@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login - Alysum</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #5b21b6, #7c3aed, #a78bfa);
+        }
+
+        .card {
+            background: white;
+            padding: 28px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 380px;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.2);
+        }
+
+        h2 {
+            margin-top: 0;
+            text-align: center;
+            color: #4c1d95;
+        }
+
+        input {
+            width: 100%;
+            padding: 14px;
+            margin: 10px 0;
+            border-radius: 12px;
+            border: 1px solid #ddd;
+            font-size: 15px;
+        }
+
+        button {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 14px;
+            background: #6d28d9;
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+
+        button:active {
+            transform: scale(0.97);
+        }
+
+        .signup-link {
+            text-align: center;
+            margin-top: 14px;
+            font-size: 14px;
+        }
+
+        .signup-link a {
+            color: #6d28d9;
+            text-decoration: none;
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="card">
+    <h2>Welcome Back</h2>
+
+    <input id="email" type="email" placeholder="Email">
+    <input id="password" type="password" placeholder="Password">
+
+    <button onclick="login()">Enter Studio</button>
+
+    <div class="signup-link">
+        New here? <a href="/signup.html">Create account</a>
+    </div>
+</div>
+
+<script type="module">
+import { auth } from "./firebase.js";
+import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+window.login = async function () {
+
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+
+    if (!email || !password) {
+        alert("Enter email and password");
+        return;
+    }
+
+    try {
+        await signInWithEmailAndPassword(auth, email, password);
+
+        window.location.href = "/studio.html";
+
+    } catch (e) {
+        alert(e.message);
+    }
+};
+</script>
+
+</body>
+</html>

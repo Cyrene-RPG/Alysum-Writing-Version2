@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Alysum Library</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #0b1220;
+            color: white;
+        }
+
+        /* HEADER */
+        .header {
+            padding: 20px;
+            background: linear-gradient(135deg, #5b21b6, #7c3aed);
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        /* NAV */
+        .nav {
+            display: flex;
+            gap: 16px;
+            padding: 12px 20px;
+            overflow-x: auto;
+            background: #111827;
+        }
+
+        .nav button {
+            background: transparent;
+            border: none;
+            color: #9ca3af;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .nav button.active {
+            color: white;
+        }
+
+        /* SEARCH */
+        .search-bar {
+            padding: 15px 20px;
+        }
+
+        .search-bar input {
+            width: 100%;
+            padding: 14px;
+            border-radius: 12px;
+            border: none;
+            background: #111827;
+            color: white;
+            font-size: 15px;
+        }
+
+        /* BOOK GRID */
+        .grid {
+            padding: 20px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 18px;
+        }
+
+        @media (max-width: 600px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .book {
+            background: #111827;
+            border-radius: 20px;
+            padding: 18px;
+            height: 160px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .book:hover {
+            transform: translateY(-4px);
+        }
+
+        .book-title {
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .book-author {
+            font-size: 13px;
+            color: #9ca3af;
+        }
+
+        .empty {
+            padding: 40px;
+            text-align: center;
+            color: #6b7280;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="header">Alysum Library</div>
+
+<div class="nav">
+    <button class="active" data-type="fiction">Fiction</button>
+    <button data-type="nonfiction">Nonfiction</button>
+    <button data-type="fanfiction">Fanfiction</button>
+    <button data-type="search">Search</button>
+</div>
+
+<div class="search-bar" id="searchBar" style="display:none;">
+    <input type="text" id="searchInput" placeholder="Search stories...">
+</div>
+
+<div class="grid" id="bookGrid"></div>
+
+<div class="empty" id="emptyState">
+    No stories yet.
+</div>
+
+<script type="module">
+import { db } from "./firebase.js";
+import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const grid = document.getElementById("bookGrid");
+const empty = document.getElementById("emptyState");
+const navButtons = document.querySelectorAll(".nav button");
+const searchBar = document.getElementById("searchBar");
+const searchInput = document.getElementById("searchInput");
+
+let allBooks = [];
+let currentFilter = "fiction";
+
+/* NAV SWITCH */
+navButtons.forEach(btn => {
+    btn.addEventListener("click", () => {
+        navButtons.forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+
+        currentFilter = btn.dataset.type;
+
+        searchBar.style.display = currentFilter === "search" ? "block" : "none";
+
+        renderBooks();
+    });
+});
+
+/* LOAD BOOKS FROM FIRESTORE */
+async function loadBooks() {
+    try {
+        const snap = await getDocs(collection(db, "library"));
+        allBooks = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        renderBooks();
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+/* RENDER */
+function renderBooks() {
+    grid.innerHTML = "";
+
+    let filtered = allBooks;
+
+    if (currentFilter !== "search") {
+        filtered = filtered.filter(b => b.type === currentFilter);
+    } else {
+        const q = searchInput.value.toLowerCase();
+        filtered = filtered.filter(b =>
+            (b.title || "").toLowerCase().includes(q)
+        );
+    }
+
+    if (filtered.length === 0) {
+        empty.style.display = "block";
+        return;
+    }
+
+    empty.style.display = "none";
+
+    filtered.forEach(book => {
+        const el = document.createElement("div");
+        el.className = "book";
+
+        el.innerHTML = `
+            <div class="book-title">${book.title || "Untitled"}</div>
+            <div class="book-author">@${book.author || "unknown"}</div>
+        `;
+
+        el.onclick = () => {
+            window.location.href = "/read.html?book=" + book.id;
+        };
+
+        grid.appendChild(el);
+    });
+}
+
+/* SEARCH */
+searchInput.addEventListener("input", renderBooks);
+
+loadBooks();
+</script>
+
+</body>
+</html>

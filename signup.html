@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sign Up - Alysum</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #5b21b6, #7c3aed, #a78bfa);
+        }
+
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 380px;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.2);
+        }
+
+        h2 {
+            margin: 0 0 15px;
+            text-align: center;
+            color: #4c1d95;
+        }
+
+        input {
+            width: 100%;
+            padding: 14px;
+            margin: 10px 0;
+            border-radius: 12px;
+            border: 1px solid #ddd;
+            font-size: 15px;
+        }
+
+        button {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 14px;
+            background: #6d28d9;
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+
+        .link {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+
+        .link a {
+            color: #6d28d9;
+            text-decoration: none;
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="card">
+    <h2>Create Account</h2>
+
+    <input id="username" placeholder="Username">
+    <input id="email" type="email" placeholder="Email">
+    <input id="password" type="password" placeholder="Password">
+
+    <button onclick="signup()">Create Account</button>
+
+    <div class="link">
+        Already have an account? <a href="/login.html">Login</a>
+    </div>
+</div>
+
+<script type="module">
+import { auth, db } from "./firebase.js";
+import { createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+window.signup = async function () {
+
+    const username = document.getElementById("username").value;
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+
+    if (!username || !email || !password) {
+        alert("Fill all fields");
+        return;
+    }
+
+    try {
+        // Create user in Firebase Auth
+        const cred = await createUserWithEmailAndPassword(auth, email, password);
+
+        // 🔥 Create Firestore user document (THIS FIXES YOUR ISSUE)
+        await setDoc(doc(db, "users", cred.user.uid), {
+            username: username,
+            words: 0,
+            books: 0,
+            streak: 0
+        });
+
+        alert("Account created!");
+
+        // Redirect to studio
+        window.location.href = "/studio.html";
+
+    } catch (e) {
+        alert(e.message);
+    }
+};
+</script>
+
+</body>
+</html>

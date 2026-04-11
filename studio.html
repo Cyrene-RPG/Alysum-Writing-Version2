@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Studio - Alysum</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #0b1220;
+            color: white;
+        }
+
+        .header {
+            padding: 20px;
+            background: linear-gradient(135deg, #5b21b6, #7c3aed);
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        .profile {
+            background: #111827;
+            margin: 20px;
+            padding: 20px;
+            border-radius: 20px;
+        }
+
+        .username {
+            color: #9ca3af;
+            margin-top: 6px;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .stat h3 {
+            margin: 0;
+            font-size: 20px;
+        }
+
+        .stat p {
+            margin: 4px 0 0;
+            font-size: 13px;
+            color: #9ca3af;
+        }
+
+        .section {
+            padding: 20px;
+        }
+
+        /* GRID */
+        .books {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 24px;
+        }
+
+        /* BOOK STYLE */
+        .book {
+            background: linear-gradient(180deg, #ffffff, #e5e7eb);
+            color: #111;
+
+            aspect-ratio: 3 / 4;
+            border-radius: 18px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+
+            padding: 12px;
+
+            box-shadow:
+                0 14px 28px rgba(0,0,0,0.35),
+                inset 6px 0 0 rgba(0,0,0,0.15);
+
+            transform: perspective(800px) rotateY(-4deg);
+            transition: all 0.2s ease;
+
+            cursor: pointer;
+        }
+
+        .book:active {
+            transform: scale(0.96) rotateY(-2deg);
+        }
+
+        .book-title {
+            font-weight: bold;
+            font-size: 16px;
+            line-height: 1.2;
+        }
+
+        .add-btn {
+            margin-top: 20px;
+            width: 100%;
+            padding: 16px;
+            border-radius: 14px;
+            border: none;
+            background: #6d28d9;
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="header">Alysum Studio</div>
+
+<div class="profile">
+    <h2 id="status">Loading...</h2>
+    <div class="username" id="username"></div>
+
+    <div class="stats">
+        <div class="stat">
+            <h3 id="words">0</h3>
+            <p>Words</p>
+        </div>
+        <div class="stat">
+            <h3 id="books">0</h3>
+            <p>Books</p>
+        </div>
+        <div class="stat">
+            <h3 id="streak">0</h3>
+            <p>Streak</p>
+        </div>
+    </div>
+</div>
+
+<div class="section">
+    <h2>Your Books</h2>
+
+    <div class="books" id="bookList"></div>
+
+    <button class="add-btn" id="createBook">+ Create Book</button>
+</div>
+
+<script type="module">
+import { auth, db } from "./firebase.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { doc, getDoc, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const status = document.getElementById("status");
+const username = document.getElementById("username");
+const words = document.getElementById("words");
+const booksEl = document.getElementById("books");
+const streak = document.getElementById("streak");
+const bookList = document.getElementById("bookList");
+const createBtn = document.getElementById("createBook");
+
+let currentUser = null;
+
+/* LOAD BOOKS */
+async function loadBooks(uid) {
+    bookList.innerHTML = "";
+
+    const snap = await getDocs(collection(db, "users", uid, "books"));
+
+    snap.forEach(docSnap => {
+        const data = docSnap.data();
+
+        const div = document.createElement("div");
+        div.className = "book";
+
+        /* CLICK → OPEN EDITOR */
+        div.onclick = () => {
+            window.location.href = "/editor.html?book=" + docSnap.id;
+        };
+
+        div.innerHTML = `
+            <div class="book-title">${data.title}</div>
+        `;
+
+        bookList.appendChild(div);
+    });
+
+    booksEl.textContent = snap.size;
+}
+
+/* CREATE BOOK */
+createBtn.onclick = async () => {
+    const title = prompt("Book title?");
+    if (!title) return;
+
+    try {
+        await addDoc(collection(db, "users", currentUser.uid, "books"), {
+            title: title,
+            created: Date.now(),
+            content: ""
+        });
+
+        await loadBooks(currentUser.uid);
+
+    } catch (e) {
+        alert(e.message);
+    }
+};
+
+/* AUTH */
+onAuthStateChanged(auth, async (user) => {
+
+    if (!user) {
+        status.textContent = "Not logged in";
+        window.location.href = "/login.html";
+        return;
+    }
+
+    currentUser = user;
+
+    try {
+        const snap = await getDoc(doc(db, "users", user.uid));
+
+        if (!snap.exists()) {
+            status.textContent = "No profile found";
+            username.textContent = "@newuser";
+            return;
+        }
+
+        const data = snap.data();
+
+        status.textContent = "Welcome!";
+        username.textContent = "@" + (data.username || "user");
+
+        words.textContent = data.words || 0;
+        streak.textContent = data.streak || 0;
+
+        await loadBooks(user.uid);
+
+    } catch (e) {
+        console.error(e);
+        status.textContent = "Error loading profile";
+        username.textContent = "@error";
+    }
+
+});
+</script>
+
+</body>
+</html>	

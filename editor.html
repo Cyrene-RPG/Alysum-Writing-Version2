@@ -1,0 +1,1761 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Alysum Editor</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        html, body {
+            margin: 0;
+            height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: #e9edf2;
+        }
+
+        body {
+            display: flex;
+            overflow: hidden;
+        }
+
+        :root {
+            --alysum-purple: #6d28d9;
+            --alysum-purple-dark: #5b21b6;
+            --sidebar-bg: #263646;
+            --sidebar-panel: #314556;
+            --sidebar-row: #34495b;
+            --sidebar-row-active: #1762a6;
+            --sidebar-text: #f3f4f6;
+            --muted: #a6b2bf;
+            --page-bg: #ffffff;
+            --page-text: #2f3740;
+            --page-subtle: #9aa3ad;
+            --border: #d7dde4;
+            --topbar-bg: #ffffff;
+            --toolbar-bg: #ffffff;
+            --workspace-bg: #e9edf2;
+            --danger: #dc2626;
+            --modal-bg: #ffffff;
+            --modal-text: #111827;
+        }
+
+        body.dark {
+            --sidebar-bg: #121826;
+            --sidebar-panel: #1a2233;
+            --sidebar-row: #263248;
+            --sidebar-row-active: #6d28d9;
+            --sidebar-text: #eef2ff;
+            --muted: #94a3b8;
+            --page-bg: #111827;
+            --page-text: #e5e7eb;
+            --page-subtle: #94a3b8;
+            --border: #334155;
+            --topbar-bg: #0f172a;
+            --toolbar-bg: #0f172a;
+            --workspace-bg: #0b1220;
+            --danger: #ef4444;
+            --modal-bg: #111827;
+            --modal-text: #e5e7eb;
+        }
+
+        .sidebar {
+            width: 320px;
+            background: var(--sidebar-bg);
+            color: var(--sidebar-text);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid rgba(255,255,255,0.06);
+            transition: transform 0.25s ease, width 0.25s ease;
+            overflow: hidden;
+            z-index: 30;
+        }
+
+        .sidebar.collapsed-desktop {
+            width: 0;
+            border-right: none;
+        }
+
+        .sidebar.mobile-hidden {
+            transform: translateX(-100%);
+        }
+
+        .sidebar-top {
+            padding: 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            background: linear-gradient(135deg, var(--alysum-purple-dark), var(--alysum-purple));
+        }
+
+        .sidebar-title-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .sidebar-mini {
+            font-size: 14px;
+            font-weight: 700;
+            opacity: 0.95;
+        }
+
+        .sidebar-book-title {
+            margin-top: 10px;
+            font-size: 28px;
+            font-weight: 800;
+            line-height: 1.1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .sidebar-meta {
+            margin-top: 10px;
+            display: flex;
+            gap: 16px;
+            font-size: 13px;
+            color: #efe9ff;
+        }
+
+        .sidebar-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 14px;
+            flex-wrap: wrap;
+        }
+
+        .pill-btn {
+            border: none;
+            border-radius: 999px;
+            padding: 10px 14px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .pill-btn.primary {
+            background: white;
+            color: var(--alysum-purple-dark);
+        }
+
+        .pill-btn.secondary {
+            background: rgba(255,255,255,0.18);
+            color: white;
+        }
+
+        .pill-btn.danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .manuscript {
+            flex: 1;
+            overflow-y: auto;
+            background: var(--sidebar-panel);
+        }
+
+        .group {
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .group-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 16px;
+            background: #3b5062;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        body.dark .group-header {
+            background: #223147;
+        }
+
+        .group-header .left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .caret {
+            width: 16px;
+            display: inline-block;
+        }
+
+        .group-body {
+            padding: 8px 0;
+        }
+
+        .group-body.hidden {
+            display: none;
+        }
+
+        .chapter-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 14px;
+            background: transparent;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .chapter-item:hover {
+            background: rgba(255,255,255,0.06);
+        }
+
+        .chapter-item.active {
+            background: var(--sidebar-row-active);
+        }
+
+        .chapter-item.dragging {
+            opacity: 0.45;
+        }
+
+        .chapter-num {
+            width: 26px;
+            text-align: center;
+            font-size: 16px;
+            font-weight: 800;
+            color: #f8fafc;
+        }
+
+        .chapter-name {
+            flex: 1;
+            min-width: 0;
+            font-size: 16px;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .chapter-drag {
+            color: #d5dee7;
+            font-size: 18px;
+        }
+
+        .empty-slot {
+            padding: 12px 18px 18px;
+            color: #aeb9c5;
+            font-style: italic;
+            font-size: 14px;
+        }
+
+        .side-footer {
+            padding: 14px 16px;
+            border-top: 1px solid rgba(255,255,255,0.08);
+            font-size: 13px;
+            color: #dbe3eb;
+            background: #2a3a49;
+        }
+
+        body.dark .side-footer {
+            background: #162132;
+        }
+
+        .main {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .topbar {
+            height: 64px;
+            background: var(--topbar-bg);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 12px;
+            gap: 10px;
+        }
+
+        .topbar-left,
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+        }
+
+        .icon-btn {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+            background: var(--topbar-bg);
+            color: var(--page-text);
+            font-size: 22px;
+            line-height: 1;
+            cursor: pointer;
+        }
+
+        .icon-btn.purple {
+            background: var(--alysum-purple);
+            border-color: var(--alysum-purple);
+            color: white;
+        }
+
+        .icon-btn.danger {
+            background: var(--danger);
+            border-color: var(--danger);
+            color: white;
+        }
+
+        .top-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--page-text);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 36vw;
+        }
+
+        .save-status {
+            font-size: 13px;
+            color: var(--page-subtle);
+            font-weight: 700;
+        }
+
+        .toolbar {
+            height: 54px;
+            background: var(--toolbar-bg);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 0 12px;
+            overflow-x: auto;
+        }
+
+        .tool-btn, .tool-select {
+            height: 36px;
+            border: 1px solid var(--border);
+            background: var(--topbar-bg);
+            border-radius: 10px;
+            color: var(--page-text);
+            font-size: 14px;
+            font-weight: 700;
+            padding: 0 12px;
+            cursor: pointer;
+        }
+
+        .workspace {
+            flex: 1;
+            overflow: auto;
+            padding: 34px 18px 60px;
+            background: var(--workspace-bg);
+        }
+
+        .page-wrap {
+            max-width: 860px;
+            margin: 0 auto;
+        }
+
+        .page {
+            background: var(--page-bg);
+            min-height: calc(100vh - 180px);
+            border-radius: 8px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.10);
+            padding: 80px 82px 110px;
+        }
+
+        .chapter-number {
+            text-align: center;
+            font-family: Georgia, serif;
+            color: var(--page-subtle);
+            font-size: 18px;
+            margin-bottom: 22px;
+        }
+
+        .chapter-title {
+            text-align: center;
+            font-family: Georgia, serif;
+            color: var(--page-subtle);
+            font-size: 34px;
+            font-weight: 700;
+            margin-bottom: 50px;
+            outline: none;
+        }
+
+        .editor {
+            min-height: 440px;
+            outline: none;
+            font-family: Georgia, serif;
+            color: var(--page-text);
+            font-size: 28px;
+            line-height: 1.85;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .editor div {
+            margin: 0 0 1.15em;
+            text-indent: 2em;
+        }
+
+        .editor div:first-child {
+            text-indent: 0;
+        }
+
+        .editor h2,
+        .editor blockquote,
+        .editor ul,
+        .editor ol {
+            text-indent: 0;
+        }
+
+        .editor ul, .editor ol {
+            margin: 0 0 1.15em 1.5em;
+        }
+
+        .editor blockquote {
+            border-left: 4px solid var(--alysum-purple);
+            margin: 0 0 1.15em;
+            padding-left: 16px;
+            color: #575f69;
+        }
+
+        body.dark .editor blockquote {
+            color: #cbd5e1;
+        }
+
+        .editor h2 {
+            font-size: 1.3em;
+            margin: 0 0 1em;
+            font-weight: 700;
+        }
+
+        .editor:empty:before {
+            content: attr(data-placeholder);
+            color: #a7afb8;
+        }
+
+        .bottom-meta {
+            margin-top: 16px;
+            text-align: center;
+            font-size: 13px;
+            color: #7b8490;
+            font-weight: 700;
+        }
+
+        .overlay {
+            display: none;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.65);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            padding: 20px;
+        }
+
+        .modal.open {
+            display: flex;
+        }
+
+        .modal-box {
+            width: 100%;
+            max-width: 560px;
+            background: var(--page-bg);
+            color: var(--page-text);
+            border-radius: 18px;
+            padding: 20px;
+            box-shadow: 0 16px 40px rgba(0,0,0,0.3);
+        }
+
+        .modal-title {
+            margin: 0 0 10px;
+            font-size: 22px;
+            font-weight: 800;
+        }
+
+        .modal-text {
+            margin: 0 0 14px;
+            color: var(--page-subtle);
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .publish-list {
+            max-height: 280px;
+            overflow: auto;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 8px;
+            margin-bottom: 14px;
+            background: rgba(0,0,0,0.03);
+        }
+
+        body.dark .publish-list {
+            background: rgba(255,255,255,0.03);
+        }
+
+        .publish-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 8px;
+            border-radius: 10px;
+        }
+
+        .publish-row:hover {
+            background: rgba(0,0,0,0.05);
+        }
+
+        body.dark .publish-row:hover {
+            background: rgba(255,255,255,0.05);
+        }
+
+        .publish-row label {
+            flex: 1;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .modal-btn {
+            flex: 1;
+            border: none;
+            border-radius: 12px;
+            padding: 12px 14px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .modal-btn.primary {
+            background: var(--alysum-purple);
+            color: white;
+        }
+
+        .modal-btn.secondary {
+            background: #e5e7eb;
+            color: #111827;
+        }
+
+        body.dark .modal-btn.secondary {
+            background: #334155;
+            color: #e5e7eb;
+        }
+
+        .publish-step {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .publish-step.hidden {
+            display: none;
+        }
+
+        .publish-label {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--page-text);
+        }
+
+        .publish-select,
+        .publish-input,
+        .publish-textarea {
+            width: 100%;
+            border: 1px solid var(--border);
+            background: var(--page-bg);
+            color: var(--page-text);
+            border-radius: 12px;
+            padding: 12px 14px;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .publish-textarea {
+            min-height: 140px;
+            resize: vertical;
+        }
+
+        .warning-box {
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px;
+            background: rgba(0,0,0,0.03);
+            display: grid;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        body.dark .warning-box {
+            background: rgba(255,255,255,0.03);
+        }
+
+        .warning-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+        }
+
+        .warning-option input {
+            width: 18px;
+            height: 18px;
+        }
+
+        .step-note {
+            font-size: 13px;
+            color: var(--page-subtle);
+            margin-top: -4px;
+            margin-bottom: 6px;
+        }
+
+        @media (max-width: 900px) {
+            .page {
+                padding: 52px 32px 70px;
+            }
+
+            .chapter-title {
+                font-size: 28px;
+            }
+
+            .editor {
+                font-size: 24px;
+            }
+
+            .top-title {
+                max-width: 28vw;
+            }
+        }
+
+        @media (max-width: 760px) {
+            .sidebar {
+                position: fixed;
+                left: 0;
+                top: 0;
+                width: 300px;
+            }
+
+            .overlay {
+                display: block;
+                position: fixed;
+                inset: 0;
+                background: rgba(0,0,0,0.35);
+                z-index: 20;
+            }
+
+            .overlay.hidden {
+                display: none;
+            }
+
+            .top-title {
+                max-width: 40vw;
+            }
+
+            .page {
+                padding: 42px 22px 60px;
+            }
+
+            .chapter-title {
+                font-size: 24px;
+                margin-bottom: 36px;
+            }
+
+            .editor {
+                font-size: 21px;
+                line-height: 1.8;
+            }
+
+            .modal-box {
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar mobile-hidden" id="sidebar">
+        <div class="sidebar-top">
+            <div class="sidebar-title-row">
+                <div class="sidebar-mini">Manuscript</div>
+                <button class="pill-btn secondary" id="renameBookBtn" type="button">Rename</button>
+            </div>
+
+            <div class="sidebar-book-title" id="sidebarBookTitle">Loading...</div>
+
+            <div class="sidebar-meta">
+                <div><span id="totalWords">0</span> words</div>
+                <div><span id="chapterCount">0</span> chapters</div>
+            </div>
+
+            <div class="sidebar-actions">
+                <button class="pill-btn primary" id="addChapterBtn" type="button">Add Chapter</button>
+                <button class="pill-btn secondary" id="deleteChapterBtn" type="button">Delete Chapter</button>
+                <button class="pill-btn secondary" id="themeToggleBtn" type="button">Dark Mode</button>
+                <button class="pill-btn secondary" id="publishSidebarBtn" type="button">Publish</button>
+                <button class="pill-btn danger" id="deleteBookBtn" type="button">Delete Book</button>
+            </div>
+        </div>
+
+        <div class="manuscript">
+            <div class="group">
+                <div class="group-header" data-group="front">
+                    <div class="left"><span class="caret" id="caret-front">▼</span>Front matter</div>
+                    <div>edit</div>
+                </div>
+                <div class="group-body" id="group-front"></div>
+            </div>
+
+            <div class="group">
+                <div class="group-header" data-group="body">
+                    <div class="left"><span class="caret" id="caret-body">▼</span>Body</div>
+                    <div>edit</div>
+                </div>
+                <div class="group-body" id="group-body"></div>
+            </div>
+
+            <div class="group">
+                <div class="group-header" data-group="back">
+                    <div class="left"><span class="caret" id="caret-back">▼</span>Back matter</div>
+                    <div>edit</div>
+                </div>
+                <div class="group-body" id="group-back"></div>
+            </div>
+        </div>
+
+        <div class="side-footer">
+            <span id="footerWords">0</span> words
+        </div>
+    </div>
+
+    <div class="overlay hidden" id="overlay"></div>
+
+    <div class="main">
+        <div class="topbar">
+            <div class="topbar-left">
+                <button class="icon-btn" id="toggleSidebarBtn" type="button">☰</button>
+                <div class="top-title" id="topBookTitle">Loading...</div>
+            </div>
+
+            <div class="topbar-right">
+                <button class="icon-btn purple" id="quickAddBtn" type="button">＋</button>
+                <button class="icon-btn purple" id="publishTopBtn" type="button">🚀</button>
+                <button class="icon-btn" id="renameChapterBtn" type="button">⋯</button>
+                <button class="icon-btn" id="themeTopBtn" type="button">◐</button>
+                <button class="icon-btn danger" id="deleteBookTopBtn" type="button">🗑</button>
+                <div class="save-status" id="saveStatus">Loading...</div>
+            </div>
+        </div>
+
+        <div class="toolbar">
+            <button class="tool-btn" type="button" data-cmd="bold">B</button>
+            <button class="tool-btn" type="button" data-cmd="italic"><em>I</em></button>
+            <button class="tool-btn" type="button" data-cmd="underline"><u>U</u></button>
+            <button class="tool-btn" type="button" data-cmd="insertUnorderedList">• List</button>
+            <button class="tool-btn" type="button" data-cmd="insertOrderedList">1. List</button>
+            <button class="tool-btn" type="button" id="quoteBtn">❝</button>
+            <select class="tool-select" id="formatSelect">
+                <option value="div">Body</option>
+                <option value="h2">Heading</option>
+            </select>
+        </div>
+
+        <div class="workspace">
+            <div class="page-wrap">
+                <div class="page">
+                    <div class="chapter-number" id="chapterNumber">1</div>
+                    <div class="chapter-title" id="chapterTitle" contenteditable="true">Chapter 1</div>
+                    <div class="editor" id="editor" contenteditable="true" data-placeholder="Begin writing here..."></div>
+                    <div class="bottom-meta">
+                        <span id="chapterWords">0</span> chapter words • <span id="bottomTotalWords">0</span> total words
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="publishModal">
+        <div class="modal-box">
+
+            <div class="publish-step" id="publishStep1">
+                <h2 class="modal-title">Publishing Details</h2>
+                <p class="modal-text">Choose your rating, warnings, type, and extra tags before selecting chapters.</p>
+
+                <label class="publish-label" for="pubRating">Rating *</label>
+                <select class="publish-select" id="pubRating">
+                    <option value="">Select rating</option>
+                    <option value="General">General</option>
+                    <option value="Teen">Teen</option>
+                    <option value="Mature">Mature</option>
+                    <option value="Explicit">Explicit</option>
+                </select>
+
+                <label class="publish-label">Alysum Warnings *</label>
+                <div class="warning-box" id="pubWarnings">
+                    <label class="warning-option"><input type="checkbox" value="Violence"> Violence</label>
+                    <label class="warning-option"><input type="checkbox" value="Death"> Death</label>
+                    <label class="warning-option"><input type="checkbox" value="Underage"> Underage</label>
+                    <label class="warning-option"><input type="checkbox" value="Abuse"> Abuse</label>
+                    <label class="warning-option"><input type="checkbox" value="Graphic Content"> Graphic Content</label>
+                    <label class="warning-option"><input type="checkbox" value="Sensitive Themes"> Sensitive Themes</label>
+                </div>
+                <div class="step-note">Pick at least one warning.</div>
+
+                <label class="publish-label" for="pubType">Type *</label>
+                <select class="publish-select" id="pubType">
+                    <option value="">Select type</option>
+                    <option value="fiction">Fiction</option>
+                    <option value="nonfiction">Nonfiction</option>
+                    <option value="fanfiction">Fanfiction</option>
+                </select>
+
+                <label class="publish-label" for="pubTags">Additional Tags</label>
+                <input class="publish-input" id="pubTags" type="text" placeholder="slow burn, found family, romance">
+
+                <div class="modal-actions">
+                    <button class="modal-btn secondary" id="closePublishBtn" type="button">Cancel</button>
+                    <button class="modal-btn primary" id="pubNext1" type="button">Next</button>
+                </div>
+            </div>
+
+            <div class="publish-step hidden" id="publishStep2">
+                <h2 class="modal-title">Select Chapters</h2>
+                <p class="modal-text">Choose which chapters are public in Alysum Library.</p>
+
+                <div class="publish-list" id="publishList"></div>
+
+                <div class="modal-actions">
+                    <button class="modal-btn secondary" id="pubBack1" type="button">Back</button>
+                    <button class="modal-btn primary" id="pubNext2" type="button">Next</button>
+                </div>
+            </div>
+
+            <div class="publish-step hidden" id="publishStep3">
+                <h2 class="modal-title">Summary</h2>
+                <p class="modal-text">Write the story summary that readers will see on the library page.</p>
+
+                <textarea class="publish-textarea" id="pubSummary" placeholder="Write your summary here..."></textarea>
+
+                <div class="modal-actions">
+                    <button class="modal-btn secondary" id="pubBack2" type="button">Back</button>
+                    <button class="modal-btn primary" id="confirmPublishBtn" type="button">Publish</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script type="module">
+        import { auth, db } from "./firebase.js";
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import { doc, getDoc, setDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+        const params = new URLSearchParams(window.location.search);
+        const bookId = params.get("book");
+
+        const sidebar = document.getElementById("sidebar");
+        const overlay = document.getElementById("overlay");
+        const toggleSidebarBtn = document.getElementById("toggleSidebarBtn");
+
+        const addChapterBtn = document.getElementById("addChapterBtn");
+        const deleteChapterBtn = document.getElementById("deleteChapterBtn");
+        const renameBookBtn = document.getElementById("renameBookBtn");
+        const quickAddBtn = document.getElementById("quickAddBtn");
+        const renameChapterBtn = document.getElementById("renameChapterBtn");
+        const deleteBookBtn = document.getElementById("deleteBookBtn");
+        const deleteBookTopBtn = document.getElementById("deleteBookTopBtn");
+        const themeToggleBtn = document.getElementById("themeToggleBtn");
+        const themeTopBtn = document.getElementById("themeTopBtn");
+        const publishSidebarBtn = document.getElementById("publishSidebarBtn");
+        const publishTopBtn = document.getElementById("publishTopBtn");
+
+        const topBookTitle = document.getElementById("topBookTitle");
+        const sidebarBookTitle = document.getElementById("sidebarBookTitle");
+        const saveStatus = document.getElementById("saveStatus");
+
+        const chapterNumber = document.getElementById("chapterNumber");
+        const chapterTitle = document.getElementById("chapterTitle");
+        const editor = document.getElementById("editor");
+
+        const totalWordsEl = document.getElementById("totalWords");
+        const chapterCountEl = document.getElementById("chapterCount");
+        const footerWordsEl = document.getElementById("footerWords");
+        const chapterWordsEl = document.getElementById("chapterWords");
+        const bottomTotalWordsEl = document.getElementById("bottomTotalWords");
+
+        const groupEls = {
+            front: document.getElementById("group-front"),
+            body: document.getElementById("group-body"),
+            back: document.getElementById("group-back")
+        };
+
+        const formatSelect = document.getElementById("formatSelect");
+        const quoteBtn = document.getElementById("quoteBtn");
+
+        const publishModal = document.getElementById("publishModal");
+        const publishList = document.getElementById("publishList");
+        const closePublishBtn = document.getElementById("closePublishBtn");
+        const confirmPublishBtn = document.getElementById("confirmPublishBtn");
+
+        const publishStep1 = document.getElementById("publishStep1");
+        const publishStep2 = document.getElementById("publishStep2");
+        const publishStep3 = document.getElementById("publishStep3");
+        const pubNext1 = document.getElementById("pubNext1");
+        const pubBack1 = document.getElementById("pubBack1");
+        const pubNext2 = document.getElementById("pubNext2");
+        const pubBack2 = document.getElementById("pubBack2");
+        const pubRating = document.getElementById("pubRating");
+        const pubWarnings = document.getElementById("pubWarnings");
+        const pubType = document.getElementById("pubType");
+        const pubTags = document.getElementById("pubTags");
+        const pubSummary = document.getElementById("pubSummary");
+
+        let currentUser = null;
+        let currentBook = null;
+        let currentSection = "body";
+        let currentChapterIndex = 0;
+        let saveTimer = null;
+        let dragged = null;
+        let authorName = "unknown";
+
+        function setSaveStatus(text) {
+            saveStatus.textContent = text;
+        }
+
+        function generateId() {
+            return "ch_" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+        }
+
+        function safeString(value, fallback = "") {
+            return typeof value === "string" ? value : fallback;
+        }
+
+        function safeNumber(value, fallback = 0) {
+            return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+        }
+
+        function safeBoolean(value, fallback = false) {
+            return typeof value === "boolean" ? value : fallback;
+        }
+
+        function safeArray(value, fallback = []) {
+            return Array.isArray(value) ? value : fallback;
+        }
+
+        function safeObject(value, fallback = {}) {
+            return value && typeof value === "object" && !Array.isArray(value) ? value : fallback;
+        }
+
+        function normalizeChapter(raw, fallbackTitle = "Untitled") {
+            const chapter = safeObject(raw, {});
+            return {
+                id: safeString(chapter.id, generateId()),
+                title: safeString(chapter.title, fallbackTitle),
+                content: safeString(chapter.content, "")
+            };
+        }
+
+        function normalizeSections(rawSections) {
+            const sections = safeObject(rawSections, {});
+            const frontRaw = safeArray(sections.front, []);
+            const bodyRaw = safeArray(sections.body, []);
+            const backRaw = safeArray(sections.back, []);
+
+            const front = frontRaw.length
+                ? frontRaw.map((ch, index) => normalizeChapter(ch, index === 0 ? "Copyright" : "Table of Contents"))
+                : [
+                    { id: generateId(), title: "Copyright", content: "" },
+                    { id: generateId(), title: "Table of Contents", content: "" }
+                ];
+
+            const body = bodyRaw.length
+                ? bodyRaw.map((ch, index) => normalizeChapter(ch, `Chapter ${index + 1}`))
+                : [
+                    { id: generateId(), title: "Chapter 1", content: "" }
+                ];
+
+            const back = backRaw.map((ch, index) => normalizeChapter(ch, `Back Matter ${index + 1}`));
+
+            return { front, body, back };
+        }
+
+        function normalizePublishMeta(rawMeta) {
+            const meta = safeObject(rawMeta, {});
+            return {
+                rating: safeString(meta.rating, ""),
+                warnings: safeArray(meta.warnings, []).filter(item => typeof item === "string"),
+                tags: safeArray(meta.tags, []).filter(item => typeof item === "string"),
+                summary: safeString(meta.summary, "")
+            };
+        }
+
+        function normalizeBookData(rawData) {
+            const data = safeObject(rawData, {});
+            return {
+                title: safeString(data.title, "Untitled Book"),
+                sections: normalizeSections(data.sections),
+                words: safeNumber(data.words, 0),
+                updated: safeNumber(data.updated, Date.now()),
+                publishedChapterIds: safeArray(data.publishedChapterIds, []).filter(item => typeof item === "string"),
+                isPublished: safeBoolean(data.isPublished, false),
+                libraryType: safeString(data.libraryType, "fiction"),
+                publishMeta: normalizePublishMeta(data.publishMeta)
+            };
+        }
+
+        function ensureChapterIds(list) {
+            list.forEach(ch => {
+                if (!ch.id) ch.id = generateId();
+            });
+        }
+
+        function ensurePublishState() {
+            if (!Array.isArray(currentBook.publishedChapterIds)) {
+                currentBook.publishedChapterIds = [];
+            }
+            if (typeof currentBook.isPublished !== "boolean") {
+                currentBook.isPublished = false;
+            }
+            if (!currentBook.libraryType) {
+                currentBook.libraryType = "fiction";
+            }
+            if (!currentBook.publishMeta || typeof currentBook.publishMeta !== "object") {
+                currentBook.publishMeta = {
+                    rating: "",
+                    warnings: [],
+                    tags: [],
+                    summary: ""
+                };
+            }
+            if (!Array.isArray(currentBook.publishMeta.warnings)) {
+                currentBook.publishMeta.warnings = [];
+            }
+            if (!Array.isArray(currentBook.publishMeta.tags)) {
+                currentBook.publishMeta.tags = [];
+            }
+            if (typeof currentBook.publishMeta.summary !== "string") {
+                currentBook.publishMeta.summary = "";
+            }
+            if (typeof currentBook.publishMeta.rating !== "string") {
+                currentBook.publishMeta.rating = "";
+            }
+        }
+
+        function applyTheme(theme) {
+            const dark = theme === "dark";
+            document.body.classList.toggle("dark", dark);
+            localStorage.setItem("alysum-theme", theme);
+            themeToggleBtn.textContent = dark ? "Light Mode" : "Dark Mode";
+        }
+
+        function toggleTheme() {
+            const nowDark = document.body.classList.contains("dark");
+            applyTheme(nowDark ? "light" : "dark");
+        }
+
+        themeToggleBtn.addEventListener("click", toggleTheme);
+        themeTopBtn.addEventListener("click", toggleTheme);
+
+        function toggleSidebar() {
+            if (window.innerWidth <= 760) {
+                sidebar.classList.toggle("mobile-hidden");
+                overlay.classList.toggle("hidden");
+            } else {
+                sidebar.classList.toggle("collapsed-desktop");
+            }
+        }
+
+        toggleSidebarBtn.addEventListener("click", toggleSidebar);
+        overlay.addEventListener("click", toggleSidebar);
+
+        function applyResponsiveSidebar() {
+            if (window.innerWidth <= 760) {
+                sidebar.classList.add("mobile-hidden");
+                overlay.classList.add("hidden");
+                sidebar.classList.remove("collapsed-desktop");
+            } else {
+                sidebar.classList.remove("mobile-hidden");
+                overlay.classList.add("hidden");
+            }
+        }
+
+        window.addEventListener("resize", applyResponsiveSidebar);
+
+        function ensureStructure() {
+            if (!currentBook.sections || typeof currentBook.sections !== "object") {
+                currentBook.sections = {};
+            }
+
+            if (!Array.isArray(currentBook.sections.front)) {
+                currentBook.sections.front = [
+                    { id: generateId(), title: "Copyright", content: "" },
+                    { id: generateId(), title: "Table of Contents", content: "" }
+                ];
+            }
+
+            if (!Array.isArray(currentBook.sections.body) || currentBook.sections.body.length === 0) {
+                currentBook.sections.body = [
+                    { id: generateId(), title: "Chapter 1", content: "" }
+                ];
+            }
+
+            if (!Array.isArray(currentBook.sections.back)) {
+                currentBook.sections.back = [];
+            }
+
+            ensureChapterIds(currentBook.sections.front);
+            ensureChapterIds(currentBook.sections.body);
+            ensureChapterIds(currentBook.sections.back);
+            ensurePublishState();
+        }
+
+        function stripHtmlToText(html) {
+            const text = safeString(html, "")
+                .replace(/<br\s*\/?>/gi, " ")
+                .replace(/<\/(div|p|h1|h2|h3|li|blockquote)>/gi, " ")
+                .replace(/<[^>]*>/g, " ")
+                .replace(/\s+/g, " ")
+                .trim();
+
+            return text;
+        }
+
+        function countWords(html) {
+            const text = stripHtmlToText(html);
+            if (!text) return 0;
+            return text.split(" ").length;
+        }
+
+        function allChaptersFlat() {
+            return [
+                ...currentBook.sections.front.map((ch, i) => ({ section: "front", index: i, ...ch })),
+                ...currentBook.sections.body.map((ch, i) => ({ section: "body", index: i, ...ch })),
+                ...currentBook.sections.back.map((ch, i) => ({ section: "back", index: i, ...ch }))
+            ];
+        }
+
+        function totalWords() {
+            return allChaptersFlat().reduce((sum, ch) => sum + countWords(ch.content || ""), 0);
+        }
+
+        function currentChapter() {
+            const list = currentBook.sections[currentSection];
+            if (!Array.isArray(list) || !list.length) {
+                currentSection = "body";
+                currentChapterIndex = 0;
+                return currentBook.sections.body[0];
+            }
+
+            if (currentChapterIndex < 0) currentChapterIndex = 0;
+            if (currentChapterIndex >= list.length) currentChapterIndex = list.length - 1;
+
+            return list[currentChapterIndex];
+        }
+
+        function syncStats() {
+            const ch = currentChapter();
+            const chWords = countWords(ch.content || "");
+            const total = totalWords();
+
+            chapterWordsEl.textContent = chWords;
+            totalWordsEl.textContent = total;
+            bottomTotalWordsEl.textContent = total;
+            footerWordsEl.textContent = total;
+            chapterCountEl.textContent = allChaptersFlat().length;
+        }
+
+        function renderTitles() {
+            const title = currentBook.title || "Untitled Book";
+            topBookTitle.textContent = title;
+            sidebarBookTitle.textContent = title;
+        }
+
+        function renderSection(section) {
+            const mount = groupEls[section];
+            mount.innerHTML = "";
+
+            const list = currentBook.sections[section];
+            if (!list.length) {
+                const empty = document.createElement("div");
+                empty.className = "empty-slot";
+                empty.textContent = "Drag chapters here";
+                mount.appendChild(empty);
+                return;
+            }
+
+            list.forEach((ch, index) => {
+                const item = document.createElement("div");
+                item.className = "chapter-item" + (section === currentSection && index === currentChapterIndex ? " active" : "");
+                item.draggable = true;
+
+                const visibleNumber = section === "body" ? index + 1 : "";
+
+                item.innerHTML = `
+                    <div class="chapter-num">${visibleNumber}</div>
+                    <div class="chapter-name">${ch.title || "Untitled"}</div>
+                    <div class="chapter-drag">⋮⋮</div>
+                `;
+
+                item.addEventListener("click", () => {
+                    loadChapter(section, index);
+                    if (window.innerWidth <= 760 && !sidebar.classList.contains("mobile-hidden")) {
+                        toggleSidebar();
+                    }
+                });
+
+                item.addEventListener("dragstart", () => {
+                    dragged = { section, index };
+                    item.classList.add("dragging");
+                });
+
+                item.addEventListener("dragend", () => {
+                    dragged = null;
+                    item.classList.remove("dragging");
+                });
+
+                item.addEventListener("dragover", (e) => e.preventDefault());
+
+                item.addEventListener("drop", async (e) => {
+                    e.preventDefault();
+                    if (!dragged) return;
+
+                    const draggedList = currentBook.sections[dragged.section];
+                    const targetList = currentBook.sections[section];
+                    const draggedItem = draggedList[dragged.index];
+
+                    draggedList.splice(dragged.index, 1);
+                    targetList.splice(index, 0, draggedItem);
+
+                    currentSection = section;
+                    currentChapterIndex = index;
+
+                    renderAllSections();
+                    loadChapter(currentSection, currentChapterIndex, false);
+
+                    try {
+                        await saveBook("Saved");
+                    } catch (err) {
+                        console.error(err);
+                        setSaveStatus("Save failed");
+                    }
+                });
+
+                mount.appendChild(item);
+            });
+        }
+
+        function renderAllSections() {
+            renderSection("front");
+            renderSection("body");
+            renderSection("back");
+            syncStats();
+        }
+
+        function loadChapter(section, index, rerender = true) {
+            currentSection = section;
+            currentChapterIndex = index;
+
+            const ch = currentChapter();
+
+            chapterNumber.textContent = section === "body" ? index + 1 : "";
+            chapterTitle.textContent = ch.title || "Untitled";
+            editor.innerHTML = ch.content || "";
+
+            if (rerender) {
+                renderAllSections();
+            }
+
+            syncStats();
+        }
+
+        function getPublishedChapters() {
+            const ids = new Set(currentBook.publishedChapterIds || []);
+            return currentBook.sections.body
+                .filter(ch => ids.has(ch.id))
+                .map((ch, index) => ({
+                    id: ch.id,
+                    order: index + 1,
+                    title: ch.title || "Untitled",
+                    content: ch.content || ""
+                }));
+        }
+
+        async function syncLibraryDoc() {
+            if (!currentUser || !bookId || !currentBook || !currentBook.isPublished) return;
+
+            const chapters = getPublishedChapters();
+            if (chapters.length === 0) return;
+
+            await setDoc(doc(db, "library", bookId), {
+                bookId,
+                ownerUid: currentUser.uid,
+                title: currentBook.title || "Untitled Book",
+                author: authorName,
+                type: currentBook.libraryType || "fiction",
+                rating: currentBook.publishMeta?.rating || "",
+                warnings: currentBook.publishMeta?.warnings || [],
+                tags: currentBook.publishMeta?.tags || [],
+                summary: currentBook.publishMeta?.summary || "",
+                updated: Date.now(),
+                words: totalWords(),
+                chapterCount: chapters.length,
+                publishedChapterIds: currentBook.publishedChapterIds || [],
+                chapters,
+                isPublished: true,
+                protectCopy: true
+            });
+        }
+
+        async function saveBook(doneText = "Saved") {
+            if (!currentUser || !bookId || !currentBook) return;
+
+            setSaveStatus("Saving...");
+
+            await updateDoc(
+                doc(db, "users", currentUser.uid, "books", bookId),
+                {
+                    title: currentBook.title || "Untitled Book",
+                    sections: currentBook.sections,
+                    words: totalWords(),
+                    updated: Date.now(),
+                    publishedChapterIds: currentBook.publishedChapterIds || [],
+                    isPublished: currentBook.isPublished || false,
+                    libraryType: currentBook.libraryType || "fiction",
+                    publishMeta: currentBook.publishMeta || {
+                        rating: "",
+                        warnings: [],
+                        tags: [],
+                        summary: ""
+                    }
+                }
+            );
+
+            if (currentBook.isPublished) {
+                await syncLibraryDoc();
+            }
+
+            setSaveStatus(doneText);
+        }
+
+        async function migrateBookIfNeeded() {
+            if (!currentUser || !bookId || !currentBook) return;
+
+            const normalized = normalizeBookData(currentBook);
+            const before = JSON.stringify(currentBook);
+            const after = JSON.stringify(normalized);
+
+            currentBook = normalized;
+            ensureStructure();
+
+            if (before !== after) {
+                try {
+                    await updateDoc(doc(db, "users", currentUser.uid, "books", bookId), {
+                        title: currentBook.title,
+                        sections: currentBook.sections,
+                        words: safeNumber(currentBook.words, 0),
+                        updated: Date.now(),
+                        publishedChapterIds: currentBook.publishedChapterIds,
+                        isPublished: currentBook.isPublished,
+                        libraryType: currentBook.libraryType,
+                        publishMeta: currentBook.publishMeta
+                    });
+                } catch (e) {
+                    console.error("Migration save failed:", e);
+                }
+            }
+        }
+
+        function scheduleSave() {
+            clearTimeout(saveTimer);
+            saveTimer = setTimeout(async () => {
+                try {
+                    await saveBook("Saved");
+                } catch (e) {
+                    console.error(e);
+                    setSaveStatus("Save failed");
+                }
+            }, 700);
+        }
+
+        function addChapterTo(section) {
+            const label = section === "body" ? "Chapter name?" : "Section name?";
+            const name = prompt(label);
+            if (!name) return;
+
+            currentBook.sections[section].push({
+                id: generateId(),
+                title: name,
+                content: ""
+            });
+
+            renderAllSections();
+            loadChapter(section, currentBook.sections[section].length - 1, false);
+            scheduleSave();
+        }
+
+        async function deleteBook() {
+            const ok = confirm("Delete this entire book?");
+            if (!ok) return;
+
+            try {
+                await deleteDoc(doc(db, "users", currentUser.uid, "books", bookId));
+                if (currentBook.isPublished) {
+                    await deleteDoc(doc(db, "library", bookId));
+                }
+                window.location.href = "/studio.html";
+            } catch (e) {
+                console.error(e);
+                setSaveStatus("Delete failed");
+            }
+        }
+
+        function resetPublishSteps() {
+            publishStep1.classList.remove("hidden");
+            publishStep2.classList.add("hidden");
+            publishStep3.classList.add("hidden");
+        }
+
+        function fillPublishStepOne() {
+            pubRating.value = currentBook.publishMeta?.rating || "";
+            pubType.value = currentBook.libraryType || "fiction";
+            pubTags.value = Array.isArray(currentBook.publishMeta?.tags) ? currentBook.publishMeta.tags.join(", ") : "";
+            pubSummary.value = currentBook.publishMeta?.summary || "";
+
+            const selectedWarnings = new Set(currentBook.publishMeta?.warnings || []);
+            pubWarnings.querySelectorAll("input[type='checkbox']").forEach(input => {
+                input.checked = selectedWarnings.has(input.value);
+            });
+        }
+
+        function buildPublishChapterList() {
+            publishList.innerHTML = "";
+
+            currentBook.sections.body.forEach((ch, index) => {
+                const row = document.createElement("div");
+                row.className = "publish-row";
+
+                const checked = (currentBook.publishedChapterIds || []).includes(ch.id) ? "checked" : "";
+
+                row.innerHTML = `
+                    <input type="checkbox" id="publish-ch-${index}" data-id="${ch.id}" ${checked}>
+                    <label for="publish-ch-${index}">${ch.title || "Untitled"}</label>
+                `;
+
+                publishList.appendChild(row);
+            });
+        }
+
+        function openPublishModal() {
+            resetPublishSteps();
+            fillPublishStepOne();
+            buildPublishChapterList();
+            publishModal.classList.add("open");
+        }
+
+        function closePublishModal() {
+            publishModal.classList.remove("open");
+        }
+
+        function getSelectedWarnings() {
+            return [...pubWarnings.querySelectorAll("input:checked")].map(input => input.value);
+        }
+
+        function getSelectedPublishChapterIds() {
+            return [...publishList.querySelectorAll("input[type='checkbox']:checked")].map(input => input.dataset.id);
+        }
+
+        async function confirmPublish() {
+            const ids = getSelectedPublishChapterIds();
+
+            if (ids.length === 0) {
+                alert("Choose at least one chapter to publish.");
+                return;
+            }
+
+            currentBook.publishedChapterIds = ids;
+            currentBook.isPublished = true;
+            currentBook.libraryType = pubType.value;
+            currentBook.publishMeta = {
+                rating: pubRating.value,
+                warnings: getSelectedWarnings(),
+                tags: pubTags.value
+                    .split(",")
+                    .map(tag => tag.trim())
+                    .filter(Boolean),
+                summary: pubSummary.value.trim()
+            };
+
+            await saveBook("Published");
+            closePublishModal();
+        }
+
+        addChapterBtn.addEventListener("click", () => addChapterTo("body"));
+        quickAddBtn.addEventListener("click", () => addChapterTo("body"));
+        deleteBookBtn.addEventListener("click", deleteBook);
+        deleteBookTopBtn.addEventListener("click", deleteBook);
+        publishSidebarBtn.addEventListener("click", openPublishModal);
+        publishTopBtn.addEventListener("click", openPublishModal);
+        closePublishBtn.addEventListener("click", closePublishModal);
+        confirmPublishBtn.addEventListener("click", confirmPublish);
+
+        pubNext1.addEventListener("click", () => {
+            if (!pubRating.value) {
+                alert("Rating is required.");
+                return;
+            }
+
+            if (getSelectedWarnings().length === 0) {
+                alert("Choose at least one Alysum warning.");
+                return;
+            }
+
+            if (!pubType.value) {
+                alert("Choose Fiction, Nonfiction, or Fanfiction.");
+                return;
+            }
+
+            publishStep1.classList.add("hidden");
+            publishStep2.classList.remove("hidden");
+        });
+
+        pubBack1.addEventListener("click", () => {
+            publishStep2.classList.add("hidden");
+            publishStep1.classList.remove("hidden");
+        });
+
+        pubNext2.addEventListener("click", () => {
+            const ids = getSelectedPublishChapterIds();
+            if (ids.length === 0) {
+                alert("Choose at least one chapter to publish.");
+                return;
+            }
+
+            publishStep2.classList.add("hidden");
+            publishStep3.classList.remove("hidden");
+        });
+
+        pubBack2.addEventListener("click", () => {
+            publishStep3.classList.add("hidden");
+            publishStep2.classList.remove("hidden");
+        });
+
+        publishModal.addEventListener("click", (e) => {
+            if (e.target === publishModal) closePublishModal();
+        });
+
+        deleteChapterBtn.addEventListener("click", async () => {
+            if (currentBook.sections[currentSection].length <= 1 && currentSection === "body") {
+                alert("Your body needs at least one chapter.");
+                return;
+            }
+
+            const ok = confirm("Delete this chapter?");
+            if (!ok) return;
+
+            const removed = currentBook.sections[currentSection][currentChapterIndex];
+            currentBook.sections[currentSection].splice(currentChapterIndex, 1);
+
+            if (currentSection === "body" && removed?.id) {
+                currentBook.publishedChapterIds = (currentBook.publishedChapterIds || []).filter(id => id !== removed.id);
+            }
+
+            if (currentBook.sections[currentSection].length === 0) {
+                if (currentSection === "front" || currentSection === "back") {
+                    currentSection = "body";
+                    currentChapterIndex = 0;
+                } else {
+                    currentBook.sections.body.push({ id: generateId(), title: "Chapter 1", content: "" });
+                    currentChapterIndex = 0;
+                }
+            } else if (currentChapterIndex >= currentBook.sections[currentSection].length) {
+                currentChapterIndex = currentBook.sections[currentSection].length - 1;
+            }
+
+            renderAllSections();
+            loadChapter(currentSection, currentChapterIndex, false);
+
+            try {
+                await saveBook("Saved");
+            } catch (e) {
+                console.error(e);
+                setSaveStatus("Save failed");
+            }
+        });
+
+        renameBookBtn.addEventListener("click", async () => {
+            const name = prompt("Book name?", currentBook.title || "");
+            if (!name) return;
+
+            currentBook.title = name;
+            renderTitles();
+
+            try {
+                await saveBook("Saved");
+            } catch (e) {
+                console.error(e);
+                setSaveStatus("Save failed");
+            }
+        });
+
+        renameChapterBtn.addEventListener("click", async () => {
+            const ch = currentChapter();
+            const name = prompt("Rename chapter?", ch.title || "");
+            if (!name) return;
+
+            ch.title = name;
+            chapterTitle.textContent = name;
+            renderAllSections();
+
+            try {
+                await saveBook("Saved");
+            } catch (e) {
+                console.error(e);
+                setSaveStatus("Save failed");
+            }
+        });
+
+        chapterTitle.addEventListener("input", () => {
+            currentChapter().title = chapterTitle.textContent.trim() || "Untitled";
+            renderAllSections();
+            scheduleSave();
+        });
+
+        editor.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+                setTimeout(() => {
+                    currentChapter().content = editor.innerHTML;
+                    syncStats();
+                    scheduleSave();
+                }, 0);
+            }
+        });
+
+        editor.addEventListener("input", () => {
+            currentChapter().content = editor.innerHTML;
+            syncStats();
+            scheduleSave();
+        });
+
+        document.querySelectorAll("[data-group]").forEach(header => {
+            header.addEventListener("click", () => {
+                const group = header.dataset.group;
+                const body = document.getElementById("group-" + group);
+                const caret = document.getElementById("caret-" + group);
+                body.classList.toggle("hidden");
+                caret.textContent = body.classList.contains("hidden") ? "▶" : "▼";
+            });
+        });
+
+        document.querySelectorAll("[data-cmd]").forEach(btn => {
+            btn.addEventListener("click", () => {
+                document.execCommand(btn.dataset.cmd, false, null);
+                editor.focus();
+                currentChapter().content = editor.innerHTML;
+                syncStats();
+                scheduleSave();
+            });
+        });
+
+        formatSelect.addEventListener("change", () => {
+            const value = formatSelect.value;
+            document.execCommand("formatBlock", false, value === "h2" ? "h2" : "div");
+            editor.focus();
+            currentChapter().content = editor.innerHTML;
+            syncStats();
+            scheduleSave();
+        });
+
+        quoteBtn.addEventListener("click", () => {
+            document.execCommand("formatBlock", false, "blockquote");
+            editor.focus();
+            currentChapter().content = editor.innerHTML;
+            syncStats();
+            scheduleSave();
+        });
+
+        async function loadBook(uid) {
+            try {
+                const snap = await getDoc(doc(db, "users", uid, "books", bookId));
+
+                if (!snap.exists()) {
+                    setSaveStatus("Book not found");
+                    topBookTitle.textContent = "Book not found";
+                    sidebarBookTitle.textContent = "Book not found";
+                    return;
+                }
+
+                const userSnap = await getDoc(doc(db, "users", uid));
+                if (userSnap.exists()) {
+                    authorName = safeString(userSnap.data().username, "unknown");
+                }
+
+                currentBook = normalizeBookData(snap.data());
+                ensureStructure();
+                await migrateBookIfNeeded();
+
+                renderTitles();
+                renderAllSections();
+
+                if (currentBook.sections.body.length > 0) {
+                    loadChapter("body", 0, false);
+                } else {
+                    loadChapter("front", 0, false);
+                }
+
+                setSaveStatus("Ready");
+            } catch (e) {
+                console.error("LOAD ERROR:", e);
+                setSaveStatus("Error loading");
+                topBookTitle.textContent = "Error loading";
+                sidebarBookTitle.textContent = "Error loading";
+            }
+        }
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = "/login.html";
+                return;
+            }
+
+            if (!bookId) {
+                setSaveStatus("No book selected");
+                topBookTitle.textContent = "No book selected";
+                sidebarBookTitle.textContent = "No book selected";
+                return;
+            }
+
+            currentUser = user;
+            applyResponsiveSidebar();
+
+            const savedTheme = localStorage.getItem("alysum-theme") || "light";
+            applyTheme(savedTheme);
+
+            setSaveStatus("Connecting...");
+
+            try {
+                await loadBook(user.uid);
+            } catch (e) {
+                console.error(e);
+                setSaveStatus("Error loading");
+            }
+        });
+    </script>
+
+</body>
+</html>
