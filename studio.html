@@ -5,157 +5,262 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <style>
-        * { box-sizing: border-box; }
+        * {
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #0b1220;
+            --panel: #111827;
+            --panel-2: #1f2937;
+            --text: #ffffff;
+            --muted: #9ca3af;
+            --purple: #6d28d9;
+            --purple-dark: #5b21b6;
+            --border: rgba(255,255,255,0.08);
+            --shadow: 0 14px 28px rgba(0,0,0,0.35);
+        }
 
         body {
             margin: 0;
             font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-            background: #0b1220;
-            color: white;
+            background: var(--bg);
+            color: var(--text);
         }
 
-        /* HEADER */
         .header {
-            padding: 20px 20px 20px 70px;
-            background: linear-gradient(135deg, #5b21b6, #7c3aed);
-            font-size: 22px;
-            font-weight: bold;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            height: 74px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--purple-dark), #7c3aed);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.28);
         }
 
-        /* MENU BUTTON */
+        .header-center {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 22px;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
         .menu-btn {
-            position: fixed;
-            top: 16px;
+            position: absolute;
             left: 16px;
-            z-index: 100;
-            width: 48px;
-            height: 48px;
+            width: 44px;
+            height: 44px;
             border-radius: 12px;
             border: none;
-            background: rgba(0,0,0,0.35);
+            background: rgba(0,0,0,0.22);
             color: white;
             font-size: 22px;
             cursor: pointer;
         }
 
-        /* OVERLAY */
         .menu-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(0,0,0,0.4);
-            z-index: 90;
+            background: rgba(0,0,0,0.45);
+            z-index: 80;
         }
 
         .menu-overlay.hidden {
             display: none;
         }
 
-        /* SIDE MENU */
         .side-menu {
             position: fixed;
             top: 0;
-            left: -260px;
-            width: 260px;
+            left: -270px;
+            width: 270px;
             height: 100vh;
             background: #111827;
-            z-index: 110;
-            padding: 20px;
-            transition: 0.25s ease;
+            border-right: 1px solid var(--border);
+            padding: 22px 18px;
+            z-index: 90;
+            transition: left 0.25s ease;
+            box-shadow: 0 18px 40px rgba(0,0,0,0.45);
         }
 
         .side-menu.open {
             left: 0;
         }
 
-        .menu-header {
-            font-size: 22px;
+        .menu-title {
+            font-size: 24px;
             font-weight: 800;
-            margin-bottom: 20px;
+            margin-bottom: 18px;
         }
 
         .menu-link {
             display: block;
-            padding: 14px;
-            border-radius: 12px;
-            color: white;
             text-decoration: none;
+            color: white;
+            padding: 14px 14px;
+            border-radius: 14px;
             margin-bottom: 8px;
+            background: transparent;
+            transition: background 0.18s ease;
+            font-weight: 700;
         }
 
         .menu-link:hover {
             background: #1f2937;
         }
 
-        /* CONTAINER */
         .container {
             max-width: 1100px;
             margin: 0 auto;
+            padding: 18px 16px 48px;
         }
 
-        /* PROFILE */
         .profile {
-            background: #111827;
-            margin: 20px;
-            padding: 20px;
-            border-radius: 20px;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 24px 20px;
+            text-align: center;
+            box-shadow: var(--shadow);
+        }
+
+        #status {
+            margin: 0 0 6px;
+            font-size: 28px;
         }
 
         .username {
-            color: #9ca3af;
-            margin-top: 6px;
+            color: var(--muted);
+            font-size: 15px;
+            margin-bottom: 20px;
         }
 
         .stats {
-            display: flex;
-            justify-content: space-around;
-            margin-top: 20px;
-            text-align: center;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .stat {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 16px 10px;
         }
 
         .stat h3 {
             margin: 0;
-            font-size: 20px;
+            font-size: 24px;
+            font-weight: 800;
         }
 
         .stat p {
-            margin: 4px 0 0;
+            margin: 6px 0 0;
             font-size: 13px;
-            color: #9ca3af;
+            color: var(--muted);
+            font-weight: 600;
         }
 
-        /* SECTION */
+        .sprint-card {
+            margin-top: 18px;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 22px 20px;
+            box-shadow: var(--shadow);
+            text-align: center;
+        }
+
+        .sprint-title {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 800;
+        }
+
+        .sprint-sub {
+            margin-top: 8px;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .timer {
+            font-size: 52px;
+            font-weight: 900;
+            letter-spacing: 0.04em;
+            margin: 16px 0 18px;
+        }
+
+        .sprint-controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .sprint-btn {
+            min-width: 120px;
+            padding: 14px 18px;
+            border-radius: 14px;
+            border: none;
+            font-size: 15px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .sprint-btn.primary {
+            background: linear-gradient(135deg, var(--purple), #9333ea);
+            color: white;
+        }
+
+        .sprint-btn.secondary {
+            background: #1f2937;
+            color: white;
+            border: 1px solid var(--border);
+        }
+
         .section {
-            padding: 20px;
+            margin-top: 22px;
         }
 
-        /* BOOK GRID */
+        .section-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .section h2 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 800;
+        }
+
         .books {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 18px;
         }
 
         .book {
             background: linear-gradient(180deg, #ffffff, #e5e7eb);
-            color: #111;
-
+            color: #111827;
             aspect-ratio: 3 / 4;
             border-radius: 18px;
-
             display: flex;
             align-items: center;
             justify-content: center;
             text-align: center;
-
-            padding: 12px;
-
+            padding: 14px;
             box-shadow:
                 0 14px 28px rgba(0,0,0,0.35),
                 inset 6px 0 0 rgba(0,0,0,0.15);
-
             transform: perspective(800px) rotateY(-4deg);
             transition: all 0.2s ease;
-
             cursor: pointer;
         }
 
@@ -164,229 +269,458 @@
         }
 
         .book:active {
-            transform: scale(0.96);
+            transform: scale(0.97);
         }
 
         .book-title {
-            font-weight: bold;
+            font-weight: 800;
             font-size: 16px;
             line-height: 1.2;
+            word-break: break-word;
+        }
+
+        .empty-books {
+            grid-column: 1 / -1;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 22px;
+            color: var(--muted);
+            text-align: center;
         }
 
         .add-btn {
             margin-top: 20px;
             width: 100%;
             padding: 16px;
-            border-radius: 14px;
+            border-radius: 16px;
             border: none;
-            background: #6d28d9;
+            background: linear-gradient(135deg, var(--purple), #9333ea);
             color: white;
-            font-weight: bold;
+            font-weight: 800;
             font-size: 16px;
             cursor: pointer;
+            box-shadow: var(--shadow);
         }
 
         .add-btn:hover {
-            background: #5b21b6;
+            background: linear-gradient(135deg, #5b21b6, #7e22ce);
         }
 
-        /* MOBILE */
-        @media (max-width: 600px) {
+        @media (min-width: 700px) {
             .books {
-                grid-template-columns: repeat(2, 1fr);
+                grid-template-columns: repeat(3, minmax(0, 1fr));
             }
         }
 
-        /* DESKTOP */
-        @media (min-width: 900px) {
-
-            .header {
-                font-size: 26px;
-                padding: 24px 24px 24px 80px;
+        @media (min-width: 950px) {
+            .container {
+                padding: 28px 20px 56px;
             }
 
             .profile {
-                margin: 30px 0;
-                padding: 28px;
+                max-width: 760px;
+                margin: 0 auto;
+                padding: 28px 28px;
             }
 
-            .stats {
-                justify-content: space-between;
-                max-width: 500px;
-                margin: 24px auto 0;
+            .sprint-card {
+                max-width: 760px;
+                margin: 18px auto 0;
             }
 
             .section {
-                padding: 0;
+                margin-top: 28px;
+            }
+
+            .section-shell {
+                max-width: 980px;
+                margin: 0 auto;
             }
 
             .books {
-                grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-                gap: 28px;
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+                gap: 24px;
             }
 
             .add-btn {
-                max-width: 300px;
-                margin: 30px auto 0;
+                max-width: 320px;
                 display: block;
+                margin-left: auto;
+                margin-right: auto;
             }
         }
     </style>
 </head>
-
 <body>
 
-<button class="menu-btn" id="menuBtn">☰</button>
+    <div class="header">
+        <button class="menu-btn" id="menuBtn" type="button">☰</button>
+        <div class="header-center">Alysum Studio</div>
+    </div>
 
-<div class="menu-overlay hidden" id="menuOverlay"></div>
+    <div class="menu-overlay hidden" id="menuOverlay"></div>
 
-<div class="side-menu" id="sideMenu">
-    <div class="menu-header">Alysum</div>
+    <div class="side-menu" id="sideMenu">
+        <div class="menu-title">Alysum</div>
+        <a href="/studio.html" class="menu-link">✍️ Studio</a>
+        <a href="/library.html" class="menu-link">📚 Library</a>
+        <a href="/index.html" class="menu-link">🏠 Home</a>
+    </div>
 
-    <a href="/studio.html" class="menu-link">✍️ Studio</a>
-    <a href="/library.html" class="menu-link">📚 Library</a>
-    <a href="/index.html" class="menu-link">🏠 Home</a>
-</div>
+    <div class="container">
 
-<div class="header">Alysum Studio</div>
+        <div class="profile">
+            <h2 id="status">Loading...</h2>
+            <div class="username" id="username"></div>
 
-<div class="container">
-
-    <div class="profile">
-        <h2 id="status">Loading...</h2>
-        <div class="username" id="username"></div>
-
-        <div class="stats">
-            <div class="stat">
-                <h3 id="words">0</h3>
-                <p>Words</p>
-            </div>
-            <div class="stat">
-                <h3 id="books">0</h3>
-                <p>Books</p>
-            </div>
-            <div class="stat">
-                <h3 id="streak">0</h3>
-                <p>Streak</p>
+            <div class="stats">
+                <div class="stat">
+                    <h3 id="words">0</h3>
+                    <p>Words</p>
+                </div>
+                <div class="stat">
+                    <h3 id="books">0</h3>
+                    <p>Books</p>
+                </div>
+                <div class="stat">
+                    <h3 id="streak">0</h3>
+                    <p>Streak 🔥</p>
+                </div>
             </div>
         </div>
+
+        <div class="sprint-card">
+            <h2 class="sprint-title">Writing Sprint</h2>
+            <div class="sprint-sub">25-minute focus session</div>
+            <div class="timer" id="timer">25:00</div>
+
+            <div class="sprint-controls">
+                <button class="sprint-btn primary" id="startSprint" type="button">Start</button>
+                <button class="sprint-btn secondary" id="resetSprint" type="button">Reset</button>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-shell">
+                <div class="section-head">
+                    <h2>Your Books</h2>
+                </div>
+
+                <div class="books" id="bookList"></div>
+
+                <button class="add-btn" id="createBook" type="button">+ Create Book</button>
+            </div>
+        </div>
+
     </div>
 
-    <div class="section">
-        <h2>Your Books</h2>
+    <script type="module">
+        import { auth, db } from "./firebase.js";
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import {
+            doc,
+            getDoc,
+            updateDoc,
+            setDoc,
+            collection,
+            addDoc,
+            getDocs
+        } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-        <div class="books" id="bookList"></div>
+        const status = document.getElementById("status");
+        const username = document.getElementById("username");
+        const wordsEl = document.getElementById("words");
+        const booksEl = document.getElementById("books");
+        const streakEl = document.getElementById("streak");
+        const bookList = document.getElementById("bookList");
+        const createBtn = document.getElementById("createBook");
 
-        <button class="add-btn" id="createBook">+ Create Book</button>
-    </div>
+        const menuBtn = document.getElementById("menuBtn");
+        const sideMenu = document.getElementById("sideMenu");
+        const menuOverlay = document.getElementById("menuOverlay");
 
-</div>
+        const timerEl = document.getElementById("timer");
+        const startSprintBtn = document.getElementById("startSprint");
+        const resetSprintBtn = document.getElementById("resetSprint");
 
-<script type="module">
-import { auth, db } from "./firebase.js";
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { doc, getDoc, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        let currentUser = null;
+        let sprintInterval = null;
 
-const status = document.getElementById("status");
-const username = document.getElementById("username");
-const words = document.getElementById("words");
-const booksEl = document.getElementById("books");
-const streak = document.getElementById("streak");
-const bookList = document.getElementById("bookList");
-const createBtn = document.getElementById("createBook");
-
-const menuBtn = document.getElementById("menuBtn");
-const sideMenu = document.getElementById("sideMenu");
-const menuOverlay = document.getElementById("menuOverlay");
-
-let currentUser = null;
-
-/* MENU */
-menuBtn.onclick = () => {
-    sideMenu.classList.add("open");
-    menuOverlay.classList.remove("hidden");
-};
-
-menuOverlay.onclick = () => {
-    sideMenu.classList.remove("open");
-    menuOverlay.classList.add("hidden");
-};
-
-/* LOAD BOOKS */
-async function loadBooks(uid) {
-    bookList.innerHTML = "";
-
-    const snap = await getDocs(collection(db, "users", uid, "books"));
-
-    snap.forEach(docSnap => {
-        const data = docSnap.data();
-
-        const div = document.createElement("div");
-        div.className = "book";
-
-        div.onclick = () => {
-            window.location.href = "/editor.html?book=" + docSnap.id;
-        };
-
-        div.innerHTML = `<div class="book-title">${data.title}</div>`;
-        bookList.appendChild(div);
-    });
-
-    booksEl.textContent = snap.size;
-}
-
-/* CREATE BOOK */
-createBtn.onclick = async () => {
-    const title = prompt("Book title?");
-    if (!title) return;
-
-    await addDoc(collection(db, "users", currentUser.uid, "books"), {
-        title,
-        created: Date.now(),
-        content: ""
-    });
-
-    await loadBooks(currentUser.uid);
-};
-
-/* AUTH */
-onAuthStateChanged(auth, async (user) => {
-
-    if (!user) {
-        status.textContent = "Not logged in";
-        window.location.href = "/login.html";
-        return;
-    }
-
-    currentUser = user;
-
-    try {
-        const snap = await getDoc(doc(db, "users", user.uid));
-
-        if (!snap.exists()) {
-            status.textContent = "No profile found";
-            username.textContent = "@newuser";
-            return;
+        function openMenu() {
+            sideMenu.classList.add("open");
+            menuOverlay.classList.remove("hidden");
         }
 
-        const data = snap.data();
+        function closeMenu() {
+            sideMenu.classList.remove("open");
+            menuOverlay.classList.add("hidden");
+        }
 
-        status.textContent = "Welcome!";
-        username.textContent = "@" + (data.username || "user");
+        menuBtn.addEventListener("click", openMenu);
+        menuOverlay.addEventListener("click", closeMenu);
 
-        words.textContent = data.words || 0;
-        streak.textContent = data.streak || 0;
+        function stripHtml(html = "") {
+            return String(html)
+                .replace(/<br\s*\/?>/gi, " ")
+                .replace(/<\/(div|p|h1|h2|h3|li|blockquote)>/gi, " ")
+                .replace(/<[^>]*>/g, " ")
+                .replace(/\s+/g, " ")
+                .trim();
+        }
 
-        await loadBooks(user.uid);
+        function countWordsFromHTML(html = "") {
+            const text = stripHtml(html);
+            if (!text) return 0;
+            return text.split(" ").length;
+        }
 
-    } catch (e) {
-        console.error(e);
-        status.textContent = "Error loading profile";
-        username.textContent = "@error";
-    }
+        function countBookWords(bookData) {
+            let total = 0;
+            const sections = bookData?.sections || {};
 
-});
-</script>
+            ["front", "body", "back"].forEach(sectionName => {
+                const list = Array.isArray(sections[sectionName]) ? sections[sectionName] : [];
+                list.forEach(chapter => {
+                    total += countWordsFromHTML(chapter?.content || "");
+                });
+            });
+
+            return total;
+        }
+
+        async function loadBooks(uid) {
+            bookList.innerHTML = "";
+
+            const snap = await getDocs(collection(db, "users", uid, "books"));
+            let totalWords = 0;
+
+            if (snap.empty) {
+                const empty = document.createElement("div");
+                empty.className = "empty-books";
+                empty.textContent = "No books yet. Create your first one.";
+                bookList.appendChild(empty);
+            }
+
+            snap.forEach(docSnap => {
+                const data = docSnap.data();
+                totalWords += countBookWords(data);
+
+                const div = document.createElement("div");
+                div.className = "book";
+                div.onclick = () => {
+                    window.location.href = "/editor.html?book=" + docSnap.id;
+                };
+
+                div.innerHTML = `
+                    <div class="book-title">${escapeHtml(data.title || "Untitled Book")}</div>
+                `;
+
+                bookList.appendChild(div);
+            });
+
+            booksEl.textContent = snap.size;
+            wordsEl.textContent = totalWords.toLocaleString();
+        }
+
+        function escapeHtml(str) {
+            return String(str)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;");
+        }
+
+        createBtn.addEventListener("click", async () => {
+            if (!currentUser) return;
+
+            const title = prompt("Book title?");
+            if (!title) return;
+
+            try {
+                await addDoc(collection(db, "users", currentUser.uid, "books"), {
+                    title: title,
+                    created: Date.now(),
+                    updated: Date.now(),
+                    words: 0,
+                    sections: {
+                        front: [
+                            { title: "Copyright", content: "" },
+                            { title: "Table of Contents", content: "" }
+                        ],
+                        body: [
+                            { title: "Chapter 1", content: "" }
+                        ],
+                        back: []
+                    }
+                });
+
+                await loadBooks(currentUser.uid);
+            } catch (e) {
+                console.error(e);
+                alert(e.message);
+            }
+        });
+
+        function todayKey() {
+            return new Date().toISOString().split("T")[0];
+        }
+
+        function daysBetween(dateA, dateB) {
+            const a = new Date(dateA + "T00:00:00");
+            const b = new Date(dateB + "T00:00:00");
+            return Math.floor((b - a) / (1000 * 60 * 60 * 24));
+        }
+
+        async function ensureUserStreak(userRef, data) {
+            const today = todayKey();
+            const lastLogin = typeof data.lastLogin === "string" ? data.lastLogin : "";
+            const currentStreak = Number.isFinite(data.streak) ? data.streak : 0;
+
+            if (!lastLogin) {
+                await updateDoc(userRef, {
+                    lastLogin: today,
+                    streak: 1
+                });
+                return 1;
+            }
+
+            const diff = daysBetween(lastLogin, today);
+
+            if (diff <= 0) {
+                return currentStreak || 1;
+            }
+
+            if (diff === 1) {
+                const nextStreak = currentStreak + 1;
+                await updateDoc(userRef, {
+                    lastLogin: today,
+                    streak: nextStreak
+                });
+                return nextStreak;
+            }
+
+            await updateDoc(userRef, {
+                lastLogin: today,
+                streak: 1
+            });
+            return 1;
+        }
+
+        function updateTimerDisplay(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            timerEl.textContent = `${mins}:${String(secs).padStart(2, "0")}`;
+        }
+
+        function loadSprintState() {
+            try {
+                return JSON.parse(localStorage.getItem("alysum-sprint") || "null");
+            } catch {
+                return null;
+            }
+        }
+
+        function saveSprintState(state) {
+            localStorage.setItem("alysum-sprint", JSON.stringify(state));
+        }
+
+        function clearSprintState() {
+            localStorage.removeItem("alysum-sprint");
+        }
+
+        function tickSprint() {
+            const state = loadSprintState();
+            if (!state || !state.end) {
+                clearInterval(sprintInterval);
+                sprintInterval = null;
+                updateTimerDisplay(1500);
+                return;
+            }
+
+            const remaining = Math.max(0, Math.floor((state.end - Date.now()) / 1000));
+            updateTimerDisplay(remaining);
+
+            if (remaining <= 0) {
+                clearInterval(sprintInterval);
+                sprintInterval = null;
+                clearSprintState();
+                alert("Sprint complete!");
+            }
+        }
+
+        function startSprint() {
+            const currentState = loadSprintState();
+
+            if (!currentState) {
+                saveSprintState({
+                    end: Date.now() + (25 * 60 * 1000)
+                });
+            }
+
+            if (sprintInterval) return;
+
+            tickSprint();
+            sprintInterval = setInterval(tickSprint, 1000);
+        }
+
+        function resetSprint() {
+            clearInterval(sprintInterval);
+            sprintInterval = null;
+            clearSprintState();
+            updateTimerDisplay(1500);
+        }
+
+        startSprintBtn.addEventListener("click", startSprint);
+        resetSprintBtn.addEventListener("click", resetSprint);
+
+        const existingSprint = loadSprintState();
+        if (existingSprint && existingSprint.end && existingSprint.end > Date.now()) {
+            startSprint();
+        } else {
+            updateTimerDisplay(1500);
+            clearSprintState();
+        }
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                status.textContent = "Not logged in";
+                window.location.href = "/login.html";
+                return;
+            }
+
+            currentUser = user;
+
+            try {
+                const userRef = doc(db, "users", user.uid);
+                let snap = await getDoc(userRef);
+
+                if (!snap.exists()) {
+                    await setDoc(userRef, {
+                        username: "newuser",
+                        words: 0,
+                        streak: 1,
+                        lastLogin: todayKey()
+                    });
+
+                    snap = await getDoc(userRef);
+                }
+
+                const data = snap.data();
+                const streak = await ensureUserStreak(userRef, data);
+
+                status.textContent = "Welcome!";
+                username.textContent = "@" + (data.username || "user");
+                streakEl.textContent = streak;
+
+                await loadBooks(user.uid);
+
+            } catch (e) {
+                console.error(e);
+                status.textContent = "Error loading profile";
+                username.textContent = "@error";
+            }
+        });
+    </script>
 
 </body>
 </html>
