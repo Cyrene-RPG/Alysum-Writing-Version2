@@ -5,73 +5,50 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <style>
-        * { box-sizing: border-box; }
-
-        :root {
-            --bg: #0b1220;
-            --panel: #111827;
-            --text: #ffffff;
-            --muted: #9ca3af;
-            --purple: #6d28d9;
-            --purple-dark: #5b21b6;
-            --border: rgba(255,255,255,0.08);
-            --shadow: 0 20px 60px rgba(0,0,0,0.45);
+        * {
+            box-sizing: border-box;
         }
 
         body {
             margin: 0;
             font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--bg);
-            color: var(--text);
+            background: #0b1220;
+            color: white;
         }
 
-        /* HERO */
+        /* HERO (UNCHANGED STYLE) */
         .hero {
             min-height: 100vh;
+            background: linear-gradient(135deg, #5b21b6, #7c3aed, #a78bfa);
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 30px 16px;
-
-            background:
-                radial-gradient(circle at top, rgba(124,58,237,0.35), transparent 40%),
-                radial-gradient(circle at bottom, rgba(0,0,0,0.6), transparent 60%),
-                linear-gradient(135deg, #0b1220, #111827);
+            text-align: center;
+            padding: 20px;
         }
 
         .hero-box {
+            max-width: 520px;
             width: 100%;
-            max-width: 620px;
-            text-align: center;
-
-            background: rgba(255,255,255,0.03);
-            border: 1px solid var(--border);
-            border-radius: 28px;
-            padding: 36px 24px;
-
-            box-shadow: var(--shadow);
-            backdrop-filter: blur(10px);
         }
 
-        /* LOGO */
-        .hero-logo {
+        /* LOGO (REPLACES TITLE) */
+        .logo {
             width: 100%;
-            max-width: 380px;
+            max-width: 320px;
             margin: 0 auto 10px;
             display: block;
-
-            filter: drop-shadow(0 18px 50px rgba(0,0,0,0.6));
         }
 
         .tagline {
-            margin-top: 14px;
-            font-size: 18px;
-            color: var(--muted);
+            margin-top: 12px;
+            font-size: 20px;
+            color: #ede9fe;
         }
 
-        /* BUTTONS */
+        /* BUTTONS (UPGRADED BUT SAME FEEL) */
         .actions {
-            margin-top: 34px;
+            margin-top: 40px;
             display: flex;
             flex-direction: column;
             gap: 14px;
@@ -79,106 +56,112 @@
 
         .btn {
             padding: 18px;
-            border-radius: 18px;
-            font-weight: 800;
-            font-size: 17px;
+            border-radius: 16px;
+            font-weight: 700;
+            font-size: 18px;
+            text-align: center;
             text-decoration: none;
             transition: all 0.2s ease;
-            text-align: center;
         }
 
         /* PRIMARY */
         .primary {
-            background: linear-gradient(135deg, var(--purple), #9333ea);
-            color: white;
-            box-shadow: 0 10px 30px rgba(109,40,217,0.45);
+            background: white;
+            color: #4c1d95;
         }
 
         .primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 16px 40px rgba(109,40,217,0.6);
         }
 
         .primary:active {
             transform: scale(0.96);
         }
 
-        /* SECOND BUTTON */
-        .secondary-btn {
-            background: var(--panel);
-            border: 1px solid var(--border);
+        /* LIBRARY BUTTON */
+        .library-btn {
+            background: #ede9fe;
+            color: #4c1d95;
+        }
+
+        .library-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        /* LOGIN */
+        .secondary {
             color: white;
-        }
-
-        .secondary-btn:hover {
-            background: #1f2937;
-        }
-
-        /* LOGIN LINK */
-        .login-link {
-            margin-top: 16px;
-            display: block;
-            color: var(--muted);
-            font-size: 14px;
+            opacity: 0.9;
+            text-decoration: underline;
+            font-size: 15px;
         }
 
         /* FEATURES */
         .features {
-            padding: 70px 20px;
-            max-width: 900px;
-            margin: auto;
+            background: #0b1220;
+            padding: 60px 20px;
         }
 
         .features h2 {
             text-align: center;
-            font-size: 34px;
+            font-size: 36px;
             margin-bottom: 30px;
         }
 
         .card {
-            background: var(--panel);
+            background: #111827;
             padding: 24px;
-            border-radius: 22px;
+            border-radius: 20px;
             margin-bottom: 20px;
-            border: 1px solid var(--border);
-            box-shadow: var(--shadow);
         }
 
         .card-title {
             font-size: 22px;
-            font-weight: 800;
+            font-weight: 700;
             margin-bottom: 10px;
         }
 
         .card-text {
-            color: var(--muted);
+            color: #d1d5db;
+            font-size: 16px;
         }
 
         footer {
             text-align: center;
             padding: 30px;
-            color: var(--muted);
             font-size: 14px;
+            color: #9ca3af;
         }
 
-        /* DESKTOP */
+        /* DESKTOP FIX */
         @media (min-width: 900px) {
+
+            .hero-box {
+                max-width: 650px;
+            }
+
+            .logo {
+                max-width: 420px;
+            }
+
             .actions {
                 flex-direction: row;
                 justify-content: center;
             }
 
             .btn {
-                flex: 1;
-                max-width: 220px;
+                width: 220px;
+            }
+        }
+
+        /* MOBILE */
+        @media (max-width: 480px) {
+            .logo {
+                max-width: 260px;
             }
 
-            .hero-box {
-                padding: 48px 40px;
-            }
-
-            .hero-logo {
-                max-width: 460px;
+            .tagline {
+                font-size: 18px;
             }
         }
 
@@ -190,22 +173,24 @@
 <section class="hero">
     <div class="hero-box">
 
-        <!-- LOGO -->
-        <img src="/images/logo.png" class="hero-logo">
+        <!-- YOUR LOGO -->
+        <img src="Alysum-3.png" class="logo" alt="Alysum Logo">
 
         <div class="tagline">Every writer needs a studio</div>
 
         <div class="actions">
             <a href="/signup.html" class="btn primary">Create Account</a>
 
-            <a href="/library.html" class="btn secondary-btn">
+            <a href="/library.html" class="btn library-btn">
                 Browse Library
             </a>
         </div>
 
-        <a href="/login.html" class="login-link">
-            Already have an account?
-        </a>
+        <div style="margin-top: 14px;">
+            <a href="/login.html" class="secondary">
+                Already have an account?
+            </a>
+        </div>
 
     </div>
 </section>
