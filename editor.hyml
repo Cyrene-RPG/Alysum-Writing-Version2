@@ -469,66 +469,25 @@
 
         .publish-modal-box {
             width: 100%;
-            max-width: 560px;
+            max-width: 520px;
             background: var(--page-bg);
             color: var(--page-text);
             border-radius: 18px;
-            padding: 20px;
+            padding: 22px;
             box-shadow: 0 16px 40px rgba(0,0,0,0.3);
         }
 
         .publish-modal-title {
             margin: 0 0 10px;
-            font-size: 22px;
+            font-size: 24px;
             font-weight: 800;
         }
 
         .publish-modal-text {
-            margin: 0 0 14px;
+            margin: 0 0 18px;
             color: var(--page-subtle);
             font-size: 14px;
             line-height: 1.5;
-        }
-
-        .publish-list {
-            max-height: 320px;
-            overflow: auto;
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 8px;
-            margin-bottom: 14px;
-            background: rgba(0,0,0,0.03);
-        }
-
-        body.dark .publish-list {
-            background: rgba(255,255,255,0.03);
-        }
-
-        .publish-row {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 8px;
-            border-radius: 10px;
-        }
-
-        .publish-row:hover {
-            background: rgba(0,0,0,0.05);
-        }
-
-        body.dark .publish-row:hover {
-            background: rgba(255,255,255,0.05);
-        }
-
-        .publish-row label {
-            flex: 1;
-            cursor: pointer;
-            font-weight: 600;
-        }
-
-        .publish-row input {
-            width: 18px;
-            height: 18px;
         }
 
         .publish-modal-actions {
@@ -726,16 +685,13 @@
 
     <div class="publish-modal" id="publishModal">
         <div class="publish-modal-box">
-            <h2 class="publish-modal-title">Choose Chapters to Publish</h2>
+            <h2 class="publish-modal-title">Publish</h2>
             <p class="publish-modal-text">
-                Select the chapters you want to publish now. The next step will open on a separate page so publishing stays clean and doesn’t interfere with the editor.
+                This is the clean first step. The modal opens and closes safely, and we have not added any publishing logic yet.
             </p>
-
-            <div class="publish-list" id="publishList"></div>
-
             <div class="publish-modal-actions">
-                <button class="publish-modal-btn secondary" id="closePublishBtn" type="button">Cancel</button>
-                <button class="publish-modal-btn primary" id="publishNextBtn" type="button">Next</button>
+                <button class="publish-modal-btn secondary" id="closePublishBtn" type="button">Close</button>
+                <button class="publish-modal-btn primary" id="publishContinueBtn" type="button">Continue</button>
             </div>
         </div>
     </div>
@@ -788,9 +744,8 @@
         const quoteBtn = document.getElementById("quoteBtn");
 
         const publishModal = document.getElementById("publishModal");
-        const publishList = document.getElementById("publishList");
         const closePublishBtn = document.getElementById("closePublishBtn");
-        const publishNextBtn = document.getElementById("publishNextBtn");
+        const publishContinueBtn = document.getElementById("publishContinueBtn");
 
         let currentUser = null;
         let currentBook = null;
@@ -1099,60 +1054,6 @@
             syncStats();
         }
 
-        function buildPublishChapterList() {
-            publishList.innerHTML = "";
-
-            const bodyChapters = currentBook?.sections?.body || [];
-
-            if (!bodyChapters.length) {
-                const empty = document.createElement("div");
-                empty.className = "empty-slot";
-                empty.textContent = "No body chapters available.";
-                publishList.appendChild(empty);
-                return;
-            }
-
-            bodyChapters.forEach((ch, index) => {
-                const row = document.createElement("div");
-                row.className = "publish-row";
-
-                row.innerHTML = `
-                    <input type="checkbox" id="publish-ch-${index}" data-id="${ch.id}" checked>
-                    <label for="publish-ch-${index}">${ch.title || "Untitled"}</label>
-                `;
-
-                publishList.appendChild(row);
-            });
-        }
-
-        function openPublishModal() {
-            if (!currentBook) return;
-            buildPublishChapterList();
-            publishModal.classList.add("open");
-        }
-
-        function closePublishModal() {
-            publishModal.classList.remove("open");
-        }
-
-        function goToPublishPage() {
-            const selectedIds = [...publishList.querySelectorAll("input[type='checkbox']:checked")]
-                .map(input => input.dataset.id)
-                .filter(Boolean);
-
-            if (!selectedIds.length) {
-                alert("Choose at least one chapter.");
-                return;
-            }
-
-            const query = new URLSearchParams({
-                book: bookId,
-                chapters: selectedIds.join(",")
-            });
-
-            window.location.href = "/publish.html?" + query.toString();
-        }
-
         async function saveBook(doneText = "Saved") {
             if (!currentUser || !bookId || !currentBook) return;
 
@@ -1236,6 +1137,14 @@
             }
         }
 
+        function openPublishModal() {
+            publishModal.classList.add("open");
+        }
+
+        function closePublishModal() {
+            publishModal.classList.remove("open");
+        }
+
         addChapterBtn.addEventListener("click", () => addChapterTo("body"));
         quickAddBtn.addEventListener("click", () => addChapterTo("body"));
         deleteBookBtn.addEventListener("click", deleteBook);
@@ -1243,7 +1152,7 @@
         publishBtn.addEventListener("click", openPublishModal);
         publishTopBtn.addEventListener("click", openPublishModal);
         closePublishBtn.addEventListener("click", closePublishModal);
-        publishNextBtn.addEventListener("click", goToPublishPage);
+        publishContinueBtn.addEventListener("click", closePublishModal);
 
         publishModal.addEventListener("click", (e) => {
             if (e.target === publishModal) {

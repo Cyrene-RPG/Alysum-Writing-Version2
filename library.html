@@ -5,211 +5,693 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <style>
-        * { box-sizing: border-box; }
+        * {
+            box-sizing: border-box;
+        }
+
+        :root {
+            --alysum-purple: #6d28d9;
+            --alysum-purple-dark: #5b21b6;
+            --bg: #0b1220;
+            --panel: #111827;
+            --panel-soft: #172132;
+            --text: #f9fafb;
+            --text-soft: #9ca3af;
+            --border: rgba(255,255,255,0.08);
+            --chip: rgba(255,255,255,0.08);
+            --shadow: 0 14px 34px rgba(0,0,0,0.28);
+        }
+
+        html, body {
+            margin: 0;
+            min-height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: var(--bg);
+            color: var(--text);
+        }
 
         body {
-            margin: 0;
-            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-            background: #0b1220;
-            color: white;
-        }
-
-        /* HEADER */
-        .header {
-            padding: 20px;
-            background: linear-gradient(135deg, #5b21b6, #7c3aed);
-            font-size: 22px;
-            font-weight: bold;
-        }
-
-        /* NAV */
-        .nav {
-            display: flex;
-            gap: 16px;
-            padding: 12px 20px;
-            overflow-x: auto;
-            background: #111827;
-        }
-
-        .nav button {
-            background: transparent;
-            border: none;
-            color: #9ca3af;
-            font-size: 15px;
-            font-weight: 600;
-            cursor: pointer;
-        }
-
-        .nav button.active {
-            color: white;
-        }
-
-        /* SEARCH */
-        .search-bar {
-            padding: 15px 20px;
-        }
-
-        .search-bar input {
-            width: 100%;
-            padding: 14px;
-            border-radius: 12px;
-            border: none;
-            background: #111827;
-            color: white;
-            font-size: 15px;
-        }
-
-        /* BOOK GRID */
-        .grid {
-            padding: 20px;
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 18px;
-        }
-
-        @media (max-width: 600px) {
-            .grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .book {
-            background: #111827;
-            border-radius: 20px;
-            padding: 18px;
-            height: 160px;
             display: flex;
             flex-direction: column;
+        }
+
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            border-bottom: 1px solid var(--border);
+            background: rgba(11, 18, 32, 0.88);
+            backdrop-filter: blur(12px);
+        }
+
+        .topbar-inner {
+            max-width: 1320px;
+            margin: 0 auto;
+            padding: 18px 20px 14px;
+        }
+
+        .brand-row {
+            display: flex;
+            align-items: center;
             justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .brand-block {
+            min-width: 0;
+        }
+
+        .eyebrow {
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: #c4b5fd;
+            margin-bottom: 6px;
+        }
+
+        .title {
+            margin: 0;
+            font-size: 34px;
+            font-weight: 900;
+            letter-spacing: -0.02em;
+        }
+
+        .subtitle {
+            margin-top: 8px;
+            color: var(--text-soft);
+            font-size: 15px;
+            line-height: 1.5;
+            max-width: 760px;
+        }
+
+        .home-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            border: 1px solid var(--border);
+            background: var(--panel);
+            color: var(--text);
+            padding: 12px 16px;
+            border-radius: 14px;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .nav-row {
+            margin-top: 18px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .nav-btn {
+            border: 1px solid var(--border);
+            background: var(--panel);
+            color: var(--text-soft);
+            border-radius: 999px;
+            padding: 10px 16px;
+            font-size: 14px;
+            font-weight: 800;
             cursor: pointer;
-            transition: 0.2s;
         }
 
-        .book:hover {
-            transform: translateY(-4px);
+        .nav-btn.active {
+            background: linear-gradient(135deg, var(--alysum-purple-dark), var(--alysum-purple));
+            color: white;
+            border-color: transparent;
         }
 
-        .book-title {
-            font-size: 18px;
+        .search-wrap {
+            margin-top: 16px;
+        }
+
+        .search-input {
+            width: 100%;
+            border: 1px solid var(--border);
+            background: var(--panel);
+            color: var(--text);
+            border-radius: 16px;
+            padding: 15px 16px;
+            font-size: 15px;
+            outline: none;
+        }
+
+        .search-input::placeholder {
+            color: #7b8798;
+        }
+
+        .page {
+            width: 100%;
+            max-width: 1320px;
+            margin: 0 auto;
+            padding: 22px 20px 40px;
+        }
+
+        .results-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+        }
+
+        .results-text {
+            font-size: 14px;
+            color: var(--text-soft);
             font-weight: 700;
         }
 
-        .book-author {
-            font-size: 13px;
-            color: #9ca3af;
+        .refresh-btn {
+            border: 1px solid var(--border);
+            background: var(--panel);
+            color: var(--text);
+            border-radius: 12px;
+            padding: 10px 14px;
+            font-size: 14px;
+            font-weight: 800;
+            cursor: pointer;
         }
 
-        .empty {
-            padding: 40px;
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 18px;
+        }
+
+        .card {
+            background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.00)), var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 18px;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            min-width: 0;
+            cursor: pointer;
+            transition: transform 0.15s ease, border-color 0.15s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(167,139,250,0.32);
+        }
+
+        .card-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .card-title-wrap {
+            min-width: 0;
+        }
+
+        .card-title {
+            font-size: 22px;
+            font-weight: 900;
+            line-height: 1.15;
+            word-break: break-word;
+        }
+
+        .card-author {
+            margin-top: 6px;
+            font-size: 14px;
+            color: var(--text-soft);
+            font-weight: 700;
+        }
+
+        .rating-badge {
+            flex: 0 0 auto;
+            border-radius: 999px;
+            padding: 8px 12px;
+            background: rgba(109,40,217,0.16);
+            color: #ddd6fe;
+            font-size: 12px;
+            font-weight: 900;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .meta-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .chip {
+            background: var(--chip);
+            border: 1px solid rgba(255,255,255,0.06);
+            color: var(--text);
+            border-radius: 999px;
+            padding: 7px 11px;
+            font-size: 12px;
+            font-weight: 800;
+            line-height: 1.2;
+        }
+
+        .chip.soft {
+            color: var(--text-soft);
+        }
+
+        .summary {
+            color: #d1d5db;
+            font-size: 14px;
+            line-height: 1.6;
+            display: -webkit-box;
+            -webkit-line-clamp: 5;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            min-height: 4.8em;
+        }
+
+        .warning-block {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .block-label {
+            font-size: 12px;
+            font-weight: 900;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: var(--text-soft);
+        }
+
+        .warning-chips,
+        .genre-chips,
+        .tag-chips {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .card-footer {
+            margin-top: auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+            padding-top: 6px;
+        }
+
+        .footer-meta {
+            color: var(--text-soft);
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .read-btn {
+            border: none;
+            background: linear-gradient(135deg, var(--alysum-purple-dark), var(--alysum-purple));
+            color: white;
+            border-radius: 12px;
+            padding: 11px 14px;
+            font-size: 14px;
+            font-weight: 900;
+            cursor: pointer;
+        }
+
+        .empty,
+        .loading,
+        .error {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 34px 22px;
             text-align: center;
-            color: #6b7280;
+            color: var(--text-soft);
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        @media (max-width: 1100px) {
+            .grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 700px) {
+            .topbar-inner,
+            .page {
+                padding-left: 14px;
+                padding-right: 14px;
+            }
+
+            .title {
+                font-size: 28px;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .card-title {
+                font-size: 20px;
+            }
+
+            .card-footer {
+                align-items: stretch;
+            }
+
+            .read-btn {
+                width: 100%;
+            }
         }
     </style>
 </head>
-
 <body>
 
-<div class="header">Alysum Library</div>
+    <div class="topbar">
+        <div class="topbar-inner">
+            <div class="brand-row">
+                <div class="brand-block">
+                    <div class="eyebrow">Alysum</div>
+                    <h1 class="title">Alysum Library</h1>
+                    <div class="subtitle">
+                        Discover published stories from Alysum writers.
+                    </div>
+                </div>
 
-<div class="nav">
-    <button class="active" data-type="fiction">Fiction</button>
-    <button data-type="nonfiction">Nonfiction</button>
-    <button data-type="fanfiction">Fanfiction</button>
-    <button data-type="search">Search</button>
-</div>
+                <a class="home-link" href="/studio.html">Back to Studio</a>
+            </div>
 
-<div class="search-bar" id="searchBar" style="display:none;">
-    <input type="text" id="searchInput" placeholder="Search stories...">
-</div>
+            <div class="nav-row">
+                <button class="nav-btn active" data-filter="fiction" type="button">Fiction</button>
+                <button class="nav-btn" data-filter="nonfiction" type="button">Nonfiction</button>
+                <button class="nav-btn" data-filter="fanfiction" type="button">Fanfiction</button>
+                <button class="nav-btn" data-filter="all" type="button">All</button>
+            </div>
 
-<div class="grid" id="bookGrid"></div>
+            <div class="search-wrap">
+                <input
+                    class="search-input"
+                    id="searchInput"
+                    type="text"
+                    placeholder="Search by title, author, summary, genre, tag, or warning..."
+                >
+            </div>
+        </div>
+    </div>
 
-<div class="empty" id="emptyState">
-    No stories yet.
-</div>
+    <main class="page">
+        <div class="results-bar">
+            <div class="results-text" id="resultsText">Loading stories...</div>
+            <button class="refresh-btn" id="refreshBtn" type="button">Refresh</button>
+        </div>
 
-<script type="module">
-import { db } from "./firebase.js";
-import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        <div class="loading" id="loadingState">Loading published stories...</div>
+        <div class="error hidden" id="errorState">Could not load the library.</div>
+        <div class="empty hidden" id="emptyState">No stories found.</div>
 
-const grid = document.getElementById("bookGrid");
-const empty = document.getElementById("emptyState");
-const navButtons = document.querySelectorAll(".nav button");
-const searchBar = document.getElementById("searchBar");
-const searchInput = document.getElementById("searchInput");
+        <div class="grid hidden" id="bookGrid"></div>
+    </main>
 
-let allBooks = [];
-let currentFilter = "fiction";
+    <script type="module">
+        import { db } from "./firebase.js";
+        import {
+            collection,
+            getDocs
+        } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-/* NAV SWITCH */
-navButtons.forEach(btn => {
-    btn.addEventListener("click", () => {
-        navButtons.forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
+        const navButtons = document.querySelectorAll(".nav-btn");
+        const searchInput = document.getElementById("searchInput");
+        const refreshBtn = document.getElementById("refreshBtn");
 
-        currentFilter = btn.dataset.type;
+        const resultsText = document.getElementById("resultsText");
+        const loadingState = document.getElementById("loadingState");
+        const errorState = document.getElementById("errorState");
+        const emptyState = document.getElementById("emptyState");
+        const bookGrid = document.getElementById("bookGrid");
 
-        searchBar.style.display = currentFilter === "search" ? "block" : "none";
+        let allBooks = [];
+        let currentFilter = "fiction";
 
-        renderBooks();
-    });
-});
+        function safeString(value, fallback = "") {
+            return typeof value === "string" ? value : fallback;
+        }
 
-/* LOAD BOOKS FROM FIRESTORE */
-async function loadBooks() {
-    try {
-        const snap = await getDocs(collection(db, "library"));
-        allBooks = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        renderBooks();
-    } catch (e) {
-        console.error(e);
-    }
-}
+        function safeNumber(value, fallback = 0) {
+            return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+        }
 
-/* RENDER */
-function renderBooks() {
-    grid.innerHTML = "";
+        function safeArray(value, fallback = []) {
+            return Array.isArray(value) ? value : fallback;
+        }
 
-    let filtered = allBooks;
+        function safeObject(value, fallback = {}) {
+            return value && typeof value === "object" && !Array.isArray(value) ? value : fallback;
+        }
 
-    if (currentFilter !== "search") {
-        filtered = filtered.filter(b => b.type === currentFilter);
-    } else {
-        const q = searchInput.value.toLowerCase();
-        filtered = filtered.filter(b =>
-            (b.title || "").toLowerCase().includes(q)
-        );
-    }
+        function flattenWarnings(warningsObj) {
+            const warnings = [];
+            const source = safeObject(warningsObj, {});
 
-    if (filtered.length === 0) {
-        empty.style.display = "block";
-        return;
-    }
+            Object.values(source).forEach(group => {
+                safeArray(group).forEach(item => {
+                    if (typeof item === "string" && item.trim()) {
+                        warnings.push(item.trim());
+                    }
+                });
+            });
 
-    empty.style.display = "none";
+            return [...new Set(warnings)];
+        }
 
-    filtered.forEach(book => {
-        const el = document.createElement("div");
-        el.className = "book";
+        function normalizeBook(id, raw) {
+            const data = safeObject(raw, {});
+            const publishGenres = safeArray(data.genres);
+            const publishTags = safeArray(data.extraTags);
+            const chapters = safeArray(data.chapters);
+            const warnings = flattenWarnings(data.warnings);
 
-        el.innerHTML = `
-            <div class="book-title">${book.title || "Untitled"}</div>
-            <div class="book-author">@${book.author || "unknown"}</div>
-        `;
+            return {
+                id,
+                title: safeString(data.title, "Untitled"),
+                author: safeString(data.author, "unknown"),
+                type: safeString(data.type, "fiction"),
+                rating: safeString(data.rating, ""),
+                summary: safeString(data.summary, ""),
+                genres: publishGenres.filter(v => typeof v === "string" && v.trim()),
+                tags: publishTags.filter(v => typeof v === "string" && v.trim()),
+                warnings,
+                chapterCount: safeNumber(data.chapterCount, chapters.length),
+                words: safeNumber(data.words, 0),
+                updated: safeNumber(data.updated, 0),
+                isPublished: !!data.isPublished
+            };
+        }
 
-        el.onclick = () => {
-            window.location.href = "/read.html?book=" + book.id;
-        };
+        function formatNumber(num) {
+            return new Intl.NumberFormat().format(num || 0);
+        }
 
-        grid.appendChild(el);
-    });
-}
+        function formatRelativeUpdate(timestamp) {
+            if (!timestamp) return "Updated recently";
 
-/* SEARCH */
-searchInput.addEventListener("input", renderBooks);
+            const diffMs = Date.now() - timestamp;
+            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+            const diffDays = Math.floor(diffHours / 24);
 
-loadBooks();
-</script>
+            if (diffHours < 1) return "Updated just now";
+            if (diffHours < 24) return `Updated ${diffHours}h ago`;
+            if (diffDays < 30) return `Updated ${diffDays}d ago`;
+
+            const date = new Date(timestamp);
+            return `Updated ${date.toLocaleDateString()}`;
+        }
+
+        function showState(type) {
+            loadingState.classList.add("hidden");
+            errorState.classList.add("hidden");
+            emptyState.classList.add("hidden");
+            bookGrid.classList.add("hidden");
+
+            if (type === "loading") loadingState.classList.remove("hidden");
+            if (type === "error") errorState.classList.remove("hidden");
+            if (type === "empty") emptyState.classList.remove("hidden");
+            if (type === "grid") bookGrid.classList.remove("hidden");
+        }
+
+        function matchesSearch(book, q) {
+            if (!q) return true;
+
+            const haystack = [
+                book.title,
+                book.author,
+                book.summary,
+                ...book.genres,
+                ...book.tags,
+                ...book.warnings,
+                book.rating,
+                book.type
+            ]
+            .join(" ")
+            .toLowerCase();
+
+            return haystack.includes(q);
+        }
+
+        function filteredBooks() {
+            const q = searchInput.value.trim().toLowerCase();
+
+            return allBooks
+                .filter(book => book.isPublished === true)
+                .filter(book => currentFilter === "all" ? true : book.type === currentFilter)
+                .filter(book => matchesSearch(book, q))
+                .sort((a, b) => (b.updated || 0) - (a.updated || 0));
+        }
+
+        function setResultsText(count) {
+            const filterLabel = currentFilter === "all"
+                ? "all shelves"
+                : currentFilter.charAt(0).toUpperCase() + currentFilter.slice(1);
+
+            if (searchInput.value.trim()) {
+                resultsText.textContent = `${count} result${count === 1 ? "" : "s"} in ${filterLabel}`;
+            } else {
+                resultsText.textContent = `${count} stor${count === 1 ? "y" : "ies"} in ${filterLabel}`;
+            }
+        }
+
+        function renderBooks() {
+            const books = filteredBooks();
+            bookGrid.innerHTML = "";
+
+            setResultsText(books.length);
+
+            if (!books.length) {
+                showState("empty");
+                return;
+            }
+
+            showState("grid");
+
+            books.forEach(book => {
+                const card = document.createElement("article");
+                card.className = "card";
+
+                const rating = book.rating || "Unrated";
+                const topGenres = book.genres.slice(0, 4);
+                const topWarnings = book.warnings
+                    .filter(w => w.toLowerCase() !== "none")
+                    .slice(0, 4);
+                const topTags = book.tags.slice(0, 4);
+
+                card.innerHTML = `
+                    <div class="card-top">
+                        <div class="card-title-wrap">
+                            <div class="card-title">${escapeHtml(book.title)}</div>
+                            <div class="card-author">@${escapeHtml(book.author)}</div>
+                        </div>
+                        <div class="rating-badge">${escapeHtml(rating)}</div>
+                    </div>
+
+                    <div class="meta-row">
+                        <div class="chip">${escapeHtml(book.type)}</div>
+                        <div class="chip soft">${book.chapterCount} chapter${book.chapterCount === 1 ? "" : "s"}</div>
+                        <div class="chip soft">${formatNumber(book.words)} words</div>
+                    </div>
+
+                    <div class="summary">${escapeHtml(book.summary || "No summary yet.")}</div>
+
+                    ${topGenres.length ? `
+                        <div class="warning-block">
+                            <div class="block-label">Genres</div>
+                            <div class="genre-chips">
+                                ${topGenres.map(item => `<div class="chip">${escapeHtml(item)}</div>`).join("")}
+                            </div>
+                        </div>
+                    ` : ""}
+
+                    ${topWarnings.length ? `
+                        <div class="warning-block">
+                            <div class="block-label">Warnings</div>
+                            <div class="warning-chips">
+                                ${topWarnings.map(item => `<div class="chip soft">${escapeHtml(item)}</div>`).join("")}
+                            </div>
+                        </div>
+                    ` : ""}
+
+                    ${topTags.length ? `
+                        <div class="warning-block">
+                            <div class="block-label">Extra Tags</div>
+                            <div class="tag-chips">
+                                ${topTags.map(item => `<div class="chip soft">${escapeHtml(item)}</div>`).join("")}
+                            </div>
+                        </div>
+                    ` : ""}
+
+                    <div class="card-footer">
+                        <div class="footer-meta">${escapeHtml(formatRelativeUpdate(book.updated))}</div>
+                        <button class="read-btn" type="button">Read Story</button>
+                    </div>
+                `;
+
+                const openBook = () => {
+                    window.location.href = "/read.html?book=" + encodeURIComponent(book.id);
+                };
+
+                card.addEventListener("click", openBook);
+                card.querySelector(".read-btn").addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    openBook();
+                });
+
+                bookGrid.appendChild(card);
+            });
+        }
+
+        function escapeHtml(str) {
+            return safeString(str)
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#039;");
+        }
+
+        async function loadBooks() {
+            showState("loading");
+            resultsText.textContent = "Loading stories...";
+
+            try {
+                const snap = await getDocs(collection(db, "library"));
+
+                allBooks = snap.docs.map(docSnap => normalizeBook(docSnap.id, docSnap.data()));
+                renderBooks();
+            } catch (error) {
+                console.error(error);
+                showState("error");
+                resultsText.textContent = "Library unavailable";
+            }
+        }
+
+        navButtons.forEach(btn => {
+            btn.addEventListener("click", () => {
+                navButtons.forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+                currentFilter = btn.dataset.filter || "fiction";
+                renderBooks();
+            });
+        });
+
+        searchInput.addEventListener("input", renderBooks);
+        refreshBtn.addEventListener("click", loadBooks);
+
+        loadBooks();
+    </script>
 
 </body>
 </html>
