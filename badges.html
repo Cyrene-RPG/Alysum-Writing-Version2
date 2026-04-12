@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Alysum Achievements</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+* { box-sizing: border-box; }
+
+:root {
+    --bg: #0b1220;
+    --panel: #111827;
+    --panel-2: #1f2937;
+    --text: #ffffff;
+    --muted: #9ca3af;
+    --purple: #6d28d9;
+    --border: rgba(255,255,255,0.08);
+    --shadow: 0 14px 28px rgba(0,0,0,0.35);
+}
+
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+}
+
+/* HEADER */
+.header {
+    padding: 20px;
+    text-align: center;
+    font-size: 26px;
+    font-weight: 900;
+    background: linear-gradient(135deg, #5b21b6, #7c3aed);
+}
+
+/* CONTAINER */
+.container {
+    max-width: 1100px;
+    margin: auto;
+    padding: 20px;
+}
+
+/* STATS */
+.stats {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.stat {
+    flex: 1;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 16px;
+    text-align: center;
+}
+
+.stat h3 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 900;
+}
+
+.stat p {
+    margin: 6px 0 0;
+    font-size: 13px;
+    color: var(--muted);
+}
+
+/* BADGES GRID */
+.badges {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 18px;
+}
+
+/* BADGE */
+.badge {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 18px;
+    transition: 0.2s;
+}
+
+.badge.unlocked {
+    background: linear-gradient(135deg, #6d28d9, #9333ea);
+}
+
+.badge.locked {
+    opacity: 0.65;
+}
+
+.badge-icon {
+    font-size: 28px;
+    margin-bottom: 8px;
+}
+
+.badge-title {
+    font-size: 15px;
+    font-weight: 900;
+}
+
+.badge-desc {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 12px;
+}
+
+/* PROGRESS BAR */
+.progress-bar {
+    height: 8px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.12);
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #6d28d9, #a78bfa);
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+/* TEXT */
+.progress-text {
+    font-size: 12px;
+    margin-top: 6px;
+    color: var(--muted);
+    font-weight: 700;
+}
+
+@media (min-width: 900px) {
+    .container {
+        padding: 28px;
+    }
+
+    .badges {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">🏆 Achievements</div>
+
+<div class="container">
+
+<div class="stats">
+    <div class="stat">
+        <h3 id="totalWords">0</h3>
+        <p>Total Words</p>
+    </div>
+    <div class="stat">
+        <h3 id="streak">0</h3>
+        <p>Streak 🔥</p>
+    </div>
+    <div class="stat">
+        <h3 id="books">0</h3>
+        <p>Books</p>
+    </div>
+</div>
+
+<div class="badges" id="badgeGrid"></div>
+
+</div>
+
+<script type="module">
+import { auth, db } from "./firebase.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import {
+    doc,
+    getDoc,
+    collection,
+    getDocs
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const grid = document.getElementById("badgeGrid");
+const wordsEl = document.getElementById("totalWords");
+const streakEl = document.getElementById("streak");
+const booksEl = document.getElementById("books");
+
+/* BADGES */
+const BADGES = [
+    { icon:"✍️", title:"1K Words", goal:1000, getValue:d=>d.words, desc:"Start writing" },
+    { icon:"🔥", title:"10K Words", goal:10000, getValue:d=>d.words, desc:"Momentum" },
+    { icon:"🏆", title:"50K Words", goal:50000, getValue:d=>d.words, desc:"NaNo milestone" },
+
+    { icon:"⚡", title:"3 Day Streak", goal:3, getValue:d=>d.streak, desc:"Consistency" },
+    { icon:"🔥", title:"7 Day Streak", goal:7, getValue:d=>d.streak, desc:"Strong habit" },
+
+    { icon:"📚", title:"First Book", goal:1, getValue:d=>d.books, desc:"You started" },
+    { icon:"📦", title:"5 Books", goal:5, getValue:d=>d.books, desc:"Library growing" }
+];
+
+/* WORD COUNT FROM EDITOR FORMAT */
+function stripHtml(html=""){
+    return html.replace(/<[^>]*>/g," ").replace(/\s+/g," ").trim();
+}
+
+function countWords(html=""){
+    const text = stripHtml(html);
+    return text ? text.split(" ").length : 0;
+}
+
+function countBookWords(book){
+    let total = 0;
+    const sections = book.sections || {};
+    ["front","body","back"].forEach(sec=>{
+        (sections[sec]||[]).forEach(ch=>{
+            total += countWords(ch.content || "");
+        });
+    });
+    return total;
+}
+
+/* LOAD DATA */
+async function loadData(uid){
+    const userSnap = await getDoc(doc(db,"users",uid));
+    const booksSnap = await getDocs(collection(db,"users",uid,"books"));
+
+    let totalWords = 0;
+
+    booksSnap.forEach(docSnap=>{
+        totalWords += countBookWords(docSnap.data());
+    });
+
+    const data = userSnap.data() || {};
+
+    return {
+        words: totalWords,
+        streak: data.streak || 0,
+        books: booksSnap.size
+    };
+}
+
+/* RENDER */
+function renderBadges(data){
+    grid.innerHTML = "";
+
+    BADGES.forEach(b=>{
+        const value = b.getValue(data);
+        const progress = Math.min(value / b.goal, 1);
+        const percent = Math.floor(progress * 100);
+        const unlocked = value >= b.goal;
+
+        const el = document.createElement("div");
+        el.className = "badge " + (unlocked ? "unlocked" : "locked");
+
+        el.innerHTML = `
+            <div class="badge-icon">${b.icon}</div>
+            <div class="badge-title">${b.title}</div>
+            <div class="badge-desc">${b.desc}</div>
+
+            <div class="progress-bar">
+                <div class="progress-fill" style="width:${percent}%"></div>
+            </div>
+
+            <div class="progress-text">
+                ${Math.min(value,b.goal)} / ${b.goal}
+            </div>
+        `;
+
+        grid.appendChild(el);
+    });
+}
+
+/* AUTH */
+onAuthStateChanged(auth, async (user)=>{
+    if(!user){
+        location.href="/login.html";
+        return;
+    }
+
+    try{
+        const data = await loadData(user.uid);
+
+        wordsEl.textContent = data.words.toLocaleString();
+        streakEl.textContent = data.streak;
+        booksEl.textContent = data.books;
+
+        renderBadges(data);
+
+    }catch(e){
+        console.error(e);
+        alert("Failed to load achievements");
+    }
+});
+</script>
+
+
+</body>
+</html>
