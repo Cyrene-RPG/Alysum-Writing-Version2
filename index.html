@@ -5,234 +5,1134 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <style>
-        * { box-sizing: border-box; }
+        * {
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #0b1220;
+            --bg-2: #111827;
+            --panel: #131c2f;
+            --panel-2: #1a2540;
+            --panel-3: #202c4b;
+            --text: #ffffff;
+            --muted: #c7d2fe;
+            --muted-2: #9ca3af;
+            --purple: #6d28d9;
+            --purple-dark: #5b21b6;
+            --purple-light: #a78bfa;
+            --white-soft: rgba(255,255,255,0.08);
+            --white-softer: rgba(255,255,255,0.04);
+            --shadow: 0 18px 40px rgba(0,0,0,0.30);
+            --shadow-strong: 0 24px 60px rgba(0,0,0,0.36);
+        }
+
+        html, body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
 
         body {
-            margin: 0;
-            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-            background: #0b1220;
-            color: white;
+            overflow-x: hidden;
         }
 
-        /* HERO */
-        .hero {
+        a {
+            color: inherit;
+        }
+
+        .page {
             min-height: 100vh;
-            background: linear-gradient(135deg, #5b21b6, #7c3aed, #a78bfa);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            padding: 20px;
+            background:
+                radial-gradient(circle at top center, rgba(167,139,250,0.14), transparent 28%),
+                linear-gradient(180deg, #0f1530 0%, #0b1220 18%, #0b1220 100%);
         }
 
-        .hero-box {
-            max-width: 520px;
-            width: 100%;
-        }
-
-        /* LOGO WRAP (NEW) */
-        .logo-wrap {
+        .hero {
             position: relative;
-            display: inline-block;
+            overflow: hidden;
+            background:
+                radial-gradient(circle at 50% 0%, rgba(255,255,255,0.16), transparent 34%),
+                linear-gradient(135deg, #5b21b6 0%, #7c3aed 42%, #a78bfa 100%);
+            padding: 28px 18px 84px;
         }
 
-        /* SOFT GLOW BEHIND LOGO */
-        .logo-wrap::before {
+        .hero::after {
             content: "";
             position: absolute;
-            inset: -20px;
-            background: radial-gradient(circle, rgba(255,255,255,0.25), transparent 70%);
-            filter: blur(30px);
-            z-index: 0;
+            inset: auto 0 0 0;
+            height: 110px;
+            background: linear-gradient(180deg, rgba(11,18,32,0), rgba(11,18,32,0.95) 90%);
+            pointer-events: none;
         }
 
-        /* LOGO */
+        .hero-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .hero-topbar {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-bottom: 22px;
+        }
+
+        .top-link {
+            padding: 10px 14px;
+            border-radius: 999px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 700;
+            color: white;
+            background: rgba(255,255,255,0.10);
+            border: 1px solid rgba(255,255,255,0.16);
+            backdrop-filter: blur(8px);
+        }
+
+        .top-link:hover {
+            background: rgba(255,255,255,0.16);
+        }
+
+        .hero-grid {
+            display: grid;
+            gap: 22px;
+            align-items: center;
+        }
+
+        .logo-wrap {
+            display: flex;
+            justify-content: center;
+        }
+
+        .logo-shell {
+            position: relative;
+            display: inline-block;
+            border-radius: 24px;
+        }
+
+        .logo-shell::before {
+            content: "";
+            position: absolute;
+            inset: -18px;
+            background: radial-gradient(circle, rgba(255,255,255,0.18), transparent 68%);
+            filter: blur(24px);
+            z-index: 0;
+            pointer-events: none;
+        }
+
         .logo {
             position: relative;
-            width: 100%;
-            max-width: 320px;
-            border-radius: 18px; /* <-- soft corners */
-            display: block;
             z-index: 1;
-
-            /* subtle blending */
-            box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+            width: min(100%, 360px);
+            height: auto;
+            display: block;
+            border-radius: 20px;
+            box-shadow: var(--shadow-strong);
         }
 
-        .tagline {
+        .hero-copy {
+            text-align: center;
+        }
+
+        .eyebrow {
+            display: inline-block;
+            padding: 8px 12px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.18);
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 14px;
+        }
+
+        .headline {
+            margin: 0;
+            font-size: 40px;
+            line-height: 0.98;
+            font-weight: 900;
+            letter-spacing: -0.03em;
+            text-shadow: 0 6px 24px rgba(0,0,0,0.16);
+        }
+
+        .subline {
+            max-width: 720px;
+            margin: 14px auto 0;
+            font-size: 17px;
+            line-height: 1.6;
+            color: #f3e8ff;
+        }
+
+        .hero-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 22px;
+            align-items: stretch;
+        }
+
+        .btn {
+            text-decoration: none;
+            text-align: center;
+            font-weight: 800;
+            font-size: 16px;
+            padding: 16px 18px;
+            border-radius: 16px;
+            transition: transform 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+            box-shadow: var(--shadow);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn.primary {
+            background: white;
+            color: #4c1d95;
+        }
+
+        .btn.primary:hover {
+            background: #f8f7ff;
+        }
+
+        .btn.secondary {
+            background: rgba(255,255,255,0.12);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.18);
+            backdrop-filter: blur(8px);
+        }
+
+        .btn.secondary:hover {
+            background: rgba(255,255,255,0.18);
+        }
+
+        .hero-note {
             margin-top: 14px;
-            font-size: 20px;
+            font-size: 14px;
             color: #ede9fe;
         }
 
-        /* BUTTONS */
-        .actions {
-            margin-top: 40px;
+        .main {
+            position: relative;
+            max-width: 1280px;
+            margin: -42px auto 0;
+            padding: 0 18px 56px;
+            z-index: 2;
+        }
+
+        .demo-banner {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 14px;
+            margin-bottom: 14px;
+            border-radius: 999px;
+            background: #2a1b0d;
+            color: #fcd34d;
+            border: 1px solid rgba(252,211,77,0.22);
+            font-size: 13px;
+            font-weight: 800;
+            box-shadow: var(--shadow);
+        }
+
+        .app-preview {
+            display: grid;
+            gap: 18px;
+        }
+
+        .panel {
+            background: linear-gradient(180deg, rgba(19,28,47,0.98), rgba(15,23,42,0.98));
+            border: 1px solid var(--white-soft);
+            border-radius: 24px;
+            box-shadow: var(--shadow-strong);
+        }
+
+        .preview-shell {
+            padding: 18px;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            gap: 16px;
+        }
+
+        .sidebar {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--white-soft);
+            border-radius: 20px;
+            padding: 16px;
+        }
+
+        .sidebar-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+
+        .sidebar-brand-badge {
+            width: 36px;
+            height: 36px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #6d28d9, #9333ea);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            box-shadow: var(--shadow);
+        }
+
+        .sidebar-brand-text {
+            font-size: 16px;
+            font-weight: 800;
+        }
+
+        .sidebar-group-label {
+            margin: 12px 0 8px;
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--muted-2);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .sidebar-item {
+            padding: 12px 12px;
+            border-radius: 14px;
+            margin-bottom: 6px;
+            background: transparent;
+            color: white;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .sidebar-item.active {
+            background: linear-gradient(135deg, rgba(109,40,217,0.38), rgba(147,51,234,0.22));
+            border: 1px solid rgba(167,139,250,0.20);
+        }
+
+        .main-col {
+            display: grid;
+            gap: 16px;
+        }
+
+        .hero-panel {
+            padding: 20px;
+        }
+
+        .welcome-row {
             display: flex;
             flex-direction: column;
             gap: 14px;
         }
 
-        .btn {
-            padding: 18px;
-            border-radius: 16px;
-            font-weight: 700;
-            font-size: 18px;
-            text-decoration: none;
-            transition: 0.2s;
+        .welcome-copy h2 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 900;
         }
 
-        .primary {
-            background: white;
-            color: #4c1d95;
-        }
-
-        .primary:hover {
-            transform: translateY(-2px);
-        }
-
-        .library-btn {
-            background: #ede9fe;
-            color: #4c1d95;
-        }
-
-        .library-btn:hover {
-            transform: translateY(-2px);
-        }
-
-        .secondary {
-            color: white;
-            opacity: 0.9;
-            text-decoration: underline;
+        .welcome-sub {
+            margin-top: 6px;
+            color: var(--muted);
             font-size: 15px;
+            line-height: 1.5;
         }
 
-        /* BOTTOM SECTION (FIXED) */
-        .features {
-            background: #0b1220;
-            padding: 70px 20px;
+        .current-project {
+            background: linear-gradient(135deg, rgba(109,40,217,0.24), rgba(147,51,234,0.10));
+            border: 1px solid rgba(167,139,250,0.18);
+            border-radius: 18px;
+            padding: 16px;
+        }
+
+        .project-label {
+            font-size: 12px;
+            color: #d8b4fe;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .project-title {
+            margin-top: 8px;
+            font-size: 20px;
+            font-weight: 900;
+        }
+
+        .project-meta {
+            margin-top: 6px;
+            color: #ddd6fe;
+            font-size: 14px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .stat-card {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--white-soft);
+            border-radius: 18px;
+            padding: 16px;
             text-align: center;
         }
 
-        .features h2 {
-            font-size: 36px;
-            margin-bottom: 10px;
+        .stat-card.big {
+            grid-column: 1 / -1;
         }
 
-        .features-sub {
-            color: #9ca3af;
-            margin-bottom: 40px;
+        .stat-number {
+            font-size: 26px;
+            font-weight: 900;
+            line-height: 1;
         }
 
-        .card {
-            background: #111827;
-            padding: 24px;
-            border-radius: 20px;
-            margin: 0 auto 20px;
-            max-width: 500px;
+        .stat-label {
+            margin-top: 6px;
+            font-size: 13px;
+            color: var(--muted);
+            font-weight: 700;
         }
 
-        .card-title {
-            font-size: 22px;
+        .panel-actions {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .action-tile {
+            background: var(--panel-2);
+            border: 1px solid var(--white-soft);
+            color: white;
+            border-radius: 16px;
+            padding: 14px;
+            text-align: center;
+            font-weight: 800;
+            font-size: 14px;
+        }
+
+        .right-rail {
+            display: grid;
+            gap: 16px;
+        }
+
+        .rail-panel {
+            padding: 18px;
+        }
+
+        .rail-title {
+            margin: 0 0 6px;
+            font-size: 20px;
+            font-weight: 900;
+        }
+
+        .rail-sub {
+            color: var(--muted);
+            font-size: 14px;
+            margin-bottom: 14px;
+        }
+
+        .timer {
+            font-size: 44px;
+            font-weight: 900;
+            letter-spacing: 0.04em;
+            text-align: center;
+            margin: 10px 0 14px;
+        }
+
+        .sprint-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .mini-btn {
+            flex: 1;
+            padding: 12px;
+            border-radius: 14px;
+            text-align: center;
+            font-weight: 800;
+            font-size: 14px;
+        }
+
+        .mini-btn.primary {
+            background: linear-gradient(135deg, #6d28d9, #9333ea);
+        }
+
+        .mini-btn.secondary {
+            background: var(--panel-2);
+            border: 1px solid var(--white-soft);
+        }
+
+        .goal-top {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            font-size: 14px;
             font-weight: 700;
             margin-bottom: 10px;
         }
 
-        .card-text {
-            color: #d1d5db;
+        .progress-bar {
+            height: 12px;
+            background: rgba(255,255,255,0.08);
+            border-radius: 999px;
+            overflow: hidden;
         }
 
-        /* NEW LIBRARY CTA */
-        .library-cta {
-            margin-top: 40px;
+        .progress-fill {
+            width: 62%;
+            height: 100%;
+            background: linear-gradient(90deg, #6d28d9, #a78bfa);
+            border-radius: 999px;
         }
 
-        .library-cta a {
-            display: inline-block;
-            padding: 16px 28px;
+        .goal-note {
+            margin-top: 10px;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .badge-card {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--white-soft);
+            border-radius: 16px;
+            padding: 14px;
+        }
+
+        .badge-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .badge-icon {
+            width: 42px;
+            height: 42px;
             border-radius: 14px;
             background: linear-gradient(135deg, #6d28d9, #9333ea);
-            color: white;
-            text-decoration: none;
-            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: var(--shadow);
+        }
+
+        .badge-name {
+            font-size: 15px;
+            font-weight: 900;
+        }
+
+        .badge-sub {
+            font-size: 13px;
+            color: var(--muted);
+            margin-top: 2px;
+        }
+
+        .section {
+            margin-top: 26px;
+        }
+
+        .section-grid {
+            display: grid;
+            gap: 18px;
+        }
+
+        .section-card {
+            background: linear-gradient(180deg, rgba(19,28,47,0.96), rgba(15,23,42,0.96));
+            border: 1px solid var(--white-soft);
+            border-radius: 24px;
+            box-shadow: var(--shadow-strong);
+            padding: 22px;
+        }
+
+        .section-title {
+            margin: 0 0 8px;
+            font-size: 28px;
+            font-weight: 900;
+        }
+
+        .section-sub {
+            color: var(--muted);
+            font-size: 15px;
+            line-height: 1.6;
+            margin-bottom: 18px;
+        }
+
+        .feature-grid {
+            display: grid;
+            gap: 12px;
+        }
+
+        .feature-box {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--white-soft);
+            border-radius: 18px;
+            padding: 16px;
+        }
+
+        .feature-box h3 {
+            margin: 0 0 8px;
+            font-size: 18px;
+            font-weight: 900;
+        }
+
+        .feature-box p {
+            margin: 0;
+            color: #d1d5db;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .journey-grid {
+            display: grid;
+            gap: 12px;
+        }
+
+        .journey-step {
+            display: grid;
+            grid-template-columns: 54px 1fr;
+            gap: 14px;
+            align-items: start;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--white-soft);
+            border-radius: 18px;
+            padding: 14px;
+        }
+
+        .journey-number {
+            width: 54px;
+            height: 54px;
+            border-radius: 18px;
+            background: linear-gradient(135deg, #6d28d9, #9333ea);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            font-weight: 900;
+            box-shadow: var(--shadow);
+        }
+
+        .journey-step h3 {
+            margin: 2px 0 6px;
+            font-size: 18px;
+            font-weight: 900;
+        }
+
+        .journey-step p {
+            margin: 0;
+            color: #d1d5db;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .library-grid {
+            display: grid;
+            gap: 12px;
+        }
+
+        .library-item {
+            display: grid;
+            grid-template-columns: 74px 1fr;
+            gap: 14px;
+            align-items: center;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--white-soft);
+            border-radius: 18px;
+            padding: 14px;
+        }
+
+        .cover {
+            width: 74px;
+            height: 98px;
+            border-radius: 14px;
+            background: linear-gradient(180deg, #ffffff, #e5e7eb);
+            color: #111827;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 8px;
+            font-size: 12px;
+            font-weight: 900;
+            box-shadow:
+                0 12px 24px rgba(0,0,0,0.30),
+                inset 6px 0 0 rgba(0,0,0,0.14);
+            transform: perspective(800px) rotateY(-5deg);
+        }
+
+        .library-meta h3 {
+            margin: 0 0 4px;
+            font-size: 17px;
+            font-weight: 900;
+        }
+
+        .library-meta p {
+            margin: 0 0 8px;
+            color: #d1d5db;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .library-chip-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .chip {
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: var(--panel-2);
+            border: 1px solid var(--white-soft);
+            font-size: 12px;
+            font-weight: 800;
+            color: var(--muted);
+        }
+
+        .final-cta {
+            text-align: center;
+            padding: 18px 18px 8px;
+        }
+
+        .final-cta h2 {
+            margin: 0 0 10px;
+            font-size: 34px;
+            font-weight: 900;
+        }
+
+        .final-cta p {
+            max-width: 720px;
+            margin: 0 auto 18px;
+            color: #d1d5db;
+            font-size: 16px;
+            line-height: 1.7;
+        }
+
+        .final-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-width: 420px;
+            margin: 0 auto;
         }
 
         footer {
             text-align: center;
-            padding: 30px;
-            color: #9ca3af;
+            padding: 28px 18px 44px;
+            color: var(--muted-2);
+            font-size: 14px;
         }
 
-        /* DESKTOP */
-        @media (min-width: 900px) {
-            .actions {
+        @media (min-width: 760px) {
+            .logo {
+                max-width: 360px;
+            }
+
+            .headline {
+                font-size: 54px;
+            }
+
+            .hero-actions,
+            .final-actions {
                 flex-direction: row;
                 justify-content: center;
+                max-width: none;
             }
 
-            .btn {
-                width: 220px;
+            .hero-actions .btn,
+            .final-actions .btn {
+                min-width: 210px;
             }
 
-            .logo {
-                max-width: 400px;
+            .feature-grid {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+
+            .journey-grid {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
             }
         }
 
+        @media (min-width: 1050px) {
+            .hero {
+                padding: 34px 24px 88px;
+            }
+
+            .hero-grid {
+                grid-template-columns: 420px 1fr;
+                gap: 34px;
+                text-align: left;
+            }
+
+            .logo-wrap {
+                justify-content: flex-start;
+            }
+
+            .hero-copy {
+                text-align: left;
+            }
+
+            .subline {
+                margin-left: 0;
+            }
+
+            .hero-actions {
+                justify-content: flex-start;
+                align-items: flex-start;
+            }
+
+            .main {
+                margin-top: -54px;
+                padding: 0 24px 72px;
+            }
+
+            .dashboard-grid {
+                grid-template-columns: 230px 1fr 310px;
+            }
+
+            .welcome-row {
+                display: grid;
+                grid-template-columns: 1.1fr 0.9fr;
+                align-items: start;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+            }
+
+            .stat-card.big {
+                grid-column: span 1;
+            }
+
+            .panel-actions {
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+            }
+
+            .section-grid.two {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .library-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 599px) {
+            .headline {
+                font-size: 32px;
+            }
+
+            .section-title {
+                font-size: 24px;
+            }
+
+            .final-cta h2 {
+                font-size: 28px;
+            }
+
+            .stats-grid,
+            .panel-actions {
+                grid-template-columns: 1fr;
+            }
+
+            .journey-step,
+            .library-item {
+                grid-template-columns: 1fr;
+            }
+
+            .cover {
+                width: 84px;
+                height: 108px;
+            }
+        }
     </style>
 </head>
-
 <body>
+    <div class="page">
 
-<section class="hero">
-    <div class="hero-box">
+        <section class="hero">
+            <div class="hero-inner">
+                <div class="hero-topbar">
+                    <a href="/login.html" class="top-link">Log In</a>
+                </div>
 
-        <div class="logo-wrap">
-            <img src="Alysum-3.png" class="logo">
-        </div>
+                <div class="hero-grid">
+                    <div class="logo-wrap">
+                        <div class="logo-shell">
+                            <img src="Alysum-3.png" class="logo" alt="Alysum Logo">
+                        </div>
+                    </div>
 
-        <div class="tagline">Every writer needs a studio</div>
+                    <div class="hero-copy">
+                        <div class="eyebrow">Write books. Build momentum.</div>
+                        <h1 class="headline">Finish your story.</h1>
+                        <div class="subline">
+                            Alysum blends structured writing tools with streaks, focus sessions, and a public library—so you can keep going, stay organized, and share your work when you’re ready.
+                        </div>
 
-        <div class="actions">
-            <a href="/signup.html" class="btn primary">Create Account</a>
-            <a href="/library.html" class="btn library-btn">Browse Library</a>
-        </div>
+                        <div class="hero-actions">
+                            <a href="/signup.html" class="btn primary">Create Account</a>
+                            <a href="/library.html" class="btn secondary">Browse Library</a>
+                        </div>
 
-        <div style="margin-top:14px;">
-            <a href="/login.html" class="secondary">
-                Already have an account?
-            </a>
-        </div>
+                        <div class="hero-note">
+                            Built for writers who want more than a blank page.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <main class="main">
+            <div class="demo-banner">Demo preview • This shows how Alysum feels after you join</div>
+
+            <section class="app-preview">
+                <div class="panel preview-shell">
+                    <div class="dashboard-grid">
+
+                        <aside class="sidebar">
+                            <div class="sidebar-brand">
+                                <div class="sidebar-brand-badge">A</div>
+                                <div class="sidebar-brand-text">Alysum Studio</div>
+                            </div>
+
+                            <div class="sidebar-group-label">Workspace</div>
+                            <div class="sidebar-item active">✍️ Studio</div>
+                            <div class="sidebar-item">📚 Library</div>
+                            <div class="sidebar-item">🏆 Achievements</div>
+                            <div class="sidebar-item">👤 Profile</div>
+
+                            <div class="sidebar-group-label">Quick Access</div>
+                            <div class="sidebar-item">🔥 Writing Streak</div>
+                            <div class="sidebar-item">⏱ Sprint Timer</div>
+                            <div class="sidebar-item">📖 Current Project</div>
+                        </aside>
+
+                        <div class="main-col">
+                            <section class="hero-panel">
+                                <div class="welcome-row">
+                                    <div class="welcome-copy">
+                                        <h2>Welcome back, writer.</h2>
+                                        <div class="welcome-sub">
+                                            Keep going. You’re building something real, and your progress is waiting for you.
+                                        </div>
+                                    </div>
+
+                                    <div class="current-project">
+                                        <div class="project-label">Current project</div>
+                                        <div class="project-title">The Forest Path</div>
+                                        <div class="project-meta">Chapter 3 • 4,280 words in this draft</div>
+                                    </div>
+                                </div>
+
+                                <div class="stats-grid">
+                                    <div class="stat-card">
+                                        <div class="stat-number">12,430</div>
+                                        <div class="stat-label">Total Words</div>
+                                    </div>
+                                    <div class="stat-card">
+                                        <div class="stat-number">6 🔥</div>
+                                        <div class="stat-label">Day Streak</div>
+                                    </div>
+                                    <div class="stat-card">
+                                        <div class="stat-number">3</div>
+                                        <div class="stat-label">Books</div>
+                                    </div>
+                                    <div class="stat-card big">
+                                        <div class="stat-number">1,200</div>
+                                        <div class="stat-label">Words Today</div>
+                                    </div>
+                                </div>
+
+                                <div class="panel-actions">
+                                    <div class="action-tile">Continue Writing</div>
+                                    <div class="action-tile">New Book</div>
+                                    <div class="action-tile">Open Library</div>
+                                    <div class="action-tile">View Badges</div>
+                                </div>
+                            </section>
+                        </div>
+
+                        <aside class="right-rail">
+                            <section class="rail-panel">
+                                <h3 class="rail-title">Writing Sprint</h3>
+                                <div class="rail-sub">Stay focused. Build momentum.</div>
+                                <div class="timer">25:00</div>
+
+                                <div class="sprint-buttons">
+                                    <div class="mini-btn primary">Start Sprint</div>
+                                    <div class="mini-btn secondary">Reset</div>
+                                </div>
+                            </section>
+
+                            <section class="rail-panel">
+                                <h3 class="rail-title">Daily Goal</h3>
+                                <div class="rail-sub">A small target makes it easier to come back tomorrow.</div>
+
+                                <div class="goal-top">
+                                    <span>1,240 written</span>
+                                    <span>2,000 goal</span>
+                                </div>
+
+                                <div class="progress-bar">
+                                    <div class="progress-fill"></div>
+                                </div>
+
+                                <div class="goal-note">You’re over halfway there.</div>
+                            </section>
+
+                            <section class="rail-panel">
+                                <h3 class="rail-title">Next Badge</h3>
+                                <div class="badge-card">
+                                    <div class="badge-row">
+                                        <div class="badge-icon">🏆</div>
+                                        <div>
+                                            <div class="badge-name">10K Words</div>
+                                            <div class="badge-sub">8,200 / 10,000</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="progress-bar" style="margin-top: 12px;">
+                                        <div class="progress-fill" style="width: 82%;"></div>
+                                    </div>
+                                </div>
+                            </section>
+                        </aside>
+
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-grid two">
+                    <div class="section-card">
+                        <h2 class="section-title">Why writers stay</h2>
+                        <div class="section-sub">
+                            Alysum is built for people who want to actually finish books, not just collect abandoned documents.
+                        </div>
+
+                        <div class="feature-grid">
+                            <div class="feature-box">
+                                <h3>✍️ Built for books</h3>
+                                <p>Work in chapters and sections with a writing flow that feels closer to a manuscript than a blank doc.</p>
+                            </div>
+
+                            <div class="feature-box">
+                                <h3>🔥 Progress that matters</h3>
+                                <p>Words, streaks, and goals make your momentum visible so it is easier to keep going tomorrow.</p>
+                            </div>
+
+                            <div class="feature-box">
+                                <h3>⏱ Focus when you need it</h3>
+                                <p>Writing sprints turn “I should write” into “I wrote for 25 minutes and got something done.”</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="section-card">
+                        <h2 class="section-title">From draft to library</h2>
+                        <div class="section-sub">
+                            Alysum gives you a private place to draft and a public place to share when you are ready.
+                        </div>
+
+                        <div class="journey-grid">
+                            <div class="journey-step">
+                                <div class="journey-number">1</div>
+                                <div>
+                                    <h3>Draft</h3>
+                                    <p>Build your story chapter by chapter inside a dedicated writing space.</p>
+                                </div>
+                            </div>
+
+                            <div class="journey-step">
+                                <div class="journey-number">2</div>
+                                <div>
+                                    <h3>Stay consistent</h3>
+                                    <p>Keep your streak alive, hit your goals, and use sprints to push through resistance.</p>
+                                </div>
+                            </div>
+
+                            <div class="journey-step">
+                                <div class="journey-number">3</div>
+                                <div>
+                                    <h3>Share</h3>
+                                    <p>Publish when you are ready and let readers discover your work in the Alysum Library.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-card">
+                    <h2 class="section-title">Explore the library</h2>
+                    <div class="section-sub">
+                        Alysum is not only where you write. It is also where readers discover new stories and writers build their worlds in public.
+                    </div>
+
+                    <div class="library-grid">
+                        <div class="library-item">
+                            <div class="cover">Forest Path</div>
+                            <div class="library-meta">
+                                <h3>The Forest Path</h3>
+                                <p>A fantasy adventure about a girl, a map, and a road that keeps changing.</p>
+                                <div class="library-chip-row">
+                                    <div class="chip">Fantasy</div>
+                                    <div class="chip">Slow Burn</div>
+                                    <div class="chip">Adventure</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="library-item">
+                            <div class="cover">Signal Ash</div>
+                            <div class="library-meta">
+                                <h3>Signal Ash</h3>
+                                <p>A sci-fi mystery set aboard a drifting station where every transmission hides a lie.</p>
+                                <div class="library-chip-row">
+                                    <div class="chip">Sci-Fi</div>
+                                    <div class="chip">Mystery</div>
+                                    <div class="chip">First Contact</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="hero-actions" style="margin-top: 18px;">
+                        <a href="/library.html" class="btn primary">Open the Library</a>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-card final-cta">
+                    <h2>Start writing before the spark fades.</h2>
+                    <p>
+                        Alysum gives you a place to draft, a reason to return, and a path to share what you finish. Start your first book, keep your streak alive, and build something worth coming back to.
+                    </p>
+
+                    <div class="final-actions">
+                        <a href="/signup.html" class="btn primary">Create Account</a>
+                        <a href="/library.html" class="btn secondary">Browse Library</a>
+                    </div>
+                </div>
+            </section>
+
+            <footer>
+                © 2026 Alysum Studio
+            </footer>
+        </main>
 
     </div>
-</section>
-
-<section class="features">
-    <h2>Your Stories</h2>
-    <div class="features-sub">Organize, explore, and share your writing.</div>
-
-    <div class="card">
-        <div class="card-title">📚 Your Library</div>
-        <div class="card-text">
-            Browse stories from other writers and discover new worlds.
-        </div>
-    </div>
-
-    <div class="card">
-        <div class="card-title">✍️ Your Studio</div>
-        <div class="card-text">
-            Write, edit, and build your stories all in one place.
-        </div>
-    </div>
-
-    <div class="library-cta">
-        <a href="/library.html">Explore the Library →</a>
-    </div>
-</section>
-
-<footer>
-    © 2026 Alysum Studio
-</footer>
-
 </body>
 </html>
