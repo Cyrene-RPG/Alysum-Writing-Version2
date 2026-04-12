@@ -27,12 +27,40 @@ body {
 
 /* HEADER */
 .header {
-    padding: 20px;
-    text-align: center;
-    font-size: 26px;
-    font-weight: 900;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     background: linear-gradient(135deg, #5b21b6, #7c3aed);
 }
+
+/* CENTER TITLE */
+.header-title {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 24px;
+    font-weight: 900;
+}
+
+/* BACK BUTTON */
+.back-btn {
+    position: absolute;
+    left: 14px;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    border: none;
+    background: rgba(0,0,0,0.25);
+    color: white;
+    font-size: 22px;
+    cursor: pointer;
+}
+
+
 
 /* CONTAINER */
 .container {
@@ -146,7 +174,11 @@ body {
 
 <body>
 
-<div class="header">🏆 Achievements</div>
+<div class="header">
+	<button class="back-btn"
+id="backBtn"> Back to Editor</button>
+	<div class="header-title">🏆 Achievements</div>
+	</div>
 
 <div class="container">
 
@@ -289,6 +321,13 @@ onAuthStateChanged(auth, async (user)=>{
         console.error(e);
         alert("Failed to load achievements");
     }
+	
+	const backBtn = document.getElementById("backBtn");
+
+backBtn.addEventListener("click", () => {
+    window.location.href = "/studio.html";
+});
+
 });
 </script>
 
