@@ -5,48 +5,73 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <style>
-        * {
-            box-sizing: border-box;
+        * { box-sizing: border-box; }
+
+        :root {
+            --bg: #0b1220;
+            --panel: #111827;
+            --text: #ffffff;
+            --muted: #9ca3af;
+            --purple: #6d28d9;
+            --purple-dark: #5b21b6;
+            --border: rgba(255,255,255,0.08);
+            --shadow: 0 20px 60px rgba(0,0,0,0.45);
         }
 
         body {
             margin: 0;
             font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-            background: #0b1220;
-            color: white;
+            background: var(--bg);
+            color: var(--text);
         }
 
         /* HERO */
         .hero {
             min-height: 100vh;
-            background: linear-gradient(135deg, #5b21b6, #7c3aed, #a78bfa);
             display: flex;
             align-items: center;
             justify-content: center;
-            text-align: center;
-            padding: 20px;
+            padding: 30px 16px;
+
+            background:
+                radial-gradient(circle at top, rgba(124,58,237,0.35), transparent 40%),
+                radial-gradient(circle at bottom, rgba(0,0,0,0.6), transparent 60%),
+                linear-gradient(135deg, #0b1220, #111827);
         }
 
         .hero-box {
-            max-width: 560px;
             width: 100%;
+            max-width: 620px;
+            text-align: center;
+
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            border-radius: 28px;
+            padding: 36px 24px;
+
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(10px);
         }
 
-        h1 {
-            font-size: 48px;
-            margin: 0;
-            font-weight: 800;
+        /* LOGO */
+        .hero-logo {
+            width: 100%;
+            max-width: 380px;
+            margin: 0 auto 10px;
+            display: block;
+
+            filter: drop-shadow(0 18px 50px rgba(0,0,0,0.6));
         }
 
         .tagline {
-            margin-top: 16px;
-            font-size: 20px;
-            color: #ede9fe;
+            margin-top: 14px;
+            font-size: 18px;
+            color: var(--muted);
         }
 
         /* BUTTONS */
         .actions {
-            margin-top: 40px;
+            margin-top: 34px;
             display: flex;
             flex-direction: column;
             gap: 14px;
@@ -54,141 +79,109 @@
 
         .btn {
             padding: 18px;
-            border-radius: 16px;
+            border-radius: 18px;
+            font-weight: 800;
+            font-size: 17px;
             text-decoration: none;
-            font-weight: 700;
-            font-size: 18px;
-            transition: 0.2s;
+            transition: all 0.2s ease;
             text-align: center;
         }
 
-        .btn:hover {
-            transform: translateY(-2px);
+        /* PRIMARY */
+        .primary {
+            background: linear-gradient(135deg, var(--purple), #9333ea);
+            color: white;
+            box-shadow: 0 10px 30px rgba(109,40,217,0.45);
         }
 
-        .primary {
-            background: white;
-            color: #4c1d95;
+        .primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 16px 40px rgba(109,40,217,0.6);
         }
 
         .primary:active {
-            transform: scale(0.97);
+            transform: scale(0.96);
         }
 
-        .library-btn {
-            background: #ede9fe;
-            color: #4c1d95;
-        }
-
-        .secondary {
+        /* SECOND BUTTON */
+        .secondary-btn {
+            background: var(--panel);
+            border: 1px solid var(--border);
             color: white;
-            opacity: 0.9;
-            text-decoration: underline;
-            font-size: 15px;
+        }
+
+        .secondary-btn:hover {
+            background: #1f2937;
+        }
+
+        /* LOGIN LINK */
+        .login-link {
+            margin-top: 16px;
+            display: block;
+            color: var(--muted);
+            font-size: 14px;
         }
 
         /* FEATURES */
         .features {
-            background: #0b1220;
-            padding: 60px 20px;
+            padding: 70px 20px;
+            max-width: 900px;
+            margin: auto;
         }
 
         .features h2 {
             text-align: center;
-            font-size: 36px;
+            font-size: 34px;
             margin-bottom: 30px;
         }
 
-        .features-grid {
-            display: flex;
-            flex-direction: column;
-        }
-
         .card {
-            background: #111827;
+            background: var(--panel);
             padding: 24px;
-            border-radius: 20px;
+            border-radius: 22px;
             margin-bottom: 20px;
-            transition: 0.2s;
-        }
-
-        .card:hover {
-            transform: translateY(-4px);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
         }
 
         .card-title {
             font-size: 22px;
-            font-weight: 700;
+            font-weight: 800;
             margin-bottom: 10px;
         }
 
         .card-text {
-            color: #d1d5db;
-            font-size: 16px;
+            color: var(--muted);
         }
 
         footer {
             text-align: center;
             padding: 30px;
+            color: var(--muted);
             font-size: 14px;
-            color: #9ca3af;
         }
 
-        /* MOBILE */
-        @media (max-width: 480px) {
-            h1 {
-                font-size: 42px;
-            }
-        }
-
-        /* DESKTOP FIXES */
+        /* DESKTOP */
         @media (min-width: 900px) {
-
-            .hero {
-                padding: 60px 20px;
-            }
-
-            .hero-box {
-                max-width: 700px;
-            }
-
-            h1 {
-                font-size: 64px;
-            }
-
-            .tagline {
-                font-size: 22px;
-            }
-
             .actions {
                 flex-direction: row;
                 justify-content: center;
-                flex-wrap: wrap;
             }
 
             .btn {
-                min-width: 220px;
+                flex: 1;
+                max-width: 220px;
             }
 
-            .features {
-                max-width: 1100px;
-                margin: 0 auto;
+            .hero-box {
+                padding: 48px 40px;
             }
 
-            .features h2 {
-                font-size: 42px;
-            }
-
-            .features-grid {
-                display: grid;
-                grid-template-columns: repeat(3, 1fr);
-                gap: 20px;
-            }
-
-            .card {
-                margin: 0;
+            .hero-logo {
+                max-width: 460px;
             }
         }
+
     </style>
 </head>
 
@@ -196,40 +189,43 @@
 
 <section class="hero">
     <div class="hero-box">
-        <h1>Alysum Studio</h1>
+
+        <!-- LOGO -->
+        <img src="/images/logo.png" class="hero-logo">
+
         <div class="tagline">Every writer needs a studio</div>
 
         <div class="actions">
             <a href="/signup.html" class="btn primary">Create Account</a>
-            <a href="/library.html" class="btn library-btn">Browse Library</a>
+
+            <a href="/library.html" class="btn secondary-btn">
+                Browse Library
+            </a>
         </div>
 
-        <a href="/login.html" class="secondary">
+        <a href="/login.html" class="login-link">
             Already have an account?
         </a>
+
     </div>
 </section>
 
 <section class="features">
     <h2>Why Alysum?</h2>
 
-    <div class="features-grid">
+    <div class="card">
+        <div class="card-title">✍️ Focused Writing</div>
+        <div class="card-text">No distractions. Just you and your words.</div>
+    </div>
 
-        <div class="card">
-            <div class="card-title">✍️ Focused Writing</div>
-            <div class="card-text">No distractions. Just you and your words.</div>
-        </div>
+    <div class="card">
+        <div class="card-title">📚 Your Stories</div>
+        <div class="card-text">Organize everything in one place.</div>
+    </div>
 
-        <div class="card">
-            <div class="card-title">📚 Your Stories</div>
-            <div class="card-text">Organize everything in one place.</div>
-        </div>
-
-        <div class="card">
-            <div class="card-title">🚀 Built for Writers</div>
-            <div class="card-text">Simple, fast, and made for creativity.</div>
-        </div>
-
+    <div class="card">
+        <div class="card-title">🚀 Built for Writers</div>
+        <div class="card-text">Simple, fast, and made for creativity.</div>
     </div>
 </section>
 
