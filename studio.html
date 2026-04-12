@@ -14,13 +14,85 @@
             color: white;
         }
 
+        /* HEADER */
         .header {
-            padding: 20px;
+            padding: 20px 20px 20px 70px;
             background: linear-gradient(135deg, #5b21b6, #7c3aed);
             font-size: 22px;
             font-weight: bold;
         }
 
+        /* MENU BUTTON */
+        .menu-btn {
+            position: fixed;
+            top: 16px;
+            left: 16px;
+            z-index: 100;
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            border: none;
+            background: rgba(0,0,0,0.35);
+            color: white;
+            font-size: 22px;
+            cursor: pointer;
+        }
+
+        /* OVERLAY */
+        .menu-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 90;
+        }
+
+        .menu-overlay.hidden {
+            display: none;
+        }
+
+        /* SIDE MENU */
+        .side-menu {
+            position: fixed;
+            top: 0;
+            left: -260px;
+            width: 260px;
+            height: 100vh;
+            background: #111827;
+            z-index: 110;
+            padding: 20px;
+            transition: 0.25s ease;
+        }
+
+        .side-menu.open {
+            left: 0;
+        }
+
+        .menu-header {
+            font-size: 22px;
+            font-weight: 800;
+            margin-bottom: 20px;
+        }
+
+        .menu-link {
+            display: block;
+            padding: 14px;
+            border-radius: 12px;
+            color: white;
+            text-decoration: none;
+            margin-bottom: 8px;
+        }
+
+        .menu-link:hover {
+            background: #1f2937;
+        }
+
+        /* CONTAINER */
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        /* PROFILE */
         .profile {
             background: #111827;
             margin: 20px;
@@ -51,18 +123,18 @@
             color: #9ca3af;
         }
 
+        /* SECTION */
         .section {
             padding: 20px;
         }
 
-        /* GRID */
+        /* BOOK GRID */
         .books {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-            gap: 24px;
+            gap: 20px;
         }
 
-        /* BOOK STYLE */
         .book {
             background: linear-gradient(180deg, #ffffff, #e5e7eb);
             color: #111;
@@ -87,8 +159,12 @@
             cursor: pointer;
         }
 
+        .book:hover {
+            transform: perspective(800px) rotateY(-2deg) translateY(-4px);
+        }
+
         .book:active {
-            transform: scale(0.96) rotateY(-2deg);
+            transform: scale(0.96);
         }
 
         .book-title {
@@ -107,40 +183,103 @@
             color: white;
             font-weight: bold;
             font-size: 16px;
+            cursor: pointer;
+        }
+
+        .add-btn:hover {
+            background: #5b21b6;
+        }
+
+        /* MOBILE */
+        @media (max-width: 600px) {
+            .books {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* DESKTOP */
+        @media (min-width: 900px) {
+
+            .header {
+                font-size: 26px;
+                padding: 24px 24px 24px 80px;
+            }
+
+            .profile {
+                margin: 30px 0;
+                padding: 28px;
+            }
+
+            .stats {
+                justify-content: space-between;
+                max-width: 500px;
+                margin: 24px auto 0;
+            }
+
+            .section {
+                padding: 0;
+            }
+
+            .books {
+                grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+                gap: 28px;
+            }
+
+            .add-btn {
+                max-width: 300px;
+                margin: 30px auto 0;
+                display: block;
+            }
         }
     </style>
 </head>
 
 <body>
 
-<div class="header">Alysum Studio</div>
+<button class="menu-btn" id="menuBtn">☰</button>
 
-<div class="profile">
-    <h2 id="status">Loading...</h2>
-    <div class="username" id="username"></div>
+<div class="menu-overlay hidden" id="menuOverlay"></div>
 
-    <div class="stats">
-        <div class="stat">
-            <h3 id="words">0</h3>
-            <p>Words</p>
-        </div>
-        <div class="stat">
-            <h3 id="books">0</h3>
-            <p>Books</p>
-        </div>
-        <div class="stat">
-            <h3 id="streak">0</h3>
-            <p>Streak</p>
-        </div>
-    </div>
+<div class="side-menu" id="sideMenu">
+    <div class="menu-header">Alysum</div>
+
+    <a href="/studio.html" class="menu-link">✍️ Studio</a>
+    <a href="/library.html" class="menu-link">📚 Library</a>
+    <a href="/index.html" class="menu-link">🏠 Home</a>
 </div>
 
-<div class="section">
-    <h2>Your Books</h2>
+<div class="header">Alysum Studio</div>
 
-    <div class="books" id="bookList"></div>
+<div class="container">
 
-    <button class="add-btn" id="createBook">+ Create Book</button>
+    <div class="profile">
+        <h2 id="status">Loading...</h2>
+        <div class="username" id="username"></div>
+
+        <div class="stats">
+            <div class="stat">
+                <h3 id="words">0</h3>
+                <p>Words</p>
+            </div>
+            <div class="stat">
+                <h3 id="books">0</h3>
+                <p>Books</p>
+            </div>
+            <div class="stat">
+                <h3 id="streak">0</h3>
+                <p>Streak</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Your Books</h2>
+
+        <div class="books" id="bookList"></div>
+
+        <button class="add-btn" id="createBook">+ Create Book</button>
+    </div>
+
 </div>
 
 <script type="module">
@@ -156,7 +295,22 @@ const streak = document.getElementById("streak");
 const bookList = document.getElementById("bookList");
 const createBtn = document.getElementById("createBook");
 
+const menuBtn = document.getElementById("menuBtn");
+const sideMenu = document.getElementById("sideMenu");
+const menuOverlay = document.getElementById("menuOverlay");
+
 let currentUser = null;
+
+/* MENU */
+menuBtn.onclick = () => {
+    sideMenu.classList.add("open");
+    menuOverlay.classList.remove("hidden");
+};
+
+menuOverlay.onclick = () => {
+    sideMenu.classList.remove("open");
+    menuOverlay.classList.add("hidden");
+};
 
 /* LOAD BOOKS */
 async function loadBooks(uid) {
@@ -170,15 +324,11 @@ async function loadBooks(uid) {
         const div = document.createElement("div");
         div.className = "book";
 
-        /* CLICK → OPEN EDITOR */
         div.onclick = () => {
             window.location.href = "/editor.html?book=" + docSnap.id;
         };
 
-        div.innerHTML = `
-            <div class="book-title">${data.title}</div>
-        `;
-
+        div.innerHTML = `<div class="book-title">${data.title}</div>`;
         bookList.appendChild(div);
     });
 
@@ -190,18 +340,13 @@ createBtn.onclick = async () => {
     const title = prompt("Book title?");
     if (!title) return;
 
-    try {
-        await addDoc(collection(db, "users", currentUser.uid, "books"), {
-            title: title,
-            created: Date.now(),
-            content: ""
-        });
+    await addDoc(collection(db, "users", currentUser.uid, "books"), {
+        title,
+        created: Date.now(),
+        content: ""
+    });
 
-        await loadBooks(currentUser.uid);
-
-    } catch (e) {
-        alert(e.message);
-    }
+    await loadBooks(currentUser.uid);
 };
 
 /* AUTH */
@@ -244,4 +389,4 @@ onAuthStateChanged(auth, async (user) => {
 </script>
 
 </body>
-</html>	
+</html>
