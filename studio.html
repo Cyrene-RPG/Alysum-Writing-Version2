@@ -5,9 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <style>
-        * {
-            box-sizing: border-box;
-        }
+        * { box-sizing: border-box; }
 
         :root {
             --bg: #0b1220;
@@ -28,6 +26,7 @@
             color: var(--text);
         }
 
+        /* HEADER */
         .header {
             position: sticky;
             top: 0;
@@ -46,7 +45,6 @@
             transform: translateX(-50%);
             font-size: 22px;
             font-weight: 800;
-            white-space: nowrap;
         }
 
         .menu-btn {
@@ -62,6 +60,7 @@
             cursor: pointer;
         }
 
+        /* SIDE MENU */
         .menu-overlay {
             position: fixed;
             inset: 0;
@@ -101,11 +100,9 @@
             display: block;
             text-decoration: none;
             color: white;
-            padding: 14px 14px;
+            padding: 14px;
             border-radius: 14px;
             margin-bottom: 8px;
-            background: transparent;
-            transition: background 0.18s ease;
             font-weight: 700;
         }
 
@@ -113,12 +110,31 @@
             background: #1f2937;
         }
 
+        /* MAIN CONTAINER */
         .container {
-            max-width: 1100px;
+            max-width: 1200px;
             margin: 0 auto;
             padding: 18px 16px 48px;
         }
 
+        /* 🔥 DASHBOARD ROW (THIS IS THE FIX) */
+        .dashboard-row {
+            display: grid;
+            gap: 18px;
+        }
+
+        @media (min-width: 1000px) {
+            .container {
+                max-width: 1400px;
+            }
+
+            .dashboard-row {
+                grid-template-columns: 1.3fr 1fr;
+                align-items: stretch;
+            }
+        }
+
+        /* PROFILE */
         .profile {
             background: var(--panel);
             border: 1px solid var(--border);
@@ -139,23 +155,25 @@
             margin-bottom: 20px;
         }
 
+/* STATS */
         .stats {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
+            gap: 14px;
         }
 
         .stat {
-            background: rgba(255,255,255,0.03);
+            background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
             border: 1px solid var(--border);
             border-radius: 18px;
-            padding: 16px 10px;
+            padding: 18px 12px;
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02);
         }
 
         .stat h3 {
             margin: 0;
-            font-size: 24px;
-            font-weight: 800;
+            font-size: 26px;
+            font-weight: 900;
         }
 
         .stat p {
@@ -165,8 +183,8 @@
             font-weight: 600;
         }
 
+        /* SPRINT */
         .sprint-card {
-            margin-top: 18px;
             background: var(--panel);
             border: 1px solid var(--border);
             border-radius: 24px;
@@ -178,7 +196,7 @@
         .sprint-title {
             margin: 0;
             font-size: 28px;
-            font-weight: 800;
+            font-weight: 900;
         }
 
         .sprint-sub {
@@ -188,21 +206,21 @@
         }
 
         .timer {
-            font-size: 52px;
+            font-size: 56px;
             font-weight: 900;
-            letter-spacing: 0.04em;
             margin: 16px 0 18px;
+            letter-spacing: 0.05em;
         }
 
         .sprint-controls {
             display: flex;
-            gap: 10px;
+            gap: 12px;
             justify-content: center;
             flex-wrap: wrap;
         }
 
         .sprint-btn {
-            min-width: 120px;
+            min-width: 130px;
             padding: 14px 18px;
             border-radius: 14px;
             border: none;
@@ -222,60 +240,86 @@
             border: 1px solid var(--border);
         }
 
+        /* SECTION */
         .section {
-            margin-top: 22px;
+            margin-top: 28px;
+        }
+
+        .section-shell {
+            max-width: 1200px;
+            margin: 0 auto;
         }
 
         .section-head {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 12px;
-            margin-bottom: 16px;
+            margin-bottom: 18px;
         }
 
         .section h2 {
             margin: 0;
-            font-size: 28px;
-            font-weight: 800;
+            font-size: 30px;
+            font-weight: 900;
         }
 
+        /* BOOK GRID */
         .books {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 18px;
         }
 
+        @media (min-width: 700px) {
+            .books {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+        }
+
+        @media (min-width: 1000px) {
+            .books {
+                grid-template-columns: repeat(5, minmax(0, 1fr));
+                gap: 26px;
+            }
+        }
+
+        /* BOOK CARD */
         .book {
             background: linear-gradient(180deg, #ffffff, #e5e7eb);
             color: #111827;
+
             aspect-ratio: 3 / 4;
             border-radius: 18px;
+
             display: flex;
             align-items: center;
             justify-content: center;
             text-align: center;
+
             padding: 14px;
+
             box-shadow:
-                0 14px 28px rgba(0,0,0,0.35),
-                inset 6px 0 0 rgba(0,0,0,0.15);
-            transform: perspective(800px) rotateY(-4deg);
-            transition: all 0.2s ease;
+                0 18px 36px rgba(0,0,0,0.45),
+                inset 8px 0 0 rgba(0,0,0,0.18);
+
+            transform: perspective(900px) rotateY(-5deg);
+            transition: all 0.25s ease;
+
             cursor: pointer;
         }
 
         .book:hover {
-            transform: perspective(800px) rotateY(-2deg) translateY(-4px);
+            transform: perspective(900px) rotateY(-3deg) translateY(-6px);
         }
 
         .book:active {
-            transform: scale(0.97);
+            transform: scale(0.96);
         }
 
         .book-title {
-            font-weight: 800;
+            font-weight: 900;
             font-size: 16px;
-            line-height: 1.2;
+            line-height: 1.25;
             word-break: break-word;
         }
 
@@ -284,20 +328,20 @@
             background: var(--panel);
             border: 1px solid var(--border);
             border-radius: 18px;
-            padding: 22px;
+            padding: 24px;
             color: var(--muted);
             text-align: center;
         }
 
         .add-btn {
-            margin-top: 20px;
+            margin-top: 24px;
             width: 100%;
-            padding: 16px;
+            padding: 18px;
             border-radius: 16px;
             border: none;
             background: linear-gradient(135deg, var(--purple), #9333ea);
             color: white;
-            font-weight: 800;
+            font-weight: 900;
             font-size: 16px;
             cursor: pointer;
             box-shadow: var(--shadow);
@@ -307,55 +351,13 @@
             background: linear-gradient(135deg, #5b21b6, #7e22ce);
         }
 
-        @media (min-width: 700px) {
-            .books {
-                grid-template-columns: repeat(3, minmax(0, 1fr));
-            }
-        }
-
-        @media (min-width: 950px) {
-            .container {
-                padding: 28px 20px 56px;
-            }
-
-            .profile {
-                max-width: 760px;
-                margin: 0 auto;
-                padding: 28px 28px;
-            }
-
-            .sprint-card {
-                max-width: 760px;
-                margin: 18px auto 0;
-            }
-
-            .section {
-                margin-top: 28px;
-            }
-
-            .section-shell {
-                max-width: 980px;
-                margin: 0 auto;
-            }
-
-            .books {
-                grid-template-columns: repeat(4, minmax(0, 1fr));
-                gap: 24px;
-            }
-
-            .add-btn {
-                max-width: 320px;
-                display: block;
-                margin-left: auto;
-                margin-right: auto;
-            }
-        }
     </style>
 </head>
+
 <body>
 
     <div class="header">
-        <button class="menu-btn" id="menuBtn" type="button">☰</button>
+        <button class="menu-btn" id="menuBtn">☰</button>
         <div class="header-center">Alysum Studio</div>
     </div>
 
@@ -370,37 +372,44 @@
 
     <div class="container">
 
-        <div class="profile">
-            <h2 id="status">Loading...</h2>
-            <div class="username" id="username"></div>
+        <!-- 🔥 DASHBOARD ROW (PC FIX) -->
+        <div class="dashboard-row">
 
-            <div class="stats">
-                <div class="stat">
-                    <h3 id="words">0</h3>
-                    <p>Words</p>
-                </div>
-                <div class="stat">
-                    <h3 id="books">0</h3>
-                    <p>Books</p>
-                </div>
-                <div class="stat">
-                    <h3 id="streak">0</h3>
-                    <p>Streak 🔥</p>
+            <div class="profile">
+                <h2 id="status">Loading...</h2>
+                <div class="username" id="username"></div>
+
+                <div class="stats">
+                    <div class="stat">
+                        <h3 id="words">0</h3>
+                        <p>Words</p>
+                    </div>
+                    <div class="stat">
+                        <h3 id="books">0</h3>
+                        <p>Books</p>
+                    </div>
+                    <div class="stat">
+                        <h3 id="streak">0</h3>
+                        <p>Streak 🔥</p>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div class="sprint-card">
-            <h2 class="sprint-title">Writing Sprint</h2>
-            <div class="sprint-sub">25-minute focus session</div>
-            <div class="timer" id="timer">25:00</div>
+            <div class="sprint-card">
+                <h2 class="sprint-title">Writing Sprint</h2>
+                <div class="sprint-sub">25-minute focus session</div>
 
-            <div class="sprint-controls">
-                <button class="sprint-btn primary" id="startSprint" type="button">Start</button>
-                <button class="sprint-btn secondary" id="resetSprint" type="button">Reset</button>
+                <div class="timer" id="timer">25:00</div>
+
+                <div class="sprint-controls">
+                    <button class="sprint-btn primary" id="startSprint">Start</button>
+                    <button class="sprint-btn secondary" id="resetSprint">Reset</button>
+                </div>
             </div>
+
         </div>
 
+        <!-- BOOK SECTION -->
         <div class="section">
             <div class="section-shell">
                 <div class="section-head">
@@ -409,13 +418,14 @@
 
                 <div class="books" id="bookList"></div>
 
-                <button class="add-btn" id="createBook" type="button">+ Create Book</button>
+                <button class="add-btn" id="createBook">
+                    + Create Book
+                </button>
             </div>
         </div>
 
     </div>
-
-    <script type="module">
+<script type="module">
         import { auth, db } from "./firebase.js";
         import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
         import {
@@ -460,6 +470,13 @@
         menuBtn.addEventListener("click", openMenu);
         menuOverlay.addEventListener("click", closeMenu);
 
+        function escapeHtml(str) {
+            return String(str)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;");
+        }
+
         function stripHtml(html = "") {
             return String(html)
                 .replace(/<br\s*\/?>/gi, " ")
@@ -485,6 +502,11 @@
                     total += countWordsFromHTML(chapter?.content || "");
                 });
             });
+
+            // fallback for older book docs that may still use plain content
+            if (total === 0 && typeof bookData?.content === "string") {
+                total += countWordsFromHTML(bookData.content);
+            }
 
             return total;
         }
@@ -521,13 +543,6 @@
 
             booksEl.textContent = snap.size;
             wordsEl.textContent = totalWords.toLocaleString();
-        }
-
-        function escapeHtml(str) {
-            return String(str)
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;");
         }
 
         createBtn.addEventListener("click", async () => {
@@ -630,6 +645,7 @@
 
         function tickSprint() {
             const state = loadSprintState();
+
             if (!state || !state.end) {
                 clearInterval(sprintInterval);
                 sprintInterval = null;
@@ -644,6 +660,7 @@
                 clearInterval(sprintInterval);
                 sprintInterval = null;
                 clearSprintState();
+                updateTimerDisplay(1500);
                 alert("Sprint complete!");
             }
         }
