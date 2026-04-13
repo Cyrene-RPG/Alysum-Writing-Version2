@@ -1,1352 +1,625 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Alysum Reader</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <style>
-        * {
-            box-sizing: border-box;
-        }
-
-        :root {
-            --alysum-purple: #6d28d9;
-            --alysum-purple-dark: #5b21b6;
-            --bg: #07101f;
-            --panel: #0d1830;
-            --panel-2: #101d39;
-            --panel-3: #162542;
-            --text: #edf2ff;
-            --muted: #a7b4d1;
-            --border: rgba(255,255,255,0.10);
-            --danger: #ef4444;
-            --success: #22c55e;
-            --shadow: 0 18px 50px rgba(0,0,0,0.35);
-            --reader-max: 860px;
-        }
-
-        body.light {
-            --bg: #eef2f7;
-            --panel: #ffffff;
-            --panel-2: #f7f9fc;
-            --panel-3: #eef3fa;
-            --text: #1e293b;
-            --muted: #64748b;
-            --border: rgba(15,23,42,0.10);
-            --shadow: 0 18px 40px rgba(15,23,42,0.10);
-        }
-
-        html, body {
-            margin: 0;
-            min-height: 100%;
-            background: radial-gradient(circle at top, rgba(109,40,217,0.18), transparent 30%), var(--bg);
-            color: var(--text);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        }
-
-        body {
-            overflow-x: hidden;
-        }
-
-        .app {
-            min-height: 100vh;
-        }
-
-        .topbar {
-            position: sticky;
-            top: 0;
-            z-index: 50;
-            height: 78px;
-            backdrop-filter: blur(16px);
-            background: rgba(7,16,31,0.84);
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 18px;
-        }
-
-        body.light .topbar {
-            background: rgba(255,255,255,0.84);
-        }
-
-        .topbar-left,
-        .topbar-right {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            min-width: 0;
-        }
-
-        .icon-btn {
-            width: 52px;
-            height: 52px;
-            border-radius: 18px;
-            border: 1px solid var(--border);
-            background: transparent;
-            color: var(--text);
-            font-size: 22px;
-            cursor: pointer;
-            flex-shrink: 0;
-        }
-
-        .icon-btn.primary {
-            background: linear-gradient(135deg, var(--alysum-purple), #7c3aed);
-            border-color: transparent;
-            color: white;
-        }
-
-        .title-wrap {
-            min-width: 0;
-        }
-
-        .brand {
-            font-size: 13px;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            color: var(--muted);
-            font-weight: 800;
-        }
-
-        .book-title {
-            font-size: 20px;
-            line-height: 1.1;
-            font-weight: 800;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 44vw;
-        }
-
-        .subline {
-            font-size: 13px;
-            color: var(--muted);
-            margin-top: 2px;
-        }
-
-        .shell {
-            max-width: var(--reader-max);
-            margin: 0 auto;
-            padding: 24px 18px 120px;
-        }
-
-        .hero {
-            background: linear-gradient(180deg, rgba(255,255,255,0.03), transparent), var(--panel);
-            border: 1px solid var(--border);
-            border-radius: 30px;
-            padding: 22px;
-            box-shadow: var(--shadow);
-            margin-bottom: 18px;
-        }
-
-        .hero-row {
-            display: flex;
-            justify-content: space-between;
-            gap: 14px;
-            align-items: flex-start;
-        }
-
-        .hero-meta {
-            min-width: 0;
-        }
-
-        .hero-title {
-            font-size: 32px;
-            line-height: 1.05;
-            font-weight: 900;
-            margin: 0;
-        }
-
-        .hero-author {
-            margin-top: 8px;
-            color: var(--muted);
-            font-size: 15px;
-            font-weight: 700;
-        }
-
-        .hero-tags {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            justify-content: flex-end;
-        }
-
-        .chip {
-            border: 1px solid var(--border);
-            background: var(--panel-2);
-            color: var(--muted);
-            border-radius: 999px;
-            padding: 7px 11px;
-            font-size: 12px;
-            font-weight: 800;
-        }
-
-        .hero-summary {
-            margin-top: 18px;
-            color: var(--text);
-            font-size: 16px;
-            line-height: 1.7;
-            white-space: pre-wrap;
-        }
-
-        .chapter-nav {
-            display: grid;
-            grid-template-columns: auto 1fr auto;
-            gap: 12px;
-            align-items: center;
-            background: var(--panel);
-            border: 1px solid var(--border);
-            border-radius: 24px;
-            padding: 12px;
-            box-shadow: var(--shadow);
-            margin-bottom: 18px;
-        }
-
-        .nav-btn {
-            height: 48px;
-            min-width: 52px;
-            border-radius: 16px;
-            border: 1px solid var(--border);
-            background: var(--panel-2);
-            color: var(--text);
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: 800;
-        }
-
-        .nav-btn:disabled {
-            opacity: 0.45;
-            cursor: not-allowed;
-        }
-
-        .chapter-picker {
-            width: 100%;
-            height: 48px;
-            border-radius: 16px;
-            border: 1px solid var(--border);
-            background: var(--panel-2);
-            color: var(--text);
-            padding: 0 14px;
-            font-size: 15px;
-            font-weight: 700;
-            outline: none;
-        }
-
-        .reader-card {
-            background: var(--panel);
-            border: 1px solid var(--border);
-            border-radius: 34px;
-            padding: 26px 22px 32px;
-            box-shadow: var(--shadow);
-        }
-
-        .chapter-number {
-            text-align: center;
-            color: var(--muted);
-            font-size: 18px;
-            font-family: Georgia, serif;
-            margin-bottom: 16px;
-        }
-
-        .chapter-title {
-            text-align: center;
-            font-family: Georgia, serif;
-            font-size: 40px;
-            line-height: 1.1;
-            font-weight: 800;
-            margin-bottom: 28px;
-        }
-
-        .reading-note {
-            text-align: center;
-            color: var(--muted);
-            font-size: 14px;
-            margin-bottom: 22px;
-        }
-
-        .content {
-            font-family: Georgia, serif;
-            font-size: 26px;
-            line-height: 1.95;
-            color: var(--text);
-            white-space: normal;
-            word-break: break-word;
-            user-select: text;
-            -webkit-user-select: text;
-        }
-
-        .content div,
-        .content p {
-            margin: 0 0 1.15em;
-            text-indent: 2em;
-        }
-
-        .content div:first-child,
-        .content p:first-child {
-            text-indent: 0;
-        }
-
-        .content h2,
-        .content h3,
-        .content blockquote,
-        .content ul,
-        .content ol {
-            text-indent: 0;
-        }
-
-        .content blockquote {
-            border-left: 4px solid var(--alysum-purple);
-            padding-left: 16px;
-            color: var(--muted);
-            margin: 0 0 1.15em;
-        }
-
-        .content ul,
-        .content ol {
-            margin: 0 0 1.15em 1.5em;
-        }
-
-        .bottom-nav {
-            display: flex;
-            gap: 12px;
-            margin-top: 22px;
-        }
-
-        .bottom-nav .nav-btn {
-            flex: 1;
-            height: 54px;
-            border-radius: 18px;
-        }
-
-        .comments-card {
-            margin-top: 18px;
-            background: var(--panel);
-            border: 1px solid var(--border);
-            border-radius: 28px;
-            padding: 22px;
-            box-shadow: var(--shadow);
-        }
-
-        .comments-head {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            margin-bottom: 14px;
-        }
-
-        .comments-title {
-            font-size: 26px;
-            font-weight: 900;
-            margin: 0;
-        }
-
-        .comments-sub {
-            color: var(--muted);
-            font-size: 14px;
-            margin-top: 4px;
-        }
-
-        .comment-list {
-            display: grid;
-            gap: 12px;
-        }
-
-        .comment-item {
-            background: var(--panel-2);
-            border: 1px solid var(--border);
-            border-radius: 20px;
-            padding: 14px;
-        }
-
-        .comment-user {
-            font-size: 14px;
-            font-weight: 800;
-            margin-bottom: 8px;
-        }
-
-        .comment-quote {
-            font-size: 14px;
-            line-height: 1.6;
-            color: var(--muted);
-            border-left: 3px solid var(--alysum-purple);
-            padding-left: 10px;
-            margin-bottom: 10px;
-            white-space: pre-wrap;
-        }
-
-        .comment-body {
-            font-size: 15px;
-            line-height: 1.6;
-            white-space: pre-wrap;
-        }
-
-        .comment-time {
-            margin-top: 8px;
-            color: var(--muted);
-            font-size: 12px;
-            font-weight: 700;
-        }
-
-        .empty-comments {
-            padding: 18px 6px 4px;
-            color: var(--muted);
-            font-size: 15px;
-            text-align: center;
-        }
-
-        .selection-bubble {
-            position: absolute;
-            z-index: 60;
-            display: none;
-            align-items: center;
-            gap: 8px;
-            background: rgba(17,24,39,0.96);
-            color: white;
-            border: 1px solid rgba(255,255,255,0.12);
-            border-radius: 999px;
-            padding: 10px 14px;
-            box-shadow: 0 12px 28px rgba(0,0,0,0.35);
-        }
-
-        .selection-bubble.open {
-            display: flex;
-        }
-
-        .selection-action {
-            border: none;
-            background: transparent;
-            color: white;
-            font-size: 14px;
-            font-weight: 800;
-            cursor: pointer;
-            padding: 0;
-        }
-
-        .composer-backdrop {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.55);
-            z-index: 70;
-            display: none;
-        }
-
-        .composer-backdrop.open {
-            display: block;
-        }
-
-        .composer-sheet {
-            position: fixed;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            z-index: 80;
-            transform: translateY(110%);
-            transition: transform 0.24s ease;
-            padding: 14px;
-        }
-
-        .composer-sheet.open {
-            transform: translateY(0);
-        }
-
-        .composer-box {
-            max-width: 760px;
-            margin: 0 auto;
-            background: var(--panel);
-            border: 1px solid var(--border);
-            border-radius: 28px 28px 18px 18px;
-            box-shadow: var(--shadow);
-            padding: 16px;
-        }
-
-        .grabber {
-            width: 54px;
-            height: 6px;
-            border-radius: 999px;
-            background: var(--border);
-            margin: 0 auto 14px;
-        }
-
-        .composer-head {
-            display: flex;
-            justify-content: space-between;
-            gap: 12px;
-            align-items: center;
-            margin-bottom: 12px;
-        }
-
-        .composer-title {
-            font-size: 22px;
-            font-weight: 900;
-            margin: 0;
-        }
-
-        .composer-close {
-            width: 42px;
-            height: 42px;
-            border-radius: 14px;
-            border: 1px solid var(--border);
-            background: transparent;
-            color: var(--text);
-            cursor: pointer;
-            font-size: 18px;
-        }
-
-        .selected-quote-card {
-            background: var(--panel-2);
-            border: 1px solid var(--border);
-            border-radius: 18px;
-            padding: 14px;
-            color: var(--muted);
-            font-size: 15px;
-            line-height: 1.7;
-            max-height: 160px;
-            overflow: auto;
-            white-space: pre-wrap;
-            margin-bottom: 12px;
-        }
-
-        .composer-textarea {
-            width: 100%;
-            min-height: 132px;
-            resize: vertical;
-            border-radius: 18px;
-            border: 1px solid var(--border);
-            background: var(--panel-2);
-            color: var(--text);
-            padding: 14px;
-            outline: none;
-            font-size: 16px;
-            line-height: 1.6;
-            margin-bottom: 12px;
-            font-family: inherit;
-        }
-
-        .composer-actions {
-            display: flex;
-            gap: 10px;
-        }
-
-        .action-btn {
-            flex: 1;
-            border: none;
-            border-radius: 18px;
-            height: 54px;
-            font-size: 17px;
-            font-weight: 900;
-            cursor: pointer;
-        }
-
-        .action-btn.secondary {
-            background: var(--panel-2);
-            color: var(--text);
-            border: 1px solid var(--border);
-        }
-
-        .action-btn.primary {
-            background: linear-gradient(135deg, var(--alysum-purple), #7c3aed);
-            color: white;
-        }
-
-        .action-btn:disabled {
-            opacity: 0.55;
-            cursor: not-allowed;
-        }
-
-        .toast {
-            position: fixed;
-            left: 50%;
-            bottom: 22px;
-            transform: translateX(-50%) translateY(120px);
-            background: rgba(17,24,39,0.96);
-            color: white;
-            border: 1px solid rgba(255,255,255,0.12);
-            border-radius: 999px;
-            padding: 12px 16px;
-            font-size: 14px;
-            font-weight: 800;
-            z-index: 100;
-            transition: transform 0.22s ease;
-            text-align: center;
-            max-width: calc(100vw - 28px);
-        }
-
-        .toast.show {
-            transform: translateX(-50%) translateY(0);
-        }
-
-        .loading,
-        .error-box {
-            background: var(--panel);
-            border: 1px solid var(--border);
-            border-radius: 28px;
-            padding: 28px 22px;
-            text-align: center;
-            box-shadow: var(--shadow);
-        }
-
-        .loading-title,
-        .error-title {
-            font-size: 28px;
-            font-weight: 900;
-            margin-bottom: 10px;
-        }
-
-        .loading-sub,
-        .error-sub {
-            color: var(--muted);
-            font-size: 15px;
-            line-height: 1.6;
-        }
-
-        .error-sub {
-            white-space: pre-wrap;
-        }
-
-        @media (max-width: 900px) {
-            .book-title {
-                max-width: 34vw;
-            }
-
-            .hero-title {
-                font-size: 28px;
-            }
-
-            .chapter-title {
-                font-size: 34px;
-            }
-
-            .content {
-                font-size: 23px;
-            }
-        }
-
-        @media (max-width: 760px) {
-            .topbar {
-                height: 74px;
-                padding: 0 12px;
-            }
-
-            .icon-btn {
-                width: 48px;
-                height: 48px;
-                border-radius: 16px;
-            }
-
-            .book-title {
-                max-width: 42vw;
-                font-size: 18px;
-            }
-
-            .shell {
-                padding: 16px 12px 110px;
-            }
-
-            .hero,
-            .reader-card,
-            .comments-card {
-                border-radius: 24px;
-            }
-
-            .hero-row {
-                flex-direction: column;
-            }
-
-            .hero-tags {
-                justify-content: flex-start;
-            }
-
-            .hero-title {
-                font-size: 24px;
-            }
-
-            .chapter-title {
-                font-size: 28px;
-                margin-bottom: 20px;
-            }
-
-            .chapter-number {
-                margin-bottom: 12px;
-            }
-
-            .content {
-                font-size: 20px;
-                line-height: 1.85;
-            }
-
-            .selection-bubble {
-                padding: 12px 16px;
-            }
-
-            .selection-action {
-                font-size: 15px;
-            }
-
-            .composer-sheet {
-                padding: 8px;
-            }
-
-            .composer-box {
-                border-radius: 24px 24px 16px 16px;
-            }
-
-            .comments-title {
-                font-size: 22px;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="app">
-        <div class="topbar">
-            <div class="topbar-left">
-                <button class="icon-btn" id="backBtn" type="button">←</button>
-                <div class="title-wrap">
-                    <div class="brand">Alysum Library</div>
-                    <div class="book-title" id="topBookTitle">Loading...</div>
-                    <div class="subline" id="topSubline">Opening story…</div>
-                </div>
-            </div>
-
-            <div class="topbar-right">
-                <button class="icon-btn" id="themeBtn" type="button">◐</button>
-            </div>
-        </div>
-
-        <div class="shell" id="shell">
-            <div class="loading" id="loadingState">
-                <div class="loading-title">Loading story</div>
-                <div class="loading-sub">Pulling the book and chapters from Alysum Library…</div>
-            </div>
-
-            <div class="error-box hidden" id="errorState">
-                <div class="error-title">Couldn’t load story</div>
-                <div class="error-sub" id="errorText">Something went wrong.</div>
-            </div>
-
-            <div class="hidden" id="readerState">
-                <div class="hero">
-                    <div class="hero-row">
-                        <div class="hero-meta">
-                            <h1 class="hero-title" id="heroTitle">Untitled</h1>
-                            <div class="hero-author" id="heroAuthor">@unknown</div>
-                        </div>
-                        <div class="hero-tags" id="heroTags"></div>
-                    </div>
-                    <div class="hero-summary" id="heroSummary"></div>
-                </div>
-
-                <div class="chapter-nav">
-                    <button class="nav-btn" id="prevTopBtn" type="button">←</button>
-                    <select class="chapter-picker" id="chapterPicker"></select>
-                    <button class="nav-btn" id="nextTopBtn" type="button">→</button>
-                </div>
-
-                <div class="reader-card">
-                    <div class="chapter-number" id="chapterNumber">1</div>
-                    <div class="chapter-title" id="chapterTitle">Chapter 1</div>
-                    <div class="reading-note">Highlight any line to leave a reader comment for the author.</div>
-                    <div class="content" id="content"></div>
-
-                    <div class="bottom-nav">
-                        <button class="nav-btn" id="prevBottomBtn" type="button">Previous</button>
-                        <button class="nav-btn" id="nextBottomBtn" type="button">Next</button>
-                    </div>
-                </div>
-
-                <div class="comments-card">
-                    <div class="comments-head">
-                        <div>
-                            <h2 class="comments-title">Chapter Comments</h2>
-                            <div class="comments-sub" id="commentsSub">Comments left on this chapter.</div>
-                        </div>
-                    </div>
-
-                    <div class="comment-list" id="commentList"></div>
-                    <div class="empty-comments hidden" id="emptyComments">No comments on this chapter yet.</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="selection-bubble" id="selectionBubble">
-            <button class="selection-action" id="commentSelectionBtn" type="button">💬 Comment on selection</button>
-        </div>
-
-        <div class="composer-backdrop" id="composerBackdrop"></div>
-
-        <div class="composer-sheet" id="composerSheet">
-            <div class="composer-box">
-                <div class="grabber"></div>
-
-                <div class="composer-head">
-                    <h3 class="composer-title">Leave a comment</h3>
-                    <button class="composer-close" id="closeComposerBtn" type="button">✕</button>
-                </div>
-
-                <div class="selected-quote-card" id="selectedQuoteCard"></div>
-
-                <textarea
-                    class="composer-textarea"
-                    id="commentInput"
-                    placeholder="Tell the author what you thought about this part…"
-                ></textarea>
-
-                <div class="composer-actions">
-                    <button class="action-btn secondary" id="cancelCommentBtn" type="button">Cancel</button>
-                    <button class="action-btn primary" id="sendCommentBtn" type="button">Send Comment</button>
-                </div>
-            </div>
-        </div>
-
-        <div class="toast" id="toast"></div>
-    </div>
-
-    <script type="module">
-        import { auth, db } from "./firebase.js";
-        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-        import {
-            doc,
-            getDoc,
-            collection,
-            addDoc,
-            getDocs,
-            query,
-            orderBy
-        } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
-        const params = new URLSearchParams(window.location.search);
-        const bookId = params.get("book");
-        const startChapterId = params.get("chapter");
-
-        const body = document.body;
-
-        const loadingState = document.getElementById("loadingState");
-        const errorState = document.getElementById("errorState");
-        const errorText = document.getElementById("errorText");
-        const readerState = document.getElementById("readerState");
-
-        const topBookTitle = document.getElementById("topBookTitle");
-        const topSubline = document.getElementById("topSubline");
-        const heroTitle = document.getElementById("heroTitle");
-        const heroAuthor = document.getElementById("heroAuthor");
-        const heroSummary = document.getElementById("heroSummary");
-        const heroTags = document.getElementById("heroTags");
-
-        const chapterPicker = document.getElementById("chapterPicker");
-        const chapterNumber = document.getElementById("chapterNumber");
-        const chapterTitle = document.getElementById("chapterTitle");
-        const content = document.getElementById("content");
-
-        const prevTopBtn = document.getElementById("prevTopBtn");
-        const nextTopBtn = document.getElementById("nextTopBtn");
-        const prevBottomBtn = document.getElementById("prevBottomBtn");
-        const nextBottomBtn = document.getElementById("nextBottomBtn");
-
-        const commentsSub = document.getElementById("commentsSub");
-        const commentList = document.getElementById("commentList");
-        const emptyComments = document.getElementById("emptyComments");
-
-        const selectionBubble = document.getElementById("selectionBubble");
-        const commentSelectionBtn = document.getElementById("commentSelectionBtn");
-
-        const composerBackdrop = document.getElementById("composerBackdrop");
-        const composerSheet = document.getElementById("composerSheet");
-        const selectedQuoteCard = document.getElementById("selectedQuoteCard");
-        const commentInput = document.getElementById("commentInput");
-        const sendCommentBtn = document.getElementById("sendCommentBtn");
-        const cancelCommentBtn = document.getElementById("cancelCommentBtn");
-        const closeComposerBtn = document.getElementById("closeComposerBtn");
-
-        const toast = document.getElementById("toast");
-        const themeBtn = document.getElementById("themeBtn");
-        const backBtn = document.getElementById("backBtn");
-
-        let currentUser = null;
-        let currentBook = null;
-        let currentChapterIndex = 0;
-        let selectedQuote = "";
-        let selectionRange = null;
-        let isTouchSelectionFlow = false;
-
-        function safeString(value, fallback = "") {
-            return typeof value === "string" ? value : fallback;
-        }
-
-        function safeArray(value, fallback = []) {
-            return Array.isArray(value) ? value : fallback;
-        }
-
-        function safeObject(value, fallback = {}) {
-            return value && typeof value === "object" && !Array.isArray(value) ? value : fallback;
-        }
-
-        function stripHtmlToText(html) {
-            return safeString(html, "")
-                .replace(/<br\s*\/?>/gi, "\n")
-                .replace(/<\/(div|p|h1|h2|h3|li|blockquote)>/gi, "\n")
-                .replace(/<[^>]*>/g, "")
-                .replace(/\n{3,}/g, "\n\n")
-                .trim();
-        }
-
-        function showToast(text) {
-            toast.textContent = text;
-            toast.classList.add("show");
-            clearTimeout(showToast._timer);
-            showToast._timer = setTimeout(() => {
-                toast.classList.remove("show");
-            }, 2200);
-        }
-
-        function setTheme(theme) {
-            body.classList.toggle("light", theme === "light");
-            localStorage.setItem("alysum-reader-theme", theme);
-        }
-
-        function toggleTheme() {
-            const isLight = body.classList.contains("light");
-            setTheme(isLight ? "dark" : "light");
-        }
-
-        function showError(message) {
-            loadingState.classList.add("hidden");
-            readerState.classList.add("hidden");
-            errorState.classList.remove("hidden");
-            errorText.textContent = message;
-        }
-
-        function showReader() {
-            loadingState.classList.add("hidden");
-            errorState.classList.add("hidden");
-            readerState.classList.remove("hidden");
-        }
-
-        function normalizeBook(raw) {
-            const data = safeObject(raw, {});
-            const chapters = safeArray(data.chapters, []).map((chapter, index) => {
-                const item = safeObject(chapter, {});
-                return {
-                    id: safeString(item.id, `chapter-${index + 1}`),
-                    title: safeString(item.title, `Chapter ${index + 1}`),
-                    content: safeString(item.content, ""),
-                    order: typeof item.order === "number" ? item.order : index + 1
-                };
-            });
-
-            return {
-                id: bookId,
-                title: safeString(data.title, "Untitled"),
-                author: safeString(data.author, "unknown"),
-                summary: safeString(data.summary, ""),
-                rating: safeString(data.rating, ""),
-                type: safeString(data.type, ""),
-                tags: safeArray(data.tags, []).filter(tag => typeof tag === "string"),
-                warnings: safeArray(data.warnings, []).filter(tag => typeof tag === "string"),
-                chapters
-            };
-        }
-
-        function buildHeroTags() {
-            heroTags.innerHTML = "";
-
-            const tags = [];
-            if (currentBook.rating) tags.push(currentBook.rating);
-            if (currentBook.type) tags.push(currentBook.type);
-            currentBook.tags.slice(0, 4).forEach(tag => tags.push(tag));
-
-            if (!tags.length) {
-                const chip = document.createElement("div");
-                chip.className = "chip";
-                chip.textContent = "Alysum Story";
-                heroTags.appendChild(chip);
-                return;
-            }
-
-            tags.forEach(tag => {
-                const chip = document.createElement("div");
-                chip.className = "chip";
-                chip.textContent = tag;
-                heroTags.appendChild(chip);
-            });
-        }
-
-        function renderHero() {
+<title>Alysum Reader</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>                                               * { box-sizing: border-box; }                         
+:root {
+    --alysum-purple: #6d28d9;
+    --bg: #07101f;                                        --panel: #0d1830;
+    --panel-2: #101d39;                                   --text: #edf2ff;
+    --muted: #a7b4d1;
+    --border: rgba(255,255,255,0.10);
+}
+                                                      body {
+    margin:0;
+    background: var(--bg);                                color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}                                                     
+/* ===== TOPBAR ===== */
+.topbar {                                                 height:70px;
+    display:flex;                                         align-items:center;
+    justify-content:space-between;
+    padding:0 16px;                                       border-bottom:1px solid var(--border);
+}                                                     
+.icon-btn {
+    width:44px;
+    height:44px;
+    border-radius:14px;
+    border:1px solid var(--border);
+    background:transparent;
+    color:white;
+    font-size:20px;                                   }
+                                                      /* ===== READER ===== */
+.shell {
+    max-width:860px;
+    margin:auto;
+    padding:20px;
+}
+
+.reader-card {
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:24px;                                   padding:20px;
+}                                                     
+.chapter-title {                                          text-align:center;
+    font-size:32px;
+    margin-bottom:20px;
+}
+
+.content {
+    font-family: Georgia, serif;                          font-size:24px;                                       line-height:1.9;
+}
+
+/* ===== HIGHLIGHT ===== */
+.highlight {
+    background: rgba(255,235,59,0.35);
+    border-radius:4px;
+}
+
+/* ===== INLINE COMMENT MARKER ===== */
+.comment-anchor {
+    display:inline-block;
+    width:18px;
+    height:18px;
+    margin-left:4px;
+    border-radius:50%;
+    background:var(--alysum-purple);
+    color:white;
+    font-size:12px;
+    font-weight:900;
+    text-align:center;
+    line-height:18px;
+    cursor:pointer;
+}
+
+/* ===== COMMENTS ===== */
+.comments-card {
+    margin-top:20px;
+}
+
+.comment-item {
+    padding:10px;
+    border:1px solid var(--border);
+    border-radius:14px;
+    margin-bottom:10px;                               }
+
+/* ===== SELECTION BUBBLE ===== */
+.selection-bubble {
+    position:absolute;
+    display:none;
+    background:black;
+    padding:8px 12px;                                     border-radius:999px;
+    z-index:100;
+}
+
+.selection-bubble.open {
+    display:block;
+}
+
+/* ===== MOBILE ===== */
+@media(max-width:760px){
+    .content { font-size:20px; }                      }
+</style>                                              </head>
+                                                      <body>
+
+<div class="topbar">
+    <button class="icon-btn" id="backBtn">←</button>
+    <div id="topBookTitle">Loading...</div>
+</div>
+
+<div class="shell">
+
+<div class="reader-card">
+    <div class="chapter-title" id="chapterTitle">Chapter</div>
+    <div class="content" id="content"></div>
+</div>
+
+<div class="comments-card" id="commentList"></div>
+                                                      </div>
+                                                      <div class="selection-bubble" id="selectionBubble">
+    <button id="commentSelectionBtn">💬 Comment</button>
+</div>
+<script type="module">
+import { auth, db } from "./firebase.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import {
+    doc,
+    getDoc,
+    collection,
+    addDoc,
+    getDocs,
+    query,
+    orderBy
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const params = new URLSearchParams(window.location.search);
+const bookId = params.get("book");
+const startChapterId = params.get("chapter");
+
+const backBtn = document.getElementById("backBtn");
+const topBookTitle = document.getElementById("topBookTitle");
+const chapterTitle = document.getElementById("chapterTitle");
+const content = document.getElementById("content");
+const commentList = document.getElementById("commentList");
+
+const selectionBubble = document.getElementById("selectionBubble");
+const commentSelectionBtn = document.getElementById("commentSelectionBtn");
+
+let currentUser = null;
+let currentBook = null;                               let currentChapterIndex = 0;
+
+let selectedQuote = "";
+let selectionRange = null;
+let selectedHighlightId = null;
+let activeThreadId = null;
+
+function safeString(value, fallback = "") {
+    return typeof value === "string" ? value : fallback;
+}
+
+function safeArray(value, fallback = []) {                return Array.isArray(value) ? value : fallback;
+}                                                     
+function safeObject(value, fallback = {}) {
+    return value && typeof value === "object" && !Array.isArray(value) ? value : fallback;
+}
+
+function escapeHtml(str) {
+    return safeString(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+}
+
+function normalizeBook(raw) {
+    const data = safeObject(raw, {});
+    const chapters = safeArray(data.chapters, []).map((chapter, index) => {
+        const item = safeObject(chapter, {});                 return {
+            id: safeString(item.id, `chapter-${index + 1}`),
+            title: safeString(item.title, `Chapter ${index + 1}`),
+            content: safeString(item.content, ""),
+            order: typeof item.order === "number" ? item.order : index + 1
+        };
+    });
+
+    return {
+        id: bookId,
+        title: safeString(data.title, "Untitled"),
+        author: safeString(data.author, "unknown"),
+        summary: safeString(data.summary, ""),
+        rating: safeString(data.rating, ""),
+        type: safeString(data.type, ""),
+        tags: safeArray(data.tags, []).filter(tag => typeof tag === "string"),
+        warnings: safeArray(data.warnings, []).filter(tag => typeof tag === "string"),
+        chapters
+    };
+}
+
+function currentChapter() {
+    return currentBook.chapters[currentChapterIndex];
+}
+
+function showToast(text) {
+    alert(text);
+}
+
+function clearSelectionUI() {
+    selectionBubble.classList.remove("open");
+    selectedQuote = "";
+    selectionRange = null;
+    selectedHighlightId = null;
+
+    const threadBackdrop = document.getElementById("threadBackdrop");
+    const threadSheet = document.getElementById("threadSheet");
+    if (threadBackdrop) threadBackdrop.remove();
+    if (threadSheet) threadSheet.remove();
+}
+
+function positionSelectionBubble(rect) {                  const bubbleWidth = 160;
+    let left = rect.left + window.scrollX + (rect.width / 2) - (bubbleWidth / 2);
+    let top = rect.top + window.scrollY - 48;
+
+    if (left < 10) left = 10;
+    if (left + bubbleWidth > window.innerWidth - 10) {
+        left = window.innerWidth - bubbleWidth - 10;
+    }
+
+    if (top < window.scrollY + 10) {
+        top = rect.bottom + window.scrollY + 10;
+    }                                                 
+    selectionBubble.style.left = left + "px";
+    selectionBubble.style.top = top + "px";
+    selectionBubble.classList.add("open");
+}
+
+function selectionInsideContent(range) {
+    if (!range) return false;
+    const container = range.commonAncestorContainer;
+    const element = container.nodeType === 1 ? container : container.parentElement;
+    return content.contains(element);
+}
+
+function detectSelection() {
+    const selection = window.getSelection();
+
+    if (!selection || selection.rangeCount === 0) {
+        clearSelectionUI();
+        return;
+    }
+
+    const text = selection.toString().trim();
+    if (text.length < 3) {
+        clearSelectionUI();
+        return;
+    }
+
+    const range = selection.getRangeAt(0);
+    if (!selectionInsideContent(range)) {
+        clearSelectionUI();
+        return;
+    }
+
+    const rect = range.getBoundingClientRect();
+    if (!rect || (!rect.width && !rect.height)) {
+        clearSelectionUI();                                   return;
+    }
+
+    selectedQuote = text;
+    selectionRange = range.cloneRange();
+    positionSelectionBubble(rect);
+}
+
+async function loadBook() {
+    if (!bookId) {
+        topBookTitle.textContent = "No book selected";
+        chapterTitle.textContent = "No chapter";
+        return;
+    }
+
+    try {
+        const snap = await getDoc(doc(db, "library", bookId));
+
+        if (!snap.exists()) {
+            topBookTitle.textContent = "Story not found";
+            chapterTitle.textContent = "Missing story";
+            content.innerHTML = "<p>This story does not exist in Alysum Library.</p>";
+            return;
+        }
+
+        currentBook = normalizeBook(snap.data());
+
+        if (!currentBook.chapters.length) {
             topBookTitle.textContent = currentBook.title;
-            heroTitle.textContent = currentBook.title;
-            heroAuthor.textContent = "@" + currentBook.author;
-            heroSummary.textContent = currentBook.summary || "No summary yet.";
-            buildHeroTags();
+            chapterTitle.textContent = "No published chapters";
+            content.innerHTML = "<p>This story has no published chapters yet.</p>";
+            return;
         }
 
-        function buildChapterPicker() {
-            chapterPicker.innerHTML = "";
-
-            currentBook.chapters.forEach((chapter, index) => {
-                const option = document.createElement("option");
-                option.value = String(index);
-                option.textContent = `${index + 1}. ${chapter.title || `Chapter ${index + 1}`}`;
-                chapterPicker.appendChild(option);
-            });
-
-            chapterPicker.value = String(currentChapterIndex);
+        if (startChapterId) {
+            const idx = currentBook.chapters.findIndex(ch => ch.id === startChapterId);
+            if (idx >= 0) currentChapterIndex = idx;
         }
 
-        function currentChapter() {
-            return currentBook.chapters[currentChapterIndex];
+        renderChapter();
+    } catch (e) {
+        console.error(e);
+        topBookTitle.textContent = "Error loading";
+        chapterTitle.textContent = "Error";
+        content.innerHTML = "<p>Something went wrong while loading this story.</p>";
+    }                                                 }
+
+function renderChapter() {
+    if (!currentBook) return;
+
+    const chapter = currentChapter();
+
+    topBookTitle.textContent = currentBook.title;
+    chapterTitle.textContent = chapter.title || `Chapter ${currentChapterIndex + 1}`;
+    content.innerHTML = chapter.content || "<p>No chapter text yet.</p>";
+
+    clearSelectionUI();
+    loadCommentsForCurrentChapter();
+    bindAnchorClicks();
+}
+
+async function loadCommentsForCurrentChapter() {
+    if (!currentBook) return;
+
+    const chapter = currentChapter();
+    commentList.innerHTML = "";
+
+    try {
+        const q = query(
+            collection(db, "library", bookId, "comments"),
+            orderBy("createdAt", "desc")
+        );
+
+        const snap = await getDocs(q);
+
+        const comments = snap.docs
+            .map(docSnap => safeObject(docSnap.data(), {}))
+            .filter(comment => safeString(comment.chapterId) === safeString(chapter.id));
+
+        if (!comments.length) {
+            commentList.innerHTML = `<div class="comment-item">No comments on this chapter yet.</div>`;
+            return;
         }
 
-        function updateNavButtons() {
-            const atStart = currentChapterIndex === 0;
-            const atEnd = currentChapterIndex === currentBook.chapters.length - 1;
+        comments.forEach(comment => {
+            const item = document.createElement("div");
+            item.className = "comment-item";
 
-            prevTopBtn.disabled = atStart;
-            prevBottomBtn.disabled = atStart;
-            nextTopBtn.disabled = atEnd;
-            nextBottomBtn.disabled = atEnd;
-        }
+            const username = safeString(comment.username, "reader");
+            const quote = safeString(comment.quote, "");
+            const text = safeString(comment.text, "");
+            const highlightId = safeString(comment.highlightId, "");
 
-        function clearSelectionUI() {
-            selectionBubble.classList.remove("open");
-            selectedQuote = "";
-            selectionRange = null;
-        }
+            item.innerHTML = `
+                <div><strong>@${escapeHtml(username)}</strong></div>
+                <div style="margin:8px 0;color:#a7b4d1;border-left:3px solid #6d28d9;padding-left:10px;">${escapeHtml(quote)}</div>
+                <div>${escapeHtml(text)}</div>
+            `;
 
-        function renderChapter() {
-            const chapter = currentChapter();
+            if (highlightId) {
+                item.style.cursor = "pointer";
+                item.addEventListener("click", () => {
+                    const anchor = document.querySelector(\`.comment-anchor[data-id="\${highlightId}"]\`);                      const highlight = document.querySelector(\`.highlight[data-id="\${highlightId}"]\`);
 
-            chapterPicker.value = String(currentChapterIndex);
-            chapterNumber.textContent = chapter.order || currentChapterIndex + 1;
-            chapterTitle.textContent = chapter.title || `Chapter ${currentChapterIndex + 1}`;
-            content.innerHTML = chapter.content || "";
-            topSubline.textContent = `Chapter ${currentChapterIndex + 1} of ${currentBook.chapters.length}`;
-
-            updateNavButtons();
-            clearSelectionUI();
-            loadCommentsForCurrentChapter();
-
-            window.scrollTo({
-                top: 0,
-                behavior: "smooth"
-            });
-        }
-
-        async function loadBook() {
-            if (!bookId) {
-                showError("No book selected.");
-                return;
-            }
-
-            try {
-                const snap = await getDoc(doc(db, "library", bookId));
-
-                if (!snap.exists()) {
-                    showError("This story does not exist in Alysum Library.");
-                    return;
-                }
-
-                currentBook = normalizeBook(snap.data());
-
-                if (!currentBook.chapters.length) {
-                    showError("This story has no published chapters yet.");
-                    return;
-                }
-
-                if (startChapterId) {
-                    const idx = currentBook.chapters.findIndex(ch => ch.id === startChapterId);
-                    if (idx >= 0) currentChapterIndex = idx;
-                }
-
-                renderHero();
-                buildChapterPicker();
-                renderChapter();
-                showReader();
-            } catch (e) {
-                console.error(e);
-                showError("Something went wrong while loading the story.");
-            }
-        }
-
-        function formatTime(timestamp) {
-            try {
-                return new Date(timestamp).toLocaleString([], {
-                    year: "numeric",
-                    month: "short",
-                    day: "numeric",
-                    hour: "numeric",
-                    minute: "2-digit"
+                    if (highlight) {
+                        highlight.scrollIntoView({ behavior: "smooth", block: "center" });
+                        highlight.style.background = "rgba(255,235,59,0.75)";
+                        setTimeout(() => {
+                            highlight.style.background = "";
+                        }, 1200);
+                    }
+                                                                          if (anchor) {
+                        anchor.style.transform = "scale(1.2)";
+                        setTimeout(() => {
+                            anchor.style.transform = "";
+                        }, 900);
+                    }
                 });
-            } catch {
-                return "";
-            }
-        }
-
-        async function loadCommentsForCurrentChapter() {
-            const chapter = currentChapter();
-            commentList.innerHTML = "";
-            emptyComments.classList.add("hidden");
-            commentsSub.textContent = `Loading comments for ${chapter.title}…`;
-
-            try {
-                const q = query(
-                    collection(db, "library", bookId, "comments"),
-                    orderBy("createdAt", "desc")
-                );
-
-                const snap = await getDocs(q);
-
-                const comments = snap.docs
-                    .map(docSnap => safeObject(docSnap.data(), {}))
-                    .filter(comment => safeString(comment.chapterId) === safeString(chapter.id));
-
-                commentsSub.textContent = `${comments.length} comment${comments.length === 1 ? "" : "s"} on this chapter`;
-
-                if (!comments.length) {
-                    emptyComments.classList.remove("hidden");
-                    return;
-                }
-
-                comments.forEach(comment => {
-                    const item = document.createElement("div");
-                    item.className = "comment-item";
-
-                    const user = safeString(comment.username, "reader");
-                    const quote = safeString(comment.quote, "");
-                    const text = safeString(comment.text, "");
-                    const createdAt = comment.createdAt || Date.now();
-
-                    item.innerHTML = `
-                        <div class="comment-user">@${escapeHtml(user)}</div>
-                        <div class="comment-quote">${escapeHtml(quote)}</div>
-                        <div class="comment-body">${escapeHtml(text)}</div>
-                        <div class="comment-time">${escapeHtml(formatTime(createdAt))}</div>
-                    `;
-
-                    commentList.appendChild(item);
-                });
-            } catch (e) {
-                console.error(e);
-                commentsSub.textContent = "Couldn’t load comments right now.";
-                emptyComments.classList.remove("hidden");
-                emptyComments.textContent = "Comments are unavailable at the moment.";
-            }
-        }
-
-        function escapeHtml(str) {
-            return safeString(str)
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;");
-        }
-
-        function positionSelectionBubble(rect) {
-            const bubbleWidth = 220;
-            let left = rect.left + window.scrollX + (rect.width / 2) - (bubbleWidth / 2);
-            let top = rect.top + window.scrollY - 54;
-
-            if (left < 10) left = 10;
-            if (left + bubbleWidth > window.innerWidth - 10) {
-                left = window.innerWidth - bubbleWidth - 10;
             }
 
-            if (top < window.scrollY + 88) {
-                top = rect.bottom + window.scrollY + 10;
-            }
-
-            selectionBubble.style.left = left + "px";
-            selectionBubble.style.top = top + "px";
-            selectionBubble.classList.add("open");
-        }
-
-        function selectionInsideContent(range) {
-            if (!range) return false;
-            const container = range.commonAncestorContainer;
-            const element = container.nodeType === 1 ? container : container.parentElement;
-            return content.contains(element);
-        }
-
-        function detectSelection() {
-            const selection = window.getSelection();
-
-            if (!selection || selection.rangeCount === 0) {
-                clearSelectionUI();
-                return;
-            }
-
-            const text = selection.toString().trim();
-            if (text.length < 3) {
-                clearSelectionUI();
-                return;
-            }
-
-            const range = selection.getRangeAt(0);
-            if (!selectionInsideContent(range)) {
-                clearSelectionUI();
-                return;
-            }
-
-            const rect = range.getBoundingClientRect();
-            if (!rect || (!rect.width && !rect.height)) {
-                clearSelectionUI();
-                return;
-            }
-
-            selectedQuote = text;
-            selectionRange = range.cloneRange();
-            positionSelectionBubble(rect);
-        }
-
-        function openComposer() {
-            if (!selectedQuote) return;
-            selectedQuoteCard.textContent = selectedQuote;
-            commentInput.value = "";
-            composerBackdrop.classList.add("open");
-            composerSheet.classList.add("open");
-            setTimeout(() => commentInput.focus(), 80);
-        }
-
-        function closeComposer() {
-            composerBackdrop.classList.remove("open");
-            composerSheet.classList.remove("open");
-        }
-
-        async function sendComment() {
-            const text = commentInput.value.trim();
-            if (!text) {
-                showToast("Write a comment first.");
-                return;
-            }
-
-            const chapter = currentChapter();
-
-            if (!currentUser) {
-                showToast("Log in to leave comments.");
-                return;
-            }
-
-            sendCommentBtn.disabled = true;
-
-            try {
-                await addDoc(collection(db, "library", bookId, "comments"), {
-                    uid: currentUser.uid,
-                    username: currentUser.displayName || currentUser.email || "reader",
-                    text,
-                    quote: selectedQuote,
-                    chapterId: chapter.id,
-                    chapterTitle: chapter.title || `Chapter ${currentChapterIndex + 1}`,
-                    createdAt: Date.now()
-                });
-
-                closeComposer();
-                clearSelectionUI();
-                window.getSelection()?.removeAllRanges();
-                await loadCommentsForCurrentChapter();
-                showToast("Comment sent to the author.");
-            } catch (e) {
-                console.error(e);
-                showToast("Couldn’t send comment.");
-            } finally {
-                sendCommentBtn.disabled = false;
-            }
-        }
-
-        function goToChapter(index) {
-            if (!currentBook) return;
-            if (index < 0 || index >= currentBook.chapters.length) return;
-            currentChapterIndex = index;
-            renderChapter();
-        }
-
-        function bindNavigation() {
-            chapterPicker.addEventListener("change", () => {
-                goToChapter(Number(chapterPicker.value));
-            });
-
-            prevTopBtn.addEventListener("click", () => goToChapter(currentChapterIndex - 1));
-            nextTopBtn.addEventListener("click", () => goToChapter(currentChapterIndex + 1));
-            prevBottomBtn.addEventListener("click", () => goToChapter(currentChapterIndex - 1));
-            nextBottomBtn.addEventListener("click", () => goToChapter(currentChapterIndex + 1));
-        }
-
-        function bindSelectionUX() {
-            document.addEventListener("mouseup", () => {
-                if (window.innerWidth > 760) {
-                    requestAnimationFrame(detectSelection);
-                } else {
-                    setTimeout(detectSelection, 120);
-                }
-            });
-
-            document.addEventListener("touchstart", () => {
-                isTouchSelectionFlow = true;
-            }, { passive: true });
-
-            document.addEventListener("touchend", () => {
-                if (!isTouchSelectionFlow) return;
-                setTimeout(detectSelection, 220);
-                isTouchSelectionFlow = false;
-            }, { passive: true });
-
-            document.addEventListener("selectionchange", () => {
-                const selection = window.getSelection();
-                if (!selection || !selection.toString().trim()) return;
-                if (window.innerWidth <= 760) {
-                    clearTimeout(bindSelectionUX._mobileTimer);
-                    bindSelectionUX._mobileTimer = setTimeout(detectSelection, 180);
-                }
-            });
-
-            document.addEventListener("scroll", () => {
-                if (selectionBubble.classList.contains("open")) {
-                    setTimeout(detectSelection, 20);
-                }
-            }, { passive: true });
-
-            commentSelectionBtn.addEventListener("click", () => {
-                selectionBubble.classList.remove("open");
-                openComposer();
-            });
-
-            composerBackdrop.addEventListener("click", closeComposer);
-            cancelCommentBtn.addEventListener("click", closeComposer);
-            closeComposerBtn.addEventListener("click", closeComposer);
-            sendCommentBtn.addEventListener("click", sendComment);
-
-            document.addEventListener("keydown", (e) => {
-                if (e.key === "Escape") {
-                    closeComposer();
-                    clearSelectionUI();
-                    window.getSelection()?.removeAllRanges();
-                }
-            });
-        }
-
-        function bindChrome() {
-            themeBtn.addEventListener("click", toggleTheme);
-
-            backBtn.addEventListener("click", () => {
-                if (document.referrer && document.referrer.includes(location.origin)) {
-                    history.back();
-                } else {
-                    window.location.href = "/library.html";
-                }
-            });
-        }
-
-        function initTheme() {
-            const saved = localStorage.getItem("alysum-reader-theme") || "dark";
-            setTheme(saved);
-        }
-
-        onAuthStateChanged(auth, async (user) => {
-            currentUser = user || null;
+            commentList.appendChild(item);
         });
+    } catch (e) {
+        console.error(e);
+        commentList.innerHTML = `<div class="comment-item">Couldn’t load comments right now.</div>`;
+    }
+}
 
-        initTheme();
-        bindChrome();
-        bindNavigation();
-        bindSelectionUX();
-        loadBook();
-    </script>
-</body>
-</html>
+function goBack() {
+    if (document.referrer && document.referrer.includes(location.origin)) {
+        history.back();
+    } else {
+        window.location.href = "/library.html";
+    }
+}
+
+backBtn.addEventListener("click", goBack);            
+onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+        window.location.href = "/login.html";
+        return;
+    }
+
+    currentUser = user;
+    await loadBook();
+});
+
+document.addEventListener("mouseup", () => {
+    requestAnimationFrame(detectSelection);
+});
+
+document.addEventListener("touchend", () => {
+    setTimeout(detectSelection, 180);
+}, { passive: true });
+
+function bindAnchorClicks() {
+    content.querySelectorAll(".comment-anchor").forEach(anchor => {
+        anchor.addEventListener("click", async (e) => {
+            e.stopPropagation();
+
+            const id = anchor.dataset.id;
+            if (!id) return;
+
+            activeThreadId = id;
+            await openThreadFromAnchor(id);
+        });
+    });
+}
+
+async function openThreadFromAnchor(highlightId) {
+    const chapter = currentChapter();
+    if (!chapter) return;
+
+    try {
+        const q = query(
+            collection(db, "library", bookId, "comments"),
+            orderBy("createdAt", "asc")
+        );
+
+        const snap = await getDocs(q);
+
+        const threadComments = snap.docs
+            .map(docSnap => ({ _id: docSnap.id, ...safeObject(docSnap.data(), {}) }))
+            .filter(comment =>
+                safeString(comment.chapterId) === safeString(chapter.id) &&
+                safeString(comment.highlightId) === safeString(highlightId)
+            );
+
+        const existingSheet = document.getElementById("threadSheet");
+        if (existingSheet) existingSheet.remove();    
+        const existingBackdrop = document.getElementById("threadBackdrop");
+        if (existingBackdrop) existingBackdrop.remove();
+
+        const backdrop = document.createElement("div");
+        backdrop.id = "threadBackdrop";
+        backdrop.style.position = "fixed";
+        backdrop.style.inset = "0";
+        backdrop.style.background = "rgba(0,0,0,0.55)";
+        backdrop.style.zIndex = "200";
+        document.body.appendChild(backdrop);
+
+        const sheet = document.createElement("div");
+        sheet.id = "threadSheet";
+        sheet.style.position = "fixed";
+        sheet.style.left = "0";
+        sheet.style.right = "0";
+        sheet.style.bottom = "0";
+        sheet.style.zIndex = "210";
+        sheet.style.padding = "10px";
+        sheet.innerHTML = `
+            <div style="
+                max-width:760px;
+                margin:0 auto;
+                background:var(--panel);
+                border:1px solid var(--border);
+                border-radius:24px 24px 16px 16px;
+                box-shadow:0 18px 50px rgba(0,0,0,0.35);
+                padding:16px;
+                max-height:80vh;
+                overflow:auto;
+            ">
+                <div style="
+                    width:54px;
+                    height:6px;
+                    border-radius:999px;
+                    background:var(--border);
+                    margin:0 auto 14px;
+                "></div>
+
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px;">
+                    <h3 style="margin:0;font-size:22px;font-weight:900;">Comment Thread</h3>
+                    <button id="closeThreadBtn" style="
+                        width:42px;
+                        height:42px;
+                        border-radius:14px;
+                        border:1px solid var(--border);
+                        background:transparent;
+                        color:var(--text);                                    cursor:pointer;
+                        font-size:18px;
+                    ">✕</button>                                      </div>
+                                                                      <div style="
+                    background:var(--panel-2);                            border:1px solid var(--border);
+                    border-radius:18px;
+                    padding:14px;
+                    color:var(--muted);
+                    font-size:15px;
+                    line-height:1.7;                                      white-space:pre-wrap;
+                    margin-bottom:12px;
+                ">${escapeHtml(threadComments[0]?.quote || "Selected text")}</div>
+
+                <div id="threadMessages" style="display:grid;gap:10px;margin-bottom:12px;">                                     ${
+                        threadComments.length                                     ? threadComments.map(comment => `
+                                <div style="
+                                    background:var(--panel-2);
+                                    border:1px solid var(--border);
+                                    border-radius:16px;
+                                    padding:12px;
+                                ">
+                                    <div style="font-size:14px;font-weight:800;margin-bottom:6px;">
+                                        @${escapeHtml(safeString(comment.username, "reader"))}
+                                    </div>                                                <div style="font-size:15px;line-height:1.6;white-space:pre-wrap;">                                              ${escapeHtml(safeString(comment.text, ""))}
+                                    </div>                                            </div>
+                            `).join("")
+                            : `<div style="color:var(--muted);text-align:center;padding:8px 0;">No comments in this thread yet.</div>`
+                    }
+                </div>
+                                                                      <textarea id="threadReplyInput" placeholder="Reply to this highlighted section…" style="                        width:100%;
+                    min-height:110px;                                     resize:vertical;
+                    border-radius:18px;
+                    border:1px solid var(--border);
+                    background:var(--panel-2);
+                    color:var(--text);                                    padding:14px;
+                    outline:none;                                         font-size:16px;
+                    line-height:1.6;                                      margin-bottom:12px;                                   font-family:inherit;
+                "></textarea>                         
+                <div style="display:flex;gap:10px;">
+                    <button id="cancelThreadReplyBtn" style="                                                                       flex:1;
+                        border:none;                                          border-radius:18px;
+                        height:52px;
+                        font-size:16px;
+                        font-weight:900;
+                        cursor:pointer;
+                        background:var(--panel-2);
+                        color:var(--text);
+                        border:1px solid var(--border);
+                    ">Close</button>                  
+                    <button id="sendThreadReplyBtn" style="
+                        flex:1;
+                        border:none;                                          border-radius:18px;
+                        height:52px;                                          font-size:16px;                                       font-weight:900;
+                        cursor:pointer;                                       background:linear-gradient(135deg, var(--alysum-purple), #7c3aed);
+                        color:white;
+                    ">Send Reply</button>                             </div>
+            </div>                                            `;                                                                                                          document.body.appendChild(sheet);
+                                                              function closeThread() {                                  backdrop.remove();
+            sheet.remove();
+        }                                                                                                           backdrop.addEventListener("click", closeThread);                                                            sheet.querySelector("#closeThreadBtn").addEventListener("click", closeThread);
+        sheet.querySelector("#cancelThreadReplyBtn").addEventListener("click", closeThread);
+                                                              sheet.querySelector("#sendThreadReplyBtn").addEventListener("click", async () => {                              const input = sheet.querySelector("#threadReplyInput");                                                     const text = input.value.trim();
+
+            if (!text) {
+                showToast("Write a reply first.");
+                return;                                           }                                                                                                           if (!currentUser) {
+                showToast("Log in to reply.");
+                return;
+            }                                         
+            try {                                                     await addDoc(collection(db, "library", bookId, "comments"), {
+                    uid: currentUser.uid,                                 username: currentUser.displayName || currentUser.email || "reader",                                         text,
+                    quote: threadComments[0]?.quote || "",
+                    highlightId,                                          chapterId: chapter.id,
+                    chapterTitle: chapter.title || `Chapter ${currentChapterIndex + 1}`,                                        createdAt: Date.now()
+                });                                   
+                closeThread();                                        await loadCommentsForCurrentChapter();
+                showToast("Reply sent.");
+            } catch (e) {
+                console.error(e);                                     showToast("Couldn’t send reply.");
+            }                                                 });
+
+    } catch (e) {                                             console.error(e);
+        showToast("Couldn’t open thread.");
+    }
+}
+
+function insertHighlightAnchor(range, highlightId) {
+    const mark = document.createElement("mark");          mark.className = "highlight";
+    mark.dataset.id = highlightId;                                                                              try {                                                     range.surroundContents(mark);                     } catch (e) {                                             const text = range.toString();
+        if (!text) return false;
+                                                              const span = document.createElement("span");          span.className = "highlight";                         span.dataset.id = highlightId;                        span.textContent = text;                                                                                    range.deleteContents();                               range.insertNode(span);                           }                                                                                                           const target = content.querySelector(`.highlight[data-id="${highlightId}"]`);                               if (!target) return false;
+                                                          const anchor = document.createElement("span");
+    anchor.className = "comment-anchor";                  anchor.dataset.id = highlightId;
+    anchor.textContent = "💬";                        
+    target.insertAdjacentElement("afterend", anchor);     return true;
+}                                                                                                           async function createCommentFromSelection() {             if (!selectedQuote || !selectionRange) {                  showToast("Select text first.");                      return;                                           }                                                                                                           if (!currentUser) {                                       showToast("Log in to comment.");
+        return;                                           }
+                                                          const text = prompt("Leave a comment for the author:");                                                     if (!text || !text.trim()) return;
+
+    const chapter = currentChapter();                     const highlightId = "hl_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8);                                                                            try {
+        const inserted = insertHighlightAnchor(selectionRange, highlightId);                                                                                              if (!inserted) {
+            showToast("Couldn’t anchor that selection.");                                                               return;                                           }
+                                                              await addDoc(collection(db, "library", bookId, "comments"), {                                                   uid: currentUser.uid,
+            username: currentUser.displayName || currentUser.email || "reader",
+            text: text.trim(),
+            quote: selectedQuote,                                 highlightId,
+            chapterId: chapter.id,                                chapterTitle: chapter.title || `Chapter ${currentChapterIndex + 1}`,                                        createdAt: Date.now()                             });
+                                                              bindAnchorClicks();
+        clearSelectionUI();                                   window.getSelection()?.removeAllRanges();                                                                   await loadCommentsForCurrentChapter();                showToast("Comment sent.");
+    } catch (e) {
+        console.error(e);                                     showToast("Couldn’t send comment.");
+    }
+}                                                     
+commentSelectionBtn.addEventListener("click", async () => {
+    selectionBubble.classList.remove("open");             await createCommentFromSelection();               });                                                                                                         document.addEventListener("selectionchange", () => {      const selection = window.getSelection();
+    if (!selection || !selection.toString().trim()) return;                                                                                                           if (window.innerWidth <= 760) {                           clearTimeout(window.__alysumSelectionTimer);          window.__alysumSelectionTimer = setTimeout(detectSelection, 180);                                       }                                                 });
+                                                      document.addEventListener("scroll", () => {
+    if (selectionBubble.classList.contains("open")) {         setTimeout(detectSelection, 20);                  }                                                 }, { passive: true });                                                                                      document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {                                 clearSelectionUI();                                   window.getSelection()?.removeAllRanges();     
+        const threadBackdrop = document.getElementById("threadBackdrop");
+        const threadSheet = document.getElementById("threadSheet");
+        if (threadBackdrop) threadBackdrop.remove();          if (threadSheet) threadSheet.remove();
+    }                                                 });                                                                                                         
+</script>
