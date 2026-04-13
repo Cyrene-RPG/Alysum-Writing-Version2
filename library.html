@@ -2,13 +2,12 @@
 <html>
 <head>
     <title>Alysum Library</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">                                  
+    
     <style>
         * {
             box-sizing: border-box;
-        }
-
+        }                                             
         :root {
             --alysum-purple: #6d28d9;
             --alysum-purple-dark: #5b21b6;
@@ -20,21 +19,18 @@
             --border: rgba(255,255,255,0.08);
             --chip: rgba(255,255,255,0.08);
             --shadow: 0 14px 34px rgba(0,0,0,0.28);
-        }
-
+        }                                             
         html, body {
             margin: 0;
             min-height: 100%;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
             background: var(--bg);
             color: var(--text);
-        }
-
+        }                                                                                                          
         body {
             display: flex;
             flex-direction: column;
-        }
-
+        }                                                                                                          
         .topbar {
             position: sticky;
             top: 0;
@@ -42,26 +38,23 @@
             border-bottom: 1px solid var(--border);
             background: rgba(11, 18, 32, 0.88);
             backdrop-filter: blur(12px);
-        }
-
+        }                                             
         .topbar-inner {
             max-width: 1320px;
             margin: 0 auto;
             padding: 18px 20px 14px;
         }
-
+                                                             
         .brand-row {
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 12px;
             flex-wrap: wrap;
-        }
-
+        }                                                                                                          
         .brand-block {
             min-width: 0;
-        }
-
+        }                                                                                                          
         .eyebrow {
             font-size: 12px;
             font-weight: 800;
@@ -69,23 +62,21 @@
             text-transform: uppercase;
             color: #c4b5fd;
             margin-bottom: 6px;
-        }
-
+        }                                             
         .title {
             margin: 0;
             font-size: 34px;
             font-weight: 900;
             letter-spacing: -0.02em;
         }
-
+                                                             
         .subtitle {
             margin-top: 8px;
             color: var(--text-soft);
             font-size: 15px;
             line-height: 1.5;
             max-width: 760px;
-        }
-
+        }                                                                                                          
         .home-link {
             display: inline-flex;
             align-items: center;
@@ -99,14 +90,13 @@
             font-weight: 800;
             white-space: nowrap;
         }
-
+                                                             
         .nav-row {
             margin-top: 18px;
             display: flex;
             gap: 10px;
             flex-wrap: wrap;
-        }
-
+        }                                                                                                          
         .nav-btn {
             border: 1px solid var(--border);
             background: var(--panel);
@@ -116,18 +106,16 @@
             font-size: 14px;
             font-weight: 800;
             cursor: pointer;
-        }
-
+        }                                             
         .nav-btn.active {
             background: linear-gradient(135deg, var(--alysum-purple-dark), var(--alysum-purple));
             color: white;
             border-color: transparent;
         }
-
+                                                             
         .search-wrap {
             margin-top: 16px;
-        }
-
+        }                                                                                                          
         .search-input {
             width: 100%;
             border: 1px solid var(--border);
@@ -137,8 +125,7 @@
             padding: 15px 16px;
             font-size: 15px;
             outline: none;
-        }
-
+        }                                             
         .search-input::placeholder {
             color: #7b8798;
         }
@@ -148,8 +135,7 @@
             max-width: 1320px;
             margin: 0 auto;
             padding: 22px 20px 40px;
-        }
-
+        }                                                                                                          
         .results-bar {
             display: flex;
             align-items: center;
@@ -157,14 +143,13 @@
             gap: 12px;
             margin-bottom: 18px;
             flex-wrap: wrap;
-        }
-
+        }                                                                                                          
         .results-text {
             font-size: 14px;
             color: var(--text-soft);
             font-weight: 700;
         }
-
+                                                             
         .refresh-btn {
             border: 1px solid var(--border);
             background: var(--panel);
@@ -174,14 +159,12 @@
             font-size: 14px;
             font-weight: 800;
             cursor: pointer;
-        }
-
+        }                                             
         .grid {
             display: grid;
             grid-template-columns: repeat(3, minmax(0, 1fr));
             gap: 18px;
-        }
-
+        }                                                                                                          
         .card {
             background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.00)), var(--panel);
             border: 1px solid var(--border);
@@ -194,13 +177,11 @@
             min-width: 0;
             cursor: pointer;
             transition: transform 0.15s ease, border-color 0.15s ease;
-        }
-
+        }                                             
         .card:hover {
             transform: translateY(-2px);
             border-color: rgba(167,139,250,0.32);
-        }
-
+        }                                                                                                          
         .card-top {
             display: flex;
             align-items: flex-start;
@@ -217,8 +198,7 @@
             font-weight: 900;
             line-height: 1.15;
             word-break: break-word;
-        }
-
+        }                                                                                                          
         .card-author {
             margin-top: 6px;
             font-size: 14px;
@@ -253,12 +233,11 @@
             font-size: 12px;
             font-weight: 800;
             line-height: 1.2;
-        }
-
+        }                                                                                                          
         .chip.soft {
             color: var(--text-soft);
         }
-
+                                                             
         .summary {
             color: #d1d5db;
             font-size: 14px;
@@ -269,13 +248,12 @@
             overflow: hidden;
             min-height: 4.8em;
         }
-
+                                                             
         .warning-block {
             display: flex;
             flex-direction: column;
             gap: 8px;
-        }
-
+        }                                             
         .block-label {
             font-size: 12px;
             font-weight: 900;
@@ -283,15 +261,14 @@
             text-transform: uppercase;
             color: var(--text-soft);
         }
-
+                                                             
         .warning-chips,
         .genre-chips,
         .tag-chips {
             display: flex;
             gap: 8px;
             flex-wrap: wrap;
-        }
-
+        }                                             
         .card-footer {
             margin-top: auto;
             display: flex;
@@ -301,13 +278,13 @@
             flex-wrap: wrap;
             padding-top: 6px;
         }
-
+                                                             
         .footer-meta {
             color: var(--text-soft);
             font-size: 13px;
             font-weight: 700;
         }
-
+                                                             
         .read-btn {
             border: none;
             background: linear-gradient(135deg, var(--alysum-purple-dark), var(--alysum-purple));
@@ -318,7 +295,7 @@
             font-weight: 900;
             cursor: pointer;
         }
-
+                                                             
         .empty,
         .loading,
         .error {
@@ -335,7 +312,7 @@
         .hidden {
             display: none !important;
         }
-
+                                                             
         @media (max-width: 1100px) {
             .grid {
                 grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -352,19 +329,18 @@
             .title {
                 font-size: 28px;
             }
-
+                                                                 
             .grid {
                 grid-template-columns: 1fr;
-            }
-
+            }                                                                                                          
             .card-title {
                 font-size: 20px;
             }
-
+                                                                 
             .card-footer {
                 align-items: stretch;
             }
-
+                                                                 
             .read-btn {
                 width: 100%;
             }
@@ -372,7 +348,6 @@
     </style>
 </head>
 <body>
-
     <div class="topbar">
         <div class="topbar-inner">
             <div class="brand-row">
@@ -384,7 +359,10 @@
                     </div>
                 </div>
 
-                <a class="home-link" href="/studio.html">Back to Studio</a>
+                <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                    <div id="userStatus" style="font-size:13px; font-weight:900; color:#c4b5fd;"></div>
+                    <a class="home-link" href="/studio.html">Back to Studio</a>
+                </div>
             </div>
 
             <div class="nav-row">
@@ -419,11 +397,16 @@
     </main>
 
     <script type="module">
-        import { db } from "./firebase.js";
+        import { db, auth } from "./firebase.js";
         import {
             collection,
-            getDocs
+            getDocs,
+            doc,
+            getDoc
         } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import {
+            onAuthStateChanged
+        } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
         const navButtons = document.querySelectorAll(".nav-btn");
         const searchInput = document.getElementById("searchInput");
@@ -434,9 +417,32 @@
         const errorState = document.getElementById("errorState");
         const emptyState = document.getElementById("emptyState");
         const bookGrid = document.getElementById("bookGrid");
+        const userStatus = document.getElementById("userStatus");
 
         let allBooks = [];
         let currentFilter = "fiction";
+        let currentUser = null;
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUser = user;
+
+                try {
+                    const snap = await getDoc(doc(db, "users", user.uid));
+                    const username = snap.exists()
+                        ? snap.data().username || "user"
+                        : "user";
+
+                    userStatus.textContent = "@" + username;
+                } catch (e) {
+                    console.error(e);
+                    userStatus.textContent = "Logged in";
+                }
+            } else {
+                currentUser = null;
+                userStatus.innerHTML = `<a href="/login.html" style="color:#c4b5fd; font-weight:900; text-decoration:none;">Log in</a>`;
+            }
+        });
 
         function safeString(value, fallback = "") {
             return typeof value === "string" ? value : fallback;
@@ -692,6 +698,5 @@
 
         loadBooks();
     </script>
-
 </body>
 </html>

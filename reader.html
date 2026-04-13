@@ -4,36 +4,25 @@
 <title>Alysum Reader</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<style>
-* { box-sizing: border-box; }
-
+<style>                                               * { box-sizing: border-box; }                         
 :root {
     --alysum-purple: #6d28d9;
-    --bg: #07101f;
-    --panel: #0d1830;
-    --panel-2: #101d39;
-    --text: #edf2ff;
+    --bg: #07101f;                                        --panel: #0d1830;
+    --panel-2: #101d39;                                   --text: #edf2ff;
     --muted: #a7b4d1;
     --border: rgba(255,255,255,0.10);
 }
-
-body {
+                                                      body {
     margin:0;
-    background: var(--bg);
-    color: var(--text);
+    background: var(--bg);                                color: var(--text);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-}
-
+}                                                     
 /* ===== TOPBAR ===== */
-.topbar {
-    height:70px;
-    display:flex;
-    align-items:center;
+.topbar {                                                 height:70px;
+    display:flex;                                         align-items:center;
     justify-content:space-between;
-    padding:0 16px;
-    border-bottom:1px solid var(--border);
-}
-
+    padding:0 16px;                                       border-bottom:1px solid var(--border);
+}                                                     
 .icon-btn {
     width:44px;
     height:44px;
@@ -41,10 +30,8 @@ body {
     border:1px solid var(--border);
     background:transparent;
     color:white;
-    font-size:20px;
-}
-
-/* ===== READER ===== */
+    font-size:20px;                                   }
+                                                      /* ===== READER ===== */
 .shell {
     max-width:860px;
     margin:auto;
@@ -54,20 +41,15 @@ body {
 .reader-card {
     background:var(--panel);
     border:1px solid var(--border);
-    border-radius:24px;
-    padding:20px;
-}
-
-.chapter-title {
-    text-align:center;
+    border-radius:24px;                                   padding:20px;
+}                                                     
+.chapter-title {                                          text-align:center;
     font-size:32px;
     margin-bottom:20px;
 }
 
 .content {
-    font-family: Georgia, serif;
-    font-size:24px;
-    line-height:1.9;
+    font-family: Georgia, serif;                          font-size:24px;                                       line-height:1.9;
 }
 
 /* ===== HIGHLIGHT ===== */
@@ -101,16 +83,14 @@ body {
     padding:10px;
     border:1px solid var(--border);
     border-radius:14px;
-    margin-bottom:10px;
-}
+    margin-bottom:10px;                               }
 
 /* ===== SELECTION BUBBLE ===== */
 .selection-bubble {
     position:absolute;
     display:none;
     background:black;
-    padding:8px 12px;
-    border-radius:999px;
+    padding:8px 12px;                                     border-radius:999px;
     z-index:100;
 }
 
@@ -120,12 +100,9 @@ body {
 
 /* ===== MOBILE ===== */
 @media(max-width:760px){
-    .content { font-size:20px; }
-}
-</style>
-</head>
-
-<body>
+    .content { font-size:20px; }                      }
+</style>                                              </head>
+                                                      <body>
 
 <div class="topbar">
     <button class="icon-btn" id="backBtn">←</button>
@@ -140,10 +117,8 @@ body {
 </div>
 
 <div class="comments-card" id="commentList"></div>
-
-</div>
-
-<div class="selection-bubble" id="selectionBubble">
+                                                      </div>
+                                                      <div class="selection-bubble" id="selectionBubble">
     <button id="commentSelectionBtn">💬 Comment</button>
 </div>
 <script type="module">
@@ -173,8 +148,7 @@ const selectionBubble = document.getElementById("selectionBubble");
 const commentSelectionBtn = document.getElementById("commentSelectionBtn");
 
 let currentUser = null;
-let currentBook = null;
-let currentChapterIndex = 0;
+let currentBook = null;                               let currentChapterIndex = 0;
 
 let selectedQuote = "";
 let selectionRange = null;
@@ -185,10 +159,8 @@ function safeString(value, fallback = "") {
     return typeof value === "string" ? value : fallback;
 }
 
-function safeArray(value, fallback = []) {
-    return Array.isArray(value) ? value : fallback;
-}
-
+function safeArray(value, fallback = []) {                return Array.isArray(value) ? value : fallback;
+}                                                     
 function safeObject(value, fallback = {}) {
     return value && typeof value === "object" && !Array.isArray(value) ? value : fallback;
 }
@@ -203,8 +175,7 @@ function escapeHtml(str) {
 function normalizeBook(raw) {
     const data = safeObject(raw, {});
     const chapters = safeArray(data.chapters, []).map((chapter, index) => {
-        const item = safeObject(chapter, {});
-        return {
+        const item = safeObject(chapter, {});                 return {
             id: safeString(item.id, `chapter-${index + 1}`),
             title: safeString(item.title, `Chapter ${index + 1}`),
             content: safeString(item.content, ""),
@@ -238,10 +209,14 @@ function clearSelectionUI() {
     selectedQuote = "";
     selectionRange = null;
     selectedHighlightId = null;
+
+    const threadBackdrop = document.getElementById("threadBackdrop");
+    const threadSheet = document.getElementById("threadSheet");
+    if (threadBackdrop) threadBackdrop.remove();
+    if (threadSheet) threadSheet.remove();
 }
 
-function positionSelectionBubble(rect) {
-    const bubbleWidth = 160;
+function positionSelectionBubble(rect) {                  const bubbleWidth = 160;
     let left = rect.left + window.scrollX + (rect.width / 2) - (bubbleWidth / 2);
     let top = rect.top + window.scrollY - 48;
 
@@ -252,8 +227,7 @@ function positionSelectionBubble(rect) {
 
     if (top < window.scrollY + 10) {
         top = rect.bottom + window.scrollY + 10;
-    }
-
+    }                                                 
     selectionBubble.style.left = left + "px";
     selectionBubble.style.top = top + "px";
     selectionBubble.classList.add("open");
@@ -288,8 +262,7 @@ function detectSelection() {
 
     const rect = range.getBoundingClientRect();
     if (!rect || (!rect.width && !rect.height)) {
-        clearSelectionUI();
-        return;
+        clearSelectionUI();                                   return;
     }
 
     selectedQuote = text;
@@ -334,8 +307,7 @@ async function loadBook() {
         topBookTitle.textContent = "Error loading";
         chapterTitle.textContent = "Error";
         content.innerHTML = "<p>Something went wrong while loading this story.</p>";
-    }
-}
+    }                                                 }
 
 function renderChapter() {
     if (!currentBook) return;
@@ -392,8 +364,7 @@ async function loadCommentsForCurrentChapter() {
             if (highlightId) {
                 item.style.cursor = "pointer";
                 item.addEventListener("click", () => {
-                    const anchor = document.querySelector(\`.comment-anchor[data-id="\${highlightId}"]\`);
-                    const highlight = document.querySelector(\`.highlight[data-id="\${highlightId}"]\`);
+                    const anchor = document.querySelector(\`.comment-anchor[data-id="\${highlightId}"]\`);                      const highlight = document.querySelector(\`.highlight[data-id="\${highlightId}"]\`);
 
                     if (highlight) {
                         highlight.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -402,8 +373,7 @@ async function loadCommentsForCurrentChapter() {
                             highlight.style.background = "";
                         }, 1200);
                     }
-
-                    if (anchor) {
+                                                                          if (anchor) {
                         anchor.style.transform = "scale(1.2)";
                         setTimeout(() => {
                             anchor.style.transform = "";
@@ -428,10 +398,13 @@ function goBack() {
     }
 }
 
-backBtn.addEventListener("click", goBack);
-
+backBtn.addEventListener("click", goBack);            
 onAuthStateChanged(auth, async (user) => {
-    currentUser = user || null;
+    if (!user) {
+        window.location.href = "/login.html";
+        return;
+    }
+    currentUser = user;
 });
 
 document.addEventListener("mouseup", () => {
@@ -476,8 +449,7 @@ async function openThreadFromAnchor(highlightId) {
             );
 
         const existingSheet = document.getElementById("threadSheet");
-        if (existingSheet) existingSheet.remove();
-
+        if (existingSheet) existingSheet.remove();    
         const existingBackdrop = document.getElementById("threadBackdrop");
         if (existingBackdrop) existingBackdrop.remove();
 
@@ -525,28 +497,21 @@ async function openThreadFromAnchor(highlightId) {
                         border-radius:14px;
                         border:1px solid var(--border);
                         background:transparent;
-                        color:var(--text);
-                        cursor:pointer;
+                        color:var(--text);                                    cursor:pointer;
                         font-size:18px;
-                    ">✕</button>
-                </div>
-
-                <div style="
-                    background:var(--panel-2);
-                    border:1px solid var(--border);
+                    ">✕</button>                                      </div>
+                                                                      <div style="
+                    background:var(--panel-2);                            border:1px solid var(--border);
                     border-radius:18px;
                     padding:14px;
                     color:var(--muted);
                     font-size:15px;
-                    line-height:1.7;
-                    white-space:pre-wrap;
+                    line-height:1.7;                                      white-space:pre-wrap;
                     margin-bottom:12px;
                 ">${escapeHtml(threadComments[0]?.quote || "Selected text")}</div>
 
-                <div id="threadMessages" style="display:grid;gap:10px;margin-bottom:12px;">
-                    ${
-                        threadComments.length
-                            ? threadComments.map(comment => `
+                <div id="threadMessages" style="display:grid;gap:10px;margin-bottom:12px;">                                     ${
+                        threadComments.length                                     ? threadComments.map(comment => `
                                 <div style="
                                     background:var(--panel-2);
                                     border:1px solid var(--border);
@@ -555,37 +520,24 @@ async function openThreadFromAnchor(highlightId) {
                                 ">
                                     <div style="font-size:14px;font-weight:800;margin-bottom:6px;">
                                         @${escapeHtml(safeString(comment.username, "reader"))}
-                                    </div>
-                                    <div style="font-size:15px;line-height:1.6;white-space:pre-wrap;">
-                                        ${escapeHtml(safeString(comment.text, ""))}
-                                    </div>
-                                </div>
+                                    </div>                                                <div style="font-size:15px;line-height:1.6;white-space:pre-wrap;">                                              ${escapeHtml(safeString(comment.text, ""))}
+                                    </div>                                            </div>
                             `).join("")
                             : `<div style="color:var(--muted);text-align:center;padding:8px 0;">No comments in this thread yet.</div>`
                     }
                 </div>
-
-                <textarea id="threadReplyInput" placeholder="Reply to this highlighted section…" style="
-                    width:100%;
-                    min-height:110px;
-                    resize:vertical;
+                                                                      <textarea id="threadReplyInput" placeholder="Reply to this highlighted section…" style="                        width:100%;
+                    min-height:110px;                                     resize:vertical;
                     border-radius:18px;
                     border:1px solid var(--border);
                     background:var(--panel-2);
-                    color:var(--text);
-                    padding:14px;
-                    outline:none;
-                    font-size:16px;
-                    line-height:1.6;
-                    margin-bottom:12px;
-                    font-family:inherit;
-                "></textarea>
-
+                    color:var(--text);                                    padding:14px;
+                    outline:none;                                         font-size:16px;
+                    line-height:1.6;                                      margin-bottom:12px;                                   font-family:inherit;
+                "></textarea>                         
                 <div style="display:flex;gap:10px;">
-                    <button id="cancelThreadReplyBtn" style="
-                        flex:1;
-                        border:none;
-                        border-radius:18px;
+                    <button id="cancelThreadReplyBtn" style="                                                                       flex:1;
+                        border:none;                                          border-radius:18px;
                         height:52px;
                         font-size:16px;
                         font-weight:900;
@@ -593,190 +545,80 @@ async function openThreadFromAnchor(highlightId) {
                         background:var(--panel-2);
                         color:var(--text);
                         border:1px solid var(--border);
-                    ">Close</button>
-
+                    ">Close</button>                  
                     <button id="sendThreadReplyBtn" style="
                         flex:1;
-                        border:none;
-                        border-radius:18px;
-                        height:52px;
-                        font-size:16px;
-                        font-weight:900;
-                        cursor:pointer;
-                        background:linear-gradient(135deg, var(--alysum-purple), #7c3aed);
+                        border:none;                                          border-radius:18px;
+                        height:52px;                                          font-size:16px;                                       font-weight:900;
+                        cursor:pointer;                                       background:linear-gradient(135deg, var(--alysum-purple), #7c3aed);
                         color:white;
-                    ">Send Reply</button>
-                </div>
-            </div>
-        `;
-
-        document.body.appendChild(sheet);
-
-        function closeThread() {
-            backdrop.remove();
+                    ">Send Reply</button>                             </div>
+            </div>                                            `;                                                                                                          document.body.appendChild(sheet);
+                                                              function closeThread() {                                  backdrop.remove();
             sheet.remove();
-        }
-
-        backdrop.addEventListener("click", closeThread);
-        sheet.querySelector("#closeThreadBtn").addEventListener("click", closeThread);
+        }                                                                                                           backdrop.addEventListener("click", closeThread);                                                            sheet.querySelector("#closeThreadBtn").addEventListener("click", closeThread);
         sheet.querySelector("#cancelThreadReplyBtn").addEventListener("click", closeThread);
-
-        sheet.querySelector("#sendThreadReplyBtn").addEventListener("click", async () => {
-            const input = sheet.querySelector("#threadReplyInput");
-            const text = input.value.trim();
+                                                              sheet.querySelector("#sendThreadReplyBtn").addEventListener("click", async () => {                              const input = sheet.querySelector("#threadReplyInput");                                                     const text = input.value.trim();
 
             if (!text) {
                 showToast("Write a reply first.");
-                return;
-            }
-
-            if (!currentUser) {
+                return;                                           }                                                                                                           if (!currentUser) {
                 showToast("Log in to reply.");
                 return;
-            }
-
-            try {
-                await addDoc(collection(db, "library", bookId, "comments"), {
-                    uid: currentUser.uid,
-                    username: currentUser.displayName || currentUser.email || "reader",
-                    text,
+            }                                         
+            try {                                                     await addDoc(collection(db, "library", bookId, "comments"), {
+                    uid: currentUser.uid,                                 username: currentUser.displayName || currentUser.email || "reader",                                         text,
                     quote: threadComments[0]?.quote || "",
-                    highlightId,
-                    chapterId: chapter.id,
-                    chapterTitle: chapter.title || `Chapter ${currentChapterIndex + 1}`,
-                    createdAt: Date.now()
-                });
-
-                closeThread();
-                await loadCommentsForCurrentChapter();
+                    highlightId,                                          chapterId: chapter.id,
+                    chapterTitle: chapter.title || `Chapter ${currentChapterIndex + 1}`,                                        createdAt: Date.now()
+                });                                   
+                closeThread();                                        await loadCommentsForCurrentChapter();
                 showToast("Reply sent.");
             } catch (e) {
-                console.error(e);
-                showToast("Couldn’t send reply.");
-            }
-        });
+                console.error(e);                                     showToast("Couldn’t send reply.");
+            }                                                 });
 
-    } catch (e) {
-        console.error(e);
+    } catch (e) {                                             console.error(e);
         showToast("Couldn’t open thread.");
     }
 }
 
 function insertHighlightAnchor(range, highlightId) {
-    const mark = document.createElement("mark");
-    mark.className = "highlight";
-    mark.dataset.id = highlightId;
-
-    try {
-        range.surroundContents(mark);
-    } catch (e) {
-        const text = range.toString();
+    const mark = document.createElement("mark");          mark.className = "highlight";
+    mark.dataset.id = highlightId;                                                                              try {                                                     range.surroundContents(mark);                     } catch (e) {                                             const text = range.toString();
         if (!text) return false;
+                                                              const span = document.createElement("span");          span.className = "highlight";                         span.dataset.id = highlightId;                        span.textContent = text;                                                                                    range.deleteContents();                               range.insertNode(span);                           }                                                                                                           const target = content.querySelector(`.highlight[data-id="${highlightId}"]`);                               if (!target) return false;
+                                                          const anchor = document.createElement("span");
+    anchor.className = "comment-anchor";                  anchor.dataset.id = highlightId;
+    anchor.textContent = "💬";                        
+    target.insertAdjacentElement("afterend", anchor);     return true;
+}                                                                                                           async function createCommentFromSelection() {             if (!selectedQuote || !selectionRange) {                  showToast("Select text first.");                      return;                                           }                                                                                                           if (!currentUser) {                                       showToast("Log in to comment.");
+        return;                                           }
+                                                          const text = prompt("Leave a comment for the author:");                                                     if (!text || !text.trim()) return;
 
-        const span = document.createElement("span");
-        span.className = "highlight";
-        span.dataset.id = highlightId;
-        span.textContent = text;
-
-        range.deleteContents();
-        range.insertNode(span);
-    }
-
-    const target = content.querySelector(`.highlight[data-id="${highlightId}"]`);
-    if (!target) return false;
-
-    const anchor = document.createElement("span");
-    anchor.className = "comment-anchor";
-    anchor.dataset.id = highlightId;
-    anchor.textContent = "💬";
-
-    target.insertAdjacentElement("afterend", anchor);
-    return true;
-}
-
-async function createCommentFromSelection() {
-    if (!selectedQuote || !selectionRange) {
-        showToast("Select text first.");
-        return;
-    }
-
-    if (!currentUser) {
-        showToast("Log in to comment.");
-        return;
-    }
-
-    const text = prompt("Leave a comment for the author:");
-    if (!text || !text.trim()) return;
-
-    const chapter = currentChapter();
-    const highlightId = "hl_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8);
-
-    try {
-        const inserted = insertHighlightAnchor(selectionRange, highlightId);
-
-        if (!inserted) {
-            showToast("Couldn’t anchor that selection.");
-            return;
-        }
-
-        await addDoc(collection(db, "library", bookId, "comments"), {
-            uid: currentUser.uid,
+    const chapter = currentChapter();                     const highlightId = "hl_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8);                                                                            try {
+        const inserted = insertHighlightAnchor(selectionRange, highlightId);                                                                                              if (!inserted) {
+            showToast("Couldn’t anchor that selection.");                                                               return;                                           }
+                                                              await addDoc(collection(db, "library", bookId, "comments"), {                                                   uid: currentUser.uid,
             username: currentUser.displayName || currentUser.email || "reader",
             text: text.trim(),
-            quote: selectedQuote,
-            highlightId,
-            chapterId: chapter.id,
-            chapterTitle: chapter.title || `Chapter ${currentChapterIndex + 1}`,
-            createdAt: Date.now()
-        });
-
-        bindAnchorClicks();
-        clearSelectionUI();
-        window.getSelection()?.removeAllRanges();
-
-        await loadCommentsForCurrentChapter();
-        showToast("Comment sent.");
+            quote: selectedQuote,                                 highlightId,
+            chapterId: chapter.id,                                chapterTitle: chapter.title || `Chapter ${currentChapterIndex + 1}`,                                        createdAt: Date.now()                             });
+                                                              bindAnchorClicks();
+        clearSelectionUI();                                   window.getSelection()?.removeAllRanges();                                                                   await loadCommentsForCurrentChapter();                showToast("Comment sent.");
     } catch (e) {
-        console.error(e);
-        showToast("Couldn’t send comment.");
+        console.error(e);                                     showToast("Couldn’t send comment.");
     }
-}
-
+}                                                     
 commentSelectionBtn.addEventListener("click", async () => {
-    selectionBubble.classList.remove("open");
-    await createCommentFromSelection();
-});
-
-document.addEventListener("selectionchange", () => {
-    const selection = window.getSelection();
-    if (!selection || !selection.toString().trim()) return;
-
-    if (window.innerWidth <= 760) {
-        clearTimeout(window.__alysumSelectionTimer);
-        window.__alysumSelectionTimer = setTimeout(detectSelection, 180);
-    }
-});
-
-document.addEventListener("scroll", () => {
-    if (selectionBubble.classList.contains("open")) {
-        setTimeout(detectSelection, 20);
-    }
-}, { passive: true });
-
-document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") {
-        clearSelectionUI();
-        window.getSelection()?.removeAllRanges();
-
+    selectionBubble.classList.remove("open");             await createCommentFromSelection();               });                                                                                                         document.addEventListener("selectionchange", () => {      const selection = window.getSelection();
+    if (!selection || !selection.toString().trim()) return;                                                                                                           if (window.innerWidth <= 760) {                           clearTimeout(window.__alysumSelectionTimer);          window.__alysumSelectionTimer = setTimeout(detectSelection, 180);                                       }                                                 });
+                                                      document.addEventListener("scroll", () => {
+    if (selectionBubble.classList.contains("open")) {         setTimeout(detectSelection, 20);                  }                                                 }, { passive: true });                                                                                      document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {                                 clearSelectionUI();                                   window.getSelection()?.removeAllRanges();     
         const threadBackdrop = document.getElementById("threadBackdrop");
         const threadSheet = document.getElementById("threadSheet");
-        if (threadBackdrop) threadBackdrop.remove();
-        if (threadSheet) threadSheet.remove();
-    }
-});
-
-loadBook();
+        if (threadBackdrop) threadBackdrop.remove();          if (threadSheet) threadSheet.remove();
+    }                                                 });                                                                                                         loadBook();
 </script>
-
-</body>
-</html>
+                                                      </body>                                               </html>
