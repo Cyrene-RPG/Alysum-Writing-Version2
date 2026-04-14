@@ -18,7 +18,9 @@
       --muted: #9ca3af;
       --border: rgba(255,255,255,0.08);
       --shadow: 0 14px 34px rgba(0,0,0,0.28);
-      --reader-max: 920px;
+      --reader-max: 980px;
+      --page-max: 1480px;
+      --sidebar-w: 300px;
       --font-size: 22px;
       --line-height: 1.95;
     }
@@ -44,6 +46,10 @@
       background: var(--bg);
       color: var(--text);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .hidden {
+      display: none !important;
     }
 
     .topbar {
@@ -115,9 +121,102 @@
 
     .page {
       width: 100%;
-      max-width: 1120px;
+      max-width: var(--page-max);
       margin: 0 auto;
       padding: 20px 16px 120px;
+    }
+
+    .reader-layout {
+      display: grid;
+      grid-template-columns: minmax(0, var(--sidebar-w)) minmax(0, 1fr);
+      gap: 20px;
+      align-items: start;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 78px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+
+    .sidebar-title {
+      font-size: 24px;
+      line-height: 1.1;
+      font-weight: 900;
+      margin: 0;
+    }
+
+    .sidebar-author {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .sidebar-summary {
+      margin-top: 14px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.65;
+      white-space: pre-wrap;
+    }
+
+    .sidebar-block {
+      margin-top: 16px;
+    }
+
+    .mobile-drawer-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 79;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .mobile-drawer-backdrop.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .mobile-drawer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: min(86vw, 360px);
+      background: var(--panel);
+      border-right: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      z-index: 80;
+      transform: translateX(-100%);
+      transition: transform 0.22s ease;
+      overflow-y: auto;
+      padding: 18px;
+    }
+
+    .mobile-drawer.open {
+      transform: translateX(0);
+    }
+
+    .mobile-drawer-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .drawer-close {
+      min-width: 44px;
+      min-height: 44px;
+      padding: 0;
+      border-radius: 12px;
     }
 
     .status,
@@ -335,6 +434,7 @@
       flex-wrap: wrap;
     }
 
+    .likes-card,
     .comments-card {
       max-width: var(--reader-max);
       margin: 18px auto 0;
@@ -345,10 +445,32 @@
       padding: 18px;
     }
 
+    .likes-title,
     .comments-title {
       font-size: 18px;
       font-weight: 900;
       margin-bottom: 12px;
+    }
+
+    .likes-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .kudos-note {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .kudos-count {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 800;
     }
 
     .comment-list {
@@ -401,6 +523,42 @@
       height: 40px;
     }
 
+    @media (min-width: 1080px) {
+      .hero {
+        display: none;
+      }
+
+      .page-main {
+        min-width: 0;
+      }
+
+      .reader-card,
+      .nav-row,
+      .reader-tools,
+      .likes-card,
+      .comments-card,
+      .status,
+      .error-box {
+        max-width: none;
+      }
+    }
+
+    @media (max-width: 1079px) {
+      .reader-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        display: none;
+      }
+    }
+
+    @media (min-width: 1080px) {
+      .topbar-left .menu-toggle {
+        display: none;
+      }
+    }
+
     @media (max-width: 760px) {
       .hero-stats {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -417,12 +575,40 @@
       .content {
         font-size: calc(var(--font-size) - 2px);
       }
+
+      .likes-row {
+        align-items: stretch;
+      }
     }
   </style>
 </head>
 <body>
+  <div class="mobile-drawer-backdrop hidden" id="drawerBackdrop"></div>
+
+  <aside class="mobile-drawer" id="mobileDrawer">
+    <div class="mobile-drawer-top">
+      <strong>Story Details</strong>
+      <button class="btn drawer-close" id="closeDrawerBtn">✕</button>
+    </div>
+
+    <h3 class="sidebar-title" id="drawerBookTitle">Loading…</h3>
+    <div class="sidebar-author" id="drawerBookAuthor"></div>
+    <div class="sidebar-summary" id="drawerBookSummary"></div>
+
+    <div class="sidebar-block">
+      <div class="chip-label">Tags</div>
+      <div class="chip-row" id="drawerTagList"></div>
+    </div>
+
+    <div class="sidebar-block">
+      <div class="chip-label">Warnings</div>
+      <div class="chip-row" id="drawerWarningList"></div>
+    </div>
+  </aside>
+
   <div class="topbar">
     <div class="topbar-left">
+      <button class="btn menu-toggle" id="menuBtn">☰</button>
       <button class="btn" id="backBtn">←</button>
     </div>
 
@@ -439,87 +625,116 @@
   </div>
 
   <div class="page">
-    <div class="status hidden" id="statusBox"></div>
-    <div class="error-box hidden" id="errorBox"></div>
+    <div class="reader-layout">
+      <aside class="sidebar">
+        <h2 class="sidebar-title" id="sideBookTitle">Loading…</h2>
+        <div class="sidebar-author" id="sideBookAuthor"></div>
+        <div class="sidebar-summary" id="sideBookSummary"></div>
 
-    <div class="hero">
-      <div class="eyebrow">Alysum Reader</div>
-      <h1 class="book-title" id="bookTitle">Loading…</h1>
-      <div class="book-author" id="bookAuthor"></div>
-      <div class="book-summary" id="bookSummary"></div>
-
-      <div class="hero-stats">
-        <div class="stat">
-          <div class="stat-label">Chapters</div>
-          <div class="stat-value" id="statChapters">0</div>
+        <div class="sidebar-block">
+          <div class="chip-label">Tags</div>
+          <div class="chip-row" id="sideTagList"></div>
         </div>
-        <div class="stat">
-          <div class="stat-label">Words</div>
-          <div class="stat-value" id="statWords">0</div>
+
+        <div class="sidebar-block">
+          <div class="chip-label">Warnings</div>
+          <div class="chip-row" id="sideWarningList"></div>
         </div>
-        <div class="stat">
-          <div class="stat-label">Type</div>
-          <div class="stat-value" id="statType">—</div>
+      </aside>
+
+      <main class="page-main">
+        <div class="status hidden" id="statusBox"></div>
+        <div class="error-box hidden" id="errorBox"></div>
+
+        <div class="hero">
+          <div class="eyebrow">Alysum Reader</div>
+          <h1 class="book-title" id="bookTitle">Loading…</h1>
+          <div class="book-author" id="bookAuthor"></div>
+          <div class="book-summary hidden" id="bookSummary"></div>
+
+          <div class="hero-stats">
+            <div class="stat">
+              <div class="stat-label">Chapters</div>
+              <div class="stat-value" id="statChapters">0</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Words</div>
+              <div class="stat-value" id="statWords">0</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Type</div>
+              <div class="stat-value" id="statType">—</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Rating</div>
+              <div class="stat-value" id="statRating">—</div>
+            </div>
+          </div>
+
+          <div class="chip-block hidden">
+            <div class="chip-label">Tags</div>
+            <div class="chip-row" id="tagList"></div>
+          </div>
+
+          <div class="chip-block hidden">
+            <div class="chip-label">Warnings</div>
+            <div class="chip-row" id="warningList"></div>
+          </div>
         </div>
-        <div class="stat">
-          <div class="stat-label">Rating</div>
-          <div class="stat-value" id="statRating">—</div>
+
+        <div class="nav-row">
+          <button class="btn" id="prevBtn">← Prev</button>
+
+          <div class="nav-center">
+            <div class="nav-label">Current Chapter</div>
+            <div class="nav-current" id="chapterIndicator">Loading…</div>
+          </div>
+
+          <button class="btn" id="nextBtn">Next →</button>
         </div>
-      </div>
 
-      <div class="chip-block">
-        <div class="chip-label">Tags</div>
-        <div class="chip-row" id="tagList"></div>
-      </div>
+        <div class="reader-card">
+          <div class="reader-head">
+            <h2 class="chapter-title" id="chapterTitle">Loading…</h2>
+            <div class="chapter-meta" id="chapterMeta"></div>
+          </div>
 
-      <div class="chip-block">
-        <div class="chip-label">Warnings</div>
-        <div class="chip-row" id="warningList"></div>
-      </div>
+          <div class="reader-body">
+            <div class="content" id="content"></div>
+          </div>
+        </div>
+
+        <div class="reader-tools">
+          <button class="btn primary" id="bookmarkBtn">Bookmark This Chapter</button>
+          <button class="btn" id="resumeBtn">Resume Where I Left Off</button>
+        </div>
+
+        <div class="likes-card">
+          <div class="likes-title">Kudos</div>
+          <div class="likes-row">
+            <button class="btn primary" id="likeBtn">❤️ Leave Kudos</button>
+            <div class="kudos-note">One kudos per logged-in reader, like AO3.</div>
+          </div>
+          <div class="kudos-count" id="likeCount">0 kudos</div>
+        </div>
+
+        <div class="comments-card">
+          <div class="comments-title">Comments</div>
+          <div class="comment-list" id="commentList"></div>
+
+          <div class="comment-form">
+            <textarea
+              class="comment-input"
+              id="commentInput"
+              placeholder="Write a comment…"
+            ></textarea>
+            <button class="btn primary" id="postCommentBtn">Post Comment</button>
+          </div>
+        </div>
+
+        <div class="footer-space"></div>
+      </main>
     </div>
-
-    <div class="nav-row">
-      <button class="btn" id="prevBtn">← Prev</button>
-
-      <div class="nav-center">
-        <div class="nav-label">Current Chapter</div>
-        <div class="nav-current" id="chapterIndicator">Loading…</div>
-      </div>
-
-      <button class="btn" id="nextBtn">Next →</button>
-    </div>
-
-    <div class="reader-card">
-      <div class="reader-head">
-        <h2 class="chapter-title" id="chapterTitle">Loading…</h2>
-        <div class="chapter-meta" id="chapterMeta"></div>
-      </div>
-
-      <div class="reader-body">
-        <div class="content" id="content"></div>
-      </div>
-    </div>
-
-    <div class="reader-tools">
-      <button class="btn primary" id="bookmarkBtn">Bookmark This Chapter</button>
-      <button class="btn" id="resumeBtn">Resume Where I Left Off</button>
-    </div>
-
-    <div class="comments-card">
-      <div class="comments-title">Comments</div>
-      <div class="comment-list" id="commentList"></div>
-
-      <div class="comment-form">
-        <textarea
-          class="comment-input"
-          id="commentInput"
-          placeholder="Write a comment…"
-        ></textarea>
-        <button class="btn primary" id="postCommentBtn">Post Comment</button>
-      </div>
-    </div>
-
-    <div class="footer-space"></div>
   </div>
 
   <script type="module">
@@ -527,11 +742,15 @@
     import {
       doc,
       getDoc,
+      setDoc,
+      updateDoc,
+      increment,
       collection,
       addDoc,
       getDocs,
       query,
-      orderBy
+      orderBy,
+      serverTimestamp
     } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import {
       onAuthStateChanged
@@ -544,6 +763,11 @@
     const themeBtn = document.getElementById("themeBtn");
     const fontMinusBtn = document.getElementById("fontMinusBtn");
     const fontPlusBtn = document.getElementById("fontPlusBtn");
+
+    const menuBtn = document.getElementById("menuBtn");
+    const mobileDrawer = document.getElementById("mobileDrawer");
+    const drawerBackdrop = document.getElementById("drawerBackdrop");
+    const closeDrawerBtn = document.getElementById("closeDrawerBtn");
 
     const topbarTitle = document.getElementById("topbarTitle");
     const topbarSubtitle = document.getElementById("topbarSubtitle");
@@ -561,6 +785,18 @@
     const tagList = document.getElementById("tagList");
     const warningList = document.getElementById("warningList");
 
+    const sideBookTitle = document.getElementById("sideBookTitle");
+    const sideBookAuthor = document.getElementById("sideBookAuthor");
+    const sideBookSummary = document.getElementById("sideBookSummary");
+    const sideTagList = document.getElementById("sideTagList");
+    const sideWarningList = document.getElementById("sideWarningList");
+
+    const drawerBookTitle = document.getElementById("drawerBookTitle");
+    const drawerBookAuthor = document.getElementById("drawerBookAuthor");
+    const drawerBookSummary = document.getElementById("drawerBookSummary");
+    const drawerTagList = document.getElementById("drawerTagList");
+    const drawerWarningList = document.getElementById("drawerWarningList");
+
     const prevBtn = document.getElementById("prevBtn");
     const nextBtn = document.getElementById("nextBtn");
     const chapterIndicator = document.getElementById("chapterIndicator");
@@ -571,6 +807,9 @@
     const bookmarkBtn = document.getElementById("bookmarkBtn");
     const resumeBtn = document.getElementById("resumeBtn");
 
+    const likeBtn = document.getElementById("likeBtn");
+    const likeCount = document.getElementById("likeCount");
+
     const commentList = document.getElementById("commentList");
     const commentInput = document.getElementById("commentInput");
     const postCommentBtn = document.getElementById("postCommentBtn");
@@ -579,6 +818,8 @@
     let currentBook = null;
     let currentChapterIndex = 0;
     let isLoaded = false;
+    let currentFontSize = 22;
+    let hasLikedThisBook = false;
 
     function safeString(value, fallback = "") {
       return typeof value === "string" ? value : fallback;
@@ -654,6 +895,18 @@
       errorBox.classList.add("hidden");
     }
 
+    function openDrawer() {
+      mobileDrawer.classList.add("open");
+      drawerBackdrop.classList.remove("hidden");
+      drawerBackdrop.classList.add("open");
+    }
+
+    function closeDrawer() {
+      mobileDrawer.classList.remove("open");
+      drawerBackdrop.classList.remove("open");
+      drawerBackdrop.classList.add("hidden");
+    }
+
     function normalizeBook(raw) {
       const data = safeObject(raw, {});
 
@@ -694,6 +947,7 @@
         warnings: flattenWarnings(data.warnings),
         chapterCount: safeNumber(data.chapterCount, chapters.length),
         words: totalWords,
+        likes: safeNumber(data.likes, 0),
         chapters
       };
     }
@@ -761,6 +1015,21 @@
       localStorage.setItem("alysum-reader-font-size", String(next));
     }
 
+    function renderChipList(target, values, emptyText) {
+      target.innerHTML = "";
+
+      if (values.length) {
+        values.forEach(value => {
+          const chip = document.createElement("div");
+          chip.className = "chip";
+          chip.textContent = value;
+          target.appendChild(chip);
+        });
+      } else {
+        target.innerHTML = `<div class="chip">${emptyText}</div>`;
+      }
+    }
+
     function renderMeta() {
       if (!currentBook) return;
 
@@ -768,36 +1037,26 @@
       bookAuthor.textContent = "@" + currentBook.author;
       bookSummary.textContent = currentBook.summary || "No summary yet.";
 
+      sideBookTitle.textContent = currentBook.title;
+      sideBookAuthor.textContent = "@" + currentBook.author;
+      sideBookSummary.textContent = currentBook.summary || "No summary yet.";
+
+      drawerBookTitle.textContent = currentBook.title;
+      drawerBookAuthor.textContent = "@" + currentBook.author;
+      drawerBookSummary.textContent = currentBook.summary || "No summary yet.";
+
       topbarTitle.textContent = currentBook.title;
       statChapters.textContent = formatNumber(currentBook.chapterCount || currentBook.chapters.length);
       statWords.textContent = formatNumber(currentBook.words);
       statType.textContent = currentBook.type || "—";
       statRating.textContent = currentBook.rating || "—";
 
-      tagList.innerHTML = "";
-      warningList.innerHTML = "";
-
-      if (currentBook.tags.length) {
-        currentBook.tags.forEach(tag => {
-          const chip = document.createElement("div");
-          chip.className = "chip";
-          chip.textContent = tag;
-          tagList.appendChild(chip);
-        });
-      } else {
-        tagList.innerHTML = `<div class="chip">No tags listed</div>`;
-      }
-
-      if (currentBook.warnings.length) {
-        currentBook.warnings.forEach(warning => {
-          const chip = document.createElement("div");
-          chip.className = "chip";
-          chip.textContent = warning;
-          warningList.appendChild(chip);
-        });
-      } else {
-        warningList.innerHTML = `<div class="chip">No warnings listed</div>`;
-      }
+      renderChipList(tagList, currentBook.tags, "No tags listed");
+      renderChipList(warningList, currentBook.warnings, "No warnings listed");
+      renderChipList(sideTagList, currentBook.tags, "No tags listed");
+      renderChipList(sideWarningList, currentBook.warnings, "No warnings listed");
+      renderChipList(drawerTagList, currentBook.tags, "No tags listed");
+      renderChipList(drawerWarningList, currentBook.warnings, "No warnings listed");
     }
 
     function renderChapter() {
@@ -817,6 +1076,74 @@
       saveResumePosition();
       window.scrollTo({ top: 0, behavior: "smooth" });
       loadComments();
+    }
+
+    async function loadLikeState() {
+      if (!bookId) return;
+
+      try {
+        const snap = await getDoc(doc(db, "library", bookId));
+        const raw = snap.exists() ? snap.data() : {};
+        const likes = safeNumber(raw.likes, 0);
+        likeCount.textContent = `${formatNumber(likes)} kudos`;
+
+        hasLikedThisBook = false;
+
+        if (currentUser) {
+          const likeSnap = await getDoc(doc(db, "library", bookId, "likes", currentUser.uid));
+          hasLikedThisBook = likeSnap.exists();
+        }
+
+        likeBtn.disabled = !currentUser || hasLikedThisBook;
+        likeBtn.textContent = hasLikedThisBook ? "❤️ Kudos Left" : "❤️ Leave Kudos";
+      } catch (error) {
+        console.error(error);
+        likeCount.textContent = "Couldn’t load kudos";
+      }
+    }
+
+    async function leaveKudos() {
+      if (!currentUser) {
+        showStatus("Log in to leave kudos.");
+        setTimeout(hideStatus, 1600);
+        return;
+      }
+
+      if (hasLikedThisBook) {
+        showStatus("You already left kudos for this story.");
+        setTimeout(hideStatus, 1600);
+        return;
+      }
+
+      try {
+        const likeRef = doc(db, "library", bookId, "likes", currentUser.uid);
+        const existing = await getDoc(likeRef);
+
+        if (existing.exists()) {
+          hasLikedThisBook = true;
+          await loadLikeState();
+          showStatus("You already left kudos for this story.");
+          setTimeout(hideStatus, 1600);
+          return;
+        }
+
+        await setDoc(likeRef, {
+          uid: currentUser.uid,
+          createdAt: serverTimestamp()
+        });
+
+        await updateDoc(doc(db, "library", bookId), {
+          likes: increment(1)
+        });
+
+        hasLikedThisBook = true;
+        await loadLikeState();
+        showStatus("Kudos left ❤️");
+        setTimeout(hideStatus, 1400);
+      } catch (error) {
+        console.error(error);
+        showError("Failed to leave kudos.");
+      }
     }
 
     async function loadBook() {
@@ -845,6 +1172,7 @@
           showError("This story has no readable chapters.");
           topbarTitle.textContent = currentBook.title || "Untitled";
           renderMeta();
+          await loadLikeState();
           hideStatus();
           return;
         }
@@ -856,6 +1184,7 @@
 
         renderMeta();
         renderChapter();
+        await loadLikeState();
         hideStatus();
         isLoaded = true;
       } catch (error) {
@@ -864,6 +1193,25 @@
         topbarTitle.textContent = "Load error";
         hideStatus();
       }
+    }
+
+    function getBestUsername(user, fallback = "reader") {
+      if (!user) return fallback;
+
+      const rawUsername =
+        user.username ||
+        user.displayName ||
+        user.handle ||
+        user.penName ||
+        user.name ||
+        user.email ||
+        fallback;
+
+      const value = safeString(rawUsername, fallback).trim();
+
+      if (!value) return fallback;
+      if (value.includes("@")) return value.split("@")[0];
+      return value;
     }
 
     async function loadComments() {
@@ -889,7 +1237,7 @@
           const item = document.createElement("div");
           item.className = "comment-item";
           item.innerHTML = `
-            <div class="comment-user">@${safeString(comment.username, "reader")}</div>
+            <div class="comment-user">@${getBestUsername(comment)}</div>
             <div class="comment-text">${safeString(comment.text, "")}</div>
           `;
           commentList.appendChild(item);
@@ -918,7 +1266,7 @@
       try {
         await addDoc(collection(db, "library", bookId, "comments"), {
           uid: currentUser.uid,
-          username: currentUser.displayName || currentUser.email || "reader",
+          username: getBestUsername(currentUser),
           text,
           createdAt: Date.now()
         });
@@ -1002,6 +1350,11 @@
     });
 
     postCommentBtn.addEventListener("click", postComment);
+    likeBtn.addEventListener("click", leaveKudos);
+
+    menuBtn.addEventListener("click", openDrawer);
+    closeDrawerBtn.addEventListener("click", closeDrawer);
+    drawerBackdrop.addEventListener("click", closeDrawer);
 
     onAuthStateChanged(auth, (user) => {
       currentUser = user || null;
@@ -1009,11 +1362,13 @@
       if (currentUser) {
         hideStatus();
       } else {
-        showStatus("Read-only mode. Log in to leave comments.");
+        showStatus("Read-only mode. Log in to leave comments or kudos.");
       }
 
       if (!isLoaded) {
         loadBook();
+      } else {
+        loadLikeState();
       }
     });
 

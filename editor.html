@@ -196,8 +196,7 @@
         .group-body {
             padding: 8px 0;
         }
-
-        .group-body.hidden {
+                                                                .group-body.hidden {
             display: none;
         }
 
@@ -221,10 +220,8 @@
 
         .chapter-item.dragging {
             opacity: 0.45;
-        }
-
-        .chapter-num {
-            width: 26px;
+        }                                               
+        .chapter-num {                                              width: 26px;
             text-align: center;
             font-size: 16px;
             font-weight: 800;
@@ -240,16 +237,14 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
-
-        .chapter-drag {
+                                                                .chapter-drag {
             color: #d5dee7;
             font-size: 18px;
         }
 
         .empty-slot {
             padding: 12px 18px 18px;
-            color: #aeb9c5;
-            font-style: italic;
+            color: #aeb9c5;                                         font-style: italic;
             font-size: 14px;
         }
 
@@ -260,8 +255,7 @@
             color: #dbe3eb;
             background: #2a3a49;
         }
-
-        body.dark .side-footer {
+                                                                body.dark .side-footer {
             background: #162132;
         }
 
@@ -281,8 +275,7 @@
             align-items: center;
             justify-content: space-between;
             padding: 0 12px;
-            gap: 10px;
-            position: relative;
+            gap: 10px;                                              position: relative;
             z-index: 15;
         }
 
@@ -290,10 +283,8 @@
         .topbar-right {
             display: flex;
             align-items: center;
-            gap: 10px;
-            min-width: 0;
-        }
-
+            gap: 10px;                                              min-width: 0;
+        }                                               
         .icon-btn {
             width: 42px;
             height: 42px;
@@ -302,10 +293,8 @@
             background: var(--topbar-bg);
             color: var(--page-text);
             font-size: 22px;
-            line-height: 1;
-            cursor: pointer;
-        }
-
+            line-height: 1;                                         cursor: pointer;
+        }                                               
         .icon-btn.purple {
             background: var(--alysum-purple);
             border-color: var(--alysum-purple);
@@ -318,8 +307,7 @@
             color: white;
         }
 
-        .top-title {
-            font-size: 18px;
+        .top-title {                                                font-size: 18px;
             font-weight: 700;
             color: var(--page-text);
             white-space: nowrap;
@@ -336,72 +324,47 @@
 
         .toolbar {
             min-height: 54px;
-            background: var(--toolbar-bg);
-            border-bottom: 1px solid var(--border);
+            background: var(--toolbar-bg);                          border-bottom: 1px solid var(--border);
             display: flex;
             align-items: center;
-            gap: 8px;
-            padding: 8px 12px;
+            gap: 8px;                                               padding: 8px 12px;
             overflow-x: auto;
-            flex-wrap: wrap;
-        }
+            flex-wrap: wrap;                                    }
 
         .tool-btn, .tool-select {
             height: 36px;
-            border: 1px solid var(--border);
-            background: var(--topbar-bg);
-            border-radius: 10px;
-            color: var(--page-text);
-            font-size: 14px;
-            font-weight: 700;
+            border: 1px solid var(--border);                        background: var(--topbar-bg);
+            border-radius: 10px;                                    color: var(--page-text);
+            font-size: 14px;                                        font-weight: 700;
             padding: 0 12px;
-            cursor: pointer;
-        }
-
-        .workspace {
+            cursor: pointer;                                    }
+                                                                .workspace {
             flex: 1;
-            overflow: auto;
-            padding: 34px 18px 60px;
-            background: var(--workspace-bg);
-        }
+            overflow: auto;                                         padding: 34px 18px 60px;
+            background: var(--workspace-bg);                    }
 
-        .page-wrap {
-            max-width: 980px;
-            margin: 0 auto;
-        }
-
-        .page {
-            background: var(--page-bg);
-            min-height: calc(100vh - 180px);
-            border-radius: 8px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.10);
-            padding: 80px 120px 100px;
-        }
-
-        .chapter-number {
+        .page-wrap {                                                max-width: 980px;
+            margin: 0 auto;                                     }
+                                                                .page {
+            background: var(--page-bg);                             min-height: calc(100vh - 180px);
+            border-radius: 8px;                                     box-shadow: 0 8px 32px rgba(0,0,0,0.10);
+            padding: 80px 120px 100px;                          }
+                                                                .chapter-number {
             display: none;
-            text-align: center;
-            font-family: Georgia, serif;
+            text-align: center;                                     font-family: Georgia, serif;
             color: var(--page-subtle);
             font-size: 18px;
             margin-bottom: 22px;
-        }
-
-        .chapter-title {
-            text-align: center;
+        }                                               
+        .chapter-title {                                            text-align: center;
             font-family: Georgia, "Times New Roman", serif;
             color: var(--page-text);
             font-size: 28px;
-            font-weight: 700;
-            margin-bottom: 40px;
-            outline: none;
-        }
+            font-weight: 700;                                       margin-bottom: 40px;
+            outline: none;                                      }
 
-        .editor {
-            min-height: 440px;
-            outline: none;
-            font-family: Georgia, "Times New Roman", serif;
-            font-size: 20px;
+        .editor {                                                   min-height: 440px;
+            outline: none;                                          font-family: Georgia, "Times New Roman", serif;                                                                 font-size: 20px;
             line-height: 1.7;
             letter-spacing: 0.2px;
             color: var(--page-text);
@@ -409,13 +372,11 @@
             word-break: break-word;
         }
 
-        .editor div {
-            margin: 0 0 1.2em;
+        .editor div {                                               margin: 0 0 1.2em;
         }
 
         .editor p {
-            margin: 0 0 1.2em;
-        }
+            margin: 0 0 1.2em;                                  }
 
         .editor h2,
         .editor blockquote,
@@ -423,15 +384,13 @@
         .editor ol {
             text-indent: 0;
         }
-
-        .editor ul, .editor ol {
+                                                                .editor ul, .editor ol {
             margin: 0 0 1.15em 1.5em;
         }
 
         .editor blockquote {
             border-left: 4px solid var(--alysum-purple);
-            margin: 0 0 1.15em;
-            padding-left: 16px;
+            margin: 0 0 1.15em;                                     padding-left: 16px;
             color: #575f69;
         }
 
@@ -445,8 +404,7 @@
             font-weight: 700;
         }
 
-        .editor:empty:before {
-            content: attr(data-placeholder);
+        .editor:empty:before {                                      content: attr(data-placeholder);
             color: #a7afb8;
         }
 
@@ -454,8 +412,7 @@
             margin-top: 16px;
             text-align: center;
             font-size: 13px;
-            color: #7b8490;
-            font-weight: 700;
+            color: #7b8490;                                         font-weight: 700;
         }
 
         .overlay {
@@ -492,38 +449,29 @@
         }
 
         .publish-modal-title {
-            margin: 0 0 10px;
-            font-size: 22px;
-            font-weight: 800;
-        }
+            margin: 0 0 10px;                                       font-size: 22px;
+            font-weight: 800;                                   }
 
-        .publish-modal-text {
-            margin: 0 0 14px;
+        .publish-modal-text {                                       margin: 0 0 14px;
             color: var(--page-subtle);
             font-size: 14px;
-            line-height: 1.5;
-        }
-
-        .publish-list {
+            line-height: 1.5;                                   }
+                                                                .publish-list {
             max-height: 320px;
-            overflow: auto;
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 8px;
+            overflow: auto;                                         border: 1px solid var(--border);
+            border-radius: 12px;                                    padding: 8px;
             margin-bottom: 14px;
             background: rgba(0,0,0,0.03);
         }
 
-        body.dark .publish-list {
-            background: rgba(255,255,255,0.03);
+        body.dark .publish-list {                                   background: rgba(255,255,255,0.03);
         }
 
         .publish-row {
             display: flex;
             align-items: center;
             gap: 10px;
-            padding: 10px 8px;
-            border-radius: 10px;
+            padding: 10px 8px;                                      border-radius: 10px;
         }
 
         .publish-row:hover {
@@ -533,19 +481,16 @@
         body.dark .publish-row:hover {
             background: rgba(255,255,255,0.05);
         }
-
-        .publish-row label {
+                                                                .publish-row label {
             flex: 1;
-            cursor: pointer;
-            font-weight: 600;
+            cursor: pointer;                                        font-weight: 600;
         }
 
         .publish-row input {
             width: 18px;
             height: 18px;
         }
-
-        .publish-modal-actions {
+                                                                .publish-modal-actions {
             display: flex;
             gap: 10px;
         }
@@ -553,14 +498,12 @@
         .publish-modal-btn {
             flex: 1;
             border: none;
-            border-radius: 12px;
-            padding: 12px 14px;
+            border-radius: 12px;                                    padding: 12px 14px;
             font-weight: 700;
             cursor: pointer;
         }
 
-        .publish-modal-btn.primary {
-            background: var(--alysum-purple);
+        .publish-modal-btn.primary {                                background: var(--alysum-purple);
             color: white;
         }
 
@@ -578,8 +521,7 @@
             position: fixed;
             top: 76px;
             right: 18px;
-            width: 400px;
-            max-width: calc(100vw - 24px);
+            width: 400px;                                           max-width: calc(100vw - 24px);
             height: calc(100vh - 94px);
             background: var(--obsidian-bg);
             color: var(--obsidian-text);
@@ -588,8 +530,7 @@
             box-shadow: 0 20px 48px rgba(0,0,0,0.28);
             display: flex;
             flex-direction: column;
-            overflow: hidden;
-            z-index: 1001;
+            overflow: hidden;                                       z-index: 1001;
         }
 
         .obsidian-topbar {
@@ -601,18 +542,14 @@
             border-bottom: 1px solid var(--border);
             background: var(--obsidian-panel);
         }
-
-        .obsidian-title {
-            font-size: 14px;
-            font-weight: 800;
+                                                                .obsidian-title {
+            font-size: 14px;                                        font-weight: 800;
             letter-spacing: 0.04em;
             text-transform: uppercase;
         }
 
-        .obsidian-layout {
-            flex: 1;
-            display: grid;
-            grid-template-columns: 150px 1fr;
+        .obsidian-layout {                                          flex: 1;
+            display: grid;                                          grid-template-columns: 150px 1fr;
             min-height: 0;
         }
 
@@ -620,17 +557,13 @@
             border-right: 1px solid var(--border);
             background: var(--obsidian-panel);
             display: flex;
-            flex-direction: column;
-            min-height: 0;
+            flex-direction: column;                                 min-height: 0;
         }
 
-        .obsidian-search-wrap {
-            padding: 10px;
-            border-bottom: 1px solid var(--border);
-        }
+        .obsidian-search-wrap {                                     padding: 10px;
+            border-bottom: 1px solid var(--border);             }
 
-        .obsidian-search {
-            width: 100%;
+        .obsidian-search {                                          width: 100%;
             height: 36px;
             border: 1px solid var(--border);
             border-radius: 10px;
@@ -643,8 +576,7 @@
         .obsidian-note-list {
             flex: 1;
             overflow: auto;
-            padding: 8px;
-        }
+            padding: 8px;                                       }
 
         .obsidian-note-item {
             padding: 10px;
@@ -655,8 +587,7 @@
             border: 1px solid transparent;
         }
 
-        .obsidian-note-item:hover {
-            background: rgba(255,255,255,0.04);
+        .obsidian-note-item:hover {                                 background: rgba(255,255,255,0.04);
         }
 
         body.light .obsidian-note-item:hover {
@@ -666,18 +597,13 @@
         .obsidian-note-item.active {
             background: var(--obsidian-item-active);
             border-color: rgba(109,40,217,0.35);
-        }
-
-        .obsidian-note-name {
+        }                                                                                                               .obsidian-note-name {
             font-size: 13px;
-            font-weight: 800;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            font-weight: 800;                                       white-space: nowrap;
+            overflow: hidden;                                       text-overflow: ellipsis;
         }
 
-        .obsidian-note-preview {
-            margin-top: 4px;
+        .obsidian-note-preview {                                    margin-top: 4px;
             font-size: 12px;
             color: var(--obsidian-muted);
             display: -webkit-box;
@@ -695,8 +621,7 @@
 
         .obsidian-note-meta {
             padding: 10px 12px;
-            border-bottom: 1px solid var(--border);
-            background: var(--obsidian-panel);
+            border-bottom: 1px solid var(--border);                 background: var(--obsidian-panel);
             display: flex;
             flex-direction: column;
             gap: 8px;
@@ -708,18 +633,15 @@
             border: 1px solid var(--border);
             border-radius: 10px;
             background: transparent;
-            color: inherit;
-            padding: 0 10px;
-            font-size: 14px;
-            font-weight: 700;
+            color: inherit;                                         padding: 0 10px;
+            font-size: 14px;                                        font-weight: 700;
         }
 
         .obsidian-link-row {
             display: flex;
             gap: 8px;
             flex-wrap: wrap;
-        }
-
+        }                                               
         .obsidian-link-btn {
             height: 32px;
             border-radius: 999px;
@@ -747,30 +669,23 @@
         }
 
         .obsidian-footer {
-            display: flex;
-            gap: 8px;
-            padding: 12px;
+            display: flex;                                          gap: 8px;                                               padding: 12px;
             border-top: 1px solid var(--border);
             background: var(--obsidian-panel);
         }
 
-        .obsidian-footer button {
-            flex: 1;
+        .obsidian-footer button {                                   flex: 1;
             border: none;
             border-radius: 12px;
             padding: 10px 12px;
-            font-weight: 700;
-            cursor: pointer;
-        }
-
+            font-weight: 700;                                       cursor: pointer;
+        }                                               
         .obsidian-primary {
             background: var(--alysum-purple);
             color: white;
         }
 
-        .obsidian-secondary {
-            background: transparent;
-            color: inherit;
+        .obsidian-secondary {                                       background: transparent;                                color: inherit;
             border: 1px solid var(--border) !important;
         }
 
@@ -790,11 +705,9 @@
             }
 
             .editor {
-                font-size: 18px;
-            }
+                font-size: 18px;                                    }
 
-            .top-title {
-                max-width: 28vw;
+            .top-title {                                                max-width: 28vw;
             }
         }
 
@@ -823,8 +736,7 @@
             }
 
             .page {
-                padding: 42px 24px 60px;
-            }
+                padding: 42px 24px 60px;                            }
 
             .chapter-title {
                 font-size: 22px;
@@ -833,8 +745,7 @@
 
             .editor {
                 font-size: 17px;
-                line-height: 1.7;
-            }
+                line-height: 1.7;                                   }
 
             .publish-modal-box {
                 max-width: 100%;
@@ -844,19 +755,15 @@
                 top: 64px;
                 left: 10px;
                 right: 10px;
-                width: auto;
-                max-width: none;
-                height: calc(100vh - 78px);
+                width: auto;                                            max-width: none;                                        height: calc(100vh - 78px);
             }
 
-            .obsidian-layout {
-                grid-template-columns: 130px 1fr;
+            .obsidian-layout {                                          grid-template-columns: 130px 1fr;
             }
         }
     </style>
 </head>
-<body>
-
+<body>                                                  
     <div class="sidebar mobile-hidden" id="sidebar">
         <div class="sidebar-top">
             <div class="sidebar-title-row">
@@ -866,33 +773,27 @@
 
             <div class="sidebar-book-title" id="sidebarBookTitle">Loading...</div>
 
-            <div class="sidebar-meta">
-                <div><span id="totalWords">0</span> words</div>
+            <div class="sidebar-meta">                                  <div><span id="totalWords">0</span> words</div>
                 <div><span id="chapterCount">0</span> chapters</div>
             </div>
-
-            <div class="sidebar-actions">
+                                                                    <div class="sidebar-actions">
                 <button class="pill-btn primary" id="addChapterBtn" type="button">Add Chapter</button>
                 <button class="pill-btn secondary" id="deleteChapterBtn" type="button">Delete Chapter</button>
                 <button class="pill-btn secondary" id="themeToggleBtn" type="button">Dark Mode</button>
                 <button class="pill-btn secondary" id="publishBtn" type="button">Publish</button>
-                <button class="pill-btn danger" id="deleteBookBtn" type="button">Delete Book</button>
-            </div>
+                <button class="pill-btn danger" id="deleteBookBtn" type="button">Delete Book</button>                       </div>
         </div>
 
         <div class="manuscript">
             <div class="group">
                 <div class="group-header" data-group="front">
-                    <div class="left"><span class="caret" id="caret-front">▼</span>Front matter</div>
-                    <div>edit</div>
+                    <div class="left"><span class="caret" id="caret-front">▼</span>Front matter</div>                               <div>edit</div>
                 </div>
                 <div class="group-body" id="group-front"></div>
             </div>
 
             <div class="group">
-                <div class="group-header" data-group="body">
-                    <div class="left"><span class="caret" id="caret-body">▼</span>Body</div>
-                    <div>edit</div>
+                <div class="group-header" data-group="body">                                                                        <div class="left"><span class="caret" id="caret-body">▼</span>Body</div>                                        <div>edit</div>
                 </div>
                 <div class="group-body" id="group-body"></div>
             </div>
@@ -917,6 +818,9 @@
         <div class="topbar">
             <div class="topbar-left">
                 <button class="icon-btn" id="toggleSidebarBtn" type="button">☰</button>
+
+<button class="icon-btn" id="homeBtn" type="button">🏠</button>
+
                 <div class="top-title" id="topBookTitle">Loading...</div>
             </div>
 
@@ -926,6 +830,7 @@
                 <button class="icon-btn" id="obsidianBtn" type="button" title="Notes">⌘</button>
                 <button class="icon-btn" id="renameChapterBtn" type="button">⋯</button>
                 <button class="icon-btn" id="themeTopBtn" type="button">◐</button>
+
                 <button class="icon-btn danger" id="deleteBookTopBtn" type="button">🗑</button>
                 <div class="save-status" id="saveStatus">Loading...</div>
             </div>
@@ -946,11 +851,8 @@
                 <option value="Georgia">Georgia</option>
                 <option value="Times New Roman">Times New Roman</option>
                 <option value="Arial">Arial</option>
-                <option value="Inter">Inter</option>
-                <option value="Courier New">Courier New</option>
-            </select>
-            <select class="tool-select" id="fontSizeSelect">
-                <option value="18">Compact</option>
+                <option value="Inter">Inter</option>                    <option value="Courier New">Courier New</option>
+            </select>                                               <select class="tool-select" id="fontSizeSelect">                                                                    <option value="18">Compact</option>
                 <option value="20">Book</option>
                 <option value="22">Comfort</option>
                 <option value="26">Large</option>
@@ -964,11 +866,9 @@
                     <div class="chapter-title" id="chapterTitle" contenteditable="true">Chapter 1</div>
                     <div class="editor" id="editor" contenteditable="true" data-placeholder="Begin writing here..."></div>
                     <div class="bottom-meta">
-                        <span id="chapterWords">0</span> chapter words • <span id="bottomTotalWords">0</span> total words
-                    </div>
+                        <span id="chapterWords">0</span> chapter words • <span id="bottomTotalWords">0</span> total words                                                                   </div>
                 </div>
-            </div>
-        </div>
+            </div>                                              </div>
     </div>
 
     <div class="publish-modal" id="publishModal">
@@ -1031,10 +931,15 @@ Try [[Prologue]] or [[Some note]]"></textarea>
 
         const params = new URLSearchParams(window.location.search);
         const bookId = params.get("book");
-
-        const sidebar = document.getElementById("sidebar");
+                                                                const sidebar = document.getElementById("sidebar");
         const overlay = document.getElementById("overlay");
         const toggleSidebarBtn = document.getElementById("toggleSidebarBtn");
+
+const homeBtn = document.getElementById("homeBtn");
+
+homeBtn.onclick = () => {
+    window.location.href = "/studio.html";
+};
 
         const addChapterBtn = document.getElementById("addChapterBtn");
         const deleteChapterBtn = document.getElementById("deleteChapterBtn");
@@ -1042,8 +947,7 @@ Try [[Prologue]] or [[Some note]]"></textarea>
         const quickAddBtn = document.getElementById("quickAddBtn");
         const renameChapterBtn = document.getElementById("renameChapterBtn");
         const deleteBookBtn = document.getElementById("deleteBookBtn");
-        const deleteBookTopBtn = document.getElementById("deleteBookTopBtn");
-        const themeToggleBtn = document.getElementById("themeToggleBtn");
+        const deleteBookTopBtn = document.getElementById("deleteBookTopBtn");                                           const themeToggleBtn = document.getElementById("themeToggleBtn");
         const themeTopBtn = document.getElementById("themeTopBtn");
         const publishBtn = document.getElementById("publishBtn");
         const publishTopBtn = document.getElementById("publishTopBtn");
@@ -1067,8 +971,7 @@ Try [[Prologue]] or [[Some note]]"></textarea>
             front: document.getElementById("group-front"),
             body: document.getElementById("group-body"),
             back: document.getElementById("group-back")
-        };
-
+        };                                              
         const formatSelect = document.getElementById("formatSelect");
         const quoteBtn = document.getElementById("quoteBtn");
         const fontSelect = document.getElementById("fontSelect");
@@ -1100,8 +1003,7 @@ Try [[Prologue]] or [[Some note]]"></textarea>
         let dragged = null;
 
         let notesState = {
-            notes: [],
-            activeId: null,
+            notes: [],                                              activeId: null,
             filter: ""
         };
 
@@ -1160,8 +1062,7 @@ Try [[Prologue]] or [[Some note]]"></textarea>
                     { id: generateId(), title: "Copyright", content: "" },
                     { id: generateId(), title: "Table of Contents", content: "" }
                 ];
-
-            const body = bodyRaw.length
+                                                                    const body = bodyRaw.length
                 ? bodyRaw.map((ch, index) => normalizeChapter(ch, `Chapter ${index + 1}`))
                 : [
                     { id: generateId(), title: "Chapter 1", content: "" }
@@ -1190,13 +1091,11 @@ Try [[Prologue]] or [[Some note]]"></textarea>
 
         function applyTheme(theme) {
             const dark = theme === "dark";
-            document.body.classList.toggle("dark", dark);
-            localStorage.setItem("alysum-theme", theme);
+            document.body.classList.toggle("dark", dark);                                                                   localStorage.setItem("alysum-theme", theme);
             themeToggleBtn.textContent = dark ? "Light Mode" : "Dark Mode";
         }
 
-        function toggleTheme() {
-            const nowDark = document.body.classList.contains("dark");
+        function toggleTheme() {                                    const nowDark = document.body.classList.contains("dark");
             applyTheme(nowDark ? "light" : "dark");
         }
 
@@ -1210,8 +1109,7 @@ Try [[Prologue]] or [[Some note]]"></textarea>
             } else {
                 sidebar.classList.toggle("collapsed-desktop");
             }
-        }
-
+        }                                               
         toggleSidebarBtn.addEventListener("click", toggleSidebar);
         overlay.addEventListener("click", toggleSidebar);
 
@@ -1234,8 +1132,7 @@ Try [[Prologue]] or [[Some note]]"></textarea>
             }
 
             if (!Array.isArray(currentBook.sections.front)) {
-                currentBook.sections.front = [
-                    { id: generateId(), title: "Copyright", content: "" },
+                currentBook.sections.front = [                              { id: generateId(), title: "Copyright", content: "" },
                     { id: generateId(), title: "Table of Contents", content: "" }
                 ];
             }
@@ -1288,8 +1185,7 @@ Try [[Prologue]] or [[Some note]]"></textarea>
             const list = currentBook.sections[currentSection];
 
             if (!Array.isArray(list) || !list.length) {
-                currentSection = "body";
-                currentChapterIndex = 0;
+                currentSection = "body";                                currentChapterIndex = 0;
                 return currentBook.sections.body[0];
             }
 
@@ -1315,8 +1211,7 @@ Try [[Prologue]] or [[Some note]]"></textarea>
             footerWordsEl.textContent = total;
             chapterCountEl.textContent = allChaptersFlat().length;
         }
-
-        function renderTitles() {
+                                                                function renderTitles() {
             const title = currentBook.title || "Untitled Book";
             topBookTitle.textContent = title;
             sidebarBookTitle.textContent = title;
@@ -1339,8 +1234,7 @@ Try [[Prologue]] or [[Some note]]"></textarea>
                 const item = document.createElement("div");
                 item.className = "chapter-item" + (section === currentSection && index === currentChapterIndex ? " active" : "");
                 item.draggable = true;
-
-                const visibleNumber = section === "body" ? index + 1 : "";
+                                                                        const visibleNumber = section === "body" ? index + 1 : "";
 
                 item.innerHTML = `
                     <div class="chapter-num">${visibleNumber}</div>
@@ -1394,8 +1288,7 @@ Try [[Prologue]] or [[Some note]]"></textarea>
 
                 mount.appendChild(item);
             });
-        }
-
+        }                                               
         function renderAllSections() {
             renderSection("front");
             renderSection("body");
@@ -1434,21 +1327,15 @@ Try [[Prologue]] or [[Some note]]"></textarea>
                 publishList.appendChild(empty);
                 return;
             }
-
-            bodyChapters.forEach((ch, index) => {
+                                                                    bodyChapters.forEach((ch, index) => {
                 const row = document.createElement("div");
                 row.className = "publish-row";
-
-                row.innerHTML = `
+                                                                        row.innerHTML = `
                     <input type="checkbox" id="publish-ch-${index}" data-id="${ch.id}" checked>
-                    <label for="publish-ch-${index}">${ch.title || "Untitled"}</label>
-                `;
-
-                publishList.appendChild(row);
-            });
-        }
-
-        function openPublishModal() {
+                    <label for="publish-ch-${index}">${ch.title || "Untitled"}</label>                                          `;
+                                                                        publishList.appendChild(row);
+            });                                                 }
+                                                                function openPublishModal() {
             if (!currentBook) return;
             buildPublishChapterList();
             publishModal.classList.add("open");
@@ -1458,52 +1345,34 @@ Try [[Prologue]] or [[Some note]]"></textarea>
             publishModal.classList.remove("open");
         }
 
-        function goToPublishPage() {
-            const selectedIds = [...publishList.querySelectorAll("input[type='checkbox']:checked")]
+        function goToPublishPage() {                                const selectedIds = [...publishList.querySelectorAll("input[type='checkbox']:checked")]
                 .map(input => input.dataset.id)
-                .filter(Boolean);
-
-            if (!selectedIds.length) {
-                alert("Choose at least one chapter.");
-                return;
-            }
-
-            const query = new URLSearchParams({
-                book: bookId,
-                chapters: selectedIds.join(",")
-            });
-
-            window.location.href = "/publish.html?" + query.toString();
-        }
-
-        async function saveBook(doneText = "Saved") {
+                .filter(Boolean);                       
+            if (!selectedIds.length) {                                  alert("Choose at least one chapter.");
+                return;                                             }
+                                                                    const query = new URLSearchParams({
+                book: bookId,                                           chapters: selectedIds.join(",")
+            });                                         
+            window.location.href = "/publish.html?" + query.toString();                                                 }
+                                                                async function saveBook(doneText = "Saved") {
             if (!currentUser || !bookId || !currentBook) return;
-
-            setSaveStatus("Saving...");
+                                                                    setSaveStatus("Saving...");
 
             await updateDoc(
                 doc(db, "users", currentUser.uid, "books", bookId),
                 {
                     title: currentBook.title || "Untitled Book",
-                    sections: currentBook.sections,
-                    words: totalWords(),
-                    updated: Date.now()
-                }
+                    sections: currentBook.sections,                         words: totalWords(),
+                    updated: Date.now()                                 }
             );
-
-            setSaveStatus(doneText);
-        }
+                                                                    setSaveStatus(doneText);                            }
 
         async function migrateBookIfNeeded() {
-            if (!currentUser || !bookId || !currentBook) return;
-
+            if (!currentUser || !bookId || !currentBook) return;                                                
             const normalized = normalizeBookData(currentBook);
-            const before = JSON.stringify(currentBook);
-            const after = JSON.stringify(normalized);
-
-            currentBook = normalized;
-            ensureStructure();
-
+            const before = JSON.stringify(currentBook);             const after = JSON.stringify(normalized);
+                                                                    currentBook = normalized;
+            ensureStructure();                          
             if (before !== after) {
                 try {
                     await updateDoc(doc(db, "users", currentUser.uid, "books", bookId), {
@@ -1528,13 +1397,9 @@ Try [[Prologue]] or [[Some note]]"></textarea>
                     setSaveStatus("Save failed");
                 }
             }, 700);
-        }
-
-        function addChapterTo(section) {
-            const label = section === "body" ? "Chapter name?" : "Section name?";
-            const name = prompt(label);
-            if (!name) return;
-
+        }                                               
+        function addChapterTo(section) {                            const label = section === "body" ? "Chapter name?" : "Section name?";                                           const name = prompt(label);
+            if (!name) return;                          
             currentBook.sections[section].push({
                 id: generateId(),
                 title: name,
@@ -1546,76 +1411,57 @@ Try [[Prologue]] or [[Some note]]"></textarea>
             scheduleSave();
         }
 
-        async function deleteBook() {
-            const ok = confirm("Delete this entire book?");
+        async function deleteBook() {                               const ok = confirm("Delete this entire book?");
             if (!ok) return;
 
-            try {
-                await deleteDoc(doc(db, "users", currentUser.uid, "books", bookId));
-                window.location.href = "/studio.html";
-            } catch (e) {
+            try {                                                       await deleteDoc(doc(db, "users", currentUser.uid, "books", bookId));
+                window.location.href = "/studio.html";              } catch (e) {
                 console.error(e);
                 setSaveStatus("Delete failed");
             }
         }
 
         function applyEditorStyle() {
-            const font = localStorage.getItem("alysum-font") || "Georgia";
-            const size = localStorage.getItem("alysum-fontSize") || "20";
-
-            editor.style.fontFamily = font + (font === "Arial" || font === "Inter" ? ", sans-serif" : ", serif");
-            editor.style.fontSize = size + "px";
+            const font = localStorage.getItem("alysum-font") || "Georgia";                                                  const size = localStorage.getItem("alysum-fontSize") || "20";
+                                                                    editor.style.fontFamily = font + (font === "Arial" || font === "Inter" ? ", sans-serif" : ", serif");                                                                   editor.style.fontSize = size + "px";
             editor.style.lineHeight = "1.7";
         }
-
-        function getNotesStorageKey() {
-            return `alysum-notes-${bookId || "global"}`;
-        }
+                                                                function getNotesStorageKey() {
+            return `alysum-notes-${bookId || "global"}`;        }
 
         function createNote(title = "Untitled note") {
             return {
                 id: generateNoteId(),
                 title,
-                body: "",
-                links: [],
+                body: "",                                               links: [],
                 updated: Date.now()
             };
-        }
-
-        function loadNotesState() {
-            try {
+        }                                               
+        function loadNotesState() {                                 try {
                 const raw = localStorage.getItem(getNotesStorageKey());
                 if (!raw) {
-                    notesState = {
-                        notes: [createNote("Scratchpad")],
+                    notesState = {                                              notes: [createNote("Scratchpad")],
                         activeId: null,
-                        filter: ""
-                    };
+                        filter: ""                                          };
                     notesState.activeId = notesState.notes[0].id;
                     persistNotesState();
                     return;
-                }
-
+                }                                       
                 const parsed = JSON.parse(raw);
                 const notes = safeArray(parsed.notes, []).map(note => ({
                     id: safeString(note.id, generateNoteId()),
-                    title: safeString(note.title, "Untitled note"),
-                    body: safeString(note.body, ""),
-                    links: safeArray(note.links, []),
-                    updated: safeNumber(note.updated, Date.now())
+                    title: safeString(note.title, "Untitled note"),                                                                 body: safeString(note.body, ""),
+                    links: safeArray(note.links, []),                       updated: safeNumber(note.updated, Date.now())
                 }));
 
-                notesState = {
-                    notes: notes.length ? notes : [createNote("Scratchpad")],
-                    activeId: safeString(parsed.activeId, notes.length ? notes[0].id : ""),
+                notesState = {                                              notes: notes.length ? notes : [createNote("Scratchpad")],                                                       activeId: safeString(parsed.activeId, notes.length ? notes[0].id : ""),
                     filter: safeString(parsed.filter, "")
                 };
 
                 if (!notesState.notes.find(n => n.id === notesState.activeId)) {
                     notesState.activeId = notesState.notes[0].id;
                 }
-            } catch (err) {
-                console.error("Notes load failed", err);
+            } catch (err) {                                             console.error("Notes load failed", err);
                 notesState = {
                     notes: [createNote("Scratchpad")],
                     activeId: null,
@@ -1623,35 +1469,23 @@ Try [[Prologue]] or [[Some note]]"></textarea>
                 };
                 notesState.activeId = notesState.notes[0].id;
             }
-        }
-
+        }                                               
         function persistNotesState() {
             localStorage.setItem(getNotesStorageKey(), JSON.stringify(notesState));
-        }
-
-        function activeNote() {
-            return notesState.notes.find(note => note.id === notesState.activeId) || null;
-        }
-
-        function renderNoteList() {
-            obsidianNoteList.innerHTML = "";
-            const filter = notesState.filter.trim().toLowerCase();
-
+        }                                               
+        function activeNote() {                                     return notesState.notes.find(note => note.id === notesState.activeId) || null;                              }
+                                                                function renderNoteList() {
+            obsidianNoteList.innerHTML = "";                        const filter = notesState.filter.trim().toLowerCase();                                              
             const visibleNotes = notesState.notes.filter(note => {
-                const hay = `${note.title} ${note.body}`.toLowerCase();
-                return !filter || hay.includes(filter);
+                const hay = `${note.title} ${note.body}`.toLowerCase();                                                         return !filter || hay.includes(filter);
             });
-
-            if (!visibleNotes.length) {
+                                                                    if (!visibleNotes.length) {
                 const empty = document.createElement("div");
                 empty.className = "obsidian-empty";
                 empty.textContent = "No notes match your search.";
-                obsidianNoteList.appendChild(empty);
-                return;
-            }
-
-            visibleNotes
-                .sort((a, b) => b.updated - a.updated)
+                obsidianNoteList.appendChild(empty);                    return;
+            }                                           
+            visibleNotes                                                .sort((a, b) => b.updated - a.updated)
                 .forEach(note => {
                     const item = document.createElement("div");
                     item.className = "obsidian-note-item" + (note.id === notesState.activeId ? " active" : "");
@@ -1659,32 +1493,20 @@ Try [[Prologue]] or [[Some note]]"></textarea>
                     item.innerHTML = `
                         <div class="obsidian-note-name">${note.title || "Untitled note"}</div>
                         <div class="obsidian-note-preview">${preview}</div>
-                    `;
-                    item.addEventListener("click", () => {
-                        notesState.activeId = note.id;
-                        persistNotesState();
-                        renderNotesUI();
-                    });
-                    obsidianNoteList.appendChild(item);
-                });
-        }
-
+                    `;                                                      item.addEventListener("click", () => {
+                        notesState.activeId = note.id;                          persistNotesState();
+                        renderNotesUI();                                    });
+                    obsidianNoteList.appendChild(item);                 });
+        }                                               
         function renderNotesUI() {
-            renderNoteList();
-            const note = activeNote();
-            if (!note) {
-                obsidianNoteTitle.value = "";
-                obsidianNoteBody.value = "";
-                return;
-            }
-            obsidianNoteTitle.value = note.title;
+            renderNoteList();                                       const note = activeNote();
+            if (!note) {                                                obsidianNoteTitle.value = "";
+                obsidianNoteBody.value = "";                            return;
+            }                                                       obsidianNoteTitle.value = note.title;
             obsidianNoteBody.value = note.body;
-            obsidianSearch.value = notesState.filter;
-        }
-
-        function saveActiveNoteFields() {
-            const note = activeNote();
-            if (!note) return;
+            obsidianSearch.value = notesState.filter;           }
+                                                                function saveActiveNoteFields() {
+            const note = activeNote();                              if (!note) return;
             note.title = obsidianNoteTitle.value.trim() || "Untitled note";
             note.body = obsidianNoteBody.value;
             note.updated = Date.now();
@@ -1701,8 +1523,7 @@ Try [[Prologue]] or [[Some note]]"></textarea>
         function closeObsidianPanel() {
             saveActiveNoteFields();
             obsidianPanel.classList.add("hidden");
-        }
-
+        }                                               
         function insertHtmlAtCursor(html) {
             editor.focus();
             document.execCommand("insertHTML", false, html);
@@ -1713,8 +1534,7 @@ Try [[Prologue]] or [[Some note]]"></textarea>
 
         function currentWikiLink() {
             return `[[${currentChapterDisplayName()}]]`;
-        }
-
+        }                                               
         addChapterBtn.addEventListener("click", () => addChapterTo("body"));
         quickAddBtn.addEventListener("click", () => addChapterTo("body"));
         deleteBookBtn.addEventListener("click", deleteBook);
@@ -1722,67 +1542,46 @@ Try [[Prologue]] or [[Some note]]"></textarea>
         publishBtn.addEventListener("click", openPublishModal);
         publishTopBtn.addEventListener("click", openPublishModal);
         closePublishBtn.addEventListener("click", closePublishModal);
-        publishNextBtn.addEventListener("click", goToPublishPage);
-
-        obsidianBtn.addEventListener("click", () => {
-            if (obsidianPanel.classList.contains("hidden")) openObsidianPanel();
-            else closeObsidianPanel();
-        });
+        publishNextBtn.addEventListener("click", goToPublishPage);                                              
+        obsidianBtn.addEventListener("click", () => {               if (obsidianPanel.classList.contains("hidden")) openObsidianPanel();
+            else closeObsidianPanel();                          });
 
         closeObsidianBtn.addEventListener("click", closeObsidianPanel);
-
-        publishModal.addEventListener("click", (e) => {
-            if (e.target === publishModal) {
-                closePublishModal();
+                                                                publishModal.addEventListener("click", (e) => {
+            if (e.target === publishModal) {                            closePublishModal();
             }
         });
 
         deleteChapterBtn.addEventListener("click", async () => {
             if (currentBook.sections[currentSection].length <= 1 && currentSection === "body") {
                 alert("Your body needs at least one chapter.");
-                return;
-            }
-
-            const ok = confirm("Delete this chapter?");
+                return;                                             }
+                                                                    const ok = confirm("Delete this chapter?");
             if (!ok) return;
 
             currentBook.sections[currentSection].splice(currentChapterIndex, 1);
-
-            if (currentBook.sections[currentSection].length === 0) {
-                if (currentSection === "front" || currentSection === "back") {
-                    currentSection = "body";
-                    currentChapterIndex = 0;
-                } else {
+                                                                    if (currentBook.sections[currentSection].length === 0) {                                                            if (currentSection === "front" || currentSection === "back") {
+                    currentSection = "body";                                currentChapterIndex = 0;                            } else {
                     currentBook.sections.body.push({ id: generateId(), title: "Chapter 1", content: "" });
                     currentChapterIndex = 0;
-                }
-            } else if (currentChapterIndex >= currentBook.sections[currentSection].length) {
+                }                                                   } else if (currentChapterIndex >= currentBook.sections[currentSection].length) {
                 currentChapterIndex = currentBook.sections[currentSection].length - 1;
-            }
-
+            }                                           
             renderAllSections();
             loadChapter(currentSection, currentChapterIndex, false);
 
-            try {
-                await saveBook("Saved");
-            } catch (e) {
-                console.error(e);
+            try {                                                       await saveBook("Saved");
+            } catch (e) {                                               console.error(e);
                 setSaveStatus("Save failed");
             }
         });
-
-        renameBookBtn.addEventListener("click", async () => {
-            const name = prompt("Book name?", currentBook.title || "");
+                                                                renameBookBtn.addEventListener("click", async () => {                                                               const name = prompt("Book name?", currentBook.title || "");
             if (!name) return;
-
-            currentBook.title = name;
-            renderTitles();
-
+                                                                    currentBook.title = name;
+            renderTitles();                             
             try {
-                await saveBook("Saved");
-            } catch (e) {
-                console.error(e);
-                setSaveStatus("Save failed");
+                await saveBook("Saved");                            } catch (e) {
+                console.error(e);                                       setSaveStatus("Save failed");
             }
         });
 
@@ -1790,11 +1589,9 @@ Try [[Prologue]] or [[Some note]]"></textarea>
             const ch = currentChapter();
             const name = prompt("Rename chapter?", ch.title || "");
             if (!name) return;
-
-            ch.title = name;
+                                                                    ch.title = name;
             chapterTitle.textContent = name;
-            renderAllSections();
-
+            renderAllSections();                        
             try {
                 await saveBook("Saved");
             } catch (e) {
@@ -1804,15 +1601,12 @@ Try [[Prologue]] or [[Some note]]"></textarea>
         });
 
         chapterTitle.addEventListener("input", () => {
-            currentChapter().title = chapterTitle.textContent.trim() || "Untitled";
-            renderAllSections();
+            currentChapter().title = chapterTitle.textContent.trim() || "Untitled";                                         renderAllSections();
             scheduleSave();
-        });
-
+        });                                             
         editor.addEventListener("keydown", (e) => {
             if (e.key === "Enter") {
-                setTimeout(() => {
-                    currentChapter().content = editor.innerHTML;
+                setTimeout(() => {                                          currentChapter().content = editor.innerHTML;
                     syncStats();
                     scheduleSave();
                 }, 0);
@@ -1821,14 +1615,12 @@ Try [[Prologue]] or [[Some note]]"></textarea>
 
         editor.addEventListener("input", () => {
             currentChapter().content = editor.innerHTML;
-            syncStats();
-            scheduleSave();
+            syncStats();                                            scheduleSave();
         });
 
         document.querySelectorAll("[data-group]").forEach(header => {
             header.addEventListener("click", () => {
-                const group = header.dataset.group;
-                const body = document.getElementById("group-" + group);
+                const group = header.dataset.group;                     const body = document.getElementById("group-" + group);
                 const caret = document.getElementById("caret-" + group);
                 body.classList.toggle("hidden");
                 caret.textContent = body.classList.contains("hidden") ? "▶" : "▼";
@@ -1840,30 +1632,23 @@ Try [[Prologue]] or [[Some note]]"></textarea>
                 document.execCommand(btn.dataset.cmd, false, null);
                 editor.focus();
                 currentChapter().content = editor.innerHTML;
-                syncStats();
-                scheduleSave();
+                syncStats();                                            scheduleSave();
             });
         });
-
-        formatSelect.addEventListener("change", () => {
+                                                                formatSelect.addEventListener("change", () => {
             const value = formatSelect.value;
             document.execCommand("formatBlock", false, value === "h2" ? "h2" : "div");
-            editor.focus();
-            currentChapter().content = editor.innerHTML;
+            editor.focus();                                         currentChapter().content = editor.innerHTML;
             syncStats();
             scheduleSave();
         });
 
         quoteBtn.addEventListener("click", () => {
-            document.execCommand("formatBlock", false, "blockquote");
-            editor.focus();
-            currentChapter().content = editor.innerHTML;
-            syncStats();
-            scheduleSave();
-        });
+            document.execCommand("formatBlock", false, "blockquote");                                                       editor.focus();
+            currentChapter().content = editor.innerHTML;            syncStats();
+            scheduleSave();                                     });
 
-        fontSelect.addEventListener("change", () => {
-            localStorage.setItem("alysum-font", fontSelect.value);
+        fontSelect.addEventListener("change", () => {               localStorage.setItem("alysum-font", fontSelect.value);
             applyEditorStyle();
         });
 
@@ -1873,22 +1658,18 @@ Try [[Prologue]] or [[Some note]]"></textarea>
         });
 
         newNoteBtn.addEventListener("click", () => {
-            saveActiveNoteFields();
-            const note = createNote("Untitled note");
+            saveActiveNoteFields();                                 const note = createNote("Untitled note");
             notesState.notes.push(note);
             notesState.activeId = note.id;
             persistNotesState();
             renderNotesUI();
             obsidianNoteTitle.focus();
             obsidianNoteTitle.select();
-        });
-
-        deleteNoteBtn.addEventListener("click", () => {
-            if (notesState.notes.length <= 1) {
+        });                                             
+        deleteNoteBtn.addEventListener("click", () => {             if (notesState.notes.length <= 1) {
                 alert("Keep at least one note.");
                 return;
-            }
-            const note = activeNote();
+            }                                                       const note = activeNote();
             if (!note) return;
             const ok = confirm(`Delete note "${note.title}"?`);
             if (!ok) return;
@@ -1900,8 +1681,7 @@ Try [[Prologue]] or [[Some note]]"></textarea>
 
         obsidianSearch.addEventListener("input", () => {
             notesState.filter = obsidianSearch.value;
-            persistNotesState();
-            renderNoteList();
+            persistNotesState();                                    renderNoteList();
         });
 
         obsidianNoteTitle.addEventListener("input", saveActiveNoteFields);
@@ -1912,38 +1692,29 @@ Try [[Prologue]] or [[Some note]]"></textarea>
             if (!note) return;
             const link = currentWikiLink();
             const body = obsidianNoteBody.value;
-            obsidianNoteBody.value = body ? `${body}\n${link}` : link;
-            saveActiveNoteFields();
+            obsidianNoteBody.value = body ? `${body}\n${link}` : link;                                                      saveActiveNoteFields();
         });
 
         insertWikiLinkBtn.addEventListener("click", () => {
-            const note = activeNote();
-            if (!note) return;
+            const note = activeNote();                              if (!note) return;
             const target = prompt("Link to which chapter or note?", currentChapterDisplayName());
-            if (!target) return;
-            const link = `[[${target.trim()}]]`;
+            if (!target) return;                                    const link = `[[${target.trim()}]]`;
             const start = obsidianNoteBody.selectionStart;
             const end = obsidianNoteBody.selectionEnd;
-            const text = obsidianNoteBody.value;
-            obsidianNoteBody.value = text.slice(0, start) + link + text.slice(end);
-            obsidianNoteBody.focus();
+            const text = obsidianNoteBody.value;                    obsidianNoteBody.value = text.slice(0, start) + link + text.slice(end);                                         obsidianNoteBody.focus();
             obsidianNoteBody.selectionStart = obsidianNoteBody.selectionEnd = start + link.length;
             saveActiveNoteFields();
         });
-
-        copyNoteBtn.addEventListener("click", async () => {
+                                                                copyNoteBtn.addEventListener("click", async () => {
             const note = activeNote();
             if (!note) return;
             try {
-                await navigator.clipboard.writeText(`# ${note.title}\n\n${note.body}`);
-                setTransientSaveStatus("Note copied", "Saved");
+                await navigator.clipboard.writeText(`# ${note.title}\n\n${note.body}`);                                         setTransientSaveStatus("Note copied", "Saved");
             } catch (err) {
                 console.error(err);
                 alert("Could not copy note.");
-            }
-        });
-
-        insertNoteBtn.addEventListener("click", () => {
+            }                                                   });
+                                                                insertNoteBtn.addEventListener("click", () => {
             const note = activeNote();
             if (!note) return;
             const body = note.body.trim();
@@ -1972,21 +1743,18 @@ Try [[Prologue]] or [[Some note]]"></textarea>
                 currentBook = normalizeBookData(snap.data());
                 ensureStructure();
                 await migrateBookIfNeeded();
-
-                renderTitles();
+                                                                        renderTitles();
                 renderAllSections();
 
                 if (currentBook.sections.body.length > 0) {
-                    loadChapter("body", 0, false);
-                } else {
+                    loadChapter("body", 0, false);                      } else {
                     loadChapter("front", 0, false);
                 }
 
                 setSaveStatus("Ready");
             } catch (e) {
                 console.error("LOAD ERROR:", e);
-                setSaveStatus("Error loading");
-                topBookTitle.textContent = "Error loading";
+                setSaveStatus("Error loading");                         topBookTitle.textContent = "Error loading";
                 sidebarBookTitle.textContent = "Error loading";
             }
         }
@@ -2021,12 +1789,10 @@ Try [[Prologue]] or [[Some note]]"></textarea>
 
             try {
                 await loadBook(user.uid);
-            } catch (e) {
-                console.error(e);
+            } catch (e) {                                               console.error(e);
                 setSaveStatus("Error loading");
             }
         });
     </script>
 
 </body>
-</html>
