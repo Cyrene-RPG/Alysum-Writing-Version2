@@ -31,7 +31,7 @@
             --sidebar-text: #f3f4f6;
             --muted: #a6b2bf;
             --page-bg: #ffffff;
-            --page-text: #2f3740;
+            --page-text: #1f2a37;
             --page-subtle: #9aa3ad;
             --border: #d7dde4;
             --topbar-bg: #ffffff;
@@ -40,7 +40,6 @@
             --danger: #dc2626;
             --obsidian-bg: #ffffff;
             --obsidian-panel: #f8fafc;
-            --obsidian-item: #ffffff;
             --obsidian-item-active: #ede9fe;
             --obsidian-text: #1f2937;
             --obsidian-muted: #64748b;
@@ -63,7 +62,6 @@
             --danger: #ef4444;
             --obsidian-bg: #0f172a;
             --obsidian-panel: #111827;
-            --obsidian-item: #1f2937;
             --obsidian-item-active: #312e81;
             --obsidian-text: #e5e7eb;
             --obsidian-muted: #94a3b8;
@@ -368,7 +366,7 @@
         }
 
         .page-wrap {
-            max-width: 860px;
+            max-width: 980px;
             margin: 0 auto;
         }
 
@@ -377,10 +375,11 @@
             min-height: calc(100vh - 180px);
             border-radius: 8px;
             box-shadow: 0 8px 32px rgba(0,0,0,0.10);
-            padding: 80px 82px 110px;
+            padding: 80px 120px 100px;
         }
 
         .chapter-number {
+            display: none;
             text-align: center;
             font-family: Georgia, serif;
             color: var(--page-subtle);
@@ -390,32 +389,32 @@
 
         .chapter-title {
             text-align: center;
-            font-family: Georgia, serif;
-            color: var(--page-subtle);
-            font-size: 34px;
+            font-family: Georgia, "Times New Roman", serif;
+            color: var(--page-text);
+            font-size: 28px;
             font-weight: 700;
-            margin-bottom: 50px;
+            margin-bottom: 40px;
             outline: none;
         }
 
         .editor {
             min-height: 440px;
             outline: none;
-            font-family: Georgia, serif;
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: 20px;
+            line-height: 1.7;
+            letter-spacing: 0.2px;
             color: var(--page-text);
-            font-size: 28px;
-            line-height: 1.85;
-            white-space: pre-wrap;
+            white-space: normal;
             word-break: break-word;
         }
 
         .editor div {
-            margin: 0 0 1.15em;
-            text-indent: 2em;
+            margin: 0 0 1.2em;
         }
 
-        .editor div:first-child {
-            text-indent: 0;
+        .editor p {
+            margin: 0 0 1.2em;
         }
 
         .editor h2,
@@ -781,23 +780,17 @@
             color: var(--obsidian-muted);
         }
 
-        @media (max-width: 1100px) {
-            .obsidian-panel {
-                width: 360px;
-            }
-        }
-
         @media (max-width: 900px) {
             .page {
-                padding: 52px 32px 70px;
+                padding: 52px 56px 70px;
             }
 
             .chapter-title {
-                font-size: 28px;
+                font-size: 24px;
             }
 
             .editor {
-                font-size: 24px;
+                font-size: 18px;
             }
 
             .top-title {
@@ -830,17 +823,17 @@
             }
 
             .page {
-                padding: 42px 22px 60px;
+                padding: 42px 24px 60px;
             }
 
             .chapter-title {
-                font-size: 24px;
-                margin-bottom: 36px;
+                font-size: 22px;
+                margin-bottom: 32px;
             }
 
             .editor {
-                font-size: 21px;
-                line-height: 1.8;
+                font-size: 17px;
+                line-height: 1.7;
             }
 
             .publish-modal-box {
@@ -957,10 +950,10 @@
                 <option value="Courier New">Courier New</option>
             </select>
             <select class="tool-select" id="fontSizeSelect">
-                <option value="22">Small</option>
-                <option value="28">Normal</option>
-                <option value="34">Large</option>
-                <option value="40">Huge</option>
+                <option value="18">Compact</option>
+                <option value="20">Book</option>
+                <option value="22">Comfort</option>
+                <option value="26">Large</option>
             </select>
         </div>
 
@@ -1020,7 +1013,9 @@
                         <button class="obsidian-link-btn" id="insertWikiLinkBtn" type="button">Insert [[link]]</button>
                     </div>
                 </div>
-                <textarea id="obsidianNoteBody" class="obsidian-note-body" placeholder="Markdown-ish notes, ideas, outlines, links...&#10;&#10;Try [[Chapter 1]] or [[Some note]]"></textarea>
+                <textarea id="obsidianNoteBody" class="obsidian-note-body" placeholder="Markdown-ish notes, ideas, outlines, links...
+
+Try [[Prologue]] or [[Some note]]"></textarea>
                 <div class="obsidian-footer">
                     <button class="obsidian-secondary" id="copyNoteBtn" type="button">Copy Note</button>
                     <button class="obsidian-primary" id="insertNoteBtn" type="button">Insert into chapter</button>
@@ -1566,14 +1561,25 @@
 
         function applyEditorStyle() {
             const font = localStorage.getItem("alysum-font") || "Georgia";
-            const size = localStorage.getItem("alysum-fontSize") || "28";
+            const size = localStorage.getItem("alysum-fontSize") || "20";
 
             editor.style.fontFamily = font + (font === "Arial" || font === "Inter" ? ", sans-serif" : ", serif");
             editor.style.fontSize = size + "px";
+            editor.style.lineHeight = "1.7";
         }
 
         function getNotesStorageKey() {
             return `alysum-notes-${bookId || "global"}`;
+        }
+
+        function createNote(title = "Untitled note") {
+            return {
+                id: generateNoteId(),
+                title,
+                body: "",
+                links: [],
+                updated: Date.now()
+            };
         }
 
         function loadNotesState() {
@@ -1621,16 +1627,6 @@
 
         function persistNotesState() {
             localStorage.setItem(getNotesStorageKey(), JSON.stringify(notesState));
-        }
-
-        function createNote(title = "Untitled note") {
-            return {
-                id: generateNoteId(),
-                title,
-                body: "",
-                links: [],
-                updated: Date.now()
-            };
         }
 
         function activeNote() {
@@ -1727,10 +1723,12 @@
         publishTopBtn.addEventListener("click", openPublishModal);
         closePublishBtn.addEventListener("click", closePublishModal);
         publishNextBtn.addEventListener("click", goToPublishPage);
+
         obsidianBtn.addEventListener("click", () => {
             if (obsidianPanel.classList.contains("hidden")) openObsidianPanel();
             else closeObsidianPanel();
         });
+
         closeObsidianBtn.addEventListener("click", closeObsidianPanel);
 
         publishModal.addEventListener("click", (e) => {
@@ -1892,7 +1890,7 @@
             }
             const note = activeNote();
             if (!note) return;
-            const ok = confirm(`Delete note \"${note.title}\"?`);
+            const ok = confirm(`Delete note "${note.title}"?`);
             if (!ok) return;
             notesState.notes = notesState.notes.filter(n => n.id !== note.id);
             notesState.activeId = notesState.notes[0]?.id || null;
@@ -2013,7 +2011,7 @@
             applyTheme(savedTheme);
 
             fontSelect.value = localStorage.getItem("alysum-font") || "Georgia";
-            fontSizeSelect.value = localStorage.getItem("alysum-fontSize") || "28";
+            fontSizeSelect.value = localStorage.getItem("alysum-fontSize") || "20";
             applyEditorStyle();
 
             loadNotesState();
