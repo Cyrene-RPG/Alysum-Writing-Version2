@@ -2,25 +2,30 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Alysum Formatter Engine</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alysum Formatter Engine</title>
   <style>
     :root {
-      --ui-bg: #e8edf3;
-      --ui-panel: #ffffff;
-      --ui-border: #d7dee7;
-      --ui-text: #1f2937;
-      --ui-muted: #6b7280;
-      --ui-purple: #6d28d9;
+      --bg: #0b1220;
+      --panel: #0f172a;
+      --panel-2: #111827;
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+      --border: #334155;
+      --accent: #7c3aed;
+      --accent-2: #6d28d9;
+      --danger: #dc2626;
+
+      --page-bg: #ffffff;
+      --page-text: #111827;
+      --page-muted: #6b7280;
 
       --page-width: 816px;
       --page-height: 1056px;
-
       --margin-top: 84px;
       --margin-bottom: 84px;
       --margin-inside: 92px;
       --margin-outside: 72px;
-
       --header-height: 22px;
       --footer-height: 22px;
 
@@ -29,25 +34,29 @@
 
       --book-font-size: 18px;
       --book-line-height: 1.8;
-      --chapter-title-size: 34px;
-      --chapter-opener-top-space: 72px;
-      --paragraph-spacing: 1.2em;
       --paragraph-indent: 2em;
+      --paragraph-spacing: 1.2em;
+      --chapter-title-size: 34px;
+      --chapter-opener-space: 72px;
     }
 
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     html, body {
       margin: 0;
       min-height: 100%;
-      background: var(--ui-bg);
-      color: var(--ui-text);
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
 
-    body {
-      font-family: Georgia, "Times New Roman", serif;
+    body.light {
+      --bg: #e9edf2;
+      --panel: #ffffff;
+      --panel-2: #f8fafc;
+      --text: #111827;
+      --muted: #64748b;
+      --border: #d7dde4;
     }
 
     .app {
@@ -57,108 +66,115 @@
     }
 
     .sidebar {
-      background: #f9fbfd;
-      border-right: 1px solid var(--ui-border);
-      padding: 16px;
+      background: var(--panel);
+      border-right: 1px solid var(--border);
+      padding: 18px;
       position: sticky;
       top: 0;
       align-self: start;
       height: 100vh;
-      overflow: auto;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      overflow-y: auto;
     }
 
-    .sidebar h1 {
-      margin: 0 0 10px;
-      font-size: 22px;
-      color: var(--ui-purple);
+    .brand {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--accent);
+      margin-bottom: 4px;
     }
 
-    .sidebar .sub {
-      color: var(--ui-muted);
+    .brand-sub {
       font-size: 13px;
+      color: var(--muted);
       margin-bottom: 18px;
-      line-height: 1.45;
+      line-height: 1.5;
     }
 
-    .group {
-      border: 1px solid var(--ui-border);
-      border-radius: 14px;
-      background: var(--ui-panel);
-      padding: 12px;
+    .panel {
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px;
       margin-bottom: 14px;
     }
 
-    .group h2 {
-      margin: 0 0 10px;
-      font-size: 14px;
-      text-transform: uppercase;
+    .panel-title {
+      font-size: 12px;
+      font-weight: 800;
       letter-spacing: 0.08em;
-      color: var(--ui-muted);
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 12px;
     }
 
-    .row {
+    .field {
       display: grid;
-      gap: 8px;
-      margin-bottom: 10px;
+      gap: 6px;
+      margin-bottom: 12px;
     }
 
-    .row.two {
+    .field.two {
       grid-template-columns: 1fr 1fr;
+      gap: 10px;
     }
 
-    label {
+    .field span, .field label, .mini-label {
       font-size: 13px;
       font-weight: 700;
-      color: var(--ui-text);
     }
 
-    input[type="text"],
-    input[type="number"],
-    select {
-      height: 38px;
+    input[type="number"], input[type="text"], select {
+      width: 100%;
+      height: 40px;
       border-radius: 10px;
-      border: 1px solid var(--ui-border);
+      border: 1px solid var(--border);
+      background: transparent;
+      color: inherit;
       padding: 0 10px;
-      background: #fff;
-      color: var(--ui-text);
       font-size: 14px;
     }
 
-    input[type="checkbox"] {
-      transform: translateY(1px);
-    }
-
-    .checkbox {
+    .check {
       display: flex;
       align-items: center;
       gap: 8px;
-      margin-bottom: 8px;
+      margin-bottom: 10px;
       font-size: 14px;
       font-weight: 600;
     }
 
-    .actions {
+    .button-row {
       display: flex;
       gap: 8px;
       flex-wrap: wrap;
     }
 
-    button {
+    .btn {
       height: 40px;
-      border: 1px solid var(--ui-border);
-      border-radius: 10px;
-      background: #fff;
-      color: var(--ui-text);
-      font-weight: 800;
-      padding: 0 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: inherit;
+      padding: 0 14px;
+      font-weight: 700;
       cursor: pointer;
     }
 
-    button.primary {
-      background: var(--ui-purple);
-      color: #fff;
-      border-color: var(--ui-purple);
+    .btn.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+
+    .btn.secondary {
+      background: rgba(255,255,255,0.04);
+    }
+
+    .status-line {
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 700;
+      line-height: 1.5;
     }
 
     .main {
@@ -168,30 +184,25 @@
 
     .topbar {
       display: flex;
+      align-items: start;
       justify-content: space-between;
-      align-items: center;
       gap: 12px;
-      margin-bottom: 16px;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      margin-bottom: 18px;
     }
 
-    .titleblock {
-      min-width: 0;
-    }
-
-    .doc-title {
-      font-size: 20px;
+    .book-title {
+      font-size: 22px;
       font-weight: 800;
-      margin: 0 0 4px;
+      margin-bottom: 4px;
     }
 
-    .status {
+    .book-subtitle {
       font-size: 13px;
-      color: var(--ui-muted);
+      color: var(--muted);
       font-weight: 700;
     }
 
-    .stack {
+    .page-stack {
       max-width: 980px;
       margin: 0 auto;
     }
@@ -200,9 +211,10 @@
       position: relative;
       width: var(--page-width);
       height: var(--page-height);
-      background: #fff;
       margin: 0 auto 28px;
-      box-shadow: 0 12px 34px rgba(0,0,0,0.10);
+      background: var(--page-bg);
+      color: var(--page-text);
+      box-shadow: 0 16px 42px rgba(0,0,0,0.28);
       overflow: hidden;
     }
 
@@ -225,21 +237,16 @@
       left: 0;
       width: 100%;
       text-align: center;
-      color: #6b7280;
+      color: var(--page-muted);
       font-size: 12px;
       letter-spacing: 0.08em;
       text-transform: uppercase;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       pointer-events: none;
     }
 
-    .page-header {
-      top: 24px;
-    }
-
-    .page-footer {
-      bottom: 22px;
-    }
+    .page-header { top: 24px; }
+    .page-footer { bottom: 22px; }
 
     .page-content {
       width: var(--content-width);
@@ -250,7 +257,8 @@
 
     .render-root {
       width: 100%;
-      color: #111827;
+      font-family: Georgia, "Times New Roman", serif;
+      color: var(--page-text);
       font-size: var(--book-font-size);
       line-height: var(--book-line-height);
       word-break: break-word;
@@ -263,8 +271,8 @@
 
     .render-root p.first-para,
     .render-root p.no-indent,
-    .render-root .chapter-title,
     .render-root .chapter-number,
+    .render-root .chapter-title,
     .render-root .front-title,
     .render-root .front-author,
     .render-root .front-subtitle,
@@ -274,22 +282,23 @@
     .render-root .toc-entry,
     .render-root blockquote,
     .render-root ul,
-    .render-root ol {
+    .render-root ol,
+    .render-root .copyright-block {
       text-indent: 0;
     }
 
     .render-root .chapter-opener {
-      padding-top: var(--chapter-opener-top-space);
+      padding-top: var(--chapter-opener-space);
     }
 
     .render-root .chapter-number {
       text-align: center;
-      color: #6b7280;
+      color: var(--page-muted);
+      font-size: 14px;
       letter-spacing: 0.1em;
       text-transform: uppercase;
-      font-size: 14px;
       margin: 0 0 20px;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
 
     .render-root .chapter-title {
@@ -310,7 +319,7 @@
 
     .render-root .front-subtitle {
       text-align: center;
-      color: #6b7280;
+      color: var(--page-muted);
       margin: 0 0 12px;
       font-size: 18px;
     }
@@ -351,9 +360,7 @@
       margin: 1.6em 0;
     }
 
-    .render-root .spacer {
-      height: 1.2em;
-    }
+    .render-root .spacer { height: 1.2em; }
 
     .render-root .toc-title {
       text-align: center;
@@ -362,10 +369,16 @@
     }
 
     .render-root .toc-entry {
-      display: flex;
-      justify-content: space-between;
-      gap: 16px;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 10px;
+      align-items: end;
       margin: 0 0 0.85em;
+    }
+
+    .render-root .toc-dots {
+      border-bottom: 1px dotted #9ca3af;
+      transform: translateY(-0.25em);
     }
 
     .render-root .copyright-block {
@@ -385,34 +398,24 @@
       pointer-events: none;
     }
 
-    .measure-root {
-      width: 100%;
-    }
+    .measure-root { width: 100%; }
 
     @media (max-width: 1100px) {
-      .app {
-        grid-template-columns: 1fr;
-      }
-
+      .app { grid-template-columns: 1fr; }
       .sidebar {
         position: static;
         height: auto;
         border-right: none;
-        border-bottom: 1px solid var(--ui-border);
+        border-bottom: 1px solid var(--border);
       }
     }
 
     @media (max-width: 920px) {
-      .main {
-        padding: 10px;
-      }
-
+      .main { padding: 10px; }
       .page {
         width: calc(var(--page-width) * 0.5);
         height: calc(var(--page-height) * 0.5);
-        transform-origin: top center;
       }
-
       .page.right {
         padding:
           calc(var(--margin-top) * 0.5)
@@ -420,7 +423,6 @@
           calc(var(--margin-bottom) * 0.5)
           calc(var(--margin-inside) * 0.5);
       }
-
       .page.left {
         padding:
           calc(var(--margin-top) * 0.5)
@@ -428,7 +430,6 @@
           calc(var(--margin-bottom) * 0.5)
           calc(var(--margin-outside) * 0.5);
       }
-
       .page-content {
         width: calc(var(--content-width) * 0.5);
         height: calc(var(--content-height) * 0.5);
@@ -443,30 +444,15 @@
         margin: 0;
       }
 
-      html, body {
-        background: #fff;
-      }
-
       .sidebar,
-      .topbar .actions {
+      .topbar .button-row {
         display: none !important;
       }
 
-      .app {
-        display: block;
-      }
-
-      .main {
-        padding: 0;
-      }
-
-      .topbar {
-        margin: 0;
-      }
-
-      .topbar .titleblock {
-        display: none;
-      }
+      .app { display: block; }
+      .main { padding: 0; }
+      .topbar { margin: 0; }
+      .topbar > div:first-child { display: none; }
 
       .page {
         margin: 0;
@@ -491,25 +477,27 @@
         transform: none !important;
       }
 
-      .page-header {
-        top: 0.28in;
-      }
-
-      .page-footer {
-        bottom: 0.2in;
-      }
+      .page-header { top: 0.28in; }
+      .page-footer { bottom: 0.2in; }
     }
   </style>
 </head>
-<body>
+<body class="dark">
   <div class="app">
     <aside class="sidebar">
-      <h1>Alysum Formatter</h1>
-      <div class="sub">This page is the formatter engine, not the editor. It reads your saved manuscript and lays it out as printable pages.</div>
+      <div class="brand">Alysum Formatter</div>
+      <div class="brand-sub">Single-file formatter engine for your live Firestore library books.</div>
 
-      <div class="group">
-        <h2>Layout</h2>
-        <div class="row">
+      <section class="panel">
+        <div class="panel-title">Theme</div>
+        <div class="button-row">
+          <button id="themeToggleBtn" class="btn secondary" type="button">Toggle Dark Mode</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-title">Layout</div>
+        <div class="field">
           <label for="trimSelect">Trim size</label>
           <select id="trimSelect">
             <option value="6x9">6 × 9</option>
@@ -517,18 +505,18 @@
           </select>
         </div>
 
-        <div class="row two">
+        <div class="field two">
           <div>
             <label for="fontSizeInput">Font size</label>
             <input id="fontSizeInput" type="number" min="10" max="24" step="1" value="18" />
           </div>
           <div>
             <label for="lineHeightInput">Line height</label>
-            <input id="lineHeightInput" type="number" min="1.2" max="2.4" step="0.05" value="1.8" />
+            <input id="lineHeightInput" type="number" min="1.2" max="2.5" step="0.05" value="1.8" />
           </div>
         </div>
 
-        <div class="row two">
+        <div class="field two">
           <div>
             <label for="indentInput">Paragraph indent</label>
             <input id="indentInput" type="number" min="0" max="4" step="0.1" value="2" />
@@ -538,47 +526,52 @@
             <input id="spacingInput" type="number" min="0.5" max="2.5" step="0.1" value="1.2" />
           </div>
         </div>
-      </div>
+      </section>
 
-      <div class="group">
-        <h2>Structure</h2>
-        <label class="checkbox"><input id="includeFrontInput" type="checkbox" checked /> Include front matter</label>
-        <label class="checkbox"><input id="includeBackInput" type="checkbox" checked /> Include back matter</label>
-        <label class="checkbox"><input id="forceRectoInput" type="checkbox" checked /> Start sections on right-hand pages</label>
-        <label class="checkbox"><input id="showHeadersInput" type="checkbox" checked /> Show running headers</label>
-        <label class="checkbox"><input id="showPageNumsInput" type="checkbox" checked /> Show page numbers</label>
-        <label class="checkbox"><input id="romanFrontInput" type="checkbox" checked /> Roman numerals in front matter</label>
-        <label class="checkbox"><input id="keepHeadingsInput" type="checkbox" checked /> Keep headings with next block</label>
-        <label class="checkbox"><input id="widowControlInput" type="checkbox" checked /> Basic widow/orphan protection</label>
-      </div>
+      <section class="panel">
+        <div class="panel-title">Structure</div>
+        <label class="check"><input id="includeFrontMatterInput" type="checkbox" checked /> Include front matter</label>
+        <label class="check"><input id="includeBackMatterInput" type="checkbox" checked /> Include back matter</label>
+        <label class="check"><input id="forceRectoInput" type="checkbox" checked /> Start sections on right-hand pages</label>
+        <label class="check"><input id="showHeadersInput" type="checkbox" checked /> Show running headers</label>
+        <label class="check"><input id="showPageNumbersInput" type="checkbox" checked /> Show page numbers</label>
+        <label class="check"><input id="romanFrontMatterInput" type="checkbox" checked /> Roman numerals in front matter</label>
+        <label class="check"><input id="keepHeadingsInput" type="checkbox" checked /> Keep headings with next block</label>
+        <label class="check"><input id="widowControlInput" type="checkbox" checked /> Basic widow/orphan protection</label>
+      </section>
 
-      <div class="group">
-        <h2>Actions</h2>
-        <div class="actions">
-          <button id="repaginateBtn" type="button">Repaginate</button>
-          <button id="exportBtn" type="button" class="primary">Export PDF</button>
+      <section class="panel">
+        <div class="panel-title">Live Book Info</div>
+        <div class="status-line" id="sidebarInfo">Waiting for Firebase…</div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-title">Actions</div>
+        <div class="button-row">
+          <button id="repaginateBtn" type="button" class="btn">Repaginate</button>
+          <button id="exportBtn" type="button" class="btn primary">Export PDF</button>
         </div>
-      </div>
+      </section>
     </aside>
 
     <main class="main">
       <div class="topbar">
-        <div class="titleblock">
-          <div class="doc-title" id="docTitle">Loading…</div>
-          <div class="status" id="status">Preparing formatter…</div>
+        <div>
+          <div id="bookTitle" class="book-title">Loading…</div>
+          <div id="status" class="book-subtitle">Connecting…</div>
         </div>
-        <div class="actions">
-          <button id="repaginateBtnTop" type="button">Repaginate</button>
-          <button id="exportBtnTop" type="button" class="primary">Export PDF</button>
+        <div class="button-row">
+          <button id="topRepaginateBtn" type="button" class="btn">Repaginate</button>
+          <button id="topExportBtn" type="button" class="btn primary">Export PDF</button>
         </div>
       </div>
 
-      <div class="stack" id="pageStack"></div>
+      <div id="pageStack" class="page-stack"></div>
     </main>
   </div>
 
   <div class="measure-host">
-    <div class="render-root measure-root" id="measureRoot"></div>
+    <div id="measureRoot" class="render-root measure-root"></div>
   </div>
 
   <script type="module">
@@ -590,8 +583,9 @@
     const bookId = params.get("book");
     const selectedChapterIds = (params.get("chapters") || "").split(",").map(s => s.trim()).filter(Boolean);
 
-    const docTitle = document.getElementById("docTitle");
+    const bookTitleEl = document.getElementById("bookTitle");
     const statusEl = document.getElementById("status");
+    const sidebarInfoEl = document.getElementById("sidebarInfo");
     const pageStack = document.getElementById("pageStack");
     const measureRoot = document.getElementById("measureRoot");
 
@@ -601,19 +595,20 @@
     const indentInput = document.getElementById("indentInput");
     const spacingInput = document.getElementById("spacingInput");
 
-    const includeFrontInput = document.getElementById("includeFrontInput");
-    const includeBackInput = document.getElementById("includeBackInput");
+    const includeFrontMatterInput = document.getElementById("includeFrontMatterInput");
+    const includeBackMatterInput = document.getElementById("includeBackMatterInput");
     const forceRectoInput = document.getElementById("forceRectoInput");
     const showHeadersInput = document.getElementById("showHeadersInput");
-    const showPageNumsInput = document.getElementById("showPageNumsInput");
-    const romanFrontInput = document.getElementById("romanFrontInput");
+    const showPageNumbersInput = document.getElementById("showPageNumbersInput");
+    const romanFrontMatterInput = document.getElementById("romanFrontMatterInput");
     const keepHeadingsInput = document.getElementById("keepHeadingsInput");
     const widowControlInput = document.getElementById("widowControlInput");
 
+    const themeToggleBtn = document.getElementById("themeToggleBtn");
     const repaginateBtn = document.getElementById("repaginateBtn");
     const exportBtn = document.getElementById("exportBtn");
-    const repaginateBtnTop = document.getElementById("repaginateBtnTop");
-    const exportBtnTop = document.getElementById("exportBtnTop");
+    const topRepaginateBtn = document.getElementById("topRepaginateBtn");
+    const topExportBtn = document.getElementById("topExportBtn");
 
     let currentUser = null;
     let currentBook = null;
@@ -622,20 +617,25 @@
       trim: "6x9",
       fontSize: 18,
       lineHeight: 1.8,
-      indentEm: 2,
-      paragraphSpacingEm: 1.2,
+      paragraphIndent: 2,
+      paragraphSpacing: 1.2,
       includeFrontMatter: true,
       includeBackMatter: true,
-      forceRectoSections: true,
+      forceRecto: true,
       showHeaders: true,
       showPageNumbers: true,
       romanFrontMatter: true,
-      keepHeadingWithNext: true,
-      basicWidowControl: true
+      keepHeadingsWithNext: true,
+      basicWidowControl: true,
+      theme: localStorage.getItem("alysum-formatter-theme") || "dark"
     };
 
     function setStatus(text) {
       statusEl.textContent = text;
+    }
+
+    function setSidebarInfo(text) {
+      sidebarInfoEl.textContent = text;
     }
 
     function safeString(value, fallback = "") {
@@ -651,46 +651,7 @@
     }
 
     function generateId() {
-      return "ch_" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
-    }
-
-    function normalizeChapter(raw, fallbackTitle = "Untitled") {
-      const chapter = safeObject(raw, {});
-      return {
-        id: safeString(chapter.id, generateId()),
-        title: safeString(chapter.title, fallbackTitle),
-        content: safeString(chapter.content, "")
-      };
-    }
-
-    function normalizeSections(rawSections) {
-      const sections = safeObject(rawSections, {});
-      const frontRaw = safeArray(sections.front, []);
-      const bodyRaw = safeArray(sections.body, []);
-      const backRaw = safeArray(sections.back, []);
-
-      const front = frontRaw.length
-        ? frontRaw.map((ch, i) => normalizeChapter(ch, i === 0 ? "Copyright" : "Table of Contents"))
-        : [
-            { id: generateId(), title: "Copyright", content: "" },
-            { id: generateId(), title: "Table of Contents", content: "" }
-          ];
-
-      const body = bodyRaw.length
-        ? bodyRaw.map((ch, i) => normalizeChapter(ch, `Chapter ${i + 1}`))
-        : [{ id: generateId(), title: "Chapter 1", content: "" }];
-
-      const back = backRaw.map((ch, i) => normalizeChapter(ch, `Back Matter ${i + 1}`));
-
-      return { front, body, back };
-    }
-
-    function normalizeBookData(rawData) {
-      const data = safeObject(rawData, {});
-      return {
-        title: safeString(data.title, "Untitled Book"),
-        sections: normalizeSections(data.sections)
-      };
+      return "id_" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
     }
 
     function toRoman(num) {
@@ -710,7 +671,14 @@
       return out.toLowerCase();
     }
 
-    function applyCSSVariables() {
+    function applyTheme(theme) {
+      document.body.classList.toggle("light", theme === "light");
+      document.body.classList.toggle("dark", theme !== "light");
+      localStorage.setItem("alysum-formatter-theme", theme);
+      settings.theme = theme;
+    }
+
+    function applyLayoutVariables() {
       const root = document.documentElement;
 
       if (settings.trim === "5.5x8.5") {
@@ -731,31 +699,112 @@
 
       root.style.setProperty("--book-font-size", settings.fontSize + "px");
       root.style.setProperty("--book-line-height", String(settings.lineHeight));
-      root.style.setProperty("--paragraph-indent", settings.indentEm + "em");
-      root.style.setProperty("--paragraph-spacing", settings.paragraphSpacingEm + "em");
+      root.style.setProperty("--paragraph-indent", settings.paragraphIndent + "em");
+      root.style.setProperty("--paragraph-spacing", settings.paragraphSpacing + "em");
+    }
+
+    function syncUIFromSettings() {
+      trimSelect.value = settings.trim;
+      fontSizeInput.value = String(settings.fontSize);
+      lineHeightInput.value = String(settings.lineHeight);
+      indentInput.value = String(settings.paragraphIndent);
+      spacingInput.value = String(settings.paragraphSpacing);
+      includeFrontMatterInput.checked = settings.includeFrontMatter;
+      includeBackMatterInput.checked = settings.includeBackMatter;
+      forceRectoInput.checked = settings.forceRecto;
+      showHeadersInput.checked = settings.showHeaders;
+      showPageNumbersInput.checked = settings.showPageNumbers;
+      romanFrontMatterInput.checked = settings.romanFrontMatter;
+      keepHeadingsInput.checked = settings.keepHeadingsWithNext;
+      widowControlInput.checked = settings.basicWidowControl;
     }
 
     function syncSettingsFromUI() {
       settings.trim = trimSelect.value;
       settings.fontSize = Number(fontSizeInput.value) || 18;
       settings.lineHeight = Number(lineHeightInput.value) || 1.8;
-      settings.indentEm = Number(indentInput.value) || 2;
-      settings.paragraphSpacingEm = Number(spacingInput.value) || 1.2;
-
-      settings.includeFrontMatter = includeFrontInput.checked;
-      settings.includeBackMatter = includeBackInput.checked;
-      settings.forceRectoSections = forceRectoInput.checked;
+      settings.paragraphIndent = Number(indentInput.value) || 2;
+      settings.paragraphSpacing = Number(spacingInput.value) || 1.2;
+      settings.includeFrontMatter = includeFrontMatterInput.checked;
+      settings.includeBackMatter = includeBackMatterInput.checked;
+      settings.forceRecto = forceRectoInput.checked;
       settings.showHeaders = showHeadersInput.checked;
-      settings.showPageNumbers = showPageNumsInput.checked;
-      settings.romanFrontMatter = romanFrontInput.checked;
-      settings.keepHeadingWithNext = keepHeadingsInput.checked;
+      settings.showPageNumbers = showPageNumbersInput.checked;
+      settings.romanFrontMatter = romanFrontMatterInput.checked;
+      settings.keepHeadingsWithNext = keepHeadingsInput.checked;
       settings.basicWidowControl = widowControlInput.checked;
+    }
+
+    function appendHTML(target, html) {
+      const temp = document.createElement("div");
+      temp.innerHTML = html;
+      while (temp.firstChild) target.appendChild(temp.firstChild);
     }
 
     function readPlainTextFromHTML(html) {
       const div = document.createElement("div");
       div.innerHTML = html;
-      return div.textContent.replace(/\s+/g, " ").trim();
+      return (div.textContent || "").replace(/\s+/g, " ").trim();
+    }
+
+    function normalizeChapter(raw, fallbackTitle = "Untitled") {
+      const chapter = safeObject(raw, {});
+      return {
+        id: safeString(chapter.id, generateId()),
+        title: safeString(chapter.title, fallbackTitle),
+        content: safeString(chapter.content, "")
+      };
+    }
+
+    function normalizeBookData(rawData, bookDocId) {
+      const data = safeObject(rawData, {});
+
+      const normalized = {
+        id: bookDocId,
+        bookId: safeString(data.bookId, bookDocId),
+        title: safeString(data.title, "Untitled Book"),
+        author: safeString(data.author, ""),
+        sections: {
+          front: [],
+          body: [],
+          back: []
+        }
+      };
+
+      if (data.sections && typeof data.sections === "object") {
+        const sections = safeObject(data.sections, {});
+        const front = safeArray(sections.front, []);
+        const body = safeArray(sections.body, []);
+        const back = safeArray(sections.back, []);
+
+        normalized.sections.front = front.map((ch, i) => normalizeChapter(ch, i === 0 ? "Copyright" : "Table of Contents"));
+        normalized.sections.body = body.length
+          ? body.map((ch, i) => normalizeChapter(ch, `Chapter ${i + 1}`))
+          : [];
+        normalized.sections.back = back.map((ch, i) => normalizeChapter(ch, `Back Matter ${i + 1}`));
+      }
+
+      if (!normalized.sections.body.length) {
+        const chaptersObj = safeObject(data.chapters, {});
+        const keys = Object.keys(chaptersObj).sort((a, b) => Number(a) - Number(b));
+        normalized.sections.body = keys.map((key, index) => {
+          const rawChapter = safeObject(chaptersObj[key], {});
+          return {
+            id: safeString(rawChapter.id, `ch_${key}`),
+            title: safeString(rawChapter.title, `Chapter ${index + 1}`),
+            content: safeString(rawChapter.content, "")
+          };
+        });
+      }
+
+      if (!normalized.sections.front.length) {
+        normalized.sections.front = [
+          { id: "front_copyright", title: "Copyright", content: "" },
+          { id: "front_toc", title: "Table of Contents", content: "" }
+        ];
+      }
+
+      return normalized;
     }
 
     function normalizeEditorHTML(html) {
@@ -766,8 +815,6 @@
       const normalized = normalizeEditorHTML(html);
       const wrap = document.createElement("div");
       wrap.innerHTML = normalized || "<div></div>";
-
-      const sourceNodes = [...wrap.childNodes];
       const blocks = [];
 
       function pushParagraph(innerHTML) {
@@ -780,27 +827,21 @@
         blocks.push({ type: "paragraph", html: innerHTML });
       }
 
-      for (const node of sourceNodes) {
+      for (const node of [...wrap.childNodes]) {
         if (node.nodeType === Node.TEXT_NODE) {
           const text = (node.textContent || "").trim();
-          if (text) {
-            blocks.push({ type: "paragraph", html: text });
-          }
+          if (text) blocks.push({ type: "paragraph", html: text });
           continue;
         }
 
         if (node.nodeType !== Node.ELEMENT_NODE) continue;
-
         const tag = node.tagName.toLowerCase();
 
         if (tag === "div" || tag === "p") {
           const inner = node.innerHTML.trim();
-          const text = node.textContent.replace(/\s+/g, " ").trim();
-          if (!text && !inner) {
-            blocks.push({ type: "spacer" });
-          } else {
-            pushParagraph(inner || text);
-          }
+          const text = (node.textContent || "").replace(/\s+/g, " ").trim();
+          if (!text && !inner) blocks.push({ type: "spacer" });
+          else pushParagraph(inner || text);
           continue;
         }
 
@@ -846,9 +887,7 @@
         }
         out.push(block);
       }
-      while (out.length && out[out.length - 1].type === "spacer") {
-        out.pop();
-      }
+      while (out.length && out[out.length - 1].type === "spacer") out.pop();
       return out;
     }
 
@@ -911,10 +950,14 @@
         const left = document.createElement("span");
         left.textContent = block.label || "";
 
+        const dots = document.createElement("span");
+        dots.className = "toc-dots";
+
         const right = document.createElement("span");
         right.textContent = block.pageLabel || "";
 
         el.appendChild(left);
+        el.appendChild(dots);
         el.appendChild(right);
         return el;
       }
@@ -965,19 +1008,9 @@
       return el;
     }
 
-    function appendHTML(target, html) {
-      const temp = document.createElement("div");
-      temp.innerHTML = html;
-      while (temp.firstChild) {
-        target.appendChild(temp.firstChild);
-      }
-    }
-
     function measureFits(elements) {
       measureRoot.innerHTML = "";
-      for (const el of elements) {
-        measureRoot.appendChild(el.cloneNode(true));
-      }
+      for (const el of elements) measureRoot.appendChild(el.cloneNode(true));
       const host = measureRoot.parentElement;
       return measureRoot.scrollHeight <= host.clientHeight;
     }
@@ -1006,9 +1039,7 @@
         }
       }
 
-      if (best < 3 || best >= words.length - 2) {
-        return null;
-      }
+      if (best < 3 || best >= words.length - 2) return null;
 
       return {
         head: { ...block, html: words.slice(0, best).join(" ") },
@@ -1020,42 +1051,39 @@
       return pageNumber % 2 === 0 ? "left" : "right";
     }
 
-    function makePageNumberLabel(pageNumber, meta) {
-      if (!settings.showPageNumbers) return "";
-      if (meta.kind === "front" && settings.romanFrontMatter) {
-        return toRoman(meta.frontDisplayIndex);
-      }
-      return String(meta.bodyDisplayIndex);
-    }
-
-    function makeHeaderLabel(meta, side) {
-      if (!settings.showHeaders) return "";
-      if (meta.kind === "front") return "";
-      return side === "left" ? currentBook.title : meta.title;
-    }
-
     function createPageShell(pageNumber, meta, blank = false) {
-      const side = pageSide(pageNumber);
-
       const page = document.createElement("div");
-      page.className = `page ${side}${blank ? " blank" : ""}`;
+      page.className = `page ${pageSide(pageNumber)}${blank ? " blank" : ""}`;
 
       const header = document.createElement("div");
       header.className = "page-header";
-      header.textContent = blank ? "" : makeHeaderLabel(meta, side);
+      header.textContent = blank ? "" : makeHeaderLabel(meta, pageNumber);
 
       const content = document.createElement("div");
-      content.className = "page-content";
+      content.className = "page-content render-root";
 
       const footer = document.createElement("div");
       footer.className = "page-footer";
-      footer.textContent = blank ? "" : makePageNumberLabel(pageNumber, meta);
+      footer.textContent = blank ? "" : makePageNumberLabel(meta);
 
       page.appendChild(header);
       page.appendChild(content);
       page.appendChild(footer);
-
       return { page, content, header, footer };
+    }
+
+    function makeHeaderLabel(meta, pageNumber) {
+      if (!settings.showHeaders) return "";
+      if (meta.kind === "front") return "";
+      return pageSide(pageNumber) === "left" ? currentBook.title : meta.title;
+    }
+
+    function makePageNumberLabel(meta) {
+      if (!settings.showPageNumbers) return "";
+      if (meta.kind === "front" && settings.romanFrontMatter) {
+        return toRoman(meta.frontDisplayIndex || 1);
+      }
+      return String(meta.bodyDisplayIndex || "");
     }
 
     function buildDocumentPlan(book, selectedIds) {
@@ -1072,7 +1100,7 @@
           kind: "front",
           title: "Title Page",
           rectoStart: true,
-          blocks: [{ type: "front_title_page", title: book.title, author: "" }],
+          blocks: [{ type: "front_title_page", title: book.title, author: book.author }],
           frontDisplayIndex: frontCounter,
           bodyDisplayIndex: 0,
           isTOC: false
@@ -1080,7 +1108,9 @@
 
         const front = safeArray(book.sections.front, []);
         for (const ch of front) {
-          if (ch.title.toLowerCase().includes("table of contents")) {
+          const lower = (ch.title || "").toLowerCase();
+
+          if (lower.includes("table of contents")) {
             frontCounter += 1;
             plan.push({
               kind: "front",
@@ -1094,18 +1124,16 @@
             continue;
           }
 
-          if (ch.title.toLowerCase().includes("copyright")) {
+          if (lower.includes("copyright")) {
             frontCounter += 1;
             plan.push({
               kind: "front",
               title: ch.title,
               rectoStart: true,
-              blocks: [
-                {
-                  type: "copyright",
-                  html: ch.content || `Copyright © ${new Date().getFullYear()} ${book.title}`
-                }
-              ],
+              blocks: [{
+                type: "copyright",
+                html: ch.content || `Copyright © ${new Date().getFullYear()} ${book.author || book.title}`
+              }],
               frontDisplayIndex: frontCounter,
               bodyDisplayIndex: 0,
               isTOC: false
@@ -1119,11 +1147,7 @@
             title: ch.title,
             rectoStart: true,
             blocks: [
-              {
-                type: "chapter_open",
-                numberLabel: "",
-                title: ch.title
-              },
+              { type: "chapter_open", numberLabel: "", title: ch.title },
               ...htmlToBlocks(ch.content)
             ],
             frontDisplayIndex: frontCounter,
@@ -1135,20 +1159,15 @@
 
       selectedBody.forEach((ch, index) => {
         bodyCounter += 1;
-
         const blocks = htmlToBlocks(ch.content);
         const chapterTitle = ch.title || `Chapter ${index + 1}`;
 
         plan.push({
           kind: "body",
           title: chapterTitle,
-          rectoStart: settings.forceRectoSections,
+          rectoStart: settings.forceRecto,
           blocks: [
-            {
-              type: "chapter_open",
-              numberLabel: `Chapter ${index + 1}`,
-              title: chapterTitle
-            },
+            { type: "chapter_open", numberLabel: `Chapter ${index + 1}`, title: chapterTitle },
             ...(blocks.length ? blocks : [{ type: "paragraph", html: " " }])
           ],
           frontDisplayIndex: 0,
@@ -1166,11 +1185,7 @@
             title: ch.title,
             rectoStart: true,
             blocks: [
-              {
-                type: "chapter_open",
-                numberLabel: "",
-                title: ch.title
-              },
+              { type: "chapter_open", numberLabel: "", title: ch.title },
               ...htmlToBlocks(ch.content)
             ],
             frontDisplayIndex: 0,
@@ -1184,53 +1199,36 @@
     }
 
     function shouldKeepWithNext(block) {
-      if (!settings.keepHeadingWithNext) return false;
+      if (!settings.keepHeadingsWithNext) return false;
       return block.type === "heading";
     }
 
-    function candidateElementsForBlocks(blocks, firstParagraphPending) {
-      const result = [];
-      let localFirst = firstParagraphPending;
-
+    function makeElementsForBlocks(blocks, firstParagraphPending) {
+      const els = [];
+      let first = firstParagraphPending;
       for (const block of blocks) {
         const isParagraph = block.type === "paragraph";
-        result.push(
-          makeElementFromBlock(block, {
-            firstParagraph: isParagraph && localFirst
-          })
-        );
-        if (isParagraph) localFirst = false;
+        els.push(makeElementFromBlock(block, { firstParagraph: isParagraph && first }));
+        if (isParagraph) first = false;
       }
-
-      return result;
+      return els;
     }
 
     function protectWidowOrphan(pageBlocks, overflowBlocks) {
-      if (!settings.basicWidowControl) {
-        return { pageBlocks, overflowBlocks };
-      }
-
-      if (!pageBlocks.length || !overflowBlocks.length) {
-        return { pageBlocks, overflowBlocks };
-      }
+      if (!settings.basicWidowControl) return { pageBlocks, overflowBlocks };
+      if (!pageBlocks.length || !overflowBlocks.length) return { pageBlocks, overflowBlocks };
 
       const last = pageBlocks[pageBlocks.length - 1];
       const firstOverflow = overflowBlocks[0];
 
       if (last.type === "paragraph") {
-        const lastText = readPlainTextFromHTML(last.html);
-        const lastWords = lastText.split(/\s+/).filter(Boolean).length;
-        if (lastWords < 4 && pageBlocks.length > 1) {
-          overflowBlocks.unshift(pageBlocks.pop());
-        }
+        const count = readPlainTextFromHTML(last.html).split(/\s+/).filter(Boolean).length;
+        if (count < 4 && pageBlocks.length > 1) overflowBlocks.unshift(pageBlocks.pop());
       }
 
       if (firstOverflow.type === "paragraph") {
-        const nextText = readPlainTextFromHTML(firstOverflow.html);
-        const nextWords = nextText.split(/\s+/).filter(Boolean).length;
-        if (nextWords < 4 && pageBlocks.length > 1) {
-          overflowBlocks.unshift(pageBlocks.pop());
-        }
+        const count = readPlainTextFromHTML(firstOverflow.html).split(/\s+/).filter(Boolean).length;
+        if (count < 4 && pageBlocks.length > 1) overflowBlocks.unshift(pageBlocks.pop());
       }
 
       return { pageBlocks, overflowBlocks };
@@ -1244,13 +1242,12 @@
       let firstRealPageNumber = null;
 
       while (blocks.length) {
-        if (!started && section.rectoStart && settings.forceRectoSections && pageSide(counters.physical + 1) !== "right") {
+        if (!started && section.rectoStart && settings.forceRecto && pageSide(counters.physical + 1) !== "right") {
           counters.physical += 1;
-          const blankMeta = { ...section };
-          const blankPage = createPageShell(counters.physical, blankMeta, true);
+          const blank = createPageShell(counters.physical, section, true);
           output.push({
             physicalPage: counters.physical,
-            node: blankPage.page,
+            node: blank.page,
             kind: "blank",
             title: section.title
           });
@@ -1259,61 +1256,45 @@
 
         counters.physical += 1;
         started = true;
+        if (firstRealPageNumber === null) firstRealPageNumber = counters.physical;
 
-        if (firstRealPageNumber === null) {
-          firstRealPageNumber = counters.physical;
-        }
-
-        const pageMeta = { ...section };
-        const shell = createPageShell(counters.physical, pageMeta, false);
-
+        const shell = createPageShell(counters.physical, section, false);
         const pageBlocks = [];
         let blockIndex = 0;
 
         while (blockIndex < blocks.length) {
-          const current = blocks[blockIndex];
+          const block = blocks[blockIndex];
 
-          if (shouldKeepWithNext(current) && blocks[blockIndex + 1]) {
-            const pair = [current, blocks[blockIndex + 1]];
-            const pairEls = candidateElementsForBlocks(pair, firstParagraphPending);
-            const allEls = candidateElementsForBlocks(pageBlocks, firstParagraphPending).concat(pairEls);
-
-            if (measureFits(allEls)) {
-              pageBlocks.push(current, blocks[blockIndex + 1]);
+          if (shouldKeepWithNext(block) && blocks[blockIndex + 1]) {
+            const pairBlocks = [block, blocks[blockIndex + 1]];
+            const pairEls = makeElementsForBlocks(pairBlocks, firstParagraphPending);
+            const currentEls = makeElementsForBlocks(pageBlocks, firstParagraphPending);
+            if (measureFits(currentEls.concat(pairEls))) {
+              pageBlocks.push(block, blocks[blockIndex + 1]);
               if (blocks[blockIndex].type === "paragraph") firstParagraphPending = false;
               if (blocks[blockIndex + 1].type === "paragraph") firstParagraphPending = false;
               blockIndex += 2;
               continue;
             }
-
             if (pageBlocks.length) break;
           }
 
-          const testEls = candidateElementsForBlocks(pageBlocks.concat(current), firstParagraphPending);
+          const testEls = makeElementsForBlocks(pageBlocks.concat(block), firstParagraphPending);
           if (measureFits(testEls)) {
-            pageBlocks.push(current);
-            if (current.type === "paragraph") firstParagraphPending = false;
+            pageBlocks.push(block);
+            if (block.type === "paragraph") firstParagraphPending = false;
             blockIndex += 1;
             continue;
           }
 
-          if (!pageBlocks.length && current.type === "paragraph") {
-            const split = splitParagraphBlock(current, {
-              firstParagraph: firstParagraphPending
-            });
-
+          if (!pageBlocks.length && block.type === "paragraph") {
+            const split = splitParagraphBlock(block, { firstParagraph: firstParagraphPending });
             if (split) {
-              const headEls = candidateElementsForBlocks([split.head], firstParagraphPending);
-              if (measureFits(headEls)) {
-                pageBlocks.push(split.head);
-                firstParagraphPending = false;
-                blocks.splice(blockIndex, 1, split.tail);
-              } else {
-                pageBlocks.push(current);
-                blockIndex += 1;
-              }
+              pageBlocks.push(split.head);
+              blocks.splice(blockIndex, 1, split.tail);
+              firstParagraphPending = false;
             } else {
-              pageBlocks.push(current);
+              pageBlocks.push(block);
               blockIndex += 1;
             }
           }
@@ -1326,9 +1307,9 @@
         const finalPageBlocks = adjusted.pageBlocks;
         overflow = adjusted.overflowBlocks;
 
-        shell.content.innerHTML = "";
-        const finalEls = candidateElementsForBlocks(finalPageBlocks, false);
-        finalEls.forEach(el => shell.content.appendChild(el));
+        for (const el of makeElementsForBlocks(finalPageBlocks, false)) {
+          shell.content.appendChild(el);
+        }
 
         output.push({
           physicalPage: counters.physical,
@@ -1354,172 +1335,150 @@
     function buildTOCBlocks(entries) {
       return [
         { type: "toc_title", title: "Contents" },
-        ...entries.map(entry => ({
-          type: "toc_entry",
-          label: entry.title,
-          pageLabel: entry.pageLabel
-        }))
+        ...entries.map(entry => ({ type: "toc_entry", label: entry.title, pageLabel: entry.pageLabel }))
       ];
     }
 
     function repaginateWithTOC(plan) {
-      let counters = {
-        physical: 0,
-        frontPhysicalCount: 0
-      };
-
+      let counters = { physical: 0, frontPhysicalCount: 0 };
       const tocEntries = [];
       let pages = [];
-      let tocSectionIndexes = [];
+      let tocIndexes = [];
 
-      for (let i = 0; i < plan.length; i++) {
-        const section = {
-          ...plan[i],
-          blocks: [...plan[i].blocks]
-        };
+      for (const section of plan) {
+        const sectionPages = paginateSection({ ...section, blocks: [...section.blocks] }, tocEntries, counters);
 
-        const sectionPages = paginateSection(section, tocEntries, counters);
         if (section.kind === "front") {
           counters.frontPhysicalCount += sectionPages.filter(p => p.kind !== "blank").length;
         }
 
         if (section.isTOC) {
-          const startIndex = pages.length;
+          const start = pages.length;
           pages.push(...sectionPages);
-          tocSectionIndexes = [];
-          for (let j = 0; j < sectionPages.length; j++) {
-            tocSectionIndexes.push(startIndex + j);
-          }
+          tocIndexes = sectionPages.map((_, i) => start + i);
         } else {
           pages.push(...sectionPages);
         }
       }
 
-      if (tocSectionIndexes.length) {
-        const tocBlocks = buildTOCBlocks(tocEntries);
+      if (!tocIndexes.length) return pages;
 
-        const oldPages = pages;
-        const newPages = [];
-        let currentPhysical = 0;
+      const before = pages.slice(0, tocIndexes[0]);
+      const after = pages.slice(tocIndexes[tocIndexes.length - 1] + 1);
 
-        for (let i = 0; i < oldPages.length; i++) {
-          if (tocSectionIndexes.includes(i)) continue;
-          newPages.push(oldPages[i]);
-          currentPhysical = oldPages[i].physicalPage;
-        }
+      const tocSection = {
+        kind: "front",
+        title: "Contents",
+        rectoStart: false,
+        blocks: buildTOCBlocks(tocEntries),
+        frontDisplayIndex: 1,
+        bodyDisplayIndex: 0,
+        isTOC: true
+      };
 
-        const tocPlaceholderIndex = tocSectionIndexes[0];
-        const before = oldPages.slice(0, tocPlaceholderIndex);
-        const after = oldPages.filter((_, i) => !tocSectionIndexes.includes(i) && i > tocSectionIndexes[tocSectionIndexes.length - 1]);
+      const rebuildCounters = {
+        physical: before.length ? before[before.length - 1].physicalPage : 0,
+        frontPhysicalCount: before.filter(p => p.kind === "front" && p.kind !== "blank").length
+      };
 
-        counters = {
-          physical: before.length ? before[before.length - 1].physicalPage : 0,
-          frontPhysicalCount: before.filter(p => p.kind === "front").length
-        };
+      const tocPages = paginateSection(tocSection, [], rebuildCounters);
+      const rebuilt = [...before, ...tocPages];
+      let physical = rebuilt.length ? rebuilt[rebuilt.length - 1].physicalPage : 0;
 
-        const fakeTOCSection = {
-          kind: "front",
-          title: "Contents",
-          rectoStart: false,
-          blocks: tocBlocks,
-          frontDisplayIndex: 1,
-          bodyDisplayIndex: 0,
-          isTOC: true
-        };
+      for (const oldPage of after) {
+        physical += 1;
+        const node = oldPage.node.cloneNode(true);
+        node.classList.remove("left", "right");
+        node.classList.add(pageSide(physical));
 
-        const tocPages = paginateSection(fakeTOCSection, [], counters);
+        const header = node.querySelector(".page-header");
+        const footer = node.querySelector(".page-footer");
 
-        const rebuilt = [...before, ...tocPages];
-        let renumberBase = rebuilt.length ? rebuilt[rebuilt.length - 1].physicalPage : 0;
-
-        for (const page of after) {
-          renumberBase += 1;
-          const newPage = page.node.cloneNode(true);
-          const side = pageSide(renumberBase);
-          newPage.classList.remove("left", "right");
-          newPage.classList.add(side);
-
-          const footer = newPage.querySelector(".page-footer");
-          const header = newPage.querySelector(".page-header");
-
-          if (footer && !newPage.classList.contains("blank")) {
-            if (page.kind === "front" && settings.romanFrontMatter) {
-              const frontIndex = rebuilt.filter(p => p.kind === "front" && p.kind !== "blank").length + 1;
-              footer.textContent = settings.showPageNumbers ? toRoman(frontIndex) : "";
-            } else {
-              const bodyPageNumber = renumberBase - rebuilt.filter(p => p.kind === "front").length;
-              footer.textContent = settings.showPageNumbers ? String(bodyPageNumber) : "";
-            }
-          }
-
-          if (header && !newPage.classList.contains("blank")) {
+        if (!node.classList.contains("blank")) {
+          if (header) {
             header.textContent = settings.showHeaders
-              ? (side === "left" ? currentBook.title : page.title)
+              ? (pageSide(physical) === "left" ? currentBook.title : oldPage.title)
               : "";
           }
 
-          rebuilt.push({
-            ...page,
-            physicalPage: renumberBase,
-            node: newPage
-          });
+          if (footer) {
+            if (!settings.showPageNumbers) {
+              footer.textContent = "";
+            } else {
+              const frontCount = rebuilt.filter(p => p.kind === "front" && p.kind !== "blank").length;
+              if (oldPage.kind === "front" && settings.romanFrontMatter) {
+                footer.textContent = toRoman(frontCount + 1);
+              } else {
+                footer.textContent = String(physical - frontCount);
+              }
+            }
+          }
         }
 
-        return rebuilt;
+        rebuilt.push({ ...oldPage, physicalPage: physical, node });
       }
 
-      return pages;
+      return rebuilt;
     }
 
     function renderPages(pages) {
       pageStack.innerHTML = "";
-      pages.forEach(page => pageStack.appendChild(page.node));
+      for (const page of pages) pageStack.appendChild(page.node);
       setStatus(`${pages.length} pages formatted`);
     }
 
     function buildAndRender() {
       if (!currentBook) return;
-
       syncSettingsFromUI();
-      applyCSSVariables();
-
+      applyLayoutVariables();
       const plan = buildDocumentPlan(currentBook, selectedChapterIds);
       const pages = repaginateWithTOC(plan);
       renderPages(pages);
+
+      const bodyCount = currentBook.sections.body.length;
+      const frontCount = currentBook.sections.front.length;
+      const backCount = currentBook.sections.back.length;
+      setSidebarInfo(`${bodyCount} body chapters • ${frontCount} front sections • ${backCount} back sections`);
     }
 
-    async function loadBook(uid) {
+    async function loadBookFromLibrary() {
       if (!bookId) {
         setStatus("No book selected");
+        bookTitleEl.textContent = "No book selected";
         return;
       }
 
-      const snap = await getDoc(doc(db, "users", uid, "books", bookId));
+      const snap = await getDoc(doc(db, "library", bookId));
       if (!snap.exists()) {
-        setStatus("Book not found");
-        docTitle.textContent = "Book not found";
+        setStatus("Book not found in library");
+        bookTitleEl.textContent = "Book not found";
+        setSidebarInfo(`Missing library/${bookId}`);
         return;
       }
 
-      currentBook = normalizeBookData(snap.data());
-      docTitle.textContent = currentBook.title;
+      currentBook = normalizeBookData(snap.data(), snap.id);
+      bookTitleEl.textContent = currentBook.title;
       document.title = `${currentBook.title} — Alysum Formatter`;
       buildAndRender();
     }
 
     function attachEvents() {
+      themeToggleBtn.addEventListener("click", () => {
+        applyTheme(document.body.classList.contains("light") ? "dark" : "light");
+      });
+
       [
         trimSelect,
         fontSizeInput,
         lineHeightInput,
         indentInput,
         spacingInput,
-        includeFrontInput,
-        includeBackInput,
+        includeFrontMatterInput,
+        includeBackMatterInput,
         forceRectoInput,
         showHeadersInput,
-        showPageNumsInput,
-        romanFrontInput,
+        showPageNumbersInput,
+        romanFrontMatterInput,
         keepHeadingsInput,
         widowControlInput
       ].forEach(el => {
@@ -1529,19 +1488,22 @@
         });
       });
 
-      [repaginateBtn, repaginateBtnTop].forEach(btn => {
+      [repaginateBtn, topRepaginateBtn].forEach(btn => {
         btn.addEventListener("click", () => {
           setStatus("Repaginating…");
           requestAnimationFrame(buildAndRender);
         });
       });
 
-      [exportBtn, exportBtnTop].forEach(btn => {
-        btn.addEventListener("click", () => {
-          window.print();
-        });
+      [exportBtn, topExportBtn].forEach(btn => {
+        btn.addEventListener("click", () => window.print());
       });
     }
+
+    applyTheme(settings.theme);
+    syncUIFromSettings();
+    applyLayoutVariables();
+    attachEvents();
 
     onAuthStateChanged(auth, async (user) => {
       if (!user) {
@@ -1550,15 +1512,16 @@
       }
 
       currentUser = user;
-      attachEvents();
-      applyCSSVariables();
       setStatus("Loading manuscript…");
+      setSidebarInfo(`Firebase ready • library/${bookId || "(missing book id)"}`);
 
       try {
-        await loadBook(user.uid);
+        await loadBookFromLibrary();
       } catch (err) {
         console.error(err);
         setStatus("Formatter load failed");
+        bookTitleEl.textContent = "Load failed";
+        setSidebarInfo("Check console for details");
       }
     });
   </script>
