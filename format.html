@@ -2,8 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Alysum Formatter Engine</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>Alysum Formatter</title>
+
   <style>
     :root {
       --bg: #0b1220;
@@ -14,7 +15,6 @@
       --border: #334155;
       --accent: #7c3aed;
       --accent-2: #6d28d9;
-      --danger: #dc2626;
 
       --page-bg: #ffffff;
       --page-text: #111827;
@@ -57,6 +57,73 @@
       --text: #111827;
       --muted: #64748b;
       --border: #d7dde4;
+    }
+
+    .picker {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.82);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      padding: 20px;
+    }
+
+    .picker.open {
+      display: flex;
+    }
+
+    .picker-box {
+      width: 100%;
+      max-width: 620px;
+      max-height: 80vh;
+      overflow: auto;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 20px;
+    }
+
+    .picker-title {
+      font-size: 24px;
+      font-weight: 800;
+      margin: 0 0 6px;
+    }
+
+    .picker-sub {
+      font-size: 13px;
+      color: var(--muted);
+      margin: 0 0 16px;
+      line-height: 1.5;
+    }
+
+    .picker-row {
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      background: rgba(255,255,255,0.02);
+    }
+
+    .picker-row:hover {
+      background: rgba(255,255,255,0.05);
+    }
+
+    body.light .picker-row:hover {
+      background: rgba(0,0,0,0.04);
+    }
+
+    .picker-book-title {
+      font-size: 16px;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .picker-book-meta {
+      font-size: 13px;
+      color: var(--muted);
     }
 
     .app {
@@ -118,12 +185,15 @@
       gap: 10px;
     }
 
-    .field span, .field label, .mini-label {
+    .field label,
+    .field span {
       font-size: 13px;
       font-weight: 700;
     }
 
-    input[type="number"], input[type="text"], select {
+    input[type="number"],
+    input[type="text"],
+    select {
       width: 100%;
       height: 40px;
       border-radius: 10px;
@@ -412,10 +482,12 @@
 
     @media (max-width: 920px) {
       .main { padding: 10px; }
+
       .page {
         width: calc(var(--page-width) * 0.5);
         height: calc(var(--page-height) * 0.5);
       }
+
       .page.right {
         padding:
           calc(var(--margin-top) * 0.5)
@@ -423,6 +495,7 @@
           calc(var(--margin-bottom) * 0.5)
           calc(var(--margin-inside) * 0.5);
       }
+
       .page.left {
         padding:
           calc(var(--margin-top) * 0.5)
@@ -430,6 +503,7 @@
           calc(var(--margin-bottom) * 0.5)
           calc(var(--margin-outside) * 0.5);
       }
+
       .page-content {
         width: calc(var(--content-width) * 0.5);
         height: calc(var(--content-height) * 0.5);
@@ -444,6 +518,7 @@
         margin: 0;
       }
 
+      .picker,
       .sidebar,
       .topbar .button-row {
         display: none !important;
@@ -483,20 +558,30 @@
   </style>
 </head>
 <body class="dark">
+  <div id="bookPicker" class="picker">
+    <div class="picker-box">
+      <h2 class="picker-title">Select a Book</h2>
+      <p class="picker-sub">Choose any book from the public library collection. The formatter will load it instantly.</p>
+      <div id="bookList"></div>
+    </div>
+  </div>
+
   <div class="app">
     <aside class="sidebar">
       <div class="brand">Alysum Formatter</div>
-      <div class="brand-sub">Single-file formatter engine for your live Firestore library books.</div>
+      <div class="brand-sub">Single-file formatter engine with book picker, Firebase loading, pagination, TOC pass, front matter, back matter, dark mode, and PDF export.</div>
 
       <section class="panel">
         <div class="panel-title">Theme</div>
         <div class="button-row">
           <button id="themeToggleBtn" class="btn secondary" type="button">Toggle Dark Mode</button>
+          <button id="openPickerBtn" class="btn secondary" type="button">Choose Book</button>
         </div>
       </section>
 
       <section class="panel">
         <div class="panel-title">Layout</div>
+
         <div class="field">
           <label for="trimSelect">Trim size</label>
           <select id="trimSelect">
@@ -561,6 +646,7 @@
           <div id="status" class="book-subtitle">Connecting…</div>
         </div>
         <div class="button-row">
+          <button id="topChooseBtn" type="button" class="btn">Choose Book</button>
           <button id="topRepaginateBtn" type="button" class="btn">Repaginate</button>
           <button id="topExportBtn" type="button" class="btn primary">Export PDF</button>
         </div>
@@ -577,12 +663,14 @@
   <script type="module">
     import { auth, db } from "./firebase.js";
     import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { collection, doc, getDoc, getDocs, limit, orderBy, query } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const params = new URLSearchParams(window.location.search);
-    const bookId = params.get("book");
+    const initialBookId = params.get("book");
     const selectedChapterIds = (params.get("chapters") || "").split(",").map(s => s.trim()).filter(Boolean);
 
+    const bookPicker = document.getElementById("bookPicker");
+    const bookList = document.getElementById("bookList");
     const bookTitleEl = document.getElementById("bookTitle");
     const statusEl = document.getElementById("status");
     const sidebarInfoEl = document.getElementById("sidebarInfo");
@@ -605,6 +693,8 @@
     const widowControlInput = document.getElementById("widowControlInput");
 
     const themeToggleBtn = document.getElementById("themeToggleBtn");
+    const openPickerBtn = document.getElementById("openPickerBtn");
+    const topChooseBtn = document.getElementById("topChooseBtn");
     const repaginateBtn = document.getElementById("repaginateBtn");
     const exportBtn = document.getElementById("exportBtn");
     const topRepaginateBtn = document.getElementById("topRepaginateBtn");
@@ -612,6 +702,7 @@
 
     let currentUser = null;
     let currentBook = null;
+    let currentBookId = initialBookId || "";
 
     const settings = {
       trim: "6x9",
@@ -758,7 +849,6 @@
 
     function normalizeBookData(rawData, bookDocId) {
       const data = safeObject(rawData, {});
-
       const normalized = {
         id: bookDocId,
         bookId: safeString(data.bookId, bookDocId),
@@ -778,9 +868,7 @@
         const back = safeArray(sections.back, []);
 
         normalized.sections.front = front.map((ch, i) => normalizeChapter(ch, i === 0 ? "Copyright" : "Table of Contents"));
-        normalized.sections.body = body.length
-          ? body.map((ch, i) => normalizeChapter(ch, `Chapter ${i + 1}`))
-          : [];
+        normalized.sections.body = body.length ? body.map((ch, i) => normalizeChapter(ch, `Chapter ${i + 1}`)) : [];
         normalized.sections.back = back.map((ch, i) => normalizeChapter(ch, `Back Matter ${i + 1}`));
       }
 
@@ -1069,6 +1157,7 @@
       page.appendChild(header);
       page.appendChild(content);
       page.appendChild(footer);
+
       return { page, content, header, footer };
     }
 
@@ -1080,9 +1169,7 @@
 
     function makePageNumberLabel(meta) {
       if (!settings.showPageNumbers) return "";
-      if (meta.kind === "front" && settings.romanFrontMatter) {
-        return toRoman(meta.frontDisplayIndex || 1);
-      }
+      if (meta.kind === "front" && settings.romanFrontMatter) return toRoman(meta.frontDisplayIndex || 1);
       return String(meta.bodyDisplayIndex || "");
     }
 
@@ -1335,7 +1422,11 @@
     function buildTOCBlocks(entries) {
       return [
         { type: "toc_title", title: "Contents" },
-        ...entries.map(entry => ({ type: "toc_entry", label: entry.title, pageLabel: entry.pageLabel }))
+        ...entries.map(entry => ({
+          type: "toc_entry",
+          label: entry.title,
+          pageLabel: entry.pageLabel
+        }))
       ];
     }
 
@@ -1438,25 +1529,92 @@
       const bodyCount = currentBook.sections.body.length;
       const frontCount = currentBook.sections.front.length;
       const backCount = currentBook.sections.back.length;
-      setSidebarInfo(`${bodyCount} body chapters • ${frontCount} front sections • ${backCount} back sections`);
+      setSidebarInfo(`${bodyCount} body chapters • ${frontCount} front sections • ${backCount} back sections • library/${currentBookId}`);
     }
 
-    async function loadBookFromLibrary() {
-      if (!bookId) {
-        setStatus("No book selected");
-        bookTitleEl.textContent = "No book selected";
+    function updateUrlWithBook(id) {
+      const url = new URL(window.location.href);
+      url.searchParams.set("book", id);
+      window.history.replaceState({}, "", url);
+      currentBookId = id;
+    }
+
+    async function openBookPicker() {
+      bookPicker.classList.add("open");
+      bookList.innerHTML = `<div class="status-line">Loading books…</div>`;
+
+      const q = query(collection(db, "library"), orderBy("updated", "desc"));
+      const snap = await getDocs(q);
+
+      if (snap.empty) {
+        bookList.innerHTML = `<div class="status-line">No books found in library.</div>`;
         return;
       }
 
-      const snap = await getDoc(doc(db, "library", bookId));
+      bookList.innerHTML = "";
+
+      snap.forEach(docSnap => {
+        const data = safeObject(docSnap.data(), {});
+        const row = document.createElement("div");
+        row.className = "picker-row";
+
+        const title = safeString(data.title, "Untitled");
+        const author = safeString(data.author, "");
+        const count = typeof data.chapterCount === "number"
+          ? data.chapterCount
+          : Object.keys(safeObject(data.chapters, {})).length;
+
+        row.innerHTML = `
+          <div class="picker-book-title">${title}</div>
+          <div class="picker-book-meta">${author || "Unknown author"} • ${count} chapters • ${docSnap.id}</div>
+        `;
+
+        row.addEventListener("click", async () => {
+          bookPicker.classList.remove("open");
+          updateUrlWithBook(docSnap.id);
+          setStatus("Loading manuscript…");
+          await loadBookFromLibrary(docSnap.id);
+        });
+
+        bookList.appendChild(row);
+      });
+    }
+
+    async function loadLatestBookIfAny() {
+      const q = query(collection(db, "library"), orderBy("updated", "desc"), limit(1));
+      const snap = await getDocs(q);
+      if (snap.empty) return null;
+      return snap.docs[0].id;
+    }
+
+    async function loadBookFromLibrary(explicitId = "") {
+      let id = explicitId || currentBookId || "";
+
+      if (!id) {
+        const latestId = await loadLatestBookIfAny();
+        if (!latestId) {
+          setStatus("No books found");
+          bookTitleEl.textContent = "No books found";
+          setSidebarInfo("Library is empty");
+          await openBookPicker();
+          return;
+        }
+        id = latestId;
+        updateUrlWithBook(id);
+      }
+
+      const snap = await getDoc(doc(db, "library", id));
+
       if (!snap.exists()) {
-        setStatus("Book not found in library");
+        setStatus("Book not found");
         bookTitleEl.textContent = "Book not found";
-        setSidebarInfo(`Missing library/${bookId}`);
+        setSidebarInfo(`Missing library/${id}`);
+        await openBookPicker();
         return;
       }
 
       currentBook = normalizeBookData(snap.data(), snap.id);
+      currentBookId = snap.id;
       bookTitleEl.textContent = currentBook.title;
       document.title = `${currentBook.title} — Alysum Formatter`;
       buildAndRender();
@@ -1465,6 +1623,14 @@
     function attachEvents() {
       themeToggleBtn.addEventListener("click", () => {
         applyTheme(document.body.classList.contains("light") ? "dark" : "light");
+      });
+
+      [openPickerBtn, topChooseBtn].forEach(btn => {
+        btn.addEventListener("click", openBookPicker);
+      });
+
+      bookPicker.addEventListener("click", (e) => {
+        if (e.target === bookPicker) bookPicker.classList.remove("open");
       });
 
       [
@@ -1513,7 +1679,7 @@
 
       currentUser = user;
       setStatus("Loading manuscript…");
-      setSidebarInfo(`Firebase ready • library/${bookId || "(missing book id)"}`);
+      setSidebarInfo(`Firebase ready • library/${currentBookId || "(auto)"}`);
 
       try {
         await loadBookFromLibrary();
