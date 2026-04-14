@@ -14,7 +14,6 @@
       --muted: #94a3b8;
       --border: #334155;
       --accent: #7c3aed;
-      --accent-2: #6d28d9;
 
       --page-bg: #ffffff;
       --page-text: #111827;
@@ -74,7 +73,7 @@
 
     .picker-box {
       width: 100%;
-      max-width: 700px;
+      max-width: 720px;
       max-height: 84vh;
       overflow: auto;
       background: var(--panel);
@@ -344,6 +343,7 @@
     .render-root p {
       margin: 0 0 var(--paragraph-spacing);
       text-indent: var(--paragraph-indent);
+      white-space: pre-wrap;
     }
 
     .render-root p.first-para,
@@ -568,8 +568,8 @@
   <div id="bookPicker" class="picker">
     <div class="picker-box">
       <h2 class="picker-title">Select a Book</h2>
-      <p class="picker-sub">Choose any book from the public library collection. Older documents are auto-migrated in memory, and your own books are upgraded in Firestore when permissions allow.</p>
-      <input id="pickerSearch" class="picker-search" type="text" placeholder="Search title, author, or id" />
+      <p class="picker-sub">Choose any book from the library collection. Legacy formats are normalized automatically, and your own books are upgraded when writes are allowed.</p>
+      <input id="pickerSearch" class="picker-search" type="text" placeholder="Search by title, author, or id" />
       <div id="bookList"></div>
     </div>
   </div>
@@ -577,7 +577,7 @@
   <div class="app">
     <aside class="sidebar">
       <div class="brand">Alysum Formatter</div>
-      <div class="brand-sub">Full single-file formatter engine with book picker, schema migration, live Firestore loading, front matter, body chapters, back matter, pagination, TOC pass, dark mode, and PDF export.</div>
+      <div class="brand-sub">Single-file formatter engine with book picker, schema normalization, live loading from <code>library/{bookId}</code>, front matter, TOC pass, pagination, dark mode, and PDF export.</div>
 
       <section class="panel">
         <div class="panel-title">Theme</div>
@@ -842,37 +842,71 @@
       while (temp.firstChild) target.appendChild(temp.firstChild);
     }
 
+    function escapeHTML(text) {
+      return text
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;");
+    }
+
     function readPlainTextFromHTML(html) {
       const div = document.createElement("div");
       div.innerHTML = html;
       return (div.textContent || "").replace(/\s+/g, " ").trim();
     }
 
+    function wrapPlainTextAsHtml(text) {
+      const normalized = safeString(text, "").replace(/\r/g, "");
+      if (!normalized.trim()) return "";
+
+      const paragraphs = normalized
+        .split(/\n{2,}/)
+        .map(part => part.trim())
+        .filter(Boolean);
+
+      if (!paragraphs.length) {
+        return `<div>${escapeHTML(normalized.trim())}</div>`;
+      }
+
+      return paragraphs
+        .map(p => `<div>${escapeHTML(p).replace(/\n/g, "<br>")}</div>`)
+        .join("");
+    }
+
     function normalizeChapter(raw, fallbackTitle = "Untitled") {
       const chapter = safeObject(raw, {});
+      const htmlContent = safeString(chapter.content, "");
+      const textContent = safeString(chapter.text, "");
+      const content = htmlContent || wrapPlainTextAsHtml(textContent);
+
       return {
         id: safeString(chapter.id, generateId()),
         title: safeString(chapter.title, fallbackTitle),
-        content: safeString(chapter.content, "")
+        content
       };
     }
 
+    function normalizeLegacyChaptersObject(chaptersObj) {
+      const keys = Object.keys(chaptersObj).sort((a, b) => Number(a) - Number(b));
+      return keys.map((key, index) => {
+        const rawChapter = safeObject(chaptersObj[key], {});
+        const htmlContent = safeString(rawChapter.content, "");
+        const textContent = safeString(rawChapter.text, "");
+        const content = htmlContent || wrapPlainTextAsHtml(textContent);
+
+        return {
+          id: safeString(rawChapter.id, `ch_${key}`),
+          title: safeString(rawChapter.title, `Chapter ${index + 1}`),
+          content
+        };
+      });
+    }
+
     function detectAndBuildFrontMatter(data) {
-      const front = [];
-
-      front.push({
-        id: "front_copyright",
-        title: "Copyright",
-        content: ""
-      });
-
-      front.push({
-        id: "front_toc",
-        title: "Table of Contents",
-        content: ""
-      });
-
-      return front;
+      return [
+        { id: "front_copyright", title: "Copyright", content: "" },
+        { id: "front_toc", title: "Table of Contents", content: "" }
+      ];
     }
 
     function normalizeBookData(rawData, bookDocId) {
@@ -906,17 +940,9 @@
 
       if (!normalized.sections.body.length) {
         const chaptersObj = safeObject(data.chapters, {});
-        const keys = Object.keys(chaptersObj).sort((a, b) => Number(a) - Number(b));
-
-        if (keys.length) {
-          normalized.sections.body = keys.map((key, index) => {
-            const rawChapter = safeObject(chaptersObj[key], {});
-            return {
-              id: safeString(rawChapter.id, `ch_${key}`),
-              title: safeString(rawChapter.title, `Chapter ${index + 1}`),
-              content: safeString(rawChapter.content, "")
-            };
-          });
+        const legacyBody = normalizeLegacyChaptersObject(chaptersObj);
+        if (legacyBody.length) {
+          normalized.sections.body = legacyBody;
           normalized._meta.sourceFormat = "chapters-object";
           normalized._meta.needsMigration = true;
         }
@@ -926,7 +952,7 @@
         normalized.sections.body = [{
           id: "ch_0",
           title: safeString(data.title, "Chapter 1"),
-          content: safeString(data.content, "")
+          content: wrapPlainTextAsHtml(safeString(data.content, ""))
         }];
         normalized._meta.sourceFormat = "flat-content";
         normalized._meta.needsMigration = true;
@@ -942,19 +968,21 @@
 
     async function migrateBookIfNeeded(bookId, normalizedBook) {
       if (!normalizedBook?._meta?.needsMigration) return false;
+      if (!currentUser) return false;
+      if (!normalizedBook.ownerUid || normalizedBook.ownerUid !== currentUser.uid) return false;
 
       const payload = {
         title: normalizedBook.title,
         author: normalizedBook.author,
         bookId: normalizedBook.bookId,
-        ownerUid: normalizedBook.ownerUid || "",
+        ownerUid: normalizedBook.ownerUid,
         updated: Date.now(),
+        chapterCount: normalizedBook.sections.body.length,
         sections: {
           front: normalizedBook.sections.front,
           body: normalizedBook.sections.body,
           back: normalizedBook.sections.back
-        },
-        chapterCount: normalizedBook.sections.body.length
+        }
       };
 
       try {
@@ -991,7 +1019,7 @@
       for (const node of [...wrap.childNodes]) {
         if (node.nodeType === Node.TEXT_NODE) {
           const text = (node.textContent || "").trim();
-          if (text) blocks.push({ type: "paragraph", html: text });
+          if (text) blocks.push({ type: "paragraph", html: escapeHTML(text) });
           continue;
         }
 
@@ -1001,13 +1029,16 @@
         if (tag === "div" || tag === "p") {
           const inner = node.innerHTML.trim();
           const text = (node.textContent || "").replace(/\s+/g, " ").trim();
-          if (!text && !inner) blocks.push({ type: "spacer" });
-          else pushParagraph(inner || text);
+          if (!text && !inner) {
+            blocks.push({ type: "spacer" });
+          } else {
+            pushParagraph(inner || escapeHTML(text));
+          }
           continue;
         }
 
         if (tag === "h2" || tag === "h3") {
-          blocks.push({ type: "heading", html: node.innerHTML.trim() || node.textContent.trim() });
+          blocks.push({ type: "heading", html: node.innerHTML.trim() || escapeHTML(node.textContent.trim()) });
           continue;
         }
 
@@ -1190,7 +1221,7 @@
       while (low <= high) {
         const mid = Math.floor((low + high) / 2);
         const headText = words.slice(0, mid).join(" ");
-        const el = makeElementFromBlock({ type: "paragraph", html: headText }, context);
+        const el = makeElementFromBlock({ type: "paragraph", html: escapeHTML(headText) }, context);
 
         if (measureFits([el])) {
           best = mid;
@@ -1203,8 +1234,8 @@
       if (best < 3 || best >= words.length - 2) return null;
 
       return {
-        head: { ...block, html: words.slice(0, best).join(" ") },
-        tail: { ...block, html: words.slice(best).join(" ") }
+        head: { ...block, html: escapeHTML(words.slice(0, best).join(" ")) },
+        tail: { ...block, html: escapeHTML(words.slice(best).join(" ")) }
       };
     }
 
@@ -1429,6 +1460,7 @@
             const pairBlocks = [block, blocks[blockIndex + 1]];
             const pairEls = makeElementsForBlocks(pairBlocks, firstParagraphPending);
             const currentEls = makeElementsForBlocks(pageBlocks, firstParagraphPending);
+
             if (measureFits(currentEls.concat(pairEls))) {
               pageBlocks.push(block, blocks[blockIndex + 1]);
               if (blocks[blockIndex].type === "paragraph") firstParagraphPending = false;
@@ -1436,6 +1468,7 @@
               blockIndex += 2;
               continue;
             }
+
             if (pageBlocks.length) break;
           }
 
@@ -1712,9 +1745,7 @@
       currentBookId = snap.id;
 
       const migrated = await migrateBookIfNeeded(currentBookId, currentBook);
-      if (migrated) {
-        currentBook._meta.needsMigration = false;
-      }
+      if (migrated) currentBook._meta.needsMigration = false;
 
       bookTitleEl.textContent = currentBook.title;
       document.title = `${currentBook.title} — Alysum Formatter`;
