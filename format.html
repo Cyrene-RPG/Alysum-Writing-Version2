@@ -62,7 +62,7 @@
     .picker {
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.82);
+      background: rgba(0,0,0,0.84);
       display: none;
       align-items: center;
       justify-content: center;
@@ -70,14 +70,12 @@
       padding: 20px;
     }
 
-    .picker.open {
-      display: flex;
-    }
+    .picker.open { display: flex; }
 
     .picker-box {
       width: 100%;
-      max-width: 620px;
-      max-height: 80vh;
+      max-width: 700px;
+      max-height: 84vh;
       overflow: auto;
       background: var(--panel);
       border: 1px solid var(--border);
@@ -92,10 +90,22 @@
     }
 
     .picker-sub {
-      font-size: 13px;
-      color: var(--muted);
       margin: 0 0 16px;
+      color: var(--muted);
+      font-size: 13px;
       line-height: 1.5;
+    }
+
+    .picker-search {
+      width: 100%;
+      height: 42px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: transparent;
+      color: inherit;
+      padding: 0 12px;
+      margin-bottom: 14px;
+      font-size: 14px;
     }
 
     .picker-row {
@@ -185,15 +195,12 @@
       gap: 10px;
     }
 
-    .field label,
-    .field span {
+    .field label, .field span {
       font-size: 13px;
       font-weight: 700;
     }
 
-    input[type="number"],
-    input[type="text"],
-    select {
+    input[type="number"], input[type="text"], select {
       width: 100%;
       height: 40px;
       border-radius: 10px;
@@ -244,7 +251,7 @@
       font-size: 13px;
       color: var(--muted);
       font-weight: 700;
-      line-height: 1.5;
+      line-height: 1.55;
     }
 
     .main {
@@ -561,7 +568,8 @@
   <div id="bookPicker" class="picker">
     <div class="picker-box">
       <h2 class="picker-title">Select a Book</h2>
-      <p class="picker-sub">Choose any book from the public library collection. The formatter will load it instantly.</p>
+      <p class="picker-sub">Choose any book from the public library collection. Older documents are auto-migrated in memory, and your own books are upgraded in Firestore when permissions allow.</p>
+      <input id="pickerSearch" class="picker-search" type="text" placeholder="Search title, author, or id" />
       <div id="bookList"></div>
     </div>
   </div>
@@ -569,7 +577,7 @@
   <div class="app">
     <aside class="sidebar">
       <div class="brand">Alysum Formatter</div>
-      <div class="brand-sub">Single-file formatter engine with book picker, Firebase loading, pagination, TOC pass, front matter, back matter, dark mode, and PDF export.</div>
+      <div class="brand-sub">Full single-file formatter engine with book picker, schema migration, live Firestore loading, front matter, body chapters, back matter, pagination, TOC pass, dark mode, and PDF export.</div>
 
       <section class="panel">
         <div class="panel-title">Theme</div>
@@ -663,7 +671,7 @@
   <script type="module">
     import { auth, db } from "./firebase.js";
     import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { collection, doc, getDoc, getDocs, limit, orderBy, query } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { collection, doc, getDoc, getDocs, limit, orderBy, query, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const params = new URLSearchParams(window.location.search);
     const initialBookId = params.get("book");
@@ -671,6 +679,7 @@
 
     const bookPicker = document.getElementById("bookPicker");
     const bookList = document.getElementById("bookList");
+    const pickerSearch = document.getElementById("pickerSearch");
     const bookTitleEl = document.getElementById("bookTitle");
     const statusEl = document.getElementById("status");
     const sidebarInfoEl = document.getElementById("sidebarInfo");
@@ -703,6 +712,7 @@
     let currentUser = null;
     let currentBook = null;
     let currentBookId = initialBookId || "";
+    let pickerDocs = [];
 
     const settings = {
       trim: "6x9",
@@ -847,52 +857,115 @@
       };
     }
 
+    function detectAndBuildFrontMatter(data) {
+      const front = [];
+
+      front.push({
+        id: "front_copyright",
+        title: "Copyright",
+        content: ""
+      });
+
+      front.push({
+        id: "front_toc",
+        title: "Table of Contents",
+        content: ""
+      });
+
+      return front;
+    }
+
     function normalizeBookData(rawData, bookDocId) {
       const data = safeObject(rawData, {});
+
       const normalized = {
         id: bookDocId,
         bookId: safeString(data.bookId, bookDocId),
         title: safeString(data.title, "Untitled Book"),
         author: safeString(data.author, ""),
+        ownerUid: safeString(data.ownerUid, ""),
+        updated: typeof data.updated === "number" ? data.updated : Date.now(),
         sections: {
           front: [],
           body: [],
           back: []
+        },
+        _meta: {
+          sourceFormat: "unknown",
+          needsMigration: false
         }
       };
 
       if (data.sections && typeof data.sections === "object") {
         const sections = safeObject(data.sections, {});
-        const front = safeArray(sections.front, []);
-        const body = safeArray(sections.body, []);
-        const back = safeArray(sections.back, []);
-
-        normalized.sections.front = front.map((ch, i) => normalizeChapter(ch, i === 0 ? "Copyright" : "Table of Contents"));
-        normalized.sections.body = body.length ? body.map((ch, i) => normalizeChapter(ch, `Chapter ${i + 1}`)) : [];
-        normalized.sections.back = back.map((ch, i) => normalizeChapter(ch, `Back Matter ${i + 1}`));
+        normalized.sections.front = safeArray(sections.front, []).map((ch, i) => normalizeChapter(ch, i === 0 ? "Copyright" : "Table of Contents"));
+        normalized.sections.body = safeArray(sections.body, []).map((ch, i) => normalizeChapter(ch, `Chapter ${i + 1}`));
+        normalized.sections.back = safeArray(sections.back, []).map((ch, i) => normalizeChapter(ch, `Back Matter ${i + 1}`));
+        normalized._meta.sourceFormat = "sections";
       }
 
       if (!normalized.sections.body.length) {
         const chaptersObj = safeObject(data.chapters, {});
         const keys = Object.keys(chaptersObj).sort((a, b) => Number(a) - Number(b));
-        normalized.sections.body = keys.map((key, index) => {
-          const rawChapter = safeObject(chaptersObj[key], {});
-          return {
-            id: safeString(rawChapter.id, `ch_${key}`),
-            title: safeString(rawChapter.title, `Chapter ${index + 1}`),
-            content: safeString(rawChapter.content, "")
-          };
-        });
+
+        if (keys.length) {
+          normalized.sections.body = keys.map((key, index) => {
+            const rawChapter = safeObject(chaptersObj[key], {});
+            return {
+              id: safeString(rawChapter.id, `ch_${key}`),
+              title: safeString(rawChapter.title, `Chapter ${index + 1}`),
+              content: safeString(rawChapter.content, "")
+            };
+          });
+          normalized._meta.sourceFormat = "chapters-object";
+          normalized._meta.needsMigration = true;
+        }
+      }
+
+      if (!normalized.sections.body.length && safeString(data.content)) {
+        normalized.sections.body = [{
+          id: "ch_0",
+          title: safeString(data.title, "Chapter 1"),
+          content: safeString(data.content, "")
+        }];
+        normalized._meta.sourceFormat = "flat-content";
+        normalized._meta.needsMigration = true;
       }
 
       if (!normalized.sections.front.length) {
-        normalized.sections.front = [
-          { id: "front_copyright", title: "Copyright", content: "" },
-          { id: "front_toc", title: "Table of Contents", content: "" }
-        ];
+        normalized.sections.front = detectAndBuildFrontMatter(data);
+        normalized._meta.needsMigration = true;
       }
 
       return normalized;
+    }
+
+    async function migrateBookIfNeeded(bookId, normalizedBook) {
+      if (!normalizedBook?._meta?.needsMigration) return false;
+
+      const payload = {
+        title: normalizedBook.title,
+        author: normalizedBook.author,
+        bookId: normalizedBook.bookId,
+        ownerUid: normalizedBook.ownerUid || "",
+        updated: Date.now(),
+        sections: {
+          front: normalizedBook.sections.front,
+          body: normalizedBook.sections.body,
+          back: normalizedBook.sections.back
+        },
+        chapterCount: normalizedBook.sections.body.length
+      };
+
+      try {
+        await updateDoc(doc(db, "library", bookId), payload);
+        normalizedBook.updated = payload.updated;
+        normalizedBook._meta.needsMigration = false;
+        return true;
+      } catch (err) {
+        console.warn("Migration write skipped or failed:", err);
+        return false;
+      }
     }
 
     function normalizeEditorHTML(html) {
@@ -1529,7 +1602,8 @@
       const bodyCount = currentBook.sections.body.length;
       const frontCount = currentBook.sections.front.length;
       const backCount = currentBook.sections.back.length;
-      setSidebarInfo(`${bodyCount} body chapters • ${frontCount} front sections • ${backCount} back sections • library/${currentBookId}`);
+      const migrationState = currentBook._meta?.needsMigration ? "migration pending" : "schema ok";
+      setSidebarInfo(`${bodyCount} body chapters • ${frontCount} front sections • ${backCount} back sections • ${migrationState} • library/${currentBookId}`);
     }
 
     function updateUrlWithBook(id) {
@@ -1539,45 +1613,66 @@
       currentBookId = id;
     }
 
+    function renderBookPickerRows(filterText = "") {
+      const q = filterText.trim().toLowerCase();
+      bookList.innerHTML = "";
+
+      const filtered = pickerDocs.filter(item => {
+        const hay = `${item.title} ${item.author} ${item.id}`.toLowerCase();
+        return hay.includes(q);
+      });
+
+      if (!filtered.length) {
+        bookList.innerHTML = `<div class="status-line">No matching books.</div>`;
+        return;
+      }
+
+      for (const item of filtered) {
+        const row = document.createElement("div");
+        row.className = "picker-row";
+        row.innerHTML = `
+          <div class="picker-book-title">${item.title}</div>
+          <div class="picker-book-meta">${item.author || "Unknown author"} • ${item.chapterCount} chapters • ${item.id}</div>
+        `;
+        row.addEventListener("click", async () => {
+          bookPicker.classList.remove("open");
+          updateUrlWithBook(item.id);
+          setStatus("Loading manuscript…");
+          await loadBookFromLibrary(item.id);
+        });
+        bookList.appendChild(row);
+      }
+    }
+
     async function openBookPicker() {
       bookPicker.classList.add("open");
       bookList.innerHTML = `<div class="status-line">Loading books…</div>`;
+      pickerSearch.value = "";
 
       const q = query(collection(db, "library"), orderBy("updated", "desc"));
       const snap = await getDocs(q);
 
       if (snap.empty) {
         bookList.innerHTML = `<div class="status-line">No books found in library.</div>`;
+        pickerDocs = [];
         return;
       }
 
-      bookList.innerHTML = "";
-
-      snap.forEach(docSnap => {
+      pickerDocs = snap.docs.map(docSnap => {
         const data = safeObject(docSnap.data(), {});
-        const row = document.createElement("div");
-        row.className = "picker-row";
-
-        const title = safeString(data.title, "Untitled");
-        const author = safeString(data.author, "");
-        const count = typeof data.chapterCount === "number"
+        const chapterCount = typeof data.chapterCount === "number"
           ? data.chapterCount
-          : Object.keys(safeObject(data.chapters, {})).length;
+          : (data.sections?.body?.length || Object.keys(safeObject(data.chapters, {})).length || 0);
 
-        row.innerHTML = `
-          <div class="picker-book-title">${title}</div>
-          <div class="picker-book-meta">${author || "Unknown author"} • ${count} chapters • ${docSnap.id}</div>
-        `;
-
-        row.addEventListener("click", async () => {
-          bookPicker.classList.remove("open");
-          updateUrlWithBook(docSnap.id);
-          setStatus("Loading manuscript…");
-          await loadBookFromLibrary(docSnap.id);
-        });
-
-        bookList.appendChild(row);
+        return {
+          id: docSnap.id,
+          title: safeString(data.title, "Untitled"),
+          author: safeString(data.author, ""),
+          chapterCount
+        };
       });
+
+      renderBookPickerRows("");
     }
 
     async function loadLatestBookIfAny() {
@@ -1615,6 +1710,12 @@
 
       currentBook = normalizeBookData(snap.data(), snap.id);
       currentBookId = snap.id;
+
+      const migrated = await migrateBookIfNeeded(currentBookId, currentBook);
+      if (migrated) {
+        currentBook._meta.needsMigration = false;
+      }
+
       bookTitleEl.textContent = currentBook.title;
       document.title = `${currentBook.title} — Alysum Formatter`;
       buildAndRender();
@@ -1631,6 +1732,10 @@
 
       bookPicker.addEventListener("click", (e) => {
         if (e.target === bookPicker) bookPicker.classList.remove("open");
+      });
+
+      pickerSearch.addEventListener("input", () => {
+        renderBookPickerRows(pickerSearch.value);
       });
 
       [
