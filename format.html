@@ -14,6 +14,7 @@
       --muted: #94a3b8;
       --border: #334155;
       --accent: #7c3aed;
+      --accent-2: #6d28d9;
 
       --page-bg: #ffffff;
       --page-text: #111827;
@@ -73,7 +74,7 @@
 
     .picker-box {
       width: 100%;
-      max-width: 720px;
+      max-width: 760px;
       max-height: 84vh;
       overflow: auto;
       background: var(--panel);
@@ -251,6 +252,7 @@
       color: var(--muted);
       font-weight: 700;
       line-height: 1.55;
+      white-space: pre-wrap;
     }
 
     .main {
@@ -568,7 +570,7 @@
   <div id="bookPicker" class="picker">
     <div class="picker-box">
       <h2 class="picker-title">Select a Book</h2>
-      <p class="picker-sub">Choose any book from the library collection. Legacy formats are normalized automatically, and your own books are upgraded when writes are allowed.</p>
+      <p class="picker-sub">Choose any book from the library collection. Legacy chapter data is normalized automatically.</p>
       <input id="pickerSearch" class="picker-search" type="text" placeholder="Search by title, author, or id" />
       <div id="bookList"></div>
     </div>
@@ -577,7 +579,7 @@
   <div class="app">
     <aside class="sidebar">
       <div class="brand">Alysum Formatter</div>
-      <div class="brand-sub">Single-file formatter engine with book picker, schema normalization, live loading from <code>library/{bookId}</code>, front matter, TOC pass, pagination, dark mode, and PDF export.</div>
+      <div class="brand-sub">Loads books from <code>library/{bookId}</code>, supports legacy chapter objects, paginates pages, and exports PDF.</div>
 
       <section class="panel">
         <div class="panel-title">Theme</div>
@@ -859,25 +861,25 @@
       const normalized = safeString(text, "").replace(/\r/g, "");
       if (!normalized.trim()) return "";
 
-      const paragraphs = normalized
+      const chunks = normalized
         .split(/\n{2,}/)
         .map(part => part.trim())
         .filter(Boolean);
 
-      if (!paragraphs.length) {
+      if (!chunks.length) {
         return `<div>${escapeHTML(normalized.trim())}</div>`;
       }
 
-      return paragraphs
-        .map(p => `<div>${escapeHTML(p).replace(/\n/g, "<br>")}</div>`)
+      return chunks
+        .map(chunk => `<div>${escapeHTML(chunk).replace(/\n/g, "<br>")}</div>`)
         .join("");
     }
 
     function normalizeChapter(raw, fallbackTitle = "Untitled") {
       const chapter = safeObject(raw, {});
-      const htmlContent = safeString(chapter.content, "");
-      const textContent = safeString(chapter.text, "");
-      const content = htmlContent || wrapPlainTextAsHtml(textContent);
+      const content =
+        safeString(chapter.content, "") ||
+        wrapPlainTextAsHtml(safeString(chapter.text, ""));
 
       return {
         id: safeString(chapter.id, generateId()),
@@ -890,9 +892,9 @@
       const keys = Object.keys(chaptersObj).sort((a, b) => Number(a) - Number(b));
       return keys.map((key, index) => {
         const rawChapter = safeObject(chaptersObj[key], {});
-        const htmlContent = safeString(rawChapter.content, "");
-        const textContent = safeString(rawChapter.text, "");
-        const content = htmlContent || wrapPlainTextAsHtml(textContent);
+        const content =
+          safeString(rawChapter.content, "") ||
+          wrapPlainTextAsHtml(safeString(rawChapter.text, ""));
 
         return {
           id: safeString(rawChapter.id, `ch_${key}`),
@@ -900,13 +902,6 @@
           content
         };
       });
-    }
-
-    function detectAndBuildFrontMatter(data) {
-      return [
-        { id: "front_copyright", title: "Copyright", content: "" },
-        { id: "front_toc", title: "Table of Contents", content: "" }
-      ];
     }
 
     function normalizeBookData(rawData, bookDocId) {
@@ -959,7 +954,10 @@
       }
 
       if (!normalized.sections.front.length) {
-        normalized.sections.front = detectAndBuildFrontMatter(data);
+        normalized.sections.front = [
+          { id: "front_copyright", title: "Copyright", content: "" },
+          { id: "front_toc", title: "Table of Contents", content: "" }
+        ];
         normalized._meta.needsMigration = true;
       }
 
