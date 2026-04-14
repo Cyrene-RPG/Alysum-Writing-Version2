@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alysum Notes</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg: #0b1020;
+      --bg-2: #0f172a;
+      --panel: #111827;
+      --panel-2: #182235;
+      --panel-3: #1e293b;
+      --panel-4: #243246;
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+      --muted-2: #64748b;
+      --line: rgba(255,255,255,0.08);
+      --line-2: rgba(255,255,255,0.12);
+      --accent: #8b5cf6;
+      --accent-2: #6d28d9;
+      --accent-soft: rgba(139,92,246,0.18);
+      --danger: #ef4444;
+      --shadow: 0 20px 50px rgba(0,0,0,0.35);
+      --radius: 18px;
+      --radius-sm: 12px;
+    }
+
+    html, body {
+      margin: 0;
+      height: 100%;
+      background:
+        radial-gradient(circle at top left, rgba(139,92,246,0.10), transparent 22%),
+        radial-gradient(circle at top right, rgba(59,130,246,0.08), transparent 20%),
+        linear-gradient(180deg, #09101d 0%, #0b1020 100%);
+      color: var(--text);
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      overflow: hidden;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+    }
+
+    button,
+    input,
+    textarea {
+      font: inherit;
+    }
+
+    .app-topbar {
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 0 14px;
+      background: rgba(10, 15, 28, 0.82);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--line);
+      flex-shrink: 0;
+    }
+
+    .topbar-left,
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .brand-badge {
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--accent-2), var(--accent));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      color: white;
+      box-shadow: 0 12px 24px rgba(109,40,217,0.35);
+    }
+
+    .brand-text {
+      min-width: 0;
+    }
+
+    .brand-title {
+      font-size: 14px;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .brand-sub {
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 240px;
+    }
+
+    .ghost-btn,
+    .primary-btn,
+    .danger-btn {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--text);
+      border-radius: 12px;
+      height: 42px;
+      padding: 0 14px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+    }
+
+    .ghost-btn.compact {
+      width: 42px;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .primary-btn {
+      background: linear-gradient(135deg, var(--accent-2), var(--accent));
+      color: white;
+      border-color: transparent;
+    }
+
+    .danger-btn {
+      background: rgba(239,68,68,0.12);
+      color: #fecaca;
+      border-color: rgba(239,68,68,0.30);
+    }
+
+    .shell {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: 300px 1fr 300px;
+      gap: 14px;
+      padding: 14px;
+    }
+
+    .pane {
+      min-width: 0;
+      min-height: 0;
+      background: rgba(17,24,39,0.88);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* LEFT SIDEBAR */
+    .sidebar-top {
+      padding: 14px;
+      border-bottom: 1px solid var(--line);
+      display: grid;
+      gap: 10px;
+      background: rgba(255,255,255,0.02);
+    }
+
+    .search-wrap {
+      position: relative;
+    }
+
+    .search-input {
+      width: 100%;
+      height: 42px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: var(--panel-2);
+      color: var(--text);
+      padding: 0 12px;
+      outline: none;
+    }
+
+    .sidebar-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .sidebar-actions button {
+      flex: 1;
+    }
+
+    .section-label {
+      padding: 0 14px;
+      margin-top: 12px;
+      margin-bottom: 8px;
+      font-size: 11px;
+      font-weight: 900;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .note-list {
+      flex: 1;
+      overflow: auto;
+      padding: 0 10px 12px;
+    }
+
+    .note-item {
+      padding: 12px;
+      border-radius: 14px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      margin-bottom: 8px;
+      transition: background 0.14s ease, border-color 0.14s ease, transform 0.14s ease;
+      background: transparent;
+    }
+
+    .note-item:hover {
+      background: rgba(255,255,255,0.04);
+      border-color: var(--line);
+      transform: translateY(-1px);
+    }
+
+    .note-item.active {
+      background: var(--accent-soft);
+      border-color: rgba(139,92,246,0.28);
+    }
+
+    .note-item-title {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .note-item-preview {
+      margin-top: 4px;
+      font-size: 12px;
+      color: var(--muted);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      line-height: 1.45;
+    }
+
+    .note-item-meta {
+      margin-top: 7px;
+      font-size: 11px;
+      color: var(--muted-2);
+      font-weight: 700;
+    }
+
+    .empty-state {
+      padding: 18px 14px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    /* CENTER EDITOR */
+    .editor-top {
+      padding: 14px;
+      border-bottom: 1px solid var(--line);
+      display: grid;
+      gap: 10px;
+      background: rgba(255,255,255,0.02);
+    }
+
+    .editor-title {
+      width: 100%;
+      height: 48px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: var(--panel-2);
+      color: var(--text);
+      padding: 0 14px;
+      font-size: 18px;
+      font-weight: 800;
+      outline: none;
+    }
+
+    .editor-toolbar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .tool-btn {
+      height: 38px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: var(--panel-2);
+      color: var(--text);
+      padding: 0 12px;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .editor-wrap {
+      flex: 1;
+      min-height: 0;
+      padding: 20px;
+      overflow: auto;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.015), transparent 120px),
+        transparent;
+    }
+
+    .editor-surface {
+      min-height: 100%;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--line);
+      padding: 24px;
+    }
+
+    .editor {
+      min-height: 60vh;
+      outline: none;
+      color: var(--text);
+      font-size: 16px;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .editor:empty::before {
+      content: attr(data-placeholder);
+      color: var(--muted-2);
+    }
+
+    .wiki-link {
+      color: #a78bfa;
+      cursor: pointer;
+      font-weight: 800;
+      text-decoration: none;
+      border-bottom: 1px dashed rgba(167,139,250,0.4);
+    }
+
+    .editor-footer {
+      margin-top: 14px;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    /* RIGHT PANEL */
+    .info-top {
+      padding: 14px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255,255,255,0.02);
+    }
+
+    .info-title {
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .info-body {
+      flex: 1;
+      min-height: 0;
+      overflow: auto;
+      padding: 14px;
+    }
+
+    .info-card {
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+
+    .info-card-title {
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .stat {
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--text);
+    }
+
+    .backlink-item,
+    .outlink-item {
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.03);
+      margin-bottom: 8px;
+      cursor: pointer;
+    }
+
+    .backlink-item:hover,
+    .outlink-item:hover {
+      background: rgba(255,255,255,0.05);
+    }
+
+    .backlink-title,
+    .outlink-title {
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .backlink-preview,
+    .outlink-preview {
+      margin-top: 4px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .muted {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .mobile-toggle {
+      display: none;
+    }
+
+    @media (max-width: 1100px) {
+      .shell {
+        grid-template-columns: 260px 1fr;
+      }
+
+      .right-pane {
+        display: none;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .app-topbar {
+        padding: 0 10px;
+      }
+
+      .brand-sub {
+        max-width: 120px;
+      }
+
+      .shell {
+        grid-template-columns: 1fr;
+        padding: 10px;
+      }
+
+      .sidebar-pane {
+        display: none;
+      }
+
+      .mobile-toggle {
+        display: inline-flex;
+      }
+
+      .editor-wrap {
+        padding: 12px;
+      }
+
+      .editor-surface {
+        padding: 16px;
+      }
+
+      .editor-footer {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-topbar">
+    <div class="topbar-left">
+      <button class="ghost-btn compact mobile-toggle" id="toggleSidebarBtn">☰</button>
+
+      <div class="brand">
+        <div class="brand-badge">A</div>
+        <div class="brand-text">
+          <div class="brand-title">Alysum Notes</div>
+          <div class="brand-sub" id="workspaceLabel">Linked workspace</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="topbar-right">
+      <button class="ghost-btn" id="copyLinkBtn">Copy [[link]]</button>
+      <button class="primary-btn" id="newNoteBtn">New Note</button>
+      <button class="danger-btn" id="deleteBtn">Delete</button>
+    </div>
+  </div>
+
+  <div class="shell">
+    <aside class="pane sidebar-pane" id="sidebarPane">
+      <div class="sidebar-top">
+        <div class="search-wrap">
+          <input id="searchInput" class="search-input" type="text" placeholder="Search notes..." />
+        </div>
+
+        <div class="sidebar-actions">
+          <button class="ghost-btn" id="sortUpdatedBtn">Recent</button>
+          <button class="ghost-btn" id="sortAlphaBtn">A–Z</button>
+        </div>
+      </div>
+
+      <div class="section-label">Notes</div>
+      <div class="note-list" id="noteList"></div>
+    </aside>
+
+    <main class="pane">
+      <div class="editor-top">
+        <input id="noteTitle" class="editor-title" type="text" placeholder="Untitled note" />
+
+        <div class="editor-toolbar">
+          <button class="tool-btn" id="insertWikiBtn">[[Link]]</button>
+          <button class="tool-btn" id="linkCurrentBtn">Link current</button>
+          <button class="tool-btn" id="h2Btn">H2</button>
+          <button class="tool-btn" id="quoteBtn">Quote</button>
+          <button class="tool-btn" id="copyNoteBtn">Copy Note</button>
+        </div>
+      </div>
+
+      <div class="editor-wrap">
+        <div class="editor-surface">
+          <div id="editor" class="editor" contenteditable="true" data-placeholder="Write notes, ideas, scene planning, outlines, worldbuilding...
+
+Try typing [[Chapter 1]], [[Character Arc]], or [[Magic System]]."></div>
+
+          <div class="editor-footer">
+            <div id="saveStatus">Saved</div>
+            <div id="noteMeta">0 words</div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <aside class="pane right-pane">
+      <div class="info-top">
+        <div class="info-title">Note Details</div>
+      </div>
+
+      <div class="info-body">
+        <div class="info-card">
+          <div class="info-card-title">Overview</div>
+          <div class="stat" id="overviewStats">Select a note.</div>
+        </div>
+
+        <div class="info-card">
+          <div class="info-card-title">Outgoing Links</div>
+          <div id="outlinksBox" class="muted">No links yet.</div>
+        </div>
+
+        <div class="info-card">
+          <div class="info-card-title">Backlinks</div>
+          <div id="backlinksBox" class="muted">No backlinks yet.</div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const key = params.get("key") || "alysum-notes-global";
+
+    const workspaceLabel = document.getElementById("workspaceLabel");
+    const sidebarPane = document.getElementById("sidebarPane");
+    const toggleSidebarBtn = document.getElementById("toggleSidebarBtn");
+
+    const noteList = document.getElementById("noteList");
+    const searchInput = document.getElementById("searchInput");
+    const noteTitle = document.getElementById("noteTitle");
+    const editor = document.getElementById("editor");
+    const saveStatus = document.getElementById("saveStatus");
+    const noteMeta = document.getElementById("noteMeta");
+
+    const sortUpdatedBtn = document.getElementById("sortUpdatedBtn");
+    const sortAlphaBtn = document.getElementById("sortAlphaBtn");
+
+    const newNoteBtn = document.getElementById("newNoteBtn");
+    const deleteBtn = document.getElementById("deleteBtn");
+    const insertWikiBtn = document.getElementById("insertWikiBtn");
+    const linkCurrentBtn = document.getElementById("linkCurrentBtn");
+    const h2Btn = document.getElementById("h2Btn");
+    const quoteBtn = document.getElementById("quoteBtn");
+    const copyNoteBtn = document.getElementById("copyNoteBtn");
+    const copyLinkBtn = document.getElementById("copyLinkBtn");
+
+    const overviewStats = document.getElementById("overviewStats");
+    const outlinksBox = document.getElementById("outlinksBox");
+    const backlinksBox = document.getElementById("backlinksBox");
+
+    let notesState = loadNotesState();
+    let sortMode = "updated";
+    let renderTimer = null;
+
+    workspaceLabel.textContent = key;
+
+    function loadNotesState() {
+      try {
+        const raw = JSON.parse(localStorage.getItem(key) || "{}");
+        if (!raw.notes || !Array.isArray(raw.notes)) {
+          return seedState();
+        }
+
+        const cleaned = {
+          notes: raw.notes.map(note => ({
+            id: typeof note.id === "string" ? note.id : generateId(),
+            title: typeof note.title === "string" ? note.title : "Untitled",
+            body: typeof note.body === "string" ? note.body : "",
+            updated: typeof note.updated === "number" ? note.updated : Date.now()
+          })),
+          activeId: typeof raw.activeId === "string" ? raw.activeId : null,
+          filter: typeof raw.filter === "string" ? raw.filter : ""
+        };
+
+        if (!cleaned.notes.length) return seedState();
+
+        if (!cleaned.notes.find(n => n.id === cleaned.activeId)) {
+          cleaned.activeId = cleaned.notes[0].id;
+        }
+
+        return cleaned;
+      } catch {
+        return seedState();
+      }
+    }
+
+    function seedState() {
+      const first = {
+        id: generateId(),
+        title: "Welcome",
+        body: "This is your full Alysum notes space.\n\nTry creating [[Character Notes]] or [[Chapter Ideas]].",
+        updated: Date.now()
+      };
+
+      return {
+        notes: [first],
+        activeId: first.id,
+        filter: ""
+      };
+    }
+
+    function persistState(status = "Saved") {
+      localStorage.setItem(key, JSON.stringify(notesState));
+      setSaveStatus(status);
+    }
+
+    function generateId() {
+      return "note_" + Math.random().toString(36).slice(2) + Date.now().toString(36);
+    }
+
+    function setSaveStatus(text) {
+      saveStatus.textContent = text;
+      clearTimeout(renderTimer);
+      renderTimer = setTimeout(() => {
+        saveStatus.textContent = "Saved";
+      }, 900);
+    }
+
+    function activeNote() {
+      return notesState.notes.find(note => note.id === notesState.activeId) || null;
+    }
+
+    function escapeHtml(text) {
+      return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+    }
+
+    function renderBodyWithLinks(body) {
+      const escaped = escapeHtml(body);
+      const withBreaks = escaped.replace(/\n/g, "<br>");
+      return withBreaks.replace(/\[\[(.*?)\]\]/g, (_, label) => {
+        const clean = label.trim();
+        return `<span class="wiki-link" data-link="${clean}">[[${clean}]]</span>`;
+      });
+    }
+
+    function extractWikiLinks(text) {
+      const links = [];
+      const regex = /\[\[(.*?)\]\]/g;
+      let match;
+
+      while ((match = regex.exec(text)) !== null) {
+        const clean = match[1].trim();
+        if (clean) links.push(clean);
+      }
+
+      return [...new Set(links)];
+    }
+
+    function plainPreview(text, length = 90) {
+      const clean = text.replace(/\[\[(.*?)\]\]/g, "$1").replace(/\s+/g, " ").trim();
+      return clean.length > length ? clean.slice(0, length) + "…" : clean || "Empty note";
+    }
+
+    function wordCount(text) {
+      const clean = text.replace(/\[\[(.*?)\]\]/g, "$1").replace(/\s+/g, " ").trim();
+      if (!clean) return 0;
+      return clean.split(" ").length;
+    }
+
+    function filteredNotes() {
+      const filter = notesState.filter.trim().toLowerCase();
+
+      let list = notesState.notes.filter(note => {
+        const hay = `${note.title} ${note.body}`.toLowerCase();
+        return !filter || hay.includes(filter);
+      });
+
+      if (sortMode === "alpha") {
+        list.sort((a, b) => a.title.localeCompare(b.title));
+      } else {
+        list.sort((a, b) => b.updated - a.updated);
+      }
+
+      return list;
+    }
+
+    function renderList() {
+      noteList.innerHTML = "";
+
+      const list = filteredNotes();
+
+      if (!list.length) {
+        noteList.innerHTML = `<div class="empty-state">No notes found. Try a different search or create a new note.</div>`;
+        return;
+      }
+
+      list.forEach(note => {
+        const item = document.createElement("div");
+        item.className = "note-item" + (note.id === notesState.activeId ? " active" : "");
+        item.innerHTML = `
+          <div class="note-item-title">${escapeHtml(note.title || "Untitled")}</div>
+          <div class="note-item-preview">${escapeHtml(plainPreview(note.body))}</div>
+          <div class="note-item-meta">${new Date(note.updated).toLocaleString()}</div>
+        `;
+
+        item.addEventListener("click", () => {
+          notesState.activeId = note.id;
+          persistState();
+          render();
+        });
+
+        noteList.appendChild(item);
+      });
+    }
+
+    function renderDetails() {
+      const note = activeNote();
+
+      if (!note) {
+        overviewStats.textContent = "No active note.";
+        outlinksBox.innerHTML = `<div class="muted">No links yet.</div>`;
+        backlinksBox.innerHTML = `<div class="muted">No backlinks yet.</div>`;
+        noteMeta.textContent = "0 words";
+        return;
+      }
+
+      const links = extractWikiLinks(note.body);
+      const backlinks = notesState.notes.filter(other => {
+        if (other.id === note.id) return false;
+        return extractWikiLinks(other.body).includes(note.title);
+      });
+
+      overviewStats.innerHTML = `
+        <div><strong>Title:</strong> ${escapeHtml(note.title)}</div>
+        <div><strong>Words:</strong> ${wordCount(note.body)}</div>
+        <div><strong>Outgoing:</strong> ${links.length}</div>
+        <div><strong>Backlinks:</strong> ${backlinks.length}</div>
+      `;
+
+      noteMeta.textContent = `${wordCount(note.body)} words`;
+
+      if (!links.length) {
+        outlinksBox.innerHTML = `<div class="muted">No links yet.</div>`;
+      } else {
+        outlinksBox.innerHTML = "";
+        links.forEach(link => {
+          const div = document.createElement("div");
+          div.className = "outlink-item";
+          div.innerHTML = `
+            <div class="outlink-title">${escapeHtml(link)}</div>
+            <div class="outlink-preview">Open or create this linked note.</div>
+          `;
+          div.addEventListener("click", () => openOrCreateNote(link));
+          outlinksBox.appendChild(div);
+        });
+      }
+
+      if (!backlinks.length) {
+        backlinksBox.innerHTML = `<div class="muted">No backlinks yet.</div>`;
+      } else {
+        backlinksBox.innerHTML = "";
+        backlinks.forEach(back => {
+          const div = document.createElement("div");
+          div.className = "backlink-item";
+          div.innerHTML = `
+            <div class="backlink-title">${escapeHtml(back.title)}</div>
+            <div class="backlink-preview">${escapeHtml(plainPreview(back.body, 70))}</div>
+          `;
+          div.addEventListener("click", () => {
+            notesState.activeId = back.id;
+            persistState();
+            render();
+          });
+          backlinksBox.appendChild(div);
+        });
+      }
+    }
+
+    function renderEditor() {
+      const note = activeNote();
+
+      if (!note) {
+        noteTitle.value = "";
+        editor.innerHTML = "";
+        return;
+      }
+
+      noteTitle.value = note.title;
+      editor.innerHTML = renderBodyWithLinks(note.body);
+    }
+
+    function render() {
+      searchInput.value = notesState.filter;
+      renderList();
+      renderEditor();
+      renderDetails();
+    }
+
+    function saveCurrentEditorBody() {
+      const note = activeNote();
+      if (!note) return;
+
+      note.body = editor.innerText;
+      note.updated = Date.now();
+      persistState("Saved");
+      renderList();
+      renderDetails();
+    }
+
+    function openOrCreateNote(title) {
+      let note = notesState.notes.find(n => n.title.trim().toLowerCase() === title.trim().toLowerCase());
+
+      if (!note) {
+        note = {
+          id: generateId(),
+          title: title.trim() || "Untitled",
+          body: "",
+          updated: Date.now()
+        };
+        notesState.notes.push(note);
+      }
+
+      notesState.activeId = note.id;
+      persistState();
+      render();
+      noteTitle.focus();
+    }
+
+    function insertAtCursor(text) {
+      document.execCommand("insertText", false, text);
+      saveCurrentEditorBody();
+    }
+
+    function copyCurrentWikiLink() {
+      const note = activeNote();
+      if (!note) return;
+
+      navigator.clipboard.writeText(`[[${note.title}]]`).then(() => {
+        setSaveStatus("Copied link");
+      }).catch(() => {
+        setSaveStatus("Copy failed");
+      });
+    }
+
+    toggleSidebarBtn.addEventListener("click", () => {
+      sidebarPane.style.display = sidebarPane.style.display === "none" ? "flex" : "none";
+    });
+
+    searchInput.addEventListener("input", () => {
+      notesState.filter = searchInput.value.toLowerCase();
+      persistState();
+      renderList();
+    });
+
+    sortUpdatedBtn.addEventListener("click", () => {
+      sortMode = "updated";
+      renderList();
+    });
+
+    sortAlphaBtn.addEventListener("click", () => {
+      sortMode = "alpha";
+      renderList();
+    });
+
+    newNoteBtn.addEventListener("click", () => {
+      const note = {
+        id: generateId(),
+        title: "Untitled",
+        body: "",
+        updated: Date.now()
+      };
+
+      notesState.notes.push(note);
+      notesState.activeId = note.id;
+      persistState();
+      render();
+      noteTitle.focus();
+      noteTitle.select();
+    });
+
+    deleteBtn.addEventListener("click", () => {
+      const note = activeNote();
+      if (!note) return;
+
+      if (!confirm(`Delete "${note.title}"?`)) return;
+
+      notesState.notes = notesState.notes.filter(n => n.id !== note.id);
+      notesState.activeId = notesState.notes[0]?.id || null;
+
+      if (!notesState.notes.length) {
+        const fallback = {
+          id: generateId(),
+          title: "Untitled",
+          body: "",
+          updated: Date.now()
+        };
+        notesState.notes.push(fallback);
+        notesState.activeId = fallback.id;
+      }
+
+      persistState();
+      render();
+    });
+
+    noteTitle.addEventListener("input", () => {
+      const note = activeNote();
+      if (!note) return;
+
+      note.title = noteTitle.value.trim() || "Untitled";
+      note.updated = Date.now();
+      persistState();
+      renderList();
+      renderDetails();
+    });
+
+    editor.addEventListener("input", saveCurrentEditorBody);
+
+    editor.addEventListener("click", (e) => {
+      if (e.target.classList.contains("wiki-link")) {
+        const title = e.target.dataset.link;
+        openOrCreateNote(title);
+      }
+    });
+
+    insertWikiBtn.addEventListener("click", () => {
+      const target = prompt("Link to which note?");
+      if (!target) return;
+      insertAtCursor(`[[${target.trim()}]]`);
+    });
+
+    linkCurrentBtn.addEventListener("click", () => {
+      const note = activeNote();
+      if (!note) return;
+      insertAtCursor(`[[${note.title}]]`);
+    });
+
+    h2Btn.addEventListener("click", () => {
+      insertAtCursor("\n## Heading\n");
+    });
+
+    quoteBtn.addEventListener("click", () => {
+      insertAtCursor("\n> Quote\n");
+    });
+
+    copyNoteBtn.addEventListener("click", async () => {
+      const note = activeNote();
+      if (!note) return;
+
+      try {
+        await navigator.clipboard.writeText(`# ${note.title}\n\n${note.body}`);
+        setSaveStatus("Copied note");
+      } catch {
+        setSaveStatus("Copy failed");
+      }
+    });
+
+    copyLinkBtn.addEventListener("click", copyCurrentWikiLink);
+
+    window.addEventListener("storage", (e) => {
+      if (e.key === key) {
+        notesState = loadNotesState();
+        render();
+      }
+    });
+
+    if (!notesState.notes.length) {
+      notesState = seedState();
+      persistState();
+    }
+
+    render();
+  </script>
+</body>
+</html>

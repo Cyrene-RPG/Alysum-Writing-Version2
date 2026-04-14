@@ -4,19 +4,15 @@
     <title>Alysum Editor</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <style>
-        * {
-            box-sizing: border-box;
-        }
+    <style>                                                     * {
+            box-sizing: border-box;                             }
 
         html, body {
             margin: 0;
             height: 100%;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            background: #e9edf2;
-        }
-
-        body {
+            background: #e9edf2;                                }
+                                                                body {
             display: flex;
             overflow: hidden;
         }
@@ -25,8 +21,7 @@
             --alysum-purple: #6d28d9;
             --alysum-purple-dark: #5b21b6;
             --sidebar-bg: #263646;
-            --sidebar-panel: #314556;
-            --sidebar-row: #34495b;
+            --sidebar-panel: #314556;                               --sidebar-row: #34495b;
             --sidebar-row-active: #1762a6;
             --sidebar-text: #f3f4f6;
             --muted: #a6b2bf;
@@ -56,10 +51,8 @@
             --page-text: #e5e7eb;
             --page-subtle: #94a3b8;
             --border: #334155;
-            --topbar-bg: #0f172a;
-            --toolbar-bg: #0f172a;
-            --workspace-bg: #0b1220;
-            --danger: #ef4444;
+            --topbar-bg: #0f172a;                                   --toolbar-bg: #0f172a;
+            --workspace-bg: #0b1220;                                --danger: #ef4444;
             --obsidian-bg: #0f172a;
             --obsidian-panel: #111827;
             --obsidian-item-active: #312e81;
@@ -74,12 +67,9 @@
             height: 100vh;
             display: flex;
             flex-direction: column;
-            border-right: 1px solid rgba(255,255,255,0.06);
-            transition: transform 0.25s ease, width 0.25s ease;
-            overflow: hidden;
+            border-right: 1px solid rgba(255,255,255,0.06);                                                                 transition: transform 0.25s ease, width 0.25s ease;                                                             overflow: hidden;
             z-index: 30;
-        }
-
+        }                                               
         .sidebar.collapsed-desktop {
             width: 0;
             border-right: none;
@@ -142,12 +132,10 @@
             cursor: pointer;
         }
 
-        .pill-btn.primary {
-            background: white;
+        .pill-btn.primary {                                         background: white;
             color: var(--alysum-purple-dark);
         }
-
-        .pill-btn.secondary {
+                                                                .pill-btn.secondary {
             background: rgba(255,255,255,0.18);
             color: white;
         }
@@ -204,8 +192,7 @@
             display: flex;
             align-items: center;
             gap: 10px;
-            padding: 14px 14px;
-            background: transparent;
+            padding: 14px 14px;                                     background: transparent;
             cursor: pointer;
             user-select: none;
         }
@@ -220,7 +207,7 @@
 
         .chapter-item.dragging {
             opacity: 0.45;
-        }                                               
+        }
         .chapter-num {                                              width: 26px;
             text-align: center;
             font-size: 16px;
@@ -235,8 +222,7 @@
             font-weight: 700;
             white-space: nowrap;
             overflow: hidden;
-            text-overflow: ellipsis;
-        }
+            text-overflow: ellipsis;                            }
                                                                 .chapter-drag {
             color: #d5dee7;
             font-size: 18px;
@@ -267,8 +253,7 @@
             height: 100vh;
         }
 
-        .topbar {
-            height: 64px;
+        .topbar {                                                   height: 64px;
             background: var(--topbar-bg);
             border-bottom: 1px solid var(--border);
             display: flex;
@@ -284,7 +269,7 @@
             display: flex;
             align-items: center;
             gap: 10px;                                              min-width: 0;
-        }                                               
+        }
         .icon-btn {
             width: 42px;
             height: 42px;
@@ -294,12 +279,11 @@
             color: var(--page-text);
             font-size: 22px;
             line-height: 1;                                         cursor: pointer;
-        }                                               
+        }
         .icon-btn.purple {
             background: var(--alysum-purple);
             border-color: var(--alysum-purple);
-            color: white;
-        }
+            color: white;                                       }
 
         .icon-btn.danger {
             background: var(--danger);
@@ -325,8 +309,7 @@
         .toolbar {
             min-height: 54px;
             background: var(--toolbar-bg);                          border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
+            display: flex;                                          align-items: center;
             gap: 8px;                                               padding: 8px 12px;
             overflow-x: auto;
             flex-wrap: wrap;                                    }
@@ -355,7 +338,7 @@
             color: var(--page-subtle);
             font-size: 18px;
             margin-bottom: 22px;
-        }                                               
+        }
         .chapter-title {                                            text-align: center;
             font-family: Georgia, "Times New Roman", serif;
             color: var(--page-text);
@@ -390,8 +373,7 @@
 
         .editor blockquote {
             border-left: 4px solid var(--alysum-purple);
-            margin: 0 0 1.15em;                                     padding-left: 16px;
-            color: #575f69;
+            margin: 0 0 1.15em;                                     padding-left: 16px;                                     color: #575f69;
         }
 
         body.dark .editor blockquote {
@@ -416,8 +398,7 @@
         }
 
         .overlay {
-            display: none;
-        }
+            display: none;                                      }
 
         .hidden {
             display: none !important;
@@ -444,8 +425,7 @@
             background: var(--page-bg);
             color: var(--page-text);
             border-radius: 18px;
-            padding: 20px;
-            box-shadow: 0 16px 40px rgba(0,0,0,0.3);
+            padding: 20px;                                          box-shadow: 0 16px 40px rgba(0,0,0,0.3);
         }
 
         .publish-modal-title {
@@ -466,8 +446,7 @@
 
         body.dark .publish-list {                                   background: rgba(255,255,255,0.03);
         }
-
-        .publish-row {
+                                                                .publish-row {
             display: flex;
             align-items: center;
             gap: 10px;
@@ -522,59 +501,41 @@
             top: 76px;
             right: 18px;
             width: 400px;                                           max-width: calc(100vw - 24px);
-            height: calc(100vh - 94px);
-            background: var(--obsidian-bg);
-            color: var(--obsidian-text);
-            border: 1px solid var(--border);
-            border-radius: 18px;
+            height: calc(100vh - 94px);                             background: var(--obsidian-bg);
+            color: var(--obsidian-text);                            border: 1px solid var(--border);                        border-radius: 18px;
             box-shadow: 0 20px 48px rgba(0,0,0,0.28);
-            display: flex;
-            flex-direction: column;
+            display: flex;                                          flex-direction: column;
             overflow: hidden;                                       z-index: 1001;
-        }
-
-        .obsidian-topbar {
-            display: flex;
+        }                                               
+        .obsidian-topbar {                                          display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 8px;
-            padding: 12px 14px;
-            border-bottom: 1px solid var(--border);
-            background: var(--obsidian-panel);
-        }
+            padding: 12px 14px;                                     border-bottom: 1px solid var(--border);
+            background: var(--obsidian-panel);                  }
                                                                 .obsidian-title {
             font-size: 14px;                                        font-weight: 800;
-            letter-spacing: 0.04em;
-            text-transform: uppercase;
+            letter-spacing: 0.04em;                                 text-transform: uppercase;
         }
 
         .obsidian-layout {                                          flex: 1;
-            display: grid;                                          grid-template-columns: 150px 1fr;
-            min-height: 0;
-        }
-
+            display: grid;                                          grid-template-columns: 150px 1fr;                       min-height: 0;
+        }                                               
         .obsidian-sidebar {
             border-right: 1px solid var(--border);
-            background: var(--obsidian-panel);
-            display: flex;
+            background: var(--obsidian-panel);                      display: flex;
             flex-direction: column;                                 min-height: 0;
         }
-
-        .obsidian-search-wrap {                                     padding: 10px;
-            border-bottom: 1px solid var(--border);             }
+                                                                .obsidian-search-wrap {                                     padding: 10px;                                          border-bottom: 1px solid var(--border);             }
 
         .obsidian-search {                                          width: 100%;
             height: 36px;
             border: 1px solid var(--border);
             border-radius: 10px;
-            background: transparent;
-            color: inherit;
-            padding: 0 10px;
-            font-size: 13px;
+            background: transparent;                                color: inherit;
+            padding: 0 10px;                                        font-size: 13px;
         }
-
-        .obsidian-note-list {
-            flex: 1;
+                                                                .obsidian-note-list {                                       flex: 1;
             overflow: auto;
             padding: 8px;                                       }
 
@@ -588,36 +549,25 @@
         }
 
         .obsidian-note-item:hover {                                 background: rgba(255,255,255,0.04);
-        }
-
+        }                                               
         body.light .obsidian-note-item:hover {
             background: rgba(0,0,0,0.04);
         }
-
-        .obsidian-note-item.active {
-            background: var(--obsidian-item-active);
-            border-color: rgba(109,40,217,0.35);
-        }                                                                                                               .obsidian-note-name {
-            font-size: 13px;
+                                                                .obsidian-note-item.active {
+            background: var(--obsidian-item-active);                border-color: rgba(109,40,217,0.35);
+        }                                                                                                               .obsidian-note-name {                                       font-size: 13px;
             font-weight: 800;                                       white-space: nowrap;
             overflow: hidden;                                       text-overflow: ellipsis;
         }
 
         .obsidian-note-preview {                                    margin-top: 4px;
-            font-size: 12px;
-            color: var(--obsidian-muted);
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-
-        .obsidian-editor-pane {
-            display: flex;
-            flex-direction: column;
-            min-width: 0;
-            min-height: 0;
-        }
+            font-size: 12px;                                        color: var(--obsidian-muted);
+            display: -webkit-box;                                   -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;                           overflow: hidden;
+        }                                               
+        .obsidian-editor-pane {                                     display: flex;
+            flex-direction: column;                                 min-width: 0;
+            min-height: 0;                                      }
 
         .obsidian-note-meta {
             padding: 10px 12px;
@@ -625,114 +575,72 @@
             display: flex;
             flex-direction: column;
             gap: 8px;
-        }
-
-        .obsidian-note-title {
-            width: 100%;
-            height: 38px;
-            border: 1px solid var(--border);
-            border-radius: 10px;
+        }                                               
+        .obsidian-note-title {                                      width: 100%;
+            height: 38px;                                           border: 1px solid var(--border);                        border-radius: 10px;
             background: transparent;
-            color: inherit;                                         padding: 0 10px;
-            font-size: 14px;                                        font-weight: 700;
+            color: inherit;                                         padding: 0 10px;                                        font-size: 14px;                                        font-weight: 700;
         }
 
         .obsidian-link-row {
             display: flex;
             gap: 8px;
             flex-wrap: wrap;
-        }                                               
+        }
         .obsidian-link-btn {
             height: 32px;
-            border-radius: 999px;
-            border: 1px solid var(--border);
-            background: transparent;
+            border-radius: 999px;                                   border: 1px solid var(--border);                        background: transparent;
             color: inherit;
             padding: 0 12px;
-            font-size: 12px;
-            font-weight: 700;
-            cursor: pointer;
-        }
-
+            font-size: 12px;                                        font-weight: 700;
+            cursor: pointer;                                    }                                               
         .obsidian-note-body {
             flex: 1;
-            min-height: 0;
-            border: none;
+            min-height: 0;                                          border: none;
             outline: none;
             resize: none;
-            background: transparent;
-            color: inherit;
-            padding: 14px;
-            font-size: 14px;
-            line-height: 1.6;
+            background: transparent;                                color: inherit;
+            padding: 14px;                                          font-size: 14px;                                        line-height: 1.6;
             font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
         }
 
-        .obsidian-footer {
-            display: flex;                                          gap: 8px;                                               padding: 12px;
-            border-top: 1px solid var(--border);
-            background: var(--obsidian-panel);
+        .obsidian-footer {                                          display: flex;                                          gap: 8px;                                               padding: 12px;
+            border-top: 1px solid var(--border);                    background: var(--obsidian-panel);
         }
-
-        .obsidian-footer button {                                   flex: 1;
-            border: none;
-            border-radius: 12px;
-            padding: 10px 12px;
+                                                                .obsidian-footer button {                                   flex: 1;                                                border: none;
+            border-radius: 12px;                                    padding: 10px 12px;
             font-weight: 700;                                       cursor: pointer;
+        }                                                       .obsidian-primary {
+            background: var(--alysum-purple);                       color: white;
         }                                               
-        .obsidian-primary {
-            background: var(--alysum-purple);
-            color: white;
-        }
-
-        .obsidian-secondary {                                       background: transparent;                                color: inherit;
-            border: 1px solid var(--border) !important;
-        }
-
-        .obsidian-empty {
-            padding: 16px;
+        .obsidian-secondary {                                       background: transparent;                                color: inherit;                                         border: 1px solid var(--border) !important;
+        }                                               
+        .obsidian-empty {                                           padding: 16px;
             font-size: 13px;
-            color: var(--obsidian-muted);
-        }
-
-        @media (max-width: 900px) {
-            .page {
-                padding: 52px 56px 70px;
-            }
-
-            .chapter-title {
-                font-size: 24px;
-            }
-
-            .editor {
-                font-size: 18px;                                    }
-
+            color: var(--obsidian-muted);                       }
+                                                                @media (max-width: 900px) {
+            .page {                                                     padding: 52px 56px 70px;                            }
+                                                                    .chapter-title {
+                font-size: 24px;                                    }
+                                                                    .editor {
+                font-size: 18px;                                    }                                           
             .top-title {                                                max-width: 28vw;
-            }
-        }
-
-        @media (max-width: 760px) {
-            .sidebar {
-                position: fixed;
+            }                                                   }
+                                                                @media (max-width: 760px) {
+            .sidebar {                                                  position: fixed;
                 left: 0;
                 top: 0;
-                width: 300px;
-            }
+                width: 300px;                                       }
 
             .overlay {
                 display: block;
                 position: fixed;
-                inset: 0;
-                background: rgba(0,0,0,0.35);
-                z-index: 20;
-            }
+                inset: 0;                                               background: rgba(0,0,0,0.35);
+                z-index: 20;                                        }
 
-            .overlay.hidden {
-                display: none;
-            }
-
-            .top-title {
-                max-width: 40vw;
+            .overlay.hidden {                                           display: none;
+            }                                           
+            .top-title {                                                max-width: 40vw;
             }
 
             .page {
@@ -749,261 +657,165 @@
 
             .publish-modal-box {
                 max-width: 100%;
-            }
-
-            .obsidian-panel {
-                top: 64px;
+            }                                           
+            .obsidian-panel {                                           top: 64px;
                 left: 10px;
-                right: 10px;
-                width: auto;                                            max-width: none;                                        height: calc(100vh - 78px);
-            }
-
-            .obsidian-layout {                                          grid-template-columns: 130px 1fr;
+                right: 10px;                                            width: auto;                                            max-width: none;                                        height: calc(100vh - 78px);
+            }                                                                                                               .obsidian-layout {                                          grid-template-columns: 130px 1fr;
             }
         }
-    </style>
-</head>
-<body>                                                  
-    <div class="sidebar mobile-hidden" id="sidebar">
-        <div class="sidebar-top">
-            <div class="sidebar-title-row">
-                <div class="sidebar-mini">Manuscript</div>
-                <button class="pill-btn secondary" id="renameBookBtn" type="button">Rename</button>
-            </div>
-
+    </style>                                            </head>
+<body>                                                      <div class="sidebar mobile-hidden" id="sidebar">
+        <div class="sidebar-top">                                   <div class="sidebar-title-row">                             <div class="sidebar-mini">Manuscript</div>                                                                      <button class="pill-btn secondary" id="renameBookBtn" type="button">Rename</button>
+            </div>                                      
             <div class="sidebar-book-title" id="sidebarBookTitle">Loading...</div>
-
-            <div class="sidebar-meta">                                  <div><span id="totalWords">0</span> words</div>
-                <div><span id="chapterCount">0</span> chapters</div>
-            </div>
+                                                                    <div class="sidebar-meta">                                  <div><span id="totalWords">0</span> words</div>                                                                 <div><span id="chapterCount">0</span> chapters</div>                                                        </div>
                                                                     <div class="sidebar-actions">
                 <button class="pill-btn primary" id="addChapterBtn" type="button">Add Chapter</button>
                 <button class="pill-btn secondary" id="deleteChapterBtn" type="button">Delete Chapter</button>
-                <button class="pill-btn secondary" id="themeToggleBtn" type="button">Dark Mode</button>
-                <button class="pill-btn secondary" id="publishBtn" type="button">Publish</button>
-                <button class="pill-btn danger" id="deleteBookBtn" type="button">Delete Book</button>                       </div>
-        </div>
+                <button class="pill-btn secondary" id="themeToggleBtn" type="button">Dark Mode</button>                         <button class="pill-btn secondary" id="publishBtn" type="button">Publish</button>
+                <button class="pill-btn danger" id="deleteBookBtn" type="button">Delete Book</button>                       </div>                                              </div>
 
         <div class="manuscript">
             <div class="group">
                 <div class="group-header" data-group="front">
                     <div class="left"><span class="caret" id="caret-front">▼</span>Front matter</div>                               <div>edit</div>
                 </div>
-                <div class="group-body" id="group-front"></div>
-            </div>
-
-            <div class="group">
-                <div class="group-header" data-group="body">                                                                        <div class="left"><span class="caret" id="caret-body">▼</span>Body</div>                                        <div>edit</div>
-                </div>
-                <div class="group-body" id="group-body"></div>
-            </div>
-
-            <div class="group">
-                <div class="group-header" data-group="back">
-                    <div class="left"><span class="caret" id="caret-back">▼</span>Back matter</div>
+                <div class="group-body" id="group-front"></div>                                                             </div>                                      
+            <div class="group">                                         <div class="group-header" data-group="body">                                                                        <div class="left"><span class="caret" id="caret-body">▼</span>Body</div>                                        <div>edit</div>
+                </div>                                                  <div class="group-body" id="group-body"></div>                                                              </div>                                      
+            <div class="group">                                         <div class="group-header" data-group="back">                                                                        <div class="left"><span class="caret" id="caret-back">▼</span>Back matter</div>
                     <div>edit</div>
                 </div>
-                <div class="group-body" id="group-back"></div>
-            </div>
-        </div>
-
-        <div class="side-footer">
-            <span id="footerWords">0</span> words
-        </div>
-    </div>
-
-    <div class="overlay hidden" id="overlay"></div>
-
+                <div class="group-body" id="group-back"></div>                                                              </div>
+        </div>                                          
+        <div class="side-footer">                                   <span id="footerWords">0</span> words               </div>                                              </div>
+                                                            <div class="overlay hidden" id="overlay"></div>     
     <div class="main">
         <div class="topbar">
-            <div class="topbar-left">
-                <button class="icon-btn" id="toggleSidebarBtn" type="button">☰</button>
-
-<button class="icon-btn" id="homeBtn" type="button">🏠</button>
-
+            <div class="topbar-left">                                   <button class="icon-btn" id="toggleSidebarBtn" type="button">☰</button>
+                                                        <button class="icon-btn" id="homeBtn" type="button">🏠</button>                                                 
                 <div class="top-title" id="topBookTitle">Loading...</div>
             </div>
 
             <div class="topbar-right">
-                <button class="icon-btn purple" id="quickAddBtn" type="button">＋</button>
-                <button class="icon-btn purple" id="publishTopBtn" type="button">🚀</button>
-                <button class="icon-btn" id="obsidianBtn" type="button" title="Notes">⌘</button>
-                <button class="icon-btn" id="renameChapterBtn" type="button">⋯</button>
-                <button class="icon-btn" id="themeTopBtn" type="button">◐</button>
-
-                <button class="icon-btn danger" id="deleteBookTopBtn" type="button">🗑</button>
-                <div class="save-status" id="saveStatus">Loading...</div>
-            </div>
-        </div>
-
-        <div class="toolbar">
-            <button class="tool-btn" type="button" data-cmd="bold">B</button>
-            <button class="tool-btn" type="button" data-cmd="italic"><em>I</em></button>
-            <button class="tool-btn" type="button" data-cmd="underline"><u>U</u></button>
-            <button class="tool-btn" type="button" data-cmd="insertUnorderedList">• List</button>
-            <button class="tool-btn" type="button" data-cmd="insertOrderedList">1. List</button>
+                <button class="icon-btn purple" id="quickAddBtn" type="button">＋</button>                                      <button class="icon-btn purple" id="publishTopBtn" type="button">🚀</button>                                    <button class="icon-btn" id="obsidianBtn" type="button" title="Notes">⌘</button>                                <button class="icon-btn" id="renameChapterBtn" type="button">⋯</button>
+                <button class="icon-btn" id="themeTopBtn" type="button">◐</button>                                                                                                      <button class="icon-btn danger" id="deleteBookTopBtn" type="button">🗑</button>                                  <div class="save-status" id="saveStatus">Loading...</div>
+            </div>                                              </div>
+                                                                <div class="toolbar">                                       <button class="tool-btn" type="button" data-cmd="bold">B</button>
+            <button class="tool-btn" type="button" data-cmd="italic"><em>I</em></button>                                    <button class="tool-btn" type="button" data-cmd="underline"><u>U</u></button>                                   <button class="tool-btn" type="button" data-cmd="insertUnorderedList">• List</button>                           <button class="tool-btn" type="button" data-cmd="insertOrderedList">1. List</button>
             <button class="tool-btn" type="button" id="quoteBtn">❝</button>
             <select class="tool-select" id="formatSelect">
-                <option value="div">Body</option>
-                <option value="h2">Heading</option>
-            </select>
-            <select class="tool-select" id="fontSelect">
-                <option value="Georgia">Georgia</option>
-                <option value="Times New Roman">Times New Roman</option>
-                <option value="Arial">Arial</option>
+                <option value="div">Body</option>                       <option value="h2">Heading</option>
+            </select>                                               <select class="tool-select" id="fontSelect">                <option value="Georgia">Georgia</option>                <option value="Times New Roman">Times New Roman</option>                                                        <option value="Arial">Arial</option>
                 <option value="Inter">Inter</option>                    <option value="Courier New">Courier New</option>
-            </select>                                               <select class="tool-select" id="fontSizeSelect">                                                                    <option value="18">Compact</option>
-                <option value="20">Book</option>
-                <option value="22">Comfort</option>
-                <option value="26">Large</option>
-            </select>
-        </div>
+            </select>                                               <select class="tool-select" id="fontSizeSelect">                                                                    <option value="18">Compact</option>                     <option value="20">Book</option>
+                <option value="22">Comfort</option>                     <option value="26">Large</option>
+            </select>                                           </div>
 
-        <div class="workspace">
-            <div class="page-wrap">
-                <div class="page">
-                    <div class="chapter-number" id="chapterNumber">1</div>
-                    <div class="chapter-title" id="chapterTitle" contenteditable="true">Chapter 1</div>
+        <div class="workspace">                                     <div class="page-wrap">
+                <div class="page">                                          <div class="chapter-number" id="chapterNumber">1</div>                                                          <div class="chapter-title" id="chapterTitle" contenteditable="true">Chapter 1</div>
                     <div class="editor" id="editor" contenteditable="true" data-placeholder="Begin writing here..."></div>
-                    <div class="bottom-meta">
-                        <span id="chapterWords">0</span> chapter words • <span id="bottomTotalWords">0</span> total words                                                                   </div>
-                </div>
-            </div>                                              </div>
-    </div>
-
-    <div class="publish-modal" id="publishModal">
+                    <div class="bottom-meta">                                   <span id="chapterWords">0</span> chapter words • <span id="bottomTotalWords">0</span> total words                                                                   </div>                                              </div>
+            </div>                                              </div>                                              </div>
+                                                            <div class="publish-modal" id="publishModal">
         <div class="publish-modal-box">
-            <h2 class="publish-modal-title">Choose Chapters to Publish</h2>
-            <p class="publish-modal-text">
+            <h2 class="publish-modal-title">Choose Chapters to Publish</h2>                                                 <p class="publish-modal-text">
                 Select the chapters you want to publish now. The next step will open on a separate page so publishing stays clean and doesn’t interfere with the editor.
             </p>
-
-            <div class="publish-list" id="publishList"></div>
-
-            <div class="publish-modal-actions">
-                <button class="publish-modal-btn secondary" id="closePublishBtn" type="button">Cancel</button>
-                <button class="publish-modal-btn primary" id="publishNextBtn" type="button">Next</button>
-            </div>
-        </div>
-    </div>
-
-    <div class="obsidian-panel hidden" id="obsidianPanel">
-        <div class="obsidian-topbar">
-            <div class="obsidian-title">Notes</div>
-            <div class="button-row">
-                <button class="obsidian-link-btn" id="newNoteBtn" type="button">New</button>
+                                                                    <div class="publish-list" id="publishList"></div>                                                   
+            <div class="publish-modal-actions">                         <button class="publish-modal-btn secondary" id="closePublishBtn" type="button">Cancel</button>                  <button class="publish-modal-btn primary" id="publishNextBtn" type="button">Next</button>                   </div>
+        </div>                                              </div>
+                                                            <div class="obsidian-panel hidden" id="obsidianPanel">
+        <div class="obsidian-topbar">                               <div class="obsidian-title">Notes</div>
+            <div class="button-row">                                    <button class="obsidian-link-btn" id="newNoteBtn" type="button">New</button>
                 <button class="obsidian-link-btn" id="deleteNoteBtn" type="button">Delete</button>
                 <button class="obsidian-link-btn" id="closeObsidianBtn" type="button">Close</button>
+    <button class="obsidian-link-btn" id="openFullObsidianBtn">Open Full</button>
             </div>
         </div>
-
-        <div class="obsidian-layout">
-            <div class="obsidian-sidebar">
-                <div class="obsidian-search-wrap">
+                                                                <div class="obsidian-layout">
+            <div class="obsidian-sidebar">                              <div class="obsidian-search-wrap">
                     <input id="obsidianSearch" class="obsidian-search" type="text" placeholder="Search notes...">
                 </div>
                 <div id="obsidianNoteList" class="obsidian-note-list"></div>
-            </div>
-
+            </div>                                      
             <div class="obsidian-editor-pane">
-                <div class="obsidian-note-meta">
-                    <input id="obsidianNoteTitle" class="obsidian-note-title" type="text" placeholder="Untitled note">
+                <div class="obsidian-note-meta">                            <input id="obsidianNoteTitle" class="obsidian-note-title" type="text" placeholder="Untitled note">
                     <div class="obsidian-link-row">
-                        <button class="obsidian-link-btn" id="linkCurrentChapterBtn" type="button">Link current chapter</button>
-                        <button class="obsidian-link-btn" id="insertWikiLinkBtn" type="button">Insert [[link]]</button>
-                    </div>
+                        <button class="obsidian-link-btn" id="linkCurrentChapterBtn" type="button">Link current chapter</button>                                                                <button class="obsidian-link-btn" id="insertWikiLinkBtn" type="button">Insert [[link]]</button>                                                                     </div>
                 </div>
-                <textarea id="obsidianNoteBody" class="obsidian-note-body" placeholder="Markdown-ish notes, ideas, outlines, links...
-
-Try [[Prologue]] or [[Some note]]"></textarea>
-                <div class="obsidian-footer">
-                    <button class="obsidian-secondary" id="copyNoteBtn" type="button">Copy Note</button>
-                    <button class="obsidian-primary" id="insertNoteBtn" type="button">Insert into chapter</button>
-                </div>
-            </div>
-        </div>
-    </div>
+                <textarea id="obsidianNoteBody" class="obsidian-note-body" placeholder="Markdown-ish notes, ideas, outlines, links...                                   
+Try [[Prologue]] or [[Some note]]"></textarea>                          <div class="obsidian-footer">                               <button class="obsidian-secondary" id="copyNoteBtn" type="button">Copy Note</button>
+                    <button class="obsidian-primary" id="insertNoteBtn" type="button">Insert into chapter</button>                                                                      </div>
+            </div>                                              </div>                                              </div>
 
     <script type="module">
         import { auth, db } from "./firebase.js";
-        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-        import { doc, getDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
-        const params = new URLSearchParams(window.location.search);
-        const bookId = params.get("book");
-                                                                const sidebar = document.getElementById("sidebar");
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";               import { doc, getDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";                                                                                                           const params = new URLSearchParams(window.location.search);
+        const bookId = params.get("book");                                                                              const sidebar = document.getElementById("sidebar");
         const overlay = document.getElementById("overlay");
         const toggleSidebarBtn = document.getElementById("toggleSidebarBtn");
-
-const homeBtn = document.getElementById("homeBtn");
+                                                        const homeBtn = document.getElementById("homeBtn");
 
 homeBtn.onclick = () => {
     window.location.href = "/studio.html";
-};
-
-        const addChapterBtn = document.getElementById("addChapterBtn");
+};                                                                                                                      const addChapterBtn = document.getElementById("addChapterBtn");
         const deleteChapterBtn = document.getElementById("deleteChapterBtn");
-        const renameBookBtn = document.getElementById("renameBookBtn");
-        const quickAddBtn = document.getElementById("quickAddBtn");
+        const renameBookBtn = document.getElementById("renameBookBtn");                                                 const quickAddBtn = document.getElementById("quickAddBtn");
         const renameChapterBtn = document.getElementById("renameChapterBtn");
-        const deleteBookBtn = document.getElementById("deleteBookBtn");
-        const deleteBookTopBtn = document.getElementById("deleteBookTopBtn");                                           const themeToggleBtn = document.getElementById("themeToggleBtn");
-        const themeTopBtn = document.getElementById("themeTopBtn");
+        const deleteBookBtn = document.getElementById("deleteBookBtn");                                                 const deleteBookTopBtn = document.getElementById("deleteBookTopBtn");                                           const themeToggleBtn = document.getElementById("themeToggleBtn");                                               const themeTopBtn = document.getElementById("themeTopBtn");
         const publishBtn = document.getElementById("publishBtn");
         const publishTopBtn = document.getElementById("publishTopBtn");
-        const obsidianBtn = document.getElementById("obsidianBtn");
-
+        const obsidianBtn = document.getElementById("obsidianBtn");                                             
         const topBookTitle = document.getElementById("topBookTitle");
         const sidebarBookTitle = document.getElementById("sidebarBookTitle");
-        const saveStatus = document.getElementById("saveStatus");
-
-        const chapterNumber = document.getElementById("chapterNumber");
+        const saveStatus = document.getElementById("saveStatus");                                                                                                               const chapterNumber = document.getElementById("chapterNumber");
         const chapterTitle = document.getElementById("chapterTitle");
-        const editor = document.getElementById("editor");
-
+        const editor = document.getElementById("editor");                                                       
         const totalWordsEl = document.getElementById("totalWords");
         const chapterCountEl = document.getElementById("chapterCount");
         const footerWordsEl = document.getElementById("footerWords");
         const chapterWordsEl = document.getElementById("chapterWords");
         const bottomTotalWordsEl = document.getElementById("bottomTotalWords");
-
-        const groupEls = {
+                                                                const groupEls = {
             front: document.getElementById("group-front"),
             body: document.getElementById("group-body"),
             back: document.getElementById("group-back")
-        };                                              
+        };
         const formatSelect = document.getElementById("formatSelect");
         const quoteBtn = document.getElementById("quoteBtn");
-        const fontSelect = document.getElementById("fontSelect");
-        const fontSizeSelect = document.getElementById("fontSizeSelect");
-
+        const fontSelect = document.getElementById("fontSelect");                                                       const fontSizeSelect = document.getElementById("fontSizeSelect");                                       
         const publishModal = document.getElementById("publishModal");
-        const publishList = document.getElementById("publishList");
-        const closePublishBtn = document.getElementById("closePublishBtn");
-        const publishNextBtn = document.getElementById("publishNextBtn");
+        const publishList = document.getElementById("publishList");                                                     const closePublishBtn = document.getElementById("closePublishBtn");                                             const publishNextBtn = document.getElementById("publishNextBtn");
 
         const obsidianPanel = document.getElementById("obsidianPanel");
         const closeObsidianBtn = document.getElementById("closeObsidianBtn");
         const newNoteBtn = document.getElementById("newNoteBtn");
+const openFullObsidianBtn = document.getElementById("openFullObsidianBtn");
+openFullObsidianBtn.onclick = () => {
+    // save latest state first
+    saveActiveNoteFields();
+
+    const key = `alysum-notes-${bookId || "global"}`;
+
+    // open full page with SAME key
+    window.open(`/notes.html?key=${encodeURIComponent(key)}`, "_blank");
+};
         const deleteNoteBtn = document.getElementById("deleteNoteBtn");
         const obsidianSearch = document.getElementById("obsidianSearch");
         const obsidianNoteList = document.getElementById("obsidianNoteList");
         const obsidianNoteTitle = document.getElementById("obsidianNoteTitle");
-        const obsidianNoteBody = document.getElementById("obsidianNoteBody");
-        const linkCurrentChapterBtn = document.getElementById("linkCurrentChapterBtn");
-        const insertWikiLinkBtn = document.getElementById("insertWikiLinkBtn");
+        const obsidianNoteBody = document.getElementById("obsidianNoteBody");                                           const linkCurrentChapterBtn = document.getElementById("linkCurrentChapterBtn");                                 const insertWikiLinkBtn = document.getElementById("insertWikiLinkBtn");
         const copyNoteBtn = document.getElementById("copyNoteBtn");
         const insertNoteBtn = document.getElementById("insertNoteBtn");
-
-        let currentUser = null;
+                                                                let currentUser = null;
         let currentBook = null;
         let currentSection = "body";
         let currentChapterIndex = 0;
-        let saveTimer = null;
-        let dragged = null;
+        let saveTimer = null;                                   let dragged = null;
 
-        let notesState = {
-            notes: [],                                              activeId: null,
+        let notesState = {                                          notes: [],                                              activeId: null,
             filter: ""
         };
 
@@ -1011,19 +823,15 @@ homeBtn.onclick = () => {
             saveStatus.textContent = text;
         }
 
-        function generateId() {
-            return "ch_" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+        function generateId() {                                     return "ch_" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
         }
-
-        function generateNoteId() {
+                                                                function generateNoteId() {
             return "note_" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
         }
-
-        function setTransientSaveStatus(text, resetText = "Saved") {
+                                                                function setTransientSaveStatus(text, resetText = "Saved") {
             setSaveStatus(text);
             clearTimeout(window.__statusTimer);
-            window.__statusTimer = setTimeout(() => setSaveStatus(resetText), 900);
-        }
+            window.__statusTimer = setTimeout(() => setSaveStatus(resetText), 900);                                     }
 
         function safeString(value, fallback = "") {
             return typeof value === "string" ? value : fallback;
@@ -1033,21 +841,17 @@ homeBtn.onclick = () => {
             return typeof value === "number" && Number.isFinite(value) ? value : fallback;
         }
 
-        function safeArray(value, fallback = []) {
-            return Array.isArray(value) ? value : fallback;
+        function safeArray(value, fallback = []) {                  return Array.isArray(value) ? value : fallback;
         }
 
         function safeObject(value, fallback = {}) {
-            return value && typeof value === "object" && !Array.isArray(value) ? value : fallback;
-        }
+            return value && typeof value === "object" && !Array.isArray(value) ? value : fallback;                      }
 
         function normalizeChapter(raw, fallbackTitle = "Untitled") {
-            const chapter = safeObject(raw, {});
-            return {
+            const chapter = safeObject(raw, {});                    return {
                 id: safeString(chapter.id, generateId()),
                 title: safeString(chapter.title, fallbackTitle),
-                content: safeString(chapter.content, "")
-            };
+                content: safeString(chapter.content, "")            };
         }
 
         function normalizeSections(rawSections) {
@@ -1060,59 +864,43 @@ homeBtn.onclick = () => {
                 ? frontRaw.map((ch, index) => normalizeChapter(ch, index === 0 ? "Copyright" : "Table of Contents"))
                 : [
                     { id: generateId(), title: "Copyright", content: "" },
-                    { id: generateId(), title: "Table of Contents", content: "" }
-                ];
+                    { id: generateId(), title: "Table of Contents", content: "" }                                               ];
                                                                     const body = bodyRaw.length
                 ? bodyRaw.map((ch, index) => normalizeChapter(ch, `Chapter ${index + 1}`))
-                : [
-                    { id: generateId(), title: "Chapter 1", content: "" }
-                ];
-
-            const back = backRaw.map((ch, index) => normalizeChapter(ch, `Back Matter ${index + 1}`));
-
-            return { front, body, back };
-        }
+                : [                                                         { id: generateId(), title: "Chapter 1", content: "" }                                                       ];
+                                                                    const back = backRaw.map((ch, index) => normalizeChapter(ch, `Back Matter ${index + 1}`));                                                                              return { front, body, back };                       }
 
         function normalizeBookData(rawData) {
             const data = safeObject(rawData, {});
             return {
                 title: safeString(data.title, "Untitled Book"),
-                sections: normalizeSections(data.sections),
-                words: safeNumber(data.words, 0),
+                sections: normalizeSections(data.sections),                                                                     words: safeNumber(data.words, 0),
                 updated: safeNumber(data.updated, Date.now())
-            };
-        }
+            };                                                  }
 
         function ensureChapterIds(list) {
             list.forEach(ch => {
                 if (!ch.id) ch.id = generateId();
-            });
-        }
-
-        function applyTheme(theme) {
+            });                                                 }
+                                                                function applyTheme(theme) {
             const dark = theme === "dark";
-            document.body.classList.toggle("dark", dark);                                                                   localStorage.setItem("alysum-theme", theme);
-            themeToggleBtn.textContent = dark ? "Light Mode" : "Dark Mode";
+            document.body.classList.toggle("dark", dark);                                                                   localStorage.setItem("alysum-theme", theme);            themeToggleBtn.textContent = dark ? "Light Mode" : "Dark Mode";
         }
 
         function toggleTheme() {                                    const nowDark = document.body.classList.contains("dark");
             applyTheme(nowDark ? "light" : "dark");
-        }
-
+        }                                               
         themeToggleBtn.addEventListener("click", toggleTheme);
         themeTopBtn.addEventListener("click", toggleTheme);
 
-        function toggleSidebar() {
-            if (window.innerWidth <= 760) {
+        function toggleSidebar() {                                  if (window.innerWidth <= 760) {
                 sidebar.classList.toggle("mobile-hidden");
                 overlay.classList.toggle("hidden");
             } else {
                 sidebar.classList.toggle("collapsed-desktop");
             }
-        }                                               
-        toggleSidebarBtn.addEventListener("click", toggleSidebar);
-        overlay.addEventListener("click", toggleSidebar);
-
+        }
+        toggleSidebarBtn.addEventListener("click", toggleSidebar);                                                      overlay.addEventListener("click", toggleSidebar);                                                       
         function applyResponsiveSidebar() {
             if (window.innerWidth <= 760) {
                 sidebar.classList.add("mobile-hidden");
@@ -1126,26 +914,22 @@ homeBtn.onclick = () => {
 
         window.addEventListener("resize", applyResponsiveSidebar);
 
-        function ensureStructure() {
-            if (!currentBook.sections || typeof currentBook.sections !== "object") {
+        function ensureStructure() {                                if (!currentBook.sections || typeof currentBook.sections !== "object") {
                 currentBook.sections = {};
-            }
-
+            }                                           
             if (!Array.isArray(currentBook.sections.front)) {
                 currentBook.sections.front = [                              { id: generateId(), title: "Copyright", content: "" },
                     { id: generateId(), title: "Table of Contents", content: "" }
                 ];
             }
 
-            if (!Array.isArray(currentBook.sections.body) || currentBook.sections.body.length === 0) {
-                currentBook.sections.body = [
+            if (!Array.isArray(currentBook.sections.body) || currentBook.sections.body.length === 0) {                          currentBook.sections.body = [
                     { id: generateId(), title: "Chapter 1", content: "" }
                 ];
             }
 
             if (!Array.isArray(currentBook.sections.back)) {
-                currentBook.sections.back = [];
-            }
+                currentBook.sections.back = [];                     }
 
             ensureChapterIds(currentBook.sections.front);
             ensureChapterIds(currentBook.sections.body);
@@ -1156,58 +940,46 @@ homeBtn.onclick = () => {
             const text = safeString(html, "")
                 .replace(/<br\s*\/?>/gi, " ")
                 .replace(/<\/(div|p|h1|h2|h3|li|blockquote)>/gi, " ")
-                .replace(/<[^>]*>/g, " ")
-                .replace(/\s+/g, " ")
+                .replace(/<[^>]*>/g, " ")                               .replace(/\s+/g, " ")
                 .trim();
 
-            return text;
-        }
-
-        function countWords(html) {
+            return text;                                        }
+                                                                function countWords(html) {
             const text = stripHtmlToText(html);
-            if (!text) return 0;
-            return text.split(" ").length;
+            if (!text) return 0;                                    return text.split(" ").length;
         }
 
         function allChaptersFlat() {
-            return [
-                ...currentBook.sections.front.map((ch, i) => ({ section: "front", index: i, ...ch })),
+            return [                                                    ...currentBook.sections.front.map((ch, i) => ({ section: "front", index: i, ...ch })),
                 ...currentBook.sections.body.map((ch, i) => ({ section: "body", index: i, ...ch })),
-                ...currentBook.sections.back.map((ch, i) => ({ section: "back", index: i, ...ch }))
-            ];
+                ...currentBook.sections.back.map((ch, i) => ({ section: "back", index: i, ...ch }))                         ];
         }
 
         function totalWords() {
             return allChaptersFlat().reduce((sum, ch) => sum + countWords(ch.content || ""), 0);
         }
 
-        function currentChapter() {
-            const list = currentBook.sections[currentSection];
-
+        function currentChapter() {                                 const list = currentBook.sections[currentSection];                                                  
             if (!Array.isArray(list) || !list.length) {
                 currentSection = "body";                                currentChapterIndex = 0;
                 return currentBook.sections.body[0];
             }
-
-            if (currentChapterIndex < 0) currentChapterIndex = 0;
+                                                                    if (currentChapterIndex < 0) currentChapterIndex = 0;
             if (currentChapterIndex >= list.length) currentChapterIndex = list.length - 1;
 
             return list[currentChapterIndex];
         }
 
         function currentChapterDisplayName() {
-            const ch = currentChapter();
-            return ch?.title || (currentSection === "body" ? `Chapter ${currentChapterIndex + 1}` : "Untitled");
+            const ch = currentChapter();                            return ch?.title || (currentSection === "body" ? `Chapter ${currentChapterIndex + 1}` : "Untitled");
         }
 
-        function syncStats() {
-            const ch = currentChapter();
+        function syncStats() {                                      const ch = currentChapter();
             const chWords = countWords(ch.content || "");
             const total = totalWords();
 
             chapterWordsEl.textContent = chWords;
-            totalWordsEl.textContent = total;
-            bottomTotalWordsEl.textContent = total;
+            totalWordsEl.textContent = total;                       bottomTotalWordsEl.textContent = total;
             footerWordsEl.textContent = total;
             chapterCountEl.textContent = allChaptersFlat().length;
         }
@@ -1222,9 +994,7 @@ homeBtn.onclick = () => {
             mount.innerHTML = "";
 
             const list = currentBook.sections[section];
-            if (!list.length) {
-                const empty = document.createElement("div");
-                empty.className = "empty-slot";
+            if (!list.length) {                                         const empty = document.createElement("div");                                                                    empty.className = "empty-slot";
                 empty.textContent = "Drag chapters here";
                 mount.appendChild(empty);
                 return;
@@ -1232,14 +1002,12 @@ homeBtn.onclick = () => {
 
             list.forEach((ch, index) => {
                 const item = document.createElement("div");
-                item.className = "chapter-item" + (section === currentSection && index === currentChapterIndex ? " active" : "");
-                item.draggable = true;
+                item.className = "chapter-item" + (section === currentSection && index === currentChapterIndex ? " active" : "");                                                       item.draggable = true;
                                                                         const visibleNumber = section === "body" ? index + 1 : "";
 
                 item.innerHTML = `
                     <div class="chapter-num">${visibleNumber}</div>
-                    <div class="chapter-name">${ch.title || "Untitled"}</div>
-                    <div class="chapter-drag">⋮⋮</div>
+                    <div class="chapter-name">${ch.title || "Untitled"}</div>                                                       <div class="chapter-drag">⋮⋮</div>
                 `;
 
                 item.addEventListener("click", () => {
@@ -1258,8 +1026,7 @@ homeBtn.onclick = () => {
                     dragged = null;
                     item.classList.remove("dragging");
                 });
-
-                item.addEventListener("dragover", (e) => e.preventDefault());
+                                                                        item.addEventListener("dragover", (e) => e.preventDefault());
 
                 item.addEventListener("drop", async (e) => {
                     e.preventDefault();
@@ -1288,7 +1055,7 @@ homeBtn.onclick = () => {
 
                 mount.appendChild(item);
             });
-        }                                               
+        }
         function renderAllSections() {
             renderSection("front");
             renderSection("body");
@@ -1320,9 +1087,7 @@ homeBtn.onclick = () => {
 
             const bodyChapters = currentBook?.sections?.body || [];
 
-            if (!bodyChapters.length) {
-                const empty = document.createElement("div");
-                empty.className = "empty-slot";
+            if (!bodyChapters.length) {                                 const empty = document.createElement("div");                                                                    empty.className = "empty-slot";
                 empty.textContent = "No body chapters available.";
                 publishList.appendChild(empty);
                 return;
@@ -1347,12 +1112,12 @@ homeBtn.onclick = () => {
 
         function goToPublishPage() {                                const selectedIds = [...publishList.querySelectorAll("input[type='checkbox']:checked")]
                 .map(input => input.dataset.id)
-                .filter(Boolean);                       
+                .filter(Boolean);
             if (!selectedIds.length) {                                  alert("Choose at least one chapter.");
                 return;                                             }
                                                                     const query = new URLSearchParams({
                 book: bookId,                                           chapters: selectedIds.join(",")
-            });                                         
+            });
             window.location.href = "/publish.html?" + query.toString();                                                 }
                                                                 async function saveBook(doneText = "Saved") {
             if (!currentUser || !bookId || !currentBook) return;
@@ -1368,11 +1133,11 @@ homeBtn.onclick = () => {
                                                                     setSaveStatus(doneText);                            }
 
         async function migrateBookIfNeeded() {
-            if (!currentUser || !bookId || !currentBook) return;                                                
+            if (!currentUser || !bookId || !currentBook) return;
             const normalized = normalizeBookData(currentBook);
             const before = JSON.stringify(currentBook);             const after = JSON.stringify(normalized);
                                                                     currentBook = normalized;
-            ensureStructure();                          
+            ensureStructure();
             if (before !== after) {
                 try {
                     await updateDoc(doc(db, "users", currentUser.uid, "books", bookId), {
@@ -1380,8 +1145,7 @@ homeBtn.onclick = () => {
                         sections: currentBook.sections,
                         words: safeNumber(currentBook.words, 0),
                         updated: Date.now()
-                    });
-                } catch (e) {
+                    });                                                 } catch (e) {
                     console.error("Migration save failed:", e);
                 }
             }
@@ -1397,9 +1161,9 @@ homeBtn.onclick = () => {
                     setSaveStatus("Save failed");
                 }
             }, 700);
-        }                                               
+        }
         function addChapterTo(section) {                            const label = section === "body" ? "Chapter name?" : "Section name?";                                           const name = prompt(label);
-            if (!name) return;                          
+            if (!name) return;
             currentBook.sections[section].push({
                 id: generateId(),
                 title: name,
@@ -1408,8 +1172,7 @@ homeBtn.onclick = () => {
 
             renderAllSections();
             loadChapter(section, currentBook.sections[section].length - 1, false);
-            scheduleSave();
-        }
+            scheduleSave();                                     }
 
         async function deleteBook() {                               const ok = confirm("Delete this entire book?");
             if (!ok) return;
@@ -1423,8 +1186,7 @@ homeBtn.onclick = () => {
 
         function applyEditorStyle() {
             const font = localStorage.getItem("alysum-font") || "Georgia";                                                  const size = localStorage.getItem("alysum-fontSize") || "20";
-                                                                    editor.style.fontFamily = font + (font === "Arial" || font === "Inter" ? ", sans-serif" : ", serif");                                                                   editor.style.fontSize = size + "px";
-            editor.style.lineHeight = "1.7";
+                                                                    editor.style.fontFamily = font + (font === "Arial" || font === "Inter" ? ", sans-serif" : ", serif");                                                                   editor.style.fontSize = size + "px";                    editor.style.lineHeight = "1.7";
         }
                                                                 function getNotesStorageKey() {
             return `alysum-notes-${bookId || "global"}`;        }
@@ -1436,18 +1198,16 @@ homeBtn.onclick = () => {
                 body: "",                                               links: [],
                 updated: Date.now()
             };
-        }                                               
+        }
         function loadNotesState() {                                 try {
                 const raw = localStorage.getItem(getNotesStorageKey());
                 if (!raw) {
                     notesState = {                                              notes: [createNote("Scratchpad")],
-                        activeId: null,
-                        filter: ""                                          };
+                        activeId: null,                                         filter: ""                                          };
                     notesState.activeId = notesState.notes[0].id;
                     persistNotesState();
                     return;
-                }                                       
-                const parsed = JSON.parse(raw);
+                }                                                       const parsed = JSON.parse(raw);
                 const notes = safeArray(parsed.notes, []).map(note => ({
                     id: safeString(note.id, generateNoteId()),
                     title: safeString(note.title, "Untitled note"),                                                                 body: safeString(note.body, ""),
@@ -1460,31 +1220,26 @@ homeBtn.onclick = () => {
 
                 if (!notesState.notes.find(n => n.id === notesState.activeId)) {
                     notesState.activeId = notesState.notes[0].id;
-                }
-            } catch (err) {                                             console.error("Notes load failed", err);
+                }                                                   } catch (err) {                                             console.error("Notes load failed", err);
                 notesState = {
                     notes: [createNote("Scratchpad")],
                     activeId: null,
                     filter: ""
                 };
-                notesState.activeId = notesState.notes[0].id;
-            }
-        }                                               
-        function persistNotesState() {
+                notesState.activeId = notesState.notes[0].id;                                                               }
+        }                                                       function persistNotesState() {
             localStorage.setItem(getNotesStorageKey(), JSON.stringify(notesState));
-        }                                               
+        }
         function activeNote() {                                     return notesState.notes.find(note => note.id === notesState.activeId) || null;                              }
-                                                                function renderNoteList() {
-            obsidianNoteList.innerHTML = "";                        const filter = notesState.filter.trim().toLowerCase();                                              
+                                                                function renderNoteList() {                                 obsidianNoteList.innerHTML = "";                        const filter = notesState.filter.trim().toLowerCase();
             const visibleNotes = notesState.notes.filter(note => {
                 const hay = `${note.title} ${note.body}`.toLowerCase();                                                         return !filter || hay.includes(filter);
             });
                                                                     if (!visibleNotes.length) {
                 const empty = document.createElement("div");
                 empty.className = "obsidian-empty";
-                empty.textContent = "No notes match your search.";
-                obsidianNoteList.appendChild(empty);                    return;
-            }                                           
+                empty.textContent = "No notes match your search.";                                                              obsidianNoteList.appendChild(empty);                    return;
+            }
             visibleNotes                                                .sort((a, b) => b.updated - a.updated)
                 .forEach(note => {
                     const item = document.createElement("div");
@@ -1494,55 +1249,35 @@ homeBtn.onclick = () => {
                         <div class="obsidian-note-name">${note.title || "Untitled note"}</div>
                         <div class="obsidian-note-preview">${preview}</div>
                     `;                                                      item.addEventListener("click", () => {
-                        notesState.activeId = note.id;                          persistNotesState();
-                        renderNotesUI();                                    });
+                        notesState.activeId = note.id;                          persistNotesState();                                    renderNotesUI();                                    });
                     obsidianNoteList.appendChild(item);                 });
-        }                                               
+        }
         function renderNotesUI() {
-            renderNoteList();                                       const note = activeNote();
-            if (!note) {                                                obsidianNoteTitle.value = "";
-                obsidianNoteBody.value = "";                            return;
-            }                                                       obsidianNoteTitle.value = note.title;
-            obsidianNoteBody.value = note.body;
-            obsidianSearch.value = notesState.filter;           }
-                                                                function saveActiveNoteFields() {
+            renderNoteList();                                       const note = activeNote();                              if (!note) {                                                obsidianNoteTitle.value = "";                           obsidianNoteBody.value = "";                            return;                                             }                                                       obsidianNoteTitle.value = note.title;
+            obsidianNoteBody.value = note.body;                     obsidianSearch.value = notesState.filter;           }                                                                                                               function saveActiveNoteFields() {
             const note = activeNote();                              if (!note) return;
             note.title = obsidianNoteTitle.value.trim() || "Untitled note";
             note.body = obsidianNoteBody.value;
-            note.updated = Date.now();
-            persistNotesState();
-            renderNoteList();
+            note.updated = Date.now();                              persistNotesState();
+            renderNoteList();                                   }
+                                                                function openObsidianPanel() {
+            obsidianPanel.classList.remove("hidden");               loadNotesState();
+            renderNotesUI();                                    }
+                                                                function closeObsidianPanel() {
+            saveActiveNoteFields();                                 obsidianPanel.classList.add("hidden");
         }
-
-        function openObsidianPanel() {
-            obsidianPanel.classList.remove("hidden");
-            loadNotesState();
-            renderNotesUI();
-        }
-
-        function closeObsidianPanel() {
-            saveActiveNoteFields();
-            obsidianPanel.classList.add("hidden");
-        }                                               
-        function insertHtmlAtCursor(html) {
-            editor.focus();
+        function insertHtmlAtCursor(html) {                         editor.focus();
             document.execCommand("insertHTML", false, html);
             currentChapter().content = editor.innerHTML;
-            syncStats();
-            scheduleSave();
-        }
-
-        function currentWikiLink() {
-            return `[[${currentChapterDisplayName()}]]`;
+            syncStats();                                            scheduleSave();
         }                                               
-        addChapterBtn.addEventListener("click", () => addChapterTo("body"));
-        quickAddBtn.addEventListener("click", () => addChapterTo("body"));
-        deleteBookBtn.addEventListener("click", deleteBook);
+        function currentWikiLink() {                                return `[[${currentChapterDisplayName()}]]`;
+        }
+        addChapterBtn.addEventListener("click", () => addChapterTo("body"));                                            quickAddBtn.addEventListener("click", () => addChapterTo("body"));                                              deleteBookBtn.addEventListener("click", deleteBook);
         deleteBookTopBtn.addEventListener("click", deleteBook);
-        publishBtn.addEventListener("click", openPublishModal);
-        publishTopBtn.addEventListener("click", openPublishModal);
+        publishBtn.addEventListener("click", openPublishModal);                                                         publishTopBtn.addEventListener("click", openPublishModal);
         closePublishBtn.addEventListener("click", closePublishModal);
-        publishNextBtn.addEventListener("click", goToPublishPage);                                              
+        publishNextBtn.addEventListener("click", goToPublishPage);
         obsidianBtn.addEventListener("click", () => {               if (obsidianPanel.classList.contains("hidden")) openObsidianPanel();
             else closeObsidianPanel();                          });
 
@@ -1556,20 +1291,17 @@ homeBtn.onclick = () => {
             if (currentBook.sections[currentSection].length <= 1 && currentSection === "body") {
                 alert("Your body needs at least one chapter.");
                 return;                                             }
-                                                                    const ok = confirm("Delete this chapter?");
-            if (!ok) return;
+                                                                    const ok = confirm("Delete this chapter?");             if (!ok) return;
 
             currentBook.sections[currentSection].splice(currentChapterIndex, 1);
                                                                     if (currentBook.sections[currentSection].length === 0) {                                                            if (currentSection === "front" || currentSection === "back") {
                     currentSection = "body";                                currentChapterIndex = 0;                            } else {
                     currentBook.sections.body.push({ id: generateId(), title: "Chapter 1", content: "" });
-                    currentChapterIndex = 0;
-                }                                                   } else if (currentChapterIndex >= currentBook.sections[currentSection].length) {
+                    currentChapterIndex = 0;                            }                                                   } else if (currentChapterIndex >= currentBook.sections[currentSection].length) {
                 currentChapterIndex = currentBook.sections[currentSection].length - 1;
-            }                                           
+            }
             renderAllSections();
-            loadChapter(currentSection, currentChapterIndex, false);
-
+            loadChapter(currentSection, currentChapterIndex, false);                                            
             try {                                                       await saveBook("Saved");
             } catch (e) {                                               console.error(e);
                 setSaveStatus("Save failed");
@@ -1578,7 +1310,7 @@ homeBtn.onclick = () => {
                                                                 renameBookBtn.addEventListener("click", async () => {                                                               const name = prompt("Book name?", currentBook.title || "");
             if (!name) return;
                                                                     currentBook.title = name;
-            renderTitles();                             
+            renderTitles();
             try {
                 await saveBook("Saved");                            } catch (e) {
                 console.error(e);                                       setSaveStatus("Save failed");
@@ -1591,55 +1323,43 @@ homeBtn.onclick = () => {
             if (!name) return;
                                                                     ch.title = name;
             chapterTitle.textContent = name;
-            renderAllSections();                        
+            renderAllSections();
             try {
                 await saveBook("Saved");
-            } catch (e) {
-                console.error(e);
-                setSaveStatus("Save failed");
-            }
+            } catch (e) {                                               console.error(e);
+                setSaveStatus("Save failed");                       }
         });
-
-        chapterTitle.addEventListener("input", () => {
-            currentChapter().title = chapterTitle.textContent.trim() || "Untitled";                                         renderAllSections();
-            scheduleSave();
-        });                                             
-        editor.addEventListener("keydown", (e) => {
+                                                                chapterTitle.addEventListener("input", () => {
+            currentChapter().title = chapterTitle.textContent.trim() || "Untitled";                                         renderAllSections();                                    scheduleSave();
+        });                                                     editor.addEventListener("keydown", (e) => {
             if (e.key === "Enter") {
-                setTimeout(() => {                                          currentChapter().content = editor.innerHTML;
-                    syncStats();
+                setTimeout(() => {                                          currentChapter().content = editor.innerHTML;                                                                    syncStats();
                     scheduleSave();
                 }, 0);
             }
         });
-
-        editor.addEventListener("input", () => {
+                                                                editor.addEventListener("input", () => {
             currentChapter().content = editor.innerHTML;
             syncStats();                                            scheduleSave();
         });
 
-        document.querySelectorAll("[data-group]").forEach(header => {
-            header.addEventListener("click", () => {
+        document.querySelectorAll("[data-group]").forEach(header => {                                                       header.addEventListener("click", () => {
                 const group = header.dataset.group;                     const body = document.getElementById("group-" + group);
                 const caret = document.getElementById("caret-" + group);
                 body.classList.toggle("hidden");
                 caret.textContent = body.classList.contains("hidden") ? "▶" : "▼";
             });
-        });
-
-        document.querySelectorAll("[data-cmd]").forEach(btn => {
-            btn.addEventListener("click", () => {
+        });                                             
+        document.querySelectorAll("[data-cmd]").forEach(btn => {                                                            btn.addEventListener("click", () => {
                 document.execCommand(btn.dataset.cmd, false, null);
                 editor.focus();
                 currentChapter().content = editor.innerHTML;
-                syncStats();                                            scheduleSave();
-            });
+                syncStats();                                            scheduleSave();                                     });
         });
                                                                 formatSelect.addEventListener("change", () => {
             const value = formatSelect.value;
             document.execCommand("formatBlock", false, value === "h2" ? "h2" : "div");
-            editor.focus();                                         currentChapter().content = editor.innerHTML;
-            syncStats();
+            editor.focus();                                         currentChapter().content = editor.innerHTML;            syncStats();
             scheduleSave();
         });
 
@@ -1655,8 +1375,7 @@ homeBtn.onclick = () => {
         fontSizeSelect.addEventListener("change", () => {
             localStorage.setItem("alysum-fontSize", fontSizeSelect.value);
             applyEditorStyle();
-        });
-
+        });                                             
         newNoteBtn.addEventListener("click", () => {
             saveActiveNoteFields();                                 const note = createNote("Untitled note");
             notesState.notes.push(note);
@@ -1664,8 +1383,7 @@ homeBtn.onclick = () => {
             persistNotesState();
             renderNotesUI();
             obsidianNoteTitle.focus();
-            obsidianNoteTitle.select();
-        });                                             
+            obsidianNoteTitle.select();                         });
         deleteNoteBtn.addEventListener("click", () => {             if (notesState.notes.length <= 1) {
                 alert("Keep at least one note.");
                 return;
@@ -1673,29 +1391,22 @@ homeBtn.onclick = () => {
             if (!note) return;
             const ok = confirm(`Delete note "${note.title}"?`);
             if (!ok) return;
-            notesState.notes = notesState.notes.filter(n => n.id !== note.id);
-            notesState.activeId = notesState.notes[0]?.id || null;
-            persistNotesState();
+            notesState.notes = notesState.notes.filter(n => n.id !== note.id);                                              notesState.activeId = notesState.notes[0]?.id || null;                                                          persistNotesState();
             renderNotesUI();
         });
 
         obsidianSearch.addEventListener("input", () => {
-            notesState.filter = obsidianSearch.value;
-            persistNotesState();                                    renderNoteList();
-        });
+            notesState.filter = obsidianSearch.value;               persistNotesState();                                    renderNoteList();                                   });
 
         obsidianNoteTitle.addEventListener("input", saveActiveNoteFields);
         obsidianNoteBody.addEventListener("input", saveActiveNoteFields);
 
-        linkCurrentChapterBtn.addEventListener("click", () => {
-            const note = activeNote();
+        linkCurrentChapterBtn.addEventListener("click", () => {                                                             const note = activeNote();
             if (!note) return;
             const link = currentWikiLink();
-            const body = obsidianNoteBody.value;
-            obsidianNoteBody.value = body ? `${body}\n${link}` : link;                                                      saveActiveNoteFields();
+            const body = obsidianNoteBody.value;                    obsidianNoteBody.value = body ? `${body}\n${link}` : link;                                                      saveActiveNoteFields();
         });
-
-        insertWikiLinkBtn.addEventListener("click", () => {
+                                                                insertWikiLinkBtn.addEventListener("click", () => {
             const note = activeNote();                              if (!note) return;
             const target = prompt("Link to which chapter or note?", currentChapterDisplayName());
             if (!target) return;                                    const link = `[[${target.trim()}]]`;
@@ -1715,17 +1426,12 @@ homeBtn.onclick = () => {
                 alert("Could not copy note.");
             }                                                   });
                                                                 insertNoteBtn.addEventListener("click", () => {
-            const note = activeNote();
-            if (!note) return;
-            const body = note.body.trim();
+            const note = activeNote();                              if (!note) return;                                      const body = note.body.trim();
             if (!body) return;
-
-            const html = body
-                .split(/\n{2,}/)
-                .map(part => `<div>${part.replace(/\n/g, "<br>")}</div>`)
+                                                                    const html = body
+                .split(/\n{2,}/)                                        .map(part => `<div>${part.replace(/\n/g, "<br>")}</div>`)
                 .join("");
-
-            insertHtmlAtCursor(html);
+                                                                    insertHtmlAtCursor(html);
             setTransientSaveStatus("Inserted note", "Saved");
         });
 
@@ -1739,8 +1445,7 @@ homeBtn.onclick = () => {
                     sidebarBookTitle.textContent = "Book not found";
                     return;
                 }
-
-                currentBook = normalizeBookData(snap.data());
+                                                                        currentBook = normalizeBookData(snap.data());
                 ensureStructure();
                 await migrateBookIfNeeded();
                                                                         renderTitles();
@@ -1748,15 +1453,12 @@ homeBtn.onclick = () => {
 
                 if (currentBook.sections.body.length > 0) {
                     loadChapter("body", 0, false);                      } else {
-                    loadChapter("front", 0, false);
-                }
-
-                setSaveStatus("Ready");
+                    loadChapter("front", 0, false);                     }
+                                                                        setSaveStatus("Ready");
             } catch (e) {
                 console.error("LOAD ERROR:", e);
                 setSaveStatus("Error loading");                         topBookTitle.textContent = "Error loading";
-                sidebarBookTitle.textContent = "Error loading";
-            }
+                sidebarBookTitle.textContent = "Error loading";                                                             }
         }
 
         onAuthStateChanged(auth, async (user) => {
@@ -1777,22 +1479,16 @@ homeBtn.onclick = () => {
 
             const savedTheme = localStorage.getItem("alysum-theme") || "light";
             applyTheme(savedTheme);
-
-            fontSelect.value = localStorage.getItem("alysum-font") || "Georgia";
+                                                                    fontSelect.value = localStorage.getItem("alysum-font") || "Georgia";
             fontSizeSelect.value = localStorage.getItem("alysum-fontSize") || "20";
             applyEditorStyle();
-
-            loadNotesState();
-            renderNotesUI();
+                                                                    loadNotesState();                                       renderNotesUI();
 
             setSaveStatus("Connecting...");
 
             try {
-                await loadBook(user.uid);
-            } catch (e) {                                               console.error(e);
+                await loadBook(user.uid);                           } catch (e) {                                               console.error(e);
                 setSaveStatus("Error loading");
             }
-        });
-    </script>
-
-</body>
+        });                                                 </script>
+                                                        </body>
