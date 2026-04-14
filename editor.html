@@ -38,6 +38,12 @@
             --toolbar-bg: #ffffff;
             --workspace-bg: #e9edf2;
             --danger: #dc2626;
+            --obsidian-bg: #ffffff;
+            --obsidian-panel: #f8fafc;
+            --obsidian-item: #ffffff;
+            --obsidian-item-active: #ede9fe;
+            --obsidian-text: #1f2937;
+            --obsidian-muted: #64748b;
         }
 
         body.dark {
@@ -55,6 +61,12 @@
             --toolbar-bg: #0f172a;
             --workspace-bg: #0b1220;
             --danger: #ef4444;
+            --obsidian-bg: #0f172a;
+            --obsidian-panel: #111827;
+            --obsidian-item: #1f2937;
+            --obsidian-item-active: #312e81;
+            --obsidian-text: #e5e7eb;
+            --obsidian-muted: #94a3b8;
         }
 
         .sidebar {
@@ -272,6 +284,8 @@
             justify-content: space-between;
             padding: 0 12px;
             gap: 10px;
+            position: relative;
+            z-index: 15;
         }
 
         .topbar-left,
@@ -323,14 +337,15 @@
         }
 
         .toolbar {
-            height: 54px;
+            min-height: 54px;
             background: var(--toolbar-bg);
             border-bottom: 1px solid var(--border);
             display: flex;
             align-items: center;
             gap: 8px;
-            padding: 0 12px;
+            padding: 8px 12px;
             overflow-x: auto;
+            flex-wrap: wrap;
         }
 
         .tool-btn, .tool-select {
@@ -449,7 +464,7 @@
         }
 
         .hidden {
-            display: none;
+            display: none !important;
         }
 
         .publish-modal {
@@ -560,6 +575,218 @@
             color: #e5e7eb;
         }
 
+        .obsidian-panel {
+            position: fixed;
+            top: 76px;
+            right: 18px;
+            width: 400px;
+            max-width: calc(100vw - 24px);
+            height: calc(100vh - 94px);
+            background: var(--obsidian-bg);
+            color: var(--obsidian-text);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            box-shadow: 0 20px 48px rgba(0,0,0,0.28);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 1001;
+        }
+
+        .obsidian-topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--border);
+            background: var(--obsidian-panel);
+        }
+
+        .obsidian-title {
+            font-size: 14px;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .obsidian-layout {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 150px 1fr;
+            min-height: 0;
+        }
+
+        .obsidian-sidebar {
+            border-right: 1px solid var(--border);
+            background: var(--obsidian-panel);
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .obsidian-search-wrap {
+            padding: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .obsidian-search {
+            width: 100%;
+            height: 36px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: transparent;
+            color: inherit;
+            padding: 0 10px;
+            font-size: 13px;
+        }
+
+        .obsidian-note-list {
+            flex: 1;
+            overflow: auto;
+            padding: 8px;
+        }
+
+        .obsidian-note-item {
+            padding: 10px;
+            border-radius: 12px;
+            cursor: pointer;
+            margin-bottom: 6px;
+            background: transparent;
+            border: 1px solid transparent;
+        }
+
+        .obsidian-note-item:hover {
+            background: rgba(255,255,255,0.04);
+        }
+
+        body.light .obsidian-note-item:hover {
+            background: rgba(0,0,0,0.04);
+        }
+
+        .obsidian-note-item.active {
+            background: var(--obsidian-item-active);
+            border-color: rgba(109,40,217,0.35);
+        }
+
+        .obsidian-note-name {
+            font-size: 13px;
+            font-weight: 800;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .obsidian-note-preview {
+            margin-top: 4px;
+            font-size: 12px;
+            color: var(--obsidian-muted);
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .obsidian-editor-pane {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            min-height: 0;
+        }
+
+        .obsidian-note-meta {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border);
+            background: var(--obsidian-panel);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .obsidian-note-title {
+            width: 100%;
+            height: 38px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: transparent;
+            color: inherit;
+            padding: 0 10px;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .obsidian-link-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .obsidian-link-btn {
+            height: 32px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: inherit;
+            padding: 0 12px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .obsidian-note-body {
+            flex: 1;
+            min-height: 0;
+            border: none;
+            outline: none;
+            resize: none;
+            background: transparent;
+            color: inherit;
+            padding: 14px;
+            font-size: 14px;
+            line-height: 1.6;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        }
+
+        .obsidian-footer {
+            display: flex;
+            gap: 8px;
+            padding: 12px;
+            border-top: 1px solid var(--border);
+            background: var(--obsidian-panel);
+        }
+
+        .obsidian-footer button {
+            flex: 1;
+            border: none;
+            border-radius: 12px;
+            padding: 10px 12px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .obsidian-primary {
+            background: var(--alysum-purple);
+            color: white;
+        }
+
+        .obsidian-secondary {
+            background: transparent;
+            color: inherit;
+            border: 1px solid var(--border) !important;
+        }
+
+        .obsidian-empty {
+            padding: 16px;
+            font-size: 13px;
+            color: var(--obsidian-muted);
+        }
+
+        @media (max-width: 1100px) {
+            .obsidian-panel {
+                width: 360px;
+            }
+        }
+
         @media (max-width: 900px) {
             .page {
                 padding: 52px 32px 70px;
@@ -618,6 +845,19 @@
 
             .publish-modal-box {
                 max-width: 100%;
+            }
+
+            .obsidian-panel {
+                top: 64px;
+                left: 10px;
+                right: 10px;
+                width: auto;
+                max-width: none;
+                height: calc(100vh - 78px);
+            }
+
+            .obsidian-layout {
+                grid-template-columns: 130px 1fr;
             }
         }
     </style>
@@ -690,6 +930,7 @@
             <div class="topbar-right">
                 <button class="icon-btn purple" id="quickAddBtn" type="button">＋</button>
                 <button class="icon-btn purple" id="publishTopBtn" type="button">🚀</button>
+                <button class="icon-btn" id="obsidianBtn" type="button" title="Notes">⌘</button>
                 <button class="icon-btn" id="renameChapterBtn" type="button">⋯</button>
                 <button class="icon-btn" id="themeTopBtn" type="button">◐</button>
                 <button class="icon-btn danger" id="deleteBookTopBtn" type="button">🗑</button>
@@ -707,6 +948,19 @@
             <select class="tool-select" id="formatSelect">
                 <option value="div">Body</option>
                 <option value="h2">Heading</option>
+            </select>
+            <select class="tool-select" id="fontSelect">
+                <option value="Georgia">Georgia</option>
+                <option value="Times New Roman">Times New Roman</option>
+                <option value="Arial">Arial</option>
+                <option value="Inter">Inter</option>
+                <option value="Courier New">Courier New</option>
+            </select>
+            <select class="tool-select" id="fontSizeSelect">
+                <option value="22">Small</option>
+                <option value="28">Normal</option>
+                <option value="34">Large</option>
+                <option value="40">Huge</option>
             </select>
         </div>
 
@@ -740,6 +994,41 @@
         </div>
     </div>
 
+    <div class="obsidian-panel hidden" id="obsidianPanel">
+        <div class="obsidian-topbar">
+            <div class="obsidian-title">Notes</div>
+            <div class="button-row">
+                <button class="obsidian-link-btn" id="newNoteBtn" type="button">New</button>
+                <button class="obsidian-link-btn" id="deleteNoteBtn" type="button">Delete</button>
+                <button class="obsidian-link-btn" id="closeObsidianBtn" type="button">Close</button>
+            </div>
+        </div>
+
+        <div class="obsidian-layout">
+            <div class="obsidian-sidebar">
+                <div class="obsidian-search-wrap">
+                    <input id="obsidianSearch" class="obsidian-search" type="text" placeholder="Search notes...">
+                </div>
+                <div id="obsidianNoteList" class="obsidian-note-list"></div>
+            </div>
+
+            <div class="obsidian-editor-pane">
+                <div class="obsidian-note-meta">
+                    <input id="obsidianNoteTitle" class="obsidian-note-title" type="text" placeholder="Untitled note">
+                    <div class="obsidian-link-row">
+                        <button class="obsidian-link-btn" id="linkCurrentChapterBtn" type="button">Link current chapter</button>
+                        <button class="obsidian-link-btn" id="insertWikiLinkBtn" type="button">Insert [[link]]</button>
+                    </div>
+                </div>
+                <textarea id="obsidianNoteBody" class="obsidian-note-body" placeholder="Markdown-ish notes, ideas, outlines, links...&#10;&#10;Try [[Chapter 1]] or [[Some note]]"></textarea>
+                <div class="obsidian-footer">
+                    <button class="obsidian-secondary" id="copyNoteBtn" type="button">Copy Note</button>
+                    <button class="obsidian-primary" id="insertNoteBtn" type="button">Insert into chapter</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script type="module">
         import { auth, db } from "./firebase.js";
         import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
@@ -763,6 +1052,7 @@
         const themeTopBtn = document.getElementById("themeTopBtn");
         const publishBtn = document.getElementById("publishBtn");
         const publishTopBtn = document.getElementById("publishTopBtn");
+        const obsidianBtn = document.getElementById("obsidianBtn");
 
         const topBookTitle = document.getElementById("topBookTitle");
         const sidebarBookTitle = document.getElementById("sidebarBookTitle");
@@ -786,11 +1076,26 @@
 
         const formatSelect = document.getElementById("formatSelect");
         const quoteBtn = document.getElementById("quoteBtn");
+        const fontSelect = document.getElementById("fontSelect");
+        const fontSizeSelect = document.getElementById("fontSizeSelect");
 
         const publishModal = document.getElementById("publishModal");
         const publishList = document.getElementById("publishList");
         const closePublishBtn = document.getElementById("closePublishBtn");
         const publishNextBtn = document.getElementById("publishNextBtn");
+
+        const obsidianPanel = document.getElementById("obsidianPanel");
+        const closeObsidianBtn = document.getElementById("closeObsidianBtn");
+        const newNoteBtn = document.getElementById("newNoteBtn");
+        const deleteNoteBtn = document.getElementById("deleteNoteBtn");
+        const obsidianSearch = document.getElementById("obsidianSearch");
+        const obsidianNoteList = document.getElementById("obsidianNoteList");
+        const obsidianNoteTitle = document.getElementById("obsidianNoteTitle");
+        const obsidianNoteBody = document.getElementById("obsidianNoteBody");
+        const linkCurrentChapterBtn = document.getElementById("linkCurrentChapterBtn");
+        const insertWikiLinkBtn = document.getElementById("insertWikiLinkBtn");
+        const copyNoteBtn = document.getElementById("copyNoteBtn");
+        const insertNoteBtn = document.getElementById("insertNoteBtn");
 
         let currentUser = null;
         let currentBook = null;
@@ -799,12 +1104,28 @@
         let saveTimer = null;
         let dragged = null;
 
+        let notesState = {
+            notes: [],
+            activeId: null,
+            filter: ""
+        };
+
         function setSaveStatus(text) {
             saveStatus.textContent = text;
         }
 
         function generateId() {
             return "ch_" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+        }
+
+        function generateNoteId() {
+            return "note_" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+        }
+
+        function setTransientSaveStatus(text, resetText = "Saved") {
+            setSaveStatus(text);
+            clearTimeout(window.__statusTimer);
+            window.__statusTimer = setTimeout(() => setSaveStatus(resetText), 900);
         }
 
         function safeString(value, fallback = "") {
@@ -983,6 +1304,11 @@
             return list[currentChapterIndex];
         }
 
+        function currentChapterDisplayName() {
+            const ch = currentChapter();
+            return ch?.title || (currentSection === "body" ? `Chapter ${currentChapterIndex + 1}` : "Untitled");
+        }
+
         function syncStats() {
             const ch = currentChapter();
             const chWords = countWords(ch.content || "");
@@ -1091,6 +1417,8 @@
             chapterNumber.textContent = section === "body" ? index + 1 : "";
             chapterTitle.textContent = ch.title || "Untitled";
             editor.innerHTML = ch.content || "";
+
+            applyEditorStyle();
 
             if (rerender) {
                 renderAllSections();
@@ -1236,6 +1564,161 @@
             }
         }
 
+        function applyEditorStyle() {
+            const font = localStorage.getItem("alysum-font") || "Georgia";
+            const size = localStorage.getItem("alysum-fontSize") || "28";
+
+            editor.style.fontFamily = font + (font === "Arial" || font === "Inter" ? ", sans-serif" : ", serif");
+            editor.style.fontSize = size + "px";
+        }
+
+        function getNotesStorageKey() {
+            return `alysum-notes-${bookId || "global"}`;
+        }
+
+        function loadNotesState() {
+            try {
+                const raw = localStorage.getItem(getNotesStorageKey());
+                if (!raw) {
+                    notesState = {
+                        notes: [createNote("Scratchpad")],
+                        activeId: null,
+                        filter: ""
+                    };
+                    notesState.activeId = notesState.notes[0].id;
+                    persistNotesState();
+                    return;
+                }
+
+                const parsed = JSON.parse(raw);
+                const notes = safeArray(parsed.notes, []).map(note => ({
+                    id: safeString(note.id, generateNoteId()),
+                    title: safeString(note.title, "Untitled note"),
+                    body: safeString(note.body, ""),
+                    links: safeArray(note.links, []),
+                    updated: safeNumber(note.updated, Date.now())
+                }));
+
+                notesState = {
+                    notes: notes.length ? notes : [createNote("Scratchpad")],
+                    activeId: safeString(parsed.activeId, notes.length ? notes[0].id : ""),
+                    filter: safeString(parsed.filter, "")
+                };
+
+                if (!notesState.notes.find(n => n.id === notesState.activeId)) {
+                    notesState.activeId = notesState.notes[0].id;
+                }
+            } catch (err) {
+                console.error("Notes load failed", err);
+                notesState = {
+                    notes: [createNote("Scratchpad")],
+                    activeId: null,
+                    filter: ""
+                };
+                notesState.activeId = notesState.notes[0].id;
+            }
+        }
+
+        function persistNotesState() {
+            localStorage.setItem(getNotesStorageKey(), JSON.stringify(notesState));
+        }
+
+        function createNote(title = "Untitled note") {
+            return {
+                id: generateNoteId(),
+                title,
+                body: "",
+                links: [],
+                updated: Date.now()
+            };
+        }
+
+        function activeNote() {
+            return notesState.notes.find(note => note.id === notesState.activeId) || null;
+        }
+
+        function renderNoteList() {
+            obsidianNoteList.innerHTML = "";
+            const filter = notesState.filter.trim().toLowerCase();
+
+            const visibleNotes = notesState.notes.filter(note => {
+                const hay = `${note.title} ${note.body}`.toLowerCase();
+                return !filter || hay.includes(filter);
+            });
+
+            if (!visibleNotes.length) {
+                const empty = document.createElement("div");
+                empty.className = "obsidian-empty";
+                empty.textContent = "No notes match your search.";
+                obsidianNoteList.appendChild(empty);
+                return;
+            }
+
+            visibleNotes
+                .sort((a, b) => b.updated - a.updated)
+                .forEach(note => {
+                    const item = document.createElement("div");
+                    item.className = "obsidian-note-item" + (note.id === notesState.activeId ? " active" : "");
+                    const preview = note.body.replace(/\n+/g, " ").trim() || "Empty note";
+                    item.innerHTML = `
+                        <div class="obsidian-note-name">${note.title || "Untitled note"}</div>
+                        <div class="obsidian-note-preview">${preview}</div>
+                    `;
+                    item.addEventListener("click", () => {
+                        notesState.activeId = note.id;
+                        persistNotesState();
+                        renderNotesUI();
+                    });
+                    obsidianNoteList.appendChild(item);
+                });
+        }
+
+        function renderNotesUI() {
+            renderNoteList();
+            const note = activeNote();
+            if (!note) {
+                obsidianNoteTitle.value = "";
+                obsidianNoteBody.value = "";
+                return;
+            }
+            obsidianNoteTitle.value = note.title;
+            obsidianNoteBody.value = note.body;
+            obsidianSearch.value = notesState.filter;
+        }
+
+        function saveActiveNoteFields() {
+            const note = activeNote();
+            if (!note) return;
+            note.title = obsidianNoteTitle.value.trim() || "Untitled note";
+            note.body = obsidianNoteBody.value;
+            note.updated = Date.now();
+            persistNotesState();
+            renderNoteList();
+        }
+
+        function openObsidianPanel() {
+            obsidianPanel.classList.remove("hidden");
+            loadNotesState();
+            renderNotesUI();
+        }
+
+        function closeObsidianPanel() {
+            saveActiveNoteFields();
+            obsidianPanel.classList.add("hidden");
+        }
+
+        function insertHtmlAtCursor(html) {
+            editor.focus();
+            document.execCommand("insertHTML", false, html);
+            currentChapter().content = editor.innerHTML;
+            syncStats();
+            scheduleSave();
+        }
+
+        function currentWikiLink() {
+            return `[[${currentChapterDisplayName()}]]`;
+        }
+
         addChapterBtn.addEventListener("click", () => addChapterTo("body"));
         quickAddBtn.addEventListener("click", () => addChapterTo("body"));
         deleteBookBtn.addEventListener("click", deleteBook);
@@ -1244,6 +1727,11 @@
         publishTopBtn.addEventListener("click", openPublishModal);
         closePublishBtn.addEventListener("click", closePublishModal);
         publishNextBtn.addEventListener("click", goToPublishPage);
+        obsidianBtn.addEventListener("click", () => {
+            if (obsidianPanel.classList.contains("hidden")) openObsidianPanel();
+            else closeObsidianPanel();
+        });
+        closeObsidianBtn.addEventListener("click", closeObsidianPanel);
 
         publishModal.addEventListener("click", (e) => {
             if (e.target === publishModal) {
@@ -1376,6 +1864,102 @@
             scheduleSave();
         });
 
+        fontSelect.addEventListener("change", () => {
+            localStorage.setItem("alysum-font", fontSelect.value);
+            applyEditorStyle();
+        });
+
+        fontSizeSelect.addEventListener("change", () => {
+            localStorage.setItem("alysum-fontSize", fontSizeSelect.value);
+            applyEditorStyle();
+        });
+
+        newNoteBtn.addEventListener("click", () => {
+            saveActiveNoteFields();
+            const note = createNote("Untitled note");
+            notesState.notes.push(note);
+            notesState.activeId = note.id;
+            persistNotesState();
+            renderNotesUI();
+            obsidianNoteTitle.focus();
+            obsidianNoteTitle.select();
+        });
+
+        deleteNoteBtn.addEventListener("click", () => {
+            if (notesState.notes.length <= 1) {
+                alert("Keep at least one note.");
+                return;
+            }
+            const note = activeNote();
+            if (!note) return;
+            const ok = confirm(`Delete note \"${note.title}\"?`);
+            if (!ok) return;
+            notesState.notes = notesState.notes.filter(n => n.id !== note.id);
+            notesState.activeId = notesState.notes[0]?.id || null;
+            persistNotesState();
+            renderNotesUI();
+        });
+
+        obsidianSearch.addEventListener("input", () => {
+            notesState.filter = obsidianSearch.value;
+            persistNotesState();
+            renderNoteList();
+        });
+
+        obsidianNoteTitle.addEventListener("input", saveActiveNoteFields);
+        obsidianNoteBody.addEventListener("input", saveActiveNoteFields);
+
+        linkCurrentChapterBtn.addEventListener("click", () => {
+            const note = activeNote();
+            if (!note) return;
+            const link = currentWikiLink();
+            const body = obsidianNoteBody.value;
+            obsidianNoteBody.value = body ? `${body}\n${link}` : link;
+            saveActiveNoteFields();
+        });
+
+        insertWikiLinkBtn.addEventListener("click", () => {
+            const note = activeNote();
+            if (!note) return;
+            const target = prompt("Link to which chapter or note?", currentChapterDisplayName());
+            if (!target) return;
+            const link = `[[${target.trim()}]]`;
+            const start = obsidianNoteBody.selectionStart;
+            const end = obsidianNoteBody.selectionEnd;
+            const text = obsidianNoteBody.value;
+            obsidianNoteBody.value = text.slice(0, start) + link + text.slice(end);
+            obsidianNoteBody.focus();
+            obsidianNoteBody.selectionStart = obsidianNoteBody.selectionEnd = start + link.length;
+            saveActiveNoteFields();
+        });
+
+        copyNoteBtn.addEventListener("click", async () => {
+            const note = activeNote();
+            if (!note) return;
+            try {
+                await navigator.clipboard.writeText(`# ${note.title}\n\n${note.body}`);
+                setTransientSaveStatus("Note copied", "Saved");
+            } catch (err) {
+                console.error(err);
+                alert("Could not copy note.");
+            }
+        });
+
+        insertNoteBtn.addEventListener("click", () => {
+            const note = activeNote();
+            if (!note) return;
+            const body = note.body.trim();
+            if (!body) return;
+
+            const html = body
+                .split(/\n{2,}/)
+                .map(part => `<div>${part.replace(/\n/g, "<br>")}</div>`)
+                .join("");
+
+            insertHtmlAtCursor(html);
+            setTransientSaveStatus("Inserted note", "Saved");
+        });
+
         async function loadBook(uid) {
             try {
                 const snap = await getDoc(doc(db, "users", uid, "books", bookId));
@@ -1427,6 +2011,13 @@
 
             const savedTheme = localStorage.getItem("alysum-theme") || "light";
             applyTheme(savedTheme);
+
+            fontSelect.value = localStorage.getItem("alysum-font") || "Georgia";
+            fontSizeSelect.value = localStorage.getItem("alysum-fontSize") || "28";
+            applyEditorStyle();
+
+            loadNotesState();
+            renderNotesUI();
 
             setSaveStatus("Connecting...");
 
