@@ -685,15 +685,22 @@ Start writing here and let your <span class="wiki-link" data-link="Character Arc
     </aside>
   </div>
   <script type="module">
+import { db, auth } from "./firebase.js";
+
 import {
-  createNote,
-  updateNote,
-  deleteNote,
-  subscribeToNotes,
-  renderLinks,
-  findNoteByTitle,
-  waitForAuthReady
-} from "./notes.js";
+  collection,
+  doc,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  onSnapshot,
+  query,
+  orderBy
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+import {
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 /* =========================
    ELEMENTS
@@ -703,111 +710,162 @@ const noteList = document.getElementById("noteList");
 const noteTitle = document.getElementById("noteTitle");
 const editor = document.getElementById("editor");
 const saveStatus = document.getElementById("saveStatus");
-const noteMeta = document.getElementById("noteMeta");
-
-const newNoteBtn = document.getElementById("newNoteBtn");
-const deleteBtn = document.getElementById("deleteBtn");
-const insertWikiBtn = document.getElementById("insertWikiBtn");
-const copyLinkBtn = document.getElementById("copyLinkBtn");
 
 /* =========================
    STATE
 ========================= */
 
+let currentUser = null;
 let notes = [];
 let activeNoteId = null;
+let unsubscribe = null;
 let saveTimer = null;
 let isRendering = false;
 
 /* =========================
-   HELPERS
+   AUTH
 ========================= */
 
-function activeNote() {
-  return notes.find((n) => n.id === activeNoteId) || null;
+function waitForAuth() {
+  return new Promise((resolve) => {
+    onAuthStateChanged(auth, (user) => {
+      currentUser = user;
+      resolve(user);
+    });
+  });
 }
 
-function getPlainEditorText() {
-  return editor.innerText.replace(/\u00A0/g, " ").trimEnd();
+/* =========================
+   FIRESTORE
+========================= */
+
+function notesRef() {
+  return collection(db, "users", currentUser.uid, "notes");
 }
 
-function wordCount(text = "") {
-  const clean = text.replace(/\[\[(.*?)\]\]/g, "$1").trim();
-  if (!clean) return 0;
-  return clean.split(/\s+/).length;
+async function createNote(title = "Untitled") {
+  const docRef = await addDoc(notesRef(), {
+    title,
+    body: "",
+    createdAt: Date.now(),
+    updatedAt: Date.now()
+  });
+
+  return { id: docRef.id, title, body: "" };
 }
 
-function setStatus(text) {
-  saveStatus.textContent = text;
+async function updateNote(id, data) {
+  await updateDoc(doc(db, "users", currentUser.uid, "notes", id), {
+    ...data,
+    updatedAt: Date.now()
+  });
 }
+
+async function deleteNote(id) {
+  await deleteDoc(doc(db, "users", currentUser.uid, "notes", id));
+}
+
+function subscribeNotes() {
+  if (unsubscribe) unsubscribe();
+
+  const q = query(notesRef(), orderBy("updatedAt", "desc"));
+
+  unsubscribe = onSnapshot(q, (snap) => {
+    notes = [];
+
+    snap.forEach((d) => {
+      notes.push({ id: d.id, ...d.data() });
+    });
+
+    renderNotes();
+
+    if (!activeNoteId && notes.length) {
+      openNote(notes[0].id);
+    }
+  });
+}
+
+/* =========================
+   RENDER
+========================= */
 
 function renderNotes() {
   noteList.innerHTML = "";
 
-  notes.forEach((note) => {
-    const item = document.createElement("div");
-    item.className = "note-item" + (note.id === activeNoteId ? " active" : "");
+  notes.forEach((n) => {
+    const div = document.createElement("div");
+    div.className = "note-item" + (n.id === activeNoteId ? " active" : "");
 
-    item.innerHTML = `
-      <div class="note-item-title">${note.title || "Untitled"}</div>
-      <div class="note-item-preview">${(note.body || "").slice(0, 80)}</div>
+    div.innerHTML = `
+      <div class="note-item-title">${n.title || "Untitled"}</div>
+      <div class="note-item-preview">${(n.body || "").slice(0, 80)}</div>
     `;
 
-    item.onclick = () => openNote(note.id);
+    div.onclick = () => openNote(n.id);
 
-    noteList.appendChild(item);
+    noteList.appendChild(div);
   });
 }
 
-function renderMeta() {
-  const note = activeNote();
-  if (!note) {
-    if (noteMeta) noteMeta.textContent = "0 words";
-    return;
-  }
-
-  if (noteMeta) {
-    noteMeta.textContent = `${wordCount(note.body || "")} words`;
-  }
-}
-
 function openNote(id) {
-  const note = notes.find((n) => n.id === id);
+  const note = notes.find(n => n.id === id);
   if (!note) return;
 
   activeNoteId = id;
+
   isRendering = true;
   noteTitle.value = note.title || "";
   editor.innerHTML = renderLinks(note.body || "");
   isRendering = false;
 
   renderNotes();
-  renderMeta();
+}
+
+/* =========================
+   SAVE
+========================= */
+
+function getText() {
+  return editor.innerText.replace(/\u00A0/g, " ");
 }
 
 function scheduleSave() {
   if (isRendering) return;
 
   clearTimeout(saveTimer);
-  setStatus("Saving...");
+  saveStatus.textContent = "Saving...";
 
   saveTimer = setTimeout(async () => {
     if (!activeNoteId) return;
 
     try {
-      const plainText = getPlainEditorText();
-
       await updateNote(activeNoteId, {
         title: noteTitle.value.trim() || "Untitled",
-        body: plainText
+        body: getText()
       });
 
-      setStatus("Saved");
-    } catch (err) {
-      console.error(err);
-      setStatus("Save failed");
+      saveStatus.textContent = "Saved";
+    } catch (e) {
+      console.error(e);
+      saveStatus.textContent = "Error";
     }
   }, 500);
+}
+
+/* =========================
+   WIKI LINKS
+========================= */
+
+function renderLinks(text) {
+  return text
+    .replace(/\n/g, "<br>")
+    .replace(/\[\[(.*?)\]\]/g, (m, name) => {
+      return `<span class="wiki-link" data-link="${name}">[[${name}]]</span>`;
+    });
+}
+
+function findNoteByTitle(name) {
+  return notes.find(n => (n.title || "").toLowerCase() === name.toLowerCase());
 }
 
 /* =========================
@@ -817,120 +875,52 @@ function scheduleSave() {
 noteTitle.addEventListener("input", scheduleSave);
 editor.addEventListener("input", scheduleSave);
 
-newNoteBtn.onclick = async () => {
-  try {
-    const note = await createNote("Untitled");
-    activeNoteId = note.id;
-  } catch (err) {
-    console.error(err);
-    setStatus("Create failed");
-  }
-};
-
-deleteBtn.onclick = async () => {
-  if (!activeNoteId) return;
-
-  const ok = confirm("Delete this note?");
-  if (!ok) return;
-
-  try {
-    await deleteNote(activeNoteId);
-    activeNoteId = null;
-  } catch (err) {
-    console.error(err);
-    setStatus("Delete failed");
-  }
-};
-
 editor.addEventListener("click", async (e) => {
   if (!e.target.classList.contains("wiki-link")) return;
 
   const name = e.target.dataset.link;
-  let target = findNoteByTitle(notes, name);
 
-  try {
-    if (!target) {
-      target = await createNote(name);
-    }
-    openNote(target.id);
-  } catch (err) {
-    console.error(err);
-    setStatus("Link open failed");
+  let note = findNoteByTitle(name);
+
+  if (!note) {
+    note = await createNote(name);
   }
+
+  openNote(note.id);
 });
 
-if (insertWikiBtn) {
-  insertWikiBtn.onclick = () => {
-    const name = prompt("Link to which note?");
-    if (!name) return;
+/* =========================
+   BUTTONS (OPTIONAL)
+========================= */
 
-    document.execCommand("insertText", false, `[[${name.trim()}]]`);
-    scheduleSave();
-  };
-}
+window.newNote = async function () {
+  const note = await createNote("Untitled");
+  openNote(note.id);
+};
 
-if (copyLinkBtn) {
-  copyLinkBtn.onclick = async () => {
-    const note = activeNote();
-    if (!note) return;
+window.deleteNote = async function () {
+  if (!activeNoteId) return;
+  if (!confirm("Delete note?")) return;
 
-    try {
-      await navigator.clipboard.writeText(`[[${note.title || "Untitled"}]]`);
-      setStatus("Copied");
-      setTimeout(() => setStatus("Saved"), 900);
-    } catch (err) {
-      console.error(err);
-      setStatus("Copy failed");
-    }
-  };
-}
+  await deleteNote(activeNoteId);
+  activeNoteId = null;
+};
 
 /* =========================
    INIT
 ========================= */
 
-try {
-  const user = await waitForAuthReady();
+(async function init() {
+  const user = await waitForAuth();
 
   if (!user) {
-    setStatus("Log in required");
-  } else {
-    await subscribeToNotes((data) => {
-      notes = data;
-
-      if (!notes.length) {
-        noteList.innerHTML = `<div class="empty-state">No notes yet. Create one to begin.</div>`;
-        noteTitle.value = "";
-        editor.innerHTML = "";
-        renderMeta();
-        return;
-      }
-
-      const stillExists = notes.find((n) => n.id === activeNoteId);
-
-      if (!activeNoteId || !stillExists) {
-        openNote(notes[0].id);
-      } else {
-        const current = activeNote();
-        if (current && !isRendering) {
-          const cursorWasEditing = document.activeElement === editor || document.activeElement === noteTitle;
-
-          if (!cursorWasEditing) {
-            openNote(current.id);
-          } else {
-            renderNotes();
-            renderMeta();
-          }
-        }
-      }
-    });
+    saveStatus.textContent = "Login required";
+    return;
   }
-} catch (err) {
-  console.error(err);
-  setStatus("Init failed");
-}
-</script>
 
+  subscribeNotes();
+})();
+</script>
 
 </body>
 </html>
