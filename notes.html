@@ -691,8 +691,8 @@ import {
   deleteNote,
   subscribeToNotes,
   renderLinks,
-  extractLinks,
-  findNoteByTitle
+  findNoteByTitle,
+  waitForAuthReady
 } from "./notes.js";
 
 /* =========================
@@ -703,9 +703,12 @@ const noteList = document.getElementById("noteList");
 const noteTitle = document.getElementById("noteTitle");
 const editor = document.getElementById("editor");
 const saveStatus = document.getElementById("saveStatus");
+const noteMeta = document.getElementById("noteMeta");
 
 const newNoteBtn = document.getElementById("newNoteBtn");
 const deleteBtn = document.getElementById("deleteBtn");
+const insertWikiBtn = document.getElementById("insertWikiBtn");
+const copyLinkBtn = document.getElementById("copyLinkBtn");
 
 /* =========================
    STATE
@@ -714,20 +717,39 @@ const deleteBtn = document.getElementById("deleteBtn");
 let notes = [];
 let activeNoteId = null;
 let saveTimer = null;
+let isRendering = false;
 
 /* =========================
-   RENDER SIDEBAR
+   HELPERS
 ========================= */
+
+function activeNote() {
+  return notes.find((n) => n.id === activeNoteId) || null;
+}
+
+function getPlainEditorText() {
+  return editor.innerText.replace(/\u00A0/g, " ").trimEnd();
+}
+
+function wordCount(text = "") {
+  const clean = text.replace(/\[\[(.*?)\]\]/g, "$1").trim();
+  if (!clean) return 0;
+  return clean.split(/\s+/).length;
+}
+
+function setStatus(text) {
+  saveStatus.textContent = text;
+}
 
 function renderNotes() {
   noteList.innerHTML = "";
 
-  notes.forEach(note => {
+  notes.forEach((note) => {
     const item = document.createElement("div");
     item.className = "note-item" + (note.id === activeNoteId ? " active" : "");
 
     item.innerHTML = `
-      <div class="note-item-title">${note.title}</div>
+      <div class="note-item-title">${note.title || "Untitled"}</div>
       <div class="note-item-preview">${(note.body || "").slice(0, 80)}</div>
     `;
 
@@ -737,78 +759,73 @@ function renderNotes() {
   });
 }
 
-/* =========================
-   OPEN NOTE
-========================= */
+function renderMeta() {
+  const note = activeNote();
+  if (!note) {
+    if (noteMeta) noteMeta.textContent = "0 words";
+    return;
+  }
+
+  if (noteMeta) {
+    noteMeta.textContent = `${wordCount(note.body || "")} words`;
+  }
+}
 
 function openNote(id) {
-  const note = notes.find(n => n.id === id);
+  const note = notes.find((n) => n.id === id);
   if (!note) return;
 
   activeNoteId = id;
-
-  noteTitle.value = note.title;
+  isRendering = true;
+  noteTitle.value = note.title || "";
   editor.innerHTML = renderLinks(note.body || "");
+  isRendering = false;
 
   renderNotes();
+  renderMeta();
 }
 
-/* =========================
-   REALTIME SYNC
-========================= */
-
-subscribeToNotes((data) => {
-  notes = data;
-
-  if (!activeNoteId && notes.length) {
-    openNote(notes[0].id);
-  } else {
-    renderNotes();
-  }
-});
-
-/* =========================
-   AUTOSAVE
-========================= */
-
 function scheduleSave() {
-  clearTimeout(saveTimer);
+  if (isRendering) return;
 
-  saveStatus.textContent = "Saving...";
+  clearTimeout(saveTimer);
+  setStatus("Saving...");
 
   saveTimer = setTimeout(async () => {
     if (!activeNoteId) return;
 
-    const plainText = editor.innerText;
+    try {
+      const plainText = getPlainEditorText();
 
-    await updateNote(activeNoteId, {
-      title: noteTitle.value,
-      body: plainText
-    });
+      await updateNote(activeNoteId, {
+        title: noteTitle.value.trim() || "Untitled",
+        body: plainText
+      });
 
-    saveStatus.textContent = "Saved";
-  }, 600);
+      setStatus("Saved");
+    } catch (err) {
+      console.error(err);
+      setStatus("Save failed");
+    }
+  }, 500);
 }
 
 /* =========================
-   INPUT EVENTS
+   EVENTS
 ========================= */
 
 noteTitle.addEventListener("input", scheduleSave);
 editor.addEventListener("input", scheduleSave);
 
-/* =========================
-   CREATE NOTE
-========================= */
-
 newNoteBtn.onclick = async () => {
-  const note = await createNote("Untitled");
-  activeNoteId = note.id;
+  try {
+    const note = await createNote("Untitled");
+    activeNoteId = note.id;
+  } catch (err) {
+    console.error(err);
+    setStatus("Create failed");
+  }
 };
-
-/* =========================
-   DELETE NOTE
-========================= */
 
 deleteBtn.onclick = async () => {
   if (!activeNoteId) return;
@@ -816,29 +833,104 @@ deleteBtn.onclick = async () => {
   const ok = confirm("Delete this note?");
   if (!ok) return;
 
-  await deleteNote(activeNoteId);
-  activeNoteId = null;
+  try {
+    await deleteNote(activeNoteId);
+    activeNoteId = null;
+  } catch (err) {
+    console.error(err);
+    setStatus("Delete failed");
+  }
 };
-
-/* =========================
-   WIKI LINKS (OBSIDIAN CORE)
-========================= */
 
 editor.addEventListener("click", async (e) => {
   if (!e.target.classList.contains("wiki-link")) return;
 
   const name = e.target.dataset.link;
-
   let target = findNoteByTitle(notes, name);
 
-  if (!target) {
-    target = await createNote(name);
+  try {
+    if (!target) {
+      target = await createNote(name);
+    }
+    openNote(target.id);
+  } catch (err) {
+    console.error(err);
+    setStatus("Link open failed");
   }
-
-  openNote(target.id);
 });
 
+if (insertWikiBtn) {
+  insertWikiBtn.onclick = () => {
+    const name = prompt("Link to which note?");
+    if (!name) return;
+
+    document.execCommand("insertText", false, `[[${name.trim()}]]`);
+    scheduleSave();
+  };
+}
+
+if (copyLinkBtn) {
+  copyLinkBtn.onclick = async () => {
+    const note = activeNote();
+    if (!note) return;
+
+    try {
+      await navigator.clipboard.writeText(`[[${note.title || "Untitled"}]]`);
+      setStatus("Copied");
+      setTimeout(() => setStatus("Saved"), 900);
+    } catch (err) {
+      console.error(err);
+      setStatus("Copy failed");
+    }
+  };
+}
+
+/* =========================
+   INIT
+========================= */
+
+try {
+  const user = await waitForAuthReady();
+
+  if (!user) {
+    setStatus("Log in required");
+  } else {
+    await subscribeToNotes((data) => {
+      notes = data;
+
+      if (!notes.length) {
+        noteList.innerHTML = `<div class="empty-state">No notes yet. Create one to begin.</div>`;
+        noteTitle.value = "";
+        editor.innerHTML = "";
+        renderMeta();
+        return;
+      }
+
+      const stillExists = notes.find((n) => n.id === activeNoteId);
+
+      if (!activeNoteId || !stillExists) {
+        openNote(notes[0].id);
+      } else {
+        const current = activeNote();
+        if (current && !isRendering) {
+          const cursorWasEditing = document.activeElement === editor || document.activeElement === noteTitle;
+
+          if (!cursorWasEditing) {
+            openNote(current.id);
+          } else {
+            renderNotes();
+            renderMeta();
+          }
+        }
+      }
+    });
+  }
+} catch (err) {
+  console.error(err);
+  setStatus("Init failed");
+}
 </script>
+
 
 </body>
 </html>

@@ -11,20 +11,38 @@ import {
   orderBy
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
+import {
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
 /* =========================
    STATE
 ========================= */
 
 let currentUser = null;
 let unsubscribe = null;
+let authReadyResolver = null;
+
+const authReadyPromise = new Promise((resolve) => {
+  authReadyResolver = resolve;
+});
 
 /* =========================
    AUTH
 ========================= */
 
-auth.onAuthStateChanged(user => {
-  currentUser = user;
+onAuthStateChanged(auth, (user) => {
+  currentUser = user || null;
+  if (authReadyResolver) {
+    authReadyResolver();
+    authReadyResolver = null;
+  }
 });
+
+export async function waitForAuthReady() {
+  await authReadyPromise;
+  return currentUser;
+}
 
 /* =========================
    HELPERS
@@ -44,7 +62,6 @@ function generateNote(title = "Untitled") {
   return {
     title,
     body: "",
-    links: [],
     createdAt: Date.now(),
     updatedAt: Date.now()
   };
@@ -54,7 +71,6 @@ function generateNote(title = "Untitled") {
    CRUD
 ========================= */
 
-// CREATE
 export async function createNote(title = "Untitled") {
   requireUser();
 
@@ -67,7 +83,6 @@ export async function createNote(title = "Untitled") {
   };
 }
 
-// UPDATE
 export async function updateNote(noteId, updates) {
   requireUser();
 
@@ -79,7 +94,6 @@ export async function updateNote(noteId, updates) {
   });
 }
 
-// DELETE
 export async function deleteNote(noteId) {
   requireUser();
 
@@ -91,7 +105,8 @@ export async function deleteNote(noteId) {
    REAL-TIME SYNC
 ========================= */
 
-export function subscribeToNotes(callback) {
+export async function subscribeToNotes(callback) {
+  await waitForAuthReady();
   requireUser();
 
   if (unsubscribe) unsubscribe();
@@ -101,7 +116,7 @@ export function subscribeToNotes(callback) {
   unsubscribe = onSnapshot(q, (snapshot) => {
     const notes = [];
 
-    snapshot.forEach(docSnap => {
+    snapshot.forEach((docSnap) => {
       notes.push({
         id: docSnap.id,
         ...docSnap.data()
@@ -110,6 +125,8 @@ export function subscribeToNotes(callback) {
 
     callback(notes);
   });
+
+  return unsubscribe;
 }
 
 /* =========================
@@ -119,7 +136,7 @@ export function subscribeToNotes(callback) {
 export function searchNotes(notes, searchQuery) {
   const q = (searchQuery || "").toLowerCase();
 
-  return notes.filter(note => {
+  return notes.filter((note) => {
     return (
       (note.title || "").toLowerCase().includes(q) ||
       (note.body || "").toLowerCase().includes(q)
@@ -131,19 +148,27 @@ export function searchNotes(notes, searchQuery) {
    WIKI LINKS
 ========================= */
 
-// Extract [[links]]
 export function extractLinks(text = "") {
   const matches = text.match(/\[\[(.*?)\]\]/g) || [];
 
-  return matches.map(link =>
-    link.replace("[[", "").replace("]]", "")
-  );
+  return matches
+    .map((link) => link.replace("[[", "").replace("]]", "").trim())
+    .filter(Boolean);
 }
 
-// Convert [[Note]] → clickable HTML
+function escapeHtml(text = "") {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
 export function renderLinks(text = "") {
-  return text.replace(/\[\[(.*?)\]\]/g, (match, name) => {
-    return `<span class="wiki-link" data-link="${name}">${name}</span>`;
+  const escaped = escapeHtml(text).replace(/\n/g, "<br>");
+
+  return escaped.replace(/\[\[(.*?)\]\]/g, (match, name) => {
+    const clean = name.trim();
+    return `<span class="wiki-link" data-link="${clean}">[[${clean}]]</span>`;
   });
 }
 
@@ -153,12 +178,12 @@ export function renderLinks(text = "") {
 
 export function findNoteByTitle(notes, title) {
   return notes.find(
-    n => (n.title || "").toLowerCase() === (title || "").toLowerCase()
+    (n) => (n.title || "").toLowerCase() === (title || "").toLowerCase()
   );
 }
 
 /* =========================
-   CLEANUP (optional)
+   CLEANUP
 ========================= */
 
 export function unsubscribeNotes() {
