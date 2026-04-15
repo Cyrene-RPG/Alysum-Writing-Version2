@@ -6,9 +6,8 @@
   <title>Alysum Notes</title>
   <style>
     * { box-sizing: border-box; }
-
     :root {
-      --bg: #0b1020;
+      --bg: #0a1020;
       --bg-2: #0f172a;
       --panel: #111827;
       --panel-2: #182235;
@@ -18,17 +17,18 @@
       --muted: #94a3b8;
       --muted-2: #64748b;
       --line: rgba(255,255,255,0.08);
-      --line-2: rgba(255,255,255,0.12);
+      --line-2: rgba(255,255,255,0.14);
       --accent: #8b5cf6;
       --accent-2: #6d28d9;
       --accent-soft: rgba(139,92,246,0.18);
       --danger: #ef4444;
       --success: #22c55e;
+      --warning: #f59e0b;
       --shadow: 0 20px 50px rgba(0,0,0,0.35);
       --radius: 18px;
       --radius-sm: 12px;
       --topbar-h: 64px;
-      --sidebar-w: 300px;
+      --sidebar-w: 320px;
       --rightbar-w: 320px;
     }
 
@@ -44,18 +44,9 @@
       overflow: hidden;
     }
 
-    body {
-      display: flex;
-      flex-direction: column;
-    }
-
-    button, input, textarea, select {
-      font: inherit;
-    }
-
-    .hidden {
-      display: none !important;
-    }
+    body { display: flex; flex-direction: column; }
+    button, input, textarea, select { font: inherit; }
+    .hidden { display: none !important; }
 
     .app-topbar {
       height: var(--topbar-h);
@@ -100,10 +91,7 @@
       flex-shrink: 0;
     }
 
-    .brand-text {
-      min-width: 0;
-    }
-
+    .brand-text { min-width: 0; }
     .brand-title {
       font-size: 14px;
       font-weight: 900;
@@ -117,12 +105,13 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      max-width: 240px;
+      max-width: 280px;
     }
 
     .ghost-btn,
     .primary-btn,
-    .danger-btn {
+    .danger-btn,
+    .soft-btn {
       border: 1px solid var(--line);
       background: var(--panel);
       color: var(--text);
@@ -137,11 +126,13 @@
 
     .ghost-btn:hover,
     .primary-btn:hover,
-    .danger-btn:hover {
+    .danger-btn:hover,
+    .soft-btn:hover {
       transform: translateY(-1px);
     }
 
-    .ghost-btn.compact {
+    .ghost-btn.compact,
+    .soft-btn.compact {
       width: 42px;
       padding: 0;
       display: inline-flex;
@@ -160,6 +151,10 @@
       background: rgba(239,68,68,0.12);
       color: #fecaca;
       border-color: rgba(239,68,68,0.30);
+    }
+
+    .soft-btn {
+      background: rgba(255,255,255,0.04);
     }
 
     .shell {
@@ -192,9 +187,7 @@
       background: rgba(255,255,255,0.02);
     }
 
-    .search-wrap {
-      position: relative;
-    }
+    .search-wrap { position: relative; }
 
     .search-input {
       width: 100%;
@@ -213,12 +206,9 @@
     }
 
     .sidebar-actions {
-      display: flex;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
       gap: 8px;
-    }
-
-    .sidebar-actions button {
-      flex: 1;
     }
 
     .section-label {
@@ -232,18 +222,81 @@
       text-transform: uppercase;
     }
 
-    .note-list {
+    .tree-scroll {
       flex: 1;
       overflow: auto;
       padding: 0 10px 12px;
     }
 
-    .note-item {
-      padding: 12px;
-      border-radius: 14px;
+    .tree-group {
+      margin-bottom: 8px;
+    }
+
+    .tree-folder {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 10px;
+      border-radius: 12px;
       border: 1px solid transparent;
       cursor: pointer;
-      margin-bottom: 8px;
+      user-select: none;
+      background: transparent;
+    }
+
+    .tree-folder:hover {
+      background: rgba(255,255,255,0.04);
+      border-color: var(--line);
+    }
+
+    .tree-folder.active {
+      background: var(--accent-soft);
+      border-color: rgba(139,92,246,0.28);
+    }
+
+    .tree-folder.drop-target {
+      outline: 1px dashed rgba(139,92,246,0.65);
+      background: rgba(139,92,246,0.10);
+    }
+
+    .tree-indent {
+      margin-left: 18px;
+      border-left: 1px solid rgba(255,255,255,0.05);
+      padding-left: 8px;
+    }
+
+    .folder-caret {
+      width: 14px;
+      font-size: 12px;
+      color: var(--muted);
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .folder-name {
+      font-size: 13px;
+      font-weight: 800;
+      min-width: 0;
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .folder-badge {
+      font-size: 10px;
+      color: var(--muted);
+      font-weight: 900;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .note-item {
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      margin-bottom: 6px;
       transition: background 0.14s ease, border-color 0.14s ease, transform 0.14s ease;
       background: transparent;
     }
@@ -259,8 +312,24 @@
       border-color: rgba(139,92,246,0.28);
     }
 
+    .note-item.dragging {
+      opacity: 0.45;
+    }
+
+    .note-item-title-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .pin-dot {
+      color: #fbbf24;
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+
     .note-item-title {
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 800;
       color: var(--text);
       white-space: nowrap;
@@ -338,6 +407,7 @@
       padding: 20px;
       overflow: auto;
       background: linear-gradient(180deg, rgba(255,255,255,0.015), transparent 120px), transparent;
+      position: relative;
     }
 
     .editor-surface {
@@ -346,6 +416,7 @@
       background: rgba(255,255,255,0.02);
       border: 1px solid var(--line);
       padding: 24px;
+      position: relative;
     }
 
     .editor {
@@ -371,6 +442,15 @@
       border-bottom: 1px dashed rgba(167,139,250,0.4);
     }
 
+    .wiki-link:hover {
+      color: #d8b4fe;
+    }
+
+    .tag-highlight {
+      color: #60a5fa;
+      font-weight: 700;
+    }
+
     .editor-footer {
       margin-top: 14px;
       display: flex;
@@ -380,6 +460,48 @@
       font-size: 12px;
       font-weight: 700;
       flex-wrap: wrap;
+    }
+
+    .suggestion-pop {
+      position: fixed;
+      width: 280px;
+      max-height: 240px;
+      overflow: auto;
+      background: rgba(17,24,39,0.98);
+      border: 1px solid var(--line-2);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      z-index: 200;
+      padding: 8px;
+      display: none;
+    }
+
+    .suggestion-pop.open {
+      display: block;
+    }
+
+    .suggestion-item {
+      padding: 10px 12px;
+      border-radius: 12px;
+      cursor: pointer;
+      border: 1px solid transparent;
+    }
+
+    .suggestion-item:hover,
+    .suggestion-item.active {
+      background: var(--accent-soft);
+      border-color: rgba(139,92,246,0.28);
+    }
+
+    .suggestion-title {
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .suggestion-sub {
+      margin-top: 4px;
+      font-size: 11px;
+      color: var(--muted);
     }
 
     .info-top {
@@ -428,7 +550,8 @@
 
     .backlink-item,
     .outlink-item,
-    .tag-item {
+    .tag-item,
+    .search-hit {
       padding: 10px 12px;
       border-radius: 12px;
       border: 1px solid var(--line);
@@ -439,20 +562,23 @@
 
     .backlink-item:hover,
     .outlink-item:hover,
-    .tag-item:hover {
+    .tag-item:hover,
+    .search-hit:hover {
       background: rgba(255,255,255,0.05);
     }
 
     .backlink-title,
     .outlink-title,
-    .tag-title {
+    .tag-title,
+    .search-hit-title {
       font-size: 13px;
       font-weight: 800;
     }
 
     .backlink-preview,
     .outlink-preview,
-    .tag-preview {
+    .tag-preview,
+    .search-hit-preview {
       margin-top: 4px;
       font-size: 12px;
       color: var(--muted);
@@ -471,7 +597,7 @@
 
     @media (max-width: 1180px) {
       .shell {
-        grid-template-columns: 280px minmax(0, 1fr);
+        grid-template-columns: 300px minmax(0, 1fr);
       }
 
       .right-pane {
@@ -490,7 +616,7 @@
         top: calc(var(--topbar-h) + 10px);
         left: 10px;
         bottom: 10px;
-        width: min(88vw, 320px);
+        width: min(88vw, 340px);
         z-index: 40;
         display: none;
       }
@@ -522,16 +648,20 @@
       .editor-footer {
         flex-direction: column;
       }
+
+      .brand-sub {
+        max-width: 120px;
+      }
     }
   </style>
 </head>
 <body>
   <div class="mobile-overlay" id="mobileOverlay"></div>
+  <div class="suggestion-pop" id="suggestionPop"></div>
 
   <div class="app-topbar">
     <div class="topbar-left">
       <button class="ghost-btn compact" id="toggleSidebarBtn">☰</button>
-
       <div class="brand">
         <div class="brand-badge">A</div>
         <div class="brand-text">
@@ -553,17 +683,23 @@
     <aside class="pane sidebar-pane" id="sidebarPane">
       <div class="sidebar-top">
         <div class="search-wrap">
-          <input id="searchInput" class="search-input" type="text" placeholder="Search notes..." />
+          <input id="searchInput" class="search-input" type="text" placeholder="Search notes, folders, tags..." />
         </div>
 
         <div class="sidebar-actions">
+          <button class="ghost-btn" id="newFolderBtn">New Folder</button>
+          <button class="ghost-btn" id="newChildFolderBtn">Child Folder</button>
           <button class="ghost-btn" id="sortUpdatedBtn">Recent</button>
           <button class="ghost-btn" id="sortAlphaBtn">A–Z</button>
         </div>
       </div>
 
-      <div class="section-label">Notes</div>
-      <div class="note-list" id="noteList"></div>
+      <div class="section-label">Pinned</div>
+      <div class="tree-scroll" id="treeScroll">
+        <div id="pinnedList"></div>
+        <div class="section-label">Workspace</div>
+        <div id="treeRoot"></div>
+      </div>
     </aside>
 
     <main class="pane editor-pane">
@@ -573,7 +709,10 @@
         <div class="editor-toolbar">
           <button class="tool-btn" id="insertWikiBtn">[[Link]]</button>
           <button class="tool-btn" id="linkCurrentBtn">Link current</button>
-          <button class="tool-btn" id="h2Btn">H2</button>
+          <button class="tool-btn" id="pinBtn">Pin</button>
+          <button class="tool-btn" id="moveToRootBtn">Move Root</button>
+          <button class="tool-btn" id="h2Btn">/heading</button>
+          <button class="tool-btn" id="todoBtn">/todo</button>
           <button class="tool-btn" id="quoteBtn">Quote</button>
           <button class="tool-btn" id="copyNoteBtn">Copy Note</button>
         </div>
@@ -587,7 +726,9 @@
             contenteditable="true"
             data-placeholder="Write notes, ideas, scene planning, outlines, worldbuilding...
 
-Try typing [[Chapter 1]], [[Character Arc]], or [[Magic System]]."
+Type [[ to auto-suggest notes
+Type / for slash commands
+Use #tags anywhere in the note."
           ></div>
 
           <div class="editor-footer">
@@ -623,6 +764,11 @@ Try typing [[Chapter 1]], [[Character Arc]], or [[Magic System]]."
           <div class="info-card-title">Tags</div>
           <div id="tagsBox" class="muted">No tags yet.</div>
         </div>
+
+        <div class="info-card">
+          <div class="info-card-title">Search Results</div>
+          <div id="searchResultsBox" class="muted">Type in search to see matching notes.</div>
+        </div>
       </div>
     </aside>
   </div>
@@ -647,23 +793,30 @@ Try typing [[Chapter 1]], [[Character Arc]], or [[Magic System]]."
     const sidebarPane = document.getElementById("sidebarPane");
     const mobileOverlay = document.getElementById("mobileOverlay");
     const toggleSidebarBtn = document.getElementById("toggleSidebarBtn");
+    const suggestionPop = document.getElementById("suggestionPop");
 
-    const noteList = document.getElementById("noteList");
     const searchInput = document.getElementById("searchInput");
+    const newFolderBtn = document.getElementById("newFolderBtn");
+    const newChildFolderBtn = document.getElementById("newChildFolderBtn");
+    const sortUpdatedBtn = document.getElementById("sortUpdatedBtn");
+    const sortAlphaBtn = document.getElementById("sortAlphaBtn");
+    const pinnedList = document.getElementById("pinnedList");
+    const treeRoot = document.getElementById("treeRoot");
+
     const noteTitle = document.getElementById("noteTitle");
     const editor = document.getElementById("editor");
     const saveStatus = document.getElementById("saveStatus");
     const noteMeta = document.getElementById("noteMeta");
-
-    const sortUpdatedBtn = document.getElementById("sortUpdatedBtn");
-    const sortAlphaBtn = document.getElementById("sortAlphaBtn");
 
     const newNoteBtn = document.getElementById("newNoteBtn");
     const deleteBtn = document.getElementById("deleteBtn");
     const duplicateBtn = document.getElementById("duplicateBtn");
     const insertWikiBtn = document.getElementById("insertWikiBtn");
     const linkCurrentBtn = document.getElementById("linkCurrentBtn");
+    const pinBtn = document.getElementById("pinBtn");
+    const moveToRootBtn = document.getElementById("moveToRootBtn");
     const h2Btn = document.getElementById("h2Btn");
+    const todoBtn = document.getElementById("todoBtn");
     const quoteBtn = document.getElementById("quoteBtn");
     const copyNoteBtn = document.getElementById("copyNoteBtn");
     const copyLinkBtn = document.getElementById("copyLinkBtn");
@@ -672,15 +825,29 @@ Try typing [[Chapter 1]], [[Character Arc]], or [[Magic System]]."
     const outlinksBox = document.getElementById("outlinksBox");
     const backlinksBox = document.getElementById("backlinksBox");
     const tagsBox = document.getElementById("tagsBox");
+    const searchResultsBox = document.getElementById("searchResultsBox");
 
     let currentUser = null;
-    let unsubscribeNotes = null;
     let notes = [];
+    let folders = [];
+    let unsubscribeNotes = null;
+    let unsubscribeFolders = null;
     let activeNoteId = null;
+    let activeFolderId = null;
     let saveTimer = null;
-    let isRendering = false;
     let sortMode = "updated";
     let filterText = "";
+    let isRendering = false;
+    let draggedNoteId = null;
+    let draggedFolderId = null;
+    const folderOpenState = {};
+    const suggestionState = {
+      open: false,
+      mode: null,
+      items: [],
+      index: 0,
+      query: ""
+    };
 
     function setStatus(text) {
       saveStatus.textContent = text;
@@ -702,6 +869,14 @@ Try typing [[Chapter 1]], [[Character Arc]], or [[Magic System]]."
       return doc(db, "users", currentUser.uid, "notes", noteId);
     }
 
+    function foldersRef() {
+      return collection(db, "users", currentUser.uid, "folders");
+    }
+
+    function folderDocRef(folderId) {
+      return doc(db, "users", currentUser.uid, "folders", folderId);
+    }
+
     function escapeHtml(text = "") {
       return text
         .replace(/&/g, "&amp;")
@@ -711,10 +886,12 @@ Try typing [[Chapter 1]], [[Character Arc]], or [[Magic System]]."
 
     function renderLinks(text = "") {
       const escaped = escapeHtml(text).replace(/\n/g, "<br>");
-      return escaped.replace(/\[\[(.*?)\]\]/g, (match, name) => {
-        const clean = name.trim();
-        return `<span class="wiki-link" data-link="${clean}">[[${clean}]]</span>`;
-      });
+      return escaped
+        .replace(/(^|\s)(#[a-zA-Z0-9_-]+)/g, (m, lead, tag) => `${lead}<span class="tag-highlight">${tag}</span>`)
+        .replace(/\[\[(.*?)\]\]/g, (match, name) => {
+          const clean = name.trim();
+          return `<span class="wiki-link" data-link="${clean}">[[${clean}]]</span>`;
+        });
     }
 
     function extractLinks(text = "") {
@@ -739,55 +916,298 @@ Try typing [[Chapter 1]], [[Character Arc]], or [[Magic System]]."
     function wordCount(text = "") {
       const clean = stripWiki(text).replace(/\s+/g, " ").trim();
       if (!clean) return 0;
-      return clean.split(" ").length;
+      return clean.split(/\s+/).length;
     }
 
     function activeNote() {
       return notes.find(n => n.id === activeNoteId) || null;
     }
 
+    function activeFolder() {
+      return folders.find(f => f.id === activeFolderId) || null;
+    }
+
     function findNoteByTitle(title) {
       return notes.find(n => (n.title || "").trim().toLowerCase() === (title || "").trim().toLowerCase());
     }
 
-    function sortAndFilterNotes(list) {
-      let filtered = list.filter(note => {
-        const hay = `${note.title || ""} ${note.body || ""}`.toLowerCase();
-        return !filterText || hay.includes(filterText);
-      });
-
-      if (sortMode === "alpha") {
-        filtered.sort((a, b) => (a.title || "").localeCompare(b.title || ""));
-      } else {
-        filtered.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
-      }
-
-      return filtered;
+    function findFolderById(id) {
+      return folders.find(f => f.id === id) || null;
     }
 
-    function renderList() {
-      noteList.innerHTML = "";
-      const list = sortAndFilterNotes([...notes]);
+    function folderChildren(parentId = null) {
+      return folders.filter(f => (f.parentId || null) === parentId);
+    }
 
-      if (!list.length) {
-        noteList.innerHTML = `<div class="empty-state">No notes found. Create one to begin.</div>`;
+    function notesInFolder(folderId = null) {
+      return notes.filter(n => (n.folderId || null) === folderId);
+    }
+
+    function sortNotes(list) {
+      const next = [...list];
+      if (sortMode === "alpha") {
+        next.sort((a, b) => (a.title || "").localeCompare(b.title || ""));
+      } else {
+        next.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+      }
+      return next;
+    }
+
+    function sortFolders(list) {
+      return [...list].sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+    }
+
+    function getFilteredNotes() {
+      const q = filterText.trim().toLowerCase();
+      if (!q) return notes;
+
+      return notes.filter(note => {
+        const hay = `${note.title || ""} ${note.body || ""}`.toLowerCase();
+        return hay.includes(q);
+      });
+    }
+
+    function getSearchHits() {
+      const q = filterText.trim().toLowerCase();
+      if (!q) return [];
+      return sortNotes(getFilteredNotes()).slice(0, 12);
+    }
+
+    function renderSearchResults() {
+      const hits = getSearchHits();
+
+      if (!filterText.trim()) {
+        searchResultsBox.innerHTML = `<div class="muted">Type in search to see matching notes.</div>`;
         return;
       }
 
-      list.forEach(note => {
-        const item = document.createElement("div");
-        item.className = "note-item" + (note.id === activeNoteId ? " active" : "");
-        item.innerHTML = `
-          <div class="note-item-title">${escapeHtml(note.title || "Untitled")}</div>
-          <div class="note-item-preview">${escapeHtml(previewText(note.body || ""))}</div>
-          <div class="note-item-meta">${new Date(note.updatedAt || Date.now()).toLocaleString()}</div>
+      if (!hits.length) {
+        searchResultsBox.innerHTML = `<div class="muted">No matching notes.</div>`;
+        return;
+      }
+
+      searchResultsBox.innerHTML = "";
+      hits.forEach(note => {
+        const div = document.createElement("div");
+        div.className = "search-hit";
+        div.innerHTML = `
+          <div class="search-hit-title">${escapeHtml(note.title || "Untitled")}</div>
+          <div class="search-hit-preview">${escapeHtml(previewText(note.body || "", 80))}</div>
         `;
-        item.addEventListener("click", () => {
-          openNote(note.id);
-          if (window.innerWidth <= 760) closeSidebar();
-        });
-        noteList.appendChild(item);
+        div.addEventListener("click", () => openNote(note.id));
+        searchResultsBox.appendChild(div);
       });
+    }
+
+    function renderPinned() {
+      pinnedList.innerHTML = "";
+      const pinned = sortNotes(notes.filter(n => !!n.pinned));
+
+      if (!pinned.length) {
+        pinnedList.innerHTML = `<div class="empty-state">No pinned notes yet.</div>`;
+        return;
+      }
+
+      pinned.forEach(note => {
+        const item = buildNoteItem(note);
+        pinnedList.appendChild(item);
+      });
+    }
+
+    function buildNoteItem(note) {
+      const item = document.createElement("div");
+      item.className = "note-item" + (note.id === activeNoteId ? " active" : "");
+      item.draggable = true;
+
+      item.innerHTML = `
+        <div class="note-item-title-row">
+          ${note.pinned ? '<span class="pin-dot">📌</span>' : ''}
+          <div class="note-item-title">${escapeHtml(note.title || "Untitled")}</div>
+        </div>
+        <div class="note-item-preview">${escapeHtml(previewText(note.body || ""))}</div>
+        <div class="note-item-meta">${new Date(note.updatedAt || Date.now()).toLocaleString()}</div>
+      `;
+
+      item.addEventListener("click", () => {
+        openNote(note.id);
+        if (window.innerWidth <= 760) closeSidebar();
+      });
+
+      item.addEventListener("dragstart", () => {
+        draggedNoteId = note.id;
+        item.classList.add("dragging");
+      });
+
+      item.addEventListener("dragend", () => {
+        draggedNoteId = null;
+        item.classList.remove("dragging");
+      });
+
+      return item;
+    }
+
+    function renderFolderTree() {
+      treeRoot.innerHTML = "";
+
+      const q = filterText.trim().toLowerCase();
+      if (q) {
+        const filteredNotes = sortNotes(getFilteredNotes().filter(n => !n.pinned));
+        if (!filteredNotes.length) {
+          treeRoot.innerHTML = `<div class="empty-state">No matching notes or folders.</div>`;
+          return;
+        }
+        filteredNotes.forEach(note => treeRoot.appendChild(buildNoteItem(note)));
+        return;
+      }
+
+      const rootWrap = document.createElement("div");
+      rootWrap.className = "tree-group";
+
+      const rootHeader = document.createElement("div");
+      rootHeader.className = "tree-folder" + (activeFolderId === null ? " active" : "");
+      rootHeader.innerHTML = `
+        <div class="folder-caret">•</div>
+        <div class="folder-name">Root</div>
+        <div class="folder-badge">${notesInFolder(null).length}</div>
+      `;
+      rootHeader.addEventListener("click", () => {
+        activeFolderId = null;
+        renderFolderTree();
+      });
+
+      rootHeader.addEventListener("dragover", e => {
+        e.preventDefault();
+        rootHeader.classList.add("drop-target");
+      });
+
+      rootHeader.addEventListener("dragleave", () => {
+        rootHeader.classList.remove("drop-target");
+      });
+
+      rootHeader.addEventListener("drop", async e => {
+        e.preventDefault();
+        rootHeader.classList.remove("drop-target");
+        try {
+          if (draggedNoteId) {
+            await updateDoc(noteDocRef(draggedNoteId), { folderId: null, updatedAt: Date.now() });
+          }
+          if (draggedFolderId) {
+            await updateDoc(folderDocRef(draggedFolderId), { parentId: null });
+          }
+        } catch (err) {
+          console.error(err);
+          setStatus("Move failed");
+        }
+      });
+
+      rootWrap.appendChild(rootHeader);
+
+      const rootNotes = sortNotes(notesInFolder(null).filter(n => !n.pinned));
+      rootNotes.forEach(note => rootWrap.appendChild(buildNoteItem(note)));
+
+      treeRoot.appendChild(rootWrap);
+
+      sortFolders(folderChildren(null)).forEach(folder => {
+        treeRoot.appendChild(buildFolderNode(folder, 0));
+      });
+    }
+
+    function buildFolderNode(folder, depth) {
+      const wrap = document.createElement("div");
+      wrap.className = "tree-group";
+
+      const open = folderOpenState[folder.id] !== false;
+      const childFolders = sortFolders(folderChildren(folder.id));
+      const childNotes = sortNotes(notesInFolder(folder.id).filter(n => !n.pinned));
+
+      const header = document.createElement("div");
+      header.className = "tree-folder" + (activeFolderId === folder.id ? " active" : "");
+      header.draggable = true;
+      header.innerHTML = `
+        <div class="folder-caret">${open ? "▼" : "▶"}</div>
+        <div class="folder-name">📁 ${escapeHtml(folder.name || "Untitled Folder")}</div>
+        <div class="folder-badge">${childFolders.length + childNotes.length}</div>
+      `;
+
+      header.addEventListener("click", (e) => {
+        if (e.detail === 2) return;
+        activeFolderId = folder.id;
+        folderOpenState[folder.id] = !open;
+        renderFolderTree();
+      });
+
+      header.addEventListener("dblclick", async () => {
+        const name = prompt("Rename folder?", folder.name || "");
+        if (!name) return;
+        try {
+          await updateDoc(folderDocRef(folder.id), { name: name.trim() || "Untitled Folder" });
+          setStatusBrief("Folder renamed");
+        } catch (err) {
+          console.error(err);
+          setStatus("Rename failed");
+        }
+      });
+
+      header.addEventListener("dragstart", () => {
+        draggedFolderId = folder.id;
+      });
+
+      header.addEventListener("dragend", () => {
+        draggedFolderId = null;
+      });
+
+      header.addEventListener("dragover", e => {
+        e.preventDefault();
+        header.classList.add("drop-target");
+      });
+
+      header.addEventListener("dragleave", () => {
+        header.classList.remove("drop-target");
+      });
+
+      header.addEventListener("drop", async e => {
+        e.preventDefault();
+        header.classList.remove("drop-target");
+
+        try {
+          if (draggedNoteId) {
+            await updateDoc(noteDocRef(draggedNoteId), { folderId: folder.id, updatedAt: Date.now() });
+          }
+
+          if (draggedFolderId && draggedFolderId !== folder.id) {
+            const bad = isDescendantFolder(folder.id, draggedFolderId);
+            if (bad) {
+              setStatusBrief("Invalid nested move", "Saved");
+              return;
+            }
+            await updateDoc(folderDocRef(draggedFolderId), { parentId: folder.id });
+          }
+        } catch (err) {
+          console.error(err);
+          setStatus("Move failed");
+        }
+      });
+
+      wrap.appendChild(header);
+
+      if (open) {
+        const body = document.createElement("div");
+        body.className = "tree-indent";
+        childNotes.forEach(note => body.appendChild(buildNoteItem(note)));
+        childFolders.forEach(child => body.appendChild(buildFolderNode(child, depth + 1)));
+        wrap.appendChild(body);
+      }
+
+      return wrap;
+    }
+
+    function isDescendantFolder(targetId, candidateAncestorId) {
+      let current = findFolderById(targetId);
+      while (current) {
+        if ((current.parentId || null) === candidateAncestorId) return true;
+        current = current.parentId ? findFolderById(current.parentId) : null;
+      }
+      return false;
     }
 
     function renderRightPanel() {
@@ -799,6 +1219,7 @@ Try typing [[Chapter 1]], [[Character Arc]], or [[Magic System]]."
         backlinksBox.innerHTML = `<div class="muted">No backlinks yet.</div>`;
         tagsBox.innerHTML = `<div class="muted">No tags yet.</div>`;
         noteMeta.textContent = "0 words";
+        renderSearchResults();
         return;
       }
 
@@ -809,11 +1230,14 @@ Try typing [[Chapter 1]], [[Character Arc]], or [[Magic System]]."
         return extractLinks(other.body || "").some(link => link.toLowerCase() === (note.title || "").toLowerCase());
       });
 
+      const folder = note.folderId ? findFolderById(note.folderId) : null;
       overviewStats.innerHTML = `
         <div><strong>Title:</strong> ${escapeHtml(note.title || "Untitled")}</div>
         <div><strong>Words:</strong> ${wordCount(note.body || "")}</div>
         <div><strong>Outgoing:</strong> ${links.length}</div>
         <div><strong>Backlinks:</strong> ${backlinks.length}</div>
+        <div><strong>Pinned:</strong> ${note.pinned ? "Yes" : "No"}</div>
+        <div><strong>Folder:</strong> ${escapeHtml(folder?.name || "Root")}</div>
         <div><strong>Updated:</strong> ${new Date(note.updatedAt || Date.now()).toLocaleString()}</div>
       `;
 
@@ -867,11 +1291,20 @@ Try typing [[Chapter 1]], [[Character Arc]], or [[Magic System]]."
           div.addEventListener("click", () => {
             searchInput.value = tag;
             filterText = tag.toLowerCase();
-            renderList();
+            renderSidebar();
+            renderSearchResults();
           });
           tagsBox.appendChild(div);
         });
       }
+
+      renderSearchResults();
+    }
+
+    function renderSidebar() {
+      renderPinned();
+      renderFolderTree();
+      pinBtn.textContent = activeNote()?.pinned ? "Unpin" : "Pin";
     }
 
     function renderEditor() {
@@ -881,6 +1314,7 @@ Try typing [[Chapter 1]], [[Character Arc]], or [[Magic System]]."
         noteTitle.value = "";
         editor.innerHTML = "";
         renderRightPanel();
+        renderSidebar();
         return;
       }
 
@@ -889,15 +1323,15 @@ Try typing [[Chapter 1]], [[Character Arc]], or [[Magic System]]."
       editor.innerHTML = renderLinks(note.body || "");
       isRendering = false;
 
+      renderSidebar();
       renderRightPanel();
     }
 
     function openNote(id) {
       const note = notes.find(n => n.id === id);
       if (!note) return;
-
       activeNoteId = id;
-      renderList();
+      activeFolderId = note.folderId || null;
       renderEditor();
     }
 
@@ -905,15 +1339,29 @@ Try typing [[Chapter 1]], [[Character Arc]], or [[Magic System]]."
       return editor.innerText.replace(/\u00A0/g, " ").trimEnd();
     }
 
-    async function createNote(title = "Untitled") {
+    async function createNote(title = "Untitled", folderId = null) {
       const payload = {
         title,
         body: "",
+        folderId,
+        pinned: false,
         createdAt: Date.now(),
         updatedAt: Date.now()
       };
 
       const ref = await addDoc(notesRef(), payload);
+      return { id: ref.id, ...payload };
+    }
+
+    async function createFolder(name = "New Folder", parentId = null) {
+      const payload = {
+        name,
+        parentId,
+        createdAt: Date.now()
+      };
+
+      const ref = await addDoc(foldersRef(), payload);
+      folderOpenState[ref.id] = true;
       return { id: ref.id, ...payload };
     }
 
@@ -933,6 +1381,8 @@ Try typing [[Chapter 1]], [[Character Arc]], or [[Magic System]]."
       const ref = await addDoc(notesRef(), {
         title,
         body: note.body || "",
+        folderId: note.folderId || null,
+        pinned: false,
         createdAt: Date.now(),
         updatedAt: Date.now()
       });
@@ -972,7 +1422,7 @@ Try typing [[Chapter 1]], [[Character Arc]], or [[Magic System]]."
       }, 500);
     }
 
-    function insertAtCursor(text) {
+    function insertTextAtCaret(text) {
       editor.focus();
       document.execCommand("insertText", false, text);
       scheduleSave();
@@ -985,7 +1435,7 @@ Try typing [[Chapter 1]], [[Character Arc]], or [[Magic System]]."
         return;
       }
 
-      const created = await createNote(title.trim() || "Untitled");
+      const created = await createNote(title.trim() || "Untitled", activeFolderId || null);
       activeNoteId = created.id;
       setStatusBrief("Created linked note");
     }
@@ -1025,6 +1475,183 @@ Try typing [[Chapter 1]], [[Character Arc]], or [[Magic System]]."
       mobileOverlay.classList.remove("open");
     }
 
+    function getCurrentRange() {
+      const sel = window.getSelection();
+      if (!sel || !sel.rangeCount) return null;
+      return sel.getRangeAt(0);
+    }
+
+    function getTextBeforeCaret() {
+      const range = getCurrentRange();
+      if (!range) return "";
+      const pre = range.cloneRange();
+      pre.selectNodeContents(editor);
+      pre.setEnd(range.endContainer, range.endOffset);
+      return pre.toString();
+    }
+
+    function getCaretRect() {
+      const range = getCurrentRange();
+      if (!range) return null;
+      const rect = range.getBoundingClientRect();
+      if (rect && (rect.top || rect.left || rect.width || rect.height)) return rect;
+
+      const span = document.createElement("span");
+      span.textContent = "\u200b";
+      range.insertNode(span);
+      const nextRect = span.getBoundingClientRect();
+      span.parentNode.removeChild(span);
+      return nextRect;
+    }
+
+    function closeSuggestion() {
+      suggestionState.open = false;
+      suggestionState.mode = null;
+      suggestionState.items = [];
+      suggestionState.index = 0;
+      suggestionState.query = "";
+      suggestionPop.classList.remove("open");
+      suggestionPop.innerHTML = "";
+    }
+
+    function openSuggestion(mode, items, queryText) {
+      if (!items.length) {
+        closeSuggestion();
+        return;
+      }
+
+      suggestionState.open = true;
+      suggestionState.mode = mode;
+      suggestionState.items = items;
+      suggestionState.index = 0;
+      suggestionState.query = queryText || "";
+
+      renderSuggestion();
+    }
+
+    function renderSuggestion() {
+      if (!suggestionState.open || !suggestionState.items.length) {
+        closeSuggestion();
+        return;
+      }
+
+      const rect = getCaretRect();
+      if (!rect) return;
+
+      suggestionPop.innerHTML = "";
+      suggestionState.items.forEach((item, index) => {
+        const div = document.createElement("div");
+        div.className = "suggestion-item" + (index === suggestionState.index ? " active" : "");
+        div.innerHTML = `
+          <div class="suggestion-title">${escapeHtml(item.label)}</div>
+          <div class="suggestion-sub">${escapeHtml(item.sub || "")}</div>
+        `;
+        div.addEventListener("mousedown", (e) => {
+          e.preventDefault();
+          applySuggestion(index);
+        });
+        suggestionPop.appendChild(div);
+      });
+
+      suggestionPop.style.left = `${Math.min(window.innerWidth - 300, Math.max(8, rect.left))}px`;
+      suggestionPop.style.top = `${Math.min(window.innerHeight - 260, rect.bottom + 8)}px`;
+      suggestionPop.classList.add("open");
+    }
+
+    function getLinkSuggestionSource(queryText) {
+      const q = queryText.toLowerCase();
+      const items = sortNotes([...notes])
+        .filter(n => !q || (n.title || "").toLowerCase().includes(q))
+        .slice(0, 8)
+        .map(n => ({
+          type: "wiki",
+          value: n.title || "Untitled",
+          label: n.title || "Untitled",
+          sub: previewText(n.body || "", 60)
+        }));
+
+      if (!q || !items.find(i => i.value.toLowerCase() === q)) {
+        items.unshift({
+          type: "wiki",
+          value: queryText.trim() || "Untitled",
+          label: `Create "${queryText.trim() || "Untitled"}"`,
+          sub: "New linked note"
+        });
+      }
+
+      return items;
+    }
+
+    function getSlashCommands(queryText) {
+      const commands = [
+        { type: "slash", value: "heading", label: "/heading", sub: "Insert a level-2 heading", insert: "## Heading" },
+        { type: "slash", value: "todo", label: "/todo", sub: "Insert a task checkbox", insert: "- [ ] Todo" },
+        { type: "slash", value: "quote", label: "/quote", sub: "Insert a block quote", insert: "> Quote" },
+        { type: "slash", value: "link", label: "/link", sub: "Insert a wiki link", insert: "[[Note]]" },
+        { type: "slash", value: "tag", label: "/tag", sub: "Insert a tag", insert: "#tag" }
+      ];
+
+      const q = queryText.toLowerCase();
+      return commands.filter(c => !q || c.value.includes(q) || c.label.includes(q));
+    }
+
+    function replaceTextNearCaret(pattern, replacement) {
+      const range = getCurrentRange();
+      if (!range) return;
+
+      const before = getTextBeforeCaret();
+      const match = before.match(pattern);
+      if (!match) return;
+
+      const charsToRemove = match[0].length;
+
+      const sel = window.getSelection();
+      const workingRange = range.cloneRange();
+
+      for (let i = 0; i < charsToRemove; i++) {
+        workingRange.setStart(workingRange.startContainer, Math.max(0, workingRange.startOffset - 1));
+      }
+
+      workingRange.deleteContents();
+      document.execCommand("insertText", false, replacement);
+    }
+
+    async function applySuggestion(index) {
+      const item = suggestionState.items[index];
+      if (!item) return;
+
+      if (suggestionState.mode === "wiki") {
+        replaceTextNearCaret(/\[\[([^\]]*)$/, `[[${item.value}]]`);
+        closeSuggestion();
+        scheduleSave();
+        return;
+      }
+
+      if (suggestionState.mode === "slash") {
+        replaceTextNearCaret(/\/([a-z]*)$/, item.insert);
+        closeSuggestion();
+        scheduleSave();
+      }
+    }
+
+    function updateSuggestionState() {
+      const before = getTextBeforeCaret();
+
+      const wikiMatch = before.match(/\[\[([^\]]*)$/);
+      if (wikiMatch) {
+        openSuggestion("wiki", getLinkSuggestionSource(wikiMatch[1]), wikiMatch[1]);
+        return;
+      }
+
+      const slashMatch = before.match(/\/([a-z]*)$/i);
+      if (slashMatch) {
+        openSuggestion("slash", getSlashCommands(slashMatch[1]), slashMatch[1]);
+        return;
+      }
+
+      closeSuggestion();
+    }
+
     function attachEvents() {
       toggleSidebarBtn.addEventListener("click", () => {
         if (window.innerWidth <= 760) {
@@ -1037,22 +1664,47 @@ Try typing [[Chapter 1]], [[Character Arc]], or [[Magic System]]."
 
       searchInput.addEventListener("input", () => {
         filterText = searchInput.value.trim().toLowerCase();
-        renderList();
+        renderSidebar();
+        renderSearchResults();
       });
 
       sortUpdatedBtn.addEventListener("click", () => {
         sortMode = "updated";
-        renderList();
+        renderSidebar();
       });
 
       sortAlphaBtn.addEventListener("click", () => {
         sortMode = "alpha";
-        renderList();
+        renderSidebar();
+      });
+
+      newFolderBtn.addEventListener("click", async () => {
+        const name = prompt("Folder name?");
+        if (!name) return;
+        try {
+          await createFolder(name.trim() || "New Folder", null);
+          setStatusBrief("Folder created");
+        } catch (err) {
+          console.error(err);
+          setStatus("Folder failed");
+        }
+      });
+
+      newChildFolderBtn.addEventListener("click", async () => {
+        const name = prompt("Child folder name?");
+        if (!name) return;
+        try {
+          await createFolder(name.trim() || "New Folder", activeFolderId || null);
+          setStatusBrief("Child folder created");
+        } catch (err) {
+          console.error(err);
+          setStatus("Folder failed");
+        }
       });
 
       newNoteBtn.addEventListener("click", async () => {
         try {
-          const created = await createNote("Untitled");
+          const created = await createNote("Untitled", activeFolderId || null);
           activeNoteId = created.id;
           setStatusBrief("Created");
         } catch (err) {
@@ -1080,43 +1732,51 @@ Try typing [[Chapter 1]], [[Character Arc]], or [[Magic System]]."
       });
 
       noteTitle.addEventListener("input", scheduleSave);
-      editor.addEventListener("input", scheduleSave);
+      editor.addEventListener("input", () => {
+        scheduleSave();
+        updateSuggestionState();
+      });
 
+      editor.addEventListener("keyup", updateSuggestionState);
       editor.addEventListener("click", async (e) => {
-        if (!e.target.classList.contains("wiki-link")) return;
-        const name = e.target.dataset.link;
-        try {
-          await openOrCreateNote(name);
-        } catch (err) {
-          console.error(err);
-          setStatus("Link failed");
+        const linkEl = e.target.closest(".wiki-link");
+        if (linkEl) {
+          e.preventDefault();
+          await openOrCreateNote(linkEl.dataset.link?.trim() || "");
+          return;
         }
+        updateSuggestionState();
       });
 
-      insertWikiBtn.addEventListener("click", () => {
-        const name = prompt("Link to which note?");
-        if (!name) return;
-        insertAtCursor(`[[${name.trim()}]]`);
-      });
+      editor.addEventListener("keydown", async (e) => {
+        if (suggestionState.open) {
+          if (e.key === "ArrowDown") {
+            e.preventDefault();
+            suggestionState.index = (suggestionState.index + 1) % suggestionState.items.length;
+            renderSuggestion();
+            return;
+          }
 
-      linkCurrentBtn.addEventListener("click", () => {
-        const note = activeNote();
-        if (!note) return;
-        insertAtCursor(`[[${note.title || "Untitled"}]]`);
-      });
+          if (e.key === "ArrowUp") {
+            e.preventDefault();
+            suggestionState.index = (suggestionState.index - 1 + suggestionState.items.length) % suggestionState.items.length;
+            renderSuggestion();
+            return;
+          }
 
-      h2Btn.addEventListener("click", () => {
-        insertAtCursor(`\n## Heading\n`);
-      });
+          if (e.key === "Enter" || e.key === "Tab") {
+            e.preventDefault();
+            await applySuggestion(suggestionState.index);
+            return;
+          }
 
-      quoteBtn.addEventListener("click", () => {
-        insertAtCursor(`\n> Quote\n`);
-      });
+          if (e.key === "Escape") {
+            e.preventDefault();
+            closeSuggestion();
+            return;
+          }
+        }
 
-      copyNoteBtn.addEventListener("click", copyCurrentNote);
-      copyLinkBtn.addEventListener("click", copyCurrentLink);
-
-      document.addEventListener("keydown", async (e) => {
         if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {
           e.preventDefault();
           clearTimeout(saveTimer);
@@ -1132,21 +1792,68 @@ Try typing [[Chapter 1]], [[Character Arc]], or [[Magic System]]."
           }
         }
       });
+
+      insertWikiBtn.addEventListener("click", () => {
+        const name = prompt("Link to which note?");
+        if (!name) return;
+        insertTextAtCaret(`[[${name.trim()}]]`);
+      });
+
+      linkCurrentBtn.addEventListener("click", () => {
+        const note = activeNote();
+        if (!note) return;
+        insertTextAtCaret(`[[${note.title || "Untitled"}]]`);
+      });
+
+      pinBtn.addEventListener("click", async () => {
+        const note = activeNote();
+        if (!note) return;
+        try {
+          await updateActiveNote({ pinned: !note.pinned });
+          setStatusBrief(note.pinned ? "Unpinned" : "Pinned");
+        } catch (err) {
+          console.error(err);
+          setStatus("Pin failed");
+        }
+      });
+
+      moveToRootBtn.addEventListener("click", async () => {
+        const note = activeNote();
+        if (!note) return;
+        try {
+          await updateActiveNote({ folderId: null });
+          activeFolderId = null;
+          setStatusBrief("Moved to root");
+        } catch (err) {
+          console.error(err);
+          setStatus("Move failed");
+        }
+      });
+
+      h2Btn.addEventListener("click", () => insertTextAtCaret("## Heading"));
+      todoBtn.addEventListener("click", () => insertTextAtCaret("- [ ] Todo"));
+      quoteBtn.addEventListener("click", () => insertTextAtCaret("> Quote"));
+      copyNoteBtn.addEventListener("click", copyCurrentNote);
+      copyLinkBtn.addEventListener("click", copyCurrentLink);
+
+      document.addEventListener("click", (e) => {
+        if (!suggestionPop.contains(e.target) && e.target !== editor) {
+          closeSuggestion();
+        }
+      });
     }
 
-    function subscribeNotes() {
+    function subscribeCollections() {
       if (unsubscribeNotes) unsubscribeNotes();
+      if (unsubscribeFolders) unsubscribeFolders();
 
-      const q = query(notesRef(), orderBy("updatedAt", "desc"));
-
-      unsubscribeNotes = onSnapshot(q, (snap) => {
-        notes = snap.docs.map(docSnap => ({
-          id: docSnap.id,
-          ...docSnap.data()
-        }));
+      const notesQ = query(notesRef(), orderBy("updatedAt", "desc"));
+      unsubscribeNotes = onSnapshot(notesQ, (snap) => {
+        notes = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
         if (!notes.length) {
-          noteList.innerHTML = `<div class="empty-state">No notes yet. Create one to begin.</div>`;
+          treeRoot.innerHTML = `<div class="empty-state">No notes yet. Create one to begin.</div>`;
+          pinnedList.innerHTML = `<div class="empty-state">No pinned notes yet.</div>`;
           noteTitle.value = "";
           editor.innerHTML = "";
           renderRightPanel();
@@ -1154,32 +1861,37 @@ Try typing [[Chapter 1]], [[Character Arc]], or [[Magic System]]."
         }
 
         const existingActive = notes.find(n => n.id === activeNoteId);
-
         if (!activeNoteId || !existingActive) {
           activeNoteId = notes[0].id;
         }
-
-        renderList();
 
         const userIsEditing = document.activeElement === editor || document.activeElement === noteTitle;
         if (!userIsEditing) {
           renderEditor();
         } else {
+          renderSidebar();
           renderRightPanel();
         }
       });
+
+      unsubscribeFolders = onSnapshot(foldersRef(), (snap) => {
+        folders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        renderSidebar();
+      });
     }
 
-    onAuthStateChanged(auth, async (user) => {
+    onAuthStateChanged(auth, (user) => {
       if (!user) {
         window.location.href = "/login.html";
         return;
       }
 
       currentUser = user;
-      workspaceLabel.textContent = `@${user.displayName || (user.email ? user.email.split("@")[0] : "writer")} notes`;
+      const handle = user.displayName || (user.email ? user.email.split("@")[0] : "writer");
+      workspaceLabel.textContent = `@${handle} notes`;
+
       attachEvents();
-      subscribeNotes();
+      subscribeCollections();
       setStatus("Ready");
     }, (err) => {
       console.error(err);
