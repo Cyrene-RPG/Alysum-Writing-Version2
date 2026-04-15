@@ -1,748 +1,975 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Alysum Formatter</title>
-
+  <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
   <style>
-    :root {
-      --bg: #0b1220;
-      --panel: #0f172a;
-      --panel-2: #111827;
-      --text: #e5e7eb;
-      --muted: #94a3b8;
-      --border: #334155;
-      --accent: #7c3aed;
-      --accent-2: #6d28d9;
-
-      --page-bg: #ffffff;
-      --page-text: #111827;
-      --page-muted: #6b7280;
-
-      --page-width: 816px;
-      --page-height: 1056px;
-      --margin-top: 84px;
-      --margin-bottom: 84px;
-      --margin-inside: 92px;
-      --margin-outside: 72px;
-      --header-height: 22px;
-      --footer-height: 22px;
-
-      --content-width: calc(var(--page-width) - var(--margin-inside) - var(--margin-outside));
-      --content-height: calc(var(--page-height) - var(--margin-top) - var(--margin-bottom) - var(--header-height) - var(--footer-height));
-
-      --book-font-size: 18px;
-      --book-line-height: 1.8;
-      --paragraph-indent: 2em;
-      --paragraph-spacing: 1.2em;
-      --chapter-title-size: 34px;
-      --chapter-opener-space: 72px;
-    }
-
-    * { box-sizing: border-box; }
-
-    html, body {
-      margin: 0;
-      min-height: 100%;
-      background: var(--bg);
-      color: var(--text);
-      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    }
-
-    body.light {
-      --bg: #e9edf2;
-      --panel: #ffffff;
-      --panel-2: #f8fafc;
-      --text: #111827;
-      --muted: #64748b;
-      --border: #d7dde4;
-    }
-
-    .picker {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.84);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 9999;
-      padding: 20px;
-    }
-
-    .picker.open { display: flex; }
-
-    .picker-box {
-      width: 100%;
-      max-width: 760px;
-      max-height: 84vh;
-      overflow: auto;
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 20px;
-    }
-
-    .picker-title {
-      font-size: 24px;
-      font-weight: 800;
-      margin: 0 0 6px;
-    }
-
-    .picker-sub {
-      margin: 0 0 16px;
-      color: var(--muted);
-      font-size: 13px;
-      line-height: 1.5;
-    }
-
-    .picker-search {
-      width: 100%;
-      height: 42px;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      background: transparent;
-      color: inherit;
-      padding: 0 12px;
-      margin-bottom: 14px;
-      font-size: 14px;
-    }
-
-    .picker-row {
-      padding: 14px;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      margin-bottom: 10px;
-      cursor: pointer;
-      background: rgba(255,255,255,0.02);
-    }
-
-    .picker-row:hover {
-      background: rgba(255,255,255,0.05);
-    }
-
-    body.light .picker-row:hover {
-      background: rgba(0,0,0,0.04);
-    }
-
-    .picker-book-title {
-      font-size: 16px;
-      font-weight: 800;
-      margin-bottom: 4px;
-    }
-
-    .picker-book-meta {
-      font-size: 13px;
-      color: var(--muted);
-    }
-
-    .app {
-      min-height: 100vh;
-      display: grid;
-      grid-template-columns: 320px 1fr;
-    }
-
-    .sidebar {
-      background: var(--panel);
-      border-right: 1px solid var(--border);
-      padding: 18px;
-      position: sticky;
-      top: 0;
-      align-self: start;
-      height: 100vh;
-      overflow-y: auto;
-    }
-
-    .brand {
-      font-size: 24px;
-      font-weight: 800;
-      color: var(--accent);
-      margin-bottom: 4px;
-    }
-
-    .brand-sub {
-      font-size: 13px;
-      color: var(--muted);
-      margin-bottom: 18px;
-      line-height: 1.5;
-    }
-
-    .panel {
-      background: var(--panel-2);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 14px;
-      margin-bottom: 14px;
-    }
-
-    .panel-title {
-      font-size: 12px;
-      font-weight: 800;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 12px;
-    }
-
-    .field {
-      display: grid;
-      gap: 6px;
-      margin-bottom: 12px;
-    }
-
-    .field.two {
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-
-    .field label, .field span {
-      font-size: 13px;
-      font-weight: 700;
-    }
-
-    input[type="number"], input[type="text"], select {
-      width: 100%;
-      height: 40px;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      background: transparent;
-      color: inherit;
-      padding: 0 10px;
-      font-size: 14px;
-    }
-
-    .check {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 10px;
-      font-size: 14px;
-      font-weight: 600;
-    }
-
-    .button-row {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    .btn {
-      height: 40px;
-      border-radius: 12px;
-      border: 1px solid var(--border);
-      background: transparent;
-      color: inherit;
-      padding: 0 14px;
-      font-weight: 700;
-      cursor: pointer;
-    }
-
-    .btn.primary {
-      background: var(--accent);
-      border-color: var(--accent);
-      color: white;
-    }
-
-    .btn.secondary {
-      background: rgba(255,255,255,0.04);
-    }
-
-    .status-line {
-      font-size: 13px;
-      color: var(--muted);
-      font-weight: 700;
-      line-height: 1.55;
-      white-space: pre-wrap;
-    }
-
-    .main {
-      min-width: 0;
-      padding: 18px;
-    }
-
-    .topbar {
-      display: flex;
-      align-items: start;
-      justify-content: space-between;
-      gap: 12px;
-      margin-bottom: 18px;
-    }
-
-    .book-title {
-      font-size: 22px;
-      font-weight: 800;
-      margin-bottom: 4px;
-    }
-
-    .book-subtitle {
-      font-size: 13px;
-      color: var(--muted);
-      font-weight: 700;
-    }
-
-    .page-stack {
-      max-width: 980px;
-      margin: 0 auto;
-    }
-
-    .page {
-      position: relative;
-      width: var(--page-width);
-      height: var(--page-height);
-      margin: 0 auto 28px;
-      background: var(--page-bg);
-      color: var(--page-text);
-      box-shadow: 0 16px 42px rgba(0,0,0,0.28);
-      overflow: hidden;
-    }
-
-    .page.right {
-      padding: var(--margin-top) var(--margin-outside) var(--margin-bottom) var(--margin-inside);
-    }
-
-    .page.left {
-      padding: var(--margin-top) var(--margin-inside) var(--margin-bottom) var(--margin-outside);
-    }
-
-    .page.blank .page-header,
-    .page.blank .page-footer {
-      display: none;
-    }
-
-    .page-header,
-    .page-footer {
-      position: absolute;
-      left: 0;
-      width: 100%;
-      text-align: center;
-      color: var(--page-muted);
-      font-size: 12px;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      pointer-events: none;
-    }
-
-    .page-header { top: 24px; }
-    .page-footer { bottom: 22px; }
-
-    .page-content {
-      width: var(--content-width);
-      height: var(--content-height);
-      overflow: hidden;
-      position: relative;
-    }
-
-    .render-root {
-      width: 100%;
-      font-family: Georgia, "Times New Roman", serif;
-      color: var(--page-text);
-      font-size: var(--book-font-size);
-      line-height: var(--book-line-height);
-      word-break: break-word;
-    }
-
-    .render-root p {
-      margin: 0 0 var(--paragraph-spacing);
-      text-indent: var(--paragraph-indent);
-      white-space: pre-wrap;
-    }
-
-    .render-root p.first-para,
-    .render-root p.no-indent,
-    .render-root .chapter-number,
-    .render-root .chapter-title,
-    .render-root .front-title,
-    .render-root .front-author,
-    .render-root .front-subtitle,
-    .render-root .section-heading,
-    .render-root .scene-break,
-    .render-root .toc-title,
-    .render-root .toc-entry,
-    .render-root blockquote,
-    .render-root ul,
-    .render-root ol,
-    .render-root .copyright-block {
-      text-indent: 0;
-    }
-
-    .render-root .chapter-opener {
-      padding-top: var(--chapter-opener-space);
-    }
-
-    .render-root .chapter-number {
-      text-align: center;
-      color: var(--page-muted);
-      font-size: 14px;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      margin: 0 0 20px;
-      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    }
-
-    .render-root .chapter-title {
-      text-align: center;
-      font-size: var(--chapter-title-size);
-      line-height: 1.2;
-      margin: 0 0 48px;
-      font-weight: 700;
-    }
-
-    .render-root .front-title {
-      margin: 170px 0 14px;
-      text-align: center;
-      font-size: 38px;
-      line-height: 1.15;
-      font-weight: 700;
-    }
-
-    .render-root .front-subtitle {
-      text-align: center;
-      color: var(--page-muted);
-      margin: 0 0 12px;
-      font-size: 18px;
-    }
-
-    .render-root .front-author {
-      text-align: center;
-      font-size: 22px;
-      margin: 72px 0 0;
-    }
-
-    .render-root .section-heading {
-      font-size: 1.22em;
-      line-height: 1.3;
-      font-weight: 700;
-      margin: 0 0 1em;
-    }
-
-    .render-root blockquote {
-      border-left: 4px solid #8b5cf6;
-      padding-left: 16px;
-      margin: 0 0 1.2em;
-      color: #4b5563;
-    }
-
-    .render-root ul,
-    .render-root ol {
-      margin: 0 0 1.2em 1.5em;
-      padding: 0;
-    }
-
-    .render-root li {
-      margin: 0 0 0.45em;
-    }
-
-    .render-root .scene-break {
-      text-align: center;
-      letter-spacing: 0.35em;
-      margin: 1.6em 0;
-    }
-
-    .render-root .spacer { height: 1.2em; }
-
-    .render-root .toc-title {
-      text-align: center;
-      font-size: 28px;
-      margin: 80px 0 36px;
-    }
-
-    .render-root .toc-entry {
-      display: grid;
-      grid-template-columns: auto 1fr auto;
-      gap: 10px;
-      align-items: end;
-      margin: 0 0 0.85em;
-    }
-
-    .render-root .toc-dots {
-      border-bottom: 1px dotted #9ca3af;
-      transform: translateY(-0.25em);
-    }
-
-    .render-root .copyright-block {
-      margin-top: 200px;
-      font-size: 15px;
-      line-height: 1.75;
-    }
-
-    .measure-host {
-      position: absolute;
-      left: -99999px;
-      top: 0;
-      width: var(--content-width);
-      height: var(--content-height);
-      overflow: hidden;
-      visibility: hidden;
-      pointer-events: none;
-    }
-
-    .measure-root { width: 100%; }
-
-    @media (max-width: 1100px) {
-      .app { grid-template-columns: 1fr; }
-      .sidebar {
-        position: static;
-        height: auto;
-        border-right: none;
-        border-bottom: 1px solid var(--border);
-      }
-    }
-
-    @media (max-width: 920px) {
-      .main { padding: 10px; }
-
-      .page {
-        width: calc(var(--page-width) * 0.5);
-        height: calc(var(--page-height) * 0.5);
-      }
-
-      .page.right {
-        padding:
-          calc(var(--margin-top) * 0.5)
-          calc(var(--margin-outside) * 0.5)
-          calc(var(--margin-bottom) * 0.5)
-          calc(var(--margin-inside) * 0.5);
-      }
-
-      .page.left {
-        padding:
-          calc(var(--margin-top) * 0.5)
-          calc(var(--margin-inside) * 0.5)
-          calc(var(--margin-bottom) * 0.5)
-          calc(var(--margin-outside) * 0.5);
-      }
-
-      .page-content {
-        width: calc(var(--content-width) * 0.5);
-        height: calc(var(--content-height) * 0.5);
-        transform: scale(0.5);
-        transform-origin: top left;
-      }
-    }
-
-    @media print {
-      @page {
-        size: 6in 9in;
-        margin: 0;
-      }
-
-      .picker,
-      .sidebar,
-      .topbar .button-row {
-        display: none !important;
-      }
-
-      .app { display: block; }
-      .main { padding: 0; }
-      .topbar { margin: 0; }
-      .topbar > div:first-child { display: none; }
-
-      .page {
-        margin: 0;
-        box-shadow: none;
-        break-after: page;
-        page-break-after: always;
-        width: 6in;
-        height: 9in;
-      }
-
-      .page.right {
-        padding: 0.875in 0.75in 0.875in 0.958in;
-      }
-
-      .page.left {
-        padding: 0.875in 0.958in 0.875in 0.75in;
-      }
-
-      .page-content {
-        width: calc(6in - 0.958in - 0.75in);
-        height: calc(9in - 0.875in - 0.875in - 0.22in - 0.22in);
-        transform: none !important;
-      }
-
-      .page-header { top: 0.28in; }
-      .page-footer { bottom: 0.2in; }
-    }
+    * { box-sizing: border-box; }:root {
+  --bg: #0b1220;
+  --panel: #111827;
+  --panel-2: #182235;
+  --line: rgba(255,255,255,0.08);
+  --text: #f8fafc;
+  --muted: #94a3b8;
+  --accent: #7c3aed;
+  --accent-2: #5b21b6;
+  --warning: #f59e0b;
+  --success: #10b981;
+  --shadow: 0 24px 60px rgba(0,0,0,0.38);
+
+  --chrome-h: 68px;
+  --sidebar-w: 430px;
+
+  --trim-width-in: 5;
+  --trim-height-in: 8;
+  --screen-page-width: 720px;
+  --screen-page-height: 1152px;
+
+  --screen-top-margin: 92px;
+  --screen-bottom-margin: 92px;
+  --screen-inner-margin: 92px;
+  --screen-outer-margin: 72px;
+
+  --print-top-margin: 0.70in;
+  --print-bottom-margin: 0.72in;
+  --print-inner-margin: 0.75in;
+  --print-outer-margin: 0.55in;
+
+  --user-font-family: Georgia, serif;
+  --user-font-size: 16px;
+  --user-line-height: 1.75;
+  --user-text-color: #1a1a1a;
+
+  --dropcap-enabled: 1;
+}
+
+html, body {
+  margin: 0;
+  min-height: 100%;
+  background:
+    radial-gradient(circle at top left, rgba(124,58,237,0.10), transparent 26%),
+    radial-gradient(circle at top right, rgba(59,130,246,0.08), transparent 22%),
+    linear-gradient(180deg, #08111f 0%, #0b1220 100%);
+  color: var(--text);
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+button, input, select, textarea { font: inherit; }
+.hidden { display: none !important; }
+
+.topbar {
+  height: var(--chrome-h);
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: rgba(10,15,28,0.88);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  flex-shrink: 0;
+}
+
+.topbar-left, .topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.brand-wrap { min-width: 0; display: flex; flex-direction: column; }
+.brand { font-size: 14px; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase; }
+.brand-sub {
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 420px;
+}
+
+.btn {
+  height: 42px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--text);
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  transition: transform 0.14s ease, background 0.14s ease, border-color 0.14s ease;
+}
+.btn:hover { transform: translateY(-1px); }
+.btn.primary { background: linear-gradient(135deg, var(--accent-2), var(--accent)); color: white; border-color: transparent; }
+.btn.secondary { background: rgba(255,255,255,0.04); }
+.btn.warning { background: rgba(245,158,11,0.14); color: #fde68a; border-color: rgba(245,158,11,0.22); }
+
+.shell {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+  gap: 16px;
+  padding: 16px;
+}
+
+.panel {
+  min-width: 0;
+  min-height: 0;
+  background: rgba(17,24,39,0.92);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-head {
+  padding: 16px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(255,255,255,0.02);
+  flex-shrink: 0;
+}
+
+.panel-title {
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.panel-subtitle {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.settings-scroll {
+  flex: 1;
+  overflow: auto;
+  padding: 16px;
+  display: grid;
+  gap: 18px;
+  min-height: 0;
+}
+
+.section {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(255,255,255,0.03);
+}
+
+.section-title {
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.field-grid { display: grid; gap: 10px; }
+.field { display: grid; gap: 6px; }
+.label { font-size: 12px; font-weight: 800; color: var(--muted); }
+
+.input, .select, .textarea {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  color: var(--text);
+  outline: none;
+}
+
+.input, .select { height: 42px; padding: 0 12px; }
+.textarea { min-height: 96px; padding: 12px; resize: vertical; line-height: 1.5; }
+
+.toggle-list { display: grid; gap: 10px; }
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255,255,255,0.03);
+}
+
+.toggle-row span { font-size: 14px; font-weight: 700; }
+.toggle-row input { width: 18px; height: 18px; }
+
+.stat-box, .warning-box, .success-box {
+  padding: 14px;
+  border-radius: 16px;
+  line-height: 1.65;
+  font-size: 14px;
+}
+.stat-box { border: 1px solid var(--line); background: rgba(255,255,255,0.03); }
+.warning-box { border: 1px solid rgba(245,158,11,0.22); background: rgba(245,158,11,0.10); color: #fde68a; }
+.success-box { border: 1px solid rgba(16,185,129,0.22); background: rgba(16,185,129,0.10); color: #bbf7d0; }
+
+.preview-panel { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+
+.preview-head {
+  padding: 16px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(255,255,255,0.02);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+.preview-head-left { min-width: 0; }
+.preview-title { font-size: 13px; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase; }
+.preview-subtitle { margin-top: 6px; color: var(--muted); font-size: 13px; }
+
+.preview-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 26px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent 140px), transparent;
+}
+
+.status-strip {
+  padding: 12px 16px;
+  border-top: 1px solid var(--line);
+  background: rgba(255,255,255,0.02);
+  color: var(--muted);
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.screen-page, .measure-page {
+  width: var(--screen-page-width);
+  height: var(--screen-page-height);
+  min-height: var(--screen-page-height);
+  background: white;
+  color: #111827;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.screen-page {
+  border-radius: 8px;
+  box-shadow: 0 18px 40px rgba(0,0,0,0.28);
+}
+
+.screen-page.front-matter,
+.measure-page.front-matter {
+  text-align: center;
+}
+
+.page-running-head {
+  position: absolute;
+  top: 28px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  font-family: Inter, sans-serif;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6b7280;
+  z-index: 2;
+}
+
+.screen-page.odd .page-running-head,
+.measure-page.odd .page-running-head {
+  left: var(--screen-inner-margin);
+  right: var(--screen-outer-margin);
+}
+
+.screen-page.even .page-running-head,
+.measure-page.even .page-running-head {
+  left: var(--screen-outer-margin);
+  right: var(--screen-inner-margin);
+}
+
+.page-folio {
+  position: absolute;
+  bottom: 28px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-family: Inter, sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  color: #6b7280;
+  z-index: 2;
+}
+
+.page-inner {
+  flex: 1;
+  overflow: hidden;
+  margin-top: var(--screen-top-margin);
+  margin-bottom: var(--screen-bottom-margin);
+}
+
+.screen-page.odd .page-inner,
+.measure-page.odd .page-inner {
+  margin-left: var(--screen-inner-margin);
+  margin-right: var(--screen-outer-margin);
+}
+
+.screen-page.even .page-inner,
+.measure-page.even .page-inner {
+  margin-left: var(--screen-outer-margin);
+  margin-right: var(--screen-inner-margin);
+}
+
+.page-content,
+.measure-content {
+  font-family: var(--user-font-family, Georgia, serif);
+  font-size: var(--user-font-size, 16px);
+  line-height: var(--user-line-height, 1.75);
+  color: var(--user-text-color, #1a1a1a);
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  hyphens: auto;
+  text-align: left;
+}
+
+.page-content p,
+.measure-content p { margin: 0 0 1.2em 0; }
+.page-content p.no-indent,
+.measure-content p.no-indent { text-indent: 0; }
+.page-content p.indent,
+.measure-content p.indent { text-indent: 1.35em; }
+
+.page-content h1,
+.measure-content h1 { font-size: 2em; font-weight: 700; margin: 1.8em 0 0.4em; }
+.page-content h2,
+.measure-content h2 { font-size: 1.6em; font-weight: 600; margin: 1.4em 0 0.35em; }
+.page-content h3,
+.measure-content h3 { font-size: 1.3em; font-weight: 600; margin: 1.2em 0 0.3em; }
+.page-content h4,
+.measure-content h4 { font-size: 1.1em; font-weight: 600; margin: 1em 0 0.25em; }
+.page-content h5,
+.measure-content h5 { font-size: 1em; font-weight: 600; margin: 0.8em 0 0.2em; }
+.page-content h6,
+.measure-content h6 { font-size: 0.9em; font-weight: 600; margin: 0.6em 0 0.2em; }
+
+.page-content strong,
+.measure-content strong,
+.page-content b,
+.measure-content b { font-weight: 700; }
+
+.page-content em,
+.measure-content em,
+.page-content i,
+.measure-content i { font-style: italic; }
+
+.page-content blockquote,
+.measure-content blockquote {
+  border-left: 3px solid #888;
+  padding-left: 1em;
+  font-style: italic;
+  margin: 1em 0;
+}
+
+.page-content code,
+.measure-content code,
+.page-content pre,
+.measure-content pre {
+  font-family: "Fira Code", "Courier New", monospace;
+  font-size: 0.9em;
+  background: #f5f5f5;
+  padding: 0.15em 0.4em;
+  border-radius: 3px;
+}
+
+.page-content pre,
+.measure-content pre {
+  padding: 0.8em 1em;
+  white-space: pre-wrap;
+}
+
+.page-content pre code,
+.measure-content pre code {
+  padding: 0;
+  background: transparent;
+}
+
+.page-content ul,
+.measure-content ul,
+.page-content ol,
+.measure-content ol {
+  padding-left: 1.6em;
+  margin: 0 0 1.2em 0;
+}
+
+.page-content li,
+.measure-content li { margin-bottom: 0.3em; }
+
+.page-content a,
+.measure-content a { color: #2563eb; text-decoration: underline; }
+
+.page-content hr,
+.measure-content hr {
+  border: none;
+  border-top: 1px solid #ddd;
+  margin: 1.5em 0;
+}
+
+.page-content .scene-break,
+.measure-content .scene-break {
+  text-align: center;
+  margin: 1.6em 0;
+  letter-spacing: 0.36em;
+  font-family: Inter, sans-serif;
+  font-size: 12px;
+  font-weight: 800;
+  color: #6b7280;
+}
+
+.dropcap::first-letter {
+  float: left;
+  font-size: 3.6em;
+  line-height: 0.82;
+  padding-top: 0.05em;
+  padding-right: 0.08em;
+  font-weight: 700;
+}
+
+.front-title { margin-top: 140px; font-size: 30px; line-height: 1.2; font-weight: 700; }
+.front-subtitle { margin-top: 12px; font-size: 16px; line-height: 1.5; color: #4b5563; }
+.front-author { margin-top: 24px; font-size: 18px; line-height: 1.5; color: #374151; }
+.copyright-text { margin-top: 220px; text-align: left; font-size: 12px; line-height: 1.8; color: #374151; white-space: pre-wrap; }
+.dedication-text { margin-top: 220px; font-size: 18px; line-height: 1.9; color: #1f2937; white-space: pre-wrap; }
+
+.toc-wrap { padding-top: 40px; text-align: left; }
+.toc-title { text-align: center; margin: 0 0 34px; font-size: 24px; line-height: 1.2; font-weight: 700; }
+
+.toc-entry {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 12px;
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.toc-entry-title {
+  display: flex;
+  align-items: end;
+  gap: 10px;
+  min-width: 0;
+}
+
+.toc-entry-title-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.toc-entry-dots {
+  flex: 1;
+  min-width: 24px;
+  border-bottom: 1px dotted #9ca3af;
+  transform: translateY(-2px);
+}
+
+.toc-entry-page { font-weight: 700; color: #374151; }
+
+.chapter-opener { padding-top: 60px; }
+.chapter-number {
+  text-align: center;
+  font-family: Inter, sans-serif;
+  font-size: var(--chapter-number-size-screen);
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #6b7280;
+  margin-bottom: 18px;
+}
+
+.chapter-title {
+  margin: 0 0 42px;
+  text-align: center;
+  font-size: var(--chapter-title-size-screen);
+  line-height: 1.2;
+  font-weight: 700;
+  color: #111827;
+}
+
+.measure-stage {
+  position: absolute;
+  left: -99999px;
+  top: 0;
+  visibility: hidden;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+#printRoot {
+  width: calc(var(--trim-width-in) * 1in);
+  background: #ffffff;
+  display: block;
+}
+
+.print-page {
+  width: calc(var(--trim-width-in) * 1in);
+  height: calc(var(--trim-height-in) * 1in);
+  background: white;
+  color: black;
+  position: relative;
+  overflow: hidden;
+  page-break-after: always;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.print-page .page-running-head {
+  position: absolute;
+  top: 0.22in;
+  font-family: Inter, sans-serif;
+  font-size: 8pt;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6b7280;
+  z-index: 2;
+}
+
+.print-page.odd .page-running-head {
+  left: var(--print-inner-margin);
+  right: var(--print-outer-margin);
+}
+
+.print-page.even .page-running-head {
+  left: var(--print-outer-margin);
+  right: var(--print-inner-margin);
+}
+
+.print-page .page-folio {
+  position: absolute;
+  bottom: 0.26in;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-family: Inter, sans-serif;
+  font-size: 9pt;
+  font-weight: 700;
+  color: #6b7280;
+  z-index: 2;
+}
+
+.print-page .page-inner {
+  flex: 1;
+  overflow: hidden;
+  margin-top: var(--print-top-margin);
+  margin-bottom: var(--print-bottom-margin);
+}
+
+.print-page.odd .page-inner {
+  margin-left: var(--print-inner-margin);
+  margin-right: var(--print-outer-margin);
+}
+
+.print-page.even .page-inner {
+  margin-left: var(--print-outer-margin);
+  margin-right: var(--print-inner-margin);
+}
+
+.print-page .page-content {
+  font-family: var(--user-font-family, Georgia, serif);
+  font-size: var(--user-font-size, 16px);
+  line-height: var(--user-line-height, 1.75);
+  color: var(--user-text-color, #1a1a1a);
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  hyphens: auto;
+}
+
+.print-page .page-content p  { margin: 0 0 1.2em 0; }
+.print-page .page-content h1 { font-size: 2em;   font-weight: 700; margin: 1.8em 0 0.4em; }
+.print-page .page-content h2 { font-size: 1.6em; font-weight: 600; margin: 1.4em 0 0.35em; }
+.print-page .page-content h3 { font-size: 1.3em; font-weight: 600; margin: 1.2em 0 0.3em; }
+.print-page .page-content h4 { font-size: 1.1em; font-weight: 600; margin: 1em 0 0.25em; }
+.print-page .page-content h5 { font-size: 1em;   font-weight: 600; margin: 0.8em 0 0.2em; }
+.print-page .page-content h6 { font-size: 0.9em; font-weight: 600; margin: 0.6em 0 0.2em; }
+.print-page .page-content strong,
+.print-page .page-content b  { font-weight: 700; }
+.print-page .page-content em,
+.print-page .page-content i  { font-style: italic; }
+.print-page .page-content blockquote {
+  border-left: 3px solid #888;
+  padding-left: 1em;
+  font-style: italic;
+  margin: 1em 0;
+}
+.print-page .page-content code,
+.print-page .page-content pre {
+  font-family: "Fira Code", "Courier New", monospace;
+  font-size: 0.9em;
+  background: #f5f5f5;
+  padding: 0.15em 0.4em;
+  border-radius: 3px;
+}
+.print-page .page-content pre      { padding: 0.8em 1em; }
+.print-page .page-content pre code { padding: 0; background: transparent; }
+.print-page .page-content ul,
+.print-page .page-content ol       { padding-left: 1.6em; margin: 0 0 1.2em 0; }
+.print-page .page-content li       { margin-bottom: 0.3em; }
+.print-page .page-content a        { color: #2563eb; }
+.print-page .page-content hr       { border: none; border-top: 1px solid #ddd; margin: 1.5em 0; }
+.print-page .page-content p.no-indent { text-indent: 0; }
+.print-page .page-content p.indent { text-indent: 1.35em; }
+.print-page .page-content .scene-break {
+  margin: 1.6em 0;
+  text-align: center;
+  letter-spacing: 0.30em;
+  font-family: Inter, sans-serif;
+  font-size: 8.5pt;
+  font-weight: 800;
+  color: #6b7280;
+}
+
+.print-page .dropcap::first-letter {
+  float: left;
+  font-size: 3.2em;
+  line-height: 0.82;
+  padding-top: 0.03em;
+  padding-right: 0.07em;
+  font-weight: 700;
+}
+
+.print-page.front-matter { text-align: center; }
+.print-page .front-title { margin-top: 1.45in; font-size: 22pt; line-height: 1.2; font-weight: 700; }
+.print-page .front-subtitle { margin-top: 0.12in; font-size: 11pt; line-height: 1.5; color: #4b5563; }
+.print-page .front-author { margin-top: 0.28in; font-size: 12pt; color: #374151; }
+.print-page .copyright-text { margin-top: 2.0in; text-align: left; font-size: 8.5pt; line-height: 1.8; color: #374151; white-space: pre-wrap; }
+.print-page .dedication-text { margin-top: 2.2in; font-size: 12pt; line-height: 1.8; white-space: pre-wrap; }
+.print-page .toc-wrap { padding-top: 0.35in; text-align: left; }
+.print-page .toc-title { margin: 0 0 0.35in; font-size: 18pt; line-height: 1.2; font-weight: 700; text-align: center; }
+.print-page .toc-entry {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: end;
+  margin-bottom: 0.12in;
+  font-size: 11pt;
+  line-height: 1.4;
+}
+.print-page .chapter-opener { padding-top: 0.65in; }
+.print-page .chapter-number {
+  text-align: center;
+  font-family: Inter, sans-serif;
+  font-size: var(--chapter-number-size-print);
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #6b7280;
+  margin-bottom: 0.18in;
+}
+.print-page .chapter-title {
+  margin: 0 0 0.45in;
+  text-align: center;
+  font-size: var(--chapter-title-size-print);
+  line-height: 1.2;
+  font-weight: 700;
+}
+
+.export-staging {
+  position: fixed;
+  left: -10000px;
+  top: 0;
+  opacity: 0.01;
+  pointer-events: none;
+  z-index: -1;
+  background: #ffffff;
+  width: calc(var(--trim-width-in) * 1in);
+  display: block;
+}
+
+@media (max-width: 1100px) {
+  .shell { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 760px) {
+  .topbar {
+    height: auto;
+    padding: 12px;
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .topbar-left,
+  .topbar-right { width: 100%; }
+  .shell { padding: 10px; }
+  .screen-page { width: min(100%, 720px); }
+}
+
   </style>
 </head>
-<body class="dark">
-  <div id="bookPicker" class="picker">
-    <div class="picker-box">
-      <h2 class="picker-title">Select a Book</h2>
-      <p class="picker-sub">Choose any book from the library collection. Legacy chapter data is normalized automatically.</p>
-      <input id="pickerSearch" class="picker-search" type="text" placeholder="Search by title, author, or id" />
-      <div id="bookList"></div>
-    </div>
-  </div>
+<body>
+  <div class="topbar">
+    <div class="topbar-left">
+      <button class="btn secondary" id="backBtn" type="button">← Back</button>
+      <div class="brand-wrap">
+        <div class="brand">Alysum Formatter</div>
+        <div class="brand-sub" id="topBookLabel">Loading book…</div>
+      </div>
+    </div><div class="topbar-right">
+  <button class="btn secondary" id="reloadBtn" type="button">Reload</button>
+  <button class="btn warning" id="previewBtn" type="button">Refresh Preview</button>
+  <button class="btn primary" id="exportBtn" type="button">Export PDF</button>
+</div>
 
-  <div class="app">
-    <aside class="sidebar">
-      <div class="brand">Alysum Formatter</div>
-      <div class="brand-sub">Loads books from <code>library/{bookId}</code>, supports legacy chapter objects, paginates pages, and exports PDF.</div>
-
-      <section class="panel">
-        <div class="panel-title">Theme</div>
-        <div class="button-row">
-          <button id="themeToggleBtn" class="btn secondary" type="button">Toggle Dark Mode</button>
-          <button id="openPickerBtn" class="btn secondary" type="button">Choose Book</button>
+  </div>  <div class="shell">
+    <aside class="panel">
+      <div class="panel-head">
+        <div class="panel-title">Export Controls</div>
+        <div class="panel-subtitle">
+          Loads your Firebase book, applies your typography system, paginates chapters, builds a TOC, and exports a real PDF.
         </div>
-      </section>
-
-      <section class="panel">
-        <div class="panel-title">Layout</div>
-
+      </div><div class="settings-scroll">
+    <div class="section">
+      <div class="section-title">Preset</div>
+      <div class="field-grid">
         <div class="field">
-          <label for="trimSelect">Trim size</label>
-          <select id="trimSelect">
-            <option value="6x9">6 × 9</option>
-            <option value="5.5x8.5">5.5 × 8.5</option>
+          <label class="label" for="presetSelect">Export preset</label>
+          <select class="select" id="presetSelect">
+            <option value="kdp-5x8">KDP 5x8 Fiction</option>
+            <option value="bn-5x8">Barnes & Noble Press 5x8 Fiction</option>
           </select>
         </div>
 
-        <div class="field two">
-          <div>
-            <label for="fontSizeInput">Font size</label>
-            <input id="fontSizeInput" type="number" min="10" max="24" step="1" value="18" />
-          </div>
-          <div>
-            <label for="lineHeightInput">Line height</label>
-            <input id="lineHeightInput" type="number" min="1.2" max="2.5" step="0.05" value="1.8" />
-          </div>
-        </div>
-
-        <div class="field two">
-          <div>
-            <label for="indentInput">Paragraph indent</label>
-            <input id="indentInput" type="number" min="0" max="4" step="0.1" value="2" />
-          </div>
-          <div>
-            <label for="spacingInput">Paragraph spacing</label>
-            <input id="spacingInput" type="number" min="0.5" max="2.5" step="0.1" value="1.2" />
-          </div>
-        </div>
-      </section>
-
-      <section class="panel">
-        <div class="panel-title">Structure</div>
-        <label class="check"><input id="includeFrontMatterInput" type="checkbox" checked /> Include front matter</label>
-        <label class="check"><input id="includeBackMatterInput" type="checkbox" checked /> Include back matter</label>
-        <label class="check"><input id="forceRectoInput" type="checkbox" checked /> Start sections on right-hand pages</label>
-        <label class="check"><input id="showHeadersInput" type="checkbox" checked /> Show running headers</label>
-        <label class="check"><input id="showPageNumbersInput" type="checkbox" checked /> Show page numbers</label>
-        <label class="check"><input id="romanFrontMatterInput" type="checkbox" checked /> Roman numerals in front matter</label>
-        <label class="check"><input id="keepHeadingsInput" type="checkbox" checked /> Keep headings with next block</label>
-        <label class="check"><input id="widowControlInput" type="checkbox" checked /> Basic widow/orphan protection</label>
-      </section>
-
-      <section class="panel">
-        <div class="panel-title">Live Book Info</div>
-        <div class="status-line" id="sidebarInfo">Waiting for Firebase…</div>
-      </section>
-
-      <section class="panel">
-        <div class="panel-title">Actions</div>
-        <div class="button-row">
-          <button id="repaginateBtn" type="button" class="btn">Repaginate</button>
-          <button id="exportBtn" type="button" class="btn primary">Export PDF</button>
-        </div>
-      </section>
-    </aside>
-
-    <main class="main">
-      <div class="topbar">
-        <div>
-          <div id="bookTitle" class="book-title">Loading…</div>
-          <div id="status" class="book-subtitle">Connecting…</div>
-        </div>
-        <div class="button-row">
-          <button id="topChooseBtn" type="button" class="btn">Choose Book</button>
-          <button id="topRepaginateBtn" type="button" class="btn">Repaginate</button>
-          <button id="topExportBtn" type="button" class="btn primary">Export PDF</button>
+        <div class="field">
+          <label class="label" for="paperSelect">Paper style</label>
+          <select class="select" id="paperSelect">
+            <option value="cream">Cream paper fiction</option>
+            <option value="white">White paper fiction</option>
+          </select>
         </div>
       </div>
+    </div>
 
-      <div id="pageStack" class="page-stack"></div>
-    </main>
+    <div class="section">
+      <div class="section-title">Metadata</div>
+      <div class="field-grid">
+        <div class="field">
+          <label class="label" for="titleOverride">Title override</label>
+          <input class="input" id="titleOverride" type="text" placeholder="Use book title from editor" />
+        </div>
+
+        <div class="field">
+          <label class="label" for="subtitleOverride">Subtitle</label>
+          <input class="input" id="subtitleOverride" type="text" placeholder="Optional subtitle" />
+        </div>
+
+        <div class="field">
+          <label class="label" for="authorOverride">Author override</label>
+          <input class="input" id="authorOverride" type="text" placeholder="Use author from editor" />
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Front Matter</div>
+      <div class="toggle-list">
+        <label class="toggle-row">
+          <span>Title page</span>
+          <input type="checkbox" id="includeTitlePage" checked />
+        </label>
+
+        <label class="toggle-row">
+          <span>Copyright page</span>
+          <input type="checkbox" id="includeCopyrightPage" checked />
+        </label>
+
+        <label class="toggle-row">
+          <span>Dedication page</span>
+          <input type="checkbox" id="includeDedicationPage" checked />
+        </label>
+
+        <label class="toggle-row">
+          <span>Table of contents</span>
+          <input type="checkbox" id="includeToc" checked />
+        </label>
+      </div>
+
+      <div class="field-grid">
+        <div class="field">
+          <label class="label" for="copyrightText">Copyright text</label>
+          <textarea class="textarea" id="copyrightText" placeholder="Copyright © YEAR AUTHOR&#10;All rights reserved."></textarea>
+        </div>
+
+        <div class="field">
+          <label class="label" for="dedicationText">Dedication</label>
+          <textarea class="textarea" id="dedicationText" placeholder="For ..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Interior Formatting</div>
+      <div class="toggle-list">
+        <label class="toggle-row">
+          <span>Recto chapter starts</span>
+          <input type="checkbox" id="rectoStarts" checked />
+        </label>
+
+        <label class="toggle-row">
+          <span>Running heads</span>
+          <input type="checkbox" id="includeRunningHeads" checked />
+        </label>
+
+        <label class="toggle-row">
+          <span>Page numbers</span>
+          <input type="checkbox" id="includePageNumbers" checked />
+        </label>
+
+        <label class="toggle-row">
+          <span>Drop caps on chapter open</span>
+          <input type="checkbox" id="enableDropCaps" checked />
+        </label>
+
+        <label class="toggle-row">
+          <span>Mirror margins by page</span>
+          <input type="checkbox" id="enableMirrorMargins" checked />
+        </label>
+      </div>
+
+      <div class="field-grid">
+        <div class="field">
+          <label class="label" for="fontPreset">Interior style</label>
+          <select class="select" id="fontPreset">
+            <option value="classic">Classic</option>
+            <option value="literary">Literary</option>
+            <option value="compact">Compact</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label class="label" for="chapterNumberStyle">Chapter numbering</label>
+          <select class="select" id="chapterNumberStyle">
+            <option value="arabic">Chapter 1, 2, 3</option>
+            <option value="roman">Chapter I, II, III</option>
+            <option value="words">Chapter One, Two, Three</option>
+            <option value="none">No chapter number label</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Stats</div>
+      <div class="stat-box" id="statsBox">Loading…</div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Preflight</div>
+      <div class="warning-box" id="preflightBox">Waiting for book…</div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Status</div>
+      <div class="success-box" id="statusBox">Formatter ready.</div>
+    </div>
+  </div>
+</aside>
+
+<section class="panel preview-panel">
+  <div class="preview-head">
+    <div class="preview-head-left">
+      <div class="preview-title">Preview</div>
+      <div class="preview-subtitle" id="previewMeta">Building preview…</div>
+    </div>
   </div>
 
-  <div class="measure-host">
-    <div id="measureRoot" class="render-root measure-root"></div>
-  </div>
+  <div class="preview-scroll" id="previewScroll"></div>
+  <div class="status-strip" id="footerStatus">Loading formatter…</div>
+</section>
 
-  <script type="module">
+  </div>  <div id="measureStage" class="measure-stage"></div>
+  <div id="printRoot"></div>  <script type="module">
     import { auth, db } from "./firebase.js";
     import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { collection, doc, getDoc, getDocs, limit, orderBy, query, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const params = new URLSearchParams(window.location.search);
-    const initialBookId = params.get("book");
-    const selectedChapterIds = (params.get("chapters") || "").split(",").map(s => s.trim()).filter(Boolean);
+    const bookId = params.get("book");
 
-    const bookPicker = document.getElementById("bookPicker");
-    const bookList = document.getElementById("bookList");
-    const pickerSearch = document.getElementById("pickerSearch");
-    const bookTitleEl = document.getElementById("bookTitle");
-    const statusEl = document.getElementById("status");
-    const sidebarInfoEl = document.getElementById("sidebarInfo");
-    const pageStack = document.getElementById("pageStack");
-    const measureRoot = document.getElementById("measureRoot");
-
-    const trimSelect = document.getElementById("trimSelect");
-    const fontSizeInput = document.getElementById("fontSizeInput");
-    const lineHeightInput = document.getElementById("lineHeightInput");
-    const indentInput = document.getElementById("indentInput");
-    const spacingInput = document.getElementById("spacingInput");
-
-    const includeFrontMatterInput = document.getElementById("includeFrontMatterInput");
-    const includeBackMatterInput = document.getElementById("includeBackMatterInput");
-    const forceRectoInput = document.getElementById("forceRectoInput");
-    const showHeadersInput = document.getElementById("showHeadersInput");
-    const showPageNumbersInput = document.getElementById("showPageNumbersInput");
-    const romanFrontMatterInput = document.getElementById("romanFrontMatterInput");
-    const keepHeadingsInput = document.getElementById("keepHeadingsInput");
-    const widowControlInput = document.getElementById("widowControlInput");
-
-    const themeToggleBtn = document.getElementById("themeToggleBtn");
-    const openPickerBtn = document.getElementById("openPickerBtn");
-    const topChooseBtn = document.getElementById("topChooseBtn");
-    const repaginateBtn = document.getElementById("repaginateBtn");
+    const backBtn = document.getElementById("backBtn");
+    const reloadBtn = document.getElementById("reloadBtn");
+    const previewBtn = document.getElementById("previewBtn");
     const exportBtn = document.getElementById("exportBtn");
-    const topRepaginateBtn = document.getElementById("topRepaginateBtn");
-    const topExportBtn = document.getElementById("topExportBtn");
+
+    const topBookLabel = document.getElementById("topBookLabel");
+    const previewMeta = document.getElementById("previewMeta");
+    const previewScroll = document.getElementById("previewScroll");
+    const footerStatus = document.getElementById("footerStatus");
+    const statusBox = document.getElementById("statusBox");
+    const statsBox = document.getElementById("statsBox");
+    const preflightBox = document.getElementById("preflightBox");
+    const measureStage = document.getElementById("measureStage");
+    const printRoot = document.getElementById("printRoot");
+
+    const presetSelect = document.getElementById("presetSelect");
+    const paperSelect = document.getElementById("paperSelect");
+    const titleOverride = document.getElementById("titleOverride");
+    const subtitleOverride = document.getElementById("subtitleOverride");
+    const authorOverride = document.getElementById("authorOverride");
+    const includeTitlePage = document.getElementById("includeTitlePage");
+    const includeCopyrightPage = document.getElementById("includeCopyrightPage");
+    const includeDedicationPage = document.getElementById("includeDedicationPage");
+    const includeToc = document.getElementById("includeToc");
+    const rectoStarts = document.getElementById("rectoStarts");
+    const includeRunningHeads = document.getElementById("includeRunningHeads");
+    const includePageNumbers = document.getElementById("includePageNumbers");
+    const enableDropCaps = document.getElementById("enableDropCaps");
+    const enableMirrorMargins = document.getElementById("enableMirrorMargins");
+    const fontPreset = document.getElementById("fontPreset");
+    const chapterNumberStyle = document.getElementById("chapterNumberStyle");
+    const copyrightText = document.getElementById("copyrightText");
+    const dedicationText = document.getElementById("dedicationText");
 
     let currentUser = null;
     let currentBook = null;
-    let currentBookId = initialBookId || "";
-    let pickerDocs = [];
-
-    const settings = {
-      trim: "6x9",
-      fontSize: 18,
-      lineHeight: 1.8,
-      paragraphIndent: 2,
-      paragraphSpacing: 1.2,
-      includeFrontMatter: true,
-      includeBackMatter: true,
-      forceRecto: true,
-      showHeaders: true,
-      showPageNumbers: true,
-      romanFrontMatter: true,
-      keepHeadingsWithNext: true,
-      basicWidowControl: true,
-      theme: localStorage.getItem("alysum-formatter-theme") || "dark"
-    };
-
-    function setStatus(text) {
-      statusEl.textContent = text;
-    }
-
-    function setSidebarInfo(text) {
-      sidebarInfoEl.textContent = text;
-    }
+    let lastRender = [];
 
     function safeString(value, fallback = "") {
       return typeof value === "string" ? value : fallback;
+    }
+
+    function safeNumber(value, fallback = 0) {
+      return typeof value === "number" && Number.isFinite(value) ? value : fallback;
     }
 
     function safeArray(value, fallback = []) {
@@ -753,475 +980,343 @@
       return value && typeof value === "object" && !Array.isArray(value) ? value : fallback;
     }
 
-    function generateId() {
-      return "id_" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+    function escapeHtml(text = "") {
+      return safeString(text)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
     }
 
-    function toRoman(num) {
-      const map = [
+    function stripHtml(html = "") {
+      const container = document.createElement("div");
+      container.innerHTML = safeString(html)
+        .replace(/<br\s*\/?>/gi, "\n")
+        .replace(/<\/(div|p|h1|h2|h3|h4|li|blockquote)>/gi, "\n");
+      return (container.textContent || "")
+        .replace(/\u00a0/g, " ")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
+    }
+
+    function wordCountFromText(text = "") {
+      const clean = safeString(text).replace(/\s+/g, " ").trim();
+      if (!clean) return 0;
+      return clean.split(" ").length;
+    }
+
+    function romanize(num) {
+      const lookup = [
         ["M", 1000], ["CM", 900], ["D", 500], ["CD", 400],
         ["C", 100], ["XC", 90], ["L", 50], ["XL", 40],
         ["X", 10], ["IX", 9], ["V", 5], ["IV", 4], ["I", 1]
       ];
-      let n = num;
       let out = "";
-      for (const [sym, val] of map) {
+      let n = num;
+      lookup.forEach(([sym, val]) => {
         while (n >= val) {
           out += sym;
           n -= val;
         }
-      }
-      return out.toLowerCase();
-    }
-
-    function applyTheme(theme) {
-      document.body.classList.toggle("light", theme === "light");
-      document.body.classList.toggle("dark", theme !== "light");
-      localStorage.setItem("alysum-formatter-theme", theme);
-      settings.theme = theme;
-    }
-
-    function applyLayoutVariables() {
-      const root = document.documentElement;
-
-      if (settings.trim === "5.5x8.5") {
-        root.style.setProperty("--page-width", "744px");
-        root.style.setProperty("--page-height", "984px");
-        root.style.setProperty("--margin-top", "78px");
-        root.style.setProperty("--margin-bottom", "78px");
-        root.style.setProperty("--margin-inside", "88px");
-        root.style.setProperty("--margin-outside", "68px");
-      } else {
-        root.style.setProperty("--page-width", "816px");
-        root.style.setProperty("--page-height", "1056px");
-        root.style.setProperty("--margin-top", "84px");
-        root.style.setProperty("--margin-bottom", "84px");
-        root.style.setProperty("--margin-inside", "92px");
-        root.style.setProperty("--margin-outside", "72px");
-      }
-
-      root.style.setProperty("--book-font-size", settings.fontSize + "px");
-      root.style.setProperty("--book-line-height", String(settings.lineHeight));
-      root.style.setProperty("--paragraph-indent", settings.paragraphIndent + "em");
-      root.style.setProperty("--paragraph-spacing", settings.paragraphSpacing + "em");
-    }
-
-    function syncUIFromSettings() {
-      trimSelect.value = settings.trim;
-      fontSizeInput.value = String(settings.fontSize);
-      lineHeightInput.value = String(settings.lineHeight);
-      indentInput.value = String(settings.paragraphIndent);
-      spacingInput.value = String(settings.paragraphSpacing);
-      includeFrontMatterInput.checked = settings.includeFrontMatter;
-      includeBackMatterInput.checked = settings.includeBackMatter;
-      forceRectoInput.checked = settings.forceRecto;
-      showHeadersInput.checked = settings.showHeaders;
-      showPageNumbersInput.checked = settings.showPageNumbers;
-      romanFrontMatterInput.checked = settings.romanFrontMatter;
-      keepHeadingsInput.checked = settings.keepHeadingsWithNext;
-      widowControlInput.checked = settings.basicWidowControl;
-    }
-
-    function syncSettingsFromUI() {
-      settings.trim = trimSelect.value;
-      settings.fontSize = Number(fontSizeInput.value) || 18;
-      settings.lineHeight = Number(lineHeightInput.value) || 1.8;
-      settings.paragraphIndent = Number(indentInput.value) || 2;
-      settings.paragraphSpacing = Number(spacingInput.value) || 1.2;
-      settings.includeFrontMatter = includeFrontMatterInput.checked;
-      settings.includeBackMatter = includeBackMatterInput.checked;
-      settings.forceRecto = forceRectoInput.checked;
-      settings.showHeaders = showHeadersInput.checked;
-      settings.showPageNumbers = showPageNumbersInput.checked;
-      settings.romanFrontMatter = romanFrontMatterInput.checked;
-      settings.keepHeadingsWithNext = keepHeadingsInput.checked;
-      settings.basicWidowControl = widowControlInput.checked;
-    }
-
-    function appendHTML(target, html) {
-      const temp = document.createElement("div");
-      temp.innerHTML = html;
-      while (temp.firstChild) target.appendChild(temp.firstChild);
-    }
-
-    function escapeHTML(text) {
-      return text
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;");
-    }
-
-    function readPlainTextFromHTML(html) {
-      const div = document.createElement("div");
-      div.innerHTML = html;
-      return (div.textContent || "").replace(/\s+/g, " ").trim();
-    }
-
-    function wrapPlainTextAsHtml(text) {
-      const normalized = safeString(text, "").replace(/\r/g, "");
-      if (!normalized.trim()) return "";
-
-      const chunks = normalized
-        .split(/\n{2,}/)
-        .map(part => part.trim())
-        .filter(Boolean);
-
-      if (!chunks.length) {
-        return `<div>${escapeHTML(normalized.trim())}</div>`;
-      }
-
-      return chunks
-        .map(chunk => `<div>${escapeHTML(chunk).replace(/\n/g, "<br>")}</div>`)
-        .join("");
-    }
-
-    function normalizeChapter(raw, fallbackTitle = "Untitled") {
-      const chapter = safeObject(raw, {});
-      const content =
-        safeString(chapter.content, "") ||
-        wrapPlainTextAsHtml(safeString(chapter.text, ""));
-
-      return {
-        id: safeString(chapter.id, generateId()),
-        title: safeString(chapter.title, fallbackTitle),
-        content
-      };
-    }
-
-    function normalizeLegacyChaptersObject(chaptersObj) {
-      const keys = Object.keys(chaptersObj).sort((a, b) => Number(a) - Number(b));
-      return keys.map((key, index) => {
-        const rawChapter = safeObject(chaptersObj[key], {});
-        const content =
-          safeString(rawChapter.content, "") ||
-          wrapPlainTextAsHtml(safeString(rawChapter.text, ""));
-
-        return {
-          id: safeString(rawChapter.id, `ch_${key}`),
-          title: safeString(rawChapter.title, `Chapter ${index + 1}`),
-          content
-        };
       });
+      return out || String(num);
     }
 
-    function normalizeBookData(rawData, bookDocId) {
-      const data = safeObject(rawData, {});
+    function numberToWords(num) {
+      const under20 = [
+        "Zero","One","Two","Three","Four","Five","Six","Seven","Eight","Nine",
+        "Ten","Eleven","Twelve","Thirteen","Fourteen","Fifteen","Sixteen",
+        "Seventeen","Eighteen","Nineteen"
+      ];
+      const tens = ["","","Twenty","Thirty","Forty","Fifty","Sixty","Seventy","Eighty","Ninety"];
 
-      const normalized = {
-        id: bookDocId,
-        bookId: safeString(data.bookId, bookDocId),
-        title: safeString(data.title, "Untitled Book"),
-        author: safeString(data.author, ""),
-        ownerUid: safeString(data.ownerUid, ""),
-        updated: typeof data.updated === "number" ? data.updated : Date.now(),
-        sections: {
-          front: [],
-          body: [],
-          back: []
-        },
-        _meta: {
-          sourceFormat: "unknown",
-          needsMigration: false
-        }
+      if (num < 20) return under20[num];
+      if (num < 100) {
+        const ten = Math.floor(num / 10);
+        const one = num % 10;
+        return one ? `${tens[ten]}-${under20[one]}` : tens[ten];
+      }
+      if (num < 1000) {
+        const hundred = Math.floor(num / 100);
+        const rest = num % 100;
+        return rest ? `${under20[hundred]} Hundred ${numberToWords(rest)}` : `${under20[hundred]} Hundred`;
+      }
+      return String(num);
+    }
+
+    function formatChapterLabel(index) {
+      const style = chapterNumberStyle.value;
+      if (style === "none") return "";
+      if (style === "roman") return `Chapter ${romanize(index)}`;
+      if (style === "words") return `Chapter ${numberToWords(index)}`;
+      return `Chapter ${index}`;
+    }
+
+    function getEffectiveTitle() {
+      return titleOverride.value.trim() || currentBook?.title || "Untitled Book";
+    }
+
+    function getEffectiveSubtitle() {
+      return subtitleOverride.value.trim();
+    }
+
+    function getEffectiveAuthor() {
+      return authorOverride.value.trim() || currentBook?.author || "Unknown Author";
+    }
+
+    function setStatus(text) {
+      statusBox.textContent = text;
+      footerStatus.textContent = text;
+    }
+
+    function readUserTypographyAndTheme() {
+      let typo = {};
+      let theme = {};
+
+      try { typo = JSON.parse(localStorage.getItem("alysum-typo") || "{}"); } catch {}
+      try { theme = JSON.parse(localStorage.getItem("alysum-theme-print") || "{}"); } catch {}
+
+      document.documentElement.style.setProperty("--user-font-family", typo.fontFamily || "Georgia, serif");
+      document.documentElement.style.setProperty("--user-font-size", typo.fontSize || "16px");
+      document.documentElement.style.setProperty("--user-line-height", typo.lineHeight || "1.75");
+      document.documentElement.style.setProperty("--user-text-color", theme.text || "#1a1a1a");
+    }
+
+    function normalizeSections(rawSections) {
+      const sections = safeObject(rawSections, {});
+      return {
+        front: safeArray(sections.front, []),
+        body: safeArray(sections.body, []),
+        back: safeArray(sections.back, [])
       };
-
-      if (data.sections && typeof data.sections === "object") {
-        const sections = safeObject(data.sections, {});
-        normalized.sections.front = safeArray(sections.front, []).map((ch, i) => normalizeChapter(ch, i === 0 ? "Copyright" : "Table of Contents"));
-        normalized.sections.body = safeArray(sections.body, []).map((ch, i) => normalizeChapter(ch, `Chapter ${i + 1}`));
-        normalized.sections.back = safeArray(sections.back, []).map((ch, i) => normalizeChapter(ch, `Back Matter ${i + 1}`));
-        normalized._meta.sourceFormat = "sections";
-      }
-
-      if (!normalized.sections.body.length) {
-        const chaptersObj = safeObject(data.chapters, {});
-        const legacyBody = normalizeLegacyChaptersObject(chaptersObj);
-        if (legacyBody.length) {
-          normalized.sections.body = legacyBody;
-          normalized._meta.sourceFormat = "chapters-object";
-          normalized._meta.needsMigration = true;
-        }
-      }
-
-      if (!normalized.sections.body.length && safeString(data.content)) {
-        normalized.sections.body = [{
-          id: "ch_0",
-          title: safeString(data.title, "Chapter 1"),
-          content: wrapPlainTextAsHtml(safeString(data.content, ""))
-        }];
-        normalized._meta.sourceFormat = "flat-content";
-        normalized._meta.needsMigration = true;
-      }
-
-      if (!normalized.sections.front.length) {
-        normalized.sections.front = [
-          { id: "front_copyright", title: "Copyright", content: "" },
-          { id: "front_toc", title: "Table of Contents", content: "" }
-        ];
-        normalized._meta.needsMigration = true;
-      }
-
-      return normalized;
     }
 
-    async function migrateBookIfNeeded(bookId, normalizedBook) {
-      if (!normalizedBook?._meta?.needsMigration) return false;
-      if (!currentUser) return false;
-      if (!normalizedBook.ownerUid || normalizedBook.ownerUid !== currentUser.uid) return false;
+    function extractBlocks(html = "") {
+      const container = document.createElement("div");
+      container.innerHTML = safeString(html);
 
-      const payload = {
-        title: normalizedBook.title,
-        author: normalizedBook.author,
-        bookId: normalizedBook.bookId,
-        ownerUid: normalizedBook.ownerUid,
-        updated: Date.now(),
-        chapterCount: normalizedBook.sections.body.length,
-        sections: {
-          front: normalizedBook.sections.front,
-          body: normalizedBook.sections.body,
-          back: normalizedBook.sections.back
-        }
-      };
-
-      try {
-        await updateDoc(doc(db, "library", bookId), payload);
-        normalizedBook.updated = payload.updated;
-        normalizedBook._meta.needsMigration = false;
-        return true;
-      } catch (err) {
-        console.warn("Migration write skipped or failed:", err);
-        return false;
-      }
-    }
-
-    function normalizeEditorHTML(html) {
-      return safeString(html, "").replace(/&nbsp;/g, " ").trim();
-    }
-
-    function htmlToBlocks(html) {
-      const normalized = normalizeEditorHTML(html);
-      const wrap = document.createElement("div");
-      wrap.innerHTML = normalized || "<div></div>";
       const blocks = [];
+      const nodes = [...container.childNodes];
+      let paragraphIndex = 0;
 
-      function pushParagraph(innerHTML) {
-        const text = readPlainTextFromHTML(innerHTML);
-        if (!text) return;
-        if (text === "***" || text === "* * *" || text === "• • •") {
-          blocks.push({ type: "scene_break" });
+      function pushParagraph(htmlContent, plainText) {
+        const plain = safeString(plainText).replace(/\u00a0/g, " ").trim();
+        if (!plain) return;
+
+        if (
+          plain === "***" ||
+          plain === "§" ||
+          plain === "# # #" ||
+          plain === "• • •" ||
+          plain === "* * *"
+        ) {
+          blocks.push({ type: "scene-break", text: "§" });
           return;
         }
-        blocks.push({ type: "paragraph", html: innerHTML });
+
+        blocks.push({
+          type: "paragraph",
+          html: safeString(htmlContent),
+          text: plain,
+          noIndent: paragraphIndex === 0,
+          dropCap: false
+        });
+        paragraphIndex++;
       }
 
-      for (const node of [...wrap.childNodes]) {
+      if (!nodes.length) {
+        const plain = (container.textContent || "").trim();
+        if (plain) pushParagraph(escapeHtml(plain), plain);
+        return blocks;
+      }
+
+      nodes.forEach(node => {
         if (node.nodeType === Node.TEXT_NODE) {
-          const text = (node.textContent || "").trim();
-          if (text) blocks.push({ type: "paragraph", html: escapeHTML(text) });
-          continue;
+          const plain = (node.textContent || "").trim();
+          if (plain) pushParagraph(escapeHtml(plain), plain);
+          return;
         }
 
-        if (node.nodeType !== Node.ELEMENT_NODE) continue;
+        if (node.nodeType !== Node.ELEMENT_NODE) return;
+
         const tag = node.tagName.toLowerCase();
+        if (tag === "br") return;
 
-        if (tag === "div" || tag === "p") {
-          const inner = node.innerHTML.trim();
-          const text = (node.textContent || "").replace(/\s+/g, " ").trim();
-          if (!text && !inner) {
-            blocks.push({ type: "spacer" });
-          } else {
-            pushParagraph(inner || escapeHTML(text));
-          }
-          continue;
+        if (["div", "p", "blockquote", "li", "h1", "h2", "h3", "h4"].includes(tag)) {
+          const plain = (node.textContent || "").trim();
+          if (plain) pushParagraph(node.innerHTML || escapeHtml(plain), plain);
+          return;
         }
 
-        if (tag === "h2" || tag === "h3") {
-          blocks.push({ type: "heading", html: node.innerHTML.trim() || escapeHTML(node.textContent.trim()) });
-          continue;
-        }
+        const plain = (node.textContent || "").trim();
+        if (plain) pushParagraph(node.outerHTML || escapeHtml(plain), plain);
+      });
 
-        if (tag === "blockquote") {
-          blocks.push({ type: "blockquote", html: node.innerHTML.trim() });
-          continue;
-        }
-
-        if (tag === "ul" || tag === "ol") {
-          blocks.push({ type: "list", ordered: tag === "ol", html: node.outerHTML });
-          continue;
-        }
-
-        if (tag === "hr") {
-          blocks.push({ type: "scene_break" });
-          continue;
-        }
-
-        if (tag === "br") {
-          blocks.push({ type: "spacer" });
-          continue;
-        }
-
-        blocks.push({ type: "paragraph", html: node.outerHTML });
-      }
-
-      return collapseBlocks(blocks);
+      return blocks;
     }
 
-    function collapseBlocks(blocks) {
-      const out = [];
-      for (const block of blocks) {
-        if (!block) continue;
-        if (block.type === "spacer") {
-          if (!out.length) continue;
-          const prev = out[out.length - 1];
-          if (prev.type === "spacer") continue;
-        }
-        out.push(block);
-      }
-      while (out.length && out[out.length - 1].type === "spacer") out.pop();
-      return out;
+    function normalizeBook(rawData) {
+      const data = safeObject(rawData, {});
+      const sections = normalizeSections(data.sections);
+
+      const rawBody = safeArray(sections.body, []).length
+        ? safeArray(sections.body, [])
+        : safeArray(data.chapters, []);
+
+      const bodyChapters = rawBody.map((chapter, index) => {
+        const item = safeObject(chapter, {});
+        const title = safeString(item.title, `Chapter ${index + 1}`);
+        const html = safeString(item.content || item.html || item.text, "");
+        const plain = stripHtml(html);
+        const blocks = extractBlocks(html || plain.replace(/\n\n/g, "</p><p>"));
+
+        return {
+          id: safeString(item.id, `chapter-${index + 1}`),
+          title,
+          html,
+          plain,
+          blocks,
+          words: wordCountFromText(plain)
+        };
+      });
+
+      return {
+        title: safeString(data.title, "Untitled Book"),
+        author: safeString(data.author, "Unknown Author"),
+        summary: safeString(data.summary, ""),
+        words: safeNumber(
+          data.words,
+          bodyChapters.reduce((sum, ch) => sum + ch.words, 0)
+        ),
+        sections,
+        chapters: bodyChapters
+      };
     }
 
-    function makeElementFromBlock(block, context = {}) {
-      let el;
-
-      if (block.type === "chapter_open") {
-        el = document.createElement("div");
-        el.className = "chapter-opener";
-
-        if (block.numberLabel) {
-          const num = document.createElement("div");
-          num.className = "chapter-number";
-          num.textContent = block.numberLabel;
-          el.appendChild(num);
-        }
-
-        const title = document.createElement("div");
-        title.className = "chapter-title";
-        title.textContent = block.title || "Untitled";
-        el.appendChild(title);
-        return el;
+    function applyPreset() {
+      if (enableMirrorMargins.checked) {
+        document.documentElement.style.setProperty("--screen-inner-margin", "92px");
+        document.documentElement.style.setProperty("--screen-outer-margin", "72px");
+        document.documentElement.style.setProperty("--print-inner-margin", "0.75in");
+        document.documentElement.style.setProperty("--print-outer-margin", "0.55in");
+      } else {
+        document.documentElement.style.setProperty("--screen-inner-margin", "82px");
+        document.documentElement.style.setProperty("--screen-outer-margin", "82px");
+        document.documentElement.style.setProperty("--print-inner-margin", "0.65in");
+        document.documentElement.style.setProperty("--print-outer-margin", "0.65in");
       }
-
-      if (block.type === "front_title_page") {
-        el = document.createElement("div");
-
-        const title = document.createElement("div");
-        title.className = "front-title";
-        title.textContent = block.title || currentBook.title || "Untitled Book";
-
-        const subtitle = document.createElement("div");
-        subtitle.className = "front-subtitle";
-        subtitle.textContent = "Alysum Writing";
-
-        el.appendChild(title);
-        el.appendChild(subtitle);
-
-        if (block.author) {
-          const author = document.createElement("div");
-          author.className = "front-author";
-          author.textContent = block.author;
-          el.appendChild(author);
-        }
-
-        return el;
-      }
-
-      if (block.type === "toc_title") {
-        el = document.createElement("div");
-        el.className = "toc-title";
-        el.textContent = block.title || "Contents";
-        return el;
-      }
-
-      if (block.type === "toc_entry") {
-        el = document.createElement("div");
-        el.className = "toc-entry";
-
-        const left = document.createElement("span");
-        left.textContent = block.label || "";
-
-        const dots = document.createElement("span");
-        dots.className = "toc-dots";
-
-        const right = document.createElement("span");
-        right.textContent = block.pageLabel || "";
-
-        el.appendChild(left);
-        el.appendChild(dots);
-        el.appendChild(right);
-        return el;
-      }
-
-      if (block.type === "copyright") {
-        el = document.createElement("div");
-        el.className = "copyright-block";
-        appendHTML(el, block.html || "");
-        return el;
-      }
-
-      if (block.type === "heading") {
-        el = document.createElement("div");
-        el.className = "section-heading";
-        appendHTML(el, block.html || "");
-        return el;
-      }
-
-      if (block.type === "blockquote") {
-        el = document.createElement("blockquote");
-        appendHTML(el, block.html || "");
-        return el;
-      }
-
-      if (block.type === "list") {
-        const temp = document.createElement("div");
-        temp.innerHTML = block.html || (block.ordered ? "<ol></ol>" : "<ul></ul>");
-        return temp.firstElementChild || document.createElement(block.ordered ? "ol" : "ul");
-      }
-
-      if (block.type === "scene_break") {
-        el = document.createElement("div");
-        el.className = "scene-break";
-        el.textContent = "• • •";
-        return el;
-      }
-
-      if (block.type === "spacer") {
-        el = document.createElement("div");
-        el.className = "spacer";
-        return el;
-      }
-
-      el = document.createElement("p");
-      if (context.firstParagraph) el.classList.add("first-para");
-      if (block.noIndent) el.classList.add("no-indent");
-      appendHTML(el, block.html || "");
-      return el;
     }
 
-    function measureFits(elements) {
-      measureRoot.innerHTML = "";
-      for (const el of elements) measureRoot.appendChild(el.cloneNode(true));
-      const host = measureRoot.parentElement;
-      return measureRoot.scrollHeight <= host.clientHeight;
+    function applyBookDefaults() {
+      if (!currentBook) return;
+
+      topBookLabel.textContent = currentBook.title || "Untitled Book";
+
+      if (!titleOverride.value.trim()) titleOverride.value = currentBook.title || "";
+      if (!authorOverride.value.trim()) authorOverride.value = currentBook.author || "";
+
+      if (!copyrightText.value.trim()) {
+        const year = new Date().getFullYear();
+        copyrightText.value =
+`Copyright © ${year} ${currentBook.author || "Author"}
+All rights reserved.
+
+No part of this book may be reproduced or transmitted in any form or by any means without written permission from the publisher, except for brief quotations in reviews or articles.`;
+      }
     }
 
-    function splitParagraphBlock(block, context = {}) {
-      const text = readPlainTextFromHTML(block.html);
-      if (!text) return null;
+    function buildBaseFrontMatter() {
+      const pages = [];
+      if (includeTitlePage.checked) pages.push({ type: "front-title", pageNumber: null });
+      if (includeCopyrightPage.checked) pages.push({ type: "front-copyright", pageNumber: null });
+      if (includeDedicationPage.checked && dedicationText.value.trim()) pages.push({ type: "front-dedication", pageNumber: null });
+      return pages;
+    }
 
-      const words = text.split(/\s+/).filter(Boolean);
-      if (words.length < 8) return null;
+    function createScreenPageShell(parity, frontMatter = false) {
+      const page = document.createElement("div");
+      page.className = `screen-page ${parity}${frontMatter ? " front-matter" : ""}`;
+      const inner = document.createElement("div");
+      inner.className = "page-inner";
+      const content = document.createElement("div");
+      content.className = "page-content";
+      inner.appendChild(content);
+      page.appendChild(inner);
+      return { page, inner, content };
+    }
 
-      let low = 1;
-      let high = words.length - 1;
+    function createMeasurePageShell(parity, frontMatter = false) {
+      const page = document.createElement("div");
+      page.className = `measure-page ${parity}${frontMatter ? " front-matter" : ""}`;
+      const inner = document.createElement("div");
+      inner.className = "page-inner";
+      const content = document.createElement("div");
+      content.className = "measure-content";
+      inner.appendChild(content);
+      page.appendChild(inner);
+      measureStage.appendChild(page);
+      return { page, inner, content };
+    }
+
+    function createPrintPageShell(parity, frontMatter = false) {
+      const page = document.createElement("div");
+      page.className = `print-page ${parity}${frontMatter ? " front-matter" : ""}`;
+      const inner = document.createElement("div");
+      inner.className = "page-inner";
+      const content = document.createElement("div");
+      content.className = "page-content";
+      inner.appendChild(content);
+      page.appendChild(inner);
+      return { page, inner, content };
+    }
+
+    function normalizeBlockClasses(block) {
+      const classes = [];
+      classes.push(block.noIndent ? "no-indent" : "indent");
+      if (block.dropCap) classes.push("dropcap");
+      return classes.join(" ");
+    }
+
+    function blockToHtml(block) {
+      if (block.type === "scene-break") return `<div class="scene-break">§</div>`;
+      return `<p class="${normalizeBlockClasses(block)}">${block.html}</p>`;
+    }
+
+    function makeMeasureNode(block) {
+      if (block.type === "scene-break") {
+        const node = document.createElement("div");
+        node.className = "scene-break";
+        node.textContent = "§";
+        return node;
+      }
+
+      const node = document.createElement("p");
+      node.className = normalizeBlockClasses(block);
+      node.innerHTML = block.html;
+      return node;
+    }
+
+    function splitParagraphSmart(block, contentEl, innerEl) {
+      const fullText = safeString(block.text).trim();
+      if (!fullText) return { fit: null, rest: null };
+
+      const words = fullText.split(/\s+/).filter(Boolean);
+      if (words.length < 12) return { fit: null, rest: block };
+
+      let low = 5;
+      let high = words.length - 5;
       let best = 0;
 
       while (low <= high) {
         const mid = Math.floor((low + high) / 2);
-        const headText = words.slice(0, mid).join(" ");
-        const el = makeElementFromBlock({ type: "paragraph", html: escapeHTML(headText) }, context);
+        const candidateText = words.slice(0, mid).join(" ");
+        const p = document.createElement("p");
+        p.className = normalizeBlockClasses(block);
+        p.textContent = candidateText;
+        contentEl.appendChild(p);
+        const fits = contentEl.scrollHeight <= innerEl.clientHeight;
+        contentEl.removeChild(p);
 
-        if (measureFits([el])) {
+        if (fits) {
           best = mid;
           low = mid + 1;
         } else {
@@ -1229,601 +1324,532 @@
         }
       }
 
-      if (best < 3 || best >= words.length - 2) return null;
+      if (best < 6 || words.length - best < 6) return { fit: null, rest: block };
 
       return {
-        head: { ...block, html: escapeHTML(words.slice(0, best).join(" ")) },
-        tail: { ...block, html: escapeHTML(words.slice(best).join(" ")) }
+        fit: {
+          type: "paragraph",
+          html: escapeHtml(words.slice(0, best).join(" ")),
+          text: words.slice(0, best).join(" "),
+          noIndent: block.noIndent,
+          dropCap: block.dropCap
+        },
+        rest: {
+          type: "paragraph",
+          html: escapeHtml(words.slice(best).join(" ")),
+          text: words.slice(best).join(" "),
+          noIndent: false,
+          dropCap: false
+        }
       };
     }
 
-    function pageSide(pageNumber) {
-      return pageNumber % 2 === 0 ? "left" : "right";
+    function normalizeChapterBlocksForPagination(chapter, chapterIndex) {
+      const blocks = chapter.blocks.map((block, i) => ({
+        ...block,
+        noIndent: block.type === "paragraph" ? i === 0 : false,
+        dropCap: block.type === "paragraph" ? (i === 0 && enableDropCaps.checked) : false
+      }));
+
+      return { ...chapter, chapterIndex, blocks };
     }
 
-    function createPageShell(pageNumber, meta, blank = false) {
-      const page = document.createElement("div");
-      page.className = `page ${pageSide(pageNumber)}${blank ? " blank" : ""}`;
+    function paginateChapter(chapter, startingPageNumber) {
+      const pages = [];
+      let remaining = chapter.blocks.map(b => ({ ...b }));
+      let pageNumber = startingPageNumber;
+      let firstPage = true;
 
-      const header = document.createElement("div");
-      header.className = "page-header";
-      header.textContent = blank ? "" : makeHeaderLabel(meta, pageNumber);
+      while (remaining.length) {
+        const parity = pageNumber % 2 === 0 ? "even" : "odd";
+        const { page, inner, content } = createMeasurePageShell(parity, false);
 
-      const content = document.createElement("div");
-      content.className = "page-content render-root";
+        if (firstPage) {
+          const openerSpace = document.createElement("div");
+          openerSpace.style.height = "190px";
+          content.appendChild(openerSpace);
+        }
 
-      const footer = document.createElement("div");
-      footer.className = "page-footer";
-      footer.textContent = blank ? "" : makePageNumberLabel(meta);
+        const used = [];
+        let carry = null;
 
-      page.appendChild(header);
-      page.appendChild(content);
-      page.appendChild(footer);
+        for (let i = 0; i < remaining.length; i++) {
+          const block = remaining[i];
 
-      return { page, content, header, footer };
+          if (block.type === "scene-break") {
+            const sceneNode = makeMeasureNode(block);
+            content.appendChild(sceneNode);
+            const nextBlock = remaining[i + 1];
+            const roomAfterScene = inner.clientHeight - content.scrollHeight;
+
+            if (
+              content.scrollHeight > inner.clientHeight ||
+              (nextBlock && nextBlock.type === "paragraph" && roomAfterScene < 80)
+            ) {
+              content.removeChild(sceneNode);
+              carry = block;
+              break;
+            }
+
+            used.push(block);
+            continue;
+          }
+
+          const node = makeMeasureNode(block);
+          content.appendChild(node);
+
+          if (content.scrollHeight > inner.clientHeight) {
+            content.removeChild(node);
+            const split = splitParagraphSmart(block, content, inner);
+
+            if (split.fit) {
+              used.push(split.fit);
+              if (split.rest) carry = split.rest;
+            } else {
+              carry = block;
+            }
+            break;
+          }
+
+          used.push(block);
+        }
+
+        if (used.length && remaining.length > used.length) {
+          const last = used[used.length - 1];
+          if (last && last.type === "paragraph" && wordCountFromText(last.text) < 6 && !firstPage) {
+            used.pop();
+            carry = last;
+          }
+        }
+
+        remaining = remaining.slice(used.length);
+        if (carry) remaining.unshift(carry);
+
+        if (used.length) {
+          pages.push({
+            type: "chapter-page",
+            chapterTitle: chapter.title,
+            chapterIndex: chapter.chapterIndex,
+            pageNumber,
+            parity,
+            firstPage,
+            blocks: used
+          });
+          pageNumber++;
+          firstPage = false;
+        }
+
+        measureStage.removeChild(page);
+      }
+
+      if (!pages.length) {
+        pages.push({
+          type: "chapter-page",
+          chapterTitle: chapter.title,
+          chapterIndex: chapter.chapterIndex,
+          pageNumber: startingPageNumber,
+          parity: startingPageNumber % 2 === 0 ? "even" : "odd",
+          firstPage: true,
+          blocks: [{ type: "paragraph", html: "No content available.", text: "No content available.", noIndent: true, dropCap: enableDropCaps.checked }]
+        });
+      }
+
+      return pages;
     }
 
-    function makeHeaderLabel(meta, pageNumber) {
-      if (!settings.showHeaders) return "";
-      if (meta.kind === "front") return "";
-      return pageSide(pageNumber) === "left" ? currentBook.title : meta.title;
-    }
-
-    function makePageNumberLabel(meta) {
-      if (!settings.showPageNumbers) return "";
-      if (meta.kind === "front" && settings.romanFrontMatter) return toRoman(meta.frontDisplayIndex || 1);
-      return String(meta.bodyDisplayIndex || "");
-    }
-
-    function buildDocumentPlan(book, selectedIds) {
+    function buildChapterBodyPlan(chapters) {
       const plan = [];
-      const body = safeArray(book.sections.body, []);
-      const selectedBody = selectedIds.length ? body.filter(ch => selectedIds.includes(ch.id)) : body;
+      let bodyPageNumber = 1;
+      const chapterStarts = [];
 
-      let frontCounter = 0;
-      let bodyCounter = 0;
+      chapters.forEach((rawChapter, chapterIdx) => {
+        const chapter = normalizeChapterBlocksForPagination(rawChapter, chapterIdx + 1);
 
-      if (settings.includeFrontMatter) {
-        frontCounter += 1;
-        plan.push({
-          kind: "front",
-          title: "Title Page",
-          rectoStart: true,
-          blocks: [{ type: "front_title_page", title: book.title, author: book.author }],
-          frontDisplayIndex: frontCounter,
-          bodyDisplayIndex: 0,
-          isTOC: false
-        });
-
-        const front = safeArray(book.sections.front, []);
-        for (const ch of front) {
-          const lower = (ch.title || "").toLowerCase();
-
-          if (lower.includes("table of contents")) {
-            frontCounter += 1;
-            plan.push({
-              kind: "front",
-              title: ch.title,
-              rectoStart: true,
-              blocks: [{ type: "toc_title", title: "Contents" }],
-              frontDisplayIndex: frontCounter,
-              bodyDisplayIndex: 0,
-              isTOC: true
-            });
-            continue;
-          }
-
-          if (lower.includes("copyright")) {
-            frontCounter += 1;
-            plan.push({
-              kind: "front",
-              title: ch.title,
-              rectoStart: true,
-              blocks: [{
-                type: "copyright",
-                html: ch.content || `Copyright © ${new Date().getFullYear()} ${book.author || book.title}`
-              }],
-              frontDisplayIndex: frontCounter,
-              bodyDisplayIndex: 0,
-              isTOC: false
-            });
-            continue;
-          }
-
-          frontCounter += 1;
-          plan.push({
-            kind: "front",
-            title: ch.title,
-            rectoStart: true,
-            blocks: [
-              { type: "chapter_open", numberLabel: "", title: ch.title },
-              ...htmlToBlocks(ch.content)
-            ],
-            frontDisplayIndex: frontCounter,
-            bodyDisplayIndex: 0,
-            isTOC: false
-          });
+        if (chapterIdx > 0) {
+          plan.push({ type: "blank-chapter-start", pageNumber: bodyPageNumber, parity: bodyPageNumber % 2 === 0 ? "even" : "odd" });
+          bodyPageNumber++;
         }
-      }
 
-      selectedBody.forEach((ch, index) => {
-        bodyCounter += 1;
-        const blocks = htmlToBlocks(ch.content);
-        const chapterTitle = ch.title || `Chapter ${index + 1}`;
+        if (rectoStarts.checked && bodyPageNumber % 2 === 0) {
+          plan.push({ type: "blank-recto-pad", pageNumber: bodyPageNumber, parity: "even" });
+          bodyPageNumber++;
+        }
 
-        plan.push({
-          kind: "body",
-          title: chapterTitle,
-          rectoStart: settings.forceRecto,
-          blocks: [
-            { type: "chapter_open", numberLabel: `Chapter ${index + 1}`, title: chapterTitle },
-            ...(blocks.length ? blocks : [{ type: "paragraph", html: " " }])
-          ],
-          frontDisplayIndex: 0,
-          bodyDisplayIndex: bodyCounter,
-          isTOC: false
-        });
+        chapterStarts.push({ title: chapter.title, chapterIndex: chapter.chapterIndex, pageNumber: bodyPageNumber });
+
+        const chapterPages = paginateChapter(chapter, bodyPageNumber);
+        chapterPages.forEach(page => plan.push(page));
+        bodyPageNumber += chapterPages.length;
       });
 
-      if (settings.includeBackMatter) {
-        const back = safeArray(book.sections.back, []);
-        for (const ch of back) {
-          bodyCounter += 1;
-          plan.push({
-            kind: "back",
-            title: ch.title,
-            rectoStart: true,
-            blocks: [
-              { type: "chapter_open", numberLabel: "", title: ch.title },
-              ...htmlToBlocks(ch.content)
-            ],
-            frontDisplayIndex: 0,
-            bodyDisplayIndex: bodyCounter,
-            isTOC: false
-          });
-        }
+      return { bodyPlan: plan, chapterStarts };
+    }
+
+    function paginateTocEntries(entries) {
+      const pages = [];
+      if (!entries.length) return pages;
+
+      const perPage = 22;
+      for (let i = 0; i < entries.length; i += perPage) {
+        pages.push({ type: "front-toc", pageNumber: null, tocEntries: entries.slice(i, i + perPage) });
       }
-
-      return plan;
+      return pages;
     }
 
-    function shouldKeepWithNext(block) {
-      if (!settings.keepHeadingsWithNext) return false;
-      return block.type === "heading";
+    function buildRenderPlan() {
+      if (!currentBook) return [];
+      const frontBase = buildBaseFrontMatter();
+      const { bodyPlan, chapterStarts } = buildChapterBodyPlan(currentBook.chapters);
+      const tocPages = includeToc.checked ? paginateTocEntries(chapterStarts) : [];
+
+      const front = [...frontBase, ...tocPages].map((page, index) => ({
+        ...page,
+        parity: index % 2 === 0 ? "odd" : "even"
+      }));
+
+      return [...front, ...bodyPlan];
     }
 
-    function makeElementsForBlocks(blocks, firstParagraphPending) {
-      const els = [];
-      let first = firstParagraphPending;
-      for (const block of blocks) {
-        const isParagraph = block.type === "paragraph";
-        els.push(makeElementFromBlock(block, { firstParagraph: isParagraph && first }));
-        if (isParagraph) first = false;
-      }
-      return els;
+    function renderTocHtml(entries) {
+      return `
+        <div class="toc-wrap">
+          <h1 class="toc-title">Contents</h1>
+          ${entries.map(entry => `
+            <div class="toc-entry">
+              <div class="toc-entry-title">
+                <div class="toc-entry-title-text">${escapeHtml(entry.title)}</div>
+                <div class="toc-entry-dots"></div>
+              </div>
+              <div class="toc-entry-page">${entry.pageNumber}</div>
+            </div>
+          `).join("")}
+        </div>
+      `;
     }
 
-    function protectWidowOrphan(pageBlocks, overflowBlocks) {
-      if (!settings.basicWidowControl) return { pageBlocks, overflowBlocks };
-      if (!pageBlocks.length || !overflowBlocks.length) return { pageBlocks, overflowBlocks };
+    function applyRunningHead(el, page) {
+      if (!includeRunningHeads.checked) return;
+      if (page.type !== "chapter-page") return;
+      if (page.firstPage) return;
 
-      const last = pageBlocks[pageBlocks.length - 1];
-      const firstOverflow = overflowBlocks[0];
-
-      if (last.type === "paragraph") {
-        const count = readPlainTextFromHTML(last.html).split(/\s+/).filter(Boolean).length;
-        if (count < 4 && pageBlocks.length > 1) overflowBlocks.unshift(pageBlocks.pop());
-      }
-
-      if (firstOverflow.type === "paragraph") {
-        const count = readPlainTextFromHTML(firstOverflow.html).split(/\s+/).filter(Boolean).length;
-        if (count < 4 && pageBlocks.length > 1) overflowBlocks.unshift(pageBlocks.pop());
-      }
-
-      return { pageBlocks, overflowBlocks };
+      const head = document.createElement("div");
+      head.className = "page-running-head";
+      head.innerHTML = `
+        <div>${escapeHtml(getEffectiveAuthor())}</div>
+        <div>${escapeHtml(page.chapterTitle)}</div>
+      `;
+      el.appendChild(head);
     }
 
-    function paginateSection(section, tocEntries, counters) {
-      const output = [];
-      let blocks = [...section.blocks];
-      let firstParagraphPending = true;
-      let started = false;
-      let firstRealPageNumber = null;
+    function applyFolio(el, page) {
+      if (!includePageNumbers.checked) return;
+      if (page.pageNumber === null || page.pageNumber === undefined) return;
 
-      while (blocks.length) {
-        if (!started && section.rectoStart && settings.forceRecto && pageSide(counters.physical + 1) !== "right") {
-          counters.physical += 1;
-          const blank = createPageShell(counters.physical, section, true);
-          output.push({
-            physicalPage: counters.physical,
-            node: blank.page,
-            kind: "blank",
-            title: section.title
-          });
-          continue;
-        }
-
-        counters.physical += 1;
-        started = true;
-        if (firstRealPageNumber === null) firstRealPageNumber = counters.physical;
-
-        const shell = createPageShell(counters.physical, section, false);
-        const pageBlocks = [];
-        let blockIndex = 0;
-
-        while (blockIndex < blocks.length) {
-          const block = blocks[blockIndex];
-
-          if (shouldKeepWithNext(block) && blocks[blockIndex + 1]) {
-            const pairBlocks = [block, blocks[blockIndex + 1]];
-            const pairEls = makeElementsForBlocks(pairBlocks, firstParagraphPending);
-            const currentEls = makeElementsForBlocks(pageBlocks, firstParagraphPending);
-
-            if (measureFits(currentEls.concat(pairEls))) {
-              pageBlocks.push(block, blocks[blockIndex + 1]);
-              if (blocks[blockIndex].type === "paragraph") firstParagraphPending = false;
-              if (blocks[blockIndex + 1].type === "paragraph") firstParagraphPending = false;
-              blockIndex += 2;
-              continue;
-            }
-
-            if (pageBlocks.length) break;
-          }
-
-          const testEls = makeElementsForBlocks(pageBlocks.concat(block), firstParagraphPending);
-          if (measureFits(testEls)) {
-            pageBlocks.push(block);
-            if (block.type === "paragraph") firstParagraphPending = false;
-            blockIndex += 1;
-            continue;
-          }
-
-          if (!pageBlocks.length && block.type === "paragraph") {
-            const split = splitParagraphBlock(block, { firstParagraph: firstParagraphPending });
-            if (split) {
-              pageBlocks.push(split.head);
-              blocks.splice(blockIndex, 1, split.tail);
-              firstParagraphPending = false;
-            } else {
-              pageBlocks.push(block);
-              blockIndex += 1;
-            }
-          }
-
-          break;
-        }
-
-        let overflow = blocks.slice(blockIndex);
-        const adjusted = protectWidowOrphan(pageBlocks, overflow);
-        const finalPageBlocks = adjusted.pageBlocks;
-        overflow = adjusted.overflowBlocks;
-
-        for (const el of makeElementsForBlocks(finalPageBlocks, false)) {
-          shell.content.appendChild(el);
-        }
-
-        output.push({
-          physicalPage: counters.physical,
-          node: shell.page,
-          kind: section.kind,
-          title: section.title,
-          isTOC: section.isTOC
-        });
-
-        blocks = overflow;
-      }
-
-      if (section.kind === "body") {
-        tocEntries.push({
-          title: section.title,
-          pageLabel: firstRealPageNumber != null ? String(firstRealPageNumber - counters.frontPhysicalCount) : ""
-        });
-      }
-
-      return output;
+      const folio = document.createElement("div");
+      folio.className = "page-folio";
+      folio.textContent = page.pageNumber;
+      el.appendChild(folio);
     }
 
-    function buildTOCBlocks(entries) {
-      return [
-        { type: "toc_title", title: "Contents" },
-        ...entries.map(entry => ({
-          type: "toc_entry",
-          label: entry.title,
-          pageLabel: entry.pageLabel
-        }))
-      ];
-    }
-
-    function repaginateWithTOC(plan) {
-      let counters = { physical: 0, frontPhysicalCount: 0 };
-      const tocEntries = [];
-      let pages = [];
-      let tocIndexes = [];
-
-      for (const section of plan) {
-        const sectionPages = paginateSection({ ...section, blocks: [...section.blocks] }, tocEntries, counters);
-
-        if (section.kind === "front") {
-          counters.frontPhysicalCount += sectionPages.filter(p => p.kind !== "blank").length;
-        }
-
-        if (section.isTOC) {
-          const start = pages.length;
-          pages.push(...sectionPages);
-          tocIndexes = sectionPages.map((_, i) => start + i);
-        } else {
-          pages.push(...sectionPages);
-        }
-      }
-
-      if (!tocIndexes.length) return pages;
-
-      const before = pages.slice(0, tocIndexes[0]);
-      const after = pages.slice(tocIndexes[tocIndexes.length - 1] + 1);
-
-      const tocSection = {
-        kind: "front",
-        title: "Contents",
-        rectoStart: false,
-        blocks: buildTOCBlocks(tocEntries),
-        frontDisplayIndex: 1,
-        bodyDisplayIndex: 0,
-        isTOC: true
-      };
-
-      const rebuildCounters = {
-        physical: before.length ? before[before.length - 1].physicalPage : 0,
-        frontPhysicalCount: before.filter(p => p.kind === "front" && p.kind !== "blank").length
-      };
-
-      const tocPages = paginateSection(tocSection, [], rebuildCounters);
-      const rebuilt = [...before, ...tocPages];
-      let physical = rebuilt.length ? rebuilt[rebuilt.length - 1].physicalPage : 0;
-
-      for (const oldPage of after) {
-        physical += 1;
-        const node = oldPage.node.cloneNode(true);
-        node.classList.remove("left", "right");
-        node.classList.add(pageSide(physical));
-
-        const header = node.querySelector(".page-header");
-        const footer = node.querySelector(".page-footer");
-
-        if (!node.classList.contains("blank")) {
-          if (header) {
-            header.textContent = settings.showHeaders
-              ? (pageSide(physical) === "left" ? currentBook.title : oldPage.title)
-              : "";
-          }
-
-          if (footer) {
-            if (!settings.showPageNumbers) {
-              footer.textContent = "";
-            } else {
-              const frontCount = rebuilt.filter(p => p.kind === "front" && p.kind !== "blank").length;
-              if (oldPage.kind === "front" && settings.romanFrontMatter) {
-                footer.textContent = toRoman(frontCount + 1);
-              } else {
-                footer.textContent = String(physical - frontCount);
-              }
-            }
-          }
-        }
-
-        rebuilt.push({ ...oldPage, physicalPage: physical, node });
-      }
-
-      return rebuilt;
-    }
-
-    function renderPages(pages) {
-      pageStack.innerHTML = "";
-      for (const page of pages) pageStack.appendChild(page.node);
-      setStatus(`${pages.length} pages formatted`);
-    }
-
-    function buildAndRender() {
-      if (!currentBook) return;
-      syncSettingsFromUI();
-      applyLayoutVariables();
-      const plan = buildDocumentPlan(currentBook, selectedChapterIds);
-      const pages = repaginateWithTOC(plan);
-      renderPages(pages);
-
-      const bodyCount = currentBook.sections.body.length;
-      const frontCount = currentBook.sections.front.length;
-      const backCount = currentBook.sections.back.length;
-      const migrationState = currentBook._meta?.needsMigration ? "migration pending" : "schema ok";
-      setSidebarInfo(`${bodyCount} body chapters • ${frontCount} front sections • ${backCount} back sections • ${migrationState} • library/${currentBookId}`);
-    }
-
-    function updateUrlWithBook(id) {
-      const url = new URL(window.location.href);
-      url.searchParams.set("book", id);
-      window.history.replaceState({}, "", url);
-      currentBookId = id;
-    }
-
-    function renderBookPickerRows(filterText = "") {
-      const q = filterText.trim().toLowerCase();
-      bookList.innerHTML = "";
-
-      const filtered = pickerDocs.filter(item => {
-        const hay = `${item.title} ${item.author} ${item.id}`.toLowerCase();
-        return hay.includes(q);
-      });
-
-      if (!filtered.length) {
-        bookList.innerHTML = `<div class="status-line">No matching books.</div>`;
-        return;
-      }
-
-      for (const item of filtered) {
-        const row = document.createElement("div");
-        row.className = "picker-row";
-        row.innerHTML = `
-          <div class="picker-book-title">${item.title}</div>
-          <div class="picker-book-meta">${item.author || "Unknown author"} • ${item.chapterCount} chapters • ${item.id}</div>
+    function renderFrontMatterContent(content, page) {
+      if (page.type === "front-title") {
+        const subtitle = getEffectiveSubtitle();
+        content.innerHTML = `
+          <div class="front-title">${escapeHtml(getEffectiveTitle())}</div>
+          ${subtitle ? `<div class="front-subtitle">${escapeHtml(subtitle)}</div>` : ""}
+          <div class="front-author">by ${escapeHtml(getEffectiveAuthor())}</div>
         `;
-        row.addEventListener("click", async () => {
-          bookPicker.classList.remove("open");
-          updateUrlWithBook(item.id);
-          setStatus("Loading manuscript…");
-          await loadBookFromLibrary(item.id);
-        });
-        bookList.appendChild(row);
+      }
+
+      if (page.type === "front-copyright") {
+        content.innerHTML = `<div class="copyright-text">${escapeHtml(copyrightText.value.trim())}</div>`;
+      }
+
+      if (page.type === "front-dedication") {
+        content.innerHTML = `<div class="dedication-text">${escapeHtml(dedicationText.value.trim())}</div>`;
+      }
+
+      if (page.type === "front-toc") {
+        content.innerHTML = renderTocHtml(page.tocEntries || []);
       }
     }
 
-    async function openBookPicker() {
-      bookPicker.classList.add("open");
-      bookList.innerHTML = `<div class="status-line">Loading books…</div>`;
-      pickerSearch.value = "";
+    function renderChapterContent(content, page) {
+      const chapterLabel = formatChapterLabel(page.chapterIndex);
+      const opener = page.firstPage
+        ? `
+          <div class="chapter-opener">
+            ${chapterLabel ? `<div class="chapter-number">${escapeHtml(chapterLabel)}</div>` : ""}
+            <h1 class="chapter-title">${escapeHtml(page.chapterTitle)}</h1>
+          </div>
+        `
+        : "";
 
-      const q = query(collection(db, "library"), orderBy("updated", "desc"));
-      const snap = await getDocs(q);
+      content.innerHTML = `${opener}${page.blocks.map(blockToHtml).join("")}`;
+    }
 
-      if (snap.empty) {
-        bookList.innerHTML = `<div class="status-line">No books found in library.</div>`;
-        pickerDocs = [];
+    function createScreenPage(page) {
+      if (["front-title", "front-copyright", "front-dedication", "front-toc"].includes(page.type)) {
+        const { page: el, content } = createScreenPageShell(page.parity, true);
+        renderFrontMatterContent(content, page);
+        return el;
+      }
+
+      if (page.type === "chapter-page") {
+        const { page: el, content } = createScreenPageShell(page.parity, false);
+        applyRunningHead(el, page);
+        applyFolio(el, page);
+        renderChapterContent(content, page);
+        return el;
+      }
+
+      if (page.type === "blank-recto-pad" || page.type === "blank-chapter-start") {
+        const { page: el } = createScreenPageShell(page.parity, false);
+        applyFolio(el, page);
+        return el;
+      }
+
+      return null;
+    }
+
+    function createPrintPage(page) {
+      if (["front-title", "front-copyright", "front-dedication", "front-toc"].includes(page.type)) {
+        const { page: el, content } = createPrintPageShell(page.parity, true);
+        renderFrontMatterContent(content, page);
+        return el;
+      }
+
+      if (page.type === "chapter-page") {
+        const { page: el, content } = createPrintPageShell(page.parity, false);
+        applyRunningHead(el, page);
+        applyFolio(el, page);
+        renderChapterContent(content, page);
+        return el;
+      }
+
+      if (page.type === "blank-recto-pad" || page.type === "blank-chapter-start") {
+        const { page: el } = createPrintPageShell(page.parity, false);
+        applyFolio(el, page);
+        return el;
+      }
+
+      return null;
+    }
+
+    function renderPreview(plan) {
+      previewScroll.innerHTML = "";
+      printRoot.innerHTML = "";
+
+      plan.forEach(page => {
+        const screenEl = createScreenPage(page);
+        const printEl = createPrintPage(page);
+        if (screenEl) previewScroll.appendChild(screenEl);
+        if (printEl) printRoot.appendChild(printEl);
+      });
+    }
+
+    function estimateInteriorPages(wordCount) {
+      return Math.max(1, Math.ceil(wordCount / 275));
+    }
+
+    function buildStats() {
+      if (!currentBook) {
+        statsBox.textContent = "No book loaded.";
         return;
       }
 
-      pickerDocs = snap.docs.map(docSnap => {
-        const data = safeObject(docSnap.data(), {});
-        const chapterCount = typeof data.chapterCount === "number"
-          ? data.chapterCount
-          : (data.sections?.body?.length || Object.keys(safeObject(data.chapters, {})).length || 0);
+      const estimated = estimateInteriorPages(currentBook.words);
+      const actualBodyPages = lastRender.filter(page => page.pageNumber !== null).length;
+      const chapterPageCount = lastRender.filter(page => page.type === "chapter-page").length;
+      const tocPageCount = lastRender.filter(page => page.type === "front-toc").length;
 
-        return {
-          id: docSnap.id,
-          title: safeString(data.title, "Untitled"),
-          author: safeString(data.author, ""),
-          chapterCount
-        };
-      });
-
-      renderBookPickerRows("");
+      statsBox.innerHTML = `
+        <div><strong>Title:</strong> ${escapeHtml(getEffectiveTitle())}</div>
+        <div><strong>Author:</strong> ${escapeHtml(getEffectiveAuthor())}</div>
+        <div><strong>Chapters:</strong> ${currentBook.chapters.length}</div>
+        <div><strong>Words:</strong> ${currentBook.words.toLocaleString()}</div>
+        <div><strong>Estimated pages:</strong> ${estimated}</div>
+        <div><strong>Rendered chapter pages:</strong> ${chapterPageCount}</div>
+        <div><strong>Rendered TOC pages:</strong> ${tocPageCount}</div>
+        <div><strong>Total numbered body pages:</strong> ${actualBodyPages}</div>
+      `;
     }
 
-    async function loadLatestBookIfAny() {
-      const q = query(collection(db, "library"), orderBy("updated", "desc"), limit(1));
-      const snap = await getDocs(q);
-      if (snap.empty) return null;
-      return snap.docs[0].id;
+    function buildPreflight() {
+      if (!currentBook) {
+        preflightBox.textContent = "No book loaded.";
+        return;
+      }
+
+      const warnings = [];
+
+      if (!getEffectiveTitle().trim()) warnings.push("Missing book title.");
+      if (!getEffectiveAuthor().trim()) warnings.push("Missing author name.");
+      if (!currentBook.chapters.length) warnings.push("No body chapters were found.");
+      if (currentBook.chapters.some(ch => !ch.blocks.length)) warnings.push("One or more chapters are empty.");
+      if (includeDedicationPage.checked && !dedicationText.value.trim()) warnings.push("Dedication page is enabled but dedication text is blank.");
+      if (includeToc.checked && currentBook.chapters.length < 2) warnings.push("Table of contents is enabled for a very short book.");
+
+      if (!warnings.length) {
+        preflightBox.innerHTML = "No major issues detected.";
+        return;
+      }
+
+      preflightBox.innerHTML = warnings.map(item => `• ${escapeHtml(item)}`).join("<br>");
     }
 
-    async function loadBookFromLibrary(explicitId = "") {
-      let id = explicitId || currentBookId || "";
+    function rebuild() {
+      if (!currentBook) return;
 
-      if (!id) {
-        const latestId = await loadLatestBookIfAny();
-        if (!latestId) {
-          setStatus("No books found");
-          bookTitleEl.textContent = "No books found";
-          setSidebarInfo("Library is empty");
-          await openBookPicker();
+      setStatus("Formatting pages…");
+      readUserTypographyAndTheme();
+      applyPreset();
+
+      const plan = buildRenderPlan();
+      lastRender = plan;
+
+      renderPreview(plan);
+      buildStats();
+      buildPreflight();
+
+      const numberedPages = plan.filter(page => page.pageNumber !== null).length;
+      previewMeta.textContent = `${plan.length} total preview pages • ${numberedPages} numbered body pages`;
+      setStatus("Preview ready.");
+    }
+
+    async function exportPdf() {
+      setStatus("Preparing PDF…");
+      rebuild();
+
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+      if (!printRoot.children.length) {
+        setStatus("Export failed: no pages rendered.");
+        return;
+      }
+
+      const staging = document.createElement("div");
+      staging.className = "export-staging";
+      staging.appendChild(printRoot.cloneNode(true));
+      document.body.appendChild(staging);
+
+      try {
+        const filename = (getEffectiveTitle().trim() || "book")
+          .replace(/[\\/:*?"<>|]+/g, "_")
+          .replace(/\s+/g, "_") + ".pdf";
+
+        await html2pdf()
+          .set({
+            margin: 0,
+            filename,
+            image: { type: "jpeg", quality: 1 },
+            html2canvas: {
+              scale: 2,
+              useCORS: true,
+              backgroundColor: "#ffffff",
+              logging: false
+            },
+            jsPDF: {
+              unit: "in",
+              format: [5, 8],
+              orientation: "portrait"
+            },
+            pagebreak: { mode: ["css", "legacy"] }
+          })
+          .from(staging)
+          .save();
+
+        setStatus("PDF exported.");
+      } catch (err) {
+        console.error("PDF EXPORT ERROR:", err);
+        setStatus("PDF export failed.");
+      } finally {
+        staging.remove();
+      }
+    }
+
+    async function loadBook(uid) {
+      if (!bookId) {
+        setStatus("Missing book ID in URL.");
+        topBookLabel.textContent = "Missing book";
+        return;
+      }
+
+      try {
+        setStatus("Loading book…");
+
+        let snap = await getDoc(doc(db, "users", uid, "books", bookId));
+        if (!snap.exists()) {
+          snap = await getDoc(doc(db, "books", bookId));
+        }
+
+        if (!snap.exists()) {
+          setStatus("Book not found.");
+          topBookLabel.textContent = "Book not found";
           return;
         }
-        id = latestId;
-        updateUrlWithBook(id);
+
+        currentBook = normalizeBook(snap.data());
+        applyBookDefaults();
+        rebuild();
+      } catch (err) {
+        console.error("FORMAT LOAD ERROR:", err);
+        setStatus("Load failed.");
+        topBookLabel.textContent = "Load failed";
       }
-
-      const snap = await getDoc(doc(db, "library", id));
-
-      if (!snap.exists()) {
-        setStatus("Book not found");
-        bookTitleEl.textContent = "Book not found";
-        setSidebarInfo(`Missing library/${id}`);
-        await openBookPicker();
-        return;
-      }
-
-      currentBook = normalizeBookData(snap.data(), snap.id);
-      currentBookId = snap.id;
-
-      const migrated = await migrateBookIfNeeded(currentBookId, currentBook);
-      if (migrated) currentBook._meta.needsMigration = false;
-
-      bookTitleEl.textContent = currentBook.title;
-      document.title = `${currentBook.title} — Alysum Formatter`;
-      buildAndRender();
     }
 
     function attachEvents() {
-      themeToggleBtn.addEventListener("click", () => {
-        applyTheme(document.body.classList.contains("light") ? "dark" : "light");
+      backBtn.addEventListener("click", () => {
+        if (bookId) {
+          window.location.href = `/editor.html?book=${encodeURIComponent(bookId)}`;
+        } else {
+          window.location.href = "/editor.html";
+        }
       });
 
-      [openPickerBtn, topChooseBtn].forEach(btn => {
-        btn.addEventListener("click", openBookPicker);
+      reloadBtn.addEventListener("click", () => {
+        if (!currentUser) return;
+        loadBook(currentUser.uid);
       });
 
-      bookPicker.addEventListener("click", (e) => {
-        if (e.target === bookPicker) bookPicker.classList.remove("open");
-      });
-
-      pickerSearch.addEventListener("input", () => {
-        renderBookPickerRows(pickerSearch.value);
-      });
+      previewBtn.addEventListener("click", rebuild);
+      exportBtn.addEventListener("click", exportPdf);
 
       [
-        trimSelect,
-        fontSizeInput,
-        lineHeightInput,
-        indentInput,
-        spacingInput,
-        includeFrontMatterInput,
-        includeBackMatterInput,
-        forceRectoInput,
-        showHeadersInput,
-        showPageNumbersInput,
-        romanFrontMatterInput,
-        keepHeadingsInput,
-        widowControlInput
+        presetSelect,
+        paperSelect,
+        titleOverride,
+        subtitleOverride,
+        authorOverride,
+        includeTitlePage,
+        includeCopyrightPage,
+        includeDedicationPage,
+        includeToc,
+        rectoStarts,
+        includeRunningHeads,
+        includePageNumbers,
+        enableDropCaps,
+        enableMirrorMargins,
+        fontPreset,
+        chapterNumberStyle,
+        copyrightText,
+        dedicationText
       ].forEach(el => {
-        el.addEventListener("change", () => {
-          setStatus("Repaginating…");
-          requestAnimationFrame(buildAndRender);
-        });
-      });
-
-      [repaginateBtn, topRepaginateBtn].forEach(btn => {
-        btn.addEventListener("click", () => {
-          setStatus("Repaginating…");
-          requestAnimationFrame(buildAndRender);
-        });
-      });
-
-      [exportBtn, topExportBtn].forEach(btn => {
-        btn.addEventListener("click", () => window.print());
+        el.addEventListener("input", rebuild);
+        el.addEventListener("change", rebuild);
       });
     }
 
-    applyTheme(settings.theme);
-    syncUIFromSettings();
-    applyLayoutVariables();
-    attachEvents();
-
-    onAuthStateChanged(auth, async (user) => {
+    onAuthStateChanged(auth, (user) => {
       if (!user) {
         window.location.href = "/login.html";
         return;
       }
 
       currentUser = user;
-      setStatus("Loading manuscript…");
-      setSidebarInfo(`Firebase ready • library/${currentBookId || "(auto)"}`);
-
-      try {
-        await loadBookFromLibrary();
-      } catch (err) {
-        console.error(err);
-        setStatus("Formatter load failed");
-        bookTitleEl.textContent = "Load failed";
-        setSidebarInfo("Check console for details");
-      }
+      attachEvents();
+      loadBook(user.uid);
     });
-  </script>
-</body>
+  </script></body>
 </html>
