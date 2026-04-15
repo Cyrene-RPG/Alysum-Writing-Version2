@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Alysum Notes</title>
+
   <style>
     * {
       box-sizing: border-box;
@@ -25,9 +26,13 @@
       --accent-2: #6d28d9;
       --accent-soft: rgba(139,92,246,0.18);
       --danger: #ef4444;
+      --success: #22c55e;
       --shadow: 0 20px 50px rgba(0,0,0,0.35);
       --radius: 18px;
       --radius-sm: 12px;
+      --topbar-h: 64px;
+      --sidebar-w: 300px;
+      --rightbar-w: 320px;
     }
 
     html, body {
@@ -49,12 +54,17 @@
 
     button,
     input,
-    textarea {
+    textarea,
+    select {
       font: inherit;
     }
 
+    .hidden {
+      display: none !important;
+    }
+
     .app-topbar {
-      height: 64px;
+      height: var(--topbar-h);
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -64,6 +74,7 @@
       backdrop-filter: blur(14px);
       border-bottom: 1px solid var(--line);
       flex-shrink: 0;
+      z-index: 20;
     }
 
     .topbar-left,
@@ -92,6 +103,7 @@
       font-weight: 900;
       color: white;
       box-shadow: 0 12px 24px rgba(109,40,217,0.35);
+      flex-shrink: 0;
     }
 
     .brand-text {
@@ -126,6 +138,13 @@
       font-weight: 800;
       cursor: pointer;
       box-shadow: var(--shadow);
+      transition: transform 0.14s ease, background 0.14s ease, border-color 0.14s ease;
+    }
+
+    .ghost-btn:hover,
+    .primary-btn:hover,
+    .danger-btn:hover {
+      transform: translateY(-1px);
     }
 
     .ghost-btn.compact {
@@ -153,7 +172,7 @@
       flex: 1;
       min-height: 0;
       display: grid;
-      grid-template-columns: 300px 1fr 300px;
+      grid-template-columns: var(--sidebar-w) minmax(0, 1fr) var(--rightbar-w);
       gap: 14px;
       padding: 14px;
     }
@@ -171,7 +190,10 @@
       flex-direction: column;
     }
 
-    /* LEFT SIDEBAR */
+    .sidebar-pane {
+      position: relative;
+    }
+
     .sidebar-top {
       padding: 14px;
       border-bottom: 1px solid var(--line);
@@ -193,6 +215,10 @@
       color: var(--text);
       padding: 0 12px;
       outline: none;
+    }
+
+    .search-input::placeholder {
+      color: var(--muted-2);
     }
 
     .sidebar-actions {
@@ -276,7 +302,10 @@
       line-height: 1.6;
     }
 
-    /* CENTER EDITOR */
+    .editor-pane {
+      position: relative;
+    }
+
     .editor-top {
       padding: 14px;
       border-bottom: 1px solid var(--line);
@@ -296,6 +325,10 @@
       font-size: 18px;
       font-weight: 800;
       outline: none;
+    }
+
+    .editor-title::placeholder {
+      color: var(--muted-2);
     }
 
     .editor-toolbar {
@@ -365,9 +398,13 @@
       color: var(--muted);
       font-size: 12px;
       font-weight: 700;
+      flex-wrap: wrap;
     }
 
-    /* RIGHT PANEL */
+    .right-pane {
+      position: relative;
+    }
+
     .info-top {
       padding: 14px;
       border-bottom: 1px solid var(--line);
@@ -413,7 +450,8 @@
     }
 
     .backlink-item,
-    .outlink-item {
+    .outlink-item,
+    .tag-item {
       padding: 10px 12px;
       border-radius: 12px;
       border: 1px solid var(--line);
@@ -423,18 +461,21 @@
     }
 
     .backlink-item:hover,
-    .outlink-item:hover {
+    .outlink-item:hover,
+    .tag-item:hover {
       background: rgba(255,255,255,0.05);
     }
 
     .backlink-title,
-    .outlink-title {
+    .outlink-title,
+    .tag-title {
       font-size: 13px;
       font-weight: 800;
     }
 
     .backlink-preview,
-    .outlink-preview {
+    .outlink-preview,
+    .tag-preview {
       margin-top: 4px;
       font-size: 12px;
       color: var(--muted);
@@ -447,13 +488,13 @@
       line-height: 1.6;
     }
 
-    .mobile-toggle {
+    .mobile-overlay {
       display: none;
     }
 
-    @media (max-width: 1100px) {
+    @media (max-width: 1180px) {
       .shell {
-        grid-template-columns: 260px 1fr;
+        grid-template-columns: 280px minmax(0, 1fr);
       }
 
       .right-pane {
@@ -476,11 +517,29 @@
       }
 
       .sidebar-pane {
+        position: fixed;
+        top: calc(var(--topbar-h) + 10px);
+        left: 10px;
+        bottom: 10px;
+        width: min(88vw, 320px);
+        z-index: 40;
         display: none;
       }
 
-      .mobile-toggle {
-        display: inline-flex;
+      .sidebar-pane.open {
+        display: flex;
+      }
+
+      .mobile-overlay {
+        display: none;
+        position: fixed;
+        inset: var(--topbar-h) 0 0 0;
+        background: rgba(0,0,0,0.42);
+        z-index: 30;
+      }
+
+      .mobile-overlay.open {
+        display: block;
       }
 
       .editor-wrap {
@@ -498,9 +557,11 @@
   </style>
 </head>
 <body>
+  <div class="mobile-overlay" id="mobileOverlay"></div>
+
   <div class="app-topbar">
     <div class="topbar-left">
-      <button class="ghost-btn compact mobile-toggle" id="toggleSidebarBtn">☰</button>
+      <button class="ghost-btn compact" id="toggleSidebarBtn">☰</button>
 
       <div class="brand">
         <div class="brand-badge">A</div>
@@ -532,12 +593,18 @@
       </div>
 
       <div class="section-label">Notes</div>
-      <div class="note-list" id="noteList"></div>
+      <div class="note-list" id="noteList">
+        <div class="note-item active">
+          <div class="note-item-title">Welcome</div>
+          <div class="note-item-preview">This is where your note previews will appear once your JS renders them.</div>
+          <div class="note-item-meta">Just now</div>
+        </div>
+      </div>
     </aside>
 
-    <main class="pane">
+    <main class="pane editor-pane">
       <div class="editor-top">
-        <input id="noteTitle" class="editor-title" type="text" placeholder="Untitled note" />
+        <input id="noteTitle" class="editor-title" type="text" placeholder="Untitled note" value="Welcome" />
 
         <div class="editor-toolbar">
           <button class="tool-btn" id="insertWikiBtn">[[Link]]</button>
@@ -550,13 +617,20 @@
 
       <div class="editor-wrap">
         <div class="editor-surface">
-          <div id="editor" class="editor" contenteditable="true" data-placeholder="Write notes, ideas, scene planning, outlines, worldbuilding...
+          <div
+            id="editor"
+            class="editor"
+            contenteditable="true"
+            data-placeholder="Write notes, ideas, scene planning, outlines, worldbuilding...
 
-Try typing [[Chapter 1]], [[Character Arc]], or [[Magic System]]."></div>
+Try typing [[Chapter 1]], [[Character Arc]], or [[Magic System]]."
+          >This is your full Alysum notes workspace.
+
+Start writing here and let your <span class="wiki-link" data-link="Character Arc">[[Character Arc]]</span> and <span class="wiki-link" data-link="Worldbuilding">[[Worldbuilding]]</span> connect everything together.</div>
 
           <div class="editor-footer">
             <div id="saveStatus">Saved</div>
-            <div id="noteMeta">0 words</div>
+            <div id="noteMeta">21 words</div>
           </div>
         </div>
       </div>
@@ -570,467 +644,201 @@ Try typing [[Chapter 1]], [[Character Arc]], or [[Magic System]]."></div>
       <div class="info-body">
         <div class="info-card">
           <div class="info-card-title">Overview</div>
-          <div class="stat" id="overviewStats">Select a note.</div>
+          <div class="stat" id="overviewStats">
+            <div><strong>Title:</strong> Welcome</div>
+            <div><strong>Words:</strong> 21</div>
+            <div><strong>Outgoing:</strong> 2</div>
+            <div><strong>Backlinks:</strong> 0</div>
+          </div>
         </div>
 
         <div class="info-card">
           <div class="info-card-title">Outgoing Links</div>
-          <div id="outlinksBox" class="muted">No links yet.</div>
+          <div id="outlinksBox">
+            <div class="outlink-item">
+              <div class="outlink-title">Character Arc</div>
+              <div class="outlink-preview">Open or create this linked note.</div>
+            </div>
+
+            <div class="outlink-item">
+              <div class="outlink-title">Worldbuilding</div>
+              <div class="outlink-preview">Open or create this linked note.</div>
+            </div>
+          </div>
         </div>
 
         <div class="info-card">
           <div class="info-card-title">Backlinks</div>
           <div id="backlinksBox" class="muted">No backlinks yet.</div>
         </div>
+
+        <div class="info-card">
+          <div class="info-card-title">Tags</div>
+          <div id="tagsBox">
+            <div class="tag-item">
+              <div class="tag-title">#story</div>
+              <div class="tag-preview">Tag results can appear here later.</div>
+            </div>
+          </div>
+        </div>
       </div>
     </aside>
   </div>
+  <script type="module">
+import {
+  createNote,
+  updateNote,
+  deleteNote,
+  subscribeToNotes,
+  renderLinks,
+  extractLinks,
+  findNoteByTitle
+} from "./notes.js";
 
-  <script>
-    const params = new URLSearchParams(window.location.search);
-    const key = params.get("key") || "alysum-notes-global";
+/* =========================
+   ELEMENTS
+========================= */
 
-    const workspaceLabel = document.getElementById("workspaceLabel");
-    const sidebarPane = document.getElementById("sidebarPane");
-    const toggleSidebarBtn = document.getElementById("toggleSidebarBtn");
+const noteList = document.getElementById("noteList");
+const noteTitle = document.getElementById("noteTitle");
+const editor = document.getElementById("editor");
+const saveStatus = document.getElementById("saveStatus");
 
-    const noteList = document.getElementById("noteList");
-    const searchInput = document.getElementById("searchInput");
-    const noteTitle = document.getElementById("noteTitle");
-    const editor = document.getElementById("editor");
-    const saveStatus = document.getElementById("saveStatus");
-    const noteMeta = document.getElementById("noteMeta");
+const newNoteBtn = document.getElementById("newNoteBtn");
+const deleteBtn = document.getElementById("deleteBtn");
 
-    const sortUpdatedBtn = document.getElementById("sortUpdatedBtn");
-    const sortAlphaBtn = document.getElementById("sortAlphaBtn");
+/* =========================
+   STATE
+========================= */
 
-    const newNoteBtn = document.getElementById("newNoteBtn");
-    const deleteBtn = document.getElementById("deleteBtn");
-    const insertWikiBtn = document.getElementById("insertWikiBtn");
-    const linkCurrentBtn = document.getElementById("linkCurrentBtn");
-    const h2Btn = document.getElementById("h2Btn");
-    const quoteBtn = document.getElementById("quoteBtn");
-    const copyNoteBtn = document.getElementById("copyNoteBtn");
-    const copyLinkBtn = document.getElementById("copyLinkBtn");
+let notes = [];
+let activeNoteId = null;
+let saveTimer = null;
 
-    const overviewStats = document.getElementById("overviewStats");
-    const outlinksBox = document.getElementById("outlinksBox");
-    const backlinksBox = document.getElementById("backlinksBox");
+/* =========================
+   RENDER SIDEBAR
+========================= */
 
-    let notesState = loadNotesState();
-    let sortMode = "updated";
-    let renderTimer = null;
+function renderNotes() {
+  noteList.innerHTML = "";
 
-    workspaceLabel.textContent = key;
+  notes.forEach(note => {
+    const item = document.createElement("div");
+    item.className = "note-item" + (note.id === activeNoteId ? " active" : "");
 
-    function loadNotesState() {
-      try {
-        const raw = JSON.parse(localStorage.getItem(key) || "{}");
-        if (!raw.notes || !Array.isArray(raw.notes)) {
-          return seedState();
-        }
+    item.innerHTML = `
+      <div class="note-item-title">${note.title}</div>
+      <div class="note-item-preview">${(note.body || "").slice(0, 80)}</div>
+    `;
 
-        const cleaned = {
-          notes: raw.notes.map(note => ({
-            id: typeof note.id === "string" ? note.id : generateId(),
-            title: typeof note.title === "string" ? note.title : "Untitled",
-            body: typeof note.body === "string" ? note.body : "",
-            updated: typeof note.updated === "number" ? note.updated : Date.now()
-          })),
-          activeId: typeof raw.activeId === "string" ? raw.activeId : null,
-          filter: typeof raw.filter === "string" ? raw.filter : ""
-        };
+    item.onclick = () => openNote(note.id);
 
-        if (!cleaned.notes.length) return seedState();
+    noteList.appendChild(item);
+  });
+}
 
-        if (!cleaned.notes.find(n => n.id === cleaned.activeId)) {
-          cleaned.activeId = cleaned.notes[0].id;
-        }
+/* =========================
+   OPEN NOTE
+========================= */
 
-        return cleaned;
-      } catch {
-        return seedState();
-      }
-    }
+function openNote(id) {
+  const note = notes.find(n => n.id === id);
+  if (!note) return;
 
-    function seedState() {
-      const first = {
-        id: generateId(),
-        title: "Welcome",
-        body: "This is your full Alysum notes space.\n\nTry creating [[Character Notes]] or [[Chapter Ideas]].",
-        updated: Date.now()
-      };
+  activeNoteId = id;
 
-      return {
-        notes: [first],
-        activeId: first.id,
-        filter: ""
-      };
-    }
+  noteTitle.value = note.title;
+  editor.innerHTML = renderLinks(note.body || "");
 
-    function persistState(status = "Saved") {
-      localStorage.setItem(key, JSON.stringify(notesState));
-      setSaveStatus(status);
-    }
+  renderNotes();
+}
 
-    function generateId() {
-      return "note_" + Math.random().toString(36).slice(2) + Date.now().toString(36);
-    }
+/* =========================
+   REALTIME SYNC
+========================= */
 
-    function setSaveStatus(text) {
-      saveStatus.textContent = text;
-      clearTimeout(renderTimer);
-      renderTimer = setTimeout(() => {
-        saveStatus.textContent = "Saved";
-      }, 900);
-    }
+subscribeToNotes((data) => {
+  notes = data;
 
-    function activeNote() {
-      return notesState.notes.find(note => note.id === notesState.activeId) || null;
-    }
+  if (!activeNoteId && notes.length) {
+    openNote(notes[0].id);
+  } else {
+    renderNotes();
+  }
+});
 
-    function escapeHtml(text) {
-      return text
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;");
-    }
+/* =========================
+   AUTOSAVE
+========================= */
 
-    function renderBodyWithLinks(body) {
-      const escaped = escapeHtml(body);
-      const withBreaks = escaped.replace(/\n/g, "<br>");
-      return withBreaks.replace(/\[\[(.*?)\]\]/g, (_, label) => {
-        const clean = label.trim();
-        return `<span class="wiki-link" data-link="${clean}">[[${clean}]]</span>`;
-      });
-    }
+function scheduleSave() {
+  clearTimeout(saveTimer);
 
-    function extractWikiLinks(text) {
-      const links = [];
-      const regex = /\[\[(.*?)\]\]/g;
-      let match;
+  saveStatus.textContent = "Saving...";
 
-      while ((match = regex.exec(text)) !== null) {
-        const clean = match[1].trim();
-        if (clean) links.push(clean);
-      }
+  saveTimer = setTimeout(async () => {
+    if (!activeNoteId) return;
 
-      return [...new Set(links)];
-    }
+    const plainText = editor.innerText;
 
-    function plainPreview(text, length = 90) {
-      const clean = text.replace(/\[\[(.*?)\]\]/g, "$1").replace(/\s+/g, " ").trim();
-      return clean.length > length ? clean.slice(0, length) + "…" : clean || "Empty note";
-    }
-
-    function wordCount(text) {
-      const clean = text.replace(/\[\[(.*?)\]\]/g, "$1").replace(/\s+/g, " ").trim();
-      if (!clean) return 0;
-      return clean.split(" ").length;
-    }
-
-    function filteredNotes() {
-      const filter = notesState.filter.trim().toLowerCase();
-
-      let list = notesState.notes.filter(note => {
-        const hay = `${note.title} ${note.body}`.toLowerCase();
-        return !filter || hay.includes(filter);
-      });
-
-      if (sortMode === "alpha") {
-        list.sort((a, b) => a.title.localeCompare(b.title));
-      } else {
-        list.sort((a, b) => b.updated - a.updated);
-      }
-
-      return list;
-    }
-
-    function renderList() {
-      noteList.innerHTML = "";
-
-      const list = filteredNotes();
-
-      if (!list.length) {
-        noteList.innerHTML = `<div class="empty-state">No notes found. Try a different search or create a new note.</div>`;
-        return;
-      }
-
-      list.forEach(note => {
-        const item = document.createElement("div");
-        item.className = "note-item" + (note.id === notesState.activeId ? " active" : "");
-        item.innerHTML = `
-          <div class="note-item-title">${escapeHtml(note.title || "Untitled")}</div>
-          <div class="note-item-preview">${escapeHtml(plainPreview(note.body))}</div>
-          <div class="note-item-meta">${new Date(note.updated).toLocaleString()}</div>
-        `;
-
-        item.addEventListener("click", () => {
-          notesState.activeId = note.id;
-          persistState();
-          render();
-        });
-
-        noteList.appendChild(item);
-      });
-    }
-
-    function renderDetails() {
-      const note = activeNote();
-
-      if (!note) {
-        overviewStats.textContent = "No active note.";
-        outlinksBox.innerHTML = `<div class="muted">No links yet.</div>`;
-        backlinksBox.innerHTML = `<div class="muted">No backlinks yet.</div>`;
-        noteMeta.textContent = "0 words";
-        return;
-      }
-
-      const links = extractWikiLinks(note.body);
-      const backlinks = notesState.notes.filter(other => {
-        if (other.id === note.id) return false;
-        return extractWikiLinks(other.body).includes(note.title);
-      });
-
-      overviewStats.innerHTML = `
-        <div><strong>Title:</strong> ${escapeHtml(note.title)}</div>
-        <div><strong>Words:</strong> ${wordCount(note.body)}</div>
-        <div><strong>Outgoing:</strong> ${links.length}</div>
-        <div><strong>Backlinks:</strong> ${backlinks.length}</div>
-      `;
-
-      noteMeta.textContent = `${wordCount(note.body)} words`;
-
-      if (!links.length) {
-        outlinksBox.innerHTML = `<div class="muted">No links yet.</div>`;
-      } else {
-        outlinksBox.innerHTML = "";
-        links.forEach(link => {
-          const div = document.createElement("div");
-          div.className = "outlink-item";
-          div.innerHTML = `
-            <div class="outlink-title">${escapeHtml(link)}</div>
-            <div class="outlink-preview">Open or create this linked note.</div>
-          `;
-          div.addEventListener("click", () => openOrCreateNote(link));
-          outlinksBox.appendChild(div);
-        });
-      }
-
-      if (!backlinks.length) {
-        backlinksBox.innerHTML = `<div class="muted">No backlinks yet.</div>`;
-      } else {
-        backlinksBox.innerHTML = "";
-        backlinks.forEach(back => {
-          const div = document.createElement("div");
-          div.className = "backlink-item";
-          div.innerHTML = `
-            <div class="backlink-title">${escapeHtml(back.title)}</div>
-            <div class="backlink-preview">${escapeHtml(plainPreview(back.body, 70))}</div>
-          `;
-          div.addEventListener("click", () => {
-            notesState.activeId = back.id;
-            persistState();
-            render();
-          });
-          backlinksBox.appendChild(div);
-        });
-      }
-    }
-
-    function renderEditor() {
-      const note = activeNote();
-
-      if (!note) {
-        noteTitle.value = "";
-        editor.innerHTML = "";
-        return;
-      }
-
-      noteTitle.value = note.title;
-      editor.innerHTML = renderBodyWithLinks(note.body);
-    }
-
-    function render() {
-      searchInput.value = notesState.filter;
-      renderList();
-      renderEditor();
-      renderDetails();
-    }
-
-    function saveCurrentEditorBody() {
-      const note = activeNote();
-      if (!note) return;
-
-      note.body = editor.innerText;
-      note.updated = Date.now();
-      persistState("Saved");
-      renderList();
-      renderDetails();
-    }
-
-    function openOrCreateNote(title) {
-      let note = notesState.notes.find(n => n.title.trim().toLowerCase() === title.trim().toLowerCase());
-
-      if (!note) {
-        note = {
-          id: generateId(),
-          title: title.trim() || "Untitled",
-          body: "",
-          updated: Date.now()
-        };
-        notesState.notes.push(note);
-      }
-
-      notesState.activeId = note.id;
-      persistState();
-      render();
-      noteTitle.focus();
-    }
-
-    function insertAtCursor(text) {
-      document.execCommand("insertText", false, text);
-      saveCurrentEditorBody();
-    }
-
-    function copyCurrentWikiLink() {
-      const note = activeNote();
-      if (!note) return;
-
-      navigator.clipboard.writeText(`[[${note.title}]]`).then(() => {
-        setSaveStatus("Copied link");
-      }).catch(() => {
-        setSaveStatus("Copy failed");
-      });
-    }
-
-    toggleSidebarBtn.addEventListener("click", () => {
-      sidebarPane.style.display = sidebarPane.style.display === "none" ? "flex" : "none";
+    await updateNote(activeNoteId, {
+      title: noteTitle.value,
+      body: plainText
     });
 
-    searchInput.addEventListener("input", () => {
-      notesState.filter = searchInput.value.toLowerCase();
-      persistState();
-      renderList();
-    });
+    saveStatus.textContent = "Saved";
+  }, 600);
+}
 
-    sortUpdatedBtn.addEventListener("click", () => {
-      sortMode = "updated";
-      renderList();
-    });
+/* =========================
+   INPUT EVENTS
+========================= */
 
-    sortAlphaBtn.addEventListener("click", () => {
-      sortMode = "alpha";
-      renderList();
-    });
+noteTitle.addEventListener("input", scheduleSave);
+editor.addEventListener("input", scheduleSave);
 
-    newNoteBtn.addEventListener("click", () => {
-      const note = {
-        id: generateId(),
-        title: "Untitled",
-        body: "",
-        updated: Date.now()
-      };
+/* =========================
+   CREATE NOTE
+========================= */
 
-      notesState.notes.push(note);
-      notesState.activeId = note.id;
-      persistState();
-      render();
-      noteTitle.focus();
-      noteTitle.select();
-    });
+newNoteBtn.onclick = async () => {
+  const note = await createNote("Untitled");
+  activeNoteId = note.id;
+};
 
-    deleteBtn.addEventListener("click", () => {
-      const note = activeNote();
-      if (!note) return;
+/* =========================
+   DELETE NOTE
+========================= */
 
-      if (!confirm(`Delete "${note.title}"?`)) return;
+deleteBtn.onclick = async () => {
+  if (!activeNoteId) return;
 
-      notesState.notes = notesState.notes.filter(n => n.id !== note.id);
-      notesState.activeId = notesState.notes[0]?.id || null;
+  const ok = confirm("Delete this note?");
+  if (!ok) return;
 
-      if (!notesState.notes.length) {
-        const fallback = {
-          id: generateId(),
-          title: "Untitled",
-          body: "",
-          updated: Date.now()
-        };
-        notesState.notes.push(fallback);
-        notesState.activeId = fallback.id;
-      }
+  await deleteNote(activeNoteId);
+  activeNoteId = null;
+};
 
-      persistState();
-      render();
-    });
+/* =========================
+   WIKI LINKS (OBSIDIAN CORE)
+========================= */
 
-    noteTitle.addEventListener("input", () => {
-      const note = activeNote();
-      if (!note) return;
+editor.addEventListener("click", async (e) => {
+  if (!e.target.classList.contains("wiki-link")) return;
 
-      note.title = noteTitle.value.trim() || "Untitled";
-      note.updated = Date.now();
-      persistState();
-      renderList();
-      renderDetails();
-    });
+  const name = e.target.dataset.link;
 
-    editor.addEventListener("input", saveCurrentEditorBody);
+  let target = findNoteByTitle(notes, name);
 
-    editor.addEventListener("click", (e) => {
-      if (e.target.classList.contains("wiki-link")) {
-        const title = e.target.dataset.link;
-        openOrCreateNote(title);
-      }
-    });
+  if (!target) {
+    target = await createNote(name);
+  }
 
-    insertWikiBtn.addEventListener("click", () => {
-      const target = prompt("Link to which note?");
-      if (!target) return;
-      insertAtCursor(`[[${target.trim()}]]`);
-    });
+  openNote(target.id);
+});
 
-    linkCurrentBtn.addEventListener("click", () => {
-      const note = activeNote();
-      if (!note) return;
-      insertAtCursor(`[[${note.title}]]`);
-    });
+</script>
 
-    h2Btn.addEventListener("click", () => {
-      insertAtCursor("\n## Heading\n");
-    });
-
-    quoteBtn.addEventListener("click", () => {
-      insertAtCursor("\n> Quote\n");
-    });
-
-    copyNoteBtn.addEventListener("click", async () => {
-      const note = activeNote();
-      if (!note) return;
-
-      try {
-        await navigator.clipboard.writeText(`# ${note.title}\n\n${note.body}`);
-        setSaveStatus("Copied note");
-      } catch {
-        setSaveStatus("Copy failed");
-      }
-    });
-
-    copyLinkBtn.addEventListener("click", copyCurrentWikiLink);
-
-    window.addEventListener("storage", (e) => {
-      if (e.key === key) {
-        notesState = loadNotesState();
-        render();
-      }
-    });
-
-    if (!notesState.notes.length) {
-      notesState = seedState();
-      persistState();
-    }
-
-    render();
-  </script>
 </body>
 </html>
