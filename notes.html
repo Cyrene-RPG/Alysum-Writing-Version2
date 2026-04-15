@@ -6,6 +6,7 @@
   <title>Alysum Notes</title>
   <style>
     * { box-sizing: border-box; }
+
     :root {
       --bg: #0a1020;
       --bg-2: #0f172a;
@@ -22,14 +23,12 @@
       --accent-2: #6d28d9;
       --accent-soft: rgba(139,92,246,0.18);
       --danger: #ef4444;
-      --success: #22c55e;
       --warning: #f59e0b;
+      --success: #22c55e;
       --shadow: 0 20px 50px rgba(0,0,0,0.35);
-      --radius: 18px;
-      --radius-sm: 12px;
       --topbar-h: 64px;
-      --sidebar-w: 320px;
-      --rightbar-w: 320px;
+      --sidebar-w: 330px;
+      --rightbar-w: 340px;
     }
 
     html, body {
@@ -44,9 +43,18 @@
       overflow: hidden;
     }
 
-    body { display: flex; flex-direction: column; }
-    button, input, textarea, select { font: inherit; }
-    .hidden { display: none !important; }
+    body {
+      display: flex;
+      flex-direction: column;
+    }
+
+    button, input, textarea {
+      font: inherit;
+    }
+
+    .hidden {
+      display: none !important;
+    }
 
     .app-topbar {
       height: var(--topbar-h);
@@ -92,6 +100,7 @@
     }
 
     .brand-text { min-width: 0; }
+
     .brand-title {
       font-size: 14px;
       font-weight: 900;
@@ -110,8 +119,7 @@
 
     .ghost-btn,
     .primary-btn,
-    .danger-btn,
-    .soft-btn {
+    .danger-btn {
       border: 1px solid var(--line);
       background: var(--panel);
       color: var(--text);
@@ -126,13 +134,11 @@
 
     .ghost-btn:hover,
     .primary-btn:hover,
-    .danger-btn:hover,
-    .soft-btn:hover {
+    .danger-btn:hover {
       transform: translateY(-1px);
     }
 
-    .ghost-btn.compact,
-    .soft-btn.compact {
+    .ghost-btn.compact {
       width: 42px;
       padding: 0;
       display: inline-flex;
@@ -151,10 +157,6 @@
       background: rgba(239,68,68,0.12);
       color: #fecaca;
       border-color: rgba(239,68,68,0.30);
-    }
-
-    .soft-btn {
-      background: rgba(255,255,255,0.04);
     }
 
     .shell {
@@ -187,21 +189,31 @@
       background: rgba(255,255,255,0.02);
     }
 
-    .search-wrap { position: relative; }
-
-    .search-input {
+    .search-input,
+    .editor-title {
       width: 100%;
-      height: 42px;
       border-radius: 12px;
       border: 1px solid var(--line);
       background: var(--panel-2);
       color: var(--text);
-      padding: 0 12px;
       outline: none;
     }
 
+    .search-input {
+      height: 42px;
+      padding: 0 12px;
+    }
+
+    .editor-title {
+      height: 48px;
+      padding: 0 14px;
+      font-size: 18px;
+      font-weight: 800;
+    }
+
     .search-input::placeholder,
-    .editor-title::placeholder {
+    .editor-title::placeholder,
+    .editor-text::placeholder {
       color: var(--muted-2);
     }
 
@@ -370,19 +382,6 @@
       background: rgba(255,255,255,0.02);
     }
 
-    .editor-title {
-      width: 100%;
-      height: 48px;
-      border-radius: 14px;
-      border: 1px solid var(--line);
-      background: var(--panel-2);
-      color: var(--text);
-      padding: 0 14px;
-      font-size: 18px;
-      font-weight: 800;
-      outline: none;
-    }
-
     .editor-toolbar {
       display: flex;
       gap: 8px;
@@ -417,42 +416,53 @@
       border: 1px solid var(--line);
       padding: 24px;
       position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
     }
 
-    .editor {
-      min-height: 60vh;
-      outline: none;
+    .editor-text {
+      width: 100%;
+      min-height: 58vh;
+      resize: vertical;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(0,0,0,0.08);
       color: var(--text);
-      font-size: 16px;
+      padding: 16px;
       line-height: 1.7;
-      white-space: pre-wrap;
-      word-break: break-word;
+      font-size: 15px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      outline: none;
     }
 
-    .editor:empty::before {
-      content: attr(data-placeholder);
-      color: var(--muted-2);
+    .inline-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
     }
 
-    .wiki-link {
-      color: #a78bfa;
-      cursor: pointer;
+    .link-chip,
+    .tag-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.03);
+      color: var(--text);
+      font-size: 12px;
       font-weight: 800;
-      text-decoration: none;
-      border-bottom: 1px dashed rgba(167,139,250,0.4);
+      cursor: pointer;
     }
 
-    .wiki-link:hover {
-      color: #d8b4fe;
-    }
-
-    .tag-highlight {
-      color: #60a5fa;
-      font-weight: 700;
+    .link-chip:hover,
+    .tag-chip:hover {
+      background: rgba(255,255,255,0.06);
     }
 
     .editor-footer {
-      margin-top: 14px;
       display: flex;
       justify-content: space-between;
       gap: 12px;
@@ -463,9 +473,11 @@
     }
 
     .suggestion-pop {
-      position: fixed;
-      width: 280px;
-      max-height: 240px;
+      position: absolute;
+      right: 24px;
+      top: 24px;
+      width: 300px;
+      max-height: 260px;
       overflow: auto;
       background: rgba(17,24,39,0.98);
       border: 1px solid var(--line-2);
@@ -597,7 +609,7 @@
 
     @media (max-width: 1180px) {
       .shell {
-        grid-template-columns: 300px minmax(0, 1fr);
+        grid-template-columns: 320px minmax(0, 1fr);
       }
 
       .right-pane {
@@ -652,12 +664,17 @@
       .brand-sub {
         max-width: 120px;
       }
+
+      .suggestion-pop {
+        left: 16px;
+        right: 16px;
+        width: auto;
+      }
     }
   </style>
 </head>
 <body>
   <div class="mobile-overlay" id="mobileOverlay"></div>
-  <div class="suggestion-pop" id="suggestionPop"></div>
 
   <div class="app-topbar">
     <div class="topbar-left">
@@ -682,10 +699,7 @@
   <div class="shell">
     <aside class="pane sidebar-pane" id="sidebarPane">
       <div class="sidebar-top">
-        <div class="search-wrap">
-          <input id="searchInput" class="search-input" type="text" placeholder="Search notes, folders, tags..." />
-        </div>
-
+        <input id="searchInput" class="search-input" type="text" placeholder="Search notes, folders, tags..." />
         <div class="sidebar-actions">
           <button class="ghost-btn" id="newFolderBtn">New Folder</button>
           <button class="ghost-btn" id="newChildFolderBtn">Child Folder</button>
@@ -695,17 +709,16 @@
       </div>
 
       <div class="section-label">Pinned</div>
-      <div class="tree-scroll" id="treeScroll">
+      <div class="tree-scroll">
         <div id="pinnedList"></div>
         <div class="section-label">Workspace</div>
         <div id="treeRoot"></div>
       </div>
     </aside>
 
-    <main class="pane editor-pane">
+    <main class="pane">
       <div class="editor-top">
         <input id="noteTitle" class="editor-title" type="text" placeholder="Untitled note" />
-
         <div class="editor-toolbar">
           <button class="tool-btn" id="insertWikiBtn">[[Link]]</button>
           <button class="tool-btn" id="linkCurrentBtn">Link current</button>
@@ -720,16 +733,28 @@
 
       <div class="editor-wrap">
         <div class="editor-surface">
-          <div
-            id="editor"
-            class="editor"
-            contenteditable="true"
-            data-placeholder="Write notes, ideas, scene planning, outlines, worldbuilding...
+          <div class="suggestion-pop" id="suggestionPop"></div>
+
+          <textarea
+            id="editorText"
+            class="editor-text"
+            spellcheck="false"
+            placeholder="Write notes, ideas, scene planning, outlines, worldbuilding...
 
 Type [[ to auto-suggest notes
 Type / for slash commands
 Use #tags anywhere in the note."
-          ></div>
+          ></textarea>
+
+          <div>
+            <div class="section-label" style="padding:0;margin:0 0 8px 0;">Inline Links</div>
+            <div class="inline-links" id="inlineLinks"></div>
+          </div>
+
+          <div>
+            <div class="section-label" style="padding:0;margin:0 0 8px 0;">Tags In Note</div>
+            <div class="inline-links" id="inlineTags"></div>
+          </div>
 
           <div class="editor-footer">
             <div id="saveStatus">Ready</div>
@@ -785,15 +810,12 @@ Use #tags anywhere in the note."
       query,
       orderBy
     } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-    import {
-      onAuthStateChanged
-    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
     const workspaceLabel = document.getElementById("workspaceLabel");
     const sidebarPane = document.getElementById("sidebarPane");
     const mobileOverlay = document.getElementById("mobileOverlay");
     const toggleSidebarBtn = document.getElementById("toggleSidebarBtn");
-    const suggestionPop = document.getElementById("suggestionPop");
 
     const searchInput = document.getElementById("searchInput");
     const newFolderBtn = document.getElementById("newFolderBtn");
@@ -804,9 +826,12 @@ Use #tags anywhere in the note."
     const treeRoot = document.getElementById("treeRoot");
 
     const noteTitle = document.getElementById("noteTitle");
-    const editor = document.getElementById("editor");
+    const editorText = document.getElementById("editorText");
+    const inlineLinks = document.getElementById("inlineLinks");
+    const inlineTags = document.getElementById("inlineTags");
     const saveStatus = document.getElementById("saveStatus");
     const noteMeta = document.getElementById("noteMeta");
+    const suggestionPop = document.getElementById("suggestionPop");
 
     const newNoteBtn = document.getElementById("newNoteBtn");
     const deleteBtn = document.getElementById("deleteBtn");
@@ -837,7 +862,6 @@ Use #tags anywhere in the note."
     let saveTimer = null;
     let sortMode = "updated";
     let filterText = "";
-    let isRendering = false;
     let draggedNoteId = null;
     let draggedFolderId = null;
     const folderOpenState = {};
@@ -884,16 +908,6 @@ Use #tags anywhere in the note."
         .replace(/>/g, "&gt;");
     }
 
-    function renderLinks(text = "") {
-      const escaped = escapeHtml(text).replace(/\n/g, "<br>");
-      return escaped
-        .replace(/(^|\s)(#[a-zA-Z0-9_-]+)/g, (m, lead, tag) => `${lead}<span class="tag-highlight">${tag}</span>`)
-        .replace(/\[\[(.*?)\]\]/g, (match, name) => {
-          const clean = name.trim();
-          return `<span class="wiki-link" data-link="${clean}">[[${clean}]]</span>`;
-        });
-    }
-
     function extractLinks(text = "") {
       const matches = text.match(/\[\[(.*?)\]\]/g) || [];
       return [...new Set(matches.map(link => link.replace("[[", "").replace("]]", "").trim()).filter(Boolean))];
@@ -921,10 +935,6 @@ Use #tags anywhere in the note."
 
     function activeNote() {
       return notes.find(n => n.id === activeNoteId) || null;
-    }
-
-    function activeFolder() {
-      return folders.find(f => f.id === activeFolderId) || null;
     }
 
     function findNoteByTitle(title) {
@@ -1021,7 +1031,7 @@ Use #tags anywhere in the note."
 
       item.innerHTML = `
         <div class="note-item-title-row">
-          ${note.pinned ? '<span class="pin-dot">📌</span>' : ''}
+          ${note.pinned ? '<span class="pin-dot">📌</span>' : ""}
           <div class="note-item-title">${escapeHtml(note.title || "Untitled")}</div>
         </div>
         <div class="note-item-preview">${escapeHtml(previewText(note.body || ""))}</div>
@@ -1070,6 +1080,7 @@ Use #tags anywhere in the note."
         <div class="folder-name">Root</div>
         <div class="folder-badge">${notesInFolder(null).length}</div>
       `;
+
       rootHeader.addEventListener("click", () => {
         activeFolderId = null;
         renderFolderTree();
@@ -1089,10 +1100,15 @@ Use #tags anywhere in the note."
         rootHeader.classList.remove("drop-target");
         try {
           if (draggedNoteId) {
-            await updateDoc(noteDocRef(draggedNoteId), { folderId: null, updatedAt: Date.now() });
+            await updateDoc(noteDocRef(draggedNoteId), {
+              folderId: null,
+              updatedAt: Date.now()
+            });
           }
           if (draggedFolderId) {
-            await updateDoc(folderDocRef(draggedFolderId), { parentId: null });
+            await updateDoc(folderDocRef(draggedFolderId), {
+              parentId: null
+            });
           }
         } catch (err) {
           console.error(err);
@@ -1108,11 +1124,11 @@ Use #tags anywhere in the note."
       treeRoot.appendChild(rootWrap);
 
       sortFolders(folderChildren(null)).forEach(folder => {
-        treeRoot.appendChild(buildFolderNode(folder, 0));
+        treeRoot.appendChild(buildFolderNode(folder));
       });
     }
 
-    function buildFolderNode(folder, depth) {
+    function buildFolderNode(folder) {
       const wrap = document.createElement("div");
       wrap.className = "tree-group";
 
@@ -1123,14 +1139,14 @@ Use #tags anywhere in the note."
       const header = document.createElement("div");
       header.className = "tree-folder" + (activeFolderId === folder.id ? " active" : "");
       header.draggable = true;
+
       header.innerHTML = `
         <div class="folder-caret">${open ? "▼" : "▶"}</div>
         <div class="folder-name">📁 ${escapeHtml(folder.name || "Untitled Folder")}</div>
         <div class="folder-badge">${childFolders.length + childNotes.length}</div>
       `;
 
-      header.addEventListener("click", (e) => {
-        if (e.detail === 2) return;
+      header.addEventListener("click", () => {
         activeFolderId = folder.id;
         folderOpenState[folder.id] = !open;
         renderFolderTree();
@@ -1171,7 +1187,10 @@ Use #tags anywhere in the note."
 
         try {
           if (draggedNoteId) {
-            await updateDoc(noteDocRef(draggedNoteId), { folderId: folder.id, updatedAt: Date.now() });
+            await updateDoc(noteDocRef(draggedNoteId), {
+              folderId: folder.id,
+              updatedAt: Date.now()
+            });
           }
 
           if (draggedFolderId && draggedFolderId !== folder.id) {
@@ -1194,7 +1213,7 @@ Use #tags anywhere in the note."
         const body = document.createElement("div");
         body.className = "tree-indent";
         childNotes.forEach(note => body.appendChild(buildNoteItem(note)));
-        childFolders.forEach(child => body.appendChild(buildFolderNode(child, depth + 1)));
+        childFolders.forEach(child => body.appendChild(buildFolderNode(child)));
         wrap.appendChild(body);
       }
 
@@ -1210,6 +1229,55 @@ Use #tags anywhere in the note."
       return false;
     }
 
+    function renderInlineChips() {
+      const note = activeNote();
+
+      inlineLinks.innerHTML = "";
+      inlineTags.innerHTML = "";
+
+      if (!note) {
+        inlineLinks.innerHTML = `<div class="muted">No note selected.</div>`;
+        inlineTags.innerHTML = `<div class="muted">No tags yet.</div>`;
+        return;
+      }
+
+      const links = extractLinks(note.body || "");
+      const tags = extractTags(note.body || "");
+
+      if (!links.length) {
+        inlineLinks.innerHTML = `<div class="muted">No links in this note.</div>`;
+      } else {
+        links.forEach(link => {
+          const chip = document.createElement("button");
+          chip.className = "link-chip";
+          chip.type = "button";
+          chip.textContent = `[[${link}]]`;
+          chip.addEventListener("click", async () => {
+            await openOrCreateNote(link);
+          });
+          inlineLinks.appendChild(chip);
+        });
+      }
+
+      if (!tags.length) {
+        inlineTags.innerHTML = `<div class="muted">No tags yet.</div>`;
+      } else {
+        tags.forEach(tag => {
+          const chip = document.createElement("button");
+          chip.className = "tag-chip";
+          chip.type = "button";
+          chip.textContent = tag;
+          chip.addEventListener("click", () => {
+            searchInput.value = tag;
+            filterText = tag.toLowerCase();
+            renderSidebar();
+            renderSearchResults();
+          });
+          inlineTags.appendChild(chip);
+        });
+      }
+    }
+
     function renderRightPanel() {
       const note = activeNote();
 
@@ -1220,6 +1288,7 @@ Use #tags anywhere in the note."
         tagsBox.innerHTML = `<div class="muted">No tags yet.</div>`;
         noteMeta.textContent = "0 words";
         renderSearchResults();
+        renderInlineChips();
         return;
       }
 
@@ -1231,6 +1300,7 @@ Use #tags anywhere in the note."
       });
 
       const folder = note.folderId ? findFolderById(note.folderId) : null;
+
       overviewStats.innerHTML = `
         <div><strong>Title:</strong> ${escapeHtml(note.title || "Untitled")}</div>
         <div><strong>Words:</strong> ${wordCount(note.body || "")}</div>
@@ -1299,6 +1369,7 @@ Use #tags anywhere in the note."
       }
 
       renderSearchResults();
+      renderInlineChips();
     }
 
     function renderSidebar() {
@@ -1312,19 +1383,18 @@ Use #tags anywhere in the note."
 
       if (!note) {
         noteTitle.value = "";
-        editor.innerHTML = "";
-        renderRightPanel();
+        editorText.value = "";
         renderSidebar();
+        renderRightPanel();
         return;
       }
 
-      isRendering = true;
       noteTitle.value = note.title || "";
-      editor.innerHTML = renderLinks(note.body || "");
-      isRendering = false;
+      editorText.value = note.body || "";
 
       renderSidebar();
       renderRightPanel();
+      closeSuggestion();
     }
 
     function openNote(id) {
@@ -1333,10 +1403,6 @@ Use #tags anywhere in the note."
       activeNoteId = id;
       activeFolderId = note.folderId || null;
       renderEditor();
-    }
-
-    function getEditorPlainText() {
-      return editor.innerText.replace(/\u00A0/g, " ").trimEnd();
     }
 
     async function createNote(title = "Untitled", folderId = null) {
@@ -1403,7 +1469,7 @@ Use #tags anywhere in the note."
     }
 
     function scheduleSave() {
-      if (isRendering || !activeNoteId) return;
+      if (!activeNoteId) return;
 
       clearTimeout(saveTimer);
       setStatus("Saving...");
@@ -1412,7 +1478,7 @@ Use #tags anywhere in the note."
         try {
           await updateActiveNote({
             title: noteTitle.value.trim() || "Untitled",
-            body: getEditorPlainText()
+            body: editorText.value
           });
           setStatus("Saved");
         } catch (err) {
@@ -1422,10 +1488,27 @@ Use #tags anywhere in the note."
       }, 500);
     }
 
-    function insertTextAtCaret(text) {
-      editor.focus();
-      document.execCommand("insertText", false, text);
+    function insertTextAtCursor(text, replace = null) {
+      const start = editorText.selectionStart;
+      const end = editorText.selectionEnd;
+      const value = editorText.value;
+
+      if (replace) {
+        const before = value.slice(0, replace.start);
+        const after = value.slice(replace.end);
+        editorText.value = before + text + after;
+        const pos = before.length + text.length;
+        editorText.setSelectionRange(pos, pos);
+      } else {
+        editorText.value = value.slice(0, start) + text + value.slice(end);
+        const pos = start + text.length;
+        editorText.setSelectionRange(pos, pos);
+      }
+
+      editorText.focus();
       scheduleSave();
+      updateSuggestionState();
+      renderRightPanel();
     }
 
     async function openOrCreateNote(title) {
@@ -1475,35 +1558,6 @@ Use #tags anywhere in the note."
       mobileOverlay.classList.remove("open");
     }
 
-    function getCurrentRange() {
-      const sel = window.getSelection();
-      if (!sel || !sel.rangeCount) return null;
-      return sel.getRangeAt(0);
-    }
-
-    function getTextBeforeCaret() {
-      const range = getCurrentRange();
-      if (!range) return "";
-      const pre = range.cloneRange();
-      pre.selectNodeContents(editor);
-      pre.setEnd(range.endContainer, range.endOffset);
-      return pre.toString();
-    }
-
-    function getCaretRect() {
-      const range = getCurrentRange();
-      if (!range) return null;
-      const rect = range.getBoundingClientRect();
-      if (rect && (rect.top || rect.left || rect.width || rect.height)) return rect;
-
-      const span = document.createElement("span");
-      span.textContent = "\u200b";
-      range.insertNode(span);
-      const nextRect = span.getBoundingClientRect();
-      span.parentNode.removeChild(span);
-      return nextRect;
-    }
-
     function closeSuggestion() {
       suggestionState.open = false;
       suggestionState.mode = null;
@@ -1514,7 +1568,7 @@ Use #tags anywhere in the note."
       suggestionPop.innerHTML = "";
     }
 
-    function openSuggestion(mode, items, queryText) {
+    function openSuggestion(mode, items, queryText, matchRange) {
       if (!items.length) {
         closeSuggestion();
         return;
@@ -1525,6 +1579,7 @@ Use #tags anywhere in the note."
       suggestionState.items = items;
       suggestionState.index = 0;
       suggestionState.query = queryText || "";
+      suggestionState.matchRange = matchRange;
 
       renderSuggestion();
     }
@@ -1534,9 +1589,6 @@ Use #tags anywhere in the note."
         closeSuggestion();
         return;
       }
-
-      const rect = getCaretRect();
-      if (!rect) return;
 
       suggestionPop.innerHTML = "";
       suggestionState.items.forEach((item, index) => {
@@ -1553,8 +1605,6 @@ Use #tags anywhere in the note."
         suggestionPop.appendChild(div);
       });
 
-      suggestionPop.style.left = `${Math.min(window.innerWidth - 300, Math.max(8, rect.left))}px`;
-      suggestionPop.style.top = `${Math.min(window.innerHeight - 260, rect.bottom + 8)}px`;
       suggestionPop.classList.add("open");
     }
 
@@ -1595,43 +1645,8 @@ Use #tags anywhere in the note."
       return commands.filter(c => !q || c.value.includes(q) || c.label.includes(q));
     }
 
-    function replaceTextNearCaret(pattern, replacement) {
-      const range = getCurrentRange();
-      if (!range) return;
-
-      const before = getTextBeforeCaret();
-      const match = before.match(pattern);
-      if (!match) return;
-
-      const charsToRemove = match[0].length;
-
-      const sel = window.getSelection();
-      const workingRange = range.cloneRange();
-
-      for (let i = 0; i < charsToRemove; i++) {
-        workingRange.setStart(workingRange.startContainer, Math.max(0, workingRange.startOffset - 1));
-      }
-
-      workingRange.deleteContents();
-      document.execCommand("insertText", false, replacement);
-    }
-
-    async function applySuggestion(index) {
-      const item = suggestionState.items[index];
-      if (!item) return;
-
-      if (suggestionState.mode === "wiki") {
-        replaceTextNearCaret(/\[\[([^\]]*)$/, `[[${item.value}]]`);
-        closeSuggestion();
-        scheduleSave();
-        return;
-      }
-
-      if (suggestionState.mode === "slash") {
-        replaceTextNearCaret(/\/([a-z]*)$/, item.insert);
-        closeSuggestion();
-        scheduleSave();
-      }
+    function getTextBeforeCaret() {
+      return editorText.value.slice(0, editorText.selectionStart);
     }
 
     function updateSuggestionState() {
@@ -1639,17 +1654,41 @@ Use #tags anywhere in the note."
 
       const wikiMatch = before.match(/\[\[([^\]]*)$/);
       if (wikiMatch) {
-        openSuggestion("wiki", getLinkSuggestionSource(wikiMatch[1]), wikiMatch[1]);
+        const start = editorText.selectionStart - wikiMatch[0].length;
+        openSuggestion("wiki", getLinkSuggestionSource(wikiMatch[1]), wikiMatch[1], {
+          start,
+          end: editorText.selectionStart
+        });
         return;
       }
 
       const slashMatch = before.match(/\/([a-z]*)$/i);
       if (slashMatch) {
-        openSuggestion("slash", getSlashCommands(slashMatch[1]), slashMatch[1]);
+        const start = editorText.selectionStart - slashMatch[0].length;
+        openSuggestion("slash", getSlashCommands(slashMatch[1]), slashMatch[1], {
+          start,
+          end: editorText.selectionStart
+        });
         return;
       }
 
       closeSuggestion();
+    }
+
+    function applySuggestion(index) {
+      const item = suggestionState.items[index];
+      if (!item) return;
+
+      if (suggestionState.mode === "wiki") {
+        insertTextAtCursor(`[[${item.value}]]`, suggestionState.matchRange);
+        closeSuggestion();
+        return;
+      }
+
+      if (suggestionState.mode === "slash") {
+        insertTextAtCursor(item.insert, suggestionState.matchRange);
+        closeSuggestion();
+      }
     }
 
     function attachEvents() {
@@ -1732,23 +1771,16 @@ Use #tags anywhere in the note."
       });
 
       noteTitle.addEventListener("input", scheduleSave);
-      editor.addEventListener("input", () => {
+      editorText.addEventListener("input", () => {
         scheduleSave();
         updateSuggestionState();
+        renderRightPanel();
       });
 
-      editor.addEventListener("keyup", updateSuggestionState);
-      editor.addEventListener("click", async (e) => {
-        const linkEl = e.target.closest(".wiki-link");
-        if (linkEl) {
-          e.preventDefault();
-          await openOrCreateNote(linkEl.dataset.link?.trim() || "");
-          return;
-        }
-        updateSuggestionState();
-      });
+      editorText.addEventListener("click", updateSuggestionState);
+      editorText.addEventListener("keyup", updateSuggestionState);
 
-      editor.addEventListener("keydown", async (e) => {
+      editorText.addEventListener("keydown", async (e) => {
         if (suggestionState.open) {
           if (e.key === "ArrowDown") {
             e.preventDefault();
@@ -1766,7 +1798,7 @@ Use #tags anywhere in the note."
 
           if (e.key === "Enter" || e.key === "Tab") {
             e.preventDefault();
-            await applySuggestion(suggestionState.index);
+            applySuggestion(suggestionState.index);
             return;
           }
 
@@ -1783,7 +1815,7 @@ Use #tags anywhere in the note."
           try {
             await updateActiveNote({
               title: noteTitle.value.trim() || "Untitled",
-              body: getEditorPlainText()
+              body: editorText.value
             });
             setStatusBrief("Saved now");
           } catch (err) {
@@ -1796,13 +1828,13 @@ Use #tags anywhere in the note."
       insertWikiBtn.addEventListener("click", () => {
         const name = prompt("Link to which note?");
         if (!name) return;
-        insertTextAtCaret(`[[${name.trim()}]]`);
+        insertTextAtCursor(`[[${name.trim()}]]`);
       });
 
       linkCurrentBtn.addEventListener("click", () => {
         const note = activeNote();
         if (!note) return;
-        insertTextAtCaret(`[[${note.title || "Untitled"}]]`);
+        insertTextAtCursor(`[[${note.title || "Untitled"}]]`);
       });
 
       pinBtn.addEventListener("click", async () => {
@@ -1830,14 +1862,14 @@ Use #tags anywhere in the note."
         }
       });
 
-      h2Btn.addEventListener("click", () => insertTextAtCaret("## Heading"));
-      todoBtn.addEventListener("click", () => insertTextAtCaret("- [ ] Todo"));
-      quoteBtn.addEventListener("click", () => insertTextAtCaret("> Quote"));
+      h2Btn.addEventListener("click", () => insertTextAtCursor("## Heading"));
+      todoBtn.addEventListener("click", () => insertTextAtCursor("- [ ] Todo"));
+      quoteBtn.addEventListener("click", () => insertTextAtCursor("> Quote"));
       copyNoteBtn.addEventListener("click", copyCurrentNote);
       copyLinkBtn.addEventListener("click", copyCurrentLink);
 
       document.addEventListener("click", (e) => {
-        if (!suggestionPop.contains(e.target) && e.target !== editor) {
+        if (!suggestionPop.contains(e.target) && e.target !== editorText) {
           closeSuggestion();
         }
       });
@@ -1855,7 +1887,7 @@ Use #tags anywhere in the note."
           treeRoot.innerHTML = `<div class="empty-state">No notes yet. Create one to begin.</div>`;
           pinnedList.innerHTML = `<div class="empty-state">No pinned notes yet.</div>`;
           noteTitle.value = "";
-          editor.innerHTML = "";
+          editorText.value = "";
           renderRightPanel();
           return;
         }
@@ -1865,7 +1897,7 @@ Use #tags anywhere in the note."
           activeNoteId = notes[0].id;
         }
 
-        const userIsEditing = document.activeElement === editor || document.activeElement === noteTitle;
+        const userIsEditing = document.activeElement === editorText || document.activeElement === noteTitle;
         if (!userIsEditing) {
           renderEditor();
         } else {
