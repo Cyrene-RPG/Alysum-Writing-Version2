@@ -4,11 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Alysum Notes</title>
-
   <style>
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     :root {
       --bg: #0b1020;
@@ -52,10 +49,7 @@
       flex-direction: column;
     }
 
-    button,
-    input,
-    textarea,
-    select {
+    button, input, textarea, select {
       font: inherit;
     }
 
@@ -190,10 +184,6 @@
       flex-direction: column;
     }
 
-    .sidebar-pane {
-      position: relative;
-    }
-
     .sidebar-top {
       padding: 14px;
       border-bottom: 1px solid var(--line);
@@ -217,7 +207,8 @@
       outline: none;
     }
 
-    .search-input::placeholder {
+    .search-input::placeholder,
+    .editor-title::placeholder {
       color: var(--muted-2);
     }
 
@@ -302,10 +293,6 @@
       line-height: 1.6;
     }
 
-    .editor-pane {
-      position: relative;
-    }
-
     .editor-top {
       padding: 14px;
       border-bottom: 1px solid var(--line);
@@ -325,10 +312,6 @@
       font-size: 18px;
       font-weight: 800;
       outline: none;
-    }
-
-    .editor-title::placeholder {
-      color: var(--muted-2);
     }
 
     .editor-toolbar {
@@ -354,9 +337,7 @@
       min-height: 0;
       padding: 20px;
       overflow: auto;
-      background:
-        linear-gradient(180deg, rgba(255,255,255,0.015), transparent 120px),
-        transparent;
+      background: linear-gradient(180deg, rgba(255,255,255,0.015), transparent 120px), transparent;
     }
 
     .editor-surface {
@@ -399,10 +380,6 @@
       font-size: 12px;
       font-weight: 700;
       flex-wrap: wrap;
-    }
-
-    .right-pane {
-      position: relative;
     }
 
     .info-top {
@@ -503,14 +480,6 @@
     }
 
     @media (max-width: 760px) {
-      .app-topbar {
-        padding: 0 10px;
-      }
-
-      .brand-sub {
-        max-width: 120px;
-      }
-
       .shell {
         grid-template-columns: 1fr;
         padding: 10px;
@@ -567,13 +536,14 @@
         <div class="brand-badge">A</div>
         <div class="brand-text">
           <div class="brand-title">Alysum Notes</div>
-          <div class="brand-sub" id="workspaceLabel">Linked workspace</div>
+          <div class="brand-sub" id="workspaceLabel">Connected to Firebase</div>
         </div>
       </div>
     </div>
 
     <div class="topbar-right">
       <button class="ghost-btn" id="copyLinkBtn">Copy [[link]]</button>
+      <button class="ghost-btn" id="duplicateBtn">Duplicate</button>
       <button class="primary-btn" id="newNoteBtn">New Note</button>
       <button class="danger-btn" id="deleteBtn">Delete</button>
     </div>
@@ -593,18 +563,12 @@
       </div>
 
       <div class="section-label">Notes</div>
-      <div class="note-list" id="noteList">
-        <div class="note-item active">
-          <div class="note-item-title">Welcome</div>
-          <div class="note-item-preview">This is where your note previews will appear once your JS renders them.</div>
-          <div class="note-item-meta">Just now</div>
-        </div>
-      </div>
+      <div class="note-list" id="noteList"></div>
     </aside>
 
     <main class="pane editor-pane">
       <div class="editor-top">
-        <input id="noteTitle" class="editor-title" type="text" placeholder="Untitled note" value="Welcome" />
+        <input id="noteTitle" class="editor-title" type="text" placeholder="Untitled note" />
 
         <div class="editor-toolbar">
           <button class="tool-btn" id="insertWikiBtn">[[Link]]</button>
@@ -624,13 +588,11 @@
             data-placeholder="Write notes, ideas, scene planning, outlines, worldbuilding...
 
 Try typing [[Chapter 1]], [[Character Arc]], or [[Magic System]]."
-          >This is your full Alysum notes workspace.
-
-Start writing here and let your <span class="wiki-link" data-link="Character Arc">[[Character Arc]]</span> and <span class="wiki-link" data-link="Worldbuilding">[[Worldbuilding]]</span> connect everything together.</div>
+          ></div>
 
           <div class="editor-footer">
-            <div id="saveStatus">Saved</div>
-            <div id="noteMeta">21 words</div>
+            <div id="saveStatus">Ready</div>
+            <div id="noteMeta">0 words</div>
           </div>
         </div>
       </div>
@@ -644,27 +606,12 @@ Start writing here and let your <span class="wiki-link" data-link="Character Arc
       <div class="info-body">
         <div class="info-card">
           <div class="info-card-title">Overview</div>
-          <div class="stat" id="overviewStats">
-            <div><strong>Title:</strong> Welcome</div>
-            <div><strong>Words:</strong> 21</div>
-            <div><strong>Outgoing:</strong> 2</div>
-            <div><strong>Backlinks:</strong> 0</div>
-          </div>
+          <div class="stat" id="overviewStats">Select a note.</div>
         </div>
 
         <div class="info-card">
           <div class="info-card-title">Outgoing Links</div>
-          <div id="outlinksBox">
-            <div class="outlink-item">
-              <div class="outlink-title">Character Arc</div>
-              <div class="outlink-preview">Open or create this linked note.</div>
-            </div>
-
-            <div class="outlink-item">
-              <div class="outlink-title">Worldbuilding</div>
-              <div class="outlink-preview">Open or create this linked note.</div>
-            </div>
-          </div>
+          <div id="outlinksBox" class="muted">No links yet.</div>
         </div>
 
         <div class="info-card">
@@ -674,253 +621,570 @@ Start writing here and let your <span class="wiki-link" data-link="Character Arc
 
         <div class="info-card">
           <div class="info-card-title">Tags</div>
-          <div id="tagsBox">
-            <div class="tag-item">
-              <div class="tag-title">#story</div>
-              <div class="tag-preview">Tag results can appear here later.</div>
-            </div>
-          </div>
+          <div id="tagsBox" class="muted">No tags yet.</div>
         </div>
       </div>
     </aside>
   </div>
+
   <script type="module">
-import { db, auth } from "./firebase.js";
+    import { db, auth } from "./firebase.js";
+    import {
+      collection,
+      doc,
+      addDoc,
+      updateDoc,
+      deleteDoc,
+      onSnapshot,
+      query,
+      orderBy
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import {
+      onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
-import {
-  collection,
-  doc,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  onSnapshot,
-  query,
-  orderBy
-} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    const workspaceLabel = document.getElementById("workspaceLabel");
+    const sidebarPane = document.getElementById("sidebarPane");
+    const mobileOverlay = document.getElementById("mobileOverlay");
+    const toggleSidebarBtn = document.getElementById("toggleSidebarBtn");
 
-import {
-  onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    const noteList = document.getElementById("noteList");
+    const searchInput = document.getElementById("searchInput");
+    const noteTitle = document.getElementById("noteTitle");
+    const editor = document.getElementById("editor");
+    const saveStatus = document.getElementById("saveStatus");
+    const noteMeta = document.getElementById("noteMeta");
 
-/* =========================
-   ELEMENTS
-========================= */
+    const sortUpdatedBtn = document.getElementById("sortUpdatedBtn");
+    const sortAlphaBtn = document.getElementById("sortAlphaBtn");
 
-const noteList = document.getElementById("noteList");
-const noteTitle = document.getElementById("noteTitle");
-const editor = document.getElementById("editor");
-const saveStatus = document.getElementById("saveStatus");
+    const newNoteBtn = document.getElementById("newNoteBtn");
+    const deleteBtn = document.getElementById("deleteBtn");
+    const duplicateBtn = document.getElementById("duplicateBtn");
+    const insertWikiBtn = document.getElementById("insertWikiBtn");
+    const linkCurrentBtn = document.getElementById("linkCurrentBtn");
+    const h2Btn = document.getElementById("h2Btn");
+    const quoteBtn = document.getElementById("quoteBtn");
+    const copyNoteBtn = document.getElementById("copyNoteBtn");
+    const copyLinkBtn = document.getElementById("copyLinkBtn");
 
-/* =========================
-   STATE
-========================= */
+    const overviewStats = document.getElementById("overviewStats");
+    const outlinksBox = document.getElementById("outlinksBox");
+    const backlinksBox = document.getElementById("backlinksBox");
+    const tagsBox = document.getElementById("tagsBox");
 
-let currentUser = null;
-let notes = [];
-let activeNoteId = null;
-let unsubscribe = null;
-let saveTimer = null;
-let isRendering = false;
+    let currentUser = null;
+    let unsubscribeNotes = null;
+    let notes = [];
+    let activeNoteId = null;
+    let saveTimer = null;
+    let isRendering = false;
+    let sortMode = "updated";
+    let filterText = "";
 
-/* =========================
-   AUTH
-========================= */
-
-function waitForAuth() {
-  return new Promise((resolve) => {
-    onAuthStateChanged(auth, (user) => {
-      currentUser = user;
-      resolve(user);
-    });
-  });
-}
-
-/* =========================
-   FIRESTORE
-========================= */
-
-function notesRef() {
-  return collection(db, "users", currentUser.uid, "notes");
-}
-
-async function createNote(title = "Untitled") {
-  const docRef = await addDoc(notesRef(), {
-    title,
-    body: "",
-    createdAt: Date.now(),
-    updatedAt: Date.now()
-  });
-
-  return { id: docRef.id, title, body: "" };
-}
-
-async function updateNote(id, data) {
-  await updateDoc(doc(db, "users", currentUser.uid, "notes", id), {
-    ...data,
-    updatedAt: Date.now()
-  });
-}
-
-async function deleteNote(id) {
-  await deleteDoc(doc(db, "users", currentUser.uid, "notes", id));
-}
-
-function subscribeNotes() {
-  if (unsubscribe) unsubscribe();
-
-  const q = query(notesRef(), orderBy("updatedAt", "desc"));
-
-  unsubscribe = onSnapshot(q, (snap) => {
-    notes = [];
-
-    snap.forEach((d) => {
-      notes.push({ id: d.id, ...d.data() });
-    });
-
-    renderNotes();
-
-    if (!activeNoteId && notes.length) {
-      openNote(notes[0].id);
+    function setStatus(text) {
+      saveStatus.textContent = text;
     }
-  });
-}
 
-/* =========================
-   RENDER
-========================= */
+    function setStatusBrief(text, reset = "Saved") {
+      saveStatus.textContent = text;
+      clearTimeout(window.__statusTimer);
+      window.__statusTimer = setTimeout(() => {
+        saveStatus.textContent = reset;
+      }, 900);
+    }
 
-function renderNotes() {
-  noteList.innerHTML = "";
+    function notesRef() {
+      return collection(db, "users", currentUser.uid, "notes");
+    }
 
-  notes.forEach((n) => {
-    const div = document.createElement("div");
-    div.className = "note-item" + (n.id === activeNoteId ? " active" : "");
+    function noteDocRef(noteId) {
+      return doc(db, "users", currentUser.uid, "notes", noteId);
+    }
 
-    div.innerHTML = `
-      <div class="note-item-title">${n.title || "Untitled"}</div>
-      <div class="note-item-preview">${(n.body || "").slice(0, 80)}</div>
-    `;
+    function escapeHtml(text = "") {
+      return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+    }
 
-    div.onclick = () => openNote(n.id);
+    function renderLinks(text = "") {
+      const escaped = escapeHtml(text).replace(/\n/g, "<br>");
+      return escaped.replace(/\[\[(.*?)\]\]/g, (match, name) => {
+        const clean = name.trim();
+        return `<span class="wiki-link" data-link="${clean}">[[${clean}]]</span>`;
+      });
+    }
 
-    noteList.appendChild(div);
-  });
-}
+    function extractLinks(text = "") {
+      const matches = text.match(/\[\[(.*?)\]\]/g) || [];
+      return [...new Set(matches.map(link => link.replace("[[", "").replace("]]", "").trim()).filter(Boolean))];
+    }
 
-function openNote(id) {
-  const note = notes.find(n => n.id === id);
-  if (!note) return;
+    function extractTags(text = "") {
+      const matches = text.match(/(^|\s)#([a-zA-Z0-9_-]+)/g) || [];
+      return [...new Set(matches.map(tag => tag.trim().replace(/^.*#/, "#")))];
+    }
 
-  activeNoteId = id;
+    function stripWiki(text = "") {
+      return text.replace(/\[\[(.*?)\]\]/g, "$1");
+    }
 
-  isRendering = true;
-  noteTitle.value = note.title || "";
-  editor.innerHTML = renderLinks(note.body || "");
-  isRendering = false;
+    function previewText(text = "", length = 90) {
+      const clean = stripWiki(text).replace(/\s+/g, " ").trim();
+      return clean.length > length ? clean.slice(0, length) + "…" : clean || "Empty note";
+    }
 
-  renderNotes();
-}
+    function wordCount(text = "") {
+      const clean = stripWiki(text).replace(/\s+/g, " ").trim();
+      if (!clean) return 0;
+      return clean.split(" ").length;
+    }
 
-/* =========================
-   SAVE
-========================= */
+    function activeNote() {
+      return notes.find(n => n.id === activeNoteId) || null;
+    }
 
-function getText() {
-  return editor.innerText.replace(/\u00A0/g, " ");
-}
+    function findNoteByTitle(title) {
+      return notes.find(n => (n.title || "").trim().toLowerCase() === (title || "").trim().toLowerCase());
+    }
 
-function scheduleSave() {
-  if (isRendering) return;
-
-  clearTimeout(saveTimer);
-  saveStatus.textContent = "Saving...";
-
-  saveTimer = setTimeout(async () => {
-    if (!activeNoteId) return;
-
-    try {
-      await updateNote(activeNoteId, {
-        title: noteTitle.value.trim() || "Untitled",
-        body: getText()
+    function sortAndFilterNotes(list) {
+      let filtered = list.filter(note => {
+        const hay = `${note.title || ""} ${note.body || ""}`.toLowerCase();
+        return !filterText || hay.includes(filterText);
       });
 
-      saveStatus.textContent = "Saved";
-    } catch (e) {
-      console.error(e);
-      saveStatus.textContent = "Error";
+      if (sortMode === "alpha") {
+        filtered.sort((a, b) => (a.title || "").localeCompare(b.title || ""));
+      } else {
+        filtered.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+      }
+
+      return filtered;
     }
-  }, 500);
-}
 
-/* =========================
-   WIKI LINKS
-========================= */
+    function renderList() {
+      noteList.innerHTML = "";
+      const list = sortAndFilterNotes([...notes]);
 
-function renderLinks(text) {
-  return text
-    .replace(/\n/g, "<br>")
-    .replace(/\[\[(.*?)\]\]/g, (m, name) => {
-      return `<span class="wiki-link" data-link="${name}">[[${name}]]</span>`;
+      if (!list.length) {
+        noteList.innerHTML = `<div class="empty-state">No notes found. Create one to begin.</div>`;
+        return;
+      }
+
+      list.forEach(note => {
+        const item = document.createElement("div");
+        item.className = "note-item" + (note.id === activeNoteId ? " active" : "");
+        item.innerHTML = `
+          <div class="note-item-title">${escapeHtml(note.title || "Untitled")}</div>
+          <div class="note-item-preview">${escapeHtml(previewText(note.body || ""))}</div>
+          <div class="note-item-meta">${new Date(note.updatedAt || Date.now()).toLocaleString()}</div>
+        `;
+        item.addEventListener("click", () => {
+          openNote(note.id);
+          if (window.innerWidth <= 760) closeSidebar();
+        });
+        noteList.appendChild(item);
+      });
+    }
+
+    function renderRightPanel() {
+      const note = activeNote();
+
+      if (!note) {
+        overviewStats.textContent = "Select a note.";
+        outlinksBox.innerHTML = `<div class="muted">No links yet.</div>`;
+        backlinksBox.innerHTML = `<div class="muted">No backlinks yet.</div>`;
+        tagsBox.innerHTML = `<div class="muted">No tags yet.</div>`;
+        noteMeta.textContent = "0 words";
+        return;
+      }
+
+      const links = extractLinks(note.body || "");
+      const tags = extractTags(note.body || "");
+      const backlinks = notes.filter(other => {
+        if (other.id === note.id) return false;
+        return extractLinks(other.body || "").some(link => link.toLowerCase() === (note.title || "").toLowerCase());
+      });
+
+      overviewStats.innerHTML = `
+        <div><strong>Title:</strong> ${escapeHtml(note.title || "Untitled")}</div>
+        <div><strong>Words:</strong> ${wordCount(note.body || "")}</div>
+        <div><strong>Outgoing:</strong> ${links.length}</div>
+        <div><strong>Backlinks:</strong> ${backlinks.length}</div>
+        <div><strong>Updated:</strong> ${new Date(note.updatedAt || Date.now()).toLocaleString()}</div>
+      `;
+
+      noteMeta.textContent = `${wordCount(note.body || "")} words`;
+
+      if (!links.length) {
+        outlinksBox.innerHTML = `<div class="muted">No links yet.</div>`;
+      } else {
+        outlinksBox.innerHTML = "";
+        links.forEach(link => {
+          const div = document.createElement("div");
+          div.className = "outlink-item";
+          div.innerHTML = `
+            <div class="outlink-title">${escapeHtml(link)}</div>
+            <div class="outlink-preview">Open or create this note.</div>
+          `;
+          div.addEventListener("click", async () => {
+            await openOrCreateNote(link);
+          });
+          outlinksBox.appendChild(div);
+        });
+      }
+
+      if (!backlinks.length) {
+        backlinksBox.innerHTML = `<div class="muted">No backlinks yet.</div>`;
+      } else {
+        backlinksBox.innerHTML = "";
+        backlinks.forEach(back => {
+          const div = document.createElement("div");
+          div.className = "backlink-item";
+          div.innerHTML = `
+            <div class="backlink-title">${escapeHtml(back.title || "Untitled")}</div>
+            <div class="backlink-preview">${escapeHtml(previewText(back.body || "", 70))}</div>
+          `;
+          div.addEventListener("click", () => openNote(back.id));
+          backlinksBox.appendChild(div);
+        });
+      }
+
+      if (!tags.length) {
+        tagsBox.innerHTML = `<div class="muted">No tags yet.</div>`;
+      } else {
+        tagsBox.innerHTML = "";
+        tags.forEach(tag => {
+          const div = document.createElement("div");
+          div.className = "tag-item";
+          div.innerHTML = `
+            <div class="tag-title">${escapeHtml(tag)}</div>
+            <div class="tag-preview">Filter by this tag.</div>
+          `;
+          div.addEventListener("click", () => {
+            searchInput.value = tag;
+            filterText = tag.toLowerCase();
+            renderList();
+          });
+          tagsBox.appendChild(div);
+        });
+      }
+    }
+
+    function renderEditor() {
+      const note = activeNote();
+
+      if (!note) {
+        noteTitle.value = "";
+        editor.innerHTML = "";
+        renderRightPanel();
+        return;
+      }
+
+      isRendering = true;
+      noteTitle.value = note.title || "";
+      editor.innerHTML = renderLinks(note.body || "");
+      isRendering = false;
+
+      renderRightPanel();
+    }
+
+    function openNote(id) {
+      const note = notes.find(n => n.id === id);
+      if (!note) return;
+
+      activeNoteId = id;
+      renderList();
+      renderEditor();
+    }
+
+    function getEditorPlainText() {
+      return editor.innerText.replace(/\u00A0/g, " ").trimEnd();
+    }
+
+    async function createNote(title = "Untitled") {
+      const payload = {
+        title,
+        body: "",
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+      };
+
+      const ref = await addDoc(notesRef(), payload);
+      return { id: ref.id, ...payload };
+    }
+
+    async function updateActiveNote(fields) {
+      if (!activeNoteId) return;
+      await updateDoc(noteDocRef(activeNoteId), {
+        ...fields,
+        updatedAt: Date.now()
+      });
+    }
+
+    async function duplicateActiveNote() {
+      const note = activeNote();
+      if (!note) return;
+
+      const title = `${note.title || "Untitled"} Copy`;
+      const ref = await addDoc(notesRef(), {
+        title,
+        body: note.body || "",
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+      });
+
+      activeNoteId = ref.id;
+      setStatusBrief("Duplicated");
+    }
+
+    async function deleteActiveNote() {
+      const note = activeNote();
+      if (!note) return;
+
+      if (!confirm(`Delete "${note.title || "Untitled"}"?`)) return;
+
+      await deleteDoc(noteDocRef(note.id));
+      activeNoteId = null;
+      setStatusBrief("Deleted", "Ready");
+    }
+
+    function scheduleSave() {
+      if (isRendering || !activeNoteId) return;
+
+      clearTimeout(saveTimer);
+      setStatus("Saving...");
+
+      saveTimer = setTimeout(async () => {
+        try {
+          await updateActiveNote({
+            title: noteTitle.value.trim() || "Untitled",
+            body: getEditorPlainText()
+          });
+          setStatus("Saved");
+        } catch (err) {
+          console.error(err);
+          setStatus("Save failed");
+        }
+      }, 500);
+    }
+
+    function insertAtCursor(text) {
+      editor.focus();
+      document.execCommand("insertText", false, text);
+      scheduleSave();
+    }
+
+    async function openOrCreateNote(title) {
+      const existing = findNoteByTitle(title);
+      if (existing) {
+        openNote(existing.id);
+        return;
+      }
+
+      const created = await createNote(title.trim() || "Untitled");
+      activeNoteId = created.id;
+      setStatusBrief("Created linked note");
+    }
+
+    async function copyCurrentNote() {
+      const note = activeNote();
+      if (!note) return;
+
+      const text = `# ${note.title || "Untitled"}\n\n${note.body || ""}`;
+      try {
+        await navigator.clipboard.writeText(text);
+        setStatusBrief("Copied note");
+      } catch {
+        setStatusBrief("Copy failed", "Saved");
+      }
+    }
+
+    async function copyCurrentLink() {
+      const note = activeNote();
+      if (!note) return;
+
+      try {
+        await navigator.clipboard.writeText(`[[${note.title || "Untitled"}]]`);
+        setStatusBrief("Copied link");
+      } catch {
+        setStatusBrief("Copy failed", "Saved");
+      }
+    }
+
+    function openSidebar() {
+      sidebarPane.classList.add("open");
+      mobileOverlay.classList.add("open");
+    }
+
+    function closeSidebar() {
+      sidebarPane.classList.remove("open");
+      mobileOverlay.classList.remove("open");
+    }
+
+    function attachEvents() {
+      toggleSidebarBtn.addEventListener("click", () => {
+        if (window.innerWidth <= 760) {
+          if (sidebarPane.classList.contains("open")) closeSidebar();
+          else openSidebar();
+        }
+      });
+
+      mobileOverlay.addEventListener("click", closeSidebar);
+
+      searchInput.addEventListener("input", () => {
+        filterText = searchInput.value.trim().toLowerCase();
+        renderList();
+      });
+
+      sortUpdatedBtn.addEventListener("click", () => {
+        sortMode = "updated";
+        renderList();
+      });
+
+      sortAlphaBtn.addEventListener("click", () => {
+        sortMode = "alpha";
+        renderList();
+      });
+
+      newNoteBtn.addEventListener("click", async () => {
+        try {
+          const created = await createNote("Untitled");
+          activeNoteId = created.id;
+          setStatusBrief("Created");
+        } catch (err) {
+          console.error(err);
+          setStatus("Create failed");
+        }
+      });
+
+      deleteBtn.addEventListener("click", async () => {
+        try {
+          await deleteActiveNote();
+        } catch (err) {
+          console.error(err);
+          setStatus("Delete failed");
+        }
+      });
+
+      duplicateBtn.addEventListener("click", async () => {
+        try {
+          await duplicateActiveNote();
+        } catch (err) {
+          console.error(err);
+          setStatus("Duplicate failed");
+        }
+      });
+
+      noteTitle.addEventListener("input", scheduleSave);
+      editor.addEventListener("input", scheduleSave);
+
+      editor.addEventListener("click", async (e) => {
+        if (!e.target.classList.contains("wiki-link")) return;
+        const name = e.target.dataset.link;
+        try {
+          await openOrCreateNote(name);
+        } catch (err) {
+          console.error(err);
+          setStatus("Link failed");
+        }
+      });
+
+      insertWikiBtn.addEventListener("click", () => {
+        const name = prompt("Link to which note?");
+        if (!name) return;
+        insertAtCursor(`[[${name.trim()}]]`);
+      });
+
+      linkCurrentBtn.addEventListener("click", () => {
+        const note = activeNote();
+        if (!note) return;
+        insertAtCursor(`[[${note.title || "Untitled"}]]`);
+      });
+
+      h2Btn.addEventListener("click", () => {
+        insertAtCursor(`\n## Heading\n`);
+      });
+
+      quoteBtn.addEventListener("click", () => {
+        insertAtCursor(`\n> Quote\n`);
+      });
+
+      copyNoteBtn.addEventListener("click", copyCurrentNote);
+      copyLinkBtn.addEventListener("click", copyCurrentLink);
+
+      document.addEventListener("keydown", async (e) => {
+        if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {
+          e.preventDefault();
+          clearTimeout(saveTimer);
+          try {
+            await updateActiveNote({
+              title: noteTitle.value.trim() || "Untitled",
+              body: getEditorPlainText()
+            });
+            setStatusBrief("Saved now");
+          } catch (err) {
+            console.error(err);
+            setStatus("Save failed");
+          }
+        }
+      });
+    }
+
+    function subscribeNotes() {
+      if (unsubscribeNotes) unsubscribeNotes();
+
+      const q = query(notesRef(), orderBy("updatedAt", "desc"));
+
+      unsubscribeNotes = onSnapshot(q, (snap) => {
+        notes = snap.docs.map(docSnap => ({
+          id: docSnap.id,
+          ...docSnap.data()
+        }));
+
+        if (!notes.length) {
+          noteList.innerHTML = `<div class="empty-state">No notes yet. Create one to begin.</div>`;
+          noteTitle.value = "";
+          editor.innerHTML = "";
+          renderRightPanel();
+          return;
+        }
+
+        const existingActive = notes.find(n => n.id === activeNoteId);
+
+        if (!activeNoteId || !existingActive) {
+          activeNoteId = notes[0].id;
+        }
+
+        renderList();
+
+        const userIsEditing = document.activeElement === editor || document.activeElement === noteTitle;
+        if (!userIsEditing) {
+          renderEditor();
+        } else {
+          renderRightPanel();
+        }
+      });
+    }
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        window.location.href = "/login.html";
+        return;
+      }
+
+      currentUser = user;
+      workspaceLabel.textContent = `@${user.displayName || (user.email ? user.email.split("@")[0] : "writer")} notes`;
+      attachEvents();
+      subscribeNotes();
+      setStatus("Ready");
+    }, (err) => {
+      console.error(err);
+      setStatus("Auth failed");
     });
-}
-
-function findNoteByTitle(name) {
-  return notes.find(n => (n.title || "").toLowerCase() === name.toLowerCase());
-}
-
-/* =========================
-   EVENTS
-========================= */
-
-noteTitle.addEventListener("input", scheduleSave);
-editor.addEventListener("input", scheduleSave);
-
-editor.addEventListener("click", async (e) => {
-  if (!e.target.classList.contains("wiki-link")) return;
-
-  const name = e.target.dataset.link;
-
-  let note = findNoteByTitle(name);
-
-  if (!note) {
-    note = await createNote(name);
-  }
-
-  openNote(note.id);
-});
-
-/* =========================
-   BUTTONS (OPTIONAL)
-========================= */
-
-window.newNote = async function () {
-  const note = await createNote("Untitled");
-  openNote(note.id);
-};
-
-window.deleteNote = async function () {
-  if (!activeNoteId) return;
-  if (!confirm("Delete note?")) return;
-
-  await deleteNote(activeNoteId);
-  activeNoteId = null;
-};
-
-/* =========================
-   INIT
-========================= */
-
-(async function init() {
-  const user = await waitForAuth();
-
-  if (!user) {
-    saveStatus.textContent = "Login required";
-    return;
-  }
-
-  subscribeNotes();
-})();
-</script>
-
+  </script>
 </body>
 </html>
