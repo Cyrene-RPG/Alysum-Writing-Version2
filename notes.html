@@ -13,7 +13,6 @@
       --panel: #111827;
       --panel-2: #182235;
       --panel-3: #1e293b;
-      --panel-4: #243246;
       --text: #e5e7eb;
       --muted: #94a3b8;
       --muted-2: #64748b;
@@ -24,7 +23,6 @@
       --accent-soft: rgba(139,92,246,0.18);
       --danger: #ef4444;
       --warning: #f59e0b;
-      --success: #22c55e;
       --shadow: 0 20px 50px rgba(0,0,0,0.35);
       --topbar-h: 64px;
       --sidebar-w: 330px;
@@ -254,6 +252,7 @@
       cursor: pointer;
       user-select: none;
       background: transparent;
+      transition: background 0.14s ease, border-color 0.14s ease;
     }
 
     .tree-folder:hover {
@@ -806,9 +805,11 @@ Use #tags anywhere in the note."
       addDoc,
       updateDoc,
       deleteDoc,
+      getDocs,
       onSnapshot,
       query,
-      orderBy
+      orderBy,
+      writeBatch
     } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
@@ -870,7 +871,8 @@ Use #tags anywhere in the note."
       mode: null,
       items: [],
       index: 0,
-      query: ""
+      query: "",
+      matchRange: null
     };
 
     function setStatus(text) {
@@ -933,12 +935,17 @@ Use #tags anywhere in the note."
       return clean.split(/\s+/).length;
     }
 
+    function normalizeTitle(str = "") {
+      return str.toLowerCase().replace(/[^a-z0-9]/g, "").trim();
+    }
+
     function activeNote() {
       return notes.find(n => n.id === activeNoteId) || null;
     }
 
     function findNoteByTitle(title) {
-      return notes.find(n => (n.title || "").trim().toLowerCase() === (title || "").trim().toLowerCase());
+      const target = normalizeTitle(title);
+      return notes.find(n => normalizeTitle(n.title) === target);
     }
 
     function findFolderById(id) {
@@ -958,7 +965,10 @@ Use #tags anywhere in the note."
       if (sortMode === "alpha") {
         next.sort((a, b) => (a.title || "").localeCompare(b.title || ""));
       } else {
-        next.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+        next.sort((a, b) => {
+          if (!!b.pinned !== !!a.pinned) return b.pinned ? 1 : -1;
+          return (b.updatedAt || 0) - (a.updatedAt || 0);
+        });
       }
       return next;
     }
@@ -1110,6 +1120,7 @@ Use #tags anywhere in the note."
               parentId: null
             });
           }
+          renderSidebar();
         } catch (err) {
           console.error(err);
           setStatus("Move failed");
@@ -1201,6 +1212,7 @@ Use #tags anywhere in the note."
             }
             await updateDoc(folderDocRef(draggedFolderId), { parentId: folder.id });
           }
+          renderSidebar();
         } catch (err) {
           console.error(err);
           setStatus("Move failed");
@@ -1296,7 +1308,7 @@ Use #tags anywhere in the note."
       const tags = extractTags(note.body || "");
       const backlinks = notes.filter(other => {
         if (other.id === note.id) return false;
-        return extractLinks(other.body || "").some(link => link.toLowerCase() === (note.title || "").toLowerCase());
+        return extractLinks(other.body || "").some(link => normalizeTitle(link) === normalizeTitle(note.title || ""));
       });
 
       const folder = note.folderId ? findFolderById(note.folderId) : null;
@@ -1431,12 +1443,49 @@ Use #tags anywhere in the note."
       return { id: ref.id, ...payload };
     }
 
+    async function updateBacklinksForRename(oldTitle, newTitle, skipNoteId) {
+      const oldNorm = normalizeTitle(oldTitle);
+      const newLabel = newTitle.trim();
+
+      if (!oldNorm || oldNorm === normalizeTitle(newLabel)) return;
+
+      const batch = writeBatch(db);
+      let changed = 0;
+
+      notes.forEach(note => {
+        if (note.id === skipNoteId) return;
+        const body = note.body || "";
+        const updated = body.replace(/\[\[(.*?)\]\]/g, (match, inner) => {
+          return normalizeTitle(inner) === oldNorm ? `[[${newLabel}]]` : match;
+        });
+
+        if (updated !== body) {
+          batch.update(noteDocRef(note.id), {
+            body: updated,
+            updatedAt: Date.now()
+          });
+          changed += 1;
+        }
+      });
+
+      if (changed > 0) {
+        await batch.commit();
+      }
+    }
+
     async function updateActiveNote(fields) {
       if (!activeNoteId) return;
+      const note = activeNote();
+      const oldTitle = note?.title || "";
+
       await updateDoc(noteDocRef(activeNoteId), {
         ...fields,
         updatedAt: Date.now()
       });
+
+      if (typeof fields.title === "string" && normalizeTitle(fields.title) !== normalizeTitle(oldTitle)) {
+        await updateBacklinksForRename(oldTitle, fields.title, activeNoteId);
+      }
     }
 
     async function duplicateActiveNote() {
@@ -1463,9 +1512,16 @@ Use #tags anywhere in the note."
 
       if (!confirm(`Delete "${note.title || "Untitled"}"?`)) return;
 
-      await deleteDoc(noteDocRef(note.id));
-      activeNoteId = null;
-      setStatusBrief("Deleted", "Ready");
+      try {
+        await deleteDoc(noteDocRef(note.id));
+        activeNoteId = null;
+        noteTitle.value = "";
+        editorText.value = "";
+        setStatusBrief("Deleted", "Ready");
+      } catch (err) {
+        console.error(err);
+        setStatus("Delete failed");
+      }
     }
 
     function scheduleSave() {
@@ -1512,14 +1568,24 @@ Use #tags anywhere in the note."
     }
 
     async function openOrCreateNote(title) {
-      const existing = findNoteByTitle(title);
+      const clean = title.trim();
+      let existing = notes.find(n => normalizeTitle(n.title) === normalizeTitle(clean));
+
       if (existing) {
         openNote(existing.id);
         return;
       }
 
-      const created = await createNote(title.trim() || "Untitled", activeFolderId || null);
-      activeNoteId = created.id;
+      const ref = await addDoc(notesRef(), {
+        title: clean || "Untitled",
+        body: "",
+        folderId: activeFolderId || null,
+        pinned: false,
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+      });
+
+      activeNoteId = ref.id;
       setStatusBrief("Created linked note");
     }
 
@@ -1564,6 +1630,7 @@ Use #tags anywhere in the note."
       suggestionState.items = [];
       suggestionState.index = 0;
       suggestionState.query = "";
+      suggestionState.matchRange = null;
       suggestionPop.classList.remove("open");
       suggestionPop.innerHTML = "";
     }
@@ -1620,7 +1687,7 @@ Use #tags anywhere in the note."
           sub: previewText(n.body || "", 60)
         }));
 
-      if (!q || !items.find(i => i.value.toLowerCase() === q)) {
+      if (!q || !items.find(i => normalizeTitle(i.value) === normalizeTitle(q))) {
         items.unshift({
           type: "wiki",
           value: queryText.trim() || "Untitled",
@@ -1753,12 +1820,7 @@ Use #tags anywhere in the note."
       });
 
       deleteBtn.addEventListener("click", async () => {
-        try {
-          await deleteActiveNote();
-        } catch (err) {
-          console.error(err);
-          setStatus("Delete failed");
-        }
+        await deleteActiveNote();
       });
 
       duplicateBtn.addEventListener("click", async () => {
@@ -1841,7 +1903,12 @@ Use #tags anywhere in the note."
         const note = activeNote();
         if (!note) return;
         try {
-          await updateActiveNote({ pinned: !note.pinned });
+          await updateDoc(noteDocRef(note.id), {
+            pinned: !note.pinned,
+            updatedAt: Date.now()
+          });
+          renderSidebar();
+          renderEditor();
           setStatusBrief(note.pinned ? "Unpinned" : "Pinned");
         } catch (err) {
           console.error(err);
@@ -1853,8 +1920,13 @@ Use #tags anywhere in the note."
         const note = activeNote();
         if (!note) return;
         try {
-          await updateActiveNote({ folderId: null });
+          await updateDoc(noteDocRef(note.id), {
+            folderId: null,
+            updatedAt: Date.now()
+          });
           activeFolderId = null;
+          renderSidebar();
+          renderEditor();
           setStatusBrief("Moved to root");
         } catch (err) {
           console.error(err);
@@ -1867,6 +1939,13 @@ Use #tags anywhere in the note."
       quoteBtn.addEventListener("click", () => insertTextAtCursor("> Quote"));
       copyNoteBtn.addEventListener("click", copyCurrentNote);
       copyLinkBtn.addEventListener("click", copyCurrentLink);
+
+      inlineLinks.addEventListener("click", async (e) => {
+        const btn = e.target.closest(".link-chip");
+        if (!btn) return;
+        const text = btn.textContent.replace(/^\[\[/, "").replace(/\]\]$/, "");
+        await openOrCreateNote(text);
+      });
 
       document.addEventListener("click", (e) => {
         if (!suggestionPop.contains(e.target) && e.target !== editorText) {
@@ -1884,6 +1963,7 @@ Use #tags anywhere in the note."
         notes = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
         if (!notes.length) {
+          activeNoteId = null;
           treeRoot.innerHTML = `<div class="empty-state">No notes yet. Create one to begin.</div>`;
           pinnedList.innerHTML = `<div class="empty-state">No pinned notes yet.</div>`;
           noteTitle.value = "";
@@ -1893,7 +1973,9 @@ Use #tags anywhere in the note."
         }
 
         const existingActive = notes.find(n => n.id === activeNoteId);
-        if (!activeNoteId || !existingActive) {
+        if (!notes.length) {
+          activeNoteId = null;
+        } else if (!activeNoteId || !existingActive) {
           activeNoteId = notes[0].id;
         }
 
