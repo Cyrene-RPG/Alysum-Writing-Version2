@@ -1271,23 +1271,36 @@
         return;
       }
 
-      try {
-        await addDoc(collection(db, "library", bookId, "comments"), {
-          uid: currentUser.uid,
-          username,
-          text,
-          createdAt: Date.now()
-        });
+    try {
+    const userRef = doc(db, "users", currentUser.uid);
+    const userSnap = await getDoc(userRef);
 
-        commentInput.value = "";
-        showStatus("Comment posted.");
-        setTimeout(hideStatus, 1200);
-        await loadComments();
-      } catch (error) {
-        console.error(error);
-        showError("Failed to post comment.");
-      }
+    if (!userSnap.exists()) {
+      throw new Error("User profile not found.");
     }
+
+    const username = userSnap.data()?.username?.trim();
+
+    if (!username) {
+      throw new Error("Username not found.");
+    }
+
+    await addDoc(collection(db, "library", bookId, "comments"), {
+      uid: currentUser.uid,
+      username,
+      text,
+      createdAt: Date.now()
+    });
+
+    commentInput.value = "";
+    showStatus("Comment posted.");
+    setTimeout(hideStatus, 1200);
+    await loadComments();
+  } catch (error) {
+    console.error(error);
+    showError("Failed to post comment.");
+  }
+}
 
     backBtn.addEventListener("click", () => {
       window.location.href = "/library.html";
