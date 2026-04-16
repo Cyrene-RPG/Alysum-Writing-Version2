@@ -1103,47 +1103,44 @@
     }
 
     async function leaveKudos() {
-      if (!currentUser) {
-        showStatus("Log in to leave kudos.");
-        setTimeout(hideStatus, 1600);
-        return;
-      }
+  if (!currentUser) {
+    showStatus("Log in to leave kudos.");
+    setTimeout(hideStatus, 1600);
+    return;
+  }
 
-      if (hasLikedThisBook) {
-        showStatus("You already left kudos for this story.");
-        setTimeout(hideStatus, 1600);
-        return;
-      }
+  if (hasLikedThisBook) {
+    showStatus("You already left kudos for this story.");
+    setTimeout(hideStatus, 1600);
+    return;
+  }
 
-      try {
-        const likeRef = doc(db, "library", bookId, "likes", currentUser.uid);
-        const existing = await getDoc(likeRef);
+  try {
+    const likeRef = doc(db, "library", bookId, "likes", currentUser.uid);
+    const existing = await getDoc(likeRef);
 
-        if (existing.exists()) {
-          hasLikedThisBook = true;
-          await loadLikeState();
-          showStatus("You already left kudos for this story.");
-          setTimeout(hideStatus, 1600);
-          return;
-        }
+    if (existing.exists()) {
+      hasLikedThisBook = true;
+      await loadLikeState();
+      showStatus("You already left kudos for this story.");
+      setTimeout(hideStatus, 1600);
+      return;
+    }
 
-        await setDoc(likeRef, {
-          uid: currentUser.uid,
-          createdAt: serverTimestamp()
-        });
+    await setDoc(likeRef, {
+      uid: currentUser.uid,
+      createdAt: serverTimestamp()
+    });
 
-        await updateDoc(doc(db, "library", bookId), {
-          likes: increment(1)
-        });
-
-        hasLikedThisBook = true;
-        await loadLikeState();
-        showStatus("Kudos left ❤️");
-        setTimeout(hideStatus, 1400);
-      } catch (error) {
-        console.error(error);
-        showError("Failed to leave kudos.");
-      }
+    hasLikedThisBook = true;
+    await loadLikeState();
+    showStatus("Kudos left ❤️");
+    setTimeout(hideStatus, 1400);
+  } catch (error) {
+    console.error(error);
+    showError("Failed to leave kudos.");
+  }
+}
     }
 
     async function loadBook() {
