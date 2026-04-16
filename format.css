@@ -1,0 +1,201 @@
+/* ============================= */
+/* ROOT THEME VARIABLES */
+/* ============================= */
+
+:root {
+  --bg-main: #0f172a;
+  --bg-sidebar: #020617;
+  --bg-preview: #e5e7eb;
+
+  --text-main: #ffffff;
+  --text-muted: #94a3b8;
+
+  --accent: #6d28d9;
+  --accent-hover: #5b21b6;
+}
+
+/* LIGHT MODE */
+body.light {
+  --bg-main: #f3f4f6;
+  --bg-sidebar: #ffffff;
+  --bg-preview: #e5e7eb;
+
+  --text-main: #111827;
+  --text-muted: #6b7280;
+
+  --accent: #6d28d9;
+}
+
+/* ============================= */
+/* APP LAYOUT */
+/* ============================= */
+
+body {
+  margin: 0;
+  display: flex;
+  height: 100vh;
+  font-family: sans-serif;
+  background: var(--bg-main);
+  color: var(--text-main);
+}
+
+/* SIDEBAR */
+.sidebar {
+  width: 260px;
+  background: var(--bg-sidebar);
+  padding: 20px;
+  box-sizing: border-box;
+  border-right: 1px solid rgba(255,255,255,0.05);
+}
+
+.sidebar h2 {
+  margin-top: 0;
+}
+
+/* BUTTONS */
+.sidebar button {
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  background: var(--accent);
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.sidebar button:hover {
+  background: var(--accent-hover);
+}
+
+/* DROPDOWN */
+.sidebar select {
+  width: 100%;
+  padding: 8px;
+  border-radius: 6px;
+  border: none;
+  margin-bottom: 12px;
+}
+
+/* LABEL */
+.sidebar label {
+  font-size: 13px;
+  color: var(--text-muted);
+  display: block;
+  margin-bottom: 6px;
+}
+
+/* PREVIEW */
+.preview {
+  flex: 1;
+  overflow: auto;
+  padding: 40px;
+  background: var(--bg-preview);
+}
+
+/* ============================= */
+/* BOOK PAGE (ALWAYS LIGHT) */
+/* ============================= */
+
+.page {
+  width: 5in;
+  min-height: 8in;
+  margin: 20px auto;
+  background: white;
+  padding: 0.75in;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+  font-family: Georgia, serif;
+  position: relative;
+  color: black;
+}
+
+/* OTHER SIZES */
+.page.size-6x9 {
+  width: 6in;
+  min-height: 9in;
+  padding: 0.8in;
+}
+
+.page.size-5_5x8_5 {
+  width: 5.5in;
+  min-height: 8.5in;
+}
+
+.page.size-mass {
+  width: 4.25in;
+  min-height: 6.87in;
+  padding: 0.6in;
+}
+
+/* ============================= */
+/* TYPOGRAPHY */
+/* ============================= */
+
+.chapter-title {
+  text-align: center;
+  margin: 2in 0;
+  font-size: 22pt;
+  font-weight: 700;
+}
+
+.line {
+  display: block;
+}
+
+/* ============================= */
+/* HEADER / FOOTER */
+/* ============================= */
+
+.header {
+  position: absolute;
+  top: 20px;
+  left: 40px;
+  right: 40px;
+  font-size: 10pt;
+  color: #555;
+}
+
+.page-number {
+  position: absolute;
+  bottom: 20px;
+  width: 100%;
+  text-align: center;
+  font-size: 10pt;
+  color: #555;
+}
+
+/* ============================= */
+/* TOC */
+/* ============================= */
+
+.toc {
+  font-family: Georgia, serif;
+}
+
+.toc h1 {
+  text-align: center;
+}
+
+.toc div {
+  margin: 6px 0;
+}
+
+/* ============================= */
+/* SCENE BREAK */
+/* ============================= */
+
+.scene-break {
+  text-align: center;
+  margin: 1.5em 0;
+}
+
+/* ============================= */
+/* PRINT SETTINGS */
+/* ============================= */
+
+@page {
+  size: 5in 8in;
+  margin: 0.75in;
+}
