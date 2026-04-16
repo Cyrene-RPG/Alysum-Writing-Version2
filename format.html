@@ -2,257 +2,928 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Alysum Formatter</title>
-  <link rel="stylesheet" href="format.css" />
-</head>
-<body class="dark">
-  <div class="app-shell">
-    <aside class="sidebar" id="sidebar">
-      <div class="sidebar-header">
-        <div class="brand-row">
-          <div>
-            <div class="eyebrow">Book formatter</div>
-            <h1 class="sidebar-title">Export Studio</h1>
-          </div>
-          <button id="themeToggleBtn" class="icon-btn" type="button" title="Toggle theme">◐</button>
-        </div>
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"
+  />
+  <meta
+    name="description"
+    content="Format — Reedsy-style Firebase-backed PDF exporter with live print preview, trim controls, typography controls, TOC generation, and Paged.js pagination."
+  />
+  <meta name="theme-color" content="#0f172a" />
+  <title>Format — Export</title>
 
-        <div class="book-meta-card">
-          <div class="book-meta-label">Current book</div>
-          <div class="book-meta-title" id="bookTitle">Loading…</div>
-          <div class="book-meta-sub" id="bookSubtitle">Ready to format for print</div>
+  <!-- =========================================================
+       FONTS
+  ========================================================== -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Lato:wght@300;400;700;900&family=Merriweather:wght@300;400;700;900&family=Crimson+Text:wght@400;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- =========================================================
+       PAGED.JS
+  ========================================================== -->
+  <script src="https://unpkg.com/pagedjs/dist/paged.polyfill.js"></script>
+
+  <!-- =========================================================
+       APP STYLES
+  ========================================================== -->
+  <link rel="stylesheet" href="./format.css" />
+</head>
+
+<body class="format-app theme-reedsy">
+  <!-- =========================================================
+       APP SHELL
+  ========================================================== -->
+  <div id="appShell" class="app-shell">
+    <!-- =====================================================
+         MOBILE TOPBAR
+    ====================================================== -->
+    <header class="mobile-topbar" id="mobileTopbar" aria-label="Mobile toolbar">
+      <div class="mobile-topbar-left">
+        <button
+          id="mobileOpenLeftBtn"
+          class="icon-btn mobile-trigger"
+          type="button"
+          aria-label="Open manuscript panel"
+          aria-controls="leftSidebar"
+          aria-expanded="false"
+        >
+          ☰
+        </button>
+
+        <div class="mobile-brand">
+          <span class="mobile-brand-mark">F</span>
+          <span class="mobile-brand-name">Format</span>
         </div>
       </div>
 
+      <div class="mobile-topbar-center">
+        <span class="mobile-topbar-status" id="mobileRenderStatusMirror">Preview</span>
+      </div>
+
+      <div class="mobile-topbar-right">
+        <button
+          id="mobileOpenRightBtn"
+          class="icon-btn mobile-trigger"
+          type="button"
+          aria-label="Open export settings"
+          aria-controls="rightSidebar"
+          aria-expanded="false"
+        >
+          ⚙
+        </button>
+      </div>
+    </header>
+
+    <!-- =====================================================
+         LEFT SIDEBAR
+         Book summary, Firebase status, navigation tree, actions
+    ====================================================== -->
+    <aside id="leftSidebar" class="sidebar sidebar-left" aria-label="Book navigation">
       <div class="sidebar-scroll">
-        <section class="panel">
-          <div class="panel-header">
-            <h2>Preset</h2>
-          </div>
-          <div class="panel-body">
-            <label class="field">
-              <span class="field-label">Platform preset</span>
-              <select id="presetSelect">
-                <option value="bn_5x8">Barnes & Noble Press — 5 × 8</option>
-                <option value="kdp_5x8">KDP — 5 × 8</option>
-                <option value="kdp_5_25x8">KDP — 5.25 × 8</option>
-                <option value="kdp_5_5x8_5">KDP — 5.5 × 8.5</option>
-                <option value="kdp_6x9">KDP — 6 × 9</option>
-                <option value="a5">A5</option>
-                <option value="mass_market">Mass market</option>
-                <option value="custom">Custom / manual</option>
-              </select>
-            </label>
-
-            <button id="applyPresetBtn" class="primary-btn" type="button">Apply preset</button>
-          </div>
-        </section>
-
-        <section class="panel">
-          <div class="panel-header">
-            <h2>Book setup</h2>
-          </div>
-          <div class="panel-body grid-2">
-            <label class="field">
-              <span class="field-label">Trim size</span>
-              <select id="trimSize">
-                <option value="5x8">5 × 8</option>
-                <option value="5_25x8">5.25 × 8</option>
-                <option value="5_5x8_5">5.5 × 8.5</option>
-                <option value="6x9">6 × 9</option>
-                <option value="a5">A5</option>
-                <option value="mass_market">Mass market</option>
-              </select>
-            </label>
-
-            <label class="field">
-              <span class="field-label">Chapter starts</span>
-              <select id="chapterStartSelect">
-                <option value="new-page">New page</option>
-                <option value="recto">Right-hand page</option>
-              </select>
-            </label>
-
-            <label class="field">
-              <span class="field-label">Inside margin</span>
-              <input id="insideMarginInput" type="text" value="0.95in" />
-            </label>
-
-            <label class="field">
-              <span class="field-label">Outside margin</span>
-              <input id="outsideMarginInput" type="text" value="0.6in" />
-            </label>
-
-            <label class="field">
-              <span class="field-label">Top margin</span>
-              <input id="topMarginInput" type="text" value="0.75in" />
-            </label>
-
-            <label class="field">
-              <span class="field-label">Bottom margin</span>
-              <input id="bottomMarginInput" type="text" value="0.75in" />
-            </label>
-          </div>
-        </section>
-
-        <section class="panel">
-          <div class="panel-header">
-            <h2>Typography</h2>
-          </div>
-          <div class="panel-body grid-2">
-            <label class="field">
-              <span class="field-label">Font</span>
-              <select id="fontSelect">
-                <option value="Georgia">Georgia</option>
-                <option value="Times New Roman">Times New Roman</option>
-                <option value="Garamond">Garamond</option>
-                <option value="Palatino Linotype">Palatino</option>
-                <option value="Arial">Arial</option>
-              </select>
-            </label>
-
-            <label class="field">
-              <span class="field-label">Font size</span>
-              <select id="fontSizeSelect">
-                <option value="10">10 pt</option>
-                <option value="10.5">10.5 pt</option>
-                <option value="11" selected>11 pt</option>
-                <option value="11.5">11.5 pt</option>
-                <option value="12">12 pt</option>
-              </select>
-            </label>
-
-            <label class="field">
-              <span class="field-label">Line height</span>
-              <select id="lineHeightSelect">
-                <option value="1.45">1.45</option>
-                <option value="1.5">1.5</option>
-                <option value="1.55">1.55</option>
-                <option value="1.6" selected>1.6</option>
-                <option value="1.7">1.7</option>
-              </select>
-            </label>
-
-            <label class="field">
-              <span class="field-label">Alignment</span>
-              <select id="alignmentSelect">
-                <option value="justify" selected>Justified</option>
-                <option value="left">Left aligned</option>
-              </select>
-            </label>
-
-            <label class="field">
-              <span class="field-label">Paragraph indent</span>
-              <input id="paragraphIndentInput" type="text" value="1.5em" />
-            </label>
-
-            <label class="field">
-              <span class="field-label">Paragraph spacing</span>
-              <input id="paragraphSpacingInput" type="text" value="0" />
-            </label>
-          </div>
-        </section>
-
-        <section class="panel">
-          <div class="panel-header">
-            <h2>Front / back matter</h2>
-          </div>
-          <div class="panel-body">
-            <div class="check-row">
-              <label><input id="includeFrontMatterToggle" type="checkbox" checked /> Include front matter</label>
-            </div>
-            <div class="check-row">
-              <label><input id="includeBackMatterToggle" type="checkbox" checked /> Include back matter</label>
-            </div>
-            <div class="check-row">
-              <label><input id="includeTOCToggle" type="checkbox" checked /> Auto-generate contents page</label>
-            </div>
-            <div class="check-row">
-              <label><input id="showHeadersToggle" type="checkbox" checked /> Running headers</label>
-            </div>
-            <div class="check-row">
-              <label><input id="showPageNumbersToggle" type="checkbox" checked /> Page numbers</label>
+        <!-- -------------------------------------------------
+             APP/BOOK HEADER
+        -------------------------------------------------- -->
+        <section class="sidebar-card sidebar-brand-card">
+          <div class="sidebar-brand-row">
+            <div class="sidebar-brand-mark">F</div>
+            <div class="sidebar-brand-copy">
+              <h1 class="sidebar-brand-title">Format</h1>
+              <p class="sidebar-brand-subtitle">Export workspace</p>
             </div>
           </div>
         </section>
 
-        <section class="panel">
-          <div class="panel-header">
-            <h2>Actions</h2>
+        <section class="sidebar-card sidebar-book-card" aria-labelledby="bookSummaryHeading">
+          <div class="sidebar-card-header">
+            <div class="sidebar-card-header-copy">
+              <p class="eyebrow">Current manuscript</p>
+              <h2 id="bookSummaryHeading" class="sidebar-card-title">Book Summary</h2>
+            </div>
+            <div class="sidebar-card-header-actions">
+              <button
+                id="refreshBookBtn"
+                class="icon-btn subtle"
+                type="button"
+                aria-label="Refresh book from Firebase"
+                title="Refresh book from Firebase"
+              >
+                ↻
+              </button>
+            </div>
           </div>
-          <div class="panel-body action-stack">
-            <button id="renderBtn" class="primary-btn" type="button">Render preview</button>
-            <button id="printBtn" class="secondary-btn" type="button">Print / Save PDF</button>
-            <button id="exportHtmlBtn" class="secondary-btn" type="button">Export HTML snapshot</button>
+
+          <div class="book-summary-layout">
+            <div class="book-cover-preview" aria-hidden="true">
+              <div id="coverInitial" class="cover-initial">F</div>
+            </div>
+
+            <div class="book-summary-copy">
+              <h3 id="bookTitleDisplay" class="book-display-title">Loading…</h3>
+              <p id="bookSubtitleDisplay" class="book-display-subtitle">Preparing preview…</p>
+              <p id="bookAuthorDisplay" class="book-display-author">Author</p>
+
+              <div class="book-stat-grid">
+                <div class="book-stat">
+                  <span class="book-stat-label">Words</span>
+                  <strong id="bookWordCount" class="book-stat-value">0</strong>
+                </div>
+                <div class="book-stat">
+                  <span class="book-stat-label">Body</span>
+                  <strong id="bookBodyCount" class="book-stat-value">0</strong>
+                </div>
+                <div class="book-stat">
+                  <span class="book-stat-label">Sections</span>
+                  <strong id="bookSectionCount" class="book-stat-value">0</strong>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 
-        <section class="panel">
-          <div class="panel-header">
-            <h2>Status</h2>
-          </div>
-          <div class="panel-body">
-            <div id="statusText" class="status-pill">Waiting for book…</div>
-            <div class="stats-list">
-              <div><span class="stats-label">Pages</span><span id="pageCountValue">0</span></div>
-              <div><span class="stats-label">Words</span><span id="wordCountValue">0</span></div>
-              <div><span class="stats-label">Trim</span><span id="trimLabelValue">5 × 8</span></div>
+        <!-- -------------------------------------------------
+             FIREBASE STATUS
+        -------------------------------------------------- -->
+        <section class="sidebar-card sidebar-status-card" aria-labelledby="firebaseStatusHeading">
+          <div class="sidebar-card-header">
+            <div class="sidebar-card-header-copy">
+              <p class="eyebrow">Connection</p>
+              <h2 id="firebaseStatusHeading" class="sidebar-card-title">Firebase Status</h2>
             </div>
+          </div>
+
+          <div class="firebase-status-list">
+            <div class="firebase-status-row">
+              <span class="firebase-status-label">Auth</span>
+              <span id="firebaseAuthStatus" class="status-pill pending">Waiting</span>
+            </div>
+
+            <div class="firebase-status-row">
+              <span class="firebase-status-label">Firestore</span>
+              <span id="firebaseDbStatus" class="status-pill pending">Waiting</span>
+            </div>
+
+            <div class="firebase-status-row">
+              <span class="firebase-status-label">User</span>
+              <span id="currentUserDisplay" class="status-value">—</span>
+            </div>
+
+            <div class="firebase-status-row">
+              <span class="firebase-status-label">Book ID</span>
+              <span id="activeBookIdDisplay" class="status-value mono">—</span>
+            </div>
+
+            <div class="firebase-status-row">
+              <span class="firebase-status-label">Last sync</span>
+              <span id="lastSyncDisplay" class="status-value">Never</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- -------------------------------------------------
+             NAVIGATION TREE
+        -------------------------------------------------- -->
+        <section class="sidebar-card sidebar-nav-card" aria-labelledby="structureHeading">
+          <div class="sidebar-card-header">
+            <div class="sidebar-card-header-copy">
+              <p class="eyebrow">Structure</p>
+              <h2 id="structureHeading" class="sidebar-card-title">Navigation</h2>
+            </div>
+          </div>
+
+          <div class="nav-group-block">
+            <div class="nav-group-header">
+              <h3 class="nav-group-title">Front Matter</h3>
+              <span id="frontCountDisplay" class="nav-group-count">0</span>
+            </div>
+            <div id="navFrontMatter" class="nav-group-body"></div>
+          </div>
+
+          <div class="nav-group-block">
+            <div class="nav-group-header">
+              <h3 class="nav-group-title">Body</h3>
+              <span id="bodyCountDisplay" class="nav-group-count">0</span>
+            </div>
+            <div id="navBodyMatter" class="nav-group-body"></div>
+          </div>
+
+          <div class="nav-group-block">
+            <div class="nav-group-header">
+              <h3 class="nav-group-title">Back Matter</h3>
+              <span id="backCountDisplay" class="nav-group-count">0</span>
+            </div>
+            <div id="navBackMatter" class="nav-group-body"></div>
+          </div>
+        </section>
+
+        <!-- -------------------------------------------------
+             LEFT ACTIONS
+        -------------------------------------------------- -->
+        <section class="sidebar-card sidebar-actions-card" aria-labelledby="workspaceActionsHeading">
+          <div class="sidebar-card-header">
+            <div class="sidebar-card-header-copy">
+              <p class="eyebrow">Actions</p>
+              <h2 id="workspaceActionsHeading" class="sidebar-card-title">Workspace</h2>
+            </div>
+          </div>
+
+          <div class="sidebar-action-stack">
+            <button id="reloadBtn" class="btn btn-secondary btn-block" type="button">
+              Reload Book
+            </button>
+            <button id="rebuildPreviewBtn" class="btn btn-secondary btn-block" type="button">
+              Rebuild Preview
+            </button>
+            <button id="renderPagedBtn" class="btn btn-secondary btn-block" type="button">
+              Re-render Pagination
+            </button>
+            <button id="downloadLayoutJsonBtn" class="btn btn-ghost btn-block" type="button">
+              Download Layout JSON
+            </button>
+            <button id="openPrintPreviewBtn" class="btn btn-primary btn-block" type="button">
+              Open Print Preview
+            </button>
           </div>
         </section>
       </div>
     </aside>
 
-    <main class="main-area">
-      <div class="topbar">
+    <!-- =====================================================
+         MAIN PREVIEW WORKSPACE
+    ====================================================== -->
+    <main class="workspace" aria-label="Preview workspace">
+      <!-- -------------------------------------------------
+           DESKTOP TOPBAR
+      -------------------------------------------------- -->
+      <header class="topbar" aria-label="Desktop toolbar">
         <div class="topbar-left">
-          <button id="toggleSidebarBtn" class="icon-btn mobile-only" type="button">☰</button>
-          <div>
-            <div class="topbar-kicker">Live preview</div>
-            <div class="topbar-title" id="topbarBookTitle">Loading…</div>
+          <div class="topbar-title-group">
+            <p class="eyebrow">Preview</p>
+            <h2 class="topbar-title">Print PDF Export</h2>
+            <p class="topbar-subtitle">
+              Live paginated preview with trim, typography, TOC, and running matter.
+            </p>
+          </div>
+        </div>
+
+        <div class="topbar-center">
+          <div class="meta-chip-row" aria-label="Preview metadata">
+            <span id="templateChip" class="meta-chip">Template: Reedsy</span>
+            <span id="trimChip" class="meta-chip">Trim: 5.5 × 8.5 in</span>
+            <span id="paperChip" class="meta-chip">Interior: B&W</span>
+            <span id="layoutChip" class="meta-chip">Mode: Print</span>
+            <span id="pageCountChip" class="meta-chip">Pages: 0</span>
           </div>
         </div>
 
         <div class="topbar-right">
-          <div class="preview-scale-wrap">
-            <label for="zoomSelect">Zoom</label>
-            <select id="zoomSelect">
-              <option value="0.75">75%</option>
-              <option value="0.85">85%</option>
+          <div class="zoom-cluster" role="group" aria-label="Zoom controls">
+            <button id="zoomOutBtn" class="icon-btn" type="button" aria-label="Zoom out">−</button>
+
+            <label class="sr-only" for="zoomSelect">Preview zoom</label>
+            <select id="zoomSelect" class="select compact">
+              <option value="0.5">50%</option>
+              <option value="0.67">67%</option>
+              <option value="0.8">80%</option>
+              <option value="0.9">90%</option>
               <option value="1" selected>100%</option>
               <option value="1.1">110%</option>
               <option value="1.25">125%</option>
+              <option value="1.5">150%</option>
             </select>
+
+            <button id="zoomInBtn" class="icon-btn" type="button" aria-label="Zoom in">+</button>
+          </div>
+
+          <div class="workspace-action-cluster">
+            <button id="fitWidthBtn" class="btn btn-secondary" type="button">Fit Width</button>
+            <button id="fitPageBtn" class="btn btn-secondary" type="button">Fit Page</button>
+            <button id="exportPdfBtn" class="btn btn-primary" type="button">Export PDF</button>
           </div>
         </div>
-      </div>
+      </header>
 
-      <div id="overlay" class="overlay hidden"></div>
-
-      <section class="preview-shell">
-        <div class="preview-toolbar">
-          <div class="preview-toolbar-left">
-            <span class="preview-badge">Print interior</span>
-            <span class="preview-note">Mirrored margins, chapter starts, headers, page numbers</span>
-          </div>
+      <!-- -------------------------------------------------
+           STATUS BAR
+      -------------------------------------------------- -->
+      <section class="workspace-statusbar" aria-label="Render status">
+        <div class="workspace-statusbar-left">
+          <span id="renderStatusText" class="render-status">Waiting for book…</span>
         </div>
+        <div class="workspace-statusbar-right">
+          <span class="status-hint">PDF preview mirrors current settings</span>
+        </div>
+      </section>
 
-        <div id="previewViewport" class="preview-viewport">
-          <div id="preview" class="preview"></div>
+      <!-- -------------------------------------------------
+           PREVIEW STAGE
+      -------------------------------------------------- -->
+      <section class="preview-shell" aria-label="Paginated preview">
+        <div id="previewStage" class="preview-stage">
+          <div id="previewScaleFrame" class="preview-scale-frame">
+            <!-- =============================================
+                 SOURCE FLOW
+                 Paged.js paginates this root.
+            ============================================== -->
+            <article id="printFlow" class="print-flow">
+              <!-- -----------------------------------------
+                   BUILT-IN FRONT MATTER
+              ------------------------------------------ -->
+              <section
+                id="flowCoverPage"
+                class="flow-section flow-cover-page is-optional skip-page-number"
+                data-flow-role="cover"
+                hidden
+              >
+                <div class="flow-cover-frame">
+                  <img
+                    id="previewCoverImage"
+                    class="flow-cover-image"
+                    alt="Cover preview"
+                    hidden
+                  />
+                </div>
+              </section>
+
+              <section
+                id="flowTitlePage"
+                class="flow-section flow-title-page skip-page-number"
+                data-flow-role="title-page"
+              >
+                <div class="flow-title-block">
+                  <p id="previewSeriesDisplay" class="flow-kicker">Alysum Export</p>
+                  <h1 id="previewBookTitle" class="flow-book-title">Untitled Book</h1>
+                  <p id="previewBookSubtitle" class="flow-book-subtitle">
+                    A professional print-ready export
+                  </p>
+                </div>
+
+                <div class="flow-title-footer">
+                  <p class="flow-byline">by</p>
+                  <p id="previewAuthorName" class="flow-author-name">Unknown Author</p>
+                </div>
+              </section>
+
+              <section
+                id="flowCopyright"
+                class="flow-section flow-front-generic skip-page-number"
+                data-flow-role="copyright"
+              >
+                <header class="flow-section-header compact">
+                  <h2>Copyright</h2>
+                </header>
+                <div id="previewCopyrightContent" class="flow-prose"></div>
+              </section>
+
+              <section
+                id="flowDedication"
+                class="flow-section flow-front-generic skip-page-number"
+                data-flow-role="dedication"
+                hidden
+              >
+                <header class="flow-section-header compact">
+                  <h2>Dedication</h2>
+                </header>
+                <div id="previewDedicationContent" class="flow-prose centered"></div>
+              </section>
+
+              <section
+                id="flowEpigraph"
+                class="flow-section flow-front-generic skip-page-number"
+                data-flow-role="epigraph"
+                hidden
+              >
+                <div id="previewEpigraphContent" class="flow-epigraph-wrap"></div>
+              </section>
+
+              <!-- custom front matter injected by JS -->
+              <section
+                id="flowFrontCustom"
+                class="flow-section-group flow-front-custom"
+                data-flow-role="front-custom"
+              ></section>
+
+              <!-- -----------------------------------------
+                   TABLE OF CONTENTS
+              ------------------------------------------ -->
+              <section
+                id="flowTableOfContents"
+                class="flow-section flow-toc skip-page-number"
+                data-flow-role="toc"
+              >
+                <header class="flow-section-header toc-header">
+                  <h2>Contents</h2>
+                </header>
+                <ol id="tocList" class="toc-list"></ol>
+              </section>
+
+              <!-- -----------------------------------------
+                   BODY MATTER
+              ------------------------------------------ -->
+              <section
+                id="flowBodyMatter"
+                class="flow-section-group flow-body-group"
+                data-flow-role="body"
+              ></section>
+
+              <!-- -----------------------------------------
+                   BACK MATTER
+              ------------------------------------------ -->
+              <section
+                id="flowBackMatter"
+                class="flow-section-group flow-back-group"
+                data-flow-role="back"
+              ></section>
+            </article>
+          </div>
         </div>
       </section>
     </main>
+
+    <!-- =====================================================
+         RIGHT SIDEBAR
+         Dense settings surface to match JS exactly.
+    ====================================================== -->
+    <aside id="rightSidebar" class="sidebar sidebar-right" aria-label="Export settings">
+      <div class="sidebar-scroll">
+        <!-- -------------------------------------------------
+             EXPORT MODE
+        -------------------------------------------------- -->
+        <section class="sidebar-card settings-card" aria-labelledby="exportModeHeading">
+          <div class="sidebar-card-header">
+            <div class="sidebar-card-header-copy">
+              <p class="eyebrow">Output</p>
+              <h2 id="exportModeHeading" class="sidebar-card-title">Export Mode</h2>
+            </div>
+          </div>
+
+          <div class="field-grid">
+            <label class="field">
+              <span class="field-label">Export type</span>
+              <select id="exportTypeSelect" class="select">
+                <option value="print" selected>Print-ready PDF</option>
+                <option value="digital">Digital PDF</option>
+                <option value="proof">Proof PDF</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span class="field-label">Template</span>
+              <select id="templateSelect" class="select">
+                <option value="reedsy" selected>Reedsy</option>
+                <option value="classic">Classic</option>
+                <option value="romance">Romance</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span class="field-label">Language</span>
+              <select id="languageSelect" class="select">
+                <option value="en" selected>English</option>
+                <option value="fr">French</option>
+                <option value="de">German</option>
+                <option value="es">Spanish</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span class="field-label">Interior type</span>
+              <select id="interiorTypeSelect" class="select">
+                <option value="bw" selected>Black & White</option>
+                <option value="standard-color">Standard Color</option>
+                <option value="premium-color">Premium Color</option>
+              </select>
+            </label>
+          </div>
+        </section>
+
+        <!-- -------------------------------------------------
+             PAGE GEOMETRY
+        -------------------------------------------------- -->
+        <section class="sidebar-card settings-card" aria-labelledby="pageGeometryHeading">
+          <div class="sidebar-card-header">
+            <div class="sidebar-card-header-copy">
+              <p class="eyebrow">Page geometry</p>
+              <h2 id="pageGeometryHeading" class="sidebar-card-title">Trim & Margins</h2>
+            </div>
+          </div>
+
+          <div class="field-grid">
+            <label class="field">
+              <span class="field-label">Trim size</span>
+              <select id="trimSizeSelect" class="select">
+                <option value="4.25x6.87">Pocket · 4.25 × 6.87 in</option>
+                <option value="5x8">Digest · 5 × 8 in</option>
+                <option value="5.25x8">A5-ish · 5.25 × 8 in</option>
+                <option value="5.5x8.5" selected>Trade · 5.5 × 8.5 in</option>
+                <option value="6x9">Trade Large · 6 × 9 in</option>
+                <option value="8.5x11">Workbook · 8.5 × 11 in</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span class="field-label">Margin preset</span>
+              <select id="marginPresetSelect" class="select">
+                <option value="balanced" selected>Balanced</option>
+                <option value="compact">Compact</option>
+                <option value="wide">Wide</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span class="field-label">Page number start</span>
+              <input id="pageNumberStartInput" class="input" type="number" min="1" value="1" />
+            </label>
+
+            <label class="field">
+              <span class="field-label">Gutter mode</span>
+              <select id="gutterModeSelect" class="select">
+                <option value="auto" selected>Auto</option>
+                <option value="narrow">Narrow</option>
+                <option value="medium">Medium</option>
+                <option value="wide">Wide</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="toggle-grid">
+            <label class="toggle-row">
+              <input id="startChaptersRightToggle" type="checkbox" checked />
+              <span>Start chapters on right-hand pages</span>
+            </label>
+
+            <label class="toggle-row">
+              <input id="showPrintGuidesToggle" type="checkbox" />
+              <span>Show print guides</span>
+            </label>
+
+            <label class="toggle-row">
+              <input id="cropMarksToggle" type="checkbox" />
+              <span>Show crop marks</span>
+            </label>
+
+            <label class="toggle-row">
+              <input id="bleedToggle" type="checkbox" />
+              <span>Enable bleed</span>
+            </label>
+          </div>
+        </section>
+
+        <!-- -------------------------------------------------
+             TYPOGRAPHY
+        -------------------------------------------------- -->
+        <section class="sidebar-card settings-card" aria-labelledby="typographyHeading">
+          <div class="sidebar-card-header">
+            <div class="sidebar-card-header-copy">
+              <p class="eyebrow">Typography</p>
+              <h2 id="typographyHeading" class="sidebar-card-title">Body Text</h2>
+            </div>
+          </div>
+
+          <div class="field-grid">
+            <label class="field">
+              <span class="field-label">Body font</span>
+              <select id="bodyFontSelect" class="select">
+                <option value="merriweather" selected>Merriweather</option>
+                <option value="crimson">Crimson Text</option>
+                <option value="lato">Lato</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span class="field-label">Heading font</span>
+              <select id="headingFontSelect" class="select">
+                <option value="lato" selected>Lato</option>
+                <option value="merriweather">Merriweather</option>
+                <option value="crimson">Crimson Text</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span class="field-label">Font size</span>
+              <input id="fontSizeRange" class="range" type="range" min="10" max="14" step="0.25" value="11.5" />
+              <span id="fontSizeValue" class="field-value">11.5 pt</span>
+            </label>
+
+            <label class="field">
+              <span class="field-label">Line height</span>
+              <input id="lineHeightRange" class="range" type="range" min="1.2" max="1.8" step="0.05" value="1.45" />
+              <span id="lineHeightValue" class="field-value">1.45</span>
+            </label>
+
+            <label class="field">
+              <span class="field-label">Paragraph spacing</span>
+              <input id="paragraphSpacingRange" class="range" type="range" min="0" max="1.5" step="0.05" value="0.35" />
+              <span id="paragraphSpacingValue" class="field-value">0.35 em</span>
+            </label>
+
+            <label class="field">
+              <span class="field-label">Paragraph indent</span>
+              <input id="paragraphIndentRange" class="range" type="range" min="0" max="2" step="0.05" value="1.4" />
+              <span id="paragraphIndentValue" class="field-value">1.4 em</span>
+            </label>
+          </div>
+
+          <div class="toggle-grid">
+            <label class="toggle-row">
+              <input id="justifyTextToggle" type="checkbox" checked />
+              <span>Justify body text</span>
+            </label>
+
+            <label class="toggle-row">
+              <input id="hyphenationToggle" type="checkbox" checked />
+              <span>Enable hyphenation</span>
+            </label>
+
+            <label class="toggle-row">
+              <input id="ligaturesToggle" type="checkbox" checked />
+              <span>Enable ligatures</span>
+            </label>
+
+            <label class="toggle-row">
+              <input id="dropCapsToggle" type="checkbox" checked />
+              <span>Use drop caps</span>
+            </label>
+          </div>
+        </section>
+
+        <!-- -------------------------------------------------
+             CHAPTER STYLING
+        -------------------------------------------------- -->
+        <section class="sidebar-card settings-card" aria-labelledby="chapterStyleHeading">
+          <div class="sidebar-card-header">
+            <div class="sidebar-card-header-copy">
+              <p class="eyebrow">Chapter styling</p>
+              <h2 id="chapterStyleHeading" class="sidebar-card-title">Openers</h2>
+            </div>
+          </div>
+
+          <div class="field-grid">
+            <label class="field">
+              <span class="field-label">Chapter spacing</span>
+              <input id="chapterSpacingRange" class="range" type="range" min="2" max="8" step="0.25" value="4.5" />
+              <span id="chapterSpacingValue" class="field-value">4.5 rem</span>
+            </label>
+
+            <label class="field">
+              <span class="field-label">Chapter title scale</span>
+              <input id="chapterTitleScaleRange" class="range" type="range" min="1.4" max="2.4" step="0.05" value="1.9" />
+              <span id="chapterTitleScaleValue" class="field-value">1.9×</span>
+            </label>
+          </div>
+
+          <div class="toggle-grid">
+            <label class="toggle-row">
+              <input id="showChapterNumbersToggle" type="checkbox" checked />
+              <span>Show chapter numbers</span>
+            </label>
+
+            <label class="toggle-row">
+              <input id="showChapterOrnamentsToggle" type="checkbox" checked />
+              <span>Show chapter ornament</span>
+            </label>
+
+            <label class="toggle-row">
+              <input id="uppercaseChapterTitlesToggle" type="checkbox" />
+              <span>Uppercase chapter titles</span>
+            </label>
+
+            <label class="toggle-row">
+              <input id="keepChapterFirstParagraphFlushToggle" type="checkbox" checked />
+              <span>No indent on first paragraph</span>
+            </label>
+          </div>
+        </section>
+
+        <!-- -------------------------------------------------
+             BOOK STRUCTURE
+        -------------------------------------------------- -->
+        <section class="sidebar-card settings-card" aria-labelledby="bookSectionsHeading">
+          <div class="sidebar-card-header">
+            <div class="sidebar-card-header-copy">
+              <p class="eyebrow">Book sections</p>
+              <h2 id="bookSectionsHeading" class="sidebar-card-title">Front & Back Matter</h2>
+            </div>
+          </div>
+
+          <div class="toggle-grid">
+            <label class="toggle-row">
+              <input id="includeTitlePageToggle" type="checkbox" checked />
+              <span>Include title page</span>
+            </label>
+
+            <label class="toggle-row">
+              <input id="includeCoverPageToggle" type="checkbox" />
+              <span>Include cover page</span>
+            </label>
+
+            <label class="toggle-row">
+              <input id="includeCopyrightToggle" type="checkbox" checked />
+              <span>Include copyright</span>
+            </label>
+
+            <label class="toggle-row">
+              <input id="includeDedicationToggle" type="checkbox" />
+              <span>Include dedication</span>
+            </label>
+
+            <label class="toggle-row">
+              <input id="includeEpigraphToggle" type="checkbox" />
+              <span>Include epigraph</span>
+            </label>
+
+            <label class="toggle-row">
+              <input id="includeTocToggle" type="checkbox" checked />
+              <span>Include table of contents</span>
+            </label>
+
+            <label class="toggle-row">
+              <input id="includeBackMatterToggle" type="checkbox" checked />
+              <span>Include back matter</span>
+            </label>
+          </div>
+        </section>
+
+        <!-- -------------------------------------------------
+             RUNNING MATTER
+        -------------------------------------------------- -->
+        <section class="sidebar-card settings-card" aria-labelledby="runningMatterHeading">
+          <div class="sidebar-card-header">
+            <div class="sidebar-card-header-copy">
+              <p class="eyebrow">Running matter</p>
+              <h2 id="runningMatterHeading" class="sidebar-card-title">Headers & Page Numbers</h2>
+            </div>
+          </div>
+
+          <div class="toggle-grid">
+            <label class="toggle-row">
+              <input id="showRunningHeadersToggle" type="checkbox" checked />
+              <span>Show running headers</span>
+            </label>
+
+            <label class="toggle-row">
+              <input id="showPageNumbersToggle" type="checkbox" checked />
+              <span>Show page numbers</span>
+            </label>
+
+            <label class="toggle-row">
+              <input id="skipFrontMatterPageNumbersToggle" type="checkbox" checked />
+              <span>Skip front matter page numbers</span>
+            </label>
+
+            <label class="toggle-row">
+              <input id="showAuthorOnLeftPagesToggle" type="checkbox" checked />
+              <span>Author on left pages</span>
+            </label>
+
+            <label class="toggle-row">
+              <input id="showChapterOnRightPagesToggle" type="checkbox" checked />
+              <span>Chapter on right pages</span>
+            </label>
+          </div>
+        </section>
+
+        <!-- -------------------------------------------------
+             RIGHT ACTIONS
+        -------------------------------------------------- -->
+        <section class="sidebar-card settings-card" aria-labelledby="exportActionsHeading">
+          <div class="sidebar-card-header">
+            <div class="sidebar-card-header-copy">
+              <p class="eyebrow">Output</p>
+              <h2 id="exportActionsHeading" class="sidebar-card-title">Export</h2>
+            </div>
+          </div>
+
+          <div class="sidebar-action-stack">
+            <button id="exportPdfSidebarBtn" class="btn btn-primary btn-block" type="button">
+              Export PDF
+            </button>
+          </div>
+        </section>
+      </div>
+    </aside>
   </div>
 
-  <template id="pageTemplate">
-    <div class="page">
-      <div class="running-header"></div>
-      <div class="page-content"></div>
-      <div class="page-number"></div>
-    </div>
-  </template>
+  <!-- =========================================================
+       BACKDROP / OVERLAYS
+  ========================================================== -->
+  <div id="sidebarBackdrop" class="sidebar-backdrop" hidden></div>
 
-  <script type="module" src="format.js"></script>
+  <!-- =========================================================
+       TOASTS
+  ========================================================== -->
+  <div class="toast-stack" aria-live="polite" aria-atomic="true">
+    <div id="syncToast" class="toast is-hidden">
+      <strong>Book synced</strong>
+      <span>Preview was refreshed from Firebase.</span>
+    </div>
+
+    <div id="renderToast" class="toast is-hidden">
+      <strong>Preview rendered</strong>
+      <span>Pagination and layout were updated.</span>
+    </div>
+
+    <div id="errorToast" class="toast is-hidden">
+      <strong>Error</strong>
+      <span>Check your data or rendering state.</span>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       DEBUG PANEL
+  ========================================================== -->
+  <section id="debugDrawer" class="debug-drawer" hidden aria-label="Debug information">
+    <header class="debug-header">
+      <h2 class="debug-title">Debug</h2>
+      <button id="closeDebugBtn" class="icon-btn" type="button" aria-label="Close debug panel">
+        ×
+      </button>
+    </header>
+    <pre id="debugOutput" class="debug-output">{}</pre>
+  </section>
+
+  <!-- =========================================================
+       INLINE PAGED.JS RULES
+       These are layout-engine rules, not decorative CSS.
+  ========================================================== -->
+  <style>
+    @page {
+      size: var(--trim-width, 5.5in) var(--trim-height, 8.5in);
+      margin: 0;
+    }
+
+    @page :left {
+      margin-top: var(--page-margin-top, 0.9in);
+      margin-bottom: var(--page-margin-bottom, 0.9in);
+      margin-left: var(--page-margin-inner, 0.9in);
+      margin-right: var(--page-margin-outer, 0.7in);
+
+      @top-left {
+        content: string(book-author);
+      }
+
+      @bottom-left {
+        content: counter(page);
+      }
+    }
+
+    @page :right {
+      margin-top: var(--page-margin-top, 0.9in);
+      margin-bottom: var(--page-margin-bottom, 0.9in);
+      margin-left: var(--page-margin-outer, 0.7in);
+      margin-right: var(--page-margin-inner, 0.9in);
+
+      @top-right {
+        content: string(chapter-title);
+      }
+
+      @bottom-right {
+        content: counter(page);
+      }
+    }
+  </style>
+
+  <!-- =========================================================
+       RUNTIME CONFIG
+  ========================================================== -->
+  <script>
+    window.FORMAT_CONFIG = {
+      appName: "Format",
+      version: "1.0.0",
+      route: {
+        bookParam: "book",
+        fallbackBookId: ""
+      },
+      firebase: {
+        useExternalModule: true,
+        modulePath: "./firebase.js"
+      },
+      data: {
+        collectionRoot: "users",
+        nestedCollection: "books"
+      },
+      defaults: {
+        exportType: "print",
+        template: "reedsy",
+        trimSize: "5.5x8.5",
+        bodyFont: "merriweather",
+        headingFont: "lato",
+        fontSize: 11.5,
+        lineHeight: 1.45,
+        paragraphSpacing: 0.35,
+        paragraphIndent: 1.4,
+        pageNumberStart: 1
+      }
+    };
+  </script>
+
+  <!-- =========================================================
+       APP SCRIPT
+  ========================================================== -->
+  <script type="module" src="./format.js"></script>
 </body>
-</html>
+</html>	
