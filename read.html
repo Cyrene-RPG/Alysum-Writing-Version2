@@ -713,7 +713,7 @@
           <div class="likes-title">Kudos</div>
           <div class="likes-row">
             <button class="btn primary" id="likeBtn">❤️ Leave Kudos</button>
-            <div class="kudos-note">One kudos per logged-in reader, like AO3.</div>
+            <div class="kudos-note">One Per User.</div>
           </div>
           <div class="kudos-count" id="likeCount">0 kudos</div>
         </div>
@@ -1250,7 +1250,15 @@
 
     async function postComment() {
       const text = commentInput.value.trim();
-
+	  
+		const userRef = doc(db, "users", currentUser.uid);
+		if (!userSnap.exists()) {
+		throw new Error("User profile not found.");
+}
+	const username = userSnap.data()?.username?.trim();
+    if (!username) {
+    throw new Error("Username not found.");
+}
       if (!text) {
         showStatus("Write a comment first.");
         setTimeout(hideStatus, 1400);
@@ -1266,7 +1274,7 @@
       try {
         await addDoc(collection(db, "library", bookId, "comments"), {
           uid: currentUser.uid,
-          username: getBestUsername(currentUser),
+          username,
           text,
           createdAt: Date.now()
         });
