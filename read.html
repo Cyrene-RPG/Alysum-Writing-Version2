@@ -1248,30 +1248,22 @@
       }
     }
 
-    async function postComment() {
-      const text = commentInput.value.trim();
-	  
-		const userRef = doc(db, "users", currentUser.uid);
-		if (!userSnap.exists()) {
-		throw new Error("User profile not found.");
-}
-	const username = userSnap.data()?.username?.trim();
-    if (!username) {
-    throw new Error("Username not found.");
-}
-      if (!text) {
-        showStatus("Write a comment first.");
-        setTimeout(hideStatus, 1400);
-        return;
-      }
+async function postComment() {
+  const text = commentInput.value.trim();
 
-      if (!currentUser) {
-        showStatus("Log in to post comments.");
-        setTimeout(hideStatus, 1800);
-        return;
-      }
+  if (!text) {
+    showStatus("Write a comment first.");
+    setTimeout(hideStatus, 1400);
+    return;
+  }
 
-    try {
+  if (!currentUser) {
+    showStatus("Log in to post comments.");
+    setTimeout(hideStatus, 1800);
+    return;
+  }
+
+  try {
     const userRef = doc(db, "users", currentUser.uid);
     const userSnap = await getDoc(userRef);
 
@@ -1296,6 +1288,7 @@
     showStatus("Comment posted.");
     setTimeout(hideStatus, 1200);
     await loadComments();
+
   } catch (error) {
     console.error(error);
     showError("Failed to post comment.");
