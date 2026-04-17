@@ -340,7 +340,7 @@ function createPage(pageNumber) {
   const paddingRight = isLeftPage ? state.outsideMargin : state.insideMargin;
 
   content.style.paddingTop = state.topMargin;
-  content.style.paddingBottom = state.bottomMargin;
+	content.style.paddingBottom = `calc(${state.bottomMargin} + 0.18in)`;
   content.style.paddingLeft = paddingLeft;
   content.style.paddingRight = paddingRight;
   content.style.fontFamily = state.font;
