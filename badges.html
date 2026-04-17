@@ -25,7 +25,6 @@ body {
     color: var(--text);
 }
 
-/* HEADER */
 .header {
     position: sticky;
     top: 0;
@@ -37,7 +36,6 @@ body {
     background: linear-gradient(135deg, #5b21b6, #7c3aed);
 }
 
-/* CENTER TITLE */
 .header-title {
     position: absolute;
     left: 50%;
@@ -46,7 +44,6 @@ body {
     font-weight: 900;
 }
 
-/* BACK BUTTON */
 .back-btn {
     position: absolute;
     left: 14px;
@@ -60,16 +57,12 @@ body {
     cursor: pointer;
 }
 
-
-
-/* CONTAINER */
 .container {
     max-width: 1100px;
     margin: auto;
     padding: 20px;
 }
 
-/* STATS */
 .stats {
     display: flex;
     gap: 12px;
@@ -97,14 +90,12 @@ body {
     color: var(--muted);
 }
 
-/* BADGES GRID */
 .badges {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
     gap: 18px;
 }
 
-/* BADGE */
 .badge {
     background: var(--panel);
     border: 1px solid var(--border);
@@ -137,7 +128,6 @@ body {
     margin-bottom: 12px;
 }
 
-/* PROGRESS BAR */
 .progress-bar {
     height: 8px;
     border-radius: 999px;
@@ -149,25 +139,13 @@ body {
     height: 100%;
     background: linear-gradient(90deg, #6d28d9, #a78bfa);
     width: 0%;
-    transition: width 0.3s ease;
 }
 
-/* TEXT */
 .progress-text {
     font-size: 12px;
     margin-top: 6px;
     color: var(--muted);
     font-weight: 700;
-}
-
-@media (min-width: 900px) {
-    .container {
-        padding: 28px;
-    }
-
-    .badges {
-        grid-template-columns: repeat(4, 1fr);
-    }
 }
 </style>
 </head>
@@ -175,26 +153,25 @@ body {
 <body>
 
 <div class="header">
-	<button class="back-btn"
-id="backBtn"> ←</button>
-	<div class="header-title">🏆 Achievements</div>
-	</div>
+<button class="back-btn" id="backBtn">←</button>
+<div class="header-title">🏆 Achievements</div>
+</div>
 
 <div class="container">
 
 <div class="stats">
-    <div class="stat">
-        <h3 id="totalWords">0</h3>
-        <p>Total Words</p>
-    </div>
-    <div class="stat">
-        <h3 id="streak">0</h3>
-        <p>Streak 🔥</p>
-    </div>
-    <div class="stat">
-        <h3 id="books">0</h3>
-        <p>Books</p>
-    </div>
+<div class="stat">
+<h3 id="totalWords">0</h3>
+<p>Total Words</p>
+</div>
+<div class="stat">
+<h3 id="streak">0</h3>
+<p>Streak 🔥</p>
+</div>
+<div class="stat">
+<h3 id="books">0</h3>
+<p>Books</p>
+</div>
 </div>
 
 <div class="badges" id="badgeGrid"></div>
@@ -204,133 +181,133 @@ id="backBtn"> ←</button>
 <script type="module">
 import { auth, db } from "./firebase.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import {
-    doc,
-    getDoc,
-    collection,
-    getDocs
-} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { doc, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const grid = document.getElementById("badgeGrid");
 const wordsEl = document.getElementById("totalWords");
 const streakEl = document.getElementById("streak");
 const booksEl = document.getElementById("books");
 
-/* BADGES */
+/* FULL BADGES */
 const BADGES = [
-    { icon:"✍️", title:"1K Words", goal:1000, getValue:d=>d.words, desc:"Start writing" },
-    { icon:"🔥", title:"10K Words", goal:10000, getValue:d=>d.words, desc:"Momentum" },
-    { icon:"🏆", title:"50K Words", goal:50000, getValue:d=>d.words, desc:"Big milestone" },
 
-    { icon:"⚡", title:"3 Day Streak", goal:3, getValue:d=>d.streak, desc:"Consistency" },
-    { icon:"🔥", title:"7 Day Streak", goal:7, getValue:d=>d.streak, desc:"Strong habit" },
+{ icon:"🧩", title:"500 Words", goal:500, getValue:d=>d.words, desc:"First step" },
+{ icon:"✍️", title:"1K Words", goal:1000, getValue:d=>d.words, desc:"Start writing" },
+{ icon:"🔥", title:"10K Words", goal:10000, getValue:d=>d.words, desc:"Momentum" },
+{ icon:"🏆", title:"50K Words", goal:50000, getValue:d=>d.words, desc:"Big milestone" },
+{ icon:"💎", title:"100K Words", goal:100000, getValue:d=>d.words, desc:"Serious writer" },
+{ icon:"🚀", title:"200K Words", goal:200000, getValue:d=>d.words, desc:"Elite output" },
+{ icon:"🧠", title:"500K Words", goal:500000, getValue:d=>d.words, desc:"Half million" },
+{ icon:"👑", title:"1M Words", goal:1000000, getValue:d=>d.words, desc:"Master writer" },
 
-    { icon:"📚", title:"First Book", goal:1, getValue:d=>d.books, desc:"You started" },
-    { icon:"📦", title:"5 Books", goal:5, getValue:d=>d.books, desc:"Library growing" }
+{ icon:"🌱", title:"Day 1", goal:1, getValue:d=>d.streak, desc:"You showed up" },
+{ icon:"⚡", title:"3 Day Streak", goal:3, getValue:d=>d.streak, desc:"Consistency" },
+{ icon:"🔥", title:"7 Day Streak", goal:7, getValue:d=>d.streak, desc:"Strong habit" },
+{ icon:"💪", title:"14 Day Streak", goal:14, getValue:d=>d.streak, desc:"Locked in" },
+{ icon:"📅", title:"30 Day Streak", goal:30, getValue:d=>d.streak, desc:"Monthly discipline" },
+{ icon:"🧱", title:"60 Day Streak", goal:60, getValue:d=>d.streak, desc:"Unbreakable" },
+{ icon:"📈", title:"90 Day Streak", goal:90, getValue:d=>d.streak, desc:"3 month grind" },
+{ icon:"🌀", title:"100 Day Streak", goal:100, getValue:d=>d.streak, desc:"Rare discipline" },
+{ icon:"🏔️", title:"180 Day Streak", goal:180, getValue:d=>d.streak, desc:"Half year" },
+{ icon:"🎖️", title:"365 Day Streak", goal:365, getValue:d=>d.streak, desc:"1 year legend" },
+
+{ icon:"📚", title:"First Book", goal:1, getValue:d=>d.books, desc:"You started" },
+{ icon:"📦", title:"5 Books", goal:5, getValue:d=>d.books, desc:"Library growing" },
+{ icon:"🏗️", title:"10 Books", goal:10, getValue:d=>d.books, desc:"Builder" },
+{ icon:"🏛️", title:"25 Books", goal:25, getValue:d=>d.books, desc:"Empire" }
+
 ];
 
-/* WORD COUNT FROM EDITOR FORMAT */
+/* WORD COUNT */
 function stripHtml(html=""){
-    return html.replace(/<[^>]*>/g," ").replace(/\s+/g," ").trim();
+return html.replace(/<[^>]*>/g," ").replace(/\s+/g," ").trim();
 }
 
 function countWords(html=""){
-    const text = stripHtml(html);
-    return text ? text.split(" ").length : 0;
+const text = stripHtml(html);
+return text ? text.split(" ").length : 0;
 }
 
 function countBookWords(book){
-    let total = 0;
-    const sections = book.sections || {};
-    ["front","body","back"].forEach(sec=>{
-        (sections[sec]||[]).forEach(ch=>{
-            total += countWords(ch.content || "");
-        });
-    });
-    return total;
+let total = 0;
+const sections = book.sections || {};
+["front","body","back"].forEach(sec=>{
+(sections[sec]||[]).forEach(ch=>{
+total += countWords(ch.content || "");
+});
+});
+return total;
 }
 
-/* LOAD DATA */
 async function loadData(uid){
-    const userSnap = await getDoc(doc(db,"users",uid));
-    const booksSnap = await getDocs(collection(db,"users",uid,"books"));
+const userSnap = await getDoc(doc(db,"users",uid));
+const booksSnap = await getDocs(collection(db,"users",uid,"books"));
 
-    let totalWords = 0;
+let totalWords = 0;
 
-    booksSnap.forEach(docSnap=>{
-        totalWords += countBookWords(docSnap.data());
-    });
+booksSnap.forEach(docSnap=>{
+totalWords += countBookWords(docSnap.data());
+});
 
-    const data = userSnap.data() || {};
+const data = userSnap.data() || {};
 
-    return {
-        words: totalWords,
-        streak: data.streak || 0,
-        books: booksSnap.size
-    };
+return {
+words: totalWords,
+streak: data.streak || 0,
+books: booksSnap.size
+};
 }
 
 /* RENDER */
 function renderBadges(data){
-    grid.innerHTML = "";
+grid.innerHTML = "";
 
-    BADGES.forEach(b=>{
-        const value = b.getValue(data);
-        const progress = Math.min(value / b.goal, 1);
-        const percent = Math.floor(progress * 100);
-        const unlocked = value >= b.goal;
+BADGES.forEach(b=>{
+const value = b.getValue(data);
+const percent = Math.min(value / b.goal, 1) * 100;
+const unlocked = value >= b.goal;
 
-        const el = document.createElement("div");
-        el.className = "badge " + (unlocked ? "unlocked" : "locked");
+const el = document.createElement("div");
+el.className = "badge " + (unlocked ? "unlocked" : "locked");
 
-        el.innerHTML = `
-            <div class="badge-icon">${b.icon}</div>
-            <div class="badge-title">${b.title}</div>
-            <div class="badge-desc">${b.desc}</div>
+el.innerHTML = `
+<div class="badge-icon">${b.icon}</div>
+<div class="badge-title">${b.title}</div>
+<div class="badge-desc">${b.desc}</div>
 
-            <div class="progress-bar">
-                <div class="progress-fill" style="width:${percent}%"></div>
-            </div>
+<div class="progress-bar">
+<div class="progress-fill" style="width:${percent}%"></div>
+</div>
 
-            <div class="progress-text">
-                ${Math.min(value,b.goal)} / ${b.goal}
-            </div>
-        `;
+<div class="progress-text">
+${Math.min(value,b.goal)} / ${b.goal}
+</div>
+`;
 
-        grid.appendChild(el);
-    });
+grid.appendChild(el);
+});
 }
 
 /* AUTH */
 onAuthStateChanged(auth, async (user)=>{
-    if(!user){
-        location.href="/login.html";
-        return;
-    }
+if(!user){
+location.href="/login.html";
+return;
+}
 
-    try{
-        const data = await loadData(user.uid);
+const data = await loadData(user.uid);
 
-        wordsEl.textContent = data.words.toLocaleString();
-        streakEl.textContent = data.streak;
-        booksEl.textContent = data.books;
+wordsEl.textContent = data.words.toLocaleString();
+streakEl.textContent = data.streak;
+booksEl.textContent = data.books;
 
-        renderBadges(data);
+renderBadges(data);
 
-    }catch(e){
-        console.error(e);
-        alert("Failed to load achievements");
-    }
-	
-	const backBtn = document.getElementById("backBtn");
-
-backBtn.addEventListener("click", () => {
-    window.location.href = "/studio.html";
-});
-
+document.getElementById("backBtn").onclick = () => {
+window.location.href = "/studio.html";
+};
 });
 </script>
-
 
 </body>
 </html>

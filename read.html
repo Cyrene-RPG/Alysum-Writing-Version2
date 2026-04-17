@@ -748,6 +748,7 @@
       collection,
       addDoc,
       getDocs,
+      getCountFromServer,
       query,
       orderBy,
       serverTimestamp
@@ -1078,29 +1079,32 @@
       loadComments();
     }
 
-    async function loadLikeState() {
+  async function loadLikeState() {
       if (!bookId) return;
-
+    
       try {
-        const snap = await getDoc(doc(db, "library", bookId));
-        const raw = snap.exists() ? snap.data() : {};
-        const likes = safeNumber(raw.likes, 0);
+        const likesRef = collection(db, "library", bookId, "likes");
+        const countSnap = await getCountFromServer(likesRef);
+        const likes = countSnap.data().count || 0;
+    
         likeCount.textContent = `${formatNumber(likes)} kudos`;
-
+    
         hasLikedThisBook = false;
-
+    
         if (currentUser) {
-          const likeSnap = await getDoc(doc(db, "library", bookId, "likes", currentUser.uid));
+          const likeSnap = await getDoc(
+            doc(db, "library", bookId, "likes", currentUser.uid)
+          );
           hasLikedThisBook = likeSnap.exists();
         }
-
+    
         likeBtn.disabled = !currentUser || hasLikedThisBook;
         likeBtn.textContent = hasLikedThisBook ? "❤️ Kudos Left" : "❤️ Leave Kudos";
       } catch (error) {
         console.error(error);
         likeCount.textContent = "Couldn’t load kudos";
       }
-    }
+   }
 
     async function leaveKudos() {
   if (!currentUser) {
