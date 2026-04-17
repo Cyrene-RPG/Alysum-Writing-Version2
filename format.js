@@ -427,10 +427,15 @@ function collectContentBlocks(book) {
   return { blocks, tocRows };
 }
 
-function fitsInPage(page, node) {
+	function fitsInPage(page, node) {
   const content = page.querySelector(".page-content");
   content.appendChild(node);
-  const fits = content.scrollHeight <= content.clientHeight;
+
+  // Add safety buffer (prevents PDF clipping)
+  const BUFFER = 8; // pixels
+
+  const fits = content.scrollHeight <= (content.clientHeight - BUFFER);
+
   content.removeChild(node);
   return fits;
 }
