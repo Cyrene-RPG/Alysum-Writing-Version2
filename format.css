@@ -375,13 +375,14 @@ body.light .field select {
 .page-content {
   position: relative;
   width: 100%;
-  min-height: 100%;
-  overflow: visible;
+  height: 100%;
+  overflow: hidden; /* restore this */
   font-family: Georgia, "Times New Roman", serif;
   font-size: 11pt;
   line-height: 1.6;
   text-align: justify;
   color: var(--paper-ink);
+
 }
 
 .page-content p {
@@ -598,22 +599,28 @@ body.light .field select {
     break-after: auto;
     page-break-after: auto;
   }
+
+  /* ✅ CRITICAL FIX — allow content to expand for print */
+  .page-content {
+    overflow: visible !important;
+  }
+
   /* Prevent ugly splits across pages */
-.book-section {
-  break-inside: avoid;
-  page-break-inside: avoid;
-}
+  .book-section {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
 
-.chapter-title {
-  break-after: avoid;
-  page-break-after: avoid;
-}
+  .chapter-title {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
 
-/* Keep paragraphs from splitting badly */
-.section-body p {
-  break-inside: avoid;
-  page-break-inside: avoid;
-  orphans: 2;
-  widows: 2;
-}
+  /* Keep paragraphs from splitting badly */
+  .section-body p {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    orphans: 2;
+    widows: 2;
+  }
 }
