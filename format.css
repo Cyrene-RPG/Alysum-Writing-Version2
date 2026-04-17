@@ -567,7 +567,7 @@ body.light .field select {
   }
 }
 
-@media print {
+	@media print {
   body,
   .main-area,
   .preview-shell,
@@ -587,12 +587,18 @@ body.light .field select {
     display: block;
   }
 
+  /* Page container */
   .page {
+    position: relative;
     box-shadow: none !important;
-    margin: 0 auto 0.2in !important;
+    margin: 0 auto !important;
     transform: none !important;
-    break-after: page;
-    page-break-after: always;
+
+    /* Let JS handle pagination */
+    break-after: auto;
+    page-break-after: auto;
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
 
   .page:last-child {
@@ -600,12 +606,23 @@ body.light .field select {
     page-break-after: auto;
   }
 
-  /* ✅ CRITICAL FIX — allow content to expand for print */
+  /* Allow content to fully render (prevents clipping) */
   .page-content {
     overflow: visible !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 
-  /* Prevent ugly splits across pages */
+  /* Fix page number positioning */
+  .page-number {
+    position: absolute;
+    bottom: 0.4in;
+    left: 0;
+    right: 0;
+    text-align: center;
+  }
+
+  /* Prevent ugly splits */
   .book-section {
     break-inside: avoid;
     page-break-inside: avoid;
@@ -616,7 +633,6 @@ body.light .field select {
     page-break-after: avoid;
   }
 
-  /* Keep paragraphs from splitting badly */
   .section-body p {
     break-inside: avoid;
     page-break-inside: avoid;
