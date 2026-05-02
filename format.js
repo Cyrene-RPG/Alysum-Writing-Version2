@@ -720,8 +720,12 @@ function exportHtmlSnapshot() {
   const a = document.createElement("a");
   a.href = url;
   a.download = `${(currentBook?.title || "book").replace(/[^a-z0-9]+/gi, "_")}.html`;
+  document.body.appendChild(a);
   a.click();
-  URL.revokeObjectURL(url);
+  a.remove();
+
+  // Allow the download to start before revoking.
+  window.setTimeout(() => URL.revokeObjectURL(url), 1500);
 }
 
 async function loadBook(uid) {
@@ -782,7 +786,11 @@ function bindEvents() {
   });
 
   el.renderBtn.addEventListener("click", renderBook);
-  el.printBtn.addEventListener("click", () => window.print());
+  el.printBtn.addEventListener("click", async () => {
+    renderBook();
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    window.print();
+  });
   el.exportHtmlBtn.addEventListener("click", exportHtmlSnapshot);
 
   el.themeToggleBtn.addEventListener("click", () => {
