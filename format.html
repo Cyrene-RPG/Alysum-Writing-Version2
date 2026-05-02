@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Alysum Formatter</title>
+  <title>Alysum PDF Exporter</title>
   <link rel="stylesheet" href="format.css" />
 </head>
 <body class="dark">
@@ -13,7 +13,7 @@
         <div class="brand-row">
           <div>
             <div class="eyebrow">Book formatter</div>
-            <h1 class="sidebar-title">Export Studio</h1>
+            <h1 class="sidebar-title">PDF Exporter</h1>
           </div>
           <button id="themeToggleBtn" class="icon-btn" type="button" title="Toggle theme">◐</button>
         </div>
@@ -21,11 +21,24 @@
         <div class="book-meta-card">
           <div class="book-meta-label">Current book</div>
           <div class="book-meta-title" id="bookTitle">Loading…</div>
-          <div class="book-meta-sub" id="bookSubtitle">Ready to format for print</div>
+          <div class="book-meta-sub" id="bookSubtitle">Ready to export</div>
         </div>
       </div>
 
       <div class="sidebar-scroll">
+        <section class="panel">
+          <div class="panel-header">
+            <h2>Exporter</h2>
+          </div>
+          <div class="panel-body">
+            <label class="field">
+              <span class="field-label">PDF service URL</span>
+              <input id="exporterUrlInput" type="text" value="http://localhost:8787" />
+            </label>
+            <div class="hint">Run the Node exporter locally, or point this at a deployed endpoint.</div>
+          </div>
+        </section>
+
         <section class="panel">
           <div class="panel-header">
             <h2>Preset</h2>
@@ -70,7 +83,7 @@
               <span class="field-label">Chapter starts</span>
               <select id="chapterStartSelect">
                 <option value="new-page">New page</option>
-                <option value="recto">Right-hand page</option>
+                <option value="recto" disabled>Right-hand page (v2)</option>
               </select>
             </label>
 
@@ -166,7 +179,7 @@
               <label><input id="includeBackMatterToggle" type="checkbox" checked /> Include back matter</label>
             </div>
             <div class="check-row">
-              <label><input id="includeTOCToggle" type="checkbox" checked /> Auto-generate contents page</label>
+              <label><input id="includeTOCToggle" type="checkbox" /> Auto-generate contents (v2)</label>
             </div>
             <div class="check-row">
               <label><input id="showHeadersToggle" type="checkbox" checked /> Running headers</label>
@@ -183,7 +196,7 @@
           </div>
           <div class="panel-body action-stack">
             <button id="renderBtn" class="primary-btn" type="button">Render preview</button>
-            <button id="printBtn" class="secondary-btn" type="button">Print / Save PDF</button>
+            <button id="exportPdfBtn" class="secondary-btn" type="button">Export PDF</button>
             <button id="exportHtmlBtn" class="secondary-btn" type="button">Export HTML snapshot</button>
           </div>
         </section>
@@ -233,8 +246,8 @@
       <section class="preview-shell">
         <div class="preview-toolbar">
           <div class="preview-toolbar-left">
-            <span class="preview-badge">Print interior</span>
-            <span class="preview-note">Mirrored margins, chapter starts, headers, page numbers</span>
+            <span class="preview-badge">Book interior</span>
+            <span class="preview-note">Preview is approximate; PDF export is authoritative.</span>
           </div>
         </div>
 
@@ -244,14 +257,6 @@
       </section>
     </main>
   </div>
-
-  <template id="pageTemplate">
-    <div class="page">
-      <div class="running-header"></div>
-      <div class="page-content"></div>
-      <div class="page-number"></div>
-    </div>
-  </template>
 
   <script type="module" src="format.js"></script>
 </body>

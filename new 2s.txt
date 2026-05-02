@@ -1,0 +1,1429 @@
+  
+  
+  import { db, auth } from "./firebase.js";
+    import {
+      collection,
+      doc,
+      addDoc,
+      updateDoc,
+      deleteDoc,
+      onSnapshot,
+      query,
+      orderBy,
+      writeBatch
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+    const workspaceLabel = document.getElementById("workspaceLabel");
+    const sidebarPane = document.getElementById("sidebarPane");
+    const editorPane = document.getElementById("editorPane");
+    const rightPane = document.getElementById("rightPane");
+    const mobileOverlay = document.getElementById("mobileOverlay");
+    const toggleSidebarBtn = document.getElementById("toggleSidebarBtn");
+
+    const searchInput = document.getElementById("searchInput");
+    const newFolderBtn = document.getElementById("newFolderBtn");
+    const newChildFolderBtn = document.getElementById("newChildFolderBtn");
+    const sortUpdatedBtn = document.getElementById("sortUpdatedBtn");
+    const sortAlphaBtn = document.getElementById("sortAlphaBtn");
+    const pinnedList = document.getElementById("pinnedList");
+    const treeRoot = document.getElementById("treeRoot");
+
+    const noteTitle = document.getElementById("noteTitle");
+    const editorFrame = document.getElementById("editorFrame");
+    const editorDisplay = document.getElementById("editorDisplay");
+    const editorText = document.getElementById("editorText");
+    const inlineLinks = document.getElementById("inlineLinks");
+    const inlineTags = document.getElementById("inlineTags");
+    const saveStatus = document.getElementById("saveStatus");
+    const noteMeta = document.getElementById("noteMeta");
+    const suggestionPop = document.getElementById("suggestionPop");
+
+    const newNoteBtn = document.getElementById("newNoteBtn");
+    const deleteBtn = document.getElementById("deleteBtn");
+    const duplicateBtn = document.getElementById("duplicateBtn");
+    const insertWikiBtn = document.getElementById("insertWikiBtn");
+    const linkCurrentBtn = document.getElementById("linkCurrentBtn");
+    const pinBtn = document.getElementById("pinBtn");
+    const moveToRootBtn = document.getElementById("moveToRootBtn");
+    const h2Btn = document.getElementById("h2Btn");
+    const todoBtn = document.getElementById("todoBtn");
+    const quoteBtn = document.getElementById("quoteBtn");
+    const copyNoteBtn = document.getElementById("copyNoteBtn");
+    const copyLinkBtn = document.getElementById("copyLinkBtn");
+
+    const overviewStats = document.getElementById("overviewStats");
+    const outlinksBox = document.getElementById("outlinksBox");
+    const backlinksBox = document.getElementById("backlinksBox");
+    const tagsBox = document.getElementById("tagsBox");
+    const searchResultsBox = document.getElementById("searchResultsBox");
+
+    const tabNotes = document.getElementById("tabNotes");
+    const tabEditor = document.getElementById("tabEditor");
+    const tabDetails = document.getElementById("tabDetails");
+
+    let currentUser = null;
+    let notes = [];
+    let folders = [];
+    let unsubscribeNotes = null;
+    let unsubscribeFolders = null;
+    let activeNoteId = null;
+    let activeFolderId = null;
+    let saveTimer = null;
+    let sortMode = "updated";
+    let filterText = "";
+    let draggedNoteId = null;
+    let draggedFolderId = null;
+    let mobileView = "editor";
+
+    const folderOpenState = {};
+    const suggestionState = {
+      open: false,
+      mode: null,
+      items: [],
+      index: 0,
+      query: "",
+      matchRange: null
+    };
+
+    function isMobile() {
+      return window.innerWidth <= 768;
+    }
+
+    function setMobileView(view) {
+      mobileView = view;
+
+      if (!isMobile()) {
+        sidebarPane.classList.remove("open");
+        rightPane.classList.remove("mobile-open");
+        editorPane.classList.remove("mobile-hidden");
+        mobileOverlay.classList.remove("open");
+        return;
+      }
+
+      tabNotes.classList.toggle("active", view === "notes");
+      tabEditor.classList.toggle("active", view === "editor");
+      tabDetails.classList.toggle("active", view === "details");
+
+      if (view === "notes") {
+        sidebarPane.classList.add("open");
+        mobileOverlay.classList.remove("open");
+        editorPane.classList.remove("mobile-hidden");
+        rightPane.classList.remove("mobile-open");
+      } else if (view === "details") {
+        sidebarPane.classList.remove("open");
+        mobileOverlay.classList.remove("open");
+        editorPane.classList.add("mobile-hidden");
+        rightPane.classList.add("mobile-open");
+      } else {
+        sidebarPane.classList.remove("open");
+        mobileOverlay.classList.remove("open");
+        editorPane.classList.remove("mobile-hidden");
+        rightPane.classList.remove("mobile-open");
+      }
+    }
+
+    function openSidebar() {
+      if (!isMobile()) return;
+      sidebarPane.classList.add("open");
+      mobileOverlay.classList.add("open");
+      tabNotes.classList.add("active");
+      tabEditor.classList.remove("active");
+      tabDetails.classList.remove("active");
+    }
+
+    function closeSidebar() {
+      sidebarPane.classList.remove("open");
+      mobileOverlay.classList.remove("open");
+      if (isMobile() && mobileView === "notes") {
+        setMobileView("editor");
+      }
+    }
+
+    function setStatus(text) {
+      saveStatus.textContent = text;
+    }
+
+    function setStatusBrief(text, reset = "Saved") {
+      saveStatus.textContent = text;
+      clearTimeout(window.__statusTimer);
+      window.__statusTimer = setTimeout(() => {
+        saveStatus.textContent = reset;
+      }, 900);
+    }
+
+    function notesRef() {
+      return collection(db, "users", currentUser.uid, "notes");
+    }
+
+    function noteDocRef(noteId) {
+      return doc(db, "users", currentUser.uid, "notes", noteId);
+    }
+
+    function foldersRef() {
+      return collection(db, "users", currentUser.uid, "folders");
+    }
+
+    function folderDocRef(folderId) {
+      return doc(db, "users", currentUser.uid, "folders", folderId);
+    }
+
+    function escapeHtml(text = "") {
+      return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+    }
+
+    function normalizeTitle(str = "") {
+      return str.toLowerCase().replace(/[^a-z0-9]/g, "").trim();
+    }
+
+    function activeNote() {
+      return notes.find(n => n.id === activeNoteId) || null;
+    }
+
+    function findNoteByTitle(title) {
+      const target = normalizeTitle(title);
+      return notes.find(n => normalizeTitle(n.title) === target);
+    }
+
+    function findFolderById(id) {
+      return folders.find(f => f.id === id) || null;
+    }
+
+    function folderChildren(parentId = null) {
+      return folders.filter(f => (f.parentId || null) === parentId);
+    }
+
+    function notesInFolder(folderId = null) {
+      return notes.filter(n => (n.folderId || null) === folderId);
+    }
+
+    function extractWikiLinks(text = "") {
+      const matches = [...text.matchAll(/\[\[(.*?)\]\]/g)];
+      return [...new Set(matches.map(m => (m[1] || "").trim()).filter(Boolean))];
+    }
+
+    function extractTags(text = "") {
+      const matches = text.match(/(^|\s)#([a-zA-Z0-9_-]+)/g) || [];
+      return [...new Set(matches.map(tag => tag.trim().replace(/^.*#/, "#")))];
+    }
+
+    function stripWiki(text = "") {
+      return text.replace(/\[\[(.*?)\]\]/g, "$1");
+    }
+
+    function previewText(text = "", length = 90) {
+      const clean = stripWiki(text).replace(/\s+/g, " ").trim();
+      return clean.length > length ? clean.slice(0, length) + "…" : clean || "Empty note";
+    }
+
+    function wordCount(text = "") {
+      const clean = stripWiki(text).replace(/\s+/g, " ").trim();
+      if (!clean) return 0;
+      return clean.split(/\s+/).length;
+    }
+
+    function getAutoLinkTitleMap() {
+      const map = new Map();
+      notes.forEach(note => {
+        const title = (note.title || "").trim();
+        if (title) {
+          map.set(normalizeTitle(title), title);
+        }
+      });
+      return map;
+    }
+
+    function buildRenderedEditorHTML(text = "") {
+      if (!text) return "";
+
+      const noteMap = getAutoLinkTitleMap();
+      const tokenRegex = /(\[\[[^\]]+\]\]|#[a-zA-Z0-9_-]+|\b[a-zA-Z0-9_-]+\b)/g;
+
+      return escapeHtml(text).replace(tokenRegex, (token) => {
+        if (token.startsWith("[[") && token.endsWith("]]")) {
+          const label = token.slice(2, -2).trim();
+          return `<span class="editor-link" data-note="${escapeHtml(label)}">${escapeHtml(token)}</span>`;
+        }
+
+        if (token.startsWith("#")) {
+          return `<span class="editor-tag">${escapeHtml(token)}</span>`;
+        }
+
+        const match = noteMap.get(normalizeTitle(token));
+        if (match) {
+          return `<span class="editor-link" data-note="${escapeHtml(match)}">${escapeHtml(token)}</span>`;
+        }
+
+        if (token.startsWith("/")) {
+          return `<span class="editor-command">${escapeHtml(token)}</span>`;
+        }
+
+        return escapeHtml(token);
+      }).replace(/\n/g, "<br>");
+    }
+
+    function renderEditorDisplay() {
+      const value = editorText.value || "";
+
+      if (!value) {
+        editorDisplay.classList.add("placeholder");
+        editorDisplay.innerHTML = `Write notes, ideas, scene planning, outlines, worldbuilding...<br><br>Type [[ to auto-suggest notes<br>Type / for slash commands<br>Use #tags anywhere in the note.`;
+        return;
+      }
+
+      editorDisplay.classList.remove("placeholder");
+      editorDisplay.innerHTML = buildRenderedEditorHTML(value);
+    }
+
+    function syncEditorScroll() {
+      editorDisplay.scrollTop = editorText.scrollTop;
+      editorDisplay.scrollLeft = editorText.scrollLeft;
+    }
+
+    function sortNotes(list) {
+      const next = [...list];
+      if (sortMode === "alpha") {
+        next.sort((a, b) => (a.title || "").localeCompare(b.title || ""));
+      } else {
+        next.sort((a, b) => {
+          if (!!b.pinned !== !!a.pinned) return b.pinned ? 1 : -1;
+          return (b.updatedAt || 0) - (a.updatedAt || 0);
+        });
+      }
+      return next;
+    }
+
+    function sortFolders(list) {
+      return [...list].sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+    }
+
+    function getFilteredNotes() {
+      const q = filterText.trim().toLowerCase();
+      if (!q) return notes;
+
+      return notes.filter(note => {
+        const hay = `${note.title || ""} ${note.body || ""}`.toLowerCase();
+        return hay.includes(q);
+      });
+    }
+
+    function getSearchHits() {
+      const q = filterText.trim().toLowerCase();
+      if (!q) return [];
+      return sortNotes(getFilteredNotes()).slice(0, 12);
+    }
+
+    function renderSearchResults() {
+      const hits = getSearchHits();
+
+      if (!filterText.trim()) {
+        searchResultsBox.innerHTML = `<div class="muted">Type in search to see matching notes.</div>`;
+        return;
+      }
+
+      if (!hits.length) {
+        searchResultsBox.innerHTML = `<div class="muted">No matching notes.</div>`;
+        return;
+      }
+
+      searchResultsBox.innerHTML = "";
+      hits.forEach(note => {
+        const div = document.createElement("div");
+        div.className = "search-hit";
+        div.innerHTML = `
+          <div class="search-hit-title">${escapeHtml(note.title || "Untitled")}</div>
+          <div class="search-hit-preview">${escapeHtml(previewText(note.body || "", 80))}</div>
+        `;
+        div.addEventListener("click", () => openNote(note.id));
+        searchResultsBox.appendChild(div);
+      });
+    }
+
+    function renderPinned() {
+      pinnedList.innerHTML = "";
+      const pinned = sortNotes(notes.filter(n => !!n.pinned));
+
+      if (!pinned.length) {
+        pinnedList.innerHTML = `<div class="empty-state">No pinned notes yet.</div>`;
+        return;
+      }
+
+      pinned.forEach(note => {
+        pinnedList.appendChild(buildNoteItem(note));
+      });
+    }
+
+    function buildNoteItem(note) {
+      const item = document.createElement("div");
+      item.className = "note-item" + (note.id === activeNoteId ? " active" : "");
+      item.draggable = true;
+
+      item.innerHTML = `
+        <div class="note-item-title-row">
+          ${note.pinned ? '<span class="pin-dot">📌</span>' : ""}
+          <div class="note-item-title">${escapeHtml(note.title || "Untitled")}</div>
+        </div>
+        <div class="note-item-preview">${escapeHtml(previewText(note.body || ""))}</div>
+        <div class="note-item-meta">${new Date(note.updatedAt || Date.now()).toLocaleString()}</div>
+      `;
+
+      item.addEventListener("click", () => {
+        openNote(note.id);
+      });
+
+      item.addEventListener("dragstart", () => {
+        draggedNoteId = note.id;
+        item.classList.add("dragging");
+      });
+
+      item.addEventListener("dragend", () => {
+        draggedNoteId = null;
+        item.classList.remove("dragging");
+      });
+
+      return item;
+    }
+
+    function renderFolderTree() {
+      treeRoot.innerHTML = "";
+
+      const q = filterText.trim().toLowerCase();
+      if (q) {
+        const filteredNotes = sortNotes(getFilteredNotes().filter(n => !n.pinned));
+        if (!filteredNotes.length) {
+          treeRoot.innerHTML = `<div class="empty-state">No matching notes or folders.</div>`;
+          return;
+        }
+        filteredNotes.forEach(note => treeRoot.appendChild(buildNoteItem(note)));
+        return;
+      }
+
+      const rootWrap = document.createElement("div");
+      rootWrap.className = "tree-group";
+
+      const rootHeader = document.createElement("div");
+      rootHeader.className = "tree-folder" + (activeFolderId === null ? " active" : "");
+      rootHeader.innerHTML = `
+        <div class="folder-caret">•</div>
+        <div class="folder-name">Root</div>
+        <div class="folder-badge">${notesInFolder(null).length}</div>
+      `;
+
+      rootHeader.addEventListener("click", () => {
+        activeFolderId = null;
+        renderFolderTree();
+      });
+
+      rootHeader.addEventListener("dragover", e => {
+        e.preventDefault();
+        rootHeader.classList.add("drop-target");
+      });
+
+      rootHeader.addEventListener("dragleave", () => {
+        rootHeader.classList.remove("drop-target");
+      });
+
+      rootHeader.addEventListener("drop", async e => {
+        e.preventDefault();
+        rootHeader.classList.remove("drop-target");
+        try {
+          if (draggedNoteId) {
+            await updateDoc(noteDocRef(draggedNoteId), {
+              folderId: null,
+              updatedAt: Date.now()
+            });
+          }
+          if (draggedFolderId) {
+            await updateDoc(folderDocRef(draggedFolderId), {
+              parentId: null
+            });
+          }
+          renderSidebar();
+        } catch (err) {
+          console.error(err);
+          setStatus("Move failed");
+        }
+      });
+
+      rootWrap.appendChild(rootHeader);
+
+      const rootNotes = sortNotes(notesInFolder(null).filter(n => !n.pinned));
+      rootNotes.forEach(note => rootWrap.appendChild(buildNoteItem(note)));
+
+      treeRoot.appendChild(rootWrap);
+
+      sortFolders(folderChildren(null)).forEach(folder => {
+        treeRoot.appendChild(buildFolderNode(folder));
+      });
+    }
+
+    function buildFolderNode(folder) {
+      const wrap = document.createElement("div");
+      wrap.className = "tree-group";
+
+      const open = folderOpenState[folder.id] !== false;
+      const childFolders = sortFolders(folderChildren(folder.id));
+      const childNotes = sortNotes(notesInFolder(folder.id).filter(n => !n.pinned));
+
+      const header = document.createElement("div");
+      header.className = "tree-folder" + (activeFolderId === folder.id ? " active" : "");
+      header.draggable = true;
+
+      header.innerHTML = `
+        <div class="folder-caret">${open ? "▼" : "▶"}</div>
+        <div class="folder-name">📁 ${escapeHtml(folder.name || "Untitled Folder")}</div>
+        <div class="folder-badge">${childFolders.length + childNotes.length}</div>
+      `;
+
+      header.addEventListener("click", () => {
+        activeFolderId = folder.id;
+        folderOpenState[folder.id] = !open;
+        renderFolderTree();
+      });
+
+      header.addEventListener("dblclick", async () => {
+        const name = prompt("Rename folder?", folder.name || "");
+        if (!name) return;
+        try {
+          await updateDoc(folderDocRef(folder.id), {
+            name: name.trim() || "Untitled Folder"
+          });
+          setStatusBrief("Folder renamed");
+        } catch (err) {
+          console.error(err);
+          setStatus("Rename failed");
+        }
+      });
+
+      header.addEventListener("dragstart", () => {
+        draggedFolderId = folder.id;
+      });
+
+      header.addEventListener("dragend", () => {
+        draggedFolderId = null;
+      });
+
+      header.addEventListener("dragover", e => {
+        e.preventDefault();
+        header.classList.add("drop-target");
+      });
+
+      header.addEventListener("dragleave", () => {
+        header.classList.remove("drop-target");
+      });
+
+      header.addEventListener("drop", async e => {
+        e.preventDefault();
+        header.classList.remove("drop-target");
+
+        try {
+          if (draggedNoteId) {
+            await updateDoc(noteDocRef(draggedNoteId), {
+              folderId: folder.id,
+              updatedAt: Date.now()
+            });
+          }
+
+          if (draggedFolderId && draggedFolderId !== folder.id) {
+            const bad = isDescendantFolder(folder.id, draggedFolderId);
+            if (bad) {
+              setStatusBrief("Invalid nested move", "Saved");
+              return;
+            }
+            await updateDoc(folderDocRef(draggedFolderId), {
+              parentId: folder.id
+            });
+          }
+
+          renderSidebar();
+        } catch (err) {
+          console.error(err);
+          setStatus("Move failed");
+        }
+      });
+
+      wrap.appendChild(header);
+
+      if (open) {
+        const body = document.createElement("div");
+        body.className = "tree-indent";
+        childNotes.forEach(note => body.appendChild(buildNoteItem(note)));
+        childFolders.forEach(child => body.appendChild(buildFolderNode(child)));
+        wrap.appendChild(body);
+      }
+
+      return wrap;
+    }
+
+    function isDescendantFolder(targetId, candidateAncestorId) {
+      let current = findFolderById(targetId);
+      while (current) {
+        if ((current.parentId || null) === candidateAncestorId) return true;
+        current = current.parentId ? findFolderById(current.parentId) : null;
+      }
+      return false;
+    }
+
+    function renderInlineChips() {
+      const note = activeNote();
+
+      inlineLinks.innerHTML = "";
+      inlineTags.innerHTML = "";
+
+      if (!note) {
+        inlineLinks.innerHTML = `<div class="muted">No note selected.</div>`;
+        inlineTags.innerHTML = `<div class="muted">No tags yet.</div>`;
+        return;
+      }
+
+      const links = extractWikiLinks(note.body || "");
+      const tags = extractTags(note.body || "");
+
+      if (!links.length) {
+        inlineLinks.innerHTML = `<div class="muted">No links in this note.</div>`;
+      } else {
+        links.forEach(link => {
+          const chip = document.createElement("button");
+          chip.className = "link-chip";
+          chip.type = "button";
+          chip.textContent = `[[${link}]]`;
+          chip.addEventListener("click", async () => {
+            await openOrCreateNote(link);
+          });
+          inlineLinks.appendChild(chip);
+        });
+      }
+
+      if (!tags.length) {
+        inlineTags.innerHTML = `<div class="muted">No tags yet.</div>`;
+      } else {
+        tags.forEach(tag => {
+          const chip = document.createElement("button");
+          chip.className = "tag-chip";
+          chip.type = "button";
+          chip.textContent = tag;
+          chip.addEventListener("click", () => {
+            searchInput.value = tag;
+            filterText = tag.toLowerCase();
+            renderSidebar();
+            renderSearchResults();
+          });
+          inlineTags.appendChild(chip);
+        });
+      }
+    }
+
+    function renderRightPanel() {
+      const note = activeNote();
+
+      if (!note) {
+        overviewStats.textContent = "Select a note.";
+        outlinksBox.innerHTML = `<div class="muted">No links yet.</div>`;
+        backlinksBox.innerHTML = `<div class="muted">No backlinks yet.</div>`;
+        tagsBox.innerHTML = `<div class="muted">No tags yet.</div>`;
+        noteMeta.textContent = "0 words";
+        renderSearchResults();
+        renderInlineChips();
+        return;
+      }
+
+      const links = extractWikiLinks(note.body || "");
+      const tags = extractTags(note.body || "");
+      const backlinks = notes.filter(other => {
+        if (other.id === note.id) return false;
+        return extractWikiLinks(other.body || "").some(link => normalizeTitle(link) === normalizeTitle(note.title || ""));
+      });
+
+      const folder = note.folderId ? findFolderById(note.folderId) : null;
+
+      overviewStats.innerHTML = `
+        <div><strong>Title:</strong> ${escapeHtml(note.title || "Untitled")}</div>
+        <div><strong>Words:</strong> ${wordCount(note.body || "")}</div>
+        <div><strong>Outgoing:</strong> ${links.length}</div>
+        <div><strong>Backlinks:</strong> ${backlinks.length}</div>
+        <div><strong>Pinned:</strong> ${note.pinned ? "Yes" : "No"}</div>
+        <div><strong>Folder:</strong> ${escapeHtml(folder?.name || "Root")}</div>
+        <div><strong>Updated:</strong> ${new Date(note.updatedAt || Date.now()).toLocaleString()}</div>
+      `;
+
+      noteMeta.textContent = `${wordCount(note.body || "")} words`;
+
+      if (!links.length) {
+        outlinksBox.innerHTML = `<div class="muted">No links yet.</div>`;
+      } else {
+        outlinksBox.innerHTML = "";
+        links.forEach(link => {
+          const div = document.createElement("div");
+          div.className = "outlink-item";
+          div.innerHTML = `
+            <div class="outlink-title">${escapeHtml(link)}</div>
+            <div class="outlink-preview">Open or create this note.</div>
+          `;
+          div.addEventListener("click", async () => {
+            await openOrCreateNote(link);
+          });
+          outlinksBox.appendChild(div);
+        });
+      }
+
+      if (!backlinks.length) {
+        backlinksBox.innerHTML = `<div class="muted">No backlinks yet.</div>`;
+      } else {
+        backlinksBox.innerHTML = "";
+        backlinks.forEach(back => {
+          const div = document.createElement("div");
+          div.className = "backlink-item";
+          div.innerHTML = `
+            <div class="backlink-title">${escapeHtml(back.title || "Untitled")}</div>
+            <div class="backlink-preview">${escapeHtml(previewText(back.body || "", 70))}</div>
+          `;
+          div.addEventListener("click", () => openNote(back.id));
+          backlinksBox.appendChild(div);
+        });
+      }
+
+      if (!tags.length) {
+        tagsBox.innerHTML = `<div class="muted">No tags yet.</div>`;
+      } else {
+        tagsBox.innerHTML = "";
+        tags.forEach(tag => {
+          const div = document.createElement("div");
+          div.className = "tag-item";
+          div.innerHTML = `
+            <div class="tag-title">${escapeHtml(tag)}</div>
+            <div class="tag-preview">Filter by this tag.</div>
+          `;
+          div.addEventListener("click", () => {
+            searchInput.value = tag;
+            filterText = tag.toLowerCase();
+            renderSidebar();
+            renderSearchResults();
+          });
+          tagsBox.appendChild(div);
+        });
+      }
+
+      renderSearchResults();
+      renderInlineChips();
+    }
+
+    function renderSidebar() {
+      renderPinned();
+      renderFolderTree();
+      pinBtn.textContent = activeNote()?.pinned ? "Unpin" : "Pin";
+    }
+
+    function renderEditor() {
+      const note = activeNote();
+
+      if (!note) {
+        noteTitle.value = "";
+        editorText.value = "";
+        renderEditorDisplay();
+        renderSidebar();
+        renderRightPanel();
+        return;
+      }
+
+      noteTitle.value = note.title || "";
+      editorText.value = note.body || "";
+      renderEditorDisplay();
+      renderSidebar();
+      renderRightPanel();
+      closeSuggestion();
+    }
+
+    function openNote(id) {
+      const note = notes.find(n => n.id === id);
+      if (!note) return;
+      activeNoteId = id;
+      activeFolderId = note.folderId || null;
+      renderEditor();
+      if (isMobile()) {
+        setMobileView("editor");
+      }
+    }
+
+    async function createNote(title = "Untitled", folderId = null) {
+      const payload = {
+        title,
+        body: "",
+        folderId,
+        pinned: false,
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+      };
+
+      const ref = await addDoc(notesRef(), payload);
+      return { id: ref.id, ...payload };
+    }
+
+    async function createFolder(name = "New Folder", parentId = null) {
+      const payload = {
+        name,
+        parentId,
+        createdAt: Date.now()
+      };
+
+      const ref = await addDoc(foldersRef(), payload);
+      folderOpenState[ref.id] = true;
+      return { id: ref.id, ...payload };
+    }
+
+    async function updateBacklinksForRename(oldTitle, newTitle, skipNoteId) {
+      const oldNorm = normalizeTitle(oldTitle);
+      const newLabel = newTitle.trim();
+
+      if (!oldNorm || oldNorm === normalizeTitle(newLabel)) return;
+
+      const batch = writeBatch(db);
+      let changed = 0;
+
+      notes.forEach(note => {
+        if (note.id === skipNoteId) return;
+        const body = note.body || "";
+        const updated = body.replace(/\[\[(.*?)\]\]/g, (match, inner) => {
+          return normalizeTitle(inner) === oldNorm ? `[[${newLabel}]]` : match;
+        });
+
+        if (updated !== body) {
+          batch.update(noteDocRef(note.id), {
+            body: updated,
+            updatedAt: Date.now()
+          });
+          changed += 1;
+        }
+      });
+
+      if (changed > 0) {
+        await batch.commit();
+      }
+    }
+
+    async function updateActiveNote(fields) {
+      if (!activeNoteId) return;
+      const note = activeNote();
+      const oldTitle = note?.title || "";
+
+      await updateDoc(noteDocRef(activeNoteId), {
+        ...fields,
+        updatedAt: Date.now()
+      });
+
+      if (typeof fields.title === "string" && normalizeTitle(fields.title) !== normalizeTitle(oldTitle)) {
+        await updateBacklinksForRename(oldTitle, fields.title, activeNoteId);
+      }
+    }
+
+    async function duplicateActiveNote() {
+      const note = activeNote();
+      if (!note) return;
+
+      const title = `${note.title || "Untitled"} Copy`;
+      const ref = await addDoc(notesRef(), {
+        title,
+        body: note.body || "",
+        folderId: note.folderId || null,
+        pinned: false,
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+      });
+
+      activeNoteId = ref.id;
+      setStatusBrief("Duplicated");
+    }
+
+    async function deleteActiveNote() {
+      const note = activeNote();
+      if (!note) return;
+
+      if (!confirm(`Delete "${note.title || "Untitled"}"?`)) return;
+
+      try {
+        await deleteDoc(noteDocRef(note.id));
+        activeNoteId = null;
+        noteTitle.value = "";
+        editorText.value = "";
+        renderEditorDisplay();
+        setStatusBrief("Deleted", "Ready");
+      } catch (err) {
+        console.error(err);
+        setStatus("Delete failed");
+      }
+    }
+
+    function autoLinkMentions(rawText = "") {
+      if (!rawText) return rawText;
+
+      const noteMap = getAutoLinkTitleMap();
+      const explicitRanges = [];
+
+      for (const match of rawText.matchAll(/\[\[(.*?)\]\]/g)) {
+        explicitRanges.push([match.index, match.index + match[0].length]);
+      }
+
+      function isInsideExplicitLink(index) {
+        return explicitRanges.some(([start, end]) => index >= start && index < end);
+      }
+
+      return rawText.replace(/\b([A-Za-z0-9_-]+)\b/g, (word, capture, offset) => {
+        if (isInsideExplicitLink(offset)) return word;
+        const existing = noteMap.get(normalizeTitle(word));
+        if (!existing) return word;
+        return `[[${existing}]]`;
+      });
+    }
+
+    function scheduleSave() {
+      if (!activeNoteId) return;
+
+      clearTimeout(saveTimer);
+      setStatus("Saving...");
+
+      saveTimer = setTimeout(async () => {
+        try {
+          const linkedBody = autoLinkMentions(editorText.value);
+
+          if (linkedBody !== editorText.value) {
+            const caret = editorText.selectionStart;
+            editorText.value = linkedBody;
+            editorText.setSelectionRange(caret, caret);
+            renderEditorDisplay();
+          }
+
+          await updateActiveNote({
+            title: noteTitle.value.trim() || "Untitled",
+            body: editorText.value
+          });
+          setStatus("Saved");
+        } catch (err) {
+          console.error(err);
+          setStatus("Save failed");
+        }
+      }, 500);
+    }
+
+    function insertTextAtCursor(text, replace = null) {
+      const start = editorText.selectionStart;
+      const end = editorText.selectionEnd;
+      const value = editorText.value;
+
+      if (replace) {
+        const before = value.slice(0, replace.start);
+        const after = value.slice(replace.end);
+        editorText.value = before + text + after;
+        const pos = before.length + text.length;
+        editorText.setSelectionRange(pos, pos);
+      } else {
+        editorText.value = value.slice(0, start) + text + value.slice(end);
+        const pos = start + text.length;
+        editorText.setSelectionRange(pos, pos);
+      }
+
+      editorText.focus();
+      renderEditorDisplay();
+      scheduleSave();
+      updateSuggestionState();
+      renderRightPanel();
+    }
+
+    async function openOrCreateNote(title) {
+      const clean = title.trim();
+      let existing = notes.find(n => normalizeTitle(n.title) === normalizeTitle(clean));
+
+      if (existing) {
+        openNote(existing.id);
+        return;
+      }
+
+      const ref = await addDoc(notesRef(), {
+        title: clean || "Untitled",
+        body: "",
+        folderId: activeFolderId || null,
+        pinned: false,
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+      });
+
+      activeNoteId = ref.id;
+      setStatusBrief("Created linked note");
+      if (isMobile()) {
+        setMobileView("editor");
+      }
+    }
+
+    async function copyCurrentNote() {
+      const note = activeNote();
+      if (!note) return;
+
+      const text = `# ${note.title || "Untitled"}\n\n${note.body || ""}`;
+      try {
+        await navigator.clipboard.writeText(text);
+        setStatusBrief("Copied note");
+      } catch {
+        setStatusBrief("Copy failed", "Saved");
+      }
+    }
+
+    async function copyCurrentLink() {
+      const note = activeNote();
+      if (!note) return;
+
+      try {
+        await navigator.clipboard.writeText(`[[${note.title || "Untitled"}]]`);
+        setStatusBrief("Copied link");
+      } catch {
+        setStatusBrief("Copy failed", "Saved");
+      }
+    }
+
+    function closeSuggestion() {
+      suggestionState.open = false;
+      suggestionState.mode = null;
+      suggestionState.items = [];
+      suggestionState.index = 0;
+      suggestionState.query = "";
+      suggestionState.matchRange = null;
+      suggestionPop.classList.remove("open");
+      suggestionPop.innerHTML = "";
+    }
+
+    function openSuggestion(mode, items, queryText, matchRange) {
+      if (!items.length) {
+        closeSuggestion();
+        return;
+      }
+
+      suggestionState.open = true;
+      suggestionState.mode = mode;
+      suggestionState.items = items;
+      suggestionState.index = 0;
+      suggestionState.query = queryText || "";
+      suggestionState.matchRange = matchRange;
+
+      renderSuggestion();
+    }
+
+    function renderSuggestion() {
+      if (!suggestionState.open || !suggestionState.items.length) {
+        closeSuggestion();
+        return;
+      }
+
+      suggestionPop.innerHTML = "";
+      suggestionState.items.forEach((item, index) => {
+        const div = document.createElement("div");
+        div.className = "suggestion-item" + (index === suggestionState.index ? " active" : "");
+        div.innerHTML = `
+          <div class="suggestion-title">${escapeHtml(item.label)}</div>
+          <div class="suggestion-sub">${escapeHtml(item.sub || "")}</div>
+        `;
+        div.addEventListener("mousedown", (e) => {
+          e.preventDefault();
+          applySuggestion(index);
+        });
+        suggestionPop.appendChild(div);
+      });
+
+      suggestionPop.classList.add("open");
+    }
+
+    function getLinkSuggestionSource(queryText) {
+      const q = queryText.toLowerCase();
+      const items = sortNotes([...notes])
+        .filter(n => !q || (n.title || "").toLowerCase().includes(q))
+        .slice(0, 8)
+        .map(n => ({
+          type: "wiki",
+          value: n.title || "Untitled",
+          label: n.title || "Untitled",
+          sub: previewText(n.body || "", 60)
+        }));
+
+      if (!q || !items.find(i => normalizeTitle(i.value) === normalizeTitle(q))) {
+        items.unshift({
+          type: "wiki",
+          value: queryText.trim() || "Untitled",
+          label: `Create "${queryText.trim() || "Untitled"}"`,
+          sub: "New linked note"
+        });
+      }
+
+      return items;
+    }
+
+    function getSlashCommands(queryText) {
+      const commands = [
+        { type: "slash", value: "heading", label: "/heading", sub: "Insert a level-2 heading", insert: "## Heading" },
+        { type: "slash", value: "todo", label: "/todo", sub: "Insert a task checkbox", insert: "- [ ] Todo" },
+        { type: "slash", value: "quote", label: "/quote", sub: "Insert a block quote", insert: "> Quote" },
+        { type: "slash", value: "link", label: "/link", sub: "Insert a wiki link", insert: "[[Note]]" },
+        { type: "slash", value: "tag", label: "/tag", sub: "Insert a tag", insert: "#tag" }
+      ];
+
+      const q = queryText.toLowerCase();
+      return commands.filter(c => !q || c.value.includes(q) || c.label.includes(q));
+    }
+
+    function getTextBeforeCaret() {
+      return editorText.value.slice(0, editorText.selectionStart);
+    }
+
+    function updateSuggestionState() {
+      const before = getTextBeforeCaret();
+
+      const wikiMatch = before.match(/\[\[([^\]]*)$/);
+      if (wikiMatch) {
+        const start = editorText.selectionStart - wikiMatch[0].length;
+        openSuggestion("wiki", getLinkSuggestionSource(wikiMatch[1]), wikiMatch[1], {
+          start,
+          end: editorText.selectionStart
+        });
+        return;
+      }
+
+      const slashMatch = before.match(/\/([a-z]*)$/i);
+      if (slashMatch) {
+        const start = editorText.selectionStart - slashMatch[0].length;
+        openSuggestion("slash", getSlashCommands(slashMatch[1]), slashMatch[1], {
+          start,
+          end: editorText.selectionStart
+        });
+        return;
+      }
+
+      closeSuggestion();
+    }
+
+    function applySuggestion(index) {
+      const item = suggestionState.items[index];
+      if (!item) return;
+
+      if (suggestionState.mode === "wiki") {
+        insertTextAtCursor(`[[${item.value}]]`, suggestionState.matchRange);
+        closeSuggestion();
+        return;
+      }
+
+      if (suggestionState.mode === "slash") {
+        insertTextAtCursor(item.insert, suggestionState.matchRange);
+        closeSuggestion();
+      }
+    }
+
+    function handleEditorDisplayClick(e) {
+      const link = e.target.closest(".editor-link");
+      if (!link) return;
+
+      const noteName = link.dataset.note || link.textContent.replace(/^\[\[/, "").replace(/\]\]$/, "");
+      openOrCreateNote(noteName);
+    }
+
+    function attachEvents() {
+      toggleSidebarBtn.addEventListener("click", () => {
+        if (isMobile()) {
+          if (sidebarPane.classList.contains("open")) {
+            closeSidebar();
+          } else {
+            setMobileView("notes");
+            openSidebar();
+          }
+        }
+      });
+
+      mobileOverlay.addEventListener("click", closeSidebar);
+
+      window.addEventListener("resize", () => {
+        if (!isMobile()) {
+          sidebarPane.classList.remove("open");
+          rightPane.classList.remove("mobile-open");
+          editorPane.classList.remove("mobile-hidden");
+          mobileOverlay.classList.remove("open");
+        } else {
+          setMobileView(mobileView);
+        }
+      });
+
+      tabNotes.addEventListener("click", () => {
+        setMobileView("notes");
+        openSidebar();
+      });
+
+      tabEditor.addEventListener("click", () => {
+        setMobileView("editor");
+      });
+
+      tabDetails.addEventListener("click", () => {
+        setMobileView("details");
+      });
+
+      searchInput.addEventListener("input", () => {
+        filterText = searchInput.value.trim().toLowerCase();
+        renderSidebar();
+        renderSearchResults();
+      });
+
+      sortUpdatedBtn.addEventListener("click", () => {
+        sortMode = "updated";
+        renderSidebar();
+      });
+
+      sortAlphaBtn.addEventListener("click", () => {
+        sortMode = "alpha";
+        renderSidebar();
+      });
+
+      newFolderBtn.addEventListener("click", async () => {
+        const name = prompt("Folder name?");
+        if (!name) return;
+        try {
+          await createFolder(name.trim() || "New Folder", null);
+          setStatusBrief("Folder created");
+        } catch (err) {
+          console.error(err);
+          setStatus("Folder failed");
+        }
+      });
+
+      newChildFolderBtn.addEventListener("click", async () => {
+        const name = prompt("Child folder name?");
+        if (!name) return;
+        try {
+          await createFolder(name.trim() || "New Folder", activeFolderId || null);
+          setStatusBrief("Child folder created");
+        } catch (err) {
+          console.error(err);
+          setStatus("Folder failed");
+        }
+      });
+
+      newNoteBtn.addEventListener("click", async () => {
+        try {
+          const created = await createNote("Untitled", activeFolderId || null);
+          activeNoteId = created.id;
+          setStatusBrief("Created");
+          if (isMobile()) setMobileView("editor");
+        } catch (err) {
+          console.error(err);
+          setStatus("Create failed");
+        }
+      });
+
+      deleteBtn.addEventListener("click", async () => {
+        await deleteActiveNote();
+      });
+
+      duplicateBtn.addEventListener("click", async () => {
+        try {
+          await duplicateActiveNote();
+          if (isMobile()) setMobileView("editor");
+        } catch (err) {
+          console.error(err);
+          setStatus("Duplicate failed");
+        }
+      });
+
+      noteTitle.addEventListener("input", scheduleSave);
+
+      editorText.addEventListener("input", () => {
+        renderEditorDisplay();
+        syncEditorScroll();
+        scheduleSave();
+        updateSuggestionState();
+        renderRightPanel();
+      });
+
+      editorText.addEventListener("scroll", syncEditorScroll);
+      editorText.addEventListener("click", updateSuggestionState);
+      editorText.addEventListener("keyup", updateSuggestionState);
+      editorDisplay.addEventListener("click", handleEditorDisplayClick);
+
+      editorText.addEventListener("keydown", async (e) => {
+        if (suggestionState.open) {
+          if (e.key === "ArrowDown") {
+            e.preventDefault();
+            suggestionState.index = (suggestionState.index + 1) % suggestionState.items.length;
+            renderSuggestion();
+            return;
+          }
+
+          if (e.key === "ArrowUp") {
+            e.preventDefault();
+            suggestionState.index = (suggestionState.index - 1 + suggestionState.items.length) % suggestionState.items.length;
+            renderSuggestion();
+            return;
+          }
+
+          if (e.key === "Enter" || e.key === "Tab") {
+            e.preventDefault();
+            applySuggestion(suggestionState.index);
+            return;
+          }
+
+          if (e.key === "Escape") {
+            e.preventDefault();
+            closeSuggestion();
+            return;
+          }
+        }
+
+        if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {
+          e.preventDefault();
+          clearTimeout(saveTimer);
+          try {
+            const linkedBody = autoLinkMentions(editorText.value);
+            if (linkedBody !== editorText.value) {
+              editorText.value = linkedBody;
+              renderEditorDisplay();
+            }
+
+            await updateActiveNote({
+              title: noteTitle.value.trim() || "Untitled",
+              body: editorText.value
+            });
+            setStatusBrief("Saved now");
+          } catch (err) {
+            console.error(err);
+            setStatus("Save failed");
+          }
+        }
+      });
+
+      insertWikiBtn.addEventListener("click", () => {
+        const name = prompt("Link to which note?");
+        if (!name) return;
+        insertTextAtCursor(`[[${name.trim()}]]`);
+      });
+
+      linkCurrentBtn.addEventListener("click", () => {
+        const note = activeNote();
+        if (!note) return;
+        insertTextAtCursor(`[[${note.title || "Untitled"}]]`);
+      });
+
+      pinBtn.addEventListener("click", async () => {
+        const note = activeNote();
+        if (!note) return;
+        try {
+          await updateDoc(noteDocRef(note.id), {
+            pinned: !note.pinned,
+            updatedAt: Date.now()
+          });
+          renderSidebar();
+          renderEditor();
+          setStatusBrief(note.pinned ? "Unpinned" : "Pinned");
+        } catch (err) {
+          console.error(err);
+          setStatus("Pin failed");
+        }
+      });
+
+      moveToRootBtn.addEventListener("click", async () => {
+        const note = activeNote();
+        if (!note) return;
+        try {
+          await updateDoc(noteDocRef(note.id), {
+            folderId: null,
+            updatedAt: Date.now()
+          });
+          activeFolderId = null;
+          renderSidebar();
+          renderEditor();
+          setStatusBrief("Moved to root");
+        } catch (err) {
+          console.error(err);
+          setStatus("Move failed");
+        }
+      });
+
+      h2Btn.addEventListener("click", () => insertTextAtCursor("## Heading"));
+      todoBtn.addEventListener("click", () => insertTextAtCursor("- [ ] Todo"));
+      quoteBtn.addEventListener("click", () => insertTextAtCursor("> Quote"));
+      copyNoteBtn.addEventListener("click", copyCurrentNote);
+      copyLinkBtn.addEventListener("click", copyCurrentLink);
+
+      inlineLinks.addEventListener("click", async (e) => {
+        const btn = e.target.closest(".link-chip");
+        if (!btn) return;
+        const text = btn.textContent.replace(/^\[\[/, "").replace(/\]\]$/, "");
+        await openOrCreateNote(text);
+      });
+
+      document.addEventListener("click", (e) => {
+        if (!suggestionPop.contains(e.target) && e.target !== editorText) {
+          closeSuggestion();
+        }
+      });
+    }
+
+    function subscribeCollections() {
+      if (unsubscribeNotes) unsubscribeNotes();
+      if (unsubscribeFolders) unsubscribeFolders();
+
+      const notesQ = query(notesRef(), orderBy("updatedAt", "desc"));
+      unsubscribeNotes = onSnapshot(notesQ, (snap) => {
+        notes = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+        if (!notes.length) {
+          activeNoteId = null;
+          treeRoot.innerHTML = `<div class="empty-state">No notes yet. Create one to begin.</div>`;
+          pinnedList.innerHTML = `<div class="empty-state">No pinned notes yet.</div>`;
+          noteTitle.value = "";
+          editorText.value = "";
+          renderEditorDisplay();
+          renderRightPanel();
+          return;
+        }
+
+        const existingActive = notes.find(n => n.id === activeNoteId);
+        if (!notes.length) {
+          activeNoteId = null;
+        } else if (!activeNoteId || !existingActive) {
+          activeNoteId = notes[0].id;
+        }
+
+        const userIsEditing = document.activeElement === editorText || document.activeElement === noteTitle;
+        if (!userIsEditing) {
+          renderEditor();
+        } else {
+          renderSidebar();
+          renderRightPanel();
+          renderEditorDisplay();
+        }
+      });
+
+      unsubscribeFolders = onSnapshot(foldersRef(), (snap) => {
+        folders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        renderSidebar();
+      });
+    }
+
+    onAuthStateChanged(
+      auth,
+      (user) => {
+        if (!user) {
+          window.location.href = "/login.html";
+          return;
+        }
+
+        currentUser = user;
+        const handle =
+          user.displayName ||
+          (user.email ? user.email.split("@")[0] : "writer");
+
+        workspaceLabel.textContent = `@${handle} notes`;
+
+        attachEvents();
+        subscribeCollections();
+        setStatus("Ready");
+        setMobileView("editor");
+        renderEditorDisplay();
+      },
+      (err) => {
+        console.error(err);
+        setStatus("Auth failed");
+      }
+    );

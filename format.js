@@ -119,6 +119,7 @@ const TRIM_MAP = {
 };
 
 const state = {
+  exporterUrl: "http://localhost:8787",
   preset: "bn_5x8",
   trim: "5x8",
   insideMargin: "0.95in",
@@ -134,7 +135,7 @@ const state = {
   chapterStart: "new-page",
   includeFrontMatter: true,
   includeBackMatter: true,
-  includeTOC: true,
+  includeTOC: false,
   showHeaders: true,
   showPageNumbers: true,
   zoom: 1
@@ -146,6 +147,7 @@ const el = {
   overlay: document.getElementById("overlay"),
   presetSelect: document.getElementById("presetSelect"),
   applyPresetBtn: document.getElementById("applyPresetBtn"),
+  exporterUrlInput: document.getElementById("exporterUrlInput"),
   trimSize: document.getElementById("trimSize"),
   chapterStartSelect: document.getElementById("chapterStartSelect"),
   insideMarginInput: document.getElementById("insideMarginInput"),
@@ -164,7 +166,7 @@ const el = {
   showHeadersToggle: document.getElementById("showHeadersToggle"),
   showPageNumbersToggle: document.getElementById("showPageNumbersToggle"),
   renderBtn: document.getElementById("renderBtn"),
-  printBtn: document.getElementById("printBtn"),
+  exportPdfBtn: document.getElementById("exportPdfBtn"),
   exportHtmlBtn: document.getElementById("exportHtmlBtn"),
   statusText: document.getElementById("statusText"),
   pageCountValue: document.getElementById("pageCountValue"),
@@ -177,8 +179,7 @@ const el = {
   previewViewport: document.getElementById("previewViewport"),
   preview: document.getElementById("preview"),
   themeToggleBtn: document.getElementById("themeToggleBtn"),
-  toggleSidebarBtn: document.getElementById("toggleSidebarBtn"),
-  pageTemplate: document.getElementById("pageTemplate")
+  toggleSidebarBtn: document.getElementById("toggleSidebarBtn")
 };
 
 function setStatus(text) {
@@ -239,6 +240,390 @@ function getWordCount(book) {
   ];
   return all.reduce((sum, ch) => sum + countWordsInHtml(ch.content), 0);
 }
+
+function normalizeContentHtml(html = "") {
+  return String(html)
+    .replace(/<div(\s|>)/gi, "<p$1")
+    .replace(/<\/div>/gi, "</p>")
+    .replace(/\*\s*\*\s*\*/g, '<p class="scene-break">* * *</p>')
+    .replace(/<p>\s*<\/p>/g, "");
+}
+
+function updateTrimLabel() {
+  el.trimLabelValue.textContent = TRIM_MAP[state.trim]?.label || state.trim;
+}
+
+function updateZoom() {
+  el.preview.style.setProperty("--preview-scale", String(state.zoom));
+}
+
+function syncControlsFromState() {
+  el.exporterUrlInput.value = state.exporterUrl;
+  el.presetSelect.value = state.preset;
+  el.trimSize.value = state.trim;
+  el.chapterStartSelect.value = state.chapterStart;
+  el.insideMarginInput.value = state.insideMargin;
+  el.outsideMarginInput.value = state.outsideMargin;
+  el.topMarginInput.value = state.topMargin;
+  el.bottomMarginInput.value = state.bottomMargin;
+  el.fontSelect.value = state.font;
+  el.fontSizeSelect.value = state.fontSize;
+  el.lineHeightSelect.value = state.lineHeight;
+  el.alignmentSelect.value = state.alignment;
+  el.paragraphIndentInput.value = state.paragraphIndent;
+  el.paragraphSpacingInput.value = state.paragraphSpacing;
+  el.includeFrontMatterToggle.checked = state.includeFrontMatter;
+  el.includeBackMatterToggle.checked = state.includeBackMatter;
+  el.includeTOCToggle.checked = state.includeTOC;
+  el.showHeadersToggle.checked = state.showHeaders;
+  el.showPageNumbersToggle.checked = state.showPageNumbers;
+  el.zoomSelect.value = String(state.zoom);
+  updateTrimLabel();
+  updateZoom();
+}
+
+function syncStateFromControls() {
+  state.exporterUrl = el.exporterUrlInput.value.trim() || "http://localhost:8787";
+  state.preset = el.presetSelect.value;
+  state.trim = el.trimSize.value;
+  state.chapterStart = el.chapterStartSelect.value;
+  state.insideMargin = el.insideMarginInput.value.trim() || "0.95in";
+  state.outsideMargin = el.outsideMarginInput.value.trim() || "0.6in";
+  state.topMargin = el.topMarginInput.value.trim() || "0.75in";
+  state.bottomMargin = el.bottomMarginInput.value.trim() || "0.75in";
+  state.font = el.fontSelect.value;
+  state.fontSize = el.fontSizeSelect.value;
+  state.lineHeight = el.lineHeightSelect.value;
+  state.alignment = el.alignmentSelect.value;
+  state.paragraphIndent = el.paragraphIndentInput.value.trim() || "1.5em";
+  state.paragraphSpacing = el.paragraphSpacingInput.value.trim() || "0";
+  state.includeFrontMatter = el.includeFrontMatterToggle.checked;
+  state.includeBackMatter = el.includeBackMatterToggle.checked;
+  state.includeTOC = el.includeTOCToggle.checked;
+  state.showHeaders = el.showHeadersToggle.checked;
+  state.showPageNumbers = el.showPageNumbersToggle.checked;
+  state.zoom = Number(el.zoomSelect.value) || 1;
+  updateTrimLabel();
+  updateZoom();
+}
+
+function applyPreset(name) {
+  const preset = PRESETS[name];
+  if (!preset) return;
+  state.preset = name;
+  Object.assign(state, preset);
+  syncControlsFromState();
+  renderPreview();
+}
+
+function buildPreviewDom(book) {
+  const docNode = document.createElement("article");
+  docNode.className = "doc";
+  docNode.style.setProperty("--book-font", state.font);
+  docNode.style.setProperty("--book-font-size", `${state.fontSize}pt`);
+  docNode.style.setProperty("--book-line-height", state.lineHeight);
+  docNode.style.setProperty("--book-align", state.alignment);
+  docNode.style.setProperty("--paragraph-indent", state.paragraphIndent);
+  docNode.style.setProperty("--paragraph-spacing", state.paragraphSpacing);
+
+  const title = document.createElement("section");
+  title.className = "title-page";
+  title.innerHTML = `
+    <h1 class="title-page-title">${escapeHtml(book.title || "Untitled Book")}</h1>
+    <div class="title-page-author">${escapeHtml(book.author || "Author")}</div>
+  `;
+  docNode.appendChild(title);
+
+  const addChapter = (ch, cls) => {
+    const section = document.createElement("section");
+    section.className = `chapter ${cls || ""}`.trim();
+    section.innerHTML = `
+      <h2 class="chapter-title">${escapeHtml(ch.title || "Chapter")}</h2>
+      <div class="chapter-body">${normalizeContentHtml(ch.content || "")}</div>
+    `;
+    docNode.appendChild(section);
+  };
+
+  if (state.includeFrontMatter) {
+    for (const ch of book.sections.front || []) addChapter(ch, "frontmatter");
+  }
+  for (const ch of book.sections.body || []) addChapter(ch, "body");
+  if (state.includeBackMatter) {
+    for (const ch of book.sections.back || []) addChapter(ch, "backmatter");
+  }
+
+  return docNode;
+}
+
+function renderPreview() {
+  if (!currentBook) return;
+  syncStateFromControls();
+  setStatus("Rendering preview…");
+
+  el.preview.innerHTML = "";
+  el.preview.appendChild(buildPreviewDom(currentBook));
+
+  el.wordCountValue.textContent = String(getWordCount(currentBook));
+  el.pageCountValue.textContent = "—";
+  setStatus("Preview ready");
+}
+
+function buildPdfCss() {
+  const trim = TRIM_MAP[state.trim] || TRIM_MAP["5x8"];
+  const top = state.topMargin;
+  const bottom = state.bottomMargin;
+  const inside = state.insideMargin;
+  const outside = state.outsideMargin;
+
+  return `
+@page {
+  size: ${trim.width} ${trim.height};
+  margin-top: ${top};
+  margin-bottom: ${bottom};
+  margin-left: ${outside};
+  margin-right: ${outside};
+}
+@page :left {
+  margin-left: ${inside};
+  margin-right: ${outside};
+}
+@page :right {
+  margin-left: ${outside};
+  margin-right: ${inside};
+}
+
+html, body {
+  background: white;
+  color: #171717;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: ${state.font}, "Times New Roman", serif;
+  font-size: ${state.fontSize}pt;
+  line-height: ${state.lineHeight};
+  text-align: ${state.alignment};
+  -webkit-font-smoothing: antialiased;
+}
+
+p {
+  margin: 0 0 ${state.paragraphSpacing};
+  text-indent: ${state.paragraphIndent};
+}
+
+.title-page {
+  break-before: page;
+  page-break-before: always;
+  text-align: center;
+  padding-top: 20%;
+}
+.title-page-title { font-size: 28pt; margin: 0 0 14pt; line-height: 1.1; }
+.title-page-author { font-size: 12pt; }
+
+.chapter {
+  break-before: page;
+  page-break-before: always;
+}
+.chapter-title {
+  text-align: center;
+  font-size: 18pt;
+  margin: 0;
+  padding: 22% 0 12%;
+  line-height: 1.15;
+  page-break-after: avoid;
+  break-after: avoid;
+}
+.chapter-body p:first-child,
+.title-page p:first-child,
+.scene-break { text-indent: 0; }
+.scene-break { text-align: center; margin: 1.2em 0; }
+blockquote { margin: 0 0 1em; padding-left: 16px; border-left: 3px solid #999; }
+`;
+}
+
+function buildPdfHtml(book) {
+  const titleSafe = escapeHtml(book.title || "Book");
+  const authorSafe = escapeHtml(book.author || "Author");
+
+  const chapterHtml = (ch) => `
+    <section class="chapter">
+      <h2 class="chapter-title">${escapeHtml(ch.title || "Chapter")}</h2>
+      <div class="chapter-body">${normalizeContentHtml(ch.content || "")}</div>
+    </section>
+  `.trim();
+
+  const front = state.includeFrontMatter ? (book.sections.front || []).map(chapterHtml).join("\n") : "";
+  const body = (book.sections.body || []).map(chapterHtml).join("\n");
+  const back = state.includeBackMatter ? (book.sections.back || []).map(chapterHtml).join("\n") : "";
+
+  return `
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>${titleSafe}</title>
+    <style>${buildPdfCss()}</style>
+  </head>
+  <body>
+    <section class="title-page">
+      <h1 class="title-page-title">${titleSafe}</h1>
+      <div class="title-page-author">${authorSafe}</div>
+    </section>
+    ${front}
+    ${body}
+    ${back}
+  </body>
+</html>
+`.trim();
+}
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1500);
+}
+
+async function exportPdf() {
+  if (!currentBook) return;
+  syncStateFromControls();
+
+  const base = state.exporterUrl.replace(/\/+$/, "");
+  const endpoint = `${base}/pdf`;
+  const pdfHtml = buildPdfHtml(currentBook);
+
+  setStatus("Exporting PDF…");
+  el.exportPdfBtn.disabled = true;
+
+  try {
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        html: pdfHtml,
+        options: {
+          showHeaderFooter: state.showHeaders || state.showPageNumbers,
+          showHeaders: state.showHeaders,
+          showPageNumbers: state.showPageNumbers,
+          title: currentBook.title || "Book",
+          author: currentBook.author || "Author"
+        }
+      })
+    });
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new Error(`Exporter failed (${res.status}). ${text}`.trim());
+    }
+
+    const blob = await res.blob();
+    const name = `${(currentBook.title || "book").replace(/[^a-z0-9]+/gi, "_")}.pdf`;
+    downloadBlob(blob, name);
+    setStatus("PDF downloaded");
+  } catch (err) {
+    setStatus(`PDF export failed: ${err?.message || String(err)}`);
+  } finally {
+    el.exportPdfBtn.disabled = false;
+  }
+}
+
+function exportHtmlSnapshot() {
+  if (!currentBook) return;
+  syncStateFromControls();
+  const html = buildPdfHtml(currentBook);
+  const blob = new Blob([html], { type: "text/html" });
+  const name = `${(currentBook.title || "book").replace(/[^a-z0-9]+/gi, "_")}.html`;
+  downloadBlob(blob, name);
+}
+
+async function loadBook(uid) {
+  if (!bookId) {
+    setStatus("Missing ?book= parameter");
+    return;
+  }
+
+  setStatus("Loading book…");
+  const ref = doc(db, "users", uid, "books", bookId);
+  const snap = await getDoc(ref);
+
+  if (!snap.exists()) {
+    setStatus("Book not found");
+    return;
+  }
+
+  currentBook = normalizeBook(snap.data());
+  el.bookTitle.textContent = currentBook.title;
+  el.topbarBookTitle.textContent = currentBook.title;
+  el.bookSubtitle.textContent = `${currentBook.author} • Ready to export`;
+  el.wordCountValue.textContent = String(getWordCount(currentBook));
+  renderPreview();
+}
+
+function bindEvents() {
+  el.applyPresetBtn.addEventListener("click", () => applyPreset(el.presetSelect.value));
+
+  [
+    el.exporterUrlInput,
+    el.trimSize,
+    el.insideMarginInput,
+    el.outsideMarginInput,
+    el.topMarginInput,
+    el.bottomMarginInput,
+    el.fontSelect,
+    el.fontSizeSelect,
+    el.lineHeightSelect,
+    el.alignmentSelect,
+    el.paragraphIndentInput,
+    el.paragraphSpacingInput,
+    el.includeFrontMatterToggle,
+    el.includeBackMatterToggle,
+    el.includeTOCToggle,
+    el.showHeadersToggle,
+    el.showPageNumbersToggle
+  ].forEach((control) => control.addEventListener("change", renderPreview));
+
+  el.zoomSelect.addEventListener("change", () => {
+    syncStateFromControls();
+  });
+
+  el.renderBtn.addEventListener("click", renderPreview);
+  el.exportPdfBtn.addEventListener("click", exportPdf);
+  el.exportHtmlBtn.addEventListener("click", exportHtmlSnapshot);
+
+  el.themeToggleBtn.addEventListener("click", () => {
+    el.body.classList.toggle("light");
+    el.body.classList.toggle("dark");
+  });
+
+  el.toggleSidebarBtn.addEventListener("click", () => {
+    el.sidebar.classList.toggle("open");
+    el.overlay.classList.toggle("hidden");
+  });
+
+  el.overlay.addEventListener("click", () => {
+    el.sidebar.classList.remove("open");
+    el.overlay.classList.add("hidden");
+  });
+}
+
+bindEvents();
+syncControlsFromState();
+applyPreset("bn_5x8");
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    setStatus("Not logged in");
+    return;
+  }
+  currentUser = user;
+  await loadBook(user.uid);
+});
 
 function normalizeContentHtml(html = "") {
   return String(html)
