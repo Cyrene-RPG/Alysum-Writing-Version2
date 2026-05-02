@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Alysum PDF Exporter</title>
-  <link rel="stylesheet" href="format.css" />
+  <title>Format &amp; export — Alysum</title>
+  <link rel="stylesheet" href="export.css" />
 </head>
 <body class="dark">
   <div class="app-shell">
@@ -12,8 +12,8 @@
       <div class="sidebar-header">
         <div class="brand-row">
           <div>
-            <div class="eyebrow">Book formatter</div>
-            <h1 class="sidebar-title">PDF Exporter</h1>
+            <div class="eyebrow">Alysum Studio</div>
+            <h1 class="sidebar-title">Format &amp; export</h1>
           </div>
           <button id="themeToggleBtn" class="icon-btn" type="button" title="Toggle theme">◐</button>
         </div>
@@ -33,9 +33,9 @@
           <div class="panel-body">
             <label class="field">
               <span class="field-label">PDF service URL</span>
-              <input id="exporterUrlInput" type="text" value="http://localhost:8787" />
+              <input id="exporterUrlInput" type="text" value="" placeholder="Leave blank for /api (Firebase)" />
             </label>
-            <div class="hint">Run the Node exporter locally, or point this at a deployed endpoint.</div>
+            <div class="hint">Hosted: leave blank so requests go to <code>/api/pdf</code> (see <code>firebase.json</code> rewrite). Local dev: run the exporter and use <code>http://localhost:8787/api</code>.</div>
           </div>
         </section>
 
@@ -45,20 +45,40 @@
           </div>
           <div class="panel-body">
             <label class="field">
-              <span class="field-label">Platform preset</span>
+              <span class="field-label">Print preset</span>
               <select id="presetSelect">
-                <option value="bn_5x8">Barnes & Noble Press — 5 × 8</option>
+                <option value="reedsy_pocket">Pocket — 4.25 × 6.87 in</option>
+                <option value="reedsy_standard" selected>Reedsy — 5 × 8 in</option>
+                <option value="reedsy_digest">Digest — 5.5 × 8.5 in</option>
+                <option value="reedsy_trade">Trade — 6 × 9 in</option>
+                <option value="bn_5x8">Barnes &amp; Noble Press — 5 × 8</option>
                 <option value="kdp_5x8">KDP — 5 × 8</option>
                 <option value="kdp_5_25x8">KDP — 5.25 × 8</option>
                 <option value="kdp_5_5x8_5">KDP — 5.5 × 8.5</option>
                 <option value="kdp_6x9">KDP — 6 × 9</option>
                 <option value="a5">A5</option>
-                <option value="mass_market">Mass market</option>
+                <option value="mass_market">Mass market (trim only)</option>
                 <option value="custom">Custom / manual</option>
               </select>
             </label>
 
             <button id="applyPresetBtn" class="primary-btn" type="button">Apply preset</button>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-header">
+            <h2>Template</h2>
+          </div>
+          <div class="panel-body">
+            <label class="field">
+              <span class="field-label">Theme</span>
+              <select id="themeSelect">
+                <option value="classic" selected>Classic</option>
+                <option value="modern">Modern</option>
+                <option value="serif_minimal">Serif minimal</option>
+              </select>
+            </label>
           </div>
         </section>
 
@@ -70,12 +90,12 @@
             <label class="field">
               <span class="field-label">Trim size</span>
               <select id="trimSize">
-                <option value="5x8">5 × 8</option>
-                <option value="5_25x8">5.25 × 8</option>
-                <option value="5_5x8_5">5.5 × 8.5</option>
-                <option value="6x9">6 × 9</option>
-                <option value="a5">A5</option>
-                <option value="mass_market">Mass market</option>
+                <option value="mass_market">Pocket — 4.25 × 6.87 in</option>
+                <option value="5x8" selected>Reedsy — 5 × 8 in</option>
+                <option value="5_25x8">5.25 × 8 in</option>
+                <option value="5_5x8_5">Digest — 5.5 × 8.5 in</option>
+                <option value="6x9">Trade — 6 × 9 in</option>
+                <option value="a5">A5 — 148 × 210 mm</option>
               </select>
             </label>
 
@@ -83,13 +103,13 @@
               <span class="field-label">Chapter starts</span>
               <select id="chapterStartSelect">
                 <option value="new-page">New page</option>
-                <option value="recto" disabled>Right-hand page (v2)</option>
+                <option value="recto">Right-hand page</option>
               </select>
             </label>
 
             <label class="field">
               <span class="field-label">Inside margin</span>
-              <input id="insideMarginInput" type="text" value="0.95in" />
+              <input id="insideMarginInput" type="text" value="0.88in" />
             </label>
 
             <label class="field">
@@ -179,13 +199,16 @@
               <label><input id="includeBackMatterToggle" type="checkbox" checked /> Include back matter</label>
             </div>
             <div class="check-row">
-              <label><input id="includeTOCToggle" type="checkbox" /> Auto-generate contents (v2)</label>
+              <label><input id="includeTOCToggle" type="checkbox" checked /> Table of contents (real page numbers)</label>
             </div>
             <div class="check-row">
               <label><input id="showHeadersToggle" type="checkbox" checked /> Running headers</label>
             </div>
             <div class="check-row">
               <label><input id="showPageNumbersToggle" type="checkbox" checked /> Page numbers</label>
+            </div>
+            <div class="check-row">
+              <label><input id="romanFrontMatterToggle" type="checkbox" checked /> Roman numerals for front matter</label>
             </div>
           </div>
         </section>
@@ -247,7 +270,7 @@
         <div class="preview-toolbar">
           <div class="preview-toolbar-left">
             <span class="preview-badge">Book interior</span>
-            <span class="preview-note">Preview is approximate; PDF export is authoritative.</span>
+            <span class="preview-note">Spread preview matches trim size in CSS inches (~96 px per in). PDF export uses the same dimensions via the print service.</span>
           </div>
         </div>
 
@@ -257,6 +280,14 @@
       </section>
     </main>
   </div>
+
+  <template id="pageTemplate">
+    <article class="page">
+      <div class="running-header"></div>
+      <div class="page-content"></div>
+      <div class="page-number"></div>
+    </article>
+  </template>
 
   <script type="module" src="format.js"></script>
 </body>

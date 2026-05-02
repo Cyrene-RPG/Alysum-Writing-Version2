@@ -1,4 +1,6 @@
 const express = require("express");
+const fs = require("node:fs");
+const path = require("node:path");
 const puppeteer = require("puppeteer");
 
 const app = express();
@@ -16,50 +18,36 @@ let browserPromise = null;
 
 function getBrowser() {
   if (!browserPromise) {
-    browserPromise = puppeteer.launch({
+    const launchOpts = {
       headless: "new",
-      args: ["--no-sandbox", "--disable-setuid-sandbox"]
-    });
+      args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"]
+    };
+    if (process.env.PUPPETEER_EXECUTABLE_PATH) {
+      launchOpts.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
+    }
+    browserPromise = puppeteer.launch(launchOpts);
   }
   return browserPromise;
 }
 
-function headerTemplate({ title = "", author = "", showHeaders }) {
-  if (!showHeaders) return "<div></div>";
-  const safeTitle = String(title).replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  const safeAuthor = String(author).replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  return `
-    <div style="width:100%; font-size:9px; color:#555; padding:0 0.55in; font-family: Georgia, 'Times New Roman', serif;">
-      <div style="display:flex; justify-content:space-between; width:100%;">
-        <span>${safeAuthor}</span>
-        <span>${safeTitle}</span>
-      </div>
-    </div>
-  `;
+function pagedPolyfillPath() {
+  const direct = path.join(__dirname, "node_modules", "pagedjs", "dist", "paged.polyfill.js");
+  if (fs.existsSync(direct)) return direct;
+  try {
+    return require.resolve("pagedjs", { conditions: ["polyfill", "require", "default"] });
+  } catch (e) {
+    return direct;
+  }
 }
 
-function footerTemplate({ showPageNumbers }) {
-  if (!showPageNumbers) return "<div></div>";
-  return `
-    <div style="width:100%; font-size:9px; color:#555; padding:0 0.55in; font-family: Georgia, 'Times New Roman', serif;">
-      <div style="text-align:center; width:100%;">
-        <span class="pageNumber"></span>
-      </div>
-    </div>
-  `;
-}
-
-app.get("/health", (req, res) => res.json({ ok: true }));
-
-app.post("/pdf", async (req, res) => {
+async function handlePdf(req, res) {
   const { html, options } = req.body || {};
   if (typeof html !== "string" || !html.trim()) {
     return res.status(400).send("Missing 'html' string");
   }
 
   const opt = options && typeof options === "object" ? options : {};
-  const showHeaders = Boolean(opt.showHeaders);
-  const showPageNumbers = Boolean(opt.showPageNumbers);
+  const usePagedJs = Boolean(opt.usePagedJs);
 
   try {
     const browser = await getBrowser();
@@ -68,13 +56,40 @@ app.post("/pdf", async (req, res) => {
     await page.setContent(html, { waitUntil: ["domcontentloaded", "networkidle0"] });
     await page.emulateMediaType("print");
 
+    if (usePagedJs) {
+      const pagedPath = pagedPolyfillPath();
+      const pagedJs = fs.readFileSync(pagedPath, "utf8");
+
+      await page.addScriptTag({ content: pagedJs });
+      await page.addScriptTag({
+        content: `
+          (function () {
+            window.__PAGED_DONE = false;
+            function done() { window.__PAGED_DONE = true; }
+            try {
+              if (window.PagedPolyfill && typeof window.PagedPolyfill.preview === "function") {
+                window.PagedPolyfill.preview().then(done).catch(done);
+              } else if (window.Paged && window.Paged.Previewer) {
+                const p = new window.Paged.Previewer();
+                p.preview().then(done).catch(done);
+              } else {
+                done();
+              }
+            } catch (e) {
+              done();
+            }
+          })();
+        `
+      });
+
+      await page.waitForFunction("window.__PAGED_DONE === true", { timeout: 120000 });
+    }
+
     const pdf = await page.pdf({
       printBackground: true,
       preferCSSPageSize: true,
-      displayHeaderFooter: Boolean(opt.showHeaderFooter),
-      headerTemplate: headerTemplate({ title: opt.title, author: opt.author, showHeaders }),
-      footerTemplate: footerTemplate({ showPageNumbers }),
-      margin: { top: showHeaders ? "0.55in" : "0.2in", bottom: showPageNumbers ? "0.55in" : "0.2in", left: "0in", right: "0in" }
+      displayHeaderFooter: false,
+      margin: { top: "0in", bottom: "0in", left: "0in", right: "0in" }
     });
 
     await page.close();
@@ -85,11 +100,17 @@ app.post("/pdf", async (req, res) => {
   } catch (err) {
     return res.status(500).send(err?.stack || err?.message || String(err));
   }
-});
+}
+
+const api = express.Router();
+api.get("/health", (req, res) => res.json({ ok: true }));
+api.post("/pdf", handlePdf);
+
+app.use("/api", api);
+app.use("/", api);
 
 const port = Number(process.env.PORT) || 8787;
-app.listen(port, () => {
+app.listen(port, "0.0.0.0", () => {
   // eslint-disable-next-line no-console
-  console.log(`PDF exporter listening on http://localhost:${port}`);
+  console.log(`PDF exporter listening on port ${port} (paths /api/* and /*)`);
 });
-

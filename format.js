@@ -9,6 +9,63 @@ let currentUser = null;
 let currentBook = null;
 
 const PRESETS = {
+  /** Reedsy Studio trim names (sizes match their formatter). */
+  reedsy_pocket: {
+    trim: "mass_market",
+    insideMargin: "0.7in",
+    outsideMargin: "0.45in",
+    topMargin: "0.6in",
+    bottomMargin: "0.6in",
+    font: "Georgia",
+    fontSize: "9.75",
+    lineHeight: "1.45",
+    alignment: "justify",
+    paragraphIndent: "1.25em",
+    paragraphSpacing: "0",
+    chapterStart: "new-page"
+  },
+  reedsy_standard: {
+    trim: "5x8",
+    insideMargin: "0.88in",
+    outsideMargin: "0.6in",
+    topMargin: "0.75in",
+    bottomMargin: "0.75in",
+    font: "Georgia",
+    fontSize: "11",
+    lineHeight: "1.6",
+    alignment: "justify",
+    paragraphIndent: "1.5em",
+    paragraphSpacing: "0",
+    chapterStart: "new-page"
+  },
+  reedsy_digest: {
+    trim: "5_5x8_5",
+    insideMargin: "0.9in",
+    outsideMargin: "0.62in",
+    topMargin: "0.78in",
+    bottomMargin: "0.78in",
+    font: "Georgia",
+    fontSize: "11",
+    lineHeight: "1.58",
+    alignment: "justify",
+    paragraphIndent: "1.5em",
+    paragraphSpacing: "0",
+    chapterStart: "new-page"
+  },
+  reedsy_trade: {
+    trim: "6x9",
+    insideMargin: "0.95in",
+    outsideMargin: "0.65in",
+    topMargin: "0.8in",
+    bottomMargin: "0.8in",
+    font: "Georgia",
+    fontSize: "11",
+    lineHeight: "1.58",
+    alignment: "justify",
+    paragraphIndent: "1.5em",
+    paragraphSpacing: "0",
+    chapterStart: "new-page"
+  },
   bn_5x8: {
     trim: "5x8",
     insideMargin: "0.95in",
@@ -110,19 +167,27 @@ const PRESETS = {
 };
 
 const TRIM_MAP = {
-  "5x8": { width: "5in", height: "8in", label: "5 × 8" },
-  "5_25x8": { width: "5.25in", height: "8in", label: "5.25 × 8" },
-  "5_5x8_5": { width: "5.5in", height: "8.5in", label: "5.5 × 8.5" },
-  "6x9": { width: "6in", height: "9in", label: "6 × 9" },
-  a5: { width: "148mm", height: "210mm", label: "A5" },
-  mass_market: { width: "4.25in", height: "6.87in", label: "Mass market" }
+  mass_market: { width: "4.25in", height: "6.87in", label: "Pocket — 4.25 × 6.87 in" },
+  "5x8": { width: "5in", height: "8in", label: "Reedsy — 5 × 8 in" },
+  "5_25x8": { width: "5.25in", height: "8in", label: "5.25 × 8 in" },
+  "5_5x8_5": { width: "5.5in", height: "8.5in", label: "Digest — 5.5 × 8.5 in" },
+  "6x9": { width: "6in", height: "9in", label: "Trade — 6 × 9 in" },
+  a5: { width: "148mm", height: "210mm", label: "A5 — 148 × 210 mm" }
 };
 
+/** Same-origin `/api` when hosted (Firebase rewrite → Cloud Run); local file → dev server. */
+function defaultExporterBase() {
+  if (typeof window === "undefined" || !window.location) return "http://localhost:8787/api";
+  if (window.location.protocol === "file:") return "http://localhost:8787/api";
+  return new URL("/api", window.location.origin).href.replace(/\/+$/, "");
+}
+
 const state = {
-  exporterUrl: "http://localhost:8787",
-  preset: "bn_5x8",
+  exporterUrl: "",
+  theme: "classic",
+  preset: "reedsy_standard",
   trim: "5x8",
-  insideMargin: "0.95in",
+  insideMargin: "0.88in",
   outsideMargin: "0.6in",
   topMargin: "0.75in",
   bottomMargin: "0.75in",
@@ -135,9 +200,10 @@ const state = {
   chapterStart: "new-page",
   includeFrontMatter: true,
   includeBackMatter: true,
-  includeTOC: false,
+  includeTOC: true,
   showHeaders: true,
   showPageNumbers: true,
+  romanFrontMatter: true,
   zoom: 1
 };
 
@@ -148,6 +214,7 @@ const el = {
   presetSelect: document.getElementById("presetSelect"),
   applyPresetBtn: document.getElementById("applyPresetBtn"),
   exporterUrlInput: document.getElementById("exporterUrlInput"),
+  themeSelect: document.getElementById("themeSelect"),
   trimSize: document.getElementById("trimSize"),
   chapterStartSelect: document.getElementById("chapterStartSelect"),
   insideMarginInput: document.getElementById("insideMarginInput"),
@@ -165,6 +232,7 @@ const el = {
   includeTOCToggle: document.getElementById("includeTOCToggle"),
   showHeadersToggle: document.getElementById("showHeadersToggle"),
   showPageNumbersToggle: document.getElementById("showPageNumbersToggle"),
+  romanFrontMatterToggle: document.getElementById("romanFrontMatterToggle"),
   renderBtn: document.getElementById("renderBtn"),
   exportPdfBtn: document.getElementById("exportPdfBtn"),
   exportHtmlBtn: document.getElementById("exportHtmlBtn"),
@@ -179,7 +247,8 @@ const el = {
   previewViewport: document.getElementById("previewViewport"),
   preview: document.getElementById("preview"),
   themeToggleBtn: document.getElementById("themeToggleBtn"),
-  toggleSidebarBtn: document.getElementById("toggleSidebarBtn")
+  toggleSidebarBtn: document.getElementById("toggleSidebarBtn"),
+  pageTemplate: document.getElementById("pageTemplate")
 };
 
 function setStatus(text) {
@@ -259,6 +328,7 @@ function updateZoom() {
 
 function syncControlsFromState() {
   el.exporterUrlInput.value = state.exporterUrl;
+  el.themeSelect.value = state.theme;
   el.presetSelect.value = state.preset;
   el.trimSize.value = state.trim;
   el.chapterStartSelect.value = state.chapterStart;
@@ -277,13 +347,15 @@ function syncControlsFromState() {
   el.includeTOCToggle.checked = state.includeTOC;
   el.showHeadersToggle.checked = state.showHeaders;
   el.showPageNumbersToggle.checked = state.showPageNumbers;
+  el.romanFrontMatterToggle.checked = state.romanFrontMatter;
   el.zoomSelect.value = String(state.zoom);
   updateTrimLabel();
   updateZoom();
 }
 
 function syncStateFromControls() {
-  state.exporterUrl = el.exporterUrlInput.value.trim() || "http://localhost:8787";
+  state.exporterUrl = el.exporterUrlInput.value.trim();
+  state.theme = el.themeSelect.value || "classic";
   state.preset = el.presetSelect.value;
   state.trim = el.trimSize.value;
   state.chapterStart = el.chapterStartSelect.value;
@@ -302,70 +374,24 @@ function syncStateFromControls() {
   state.includeTOC = el.includeTOCToggle.checked;
   state.showHeaders = el.showHeadersToggle.checked;
   state.showPageNumbers = el.showPageNumbersToggle.checked;
+  state.romanFrontMatter = el.romanFrontMatterToggle.checked;
   state.zoom = Number(el.zoomSelect.value) || 1;
   updateTrimLabel();
   updateZoom();
 }
 
 function applyPreset(name) {
+  state.preset = name;
+  if (name === "custom") {
+    syncControlsFromState();
+    renderBook();
+    return;
+  }
   const preset = PRESETS[name];
   if (!preset) return;
-  state.preset = name;
   Object.assign(state, preset);
   syncControlsFromState();
-  renderPreview();
-}
-
-function buildPreviewDom(book) {
-  const docNode = document.createElement("article");
-  docNode.className = "doc";
-  docNode.style.setProperty("--book-font", state.font);
-  docNode.style.setProperty("--book-font-size", `${state.fontSize}pt`);
-  docNode.style.setProperty("--book-line-height", state.lineHeight);
-  docNode.style.setProperty("--book-align", state.alignment);
-  docNode.style.setProperty("--paragraph-indent", state.paragraphIndent);
-  docNode.style.setProperty("--paragraph-spacing", state.paragraphSpacing);
-
-  const title = document.createElement("section");
-  title.className = "title-page";
-  title.innerHTML = `
-    <h1 class="title-page-title">${escapeHtml(book.title || "Untitled Book")}</h1>
-    <div class="title-page-author">${escapeHtml(book.author || "Author")}</div>
-  `;
-  docNode.appendChild(title);
-
-  const addChapter = (ch, cls) => {
-    const section = document.createElement("section");
-    section.className = `chapter ${cls || ""}`.trim();
-    section.innerHTML = `
-      <h2 class="chapter-title">${escapeHtml(ch.title || "Chapter")}</h2>
-      <div class="chapter-body">${normalizeContentHtml(ch.content || "")}</div>
-    `;
-    docNode.appendChild(section);
-  };
-
-  if (state.includeFrontMatter) {
-    for (const ch of book.sections.front || []) addChapter(ch, "frontmatter");
-  }
-  for (const ch of book.sections.body || []) addChapter(ch, "body");
-  if (state.includeBackMatter) {
-    for (const ch of book.sections.back || []) addChapter(ch, "backmatter");
-  }
-
-  return docNode;
-}
-
-function renderPreview() {
-  if (!currentBook) return;
-  syncStateFromControls();
-  setStatus("Rendering preview…");
-
-  el.preview.innerHTML = "";
-  el.preview.appendChild(buildPreviewDom(currentBook));
-
-  el.wordCountValue.textContent = String(getWordCount(currentBook));
-  el.pageCountValue.textContent = "—";
-  setStatus("Preview ready");
+  renderBook();
 }
 
 function buildPdfCss() {
@@ -375,21 +401,40 @@ function buildPdfCss() {
   const inside = state.insideMargin;
   const outside = state.outsideMargin;
 
+  const themeVars = (() => {
+    switch (state.theme) {
+      case "modern":
+        return `
+          --heading-font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+          --body-font: ${state.font}, "Times New Roman", serif;
+          --chapter-title-size: 17pt;
+          --title-size: 30pt;
+        `;
+      case "serif_minimal":
+        return `
+          --heading-font: ${state.font}, "Times New Roman", serif;
+          --body-font: ${state.font}, "Times New Roman", serif;
+          --chapter-title-size: 16pt;
+          --title-size: 28pt;
+        `;
+      default:
+        return `
+          --heading-font: ${state.font}, "Times New Roman", serif;
+          --body-font: ${state.font}, "Times New Roman", serif;
+          --chapter-title-size: 18pt;
+          --title-size: 28pt;
+        `;
+    }
+  })();
+
   return `
 @page {
   size: ${trim.width} ${trim.height};
-  margin-top: ${top};
-  margin-bottom: ${bottom};
-  margin-left: ${outside};
-  margin-right: ${outside};
+  margin: 0;
 }
 @page :left {
-  margin-left: ${inside};
-  margin-right: ${outside};
 }
 @page :right {
-  margin-left: ${outside};
-  margin-right: ${inside};
 }
 
 html, body {
@@ -400,26 +445,88 @@ html, body {
 }
 
 body {
-  font-family: ${state.font}, "Times New Roman", serif;
+  ${themeVars}
+  font-family: var(--body-font);
   font-size: ${state.fontSize}pt;
   line-height: ${state.lineHeight};
   text-align: ${state.alignment};
   -webkit-font-smoothing: antialiased;
+  hyphens: auto;
+}
+
+/* Paged.js uses these paged pages */
+.pagedjs_page {
+  background: white;
+}
+
+.pagedjs_sheet {
+  padding: 0 !important;
+}
+
+.pagedjs_pagebox {
+  padding: 0 !important;
+}
+
+/* Content frame inside each page */
+.book {
+  padding-top: ${top};
+  padding-bottom: ${bottom};
+  padding-left: ${outside};
+  padding-right: ${outside};
+}
+
+/* Mirror margins: swap inside/outside per page */
+.pagedjs_left_page .book {
+  padding-left: ${inside};
+  padding-right: ${outside};
+}
+.pagedjs_right_page .book {
+  padding-left: ${outside};
+  padding-right: ${inside};
 }
 
 p {
   margin: 0 0 ${state.paragraphSpacing};
   text-indent: ${state.paragraphIndent};
+  orphans: 2;
+  widows: 2;
+}
+
+.keep-with-next {
+  break-after: avoid;
+  page-break-after: avoid;
 }
 
 .title-page {
   break-before: page;
   page-break-before: always;
   text-align: center;
-  padding-top: 20%;
+  padding-top: 18%;
 }
-.title-page-title { font-size: 28pt; margin: 0 0 14pt; line-height: 1.1; }
+.title-page-title { font-family: var(--heading-font); font-size: var(--title-size); margin: 0 0 14pt; line-height: 1.1; }
 .title-page-author { font-size: 12pt; }
+
+.toc {
+  break-before: page;
+  page-break-before: always;
+}
+.toc h2 {
+  font-family: var(--heading-font);
+  font-size: 16pt;
+  text-align: center;
+  margin: 12% 0 10%;
+}
+.toc a {
+  color: inherit;
+  text-decoration: none;
+}
+.toc-item {
+  display: block;
+  margin: 0 0 0.25em;
+}
+.toc-item a::after {
+  content: leader('.') target-counter(attr(href), page);
+}
 
 .chapter {
   break-before: page;
@@ -427,53 +534,129 @@ p {
 }
 .chapter-title {
   text-align: center;
-  font-size: 18pt;
+  font-family: var(--heading-font);
+  font-size: var(--chapter-title-size);
   margin: 0;
   padding: 22% 0 12%;
   line-height: 1.15;
   page-break-after: avoid;
   break-after: avoid;
+  string-set: chapter content(text);
 }
 .chapter-body p:first-child,
 .title-page p:first-child,
 .scene-break { text-indent: 0; }
 .scene-break { text-align: center; margin: 1.2em 0; }
 blockquote { margin: 0 0 1em; padding-left: 16px; border-left: 3px solid #999; }
+
+/* Running heads + page numbers in margin boxes (Paged.js) */
+@page {
+  @top-left {
+    content: ${state.showHeaders ? "string(author)" : "none"};
+    font-size: 9pt;
+    color: #555;
+  }
+  @top-right {
+    content: ${state.showHeaders ? "string(chapter)" : "none"};
+    font-size: 9pt;
+    color: #555;
+  }
+  @bottom-center {
+    content: ${state.showPageNumbers ? "counter(page)" : "none"};
+    font-size: 9pt;
+    color: #555;
+  }
+}
+
+@page title {
+  @top-left { content: none; }
+  @top-right { content: none; }
+  @bottom-center { content: none; }
+}
+
+@page toc {
+  @top-left { content: none; }
+  @top-right { content: none; }
+}
+
+@page frontmatter {
+  @bottom-center { content: ${state.showPageNumbers ? (state.romanFrontMatter ? "counter(page, lower-roman)" : "counter(page)") : "none"}; }
+}
 `;
 }
 
 function buildPdfHtml(book) {
   const titleSafe = escapeHtml(book.title || "Book");
   const authorSafe = escapeHtml(book.author || "Author");
+  const lang = "en";
 
-  const chapterHtml = (ch) => `
-    <section class="chapter">
-      <h2 class="chapter-title">${escapeHtml(ch.title || "Chapter")}</h2>
+  const idFor = (prefix, idx) => `${prefix}-${idx + 1}`;
+
+  const chapterHtml = (ch, idx, prefix = "ch") => `
+    <section class="chapter" id="${idFor(prefix, idx)}">
+      <h2 class="chapter-title keep-with-next">${escapeHtml(ch.title || "Chapter")}</h2>
       <div class="chapter-body">${normalizeContentHtml(ch.content || "")}</div>
     </section>
   `.trim();
 
-  const front = state.includeFrontMatter ? (book.sections.front || []).map(chapterHtml).join("\n") : "";
-  const body = (book.sections.body || []).map(chapterHtml).join("\n");
-  const back = state.includeBackMatter ? (book.sections.back || []).map(chapterHtml).join("\n") : "";
+  const tocHtml = (() => {
+    if (!state.includeTOC) return "";
+    const items = (book.sections.body || [])
+      .map((ch, idx) => `<div class="toc-item"><a href="#${idFor("ch", idx)}">${escapeHtml(ch.title || `Chapter ${idx + 1}`)}</a></div>`)
+      .join("\n");
+    return `
+      <section class="toc" style="page: toc;">
+        <h2>Contents</h2>
+        <div class="toc-list">
+          ${items}
+        </div>
+      </section>
+    `.trim();
+  })();
+
+  const front = state.includeFrontMatter
+    ? (book.sections.front || []).map((ch, idx) => `<section class="chapter frontmatter" style="page: frontmatter;" id="${idFor("front", idx)}">
+      <h2 class="chapter-title keep-with-next">${escapeHtml(ch.title || "Front matter")}</h2>
+      <div class="chapter-body">${normalizeContentHtml(ch.content || "")}</div>
+    </section>`.trim()).join("\n")
+    : "";
+
+  const body = (book.sections.body || [])
+    .map((ch, idx) => chapterHtml(ch, idx, "ch"))
+    .join("\n");
+
+  const back = state.includeBackMatter
+    ? (book.sections.back || []).map((ch, idx) => `<section class="chapter backmatter" id="${idFor("back", idx)}">
+      <h2 class="chapter-title keep-with-next">${escapeHtml(ch.title || "Back matter")}</h2>
+      <div class="chapter-body">${normalizeContentHtml(ch.content || "")}</div>
+    </section>`.trim()).join("\n")
+    : "";
+
+  const chapterStartCss = state.chapterStart === "recto"
+    ? `<style>.chapter { break-before: right; page-break-before: right; }</style>`
+    : "";
 
   return `
 <!doctype html>
-<html>
+<html lang="${lang}">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>${titleSafe}</title>
     <style>${buildPdfCss()}</style>
+    ${chapterStartCss}
   </head>
-  <body>
-    <section class="title-page">
+  <body style="string-set: author '${authorSafe}';">
+    <section class="title-page" style="page: title;">
       <h1 class="title-page-title">${titleSafe}</h1>
       <div class="title-page-author">${authorSafe}</div>
     </section>
+    ${tocHtml}
+    <main class="book">
     ${front}
     ${body}
     ${back}
+    </main>
   </body>
 </html>
 `.trim();
@@ -494,7 +677,7 @@ async function exportPdf() {
   if (!currentBook) return;
   syncStateFromControls();
 
-  const base = state.exporterUrl.replace(/\/+$/, "");
+  const base = (state.exporterUrl || defaultExporterBase()).replace(/\/+$/, "");
   const endpoint = `${base}/pdf`;
   const pdfHtml = buildPdfHtml(currentBook);
 
@@ -508,9 +691,7 @@ async function exportPdf() {
       body: JSON.stringify({
         html: pdfHtml,
         options: {
-          showHeaderFooter: state.showHeaders || state.showPageNumbers,
-          showHeaders: state.showHeaders,
-          showPageNumbers: state.showPageNumbers,
+          usePagedJs: true,
           title: currentBook.title || "Book",
           author: currentBook.author || "Author"
         }
@@ -533,172 +714,6 @@ async function exportPdf() {
   }
 }
 
-function exportHtmlSnapshot() {
-  if (!currentBook) return;
-  syncStateFromControls();
-  const html = buildPdfHtml(currentBook);
-  const blob = new Blob([html], { type: "text/html" });
-  const name = `${(currentBook.title || "book").replace(/[^a-z0-9]+/gi, "_")}.html`;
-  downloadBlob(blob, name);
-}
-
-async function loadBook(uid) {
-  if (!bookId) {
-    setStatus("Missing ?book= parameter");
-    return;
-  }
-
-  setStatus("Loading book…");
-  const ref = doc(db, "users", uid, "books", bookId);
-  const snap = await getDoc(ref);
-
-  if (!snap.exists()) {
-    setStatus("Book not found");
-    return;
-  }
-
-  currentBook = normalizeBook(snap.data());
-  el.bookTitle.textContent = currentBook.title;
-  el.topbarBookTitle.textContent = currentBook.title;
-  el.bookSubtitle.textContent = `${currentBook.author} • Ready to export`;
-  el.wordCountValue.textContent = String(getWordCount(currentBook));
-  renderPreview();
-}
-
-function bindEvents() {
-  el.applyPresetBtn.addEventListener("click", () => applyPreset(el.presetSelect.value));
-
-  [
-    el.exporterUrlInput,
-    el.trimSize,
-    el.insideMarginInput,
-    el.outsideMarginInput,
-    el.topMarginInput,
-    el.bottomMarginInput,
-    el.fontSelect,
-    el.fontSizeSelect,
-    el.lineHeightSelect,
-    el.alignmentSelect,
-    el.paragraphIndentInput,
-    el.paragraphSpacingInput,
-    el.includeFrontMatterToggle,
-    el.includeBackMatterToggle,
-    el.includeTOCToggle,
-    el.showHeadersToggle,
-    el.showPageNumbersToggle
-  ].forEach((control) => control.addEventListener("change", renderPreview));
-
-  el.zoomSelect.addEventListener("change", () => {
-    syncStateFromControls();
-  });
-
-  el.renderBtn.addEventListener("click", renderPreview);
-  el.exportPdfBtn.addEventListener("click", exportPdf);
-  el.exportHtmlBtn.addEventListener("click", exportHtmlSnapshot);
-
-  el.themeToggleBtn.addEventListener("click", () => {
-    el.body.classList.toggle("light");
-    el.body.classList.toggle("dark");
-  });
-
-  el.toggleSidebarBtn.addEventListener("click", () => {
-    el.sidebar.classList.toggle("open");
-    el.overlay.classList.toggle("hidden");
-  });
-
-  el.overlay.addEventListener("click", () => {
-    el.sidebar.classList.remove("open");
-    el.overlay.classList.add("hidden");
-  });
-}
-
-bindEvents();
-syncControlsFromState();
-applyPreset("bn_5x8");
-
-onAuthStateChanged(auth, async (user) => {
-  if (!user) {
-    setStatus("Not logged in");
-    return;
-  }
-  currentUser = user;
-  await loadBook(user.uid);
-});
-
-function normalizeContentHtml(html = "") {
-  return String(html)
-    .replace(/<div(\s|>)/gi, "<p$1")
-    .replace(/<\/div>/gi, "</p>")
-    .replace(/\*\s*\*\s*\*/g, '<p class="scene-break">* * *</p>');
-}
-
-function applyPreset(name) {
-  const preset = PRESETS[name];
-  if (!preset) return;
-
-  state.preset = name;
-  Object.assign(state, preset);
-
-  syncControlsFromState();
-  renderBook();
-}
-
-function syncControlsFromState() {
-  el.presetSelect.value = state.preset;
-  el.trimSize.value = state.trim;
-  el.chapterStartSelect.value = state.chapterStart;
-  el.insideMarginInput.value = state.insideMargin;
-  el.outsideMarginInput.value = state.outsideMargin;
-  el.topMarginInput.value = state.topMargin;
-  el.bottomMarginInput.value = state.bottomMargin;
-  el.fontSelect.value = state.font;
-  el.fontSizeSelect.value = state.fontSize;
-  el.lineHeightSelect.value = state.lineHeight;
-  el.alignmentSelect.value = state.alignment;
-  el.paragraphIndentInput.value = state.paragraphIndent;
-  el.paragraphSpacingInput.value = state.paragraphSpacing;
-  el.includeFrontMatterToggle.checked = state.includeFrontMatter;
-  el.includeBackMatterToggle.checked = state.includeBackMatter;
-  el.includeTOCToggle.checked = state.includeTOC;
-  el.showHeadersToggle.checked = state.showHeaders;
-  el.showPageNumbersToggle.checked = state.showPageNumbers;
-  el.zoomSelect.value = String(state.zoom);
-  updateTrimLabel();
-  updateZoom();
-}
-
-function syncStateFromControls() {
-  state.preset = el.presetSelect.value;
-  state.trim = el.trimSize.value;
-  state.chapterStart = el.chapterStartSelect.value;
-  state.insideMargin = el.insideMarginInput.value.trim() || "0.95in";
-  state.outsideMargin = el.outsideMarginInput.value.trim() || "0.6in";
-  state.topMargin = el.topMarginInput.value.trim() || "0.75in";
-  state.bottomMargin = el.bottomMarginInput.value.trim() || "0.75in";
-  state.font = el.fontSelect.value;
-  state.fontSize = el.fontSizeSelect.value;
-  state.lineHeight = el.lineHeightSelect.value;
-  state.alignment = el.alignmentSelect.value;
-  state.paragraphIndent = el.paragraphIndentInput.value.trim() || "1.5em";
-  state.paragraphSpacing = el.paragraphSpacingInput.value.trim() || "0";
-  state.includeFrontMatter = el.includeFrontMatterToggle.checked;
-  state.includeBackMatter = el.includeBackMatterToggle.checked;
-  state.includeTOC = el.includeTOCToggle.checked;
-  state.showHeaders = el.showHeadersToggle.checked;
-  state.showPageNumbers = el.showPageNumbersToggle.checked;
-  state.zoom = Number(el.zoomSelect.value) || 1;
-  updateTrimLabel();
-  updateZoom();
-}
-
-function updateTrimLabel() {
-  el.trimLabelValue.textContent = TRIM_MAP[state.trim]?.label || state.trim;
-}
-
-function updateZoom() {
-  el.preview.style.setProperty("--preview-scale", state.zoom);
-}
-
 function getTrimConfig() {
   return TRIM_MAP[state.trim] || TRIM_MAP["5x8"];
 }
@@ -709,7 +724,15 @@ function buildRunningHeader(pageNumber) {
 }
 
 function createPage(pageNumber) {
-  const node = el.pageTemplate.content.firstElementChild.cloneNode(true);
+  let node;
+  if (el.pageTemplate?.content?.firstElementChild) {
+    node = el.pageTemplate.content.firstElementChild.cloneNode(true);
+  } else {
+    node = document.createElement("article");
+    node.className = "page";
+    node.innerHTML =
+      '<div class="running-header"></div><div class="page-content"></div><div class="page-number"></div>';
+  }
   const trim = getTrimConfig();
 
   node.dataset.pageNumber = String(pageNumber);
@@ -725,7 +748,7 @@ function createPage(pageNumber) {
   const paddingRight = isLeftPage ? state.outsideMargin : state.insideMargin;
 
   content.style.paddingTop = state.topMargin;
-	content.style.paddingBottom = `calc(${state.bottomMargin} + 0.18in)`;
+  content.style.paddingBottom = `calc(${state.bottomMargin} + 0.18in)`;
   content.style.paddingLeft = paddingLeft;
   content.style.paddingRight = paddingRight;
   content.style.fontFamily = state.font;
@@ -1092,7 +1115,7 @@ function exportHtmlSnapshot() {
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>${escapeHtml(currentBook?.title || "Book Export")}</title>
-<link rel="stylesheet" href="format.css" />
+<link rel="stylesheet" href="export.css" />
 </head>
 <body class="export-only">
 <div class="export-preview">${el.preview.innerHTML}</div>
@@ -1142,6 +1165,8 @@ function bindEvents() {
   el.applyPresetBtn.addEventListener("click", () => applyPreset(el.presetSelect.value));
 
   [
+    el.exporterUrlInput,
+    el.themeSelect,
     el.trimSize,
     el.chapterStartSelect,
     el.insideMarginInput,
@@ -1158,8 +1183,9 @@ function bindEvents() {
     el.includeBackMatterToggle,
     el.includeTOCToggle,
     el.showHeadersToggle,
-    el.showPageNumbersToggle
-  ].forEach(control => {
+    el.showPageNumbersToggle,
+    el.romanFrontMatterToggle
+  ].forEach((control) => {
     control.addEventListener("change", () => {
       syncStateFromControls();
       renderBook();
@@ -1171,11 +1197,7 @@ function bindEvents() {
   });
 
   el.renderBtn.addEventListener("click", renderBook);
-  el.printBtn.addEventListener("click", async () => {
-    renderBook();
-    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-    window.print();
-  });
+  el.exportPdfBtn.addEventListener("click", exportPdf);
   el.exportHtmlBtn.addEventListener("click", exportHtmlSnapshot);
 
   el.themeToggleBtn.addEventListener("click", () => {
@@ -1195,7 +1217,8 @@ function bindEvents() {
 }
 
 bindEvents();
-applyPreset("bn_5x8");
+syncControlsFromState();
+applyPreset("reedsy_standard");
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
