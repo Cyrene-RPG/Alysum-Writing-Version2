@@ -4,7 +4,7 @@
  *
  * @typedef {{ id: string, title: string, body: string, folderId: string | null, updated: number }} Note
  * @typedef {{ id: string, name: string, parentId: string | null, updated: number }} Folder
- * @typedef {{ v: number, notes: Note[], folders: Folder[], activeNoteId: string | null, filter: string, openFolderIds: Record<string, boolean> }} VaultState
+ * @typedef {{ v: number, notes: Note[], folders: Folder[], activeNoteId: string | null, filter: string, openFolderIds: Record<string, boolean>, openTabIds: string[], paneMode: 'source'|'preview'|'split' }} VaultState
  */
 
 export const VAULT_PREFIX = "alysum-notes-";
@@ -66,7 +66,9 @@ export function emptyVault() {
     folders: [],
     activeNoteId: first.id,
     filter: "",
-    openFolderIds: {}
+    openFolderIds: {},
+    openTabIds: [first.id],
+    paneMode: "split"
   };
 }
 
@@ -119,7 +121,22 @@ export function normalizeVault(raw) {
       ? /** @type {Record<string, boolean>} */ (o.openFolderIds)
       : {};
 
-  return { v: 2, notes, folders, activeNoteId, filter, openFolderIds };
+  const validIds = new Set(notes.map(n => n.id));
+  let openTabIds = Array.isArray(o.openTabIds)
+    ? /** @type {unknown[]} */ (o.openTabIds)
+        .filter(x => typeof x === "string" && validIds.has(x))
+        .slice(0, 24)
+    : [];
+  if (!openTabIds.length) openTabIds = [activeNoteId];
+  else if (activeNoteId && !openTabIds.includes(activeNoteId)) openTabIds = [activeNoteId, ...openTabIds];
+  openTabIds = [...new Set(openTabIds)].filter(id => validIds.has(id));
+  if (!openTabIds.length && activeNoteId) openTabIds = [activeNoteId];
+
+  const pm = o.paneMode;
+  const paneMode =
+    pm === "source" || pm === "preview" || pm === "split" ? pm : "split";
+
+  return { v: 2, notes, folders, activeNoteId, filter, openFolderIds, openTabIds, paneMode };
 }
 
 /** @param {string} key */

@@ -11,6 +11,8 @@ import {
   extractTags,
   backlinksFor
 } from "./notes-vault.js";
+import { renderFileExplorer } from "./notes-file-explorer.js";
+import { renderTabStrip } from "./notes-tab-strip.js";
 
 function qs(id) {
   const el = document.getElementById(id);
@@ -40,30 +42,67 @@ function runApp(bookId) {
   let uiFolderOpen = { ...state.openFolderIds };
   let selectedFolderId = /** @type {string | null} */ (null);
   let saveTimer = null;
+  let bodyTimer = null;
+
+  /** @type {null | { getText: () => string, setText: (s: string) => void, focus: () => void, destroy: () => void }} */
+  let cmApi = null;
+  /** @type {null | ((src: string) => string)} */
+  let renderMarkdownPreview = null;
+
+  /** @type {'quick' | 'cmd'} */
+  let palMode = "quick";
+  let palHi = 0;
 
   const elBookLabel = qs("naBookLabel");
   const elTree = qs("naTree");
+  const elTabBar = qs("naTabBar");
   const elSearch = qs("naSearch");
   const elTitle = qs("naNoteTitle");
-  const elBody = qs("naNoteBody");
+  const elHost = qs("naEditorHost");
+  const elShell = qs("naEditorShell");
+  const elPreview = qs("naPreviewHost");
   const elStatus = qs("naStatus");
   const elWords = qs("naWordCount");
   const elOut = qs("naOutlinks");
   const elBack = qs("naBacklinks");
   const elTags = qs("naTags");
   const elEditorLink = qs("naEditorLink");
+  const btnSource = qs("naViewSource");
+  const btnPreview = qs("naViewPreview");
+  const btnSplit = qs("naViewSplit");
 
-  elBookLabel.textContent = bookId ? `Book ${bookId}` : "Global vault";
+  const elPalette = qs("naPalette");
+  const elPalBackdrop = qs("naPaletteBackdrop");
+  const elPalHint = qs("naPaletteHint");
+  const elPalInput = qs("naPaletteInput");
+  const elPalList = qs("naPaletteList");
+
+  elBookLabel.textContent = bookId ? `Vault · ${String(bookId).slice(0, 10)}${String(bookId).length > 10 ? "…" : ""}` : "Vault";
   elEditorLink.href = bookId ? `/editor.html?book=${encodeURIComponent(bookId)}` : "/editor.html";
 
   function activeNote() {
     return state.notes.find(n => n.id === state.activeNoteId) || null;
   }
 
+  function ensureActiveInTabs() {
+    const valid = new Set(state.notes.map(n => n.id));
+    state.openTabIds = (state.openTabIds || []).filter(id => valid.has(id));
+    if (!state.openTabIds.length && state.activeNoteId && valid.has(state.activeNoteId)) {
+      state.openTabIds = [state.activeNoteId];
+    } else if (!state.openTabIds.length && state.notes[0]) {
+      state.openTabIds = [state.notes[0].id];
+    }
+    if (state.activeNoteId && !state.openTabIds.includes(state.activeNoteId)) {
+      state.openTabIds = [state.activeNoteId, ...state.openTabIds];
+    }
+    if (!valid.has(state.activeNoteId)) state.activeNoteId = state.openTabIds[0] || state.notes[0]?.id || null;
+  }
+
   function schedulePersist() {
     clearTimeout(saveTimer);
     saveTimer = setTimeout(() => {
       state.openFolderIds = { ...uiFolderOpen };
+      ensureActiveInTabs();
       persistVault(key, state);
       elStatus.textContent = "Saved";
     }, 280);
@@ -72,34 +111,9 @@ function runApp(bookId) {
   function persistNow() {
     clearTimeout(saveTimer);
     state.openFolderIds = { ...uiFolderOpen };
+    ensureActiveInTabs();
     persistVault(key, state);
     elStatus.textContent = "Saved";
-  }
-
-  function renderRight() {
-    const n = activeNote();
-    if (!n) {
-      elWords.textContent = "0 words";
-      elOut.innerHTML = '<span class="na-muted">—</span>';
-      elBack.innerHTML = '<span class="na-muted">—</span>';
-      elTags.innerHTML = '<span class="na-muted">—</span>';
-      return;
-    }
-    const wc = wordCount(n.body);
-    elWords.textContent = `${wc} words`;
-
-    const outs = extractWikiTargets(n.body);
-    elOut.innerHTML = outs.length
-      ? outs.map(t => `<div><span class="na-link" data-jump="${encodeURIComponent(t)}">[[${escapeAttr(t)}]]</span></div>`).join("")
-      : '<span class="na-muted">No outgoing wiki links.</span>';
-
-    const backs = backlinksFor(state.notes, n.id);
-    elBack.innerHTML = backs.length
-      ? backs.map(b => `<div><span class="na-link" data-id="${escapeAttr(b.id)}">${escapeAttr(b.title)}</span></div>`).join("")
-      : '<span class="na-muted">No backlinks.</span>';
-
-    const tags = extractTags(n.body);
-    elTags.innerHTML = tags.length ? tags.map(t => `<span style="margin-right:6px;">#${escapeAttr(t)}</span>`).join("") : '<span class="na-muted">No tags.</span>';
   }
 
   function escapeAttr(s) {
@@ -109,110 +123,233 @@ function runApp(bookId) {
       .replace(/</g, "&lt;");
   }
 
-  function renderEditor() {
+  function refreshPreview() {
+    if (!renderMarkdownPreview || !elPreview) return;
     const n = activeNote();
-    elSearch.value = state.filter;
+    elPreview.innerHTML = n ? renderMarkdownPreview(n.body) : "";
+  }
+
+  function applyPaneMode() {
+    const m = state.paneMode === "preview" || state.paneMode === "split" || state.paneMode === "source" ? state.paneMode : "split";
+    state.paneMode = m;
+    elShell.classList.remove("ob-pane-source", "ob-pane-preview", "ob-pane-split");
+    elShell.classList.add(`ob-pane-${m}`);
+    [btnSource, btnPreview, btnSplit].forEach(b => b.classList.remove("is-active"));
+    if (m === "source") btnSource.classList.add("is-active");
+    else if (m === "preview") btnPreview.classList.add("is-active");
+    else btnSplit.classList.add("is-active");
+  }
+
+  function setPaneMode(m) {
+    state.paneMode = m;
+    applyPaneMode();
+    persistNow();
+    if (m === "preview" || m === "split") refreshPreview();
+    if (m === "source" || m === "split") queueMicrotask(() => cmApi && cmApi.focus());
+  }
+
+  function renderRight() {
+    const n = activeNote();
     if (!n) {
-      elTitle.value = "";
-      elBody.value = "";
-      renderRight();
+      elWords.textContent = "0 words";
+      elOut.innerHTML = '<span class="ob-muted">—</span>';
+      elBack.innerHTML = '<span class="ob-muted">—</span>';
+      elTags.innerHTML = '<span class="ob-muted">—</span>';
       return;
     }
-    elTitle.value = n.title;
-    elBody.value = n.body;
-    renderRight();
-  }
+    const body = cmApi ? cmApi.getText() : n.body;
+    const wc = wordCount(body);
+    elWords.textContent = `${wc} words`;
 
-  function noteMatchesFilter(n) {
-    const q = state.filter.trim().toLowerCase();
-    if (!q) return true;
-    return `${n.title}\n${n.body}`.toLowerCase().includes(q);
-  }
+    const outs = extractWikiTargets(body);
+    elOut.innerHTML = outs.length
+      ? outs.map(t => `<div><span class="ob-link" data-jump="${encodeURIComponent(t)}">[[${escapeAttr(t)}]]</span></div>`).join("")
+      : '<span class="ob-muted">No outgoing links.</span>';
 
-  function renderTree() {
-    elTree.innerHTML = "";
-    const notesFiltered = state.notes.filter(noteMatchesFilter);
+    const backs = backlinksFor(state.notes, n.id);
+    elBack.innerHTML = backs.length
+      ? backs.map(b => `<div><span class="ob-link" data-id="${escapeAttr(b.id)}">${escapeAttr(b.title)}</span></div>`).join("")
+      : '<span class="ob-muted">No backlinks.</span>';
 
-    const roots = state.folders.filter(f => !f.parentId).sort((a, b) => a.name.localeCompare(b.name));
-    const orphans = notesFiltered.filter(n => !n.folderId).sort((a, b) => b.updated - a.updated);
-
-    function appendNoteRow(note, container) {
-      const row = document.createElement("div");
-      row.className = "na-note-row" + (note.id === state.activeNoteId ? " active" : "");
-      const t = document.createElement("div");
-      t.className = "na-note-title";
-      t.textContent = note.title || "Untitled";
-      const s = document.createElement("div");
-      s.className = "na-note-snip";
-      s.textContent = note.body.replace(/\s+/g, " ").trim().slice(0, 72) || "Empty";
-      row.appendChild(t);
-      row.appendChild(s);
-      row.addEventListener("click", () => {
-        saveFields();
-        state.activeNoteId = note.id;
-        persistNow();
-        renderAll();
-      });
-      container.appendChild(row);
-    }
-
-    function renderFolderNode(folder, depth) {
-      const wrap = document.createElement("div");
-      wrap.className = "na-folder";
-      wrap.style.paddingLeft = `${8 + depth * 10}px`;
-      const head = document.createElement("div");
-      head.className = "na-folder-head" + (uiFolderOpen[folder.id] ? " open" : "");
-      head.textContent = (uiFolderOpen[folder.id] ? "▼ " : "▶ ") + folder.name;
-      head.addEventListener("click", () => {
-        selectedFolderId = folder.id;
-        uiFolderOpen[folder.id] = !uiFolderOpen[folder.id];
-        renderTree();
-      });
-      wrap.appendChild(head);
-      if (uiFolderOpen[folder.id]) {
-        const body = document.createElement("div");
-        const kids = state.folders.filter(f => f.parentId === folder.id).sort((a, b) => a.name.localeCompare(b.name));
-        kids.forEach(k => body.appendChild(renderFolderNode(k, depth + 1)));
-        notesFiltered
-          .filter(n => n.folderId === folder.id)
-          .sort((a, b) => b.updated - a.updated)
-          .forEach(n => appendNoteRow(n, body));
-        wrap.appendChild(body);
-      }
-      return wrap;
-    }
-
-    if (!roots.length && !orphans.length) {
-      const e = document.createElement("div");
-      e.className = "na-empty";
-      e.textContent = "No notes match search.";
-      elTree.appendChild(e);
-      return;
-    }
-
-    roots.forEach(r => elTree.appendChild(renderFolderNode(r, 0)));
-    if (orphans.length) {
-      const lab = document.createElement("div");
-      lab.className = "na-folder-head open";
-      lab.style.marginTop = "8px";
-      lab.textContent = "Notes";
-      elTree.appendChild(lab);
-      orphans.forEach(n => appendNoteRow(n, elTree));
-    }
-  }
-
-  function renderAll() {
-    renderTree();
-    renderEditor();
+    const tags = extractTags(body);
+    elTags.innerHTML = tags.length
+      ? tags.map(t => `<span class="ob-tag">#${escapeAttr(t)}</span>`).join("")
+      : '<span class="ob-muted">No tags.</span>';
   }
 
   function saveFields() {
     const n = activeNote();
     if (!n) return;
-    n.title = elTitle.value.trim() || "Untitled note";
-    n.body = elBody.value;
+    n.title = elTitle.value.trim() || "Untitled";
+    if (cmApi) n.body = cmApi.getText();
     n.updated = Date.now();
     schedulePersist();
+  }
+
+  function debouncedBodySync() {
+    clearTimeout(bodyTimer);
+    bodyTimer = setTimeout(() => {
+      saveFields();
+      renderRight();
+      refreshPreview();
+    }, 100);
+  }
+
+  function renderEditor() {
+    const n = activeNote();
+    elSearch.value = state.filter;
+    applyPaneMode();
+    if (!cmApi) return;
+    if (!n) {
+      elTitle.value = "";
+      cmApi.setText("");
+      refreshPreview();
+      renderRight();
+      return;
+    }
+    elTitle.value = n.title;
+    cmApi.setText(n.body);
+    refreshPreview();
+    renderRight();
+  }
+
+  function renderTree() {
+    renderFileExplorer(elTree, state, uiFolderOpen, {
+      onNote: id => {
+        saveFields();
+        if (!state.openTabIds.includes(id)) {
+          state.openTabIds = [...state.openTabIds, id].slice(-16);
+        }
+        state.activeNoteId = id;
+        persistNow();
+        renderAll();
+      },
+      onFolderHead: folderId => {
+        selectedFolderId = folderId;
+        uiFolderOpen[folderId] = !uiFolderOpen[folderId];
+        renderTree();
+      }
+    });
+  }
+
+  function renderTabs() {
+    ensureActiveInTabs();
+    renderTabStrip(elTabBar, state, {
+      select: id => {
+        saveFields();
+        state.activeNoteId = id;
+        persistNow();
+        renderAll();
+      },
+      close: id => {
+        saveFields();
+        if (state.openTabIds.length <= 1) return;
+        state.openTabIds = state.openTabIds.filter(x => x !== id);
+        if (state.activeNoteId === id) state.activeNoteId = state.openTabIds[0];
+        persistNow();
+        renderAll();
+      }
+    });
+  }
+
+  function renderAll() {
+    ensureActiveInTabs();
+    renderTree();
+    renderTabs();
+    renderEditor();
+  }
+
+  function openNoteById(id) {
+    saveFields();
+    if (!state.openTabIds.includes(id)) state.openTabIds = [...state.openTabIds, id].slice(-16);
+    state.activeNoteId = id;
+    persistNow();
+    renderAll();
+  }
+
+  function closePalette() {
+    elPalette.classList.add("hidden");
+    elPalette.setAttribute("aria-hidden", "true");
+    elPalInput.value = "";
+    elPalList.innerHTML = "";
+  }
+
+  function openPalette(mode) {
+    palMode = mode;
+    palHi = 0;
+    elPalHint.textContent = mode === "quick" ? "Quick switcher — open note (Ctrl+O)" : "Command palette (Ctrl+P)";
+    elPalette.classList.remove("hidden");
+    elPalette.setAttribute("aria-hidden", "false");
+    elPalInput.value = "";
+    renderPaletteRows();
+    queueMicrotask(() => elPalInput.focus());
+  }
+
+  function cmdList() {
+    return [
+      { id: "new", label: "Create new note", hint: "vault", run: () => qs("naNewNote").click() },
+      { id: "folder", label: "Create new folder", hint: "vault", run: () => qs("naNewFolder").click() },
+      { id: "src", label: "Editing: Source mode", hint: "layout", run: () => setPaneMode("source") },
+      { id: "read", label: "Editing: Reading view", hint: "layout", run: () => setPaneMode("preview") },
+      { id: "split", label: "Editing: Split view", hint: "layout", run: () => setPaneMode("split") },
+      {
+        id: "ed",
+        label: "Open manuscript editor",
+        hint: "navigate",
+        run: () => {
+          window.location.href = elEditorLink.href;
+        }
+      }
+    ];
+  }
+
+  function renderPaletteRows() {
+    const q = elPalInput.value.trim().toLowerCase();
+    elPalList.innerHTML = "";
+    palHi = 0;
+
+    if (palMode === "quick") {
+      const rows = state.notes
+        .filter(n => !q || `${n.title}\n${n.body}`.toLowerCase().includes(q))
+        .sort((a, b) => b.updated - a.updated);
+      if (!rows.length) {
+        elPalList.innerHTML = '<div class="ob-palette-row ob-muted">No matching notes</div>';
+        return;
+      }
+      rows.forEach((n, i) => {
+        const row = document.createElement("div");
+        row.className = "ob-palette-row" + (i === palHi ? " is-hi" : "");
+        row.textContent = n.title || "Untitled";
+        const meta = document.createElement("div");
+        meta.className = "ob-palette-meta";
+        meta.textContent = n.body.replace(/\s+/g, " ").trim().slice(0, 80) || "Empty";
+        row.appendChild(meta);
+        row.addEventListener("mousedown", ev => ev.preventDefault());
+        row.addEventListener("click", () => {
+          closePalette();
+          openNoteById(n.id);
+        });
+        elPalList.appendChild(row);
+      });
+      return;
+    }
+
+    const cmds = cmdList().filter(c => !q || `${c.label} ${c.hint}`.toLowerCase().includes(q));
+    cmds.forEach((c, i) => {
+      const row = document.createElement("div");
+      row.className = "ob-palette-row" + (i === palHi ? " is-hi" : "");
+      row.textContent = c.label;
+      const meta = document.createElement("div");
+      meta.className = "ob-palette-meta";
+      meta.textContent = c.hint;
+      row.appendChild(meta);
+      row.addEventListener("mousedown", ev => ev.preventDefault());
+      row.addEventListener("click", () => {
+        closePalette();
+        c.run();
+      });
+      elPalList.appendChild(row);
+    });
   }
 
   elSearch.addEventListener("input", () => {
@@ -224,21 +361,65 @@ function runApp(bookId) {
   elTitle.addEventListener("input", () => {
     saveFields();
     renderTree();
+    renderTabs();
   });
-  elBody.addEventListener("input", () => {
+
+  elOut.addEventListener("click", e => {
+    const t = e.target instanceof HTMLElement ? e.target.closest("[data-jump]") : null;
+    const jump = t && t.getAttribute("data-jump");
+    if (!t || !jump) return;
+    const name = decodeURIComponent(jump);
+    let target = state.notes.find(n => n.title.trim().toLowerCase() === name.toLowerCase());
+    if (!target) {
+      target = createNote(name, selectedFolderId);
+      state.notes.push(target);
+    }
     saveFields();
-    renderRight();
+    if (!state.openTabIds.includes(target.id)) state.openTabIds = [...state.openTabIds, target.id].slice(-16);
+    state.activeNoteId = target.id;
+    persistNow();
+    renderAll();
   });
+
+  elBack.addEventListener("click", e => {
+    const t = e.target instanceof HTMLElement ? e.target.closest("[data-id]") : null;
+    const id = t && t.getAttribute("data-id");
+    if (!t || !id) return;
+    saveFields();
+    if (!state.openTabIds.includes(id)) state.openTabIds = [...state.openTabIds, id].slice(-16);
+    state.activeNoteId = id;
+    persistNow();
+    renderAll();
+  });
+
+  elPreview.addEventListener("click", e => {
+    const t = e.target instanceof HTMLElement ? e.target.closest("[data-jump]") : null;
+    const jump = t && t.getAttribute("data-jump");
+    if (!t || !jump) return;
+    const name = decodeURIComponent(jump);
+    let target = state.notes.find(n => n.title.trim().toLowerCase() === name.toLowerCase());
+    if (!target) {
+      target = createNote(name, selectedFolderId);
+      state.notes.push(target);
+    }
+    openNoteById(target.id);
+  });
+
+  btnSource.addEventListener("click", () => setPaneMode("source"));
+  btnPreview.addEventListener("click", () => setPaneMode("preview"));
+  btnSplit.addEventListener("click", () => setPaneMode("split"));
 
   qs("naNewNote").addEventListener("click", () => {
     saveFields();
-    const n = createNote("Untitled note", selectedFolderId);
+    const n = createNote("Untitled", selectedFolderId);
     state.notes.push(n);
     state.activeNoteId = n.id;
+    state.openTabIds = [...state.openTabIds, n.id].slice(-16);
     persistNow();
     renderAll();
     elTitle.focus();
     elTitle.select();
+    queueMicrotask(() => cmApi && cmApi.focus());
   });
 
   qs("naNewFolder").addEventListener("click", () => {
@@ -259,40 +440,62 @@ function runApp(bookId) {
     const n = activeNote();
     if (!n) return;
     if (!window.confirm(`Delete “${n.title}”?`)) return;
-    state.notes = state.notes.filter(x => x.id !== n.id);
-    state.activeNoteId = state.notes[0].id;
+    const gone = n.id;
+    state.notes = state.notes.filter(x => x.id !== gone);
+    state.openTabIds = state.openTabIds.filter(id => id !== gone);
+    if (!state.openTabIds.length) state.openTabIds = [state.notes[0].id];
+    state.activeNoteId = state.openTabIds[0];
     persistNow();
     renderAll();
   });
 
-  elOut.addEventListener("click", e => {
-    const t = /** @type {HTMLElement} */ (e.target);
-    const jump = t.getAttribute && t.getAttribute("data-jump");
-    if (!jump) return;
-    const name = decodeURIComponent(jump);
-    let target = state.notes.find(n => n.title.trim().toLowerCase() === name.toLowerCase());
-    if (!target) {
-      target = createNote(name, selectedFolderId);
-      state.notes.push(target);
+  elPalBackdrop.addEventListener("click", closePalette);
+  elPalInput.addEventListener("input", renderPaletteRows);
+  elPalInput.addEventListener("keydown", e => {
+    if (e.key === "Escape") {
+      e.preventDefault();
+      closePalette();
     }
-    saveFields();
-    state.activeNoteId = target.id;
-    persistNow();
-    renderAll();
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const first = elPalList.querySelector(".ob-palette-row");
+      if (first) first.click();
+    }
   });
 
-  elBack.addEventListener("click", e => {
-    const t = /** @type {HTMLElement} */ (e.target);
-    const id = t.getAttribute && t.getAttribute("data-id");
-    if (!id) return;
-    saveFields();
-    state.activeNoteId = id;
-    persistNow();
-    renderAll();
+  window.addEventListener("keydown", e => {
+    const meta = e.ctrlKey || e.metaKey;
+    if (!meta) return;
+    const el = e.target instanceof HTMLElement ? e.target : null;
+    const inCm = !!(el && el.closest(".cm-editor"));
+    const tag = el?.tagName || "";
+    if (e.key === "o" || e.key === "O") {
+      if (!inCm && (tag === "INPUT" || tag === "TEXTAREA")) return;
+      e.preventDefault();
+      openPalette("quick");
+    }
+    if (e.key === "p" || e.key === "P") {
+      if (!inCm && (tag === "INPUT" || tag === "TEXTAREA")) return;
+      e.preventDefault();
+      openPalette("cmd");
+    }
   });
 
-  renderAll();
-  elStatus.textContent = "Ready";
+  Promise.all([import("./notes-cm6.js"), import("./notes-md-preview.js")])
+    .then(([cmMod, mdMod]) => {
+      renderMarkdownPreview = mdMod.renderMarkdownPreview;
+      cmApi = cmMod.createMarkdownEditor(elHost, {
+        initialDoc: activeNote()?.body || "",
+        onChange: () => debouncedBodySync()
+      });
+      applyPaneMode();
+      renderAll();
+      elStatus.textContent = "Ready";
+    })
+    .catch(err => {
+      console.error(err);
+      elStatus.textContent = "Editor failed to load (network/CDN)";
+    });
 }
 
 onAuthStateChanged(auth, user => {
@@ -306,6 +509,6 @@ onAuthStateChanged(auth, user => {
   } catch (e) {
     console.error(e);
     const s = document.getElementById("naStatus");
-    if (s) s.textContent = "Failed to load notes UI";
+    if (s) s.textContent = "Failed to load vault";
   }
 });
