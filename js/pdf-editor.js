@@ -568,20 +568,28 @@ function atPageCssBlock() {
   } else if (state.headerFooter === "page") {
     marginBoxes = `@bottom-center { content: counter(page); font-size: 8.75pt; font-weight: 500; color: #5c5a58; font-family: ${runStack}; font-variant-numeric: oldstyle-nums; letter-spacing: 0.02em; }`;
   }
-  /* Symmetric horizontal margins: top/bottom = fore-edge, left/right = average of outside + binding gutter. */
-  return `@page { size: ${trim.width} ${trim.height}; }
-    @page:left {
-      margin: ${tout} ${hSym} ${tout} ${hSym};
-      ${marginBoxes}
-    }
-    @page:right {
-      margin: ${tout} ${hSym} ${tout} ${hSym};
-      ${marginBoxes}
-    }
-    @page :first {
-      margin: ${tfirst};
-      ${marginBoxes}
-    }`;
+  /*
+   * One @page rule (no :left/:right) so every sheet gets the same margin math.
+   * Paged.js also sets --pagedjs-margin-left/right per page — force them to match,
+   * otherwise the polyfill can keep asymmetric gutters and the type block sits off-center.
+   */
+  return `@page {
+    size: ${trim.width} ${trim.height};
+    margin: ${tout} ${hSym} ${tout} ${hSym};
+    ${marginBoxes}
+  }
+  @page :first {
+    margin: ${tfirst};
+    ${marginBoxes}
+  }
+  .pagedjs_page {
+    --pagedjs-margin-left: ${hSym} !important;
+    --pagedjs-margin-right: ${hSym} !important;
+  }
+  .pagedjs_page.pagedjs_first_page {
+    --pagedjs-margin-left: ${tfirst} !important;
+    --pagedjs-margin-right: ${tfirst} !important;
+  }`;
 }
 
 /**
