@@ -255,37 +255,6 @@ function getPrintPageMarginStrings() {
   };
 }
 
-/**
- * Overrides Paged.js facing-page rules (different .pagedjs_sheet grids for left vs right).
- * Injected after Paged runs so it wins over the polyfill stylesheet order.
- */
-function pagedJsLayoutSymmetryCss(hSym, tfirst) {
-  return [
-    ".pagedjs_pages > .pagedjs_page {",
-    `  --pagedjs-margin-left: ${hSym} !important;`,
-    `  --pagedjs-margin-right: ${hSym} !important;`,
-    "}",
-    ".pagedjs_pages > .pagedjs_page.pagedjs_first_page {",
-    `  --pagedjs-margin-left: ${tfirst} !important;`,
-    `  --pagedjs-margin-right: ${tfirst} !important;`,
-    "}",
-    ".pagedjs_pages > .pagedjs_page.pagedjs_left_page {",
-    "  --pagedjs-width-left: var(--pagedjs-width) !important;",
-    "  --pagedjs-height-left: var(--pagedjs-height) !important;",
-    "}",
-    ".pagedjs_pages > .pagedjs_page.pagedjs_right_page {",
-    "  --pagedjs-width-right: var(--pagedjs-width) !important;",
-    "  --pagedjs-height-right: var(--pagedjs-height) !important;",
-    "}",
-    ".pagedjs_pages .pagedjs_page > .pagedjs_sheet {",
-    "  width: var(--pagedjs-width) !important;",
-    "  height: var(--pagedjs-height) !important;",
-    "  grid-template-columns: [bleed-left] var(--pagedjs-bleed-left) [sheet-center] calc(var(--pagedjs-width) - var(--pagedjs-bleed-left) - var(--pagedjs-bleed-right)) [bleed-right] var(--pagedjs-bleed-right) !important;",
-    "  grid-template-rows: [bleed-top] var(--pagedjs-bleed-top) [sheet-middle] calc(var(--pagedjs-height) - var(--pagedjs-bleed-top) - var(--pagedjs-bleed-bottom)) [bleed-bottom] var(--pagedjs-bleed-bottom) !important;",
-    "}"
-  ].join("\n");
-}
-
 /** CSS `content:` string for running heads — escape quotes and newlines */
 function escapeCssContent(str) {
   return String(str)
@@ -632,7 +601,8 @@ function buildPreviewDocumentHtml(options = {}) {
 
   const inner = buildManuscriptBodyHtml(book);
   const marginStr = getPrintPageMarginStrings();
-  const symmetryJson = JSON.stringify(pagedJsLayoutSymmetryCss(marginStr.hSym, marginStr.tfirst));
+  const hSymJson = JSON.stringify(marginStr.hSym);
+  const tfirstJson = JSON.stringify(marginStr.tfirst);
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -1018,16 +988,48 @@ function buildPreviewDocumentHtml(options = {}) {
   <script>
     (function () {
       var __ALYSUM_PRINT__ = ${forPrint ? "true" : "false"};
-      var __ALYSUM_PAGED_SYM__ = ${symmetryJson};
+      var __HS = ${hSymJson};
+      var __TF = ${tfirstJson};
       var __alysumPrintScheduled = false;
+      function ajsPagedSymmetry() {
+        var gtc = "[bleed-left] var(--pagedjs-bleed-left) [sheet-center] calc(var(--pagedjs-width) - var(--pagedjs-bleed-left) - var(--pagedjs-bleed-right)) [bleed-right] var(--pagedjs-bleed-right)";
+        var gtr = "[bleed-top] var(--pagedjs-bleed-top) [sheet-middle] calc(var(--pagedjs-height) - var(--pagedjs-bleed-top) - var(--pagedjs-bleed-bottom)) [bleed-bottom] var(--pagedjs-bleed-bottom)";
+        function setLR(el, m) {
+          if (!el) return;
+          el.style.setProperty("--pagedjs-margin-left", m, "important");
+          el.style.setProperty("--pagedjs-margin-right", m, "important");
+        }
+        document.querySelectorAll(".pagedjs_page").forEach(function (p) {
+          var isFirst = p.classList.contains("pagedjs_first_page");
+          setLR(p, isFirst ? __TF : __HS);
+          if (p.classList.contains("pagedjs_left_page")) {
+            p.style.setProperty("--pagedjs-width-left", "var(--pagedjs-width)", "important");
+            p.style.setProperty("--pagedjs-height-left", "var(--pagedjs-height)", "important");
+          }
+          if (p.classList.contains("pagedjs_right_page")) {
+            p.style.setProperty("--pagedjs-width-right", "var(--pagedjs-width)", "important");
+            p.style.setProperty("--pagedjs-height-right", "var(--pagedjs-height)", "important");
+          }
+        });
+        document.querySelectorAll(".pagedjs_pagebox").forEach(function (box) {
+          var page = box.closest(".pagedjs_page");
+          var isFirst = page && page.classList.contains("pagedjs_first_page");
+          setLR(box, isFirst ? __TF : __HS);
+        });
+        document.querySelectorAll(".pagedjs_page > .pagedjs_sheet").forEach(function (sh) {
+          sh.style.setProperty("width", "var(--pagedjs-width)", "important");
+          sh.style.setProperty("height", "var(--pagedjs-height)", "important");
+          sh.style.setProperty("grid-template-columns", gtc, "important");
+          sh.style.setProperty("grid-template-rows", gtr, "important");
+        });
+      }
       function done() {
         try {
-          if (__ALYSUM_PAGED_SYM__ && document.head && !document.getElementById("alysum-paged-symmetry")) {
-            var sym = document.createElement("style");
-            sym.id = "alysum-paged-symmetry";
-            sym.textContent = __ALYSUM_PAGED_SYM__;
-            document.head.appendChild(sym);
-          }
+          ajsPagedSymmetry();
+          requestAnimationFrame(function () {
+            ajsPagedSymmetry();
+            requestAnimationFrame(ajsPagedSymmetry);
+          });
         } catch (e0) {}
         try {
           window.parent.postMessage({ type: "alysum-pdf-pages", count: document.querySelectorAll(".pagedjs_page").length }, "*");
