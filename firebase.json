@@ -79,7 +79,7 @@
         ]
       },
       {
-        "source": "/js/notebook.js",
+        "source": "/js/nb-app.js",
         "headers": [
           {
             "key": "Cache-Control",

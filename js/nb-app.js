@@ -18,7 +18,7 @@ import {
 
 marked.use({ gfm: true, breaks: true });
 
-const BUILD = "notebook-20260503d";
+const BUILD = "nb-app-20260503e";
 
 function escapeHtml(s) {
   return String(s)
@@ -396,7 +396,7 @@ export function mountNotebookPanel(bookId) {
   function openFullPage() {
     saveFields();
     const q = bookId ? `?book=${encodeURIComponent(bookId)}` : "";
-    window.open(`/notes.html${q}`, "_blank", "noopener,noreferrer");
+    window.open(`/notes.html${q}${q ? "&" : "?"}nb=20260503e`, "_blank", "noopener,noreferrer");
   }
 
   if (btn) {
@@ -614,7 +614,8 @@ function runFullPage(bookId) {
   const elPalList = qs("nbPalList");
 
   elBookLabel.textContent = bookId ? `Notes · ${String(bookId).slice(0, 10)}${String(bookId).length > 10 ? "…" : ""}` : "Notes";
-  elEditorLink.href = bookId ? `/editor.html?book=${encodeURIComponent(bookId)}` : "/editor.html";
+  const nbQ = "&nb=20260503e";
+  elEditorLink.href = bookId ? `/editor.html?book=${encodeURIComponent(bookId)}${nbQ}` : `/editor.html?nb=20260503e`;
 
   function activeNote() {
     return state.notes.find(n => n.id === state.activeNoteId) || null;

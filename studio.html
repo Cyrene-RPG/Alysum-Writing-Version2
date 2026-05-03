@@ -1031,7 +1031,7 @@
                 const div = document.createElement("div");
                 div.className = "book";
                 div.onclick = () => {
-                    window.location.href = "/editor.html?book=" + docSnap.id;
+                    window.location.href = "/editor.html?book=" + encodeURIComponent(docSnap.id) + "&nb=20260503e";
                 };
 
                 div.innerHTML = `
@@ -1092,7 +1092,7 @@
 
         function continueWriting() {
             if (firstBookId) {
-                window.location.href = "/editor.html?book=" + firstBookId;
+                window.location.href = "/editor.html?book=" + encodeURIComponent(firstBookId) + "&nb=20260503e";
             } else {
                 createBookNow();
             }
