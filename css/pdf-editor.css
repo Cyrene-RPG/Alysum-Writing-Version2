@@ -456,6 +456,31 @@ a:hover {
   border-color: var(--reedsy-teal);
 }
 
+.print-override-input,
+.print-override-textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--panel-border);
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--text);
+  background: #fff;
+  box-sizing: border-box;
+}
+
+.print-override-textarea {
+  resize: vertical;
+  min-height: 140px;
+  line-height: 1.45;
+}
+
+.print-override-input:focus,
+.print-override-textarea:focus {
+  outline: 2px solid var(--reedsy-teal-muted);
+  border-color: var(--reedsy-teal);
+}
+
 .row-2 {
   display: grid;
   grid-template-columns: 1fr 1fr;

@@ -110,6 +110,18 @@
         </div>
 
         <div class="divider"></div>
+        <div class="section-title">Title &amp; copyright</div>
+        <div class="field">
+          <label for="printAuthorInput">Author (title page)</label>
+          <input type="text" id="printAuthorInput" class="print-override-input" placeholder="Shown in small caps line above the title — leave blank for profile name" autocomplete="off" spellcheck="false" />
+          <p class="hint">Saved per book on <strong>this browser</strong> (local storage). Empty = use your Firestore / Google display name.</p>
+        </div>
+        <div class="field">
+          <label for="printCopyrightInput">Copyright page</label>
+          <textarea id="printCopyrightInput" class="print-override-textarea" rows="8" placeholder="Blank = use your first front-matter chapter (Copyright) from the manuscript. Separate paragraphs with a blank line." spellcheck="true"></textarea>
+        </div>
+
+        <div class="divider"></div>
         <div class="section-title">Layout &amp; breaks</div>
         <div class="field">
           <label for="optMargin">Margins</label>

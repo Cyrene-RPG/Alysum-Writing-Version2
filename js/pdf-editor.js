@@ -201,9 +201,12 @@ const SCENE_BREAKS = {
   rule: '<hr class="scene-rule" />'
 };
 
-/** @type {{ book: ReturnType<typeof normalizeBookData> | null, activeNav: string, zoom: number, trim: string, bodyFont: string, headingFont: string, bodySizePt: number, lineHeight: number, paragraphIndent: string, marginPreset: string, chapterNewPage: boolean, dropCap: boolean, headerFooter: string, sceneBreak: string, showPartLabels: boolean }} */
+/** @type {{ book: ReturnType<typeof normalizeBookData> | null, authorDisplay: string, printAuthorOverride: string, printCopyrightOverride: string, activeNav: string, zoom: number, trim: string, bodyFont: string, headingFont: string, bodySizePt: number, lineHeight: number, paragraphIndent: string, marginPreset: string, chapterNewPage: boolean, dropCap: boolean, headerFooter: string, sceneBreak: string, showPartLabels: boolean }} */
 const state = {
   book: null,
+  authorDisplay: "",
+  printAuthorOverride: "",
+  printCopyrightOverride: "",
   activeNav: "",
   zoom: 1,
   trim: "6x9",
@@ -249,6 +252,55 @@ function googleFontHref() {
 
 function navId(section, index) {
   return `ch-${section}-${index}`;
+}
+
+function printOverridesStorageKey() {
+  return bookId ? `alysum-pdf-print-${bookId}` : "";
+}
+
+function loadPrintOverridesFromStorage() {
+  state.printAuthorOverride = "";
+  state.printCopyrightOverride = "";
+  const key = printOverridesStorageKey();
+  if (!key) return;
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return;
+    const o = JSON.parse(raw);
+    state.printAuthorOverride = safeString(o.author, "");
+    state.printCopyrightOverride = safeString(o.copyright, "");
+  } catch (_) {
+    /* ignore */
+  }
+}
+
+function persistPrintOverrides() {
+  const key = printOverridesStorageKey();
+  if (!key) return;
+  try {
+    localStorage.setItem(
+      key,
+      JSON.stringify({
+        author: state.printAuthorOverride,
+        copyright: state.printCopyrightOverride
+      })
+    );
+  } catch (_) {
+    /* quota / private mode */
+  }
+}
+
+/** Plain-text copyright box → safe HTML paragraphs */
+function plainCopyrightToHtml(text) {
+  const raw = String(text).trim();
+  if (!raw) return "";
+  return raw
+    .split(/\n\s*\n+/)
+    .map(block => {
+      const inner = escapeHtml(block.trim()).replace(/\n/g, "<br>");
+      return `<p class="pdf-para">${inner}</p>`;
+    })
+    .join("");
 }
 
 function allChaptersFlat(book) {
@@ -325,11 +377,15 @@ function normalizeDomBlocks(container, doc) {
 }
 
 function buildTitlePageSection(book) {
-  const t = escapeHtml(book.title || "Untitled");
+  const title = escapeHtml(book.title || "Untitled");
+  const rawAuthor = (state.printAuthorOverride || "").trim() || safeString(state.authorDisplay, "").trim();
+  const authorLine = rawAuthor
+    ? `<p class="title-author">${escapeHtml(rawAuthor.toUpperCase())}</p>`
+    : "";
   return `<article class="pdf-chapter pdf-title-page" id="pdf-title" data-section="title">
     <div class="title-page-inner">
-      <h1 class="title-book">${t}</h1>
-      <p class="title-byline">&nbsp;</p>
+      ${authorLine}
+      <h1 class="title-book">${title}</h1>
     </div>
   </article>`;
 }
@@ -375,11 +431,24 @@ function buildChapterArticle(section, index, ch, opts = {}) {
   const pageClass = state.chapterNewPage ? "chapter-start" : "";
   const extra = isCopyright ? " pdf-copyright-page" : "";
   const norm = normalizeChapterBodyHtml(ch.content);
-  const h1Class = isCopyright ? "pdf-h1 pdf-h1-small" : "pdf-h1";
-  return `<article class="pdf-chapter ${pageClass}${extra}" id="${id}" data-section="${section}">
+  const proseClass = isCopyright ? "" : " pdf-chapter-prose";
+
+  if (isCopyright) {
+    const copyOverride = (state.printCopyrightOverride || "").trim();
+    const copyHtml = copyOverride ? plainCopyrightToHtml(copyOverride) : norm;
+    return `<article class="pdf-chapter ${pageClass}${extra}" id="${id}" data-section="${section}">
+    ${partLabel}
+    <div class="copyright-sheet">
+      <div class="pdf-body copyright-body">${copyHtml}</div>
+    </div>
+  </article>`;
+  }
+
+  const h1Class = "pdf-h1";
+  return `<article class="pdf-chapter ${pageClass}${extra}${proseClass}" id="${id}" data-section="${section}">
     ${partLabel}
     <h1 class="${h1Class}">${escapeHtml(ch.title || "Untitled")}</h1>
-    <div class="pdf-body ${state.dropCap && !isCopyright ? "drop-cap" : ""}">${norm}</div>
+    <div class="pdf-body ${state.dropCap ? "drop-cap" : ""}">${norm}</div>
   </article>`;
 }
 
@@ -521,36 +590,76 @@ function buildPreviewDocumentHtml() {
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
       text-align: center;
-      padding: 2rem 1.25in;
+      padding: 0 1.35in;
       box-sizing: border-box;
+    }
+    .pdf-title-page .title-page-inner {
+      width: 100%;
+      max-width: 100%;
+      padding-top: 14vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .pdf-title-page .title-author {
+      font-family: "Source Sans 3", system-ui, sans-serif;
+      font-size: 10.5pt;
+      font-weight: 600;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      margin: 0 0 1.6rem;
+      color: #1e293b;
     }
     .pdf-title-page .title-book {
       font-family: ${hFont};
-      font-size: 2.35rem;
-      font-weight: 700;
+      font-size: 2.65rem;
+      font-weight: 400;
       margin: 0;
-      line-height: 1.12;
-      letter-spacing: 0.03em;
+      line-height: 1.08;
+      letter-spacing: 0.02em;
     }
-    .pdf-title-page .title-byline {
-      margin-top: 2.75rem;
-      font-size: 12pt;
-      color: #64748b;
-      font-family: "Source Sans 3", system-ui, sans-serif;
+    .pdf-copyright-page {
+      min-height: 88vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 0 12% 12vh;
+      box-sizing: border-box;
     }
-    .pdf-copyright-page .pdf-h1,
-    .pdf-copyright-page .pdf-h1-small {
-      font-size: 11pt;
-      margin-bottom: 0.75rem;
+    .pdf-copyright-page .copyright-sheet {
+      width: 100%;
     }
-    .pdf-copyright-page .pdf-body {
-      font-size: 9pt;
+    .pdf-copyright-page .copyright-body {
+      font-size: 9.5pt;
       line-height: 1.55;
-      text-align: left;
+      text-align: center;
     }
-    .pdf-toc-article .pdf-h1 { margin-bottom: 1.25rem; }
+    .pdf-copyright-page .copyright-body p,
+    .pdf-copyright-page .copyright-body p.pdf-para {
+      text-indent: 0 !important;
+      text-align: center !important;
+      margin: 0 0 0.85em;
+    }
+    .pdf-copyright-page .copyright-body p:first-of-type,
+    .pdf-copyright-page .copyright-body p.pdf-para:first-of-type {
+      font-style: italic;
+      margin-bottom: 1.1em;
+    }
+    .pdf-chapter-prose .pdf-h1 {
+      text-align: center;
+      font-weight: 400;
+      font-size: 1.05rem;
+      letter-spacing: 0.14em;
+      margin: 16vh 0 2.75rem;
+      line-height: 1.3;
+    }
+    .pdf-toc-article .pdf-h1 {
+      text-align: center;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      margin: 2.5rem 0 1.25rem;
+    }
     .pdf-toc ol {
       list-style: none;
       padding: 0;
@@ -582,9 +691,9 @@ function buildPreviewDocumentHtml() {
       text-align: justify;
       text-indent: ${state.paragraphIndent};
     }
-    .pdf-body > p:first-child,
-    .pdf-body > p.pdf-para:first-child,
-    .pdf-body > div:first-child {
+    /* Fiction style: first paragraph after chapter title is also indented (like trade paperbacks) */
+    .pdf-toc-article .pdf-body > p:first-child,
+    .pdf-toc-article .pdf-body > p.pdf-para:first-child {
       text-indent: 0;
     }
     .pdf-body p.scene-break,
@@ -1004,6 +1113,30 @@ async function loadBook(uid) {
     ensureStructure(book);
     state.book = book;
 
+    state.authorDisplay = "";
+    try {
+      const userSnap = await getDoc(doc(db, "users", uid));
+      if (userSnap.exists()) {
+        const u = userSnap.data();
+        state.authorDisplay =
+          safeString(u.username, "").trim() ||
+          safeString(u.displayName, "").trim() ||
+          safeString(u.name, "").trim() ||
+          safeString(u.penName, "").trim();
+      }
+    } catch (_) {
+      state.authorDisplay = "";
+    }
+    if (!state.authorDisplay && auth.currentUser?.displayName) {
+      state.authorDisplay = String(auth.currentUser.displayName).trim();
+    }
+
+    loadPrintOverridesFromStorage();
+    const pa = document.getElementById("printAuthorInput");
+    const pc = document.getElementById("printCopyrightInput");
+    if (pa) pa.value = state.printAuthorOverride;
+    if (pc) pc.value = state.printCopyrightOverride;
+
     $("topBookTitle").textContent = book.title || "Untitled";
     const tw = allChaptersFlat(book).reduce((s, ch) => s + countWords(ch.content || ""), 0);
     $("railWords").textContent = tw.toLocaleString();
@@ -1015,6 +1148,7 @@ async function loadBook(uid) {
   } catch (err) {
     console.error(err);
     state.book = null;
+    state.authorDisplay = "";
     refreshPreview();
     const code = err && typeof err === "object" && "code" in err ? err.code : "";
     let msg = "Could not load book.";
@@ -1047,6 +1181,25 @@ function openPrintWindow() {
   });
 }
 
+function wirePrintOverrideInputs() {
+  const authorIn = document.getElementById("printAuthorInput");
+  const copyIn = document.getElementById("printCopyrightInput");
+  if (!authorIn || !copyIn) return;
+  let debounce = null;
+  const flush = () => {
+    state.printAuthorOverride = authorIn.value;
+    state.printCopyrightOverride = copyIn.value;
+    persistPrintOverrides();
+    if (state.book) refreshPreview();
+  };
+  const schedule = () => {
+    clearTimeout(debounce);
+    debounce = setTimeout(flush, 450);
+  };
+  authorIn.addEventListener("input", schedule);
+  copyIn.addEventListener("input", schedule);
+}
+
 function init() {
   $("btnBack").addEventListener("click", () => {
     const q = bookId ? `?book=${encodeURIComponent(bookId)}` : "";
@@ -1061,6 +1214,8 @@ function init() {
     console.error(e);
     setStatus("Typesetting panel failed to init — hard refresh (Ctrl+F5)", true);
   }
+
+  wirePrintOverrideInputs();
 
   window.addEventListener("message", ev => {
     if (ev.data?.type === "alysum-pdf-pages") {
