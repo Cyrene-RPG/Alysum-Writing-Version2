@@ -1,4 +1,9 @@
-@import url("/css/obsidian-replica.css");
+@import url("obsidian-replica.css");
+
+/* Panel is portaled to <body> so fixed positioning is never clipped by .main / .workspace */
+#obsidianPanel.ob-float {
+  z-index: 10050;
+}
 
 #obsidianPanel.hidden {
   display: none !important;

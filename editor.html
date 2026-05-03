@@ -1188,9 +1188,14 @@ homeBtn.onclick = () => {
                                                                     fontSelect.value = localStorage.getItem("alysum-font") || "Georgia";
             fontSizeSelect.value = localStorage.getItem("alysum-fontSize") || "20";
             applyEditorStyle();
-            import("./js/notes-editor-mount.js").then(m => {
-                m.mountEditorNotes(bookId);
-            });
+            import("./js/notes-editor-mount.js")
+                .then(m => {
+                    m.mountEditorNotes(bookId);
+                })
+                .catch(err => {
+                    console.error("Notes UI module failed:", err);
+                    setSaveStatus("Notes failed to load — check console");
+                });
 
             setSaveStatus("Connecting...");
 

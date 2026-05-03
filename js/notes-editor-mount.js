@@ -38,7 +38,7 @@ function setMiniStatus(text) {
 export function mountEditorNotes(bookId) {
   const key = vaultStorageKey(bookId);
   let state = loadVault(key);
-  let uiFolderOpen = { ...state.openFolderIds };
+  let uiFolderOpen = { ...(state.openFolderIds && typeof state.openFolderIds === "object" ? state.openFolderIds : {}) };
   let selectedFolderId = /** @type {string | null} */ (null);
 
   /** @type {null | { getText: () => string, setText: (s: string) => void, insertSnippet: (s: string) => void, focus: () => void, destroy: () => void }} */
@@ -66,6 +66,10 @@ export function mountEditorNotes(bookId) {
     return { reload() {} };
   }
 
+  if (panel.parentElement !== document.body) {
+    document.body.appendChild(panel);
+  }
+
   if (vaultLabel) {
     vaultLabel.textContent = bookId ? `Vault · ${String(bookId).slice(0, 8)}…` : "Vault";
   }
@@ -75,8 +79,9 @@ export function mountEditorNotes(bookId) {
   }
 
   function clampTabs() {
+    if (!Array.isArray(state.notes)) state.notes = [];
     const valid = new Set(state.notes.map(n => n.id));
-    state.openTabIds = (state.openTabIds || []).filter(id => valid.has(id));
+    state.openTabIds = (Array.isArray(state.openTabIds) ? state.openTabIds : []).filter(id => valid.has(id));
     if (!state.openTabIds.length && state.activeNoteId && valid.has(state.activeNoteId)) {
       state.openTabIds = [state.activeNoteId];
     } else if (!state.openTabIds.length && state.notes[0]) {
@@ -161,12 +166,23 @@ export function mountEditorNotes(bookId) {
   }
 
   function openPanel() {
-    state = loadVault(key);
-    uiFolderOpen = { ...state.openFolderIds };
-    clampTabs();
+    try {
+      state = loadVault(key);
+      uiFolderOpen = {
+        ...(state.openFolderIds && typeof state.openFolderIds === "object" ? state.openFolderIds : {})
+      };
+      clampTabs();
+    } catch (e) {
+      console.error("alysum notes: vault load", e);
+    }
     panel.classList.remove("hidden");
     setMiniStatus("Ready");
-    renderAll();
+    try {
+      renderAll();
+    } catch (e) {
+      console.error("alysum notes: render", e);
+      setMiniStatus("Render error — see console");
+    }
     queueMicrotask(() => cmApi && cmApi.focus());
   }
 

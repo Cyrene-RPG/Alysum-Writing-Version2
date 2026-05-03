@@ -39,7 +39,9 @@ function runApp(bookId) {
   const key = vaultStorageKey(bookId);
   let state = loadVault(key);
 
-  let uiFolderOpen = { ...state.openFolderIds };
+  let uiFolderOpen = {
+    ...(state.openFolderIds && typeof state.openFolderIds === "object" ? state.openFolderIds : {})
+  };
   let selectedFolderId = /** @type {string | null} */ (null);
   let saveTimer = null;
   let bodyTimer = null;
@@ -85,8 +87,9 @@ function runApp(bookId) {
   }
 
   function ensureActiveInTabs() {
+    if (!Array.isArray(state.notes)) state.notes = [];
     const valid = new Set(state.notes.map(n => n.id));
-    state.openTabIds = (state.openTabIds || []).filter(id => valid.has(id));
+    state.openTabIds = (Array.isArray(state.openTabIds) ? state.openTabIds : []).filter(id => valid.has(id));
     if (!state.openTabIds.length && state.activeNoteId && valid.has(state.activeNoteId)) {
       state.openTabIds = [state.activeNoteId];
     } else if (!state.openTabIds.length && state.notes[0]) {
