@@ -1,7 +1,8 @@
 ﻿<!DOCTYPE html>
 <html>
 <head>
-    <link rel="stylesheet" href="/css/vault.css" />
+    <!-- If this comment is missing in View Source, the browser or CDN is still serving an old editor.html. -->
+    <link rel="stylesheet" href="/css/vault.css?v=20260503" />
     <title>Alysum Editor</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -1189,7 +1190,7 @@ homeBtn.onclick = () => {
                                                                     fontSelect.value = localStorage.getItem("alysum-font") || "Georgia";
             fontSizeSelect.value = localStorage.getItem("alysum-fontSize") || "20";
             applyEditorStyle();
-            import("./js/vault-panel.js")
+            import("./js/vault-panel.js?v=20260503")
                 .then(m => {
                     m.mountEditorNotes(bookId);
                 })

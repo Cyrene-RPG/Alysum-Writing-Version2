@@ -36,6 +36,7 @@ function setMiniStatus(text) {
  * @param {string | null} bookId
  */
 export function mountEditorNotes(bookId) {
+  console.info("%cAlysum vault", "color:#7f6df2;font-weight:bold", "panel UI v20260503 (textarea editor)");
   const key = vaultStorageKey(bookId);
   let state = loadVault(key);
   let uiFolderOpen = { ...(state.openFolderIds && typeof state.openFolderIds === "object" ? state.openFolderIds : {}) };
