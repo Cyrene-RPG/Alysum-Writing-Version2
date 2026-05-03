@@ -1,7 +1,8 @@
 /**
- * CodeMirror 6 markdown editor.
- * Single CDN (esm.sh) so @codemirror/state and @lezer/* are deduped — mixing jsdelivr
- * +esm bundles causes "Cannot read properties of undefined (reading 'deserialize')".
+ * CodeMirror 6 notes editor (plain text / Markdown source).
+ * We intentionally do NOT load @codemirror/lang-markdown here: its Lezer stack
+ * often hits "Cannot read properties of undefined (reading 'deserialize')" when
+ * multiple ESM CDNs duplicate @lezer/common or @codemirror/state. Plain CM6 is stable.
  */
 import {
   EditorView,
@@ -32,7 +33,6 @@ import {
   closeBracketsKeymap
 } from "https://esm.sh/@codemirror/autocomplete@6.18.4";
 import { EditorState } from "https://esm.sh/@codemirror/state@6.5.0";
-import { markdown } from "https://esm.sh/@codemirror/lang-markdown@6.3.2";
 
 const obsidianEditorTheme = EditorView.theme(
   {
@@ -92,7 +92,6 @@ function baseExtensions(onDocChange) {
       ...completionKeymap,
       indentWithTab
     ]),
-    markdown(),
     EditorView.lineWrapping,
     obsidianEditorTheme,
     updateListener
