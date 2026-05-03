@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/css/pdf-editor.css?v=20260503b" />
+  <link rel="stylesheet" href="/css/pdf-editor.css?v=20260503n" />
 </head>
 <body>
   <div class="app">
@@ -21,6 +21,9 @@
         </div>
       </div>
       <div class="topbar-right">
+        <button type="button" class="btn btn-ghost btn-theme" id="btnTheme" aria-pressed="false" title="Toggle light/dark interface">
+          Dark mode
+        </button>
         <span class="status-pill" id="statusPill"></span>
         <button type="button" class="btn btn-ghost" id="btnBack">← Manuscript</button>
         <button type="button" class="btn btn-primary" id="btnPrint" title="Uses your browser on this phone or computer. The book is not sent to a PDF conversion server.">Print / Save as PDF</button>
@@ -166,7 +169,7 @@
     </aside>
   </div>
 
-  <script type="module" src="/js/pdf-editor.js?v=20260503m"></script>
+  <script type="module" src="/js/pdf-editor.js?v=20260503n"></script>
   <script>
     (function () {
       var params = new URLSearchParams(window.location.search);

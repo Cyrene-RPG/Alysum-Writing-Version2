@@ -10,6 +10,43 @@ import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase
 const params = new URLSearchParams(window.location.search);
 const bookId = params.get("book");
 
+/** Same key as editor.html so PDF formatter follows manuscript theme. */
+const THEME_STORAGE_KEY = "alysum-theme";
+
+/**
+ * @param {"light" | "dark"} theme
+ */
+function applyPdfChromeTheme(theme) {
+  const dark = theme === "dark";
+  document.body.classList.toggle("dark", dark);
+  try {
+    localStorage.setItem(THEME_STORAGE_KEY, dark ? "dark" : "light");
+  } catch (_) {
+    /* private mode */
+  }
+  const btn = document.getElementById("btnTheme");
+  if (btn) {
+    btn.textContent = dark ? "Light mode" : "Dark mode";
+    btn.setAttribute("aria-pressed", dark ? "true" : "false");
+    btn.title = dark ? "Switch to light interface" : "Switch to dark interface";
+  }
+}
+
+function wireThemeToggle() {
+  const btn = document.getElementById("btnTheme");
+  if (!btn) return;
+  btn.addEventListener("click", () => {
+    applyPdfChromeTheme(document.body.classList.contains("dark") ? "light" : "dark");
+  });
+  let saved = "light";
+  try {
+    saved = localStorage.getItem(THEME_STORAGE_KEY) || "light";
+  } catch (_) {
+    /* ignore */
+  }
+  applyPdfChromeTheme(saved === "dark" ? "dark" : "light");
+}
+
 function $(id) {
   const el = document.getElementById(id);
   if (!el) throw new Error(`Missing #${id}`);
@@ -1624,6 +1661,8 @@ function wirePrintOverrideInputs() {
 }
 
 function init() {
+  wireThemeToggle();
+
   $("btnBack").addEventListener("click", () => {
     const q = bookId ? `?book=${encodeURIComponent(bookId)}` : "";
     window.location.href = "/editor.html" + q;
