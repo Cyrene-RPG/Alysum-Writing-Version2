@@ -1010,6 +1010,81 @@ function buildPreviewDocumentHtml(options = {}) {
       var __HS = ${hSymJson};
       var __TF = ${tfirstJson};
       var __alysumPrintScheduled = false;
+      /**
+       * Paged.js 0.4.x emits higher-specificity rules than our early <style> (e.g. .pagedjs_left_page .pagedjs_sheet
+       * with asymmetric bleed tracks; .pagedjs_page:nth-of-type(...) margin variables). Those can shift the
+       * pagebox and type area in Firefox / DuckDuckGo for both screen preview and print. Install this sheet
+       * once after layout so it sorts after Paged's injected CSS and wins the cascade.
+       */
+      function ajsInstallLatePagedSymmetryCss() {
+        var existing = document.getElementById("alysum-paged-late-sym");
+        if (existing) existing.remove();
+        var st = document.createElement("style");
+        st.id = "alysum-paged-late-sym";
+        var hs = __HS;
+        var tf = __TF;
+        var gtc =
+          "[bleed-left] var(--pagedjs-bleed-left) [sheet-center] calc(var(--pagedjs-width) - var(--pagedjs-bleed-left) - var(--pagedjs-bleed-right)) [bleed-right] var(--pagedjs-bleed-right)";
+        var gtr =
+          "[bleed-top] var(--pagedjs-bleed-top) [sheet-middle] calc(var(--pagedjs-height) - var(--pagedjs-bleed-top) - var(--pagedjs-bleed-bottom)) [bleed-bottom] var(--pagedjs-bleed-bottom)";
+        var ctr = "calc(var(--pagedjs-pagebox-width) - " + hs + " - " + hs + ")";
+        var ctrF = "calc(var(--pagedjs-pagebox-width) - " + tf + " - " + tf + ")";
+        st.textContent =
+          "html body .pagedjs_pages > .pagedjs_page.pagedjs_left_page,\\n" +
+          "html body .pagedjs_pages > .pagedjs_page.pagedjs_right_page {\\n" +
+          "  width: var(--pagedjs-width) !important;\\n" +
+          "  height: var(--pagedjs-height) !important;\\n" +
+          "}\\n" +
+          "html body .pagedjs_pages > .pagedjs_page > .pagedjs_sheet {\\n" +
+          "  width: var(--pagedjs-width) !important;\\n" +
+          "  height: var(--pagedjs-height) !important;\\n" +
+          "  grid-template-columns: " +
+          gtc +
+          " !important;\\n" +
+          "  grid-template-rows: " +
+          gtr +
+          " !important;\\n" +
+          "}\\n" +
+          "html body .pagedjs_pages > .pagedjs_page:not(.pagedjs_first_page) > .pagedjs_sheet > .pagedjs_pagebox {\\n" +
+          "  grid-template-columns: [left] " +
+          hs +
+          " [center] " +
+          ctr +
+          " [right] " +
+          hs +
+          " !important;\\n" +
+          "}\\n" +
+          "html body .pagedjs_pages > .pagedjs_page.pagedjs_first_page > .pagedjs_sheet > .pagedjs_pagebox {\\n" +
+          "  grid-template-columns: [left] " +
+          tf +
+          " [center] " +
+          ctrF +
+          " [right] " +
+          tf +
+          " !important;\\n" +
+          "}\\n" +
+          "html body .pagedjs_pages > .pagedjs_page:not(.pagedjs_first_page) {\\n" +
+          "  --pagedjs-margin-left: " +
+          hs +
+          " !important;\\n" +
+          "  --pagedjs-margin-right: " +
+          hs +
+          " !important;\\n" +
+          "}\\n" +
+          "html body .pagedjs_pages > .pagedjs_page.pagedjs_first_page {\\n" +
+          "  --pagedjs-margin-left: " +
+          tf +
+          " !important;\\n" +
+          "  --pagedjs-margin-right: " +
+          tf +
+          " !important;\\n" +
+          "}";
+        (document.head || document.documentElement).appendChild(st);
+      }
+      function ajsSymmetryPass(installLateCss) {
+        if (installLateCss) ajsInstallLatePagedSymmetryCss();
+        ajsPagedSymmetry();
+      }
       function ajsReflowPagedColumns() {
         var cgMain =
           "calc(var(--pagedjs-margin-right) + var(--pagedjs-margin-left) + var(--pagedjs-bleed-right) + var(--pagedjs-bleed-left) + var(--pagedjs-column-gap-offset))";
@@ -1066,14 +1141,23 @@ function buildPreviewDocumentHtml(options = {}) {
       }
       function done() {
         try {
-          ajsPagedSymmetry();
+          ajsSymmetryPass(true);
           requestAnimationFrame(function () {
-            ajsPagedSymmetry();
+            ajsSymmetryPass(false);
             requestAnimationFrame(function () {
-              ajsPagedSymmetry();
-              [0, 50, 150, 400].forEach(function (ms) {
-                setTimeout(ajsPagedSymmetry, ms);
-              });
+              ajsSymmetryPass(false);
+              setTimeout(function () {
+                ajsSymmetryPass(true);
+              }, 0);
+              setTimeout(function () {
+                ajsSymmetryPass(false);
+              }, 50);
+              setTimeout(function () {
+                ajsSymmetryPass(true);
+              }, 150);
+              setTimeout(function () {
+                ajsSymmetryPass(true);
+              }, 400);
             });
           });
         } catch (e0) {}
