@@ -179,16 +179,20 @@ const TRIM_SIZES = {
 };
 
 const BODY_FONTS = {
+  "EB Garamond": "'EB Garamond', 'Times New Roman', Times, serif",
+  "Libre Baskerville": "'Libre Baskerville', Georgia, serif",
   "Crimson Pro": "'Crimson Pro', Georgia, serif",
   Lora: "'Lora', Georgia, serif",
   Merriweather: "'Merriweather', Georgia, serif",
-  "Literata": "'Literata', Georgia, serif",
+  Literata: "'Literata', Georgia, serif",
   "Source Serif 4": "'Source Serif 4', Georgia, serif",
   Georgia: "Georgia, serif"
 };
 
 const HEADING_FONTS = {
   match: "inherit",
+  "EB Garamond": "'EB Garamond', 'Times New Roman', Times, serif",
+  "Libre Baskerville": "'Libre Baskerville', Georgia, serif",
   "Crimson Pro": "'Crimson Pro', Georgia, serif",
   Lora: "'Lora', Georgia, serif",
   "Source Sans 3": "'Source Sans 3', system-ui, sans-serif"
@@ -210,11 +214,11 @@ const state = {
   activeNav: "",
   zoom: 1,
   trim: "6x9",
-  bodyFont: "Crimson Pro",
+  bodyFont: "EB Garamond",
   headingFont: "match",
   bodySizePt: 11,
-  lineHeight: 1.45,
-  paragraphIndent: "0.25in",
+  lineHeight: 1.48,
+  paragraphIndent: "0.3in",
   marginPreset: "bn",
   chapterNewPage: true,
   dropCap: false,
@@ -223,22 +227,44 @@ const state = {
   showPartLabels: false
 };
 
-function marginInches() {
+/** Outside (fore-edge) margin in inches — inner = this + gutter for mirror spreads. */
+function marginOutsideInches() {
   switch (state.marginPreset) {
     case "tight":
-      return "0.55in";
+      return 0.52;
     case "wide":
-      return "1in";
+      return 0.92;
     case "bn":
-      /* Extra gutter for POD; B&N flags content in the trim zone */
-      return "0.8in";
+      /* POD-safe outside; binding edge gets +gutter in @page:left / :right */
+      return 0.7;
     default:
-      return "0.75in";
+      return 0.68;
   }
+}
+
+function marginGutterInches() {
+  return 0.16;
+}
+
+/** Uniform margin for @page :first (half-title / title spread) */
+function marginFirstPageInches() {
+  const o = marginOutsideInches();
+  const g = marginGutterInches();
+  return Math.max(0.78, o + g * 0.5);
+}
+
+/** CSS `content:` string for running heads — escape quotes and newlines */
+function escapeCssContent(str) {
+  return String(str)
+    .replace(/\\/g, "\\\\")
+    .replace(/"/g, '\\"')
+    .replace(/\r?\n/g, " ");
 }
 
 function googleFontHref() {
   const families = new Set([
+    "EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400",
+    "Libre+Baskerville:ital,wght@0,400;0,700;1,400",
     "Crimson Pro:ital,wght@0,400;0,600;0,700;1,400",
     "Lora:ital,wght@0,400;0,600;0,700;1,400",
     "Merriweather:ital,wght@0,400;0,700;1,400",
@@ -495,25 +521,45 @@ function buildManuscriptBodyHtml(book) {
 
 function headingFontCss() {
   if (state.headingFont === "match") {
-    return BODY_FONTS[state.bodyFont] || BODY_FONTS["Crimson Pro"];
+    return BODY_FONTS[state.bodyFont] || BODY_FONTS["EB Garamond"];
   }
-  return HEADING_FONTS[state.headingFont] || BODY_FONTS["Crimson Pro"];
+  return HEADING_FONTS[state.headingFont] || BODY_FONTS["EB Garamond"];
 }
 
 function atPageCssBlock() {
   const trim = TRIM_SIZES[state.trim] || TRIM_SIZES["6x9"];
-  const margin = marginInches();
-  const bookTitle = escapeHtml(state.book?.title || "Manuscript");
-  let running = "";
+  const out = marginOutsideInches();
+  const g = marginGutterInches();
+  const inner = out + g;
+  const firstM = marginFirstPageInches();
+  const tout = `${out.toFixed(2)}in`;
+  const tin = `${inner.toFixed(2)}in`;
+  const tfirst = `${firstM.toFixed(2)}in`;
+  const bookTitleEsc = escapeCssContent(state.book?.title || "Manuscript");
+  const runFont = "Georgia, 'Times New Roman', serif";
+  let marginBoxes = "";
   if (state.headerFooter === "title") {
-    running = `@top-center { content: "${bookTitle}"; font-size: 9pt; color: #64748b; font-family: system-ui, sans-serif; }`;
+    marginBoxes = `@top-center { content: "${bookTitleEsc}"; font-size: 8.5pt; font-weight: 400; color: #3d3d3d; font-family: ${runFont}; font-variant: small-caps; letter-spacing: 0.08em; }`;
   } else if (state.headerFooter === "title-page") {
-    running = `@top-center { content: "${bookTitle}"; font-size: 9pt; color: #64748b; font-family: system-ui, sans-serif; }
-      @bottom-center { content: counter(page); font-size: 9pt; color: #64748b; font-family: system-ui, sans-serif; }`;
+    marginBoxes = `@top-center { content: "${bookTitleEsc}"; font-size: 8.5pt; font-weight: 400; color: #3d3d3d; font-family: ${runFont}; font-variant: small-caps; letter-spacing: 0.08em; }
+      @bottom-center { content: counter(page); font-size: 9pt; font-weight: 400; color: #222; font-family: ${runFont}; font-variant-numeric: oldstyle-nums; }`;
   } else if (state.headerFooter === "page") {
-    running = `@bottom-center { content: counter(page); font-size: 9pt; color: #64748b; font-family: system-ui, sans-serif; }`;
+    marginBoxes = `@bottom-center { content: counter(page); font-size: 9pt; font-weight: 400; color: #222; font-family: ${runFont}; font-variant-numeric: oldstyle-nums; }`;
   }
-  return `@page { size: ${trim.width} ${trim.height}; margin: ${margin}; ${running} }`;
+  /* Mirror margins: binding edge is wider. Shorthand = top, right, bottom, left. Verso (:left) = gutter on right; recto (:right) = gutter on left. :last so page 1 wins over :right. */
+  return `@page { size: ${trim.width} ${trim.height}; }
+    @page:left {
+      margin: ${tout} ${tin} ${tout} ${tout};
+      ${marginBoxes}
+    }
+    @page:right {
+      margin: ${tout} ${tout} ${tout} ${tin};
+      ${marginBoxes}
+    }
+    @page :first {
+      margin: ${tfirst};
+      ${marginBoxes}
+    }`;
 }
 
 /**
@@ -524,7 +570,8 @@ function buildPreviewDocumentHtml(options = {}) {
   const book = state.book;
   if (!book) return "";
 
-  const bodyFont = BODY_FONTS[state.bodyFont] || BODY_FONTS["Crimson Pro"];
+  const trim = TRIM_SIZES[state.trim] || TRIM_SIZES["6x9"];
+  const bodyFont = BODY_FONTS[state.bodyFont] || BODY_FONTS["EB Garamond"];
   const hFont = headingFontCss();
 
   const inner = buildManuscriptBodyHtml(book);
@@ -536,13 +583,20 @@ function buildPreviewDocumentHtml(options = {}) {
   <link rel="stylesheet" href="${googleFontHref()}" />
   <style>
     ${atPageCssBlock()}
+    :root {
+      --trim-w: ${trim.width};
+      --trim-h: ${trim.height};
+    }
     html { font-size: ${state.bodySizePt}pt; }
     body {
       margin: 0;
       font-family: ${bodyFont};
       line-height: ${state.lineHeight};
-      color: #1e293b;
+      color: #141414;
       background: #fff;
+      text-rendering: optimizeLegibility;
+      font-variant-numeric: oldstyle-nums;
+      -webkit-font-smoothing: antialiased;
     }
     @media screen {
       html {
@@ -632,48 +686,49 @@ function buildPreviewDocumentHtml(options = {}) {
     }
     .pdf-h1 {
       font-family: ${hFont};
-      font-size: 1.35rem;
-      font-weight: 700;
+      font-size: 1.25rem;
+      font-weight: 600;
       margin: 0 0 1rem;
       line-height: 1.25;
     }
     .pdf-title-page {
-      min-height: 100vh;
-      min-height: 100dvh;
+      min-height: var(--trim-h, 9in);
       display: flex;
       flex-direction: column;
       align-items: center;
       text-align: center;
-      padding: 0 1.35in;
+      padding: 0 12%;
       box-sizing: border-box;
     }
     .pdf-title-page .title-page-inner {
       width: 100%;
-      max-width: 100%;
-      padding-top: 14vh;
+      max-width: 32rem;
+      padding-top: 22%;
       display: flex;
       flex-direction: column;
       align-items: center;
     }
     .pdf-title-page .title-author {
-      font-family: "Source Sans 3", system-ui, sans-serif;
-      font-size: 10.5pt;
-      font-weight: 600;
-      letter-spacing: 0.28em;
+      font-family: ${bodyFont};
+      font-size: 11pt;
+      font-weight: 500;
+      letter-spacing: 0.22em;
       text-transform: uppercase;
-      margin: 0 0 1.6rem;
-      color: #1e293b;
+      font-variant: normal;
+      margin: 0 0 2.25rem;
+      color: #222;
     }
     .pdf-title-page .title-book {
       font-family: ${hFont};
-      font-size: 2.65rem;
-      font-weight: 400;
+      font-size: 2.5rem;
+      font-weight: 500;
       margin: 0;
-      line-height: 1.08;
-      letter-spacing: 0.02em;
+      line-height: 1.06;
+      letter-spacing: 0.015em;
+      color: #0a0a0a;
     }
     .pdf-copyright-page {
-      min-height: 88vh;
+      min-height: calc(0.88 * var(--trim-h, 9in));
       display: flex;
       flex-direction: column;
       justify-content: flex-end;
@@ -701,11 +756,14 @@ function buildPreviewDocumentHtml(options = {}) {
     }
     .pdf-chapter-prose .pdf-h1 {
       text-align: center;
-      font-weight: 400;
-      font-size: 1.05rem;
-      letter-spacing: 0.14em;
-      margin: 16vh 0 2.75rem;
-      line-height: 1.3;
+      font-weight: 500;
+      font-size: 1.55rem;
+      letter-spacing: 0.1em;
+      text-transform: none;
+      margin: 18vh 0 2.6rem;
+      line-height: 1.22;
+      color: #0a0a0a;
+      font-variant-numeric: lining-nums;
     }
     .pdf-chapter-prose .pdf-body {
       hyphens: auto;
@@ -715,8 +773,11 @@ function buildPreviewDocumentHtml(options = {}) {
     .pdf-toc-article .pdf-h1 {
       text-align: center;
       font-weight: 600;
-      letter-spacing: 0.12em;
-      margin: 2.5rem 0 1.25rem;
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      letter-spacing: 0.22em;
+      margin: 3.25rem 0 1.75rem;
+      color: #222;
     }
     .pdf-toc ol {
       list-style: none;
@@ -725,8 +786,9 @@ function buildPreviewDocumentHtml(options = {}) {
       font-family: ${bodyFont};
     }
     .pdf-toc li {
-      margin: 0.4rem 0;
-      line-height: 1.4;
+      margin: 0.48rem 0;
+      line-height: 1.45;
+      font-size: 1em;
       break-inside: avoid;
     }
     .pdf-toc a {
@@ -742,6 +804,10 @@ function buildPreviewDocumentHtml(options = {}) {
       content: leader('.') target-counter(attr(href url), page);
     }
     @media print {
+      body,
+      .pdf-chapter-prose {
+        color: #000 !important;
+      }
       .pdf-toc a,
       .pdf-toc a:link,
       .pdf-toc a:visited {
@@ -751,6 +817,10 @@ function buildPreviewDocumentHtml(options = {}) {
       .pdf-body p,
       .pdf-body p.pdf-para {
         text-align: justify;
+        text-indent: ${state.paragraphIndent};
+      }
+      .pdf-chapter-prose .pdf-body > p:first-child,
+      .pdf-chapter-prose .pdf-body > p.pdf-para:first-child {
         text-indent: ${state.paragraphIndent};
       }
     }
@@ -763,14 +833,20 @@ function buildPreviewDocumentHtml(options = {}) {
     .pdf-body p,
     .pdf-body p.pdf-para,
     .pdf-body div:not(.scene-break):not(.scene-spacer) {
-      margin: 0 0 0.62em;
+      margin: 0 0 0.38em;
       text-align: justify;
       text-indent: ${state.paragraphIndent};
+      orphans: 2;
+      widows: 2;
     }
-    /* Fiction style: first paragraph after chapter title is also indented (like trade paperbacks) */
+    /* TOC placeholder only — prose chapters indent every paragraph including the first (trade fiction). */
     .pdf-toc-article .pdf-body > p:first-child,
     .pdf-toc-article .pdf-body > p.pdf-para:first-child {
       text-indent: 0;
+    }
+    .pdf-chapter-prose .pdf-body > p:first-child,
+    .pdf-chapter-prose .pdf-body > p.pdf-para:first-child {
+      text-indent: ${state.paragraphIndent};
     }
     .pdf-body p.scene-break,
     .pdf-body div.scene-break {
@@ -804,9 +880,9 @@ function buildPreviewDocumentHtml(options = {}) {
     }
     .pdf-body h2, .pdf-body h3 { font-family: ${hFont}; margin: 1.2em 0 0.5em; }
     .pdf-body blockquote {
-      margin: 1em 1.2em;
+      margin: 1em 1.15em;
       font-style: italic;
-      color: #475569;
+      color: #4a4a4a;
     }
     .pdf-body blockquote p,
     .pdf-body blockquote div {
@@ -814,10 +890,10 @@ function buildPreviewDocumentHtml(options = {}) {
     }
     .scene-break {
       text-align: center;
-      letter-spacing: 0.25em;
-      margin: 1.4em 0;
-      color: #64748b;
-      font-size: 0.95rem;
+      letter-spacing: 0.28em;
+      margin: 1.5em 0;
+      color: #5c5c5c;
+      font-size: 0.92rem;
       border: none;
       page-break-inside: avoid;
     }
