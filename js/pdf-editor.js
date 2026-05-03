@@ -214,10 +214,10 @@ const state = {
   activeNav: "",
   zoom: 1,
   trim: "6x9",
-  bodyFont: "EB Garamond",
+  bodyFont: "Literata",
   headingFont: "match",
   bodySizePt: 11,
-  lineHeight: 1.48,
+  lineHeight: 1.52,
   paragraphIndent: "0.3in",
   marginPreset: "bn",
   chapterNewPage: true,
@@ -448,9 +448,11 @@ function buildTitlePageSection(book) {
   const authorLine = rawAuthor
     ? `<p class="title-author">${escapeHtml(rawAuthor.toUpperCase())}</p>`
     : "";
+  const rule = `<div class="title-page-rule" aria-hidden="true"></div>`;
   return `<article class="pdf-chapter pdf-title-page" id="pdf-title" data-section="title">
     <div class="title-page-inner">
       ${authorLine}
+      ${rule}
       <h1 class="title-book">${title}</h1>
     </div>
   </article>`;
@@ -561,9 +563,9 @@ function buildManuscriptBodyHtml(book) {
 
 function headingFontCss() {
   if (state.headingFont === "match") {
-    return BODY_FONTS[state.bodyFont] || BODY_FONTS["EB Garamond"];
+    return BODY_FONTS[state.bodyFont] || BODY_FONTS["Literata"];
   }
-  return HEADING_FONTS[state.headingFont] || BODY_FONTS["EB Garamond"];
+  return HEADING_FONTS[state.headingFont] || BODY_FONTS["Literata"];
 }
 
 function atPageCssBlock() {
@@ -576,15 +578,15 @@ function atPageCssBlock() {
   const tin = `${inner.toFixed(2)}in`;
   const tfirst = `${firstM.toFixed(2)}in`;
   const bookTitleEsc = escapeCssContent(state.book?.title || "Manuscript");
-  const runFont = "Georgia, 'Times New Roman', serif";
+  const runStack = BODY_FONTS[state.bodyFont] || BODY_FONTS["Literata"];
   let marginBoxes = "";
   if (state.headerFooter === "title") {
-    marginBoxes = `@top-center { content: "${bookTitleEsc}"; font-size: 8.5pt; font-weight: 400; color: #3d3d3d; font-family: ${runFont}; font-variant: small-caps; letter-spacing: 0.08em; }`;
+    marginBoxes = `@top-center { content: "${bookTitleEsc}"; font-size: 8pt; font-weight: 500; color: #6b6967; font-family: ${runStack}; font-variant: all-small-caps; letter-spacing: 0.14em; }`;
   } else if (state.headerFooter === "title-page") {
-    marginBoxes = `@top-center { content: "${bookTitleEsc}"; font-size: 8.5pt; font-weight: 400; color: #3d3d3d; font-family: ${runFont}; font-variant: small-caps; letter-spacing: 0.08em; }
-      @bottom-center { content: counter(page); font-size: 9pt; font-weight: 400; color: #222; font-family: ${runFont}; font-variant-numeric: oldstyle-nums; }`;
+    marginBoxes = `@top-center { content: "${bookTitleEsc}"; font-size: 8pt; font-weight: 500; color: #6b6967; font-family: ${runStack}; font-variant: all-small-caps; letter-spacing: 0.14em; }
+      @bottom-center { content: counter(page); font-size: 8.75pt; font-weight: 500; color: #5c5a58; font-family: ${runStack}; font-variant-numeric: oldstyle-nums; letter-spacing: 0.02em; }`;
   } else if (state.headerFooter === "page") {
-    marginBoxes = `@bottom-center { content: counter(page); font-size: 9pt; font-weight: 400; color: #222; font-family: ${runFont}; font-variant-numeric: oldstyle-nums; }`;
+    marginBoxes = `@bottom-center { content: counter(page); font-size: 8.75pt; font-weight: 500; color: #5c5a58; font-family: ${runStack}; font-variant-numeric: oldstyle-nums; letter-spacing: 0.02em; }`;
   }
   /* Mirror margins: binding edge is wider. Shorthand = top, right, bottom, left. Verso (:left) = gutter on right; recto (:right) = gutter on left. :last so page 1 wins over :right. */
   return `@page { size: ${trim.width} ${trim.height}; }
@@ -611,7 +613,7 @@ function buildPreviewDocumentHtml(options = {}) {
   if (!book) return "";
 
   const trim = TRIM_SIZES[state.trim] || TRIM_SIZES["6x9"];
-  const bodyFont = BODY_FONTS[state.bodyFont] || BODY_FONTS["EB Garamond"];
+  const bodyFont = BODY_FONTS[state.bodyFont] || BODY_FONTS["Literata"];
   const hFont = headingFontCss();
 
   const inner = buildManuscriptBodyHtml(book);
@@ -626,17 +628,27 @@ function buildPreviewDocumentHtml(options = {}) {
     :root {
       --trim-w: ${trim.width};
       --trim-h: ${trim.height};
+      --ink: #1c1b1a;
+      --ink-soft: #3d3c3a;
+      --rule: rgba(28, 27, 26, 0.14);
+      --paper-print: #fffefc;
+      --paper-screen: #faf8f5;
     }
     html { font-size: ${state.bodySizePt}pt; }
     body {
       margin: 0;
       font-family: ${bodyFont};
       line-height: ${state.lineHeight};
-      color: #141414;
-      background: #fff;
+      color: var(--ink);
+      background: var(--paper-screen);
       text-rendering: optimizeLegibility;
+      font-feature-settings: "kern" 1, "liga" 1, "onum" 1;
       font-variant-numeric: oldstyle-nums;
       -webkit-font-smoothing: antialiased;
+      font-kerning: normal;
+    }
+    @media print {
+      body { background: #fff !important; color: #000 !important; }
     }
     @media screen {
       html {
@@ -651,7 +663,7 @@ function buildPreviewDocumentHtml(options = {}) {
         margin: 0 !important;
         padding: 0 !important;
         overflow: auto !important;
-        background: #e8ecf0;
+        background: #dfe5e8;
       }
       #manuscript-root {
         margin: 0;
@@ -662,8 +674,8 @@ function buildPreviewDocumentHtml(options = {}) {
         flex-direction: column !important;
         align-items: center !important;
         justify-content: flex-start !important;
-        gap: 14px !important;
-        padding: 12px 8px 28px !important;
+        gap: 20px !important;
+        padding: 16px 10px 32px !important;
         margin: 0 auto !important;
         width: 100% !important;
         max-width: 100% !important;
@@ -673,16 +685,24 @@ function buildPreviewDocumentHtml(options = {}) {
         margin: 0 auto !important;
         float: none !important;
         box-sizing: border-box !important;
-        background: #fff !important;
+        background: linear-gradient(180deg, #fffefc 0%, #faf8f4 100%) !important;
+        border: 1px solid rgba(28, 27, 26, 0.06) !important;
+        border-radius: 1px !important;
+        box-shadow:
+          0 1px 1px rgba(28, 27, 26, 0.04),
+          0 8px 24px rgba(28, 27, 26, 0.07),
+          0 24px 48px rgba(28, 27, 26, 0.06) !important;
       }
     }
     .part-label {
-      font-family: "Source Sans 3", system-ui, sans-serif;
-      font-size: 8pt;
-      letter-spacing: 0.14em;
+      font-family: ${bodyFont};
+      font-size: 7.5pt;
+      font-weight: 600;
+      letter-spacing: 0.2em;
       text-transform: uppercase;
-      color: #94a3b8;
-      margin-bottom: 0.6rem;
+      font-variant: all-small-caps;
+      color: #7a7876;
+      margin-bottom: 0.85rem;
     }
     /* Do not use break-inside:avoid on whole chapters — it glues title+TOC+text onto one sheet in print. */
     .pdf-title-page,
@@ -726,10 +746,10 @@ function buildPreviewDocumentHtml(options = {}) {
     }
     .pdf-h1 {
       font-family: ${hFont};
-      font-size: 1.25rem;
+      font-size: 1.2rem;
       font-weight: 600;
       margin: 0 0 1rem;
-      line-height: 1.25;
+      line-height: 1.28;
     }
     .pdf-title-page {
       min-height: var(--trim-h, 9in);
@@ -737,35 +757,41 @@ function buildPreviewDocumentHtml(options = {}) {
       flex-direction: column;
       align-items: center;
       text-align: center;
-      padding: 0 12%;
+      padding: 0 11%;
       box-sizing: border-box;
     }
     .pdf-title-page .title-page-inner {
       width: 100%;
-      max-width: 32rem;
-      padding-top: 22%;
+      max-width: 28rem;
+      padding-top: 26%;
       display: flex;
       flex-direction: column;
       align-items: center;
     }
     .pdf-title-page .title-author {
       font-family: ${bodyFont};
-      font-size: 11pt;
-      font-weight: 500;
-      letter-spacing: 0.22em;
+      font-size: 10.5pt;
+      font-weight: 600;
+      letter-spacing: 0.32em;
       text-transform: uppercase;
       font-variant: normal;
-      margin: 0 0 2.25rem;
-      color: #222;
+      margin: 0 0 1.75rem;
+      color: var(--ink-soft);
+    }
+    .pdf-title-page .title-page-rule {
+      width: 3.25rem;
+      height: 1px;
+      background: var(--rule);
+      margin: 0 0 1.75rem;
     }
     .pdf-title-page .title-book {
       font-family: ${hFont};
-      font-size: 2.5rem;
-      font-weight: 500;
+      font-size: 2.65rem;
+      font-weight: 400;
       margin: 0;
-      line-height: 1.06;
-      letter-spacing: 0.015em;
-      color: #0a0a0a;
+      line-height: 1.05;
+      letter-spacing: 0.008em;
+      color: var(--ink);
     }
     .pdf-copyright-page {
       min-height: calc(0.88 * var(--trim-h, 9in));
@@ -779,9 +805,10 @@ function buildPreviewDocumentHtml(options = {}) {
       width: 100%;
     }
     .pdf-copyright-page .copyright-body {
-      font-size: 9.5pt;
-      line-height: 1.55;
+      font-size: 9.25pt;
+      line-height: 1.62;
       text-align: center;
+      color: var(--ink-soft);
     }
     .pdf-copyright-page .copyright-body p,
     .pdf-copyright-page .copyright-body p.pdf-para {
@@ -796,28 +823,44 @@ function buildPreviewDocumentHtml(options = {}) {
     }
     .pdf-chapter-prose .pdf-h1 {
       text-align: center;
-      font-weight: 500;
-      font-size: 1.55rem;
-      letter-spacing: 0.1em;
+      font-weight: 400;
+      font-size: 1.72rem;
+      letter-spacing: 0.06em;
       text-transform: none;
-      margin: 18vh 0 2.6rem;
-      line-height: 1.22;
-      color: #0a0a0a;
+      margin: 20vh 0 0;
+      line-height: 1.2;
+      color: var(--ink);
       font-variant-numeric: lining-nums;
+      font-feature-settings: "kern" 1, "liga" 1;
+    }
+    .pdf-chapter-prose .pdf-h1::after {
+      content: "";
+      display: block;
+      width: 2.5rem;
+      height: 1px;
+      margin: 1.15rem auto 2.45rem;
+      background: var(--rule);
     }
     .pdf-chapter-prose .pdf-body {
       hyphens: auto;
       -webkit-hyphens: auto;
-      hyphenate-limit-chars: 6 3 3;
+      hyphenate-limit-chars: 10 4 3;
+      hyphenate-limit-lines: 2;
+      text-wrap: pretty;
     }
     .pdf-toc-article .pdf-h1 {
       text-align: center;
       font-weight: 600;
-      font-size: 0.95rem;
+      font-size: 0.82rem;
       text-transform: uppercase;
-      letter-spacing: 0.22em;
-      margin: 3.25rem 0 1.75rem;
-      color: #222;
+      letter-spacing: 0.28em;
+      margin: 3.5rem 0 2rem;
+      color: var(--ink-soft);
+      font-variant: all-small-caps;
+    }
+    .pdf-toc {
+      padding: 0 0.08in;
+      max-width: 100%;
     }
     .pdf-toc ol {
       list-style: none;
@@ -826,9 +869,9 @@ function buildPreviewDocumentHtml(options = {}) {
       font-family: ${bodyFont};
     }
     .pdf-toc li {
-      margin: 0.48rem 0;
-      line-height: 1.45;
-      font-size: 1em;
+      margin: 0.55rem 0;
+      line-height: 1.55;
+      font-size: 0.98rem;
       break-inside: avoid;
     }
     .pdf-toc a {
@@ -842,6 +885,9 @@ function buildPreviewDocumentHtml(options = {}) {
     }
     .pdf-toc a::after {
       content: leader('.') target-counter(attr(href url), page);
+      font-variant-numeric: oldstyle-nums;
+      color: #6e6c6a;
+      font-size: 0.96em;
     }
     @media print {
       body,
@@ -873,11 +919,12 @@ function buildPreviewDocumentHtml(options = {}) {
     .pdf-body p,
     .pdf-body p.pdf-para,
     .pdf-body div:not(.scene-break):not(.scene-spacer) {
-      margin: 0 0 0.38em;
+      margin: 0 0 0.32em;
       text-align: justify;
       text-indent: ${state.paragraphIndent};
       orphans: 2;
-      widows: 2;
+      widows: 3;
+      hanging-punctuation: first last;
     }
     /* TOC placeholder only — prose chapters indent every paragraph including the first (trade fiction). */
     .pdf-toc-article .pdf-body > p:first-child,
@@ -913,10 +960,12 @@ function buildPreviewDocumentHtml(options = {}) {
     .drop-cap .pdf-body > p.pdf-para:first-of-type::first-letter,
     .drop-cap .pdf-body > div:first-of-type::first-letter {
       float: left;
-      font-size: 2.85rem;
-      line-height: 0.85;
-      font-weight: 700;
-      padding-right: 0.08em;
+      font-size: 3.1rem;
+      line-height: 0.82;
+      font-weight: 400;
+      padding-right: 0.06em;
+      margin-top: 0.06em;
+      color: var(--ink);
     }
     .pdf-body h2, .pdf-body h3 { font-family: ${hFont}; margin: 1.2em 0 0.5em; }
     .pdf-body blockquote {
@@ -930,19 +979,20 @@ function buildPreviewDocumentHtml(options = {}) {
     }
     .scene-break {
       text-align: center;
-      letter-spacing: 0.28em;
-      margin: 1.5em 0;
-      color: #5c5c5c;
-      font-size: 0.92rem;
+      letter-spacing: 0.42em;
+      margin: 1.65em 0;
+      color: #8a8886;
+      font-size: 0.88rem;
+      font-weight: 300;
       border: none;
       page-break-inside: avoid;
     }
-    .scene-spacer { visibility: hidden; height: 2.5em; }
+    .scene-spacer { visibility: hidden; height: 2.75em; }
     .scene-rule {
-      width: 28%;
-      margin: 1.5em auto;
+      width: 18%;
+      margin: 1.65em auto;
       border: none;
-      border-top: 1px solid #cbd5e1;
+      border-top: 1px solid rgba(28, 27, 26, 0.12);
     }
   </style>
 </head>
