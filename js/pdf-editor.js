@@ -227,7 +227,6 @@ function marginOutsideInches() {
     case "wide":
       return 0.92;
     case "bn":
-      /* POD-safe outside; binding edge gets +gutter in @page:left / :right */
       return 0.7;
     default:
       return 0.68;
@@ -243,6 +242,48 @@ function marginFirstPageInches() {
   const o = marginOutsideInches();
   const g = marginGutterInches();
   return Math.max(0.78, o + g * 0.5);
+}
+
+/** @page + Paged.js `--pagedjs-*` margin strings (inches with unit suffix). */
+function getPrintPageMarginStrings() {
+  const out = marginOutsideInches();
+  const inner = out + marginGutterInches();
+  return {
+    tout: `${out.toFixed(2)}in`,
+    hSym: `${((out + inner) / 2).toFixed(3)}in`,
+    tfirst: `${marginFirstPageInches().toFixed(2)}in`
+  };
+}
+
+/**
+ * Overrides Paged.js facing-page rules (different .pagedjs_sheet grids for left vs right).
+ * Injected after Paged runs so it wins over the polyfill stylesheet order.
+ */
+function pagedJsLayoutSymmetryCss(hSym, tfirst) {
+  return [
+    ".pagedjs_pages > .pagedjs_page {",
+    `  --pagedjs-margin-left: ${hSym} !important;`,
+    `  --pagedjs-margin-right: ${hSym} !important;`,
+    "}",
+    ".pagedjs_pages > .pagedjs_page.pagedjs_first_page {",
+    `  --pagedjs-margin-left: ${tfirst} !important;`,
+    `  --pagedjs-margin-right: ${tfirst} !important;`,
+    "}",
+    ".pagedjs_pages > .pagedjs_page.pagedjs_left_page {",
+    "  --pagedjs-width-left: var(--pagedjs-width) !important;",
+    "  --pagedjs-height-left: var(--pagedjs-height) !important;",
+    "}",
+    ".pagedjs_pages > .pagedjs_page.pagedjs_right_page {",
+    "  --pagedjs-width-right: var(--pagedjs-width) !important;",
+    "  --pagedjs-height-right: var(--pagedjs-height) !important;",
+    "}",
+    ".pagedjs_pages .pagedjs_page > .pagedjs_sheet {",
+    "  width: var(--pagedjs-width) !important;",
+    "  height: var(--pagedjs-height) !important;",
+    "  grid-template-columns: [bleed-left] var(--pagedjs-bleed-left) [sheet-center] calc(var(--pagedjs-width) - var(--pagedjs-bleed-left) - var(--pagedjs-bleed-right)) [bleed-right] var(--pagedjs-bleed-right) !important;",
+    "  grid-template-rows: [bleed-top] var(--pagedjs-bleed-top) [sheet-middle] calc(var(--pagedjs-height) - var(--pagedjs-bleed-top) - var(--pagedjs-bleed-bottom)) [bleed-bottom] var(--pagedjs-bleed-bottom) !important;",
+    "}"
+  ].join("\n");
 }
 
 /** CSS `content:` string for running heads — escape quotes and newlines */
@@ -549,14 +590,7 @@ function headingFontCss() {
 
 function atPageCssBlock() {
   const trim = TRIM_SIZES[state.trim] || TRIM_SIZES["6x9"];
-  const out = marginOutsideInches();
-  const g = marginGutterInches();
-  const inner = out + g;
-  const firstM = marginFirstPageInches();
-  const tout = `${out.toFixed(2)}in`;
-  /** Same left & right so the type column sits on the page center (mirror gutters shift verso/recto off-center in preview). */
-  const hSym = `${((out + inner) / 2).toFixed(3)}in`;
-  const tfirst = `${firstM.toFixed(2)}in`;
+  const { tout, hSym, tfirst } = getPrintPageMarginStrings();
   const bookTitleEsc = escapeCssContent(state.book?.title || "Manuscript");
   const runStack = BODY_FONTS[state.bodyFont] || BODY_FONTS["Literata"];
   let marginBoxes = "";
@@ -581,14 +615,6 @@ function atPageCssBlock() {
   @page :first {
     margin: ${tfirst};
     ${marginBoxes}
-  }
-  .pagedjs_page {
-    --pagedjs-margin-left: ${hSym} !important;
-    --pagedjs-margin-right: ${hSym} !important;
-  }
-  .pagedjs_page.pagedjs_first_page {
-    --pagedjs-margin-left: ${tfirst} !important;
-    --pagedjs-margin-right: ${tfirst} !important;
   }`;
 }
 
@@ -605,6 +631,8 @@ function buildPreviewDocumentHtml(options = {}) {
   const hFont = headingFontCss();
 
   const inner = buildManuscriptBodyHtml(book);
+  const marginStr = getPrintPageMarginStrings();
+  const symmetryJson = JSON.stringify(pagedJsLayoutSymmetryCss(marginStr.hSym, marginStr.tfirst));
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -990,8 +1018,17 @@ function buildPreviewDocumentHtml(options = {}) {
   <script>
     (function () {
       var __ALYSUM_PRINT__ = ${forPrint ? "true" : "false"};
+      var __ALYSUM_PAGED_SYM__ = ${symmetryJson};
       var __alysumPrintScheduled = false;
       function done() {
+        try {
+          if (__ALYSUM_PAGED_SYM__ && document.head && !document.getElementById("alysum-paged-symmetry")) {
+            var sym = document.createElement("style");
+            sym.id = "alysum-paged-symmetry";
+            sym.textContent = __ALYSUM_PAGED_SYM__;
+            document.head.appendChild(sym);
+          }
+        } catch (e0) {}
         try {
           window.parent.postMessage({ type: "alysum-pdf-pages", count: document.querySelectorAll(".pagedjs_page").length }, "*");
         } catch (e) {}
