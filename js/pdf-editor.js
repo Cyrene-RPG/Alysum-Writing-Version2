@@ -680,6 +680,25 @@ function buildPreviewDocumentHtml(options = {}) {
           0 24px 48px rgba(28, 27, 26, 0.06) !important;
       }
     }
+    /*
+     * Paged.js sets per-page --pagedjs-margin-left/right from @page:left/right even when @page is symmetric.
+     * Firefox / DuckDuckGo can keep stale inline columnWidth (px) from that first pass — see ajsReflowPagedColumns().
+     * These !important rules beat non-important inline custom properties from the polyfill.
+     */
+    .pagedjs_page:not(.pagedjs_first_page),
+    .pagedjs_page:not(.pagedjs_first_page) .pagedjs_pagebox {
+      --pagedjs-margin-left: ${marginStr.hSym} !important;
+      --pagedjs-margin-right: ${marginStr.hSym} !important;
+    }
+    .pagedjs_page.pagedjs_first_page,
+    .pagedjs_page.pagedjs_first_page .pagedjs_pagebox {
+      --pagedjs-margin-left: ${marginStr.tfirst} !important;
+      --pagedjs-margin-right: ${marginStr.tfirst} !important;
+    }
+    #manuscript-root {
+      direction: ltr;
+      unicode-bidi: isolate;
+    }
     .part-label {
       font-family: ${bodyFont};
       font-size: 7.5pt;
@@ -991,6 +1010,27 @@ function buildPreviewDocumentHtml(options = {}) {
       var __HS = ${hSymJson};
       var __TF = ${tfirstJson};
       var __alysumPrintScheduled = false;
+      function ajsReflowPagedColumns() {
+        var cgMain =
+          "calc(var(--pagedjs-margin-right) + var(--pagedjs-margin-left) + var(--pagedjs-bleed-right) + var(--pagedjs-bleed-left) + var(--pagedjs-column-gap-offset))";
+        var cgFoot = "calc(var(--pagedjs-margin-right) + var(--pagedjs-margin-left))";
+        document.querySelectorAll(".pagedjs_page_content").forEach(function (area) {
+          var w = area.getBoundingClientRect().width;
+          if (w > 1) {
+            area.style.setProperty("column-width", Math.round(w) + "px", "important");
+            area.style.setProperty("column-gap", cgMain, "important");
+          }
+        });
+        document.querySelectorAll(".pagedjs_footnote_inner_content").forEach(function (el) {
+          var wrap = el.closest(".pagedjs_footnote_area");
+          var noteContent = wrap && wrap.querySelector(".pagedjs_footnote_content");
+          var w = noteContent ? noteContent.getBoundingClientRect().width : el.getBoundingClientRect().width;
+          if (w > 1) {
+            el.style.setProperty("column-width", Math.round(w) + "px", "important");
+            el.style.setProperty("column-gap", cgFoot, "important");
+          }
+        });
+      }
       function ajsPagedSymmetry() {
         var gtc = "[bleed-left] var(--pagedjs-bleed-left) [sheet-center] calc(var(--pagedjs-width) - var(--pagedjs-bleed-left) - var(--pagedjs-bleed-right)) [bleed-right] var(--pagedjs-bleed-right)";
         var gtr = "[bleed-top] var(--pagedjs-bleed-top) [sheet-middle] calc(var(--pagedjs-height) - var(--pagedjs-bleed-top) - var(--pagedjs-bleed-bottom)) [bleed-bottom] var(--pagedjs-bleed-bottom)";
@@ -1022,13 +1062,19 @@ function buildPreviewDocumentHtml(options = {}) {
           sh.style.setProperty("grid-template-columns", gtc, "important");
           sh.style.setProperty("grid-template-rows", gtr, "important");
         });
+        ajsReflowPagedColumns();
       }
       function done() {
         try {
           ajsPagedSymmetry();
           requestAnimationFrame(function () {
             ajsPagedSymmetry();
-            requestAnimationFrame(ajsPagedSymmetry);
+            requestAnimationFrame(function () {
+              ajsPagedSymmetry();
+              [0, 50, 150, 400].forEach(function (ms) {
+                setTimeout(ajsPagedSymmetry, ms);
+              });
+            });
           });
         } catch (e0) {}
         try {
