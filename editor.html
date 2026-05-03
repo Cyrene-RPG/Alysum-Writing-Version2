@@ -529,7 +529,48 @@
             }                                           
         }
     </style>                                            </head>
-<body>                                                      <div class="sidebar mobile-hidden" id="sidebar">
+<body>
+    <div id="obsidianPanel" class="ob-app ob-float ob-theme-mirror hidden" role="dialog" aria-label="Vault notes">
+        <header class="ob-top-hat">
+            <span class="ob-vault-name" id="obMiniVaultLabel">Vault</span>
+            <div class="ob-hat-actions">
+                <button class="ob-hat-btn" id="newNoteBtn" type="button" title="New note">＋</button>
+                <button class="ob-hat-btn" id="deleteNoteBtn" type="button" title="Delete note">⌫</button>
+                <button class="ob-hat-btn" id="openFullObsidianBtn" type="button" title="Open in new window">⇱</button>
+                <button class="ob-hat-btn" id="closeObsidianBtn" type="button" title="Close">×</button>
+            </div>
+        </header>
+        <div class="ob-body">
+            <nav class="ob-ribbon" aria-label="Ribbon">
+                <button type="button" class="ob-rib-btn is-active" title="Files">≡</button>
+                <button type="button" class="ob-rib-btn" title="Search">⌕</button>
+                <button type="button" class="ob-rib-btn" title="Bookmarks">🔖</button>
+            </nav>
+            <div class="ob-work">
+                <div class="ob-columns">
+                    <aside class="ob-left">
+                        <input id="obsidianSearch" class="ob-quick-open" type="search" placeholder="Search vault..." autocomplete="off" />
+                        <div id="obsidianNoteList" class="ob-nav-list"></div>
+                    </aside>
+                    <div class="ob-main" role="main">
+                        <div id="obMiniTabBar" class="ob-tab-strip" role="tablist"></div>
+                        <input id="obsidianNoteTitle" type="text" class="ob-inline-title" placeholder="Untitled" />
+                        <div id="obMiniEditorHost" class="ob-cm-host" aria-label="Note editor"></div>
+                        <footer class="ob-status">
+                            <span class="ob-status-left" id="obMiniStatus">Ready</span>
+                            <div class="ob-status-actions">
+                                <button type="button" class="ob-miniact" id="linkCurrentChapterBtn">Chapter link</button>
+                                <button type="button" class="ob-miniact" id="insertWikiLinkBtn">[[link]]</button>
+                                <button type="button" class="ob-miniact" id="copyNoteBtn">Copy</button>
+                                <button type="button" class="ob-miniact ob-miniact-accent" id="insertNoteBtn">Insert to chapter</button>
+                            </div>
+                        </footer>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+                                                      <div class="sidebar mobile-hidden" id="sidebar">
         <div class="sidebar-top">                                   <div class="sidebar-title-row">                             <div class="sidebar-mini">Manuscript</div>                                                                      <button class="pill-btn secondary" id="renameBookBtn" type="button">Rename</button>
             </div>                                      
             <div class="sidebar-book-title" id="sidebarBookTitle">Loading...</div>
@@ -590,46 +631,6 @@
                                                                     <div class="publish-list" id="publishList"></div>                                                   
             <div class="publish-modal-actions">                         <button class="publish-modal-btn secondary" id="closePublishBtn" type="button">Cancel</button>                  <button class="publish-modal-btn primary" id="publishNextBtn" type="button">Next</button>                   </div>
         </div>                                              </div>
-                                                            <div id="obsidianPanel" class="ob-app ob-float ob-theme-mirror hidden" role="dialog" aria-label="Vault notes">
-        <header class="ob-top-hat">
-            <span class="ob-vault-name" id="obMiniVaultLabel">Vault</span>
-            <div class="ob-hat-actions">
-                <button class="ob-hat-btn" id="newNoteBtn" type="button" title="New note">＋</button>
-                <button class="ob-hat-btn" id="deleteNoteBtn" type="button" title="Delete note">⌫</button>
-                <button class="ob-hat-btn" id="openFullObsidianBtn" type="button" title="Open in new window">⇱</button>
-                <button class="ob-hat-btn" id="closeObsidianBtn" type="button" title="Close">×</button>
-            </div>
-        </header>
-        <div class="ob-body">
-            <nav class="ob-ribbon" aria-label="Ribbon">
-                <button type="button" class="ob-rib-btn is-active" title="Files">≡</button>
-                <button type="button" class="ob-rib-btn" title="Search">⌕</button>
-                <button type="button" class="ob-rib-btn" title="Bookmarks">🔖</button>
-            </nav>
-            <div class="ob-work">
-                <div class="ob-columns">
-                    <aside class="ob-left">
-                        <input id="obsidianSearch" class="ob-quick-open" type="search" placeholder="Search vault..." autocomplete="off" />
-                        <div id="obsidianNoteList" class="ob-nav-list"></div>
-                    </aside>
-                    <main class="ob-main">
-                        <div id="obMiniTabBar" class="ob-tab-strip" role="tablist"></div>
-                        <input id="obsidianNoteTitle" type="text" class="ob-inline-title" placeholder="Untitled" />
-                        <div id="obMiniEditorHost" class="ob-cm-host" aria-label="Note editor"></div>
-                        <footer class="ob-status">
-                            <span class="ob-status-left" id="obMiniStatus">Ready</span>
-                            <div class="ob-status-actions">
-                                <button type="button" class="ob-miniact" id="linkCurrentChapterBtn">Chapter link</button>
-                                <button type="button" class="ob-miniact" id="insertWikiLinkBtn">[[link]]</button>
-                                <button type="button" class="ob-miniact" id="copyNoteBtn">Copy</button>
-                                <button type="button" class="ob-miniact ob-miniact-accent" id="insertNoteBtn">Insert to chapter</button>
-                            </div>
-                        </footer>
-                    </main>
-                </div>
-            </div>
-        </div>
-                                                            </div>
 
     <script type="module">
         import { auth, db } from "./firebase.js";

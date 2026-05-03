@@ -46,23 +46,28 @@ export function mountEditorNotes(bookId) {
 
   const panel = document.getElementById("obsidianPanel");
   const btn = document.getElementById("obsidianBtn");
-  const closeBtn = document.getElementById("closeObsidianBtn");
-  const newNoteBtn = document.getElementById("newNoteBtn");
-  const deleteNoteBtn = document.getElementById("deleteNoteBtn");
-  const openFullBtn = document.getElementById("openFullObsidianBtn");
-  const searchEl = document.getElementById("obsidianSearch");
-  const listEl = document.getElementById("obsidianNoteList");
-  const tabBarEl = document.getElementById("obMiniTabBar");
-  const vaultLabel = document.getElementById("obMiniVaultLabel");
-  const titleEl = document.getElementById("obsidianNoteTitle");
-  const hostEl = document.getElementById("obMiniEditorHost");
-  const linkChBtn = document.getElementById("linkCurrentChapterBtn");
-  const insertWikiBtn = document.getElementById("insertWikiLinkBtn");
-  const copyBtn = document.getElementById("copyNoteBtn");
-  const insertBtn = document.getElementById("insertNoteBtn");
+  const listEl = panel ? panel.querySelector("#obsidianNoteList") : null;
+  const titleEl = panel ? panel.querySelector("#obsidianNoteTitle") : null;
+  const hostEl = panel ? panel.querySelector("#obMiniEditorHost") : null;
+  const closeBtn = panel ? panel.querySelector("#closeObsidianBtn") : null;
+  const newNoteBtn = panel ? panel.querySelector("#newNoteBtn") : null;
+  const deleteNoteBtn = panel ? panel.querySelector("#deleteNoteBtn") : null;
+  const openFullBtn = panel ? panel.querySelector("#openFullObsidianBtn") : null;
+  const searchEl = panel ? panel.querySelector("#obsidianSearch") : null;
+  const tabBarEl = panel ? panel.querySelector("#obMiniTabBar") : null;
+  const vaultLabel = panel ? panel.querySelector("#obMiniVaultLabel") : null;
+  const linkChBtn = panel ? panel.querySelector("#linkCurrentChapterBtn") : null;
+  const insertWikiBtn = panel ? panel.querySelector("#insertWikiLinkBtn") : null;
+  const copyBtn = panel ? panel.querySelector("#copyNoteBtn") : null;
+  const insertBtn = panel ? panel.querySelector("#insertNoteBtn") : null;
 
   if (!panel || !listEl || !titleEl || !hostEl) {
-    console.warn("alysum notes: mini panel DOM missing");
+    console.warn("alysum notes: mini panel DOM missing", {
+      obsidianPanel: !!panel,
+      obsidianNoteList: !!listEl,
+      obsidianNoteTitle: !!titleEl,
+      obMiniEditorHost: !!hostEl
+    });
     return { reload() {} };
   }
 
