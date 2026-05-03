@@ -205,7 +205,7 @@ const SCENE_BREAKS = {
 const state = {
   book: null,
   activeNav: "",
-  zoom: 0.92,
+  zoom: 1,
   trim: "6x9",
   bodyFont: "Crimson Pro",
   headingFont: "match",
@@ -495,6 +495,8 @@ function buildPrintableHtml() {
 }
 
 let previewBlobUrl = null;
+/** After Paged.js lays out, fit page width to the preview column once. */
+let fitPreviewAfterPaged = false;
 
 function resetPreviewScroll() {
   const outer = $("previewOuter");
@@ -535,20 +537,40 @@ function refreshPreview() {
   if (previewBlobUrl) URL.revokeObjectURL(previewBlobUrl);
   previewBlobUrl = URL.createObjectURL(new Blob([html], { type: "text/html" }));
 
+  fitPreviewAfterPaged = true;
   iframe.onload = () => {
     resetPreviewScroll();
-    requestAnimationFrame(resetPreviewScroll);
   };
   iframe.src = previewBlobUrl;
 }
 
+function autoFitPreviewToColumn() {
+  const outer = document.getElementById("previewOuter");
+  const zSlider = document.getElementById("zoomSlider");
+  if (!outer || !TRIM_SIZES[state.trim]) return;
+  const iw = Math.max(240, outer.clientWidth - 20);
+  const trim = TRIM_SIZES[state.trim];
+  const pagePx = parseFloat(trim.width) * 96;
+  if (!pagePx) return;
+  state.zoom = Math.min(1.35, Math.max(0.45, iw / pagePx));
+  if (zSlider) zSlider.value = String(state.zoom);
+  applyZoom();
+}
+
 function applyZoom() {
-  const frame = $("previewFrameWrap");
   const z = state.zoom;
-  frame.style.transform = "";
-  frame.style.transformOrigin = "";
-  frame.style.zoom = String(z);
-  $("zoomPct").textContent = Math.round(z * 100) + "%";
+  const frame = document.getElementById("previewFrameWrap");
+  if (frame) {
+    try {
+      frame.style.transform = "";
+      frame.style.transformOrigin = "";
+      frame.style.zoom = String(z);
+    } catch (_) {
+      frame.style.zoom = "";
+    }
+  }
+  const pct = $("zoomPct");
+  if (pct) pct.textContent = Math.round(z * 100) + "%";
 }
 
 function renderNav(book) {
@@ -743,29 +765,45 @@ async function loadBook(uid) {
   }
 
   setStatus("Loading…");
-  const snap = await getDoc(doc(db, "users", uid, "books", bookId));
+  try {
+    const snap = await getDoc(doc(db, "users", uid, "books", bookId));
 
-  if (!snap.exists()) {
-    setStatus("Book not found", true);
-    $("topBookTitle").textContent = "Not found";
-    $("railWords").textContent = "—";
+    if (!snap.exists()) {
+      setStatus("Book not found", true);
+      $("topBookTitle").textContent = "Not found";
+      $("railWords").textContent = "—";
+      state.book = null;
+      refreshPreview();
+      return;
+    }
+
+    const book = normalizeBookData(snap.data());
+    ensureStructure(book);
+    state.book = book;
+
+    $("topBookTitle").textContent = book.title || "Untitled";
+    const tw = allChaptersFlat(book).reduce((s, ch) => s + countWords(ch.content || ""), 0);
+    $("railWords").textContent = tw.toLocaleString();
+
+    renderNav(book);
+    refreshPreview();
+    applyZoom();
+    setStatus("Ready");
+  } catch (err) {
+    console.error(err);
     state.book = null;
     refreshPreview();
-    return;
+    const code = err && typeof err === "object" && "code" in err ? err.code : "";
+    let msg = "Could not load book.";
+    if (code === "permission-denied") {
+      msg = "No permission to read this book (check Firestore rules).";
+    } else if (err && typeof err === "object" && "message" in err && typeof err.message === "string") {
+      msg = err.message;
+    }
+    setStatus(msg.length > 140 ? msg.slice(0, 137) + "…" : msg, true);
+    $("topBookTitle").textContent = "Error";
+    $("railWords").textContent = "—";
   }
-
-  let book = normalizeBookData(snap.data());
-  ensureStructure(book);
-  state.book = book;
-
-  $("topBookTitle").textContent = book.title || "Untitled";
-  const tw = allChaptersFlat(book).reduce((s, ch) => s + countWords(ch.content || ""), 0);
-  $("railWords").textContent = tw.toLocaleString();
-
-  renderNav(book);
-  refreshPreview();
-  applyZoom();
-  setStatus("Ready");
 }
 
 function openPrintWindow() {
@@ -794,15 +832,24 @@ function init() {
 
   $("btnPrint").addEventListener("click", () => openPrintWindow());
 
-  wirePanel();
+  try {
+    wirePanel();
+  } catch (e) {
+    console.error(e);
+    setStatus("Typesetting panel failed to init — hard refresh (Ctrl+F5)", true);
+  }
 
   window.addEventListener("message", ev => {
     if (ev.data?.type === "alysum-pdf-pages") {
       const n = ev.data.count;
       $("pageInfo").textContent = n ? `${n} pages (preview)` : "Preview";
-      resetPreviewScroll();
-      requestAnimationFrame(resetPreviewScroll);
-      setTimeout(resetPreviewScroll, 100);
+      if (fitPreviewAfterPaged) {
+        fitPreviewAfterPaged = false;
+        requestAnimationFrame(() => {
+          autoFitPreviewToColumn();
+          resetPreviewScroll();
+        });
+      }
     }
   });
 
@@ -818,10 +865,7 @@ function init() {
       window.location.href = "/login.html";
       return;
     }
-    loadBook(user.uid).catch(err => {
-      console.error(err);
-      setStatus("Error loading", true);
-    });
+    loadBook(user.uid);
   });
 }
 
