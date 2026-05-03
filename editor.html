@@ -1498,8 +1498,7 @@ exportBtn.addEventListener("click", () => {
     return;
   }
 
-  // 👇 This is the connection to your formatter
-  window.location.href = `/format.html?book=${bookId}`;
+  window.location.href = `/pdf-editor.html?book=${encodeURIComponent(bookId)}`;
 });
         });                                                 </script>
                                                         </body>
