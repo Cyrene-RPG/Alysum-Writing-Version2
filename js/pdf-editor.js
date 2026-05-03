@@ -908,6 +908,7 @@ function buildPreviewDocumentHtml(options = {}) {
       .pdf-body p,
       .pdf-body p.pdf-para {
         text-align: justify;
+        text-align-last: left;
         text-indent: ${state.paragraphIndent};
       }
       .pdf-chapter-prose .pdf-body > p:first-child,
@@ -926,6 +927,7 @@ function buildPreviewDocumentHtml(options = {}) {
     .pdf-body div:not(.scene-break):not(.scene-spacer) {
       margin: 0 0 0.32em;
       text-align: justify;
+      text-align-last: left;
       text-indent: ${state.paragraphIndent};
       orphans: 2;
       widows: 3;
@@ -1028,10 +1030,10 @@ function buildPreviewDocumentHtml(options = {}) {
         var gtr =
           "[bleed-top] var(--pagedjs-bleed-top) [sheet-middle] calc(var(--pagedjs-height) - var(--pagedjs-bleed-top) - var(--pagedjs-bleed-bottom)) [bleed-bottom] var(--pagedjs-bleed-bottom)";
         /*
-         * If --pagedjs-pagebox-width does not match the sheet "center" cell, the pagebox stays narrower and
-         * grid default alignment pins it to the start (left) — exactly the wide-right / tight-left you see in
-         * Firefox / DuckDuckGo preview and print. Fill the cell and use 1fr for the type column so the center
-         * track always absorbs the remaining width between symmetric margin tracks.
+         * If the pagebox is narrower than the sheet center cell, default grid alignment pins it left (wide
+         * empty band on the right). Center it with justify-self — do NOT set --pagedjs-pagebox-width to 100%;
+         * that breaks Paged.js calcs (margin bands, columns, breaks) and makes layout look "unformatted".
+         * Use 1fr for the inner text grid center track so it always fills space between symmetric margins.
          */
         st.textContent =
           "html body .pagedjs_pages > .pagedjs_page.pagedjs_left_page,\\n" +
@@ -1050,14 +1052,10 @@ function buildPreviewDocumentHtml(options = {}) {
           " !important;\\n" +
           "}\\n" +
           "html body .pagedjs_pages > .pagedjs_page:not(.pagedjs_first_page) > .pagedjs_sheet > .pagedjs_pagebox {\\n" +
-          "  width: 100% !important;\\n" +
-          "  height: 100% !important;\\n" +
-          "  max-width: none !important;\\n" +
-          "  justify-self: stretch !important;\\n" +
-          "  align-self: stretch !important;\\n" +
+          "  width: var(--pagedjs-pagebox-width) !important;\\n" +
+          "  height: var(--pagedjs-pagebox-height) !important;\\n" +
           "  box-sizing: border-box !important;\\n" +
-          "  --pagedjs-pagebox-width: 100% !important;\\n" +
-          "  --pagedjs-pagebox-height: 100% !important;\\n" +
+          "  justify-self: center !important;\\n" +
           "  grid-template-columns: [left] " +
           hs +
           " [center] 1fr [right] " +
@@ -1065,14 +1063,10 @@ function buildPreviewDocumentHtml(options = {}) {
           " !important;\\n" +
           "}\\n" +
           "html body .pagedjs_pages > .pagedjs_page.pagedjs_first_page > .pagedjs_sheet > .pagedjs_pagebox {\\n" +
-          "  width: 100% !important;\\n" +
-          "  height: 100% !important;\\n" +
-          "  max-width: none !important;\\n" +
-          "  justify-self: stretch !important;\\n" +
-          "  align-self: stretch !important;\\n" +
+          "  width: var(--pagedjs-pagebox-width) !important;\\n" +
+          "  height: var(--pagedjs-pagebox-height) !important;\\n" +
           "  box-sizing: border-box !important;\\n" +
-          "  --pagedjs-pagebox-width: 100% !important;\\n" +
-          "  --pagedjs-pagebox-height: 100% !important;\\n" +
+          "  justify-self: center !important;\\n" +
           "  grid-template-columns: [left] " +
           tf +
           " [center] 1fr [right] " +
