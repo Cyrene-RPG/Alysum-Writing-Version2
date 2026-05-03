@@ -642,34 +642,6 @@ function openPrintWindow() {
   });
 }
 
-async function tryServerPdf() {
-  const html = buildPrintableHtml();
-  setStatus("Exporting…");
-  try {
-    const res = await fetch("/api/pdf", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ html, options: { usePagedJs: true } })
-    });
-    if (!res.ok) {
-      const t = await res.text();
-      throw new Error(t || res.statusText);
-    }
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${(state.book?.title || "book").replace(/[^\w\-]+/g, "_")}.pdf`;
-    a.click();
-    URL.revokeObjectURL(url);
-    setStatus("Downloaded");
-  } catch (e) {
-    console.error(e);
-    setStatus("Cloud export failed — use Print", true);
-    openPrintWindow();
-  }
-}
-
 function init() {
   $("btnBack").addEventListener("click", () => {
     const q = bookId ? `?book=${encodeURIComponent(bookId)}` : "";
@@ -677,7 +649,6 @@ function init() {
   });
 
   $("btnPrint").addEventListener("click", () => openPrintWindow());
-  $("btnServerPdf").addEventListener("click", () => tryServerPdf());
 
   wirePanel();
 
@@ -692,7 +663,6 @@ function init() {
     setStatus("Add ?book=… to the URL", true);
     $("topBookTitle").textContent = "No book selected";
     $("btnPrint").disabled = true;
-    $("btnServerPdf").disabled = true;
     return;
   }
 

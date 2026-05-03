@@ -4,17 +4,9 @@
     "ignore": [
       "firebase.json",
       "**/.*",
-      "**/node_modules/**",
-      "exporter/**"
+      "**/node_modules/**"
     ],
     "rewrites": [
-      {
-        "source": "/api/**",
-        "run": {
-          "serviceId": "pdf-exporter",
-          "region": "us-central1"
-        }
-      },
       {
         "source": "**",
         "destination": "/index.html"

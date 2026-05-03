@@ -22,8 +22,7 @@
       <div class="topbar-right">
         <span class="status-pill" id="statusPill"></span>
         <button type="button" class="btn btn-ghost" id="btnBack">← Manuscript</button>
-        <button type="button" class="btn btn-secondary" id="btnServerPdf" title="Uses your hosted /api/pdf when available">Download PDF</button>
-        <button type="button" class="btn btn-primary" id="btnPrint">Print / Save as PDF</button>
+        <button type="button" class="btn btn-primary" id="btnPrint" title="Uses your browser on this phone or computer. The book is not sent to a PDF conversion server.">Print / Save as PDF</button>
       </div>
     </header>
 
@@ -35,6 +34,7 @@
       <div class="rail-scroll" id="navScroll"></div>
       <div class="rail-footer">
         Same book as <a href="#" id="linkEditor">editor.html</a> — Firestore path <code>users/…/books/…</code>
+        <p class="local-export-note">Preview and <strong>Print / Save as PDF</strong> run on <strong>this device</strong> only. Alysum does not upload your manuscript to a separate PDF server.</p>
       </div>
     </aside>
 

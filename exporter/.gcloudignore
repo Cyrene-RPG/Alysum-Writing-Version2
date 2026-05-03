@@ -1,5 +1,0 @@
-# Speed up `gcloud run deploy --source` uploads (dependencies install in Dockerfile).
-node_modules
-npm-debug.log
-smoke.js
-smoke.pdf

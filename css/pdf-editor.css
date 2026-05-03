@@ -295,6 +295,13 @@ a:hover {
   background: var(--rail-bg-deep);
 }
 
+.rail-footer .local-export-note {
+  margin: 10px 0 0;
+  line-height: 1.45;
+  font-size: 11px;
+  color: #cbd5e1;
+}
+
 /* ——— Center preview stage ——— */
 .stage {
   grid-row: 2;
