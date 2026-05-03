@@ -1027,8 +1027,12 @@ function buildPreviewDocumentHtml(options = {}) {
           "[bleed-left] var(--pagedjs-bleed-left) [sheet-center] calc(var(--pagedjs-width) - var(--pagedjs-bleed-left) - var(--pagedjs-bleed-right)) [bleed-right] var(--pagedjs-bleed-right)";
         var gtr =
           "[bleed-top] var(--pagedjs-bleed-top) [sheet-middle] calc(var(--pagedjs-height) - var(--pagedjs-bleed-top) - var(--pagedjs-bleed-bottom)) [bleed-bottom] var(--pagedjs-bleed-bottom)";
-        var ctr = "calc(var(--pagedjs-pagebox-width) - " + hs + " - " + hs + ")";
-        var ctrF = "calc(var(--pagedjs-pagebox-width) - " + tf + " - " + tf + ")";
+        /*
+         * If --pagedjs-pagebox-width does not match the sheet "center" cell, the pagebox stays narrower and
+         * grid default alignment pins it to the start (left) — exactly the wide-right / tight-left you see in
+         * Firefox / DuckDuckGo preview and print. Fill the cell and use 1fr for the type column so the center
+         * track always absorbs the remaining width between symmetric margin tracks.
+         */
         st.textContent =
           "html body .pagedjs_pages > .pagedjs_page.pagedjs_left_page,\\n" +
           "html body .pagedjs_pages > .pagedjs_page.pagedjs_right_page {\\n" +
@@ -1046,20 +1050,32 @@ function buildPreviewDocumentHtml(options = {}) {
           " !important;\\n" +
           "}\\n" +
           "html body .pagedjs_pages > .pagedjs_page:not(.pagedjs_first_page) > .pagedjs_sheet > .pagedjs_pagebox {\\n" +
+          "  width: 100% !important;\\n" +
+          "  height: 100% !important;\\n" +
+          "  max-width: none !important;\\n" +
+          "  justify-self: stretch !important;\\n" +
+          "  align-self: stretch !important;\\n" +
+          "  box-sizing: border-box !important;\\n" +
+          "  --pagedjs-pagebox-width: 100% !important;\\n" +
+          "  --pagedjs-pagebox-height: 100% !important;\\n" +
           "  grid-template-columns: [left] " +
           hs +
-          " [center] " +
-          ctr +
-          " [right] " +
+          " [center] 1fr [right] " +
           hs +
           " !important;\\n" +
           "}\\n" +
           "html body .pagedjs_pages > .pagedjs_page.pagedjs_first_page > .pagedjs_sheet > .pagedjs_pagebox {\\n" +
+          "  width: 100% !important;\\n" +
+          "  height: 100% !important;\\n" +
+          "  max-width: none !important;\\n" +
+          "  justify-self: stretch !important;\\n" +
+          "  align-self: stretch !important;\\n" +
+          "  box-sizing: border-box !important;\\n" +
+          "  --pagedjs-pagebox-width: 100% !important;\\n" +
+          "  --pagedjs-pagebox-height: 100% !important;\\n" +
           "  grid-template-columns: [left] " +
           tf +
-          " [center] " +
-          ctrF +
-          " [right] " +
+          " [center] 1fr [right] " +
           tf +
           " !important;\\n" +
           "}\\n" +
