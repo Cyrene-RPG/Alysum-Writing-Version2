@@ -412,7 +412,7 @@ function buildAutoTocSection(book) {
   const tocBody = links
     ? `<nav class="pdf-toc" aria-label="Table of contents"><ol>${links}</ol></nav>`
     : `<p class="pdf-toc-empty">Chapters will appear here.</p>`;
-  return `<article class="pdf-chapter pdf-toc-article chapter-start" id="${navId(
+  return `<article class="pdf-chapter pdf-toc-article" id="${navId(
     "front",
     1
   )}" data-section="front">
@@ -454,30 +454,43 @@ function buildChapterArticle(section, index, ch, opts = {}) {
 
 function buildManuscriptBodyHtml(book) {
   const brk = SCENE_BREAKS[state.sceneBreak] || SCENE_BREAKS.asterism;
-  const parts = [];
+  /** Scene ornaments only between body/back chapters — never between title, copyright, TOC, or extra front matter (Reedsy-style). */
+  const segments = [];
 
-  parts.push(buildTitlePageSection(book));
+  segments.push({ html: buildTitlePageSection(book), kind: "preface" });
 
   const front = book.sections.front || [];
   if (front[0]) {
-    parts.push(buildChapterArticle("front", 0, front[0], { isCopyright: true }));
+    segments.push({ html: buildChapterArticle("front", 0, front[0], { isCopyright: true }), kind: "preface" });
   }
-  parts.push(buildAutoTocSection(book));
+  segments.push({ html: buildAutoTocSection(book), kind: "preface" });
   for (let i = 2; i < front.length; i++) {
-    parts.push(buildChapterArticle("front", i, front[i], {}));
+    segments.push({ html: buildChapterArticle("front", i, front[i], {}), kind: "preface" });
   }
 
   const bodyList = book.sections.body || [];
   bodyList.forEach((ch, index) => {
-    parts.push(buildChapterArticle("body", index, ch, {}));
+    segments.push({ html: buildChapterArticle("body", index, ch, {}), kind: "body" });
   });
 
   const backList = book.sections.back || [];
   backList.forEach((ch, index) => {
-    parts.push(buildChapterArticle("back", index, ch, {}));
+    segments.push({ html: buildChapterArticle("back", index, ch, {}), kind: "back" });
   });
 
-  return parts.map((html, i) => (i < parts.length - 1 ? html + brk : html)).join("\n");
+  const chunks = [];
+  for (let i = 0; i < segments.length; i++) {
+    chunks.push(segments[i].html);
+    if (i >= segments.length - 1) break;
+    const a = segments[i];
+    const b = segments[i + 1];
+    const useScene =
+      (a.kind === "body" && b.kind === "body") ||
+      (a.kind === "body" && b.kind === "back") ||
+      (a.kind === "back" && b.kind === "back");
+    if (useScene) chunks.push(brk);
+  }
+  return chunks.join("\n");
 }
 
 function headingFontCss() {
@@ -503,7 +516,11 @@ function atPageCssBlock() {
   return `@page { size: ${trim.width} ${trim.height}; margin: ${margin}; ${running} }`;
 }
 
-function buildPreviewDocumentHtml() {
+/**
+ * @param {{ forPrint?: boolean }} [options]
+ */
+function buildPreviewDocumentHtml(options = {}) {
+  const forPrint = Boolean(options.forPrint);
   const book = state.book;
   if (!book) return "";
 
@@ -573,10 +590,46 @@ function buildPreviewDocumentHtml() {
       color: #94a3b8;
       margin-bottom: 0.6rem;
     }
-    .pdf-chapter { break-inside: avoid; }
-    .pdf-chapter.chapter-start { break-before: page; }
-    .pdf-title-page { break-before: auto; }
-    .pdf-chapter:first-of-type { break-before: auto; }
+    /* Do not use break-inside:avoid on whole chapters — it glues title+TOC+text onto one sheet in print. */
+    .pdf-title-page,
+    .pdf-copyright-page,
+    .pdf-toc-article {
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+    .pdf-chapter.chapter-start {
+      break-before: page;
+      page-break-before: always;
+    }
+    .pdf-title-page {
+      break-before: auto;
+      page-break-before: auto;
+    }
+    .pdf-chapter:first-of-type {
+      break-before: auto;
+      page-break-before: auto;
+    }
+    .pdf-title-page {
+      break-after: page;
+      page-break-after: always;
+    }
+    .pdf-copyright-page {
+      break-before: page;
+      page-break-before: always;
+      break-after: page;
+      page-break-after: always;
+    }
+    .pdf-toc-article {
+      break-before: page;
+      page-break-before: always;
+      break-after: page;
+      page-break-after: always;
+    }
+    /* TOC already ends with a page break; drop duplicate break-before on the next chapter. */
+    .pdf-toc-article + .pdf-chapter.chapter-start {
+      break-before: auto;
+      page-break-before: auto;
+    }
     .pdf-h1 {
       font-family: ${hFont};
       font-size: 1.35rem;
@@ -654,6 +707,11 @@ function buildPreviewDocumentHtml() {
       margin: 16vh 0 2.75rem;
       line-height: 1.3;
     }
+    .pdf-chapter-prose .pdf-body {
+      hyphens: auto;
+      -webkit-hyphens: auto;
+      hyphenate-limit-chars: 6 3 3;
+    }
     .pdf-toc-article .pdf-h1 {
       text-align: center;
       font-weight: 600;
@@ -672,11 +730,29 @@ function buildPreviewDocumentHtml() {
       break-inside: avoid;
     }
     .pdf-toc a {
-      color: inherit;
-      text-decoration: none;
+      color: inherit !important;
+      text-decoration: none !important;
+      -webkit-text-fill-color: inherit;
+    }
+    .pdf-toc a:link,
+    .pdf-toc a:visited {
+      color: inherit !important;
     }
     .pdf-toc a::after {
       content: leader('.') target-counter(attr(href url), page);
+    }
+    @media print {
+      .pdf-toc a,
+      .pdf-toc a:link,
+      .pdf-toc a:visited {
+        color: #000 !important;
+        text-decoration: none !important;
+      }
+      .pdf-body p,
+      .pdf-body p.pdf-para {
+        text-align: justify;
+        text-indent: ${state.paragraphIndent};
+      }
     }
     .pdf-toc-empty {
       font-style: italic;
@@ -759,10 +835,24 @@ function buildPreviewDocumentHtml() {
   <script src="https://cdn.jsdelivr.net/npm/pagedjs@0.4.3/dist/paged.polyfill.js"><\/script>
   <script>
     (function () {
+      var __ALYSUM_PRINT__ = ${forPrint ? "true" : "false"};
+      var __alysumPrintScheduled = false;
       function done() {
         try {
           window.parent.postMessage({ type: "alysum-pdf-pages", count: document.querySelectorAll(".pagedjs_page").length }, "*");
         } catch (e) {}
+        if (typeof __ALYSUM_PRINT__ !== "undefined" && __ALYSUM_PRINT__ && !__alysumPrintScheduled) {
+          __alysumPrintScheduled = true;
+          try {
+            document.__alysumPrintFired = true;
+          } catch (e2) {}
+          setTimeout(function () {
+            try {
+              window.focus();
+              window.print();
+            } catch (err) {}
+          }, 650);
+        }
       }
       function runPaged() {
         try {
@@ -793,7 +883,7 @@ function buildPreviewDocumentHtml() {
 }
 
 function buildPrintableHtml() {
-  return buildPreviewDocumentHtml();
+  return buildPreviewDocumentHtml({ forPrint: true });
 }
 
 let previewBlobUrl = null;
@@ -1173,12 +1263,16 @@ function openPrintWindow() {
   w.document.open();
   w.document.write(html);
   w.document.close();
-  w.addEventListener("load", () => {
-    setTimeout(() => {
-      w.focus();
-      w.print();
-    }, 800);
-  });
+  /* Print runs after Paged.js finishes (see __ALYSUM_PRINT__ in document). Fallback if script never fires. */
+  setTimeout(function () {
+    try {
+      if (w.document.querySelector(".pagedjs_page") && !w.document.__alysumPrintFired) {
+        w.document.__alysumPrintFired = true;
+        w.focus();
+        w.print();
+      }
+    } catch (e) {}
+  }, 12000);
 }
 
 function wirePrintOverrideInputs() {
