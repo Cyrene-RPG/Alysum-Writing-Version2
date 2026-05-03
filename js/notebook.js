@@ -18,7 +18,7 @@ import {
 
 marked.use({ gfm: true, breaks: true });
 
-const BUILD = "notebook-20260503b";
+const BUILD = "notebook-20260503d";
 
 function escapeHtml(s) {
   return String(s)
