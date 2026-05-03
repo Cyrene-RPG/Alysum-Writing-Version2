@@ -222,7 +222,7 @@ const state = {
   marginPreset: "bn",
   chapterNewPage: true,
   dropCap: false,
-  headerFooter: "page",
+  headerFooter: "title-page",
   sceneBreak: "asterism",
   showPartLabels: false
 };
@@ -261,19 +261,59 @@ function escapeCssContent(str) {
     .replace(/\r?\n/g, " ");
 }
 
-function googleFontHref() {
-  const families = new Set([
-    "EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400",
-    "Libre+Baskerville:ital,wght@0,400;0,700;1,400",
-    "Crimson Pro:ital,wght@0,400;0,600;0,700;1,400",
-    "Lora:ital,wght@0,400;0,600;0,700;1,400",
-    "Merriweather:ital,wght@0,400;0,700;1,400",
-    "Literata:ital,wght@0,400;0,600;0,700;1,400",
-    "Source Serif 4:ital,wght@0,400;0,600;0,700;1,400",
-    "Source Sans 3:ital,wght@0,500;0,600;0,700;1,400"
-  ]);
-  const q = [...families].map(f => `family=${encodeURIComponent(f)}`).join("&");
-  return `https://fonts.googleapis.com/css2?${q}&display=swap`;
+/**
+ * Same-origin font faces for the Paged.js iframe / print document.
+ * Do not load fonts.googleapis.com/css2 inside the blob — Paged.js re-fetches stylesheets via XHR,
+ * which googleapis blocks (no Access-Control-Allow-Origin). gstatic font files are fine.
+ */
+function printFontStylesheetHref() {
+  try {
+    if (typeof location !== "undefined" && location.origin && location.protocol !== "file:") {
+      return `${location.origin}/css/pdf-print-fontfaces.css`;
+    }
+  } catch (_) {
+    /* ignore */
+  }
+  return "/css/pdf-print-fontfaces.css";
+}
+
+/** Fetched once; inlined into the blob/print HTML so Paged.js never XHRs fonts.googleapis.com (CORS). */
+/** @type {string | undefined} */
+let printFontFacesInlineCss = undefined;
+/** @type {Promise<string> | null} */
+let printFontFacesLoadPromise = null;
+
+function ensurePrintFontFacesCss() {
+  if (printFontFacesInlineCss !== undefined) {
+    return Promise.resolve(printFontFacesInlineCss);
+  }
+  if (!printFontFacesLoadPromise) {
+    const href = printFontStylesheetHref();
+    printFontFacesLoadPromise = fetch(href, { credentials: "same-origin", cache: "force-cache" })
+      .then(r => {
+        if (!r.ok) throw new Error(String(r.status));
+        return r.text();
+      })
+      .then(text => {
+        printFontFacesInlineCss = text;
+        return text;
+      })
+      .catch(err => {
+        console.warn("alysum: could not load /css/pdf-print-fontfaces.css — using fallback fonts", err);
+        printFontFacesInlineCss = "";
+        return "";
+      });
+  }
+  return printFontFacesLoadPromise;
+}
+
+function printFontHeadBlock() {
+  if (printFontFacesInlineCss === undefined) {
+    return `<link rel="stylesheet" href="${printFontStylesheetHref()}" />`;
+  }
+  if (!printFontFacesInlineCss) return "";
+  const safe = printFontFacesInlineCss.replace(/<\/style/gi, "<\\/style");
+  return `<style class="alysum-print-fontfaces">\n${safe}\n</style>`;
 }
 
 function navId(section, index) {
@@ -580,7 +620,7 @@ function buildPreviewDocumentHtml(options = {}) {
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <link rel="stylesheet" href="${googleFontHref()}" />
+  ${printFontHeadBlock()}
   <style>
     ${atPageCssBlock()}
     :root {
@@ -1001,15 +1041,17 @@ function refreshPreview() {
   placeholder.classList.add("hidden");
   iframe.classList.remove("hidden");
 
-  const html = buildPreviewDocumentHtml();
-  if (previewBlobUrl) URL.revokeObjectURL(previewBlobUrl);
-  previewBlobUrl = URL.createObjectURL(new Blob([html], { type: "text/html" }));
+  ensurePrintFontFacesCss().then(() => {
+    const html = buildPreviewDocumentHtml();
+    if (previewBlobUrl) URL.revokeObjectURL(previewBlobUrl);
+    previewBlobUrl = URL.createObjectURL(new Blob([html], { type: "text/html" }));
 
-  fitPreviewAfterPaged = true;
-  iframe.onload = () => {
-    resetPreviewScroll();
-  };
-  iframe.src = previewBlobUrl;
+    fitPreviewAfterPaged = true;
+    iframe.onload = () => {
+      resetPreviewScroll();
+    };
+    iframe.src = previewBlobUrl;
+  });
 }
 
 function autoFitPreviewToColumn() {
@@ -1329,7 +1371,8 @@ async function loadBook(uid) {
   }
 }
 
-function openPrintWindow() {
+async function openPrintWindow() {
+  await ensurePrintFontFacesCss();
   const html = buildPrintableHtml();
   const w = window.open("", "_blank");
   if (!w) {
@@ -1376,7 +1419,12 @@ function init() {
     window.location.href = "/editor.html" + q;
   });
 
-  $("btnPrint").addEventListener("click", () => openPrintWindow());
+  $("btnPrint").addEventListener("click", () => {
+    openPrintWindow().catch(e => {
+      console.error(e);
+      alert("Could not prepare fonts for printing. Check your connection and try again.");
+    });
+  });
 
   try {
     wirePanel();
@@ -1386,6 +1434,7 @@ function init() {
   }
 
   wirePrintOverrideInputs();
+  ensurePrintFontFacesCss().catch(() => {});
 
   window.addEventListener("message", ev => {
     if (ev.data?.type === "alysum-pdf-pages") {
