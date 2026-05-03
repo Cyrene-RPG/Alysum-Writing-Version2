@@ -1,6 +1,7 @@
 /**
- * CodeMirror 6 markdown editor — same core model as Obsidian’s source editor.
- * All @codemirror/* versions aligned for jsdelivr ESM.
+ * CodeMirror 6 markdown editor.
+ * Single CDN (esm.sh) so @codemirror/state and @lezer/* are deduped — mixing jsdelivr
+ * +esm bundles causes "Cannot read properties of undefined (reading 'deserialize')".
  */
 import {
   EditorView,
@@ -13,7 +14,7 @@ import {
   rectangularSelection,
   crosshairCursor,
   highlightSpecialChars
-} from "https://cdn.jsdelivr.net/npm/@codemirror/view@6.36.1/+esm";
+} from "https://esm.sh/@codemirror/view@6.36.1";
 import {
   defaultHighlightStyle,
   syntaxHighlighting,
@@ -21,17 +22,17 @@ import {
   bracketMatching,
   foldGutter,
   foldKeymap
-} from "https://cdn.jsdelivr.net/npm/@codemirror/language@6.10.8/+esm";
-import { defaultKeymap, history, historyKeymap, indentWithTab } from "https://cdn.jsdelivr.net/npm/@codemirror/commands@6.7.1/+esm";
-import { highlightSelectionMatches, searchKeymap } from "https://cdn.jsdelivr.net/npm/@codemirror/search@6.5.9/+esm";
+} from "https://esm.sh/@codemirror/language@6.10.8";
+import { defaultKeymap, history, historyKeymap, indentWithTab } from "https://esm.sh/@codemirror/commands@6.7.1";
+import { highlightSelectionMatches, searchKeymap } from "https://esm.sh/@codemirror/search@6.5.9";
 import {
   autocompletion,
   completionKeymap,
   closeBrackets,
   closeBracketsKeymap
-} from "https://cdn.jsdelivr.net/npm/@codemirror/autocomplete@6.18.4/+esm";
-import { EditorState } from "https://cdn.jsdelivr.net/npm/@codemirror/state@6.5.0/+esm";
-import { markdown } from "https://cdn.jsdelivr.net/npm/@codemirror/lang-markdown@6.3.2/+esm";
+} from "https://esm.sh/@codemirror/autocomplete@6.18.4";
+import { EditorState } from "https://esm.sh/@codemirror/state@6.5.0";
+import { markdown } from "https://esm.sh/@codemirror/lang-markdown@6.3.2";
 
 const obsidianEditorTheme = EditorView.theme(
   {

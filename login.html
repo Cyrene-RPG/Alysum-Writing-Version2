@@ -70,6 +70,27 @@
             text-decoration: none;
             font-weight: 600;
         }
+
+        #error-msg {
+            display: none;
+            margin-top: 12px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            font-size: 14px;
+            line-height: 1.45;
+            color: #7f1d1d;
+            background: #fee2e2;
+            border: 1px solid #fecaca;
+        }
+
+        #error-msg.visible {
+            display: block;
+        }
+
+        button:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 
@@ -78,10 +99,11 @@
 <div class="card">
     <h2>Welcome Back</h2>
 
-    <input id="email" type="email" placeholder="Email">
-    <input id="password" type="password" placeholder="Password">
+    <input id="email" type="email" placeholder="Email" autocomplete="username">
+    <input id="password" type="password" placeholder="Password" autocomplete="current-password">
 
-    <button onclick="login()">Enter Studio</button>
+    <button type="button" id="login-btn" onclick="login()">Enter Studio</button>
+    <p id="error-msg" role="alert"></p>
 
     <div class="signup-link">
         New here? <a href="/signup.html">Create account</a>
@@ -92,25 +114,85 @@
 import { auth } from "./firebase.js";
 import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
+const errorEl = document.getElementById("error-msg");
+const loginBtn = document.getElementById("login-btn");
+
+function showError(text) {
+    errorEl.textContent = text;
+    errorEl.classList.add("visible");
+}
+
+function clearError() {
+    errorEl.textContent = "";
+    errorEl.classList.remove("visible");
+}
+
+function authMessage(code) {
+    switch (code) {
+        case "auth/too-many-requests":
+            return "Too many sign-in attempts. Wait 15–30 minutes before trying again, or try from another network if you were testing with the wrong password.";
+        case "auth/wrong-password":
+        case "auth/invalid-credential":
+        case "auth/invalid-login-credentials":
+            return "Email or password is incorrect.";
+        case "auth/user-not-found":
+            return "No account found for this email.";
+        case "auth/user-disabled":
+            return "This account has been disabled.";
+        case "auth/invalid-email":
+            return "That email address does not look valid.";
+        case "auth/network-request-failed":
+            return "Network error. Check your connection and try again.";
+        default:
+            return null;
+    }
+}
+
+let loginInFlight = false;
+let cooldownUntil = 0;
+
 window.login = async function () {
-
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
-
-    if (!email || !password) {
-        alert("Enter email and password");
+    if (loginInFlight) return;
+    if (Date.now() < cooldownUntil) {
+        const s = Math.ceil((cooldownUntil - Date.now()) / 1000);
+        showError(`Please wait ${s}s before trying again.`);
         return;
     }
 
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
+
+    if (!email || !password) {
+        showError("Enter email and password.");
+        return;
+    }
+
+    clearError();
+    loginInFlight = true;
+    loginBtn.disabled = true;
+
     try {
         await signInWithEmailAndPassword(auth, email, password);
-
         window.location.href = "/studio.html";
-
     } catch (e) {
-        alert(e.message);
+        const code = e && e.code;
+        const friendly = authMessage(code) || (e && e.message) || "Sign-in failed.";
+        showError(friendly);
+        if (code === "auth/too-many-requests") {
+            cooldownUntil = Date.now() + 90_000;
+        }
+    } finally {
+        loginInFlight = false;
+        loginBtn.disabled = false;
     }
 };
+
+document.getElementById("password").addEventListener("keydown", (ev) => {
+    if (ev.key === "Enter") {
+        ev.preventDefault();
+        window.login();
+    }
+});
 </script>
 
 </body>

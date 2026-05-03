@@ -66,6 +66,27 @@
             text-decoration: none;
             font-weight: 600;
         }
+
+        #error-msg {
+            display: none;
+            margin-top: 12px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            font-size: 14px;
+            line-height: 1.45;
+            color: #7f1d1d;
+            background: #fee2e2;
+            border: 1px solid #fecaca;
+        }
+
+        #error-msg.visible {
+            display: block;
+        }
+
+        button:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 
@@ -74,11 +95,12 @@
 <div class="card">
     <h2>Create Account</h2>
 
-    <input id="username" placeholder="Username">
-    <input id="email" type="email" placeholder="Email">
-    <input id="password" type="password" placeholder="Password">
+    <input id="username" placeholder="Username" autocomplete="username">
+    <input id="email" type="email" placeholder="Email" autocomplete="email">
+    <input id="password" type="password" placeholder="Password" autocomplete="new-password">
 
-    <button onclick="signup()">Create Account</button>
+    <button type="button" id="signup-btn" onclick="signup()">Create Account</button>
+    <p id="error-msg" role="alert"></p>
 
     <div class="link">
         Already have an account? <a href="/login.html">Login</a>
@@ -90,22 +112,57 @@ import { auth, db } from "./firebase.js";
 import { createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-window.signup = async function () {
+const errorEl = document.getElementById("error-msg");
+const signupBtn = document.getElementById("signup-btn");
 
-    const username = document.getElementById("username").value;
-    const email = document.getElementById("email").value;
+function showError(text) {
+    errorEl.textContent = text;
+    errorEl.classList.add("visible");
+}
+
+function clearError() {
+    errorEl.textContent = "";
+    errorEl.classList.remove("visible");
+}
+
+function signupAuthMessage(code) {
+    switch (code) {
+        case "auth/too-many-requests":
+            return "Too many attempts from this network. Wait several minutes and try again.";
+        case "auth/email-already-in-use":
+            return "That email is already registered. Try logging in instead.";
+        case "auth/invalid-email":
+            return "That email address does not look valid.";
+        case "auth/weak-password":
+            return "Password is too weak. Use at least 6 characters.";
+        case "auth/network-request-failed":
+            return "Network error. Check your connection and try again.";
+        default:
+            return null;
+    }
+}
+
+let signupInFlight = false;
+
+window.signup = async function () {
+    if (signupInFlight) return;
+
+    const username = document.getElementById("username").value.trim();
+    const email = document.getElementById("email").value.trim();
     const password = document.getElementById("password").value;
 
     if (!username || !email || !password) {
-        alert("Fill all fields");
+        showError("Fill all fields.");
         return;
     }
 
+    clearError();
+    signupInFlight = true;
+    signupBtn.disabled = true;
+
     try {
-        // Create user in Firebase Auth
         const cred = await createUserWithEmailAndPassword(auth, email, password);
 
-        // 🔥 Create Firestore user document (THIS FIXES YOUR ISSUE)
         await setDoc(doc(db, "users", cred.user.uid), {
             username: username,
             words: 0,
@@ -113,15 +170,23 @@ window.signup = async function () {
             streak: 0
         });
 
-        alert("Account created!");
-
-        // Redirect to studio
         window.location.href = "/studio.html";
-
     } catch (e) {
-        alert(e.message);
+        const code = e && e.code;
+        const friendly = signupAuthMessage(code) || (e && e.message) || "Could not create account.";
+        showError(friendly);
+    } finally {
+        signupInFlight = false;
+        signupBtn.disabled = false;
     }
 };
+
+document.getElementById("password").addEventListener("keydown", (ev) => {
+    if (ev.key === "Enter") {
+        ev.preventDefault();
+        window.signup();
+    }
+});
 </script>
 
 </body>
