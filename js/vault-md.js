@@ -11,7 +11,6 @@ function escapeAttr(s) {
 }
 
 /**
- * Markdown → HTML for reading view; [[wikilinks]] become clickable spans.
  * @param {string} markdownSource
  */
 export function renderMarkdownPreview(markdownSource) {

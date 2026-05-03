@@ -1,6 +1,6 @@
 import { vaultStorageKey, loadVault, persistVault, createNote } from "./notes-vault.js";
-import { renderFileExplorer } from "./notes-file-explorer.js";
-import { renderTabStrip } from "./notes-tab-strip.js";
+import { renderFileExplorer, renderTabStrip } from "./vault-tree.js";
+import { createVaultTextarea } from "./vault-textarea.js";
 
 function escapeHtml(s) {
   return String(s)
@@ -28,7 +28,7 @@ function currentChapterTitle() {
 }
 
 function setMiniStatus(text) {
-  const el = document.getElementById("obMiniStatus");
+  const el = document.getElementById("vaultMiniStatus");
   if (el) el.textContent = text;
 }
 
@@ -41,32 +41,32 @@ export function mountEditorNotes(bookId) {
   let uiFolderOpen = { ...(state.openFolderIds && typeof state.openFolderIds === "object" ? state.openFolderIds : {}) };
   let selectedFolderId = /** @type {string | null} */ (null);
 
-  /** @type {null | { getText: () => string, setText: (s: string) => void, insertSnippet: (s: string) => void, focus: () => void, destroy: () => void }} */
-  let cmApi = null;
+  /** @type {null | ReturnType<typeof createVaultTextarea>} */
+  let editorApi = null;
 
-  const panel = document.getElementById("obsidianPanel");
-  const btn = document.getElementById("obsidianBtn");
-  const listEl = panel ? panel.querySelector("#obsidianNoteList") : null;
-  const titleEl = panel ? panel.querySelector("#obsidianNoteTitle") : null;
-  const hostEl = panel ? panel.querySelector("#obMiniEditorHost") : null;
-  const closeBtn = panel ? panel.querySelector("#closeObsidianBtn") : null;
-  const newNoteBtn = panel ? panel.querySelector("#newNoteBtn") : null;
-  const deleteNoteBtn = panel ? panel.querySelector("#deleteNoteBtn") : null;
-  const openFullBtn = panel ? panel.querySelector("#openFullObsidianBtn") : null;
-  const searchEl = panel ? panel.querySelector("#obsidianSearch") : null;
-  const tabBarEl = panel ? panel.querySelector("#obMiniTabBar") : null;
-  const vaultLabel = panel ? panel.querySelector("#obMiniVaultLabel") : null;
+  const panel = document.getElementById("vaultPanel");
+  const btn = document.getElementById("vaultBtn");
+  const listEl = panel ? panel.querySelector("#vaultNoteList") : null;
+  const titleEl = panel ? panel.querySelector("#vaultNoteTitle") : null;
+  const hostEl = panel ? panel.querySelector("#vaultMiniEditorHost") : null;
+  const closeBtn = panel ? panel.querySelector("#closeVaultPanelBtn") : null;
+  const newNoteBtn = panel ? panel.querySelector("#vaultNewNoteBtn") : null;
+  const deleteNoteBtn = panel ? panel.querySelector("#vaultDeleteNoteBtn") : null;
+  const openFullBtn = panel ? panel.querySelector("#openFullVaultBtn") : null;
+  const searchEl = panel ? panel.querySelector("#vaultSearch") : null;
+  const tabBarEl = panel ? panel.querySelector("#vaultMiniTabBar") : null;
+  const vaultLabel = panel ? panel.querySelector("#vaultMiniLabel") : null;
   const linkChBtn = panel ? panel.querySelector("#linkCurrentChapterBtn") : null;
   const insertWikiBtn = panel ? panel.querySelector("#insertWikiLinkBtn") : null;
   const copyBtn = panel ? panel.querySelector("#copyNoteBtn") : null;
   const insertBtn = panel ? panel.querySelector("#insertNoteBtn") : null;
 
   if (!panel || !listEl || !titleEl || !hostEl) {
-    console.warn("alysum notes: mini panel DOM missing", {
-      obsidianPanel: !!panel,
-      obsidianNoteList: !!listEl,
-      obsidianNoteTitle: !!titleEl,
-      obMiniEditorHost: !!hostEl
+    console.warn("alysum vault: mini panel DOM missing", {
+      vaultPanel: !!panel,
+      vaultNoteList: !!listEl,
+      vaultNoteTitle: !!titleEl,
+      vaultMiniEditorHost: !!hostEl
     });
     return { reload() {} };
   }
@@ -108,7 +108,7 @@ export function mountEditorNotes(bookId) {
     const n = activeNote();
     if (!n) return;
     n.title = titleEl.value.trim() || "Untitled";
-    if (cmApi) n.body = cmApi.getText();
+    if (editorApi) n.body = editorApi.getText();
     n.updated = Date.now();
     persist();
   }
@@ -154,14 +154,14 @@ export function mountEditorNotes(bookId) {
   function renderEditor() {
     const n = activeNote();
     if (searchEl) searchEl.value = state.filter;
-    if (!cmApi) return;
+    if (!editorApi) return;
     if (!n) {
       titleEl.value = "";
-      cmApi.setText("");
+      editorApi.setText("");
       return;
     }
     titleEl.value = n.title;
-    cmApi.setText(n.body);
+    editorApi.setText(n.body);
   }
 
   function renderAll() {
@@ -178,17 +178,17 @@ export function mountEditorNotes(bookId) {
       };
       clampTabs();
     } catch (e) {
-      console.error("alysum notes: vault load", e);
+      console.error("alysum vault: load", e);
     }
     panel.classList.remove("hidden");
     setMiniStatus("Ready");
     try {
       renderAll();
     } catch (e) {
-      console.error("alysum notes: render", e);
+      console.error("alysum vault: render", e);
       setMiniStatus("Render error — see console");
     }
-    queueMicrotask(() => cmApi && cmApi.focus());
+    queueMicrotask(() => editorApi && editorApi.focus());
   }
 
   function closePanel() {
@@ -222,7 +222,7 @@ export function mountEditorNotes(bookId) {
       renderAll();
       titleEl.focus();
       titleEl.select();
-      queueMicrotask(() => cmApi && cmApi.focus());
+      queueMicrotask(() => editorApi && editorApi.focus());
     });
   }
 
@@ -262,11 +262,11 @@ export function mountEditorNotes(bookId) {
   if (linkChBtn) {
     linkChBtn.addEventListener("click", () => {
       const n = activeNote();
-      if (!n || !cmApi) return;
+      if (!n || !editorApi) return;
       const link = `[[${currentChapterTitle()}]]`;
-      const cur = cmApi.getText();
+      const cur = editorApi.getText();
       const prefix = cur.length && !cur.endsWith("\n") ? "\n" : "";
-      cmApi.insertSnippet(prefix + link);
+      editorApi.insertSnippet(prefix + link);
       saveFields();
     });
   }
@@ -274,12 +274,12 @@ export function mountEditorNotes(bookId) {
   if (insertWikiBtn) {
     insertWikiBtn.addEventListener("click", () => {
       const n = activeNote();
-      if (!n || !cmApi) return;
+      if (!n || !editorApi) return;
       const def = currentChapterTitle();
       const target = window.prompt("Link text (chapter or note title)", def);
       if (!target) return;
       const link = `[[${target.trim()}]]`;
-      cmApi.insertSnippet(link);
+      editorApi.insertSnippet(link);
       saveFields();
     });
   }
@@ -288,7 +288,7 @@ export function mountEditorNotes(bookId) {
     copyBtn.addEventListener("click", async () => {
       const n = activeNote();
       if (!n) return;
-      const blob = `# ${n.title}\n\n${cmApi ? cmApi.getText() : n.body}`;
+      const blob = `# ${n.title}\n\n${editorApi ? editorApi.getText() : n.body}`;
       try {
         await navigator.clipboard.writeText(blob);
         setMiniStatus("Copied");
@@ -309,8 +309,8 @@ export function mountEditorNotes(bookId) {
   if (insertBtn) {
     insertBtn.addEventListener("click", () => {
       const n = activeNote();
-      if (!n || !cmApi) return;
-      const body = cmApi.getText().trim();
+      if (!n || !editorApi) return;
+      const body = editorApi.getText().trim();
       if (!body) return;
       const html = body
         .split(/\n{2,}/)
@@ -329,20 +329,16 @@ export function mountEditorNotes(bookId) {
     });
   }
 
-  import("./notes-cm6.js")
-    .then(({ createMarkdownEditor }) => {
-      cmApi = createMarkdownEditor(hostEl, {
-        initialDoc: activeNote()?.body || "",
-        onChange: () => {
-          saveFields();
-        }
-      });
-      renderAll();
-    })
-    .catch(e => {
-      console.error(e);
-      setMiniStatus("Editor load failed");
+  try {
+    editorApi = createVaultTextarea(hostEl, {
+      initialDoc: activeNote()?.body || "",
+      onChange: () => saveFields()
     });
+    renderAll();
+  } catch (e) {
+    console.error(e);
+    setMiniStatus("Editor failed");
+  }
 
   return {
     reload() {

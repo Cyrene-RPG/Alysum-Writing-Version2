@@ -11,8 +11,9 @@ import {
   extractTags,
   backlinksFor
 } from "./notes-vault.js";
-import { renderFileExplorer } from "./notes-file-explorer.js";
-import { renderTabStrip } from "./notes-tab-strip.js";
+import { renderFileExplorer, renderTabStrip } from "./vault-tree.js";
+import { renderMarkdownPreview } from "./vault-md.js";
+import { createVaultTextarea } from "./vault-textarea.js";
 
 function qs(id) {
   const el = document.getElementById(id);
@@ -35,6 +36,13 @@ function wordCount(text) {
   return t.length;
 }
 
+/** @param {HTMLElement | null} el */
+function allowQuickSwitcherFromField(el) {
+  if (!el) return false;
+  if (el.id === "naNoteTitle") return true;
+  return !!(el.closest("#naEditorHost") || el.closest(".cm-editor"));
+}
+
 function runApp(bookId) {
   const key = vaultStorageKey(bookId);
   let state = loadVault(key);
@@ -46,10 +54,8 @@ function runApp(bookId) {
   let saveTimer = null;
   let bodyTimer = null;
 
-  /** @type {null | { getText: () => string, setText: (s: string) => void, focus: () => void, destroy: () => void }} */
-  let cmApi = null;
-  /** @type {null | ((src: string) => string)} */
-  let renderMarkdownPreview = null;
+  /** @type {null | ReturnType<typeof createVaultTextarea>} */
+  let editorApi = null;
 
   /** @type {'quick' | 'cmd'} */
   let palMode = "quick";
@@ -127,7 +133,6 @@ function runApp(bookId) {
   }
 
   function refreshPreview() {
-    if (!renderMarkdownPreview || !elPreview) return;
     const n = activeNote();
     elPreview.innerHTML = n ? renderMarkdownPreview(n.body) : "";
   }
@@ -148,7 +153,7 @@ function runApp(bookId) {
     applyPaneMode();
     persistNow();
     if (m === "preview" || m === "split") refreshPreview();
-    if (m === "source" || m === "split") queueMicrotask(() => cmApi && cmApi.focus());
+    if (m === "source" || m === "split") queueMicrotask(() => editorApi && editorApi.focus());
   }
 
   function renderRight() {
@@ -160,7 +165,7 @@ function runApp(bookId) {
       elTags.innerHTML = '<span class="ob-muted">—</span>';
       return;
     }
-    const body = cmApi ? cmApi.getText() : n.body;
+    const body = editorApi ? editorApi.getText() : n.body;
     const wc = wordCount(body);
     elWords.textContent = `${wc} words`;
 
@@ -184,7 +189,7 @@ function runApp(bookId) {
     const n = activeNote();
     if (!n) return;
     n.title = elTitle.value.trim() || "Untitled";
-    if (cmApi) n.body = cmApi.getText();
+    if (editorApi) n.body = editorApi.getText();
     n.updated = Date.now();
     schedulePersist();
   }
@@ -202,16 +207,16 @@ function runApp(bookId) {
     const n = activeNote();
     elSearch.value = state.filter;
     applyPaneMode();
-    if (!cmApi) return;
+    if (!editorApi) return;
     if (!n) {
       elTitle.value = "";
-      cmApi.setText("");
+      editorApi.setText("");
       refreshPreview();
       renderRight();
       return;
     }
     elTitle.value = n.title;
-    cmApi.setText(n.body);
+    editorApi.setText(n.body);
     refreshPreview();
     renderRight();
   }
@@ -422,7 +427,7 @@ function runApp(bookId) {
     renderAll();
     elTitle.focus();
     elTitle.select();
-    queueMicrotask(() => cmApi && cmApi.focus());
+    queueMicrotask(() => editorApi && editorApi.focus());
   });
 
   qs("naNewFolder").addEventListener("click", () => {
@@ -470,35 +475,36 @@ function runApp(bookId) {
     const meta = e.ctrlKey || e.metaKey;
     if (!meta) return;
     const el = e.target instanceof HTMLElement ? e.target : null;
-    const inCm = !!(el && el.closest(".cm-editor"));
+    const paletteOpen = !elPalette.classList.contains("hidden");
+    if (paletteOpen) return;
+
     const tag = el?.tagName || "";
+    if ((e.key === "o" || e.key === "O" || e.key === "p" || e.key === "P") && !allowQuickSwitcherFromField(el)) {
+      if (tag === "INPUT" || tag === "TEXTAREA") return;
+    }
+
     if (e.key === "o" || e.key === "O") {
-      if (!inCm && (tag === "INPUT" || tag === "TEXTAREA")) return;
       e.preventDefault();
       openPalette("quick");
     }
     if (e.key === "p" || e.key === "P") {
-      if (!inCm && (tag === "INPUT" || tag === "TEXTAREA")) return;
       e.preventDefault();
       openPalette("cmd");
     }
   });
 
-  Promise.all([import("./notes-cm6.js"), import("./notes-md-preview.js")])
-    .then(([cmMod, mdMod]) => {
-      renderMarkdownPreview = mdMod.renderMarkdownPreview;
-      cmApi = cmMod.createMarkdownEditor(elHost, {
-        initialDoc: activeNote()?.body || "",
-        onChange: () => debouncedBodySync()
-      });
-      applyPaneMode();
-      renderAll();
-      elStatus.textContent = "Ready";
-    })
-    .catch(err => {
-      console.error(err);
-      elStatus.textContent = "Editor failed to load (network/CDN)";
+  try {
+    editorApi = createVaultTextarea(elHost, {
+      initialDoc: activeNote()?.body || "",
+      onChange: () => debouncedBodySync()
     });
+    applyPaneMode();
+    renderAll();
+    elStatus.textContent = "Ready";
+  } catch (err) {
+    console.error(err);
+    elStatus.textContent = "Editor failed to initialize";
+  }
 }
 
 onAuthStateChanged(auth, user => {

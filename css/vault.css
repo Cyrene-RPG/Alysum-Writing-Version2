@@ -1,7 +1,22 @@
 /**
- * Obsidian-style UI chrome (default dark + optional light mirror).
- * Tokens aligned with Obsidian’s default dark appearance.
+ * Alysum vault UI — desktop-style dark workspace (ribbon, tree, tabs, editor, palettes).
+ * Single stylesheet for the floating manuscript panel and full-page vault.
  */
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+a.ob-hat-btn {
+  text-decoration: none;
+}
+
+.ob-hat-btn.ob-hat-danger:hover {
+  color: #f87171;
+}
 
 .ob-app {
   --ob-bg1: #1e1e1e;
@@ -46,7 +61,6 @@
   color: inherit;
 }
 
-/* —— Top title strip (window chrome feel) —— */
 .ob-top-hat {
   display: flex;
   align-items: center;
@@ -94,7 +108,6 @@
   color: var(--ob-text);
 }
 
-/* —— Body: ribbon + workspace —— */
 .ob-body {
   display: flex;
   flex: 1;
@@ -150,7 +163,6 @@
   min-height: 0;
 }
 
-/* —— Left: file explorer —— */
 .ob-left {
   width: 232px;
   flex-shrink: 0;
@@ -286,7 +298,6 @@
   text-overflow: ellipsis;
 }
 
-/* —— Center: tabs + editor —— */
 .ob-main {
   flex: 1;
   min-width: 0;
@@ -449,10 +460,28 @@
   min-width: 0;
   background: var(--ob-bg1);
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
-.ob-cm-host .cm-editor {
-  height: 100%;
+.vault-md {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  margin: 0;
+  border: none;
+  resize: none;
+  padding: 12px 16px 20px;
+  background: var(--ob-bg1);
+  color: var(--ob-text);
+  font-family: var(--ob-font-mono);
+  font-size: 14px;
+  line-height: 1.55;
+  tab-size: 2;
+}
+
+.vault-md:focus {
+  outline: none;
 }
 
 .ob-preview-host {
@@ -614,7 +643,6 @@
   margin-top: 2px;
 }
 
-/* —— Status bar —— */
 .ob-status {
   flex-shrink: 0;
   height: var(--ob-status-h);
@@ -674,7 +702,6 @@
   color: #f87171;
 }
 
-/* —— Right sidebar (full app) —— */
 .ob-right {
   width: 280px;
   flex-shrink: 0;
@@ -740,7 +767,6 @@
   color: var(--ob-muted);
 }
 
-/* —— Full-page root —— */
 .ob-root-full {
   display: flex;
   flex-direction: column;
@@ -765,7 +791,6 @@
   width: 300px;
 }
 
-/* —— Floating panel (editor) —— */
 .ob-float {
   position: fixed;
   top: 72px;
@@ -806,7 +831,6 @@
   }
 }
 
-/* —— Light mirror (editor light theme) —— */
 body.light .ob-app.ob-theme-mirror {
   --ob-bg1: #ffffff;
   --ob-bg2: #f6f7f8;
@@ -847,4 +871,18 @@ body.light .ob-app.ob-theme-mirror .ob-miniact-accent {
     border-left: none;
     border-top: 1px solid var(--ob-border);
   }
+}
+
+/* Floating panel: portal to body so layout never clips it */
+#vaultPanel.ob-float {
+  z-index: 10050;
+}
+
+#vaultPanel.hidden {
+  display: none !important;
+}
+
+#vaultPanel.ob-app {
+  display: flex;
+  flex-direction: column;
 }
