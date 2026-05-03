@@ -217,7 +217,7 @@ const state = {
   dropCap: false,
   headerFooter: "page",
   sceneBreak: "asterism",
-  showPartLabels: true
+  showPartLabels: false
 };
 
 function marginInches() {
@@ -260,32 +260,155 @@ function allChaptersFlat(book) {
   ];
 }
 
+/**
+ * Convert editor HTML (mostly div + br) into real paragraphs for print/PDF.
+ */
+function normalizeChapterBodyHtml(html) {
+  const raw = String(html || "").trim();
+  if (!raw) return '<p class="pdf-para"></p>';
+  try {
+    const doc = new DOMParser().parseFromString(`<div id="alysum-norm-root">${raw}</div>`, "text/html");
+    const root = doc.getElementById("alysum-norm-root");
+    if (!root) return `<p class="pdf-para">${raw}</p>`;
+    normalizeDomBlocks(root, root.ownerDocument);
+    return root.innerHTML;
+  } catch (e) {
+    console.warn("normalizeChapterBodyHtml", e);
+    return `<p class="pdf-para">${raw}</p>`;
+  }
+}
+
+function normalizeDomBlocks(container, doc) {
+  const nodes = [...container.childNodes];
+  for (const node of nodes) {
+    if (node.nodeType !== Node.ELEMENT_NODE) continue;
+    const el = /** @type {Element} */ (node);
+    const tag = el.tagName.toUpperCase();
+    if (tag === "SCRIPT" || tag === "STYLE") continue;
+    if (["P", "UL", "OL", "BLOCKQUOTE", "TABLE", "H1", "H2", "H3", "H4", "HR", "PRE"].includes(tag)) {
+      if (tag === "P" && !el.classList.contains("pdf-para")) el.classList.add("pdf-para");
+      normalizeDomBlocks(el, doc);
+      continue;
+    }
+    if (tag === "DIV") {
+      if (el.querySelector("p, div, ul, ol, blockquote, h1, h2, h3, table")) {
+        normalizeDomBlocks(el, doc);
+        continue;
+      }
+      const inner = el.innerHTML;
+      if (!/<br\s*\/?>/i.test(inner)) {
+        const p = doc.createElement("p");
+        p.className = "pdf-para";
+        while (el.firstChild) p.appendChild(el.firstChild);
+        el.replaceWith(p);
+        continue;
+      }
+      const parts = inner.split(/<br\s*\/?>/gi);
+      const frag = doc.createDocumentFragment();
+      for (const part of parts) {
+        const stripped = part.replace(/&nbsp;/gi, " ").replace(/<[^>]+>/g, "").replace(/\s+/g, "").trim();
+        if (!part.trim() || !stripped) continue;
+        const p = doc.createElement("p");
+        p.className = "pdf-para";
+        p.innerHTML = part.trim();
+        frag.appendChild(p);
+      }
+      if (!frag.childNodes.length) {
+        const p = doc.createElement("p");
+        p.className = "pdf-para";
+        el.replaceWith(p);
+      } else {
+        el.replaceWith(frag);
+      }
+    }
+  }
+}
+
+function buildTitlePageSection(book) {
+  const t = escapeHtml(book.title || "Untitled");
+  return `<article class="pdf-chapter pdf-title-page" id="pdf-title" data-section="title">
+    <div class="title-page-inner">
+      <h1 class="title-book">${t}</h1>
+      <p class="title-byline">&nbsp;</p>
+    </div>
+  </article>`;
+}
+
+function tocLinkEntries(book) {
+  const out = [];
+  const front = book.sections.front || [];
+  for (let i = 2; i < front.length; i++) {
+    out.push({ id: navId("front", i), label: front[i].title || "Untitled" });
+  }
+  (book.sections.body || []).forEach((ch, i) => {
+    out.push({ id: navId("body", i), label: ch.title || `Chapter ${i + 1}` });
+  });
+  (book.sections.back || []).forEach((ch, i) => {
+    out.push({ id: navId("back", i), label: ch.title || "Untitled" });
+  });
+  return out;
+}
+
+function buildAutoTocSection(book) {
+  const links = tocLinkEntries(book)
+    .map(e => `<li><a href="#${e.id}">${escapeHtml(e.label)}</a></li>`)
+    .join("");
+  const tocBody = links
+    ? `<nav class="pdf-toc" aria-label="Table of contents"><ol>${links}</ol></nav>`
+    : `<p class="pdf-toc-empty">Chapters will appear here.</p>`;
+  return `<article class="pdf-chapter pdf-toc-article chapter-start" id="${navId(
+    "front",
+    1
+  )}" data-section="front">
+    <h1 class="pdf-h1">Contents</h1>
+    ${tocBody}
+  </article>`;
+}
+
+function buildChapterArticle(section, index, ch, opts = {}) {
+  const { isCopyright } = opts;
+  const id = navId(section, index);
+  const partLabel =
+    state.showPartLabels && (section === "front" || section === "back")
+      ? `<div class="part-label">${section === "front" ? "Front matter" : "Back matter"}</div>`
+      : "";
+  const pageClass = state.chapterNewPage ? "chapter-start" : "";
+  const extra = isCopyright ? " pdf-copyright-page" : "";
+  const norm = normalizeChapterBodyHtml(ch.content);
+  const h1Class = isCopyright ? "pdf-h1 pdf-h1-small" : "pdf-h1";
+  return `<article class="pdf-chapter ${pageClass}${extra}" id="${id}" data-section="${section}">
+    ${partLabel}
+    <h1 class="${h1Class}">${escapeHtml(ch.title || "Untitled")}</h1>
+    <div class="pdf-body ${state.dropCap && !isCopyright ? "drop-cap" : ""}">${norm}</div>
+  </article>`;
+}
+
 function buildManuscriptBodyHtml(book) {
-  const chunks = [];
   const brk = SCENE_BREAKS[state.sceneBreak] || SCENE_BREAKS.asterism;
+  const parts = [];
 
-  for (const section of ["front", "body", "back"]) {
-    const list = book.sections[section] || [];
-    list.forEach((ch, index) => {
-      const id = navId(section, index);
-      const partLabel =
-        state.showPartLabels && (section === "front" || section === "back")
-          ? `<div class="part-label">${section === "front" ? "Front matter" : "Back matter"}</div>`
-          : "";
+  parts.push(buildTitlePageSection(book));
 
-      const pageClass = state.chapterNewPage ? "chapter-start" : "";
-      chunks.push(`
-        <article class="pdf-chapter ${pageClass}" id="${id}" data-section="${section}">
-          ${partLabel}
-          <h1 class="pdf-h1">${escapeHtml(ch.title || "Untitled")}</h1>
-          <div class="pdf-body ${state.dropCap ? "drop-cap" : ""}">${ch.content || "<p></p>"}</div>
-          ${index < list.length - 1 ? brk : ""}
-        </article>
-      `);
-    });
+  const front = book.sections.front || [];
+  if (front[0]) {
+    parts.push(buildChapterArticle("front", 0, front[0], { isCopyright: true }));
+  }
+  parts.push(buildAutoTocSection(book));
+  for (let i = 2; i < front.length; i++) {
+    parts.push(buildChapterArticle("front", i, front[i], {}));
   }
 
-  return chunks.join("\n");
+  const bodyList = book.sections.body || [];
+  bodyList.forEach((ch, index) => {
+    parts.push(buildChapterArticle("body", index, ch, {}));
+  });
+
+  const backList = book.sections.back || [];
+  backList.forEach((ch, index) => {
+    parts.push(buildChapterArticle("back", index, ch, {}));
+  });
+
+  return parts.map((html, i) => (i < parts.length - 1 ? html + brk : html)).join("\n");
 }
 
 function headingFontCss() {
@@ -383,6 +506,7 @@ function buildPreviewDocumentHtml() {
     }
     .pdf-chapter { break-inside: avoid; }
     .pdf-chapter.chapter-start { break-before: page; }
+    .pdf-title-page { break-before: auto; }
     .pdf-chapter:first-of-type { break-before: auto; }
     .pdf-h1 {
       font-family: ${hFont};
@@ -391,14 +515,75 @@ function buildPreviewDocumentHtml() {
       margin: 0 0 1rem;
       line-height: 1.25;
     }
-    /* Manuscript uses <div> blocks from contenteditable, not only <p> */
+    .pdf-title-page {
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 2rem 1.25in;
+      box-sizing: border-box;
+    }
+    .pdf-title-page .title-book {
+      font-family: ${hFont};
+      font-size: 2.35rem;
+      font-weight: 700;
+      margin: 0;
+      line-height: 1.12;
+      letter-spacing: 0.03em;
+    }
+    .pdf-title-page .title-byline {
+      margin-top: 2.75rem;
+      font-size: 12pt;
+      color: #64748b;
+      font-family: "Source Sans 3", system-ui, sans-serif;
+    }
+    .pdf-copyright-page .pdf-h1,
+    .pdf-copyright-page .pdf-h1-small {
+      font-size: 11pt;
+      margin-bottom: 0.75rem;
+    }
+    .pdf-copyright-page .pdf-body {
+      font-size: 9pt;
+      line-height: 1.55;
+      text-align: left;
+    }
+    .pdf-toc-article .pdf-h1 { margin-bottom: 1.25rem; }
+    .pdf-toc ol {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      font-family: ${bodyFont};
+    }
+    .pdf-toc li {
+      margin: 0.4rem 0;
+      line-height: 1.4;
+      break-inside: avoid;
+    }
+    .pdf-toc a {
+      color: inherit;
+      text-decoration: none;
+    }
+    .pdf-toc a::after {
+      content: leader('.') target-counter(attr(href url), page);
+    }
+    .pdf-toc-empty {
+      font-style: italic;
+      color: #94a3b8;
+      margin-top: 0.5rem;
+    }
+    /* Normalized paragraphs + legacy div/p from editor */
     .pdf-body p,
+    .pdf-body p.pdf-para,
     .pdf-body div:not(.scene-break):not(.scene-spacer) {
-      margin: 0 0 0.55em;
+      margin: 0 0 0.62em;
       text-align: justify;
       text-indent: ${state.paragraphIndent};
     }
     .pdf-body > p:first-child,
+    .pdf-body > p.pdf-para:first-child,
     .pdf-body > div:first-child {
       text-indent: 0;
     }
@@ -418,11 +603,13 @@ function buildPreviewDocumentHtml() {
       text-align: left;
     }
     .pdf-body li p,
-    .pdf-body li div {
+    .pdf-body li div,
+    .pdf-body li p.pdf-para {
       text-indent: 0;
       margin: 0.15em 0;
     }
     .drop-cap .pdf-body > p:first-of-type::first-letter,
+    .drop-cap .pdf-body > p.pdf-para:first-of-type::first-letter,
     .drop-cap .pdf-body > div:first-of-type::first-letter {
       float: left;
       font-size: 2.85rem;
@@ -584,9 +771,39 @@ function applyZoom() {
   if (pct) pct.textContent = Math.round(z * 100) + "%";
 }
 
+function scrollPreviewTo(elementId) {
+  const iframe = /** @type {HTMLIFrameElement} */ (document.getElementById("iframePreview"));
+  try {
+    iframe?.contentDocument?.getElementById(elementId)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  } catch (_) {}
+}
+
 function renderNav(book) {
   const mount = $("navScroll");
   mount.innerHTML = "";
+
+  const openGroup = document.createElement("div");
+  openGroup.className = "rail-group";
+  const openHead = document.createElement("div");
+  openHead.className = "rail-group-header";
+  openHead.innerHTML = `<span><span class="rail-caret">▼</span> Opening</span><span> </span>`;
+  const openBody = document.createElement("div");
+  openBody.className = "rail-group-body";
+  const titleRow = document.createElement("div");
+  titleRow.className = "nav-item";
+  titleRow.innerHTML = `<span class="nav-num"> </span><span class="nav-label">Title page</span>`;
+  titleRow.addEventListener("click", e => {
+    e.stopPropagation();
+    scrollPreviewTo("pdf-title");
+  });
+  openBody.appendChild(titleRow);
+  openHead.addEventListener("click", () => {
+    openGroup.classList.toggle("collapsed");
+    openBody.classList.toggle("collapsed");
+  });
+  openGroup.appendChild(openHead);
+  openGroup.appendChild(openBody);
+  mount.appendChild(openGroup);
 
   function renderGroup(section, title) {
     const list = book.sections[section] || [];
@@ -617,12 +834,7 @@ function renderNav(book) {
         state.activeNav = id;
         mount.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
         row.classList.add("active");
-        const iframe = /** @type {HTMLIFrameElement} */ ($("iframePreview"));
-        try {
-          const doc = iframe.contentDocument;
-          const el = doc?.getElementById(id);
-          el?.scrollIntoView({ behavior: "smooth", block: "start" });
-        } catch (_) {}
+        scrollPreviewTo(id);
       });
       body.appendChild(row);
     });
