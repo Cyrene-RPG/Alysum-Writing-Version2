@@ -468,7 +468,7 @@ function buildPreviewDocumentHtml() {
           window.parent.postMessage({ type: "alysum-pdf-pages", count: document.querySelectorAll(".pagedjs_page").length }, "*");
         } catch (e) {}
       }
-      function run() {
+      function runPaged() {
         try {
           if (window.PagedPolyfill && typeof window.PagedPolyfill.preview === "function") {
             window.PagedPolyfill.preview().then(done).catch(done);
@@ -481,6 +481,12 @@ function buildPreviewDocumentHtml() {
         } catch (e) {
           done();
         }
+      }
+      /* Defer one frame so layout/DOM is stable; reduces Paged.js "item doesn't belong to list" races in iframes */
+      function run() {
+        requestAnimationFrame(function () {
+          requestAnimationFrame(runPaged);
+        });
       }
       if (document.readyState === "complete") run();
       else window.addEventListener("load", run);
@@ -557,9 +563,14 @@ function autoFitPreviewToColumn() {
   applyZoom();
 }
 
+/** Zoom target: current layout uses #previewFrameWrap; older builds used #previewScaleWrap. */
+function previewZoomTarget() {
+  return document.getElementById("previewFrameWrap") || document.getElementById("previewScaleWrap");
+}
+
 function applyZoom() {
   const z = state.zoom;
-  const frame = document.getElementById("previewFrameWrap");
+  const frame = previewZoomTarget();
   if (frame) {
     try {
       frame.style.transform = "";
@@ -569,7 +580,7 @@ function applyZoom() {
       frame.style.zoom = "";
     }
   }
-  const pct = $("zoomPct");
+  const pct = document.getElementById("zoomPct");
   if (pct) pct.textContent = Math.round(z * 100) + "%";
 }
 
