@@ -198,14 +198,7 @@ const HEADING_FONTS = {
   "Source Sans 3": "'Source Sans 3', system-ui, sans-serif"
 };
 
-const SCENE_BREAKS = {
-  asterism: '<p class="scene-break" aria-hidden="true">* &nbsp; * &nbsp; *</p>',
-  hash: '<p class="scene-break" aria-hidden="true"># # #</p>',
-  space: '<p class="scene-break scene-spacer" aria-hidden="true">&nbsp;</p>',
-  rule: '<hr class="scene-rule" />'
-};
-
-/** @type {{ book: ReturnType<typeof normalizeBookData> | null, authorDisplay: string, printAuthorOverride: string, printCopyrightOverride: string, activeNav: string, zoom: number, trim: string, bodyFont: string, headingFont: string, bodySizePt: number, lineHeight: number, paragraphIndent: string, marginPreset: string, chapterNewPage: boolean, dropCap: boolean, headerFooter: string, sceneBreak: string, showPartLabels: boolean }} */
+/** @type {{ book: ReturnType<typeof normalizeBookData> | null, authorDisplay: string, printAuthorOverride: string, printCopyrightOverride: string, activeNav: string, zoom: number, trim: string, bodyFont: string, headingFont: string, bodySizePt: number, lineHeight: number, paragraphIndent: string, marginPreset: string, chapterNewPage: boolean, dropCap: boolean, headerFooter: string, showPartLabels: boolean }} */
 const state = {
   book: null,
   authorDisplay: "",
@@ -223,7 +216,6 @@ const state = {
   chapterNewPage: true,
   dropCap: false,
   headerFooter: "title-page",
-  sceneBreak: "asterism",
   showPartLabels: false
 };
 
@@ -521,44 +513,31 @@ function buildChapterArticle(section, index, ch, opts = {}) {
 }
 
 function buildManuscriptBodyHtml(book) {
-  const brk = SCENE_BREAKS[state.sceneBreak] || SCENE_BREAKS.asterism;
-  /** Scene ornaments only between body/back chapters — never between title, copyright, TOC, or extra front matter (Reedsy-style). */
-  const segments = [];
+  const parts = [];
 
-  segments.push({ html: buildTitlePageSection(book), kind: "preface" });
+  parts.push(buildTitlePageSection(book));
 
   const front = book.sections.front || [];
   if (front[0]) {
-    segments.push({ html: buildChapterArticle("front", 0, front[0], { isCopyright: true }), kind: "preface" });
+    parts.push(buildChapterArticle("front", 0, front[0], { isCopyright: true }));
   }
-  segments.push({ html: buildAutoTocSection(book), kind: "preface" });
+  parts.push(buildAutoTocSection(book));
   for (let i = 2; i < front.length; i++) {
-    segments.push({ html: buildChapterArticle("front", i, front[i], {}), kind: "preface" });
+    parts.push(buildChapterArticle("front", i, front[i], {}));
   }
 
   const bodyList = book.sections.body || [];
   bodyList.forEach((ch, index) => {
-    segments.push({ html: buildChapterArticle("body", index, ch, {}), kind: "body" });
+    parts.push(buildChapterArticle("body", index, ch, {}));
   });
 
   const backList = book.sections.back || [];
   backList.forEach((ch, index) => {
-    segments.push({ html: buildChapterArticle("back", index, ch, {}), kind: "back" });
+    parts.push(buildChapterArticle("back", index, ch, {}));
   });
 
-  const chunks = [];
-  for (let i = 0; i < segments.length; i++) {
-    chunks.push(segments[i].html);
-    if (i >= segments.length - 1) break;
-    const a = segments[i];
-    const b = segments[i + 1];
-    const useScene =
-      (a.kind === "body" && b.kind === "body") ||
-      (a.kind === "body" && b.kind === "back") ||
-      (a.kind === "back" && b.kind === "back");
-    if (useScene) chunks.push(brk);
-  }
-  return chunks.join("\n");
+  /* No auto * * * between chapters — page breaks already separate them; ornaments belong in the manuscript. */
+  return parts.join("\n");
 }
 
 function headingFontCss() {
@@ -575,7 +554,8 @@ function atPageCssBlock() {
   const inner = out + g;
   const firstM = marginFirstPageInches();
   const tout = `${out.toFixed(2)}in`;
-  const tin = `${inner.toFixed(2)}in`;
+  /** Same left & right so the type column sits on the page center (mirror gutters shift verso/recto off-center in preview). */
+  const hSym = `${((out + inner) / 2).toFixed(3)}in`;
   const tfirst = `${firstM.toFixed(2)}in`;
   const bookTitleEsc = escapeCssContent(state.book?.title || "Manuscript");
   const runStack = BODY_FONTS[state.bodyFont] || BODY_FONTS["Literata"];
@@ -588,14 +568,14 @@ function atPageCssBlock() {
   } else if (state.headerFooter === "page") {
     marginBoxes = `@bottom-center { content: counter(page); font-size: 8.75pt; font-weight: 500; color: #5c5a58; font-family: ${runStack}; font-variant-numeric: oldstyle-nums; letter-spacing: 0.02em; }`;
   }
-  /* Mirror margins: binding edge is wider. Shorthand = top, right, bottom, left. Verso (:left) = gutter on right; recto (:right) = gutter on left. :last so page 1 wins over :right. */
+  /* Symmetric horizontal margins: top/bottom = fore-edge, left/right = average of outside + binding gutter. */
   return `@page { size: ${trim.width} ${trim.height}; }
     @page:left {
-      margin: ${tout} ${tin} ${tout} ${tout};
+      margin: ${tout} ${hSym} ${tout} ${hSym};
       ${marginBoxes}
     }
     @page:right {
-      margin: ${tout} ${tout} ${tout} ${tin};
+      margin: ${tout} ${hSym} ${tout} ${hSym};
       ${marginBoxes}
     }
     @page :first {
@@ -1275,13 +1255,6 @@ function wirePanel() {
   margin.value = state.marginPreset;
   margin.addEventListener("change", () => {
     state.marginPreset = margin.value;
-    refreshPreview();
-  });
-
-  const scene = $("optSceneBreak");
-  scene.value = state.sceneBreak;
-  scene.addEventListener("change", () => {
-    state.sceneBreak = scene.value;
     refreshPreview();
   });
 
