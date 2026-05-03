@@ -1,6 +1,6 @@
 /**
- * Shared “vault” for Alysum notes — localStorage only so the editor panel and
- * notes.html stay in sync (same key per book as `alysum-notes-${bookId}`).
+ * Per-book notes in localStorage (`alysum-notes-${bookId}`).
+ * Shared by the manuscript panel and notes.html.
  *
  * @typedef {{ id: string, title: string, body: string, folderId: string | null, updated: number }} Note
  * @typedef {{ id: string, name: string, parentId: string | null, updated: number }} Folder
@@ -16,8 +16,7 @@ export function vaultStorageKey(bookId) {
 }
 
 /**
- * Parse `?key=` from “Open full” legacy links (`alysum-notes-xyz`).
- * @param {string} [search] window.location.search
+ * @param {string} [search]
  */
 export function bookIdFromVaultQueryKey(search = "") {
   try {
@@ -158,7 +157,7 @@ export function persistVault(key, state) {
   try {
     localStorage.setItem(key, JSON.stringify(state));
   } catch (e) {
-    console.warn("alysum notes: could not persist vault", e);
+    console.warn("notebook-storage: persist failed", e);
   }
 }
 

@@ -62,7 +62,7 @@
         ]
       },
       {
-        "source": "/css/vault.css",
+        "source": "/css/notebook.css",
         "headers": [
           {
             "key": "Cache-Control",
@@ -71,7 +71,7 @@
         ]
       },
       {
-        "source": "/js/vault-panel.js",
+        "source": "/js/notebook.js",
         "headers": [
           {
             "key": "Cache-Control",
@@ -80,43 +80,7 @@
         ]
       },
       {
-        "source": "/js/vault-app.js",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "public, max-age=0, must-revalidate"
-          }
-        ]
-      },
-      {
-        "source": "/js/vault-textarea.js",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "public, max-age=0, must-revalidate"
-          }
-        ]
-      },
-      {
-        "source": "/js/vault-tree.js",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "public, max-age=0, must-revalidate"
-          }
-        ]
-      },
-      {
-        "source": "/js/vault-md.js",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "public, max-age=0, must-revalidate"
-          }
-        ]
-      },
-      {
-        "source": "/js/notes-vault.js",
+        "source": "/js/notebook-storage.js",
         "headers": [
           {
             "key": "Cache-Control",

@@ -3,62 +3,62 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Vault</title>
-  <link rel="stylesheet" href="/css/vault.css?v=20260503" />
+  <title>Notes</title>
+  <link rel="stylesheet" href="/css/notebook.css?v=20260503c" />
 </head>
 <body>
-  <div class="ob-app ob-root-full">
-    <header class="ob-top-hat">
-      <span class="ob-vault-name" id="naBookLabel">Vault</span>
-      <div class="ob-hat-actions">
-        <a class="ob-hat-btn" id="naEditorLink" href="/editor.html" title="Open editor">↗</a>
-        <button type="button" class="ob-hat-btn" id="naNewFolder" title="New folder">▣</button>
-        <button type="button" class="ob-hat-btn" id="naNewNote" title="New note">＋</button>
-        <button type="button" class="ob-hat-btn ob-hat-danger" id="naDeleteNote" title="Delete note">⌫</button>
+  <div class="nb-app nb-root-full">
+    <header class="nb-top-hat">
+      <span class="nb-workspace-title" id="nbPageBook">Notes</span>
+      <div class="nb-hat-actions">
+        <a class="nb-hat-btn" id="nbPageEditorHref" href="/editor.html" title="Editor">↗</a>
+        <button type="button" class="nb-hat-btn" id="nbPageFolder" title="New folder">▣</button>
+        <button type="button" class="nb-hat-btn" id="nbPageNew" title="New note">＋</button>
+        <button type="button" class="nb-hat-btn nb-hat-danger" id="nbPageDel" title="Delete note">⌫</button>
       </div>
     </header>
-    <div class="ob-body">
-      <nav class="ob-ribbon" aria-label="Ribbon">
-        <button type="button" class="ob-rib-btn is-active" title="Files">≡</button>
-        <button type="button" class="ob-rib-btn" title="Search">⌕</button>
-        <button type="button" class="ob-rib-btn" title="Bookmarks">🔖</button>
+    <div class="nb-frame">
+      <nav class="nb-ribbon" aria-label="Ribbon">
+        <button type="button" class="nb-rib-btn is-active" title="Files">≡</button>
+        <button type="button" class="nb-rib-btn" title="Search">⌕</button>
+        <button type="button" class="nb-rib-btn" title="Bookmarks">🔖</button>
       </nav>
-      <div class="ob-work">
-        <div class="ob-columns">
-          <aside class="ob-left">
-            <input id="naSearch" class="ob-quick-open" type="search" placeholder="Search vault..." autocomplete="off" />
-            <div id="naTree" class="ob-nav-list"></div>
+      <div class="nb-work">
+        <div class="nb-columns">
+          <aside class="nb-left">
+            <input id="nbPageFind" class="nb-quick-open" type="search" placeholder="Search…" autocomplete="off" />
+            <div id="nbPageTree" class="nb-nav-list"></div>
           </aside>
-          <main class="ob-main">
-            <div id="naTabBar" class="ob-tab-strip" role="tablist"></div>
-            <input id="naNoteTitle" type="text" class="ob-inline-title" placeholder="Untitled" />
-            <div class="ob-mode-bar">
-              <button type="button" class="ob-mode-btn" id="naViewSource" data-mode="source">Source</button>
-              <button type="button" class="ob-mode-btn" id="naViewPreview" data-mode="preview">Reading</button>
-              <button type="button" class="ob-mode-btn" id="naViewSplit" data-mode="split">Split</button>
+          <main class="nb-main">
+            <div id="nbPageTabs" class="nb-tab-strip" role="tablist"></div>
+            <input id="nbPageTitle" type="text" class="nb-inline-title" placeholder="Untitled" />
+            <div class="nb-mode-bar">
+              <button type="button" class="nb-mode-btn" id="nbViewSrc" data-mode="source">Source</button>
+              <button type="button" class="nb-mode-btn" id="nbViewRead" data-mode="preview">Reading</button>
+              <button type="button" class="nb-mode-btn" id="nbViewSplit" data-mode="split">Split</button>
             </div>
-            <div id="naEditorShell" class="ob-editor-shell ob-pane-split">
-              <div id="naEditorHost" class="ob-cm-host"></div>
-              <div id="naPreviewHost" class="ob-preview-host ob-markdown-preview"></div>
+            <div id="nbPageShell" class="nb-editor-shell nb-pane-split">
+              <div id="nbPageBody" class="nb-editor-host"></div>
+              <div id="nbPagePreview" class="nb-preview-host nb-markdown-preview"></div>
             </div>
-            <footer class="ob-status">
-              <span id="naWordCount" class="ob-status-left"></span>
-              <span id="naStatus" class="ob-status-right"></span>
+            <footer class="nb-status">
+              <span id="nbPageWords" class="nb-status-left"></span>
+              <span id="nbPageStat" class="nb-status-right"></span>
             </footer>
           </main>
-          <aside class="ob-right">
-            <div class="ob-side-scroll">
-              <div class="ob-side-card">
-                <div class="ob-side-card-h">Outgoing links</div>
-                <div class="ob-side-card-b" id="naOutlinks"></div>
+          <aside class="nb-right">
+            <div class="nb-side-scroll">
+              <div class="nb-side-card">
+                <div class="nb-side-card-h">Outgoing links</div>
+                <div class="nb-side-card-b" id="nbPageOut"></div>
               </div>
-              <div class="ob-side-card">
-                <div class="ob-side-card-h">Backlinks</div>
-                <div class="ob-side-card-b" id="naBacklinks"></div>
+              <div class="nb-side-card">
+                <div class="nb-side-card-h">Backlinks</div>
+                <div class="nb-side-card-b" id="nbPageBack"></div>
               </div>
-              <div class="ob-side-card">
-                <div class="ob-side-card-h">Tags</div>
-                <div class="ob-side-card-b" id="naTags"></div>
+              <div class="nb-side-card">
+                <div class="nb-side-card-h">Tags</div>
+                <div class="nb-side-card-b" id="nbPageTags"></div>
               </div>
             </div>
           </aside>
@@ -67,15 +67,18 @@
     </div>
   </div>
 
-  <div id="naPalette" class="ob-palette hidden" aria-hidden="true">
-    <div class="ob-palette-backdrop" id="naPaletteBackdrop"></div>
-    <div class="ob-palette-panel" role="dialog" aria-modal="true" aria-labelledby="naPaletteHint">
-      <div id="naPaletteHint" class="ob-palette-hint">Quick switcher</div>
-      <input id="naPaletteInput" type="text" class="ob-palette-input" autocomplete="off" spellcheck="false" />
-      <div id="naPaletteList" class="ob-palette-list"></div>
+  <div id="nbPal" class="nb-palette hidden" aria-hidden="true">
+    <div class="nb-palette-backdrop" id="nbPalBd"></div>
+    <div class="nb-palette-panel" role="dialog" aria-modal="true" aria-labelledby="nbPalHint">
+      <div id="nbPalHint" class="nb-palette-hint">Quick switcher</div>
+      <input id="nbPalQ" type="text" class="nb-palette-input" autocomplete="off" spellcheck="false" />
+      <div id="nbPalList" class="nb-palette-list"></div>
     </div>
   </div>
 
-  <script type="module" src="/js/vault-app.js?v=20260503"></script>
+  <script type="module">
+    import { bootNotebookPage } from "/js/notebook.js?v=20260503c";
+    bootNotebookPage();
+  </script>
 </body>
 </html>

@@ -1,8 +1,7 @@
 ﻿<!DOCTYPE html>
 <html>
 <head>
-    <!-- If this comment is missing in View Source, the browser or CDN is still serving an old editor.html. -->
-    <link rel="stylesheet" href="/css/vault.css?v=20260503" />
+    <link rel="stylesheet" href="/css/notebook.css?v=20260503c" />
     <title>Alysum Editor</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -531,39 +530,39 @@
         }
     </style>                                            </head>
 <body>
-    <div id="vaultPanel" class="ob-app ob-float ob-theme-mirror hidden" role="dialog" aria-label="Book vault">
-        <header class="ob-top-hat">
-            <span class="ob-vault-name" id="vaultMiniLabel">Vault</span>
-            <div class="ob-hat-actions">
-                <button class="ob-hat-btn" id="vaultNewNoteBtn" type="button" title="New note">＋</button>
-                <button class="ob-hat-btn" id="vaultDeleteNoteBtn" type="button" title="Delete note">⌫</button>
-                <button class="ob-hat-btn" id="openFullVaultBtn" type="button" title="Open in new window">⇱</button>
-                <button class="ob-hat-btn" id="closeVaultPanelBtn" type="button" title="Close">×</button>
+    <div id="nbPanel" class="nb-app nb-float nb-theme-mirror hidden" role="dialog" aria-label="Notes">
+        <header class="nb-top-hat">
+            <span class="nb-workspace-title" id="nbLabel">Notes</span>
+            <div class="nb-hat-actions">
+                <button class="nb-hat-btn" id="nbNew" type="button" title="New note">＋</button>
+                <button class="nb-hat-btn" id="nbDel" type="button" title="Delete note">⌫</button>
+                <button class="nb-hat-btn" id="nbFull" type="button" title="Open full page">⇱</button>
+                <button class="nb-hat-btn" id="nbClose" type="button" title="Close">×</button>
             </div>
         </header>
-        <div class="ob-body">
-            <nav class="ob-ribbon" aria-label="Ribbon">
-                <button type="button" class="ob-rib-btn is-active" title="Files">≡</button>
-                <button type="button" class="ob-rib-btn" title="Search">⌕</button>
-                <button type="button" class="ob-rib-btn" title="Bookmarks">🔖</button>
+        <div class="nb-frame">
+            <nav class="nb-ribbon" aria-label="Ribbon">
+                <button type="button" class="nb-rib-btn is-active" title="Files">≡</button>
+                <button type="button" class="nb-rib-btn" title="Search">⌕</button>
+                <button type="button" class="nb-rib-btn" title="Bookmarks">🔖</button>
             </nav>
-            <div class="ob-work">
-                <div class="ob-columns">
-                    <aside class="ob-left">
-                        <input id="vaultSearch" class="ob-quick-open" type="search" placeholder="Search vault..." autocomplete="off" />
-                        <div id="vaultNoteList" class="ob-nav-list"></div>
+            <div class="nb-work">
+                <div class="nb-columns">
+                    <aside class="nb-left">
+                        <input id="nbFind" class="nb-quick-open" type="search" placeholder="Search…" autocomplete="off" />
+                        <div id="nbTree" class="nb-nav-list"></div>
                     </aside>
-                    <div class="ob-main" role="main">
-                        <div id="vaultMiniTabBar" class="ob-tab-strip" role="tablist"></div>
-                        <input id="vaultNoteTitle" type="text" class="ob-inline-title" placeholder="Untitled" />
-                        <div id="vaultMiniEditorHost" class="ob-cm-host" aria-label="Note editor"></div>
-                        <footer class="ob-status">
-                            <span class="ob-status-left" id="vaultMiniStatus">Ready</span>
-                            <div class="ob-status-actions">
-                                <button type="button" class="ob-miniact" id="linkCurrentChapterBtn">Chapter link</button>
-                                <button type="button" class="ob-miniact" id="insertWikiLinkBtn">[[link]]</button>
-                                <button type="button" class="ob-miniact" id="copyNoteBtn">Copy</button>
-                                <button type="button" class="ob-miniact ob-miniact-accent" id="insertNoteBtn">Insert to chapter</button>
+                    <div class="nb-main" role="main">
+                        <div id="nbTabs" class="nb-tab-strip" role="tablist"></div>
+                        <input id="nbTitle" type="text" class="nb-inline-title" placeholder="Untitled" />
+                        <div id="nbBody" class="nb-editor-host" aria-label="Note body"></div>
+                        <footer class="nb-status">
+                            <span class="nb-status-left" id="nbStatus">Ready</span>
+                            <div class="nb-status-actions">
+                                <button type="button" class="nb-miniact" id="nbLinkCh">Chapter link</button>
+                                <button type="button" class="nb-miniact" id="nbWiki">[[link]]</button>
+                                <button type="button" class="nb-miniact" id="nbCopy">Copy</button>
+                                <button type="button" class="nb-miniact nb-miniact-accent" id="nbInsert">Insert to chapter</button>
                             </div>
                         </footer>
                     </div>
@@ -605,7 +604,7 @@
             </div>
 
             <div class="topbar-right">
-                <button class="icon-btn purple" id="quickAddBtn" type="button">＋</button>                                      <button class="icon-btn purple" id="publishTopBtn" type="button">🚀</button>                                    <button class="icon-btn" id="vaultBtn" type="button" title="Notes">⌘</button>                                <button class="icon-btn" id="renameChapterBtn" type="button">⋯</button>
+                <button class="icon-btn purple" id="quickAddBtn" type="button">＋</button>                                      <button class="icon-btn purple" id="publishTopBtn" type="button">🚀</button>                                    <button class="icon-btn" id="nbBtn" type="button" title="Notes">⌘</button>                                <button class="icon-btn" id="renameChapterBtn" type="button">⋯</button>
                 <button class="icon-btn" id="themeTopBtn" type="button">◐</button>                                                                                                      <button class="icon-btn danger" id="deleteBookTopBtn" type="button">🗑</button>                                  <div class="save-status" id="saveStatus">Loading...</div>
             </div>                                              </div>
             <button class="icon-btn purple" id="exportBtn" type="button">📄</button>                                                    <div class="toolbar">                                       <button class="tool-btn" type="button" data-cmd="bold">B</button>
@@ -1190,13 +1189,13 @@ homeBtn.onclick = () => {
                                                                     fontSelect.value = localStorage.getItem("alysum-font") || "Georgia";
             fontSizeSelect.value = localStorage.getItem("alysum-fontSize") || "20";
             applyEditorStyle();
-            import("./js/vault-panel.js?v=20260503")
+            import("./js/notebook.js?v=20260503c")
                 .then(m => {
                     m.mountEditorNotes(bookId);
                 })
                 .catch(err => {
-                    console.error("Vault panel failed:", err);
-                    setSaveStatus("Vault failed to load — check console");
+                    console.error("Notebook failed:", err);
+                    setSaveStatus("Notes failed to load");
                 });
 
             setSaveStatus("Connecting...");
