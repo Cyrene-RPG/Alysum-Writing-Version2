@@ -128,11 +128,54 @@ function countWords(html) {
   return text.split(/\s+/).filter(Boolean).length;
 }
 
+/**
+ * Barnes & Noble Press trim sizes (interior page size = final trim).
+ * Source: https://help-press.barnesandnoble.com/hc/en-us/articles/5358034341275-Trim-Sizes-and-Paper-Stock
+ */
+const TRIM_ORDER = [
+  "4x6",
+  "4.25x7",
+  "4.37x7",
+  "5x8",
+  "5.06x7.81",
+  "5.25x8",
+  "5.5x8.25",
+  "5.5x8.5",
+  "5.83x8.27",
+  "6x9",
+  "6.14x9.21",
+  "7x10",
+  "7.5x9.25",
+  "8x8",
+  "8x10",
+  "8.25x11",
+  "8.268x11.693",
+  "8.5x8.5",
+  "8.5x11",
+  "11x8.5"
+];
+
 const TRIM_SIZES = {
-  "5x8": { label: 'Reedsy standard (5" × 8")', width: "5in", height: "8in" },
-  "5.5x8.5": { label: 'Digest (5.5" × 8.5")', width: "5.5in", height: "8.5in" },
-  "6x9": { label: 'Trade paperback (6" × 9")', width: "6in", height: "9in" },
-  "7x10": { label: 'US trade (7" × 10")', width: "7in", height: "10in" }
+  "4x6": { label: "B&N Press — 4 × 6 in", width: "4in", height: "6in" },
+  "4.25x7": { label: "B&N Press — 4.25 × 7 in (mass market)", width: "4.25in", height: "7in" },
+  "4.37x7": { label: "B&N Press — 4.37 × 7 in", width: "4.37in", height: "7in" },
+  "5x8": { label: "B&N Press — 5 × 8 in", width: "5in", height: "8in" },
+  "5.06x7.81": { label: "B&N Press — 5.06 × 7.81 in", width: "5.06in", height: "7.81in" },
+  "5.25x8": { label: "B&N Press — 5.25 × 8 in", width: "5.25in", height: "8in" },
+  "5.5x8.25": { label: "B&N Press — 5.5 × 8.25 in (trade)", width: "5.5in", height: "8.25in" },
+  "5.5x8.5": { label: "B&N Press — 5.5 × 8.5 in", width: "5.5in", height: "8.5in" },
+  "5.83x8.27": { label: "B&N Press — 5.83 × 8.27 in (UK)", width: "5.83in", height: "8.27in" },
+  "6x9": { label: "B&N Press — 6 × 9 in (trade / hardcover)", width: "6in", height: "9in" },
+  "6.14x9.21": { label: "B&N Press — 6.14 × 9.21 in", width: "6.14in", height: "9.21in" },
+  "7x10": { label: "B&N Press — 7 × 10 in", width: "7in", height: "10in" },
+  "7.5x9.25": { label: "B&N Press — 7.5 × 9.25 in", width: "7.5in", height: "9.25in" },
+  "8x8": { label: "B&N Press — 8 × 8 in", width: "8in", height: "8in" },
+  "8x10": { label: "B&N Press — 8 × 10 in", width: "8in", height: "10in" },
+  "8.25x11": { label: "B&N Press — 8.25 × 11 in", width: "8.25in", height: "11in" },
+  "8.268x11.693": { label: "B&N Press — 8.268 × 11.693 in (UK)", width: "8.268in", height: "11.693in" },
+  "8.5x8.5": { label: "B&N Press — 8.5 × 8.5 in", width: "8.5in", height: "8.5in" },
+  "8.5x11": { label: "B&N Press — 8.5 × 11 in", width: "8.5in", height: "11in" },
+  "11x8.5": { label: "B&N Press — 11 × 8.5 in (landscape)", width: "11in", height: "8.5in" }
 };
 
 const BODY_FONTS = {
@@ -169,7 +212,7 @@ const state = {
   bodySizePt: 11,
   lineHeight: 1.45,
   paragraphIndent: "0.25in",
-  marginPreset: "normal",
+  marginPreset: "bn",
   chapterNewPage: true,
   dropCap: false,
   headerFooter: "page",
@@ -183,6 +226,9 @@ function marginInches() {
       return "0.55in";
     case "wide":
       return "1in";
+    case "bn":
+      /* Extra gutter for POD; B&N flags content in the trim zone */
+      return "0.8in";
     default:
       return "0.75in";
   }
@@ -278,7 +324,6 @@ function buildPreviewDocumentHtml() {
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="${googleFontHref()}" />
   <style>
     ${atPageCssBlock()}
@@ -289,6 +334,44 @@ function buildPreviewDocumentHtml() {
       line-height: ${state.lineHeight};
       color: #1e293b;
       background: #fff;
+    }
+    @media screen {
+      html {
+        margin: 0;
+        padding: 0;
+        height: auto;
+        min-height: 100%;
+        overflow: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      body {
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: auto !important;
+        background: #e8ecf0;
+      }
+      #manuscript-root {
+        margin: 0;
+        padding: 0;
+      }
+      .pagedjs_pages {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        gap: 14px !important;
+        padding: 12px 8px 28px !important;
+        margin: 0 auto !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+      }
+      .pagedjs_page {
+        margin: 0 auto !important;
+        float: none !important;
+        box-sizing: border-box !important;
+        background: #fff !important;
+      }
     }
     .part-label {
       font-family: "Source Sans 3", system-ui, sans-serif;
@@ -308,13 +391,39 @@ function buildPreviewDocumentHtml() {
       margin: 0 0 1rem;
       line-height: 1.25;
     }
-    .pdf-body p {
+    /* Manuscript uses <div> blocks from contenteditable, not only <p> */
+    .pdf-body p,
+    .pdf-body div:not(.scene-break):not(.scene-spacer) {
       margin: 0 0 0.55em;
       text-align: justify;
       text-indent: ${state.paragraphIndent};
     }
-    .pdf-body p:first-of-type { text-indent: 0; }
-    .drop-cap .pdf-body > p:first-of-type::first-letter {
+    .pdf-body > p:first-child,
+    .pdf-body > div:first-child {
+      text-indent: 0;
+    }
+    .pdf-body p.scene-break,
+    .pdf-body div.scene-break {
+      text-indent: 0 !important;
+      text-align: center !important;
+    }
+    .pdf-body ul,
+    .pdf-body ol {
+      margin: 0.5em 0 0.75em;
+      padding-left: 1.35em;
+    }
+    .pdf-body li {
+      margin: 0 0 0.2em;
+      text-indent: 0;
+      text-align: left;
+    }
+    .pdf-body li p,
+    .pdf-body li div {
+      text-indent: 0;
+      margin: 0.15em 0;
+    }
+    .drop-cap .pdf-body > p:first-of-type::first-letter,
+    .drop-cap .pdf-body > div:first-of-type::first-letter {
       float: left;
       font-size: 2.85rem;
       line-height: 0.85;
@@ -326,6 +435,10 @@ function buildPreviewDocumentHtml() {
       margin: 1em 1.2em;
       font-style: italic;
       color: #475569;
+    }
+    .pdf-body blockquote p,
+    .pdf-body blockquote div {
+      text-indent: 0;
     }
     .scene-break {
       text-align: center;
@@ -383,6 +496,28 @@ function buildPrintableHtml() {
 
 let previewBlobUrl = null;
 
+function resetPreviewScroll() {
+  const outer = $("previewOuter");
+  outer.scrollLeft = 0;
+  outer.scrollTop = 0;
+  const iframe = /** @type {HTMLIFrameElement} */ (document.getElementById("iframePreview"));
+  if (!iframe) return;
+  try {
+    iframe.contentWindow?.scrollTo(0, 0);
+    const d = iframe.contentDocument;
+    if (d) {
+      d.documentElement.scrollLeft = 0;
+      d.documentElement.scrollTop = 0;
+      if (d.body) {
+        d.body.scrollLeft = 0;
+        d.body.scrollTop = 0;
+      }
+    }
+  } catch (_) {
+    /* cross-origin */
+  }
+}
+
 function refreshPreview() {
   const iframe = /** @type {HTMLIFrameElement} */ ($("iframePreview"));
   const placeholder = $("previewPlaceholder");
@@ -399,13 +534,20 @@ function refreshPreview() {
   const html = buildPreviewDocumentHtml();
   if (previewBlobUrl) URL.revokeObjectURL(previewBlobUrl);
   previewBlobUrl = URL.createObjectURL(new Blob([html], { type: "text/html" }));
+
+  iframe.onload = () => {
+    resetPreviewScroll();
+    requestAnimationFrame(resetPreviewScroll);
+  };
   iframe.src = previewBlobUrl;
 }
 
 function applyZoom() {
-  const wrap = $("previewScaleWrap");
+  const frame = $("previewFrameWrap");
   const z = state.zoom;
-  wrap.style.transform = `scale(${z})`;
+  frame.style.transform = "";
+  frame.style.transformOrigin = "";
+  frame.style.zoom = String(z);
   $("zoomPct").textContent = Math.round(z * 100) + "%";
 }
 
@@ -464,9 +606,11 @@ function renderNav(book) {
 
 function wirePanel() {
   const trim = $("optTrim");
-  trim.innerHTML = Object.entries(TRIM_SIZES)
-    .map(([k, v]) => `<option value="${k}">${escapeHtml(v.label)}</option>`)
-    .join("");
+  if (!TRIM_SIZES[state.trim]) state.trim = "6x9";
+  trim.innerHTML = TRIM_ORDER.map(k => {
+    const v = TRIM_SIZES[k];
+    return `<option value="${escapeHtml(k)}">${escapeHtml(v.label)}</option>`;
+  }).join("");
   trim.value = state.trim;
   trim.addEventListener("change", () => {
     state.trim = trim.value;
@@ -656,6 +800,9 @@ function init() {
     if (ev.data?.type === "alysum-pdf-pages") {
       const n = ev.data.count;
       $("pageInfo").textContent = n ? `${n} pages (preview)` : "Preview";
+      resetPreviewScroll();
+      requestAnimationFrame(resetPreviewScroll);
+      setTimeout(resetPreviewScroll, 100);
     }
   });
 

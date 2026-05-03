@@ -52,13 +52,11 @@
         </div>
       </div>
       <div class="preview-outer" id="previewOuter">
-        <div class="preview-scale-wrap" id="previewScaleWrap">
-          <div class="preview-frame-wrap">
+        <div class="preview-frame-wrap" id="previewFrameWrap">
             <iframe id="iframePreview" title="Paged print preview" class="hidden" sandbox="allow-scripts allow-same-origin"></iframe>
             <div id="previewPlaceholder" class="preview-placeholder">
               Sign in and open this page with <strong>?book=yourBookId</strong> (use the same id as in the manuscript editor). Export from the editor opens here automatically.
             </div>
-          </div>
         </div>
       </div>
     </main>
@@ -72,7 +70,7 @@
         <div class="field">
           <label for="optTrim">Trim size</label>
           <select id="optTrim"></select>
-          <p class="hint">Controls <code>@page size</code> for print and for Paged.js layout.</p>
+          <p class="hint">Every size matches <strong>B&amp;N Press</strong> interior trims (see their trim chart). Pick the same size you choose when you set up the book on press.barnesandnoble.com.</p>
         </div>
 
         <div class="section-title">Typography</div>
@@ -116,10 +114,12 @@
         <div class="field">
           <label for="optMargin">Margins</label>
           <select id="optMargin">
-            <option value="tight">Tight</option>
-            <option value="normal" selected>Normal</option>
-            <option value="wide">Wide</option>
+            <option value="tight">Tight (0.55″)</option>
+            <option value="normal">Normal (0.75″)</option>
+            <option value="bn" selected>B&amp;N safe (0.8″)</option>
+            <option value="wide">Wide (1″)</option>
           </select>
+          <p class="hint">Use <strong>B&amp;N safe</strong> so body copy stays clear of the trim edge; B&amp;N rejects art or type in the danger zone.</p>
         </div>
         <div class="field">
           <label for="optSceneBreak">Scene break between chapters</label>
