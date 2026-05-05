@@ -5,10 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta http-equiv="Cache-Control" content="no-cache" />
   <title>PDF &amp; Print — Alysum</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/css/pdf-editor.css?v=20260503n" />
+  <link rel="stylesheet" href="/css/pdf-editor.css?v=20260504a" />
   <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
 </head>
 <body>
@@ -17,17 +14,17 @@
       <div class="topbar-left">
         <span class="brand-mark" aria-hidden="true"></span>
         <div class="topbar-title-block">
-          <div class="topbar-kicker">PDF &amp; print preview</div>
-          <div class="topbar-book-title" id="topBookTitle">Loading…</div>
+          <div class="topbar-kicker">Print &amp; PDF</div>
+          <div class="topbar-book-title" id="topBookTitle" title="">Loading…</div>
         </div>
       </div>
       <div class="topbar-right">
         <button type="button" class="btn btn-ghost btn-theme" id="btnTheme" aria-pressed="false" title="Toggle light/dark interface">
           Dark mode
         </button>
-        <span class="status-pill" id="statusPill"></span>
-        <button type="button" class="btn btn-ghost" id="btnBack">← Manuscript</button>
-        <button type="button" class="btn btn-primary" id="btnPrint" title="Uses your browser on this phone or computer. The book is not sent to a PDF conversion server.">Print / Save as PDF</button>
+        <span class="status-pill" id="statusPill" role="status"></span>
+        <button type="button" class="btn btn-ghost btn-back" id="btnBack">← Manuscript</button>
+        <button type="button" class="btn btn-primary" id="btnPrint" title="Uses your browser on this device. Your manuscript is not uploaded to a separate PDF server.">Print / Save as PDF</button>
       </div>
     </header>
 
@@ -60,7 +57,9 @@
         <div class="preview-frame-wrap" id="previewFrameWrap">
             <iframe id="iframePreview" title="Paged print preview" class="hidden" sandbox="allow-scripts allow-same-origin"></iframe>
             <div id="previewPlaceholder" class="preview-placeholder">
-              Sign in and open this page with <strong>?book=yourBookId</strong> (use the same id as in the manuscript editor). Export from the editor opens here automatically.
+              <p class="preview-placeholder-lead">Print-ready preview</p>
+              <p class="preview-placeholder-body">Open this page from the manuscript editor (export), or add <code class="preview-code">?book=…</code> using the same book id as in the URL bar of <strong>editor.html</strong>.</p>
+              <p class="preview-placeholder-note">Layout runs in your browser only.</p>
             </div>
         </div>
       </div>
@@ -142,16 +141,16 @@
           <p class="hint">Use <strong>B&amp;N safe</strong> so body copy stays clear of the trim edge; B&amp;N rejects art or type in the danger zone.</p>
         </div>
         <div class="toggle-row">
-          <span>New page for each chapter</span>
-          <input type="checkbox" id="chkChapterPage" checked />
+          <label class="toggle-label" for="chkChapterPage">New page for each chapter</label>
+          <span class="switch"><input type="checkbox" id="chkChapterPage" checked role="switch" /><span class="switch-ui" aria-hidden="true"></span></span>
         </div>
         <div class="toggle-row">
-          <span>Drop cap (first paragraph)</span>
-          <input type="checkbox" id="chkDropCap" />
+          <label class="toggle-label" for="chkDropCap">Drop cap (first paragraph)</label>
+          <span class="switch"><input type="checkbox" id="chkDropCap" role="switch" /><span class="switch-ui" aria-hidden="true"></span></span>
         </div>
         <div class="toggle-row">
-          <span>Show “Front / back matter” labels in chapters</span>
-          <input type="checkbox" id="chkPartLabels" />
+          <label class="toggle-label" for="chkPartLabels">“Front / back matter” labels</label>
+          <span class="switch"><input type="checkbox" id="chkPartLabels" role="switch" /><span class="switch-ui" aria-hidden="true"></span></span>
         </div>
 
         <div class="divider"></div>
@@ -170,7 +169,7 @@
     </aside>
   </div>
 
-  <script type="module" src="/js/pdf-editor.js?v=20260503n"></script>
+  <script type="module" src="/js/pdf-editor.js?v=20260504a"></script>
   <script>
     (function () {
       var params = new URLSearchParams(window.location.search);

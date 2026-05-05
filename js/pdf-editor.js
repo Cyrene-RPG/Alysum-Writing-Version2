@@ -1257,8 +1257,19 @@ function buildPrintableHtml() {
 }
 
 let previewBlobUrl = null;
-/** After Paged.js lays out, fit page width to the preview column once. */
-let fitPreviewAfterPaged = false;
+/** When true, next iframe load fits zoom to the preview column (trim / first load only — not every typesetting tweak). */
+let pendingPreviewAutoFit = false;
+
+/** @type {ReturnType<typeof setTimeout> | null} */
+let previewRefreshTimer = null;
+
+function refreshPreviewDebounced() {
+  if (previewRefreshTimer) clearTimeout(previewRefreshTimer);
+  previewRefreshTimer = setTimeout(() => {
+    previewRefreshTimer = null;
+    refreshPreview();
+  }, 300);
+}
 
 function resetPreviewScroll() {
   const outer = $("previewOuter");
@@ -1282,11 +1293,20 @@ function resetPreviewScroll() {
   }
 }
 
-function refreshPreview() {
+/**
+ * @param {{ autoFit?: boolean }} [opts]
+ */
+function refreshPreview(opts = {}) {
+  if (previewRefreshTimer) {
+    clearTimeout(previewRefreshTimer);
+    previewRefreshTimer = null;
+  }
+
   const iframe = /** @type {HTMLIFrameElement} */ ($("iframePreview"));
   const placeholder = $("previewPlaceholder");
 
   if (!state.book) {
+    pendingPreviewAutoFit = false;
     iframe.classList.add("hidden");
     placeholder.classList.remove("hidden");
     return;
@@ -1295,14 +1315,22 @@ function refreshPreview() {
   placeholder.classList.add("hidden");
   iframe.classList.remove("hidden");
 
+  if (opts.autoFit) pendingPreviewAutoFit = true;
+
   ensurePrintFontFacesCss().then(() => {
     const html = buildPreviewDocumentHtml();
     if (previewBlobUrl) URL.revokeObjectURL(previewBlobUrl);
     previewBlobUrl = URL.createObjectURL(new Blob([html], { type: "text/html" }));
 
-    fitPreviewAfterPaged = true;
     iframe.onload = () => {
       resetPreviewScroll();
+      if (pendingPreviewAutoFit) {
+        pendingPreviewAutoFit = false;
+        requestAnimationFrame(() => {
+          autoFitPreviewToColumn();
+          applyZoom();
+        });
+      }
     };
     iframe.src = previewBlobUrl;
   });
@@ -1430,7 +1458,7 @@ function wirePanel() {
   trim.value = state.trim;
   trim.addEventListener("change", () => {
     state.trim = trim.value;
-    refreshPreview();
+    refreshPreview({ autoFit: true });
   });
 
   const bodyFont = $("optBodyFont");
@@ -1440,7 +1468,7 @@ function wirePanel() {
   bodyFont.value = state.bodyFont;
   bodyFont.addEventListener("change", () => {
     state.bodyFont = bodyFont.value;
-    refreshPreview();
+    refreshPreviewDebounced();
   });
 
   const headFont = $("optHeadingFont");
@@ -1451,61 +1479,61 @@ function wirePanel() {
   headFont.value = state.headingFont;
   headFont.addEventListener("change", () => {
     state.headingFont = headFont.value;
-    refreshPreview();
+    refreshPreviewDebounced();
   });
 
   const size = $("optBodySize");
   size.value = String(state.bodySizePt);
   size.addEventListener("change", () => {
     state.bodySizePt = Number(size.value) || 11;
-    refreshPreview();
+    refreshPreviewDebounced();
   });
 
   const lh = $("optLineHeight");
   lh.value = String(state.lineHeight);
   lh.addEventListener("change", () => {
     state.lineHeight = Number(lh.value) || 1.45;
-    refreshPreview();
+    refreshPreviewDebounced();
   });
 
   const indent = $("optIndent");
   indent.value = state.paragraphIndent;
   indent.addEventListener("change", () => {
     state.paragraphIndent = indent.value;
-    refreshPreview();
+    refreshPreviewDebounced();
   });
 
   const margin = $("optMargin");
   margin.value = state.marginPreset;
   margin.addEventListener("change", () => {
     state.marginPreset = margin.value;
-    refreshPreview();
+    refreshPreviewDebounced();
   });
 
   const hf = $("optHeaderFooter");
   hf.value = state.headerFooter;
   hf.addEventListener("change", () => {
     state.headerFooter = hf.value;
-    refreshPreview();
+    refreshPreviewDebounced();
   });
 
   $("chkChapterPage").checked = state.chapterNewPage;
   $("chkChapterPage").addEventListener("change", () => {
     state.chapterNewPage = $("chkChapterPage").checked;
-    refreshPreview();
+    refreshPreviewDebounced();
   });
 
   $("chkDropCap").checked = state.dropCap;
   $("chkDropCap").addEventListener("change", () => {
     state.dropCap = $("chkDropCap").checked;
-    refreshPreview();
+    refreshPreviewDebounced();
   });
 
   $("chkPartLabels").checked = state.showPartLabels;
   $("chkPartLabels").addEventListener("change", () => {
     state.showPartLabels = $("chkPartLabels").checked;
     renderNav(state.book);
-    refreshPreview();
+    refreshPreviewDebounced();
   });
 
   const z = $("zoomSlider");
@@ -1546,7 +1574,9 @@ function setStatus(text, isError = false) {
 async function loadBook(uid) {
   if (!bookId) {
     setStatus("No book in URL", true);
-    $("topBookTitle").textContent = "No book selected";
+    const te = $("topBookTitle");
+    te.textContent = "No book selected";
+    te.title = "";
     $("railWords").textContent = "—";
     return;
   }
@@ -1557,7 +1587,9 @@ async function loadBook(uid) {
 
     if (!snap.exists()) {
       setStatus("Book not found", true);
-      $("topBookTitle").textContent = "Not found";
+      const nf = $("topBookTitle");
+      nf.textContent = "Not found";
+      nf.title = "";
       $("railWords").textContent = "—";
       state.book = null;
       refreshPreview();
@@ -1592,12 +1624,15 @@ async function loadBook(uid) {
     if (pa) pa.value = state.printAuthorOverride;
     if (pc) pc.value = state.printCopyrightOverride;
 
-    $("topBookTitle").textContent = book.title || "Untitled";
+    const titleEl = $("topBookTitle");
+    const t = book.title || "Untitled";
+    titleEl.textContent = t;
+    titleEl.title = t;
     const tw = allChaptersFlat(book).reduce((s, ch) => s + countWords(ch.content || ""), 0);
     $("railWords").textContent = tw.toLocaleString();
 
     renderNav(book);
-    refreshPreview();
+    refreshPreview({ autoFit: true });
     applyZoom();
     setStatus("Ready");
   } catch (err) {
@@ -1613,7 +1648,9 @@ async function loadBook(uid) {
       msg = err.message;
     }
     setStatus(msg.length > 140 ? msg.slice(0, 137) + "…" : msg, true);
-    $("topBookTitle").textContent = "Error";
+    const errTitle = $("topBookTitle");
+    errTitle.textContent = "Error";
+    errTitle.title = "";
     $("railWords").textContent = "—";
   }
 }
@@ -1688,20 +1725,15 @@ function init() {
   window.addEventListener("message", ev => {
     if (ev.data?.type === "alysum-pdf-pages") {
       const n = ev.data.count;
-      $("pageInfo").textContent = n ? `${n} pages (preview)` : "Preview";
-      if (fitPreviewAfterPaged) {
-        fitPreviewAfterPaged = false;
-        requestAnimationFrame(() => {
-          autoFitPreviewToColumn();
-          resetPreviewScroll();
-        });
-      }
+      $("pageInfo").textContent = n ? `${n.toLocaleString()} pages` : "Preview";
     }
   });
 
   if (!bookId) {
     setStatus("Add ?book=… to the URL", true);
-    $("topBookTitle").textContent = "No book selected";
+    const te = $("topBookTitle");
+    te.textContent = "No book selected";
+    te.title = "";
     $("btnPrint").disabled = true;
     return;
   }
