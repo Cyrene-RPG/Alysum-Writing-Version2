@@ -719,11 +719,10 @@
             <div class="publish-modal-actions">                         <button class="publish-modal-btn secondary" id="closePublishBtn" type="button">Cancel</button>                  <button class="publish-modal-btn primary" id="publishNextBtn" type="button">Next</button>                   </div>
         </div>                                              </div>
 
-    <script type="module" src="/js/editor-notes-mount.js?v=1"></script>
-
     <script type="module">
         import { auth, db } from "./firebase.js";
-        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";               import { doc, getDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";                                                                                                           const params = new URLSearchParams(window.location.search);
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";               import { doc, getDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { mountEditorNotes } from "./js/nb-app.js?v=17";                                                                                                           const params = new URLSearchParams(window.location.search);
         const bookId = params.get("book");                                                                              const sidebar = document.getElementById("sidebar");
         const overlay = document.getElementById("overlay");
         const toggleSidebarBtn = document.getElementById("toggleSidebarBtn");
@@ -1278,6 +1277,12 @@ homeBtn.onclick = () => {
                                                                     fontSelect.value = localStorage.getItem("alysum-font") || "Georgia";
             fontSizeSelect.value = localStorage.getItem("alysum-fontSize") || "20";
             applyEditorStyle();
+
+            try {
+                mountEditorNotes(bookId, { db, uid: user.uid });
+            } catch (err) {
+                console.error("Notes panel:", err);
+            }
 
             setSaveStatus("Connecting...");
 
