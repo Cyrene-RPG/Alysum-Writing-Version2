@@ -9,10 +9,14 @@ import {
     setNoteContent,
     folderExpanded,
     toggleFolderExpanded,
+    collectDescendantIds,
+    moveItemWithPlacement,
+    moveItemToParentEnd,
+    getChildren,
     DEFAULT_VAULT_KEY
 } from "./alysum-vault.js";
 import { normalizeVaultPlain, plainToWikiHtml, serializeWikiBody } from "./alysum-wikilinks.js?v=8";
-import { createVaultFirebaseDriver } from "./alysum-vault-firebase.js?v=8";
+import { createVaultFirebaseDriver } from "./alysum-vault-firebase.js?v=9";
 
 function escapeHtml(s) {
     return String(s)
@@ -30,6 +34,160 @@ function subtreeHasMatch(items, item, q) {
     return getChildren(items, item.id).some(ch => subtreeHasMatch(items, ch, q));
 }
 
+function resolvePlacement(row, e, targetType) {
+    const inner = row.querySelector(".nb-tree-inner") || row;
+    const rect = inner.getBoundingClientRect();
+    const h = rect.height || 1;
+    const ratio = (e.clientY - rect.top) / h;
+    if (targetType === "folder") {
+        if (ratio < 0.33) return "before";
+        if (ratio > 0.67) return "after";
+        return "into";
+    }
+    return ratio < 0.5 ? "before" : "after";
+}
+
+function wouldAcceptDrop(state, dragId, targetId, placement) {
+    const item = state.items.find(i => i.id === dragId);
+    const target = state.items.find(i => i.id === targetId);
+    if (!item || !target || item.id === target.id) return false;
+
+    if (placement === "into") {
+        if (target.type !== "folder") return false;
+        if (item.type === "folder") {
+            const desc = collectDescendantIds(state.items, dragId);
+            if (desc.has(target.id)) return false;
+        }
+        if ((item.parentId || null) === target.id) {
+            const ordered = getChildren(state, target.id).map(i => i.id);
+            const sim = ordered.filter(id => id !== dragId);
+            sim.push(dragId);
+            return sim.join("\0") !== ordered.join("\0");
+        }
+        return true;
+    }
+
+    const newParent = target.parentId || null;
+    if (item.type === "folder" && newParent !== null) {
+        const desc = collectDescendantIds(state.items, dragId);
+        if (desc.has(newParent)) return false;
+    }
+
+    const oldParent = item.parentId || null;
+    if ((oldParent || null) === (newParent || null)) {
+        const ordered = getChildren(state, newParent).map(i => i.id);
+        const sim = ordered.filter(id => id !== dragId);
+        const tIx = sim.indexOf(targetId);
+        if (tIx === -1) return false;
+        const insertAt = placement === "before" ? tIx : tIx + 1;
+        sim.splice(insertAt, 0, dragId);
+        return sim.join("\0") !== ordered.join("\0");
+    }
+    return true;
+}
+
+function clearTreeDropHover(treeEl) {
+    treeEl.querySelectorAll(".nb-drop-hover").forEach(el => el.classList.remove("nb-drop-hover"));
+}
+
+function wouldAcceptRootEndDrop(state, dragId) {
+    const item = state.items.find(i => i.id === dragId);
+    if (!item) return false;
+    const rootKids = getChildren(state, null);
+    const before = rootKids.map(i => i.id).join("\0");
+    const ids = rootKids.map(i => i.id).filter(id => id !== dragId);
+    ids.push(dragId);
+    return ids.join("\0") !== before;
+}
+
+/**
+ * @param {HTMLElement} treeEl
+ * @param {object} state
+ * @param {object} opts
+ * @param {() => void} [opts.onMoved]
+ * @param {() => void} [opts.cancelArmSilent]
+ */
+function wireTreeDragDrop(treeEl, state, opts) {
+    let dragId = null;
+    const rootDrop = treeEl.querySelector(".nb-tree-root-drop");
+
+    function tryMoveToRootEnd(fromId) {
+        const r = moveItemToParentEnd(state, fromId, null);
+        if (r.ok) opts.onMoved?.();
+    }
+
+    if (rootDrop) {
+        rootDrop.addEventListener("dragover", e => {
+            if (!dragId) return;
+            if (!wouldAcceptRootEndDrop(state, dragId)) return;
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "move";
+            clearTreeDropHover(treeEl);
+            rootDrop.classList.add("nb-drop-hover");
+        });
+        rootDrop.addEventListener("dragleave", e => {
+            if (!rootDrop.contains(e.relatedTarget)) rootDrop.classList.remove("nb-drop-hover");
+        });
+        rootDrop.addEventListener("drop", e => {
+            e.preventDefault();
+            rootDrop.classList.remove("nb-drop-hover");
+            const fromId = e.dataTransfer.getData("text/plain") || dragId;
+            if (!fromId) return;
+            tryMoveToRootEnd(fromId);
+        });
+    }
+
+    treeEl.querySelectorAll(".nb-tree-row").forEach(row => {
+        const armed = row.classList.contains("is-armed-delete");
+        row.setAttribute("draggable", armed ? "false" : "true");
+
+        row.addEventListener("dragstart", e => {
+            if (
+                e.target.closest(".nb-tree-del-prep") ||
+                e.target.closest(".nb-arm-bar")
+            ) {
+                e.preventDefault();
+                return;
+            }
+            dragId = row.dataset.id;
+            e.dataTransfer.setData("text/plain", dragId);
+            e.dataTransfer.effectAllowed = "move";
+            row.classList.add("nb-dragging");
+            opts.cancelArmSilent?.();
+        });
+        row.addEventListener("dragend", () => {
+            row.classList.remove("nb-dragging");
+            clearTreeDropHover(treeEl);
+            rootDrop?.classList.remove("nb-drop-hover");
+            dragId = null;
+        });
+        row.addEventListener("dragover", e => {
+            if (!dragId) return;
+            const idOver = row.dataset.id;
+            const placement = resolvePlacement(row, e, row.dataset.type);
+            if (!wouldAcceptDrop(state, dragId, idOver, placement)) return;
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "move";
+            clearTreeDropHover(treeEl);
+            row.classList.add("nb-drop-hover");
+        });
+        row.addEventListener("dragleave", e => {
+            if (!row.contains(e.relatedTarget)) row.classList.remove("nb-drop-hover");
+        });
+        row.addEventListener("drop", e => {
+            e.preventDefault();
+            row.classList.remove("nb-drop-hover");
+            const fromId = e.dataTransfer.getData("text/plain") || dragId;
+            if (!fromId) return;
+            const idOver = row.dataset.id;
+            const placement = resolvePlacement(row, e, row.dataset.type);
+            if (!wouldAcceptDrop(state, fromId, idOver, placement)) return;
+            const r = moveItemWithPlacement(state, fromId, idOver, placement);
+            if (r.ok) opts.onMoved?.();
+        });
+    });
+}
+
 /**
  * @param {HTMLElement} treeEl
  * @param {object} state
@@ -44,6 +202,7 @@ function renderTree(treeEl, state, opts) {
         getArmedId,
         armDeleteRow,
         cancelArm,
+        cancelArmSilent,
         completeDeleteRow
     } = opts;
     const maxDepth = compact ? 8 : 48;
@@ -103,8 +262,12 @@ function renderTree(treeEl, state, opts) {
     }
 
     treeEl.innerHTML = "";
-    const content = renderLevel(null, 0);
-    treeEl.appendChild(content);
+    const rootDrop = document.createElement("div");
+    rootDrop.className = "nb-tree-root-drop";
+    rootDrop.setAttribute("aria-label", "Drop here to move items to vault root");
+    rootDrop.textContent = "Drop here for vault root";
+    treeEl.appendChild(rootDrop);
+    treeEl.appendChild(renderLevel(null, 0));
 
     if (!treeEl.querySelector(".nb-tree-row")) {
         treeEl.innerHTML = `<div class="nb-tree-empty">No matches.</div>`;
@@ -143,19 +306,29 @@ function renderTree(treeEl, state, opts) {
             const item = state.items.find(i => i.id === id);
             if (!item) return;
             if (type === "folder") {
-                if (getArmedId() && getArmedId() !== id) cancelArmSilent();
-                toggleFolderExpanded(state, id);
+                if (e.target.closest(".nb-chev")) {
+                    if (getArmedId() && getArmedId() !== id) cancelArmSilent?.();
+                    toggleFolderExpanded(state, id);
+                    saveVault(state, storageKey);
+                    renderTree(treeEl, state, opts);
+                    return;
+                }
+                if (getArmedId() && getArmedId() !== id) cancelArmSilent?.();
+                state.lastActiveId = id;
                 saveVault(state, storageKey);
                 renderTree(treeEl, state, opts);
+                opts.onSelectFolder?.(item);
                 return;
             }
-            if (getArmedId()) cancelArmSilent();
+            if (getArmedId()) cancelArmSilent?.();
             state.lastActiveId = id;
             saveVault(state, storageKey);
             renderTree(treeEl, state, opts);
             onSelectNote(item);
         });
     });
+
+    wireTreeDragDrop(treeEl, state, opts);
 }
 
 /**
@@ -216,9 +389,9 @@ export function bindVaultUI(elements, config = {}) {
             const raw = serializeWikiBody(elements.body);
             const next = normalizeVaultPlain(raw, state, note.id);
             setNoteContent(state, note.id, next);
-            if (next !== raw) {
-                elements.body.innerHTML = plainToWikiHtml(next, state);
-            }
+            // Always repaint from plain: literal [[ ]] in the DOM often matches `next === raw` after
+            // canonicalization, but links only exist as HTML from plainToWikiHtml.
+            elements.body.innerHTML = plainToWikiHtml(next, state);
             schedulePersist();
             renderTree(elements.tree, state, treeOpts());
             if (next !== raw) setStatus("Notes linked · saved");
@@ -322,6 +495,10 @@ export function bindVaultUI(elements, config = {}) {
         return state.items.find(i => i.id === state.lastActiveId && i.type === "note") || null;
     }
 
+    function activeFolder() {
+        return state.items.find(i => i.id === state.lastActiveId && i.type === "folder") || null;
+    }
+
     function treeOpts() {
         const filterRaw = elements.find && elements.find.value ? elements.find.value.trim().toLowerCase() : "";
         return {
@@ -331,12 +508,32 @@ export function bindVaultUI(elements, config = {}) {
             getArmedId: () => armedDeleteId,
             armDeleteRow,
             cancelArm,
+            cancelArmSilent,
             completeDeleteRow,
+            onMoved: () => {
+                cancelArmSilent();
+                persist();
+                refresh();
+                setStatus("Moved");
+            },
             onSelectNote: item => {
-                if (elements.title) elements.title.value = item.name;
+                if (elements.title) {
+                    elements.title.placeholder = "Untitled";
+                    elements.title.value = item.name;
+                }
                 applyBodyFromNote(item);
                 setStatus("Editing · " + item.name);
                 if (elements.title) elements.title.disabled = false;
+            },
+            onSelectFolder: item => {
+                clearWikiDebounce();
+                if (elements.title) {
+                    elements.title.placeholder = "Folder name";
+                    elements.title.value = item.name;
+                    elements.title.disabled = false;
+                }
+                applyBodyFromNote(null);
+                setStatus("Folder · rename in title, or ⌫ to remove");
             }
         };
     }
@@ -345,12 +542,27 @@ export function bindVaultUI(elements, config = {}) {
         renderTree(elements.tree, state, treeOpts());
 
         const note = activeNote();
+        const folder = activeFolder();
         if (note) {
-            if (elements.title) elements.title.value = note.name;
+            if (elements.title) {
+                elements.title.placeholder = "Untitled";
+                elements.title.value = note.name;
+            }
             applyBodyFromNote(note);
             if (elements.title) elements.title.disabled = false;
+            setStatus("Editing · " + note.name);
+        } else if (folder) {
+            if (elements.title) {
+                elements.title.placeholder = "Folder name";
+                elements.title.value = folder.name;
+                elements.title.disabled = false;
+            }
+            clearWikiDebounce();
+            applyBodyFromNote(null);
+            setStatus("Folder · rename in title, or ⌫ to remove");
         } else {
             if (elements.title) {
+                elements.title.placeholder = "Untitled";
                 elements.title.value = "";
                 elements.title.disabled = true;
             }
@@ -362,7 +574,7 @@ export function bindVaultUI(elements, config = {}) {
     elements.newNote?.addEventListener("click", () => {
         cancelArmSilent();
         clearWikiDebounce();
-        const parentId = activeNote()?.parentId ?? null;
+        const parentId = activeFolder()?.id ?? activeNote()?.parentId ?? null;
         addNote(state, parentId);
         persist();
         refresh();
@@ -372,8 +584,7 @@ export function bindVaultUI(elements, config = {}) {
     elements.newFolder?.addEventListener("click", () => {
         cancelArmSilent();
         clearWikiDebounce();
-        const folderSel = state.items.find(i => i.id === state.lastActiveId && i.type === "folder");
-        const parentId = folderSel ? folderSel.id : activeNote()?.parentId ?? null;
+        const parentId = activeFolder()?.id ?? activeNote()?.parentId ?? null;
         addFolder(state, parentId);
         persist();
         refresh();
@@ -383,19 +594,27 @@ export function bindVaultUI(elements, config = {}) {
     elements.deleteItem?.addEventListener("click", () => {
         const id = state.lastActiveId;
         if (!id) {
-            setStatus("Select a note in the tree first");
+            setStatus("Select a note or folder in the tree first");
             return;
         }
         if (!state.items.some(i => i.id === id)) {
-            setStatus("Select a note in the tree first");
+            setStatus("Select a note or folder in the tree first");
             return;
         }
         armDeleteRow(id);
     });
 
     elements.title?.addEventListener("input", () => {
+        if (!elements.title) return;
+        const folder = activeFolder();
+        if (folder) {
+            renameItem(state, folder.id, elements.title.value);
+            schedulePersist();
+            renderTree(elements.tree, state, treeOpts());
+            return;
+        }
         const note = activeNote();
-        if (!note || !elements.title) return;
+        if (!note) return;
         renameItem(state, note.id, elements.title.value);
         schedulePersist();
         renderTree(elements.tree, state, treeOpts());
@@ -435,9 +654,7 @@ export function bindVaultUI(elements, config = {}) {
         const raw = serializeWikiBody(elements.body);
         const next = normalizeVaultPlain(raw, state, note.id);
         setNoteContent(state, note.id, next);
-        if (next !== raw) {
-            elements.body.innerHTML = plainToWikiHtml(next, state);
-        }
+        elements.body.innerHTML = plainToWikiHtml(next, state);
         persist();
         renderTree(elements.tree, state, treeOpts());
     });

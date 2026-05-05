@@ -2,7 +2,7 @@
 <html>
 <head>
     <!-- If notes UI looks stale after deploy, bump v= on the next two lines (same number). -->
-    <link rel="stylesheet" href="/css/notebook.css?v=8" />
+    <link rel="stylesheet" href="/css/notebook.css?v=9" />
     <title>Alysum Editor</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -537,7 +537,7 @@
             <div class="nb-hat-actions">
                 <button class="nb-hat-btn" id="nbNew" type="button" title="New note">＋</button>
                 <button class="nb-hat-btn" id="nbNewFolder" type="button" title="New folder">📁</button>
-                <button class="nb-hat-btn" id="nbDel" type="button" title="Delete note or folder">⌫</button>
+                <button class="nb-hat-btn" id="nbDel" type="button" title="Delete selected note or folder">⌫</button>
                 <button class="nb-hat-btn" id="nbFull" type="button" title="Open full page">⇱</button>
                 <button class="nb-hat-btn" id="nbClose" type="button" title="Close">×</button>
             </div>
@@ -1191,7 +1191,7 @@ homeBtn.onclick = () => {
                                                                     fontSelect.value = localStorage.getItem("alysum-font") || "Georgia";
             fontSizeSelect.value = localStorage.getItem("alysum-fontSize") || "20";
             applyEditorStyle();
-            import("/js/nb-app.js?v=8")
+            import("/js/nb-app.js?v=12")
                 .then(m => {
                     m.mountEditorNotes(bookId, { db, uid: user.uid });
                 })

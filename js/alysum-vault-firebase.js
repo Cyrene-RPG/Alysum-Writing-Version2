@@ -9,7 +9,7 @@ export function vaultFirestoreRef(db, uid) {
 
 function packState(state) {
     return {
-        v: 1,
+        v: state.v ?? 2,
         expandedFolders: state.expandedFolders,
         lastActiveId: state.lastActiveId,
         items: JSON.parse(JSON.stringify(state.items)),

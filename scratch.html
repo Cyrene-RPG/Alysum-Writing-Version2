@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Scratch notes — Alysum</title>
-    <link rel="stylesheet" href="/css/notebook.css?v=8" />
+    <link rel="stylesheet" href="/css/notebook.css?v=9" />
 </head>
 <body class="scratch-page">
     <div class="scratch-shell">
@@ -44,7 +44,7 @@
     <script type="module">
         import { auth, db } from "./firebase.js";
         import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-        import { bindVaultUI, DEFAULT_VAULT_KEY } from "./js/alysum-vault-ui.js?v=8";
+        import { bindVaultUI, DEFAULT_VAULT_KEY } from "./js/alysum-vault-ui.js?v=12";
 
         onAuthStateChanged(auth, user => {
             if (!user) {

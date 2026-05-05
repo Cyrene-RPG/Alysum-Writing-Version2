@@ -1,4 +1,4 @@
-import { bindVaultUI, DEFAULT_VAULT_KEY } from "./alysum-vault-ui.js?v=8";
+import { bindVaultUI, DEFAULT_VAULT_KEY } from "./alysum-vault-ui.js?v=12";
 import { serializeWikiBody } from "./alysum-wikilinks.js?v=8";
 
 /**
@@ -113,7 +113,7 @@ export function mountEditorNotes(bookId, firebase = null) {
         const note = activeNoteFromVault();
         const editor = document.getElementById("editor");
         if (!note || !editor || bodyEl.contentEditable === "false") {
-            setStatus("Select a note first");
+            setStatus("Select a note (not a folder) to insert from");
             return;
         }
         const raw = getNotePlain().trim();
