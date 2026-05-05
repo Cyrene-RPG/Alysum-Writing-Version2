@@ -722,7 +722,6 @@
     <script type="module">
         import { auth, db } from "./firebase.js";
         import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";               import { doc, getDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-        /* Notes: load via dynamic import so a vault sub-module 404 never blocks the whole editor. */
         const params = new URLSearchParams(window.location.search);
         const bookId = params.get("book");                                                                              const sidebar = document.getElementById("sidebar");
         const overlay = document.getElementById("overlay");
@@ -1281,10 +1280,6 @@ homeBtn.onclick = () => {
 
             setSaveStatus("Connecting...");
 
-            import("./js/nb-app.js?v=18")
-                .then(nb => nb.mountEditorNotes(bookId, { db, uid: user.uid }))
-                .catch(err => console.error("Notes panel (editor still works):", err));
-
             try {
                 await loadBook(user.uid);                           } catch (e) {                                               console.error(e);
                 setSaveStatus("Error loading");
@@ -1297,4 +1292,5 @@ homeBtn.onclick = () => {
                 window.location.href = `/pdf-editor.html?book=${encodeURIComponent(bookId)}`;
             });
         });                                                 </script>
+    <script type="module" src="./js/editor-notes-bootstrap.js?v=1"></script>
                                                         </body>
