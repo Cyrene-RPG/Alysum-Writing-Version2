@@ -301,22 +301,28 @@
             font-weight: 700;
         }
 
-        /* Hover hints: small white label under the control (native hover, no title=) */
-        .topbar .icon-btn[data-tip]:hover {
+        /* Hover hints on .topbar-tip wrapper — ::after on <button> can block clicks in some browsers */
+        .topbar .topbar-tip {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            vertical-align: middle;
+        }
+
+        .topbar .topbar-tip:hover > .icon-btn {
             box-shadow: 0 0 0 2px rgba(109, 40, 217, 0.45);
         }
 
-        .topbar .icon-btn.purple[data-tip]:hover,
-        .topbar .icon-btn.danger[data-tip]:hover {
+        .topbar .topbar-tip:hover > .icon-btn.purple,
+        .topbar .topbar-tip:hover > .icon-btn.danger {
             box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.55);
         }
 
-        .topbar .icon-btn[data-tip],
         .topbar .save-status[data-tip] {
             position: relative;
         }
 
-        .topbar .icon-btn[data-tip]::after,
+        .topbar .topbar-tip[data-tip]::after,
         .topbar .save-status[data-tip]::after {
             content: attr(data-tip);
             position: absolute;
@@ -343,7 +349,7 @@
             transition: opacity 0.08s ease, transform 0.08s ease;
         }
 
-        .topbar .icon-btn[data-tip]:hover::after,
+        .topbar .topbar-tip[data-tip]:hover::after,
         .topbar .save-status[data-tip]:hover::after {
             opacity: 1;
             transform: translateX(-50%) translateY(0);
@@ -653,19 +659,37 @@
     <div class="main">
         <div class="topbar">
             <div class="topbar-left">
-                <button class="icon-btn" id="toggleSidebarBtn" type="button" data-tip="Sidebar on / off" aria-label="Toggle sidebar">☰</button>
-                <button class="icon-btn" id="homeBtn" type="button" data-tip="Studio — your books" aria-label="Back to Studio">🏠</button>
+                <span class="topbar-tip" data-tip="Sidebar on / off">
+                    <button class="icon-btn" id="toggleSidebarBtn" type="button" aria-label="Toggle sidebar">☰</button>
+                </span>
+                <span class="topbar-tip" data-tip="Studio — your books">
+                    <button class="icon-btn" id="homeBtn" type="button" aria-label="Back to Studio">🏠</button>
+                </span>
                 <div class="top-title" id="topBookTitle">Loading...</div>
             </div>
 
             <div class="topbar-right">
-                <button class="icon-btn purple" id="quickAddBtn" type="button" data-tip="New chapter" aria-label="Add chapter">＋</button>
-                <button class="icon-btn purple" id="publishTopBtn" type="button" data-tip="Publish to web" aria-label="Publish">🚀</button>
-                <button class="icon-btn purple" id="exportBtn" type="button" data-tip="Export / print (PDF)" aria-label="Export">📄</button>
-                <button class="icon-btn" id="nbBtn" type="button" data-tip="Notes" aria-label="Notes">⌘</button>
-                <button class="icon-btn" id="renameChapterBtn" type="button" data-tip="Rename chapter" aria-label="Rename chapter">⋯</button>
-                <button class="icon-btn" id="themeTopBtn" type="button" data-tip="Light / dark" aria-label="Toggle theme">◐</button>
-                <button class="icon-btn danger" id="deleteBookTopBtn" type="button" data-tip="Delete entire book" aria-label="Delete book">🗑</button>
+                <span class="topbar-tip" data-tip="New chapter">
+                    <button class="icon-btn purple" id="quickAddBtn" type="button" aria-label="Add chapter">＋</button>
+                </span>
+                <span class="topbar-tip" data-tip="Publish to web">
+                    <button class="icon-btn purple" id="publishTopBtn" type="button" aria-label="Publish">🚀</button>
+                </span>
+                <span class="topbar-tip" data-tip="Export / print (PDF)">
+                    <button class="icon-btn purple" id="exportBtn" type="button" aria-label="Export">📄</button>
+                </span>
+                <span class="topbar-tip" data-tip="Notes">
+                    <button class="icon-btn" id="nbBtn" type="button" aria-label="Notes">⌘</button>
+                </span>
+                <span class="topbar-tip" data-tip="Rename chapter">
+                    <button class="icon-btn" id="renameChapterBtn" type="button" aria-label="Rename chapter">⋯</button>
+                </span>
+                <span class="topbar-tip" data-tip="Light / dark">
+                    <button class="icon-btn" id="themeTopBtn" type="button" aria-label="Toggle theme">◐</button>
+                </span>
+                <span class="topbar-tip" data-tip="Delete entire book">
+                    <button class="icon-btn danger" id="deleteBookTopBtn" type="button" aria-label="Delete book">🗑</button>
+                </span>
                 <div class="save-status" id="saveStatus" data-tip="Save status" aria-live="polite">Loading...</div>
             </div>
         </div>
@@ -1266,15 +1290,12 @@ homeBtn.onclick = () => {
                 await loadBook(user.uid);                           } catch (e) {                                               console.error(e);
                 setSaveStatus("Error loading");
             }
-const exportBtn = document.getElementById("exportBtn");
-
-exportBtn.addEventListener("click", () => {
-  if (!bookId) {
-    alert("No book loaded.");
-    return;
-  }
-
-  window.location.href = `/pdf-editor.html?book=${encodeURIComponent(bookId)}`;
-});
+            document.getElementById("exportBtn")?.addEventListener("click", () => {
+                if (!bookId) {
+                    alert("No book loaded.");
+                    return;
+                }
+                window.location.href = `/pdf-editor.html?book=${encodeURIComponent(bookId)}`;
+            });
         });                                                 </script>
                                                         </body>
