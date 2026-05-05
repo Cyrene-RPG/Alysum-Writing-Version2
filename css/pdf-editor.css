@@ -641,6 +641,52 @@ input[type="checkbox"] {
   }
 }
 
+@media (max-width: 640px) {
+  .topbar {
+    height: auto;
+    min-height: 52px;
+    flex-wrap: wrap;
+    padding: 10px 12px;
+    align-items: flex-start;
+    row-gap: 10px;
+  }
+
+  .topbar-right {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    width: 100%;
+    flex-shrink: 1;
+    gap: 6px;
+  }
+
+  .topbar-book-title {
+    max-width: 100%;
+  }
+
+  .btn-theme {
+    min-width: auto;
+  }
+
+  .btn-primary {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+
+  .stage-toolbar {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+
+  .stage-toolbar-left {
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+
+  .zoom-slider {
+    width: min(120px, 42vw);
+  }
+}
+
 @media print {
   .topbar,
   .rail,

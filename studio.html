@@ -3,6 +3,7 @@
 <head>
     <title>Studio - Alysum</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
 
     <style>
         * { box-sizing: border-box; }
@@ -652,6 +653,15 @@
 
             .timer {
                 font-size: 46px;
+            }
+        }
+
+        @media (max-width: 420px) {
+            .header-center {
+                font-size: 17px;
+                max-width: calc(100vw - 120px);
+                overflow: hidden;
+                text-overflow: ellipsis;
             }
         }
     </style>

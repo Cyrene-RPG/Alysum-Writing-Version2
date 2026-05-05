@@ -2,8 +2,9 @@
 <html>
 <head>
     <title>Alysum Library</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">                                  
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
+
     <style>
         * {
             box-sizing: border-box;
@@ -320,6 +321,11 @@
         }
 
         @media (max-width: 700px) {
+            html,
+            body {
+                overflow-x: hidden;
+            }
+
             .topbar-inner,
             .page {
                 padding-left: 14px;

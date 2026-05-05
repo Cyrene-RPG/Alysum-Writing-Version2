@@ -747,3 +747,22 @@
         grid-template-rows: minmax(200px, 38vh) 1fr;
     }
 }
+
+@media (max-width: 480px) {
+    .vault-shell,
+    .scratch-shell {
+        padding: 12px 12px 28px;
+    }
+
+    .vault-hero,
+    .scratch-hero {
+        padding: 16px 16px;
+        border-radius: 18px;
+    }
+
+    .vault-grid,
+    .scratch-grid {
+        gap: 10px;
+        min-height: 360px;
+    }
+}

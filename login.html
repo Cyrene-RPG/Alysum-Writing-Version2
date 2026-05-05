@@ -3,6 +3,7 @@
 <head>
     <title>Login - Alysum</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
 
     <style>
         * {
@@ -90,6 +91,15 @@
         button:disabled {
             opacity: 0.65;
             cursor: not-allowed;
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 12px;
+                padding-left: max(12px, env(safe-area-inset-left, 0px));
+                padding-right: max(12px, env(safe-area-inset-right, 0px));
+                padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
+            }
         }
     </style>
 </head>

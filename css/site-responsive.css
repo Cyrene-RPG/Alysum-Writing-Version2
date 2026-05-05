@@ -1,0 +1,20 @@
+/**
+ * Alysum — site-wide responsive baseline (additive, low specificity).
+ * Linked from all HTML entry points so phones and desktops share sensible defaults.
+ */
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+img,
+video {
+  max-width: 100%;
+  height: auto;
+}
+
+picture {
+  display: block;
+  max-width: 100%;
+}

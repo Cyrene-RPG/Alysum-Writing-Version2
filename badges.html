@@ -1,9 +1,10 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+<meta charset="UTF-8" />
 <title>Alysum Achievements</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+<link rel="stylesheet" href="/css/site-responsive.css?v=1" />
 <style>
 * { box-sizing: border-box; }
 
@@ -65,12 +66,14 @@ body {
 
 .stats {
     display: flex;
+    flex-wrap: wrap;
     gap: 12px;
     margin-bottom: 20px;
 }
 
 .stat {
-    flex: 1;
+    flex: 1 1 140px;
+    min-width: 0;
     background: var(--panel);
     border: 1px solid var(--border);
     border-radius: 18px;
@@ -146,6 +149,28 @@ body {
     margin-top: 6px;
     color: var(--muted);
     font-weight: 700;
+}
+
+@media (max-width: 540px) {
+    .stats {
+        flex-direction: column;
+    }
+
+    .stat {
+        flex: 1 1 auto;
+    }
+
+    .header-title {
+        font-size: 17px;
+        max-width: min(260px, 72vw);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .container {
+        padding: 14px 12px;
+    }
 }
 </style>
 </head>
