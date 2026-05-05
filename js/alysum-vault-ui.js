@@ -12,7 +12,6 @@ import {
     collectDescendantIds,
     moveItemWithPlacement,
     moveItemToParentEnd,
-    getChildren,
     DEFAULT_VAULT_KEY
 } from "./alysum-vault.js";
 import { normalizeVaultPlain, plainToWikiHtml, serializeWikiBody } from "./alysum-wikilinks.js?v=8";
