@@ -17,29 +17,62 @@ export function mountEditorNotes(bookId, firebase = null) {
     const bodyEl = document.getElementById("nbBody");
 
     if (!panel || !btn || !bodyEl) return;
+    if (btn.dataset.notesMounted === "1") return;
+    btn.dataset.notesMounted = "1";
 
     const setStatus = msg => {
         if (statusEl) statusEl.textContent = msg;
     };
 
-    const api = bindVaultUI(
-        {
-            tree: document.getElementById("nbTree"),
-            find: document.getElementById("nbFind"),
-            title: document.getElementById("nbTitle"),
-            body: bodyEl,
-            newNote: document.getElementById("nbNew"),
-            newFolder: document.getElementById("nbNewFolder"),
-            deleteItem: document.getElementById("nbDel")
-        },
-        {
-            storageKey: DEFAULT_VAULT_KEY,
-            compact: true,
-            setStatus,
-            firebaseDb: firebase?.db,
-            firebaseUid: firebase?.uid
+    const stubApi = {
+        refresh: () => {},
+        getState: () => ({ v: 2, items: [], lastActiveId: null, expandedFolders: [] })
+    };
+
+    let api;
+    try {
+        api = bindVaultUI(
+            {
+                tree: document.getElementById("nbTree"),
+                find: document.getElementById("nbFind"),
+                title: document.getElementById("nbTitle"),
+                body: bodyEl,
+                newNote: document.getElementById("nbNew"),
+                newFolder: document.getElementById("nbNewFolder"),
+                deleteItem: document.getElementById("nbDel")
+            },
+            {
+                storageKey: DEFAULT_VAULT_KEY,
+                compact: true,
+                setStatus,
+                firebaseDb: firebase?.db,
+                firebaseUid: firebase?.uid
+            }
+        );
+    } catch (err) {
+        console.error("Notes vault failed to bind:", err);
+        api = stubApi;
+    }
+
+    function openPanel() {
+        panel.classList.remove("hidden");
+        try {
+            api.refresh();
+            setStatus("Vault synced");
+        } catch (err) {
+            console.error("Notes refresh:", err);
+            setStatus("Notes opened (refresh error — check console)");
         }
-    );
+    }
+
+    function closePanel() {
+        panel.classList.add("hidden");
+    }
+
+    btn.addEventListener("click", () => {
+        if (panel.classList.contains("hidden")) openPanel();
+        else closePanel();
+    });
 
     function getNotePlain() {
         if (bodyEl.contentEditable === "true") return serializeWikiBody(bodyEl);
@@ -140,20 +173,6 @@ export function mountEditorNotes(bookId, firebase = null) {
         setStatus("Appended to chapter");
     });
 
-    function openPanel() {
-        panel.classList.remove("hidden");
-        api.refresh();
-        setStatus("Vault synced");
-    }
-
-    function closePanel() {
-        panel.classList.add("hidden");
-    }
-
-    btn.addEventListener("click", () => {
-        if (panel.classList.contains("hidden")) openPanel();
-        else closePanel();
-    });
     close?.addEventListener("click", closePanel);
 
     full?.addEventListener("click", () => {

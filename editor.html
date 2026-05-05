@@ -307,6 +307,11 @@
             display: inline-flex;
             align-items: center;
             vertical-align: middle;
+            pointer-events: none;
+        }
+
+        .topbar .topbar-tip .icon-btn {
+            pointer-events: auto;
         }
 
         .topbar .topbar-tip:hover > .icon-btn {
@@ -1276,13 +1281,12 @@ homeBtn.onclick = () => {
                                                                     fontSelect.value = localStorage.getItem("alysum-font") || "Georgia";
             fontSizeSelect.value = localStorage.getItem("alysum-fontSize") || "20";
             applyEditorStyle();
-            import("/js/nb-app.js?v=12")
-                .then(m => {
-                    m.mountEditorNotes(bookId, { db, uid: user.uid });
-                })
-                .catch(err => {
-                    console.error("Notes panel failed (manuscript editor is unaffected):", err);
-                });
+            try {
+                const nb = await import("/js/nb-app.js?v=13");
+                nb.mountEditorNotes(bookId, { db, uid: user.uid });
+            } catch (err) {
+                console.error("Notes panel failed (manuscript editor is unaffected):", err);
+            }
 
             setSaveStatus("Connecting...");
 
