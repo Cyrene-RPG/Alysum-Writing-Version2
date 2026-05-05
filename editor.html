@@ -307,11 +307,6 @@
             display: inline-flex;
             align-items: center;
             vertical-align: middle;
-            pointer-events: none;
-        }
-
-        .topbar .topbar-tip > .icon-btn {
-            pointer-events: auto;
         }
 
         .topbar .topbar-tip:hover > .icon-btn {
@@ -684,7 +679,15 @@
                     <button class="icon-btn purple" id="exportBtn" type="button" aria-label="Export">📄</button>
                 </span>
                 <span class="topbar-tip" data-tip="Notes">
-                    <button class="icon-btn" id="nbBtn" type="button" aria-label="Notes">⌘</button>
+                    <button
+                        class="icon-btn"
+                        id="nbBtn"
+                        type="button"
+                        aria-label="Notes"
+                        onclick="var p=document.getElementById('nbPanel');if(!p)return;var wasHidden=p.classList.contains('hidden');p.classList.toggle('hidden');if(wasHidden&&!p.classList.contains('hidden')){try{(window.__alysumNotesOpenPanel||function(){})( )}catch(e){console.error(e)}}"
+                    >
+                        ⌘
+                    </button>
                 </span>
                 <span class="topbar-tip" data-tip="Rename chapter">
                     <button class="icon-btn" id="renameChapterBtn" type="button" aria-label="Rename chapter">⋯</button>
@@ -1285,7 +1288,8 @@ homeBtn.onclick = () => {
 
             void (async () => {
                 try {
-                    const nb = await import("./js/nb-app.js?v=21");
+                    const href = new URL("./js/nb-app.js?v=24", import.meta.url).href;
+                    const nb = await import(href);
                     nb.mountEditorNotes(bookId, { db, uid: user.uid });
                 } catch (err) {
                     console.error("Notes:", err);

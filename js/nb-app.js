@@ -18,7 +18,7 @@ export function mountEditorNotes(bookId, firebase = null) {
     const treeEl = document.getElementById("nbTree");
 
     if (!panel || !btn || !bodyEl || !treeEl) return;
-    if (btn.dataset.notesUiBound === "1") return;
+    if (panel.dataset.alysumNotesInit === "1") return;
 
     const setStatus = msg => {
         if (statusEl) statusEl.textContent = msg;
@@ -64,11 +64,8 @@ export function mountEditorNotes(bookId, firebase = null) {
         panel.classList.add("hidden");
     }
 
-    btn.addEventListener("click", () => {
-        const wasHidden = panel.classList.contains("hidden");
-        panel.classList.toggle("hidden");
-        if (wasHidden && !panel.classList.contains("hidden")) openPanel();
-    });
+    /** Editor ⌘ button uses inline onclick to toggle; this runs after open to refresh vault. */
+    window.__alysumNotesOpenPanel = openPanel;
 
     function getNotePlain() {
         if (bodyEl.contentEditable === "true") return serializeWikiBody(bodyEl);
@@ -191,6 +188,5 @@ export function mountEditorNotes(bookId, firebase = null) {
         }
     });
 
-    btn.dataset.notesUiBound = "1";
     panel.dataset.alysumNotesInit = "1";
 }
