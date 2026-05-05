@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Notes Library — Alysum</title>
-    <link rel="stylesheet" href="/css/notebook.css?v=4" />
+    <link rel="stylesheet" href="/css/notebook.css?v=8" />
 </head>
 <body class="vault-page">
     <div class="vault-shell">
@@ -12,7 +12,7 @@
             <div>
                 <h1>Notes library</h1>
                 <p>
-                    Folders and notes stay on this device until you add cloud sync later. The same vault opens in the editor scratch panel and the compact scratch page.
+                    Syncs to your Alysum account when you’re signed in. The same vault opens in the editor scratch panel and scratch page.
                 </p>
             </div>
             <div class="vault-hero-actions">
@@ -36,33 +36,44 @@
                 <div class="vault-editor-head">
                     <input id="vaultTitle" class="vault-title-input" type="text" placeholder="Untitled" />
                 </div>
-                <textarea id="vaultBody" class="vault-body" placeholder="Write markdown-flavored notes, ideas, snippets…"></textarea>
-                <footer class="vault-status" id="vaultStatus">Ready</footer>
+                <div id="vaultBody" class="vault-body nb-body-ce" contenteditable="false" spellcheck="true" data-placeholder="Write here. [[Note title]] creates or links a note; matching titles auto-link after a short pause."></div>
+                <footer class="vault-status" id="vaultStatus">Checking sign-in…</footer>
             </section>
         </div>
     </div>
     <script type="module">
-        import { bindVaultUI, DEFAULT_VAULT_KEY } from "./js/alysum-vault-ui.js?v=4";
+        import { auth, db } from "./firebase.js";
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import { bindVaultUI, DEFAULT_VAULT_KEY } from "./js/alysum-vault-ui.js?v=8";
 
-        bindVaultUI(
-            {
-                tree: document.getElementById("vaultTree"),
-                find: document.getElementById("vaultFind"),
-                title: document.getElementById("vaultTitle"),
-                body: document.getElementById("vaultBody"),
-                newNote: document.getElementById("vaultNewNote"),
-                newFolder: document.getElementById("vaultNewFolder"),
-                deleteItem: document.getElementById("vaultDel")
-            },
-            {
-                storageKey: DEFAULT_VAULT_KEY,
-                compact: false,
-                setStatus: msg => {
-                    const el = document.getElementById("vaultStatus");
-                    if (el) el.textContent = msg;
-                }
+        onAuthStateChanged(auth, user => {
+            if (!user) {
+                window.location.href = "/login.html?next=" + encodeURIComponent("/vault.html");
+                return;
             }
-        );
+
+            bindVaultUI(
+                {
+                    tree: document.getElementById("vaultTree"),
+                    find: document.getElementById("vaultFind"),
+                    title: document.getElementById("vaultTitle"),
+                    body: document.getElementById("vaultBody"),
+                    newNote: document.getElementById("vaultNewNote"),
+                    newFolder: document.getElementById("vaultNewFolder"),
+                    deleteItem: document.getElementById("vaultDel")
+                },
+                {
+                    storageKey: DEFAULT_VAULT_KEY,
+                    compact: false,
+                    firebaseDb: db,
+                    firebaseUid: user.uid,
+                    setStatus: msg => {
+                        const el = document.getElementById("vaultStatus");
+                        if (el) el.textContent = msg;
+                    }
+                }
+            );
+        });
     </script>
 </body>
 </html>

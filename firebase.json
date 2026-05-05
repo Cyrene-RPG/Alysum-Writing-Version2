@@ -130,6 +130,24 @@
             "value": "no-store, no-cache, must-revalidate, max-age=0"
           }
         ]
+      },
+      {
+        "source": "/js/alysum-wikilinks.js",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-store, no-cache, must-revalidate, max-age=0"
+          }
+        ]
+      },
+      {
+        "source": "/js/alysum-vault-firebase.js",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-store, no-cache, must-revalidate, max-age=0"
+          }
+        ]
       }
     ],
     "rewrites": [

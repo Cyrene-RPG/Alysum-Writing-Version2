@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Scratch notes — Alysum</title>
-    <link rel="stylesheet" href="/css/notebook.css?v=4" />
+    <link rel="stylesheet" href="/css/notebook.css?v=8" />
 </head>
 <body class="scratch-page">
     <div class="scratch-shell">
@@ -12,7 +12,7 @@
             <div>
                 <h1>Scratch notes</h1>
                 <p>
-                    A compact space for quick thoughts. Everything here is the same vault as the full library—open the library anytime in a new tab.
+                    Same vault as the full library, synced to your account when signed in. Open the library in another tab anytime.
                 </p>
             </div>
             <div class="scratch-hero-actions">
@@ -36,33 +36,44 @@
                 <div class="scratch-editor-head">
                     <input id="scTitle" class="scratch-title-input" type="text" placeholder="Untitled" />
                 </div>
-                <textarea id="scBody" class="scratch-body" placeholder="Jot ideas, links, outlines…"></textarea>
-                <footer class="scratch-status" id="scStatus">Ready</footer>
+                <div id="scBody" class="scratch-body nb-body-ce" contenteditable="false" spellcheck="true" data-placeholder="Jot ideas. [[Note title]] links; matching note titles auto-link after a pause."></div>
+                <footer class="scratch-status" id="scStatus">Checking sign-in…</footer>
             </section>
         </div>
     </div>
     <script type="module">
-        import { bindVaultUI, DEFAULT_VAULT_KEY } from "./js/alysum-vault-ui.js?v=4";
+        import { auth, db } from "./firebase.js";
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import { bindVaultUI, DEFAULT_VAULT_KEY } from "./js/alysum-vault-ui.js?v=8";
 
-        bindVaultUI(
-            {
-                tree: document.getElementById("scTree"),
-                find: document.getElementById("scFind"),
-                title: document.getElementById("scTitle"),
-                body: document.getElementById("scBody"),
-                newNote: document.getElementById("scNewNote"),
-                newFolder: document.getElementById("scNewFolder"),
-                deleteItem: document.getElementById("scDel")
-            },
-            {
-                storageKey: DEFAULT_VAULT_KEY,
-                compact: true,
-                setStatus: msg => {
-                    const el = document.getElementById("scStatus");
-                    if (el) el.textContent = msg;
-                }
+        onAuthStateChanged(auth, user => {
+            if (!user) {
+                window.location.href = "/login.html?next=" + encodeURIComponent("/scratch.html");
+                return;
             }
-        );
+
+            bindVaultUI(
+                {
+                    tree: document.getElementById("scTree"),
+                    find: document.getElementById("scFind"),
+                    title: document.getElementById("scTitle"),
+                    body: document.getElementById("scBody"),
+                    newNote: document.getElementById("scNewNote"),
+                    newFolder: document.getElementById("scNewFolder"),
+                    deleteItem: document.getElementById("scDel")
+                },
+                {
+                    storageKey: DEFAULT_VAULT_KEY,
+                    compact: true,
+                    firebaseDb: db,
+                    firebaseUid: user.uid,
+                    setStatus: msg => {
+                        const el = document.getElementById("scStatus");
+                        if (el) el.textContent = msg;
+                    }
+                }
+            );
+        });
     </script>
 </body>
 </html>

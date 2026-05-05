@@ -2,7 +2,7 @@
 <html>
 <head>
     <!-- If notes UI looks stale after deploy, bump v= on the next two lines (same number). -->
-    <link rel="stylesheet" href="/css/notebook.css?v=4" />
+    <link rel="stylesheet" href="/css/notebook.css?v=8" />
     <title>Alysum Editor</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -557,7 +557,7 @@
                     <div class="nb-main" role="main">
                         <div id="nbTabs" class="nb-tab-strip" role="tablist"></div>
                         <input id="nbTitle" type="text" class="nb-inline-title" placeholder="Untitled" />
-                        <textarea id="nbBody" class="nb-editor-host nb-editor-textarea" rows="6" aria-label="Note body" spellcheck="true"></textarea>
+                        <div id="nbBody" class="nb-editor-host nb-body-ce" contenteditable="false" aria-label="Note body" spellcheck="true" data-placeholder="Write here. Use [[Note title]] for links — matching titles also link after you pause typing."></div>
                         <footer class="nb-status">
                             <span class="nb-status-left" id="nbStatus">Ready</span>
                             <div class="nb-status-actions">
@@ -1191,9 +1191,9 @@ homeBtn.onclick = () => {
                                                                     fontSelect.value = localStorage.getItem("alysum-font") || "Georgia";
             fontSizeSelect.value = localStorage.getItem("alysum-fontSize") || "20";
             applyEditorStyle();
-            import("/js/nb-app.js?v=4")
+            import("/js/nb-app.js?v=8")
                 .then(m => {
-                    m.mountEditorNotes(bookId);
+                    m.mountEditorNotes(bookId, { db, uid: user.uid });
                 })
                 .catch(err => {
                     console.error("Notes panel failed (manuscript editor is unaffected):", err);

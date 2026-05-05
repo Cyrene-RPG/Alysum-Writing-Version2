@@ -1,9 +1,13 @@
-import { bindVaultUI, DEFAULT_VAULT_KEY } from "./alysum-vault-ui.js";
+import { bindVaultUI, DEFAULT_VAULT_KEY } from "./alysum-vault-ui.js?v=8";
+import { serializeWikiBody } from "./alysum-wikilinks.js?v=8";
 
 /**
- * @param {string | null} bookId — reserved for future per-book vaults; currently global vault
+ * @param {string | null} bookId
+ * @param {object} [firebase]
+ * @param {object} [firebase.db]
+ * @param {string} [firebase.uid]
  */
-export function mountEditorNotes(bookId) {
+export function mountEditorNotes(bookId, firebase = null) {
     void bookId;
     const panel = document.getElementById("nbPanel");
     const btn = document.getElementById("nbBtn");
@@ -31,19 +35,48 @@ export function mountEditorNotes(bookId) {
         {
             storageKey: DEFAULT_VAULT_KEY,
             compact: true,
-            setStatus
+            setStatus,
+            firebaseDb: firebase?.db,
+            firebaseUid: firebase?.uid
         }
     );
 
+    function getNotePlain() {
+        if (bodyEl.contentEditable === "true") return serializeWikiBody(bodyEl);
+        return bodyEl.value || "";
+    }
+
     function insertAtNoteCaret(text) {
-        const el = bodyEl;
-        if (el.tagName !== "TEXTAREA" && el.tagName !== "INPUT") return;
-        const ta = el;
-        const start = ta.selectionStart ?? ta.value.length;
-        const end = ta.selectionEnd ?? start;
-        ta.value = ta.value.slice(0, start) + text + ta.value.slice(end);
-        ta.selectionStart = ta.selectionEnd = start + text.length;
-        ta.dispatchEvent(new Event("input", { bubbles: true }));
+        bodyEl.focus();
+        if (bodyEl.contentEditable === "true") {
+            const sel = window.getSelection();
+            if (!sel || !sel.rangeCount) {
+                bodyEl.appendChild(document.createTextNode(text));
+                bodyEl.dispatchEvent(new Event("input", { bubbles: true }));
+                return;
+            }
+            const range = sel.getRangeAt(0);
+            if (!bodyEl.contains(range.commonAncestorContainer)) {
+                bodyEl.appendChild(document.createTextNode(text));
+                bodyEl.dispatchEvent(new Event("input", { bubbles: true }));
+                return;
+            }
+            range.deleteContents();
+            range.insertNode(document.createTextNode(text));
+            range.collapse(false);
+            sel.removeAllRanges();
+            sel.addRange(range);
+            bodyEl.dispatchEvent(new Event("input", { bubbles: true }));
+            return;
+        }
+        if (bodyEl.tagName === "TEXTAREA" || bodyEl.tagName === "INPUT") {
+            const ta = bodyEl;
+            const start = ta.selectionStart ?? ta.value.length;
+            const end = ta.selectionEnd ?? start;
+            ta.value = ta.value.slice(0, start) + text + ta.value.slice(end);
+            ta.selectionStart = ta.selectionEnd = start + text.length;
+            ta.dispatchEvent(new Event("input", { bubbles: true }));
+        }
     }
 
     function activeNoteFromVault() {
@@ -53,7 +86,7 @@ export function mountEditorNotes(bookId) {
 
     document.getElementById("nbCopy")?.addEventListener("click", async () => {
         const note = activeNoteFromVault();
-        const text = bodyEl.value || "";
+        const text = getNotePlain();
         try {
             await navigator.clipboard.writeText(text);
             setStatus(note ? "Copied note body" : "Nothing to copy");
@@ -63,13 +96,13 @@ export function mountEditorNotes(bookId) {
     });
 
     document.getElementById("nbWiki")?.addEventListener("click", () => {
-        if (bodyEl.disabled) return;
+        if (bodyEl.contentEditable === "false") return;
         insertAtNoteCaret("[[");
         setStatus("Inserted [[");
     });
 
     document.getElementById("nbLinkCh")?.addEventListener("click", () => {
-        if (bodyEl.disabled) return;
+        if (bodyEl.contentEditable === "false") return;
         const chTitle =
             document.getElementById("chapterTitle")?.textContent?.trim().replace(/\s+/g, " ") || "Chapter";
         insertAtNoteCaret(`[[${chTitle}]]`);
@@ -79,11 +112,11 @@ export function mountEditorNotes(bookId) {
     document.getElementById("nbInsert")?.addEventListener("click", () => {
         const note = activeNoteFromVault();
         const editor = document.getElementById("editor");
-        if (!note || !editor || bodyEl.disabled) {
+        if (!note || !editor || bodyEl.contentEditable === "false") {
             setStatus("Select a note first");
             return;
         }
-        const raw = (bodyEl.value || "").trim();
+        const raw = getNotePlain().trim();
         if (!raw) {
             setStatus("Note is empty");
             return;

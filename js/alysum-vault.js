@@ -43,8 +43,15 @@ function normalizeItem(row) {
         parentId,
         name,
         content: type === "note" ? String(row.content ?? "") : "",
-        updatedAt: typeof row.updatedAt === "number" ? row.updatedAt : Date.now()
+        updatedAt: readUpdatedAt(row)
     };
+}
+
+function readUpdatedAt(row) {
+    const u = row?.updatedAt;
+    if (typeof u === "number" && Number.isFinite(u)) return u;
+    if (u && typeof u.toMillis === "function") return u.toMillis();
+    return Date.now();
 }
 
 function normalizeVault(parsed) {
@@ -61,6 +68,13 @@ function normalizeVault(parsed) {
         lastActiveId: lastActive,
         items
     };
+}
+
+/** Normalize Firestore / API payload into the same shape as loadVault(). */
+export function normalizeVaultFromObject(data) {
+    const parsed = data && typeof data === "object" ? data : {};
+    if (!safeArray(parsed.items).length) return defaultVault();
+    return normalizeVault(parsed);
 }
 
 export function loadVault(key = DEFAULT_VAULT_KEY) {
@@ -134,7 +148,12 @@ export function toggleFolderExpanded(state, folderId) {
     state.expandedFolders = next.length === allF.length ? [] : next;
 }
 
-export function addNote(state, parentId) {
+/**
+ * @param {object} [opts]
+ * @param {boolean} [opts.skipActivate] — do not change lastActiveId (e.g. when creating link targets in the background)
+ */
+export function addNote(state, parentId, opts = {}) {
+    const { skipActivate = false } = opts;
     const id = createId();
     const now = Date.now();
     state.items.push({
@@ -145,13 +164,24 @@ export function addNote(state, parentId) {
         content: "",
         updatedAt: now
     });
-    state.lastActiveId = id;
+    if (!skipActivate) state.lastActiveId = id;
     if (parentId && state.expandedFolders.length) {
         const s = new Set(state.expandedFolders);
         s.add(parentId);
         state.expandedFolders = [...s];
     }
     return id;
+}
+
+/** Resolve or create a note by title (case-insensitive). New notes share parentId with currentNote when provided. */
+export function findOrCreateNoteByTitle(state, title, parentId = null) {
+    const t = (title || "").trim();
+    if (!t) return null;
+    const found = state.items.find(i => i.type === "note" && i.name.toLowerCase() === t.toLowerCase());
+    if (found) return found;
+    const id = addNote(state, parentId, { skipActivate: true });
+    renameItem(state, id, t);
+    return state.items.find(i => i.id === id) || null;
 }
 
 export function addFolder(state, parentId) {

@@ -173,7 +173,11 @@ window.login = async function () {
 
     try {
         await signInWithEmailAndPassword(auth, email, password);
-        window.location.href = "/studio.html";
+        const params = new URLSearchParams(window.location.search);
+        const next = params.get("next");
+        const safe =
+            next && next.startsWith("/") && !next.startsWith("//") ? next : "/studio.html";
+        window.location.href = safe;
     } catch (e) {
         const code = e && e.code;
         const friendly = authMessage(code) || (e && e.message) || "Sign-in failed.";
