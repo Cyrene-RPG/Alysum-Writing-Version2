@@ -1,4 +1,4 @@
-import { bindVaultUI, DEFAULT_VAULT_KEY } from "./alysum-vault-ui.js?v=14";
+import { bindVaultUI, DEFAULT_VAULT_KEY } from "./alysum-vault-ui.js?v=15";
 import { serializeWikiBody } from "./alysum-wikilinks.js?v=8";
 
 /**

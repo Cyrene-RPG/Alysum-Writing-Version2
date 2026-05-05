@@ -305,14 +305,11 @@ function renderTree(treeEl, state, opts) {
             const item = state.items.find(i => i.id === id);
             if (!item) return;
             if (type === "folder") {
-                if (e.target.closest(".nb-chev")) {
-                    if (getArmedId() && getArmedId() !== id) cancelArmSilent?.();
-                    toggleFolderExpanded(state, id);
-                    saveVault(state, storageKey);
-                    renderTree(treeEl, state, opts);
-                    return;
-                }
                 if (getArmedId() && getArmedId() !== id) cancelArmSilent?.();
+                const hasKids = getChildren(state.items, id).length > 0;
+                if (hasKids) {
+                    toggleFolderExpanded(state, id);
+                }
                 state.lastActiveId = id;
                 saveVault(state, storageKey);
                 renderTree(treeEl, state, opts);

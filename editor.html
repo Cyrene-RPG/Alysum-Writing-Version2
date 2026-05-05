@@ -593,8 +593,8 @@
         <header class="nb-top-hat">
             <span class="nb-workspace-title" id="nbLabel">Notes</span>
             <div class="nb-hat-actions">
-                <button class="nb-hat-btn" id="nbNew" type="button" title="New note">＋</button>
-                <button class="nb-hat-btn" id="nbNewFolder" type="button" title="New folder">📁</button>
+                <button class="nb-hat-btn" id="nbNew" type="button" title="New note inside the selected folder (or same level as the selected note)">＋</button>
+                <button class="nb-hat-btn" id="nbNewFolder" type="button" title="New folder inside the selected folder (select a folder first to nest)">📁</button>
                 <button class="nb-hat-btn" id="nbDel" type="button" title="Delete selected note or folder">⌫</button>
                 <button class="nb-hat-btn" id="nbFull" type="button" title="Open full page">⇱</button>
                 <button class="nb-hat-btn" id="nbClose" type="button" title="Close">×</button>
@@ -1287,7 +1287,7 @@ homeBtn.onclick = () => {
             applyEditorStyle();
 
             void (async () => {
-                const href = new URL("./js/nb-app.js?v=27", import.meta.url).href;
+                const href = new URL("./js/nb-app.js?v=28", import.meta.url).href;
                 const panelEl = () => document.getElementById("nbPanel");
                 const markNotesFailed = msg => {
                     const st = document.getElementById("nbStatus");
