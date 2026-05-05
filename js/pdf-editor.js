@@ -26,9 +26,12 @@ function applyPdfChromeTheme(theme) {
   }
   const btn = document.getElementById("btnTheme");
   if (btn) {
-    btn.textContent = dark ? "Light mode" : "Dark mode";
     btn.setAttribute("aria-pressed", dark ? "true" : "false");
-    btn.title = dark ? "Switch to light interface" : "Switch to dark interface";
+    btn.title = dark ? "Use light interface" : "Use dark interface";
+    btn.setAttribute("aria-label", dark ? "Switch to light interface" : "Switch to dark interface");
+    btn.innerHTML = dark
+      ? '<span class="theme-icon" aria-hidden="true">☀</span><span class="theme-label">Light</span>'
+      : '<span class="theme-icon" aria-hidden="true">☽</span><span class="theme-label">Dark</span>';
   }
 }
 
@@ -1569,6 +1572,8 @@ function setStatus(text, isError = false) {
   const el = $("statusPill");
   el.textContent = text;
   el.classList.toggle("error", isError);
+  const ready = !isError && text === "Ready";
+  el.dataset.state = ready ? "ready" : isError ? "error" : text ? "busy" : "idle";
 }
 
 async function loadBook(uid) {

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta http-equiv="Cache-Control" content="no-cache" />
   <title>PDF &amp; Print — Alysum</title>
-  <link rel="stylesheet" href="/css/pdf-editor.css?v=20260504a" />
+  <link rel="stylesheet" href="/css/pdf-editor.css?v=20260504b" />
   <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
 </head>
 <body>
@@ -14,40 +14,42 @@
       <div class="topbar-left">
         <span class="brand-mark" aria-hidden="true"></span>
         <div class="topbar-title-block">
-          <div class="topbar-kicker">Print &amp; PDF</div>
           <div class="topbar-book-title" id="topBookTitle" title="">Loading…</div>
+          <div class="topbar-kicker">Print preview</div>
         </div>
       </div>
       <div class="topbar-right">
-        <button type="button" class="btn btn-ghost btn-theme" id="btnTheme" aria-pressed="false" title="Toggle light/dark interface">
-          Dark mode
-        </button>
-        <span class="status-pill" id="statusPill" role="status"></span>
-        <button type="button" class="btn btn-ghost btn-back" id="btnBack">← Manuscript</button>
-        <button type="button" class="btn btn-primary" id="btnPrint" title="Uses your browser on this device. Your manuscript is not uploaded to a separate PDF server.">Print / Save as PDF</button>
+        <span class="status-pill" id="statusPill" role="status" data-state="idle"></span>
+        <button type="button" class="btn btn-ghost btn-theme" id="btnTheme" aria-pressed="false" title="Interface theme" aria-label="Switch to dark interface"><span class="theme-icon" aria-hidden="true">☽</span><span class="theme-label">Dark</span></button>
+        <button type="button" class="btn btn-ghost btn-back" id="btnBack">Editor</button>
+        <button type="button" class="btn btn-primary" id="btnPrint" title="Runs in your browser. Your book is not sent to a separate PDF server.">Print or save PDF</button>
       </div>
     </header>
 
     <aside class="rail" aria-label="Book structure">
       <div class="rail-header">
-        <h2>Contents</h2>
+        <h2>Chapters</h2>
         <div class="rail-meta"><span id="railWords">—</span> words</div>
       </div>
       <div class="rail-scroll" id="navScroll"></div>
       <div class="rail-footer">
-        Same book as <a href="#" id="linkEditor">editor.html</a> — Firestore path <code>users/…/books/…</code>
-        <p class="local-export-note">Preview and <strong>Print / Save as PDF</strong> run on <strong>this device</strong> only. Alysum does not upload your manuscript to a separate PDF server.</p>
+        <a href="#" id="linkEditor" class="rail-footer-link">Open in manuscript editor</a>
+        <details class="rail-footnote">
+          <summary>Privacy &amp; path</summary>
+          <p>Same Firestore book as <code>editor.html</code> (<code>users/…/books/…</code>). Preview and print run on <strong>this device</strong> only.</p>
+        </details>
       </div>
     </aside>
 
     <main class="stage">
       <div class="stage-toolbar">
         <div class="stage-toolbar-left">
+          <span class="zoom-group-label">Zoom</span>
           <span class="zoom-label" id="zoomPct">100%</span>
           <input type="range" class="zoom-slider" id="zoomSlider" min="0.45" max="1.35" step="0.02" value="1" aria-label="Preview zoom" />
-          <button type="button" class="btn btn-ghost" id="btnZoomOut" aria-label="Zoom out">−</button>
-          <button type="button" class="btn btn-ghost" id="btnZoomIn" aria-label="Zoom in">+</button>
-          <button type="button" class="btn btn-ghost" id="btnFitWidth">Fit width</button>
+          <button type="button" class="btn btn-ghost btn-zoom" id="btnZoomOut" aria-label="Zoom out">−</button>
+          <button type="button" class="btn btn-ghost btn-zoom" id="btnZoomIn" aria-label="Zoom in">+</button>
+          <button type="button" class="btn btn-ghost btn-fit" id="btnFitWidth">Fit width</button>
         </div>
         <div class="stage-toolbar-right">
           <span class="page-info" id="pageInfo">Preview</span>
@@ -55,121 +57,139 @@
       </div>
       <div class="preview-outer" id="previewOuter">
         <div class="preview-frame-wrap" id="previewFrameWrap">
-            <iframe id="iframePreview" title="Paged print preview" class="hidden" sandbox="allow-scripts allow-same-origin"></iframe>
-            <div id="previewPlaceholder" class="preview-placeholder">
-              <p class="preview-placeholder-lead">Print-ready preview</p>
-              <p class="preview-placeholder-body">Open this page from the manuscript editor (export), or add <code class="preview-code">?book=…</code> using the same book id as in the URL bar of <strong>editor.html</strong>.</p>
-              <p class="preview-placeholder-note">Layout runs in your browser only.</p>
-            </div>
+          <iframe id="iframePreview" title="Paged print preview" class="hidden" sandbox="allow-scripts allow-same-origin"></iframe>
+          <div id="previewPlaceholder" class="preview-placeholder">
+            <p class="preview-placeholder-lead">No preview yet</p>
+            <p class="preview-placeholder-body">Open this page from the editor’s export, or add <code class="preview-code">?book=…</code> to the URL (same id as in the editor).</p>
+            <p class="preview-placeholder-note">Layout runs in your browser.</p>
+          </div>
         </div>
       </div>
     </main>
 
-    <aside class="panel" aria-label="Typesetting">
+    <aside class="panel" aria-label="Print settings">
       <div class="panel-header">
-        <h2>Typesetting</h2>
+        <h2>Print settings</h2>
+        <p class="panel-sub">Collapse any section you are not using. Changes refresh the preview.</p>
       </div>
       <div class="panel-scroll">
-        <div class="section-title">Book block</div>
-        <div class="field">
-          <label for="optTrim">Trim size</label>
-          <select id="optTrim"></select>
-          <p class="hint">Every size matches <strong>B&amp;N Press</strong> interior trims (see their trim chart). Pick the same size you choose when you set up the book on press.barnesandnoble.com.</p>
-        </div>
-
-        <div class="section-title">Typography</div>
-        <div class="field">
-          <label for="optBodyFont">Body typeface</label>
-          <select id="optBodyFont"></select>
-        </div>
-        <div class="field">
-          <label for="optHeadingFont">Chapter title typeface</label>
-          <select id="optHeadingFont"></select>
-        </div>
-        <div class="row-2">
-          <div class="field">
-            <label for="optBodySize">Body (pt)</label>
-            <select id="optBodySize">
-              <option value="10">10 pt</option>
-              <option value="11" selected>11 pt</option>
-              <option value="12">12 pt</option>
-            </select>
+        <details class="panel-disclosure" open>
+          <summary class="panel-disclosure-summary">Page size &amp; margins</summary>
+          <div class="panel-disclosure-body">
+            <div class="field">
+              <label for="optTrim">Trim size</label>
+              <select id="optTrim"></select>
+              <p class="hint">Match the trim you choose at your printer (for example B&amp;N Press).</p>
+              <details class="hint-drawer">
+                <summary>About B&amp;N Press sizes</summary>
+                <p class="hint-drawer-text">Each option follows B&amp;N Press interior trim names. Use the same size when you set up the book on press.barnesandnoble.com.</p>
+              </details>
+            </div>
+            <div class="field">
+              <label for="optMargin">Margins</label>
+              <select id="optMargin">
+                <option value="tight">Tight (0.55″)</option>
+                <option value="normal">Normal (0.75″)</option>
+                <option value="bn" selected>B&amp;N safe (0.8″)</option>
+                <option value="wide">Wide (1″)</option>
+              </select>
+              <p class="hint">B&amp;N safe keeps body text outside the trim danger zone.</p>
+            </div>
+            <div class="field">
+              <label for="optHeaderFooter">Running heads</label>
+              <select id="optHeaderFooter">
+                <option value="none">None</option>
+                <option value="title">Book title (header)</option>
+                <option value="title-page" selected>Title + page #</option>
+                <option value="page">Page # only</option>
+              </select>
+              <p class="hint">Headers and footers appear in the printed PDF; browsers may differ on screen.</p>
+            </div>
           </div>
-          <div class="field">
-            <label for="optLineHeight">Line height</label>
-            <select id="optLineHeight">
-              <option value="1.35">Tight</option>
-              <option value="1.45">Book (compact)</option>
-              <option value="1.48">Book</option>
-              <option value="1.52" selected>Book (edition)</option>
-              <option value="1.55">Open</option>
-            </select>
+        </details>
+
+        <details class="panel-disclosure">
+          <summary class="panel-disclosure-summary">Typography</summary>
+          <div class="panel-disclosure-body">
+            <div class="field">
+              <label for="optBodyFont">Body typeface</label>
+              <select id="optBodyFont"></select>
+            </div>
+            <div class="field">
+              <label for="optHeadingFont">Chapter titles</label>
+              <select id="optHeadingFont"></select>
+            </div>
+            <div class="row-2">
+              <div class="field">
+                <label for="optBodySize">Body size</label>
+                <select id="optBodySize">
+                  <option value="10">10 pt</option>
+                  <option value="11" selected>11 pt</option>
+                  <option value="12">12 pt</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="optLineHeight">Line height</label>
+                <select id="optLineHeight">
+                  <option value="1.35">Tight</option>
+                  <option value="1.45">Book (compact)</option>
+                  <option value="1.48">Book</option>
+                  <option value="1.52" selected>Book (edition)</option>
+                  <option value="1.55">Open</option>
+                </select>
+              </div>
+            </div>
+            <div class="field">
+              <label for="optIndent">First-line indent</label>
+              <select id="optIndent">
+                <option value="0">None</option>
+                <option value="0.25in">Standard (0.25″)</option>
+                <option value="0.3in" selected>Trade (0.3″)</option>
+                <option value="0.35in">Deep (0.35″)</option>
+              </select>
+            </div>
           </div>
-        </div>
-        <div class="field">
-          <label for="optIndent">First-line indent</label>
-          <select id="optIndent">
-            <option value="0">None</option>
-            <option value="0.25in">Standard (0.25″)</option>
-            <option value="0.3in" selected>Trade (0.3″)</option>
-            <option value="0.35in">Deep (0.35″)</option>
-          </select>
-        </div>
+        </details>
 
-        <div class="divider"></div>
-        <div class="section-title">Title &amp; copyright</div>
-        <div class="field">
-          <label for="printAuthorInput">Author (title page)</label>
-          <input type="text" id="printAuthorInput" class="print-override-input" placeholder="Shown in small caps line above the title — leave blank for profile name" autocomplete="off" spellcheck="false" />
-          <p class="hint">Saved per book on <strong>this browser</strong> (local storage). Empty = use your Firestore / Google display name.</p>
-        </div>
-        <div class="field">
-          <label for="printCopyrightInput">Copyright page</label>
-          <textarea id="printCopyrightInput" class="print-override-textarea" rows="8" placeholder="Blank = use your first front-matter chapter (Copyright) from the manuscript. Separate paragraphs with a blank line." spellcheck="true"></textarea>
-        </div>
+        <details class="panel-disclosure">
+          <summary class="panel-disclosure-summary">Title page &amp; copyright</summary>
+          <div class="panel-disclosure-body">
+            <div class="field">
+              <label for="printAuthorInput">Author on title page</label>
+              <input type="text" id="printAuthorInput" class="print-override-input" placeholder="Leave blank to use your profile name" autocomplete="off" spellcheck="false" />
+              <p class="hint">Stored in this browser for this book only.</p>
+            </div>
+            <div class="field">
+              <label for="printCopyrightInput">Copyright page</label>
+              <textarea id="printCopyrightInput" class="print-override-textarea" rows="5" placeholder="Leave blank to use your Copyright chapter from the manuscript. Blank line between paragraphs." spellcheck="true"></textarea>
+            </div>
+          </div>
+        </details>
 
-        <div class="divider"></div>
-        <div class="section-title">Layout &amp; breaks</div>
-        <div class="field">
-          <label for="optMargin">Margins</label>
-          <select id="optMargin">
-            <option value="tight">Tight (0.55″)</option>
-            <option value="normal">Normal (0.75″)</option>
-            <option value="bn" selected>B&amp;N safe (0.8″)</option>
-            <option value="wide">Wide (1″)</option>
-          </select>
-          <p class="hint">Use <strong>B&amp;N safe</strong> so body copy stays clear of the trim edge; B&amp;N rejects art or type in the danger zone.</p>
-        </div>
-        <div class="toggle-row">
-          <label class="toggle-label" for="chkChapterPage">New page for each chapter</label>
-          <span class="switch"><input type="checkbox" id="chkChapterPage" checked role="switch" /><span class="switch-ui" aria-hidden="true"></span></span>
-        </div>
-        <div class="toggle-row">
-          <label class="toggle-label" for="chkDropCap">Drop cap (first paragraph)</label>
-          <span class="switch"><input type="checkbox" id="chkDropCap" role="switch" /><span class="switch-ui" aria-hidden="true"></span></span>
-        </div>
-        <div class="toggle-row">
-          <label class="toggle-label" for="chkPartLabels">“Front / back matter” labels</label>
-          <span class="switch"><input type="checkbox" id="chkPartLabels" role="switch" /><span class="switch-ui" aria-hidden="true"></span></span>
-        </div>
-
-        <div class="divider"></div>
-        <div class="section-title">Running heads</div>
-        <div class="field">
-          <label for="optHeaderFooter">Headers &amp; footers</label>
-          <select id="optHeaderFooter">
-            <option value="none">None</option>
-            <option value="title">Book title (header)</option>
-            <option value="title-page" selected>Title + page #</option>
-            <option value="page">Page # only</option>
-          </select>
-          <p class="hint">Paged media only affects print / PDF output; on-screen chrome may vary by browser.</p>
-        </div>
+        <details class="panel-disclosure">
+          <summary class="panel-disclosure-summary">Chapters &amp; layout</summary>
+          <div class="panel-disclosure-body">
+            <div class="toggle-stack">
+              <div class="toggle-row">
+                <label class="toggle-label" for="chkChapterPage">New page per chapter</label>
+                <span class="switch"><input type="checkbox" id="chkChapterPage" checked role="switch" /><span class="switch-ui" aria-hidden="true"></span></span>
+              </div>
+              <div class="toggle-row">
+                <label class="toggle-label" for="chkDropCap">Drop cap (first paragraph)</label>
+                <span class="switch"><input type="checkbox" id="chkDropCap" role="switch" /><span class="switch-ui" aria-hidden="true"></span></span>
+              </div>
+              <div class="toggle-row">
+                <label class="toggle-label" for="chkPartLabels">Label front / back matter</label>
+                <span class="switch"><input type="checkbox" id="chkPartLabels" role="switch" /><span class="switch-ui" aria-hidden="true"></span></span>
+              </div>
+            </div>
+          </div>
+        </details>
       </div>
     </aside>
   </div>
 
-  <script type="module" src="/js/pdf-editor.js?v=20260504a"></script>
+  <script type="module" src="/js/pdf-editor.js?v=20260504b"></script>
   <script>
     (function () {
       var params = new URLSearchParams(window.location.search);
