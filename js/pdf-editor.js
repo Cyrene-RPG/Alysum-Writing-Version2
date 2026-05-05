@@ -644,6 +644,11 @@ function buildPreviewDocumentHtml(options = {}) {
   const hSymJson = JSON.stringify(marginStr.hSym);
   const tfirstJson = JSON.stringify(marginStr.tfirst);
 
+  const trimHIn = parseFloat(trim.height) || 9;
+  /* Never use vh for book layout: in the preview iframe vh is the iframe height, not the trim page — it blows up margins. */
+  const chapterH1MarginTop = `${Math.min(Math.max(trimHIn * 0.185, 1.1), 2.35).toFixed(2)}in`;
+  const copyrightPadBottom = `${Math.min(Math.max(trimHIn * 0.11, 0.55), 1.25).toFixed(2)}in`;
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -654,6 +659,8 @@ function buildPreviewDocumentHtml(options = {}) {
     :root {
       --trim-w: ${trim.width};
       --trim-h: ${trim.height};
+      --chapter-h1-margin-top: ${chapterH1MarginTop};
+      --copyright-pad-bottom: ${copyrightPadBottom};
       --ink: #1c1b1a;
       --ink-soft: #3d3c3a;
       --rule: rgba(28, 27, 26, 0.14);
@@ -681,7 +688,7 @@ function buildPreviewDocumentHtml(options = {}) {
         margin: 0;
         padding: 0;
         height: auto;
-        min-height: 100%;
+        min-height: auto;
         overflow: auto;
         -webkit-overflow-scrolling: touch;
       }
@@ -843,7 +850,7 @@ function buildPreviewDocumentHtml(options = {}) {
       display: flex;
       flex-direction: column;
       justify-content: flex-end;
-      padding: 0 12% 12vh;
+      padding: 0 12% var(--copyright-pad-bottom, 0.75in);
       box-sizing: border-box;
     }
     .pdf-copyright-page .copyright-sheet {
@@ -872,7 +879,7 @@ function buildPreviewDocumentHtml(options = {}) {
       font-size: 1.72rem;
       letter-spacing: 0.06em;
       text-transform: none;
-      margin: 20vh 0 0;
+      margin: var(--chapter-h1-margin-top, 1.45in) 0 0;
       line-height: 1.2;
       color: var(--ink);
       font-variant-numeric: lining-nums;
