@@ -307,11 +307,6 @@
             display: inline-flex;
             align-items: center;
             vertical-align: middle;
-            pointer-events: none;
-        }
-
-        .topbar .topbar-tip .icon-btn {
-            pointer-events: auto;
         }
 
         .topbar .topbar-tip:hover > .icon-btn {
@@ -723,6 +718,30 @@
                                                                     <div class="publish-list" id="publishList"></div>                                                   
             <div class="publish-modal-actions">                         <button class="publish-modal-btn secondary" id="closePublishBtn" type="button">Cancel</button>                  <button class="publish-modal-btn primary" id="publishNextBtn" type="button">Next</button>                   </div>
         </div>                                              </div>
+
+    <!-- Notes ⌘ must work even if the ES module is slow or fails: shell toggle binds synchronously. -->
+    <script>
+        (function notesShell() {
+            var panel = document.getElementById("nbPanel");
+            var btn = document.getElementById("nbBtn");
+            if (!panel || !btn) return;
+            if (btn.dataset.notesShell === "1") return;
+            btn.dataset.notesShell = "1";
+            btn.addEventListener("click", function () {
+                var wasHidden = panel.classList.contains("hidden");
+                panel.classList.toggle("hidden");
+                if (wasHidden && !panel.classList.contains("hidden")) {
+                    if (typeof window.__alysumNotesDidOpen === "function") {
+                        try {
+                            window.__alysumNotesDidOpen();
+                        } catch (err) {
+                            console.error(err);
+                        }
+                    }
+                }
+            });
+        })();
+    </script>
 
     <script type="module">
         import { auth, db } from "./firebase.js";
@@ -1282,7 +1301,7 @@ homeBtn.onclick = () => {
             fontSizeSelect.value = localStorage.getItem("alysum-fontSize") || "20";
             applyEditorStyle();
             try {
-                const nb = await import("/js/nb-app.js?v=13");
+                const nb = await import("/js/nb-app.js?v=14");
                 nb.mountEditorNotes(bookId, { db, uid: user.uid });
             } catch (err) {
                 console.error("Notes panel failed (manuscript editor is unaffected):", err);

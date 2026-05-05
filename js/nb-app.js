@@ -17,8 +17,6 @@ export function mountEditorNotes(bookId, firebase = null) {
     const bodyEl = document.getElementById("nbBody");
 
     if (!panel || !btn || !bodyEl) return;
-    if (btn.dataset.notesMounted === "1") return;
-    btn.dataset.notesMounted = "1";
 
     const setStatus = msg => {
         if (statusEl) statusEl.textContent = msg;
@@ -54,25 +52,19 @@ export function mountEditorNotes(bookId, firebase = null) {
         api = stubApi;
     }
 
-    function openPanel() {
-        panel.classList.remove("hidden");
+    window.__alysumNotesDidOpen = () => {
         try {
             api.refresh();
             setStatus("Vault synced");
         } catch (err) {
             console.error("Notes refresh:", err);
-            setStatus("Notes opened (refresh error — check console)");
+            setStatus("Notes refresh error — see console");
         }
-    }
+    };
 
     function closePanel() {
         panel.classList.add("hidden");
     }
-
-    btn.addEventListener("click", () => {
-        if (panel.classList.contains("hidden")) openPanel();
-        else closePanel();
-    });
 
     function getNotePlain() {
         if (bodyEl.contentEditable === "true") return serializeWikiBody(bodyEl);
