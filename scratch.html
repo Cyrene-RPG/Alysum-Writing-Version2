@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Scratch notes — Alysum</title>
+    <link rel="stylesheet" href="/css/notebook.css?v=4" />
+</head>
+<body class="scratch-page">
+    <div class="scratch-shell">
+        <header class="scratch-hero">
+            <div>
+                <h1>Scratch notes</h1>
+                <p>
+                    A compact space for quick thoughts. Everything here is the same vault as the full library—open the library anytime in a new tab.
+                </p>
+            </div>
+            <div class="scratch-hero-actions">
+                <a class="scratch-btn scratch-btn-primary" href="/vault.html" target="_blank" rel="noopener noreferrer">Open library in new tab</a>
+                <a class="scratch-btn scratch-btn-ghost" href="/studio.html">Studio</a>
+            </div>
+        </header>
+
+        <div class="scratch-grid">
+            <aside class="scratch-panel">
+                <div class="scratch-side-head">Tree</div>
+                <div class="scratch-side-tools">
+                    <button type="button" class="scratch-tool-btn" id="scNewNote">＋ Note</button>
+                    <button type="button" class="scratch-tool-btn" id="scNewFolder">📁</button>
+                    <button type="button" class="scratch-tool-btn" id="scDel" style="flex:0 0 auto">⌫</button>
+                </div>
+                <input id="scFind" class="nb-quick-open" type="search" placeholder="Search…" autocomplete="off" style="margin:0;border-radius:0;border-left:none;border-right:none" />
+                <div id="scTree" class="scratch-tree"></div>
+            </aside>
+            <section class="scratch-panel">
+                <div class="scratch-editor-head">
+                    <input id="scTitle" class="scratch-title-input" type="text" placeholder="Untitled" />
+                </div>
+                <textarea id="scBody" class="scratch-body" placeholder="Jot ideas, links, outlines…"></textarea>
+                <footer class="scratch-status" id="scStatus">Ready</footer>
+            </section>
+        </div>
+    </div>
+    <script type="module">
+        import { bindVaultUI, DEFAULT_VAULT_KEY } from "./js/alysum-vault-ui.js?v=4";
+
+        bindVaultUI(
+            {
+                tree: document.getElementById("scTree"),
+                find: document.getElementById("scFind"),
+                title: document.getElementById("scTitle"),
+                body: document.getElementById("scBody"),
+                newNote: document.getElementById("scNewNote"),
+                newFolder: document.getElementById("scNewFolder"),
+                deleteItem: document.getElementById("scDel")
+            },
+            {
+                storageKey: DEFAULT_VAULT_KEY,
+                compact: true,
+                setStatus: msg => {
+                    const el = document.getElementById("scStatus");
+                    if (el) el.textContent = msg;
+                }
+            }
+        );
+    </script>
+</body>
+</html>

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Notes Library — Alysum</title>
+    <link rel="stylesheet" href="/css/notebook.css?v=4" />
+</head>
+<body class="vault-page">
+    <div class="vault-shell">
+        <header class="vault-hero">
+            <div>
+                <h1>Notes library</h1>
+                <p>
+                    Folders and notes stay on this device until you add cloud sync later. The same vault opens in the editor scratch panel and the compact scratch page.
+                </p>
+            </div>
+            <div class="vault-hero-actions">
+                <a class="vault-btn vault-btn-ghost" href="/scratch.html">Scratch pad</a>
+                <a class="vault-btn vault-btn-ghost" href="/studio.html">Studio</a>
+            </div>
+        </header>
+
+        <div class="vault-grid">
+            <aside class="vault-panel">
+                <div class="vault-side-head">Explorer</div>
+                <div class="vault-side-tools">
+                    <button type="button" class="vault-tool-btn" id="vaultNewNote">＋ Note</button>
+                    <button type="button" class="vault-tool-btn" id="vaultNewFolder">📁 Folder</button>
+                    <button type="button" class="vault-tool-btn" id="vaultDel" style="flex:0 0 auto">⌫</button>
+                </div>
+                <input id="vaultFind" class="nb-quick-open" type="search" placeholder="Search titles and bodies…" autocomplete="off" style="margin:0;border-radius:0;border-left:none;border-right:none" />
+                <div id="vaultTree" class="vault-tree"></div>
+            </aside>
+            <section class="vault-panel">
+                <div class="vault-editor-head">
+                    <input id="vaultTitle" class="vault-title-input" type="text" placeholder="Untitled" />
+                </div>
+                <textarea id="vaultBody" class="vault-body" placeholder="Write markdown-flavored notes, ideas, snippets…"></textarea>
+                <footer class="vault-status" id="vaultStatus">Ready</footer>
+            </section>
+        </div>
+    </div>
+    <script type="module">
+        import { bindVaultUI, DEFAULT_VAULT_KEY } from "./js/alysum-vault-ui.js?v=4";
+
+        bindVaultUI(
+            {
+                tree: document.getElementById("vaultTree"),
+                find: document.getElementById("vaultFind"),
+                title: document.getElementById("vaultTitle"),
+                body: document.getElementById("vaultBody"),
+                newNote: document.getElementById("vaultNewNote"),
+                newFolder: document.getElementById("vaultNewFolder"),
+                deleteItem: document.getElementById("vaultDel")
+            },
+            {
+                storageKey: DEFAULT_VAULT_KEY,
+                compact: false,
+                setStatus: msg => {
+                    const el = document.getElementById("vaultStatus");
+                    if (el) el.textContent = msg;
+                }
+            }
+        );
+    </script>
+</body>
+</html>

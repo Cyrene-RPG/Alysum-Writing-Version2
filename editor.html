@@ -2,7 +2,7 @@
 <html>
 <head>
     <!-- If notes UI looks stale after deploy, bump v= on the next two lines (same number). -->
-    <link rel="stylesheet" href="/css/notebook.css?v=3" />
+    <link rel="stylesheet" href="/css/notebook.css?v=4" />
     <title>Alysum Editor</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -536,7 +536,8 @@
             <span class="nb-workspace-title" id="nbLabel">Notes</span>
             <div class="nb-hat-actions">
                 <button class="nb-hat-btn" id="nbNew" type="button" title="New note">＋</button>
-                <button class="nb-hat-btn" id="nbDel" type="button" title="Delete note">⌫</button>
+                <button class="nb-hat-btn" id="nbNewFolder" type="button" title="New folder">📁</button>
+                <button class="nb-hat-btn" id="nbDel" type="button" title="Delete note or folder">⌫</button>
                 <button class="nb-hat-btn" id="nbFull" type="button" title="Open full page">⇱</button>
                 <button class="nb-hat-btn" id="nbClose" type="button" title="Close">×</button>
             </div>
@@ -556,7 +557,7 @@
                     <div class="nb-main" role="main">
                         <div id="nbTabs" class="nb-tab-strip" role="tablist"></div>
                         <input id="nbTitle" type="text" class="nb-inline-title" placeholder="Untitled" />
-                        <div id="nbBody" class="nb-editor-host" aria-label="Note body"></div>
+                        <textarea id="nbBody" class="nb-editor-host nb-editor-textarea" rows="6" aria-label="Note body" spellcheck="true"></textarea>
                         <footer class="nb-status">
                             <span class="nb-status-left" id="nbStatus">Ready</span>
                             <div class="nb-status-actions">
@@ -1190,13 +1191,12 @@ homeBtn.onclick = () => {
                                                                     fontSelect.value = localStorage.getItem("alysum-font") || "Georgia";
             fontSizeSelect.value = localStorage.getItem("alysum-fontSize") || "20";
             applyEditorStyle();
-            import("/js/nb-app.js?v=3")
+            import("/js/nb-app.js?v=4")
                 .then(m => {
                     m.mountEditorNotes(bookId);
                 })
                 .catch(err => {
-                    console.error("Notebook failed:", err);
-                    setSaveStatus("Notes failed to load");
+                    console.error("Notes panel failed (manuscript editor is unaffected):", err);
                 });
 
             setSaveStatus("Connecting...");
