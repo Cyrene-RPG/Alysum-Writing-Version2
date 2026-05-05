@@ -307,6 +307,11 @@
             display: inline-flex;
             align-items: center;
             vertical-align: middle;
+            pointer-events: none;
+        }
+
+        .topbar .topbar-tip > .icon-btn {
+            pointer-events: auto;
         }
 
         .topbar .topbar-tip:hover > .icon-btn {
@@ -1278,6 +1283,15 @@ homeBtn.onclick = () => {
             fontSizeSelect.value = localStorage.getItem("alysum-fontSize") || "20";
             applyEditorStyle();
 
+            void (async () => {
+                try {
+                    const nb = await import("./js/nb-app.js?v=21");
+                    nb.mountEditorNotes(bookId, { db, uid: user.uid });
+                } catch (err) {
+                    console.error("Notes:", err);
+                }
+            })();
+
             setSaveStatus("Connecting...");
 
             try {
@@ -1292,5 +1306,4 @@ homeBtn.onclick = () => {
                 window.location.href = `/pdf-editor.html?book=${encodeURIComponent(bookId)}`;
             });
         });                                                 </script>
-    <script type="module" src="./js/editor-notes-bootstrap.js?v=1"></script>
                                                         </body>

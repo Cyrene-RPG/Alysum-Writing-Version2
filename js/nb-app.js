@@ -18,13 +18,13 @@ export function mountEditorNotes(bookId, firebase = null) {
     const treeEl = document.getElementById("nbTree");
 
     if (!panel || !btn || !bodyEl || !treeEl) return;
-    if (panel.dataset.alysumNotesInit === "1") return;
+    if (btn.dataset.notesUiBound === "1") return;
 
     const setStatus = msg => {
         if (statusEl) statusEl.textContent = msg;
     };
 
-    let api;
+    let api = null;
     try {
         api = bindVaultUI(
             {
@@ -46,11 +46,11 @@ export function mountEditorNotes(bookId, firebase = null) {
         );
     } catch (err) {
         console.error("Notes vault failed to bind:", err);
-        setStatus("Notes failed to load — see console");
-        return;
+        setStatus("Notes error — see console (⌘ still opens panel)");
     }
 
     function openPanel() {
+        if (!api) return;
         try {
             api.refresh();
             setStatus("Vault synced");
@@ -109,11 +109,16 @@ export function mountEditorNotes(bookId, firebase = null) {
     }
 
     function activeNoteFromVault() {
+        if (!api) return null;
         const s = api.getState();
         return s.items.find(i => i.id === s.lastActiveId && i.type === "note") || null;
     }
 
     document.getElementById("nbCopy")?.addEventListener("click", async () => {
+        if (!api) {
+            setStatus("Notes not ready yet");
+            return;
+        }
         const note = activeNoteFromVault();
         const text = getNotePlain();
         try {
@@ -139,6 +144,10 @@ export function mountEditorNotes(bookId, firebase = null) {
     });
 
     document.getElementById("nbInsert")?.addEventListener("click", () => {
+        if (!api) {
+            setStatus("Notes not ready yet");
+            return;
+        }
         const note = activeNoteFromVault();
         const editor = document.getElementById("editor");
         if (!note || !editor || bodyEl.contentEditable === "false") {
@@ -182,5 +191,6 @@ export function mountEditorNotes(bookId, firebase = null) {
         }
     });
 
+    btn.dataset.notesUiBound = "1";
     panel.dataset.alysumNotesInit = "1";
 }
