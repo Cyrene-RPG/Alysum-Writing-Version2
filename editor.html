@@ -1,9 +1,8 @@
 ﻿<!DOCTYPE html>
-<!-- BUILD:nb-app-20260503e -->
 <html>
 <head>
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-    <link rel="stylesheet" href="/css/notebook.css?v=20260503e" />
+    <!-- If notes UI looks stale after deploy, bump v= on the next two lines (same number). -->
+    <link rel="stylesheet" href="/css/notebook.css?v=3" />
     <title>Alysum Editor</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -1191,7 +1190,7 @@ homeBtn.onclick = () => {
                                                                     fontSelect.value = localStorage.getItem("alysum-font") || "Georgia";
             fontSizeSelect.value = localStorage.getItem("alysum-fontSize") || "20";
             applyEditorStyle();
-            import("./js/nb-app.js?v=20260503e")
+            import("/js/nb-app.js?v=3")
                 .then(m => {
                     m.mountEditorNotes(bookId);
                 })

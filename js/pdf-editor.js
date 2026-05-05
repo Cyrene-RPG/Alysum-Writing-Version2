@@ -1664,9 +1664,7 @@ function init() {
   wireThemeToggle();
 
   $("btnBack").addEventListener("click", () => {
-    const q = bookId
-      ? `?book=${encodeURIComponent(bookId)}&nb=20260503e`
-      : "?nb=20260503e";
+    const q = bookId ? `?book=${encodeURIComponent(bookId)}` : "";
     window.location.href = "/editor.html" + q;
   });
 

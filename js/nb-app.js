@@ -4,21 +4,206 @@
  */
 import { marked } from "https://cdn.jsdelivr.net/npm/marked@15.0.6/+esm";
 import DOMPurify from "https://cdn.jsdelivr.net/npm/dompurify@3.2.2/+esm";
-import {
-  vaultStorageKey,
-  bookIdFromVaultQueryKey,
-  loadVault,
-  persistVault,
-  createNote,
-  createFolder,
-  extractWikiTargets,
-  extractTags,
-  backlinksFor
-} from "./notebook-storage.js";
+
+/** @typedef {{ id: string, title: string, body: string, folderId: string | null, updated: number }} Note */
+/** @typedef {{ id: string, name: string, parentId: string | null, updated: number }} Folder */
+/** @typedef {{ v: number, notes: Note[], folders: Folder[], activeNoteId: string | null, filter: string, openFolderIds: Record<string, boolean>, openTabIds: string[], paneMode: 'source'|'preview'|'split' }} VaultState */
+
+export const VAULT_PREFIX = "alysum-notes-";
+
+/** @param {string | null | undefined} bookId */
+export function vaultStorageKey(bookId) {
+  const id = bookId && String(bookId).trim() ? String(bookId).trim() : "global";
+  return `${VAULT_PREFIX}${id}`;
+}
+
+/** @param {string} [search] */
+export function bookIdFromVaultQueryKey(search = "") {
+  try {
+    const q = new URLSearchParams(search || (typeof location !== "undefined" ? location.search : ""));
+    const key = q.get("key");
+    if (!key || typeof key !== "string") return null;
+    if (!key.startsWith(VAULT_PREFIX)) return null;
+    const rest = key.slice(VAULT_PREFIX.length);
+    return rest === "global" ? null : rest;
+  } catch {
+    return null;
+  }
+}
+
+function generateId(prefix) {
+  return `${prefix}_${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36)}`;
+}
+
+/** @returns {Note} */
+export function createNote(title = "Untitled note", folderId = null) {
+  return {
+    id: generateId("note"),
+    title,
+    body: "",
+    folderId,
+    updated: Date.now()
+  };
+}
+
+/** @returns {Folder} */
+export function createFolder(name = "New folder", parentId = null) {
+  return {
+    id: generateId("fld"),
+    name,
+    parentId,
+    updated: Date.now()
+  };
+}
+
+/** @returns {VaultState} */
+export function emptyVault() {
+  const first = createNote("Scratchpad", null);
+  return {
+    v: 2,
+    notes: [first],
+    folders: [],
+    activeNoteId: first.id,
+    filter: "",
+    openFolderIds: {},
+    openTabIds: [first.id],
+    paneMode: "split"
+  };
+}
+
+/** @param {unknown} raw */
+export function normalizeVault(raw) {
+  if (!raw || typeof raw !== "object") return emptyVault();
+  const o = /** @type {Record<string, unknown>} */ (raw);
+  const v = typeof o.v === "number" ? o.v : 1;
+
+  const notesRaw = Array.isArray(o.notes) ? o.notes : [];
+  const notes = notesRaw.map(n => {
+    const x = /** @type {Record<string, unknown>} */ (n && typeof n === "object" ? n : {});
+    return {
+      id: typeof x.id === "string" && x.id ? x.id : generateId("note"),
+      title: typeof x.title === "string" ? x.title : "Untitled note",
+      body: typeof x.body === "string" ? x.body : "",
+      folderId: typeof x.folderId === "string" ? x.folderId : null,
+      updated: typeof x.updated === "number" && Number.isFinite(x.updated) ? x.updated : Date.now()
+    };
+  });
+
+  const foldersRaw = v >= 2 && Array.isArray(o.folders) ? o.folders : [];
+  const folders = foldersRaw.map(f => {
+    const x = /** @type {Record<string, unknown>} */ (f && typeof f === "object" ? f : {});
+    return {
+      id: typeof x.id === "string" && x.id ? x.id : generateId("fld"),
+      name: typeof x.name === "string" ? x.name : "Folder",
+      parentId: typeof x.parentId === "string" ? x.parentId : null,
+      updated: typeof x.updated === "number" && Number.isFinite(x.updated) ? x.updated : Date.now()
+    };
+  });
+
+  let activeNoteId =
+    typeof o.activeNoteId === "string"
+      ? o.activeNoteId
+      : typeof o.activeId === "string"
+        ? o.activeId
+        : null;
+  if (!notes.length) {
+    const z = createNote("Scratchpad", null);
+    notes.push(z);
+    activeNoteId = z.id;
+  } else if (!activeNoteId || !notes.some(n => n.id === activeNoteId)) {
+    activeNoteId = notes[0].id;
+  }
+
+  const filter = typeof o.filter === "string" ? o.filter : "";
+  const openFolderIds =
+    v >= 2 && o.openFolderIds && typeof o.openFolderIds === "object" && !Array.isArray(o.openFolderIds)
+      ? /** @type {Record<string, boolean>} */ (o.openFolderIds)
+      : {};
+
+  const validIds = new Set(notes.map(n => n.id));
+  let openTabIds = Array.isArray(o.openTabIds)
+    ? /** @type {unknown[]} */ (o.openTabIds)
+        .filter(x => typeof x === "string" && validIds.has(x))
+        .slice(0, 24)
+    : [];
+  if (!openTabIds.length) openTabIds = [activeNoteId];
+  else if (activeNoteId && !openTabIds.includes(activeNoteId)) openTabIds = [activeNoteId, ...openTabIds];
+  openTabIds = [...new Set(openTabIds)].filter(id => validIds.has(id));
+  if (!openTabIds.length && activeNoteId) openTabIds = [activeNoteId];
+
+  const pm = o.paneMode;
+  const paneMode =
+    pm === "source" || pm === "preview" || pm === "split" ? pm : "split";
+
+  return { v: 2, notes, folders, activeNoteId, filter, openFolderIds, openTabIds, paneMode };
+}
+
+/** @param {string} key */
+export function loadVault(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return emptyVault();
+    return normalizeVault(JSON.parse(raw));
+  } catch {
+    return emptyVault();
+  }
+}
+
+/**
+ * @param {string} key
+ * @param {VaultState} state
+ */
+export function persistVault(key, state) {
+  try {
+    localStorage.setItem(key, JSON.stringify(state));
+  } catch (e) {
+    console.warn("nb-app: persist failed", e);
+  }
+}
+
+/** @param {string} body */
+export function extractWikiTargets(body) {
+  const out = new Set();
+  const re = /\[\[([^\]]+)\]\]/g;
+  let m;
+  while ((m = re.exec(body)) !== null) {
+    const t = m[1].trim();
+    if (t) out.add(t);
+  }
+  return [...out];
+}
+
+/** @param {string} body */
+export function extractTags(body) {
+  const out = new Set();
+  const re = /(^|\s)#([\w\-]+)/g;
+  let m;
+  while ((m = re.exec(body)) !== null) {
+    if (m[2]) out.add(m[2]);
+  }
+  return [...out];
+}
+
+/**
+ * @param {Note[]} notes
+ * @param {string} noteId
+ */
+export function backlinksFor(notes, noteId) {
+  const target = notes.find(n => n.id === noteId);
+  if (!target) return [];
+  const titleLower = target.title.trim().toLowerCase();
+  const hits = [];
+  for (const n of notes) {
+    if (n.id === noteId) continue;
+    const targets = extractWikiTargets(n.body).map(t => t.trim().toLowerCase());
+    if (targets.includes(titleLower)) hits.push(n);
+  }
+  return hits;
+}
 
 marked.use({ gfm: true, breaks: true });
 
-const BUILD = "nb-app-20260503e";
+const BUILD = "nb-app-3";
 
 function escapeHtml(s) {
   return String(s)
@@ -90,14 +275,14 @@ function createTextareaEditor(host, opts) {
 
 /**
  * @param {HTMLElement} elTree
- * @param {import("./notebook-storage.js").VaultState} state
+ * @param {VaultState} state
  * @param {Record<string, boolean>} uiFolderOpen
  * @param {{ onNote: (id: string) => void, onFolderHead: (id: string) => void }} cb
  */
 function renderFileExplorer(elTree, state, uiFolderOpen, cb) {
   elTree.innerHTML = "";
   const q = state.filter.trim().toLowerCase();
-  /** @param {import("./notebook-storage.js").Note} n */
+  /** @param {Note} n */
   const noteMatches = n => {
     if (!q) return true;
     return `${n.title}\n${n.body}`.toLowerCase().includes(q);
@@ -178,7 +363,7 @@ function renderFileExplorer(elTree, state, uiFolderOpen, cb) {
 
 /**
  * @param {HTMLElement} bar
- * @param {import("./notebook-storage.js").VaultState} state
+ * @param {VaultState} state
  * @param {{ select: (id: string) => void, close: (id: string) => void }} api
  */
 function renderTabStrip(bar, state, api) {
@@ -233,7 +418,7 @@ function currentChapterTitle() {
  * @param {string | null} bookId
  */
 export function mountNotebookPanel(bookId) {
-  console.info("%cAlysum", "color:#7f6df2;font-weight:bold", BUILD);
+  console.info("Alysum notes:", BUILD);
   const key = vaultStorageKey(bookId);
   let state = loadVault(key);
   let uiFolderOpen = { ...(state.openFolderIds && typeof state.openFolderIds === "object" ? state.openFolderIds : {}) };
@@ -271,7 +456,6 @@ export function mountNotebookPanel(bookId) {
   if (panel.parentElement !== document.body) {
     document.body.appendChild(panel);
   }
-
   if (labelEl) {
     labelEl.textContent = bookId ? `Notes · ${String(bookId).slice(0, 8)}…` : "Notes";
   }
@@ -396,7 +580,7 @@ export function mountNotebookPanel(bookId) {
   function openFullPage() {
     saveFields();
     const q = bookId ? `?book=${encodeURIComponent(bookId)}` : "";
-    window.open(`/notes.html${q}${q ? "&" : "?"}nb=20260503e`, "_blank", "noopener,noreferrer");
+    window.open(`/notes.html${q}`, "_blank", "noopener,noreferrer");
   }
 
   if (btn) {
@@ -612,10 +796,8 @@ function runFullPage(bookId) {
   const elPalHint = qs("nbPalHint");
   const elPalInput = qs("nbPalQ");
   const elPalList = qs("nbPalList");
-
   elBookLabel.textContent = bookId ? `Notes · ${String(bookId).slice(0, 10)}${String(bookId).length > 10 ? "…" : ""}` : "Notes";
-  const nbQ = "&nb=20260503e";
-  elEditorLink.href = bookId ? `/editor.html?book=${encodeURIComponent(bookId)}${nbQ}` : `/editor.html?nb=20260503e`;
+  elEditorLink.href = bookId ? `/editor.html?book=${encodeURIComponent(bookId)}` : "/editor.html";
 
   function activeNote() {
     return state.notes.find(n => n.id === state.activeNoteId) || null;
