@@ -15,23 +15,20 @@ export function mountEditorNotes(bookId, firebase = null) {
     const full = document.getElementById("nbFull");
     const statusEl = document.getElementById("nbStatus");
     const bodyEl = document.getElementById("nbBody");
+    const treeEl = document.getElementById("nbTree");
 
-    if (!panel || !btn || !bodyEl) return;
+    if (!panel || !btn || !bodyEl || !treeEl) return;
+    if (panel.dataset.alysumNotesInit === "1") return;
 
     const setStatus = msg => {
         if (statusEl) statusEl.textContent = msg;
-    };
-
-    const stubApi = {
-        refresh: () => {},
-        getState: () => ({ v: 2, items: [], lastActiveId: null, expandedFolders: [] })
     };
 
     let api;
     try {
         api = bindVaultUI(
             {
-                tree: document.getElementById("nbTree"),
+                tree: treeEl,
                 find: document.getElementById("nbFind"),
                 title: document.getElementById("nbTitle"),
                 body: bodyEl,
@@ -49,10 +46,11 @@ export function mountEditorNotes(bookId, firebase = null) {
         );
     } catch (err) {
         console.error("Notes vault failed to bind:", err);
-        api = stubApi;
+        setStatus("Notes failed to load — see console");
+        return;
     }
 
-    window.__alysumNotesDidOpen = () => {
+    function openPanel() {
         try {
             api.refresh();
             setStatus("Vault synced");
@@ -60,11 +58,17 @@ export function mountEditorNotes(bookId, firebase = null) {
             console.error("Notes refresh:", err);
             setStatus("Notes refresh error — see console");
         }
-    };
+    }
 
     function closePanel() {
         panel.classList.add("hidden");
     }
+
+    btn.addEventListener("click", () => {
+        const wasHidden = panel.classList.contains("hidden");
+        panel.classList.toggle("hidden");
+        if (wasHidden && !panel.classList.contains("hidden")) openPanel();
+    });
 
     function getNotePlain() {
         if (bodyEl.contentEditable === "true") return serializeWikiBody(bodyEl);
@@ -177,4 +181,6 @@ export function mountEditorNotes(bookId, firebase = null) {
             closePanel();
         }
     });
+
+    panel.dataset.alysumNotesInit = "1";
 }
