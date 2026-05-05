@@ -39,9 +39,33 @@ export function createVaultFirebaseDriver(opts) {
             setStatus?.("Vault saved to cloud");
             return;
         }
-        const raw = snap.data();
+        const raw = snap.data() || {};
+        const cloudItems = raw.items;
+        const cloudCount = Array.isArray(cloudItems) ? cloudItems.length : 0;
+
+        const local = getState();
+        const localCount = Array.isArray(local.items) ? local.items.length : 0;
+
+        if (cloudCount === 0) {
+            await setDoc(ref, packState(local), { merge: true });
+            setStatus?.("Cloud had no note list — kept this device and updated the cloud");
+            return;
+        }
+
         const next = normalizeVaultFromObject(raw);
-        if (!next.items.length) return;
+        if (next == null || !next.items?.length) {
+            await setDoc(ref, packState(local), { merge: true });
+            setStatus?.("Cloud data was incomplete — kept this device and re-synced");
+            return;
+        }
+
+        if (localCount > next.items.length) {
+            await setDoc(ref, packState(local), { merge: true });
+            setStatus?.("This device had more notes than the cloud — kept this copy and updated the cloud");
+            refresh();
+            return;
+        }
+
         setState(next);
         saveVault(next, storageKey);
         setStatus?.("Loaded vault from cloud");

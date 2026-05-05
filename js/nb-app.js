@@ -1,4 +1,4 @@
-import { bindVaultUI, DEFAULT_VAULT_KEY } from "./alysum-vault-ui.js?v=12";
+import { bindVaultUI, DEFAULT_VAULT_KEY } from "./alysum-vault-ui.js?v=13";
 import { serializeWikiBody } from "./alysum-wikilinks.js?v=8";
 
 /**
@@ -178,7 +178,12 @@ export function mountEditorNotes(bookId, firebase = null) {
     close?.addEventListener("click", closePanel);
 
     full?.addEventListener("click", () => {
-        window.open("/vault.html", "_blank", "noopener,noreferrer");
+        const url = new URL("../vault.html", import.meta.url).href;
+        const w = window.open(url, "_blank", "noopener,noreferrer");
+        if (!w) {
+            setStatus("Pop-up blocked — allow pop-ups, or open Notes library from Studio");
+            return;
+        }
         setStatus("Opened library in new tab");
     });
 

@@ -1287,13 +1287,35 @@ homeBtn.onclick = () => {
             applyEditorStyle();
 
             void (async () => {
-                try {
-                    const href = new URL("./js/nb-app.js?v=24", import.meta.url).href;
-                    const nb = await import(href);
-                    nb.mountEditorNotes(bookId, { db, uid: user.uid });
-                } catch (err) {
-                    console.error("Notes:", err);
+                const href = new URL("./js/nb-app.js?v=26", import.meta.url).href;
+                const panelEl = () => document.getElementById("nbPanel");
+                const markNotesFailed = msg => {
+                    const st = document.getElementById("nbStatus");
+                    const b = document.getElementById("nbBtn");
+                    if (st) st.textContent = msg;
+                    if (b) b.setAttribute("title", msg);
+                };
+                const gapsMs = [0, 350, 1400, 4500];
+                let lastErr = null;
+                for (let i = 0; i < gapsMs.length; i++) {
+                    if (i > 0) await new Promise(r => setTimeout(r, gapsMs[i] - gapsMs[i - 1]));
+                    try {
+                        const nb = await import(href);
+                        nb.mountEditorNotes(bookId, { db, uid: user.uid });
+                        if (panelEl()?.dataset?.alysumNotesInit === "1") {
+                            document.getElementById("nbBtn")?.setAttribute("title", "Notes");
+                            return;
+                        }
+                        lastErr = new Error("Notes mount did not finish");
+                    } catch (e) {
+                        lastErr = e;
+                        console.error("Notes load attempt " + (i + 1) + ":", e);
+                    }
                 }
+                markNotesFailed(
+                    "Notes didn't load — hard refresh (Ctrl+Shift+R). If this stays, open the browser console (F12)."
+                );
+                console.error("Notes: all retries failed", lastErr);
             })();
 
             setSaveStatus("Connecting...");

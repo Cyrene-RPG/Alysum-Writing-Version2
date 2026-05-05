@@ -16,7 +16,7 @@ import {
     DEFAULT_VAULT_KEY
 } from "./alysum-vault.js";
 import { normalizeVaultPlain, plainToWikiHtml, serializeWikiBody } from "./alysum-wikilinks.js?v=8";
-import { createVaultFirebaseDriver } from "./alysum-vault-firebase.js?v=9";
+import { createVaultFirebaseDriver } from "./alysum-vault-firebase.js?v=10";
 
 function escapeHtml(s) {
     return String(s)
@@ -377,7 +377,13 @@ export function bindVaultUI(elements, config = {}) {
             return;
         }
         elements.body.contentEditable = "true";
-        elements.body.innerHTML = plainToWikiHtml(note.content, state);
+        try {
+            elements.body.innerHTML = plainToWikiHtml(note.content, state);
+        } catch (err) {
+            console.error("Note body render:", err);
+            elements.body.textContent = note.content == null ? "" : String(note.content);
+            setStatus("Opened as plain text (link preview had an issue)");
+        }
     }
 
     function scheduleWikiNormalize() {

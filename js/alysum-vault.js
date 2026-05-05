@@ -82,11 +82,16 @@ function normalizeVault(parsed) {
     };
 }
 
-/** Normalize Firestore / API payload into the same shape as loadVault(). */
+/**
+ * Normalize Firestore / API payload into the same shape as loadVault().
+ * Returns null when the payload has no usable notes (caller must not overwrite a full local vault).
+ */
 export function normalizeVaultFromObject(data) {
     const parsed = data && typeof data === "object" ? data : {};
-    if (!safeArray(parsed.items).length) return defaultVault();
-    return normalizeVault(parsed);
+    if (!safeArray(parsed.items).length) return null;
+    const out = normalizeVault(parsed);
+    if (!safeArray(out.items).length) return null;
+    return out;
 }
 
 export function loadVault(key = DEFAULT_VAULT_KEY) {
@@ -103,6 +108,12 @@ export function loadVault(key = DEFAULT_VAULT_KEY) {
 }
 
 export function saveVault(state, key = DEFAULT_VAULT_KEY) {
+    try {
+        const prev = localStorage.getItem(key);
+        if (prev) localStorage.setItem(`${key}-prev`, prev);
+    } catch (_) {
+        /* ignore quota */
+    }
     localStorage.setItem(
         key,
         JSON.stringify({
