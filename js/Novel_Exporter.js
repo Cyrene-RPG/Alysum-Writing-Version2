@@ -340,188 +340,64 @@ function setPreviewPlaceholder(visible, text) {
 }
 
 let loadedBook = null;
-let previewBlobUrl = null;
-let pagedPageCount = 0;
-let pagedCurrentPage = 1;
+let previewPages = [];
+let previewIndex = 0;
 
 function updatePagerUi() {
     const prev = document.getElementById("nePrevPageBtn");
     const next = document.getElementById("neNextPageBtn");
     const status = document.getElementById("nePageStatus");
     if (!prev || !next || !status) return;
-    const total = pagedPageCount || 0;
-    const n = total ? Math.min(Math.max(1, pagedCurrentPage), total) : 0;
+    const total = previewPages.length;
+    const n = total ? previewIndex + 1 : 0;
     status.textContent = total ? `Page ${n} / ${total}` : "—";
-    prev.disabled = !total || n <= 1;
-    next.disabled = !total || n >= total;
+    prev.disabled = previewIndex <= 0;
+    next.disabled = total === 0 || previewIndex >= total - 1;
 }
 
-function buildPagedPreviewHtml(book) {
-    const mount = document.getElementById("pdfPreviewMount");
-    const w = parseFloat(mount?.getAttribute("data-page-width-in") || "6") || 6;
-    const h = parseFloat(mount?.getAttribute("data-page-height-in") || "9") || 9;
-    const mt = parseFloat(mount?.getAttribute("data-margin-top-in") || "0.5") || 0.5;
-    const mb = parseFloat(mount?.getAttribute("data-margin-bottom-in") || "0.5") || 0.5;
-    const mo = parseFloat(mount?.getAttribute("data-margin-outer-in") || "0.5") || 0.5;
-    const mi = parseFloat(mount?.getAttribute("data-margin-inner-in") || "0.75") || 0.75;
-
-    const chapterNewPage = (mount?.getAttribute("data-chapter-new-page") || "true") === "true";
-    const dropCap = (mount?.getAttribute("data-chapter-drop-cap") || "false") === "true";
-
+function buildPreviewPages(book) {
     const inputs = currentPreviewInputs();
     const title = inputs.title || safeString(book.title, "Untitled Book");
     const pen = inputs.pen;
 
-    const chapters = (book.sections?.body || []).map((ch, i) => ({
-        id: `ne-ch-${i + 1}`,
-        title: safeString(ch.title, "").trim() || `Chapter ${i + 1}`,
-        content: safeString(ch.content, "")
-    }));
+    const pages = [];
+    pages.push({ kind: "title", label: "Title page", html: titlePageHtml(title, pen) });
+    pages.push({ kind: "copyright", label: "Copyright", html: copyrightPageHtml(inputs.cp) });
 
-    const tocRows = chapters
-        .map(ch => {
-            const label = escapeHtml(ch.title);
-            return `<li class="toc-row"><a href="#${escapeHtml(ch.id)}">${label}</a></li>`;
-        })
-        .join("");
+    const tocIndex = pages.length;
+    pages.push({ kind: "toc", label: "Contents", html: "" });
 
-    const chapterArticles = chapters
-        .map(ch => {
-            const body = normalizeChapterBodyHtml(ch.content);
-            return (
-                `<article class="ne-chapter ${chapterNewPage ? "ne-break" : ""}" id="${escapeHtml(ch.id)}">` +
-                `<h1 class="ne-h1">${escapeHtml(ch.title)}</h1>` +
-                `<div class="ne-body ${dropCap ? "drop-cap" : ""}">${body}</div>` +
-                `</article>`
-            );
-        })
-        .join("\n");
+    const chapterStartPageNumber = 1 + pages.length; // 1-based
+    pages[tocIndex].html = tocPageHtml(book, chapterStartPageNumber);
 
-    const titleSection = `<article class="ne-title ne-break" id="ne-title">${titlePageHtml(title, pen)}</article>`;
-    const copyrightSection = `<article class="ne-copyright ne-break" id="ne-copyright">${copyrightPageHtml(
-        inputs.cp
-    )}</article>`;
-    const tocSection =
-        `<article class="ne-toc ne-break" id="ne-toc">` +
-        `<h1 class="ne-h1 ne-toc-title">Contents</h1>` +
-        `<ol class="ne-toc-list">${tocRows || "<li>—</li>"}</ol>` +
-        `</article>`;
+    const chapters = allChaptersFlat(book).filter(ch => ch.section === "body");
+    chapters.forEach((ch, i) => {
+        pages.push({ kind: "chapter", label: ch.title || `Chapter ${i + 1}`, html: chapterPageHtml(ch) });
+    });
 
-    // Real TOC page numbers via target-counter(page)
-    const css = `
-@page { size: ${w}in ${h}in; margin: ${mt}in ${mo}in ${mb}in ${mi}in; }
-@page :left { margin-left: ${mo}in; margin-right: ${mi}in; }
-@page :right { margin-left: ${mi}in; margin-right: ${mo}in; }
-html { font-size: 11pt; }
-body { margin: 0; background: #dfe5e8; color: #111827; font-family: Georgia, "Times New Roman", Times, serif; line-height: 1.48; }
-.ne-break { break-before: page; }
-.pagedjs_pages { display: flex !important; flex-direction: column !important; align-items: center !important; gap: 18px !important; padding: 14px 10px 34px !important; }
-.pagedjs_page { background: linear-gradient(180deg, #fffefc 0%, #faf8f4 100%) !important; border: 1px solid rgba(17,24,39,.08) !important; box-shadow: 0 8px 24px rgba(17,24,39,.08) !important; }
-.ne-h1 { font-family: "Playfair Display", Georgia, "Times New Roman", serif; font-size: 16pt; margin: 0 0 .65rem; text-align: center; letter-spacing: .04em; }
-.ne-title { min-height: 100%; }
-.ne-title .ne-preview-page-title { min-height: 100%; justify-content: flex-start; padding-top: 16%; }
-.ne-copyright { min-height: 100%; display: flex; align-items: center; justify-content: center; }
-.ne-copyright .ne-preview-page-copyright { padding: 0; max-width: 92%; }
-.ne-body p { margin: 0 0 .65em; text-indent: .25in; }
-.ne-body p:first-child { text-indent: 0; }
-.drop-cap > p:first-child::first-letter { float:left; font-family:"Playfair Display", Georgia, serif; font-size: 2.85em; line-height:.82; font-weight:700; padding-right:.06em; margin-top:.04em; }
-.ne-toc-title { margin-top: 0; }
-.ne-toc-list { list-style: none; padding: 0; margin: 0; }
-.ne-toc-list .toc-row { display: grid; grid-template-columns: 1fr auto; gap: .65rem; align-items: baseline; padding: .12rem 0; }
-.ne-toc-list .toc-row a { color: inherit; text-decoration: none; }
-.ne-toc-list .toc-row a::after { content: target-counter(attr(href), page); font-variant-numeric: oldstyle-nums; }
-`;
-
-    const inner = `${titleSection}\n${copyrightSection}\n${tocSection}\n${chapterArticles}`;
-
-    // pager bridge: parent sends go-to-page; iframe scrolls to that pagedjs_page and reports back
-    const script = `
-(function () {
-  function post(type, payload) { try { window.parent.postMessage(Object.assign({ type: type }, payload || {}), "*"); } catch (e) {} }
-  function pageEls() { return Array.prototype.slice.call(document.querySelectorAll(".pagedjs_page")); }
-  function clamp(n, a, b) { return Math.max(a, Math.min(b, n)); }
-  function goTo(n) {
-    var pages = pageEls();
-    var total = pages.length || 0;
-    if (!total) return;
-    var idx = clamp((n|0) - 1, 0, total - 1);
-    var el = pages[idx];
-    if (el && el.scrollIntoView) el.scrollIntoView({ behavior: "smooth", block: "start" });
-    post("ne-current-page", { page: idx + 1, total: total });
-  }
-  window.addEventListener("message", function (ev) {
-    if (!ev || !ev.data) return;
-    if (ev.data.type === "ne-go-page") goTo(ev.data.page);
-    if (ev.data.type === "ne-go-next") goTo((ev.data.page || 1) + 1);
-    if (ev.data.type === "ne-go-prev") goTo((ev.data.page || 1) - 1);
-  });
-  function done() {
-    var total = pageEls().length || 0;
-    post("ne-page-count", { total: total });
-    post("alysum-pdf-pages", { count: total });
-    goTo(1);
-  }
-  function runPaged() {
-    try {
-      if (window.PagedPolyfill && typeof window.PagedPolyfill.preview === "function") {
-        window.PagedPolyfill.preview().then(done).catch(done);
-      } else if (window.Paged && window.Paged.Previewer) {
-        var p = new window.Paged.Previewer();
-        p.preview().then(done).catch(done);
-      } else {
-        done();
-      }
-    } catch (e) { done(); }
-  }
-  function run() { requestAnimationFrame(function(){ requestAnimationFrame(runPaged); }); }
-  if (document.readyState === "complete") run();
-  else window.addEventListener("load", run);
-})();`;
-
-    return `<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>${css}</style>
-</head>
-<body>
-  <div id="manuscript-root">${inner}</div>
-  <script src="https://cdn.jsdelivr.net/npm/pagedjs@0.4.3/dist/paged.polyfill.js"><\/script>
-  <script>${script}<\/script>
-</body>
-</html>`;
+    return pages;
 }
 
-let previewRefreshTimer = null;
-function refreshPagedPreviewDebounced() {
-    if (previewRefreshTimer) clearTimeout(previewRefreshTimer);
-    previewRefreshTimer = setTimeout(() => {
-        previewRefreshTimer = null;
-        refreshPagedPreviewNow();
-    }, 300);
-}
+function renderCurrentPreviewPage() {
+    const sc = document.getElementById("nePreviewScroll");
+    if (!sc) return;
 
-function refreshPagedPreviewNow() {
-    const iframe = /** @type {HTMLIFrameElement | null} */ (document.getElementById("nePreviewFrame"));
-    if (!iframe) return;
     if (!loadedBook) {
         setPreviewPlaceholder(true, bookId ? "Loading manuscript…" : "Open a book to preview.");
-        pagedPageCount = 0;
-        pagedCurrentPage = 1;
+        previewPages = [];
+        previewIndex = 0;
         updatePagerUi();
         return;
     }
 
-    const html = buildPagedPreviewHtml(loadedBook);
-    if (previewBlobUrl) URL.revokeObjectURL(previewBlobUrl);
-    previewBlobUrl = URL.createObjectURL(new Blob([html], { type: "text/html" }));
+    previewPages = buildPreviewPages(loadedBook);
+    if (previewIndex < 0) previewIndex = 0;
+    if (previewIndex >= previewPages.length) previewIndex = Math.max(0, previewPages.length - 1);
 
-    pagedPageCount = 0;
-    pagedCurrentPage = 1;
-    updatePagerUi();
+    const page = previewPages[previewIndex];
+    sc.innerHTML = page ? page.html : "";
     setPreviewPlaceholder(false, "");
-    iframe.src = previewBlobUrl;
+    updatePagerUi();
 }
 
 function fillTitleAndPenFromBook(book, authorLine) {
@@ -575,7 +451,7 @@ async function loadBookForPreview(uid) {
 
     setPreviewPlaceholder(true, "Loading manuscript…");
     loadedBook = null;
-    refreshPagedPreviewNow();
+    renderCurrentPreviewPage();
 
     try {
         const snap = await getDoc(doc(db, "users", uid, "books", bookId));
@@ -585,7 +461,7 @@ async function loadBookForPreview(uid) {
             const titleIn = document.getElementById("neBookTitleInput");
             if (titleIn) titleIn.value = "";
             loadedBook = null;
-            refreshPagedPreviewNow();
+            renderCurrentPreviewPage();
             return;
         }
 
@@ -593,9 +469,8 @@ async function loadBookForPreview(uid) {
         ensureStructure(book);
         fillTitleAndPenFromBook(book, authorDisplay);
         loadedBook = book;
-        pagedPageCount = 0;
-        pagedCurrentPage = 1;
-        refreshPagedPreviewNow();
+        previewIndex = 0;
+        renderCurrentPreviewPage();
     } catch (err) {
         console.error(err);
         const code = err && typeof err === "object" && "code" in err ? err.code : "";
@@ -605,7 +480,7 @@ async function loadBookForPreview(uid) {
         }
         setPreviewPlaceholder(true, msg);
         loadedBook = null;
-        refreshPagedPreviewNow();
+        renderCurrentPreviewPage();
     }
 }
 
@@ -792,13 +667,13 @@ function initLayoutControls() {
     if (newPageBtn) {
         newPageBtn.addEventListener("click", () => {
             if (!loadedBook) return;
-            refreshPagedPreviewDebounced();
+            renderCurrentPreviewPage();
         });
     }
     if (dropCapBtn) {
         dropCapBtn.addEventListener("click", () => {
             if (!loadedBook) return;
-            refreshPagedPreviewDebounced();
+            renderCurrentPreviewPage();
         });
     }
 }
@@ -817,12 +692,12 @@ function wirePreviewPager() {
     const prev = document.getElementById("nePrevPageBtn");
     const next = document.getElementById("neNextPageBtn");
     prev?.addEventListener("click", () => {
-        const frame = /** @type {HTMLIFrameElement | null} */ (document.getElementById("nePreviewFrame"));
-        frame?.contentWindow?.postMessage({ type: "ne-go-prev", page: pagedCurrentPage }, "*");
+        previewIndex = Math.max(0, previewIndex - 1);
+        renderCurrentPreviewPage();
     });
     next?.addEventListener("click", () => {
-        const frame = /** @type {HTMLIFrameElement | null} */ (document.getElementById("nePreviewFrame"));
-        frame?.contentWindow?.postMessage({ type: "ne-go-next", page: pagedCurrentPage }, "*");
+        previewIndex = Math.min(Math.max(0, previewPages.length - 1), previewIndex + 1);
+        renderCurrentPreviewPage();
     });
     updatePagerUi();
 }
@@ -846,7 +721,7 @@ function wirePreviewLiveInputs() {
     ];
     const handler = () => {
         if (!loadedBook) return;
-        refreshPagedPreviewDebounced();
+        renderCurrentPreviewPage();
     };
     ids.forEach(id => {
         const el = document.getElementById(id);
@@ -863,20 +738,6 @@ function init() {
     wirePreviewPager();
     wirePreviewLiveInputs();
 
-    window.addEventListener("message", ev => {
-        if (!ev || !ev.data) return;
-        if (ev.data.type === "ne-page-count") {
-            pagedPageCount = Number(ev.data.total) || 0;
-            pagedCurrentPage = 1;
-            updatePagerUi();
-        }
-        if (ev.data.type === "ne-current-page") {
-            pagedCurrentPage = Number(ev.data.page) || pagedCurrentPage || 1;
-            pagedPageCount = Number(ev.data.total) || pagedPageCount || 0;
-            updatePagerUi();
-        }
-    });
-
     if (!bookId) {
         setPreviewPlaceholder(true, "Add ?book=… or open Export from the editor to preview a manuscript here.");
         onAuthStateChanged(auth, async user => {
@@ -888,12 +749,8 @@ function init() {
             }
         });
         loadedBook = null;
-        if (previewBlobUrl) {
-            try { URL.revokeObjectURL(previewBlobUrl); } catch (_) {}
-            previewBlobUrl = null;
-        }
-        pagedPageCount = 0;
-        pagedCurrentPage = 1;
+        previewPages = [];
+        previewIndex = 0;
         updatePagerUi();
         return;
     }
