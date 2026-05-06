@@ -686,22 +686,119 @@
         0 2px 0 rgba(255, 255, 255, 0.75) inset,
         0 24px 48px rgba(0, 0, 0, 0.45),
         0 0 0 1px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+    text-align: left;
+    color: #1e293b;
+}
+
+.ne-preview-placeholder {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
     display: flex;
     align-items: center;
     justify-content: center;
     text-align: center;
-    padding: 24px;
-    color: #64748b;
-}
-
-.ne-preview-placeholder {
-    position: relative;
-    z-index: 3;
     margin: 0;
+    padding: 12px;
     font-size: 14px;
     font-weight: 600;
     line-height: 1.45;
-    max-width: 16em;
+    max-width: none;
+    color: #64748b;
+    pointer-events: none;
+}
+
+.ne-preview-placeholder[hidden] {
+    display: none;
+}
+
+.ne-preview-scroll {
+    position: absolute;
+    z-index: 3;
+    box-sizing: border-box;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-color: rgba(100, 116, 139, 0.55) transparent;
+}
+
+.ne-preview-scroll[hidden] {
+    display: none;
+}
+
+.ne-preview-scroll:not([hidden]) {
+    top: calc(100% * var(--guide-mt, 0) / var(--guide-pgh));
+    bottom: calc(100% * var(--guide-mb, 0) / var(--guide-pgh));
+    left: calc(100% * var(--guide-mi, 0) / var(--guide-pgw));
+    right: calc(100% * var(--guide-mo, 0) / var(--guide-pgw));
+}
+
+.ne-preview-page--verso .ne-preview-scroll:not([hidden]) {
+    left: calc(100% * var(--guide-mo, 0) / var(--guide-pgw));
+    right: calc(100% * var(--guide-mi, 0) / var(--guide-pgw));
+}
+
+.ne-preview-manuscript {
+    font-family: Georgia, "Times New Roman", Times, serif;
+    font-size: 11pt;
+    line-height: 1.48;
+}
+
+.ne-ms-ch + .ne-ms-ch {
+    margin-top: 0.85rem;
+}
+
+.ne-preview-page[data-chapter-new-page="true"] .ne-ms-ch + .ne-ms-ch {
+    margin-top: 2.25rem;
+    padding-top: 1.85rem;
+    border-top: 1px solid rgba(15, 23, 42, 0.1);
+}
+
+.ne-ms-ch-title {
+    margin: 0 0 0.55rem;
+    font-family: "Playfair Display", Georgia, "Times New Roman", serif;
+    font-size: 13pt;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: #0f172a;
+}
+
+.ne-ms-ch-body {
+    font-size: inherit;
+    line-height: inherit;
+}
+
+.ne-ms-ch-body p {
+    margin: 0 0 0.65em;
+    text-indent: 0.25in;
+}
+
+.ne-ms-ch-body p:first-child {
+    text-indent: 0;
+}
+
+.ne-preview-page[data-chapter-drop-cap="true"] .ne-ms-ch-body > p:first-child::first-letter {
+    float: left;
+    font-family: "Playfair Display", Georgia, "Times New Roman", serif;
+    font-size: 2.85em;
+    line-height: 0.82;
+    font-weight: 700;
+    padding-right: 0.06em;
+    margin-top: 0.04em;
+    color: #0f172a;
+}
+
+.ne-ms-ch-body ul,
+.ne-ms-ch-body ol {
+    margin: 0.4em 0 0.65em;
+    padding-left: 1.25em;
+}
+
+.ne-ms-ch-body blockquote {
+    margin: 0.5em 0 0.65em;
+    padding-left: 0.75em;
+    border-left: 2px solid rgba(100, 116, 139, 0.35);
+    color: #334155;
 }
 
 .ne-workspace.ne-print-guides-on .ne-preview-track,

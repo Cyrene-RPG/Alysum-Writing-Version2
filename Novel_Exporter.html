@@ -27,7 +27,7 @@
             </div>
         </div>
         <div class="ne-toolbar" role="navigation" aria-label="Novel exporter">
-            <a class="ne-bar-btn ne-bar-btn-back" href="studio.html">Back</a>
+            <a class="ne-bar-btn ne-bar-btn-back" id="neBackLink" href="studio.html">Back</a>
             <span class="ne-toolbar-kicker">Export workspace</span>
             <button type="button" class="ne-bar-btn ne-bar-btn-settings" aria-label="Settings">Settings</button>
         </div>
@@ -190,7 +190,8 @@
                             <span class="ne-guide-trim" title="Trim size"></span>
                             <span class="ne-guide-live" title="Type / live area (inside margins)"></span>
                         </div>
-                        <p class="ne-preview-placeholder">PDF preview will appear here.</p>
+                        <div class="ne-preview-scroll" id="nePreviewScroll" hidden></div>
+                        <p class="ne-preview-placeholder" id="nePreviewPlaceholder">PDF preview will appear here.</p>
                     </div>
                 </section>
             </div>
@@ -370,6 +371,6 @@
             </aside>
         </div>
     </main>
-    <script src="js/Novel_Exporter.js" defer></script>
+    <script type="module" src="js/Novel_Exporter.js"></script>
 </body>
 </html>
