@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Novel Exporter — Alysum</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&amp;display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="css/site-responsive.css?v=1" />
+    <link rel="stylesheet" href="css/Novel_Exporter.css" />
+</head>
+<body class="ne-body">
+    <header class="ne-header">
+        <div class="ne-user-row">
+            <div class="ne-user-left">
+                <a class="ne-logo-link" href="index.html" aria-label="Alysum home">
+                    <img class="ne-logo" src="Alysum-3.png" alt="Alysum" />
+                </a>
+            </div>
+            <div class="ne-title-cluster">
+                <h1 class="ne-page-title">Novel Exporter</h1>
+                <p class="ne-page-subtitle">Print-ready files and export paths for your manuscript.</p>
+            </div>
+            <div class="ne-user-right">
+                <span class="ne-username" id="exporterUsername" aria-live="polite">@username</span>
+            </div>
+        </div>
+        <div class="ne-toolbar" role="navigation" aria-label="Novel exporter">
+            <a class="ne-bar-btn ne-bar-btn-back" href="studio.html">Back</a>
+            <span class="ne-toolbar-kicker">Export workspace</span>
+            <button type="button" class="ne-bar-btn ne-bar-btn-settings" aria-label="Settings">Settings</button>
+        </div>
+    </header>
+
+    <main class="ne-main" aria-label="Exporter content">
+        <div class="ne-workspace">
+            <aside class="ne-meta-panel ne-side-panel" aria-label="Export details and copyright page">
+                <details class="ne-fold-details" aria-label="Title page">
+                    <summary class="ne-fold-summary">
+                        <span class="ne-fold-summary-title">Title Page</span>
+                        <span class="ne-fold-summary-chev" aria-hidden="true"></span>
+                    </summary>
+                    <div class="ne-fold-body">
+                        <div class="ne-field">
+                            <label class="ne-field-label" for="neBookTitleInput">Book title</label>
+                            <input
+                                type="text"
+                                class="ne-field-input ne-field-input-title"
+                                id="neBookTitleInput"
+                                name="bookTitle"
+                                placeholder="Book title"
+                                autocomplete="off"
+                                spellcheck="true"
+                            />
+                        </div>
+                        <div class="ne-field">
+                            <label class="ne-field-label" for="neAuthorUsernameInput">Pen Name</label>
+                            <input
+                                type="text"
+                                class="ne-field-input"
+                                id="neAuthorUsernameInput"
+                                name="authorUsername"
+                                placeholder="@username"
+                                autocomplete="off"
+                                spellcheck="false"
+                            />
+                        </div>
+                    </div>
+                </details>
+
+                <details class="ne-fold-details" aria-label="Copyright page text for export">
+                    <summary class="ne-fold-summary">
+                        <span class="ne-fold-summary-title">Copyright page</span>
+                        <span class="ne-fold-summary-chev" aria-hidden="true"></span>
+                    </summary>
+                    <div class="ne-fold-body">
+                        <p class="ne-copyright-hint">This block will supply the export copyright page.</p>
+
+                        <div class="ne-copyright-scroll">
+                        <p class="ne-copy-p">
+                            Copyright ©
+                            <input type="text" class="ne-field-input ne-copy-inline ne-copy-inline--year" id="neCpYear" name="copyrightYear" inputmode="numeric" maxlength="9" spellcheck="false" aria-label="Copyright year" placeholder="Year" />
+                            by
+                            <input type="text" class="ne-field-input ne-copy-inline ne-copy-inline--name" id="neCpHolderName" name="copyrightHolderName" spellcheck="false" aria-label="Copyright holder name" placeholder="Your name" />
+                        </p>
+                        <p class="ne-copy-p">All rights reserved.</p>
+                        <p class="ne-copy-p">
+                            No part of this publication may be reproduced, distributed, stored in a retrieval system, or transmitted in any form or by any means—electronic,
+                            mechanical, photocopying, recording, scanning, or otherwise—without the prior written permission of the publisher or copyright owner, except in the
+                            case of brief quotations embodied in critical reviews and certain other noncommercial uses permitted by copyright law.
+                        </p>
+                        <p class="ne-copy-p">
+                            This book is protected under international and domestic copyright laws and treaties. Any unauthorized use of the material contained herein may violate
+                            copyright, trademark, and other applicable laws and could result in criminal or civil penalties.
+                        </p>
+                        <p class="ne-copy-p">
+                            This is a work of fiction. Names, characters, businesses, organizations, places, events, and incidents are either the product of the author’s imagination
+                            or used fictitiously. Any resemblance to actual persons, living or dead, or actual events is purely coincidental.
+                        </p>
+                        <p class="ne-copy-p">The author asserts the moral right to be identified as the author of this work.</p>
+                        <p class="ne-copy-p">
+                            No part of this book may be used, reproduced, or transmitted in any manner for the purpose of training, developing, or improving machine learning
+                            systems, artificial intelligence models, or similar technologies without the express written consent of the copyright owner. This includes, but is not
+                            limited to, text and data mining, scraping, or inclusion in datasets used for training artificial intelligence systems.
+                        </p>
+                        <p class="ne-copy-p">
+                            For information about permissions, rights, or licensing requests, contact:
+                            <input
+                                type="text"
+                                class="ne-field-input ne-copy-line"
+                                id="neCpContact"
+                                name="copyrightContact"
+                                spellcheck="false"
+                                autocomplete="off"
+                                aria-label="Contact email or website"
+                                placeholder="Your contact email or website"
+                            />
+                        </p>
+                        <p class="ne-copy-p">
+                            First Edition:
+                            <input type="text" class="ne-field-input ne-copy-inline ne-copy-inline--year" id="neCpEditionYear" name="firstEditionYear" inputmode="numeric" maxlength="9" spellcheck="false" aria-label="First edition year" placeholder="Year" />
+                        </p>
+                        <p class="ne-copy-p">
+                            Published by
+                            <input type="text" class="ne-field-input ne-copy-inline ne-copy-inline--wide" id="neCpImprint" name="publishingImprint" spellcheck="true" aria-label="Publishing name or imprint" placeholder="Your publishing name or imprint" />
+                        </p>
+                        <p class="ne-copy-p">
+                            <input type="text" class="ne-field-input ne-copy-line" id="neCpPublisherLoc" name="publisherLocation" spellcheck="true" aria-label="City, state or country" placeholder="City, state/country" />
+                        </p>
+                        <p class="ne-copy-p">
+                            ISBN:
+                            <input type="text" class="ne-field-input ne-copy-inline ne-copy-inline--isbn" id="neCpIsbn" name="isbn" spellcheck="false" autocomplete="off" aria-label="ISBN" placeholder="Your ISBN" />
+                        </p>
+                        <p class="ne-copy-p">
+                            Cover design by:
+                            <input type="text" class="ne-field-input ne-copy-inline ne-copy-inline--name" id="neCpCoverDesign" name="coverDesignBy" spellcheck="true" aria-label="Cover designer name" placeholder="Name" />
+                        </p>
+                        <p class="ne-copy-p">
+                            Editing by:
+                            <input type="text" class="ne-field-input ne-copy-inline ne-copy-inline--name" id="neCpEditingBy" name="editingBy" spellcheck="true" aria-label="Editor name" placeholder="Name" />
+                        </p>
+                        <p class="ne-copy-p">
+                            Printed in
+                            <input type="text" class="ne-field-input ne-copy-inline ne-copy-inline--country" id="neCpPrintedIn" name="printedIn" spellcheck="true" aria-label="Country printed in" placeholder="Country" />
+                        </p>
+                        <div class="ne-field ne-field--copyright-optional">
+                            <label class="ne-copy-check-row" for="neCpOptionalInclude">
+                                <input type="checkbox" id="neCpOptionalInclude" name="copyrightOptionalInclude" />
+                                <span class="ne-copy-check-text">Include optional reader advisory</span>
+                            </label>
+                            <textarea
+                                class="ne-field-input ne-copy-textarea"
+                                id="neCpOptional"
+                                name="copyrightOptional"
+                                rows="3"
+                                spellcheck="true"
+                                disabled
+                                aria-label="Optional reader advisory text"
+                                placeholder="This book may contain material that some readers may find disturbing. Reader discretion is advised."
+                            ></textarea>
+                        </div>
+                        </div>
+                    </div>
+                </details>
+            </aside>
+            <div class="ne-preview-track">
+                <section class="ne-preview-stage" aria-label="PDF preview">
+                    <div
+                        class="ne-preview-page"
+                        id="pdfPreviewMount"
+                        data-format="5x8"
+                        data-page-hand="recto"
+                        data-page-width-in="5"
+                        data-page-height-in="8"
+                        data-margin-top-in="0.5"
+                        data-margin-bottom-in="0.5"
+                        data-margin-outer-in="0.5"
+                        data-margin-inner-in="0.75"
+                        data-bleed-in="0.125"
+                        data-chapter-new-page="true"
+                        data-chapter-drop-cap="false"
+                    >
+                        <div class="ne-preview-print-guides" aria-hidden="true">
+                            <div class="ne-guide-bleeds">
+                                <span class="ne-guide-bleed-top"></span>
+                                <span class="ne-guide-bleed-bot"></span>
+                                <span class="ne-guide-bleed-out"></span>
+                            </div>
+                            <span class="ne-guide-trim" title="Trim size"></span>
+                            <span class="ne-guide-live" title="Type / live area (inside margins)"></span>
+                        </div>
+                        <p class="ne-preview-placeholder">PDF preview will appear here.</p>
+                    </div>
+                </section>
+            </div>
+
+            <aside class="ne-layout-panel ne-side-panel" aria-label="Page layout">
+                <details class="ne-fold-details" aria-label="Page size and margins">
+                    <summary class="ne-fold-summary">
+                        <span class="ne-fold-summary-title">Page size &amp; margins</span>
+                        <span class="ne-fold-summary-chev" aria-hidden="true"></span>
+                    </summary>
+                    <div class="ne-fold-body">
+                        <p class="ne-layout-hint">Exported PDF pages use exactly the trim size shown (physical inches). The preview scales down to fit your screen but keeps the same proportions.</p>
+                        <div class="ne-page-format-group" role="radiogroup" aria-labelledby="nePageFormatLabel">
+                            <p class="ne-field-label ne-page-format-heading" id="nePageFormatLabel">Trim size</p>
+                            <label class="ne-format-option">
+                                <input type="radio" name="nePageFormat" value="5x8" checked />
+                                <span class="ne-format-option-body">
+                                    <span class="ne-format-option-title">5 × 8 in</span>
+                                    <span class="ne-format-option-desc">
+                                        Exact trim 5 × 8 in. Margins: top / bottom / outer 0.5 in, inner gutter 0.75 in. Bleed 0.125 in on top, bottom, and outer edge.
+                                    </span>
+                                </span>
+                            </label>
+                            <label class="ne-format-option">
+                                <input type="radio" name="nePageFormat" value="6x9" />
+                                <span class="ne-format-option-body">
+                                    <span class="ne-format-option-title">6 × 9 in</span>
+                                    <span class="ne-format-option-desc">
+                                        Exact trim 6 × 9 in. Margins: top / bottom / outer 0.5 in, inner gutter 0.75 in. Bleed 0.125 in on top, bottom, and outer edge.
+                                    </span>
+                                </span>
+                            </label>
+                            <label class="ne-format-option">
+                                <input type="radio" name="nePageFormat" value="letter" />
+                                <span class="ne-format-option-body">
+                                    <span class="ne-format-option-title">8.5 × 11 in</span>
+                                    <span class="ne-format-option-desc">PDF trim is exactly 8.5 in × 11 in.</span>
+                                </span>
+                            </label>
+                        </div>
+                        <div class="ne-hand-group" role="radiogroup" aria-labelledby="nePageHandLabel">
+                            <p class="ne-field-label ne-hand-heading" id="nePageHandLabel">Page in spread</p>
+                            <p class="ne-hand-hint">Verso: gutter moves to the page right (toward the spine); outer margin and bleed move to the page left.</p>
+                            <label class="ne-hand-option">
+                                <input type="radio" name="nePageHand" value="recto" checked />
+                                <span class="ne-hand-option-body">
+                                    <span class="ne-hand-option-title">Right-hand (recto)</span>
+                                    <span class="ne-hand-option-desc">Gutter left, outer edge right — typical chapter opening.</span>
+                                </span>
+                            </label>
+                            <label class="ne-hand-option">
+                                <input type="radio" name="nePageHand" value="verso" />
+                                <span class="ne-hand-option-body">
+                                    <span class="ne-hand-option-title">Left-hand (verso)</span>
+                                    <span class="ne-hand-option-desc">Mirrored margins and outer bleed.</span>
+                                </span>
+                            </label>
+                        </div>
+                        <div class="ne-guide-toggle-row">
+                            <button
+                                type="button"
+                                class="ne-toggle-switch"
+                                id="neTogglePrintGuides"
+                                aria-pressed="false"
+                                aria-controls="pdfPreviewMount"
+                                aria-label="Toggle bleed and margin overlay on preview"
+                            >
+                                <span class="ne-toggle-copy">Bleed &amp; margin overlay</span>
+                                <span class="ne-toggle-rail" aria-hidden="true"><span class="ne-toggle-thumb"></span></span>
+                            </button>
+                        </div>
+                    </div>
+                </details>
+
+                <details class="ne-fold-details" aria-label="Typography">
+                    <summary class="ne-fold-summary">
+                        <span class="ne-fold-summary-title">Typography</span>
+                        <span class="ne-fold-summary-chev" aria-hidden="true"></span>
+                    </summary>
+                    <div class="ne-fold-body">
+                        <p class="ne-typo-hint">Export will use these choices for body text and chapter openings. (Preview uses your trim layout only for now.)</p>
+                        <div class="ne-field">
+                            <label class="ne-field-label" for="neTypoBodyFace">Body typeface</label>
+                            <select class="ne-field-select" id="neTypoBodyFace" name="typoBodyFace">
+                                <option value="Georgia, 'Times New Roman', Times, serif">Georgia</option>
+                                <option value="'Palatino Linotype', Palatino Linotype, Palatino, 'Book Antiqua', serif">Palatino</option>
+                                <option value="'Times New Roman', Times, serif">Times New Roman</option>
+                                <option value="Charter, 'Bitstream Charter', 'Sitka Text', Cambria, serif">Charter / Cambria stack</option>
+                                <option value="Baskerville, 'Baskerville Old Face', Garamond, serif">Baskerville-style</option>
+                                <option value="system-ui, -apple-system, 'Segoe UI', sans-serif">Sans (system)</option>
+                            </select>
+                        </div>
+                        <div class="ne-field">
+                            <label class="ne-field-label" for="neTypoChapterFace">Chapter titles</label>
+                            <select class="ne-field-select ne-field-select-display" id="neTypoChapterFace" name="typoChapterFace">
+                                <option value="'Playfair Display', Georgia, 'Times New Roman', serif">Playfair Display</option>
+                                <option value="Georgia, 'Times New Roman', Times, serif">Georgia</option>
+                                <option value="'Palatino Linotype', Palatino, serif">Palatino</option>
+                                <option value="'Times New Roman', Times, serif">Times New Roman</option>
+                                <option value="match-body">Match body</option>
+                            </select>
+                        </div>
+                        <div class="ne-field">
+                            <label class="ne-field-label" for="neTypoBodySizePt">Body size</label>
+                            <div class="ne-input-with-suffix">
+                                <input
+                                    type="number"
+                                    class="ne-field-input"
+                                    id="neTypoBodySizePt"
+                                    name="typoBodySizePt"
+                                    min="8"
+                                    max="16"
+                                    step="0.25"
+                                    value="11"
+                                    inputmode="decimal"
+                                />
+                                <span class="ne-input-suffix" aria-hidden="true">pt</span>
+                            </div>
+                        </div>
+                        <div class="ne-field">
+                            <label class="ne-field-label" for="neTypoFirstIndentIn">First line indent</label>
+                            <div class="ne-input-with-suffix">
+                                <input
+                                    type="number"
+                                    class="ne-field-input"
+                                    id="neTypoFirstIndentIn"
+                                    name="typoFirstIndentIn"
+                                    min="0"
+                                    max="1"
+                                    step="0.01"
+                                    value="0.25"
+                                    inputmode="decimal"
+                                />
+                                <span class="ne-input-suffix" aria-hidden="true">in</span>
+                            </div>
+                        </div>
+                    </div>
+                </details>
+
+                <details class="ne-fold-details" aria-label="Chapters and layout">
+                    <summary class="ne-fold-summary">
+                        <span class="ne-fold-summary-title">Chapters &amp; layout</span>
+                        <span class="ne-fold-summary-chev" aria-hidden="true"></span>
+                    </summary>
+                    <div class="ne-fold-body">
+                        <p class="ne-typo-hint">How chapters start in the exported PDF. You can tune this before generating print files.</p>
+                        <div class="ne-chapter-stack">
+                            <div class="ne-guide-toggle-row">
+                                <button
+                                    type="button"
+                                    class="ne-toggle-switch"
+                                    id="neChapterNewPageEach"
+                                    aria-pressed="true"
+                                    aria-controls="pdfPreviewMount"
+                                    aria-label="Start each chapter on a new page"
+                                >
+                                    <span class="ne-toggle-copy">New page per chapter</span>
+                                    <span class="ne-toggle-rail" aria-hidden="true"><span class="ne-toggle-thumb"></span></span>
+                                </button>
+                            </div>
+                            <div class="ne-guide-toggle-row">
+                                <button
+                                    type="button"
+                                    class="ne-toggle-switch"
+                                    id="neChapterDropCap"
+                                    aria-pressed="false"
+                                    aria-controls="pdfPreviewMount"
+                                    aria-label="Use a drop cap on the first paragraph of each chapter"
+                                >
+                                    <span class="ne-toggle-copy">Drop cap on chapter opening</span>
+                                    <span class="ne-toggle-rail" aria-hidden="true"><span class="ne-toggle-thumb"></span></span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </details>
+            </aside>
+        </div>
+    </main>
+    <script src="js/Novel_Exporter.js" defer></script>
+</body>
+</html>

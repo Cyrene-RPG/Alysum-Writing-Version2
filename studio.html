@@ -702,7 +702,7 @@
                 <a href="/scratch.html" class="sidebar-item">📝 Scratch notes</a>
                 <a href="/vault.html" class="sidebar-item">📓 Notes library</a>
                 <a href="/badges.html" class="sidebar-item">🏆 Achievements</a>
-				<a href="/pdf-editor.html" class="sidebar-item" id="sidebarFormatLink">📃 Format &amp; PDF</a>
+				<a href="/Novel_Exporter.html" class="sidebar-item" id="sidebarFormatLink">📃 Novel exporter</a>
                 <a href="/index.html" class="sidebar-item">🏠 Home</a>
 
                 <div class="sidebar-group-label">Quick Access</div>
@@ -1068,8 +1068,8 @@
             const formatLink = document.getElementById("sidebarFormatLink");
             if (formatLink) {
                 formatLink.href = firstBookId
-                    ? "/pdf-editor.html?book=" + encodeURIComponent(firstBookId)
-                    : "/pdf-editor.html";
+                    ? "/Novel_Exporter.html?book=" + encodeURIComponent(firstBookId)
+                    : "/Novel_Exporter.html";
             }
         }
 

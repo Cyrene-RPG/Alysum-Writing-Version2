@@ -8,7 +8,7 @@
     ],
     "headers": [
       {
-        "source": "/js/pdf-editor.js",
+        "source": "/js/Novel_Exporter.js",
         "headers": [
           {
             "key": "Cache-Control",
@@ -17,7 +17,7 @@
         ]
       },
       {
-        "source": "/pdf-editor.html",
+        "source": "/Novel_Exporter.html",
         "headers": [
           {
             "key": "Cache-Control",
@@ -26,7 +26,7 @@
         ]
       },
       {
-        "source": "/css/pdf-editor.css",
+        "source": "/css/Novel_Exporter.css",
         "headers": [
           {
             "key": "Cache-Control",
