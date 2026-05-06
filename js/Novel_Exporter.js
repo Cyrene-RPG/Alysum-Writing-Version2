@@ -115,6 +115,12 @@ function allChaptersFlat(book) {
     ];
 }
 
+function normalizeAtName(raw) {
+    const v = safeString(raw, "").trim();
+    if (!v) return "";
+    return v.startsWith("@") ? v : `@${v}`;
+}
+
 /**
  * Same normalization as pdf-editor: editor HTML (mostly div + br) → paragraphs for reading.
  */
@@ -179,6 +185,120 @@ function normalizeChapterBodyHtml(html) {
     }
 }
 
+function currentPreviewInputs() {
+    const title = safeString(document.getElementById("neBookTitleInput")?.value, "").trim();
+    const pen = normalizeAtName(safeString(document.getElementById("neAuthorUsernameInput")?.value, "").trim());
+
+    return {
+        title,
+        pen,
+        cp: {
+            year: safeString(document.getElementById("neCpYear")?.value, "").trim(),
+            holder: safeString(document.getElementById("neCpHolderName")?.value, "").trim(),
+            contact: safeString(document.getElementById("neCpContact")?.value, "").trim(),
+            editionYear: safeString(document.getElementById("neCpEditionYear")?.value, "").trim(),
+            imprint: safeString(document.getElementById("neCpImprint")?.value, "").trim(),
+            publisherLocation: safeString(document.getElementById("neCpPublisherLoc")?.value, "").trim(),
+            isbn: safeString(document.getElementById("neCpIsbn")?.value, "").trim(),
+            coverDesignBy: safeString(document.getElementById("neCpCoverDesign")?.value, "").trim(),
+            editingBy: safeString(document.getElementById("neCpEditingBy")?.value, "").trim(),
+            printedIn: safeString(document.getElementById("neCpPrintedIn")?.value, "").trim(),
+            optionalOn: Boolean(document.getElementById("neCpOptionalInclude")?.checked),
+            optionalText: safeString(document.getElementById("neCpOptional")?.value, "").trim()
+        }
+    };
+}
+
+function titlePageHtml(title, pen) {
+    const t = escapeHtml(title || "Untitled");
+    const penClean = safeString(pen, "").replace(/^@/, "").trim();
+    const authorLine = penClean
+        ? `<p class="ne-preview-title-author">${escapeHtml(penClean)}</p>`
+        : `<p class="ne-preview-title-author">&nbsp;</p>`;
+
+    return (
+        `<div class="ne-preview-page-frame ne-preview-page-title">` +
+        `${authorLine}` +
+        `<div class="ne-preview-title-rule" aria-hidden="true"></div>` +
+        `<h1 class="ne-preview-title-work">${t}</h1>` +
+        `</div>`
+    );
+}
+
+function copyrightPageHtml(cp) {
+    const year = escapeHtml(cp.year || "");
+    const holder = escapeHtml(cp.holder || "");
+    const contact = escapeHtml(cp.contact || "");
+    const edition = escapeHtml(cp.editionYear || "");
+    const imprint = escapeHtml(cp.imprint || "");
+    const loc = escapeHtml(cp.publisherLocation || "");
+    const isbn = escapeHtml(cp.isbn || "");
+    const cover = escapeHtml(cp.coverDesignBy || "");
+    const editing = escapeHtml(cp.editingBy || "");
+    const printed = escapeHtml(cp.printedIn || "");
+    const opt = cp.optionalOn ? escapeHtml(cp.optionalText || "") : "";
+
+    const blocks = [];
+    const firstLine = `Copyright © ${year || "____"}${holder ? ` by ${holder}` : ""}`;
+    blocks.push(`<p>${firstLine}</p>`);
+    blocks.push(`<p>All rights reserved.</p>`);
+    blocks.push(
+        `<p>No part of this publication may be reproduced, distributed, stored in a retrieval system, or transmitted in any form or by any means—electronic, mechanical, photocopying, recording, scanning, or otherwise—without the prior written permission of the publisher or copyright owner, except in the case of brief quotations embodied in critical reviews and certain other noncommercial uses permitted by copyright law.</p>`
+    );
+    blocks.push(
+        `<p>This is a work of fiction. Names, characters, businesses, organizations, places, events, and incidents are either the product of the author’s imagination or used fictitiously. Any resemblance to actual persons, living or dead, or actual events is purely coincidental.</p>`
+    );
+    if (contact) blocks.push(`<p>For permissions, rights, or licensing requests: ${contact}</p>`);
+    if (edition) blocks.push(`<p>First Edition: ${edition}</p>`);
+    if (imprint) blocks.push(`<p>Published by ${imprint}</p>`);
+    if (loc) blocks.push(`<p>${loc}</p>`);
+    if (isbn) blocks.push(`<p>ISBN: ${isbn}</p>`);
+    if (cover) blocks.push(`<p>Cover design by: ${cover}</p>`);
+    if (editing) blocks.push(`<p>Editing by: ${editing}</p>`);
+    if (printed) blocks.push(`<p>Printed in ${printed}</p>`);
+    if (opt) blocks.push(`<p>${opt.replace(/\n+/g, "<br>")}</p>`);
+
+    return `<div class="ne-preview-page-frame ne-preview-page-copyright">${blocks.join("")}</div>`;
+}
+
+function tocPageHtml(book, firstChapterPageNumber) {
+    const chapters = (book.sections?.body || []).map((ch, i) => ({
+        label: safeString(ch.title, "").trim() || `Chapter ${i + 1}`
+    }));
+    const rows = chapters
+        .map((e, idx) => {
+            const pageNum = firstChapterPageNumber + idx;
+            return (
+                `<li class="ne-preview-toc-row">` +
+                `<span>${escapeHtml(e.label)}</span>` +
+                `<span class="ne-preview-toc-dots" aria-hidden="true"></span>` +
+                `<span>${escapeHtml(String(pageNum))}</span>` +
+                `</li>`
+            );
+        })
+        .join("");
+
+    return (
+        `<div class="ne-preview-page-frame ne-preview-page-toc">` +
+        `<h2 class="ne-preview-toc-title">Contents</h2>` +
+        `<ol class="ne-preview-toc-list">${rows || "<li>—</li>"}</ol>` +
+        `</div>`
+    );
+}
+
+function chapterPageHtml(ch) {
+    const title = escapeHtml(ch.title || "Untitled");
+    const body = normalizeChapterBodyHtml(ch.content);
+    return (
+        `<div class="ne-preview-page-frame ne-preview-manuscript">` +
+        `<section class="ne-ms-ch" data-section="${escapeHtml(ch.section || "")}">` +
+        `<h2 class="ne-ms-ch-title">${title}</h2>` +
+        `<div class="ne-ms-ch-body">${body}</div>` +
+        `</section>` +
+        `</div>`
+    );
+}
+
 function buildManuscriptPreviewHtml(book) {
     const parts = [];
     for (const ch of allChaptersFlat(book)) {
@@ -219,11 +339,65 @@ function setPreviewPlaceholder(visible, text) {
     }
 }
 
-function applyManuscriptToPreview(book) {
+let loadedBook = null;
+let previewPages = [];
+let previewIndex = 0;
+
+function buildPreviewPages(book) {
+    const inputs = currentPreviewInputs();
+    const title = inputs.title || safeString(book.title, "Untitled Book");
+    const pen = inputs.pen;
+
+    const pages = [];
+    pages.push({ kind: "title", label: "Title page", html: titlePageHtml(title, pen) });
+    pages.push({ kind: "copyright", label: "Copyright", html: copyrightPageHtml(inputs.cp) });
+
+    const tocIndex = pages.length;
+    pages.push({ kind: "toc", label: "Contents", html: "" });
+
+    const firstChapterPageNumber = pages.length + 1; // 1-based
+    pages[tocIndex].html = tocPageHtml(book, firstChapterPageNumber);
+
+    const chapters = allChaptersFlat(book).filter(ch => ch.section === "body");
+    chapters.forEach((ch, i) => {
+        pages.push({ kind: "chapter", label: ch.title || `Chapter ${i + 1}`, html: chapterPageHtml(ch) });
+    });
+
+    return pages;
+}
+
+function updatePagerUi() {
+    const prev = document.getElementById("nePrevPageBtn");
+    const next = document.getElementById("neNextPageBtn");
+    const status = document.getElementById("nePageStatus");
+    if (!prev || !next || !status) return;
+    const total = previewPages.length;
+    const n = total ? previewIndex + 1 : 0;
+    status.textContent = total ? `Page ${n} / ${total}` : "—";
+    prev.disabled = previewIndex <= 0;
+    next.disabled = total === 0 || previewIndex >= total - 1;
+}
+
+function renderCurrentPreviewPage() {
     const sc = document.getElementById("nePreviewScroll");
     if (!sc) return;
-    sc.innerHTML = `<div class="ne-preview-manuscript">${buildManuscriptPreviewHtml(book)}</div>`;
+
+    if (!loadedBook) {
+        setPreviewPlaceholder(true, bookId ? "Loading manuscript…" : "Open a book to preview.");
+        previewPages = [];
+        previewIndex = 0;
+        updatePagerUi();
+        return;
+    }
+
+    previewPages = buildPreviewPages(loadedBook);
+    if (previewIndex < 0) previewIndex = 0;
+    if (previewIndex >= previewPages.length) previewIndex = Math.max(0, previewPages.length - 1);
+
+    const page = previewPages[previewIndex];
+    sc.innerHTML = page ? page.html : "";
     setPreviewPlaceholder(false, "");
+    updatePagerUi();
 }
 
 function fillTitleAndPenFromBook(book, authorLine) {
@@ -234,7 +408,7 @@ function fillTitleAndPenFromBook(book, authorLine) {
     }
     if (penIn && !penIn.dataset.neTouched) {
         const v = safeString(authorLine, "").trim();
-        penIn.value = v.startsWith("@") ? v : v ? `@${v}` : "";
+        penIn.value = normalizeAtName(v);
     }
 }
 
@@ -276,6 +450,8 @@ async function loadBookForPreview(uid) {
     }
 
     setPreviewPlaceholder(true, "Loading manuscript…");
+    loadedBook = null;
+    renderCurrentPreviewPage();
 
     try {
         const snap = await getDoc(doc(db, "users", uid, "books", bookId));
@@ -284,13 +460,17 @@ async function loadBookForPreview(uid) {
             setPreviewPlaceholder(true, "This book was not found, or you do not have access.");
             const titleIn = document.getElementById("neBookTitleInput");
             if (titleIn) titleIn.value = "";
+            loadedBook = null;
+            renderCurrentPreviewPage();
             return;
         }
 
         const book = normalizeBookData(snap.data());
         ensureStructure(book);
         fillTitleAndPenFromBook(book, authorDisplay);
-        applyManuscriptToPreview(book);
+        loadedBook = book;
+        previewIndex = 0;
+        renderCurrentPreviewPage();
     } catch (err) {
         console.error(err);
         const code = err && typeof err === "object" && "code" in err ? err.code : "";
@@ -299,6 +479,8 @@ async function loadBookForPreview(uid) {
             msg = "No permission to read this book.";
         }
         setPreviewPlaceholder(true, msg);
+        loadedBook = null;
+        renderCurrentPreviewPage();
     }
 }
 
@@ -492,10 +674,55 @@ function wireTitlePenGuards() {
     penIn?.addEventListener("input", () => mark(penIn));
 }
 
+function wirePreviewPager() {
+    const prev = document.getElementById("nePrevPageBtn");
+    const next = document.getElementById("neNextPageBtn");
+    prev?.addEventListener("click", () => {
+        previewIndex = Math.max(0, previewIndex - 1);
+        renderCurrentPreviewPage();
+    });
+    next?.addEventListener("click", () => {
+        previewIndex = Math.min(Math.max(0, previewPages.length - 1), previewIndex + 1);
+        renderCurrentPreviewPage();
+    });
+    updatePagerUi();
+}
+
+function wirePreviewLiveInputs() {
+    const ids = [
+        "neBookTitleInput",
+        "neAuthorUsernameInput",
+        "neCpYear",
+        "neCpHolderName",
+        "neCpContact",
+        "neCpEditionYear",
+        "neCpImprint",
+        "neCpPublisherLoc",
+        "neCpIsbn",
+        "neCpCoverDesign",
+        "neCpEditingBy",
+        "neCpPrintedIn",
+        "neCpOptionalInclude",
+        "neCpOptional"
+    ];
+    const handler = () => {
+        if (!loadedBook) return;
+        renderCurrentPreviewPage();
+    };
+    ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener("input", handler);
+        el.addEventListener("change", handler);
+    });
+}
+
 function init() {
     wireBackLink();
     initLayoutControls();
     wireTitlePenGuards();
+    wirePreviewPager();
+    wirePreviewLiveInputs();
 
     if (!bookId) {
         setPreviewPlaceholder(true, "Add ?book=… or open Export from the editor to preview a manuscript here.");
@@ -507,6 +734,10 @@ function init() {
                 updateExporterUsername("");
             }
         });
+        loadedBook = null;
+        previewPages = [];
+        previewIndex = 0;
+        updatePagerUi();
         return;
     }
 

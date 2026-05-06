@@ -672,7 +672,10 @@
 .ne-preview-stage {
     width: 100%;
     display: flex;
+    flex-direction: column;
     justify-content: center;
+    align-items: center;
+    gap: 14px;
 }
 
 .ne-preview-page {
@@ -720,6 +723,7 @@
     overflow: auto;
     -webkit-overflow-scrolling: touch;
     scrollbar-color: rgba(100, 116, 139, 0.55) transparent;
+    padding: 0;
 }
 
 .ne-preview-scroll[hidden] {
@@ -742,6 +746,136 @@
     font-family: Georgia, "Times New Roman", Times, serif;
     font-size: 11pt;
     line-height: 1.48;
+}
+
+.ne-preview-page-frame {
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.ne-preview-page-title {
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 8% 6%;
+}
+
+.ne-preview-title-author {
+    margin: 0 0 1.15rem;
+    font-family: Georgia, "Times New Roman", Times, serif;
+    font-size: 11pt;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(15, 23, 42, 0.82);
+}
+
+.ne-preview-title-rule {
+    width: min(68%, 15rem);
+    height: 1px;
+    background: rgba(15, 23, 42, 0.35);
+    margin: 0 0 1.15rem;
+}
+
+.ne-preview-title-work {
+    margin: 0;
+    font-family: "Playfair Display", Georgia, "Times New Roman", serif;
+    font-size: 22pt;
+    line-height: 1.05;
+    letter-spacing: 0.03em;
+    color: #0f172a;
+}
+
+.ne-preview-page-copyright {
+    padding: 0.8rem 0.95rem;
+    font-family: Georgia, "Times New Roman", Times, serif;
+    font-size: 9.25pt;
+    line-height: 1.38;
+    color: rgba(15, 23, 42, 0.88);
+}
+
+.ne-preview-page-copyright p {
+    margin: 0 0 0.65em;
+}
+
+.ne-preview-page-toc {
+    padding: 1.1rem 1.05rem;
+    font-family: Georgia, "Times New Roman", Times, serif;
+}
+
+.ne-preview-toc-title {
+    margin: 0 0 0.85rem;
+    font-family: "Playfair Display", Georgia, "Times New Roman", serif;
+    font-size: 16pt;
+    letter-spacing: 0.04em;
+    color: #0f172a;
+    text-align: center;
+}
+
+.ne-preview-toc-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    font-size: 10.75pt;
+    line-height: 1.45;
+}
+
+.ne-preview-toc-row {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 0.5rem;
+    align-items: baseline;
+    padding: 0.15rem 0;
+}
+
+.ne-preview-toc-dots {
+    border-bottom: 1px dotted rgba(15, 23, 42, 0.35);
+    transform: translateY(-0.15em);
+}
+
+.ne-preview-pager {
+    width: 100%;
+    max-width: 560px;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 10px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(0, 0, 0, 0.18);
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.28);
+}
+
+.ne-preview-pager-btn {
+    appearance: none;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(0, 0, 0, 0.22);
+    color: #fff7ed;
+    font-weight: 800;
+    font-size: 13px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.ne-preview-pager-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.ne-preview-pager-status {
+    text-align: center;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(226, 232, 240, 0.86);
+    user-select: none;
 }
 
 .ne-ms-ch + .ne-ms-ch {
