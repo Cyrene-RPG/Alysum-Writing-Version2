@@ -731,12 +731,27 @@ function wirePreviewLiveInputs() {
     });
 }
 
+function preventPreviewScrollChaining() {
+    const sc = document.getElementById("nePreviewScroll");
+    if (!sc) return;
+
+    // The preview is paged via Prev/Next; block wheel/touch scrolling inside the page box
+    // so you can't accidentally reveal other pages or drift the content.
+    const stop = ev => {
+        ev.preventDefault();
+        ev.stopPropagation();
+    };
+    sc.addEventListener("wheel", stop, { passive: false });
+    sc.addEventListener("touchmove", stop, { passive: false });
+}
+
 function init() {
     wireBackLink();
     initLayoutControls();
     wireTitlePenGuards();
     wirePreviewPager();
     wirePreviewLiveInputs();
+    preventPreviewScrollChaining();
 
     if (!bookId) {
         setPreviewPlaceholder(true, "Add ?book=… or open Export from the editor to preview a manuscript here.");

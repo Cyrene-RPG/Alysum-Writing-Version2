@@ -720,7 +720,7 @@
     position: absolute;
     z-index: 3;
     box-sizing: border-box;
-    overflow: auto;
+    overflow: hidden;
     -webkit-overflow-scrolling: touch;
     scrollbar-color: rgba(100, 116, 139, 0.55) transparent;
     padding: 0;
