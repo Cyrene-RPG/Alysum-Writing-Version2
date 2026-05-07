@@ -1006,6 +1006,16 @@
     text-indent: 0;
 }
 
+/* Chapter body only: trade spacing — no extra gap between paragraphs (indent carries the rhythm). */
+.ne-ms-ch--book .ne-ms-ch-body > p {
+    margin: 0;
+    text-indent: 0.25in;
+}
+
+.ne-ms-ch--book .ne-ms-ch-body > p:first-child {
+    text-indent: 0;
+}
+
 .ne-preview-page[data-chapter-drop-cap="true"] .ne-ms-ch-body > p:first-child::first-letter {
     float: left;
     font-family: "Playfair Display", Georgia, "Times New Roman", serif;
