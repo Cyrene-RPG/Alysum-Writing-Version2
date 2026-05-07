@@ -596,6 +596,52 @@
             font-weight: 800;
         }
 
+        .prompt-slide {
+            margin-top: 12px;
+            border: 1px solid rgba(255,255,255,0.10);
+            border-radius: 18px;
+            padding: 14px;
+            background: rgba(255,255,255,0.04);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .prompt-kicker {
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #f5d0fe;
+        }
+
+        .prompt-text {
+            margin-top: 8px;
+            font-size: 15px;
+            line-height: 1.45;
+            font-weight: 800;
+            color: #fff7ed;
+        }
+
+        .prompt-dots {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .prompt-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.25);
+            border: 1px solid rgba(255,255,255,0.20);
+        }
+
+        .prompt-dot.active {
+            background: linear-gradient(135deg, var(--purple-bright), var(--pink));
+            border-color: rgba(255,255,255,0.32);
+        }
+
         @media (max-width: 1280px) {
             .app-shell {
                 grid-template-columns: 240px 1fr 300px;
@@ -797,6 +843,20 @@
 
             <!-- RIGHT RAIL -->
             <aside class="right-rail">
+                <section class="panel rail-card" id="promptsCard">
+                    <h3>Weekly prompts</h3>
+                    <div class="rail-sub">Weekly writing prompt + daily character & worldbuilding questions.</div>
+                    <div class="prompt-slide" id="promptSlide" role="button" tabindex="0" aria-label="Open prompt notebook">
+                        <div class="prompt-kicker" id="promptKicker">Loading…</div>
+                        <div class="prompt-text" id="promptText">Loading…</div>
+                    </div>
+                    <div class="prompt-dots" aria-label="Prompt slideshow">
+                        <div class="prompt-dot" id="promptDot0" aria-hidden="true"></div>
+                        <div class="prompt-dot" id="promptDot1" aria-hidden="true"></div>
+                        <div class="prompt-dot" id="promptDot2" aria-hidden="true"></div>
+                    </div>
+                </section>
+
                 <section class="panel rail-card">
                     <h3>Daily Goal</h3>
                     <div class="rail-sub">A small target makes it easier to come back tomorrow.</div>
@@ -883,6 +943,14 @@
         const badgeName = document.getElementById("badgeName");
         const badgeProgressText = document.getElementById("badgeProgressText");
         const badgeBar = document.getElementById("badgeBar");
+
+        const promptsCard = document.getElementById("promptsCard");
+        const promptSlide = document.getElementById("promptSlide");
+        const promptKicker = document.getElementById("promptKicker");
+        const promptText = document.getElementById("promptText");
+        const promptDots = [0, 1, 2].map(i => document.getElementById("promptDot" + i));
+        let promptIx = 0;
+        let promptTimer = null;
 
         let currentUser = null;
         let firstBookId = null;
@@ -1007,6 +1075,185 @@
             badgeProgressText.textContent = `${Math.min(totalWords, progressTarget).toLocaleString()} / ${progressTarget.toLocaleString()}`;
             badgeBar.style.width = pct + "%";
         }
+
+        // Prompts (simple slideshow; notebook page handles saving/history)
+        const WEEKLY_PROMPTS_52 = [
+            "Write a scene where a character must choose between comfort and truth.",
+            "Describe a place that feels safe—then reveal the hidden danger.",
+            "Write dialogue where nobody says what they mean.",
+            "Your character finds an object that shouldn’t exist. What is it?",
+            "Write a scene that starts with a lie and ends with an apology.",
+            "A storm interrupts something important. What changes after?",
+            "A minor decision triggers major consequences.",
+            "Write a reunion that goes worse than expected.",
+            "A character receives a message meant for someone else.",
+            "Write a moment of victory that doesn’t feel good.",
+            "A secret is accidentally revealed in public.",
+            "Write a scene where a promise is tested.",
+            "A character must ask for help and hates it.",
+            "Write a scene using only senses (no internal thoughts).",
+            "Your setting’s rules break for one day. What happens?",
+            "Write a scene where time is running out—quietly.",
+            "A character confronts their younger self (literally or metaphorically).",
+            "Write a scene that begins in celebration and ends in silence.",
+            "Someone returns with news that changes everything.",
+            "Write a scene where a doorway is a boundary (literal or social).",
+            "Your protagonist loses something small that matters a lot.",
+            "Write a scene where the wrong person is trusted.",
+            "A character makes an offer they can’t keep.",
+            "Write an argument where both sides are right.",
+            "A character is forced to slow down and notice.",
+            "Write a scene where a rule is broken for the first time.",
+            "A character discovers a map to somewhere impossible.",
+            "Write a scene where silence is the weapon.",
+            "A character hears a rumor about themselves—true or false?",
+            "Write a scene where a gift becomes a burden.",
+            "A character meets someone who knows their future.",
+            "Write a scene where the world feels too bright.",
+            "A character must forgive, but doesn’t forget.",
+            "Write a scene where a plan fails beautifully.",
+            "Your character has to say goodbye without words.",
+            "Write a scene where a stranger sees through the mask.",
+            "A character finds a note addressed to them from years ago.",
+            "Write a scene where a door won’t open—why?",
+            "Someone offers a shortcut with a cost.",
+            "Write a scene where laughter hides fear.",
+            "A character realizes they’re the villain in someone else’s story.",
+            "Write a scene where an apology is refused.",
+            "A character must tell the truth to the person who least deserves it.",
+            "Write a scene that turns on a single sentence.",
+            "A character is offered exactly what they want—too late.",
+            "Write a scene where the setting itself is watching.",
+            "A character makes peace with a past version of themselves.",
+            "Write a scene where a small kindness changes the outcome.",
+            "A character breaks a tradition—what do they lose?",
+            "Write a scene where the last line is a question.",
+            "A character chooses the harder path on purpose.",
+            "Write a scene where the ending is a beginning."
+        ];
+
+        const DAILY_CHARACTER_Q = [
+            "What does your character want today, and what are they afraid it costs?",
+            "What lie does your character tell themselves most often?",
+            "What would make your character forgive the unforgivable?",
+            "What is your character’s comfort habit—and why do they hide it?",
+            "Who does your character envy, and what do they envy about them?",
+            "What boundary would your character never cross—until now?",
+            "What is your character’s most misunderstood trait?"
+        ];
+
+        const DAILY_WORLDBUILD_Q = [
+            "What is a normal custom in your world that would shock an outsider?",
+            "What does your world value more than money?",
+            "What is something everyone believes that is actually wrong?",
+            "What resource is scarce—and who controls it?",
+            "What does your world celebrate, and what do they mourn?",
+            "What law exists because of an ancient disaster?",
+            "What technology/magic has an unexpected side effect?"
+        ];
+
+        function nyDateParts(now = new Date()) {
+            const fmt = new Intl.DateTimeFormat("en-US", {
+                timeZone: "America/New_York",
+                year: "numeric",
+                month: "2-digit",
+                day: "2-digit",
+                weekday: "short"
+            });
+            const parts = fmt.formatToParts(now);
+            const get = t => parts.find(p => p.type === t)?.value;
+            return {
+                y: Number(get("year")),
+                m: Number(get("month")),
+                d: Number(get("day")),
+                wd: String(get("weekday") || "")
+            };
+        }
+
+        function nyDayKey(now = new Date()) {
+            const p = nyDateParts(now);
+            return `${p.y}-${String(p.m).padStart(2, "0")}-${String(p.d).padStart(2, "0")}`;
+        }
+
+        function nyWeekKey(now = new Date()) {
+            // Week key = Sunday date (YYYY-MM-DD) in America/New_York.
+            // We approximate by stepping back from today's NY weekday to Sunday.
+            const p = nyDateParts(now);
+            const wd = p.wd.toLowerCase();
+            const map = { sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6 };
+            const back = map[wd.slice(0, 3)] ?? 0;
+            const local = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
+            local.setHours(0, 0, 0, 0);
+            local.setDate(local.getDate() - back);
+            const wk = nyDateParts(local);
+            return `${wk.y}-${String(wk.m).padStart(2, "0")}-${String(wk.d).padStart(2, "0")}`;
+        }
+
+        function hashString(str) {
+            let h = 2166136261;
+            for (let i = 0; i < str.length; i++) {
+                h ^= str.charCodeAt(i);
+                h = Math.imul(h, 16777619);
+            }
+            return (h >>> 0);
+        }
+
+        function getPromptsForNow() {
+            const weekKey = nyWeekKey();
+            const dayKey = nyDayKey();
+            const weeklyIx = hashString(weekKey) % WEEKLY_PROMPTS_52.length;
+            const dailyIx = hashString(dayKey) % DAILY_CHARACTER_Q.length;
+            const worldIx = (hashString(dayKey + "|world") % DAILY_WORLDBUILD_Q.length);
+            return {
+                weekKey,
+                dayKey,
+                weekly: WEEKLY_PROMPTS_52[weeklyIx],
+                character: DAILY_CHARACTER_Q[dailyIx],
+                world: DAILY_WORLDBUILD_Q[worldIx]
+            };
+        }
+
+        function renderPromptSlide(ix) {
+            const p = getPromptsForNow();
+            const slides = [
+                { kicker: `Weekly writing prompt • Week of ${p.weekKey}`, text: p.weekly, type: "weekly" },
+                { kicker: `Daily character question • ${p.dayKey}`, text: p.character, type: "character" },
+                { kicker: `Daily worldbuilding question • ${p.dayKey}`, text: p.world, type: "world" }
+            ];
+            const s = slides[ix] || slides[0];
+            promptKicker.textContent = s.kicker;
+            promptText.textContent = s.text;
+            promptDots.forEach((d, i) => d?.classList.toggle("active", i === ix));
+            promptSlide.dataset.type = s.type;
+            promptSlide.dataset.weekKey = p.weekKey;
+            promptSlide.dataset.dayKey = p.dayKey;
+        }
+
+        function startPromptSlideshow() {
+            if (!promptSlide) return;
+            renderPromptSlide(promptIx);
+            if (promptTimer) clearInterval(promptTimer);
+            promptTimer = setInterval(() => {
+                promptIx = (promptIx + 1) % 3;
+                renderPromptSlide(promptIx);
+            }, 6500);
+        }
+
+        function openPromptNotebook() {
+            const type = promptSlide?.dataset?.type || "weekly";
+            const weekKey = promptSlide?.dataset?.weekKey || nyWeekKey();
+            const dayKey = promptSlide?.dataset?.dayKey || nyDayKey();
+            const q = new URLSearchParams({ week: weekKey, day: dayKey, focus: type });
+            window.location.href = "/prompt-notebook.html?" + q.toString();
+        }
+
+        promptSlide?.addEventListener("click", openPromptNotebook);
+        promptSlide?.addEventListener("keydown", e => {
+            if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                openPromptNotebook();
+            }
+        });
 
         async function loadBooks(uid) {
             bookList.innerHTML = "";
@@ -1200,6 +1447,7 @@
                 streakEl.textContent = streak.toLocaleString();
 
                 await loadBooks(user.uid);
+                startPromptSlideshow();
 
             } catch (e) {
                 console.error(e);

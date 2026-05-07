@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Prompts Notebook — Alysum</title>
+    <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
+    <style>
+        * { box-sizing: border-box; }
+
+        :root {
+            --bg: #0b1220;
+            --panel: #111827;
+            --panel-2: #1f2937;
+            --text: #ffffff;
+            --muted: #9ca3af;
+            --border: rgba(255,255,255,0.10);
+            --purple: #6d28d9;
+            --pink: #ec4899;
+            --shadow: 0 18px 44px rgba(0,0,0,0.45);
+        }
+
+        html, body {
+            margin: 0;
+            height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: radial-gradient(circle at top center, rgba(109,40,217,0.18), transparent 26%),
+                linear-gradient(180deg, #0d1426 0%, #0b1220 100%);
+            color: var(--text);
+        }
+
+        .shell {
+            height: 100%;
+            display: grid;
+            grid-template-rows: 64px 1fr;
+        }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 14px;
+            gap: 12px;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(135deg, rgba(109,40,217,0.35), rgba(236,72,153,0.18));
+        }
+
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+        }
+
+        .back-btn {
+            border: 1px solid var(--border);
+            background: rgba(0,0,0,0.20);
+            color: var(--text);
+            padding: 10px 12px;
+            border-radius: 12px;
+            font-weight: 900;
+            cursor: pointer;
+        }
+
+        .title {
+            font-weight: 900;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .tabbar {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .tab {
+            border: 1px solid var(--border);
+            background: rgba(0,0,0,0.18);
+            color: var(--text);
+            padding: 10px 12px;
+            border-radius: 999px;
+            font-weight: 900;
+            cursor: pointer;
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, var(--purple), var(--pink));
+            border-color: rgba(255,255,255,0.22);
+        }
+
+        .main {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 14px;
+            padding: 14px;
+            min-height: 0;
+        }
+
+        .panel {
+            background: linear-gradient(180deg, rgba(17,24,39,0.98), rgba(15,23,42,0.98));
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            box-shadow: var(--shadow);
+            min-height: 0;
+        }
+
+        .side {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .side-head {
+            padding: 14px;
+            border-bottom: 1px solid var(--border);
+            font-weight: 900;
+        }
+
+        .side-list {
+            overflow: auto;
+            padding: 10px;
+            display: grid;
+            gap: 8px;
+        }
+
+        .entry {
+            border: 1px solid rgba(255,255,255,0.10);
+            background: rgba(255,255,255,0.04);
+            border-radius: 14px;
+            padding: 10px;
+            cursor: pointer;
+        }
+
+        .entry .meta {
+            font-size: 12px;
+            color: var(--muted);
+            font-weight: 800;
+        }
+
+        .entry .name {
+            margin-top: 6px;
+            font-weight: 900;
+        }
+
+        .entry.active {
+            border-color: rgba(236,72,153,0.35);
+            box-shadow: 0 0 0 2px rgba(109,40,217,0.25);
+        }
+
+        .work {
+            display: grid;
+            grid-template-rows: auto auto 1fr auto;
+            overflow: hidden;
+        }
+
+        .prompt-box {
+            padding: 14px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .prompt-kicker {
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #f5d0fe;
+        }
+
+        .prompt-text {
+            margin-top: 8px;
+            font-size: 16px;
+            font-weight: 900;
+            line-height: 1.45;
+        }
+
+        .note-title-row {
+            display: flex;
+            gap: 10px;
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--border);
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .note-title {
+            flex: 1;
+            min-width: 220px;
+            border: 1px solid rgba(255,255,255,0.12);
+            background: rgba(0,0,0,0.20);
+            color: var(--text);
+            padding: 10px 12px;
+            border-radius: 12px;
+            font-weight: 800;
+            outline: none;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            border: none;
+            border-radius: 12px;
+            padding: 10px 12px;
+            font-weight: 900;
+            cursor: pointer;
+        }
+
+        .btn.primary { background: linear-gradient(135deg, var(--purple), var(--pink)); color: white; }
+        .btn.ghost { background: rgba(255,255,255,0.06); color: white; border: 1px solid rgba(255,255,255,0.10); }
+
+        .editor {
+            padding: 14px;
+            overflow: auto;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 320px;
+            resize: vertical;
+            border: 1px solid rgba(255,255,255,0.12);
+            background: rgba(0,0,0,0.18);
+            color: var(--text);
+            padding: 12px;
+            border-radius: 14px;
+            font-size: 15px;
+            line-height: 1.55;
+            font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+            outline: none;
+        }
+
+        .status {
+            padding: 10px 14px;
+            border-top: 1px solid var(--border);
+            color: var(--muted);
+            font-weight: 800;
+            font-size: 13px;
+        }
+
+        @media (max-width: 980px) {
+            .main { grid-template-columns: 1fr; }
+            .side { order: 2; }
+        }
+    </style>
+</head>
+<body>
+    <div class="shell">
+        <header class="topbar">
+            <div class="topbar-left">
+                <button class="back-btn" id="backBtn" type="button">← Studio</button>
+                <div class="title" id="pageTitle">Prompts Notebook</div>
+            </div>
+            <div class="tabbar" role="tablist" aria-label="Prompt tabs">
+                <button class="tab" id="tabWeekly" type="button" data-tab="weekly">Weekly prompt</button>
+                <button class="tab" id="tabCharacter" type="button" data-tab="character">Character</button>
+                <button class="tab" id="tabWorld" type="button" data-tab="world">Worldbuilding</button>
+            </div>
+        </header>
+
+        <div class="main">
+            <aside class="panel side">
+                <div class="side-head">Saved prompts</div>
+                <div class="side-list" id="historyList"></div>
+            </aside>
+
+            <section class="panel work">
+                <div class="prompt-box">
+                    <div class="prompt-kicker" id="promptKicker">Loading…</div>
+                    <div class="prompt-text" id="promptText">Loading…</div>
+                </div>
+
+                <div class="note-title-row">
+                    <input class="note-title" id="noteTitle" type="text" placeholder="Optional title for this response" />
+                    <div class="actions">
+                        <button class="btn ghost" id="sendToVaultBtn" type="button">Send to Vault</button>
+                        <button class="btn primary" id="saveBtn" type="button">Save</button>
+                    </div>
+                </div>
+
+                <div class="editor">
+                    <textarea id="responseBox" placeholder="Write your response here…"></textarea>
+                </div>
+
+                <div class="status" id="status">Checking sign-in…</div>
+            </section>
+        </div>
+    </div>
+
+    <script type="module">
+        import { auth, db } from "./firebase.js";
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import {
+            collection,
+            doc,
+            getDoc,
+            getDocs,
+            orderBy,
+            query,
+            setDoc
+        } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { DEFAULT_VAULT_KEY, loadVault, saveVault, addNote, renameItem, setNoteContent } from "./js/alysum-vault.js";
+
+        const params = new URLSearchParams(window.location.search);
+        const weekKey = params.get("week") || "";
+        const dayKey = params.get("day") || "";
+        const focus = params.get("focus") || "weekly";
+
+        const backBtn = document.getElementById("backBtn");
+        const pageTitle = document.getElementById("pageTitle");
+        const tabWeekly = document.getElementById("tabWeekly");
+        const tabCharacter = document.getElementById("tabCharacter");
+        const tabWorld = document.getElementById("tabWorld");
+        const promptKicker = document.getElementById("promptKicker");
+        const promptText = document.getElementById("promptText");
+        const historyList = document.getElementById("historyList");
+        const noteTitle = document.getElementById("noteTitle");
+        const responseBox = document.getElementById("responseBox");
+        const saveBtn = document.getElementById("saveBtn");
+        const sendToVaultBtn = document.getElementById("sendToVaultBtn");
+        const statusEl = document.getElementById("status");
+
+        const WEEKLY_PROMPTS_52 = [
+            "Write a scene where a character must choose between comfort and truth.",
+            "Describe a place that feels safe—then reveal the hidden danger.",
+            "Write dialogue where nobody says what they mean.",
+            "Your character finds an object that shouldn’t exist. What is it?",
+            "Write a scene that starts with a lie and ends with an apology.",
+            "A storm interrupts something important. What changes after?",
+            "A minor decision triggers major consequences.",
+            "Write a reunion that goes worse than expected.",
+            "A character receives a message meant for someone else.",
+            "Write a moment of victory that doesn’t feel good.",
+            "A secret is accidentally revealed in public.",
+            "Write a scene where a promise is tested.",
+            "A character must ask for help and hates it.",
+            "Write a scene using only senses (no internal thoughts).",
+            "Your setting’s rules break for one day. What happens?",
+            "Write a scene where time is running out—quietly.",
+            "A character confronts their younger self (literally or metaphorically).",
+            "Write a scene that begins in celebration and ends in silence.",
+            "Someone returns with news that changes everything.",
+            "Write a scene where a doorway is a boundary (literal or social).",
+            "Your protagonist loses something small that matters a lot.",
+            "Write a scene where the wrong person is trusted.",
+            "A character makes an offer they can’t keep.",
+            "Write an argument where both sides are right.",
+            "A character is forced to slow down and notice.",
+            "Write a scene where a rule is broken for the first time.",
+            "A character discovers a map to somewhere impossible.",
+            "Write a scene where silence is the weapon.",
+            "A character hears a rumor about themselves—true or false?",
+            "Write a scene where a gift becomes a burden.",
+            "A character meets someone who knows their future.",
+            "Write a scene where the world feels too bright.",
+            "A character must forgive, but doesn’t forget.",
+            "Write a scene where a plan fails beautifully.",
+            "Your character has to say goodbye without words.",
+            "Write a scene where a stranger sees through the mask.",
+            "A character finds a note addressed to them from years ago.",
+            "Write a scene where a door won’t open—why?",
+            "Someone offers a shortcut with a cost.",
+            "Write a scene where laughter hides fear.",
+            "A character realizes they’re the villain in someone else’s story.",
+            "Write a scene where an apology is refused.",
+            "A character must tell the truth to the person who least deserves it.",
+            "Write a scene that turns on a single sentence.",
+            "A character is offered exactly what they want—too late.",
+            "Write a scene where the setting itself is watching.",
+            "A character makes peace with a past version of themselves.",
+            "Write a scene where a small kindness changes the outcome.",
+            "A character breaks a tradition—what do they lose?",
+            "Write a scene where the last line is a question.",
+            "A character chooses the harder path on purpose.",
+            "Write a scene where the ending is a beginning."
+        ];
+        const DAILY_CHARACTER_Q = [
+            "What does your character want today, and what are they afraid it costs?",
+            "What lie does your character tell themselves most often?",
+            "What would make your character forgive the unforgivable?",
+            "What is your character’s comfort habit—and why do they hide it?",
+            "Who does your character envy, and what do they envy about them?",
+            "What boundary would your character never cross—until now?",
+            "What is your character’s most misunderstood trait?"
+        ];
+        const DAILY_WORLDBUILD_Q = [
+            "What is a normal custom in your world that would shock an outsider?",
+            "What does your world value more than money?",
+            "What is something everyone believes that is actually wrong?",
+            "What resource is scarce—and who controls it?",
+            "What does your world celebrate, and what do they mourn?",
+            "What law exists because of an ancient disaster?",
+            "What technology/magic has an unexpected side effect?"
+        ];
+
+        function hashString(str) {
+            let h = 2166136261;
+            for (let i = 0; i < str.length; i++) {
+                h ^= str.charCodeAt(i);
+                h = Math.imul(h, 16777619);
+            }
+            return (h >>> 0);
+        }
+
+        function computePrompts(week, day) {
+            const wk = week || "0000-00-00";
+            const dy = day || "0000-00-00";
+            const weeklyIx = hashString(wk) % WEEKLY_PROMPTS_52.length;
+            const dailyIx = hashString(dy) % DAILY_CHARACTER_Q.length;
+            const worldIx = (hashString(dy + "|world") % DAILY_WORLDBUILD_Q.length);
+            return {
+                weekKey: wk,
+                dayKey: dy,
+                weekly: WEEKLY_PROMPTS_52[weeklyIx],
+                character: DAILY_CHARACTER_Q[dailyIx],
+                world: DAILY_WORLDBUILD_Q[worldIx]
+            };
+        }
+
+        function setStatus(msg) {
+            statusEl.textContent = msg;
+        }
+
+        backBtn.addEventListener("click", () => (window.location.href = "/studio.html"));
+
+        let currentUser = null;
+        let activeTab = "weekly";
+        let activeDocId = "";
+        let draft = { weekly: "", character: "", world: "" };
+
+        function setActiveTab(tab) {
+            activeTab = tab;
+            [tabWeekly, tabCharacter, tabWorld].forEach(t => t.classList.remove("active"));
+            if (tab === "weekly") tabWeekly.classList.add("active");
+            if (tab === "character") tabCharacter.classList.add("active");
+            if (tab === "world") tabWorld.classList.add("active");
+
+            responseBox.value = draft[tab] || "";
+
+            const prompts = computePrompts(weekKey, dayKey);
+            if (tab === "weekly") {
+                promptKicker.textContent = `Weekly writing prompt • Week of ${prompts.weekKey}`;
+                promptText.textContent = prompts.weekly;
+            } else if (tab === "character") {
+                promptKicker.textContent = `Daily character question • ${prompts.dayKey}`;
+                promptText.textContent = prompts.character;
+            } else {
+                promptKicker.textContent = `Daily worldbuilding question • ${prompts.dayKey}`;
+                promptText.textContent = prompts.world;
+            }
+        }
+
+        tabWeekly.addEventListener("click", () => setActiveTab("weekly"));
+        tabCharacter.addEventListener("click", () => setActiveTab("character"));
+        tabWorld.addEventListener("click", () => setActiveTab("world"));
+
+        responseBox.addEventListener("input", () => {
+            draft[activeTab] = responseBox.value;
+        });
+
+        function entryDocRef(uid, id) {
+            return doc(db, "users", uid, "promptEntries", id);
+        }
+
+        function entryCollection(uid) {
+            return collection(db, "users", uid, "promptEntries");
+        }
+
+        function labelForDoc(data) {
+            const wk = data?.weekKey || "";
+            const dy = data?.dayKey || "";
+            return wk ? `Week of ${wk}` : (dy || "Saved entry");
+        }
+
+        function safeString(x, fb = "") {
+            return typeof x === "string" ? x : fb;
+        }
+
+        function renderHistory(list, activeId) {
+            historyList.innerHTML = "";
+            if (!list.length) {
+                const empty = document.createElement("div");
+                empty.className = "entry";
+                empty.style.cursor = "default";
+                empty.innerHTML = `<div class="meta">No saved prompts yet</div><div class="name">Start writing on the right.</div>`;
+                historyList.appendChild(empty);
+                return;
+            }
+
+            list.forEach(row => {
+                const data = row.data;
+                const div = document.createElement("div");
+                div.className = "entry" + (row.id === activeId ? " active" : "");
+                div.innerHTML = `
+                    <div class="meta">${safeString(data.dayKey, "")}</div>
+                    <div class="name">${labelForDoc(data)}</div>
+                `;
+                div.addEventListener("click", () => loadEntry(row.id));
+                historyList.appendChild(div);
+            });
+        }
+
+        async function loadHistory() {
+            if (!currentUser) return;
+            const q = query(entryCollection(currentUser.uid), orderBy("updatedAt", "desc"));
+            const snap = await getDocs(q);
+            const out = [];
+            snap.forEach(s => out.push({ id: s.id, data: s.data() }));
+            renderHistory(out, activeDocId);
+        }
+
+        async function loadEntry(id) {
+            if (!currentUser) return;
+            const snap = await getDoc(entryDocRef(currentUser.uid, id));
+            if (!snap.exists()) return;
+            const data = snap.data();
+            activeDocId = id;
+            pageTitle.textContent = "Prompts Notebook";
+            noteTitle.value = safeString(data.title, "");
+            draft = {
+                weekly: safeString(data.responses?.weekly, ""),
+                character: safeString(data.responses?.character, ""),
+                world: safeString(data.responses?.world, "")
+            };
+            setActiveTab(activeTab);
+            await loadHistory();
+            setStatus("Loaded saved entry");
+        }
+
+        async function saveCurrent() {
+            if (!currentUser) return;
+            const id = activeDocId || `${weekKey || "week"}__${dayKey || "day"}`;
+            activeDocId = id;
+
+            const prompts = computePrompts(weekKey, dayKey);
+            const payload = {
+                weekKey: prompts.weekKey,
+                dayKey: prompts.dayKey,
+                title: noteTitle.value.trim(),
+                prompts: {
+                    weekly: prompts.weekly,
+                    character: prompts.character,
+                    world: prompts.world
+                },
+                responses: {
+                    weekly: draft.weekly || "",
+                    character: draft.character || "",
+                    world: draft.world || ""
+                },
+                updatedAt: Date.now(),
+                createdAt: Date.now()
+            };
+
+            const existing = await getDoc(entryDocRef(currentUser.uid, id));
+            if (existing.exists()) payload.createdAt = existing.data().createdAt || payload.createdAt;
+
+            await setDoc(entryDocRef(currentUser.uid, id), payload, { merge: true });
+            setStatus("Saved");
+            await loadHistory();
+        }
+
+        function packVaultState(state) {
+            return {
+                v: state.v ?? 2,
+                expandedFolders: state.expandedFolders,
+                lastActiveId: state.lastActiveId,
+                items: JSON.parse(JSON.stringify(state.items)),
+                updatedAt: Date.now()
+            };
+        }
+
+        async function sendActiveToVault() {
+            if (!currentUser) return;
+            const body = (draft[activeTab] || "").trim();
+            if (!body) {
+                alert("Write something first.");
+                return;
+            }
+            const title = prompt("Title for the Vault note?");
+            if (!title) return;
+
+            const state = loadVault(DEFAULT_VAULT_KEY);
+            const id = addNote(state, null);
+            renameItem(state, id, title);
+            const prompts = computePrompts(weekKey, dayKey);
+            const header =
+                activeTab === "weekly"
+                    ? `Weekly Prompt (week of ${prompts.weekKey})\n\n${prompts.weekly}\n\n---\n\n`
+                    : activeTab === "character"
+                      ? `Character Question (${prompts.dayKey})\n\n${prompts.character}\n\n---\n\n`
+                      : `Worldbuilding Question (${prompts.dayKey})\n\n${prompts.world}\n\n---\n\n`;
+            setNoteContent(state, id, header + body);
+            saveVault(state, DEFAULT_VAULT_KEY);
+
+            // Push to Firestore vault doc so Vault page sees it immediately.
+            await setDoc(doc(db, "users", currentUser.uid, "notebookVault", "data"), packVaultState(state), { merge: true });
+            setStatus("Sent to Vault");
+        }
+
+        saveBtn.addEventListener("click", saveCurrent);
+        sendToVaultBtn.addEventListener("click", sendActiveToVault);
+
+        onAuthStateChanged(auth, async user => {
+            if (!user) {
+                window.location.href = "/login.html?next=" + encodeURIComponent(window.location.pathname + window.location.search);
+                return;
+            }
+            currentUser = user;
+            setStatus("Ready");
+            activeTab = ["weekly", "character", "world"].includes(focus) ? focus : "weekly";
+            setActiveTab(activeTab);
+            await loadHistory();
+        });
+    </script>
+</body>
+</html>
