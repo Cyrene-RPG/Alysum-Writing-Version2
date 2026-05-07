@@ -243,7 +243,7 @@
     left: -32000px;
     top: 0;
     pointer-events: none;
-    z-index: -3;
+    z-index: 999999;
     width: max-content;
     height: max-content;
     overflow: visible;

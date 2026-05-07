@@ -602,9 +602,21 @@ function measureChapterSliceOverflow(includeHead, headFragmentHtml, bodyNodes, l
     document.body.appendChild(shell);
     let over = false;
     try {
-        /* Match `.ne-preview-scroll { overflow: hidden }` — compare scroll height on the live box, not the trim shell. */
-        /* Small slack: subpixel / flex rounding otherwise marks a “full” page as overflow and drops a whole line. */
-        over = fauxScroll.scrollHeight > fauxScroll.clientHeight + 5;
+        /* Match `.ne-preview-scroll { overflow: hidden }` — never treat clipped overflow as “fits”.
+         * Old `scrollHeight > clientHeight + 5` wrongly allowed ~5px of spill → half-lines at page bottom. */
+        const ch = fauxScroll.clientHeight;
+        const sh = fauxScroll.scrollHeight;
+        /* Subpixel slack only — old `...+ 5` allowed several px of clipped text at the bottom. */
+        over = Math.ceil(sh) > Math.floor(ch) + 1;
+        if (!over) {
+            const clip = fauxScroll.getBoundingClientRect();
+            const frame = fauxScroll.querySelector(".ne-preview-page-frame");
+            if (frame) {
+                const br = frame.getBoundingClientRect();
+                /* Any real extension past the clip = partial line / glyph crop; 2px fudge for subpixels only. */
+                if (br.bottom > clip.bottom + 2) over = true;
+            }
+        }
     } finally {
         shell.remove();
     }
@@ -662,7 +674,14 @@ function splitTextParagraphToFit(pEl, prefixBodyNodes, includeHead, headFragment
         }
     }
     if (maxFit === 0) return null;
-    const best = snapCutIndexToWordBoundary(text, maxFit);
+    let best = snapCutIndexToWordBoundary(text, maxFit);
+    while (best > 1 && measureChapterSliceOverflow(includeHead, headFragmentHtml, trialWithMid(best), layout, bodyFont, bodyPt)) {
+        const cut = text.lastIndexOf(" ", best - 1);
+        if (cut < 1) break;
+        const next = snapCutIndexToWordBoundary(text, cut);
+        if (next >= best) break;
+        best = next;
+    }
     const first = document.createElement("p");
     first.setAttribute("class", cls);
     first.textContent = text.slice(0, best).replace(/\s+$/, "");
@@ -814,13 +833,18 @@ let loadedBook = null;
 let previewPages = [];
 let previewIndex = 0;
 let nePreviewResizeTimer = null;
+/** Rebuild `previewPages` on next flush (expensive — avoid on every pager tick / keystroke). */
+let previewPagesDirty = true;
+let nePreviewRebuildTimer = null;
 
 function scheduleNePreviewReflow() {
     if (!loadedBook) return;
     if (nePreviewResizeTimer) clearTimeout(nePreviewResizeTimer);
     nePreviewResizeTimer = setTimeout(() => {
         nePreviewResizeTimer = null;
-        renderCurrentPreviewPage();
+        previewPagesDirty = true;
+        flushPreviewBuild();
+        applyPreviewPageHtml();
     }, 160);
 }
 
@@ -834,6 +858,40 @@ function updatePagerUi() {
     status.textContent = total ? `Page ${n} / ${total}` : "—";
     prev.disabled = previewIndex <= 0;
     next.disabled = total === 0 || previewIndex >= total - 1;
+}
+
+function applyPreviewPageHtml() {
+    const sc = document.getElementById("nePreviewScroll");
+    if (!sc) return;
+    if (previewIndex < 0) previewIndex = 0;
+    if (previewPages.length > 0 && previewIndex >= previewPages.length) {
+        previewIndex = previewPages.length - 1;
+    }
+    const page = previewPages[previewIndex];
+    sc.innerHTML = page ? page.html : "";
+    updatePagerUi();
+}
+
+function flushPreviewBuild() {
+    if (!loadedBook) {
+        previewPages = [];
+        previewPagesDirty = false;
+        return;
+    }
+    if (!previewPagesDirty && previewPages.length > 0) return;
+    previewPages = buildPreviewPages(loadedBook);
+    previewPagesDirty = false;
+}
+
+function scheduleDebouncedPreviewRebuild() {
+    if (nePreviewRebuildTimer) clearTimeout(nePreviewRebuildTimer);
+    nePreviewRebuildTimer = setTimeout(() => {
+        nePreviewRebuildTimer = null;
+        if (!loadedBook) return;
+        previewPagesDirty = true;
+        flushPreviewBuild();
+        applyPreviewPageHtml();
+    }, 360);
 }
 
 function buildPreviewPages(book) {
@@ -931,9 +989,12 @@ function renderCurrentPreviewPage() {
     if (!sc) return;
 
     if (!loadedBook) {
-        setPreviewPlaceholder(true, bookId ? "Loading manuscript…" : "Open a book to preview.");
+        setPreviewPlaceholder(true, bookId ? "Loading manuscript…" : "Add ?book=… or open Export from the editor to preview a manuscript here.");
         previewPages = [];
         previewIndex = 0;
+        previewPagesDirty = true;
+        if (nePreviewRebuildTimer) clearTimeout(nePreviewRebuildTimer);
+        nePreviewRebuildTimer = null;
         updatePagerUi();
         return;
     }
@@ -943,14 +1004,14 @@ function renderCurrentPreviewPage() {
     sc.hidden = false;
     void sc.offsetWidth;
 
-    previewPages = buildPreviewPages(loadedBook);
+    previewPagesDirty = true;
+    flushPreviewBuild();
     if (previewIndex < 0) previewIndex = 0;
-    if (previewIndex >= previewPages.length) previewIndex = Math.max(0, previewPages.length - 1);
-
-    const page = previewPages[previewIndex];
-    sc.innerHTML = page ? page.html : "";
+    if (previewPages.length > 0 && previewIndex >= previewPages.length) {
+        previewIndex = previewPages.length - 1;
+    }
+    applyPreviewPageHtml();
     setPreviewPlaceholder(false, "");
-    updatePagerUi();
 }
 
 function fillTitleAndPenFromBook(book, authorLine) {
@@ -1251,12 +1312,16 @@ function wirePreviewPager() {
     const prev = document.getElementById("nePrevPageBtn");
     const next = document.getElementById("neNextPageBtn");
     prev?.addEventListener("click", () => {
+        flushPreviewBuild();
         previewIndex = Math.max(0, previewIndex - 1);
-        renderCurrentPreviewPage();
+        applyPreviewPageHtml();
     });
     next?.addEventListener("click", () => {
-        previewIndex += 1;
-        renderCurrentPreviewPage();
+        flushPreviewBuild();
+        if (previewPages.length > 0) {
+            previewIndex = Math.min(previewPages.length - 1, previewIndex + 1);
+        }
+        applyPreviewPageHtml();
     });
     updatePagerUi();
 }
@@ -1292,15 +1357,24 @@ function wirePreviewLiveInputs() {
         "neCpOptionalInclude",
         "neCpOptional"
     ];
-    const handler = () => {
+    const onChange = () => {
         if (!loadedBook) return;
-        renderCurrentPreviewPage();
+        if (nePreviewRebuildTimer) clearTimeout(nePreviewRebuildTimer);
+        nePreviewRebuildTimer = null;
+        previewPagesDirty = true;
+        flushPreviewBuild();
+        applyPreviewPageHtml();
+    };
+    const onInput = () => {
+        if (!loadedBook) return;
+        previewPagesDirty = true;
+        scheduleDebouncedPreviewRebuild();
     };
     ids.forEach(id => {
         const el = document.getElementById(id);
         if (!el) return;
-        el.addEventListener("input", handler);
-        el.addEventListener("change", handler);
+        el.addEventListener("input", onInput);
+        el.addEventListener("change", onChange);
     });
 }
 
@@ -1372,9 +1446,14 @@ async function exportManuscriptPdf() {
         btn.textContent = "Exporting…";
     }
 
+    const hostPrevStyle = host.getAttribute("style");
     try {
         await document.fonts.ready.catch(() => {});
-        const pages = buildPreviewPages(loadedBook);
+        if (nePreviewRebuildTimer) clearTimeout(nePreviewRebuildTimer);
+        nePreviewRebuildTimer = null;
+        previewPagesDirty = true;
+        flushPreviewBuild();
+        const pages = previewPages;
         if (!pages.length) {
             throw new Error("Nothing to export.");
         }
@@ -1389,6 +1468,10 @@ async function exportManuscriptPdf() {
             orientation: portrait ? "portrait" : "landscape",
             compress: true
         });
+
+        /* Bring host on-screen (invisible) so layout + html2canvas see non-zero paint bounds. */
+        host.style.cssText =
+            "position:fixed;left:0;top:0;width:max-content;height:max-content;opacity:0.02;pointer-events:none;z-index:2147483646;overflow:visible;";
 
         for (let i = 0; i < pages.length; i += 1) {
             host.replaceChildren();
@@ -1406,8 +1489,9 @@ async function exportManuscriptPdf() {
                 throw new Error("Export page had no measurable layout.");
             }
 
+            const scale = Math.min(2.5, Math.max(2, (window.devicePixelRatio || 1) * 1.25));
             const canvas = await h2c(pageEl, {
-                scale: 2,
+                scale,
                 useCORS: true,
                 allowTaint: false,
                 logging: false,
@@ -1418,11 +1502,11 @@ async function exportManuscriptPdf() {
                 windowHeight: hPx
             });
 
-            const img = canvas.toDataURL("image/jpeg", 0.94);
+            const img = canvas.toDataURL("image/png");
             if (i > 0) {
                 pdf.addPage([pw, ph], portrait ? "portrait" : "landscape");
             }
-            pdf.addImage(img, "JPEG", 0, 0, pw, ph);
+            pdf.addImage(img, "PNG", 0, 0, pw, ph);
         }
 
         const inputs = currentPreviewInputs();
@@ -1433,6 +1517,9 @@ async function exportManuscriptPdf() {
         const msg = err && typeof err === "object" && "message" in err ? String(err.message) : String(err);
         alert(msg || "Could not export PDF.");
     } finally {
+        host.replaceChildren();
+        if (hostPrevStyle) host.setAttribute("style", hostPrevStyle);
+        else host.removeAttribute("style");
         if (btn) {
             btn.disabled = false;
             btn.textContent = label;
@@ -1476,6 +1563,9 @@ function init() {
         loadedBook = null;
         previewPages = [];
         previewIndex = 0;
+        previewPagesDirty = true;
+        if (nePreviewRebuildTimer) clearTimeout(nePreviewRebuildTimer);
+        nePreviewRebuildTimer = null;
         updatePagerUi();
         return;
     }
