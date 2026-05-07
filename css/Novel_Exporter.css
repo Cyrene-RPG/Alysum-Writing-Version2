@@ -24,10 +24,15 @@
     top: 0;
     z-index: 40;
     flex-shrink: 0;
-    padding: 14px 18px 0;
+    align-self: center;
+    padding: 14px 18px 12px;
     max-width: 1200px;
     width: 100%;
     margin: 0 auto;
+    /* Opaque strip so scroll never shows “through” the sticky header (avoids the toolbar looking detached). */
+    background: linear-gradient(180deg, rgba(13, 20, 38, 0.98) 0%, rgba(11, 18, 32, 0.96) 55%, rgba(11, 18, 32, 0.92) 100%);
+    backdrop-filter: saturate(140%) blur(10px);
+    -webkit-backdrop-filter: saturate(140%) blur(10px);
 }
 
 .ne-user-row {
@@ -226,7 +231,9 @@
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    justify-content: center;
+    /* Do not vertically center the workspace: it breaks `position: sticky` on the header and makes the toolbar
+       appear to “float” mid-screen while scrolling long side panels. */
+    justify-content: flex-start;
     min-height: 0;
 }
 
