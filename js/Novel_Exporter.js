@@ -451,11 +451,12 @@ function getLiveAreaDimensions() {
     const innerHIn = Math.max(0.1, ph - mt - mb);
     const scaleX = mr.width / pw;
     const scaleY = mr.height / ph;
-    let w = Math.round(innerWIn * scaleX);
-    let h = Math.round(innerHIn * scaleY);
+    /* Floor so pagination never assumes a live area taller than the real scroll box (avoids subtle bottom clip). */
+    let w = Math.floor(innerWIn * scaleX);
+    let h = Math.floor(innerHIn * scaleY);
     if (sc && !sc.hidden && sc.clientWidth > 24 && sc.clientHeight > 24) {
-        w = Math.round(sc.clientWidth);
-        h = Math.round(sc.clientHeight);
+        w = Math.floor(sc.clientWidth);
+        h = Math.floor(sc.clientHeight);
     }
     return { w: Math.max(64, w), h: Math.max(64, h) };
 }
@@ -510,7 +511,7 @@ function measureChapterSliceOverflow(includeHead, headFragmentHtml, bodyNodes, w
     document.body.appendChild(shell);
     let over = false;
     try {
-        over = shell.scrollHeight > shell.clientHeight + 2;
+        over = shell.scrollHeight > shell.clientHeight + 1;
     } finally {
         shell.remove();
     }

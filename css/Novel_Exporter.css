@@ -687,6 +687,9 @@
 
 .ne-preview-page {
     position: relative;
+    /* Chapter title sizing uses cqw so type scales with the trim box, not the browser viewport. */
+    container-type: inline-size;
+    container-name: ne-preview-trim;
     margin: 0 auto;
     box-sizing: border-box;
     background: linear-gradient(180deg, #fdfefe 0%, #f1f5f9 100%);
@@ -957,6 +960,12 @@
     text-wrap: balance;
     font-kerning: normal;
     font-feature-settings: "kern" 1, "liga" 1;
+}
+
+@supports (font-size: 1cqw) {
+    .ne-ms-ch--book .ne-ms-ch-title {
+        font-size: clamp(15pt, 5cqw, 18pt);
+    }
 }
 
 .ne-ms-ch--book .ne-ms-ch-title-text {
