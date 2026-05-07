@@ -509,70 +509,12 @@ function getLiveAreaDimensions() {
     return { w: m.liveW, h: m.liveH };
 }
 
-function bottomReservePxForMeasure(bodyPt) {
-    /*
-     * Keep a band free at the bottom of the live area so the last rendered line cannot sit on the clip edge:
-     * scrollHeight/clientHeight rounding, flex min-height vs text metrics, subpixels, drop caps —
-     * all can report “fits” while glyphs are still clipped.
-     */
-    const linePx = ((bodyPt / 72) * 96) * 1.48;
-    return Math.max(12, Math.min(42, Math.round(linePx * 0.92)));
-}
-
-/**
- * Whether any painted line/content in scrollEl protrudes below the drawable band (respecting bottom reserve).
- * @param {HTMLElement} scrollEl
- * @param {number} bottomReservePx
- */
-function scrollContentExtendsPastLiveArea(scrollEl, bottomReservePx) {
-    const clip = scrollEl.getBoundingClientRect();
-    const drawBottom = clip.bottom - bottomReservePx;
-    const section = scrollEl.querySelector(".ne-ms-ch--book");
-    if (!section) return false;
-    const doc = scrollEl.ownerDocument;
-    /** @type {number} */
-    let maxBottom = -Infinity;
-
-    const bumpRange = container => {
-        if (!container) return;
-        const range = doc.createRange();
-        try {
-            range.selectNodeContents(container);
-            const rects = range.getClientRects();
-            for (let i = 0; i < rects.length; i += 1) {
-                const r = rects.item(i);
-                if (r && r.height > 0.5 && r.width > 0.5) {
-                    maxBottom = Math.max(maxBottom, r.bottom);
-                }
-            }
-        } catch (_) {
-            /* empty */
-        }
-    };
-
-    bumpRange(section.querySelector(".ne-chapter-head"));
-    bumpRange(section.querySelector(".ne-ms-ch-body"));
-
-    /*
-     * Floated ::first-letter is weak in Range line boxes; union block bottoms catches drop caps + tables.
-     */
-    section.querySelectorAll("p, li, blockquote, h1, h2, h3, hr, table").forEach(el => {
-        const r = /** @type {HTMLElement} */ (el).getBoundingClientRect();
-        if (r.height > 0) maxBottom = Math.max(maxBottom, r.bottom);
-    });
-
-    if (maxBottom === -Infinity) return false;
-    return maxBottom > drawBottom + 0.75;
-}
-
 function measureChapterSliceOverflow(includeHead, headFragmentHtml, bodyNodes, layout, bodyFont, bodyPt) {
     const mount = document.getElementById("pdfPreviewMount");
     const { liveW: w, liveH: h, trimW, trimH, scrollLeftPx, scrollTopPx } = layout;
-    const reserve = bottomReservePxForMeasure(bodyPt);
 
     /*
-     * Sandbox must wrap the whole trim sheet: the old wrapper used only the live-area w×h with overflow:hidden,
-     * which clipped the simulated page subtree and distorted scroll/layout vs the real `#pdfPreviewMount`.
+     * Sandbox wraps full trim dimensions so the simulated page matches `#pdfPreviewMount` layout.
      */
     const shell = document.createElement("div");
     shell.setAttribute("data-ne-measure", "1");
@@ -584,8 +526,7 @@ function measureChapterSliceOverflow(includeHead, headFragmentHtml, bodyNodes, l
         `height:${Math.ceil(trimH)}px`,
         "overflow:visible",
         "box-sizing:border-box",
-        "visibility:visible",
-        "opacity:0",
+        "visibility:hidden",
         "pointer-events:none",
         "margin:0",
         "padding:0"
@@ -666,8 +607,8 @@ function measureChapterSliceOverflow(includeHead, headFragmentHtml, bodyNodes, l
     try {
         const ch = fauxScroll.clientHeight;
         const sh = fauxScroll.scrollHeight;
-        const effectiveLimit = Math.max(32, ch - reserve);
-        over = Math.ceil(sh) > effectiveLimit || scrollContentExtendsPastLiveArea(fauxScroll, reserve);
+        /* Bottom padding on the page frame keeps text off the clip; overflow = any real scroll past the box. */
+        over = sh > ch + 0.5;
     } finally {
         shell.remove();
     }

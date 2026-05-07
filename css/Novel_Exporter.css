@@ -821,6 +821,22 @@
     flex-direction: column;
 }
 
+/*
+ * Mandatory bottom gutter inside the live (clip) box so the final line cannot straddle overflow:hidden —
+ * fractional layout, ascenders/descenders, and flex rounding can otherwise crop text.
+ */
+.ne-preview-scroll > .ne-preview-page-frame {
+    box-sizing: border-box;
+    padding-bottom: calc(1.48em + 14px);
+}
+
+/*
+ * Pagination measure tree only: drop min-height:100% flex stretch there so scrollHeight matches real content flow.
+ */
+[data-ne-measure="1"] .ne-preview-scroll > .ne-preview-page-frame {
+    min-height: 0 !important;
+}
+
 /* Avoid flex-shrink shortening the measured column vs what pagination assumed. */
 .ne-preview-page-frame.ne-preview-manuscript > .ne-ms-ch--book {
     flex-shrink: 0;
