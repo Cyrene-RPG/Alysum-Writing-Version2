@@ -11,6 +11,7 @@
         radial-gradient(circle at 50% -10%, rgba(109, 40, 217, 0.22), transparent 42%),
         linear-gradient(180deg, #0d1426 0%, #0b1220 55%);
     color: #f9fafb;
+    overflow-x: hidden;
 }
 
 .ne-body *,
@@ -25,8 +26,8 @@
     z-index: 40;
     flex-shrink: 0;
     align-self: center;
-    padding: 14px 18px 12px;
-    max-width: 1200px;
+    padding: 14px clamp(14px, 2vw, 24px) 12px;
+    max-width: 1440px;
     width: 100%;
     margin: 0 auto;
     /* Opaque strip so scroll never shows “through” the sticky header (avoids the toolbar looking detached). */
@@ -282,9 +283,9 @@
 .ne-main {
     flex: 1 1 auto;
     width: 100%;
-    max-width: 1200px;
+    max-width: 1440px;
     margin: 0 auto;
-    padding: 20px 18px 40px;
+    padding: 22px clamp(14px, 2vw, 24px) 44px;
     display: flex;
     flex-direction: column;
     align-items: stretch;
@@ -297,14 +298,20 @@
 .ne-workspace {
     position: relative;
     width: 100%;
+    display: grid;
+    grid-template-columns: minmax(250px, 320px) minmax(320px, 1fr) minmax(250px, 320px);
+    align-items: start;
+    gap: clamp(16px, 2vw, 28px);
 }
 
 .ne-side-panel {
-    position: absolute;
-    top: 0;
+    position: sticky;
+    top: 118px;
     z-index: 2;
-    width: min(380px, 92vw);
-    max-width: 380px;
+    width: 100%;
+    max-width: none;
+    max-height: calc(100dvh - 138px);
+    overflow: auto;
     padding: 22px 20px;
     border-radius: 20px;
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -315,11 +322,11 @@
 }
 
 .ne-meta-panel.ne-side-panel {
-    left: clamp(-220px, -14vw, -72px);
+    left: auto;
 }
 
 .ne-layout-panel.ne-side-panel {
-    right: clamp(-220px, -14vw, -72px);
+    right: auto;
     left: auto;
 }
 
@@ -730,11 +737,13 @@
 .ne-preview-track {
     width: 100%;
     box-sizing: border-box;
-    padding: 0 clamp(10px, 3vw, 24px);
+    min-width: 0;
+    padding: 0;
 }
 
 .ne-preview-stage {
     width: 100%;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -976,7 +985,7 @@
 
 .ne-preview-pager {
     width: 100%;
-    max-width: 560px;
+    max-width: min(560px, 100%);
     display: grid;
     grid-template-columns: auto 1fr auto;
     align-items: center;
@@ -1434,9 +1443,19 @@
     width: min(8.5in, 100%, calc(75vh * 8.5 / 11));
 }
 
-@media (min-width: 841px) and (max-width: 1080px) {
+@media (max-width: 1240px) {
+    .ne-workspace {
+        grid-template-columns: minmax(220px, 280px) minmax(300px, 1fr) minmax(220px, 280px);
+        gap: 16px;
+    }
+
     .ne-side-panel {
-        width: min(328px, 34vw);
+        padding: 18px 16px;
+    }
+
+    .ne-field-label,
+    .ne-fold-summary-title {
+        letter-spacing: 0.09em;
     }
 
     .ne-preview-page[data-format="5x8"] {
@@ -1452,23 +1471,32 @@
     }
 }
 
-@media (max-width: 840px) {
-    .ne-meta-panel.ne-side-panel {
-        position: relative;
-        left: auto;
-        top: auto;
-        width: 100%;
-        max-width: min(388px, 100%);
-        margin: 0 auto 28px;
+@media (max-width: 1040px) {
+    .ne-header {
+        position: sticky;
     }
 
+    .ne-workspace {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+    }
+
+    .ne-preview-track {
+        order: -1;
+    }
+
+    .ne-side-panel,
+    .ne-meta-panel.ne-side-panel,
     .ne-layout-panel.ne-side-panel {
         position: relative;
-        right: auto;
         left: auto;
+        right: auto;
+        top: auto;
         width: 100%;
-        max-width: min(388px, 100%);
-        margin: 28px auto 0;
+        max-width: none;
+        max-height: none;
+        margin: 0;
     }
 
     .ne-preview-stage {
@@ -1485,5 +1513,214 @@
 
     .ne-preview-page[data-format="letter"] {
         width: min(8.5in, calc(100vw - 36px), calc(75vh * 8.5 / 11));
+    }
+}
+
+@media (max-width: 720px) {
+    .ne-header {
+        padding: 10px max(12px, env(safe-area-inset-right, 0px)) 10px max(12px, env(safe-area-inset-left, 0px));
+    }
+
+    .ne-user-row {
+        grid-template-columns: auto minmax(0, 1fr);
+        grid-template-areas:
+            "logo title"
+            "user user";
+        align-items: center;
+        gap: 8px 12px;
+        margin-bottom: 10px;
+        padding-bottom: 10px;
+    }
+
+    .ne-user-left {
+        grid-area: logo;
+    }
+
+    .ne-title-cluster {
+        grid-area: title;
+        justify-self: end;
+        max-width: none;
+        text-align: right;
+    }
+
+    .ne-user-right {
+        grid-area: user;
+        justify-self: stretch;
+    }
+
+    .ne-logo {
+        height: 40px;
+        max-width: 132px;
+    }
+
+    .ne-page-title {
+        white-space: normal;
+        font-size: clamp(1.05rem, 5.5vw, 1.45rem);
+    }
+
+    .ne-page-subtitle {
+        font-size: 11px;
+    }
+
+    .ne-username {
+        display: block;
+        width: fit-content;
+        max-width: 100%;
+        margin-left: auto;
+        padding: 5px 10px;
+        border-radius: 999px;
+        background: rgba(0, 0, 0, 0.22);
+        font-size: 12px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .ne-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        padding: 10px;
+        border-radius: 14px;
+    }
+
+    .ne-toolbar-kicker {
+        display: none;
+    }
+
+    .ne-bar-btn {
+        flex: 1 1 0;
+        min-height: 46px;
+        padding: 0 12px;
+    }
+
+    .ne-main {
+        padding: 14px max(12px, env(safe-area-inset-right, 0px)) 32px max(12px, env(safe-area-inset-left, 0px));
+    }
+
+    .ne-workspace {
+        gap: 14px;
+    }
+
+    .ne-side-panel {
+        padding: 16px;
+        border-radius: 18px;
+    }
+
+    .ne-fold-summary {
+        min-height: 48px;
+        padding: 12px 2px;
+    }
+
+    .ne-field + .ne-field,
+    .ne-fold-details + .ne-fold-details {
+        margin-top: 14px;
+    }
+
+    .ne-fold-details + .ne-fold-details {
+        padding-top: 14px;
+    }
+
+    .ne-field-input,
+    .ne-field-select {
+        min-height: 46px;
+        font-size: 16px;
+    }
+
+    .ne-format-option,
+    .ne-hand-option,
+    .ne-toggle-switch {
+        padding: 12px;
+    }
+
+    .ne-copy-p,
+    .ne-copyright-hint,
+    .ne-layout-hint,
+    .ne-hand-hint,
+    .ne-format-option-desc,
+    .ne-hand-option-desc {
+        font-size: 12px;
+    }
+
+    .ne-preview-page[data-format="5x8"] {
+        width: min(5in, calc(100vw - 28px), calc(64vh * 5 / 8));
+    }
+
+    .ne-preview-page[data-format="6x9"] {
+        width: min(6in, calc(100vw - 28px), calc(64vh * 6 / 9));
+    }
+
+    .ne-preview-page[data-format="letter"] {
+        width: min(8.5in, calc(100vw - 28px), calc(64vh * 8.5 / 11));
+    }
+
+    .ne-preview-pager {
+        gap: 8px;
+        padding: 8px;
+    }
+
+    .ne-preview-pager-btn {
+        min-height: 44px;
+        padding: 9px 12px;
+    }
+}
+
+@media (max-width: 430px) {
+    .ne-user-row {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "logo"
+            "title"
+            "user";
+    }
+
+    .ne-user-left,
+    .ne-title-cluster,
+    .ne-user-right {
+        justify-self: center;
+    }
+
+    .ne-title-cluster {
+        text-align: center;
+    }
+
+    .ne-page-subtitle {
+        display: none;
+    }
+
+    .ne-toolbar {
+        gap: 8px;
+    }
+
+    .ne-bar-btn {
+        flex-basis: 100%;
+    }
+
+    .ne-side-panel {
+        padding: 14px;
+    }
+
+    .ne-preview-pager {
+        display: flex;
+        flex-wrap: wrap;
+    }
+
+    .ne-preview-pager-status {
+        flex: 1 0 100%;
+        order: -1;
+        padding: 4px 0;
+    }
+
+    .ne-preview-pager-btn {
+        flex: 1 1 0;
+    }
+
+    .ne-copy-inline.ne-field-input {
+        display: block;
+        width: 100%;
+        min-width: 0;
+        margin: 6px 0;
+        padding: 9px 10px;
+        font-size: 16px;
     }
 }
