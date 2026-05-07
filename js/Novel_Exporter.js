@@ -455,9 +455,9 @@ function addBodyChapterPrintFooter(html, printPageOneIndexed) {
  * (trim width), not the scroll box — an off-screen measure shell without that ancestor mis-sized
  * the chapter head and broke pages early, leaving empty bands inside the margins.
  */
-function getPreviewMountLayoutMetrics() {
-    const mount = document.getElementById("pdfPreviewMount");
-    const sc = document.getElementById("nePreviewScroll");
+function getPreviewMountLayoutMetrics(mountEl, scrollEl) {
+    const mount = mountEl || document.getElementById("pdfPreviewMount");
+    const sc = scrollEl || document.getElementById("nePreviewScroll");
     if (!mount) {
         return {
             trimW: 400,
@@ -920,7 +920,7 @@ function scheduleDebouncedPreviewRebuild() {
     }, 360);
 }
 
-function buildPreviewPages(book) {
+function buildPreviewPages(book, layoutOverride) {
     const inputs = currentPreviewInputs();
     const title = inputs.title || safeString(book.title, "Untitled Book");
     const pen = inputs.pen;
@@ -949,7 +949,7 @@ function buildPreviewPages(book) {
     if (inputs.glossary) backTocLabels.push("Glossary");
     if (inputs.aboutAuthor) backTocLabels.push("About the author");
 
-    const layout = getPreviewMountLayoutMetrics();
+    const layout = layoutOverride || getPreviewMountLayoutMetrics();
     const chapterBundles = bodyChapters.map((ch, i) => paginateChapterSlices(ch, i + 1, layout));
 
     const chapterStartPages = [];
@@ -1009,6 +1009,29 @@ function buildPreviewPages(book) {
     }
 
     return pages;
+}
+
+function computeExportLayoutMetrics(mount, host) {
+    const pw = parseFloat(mount.getAttribute("data-page-width-in")) || 5;
+    const ph = parseFloat(mount.getAttribute("data-page-height-in")) || 8;
+    const pageEl = cloneExportPageShell(mount);
+    const sc = document.createElement("div");
+    sc.className = "ne-preview-scroll";
+    sc.innerHTML = '<div class="ne-preview-page-frame ne-preview-manuscript"><section class="ne-ms-ch ne-ms-ch--book"><div class="ne-ms-ch-body"><p class="ne-ms-para">.</p></div></section></div>';
+    pageEl.appendChild(sc);
+    host.appendChild(pageEl);
+
+    // Let CSS apply inset calculations before measuring.
+    void pageEl.offsetWidth;
+    void sc.offsetWidth;
+
+    const layout = getPreviewMountLayoutMetrics(pageEl, sc);
+    host.replaceChildren();
+
+    // Hard clamp: ensure trim size matches intended inches even if CSS is overridden.
+    layout.pw = pw;
+    layout.ph = ph;
+    return layout;
 }
 
 function renderCurrentPreviewPage() {
@@ -1478,9 +1501,8 @@ async function exportManuscriptPdf() {
         await document.fonts.ready.catch(() => {});
         if (nePreviewRebuildTimer) clearTimeout(nePreviewRebuildTimer);
         nePreviewRebuildTimer = null;
-        previewPagesDirty = true;
-        flushPreviewBuild();
-        const pages = previewPages;
+        const exportLayout = computeExportLayoutMetrics(mount, host);
+        const pages = buildPreviewPages(loadedBook, exportLayout);
         if (!pages.length) {
             throw new Error("Nothing to export.");
         }

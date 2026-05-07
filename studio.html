@@ -720,7 +720,6 @@
                 <div class="sidebar-group-label">Quick Access</div>
                 <div class="sidebar-item" id="sidebarContinueBtn">📖 Continue Writing</div>
                 <div class="sidebar-item" id="sidebarNewBookBtn">➕ New Book</div>
-                <div class="sidebar-item" id="sidebarSprintBtn">⏱ Sprint Timer</div>
             </aside>
 
             <!-- MAIN CENTER -->
@@ -743,18 +742,6 @@
                                     Create your first book to begin.
                                 </div>
                             </div>
-
-                            <section class="panel rail-card" id="sprintCard">
-                                <h3>Writing Sprint</h3>
-                                <div class="rail-sub">25-minute focus session</div>
-
-                                <div class="timer" id="timer">25:00</div>
-
-                                <div class="sprint-controls">
-                                    <button class="sprint-btn primary" id="startSprint" type="button">Start</button>
-                                    <button class="sprint-btn secondary" id="resetSprint" type="button">Reset</button>
-                                </div>
-                            </section>
                         </div>
                     </div>
 
@@ -883,16 +870,10 @@
 
         const sidebarContinueBtn = document.getElementById("sidebarContinueBtn");
         const sidebarNewBookBtn = document.getElementById("sidebarNewBookBtn");
-        const sidebarSprintBtn = document.getElementById("sidebarSprintBtn");
 
         const menuBtn = document.getElementById("menuBtn");
         const sideMenu = document.getElementById("sideMenu");
         const menuOverlay = document.getElementById("menuOverlay");
-
-        const sprintCard = document.getElementById("sprintCard");
-        const timerEl = document.getElementById("timer");
-        const startSprintBtn = document.getElementById("startSprint");
-        const resetSprintBtn = document.getElementById("resetSprint");
 
         const goalCurrentText = document.getElementById("goalCurrentText");
         const goalTargetText = document.getElementById("goalTargetText");
@@ -904,7 +885,6 @@
         const badgeBar = document.getElementById("badgeBar");
 
         let currentUser = null;
-        let sprintInterval = null;
         let firstBookId = null;
         let firstBookData = null;
 
@@ -1134,10 +1114,6 @@
             window.location.href = "/badges.html";
         }
 
-        function scrollToSprint() {
-            sprintCard.scrollIntoView({ behavior: "smooth", block: "start" });
-        }
-
         createBtn.addEventListener("click", createBookNow);
         newBookTile.addEventListener("click", createBookNow);
         continueBtn.addEventListener("click", continueWriting);
@@ -1146,7 +1122,6 @@
 
         sidebarContinueBtn.addEventListener("click", continueWriting);
         sidebarNewBookBtn.addEventListener("click", createBookNow);
-        sidebarSprintBtn.addEventListener("click", scrollToSprint);
 
         function todayKey() {
             return new Date().toISOString().split("T")[0];
@@ -1191,83 +1166,6 @@
                 streak: 1
             });
             return 1;
-        }
-
-        function updateTimerDisplay(seconds) {
-            const mins = Math.floor(seconds / 60);
-            const secs = seconds % 60;
-            timerEl.textContent = `${mins}:${String(secs).padStart(2, "0")}`;
-        }
-
-        function loadSprintState() {
-            try {
-                return JSON.parse(localStorage.getItem("alysum-sprint") || "null");
-            } catch {
-                return null;
-            }
-        }
-
-        function saveSprintState(state) {
-            localStorage.setItem("alysum-sprint", JSON.stringify(state));
-        }
-
-        function clearSprintState() {
-            localStorage.removeItem("alysum-sprint");
-        }
-
-        function tickSprint() {
-            const state = loadSprintState();
-
-            if (!state || !state.end) {
-                clearInterval(sprintInterval);
-                sprintInterval = null;
-                updateTimerDisplay(1500);
-                return;
-            }
-
-            const remaining = Math.max(0, Math.floor((state.end - Date.now()) / 1000));
-            updateTimerDisplay(remaining);
-
-            if (remaining <= 0) {
-                clearInterval(sprintInterval);
-                sprintInterval = null;
-                clearSprintState();
-                updateTimerDisplay(1500);
-                alert("Sprint complete!");
-            }
-        }
-
-        function startSprint() {
-            const currentState = loadSprintState();
-
-            if (!currentState) {
-                saveSprintState({
-                    end: Date.now() + (25 * 60 * 1000)
-                });
-            }
-
-            if (sprintInterval) return;
-
-            tickSprint();
-            sprintInterval = setInterval(tickSprint, 1000);
-        }
-
-        function resetSprint() {
-            clearInterval(sprintInterval);
-            sprintInterval = null;
-            clearSprintState();
-            updateTimerDisplay(1500);
-        }
-
-        startSprintBtn.addEventListener("click", startSprint);
-        resetSprintBtn.addEventListener("click", resetSprint);
-
-        const existingSprint = loadSprintState();
-        if (existingSprint && existingSprint.end && existingSprint.end > Date.now()) {
-            startSprint();
-        } else {
-            updateTimerDisplay(1500);
-            clearSprintState();
         }
 
         onAuthStateChanged(auth, async (user) => {
