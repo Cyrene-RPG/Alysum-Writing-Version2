@@ -612,7 +612,26 @@ function measureChapterSliceOverflow(includeHead, headFragmentHtml, bodyNodes, l
 }
 
 /**
+ * Largest index k (0 < k <= maxFit) where text[k] is whitespace (so text.slice(0, k) ends a whole word).
+ * If none (single long token), returns `maxFit` so callers can fall back to a character break.
+ * @param {string} text
+ * @param {number} maxFit
+ */
+function snapCutIndexToWordBoundary(text, maxFit) {
+    const n = text.length;
+    const lim = Math.min(Math.max(0, maxFit), n);
+    if (lim <= 0) return 0;
+    if (lim >= n) return n;
+    let k = lim;
+    while (k > 0 && !(k === n || /\s/.test(text[k]))) {
+        k -= 1;
+    }
+    return k > 0 ? k : lim;
+}
+
+/**
  * Split a text paragraph so `prefixBodyNodes` + first part fits the live area; remainder continues on the next page.
+ * Breaks only at spaces between words (never mid-word) unless one word is longer than the page can hold.
  * @param {Element} pEl
  * @param {Element[]} prefixBodyNodes Nodes already placed on this page (same order as in body).
  * @param rest same as measureChapterSliceOverflow
@@ -632,20 +651,21 @@ function splitTextParagraphToFit(pEl, prefixBodyNodes, includeHead, headFragment
     };
     let lo = 1;
     let hi = text.length;
-    let best = 0;
+    let maxFit = 0;
     while (lo <= hi) {
         const mid = (lo + hi) >> 1;
         if (!measureChapterSliceOverflow(includeHead, headFragmentHtml, trialWithMid(mid), layout, bodyFont, bodyPt)) {
-            best = mid;
+            maxFit = mid;
             lo = mid + 1;
         } else {
             hi = mid - 1;
         }
     }
-    if (best === 0) return null;
+    if (maxFit === 0) return null;
+    const best = snapCutIndexToWordBoundary(text, maxFit);
     const first = document.createElement("p");
     first.setAttribute("class", cls);
-    first.textContent = text.slice(0, best);
+    first.textContent = text.slice(0, best).replace(/\s+$/, "");
     const rest = document.createElement("p");
     rest.setAttribute("class", cls + " ne-ms-para--split-cont");
     rest.textContent = text.slice(best).trim();
