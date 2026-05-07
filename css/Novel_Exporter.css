@@ -764,6 +764,11 @@
     flex-direction: column;
 }
 
+/* Avoid flex-shrink shortening the measured column vs what pagination assumed. */
+.ne-preview-page-frame.ne-preview-manuscript > .ne-ms-ch--book {
+    flex-shrink: 0;
+}
+
 .ne-preview-page-title {
     min-height: 100%;
     display: flex;

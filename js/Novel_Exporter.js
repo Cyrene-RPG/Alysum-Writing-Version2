@@ -451,12 +451,17 @@ function getLiveAreaDimensions() {
     const innerHIn = Math.max(0.1, ph - mt - mb);
     const scaleX = mr.width / pw;
     const scaleY = mr.height / ph;
-    /* Floor so pagination never assumes a live area taller than the real scroll box (avoids subtle bottom clip). */
-    let w = Math.floor(innerWIn * scaleX);
-    let h = Math.floor(innerHIn * scaleY);
+    /*
+     * Use ceil + getBoundingClientRect so the measure box is >= the painted live area.
+     * Flooring clientWidth/height made the column slightly too narrow/tall in the math model,
+     * which triggered overflow early and left big empty bands at the bottom of real pages.
+     */
+    let w = Math.ceil(innerWIn * scaleX);
+    let h = Math.ceil(innerHIn * scaleY);
     if (sc && !sc.hidden && sc.clientWidth > 24 && sc.clientHeight > 24) {
-        w = Math.floor(sc.clientWidth);
-        h = Math.floor(sc.clientHeight);
+        const br = sc.getBoundingClientRect();
+        w = Math.ceil(br.width);
+        h = Math.ceil(br.height);
     }
     return { w: Math.max(64, w), h: Math.max(64, h) };
 }
@@ -511,7 +516,8 @@ function measureChapterSliceOverflow(includeHead, headFragmentHtml, bodyNodes, w
     document.body.appendChild(shell);
     let over = false;
     try {
-        over = shell.scrollHeight > shell.clientHeight + 1;
+        /* Small slack: subpixel / flex rounding otherwise marks a “full” page as overflow and drops a whole line. */
+        over = shell.scrollHeight > shell.clientHeight + 5;
     } finally {
         shell.remove();
     }
