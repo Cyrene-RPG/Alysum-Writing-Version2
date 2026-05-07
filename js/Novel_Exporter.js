@@ -436,6 +436,19 @@ function wrapChapterSliceHtml(sectionAttr, headFragmentHtml, bodyInnerHtml, body
     );
 }
 
+/** Bottom margin gutter print page numbers — body chapters only; must not change pagination (absolute in frame). */
+function addBodyChapterPrintFooter(html, printPageOneIndexed) {
+    const pg =
+        typeof printPageOneIndexed === "number" && Number.isFinite(printPageOneIndexed)
+            ? Math.max(1, Math.floor(printPageOneIndexed))
+            : 1;
+    const foot = `<footer class="ne-ms-page-print" aria-label="Page ${pg}">${pg}</footer>`;
+    const trimmed = safeString(html, "").trimEnd();
+    const suf = "</section></div>";
+    if (!trimmed.endsWith(suf)) return trimmed + foot;
+    return trimmed.slice(0, trimmed.length - suf.length) + foot + suf;
+}
+
 /**
  * Single source of truth for preview trim + live (type) area in CSS pixels.
  * Pagination must mirror the on-screen DOM: chapter titles use `cqw` against `.ne-preview-page`
@@ -964,10 +977,11 @@ function buildPreviewPages(book) {
         const ch = bodyChapters[i];
         const baseLabel = ch.title || `Chapter ${i + 1}`;
         slices.forEach((html, si) => {
+            const printedPageNum = pages.length + 1;
             pages.push({
                 kind: "chapter",
                 label: si === 0 ? baseLabel : `${baseLabel} · ${si + 1}`,
-                html
+                html: addBodyChapterPrintFooter(html, printedPageNum)
             });
         });
     });

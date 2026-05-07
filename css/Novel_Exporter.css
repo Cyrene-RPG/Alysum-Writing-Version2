@@ -842,6 +842,29 @@
     flex-shrink: 0;
 }
 
+.ne-preview-scroll > .ne-preview-page-frame.ne-preview-manuscript {
+    position: relative;
+}
+
+.ne-ms-page-print {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0 0.35rem 3px;
+    font-family: var(--ne-print-pg-font, Georgia, "Times New Roman", Times, serif);
+    font-size: 9pt;
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: 0.04em;
+    text-align: center;
+    color: rgba(15, 23, 42, 0.42);
+    pointer-events: none;
+    user-select: none;
+}
+
 .ne-preview-page-title {
     min-height: 100%;
     display: flex;
