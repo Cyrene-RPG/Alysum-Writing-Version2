@@ -372,11 +372,11 @@ function optionalBackMatterPageHtml(heading, plain, fontStack) {
     );
 }
 
-function tocPageHtml(chapterLabels, backLabels, firstChapterPageNumber) {
-    let p = firstChapterPageNumber;
+function tocPageHtml(chapterLabels, chapterStartPages, backLabels, backStartPages) {
     const rows = [];
 
-    chapterLabels.forEach(lab => {
+    chapterLabels.forEach((lab, i) => {
+        const p = chapterStartPages[i] != null ? chapterStartPages[i] : "";
         rows.push(
             `<li class="ne-preview-toc-row">` +
                 `<span>${escapeHtml(lab)}</span>` +
@@ -384,10 +384,10 @@ function tocPageHtml(chapterLabels, backLabels, firstChapterPageNumber) {
                 `<span>${escapeHtml(String(p))}</span>` +
                 `</li>`
         );
-        p += 1;
     });
 
-    backLabels.forEach(lab => {
+    backLabels.forEach((lab, j) => {
+        const p = backStartPages[j] != null ? backStartPages[j] : "";
         rows.push(
             `<li class="ne-preview-toc-row">` +
                 `<span>${escapeHtml(lab)}</span>` +
@@ -395,7 +395,6 @@ function tocPageHtml(chapterLabels, backLabels, firstChapterPageNumber) {
                 `<span>${escapeHtml(String(p))}</span>` +
                 `</li>`
         );
-        p += 1;
     });
 
     const list = rows.length ? rows.join("") : "<li>—</li>";
@@ -408,29 +407,228 @@ function tocPageHtml(chapterLabels, backLabels, firstChapterPageNumber) {
     );
 }
 
-function chapterPageHtml(ch, chapterNumber) {
-    const titleFont = getPreviewChapterTitleFontStack();
+function chapterHeadFragmentHtml(ch, chapterNumber, titleFontStack) {
     const title = escapeHtml(ch.title || "Untitled");
-    const body = normalizeChapterBodyHtml(ch.content);
+    const tf = titleFontStack || getPreviewChapterTitleFontStack();
     const n = typeof chapterNumber === "number" && chapterNumber > 0 ? chapterNumber : 0;
     const numLine =
         n > 0
             ? `<p class="ne-chapter-num"><span class="ne-chapter-num-inner">Chapter ${n}</span></p>`
             : "";
-    const bodyFont = getPreviewBodyFontStack();
-    const bodyPt = getPreviewBodySizePt();
     return (
-        `<div class="ne-preview-page-frame ne-preview-manuscript" style="font-family:${bodyFont};font-size:${bodyPt}pt">` +
-        `<section class="ne-ms-ch ne-ms-ch--book" data-section="${escapeHtml(ch.section || "")}">` +
         `<header class="ne-chapter-head">` +
         numLine +
-        `<h2 class="ne-ms-ch-title" style="font-family:${titleFont}"><span class="ne-ms-ch-title-text">${title}</span></h2>` +
+        `<h2 class="ne-ms-ch-title" style="font-family:${tf}"><span class="ne-ms-ch-title-text">${title}</span></h2>` +
         `<div class="ne-chapter-rule" aria-hidden="true"></div>` +
-        `</header>` +
-        `<div class="ne-ms-ch-body">${body}</div>` +
+        `</header>`
+    );
+}
+
+function wrapChapterSliceHtml(sectionAttr, headFragmentHtml, bodyInnerHtml, bodyFont, bodyPt) {
+    const head = headFragmentHtml || "";
+    return (
+        `<div class="ne-preview-page-frame ne-preview-manuscript" style="font-family:${bodyFont};font-size:${bodyPt}pt">` +
+        `<section class="ne-ms-ch ne-ms-ch--book" data-section="${sectionAttr}">` +
+        head +
+        `<div class="ne-ms-ch-body">${bodyInnerHtml}</div>` +
         `</section>` +
         `</div>`
     );
+}
+
+function getLiveAreaDimensions() {
+    const mount = document.getElementById("pdfPreviewMount");
+    const sc = document.getElementById("nePreviewScroll");
+    if (!mount) return { w: 320, h: 520 };
+    const mr = mount.getBoundingClientRect();
+    const pw = parseFloat(mount.getAttribute("data-page-width-in")) || 5;
+    const ph = parseFloat(mount.getAttribute("data-page-height-in")) || 8;
+    const mt = parseFloat(mount.getAttribute("data-margin-top-in") ?? "0.5") || 0.5;
+    const mb = parseFloat(mount.getAttribute("data-margin-bottom-in") ?? "0.5") || 0.5;
+    const mi = parseFloat(mount.getAttribute("data-margin-inner-in") ?? "0.75") || 0.75;
+    const mo = parseFloat(mount.getAttribute("data-margin-outer-in") ?? "0.5") || 0.5;
+    const innerWIn = Math.max(0.1, pw - mi - mo);
+    const innerHIn = Math.max(0.1, ph - mt - mb);
+    const scaleX = mr.width / pw;
+    const scaleY = mr.height / ph;
+    let w = Math.round(innerWIn * scaleX);
+    let h = Math.round(innerHIn * scaleY);
+    if (sc && !sc.hidden && sc.clientWidth > 24 && sc.clientHeight > 24) {
+        w = Math.round(sc.clientWidth);
+        h = Math.round(sc.clientHeight);
+    }
+    return { w: Math.max(64, w), h: Math.max(64, h) };
+}
+
+function measureChapterSliceOverflow(includeHead, headFragmentHtml, bodyNodes, w, h, bodyFont, bodyPt) {
+    const shell = document.createElement("div");
+    shell.setAttribute("data-ne-measure", "1");
+    shell.style.cssText = [
+        "position:fixed",
+        "left:-14000px",
+        "top:0",
+        `width:${w}px`,
+        `height:${h}px`,
+        "overflow:hidden",
+        "box-sizing:border-box",
+        "visibility:hidden",
+        "pointer-events:none",
+        "margin:0",
+        "padding:0"
+    ].join(";");
+    const ms = document.createElement("div");
+    ms.className = "ne-preview-page-frame ne-preview-manuscript";
+    ms.style.cssText = [
+        `font-family:${bodyFont}`,
+        `font-size:${bodyPt}pt`,
+        "line-height:1.48",
+        "color:#1e293b",
+        "width:100%",
+        "max-width:100%",
+        "box-sizing:border-box",
+        "margin:0",
+        "padding:0"
+    ].join(";");
+    const section = document.createElement("section");
+    section.className = "ne-ms-ch ne-ms-ch--book";
+    section.setAttribute("data-section", "body");
+    if (includeHead && headFragmentHtml) {
+        const tpl = document.createElement("template");
+        tpl.innerHTML = headFragmentHtml.trim();
+        while (tpl.content.firstChild) {
+            section.appendChild(tpl.content.firstChild);
+        }
+    }
+    const bodyEl = document.createElement("div");
+    bodyEl.className = "ne-ms-ch-body";
+    bodyNodes.forEach(n => {
+        bodyEl.appendChild(n.cloneNode(true));
+    });
+    section.appendChild(bodyEl);
+    ms.appendChild(section);
+    shell.appendChild(ms);
+    document.body.appendChild(shell);
+    let over = false;
+    try {
+        over = shell.scrollHeight > shell.clientHeight + 2;
+    } finally {
+        shell.remove();
+    }
+    return over;
+}
+
+function splitTextParagraphToFit(pEl, includeHead, headFragmentHtml, w, h, bodyFont, bodyPt) {
+    const text = (pEl.textContent || "").replace(/\s+/g, " ").trim();
+    if (!text) return null;
+    const cls = pEl.getAttribute("class") || "ne-ms-para";
+    let lo = 1;
+    let hi = text.length;
+    let best = 1;
+    while (lo <= hi) {
+        const mid = (lo + hi) >> 1;
+        const p = document.createElement("p");
+        p.setAttribute("class", cls);
+        p.textContent = text.slice(0, mid);
+        if (!measureChapterSliceOverflow(includeHead, headFragmentHtml, [p], w, h, bodyFont, bodyPt)) {
+            best = mid;
+            lo = mid + 1;
+        } else {
+            hi = mid - 1;
+        }
+    }
+    best = Math.max(1, best);
+    const first = document.createElement("p");
+    first.setAttribute("class", cls);
+    first.textContent = text.slice(0, best);
+    const rest = document.createElement("p");
+    rest.setAttribute("class", cls);
+    rest.textContent = text.slice(best).trim();
+    return { first, rest: rest.textContent ? rest : null };
+}
+
+function bodyNodesFromHtml(bodyHtml) {
+    const tmp = document.createElement("div");
+    tmp.innerHTML = bodyHtml || "";
+    let nodes = Array.from(tmp.children);
+    if (!nodes.length && (tmp.textContent || "").trim()) {
+        const p = document.createElement("p");
+        p.className = "ne-ms-para";
+        p.textContent = tmp.textContent.trim();
+        nodes = [p];
+    }
+    return nodes;
+}
+
+function serializeBodyNodes(nodes) {
+    const d = document.createElement("div");
+    nodes.forEach(n => d.appendChild(n));
+    return d.innerHTML;
+}
+
+/**
+ * Split one chapter into multiple preview pages using live-area height (no Paged.js).
+ * First slice includes the chapter head; later slices are body-only continuations.
+ */
+function paginateChapterSlices(ch, chapterNumber, liveW, liveH) {
+    const bodyFont = getPreviewBodyFontStack();
+    const bodyPt = getPreviewBodySizePt();
+    const titleFont = getPreviewChapterTitleFontStack();
+    const headHtml = chapterHeadFragmentHtml(ch, chapterNumber, titleFont);
+    const bodyHtml = normalizeChapterBodyHtml(ch.content);
+    const sectionAttr = escapeHtml(ch.section || "");
+
+    let remaining = bodyNodesFromHtml(bodyHtml);
+    const slices = [];
+    let first = true;
+
+    if (!remaining.length) {
+        slices.push(wrapChapterSliceHtml(sectionAttr, first ? headHtml : "", "", bodyFont, bodyPt));
+        return slices;
+    }
+
+    while (remaining.length) {
+        const pageNodes = [];
+        while (remaining.length) {
+            const next = remaining[0];
+            const trial = pageNodes.concat([next]);
+            if (!measureChapterSliceOverflow(first, headHtml, trial, liveW, liveH, bodyFont, bodyPt)) {
+                pageNodes.push(remaining.shift());
+            } else {
+                if (pageNodes.length) break;
+                if (next.tagName === "P") {
+                    const sp = splitTextParagraphToFit(next, first, headHtml, liveW, liveH, bodyFont, bodyPt);
+                    if (sp && sp.first.textContent) {
+                        pageNodes.push(sp.first);
+                        if (sp.rest && sp.rest.textContent) {
+                            remaining[0] = sp.rest;
+                        } else {
+                            remaining.shift();
+                        }
+                    } else {
+                        pageNodes.push(remaining.shift());
+                    }
+                } else {
+                    pageNodes.push(remaining.shift());
+                }
+                break;
+            }
+        }
+        if (!pageNodes.length && remaining.length) {
+            pageNodes.push(remaining.shift());
+        }
+        const inner = serializeBodyNodes(pageNodes);
+        slices.push(wrapChapterSliceHtml(sectionAttr, first ? headHtml : "", inner, bodyFont, bodyPt));
+        first = false;
+    }
+
+    return slices;
+}
+
+/** Single-page chapter (fallback / tiny live area). */
+function chapterPageHtml(ch, chapterNumber) {
+    const body = normalizeChapterBodyHtml(ch.content);
+    const head = chapterHeadFragmentHtml(ch, chapterNumber, getPreviewChapterTitleFontStack());
+    return wrapChapterSliceHtml(escapeHtml(ch.section || ""), head, body, getPreviewBodyFontStack(), getPreviewBodySizePt());
 }
 
 function buildManuscriptPreviewHtml(book) {
@@ -476,6 +674,16 @@ function setPreviewPlaceholder(visible, text) {
 let loadedBook = null;
 let previewPages = [];
 let previewIndex = 0;
+let nePreviewResizeTimer = null;
+
+function scheduleNePreviewReflow() {
+    if (!loadedBook) return;
+    if (nePreviewResizeTimer) clearTimeout(nePreviewResizeTimer);
+    nePreviewResizeTimer = setTimeout(() => {
+        nePreviewResizeTimer = null;
+        renderCurrentPreviewPage();
+    }, 160);
+}
 
 function updatePagerUi() {
     const prev = document.getElementById("nePrevPageBtn");
@@ -518,20 +726,39 @@ function buildPreviewPages(book) {
     if (inputs.glossary) backTocLabels.push("Glossary");
     if (inputs.aboutAuthor) backTocLabels.push("About the author");
 
+    const live = getLiveAreaDimensions();
+    const chapterBundles = bodyChapters.map((ch, i) => paginateChapterSlices(ch, i + 1, live.w, live.h));
+
+    const chapterStartPages = [];
+    let cursor = pages.length + (inputs.includeToc ? 2 : 1);
+    chapterBundles.forEach(b => {
+        chapterStartPages.push(cursor);
+        cursor += b.length;
+    });
+
+    const backStartPages = [];
+    backTocLabels.forEach(() => {
+        backStartPages.push(cursor);
+        cursor += 1;
+    });
+
     if (inputs.includeToc) {
-        const firstChapterPageNumber = pages.length + 2;
         pages.push({
             kind: "toc",
             label: "Contents",
-            html: tocPageHtml(chapterLabels, backTocLabels, firstChapterPageNumber)
+            html: tocPageHtml(chapterLabels, chapterStartPages, backTocLabels, backStartPages)
         });
     }
 
-    bodyChapters.forEach((ch, i) => {
-        pages.push({
-            kind: "chapter",
-            label: ch.title || `Chapter ${i + 1}`,
-            html: chapterPageHtml(ch, i + 1)
+    chapterBundles.forEach((slices, i) => {
+        const ch = bodyChapters[i];
+        const baseLabel = ch.title || `Chapter ${i + 1}`;
+        slices.forEach((html, si) => {
+            pages.push({
+                kind: "chapter",
+                label: si === 0 ? baseLabel : `${baseLabel} · ${si + 1}`,
+                html
+            });
         });
     });
 
@@ -571,6 +798,11 @@ function renderCurrentPreviewPage() {
         updatePagerUi();
         return;
     }
+
+    const ph = document.getElementById("nePreviewPlaceholder");
+    if (ph) ph.hidden = true;
+    sc.hidden = false;
+    void sc.offsetWidth;
 
     previewPages = buildPreviewPages(loadedBook);
     if (previewIndex < 0) previewIndex = 0;
@@ -788,7 +1020,10 @@ function initLayoutControls() {
     if (preview && radios.length) {
         radios.forEach(function (el) {
             el.addEventListener("change", function () {
-                if (el.checked) applyPageFormat(el.value);
+                if (el.checked) {
+                    applyPageFormat(el.value);
+                    if (loadedBook) renderCurrentPreviewPage();
+                }
             });
         });
         var picked = document.querySelector('input[name="nePageFormat"]:checked');
@@ -799,7 +1034,10 @@ function initLayoutControls() {
     if (preview && handRadios.length) {
         handRadios.forEach(function (el) {
             el.addEventListener("change", function () {
-                if (el.checked) applyPageHand(el.value);
+                if (el.checked) {
+                    applyPageHand(el.value);
+                    if (loadedBook) renderCurrentPreviewPage();
+                }
             });
         });
         var handPicked = document.querySelector('input[name="nePageHand"]:checked');
@@ -878,7 +1116,7 @@ function wirePreviewPager() {
         renderCurrentPreviewPage();
     });
     next?.addEventListener("click", () => {
-        previewIndex = Math.min(Math.max(0, previewPages.length - 1), previewIndex + 1);
+        previewIndex += 1;
         renderCurrentPreviewPage();
     });
     updatePagerUi();
@@ -948,6 +1186,12 @@ function init() {
     wirePreviewPager();
     wirePreviewLiveInputs();
     preventPreviewScrollChaining();
+
+    window.addEventListener("resize", scheduleNePreviewReflow);
+    const pm = document.getElementById("pdfPreviewMount");
+    if (pm && typeof ResizeObserver !== "undefined") {
+        new ResizeObserver(() => scheduleNePreviewReflow()).observe(pm);
+    }
 
     if (!bookId) {
         setPreviewPlaceholder(true, "Add ?book=… or open Export from the editor to preview a manuscript here.");
