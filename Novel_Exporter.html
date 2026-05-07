@@ -6,7 +6,10 @@
     <title>Novel Exporter — Alysum</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&amp;display=swap" rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;1,600&amp;family=Lora:ital,wght@0,500;1,500&amp;family=Playfair+Display:wght@600;700&amp;display=swap"
+        rel="stylesheet"
+    />
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
     <link rel="stylesheet" href="css/Novel_Exporter.css" />
 </head>
@@ -55,6 +58,17 @@
                             />
                         </div>
                         <div class="ne-field">
+                            <label class="ne-field-label" for="neTitleFontSelect">Title typeface</label>
+                            <select class="ne-field-select" id="neTitleFontSelect" name="titleFont" aria-label="Title typeface">
+                                <option value="Georgia, 'Times New Roman', Times, serif">Classic serif — Georgia</option>
+                                <option value="'Palatino Linotype', Palatino, 'Book Antiqua', serif">Book serif — Palatino</option>
+                                <option value="Charter, 'Bitstream Charter', 'Sitka Text', Cambria, serif">Editorial — Charter / Cambria</option>
+                                <option value="'Lora', Georgia, 'Times New Roman', serif">Refined — Lora</option>
+                                <option value="'Cormorant Garamond', 'Palatino Linotype', Palatino, serif">Fancy — Cormorant Garamond</option>
+                                <option value="'Playfair Display', Georgia, 'Times New Roman', serif">Display — Playfair</option>
+                            </select>
+                        </div>
+                        <div class="ne-field">
                             <label class="ne-field-label" for="neAuthorUsernameInput">Pen Name</label>
                             <input
                                 type="text"
@@ -65,6 +79,17 @@
                                 autocomplete="off"
                                 spellcheck="false"
                             />
+                        </div>
+                        <div class="ne-field">
+                            <label class="ne-field-label" for="nePenFontSelect">Pen name typeface</label>
+                            <select class="ne-field-select" id="nePenFontSelect" name="penFont" aria-label="Pen name typeface">
+                                <option value="Georgia, 'Times New Roman', Times, serif">Classic serif — Georgia</option>
+                                <option value="'Palatino Linotype', Palatino, 'Book Antiqua', serif">Book serif — Palatino</option>
+                                <option value="Charter, 'Bitstream Charter', 'Sitka Text', Cambria, serif">Editorial — Charter / Cambria</option>
+                                <option value="'Lora', Georgia, 'Times New Roman', serif">Refined — Lora</option>
+                                <option value="'Cormorant Garamond', 'Palatino Linotype', Palatino, serif">Fancy — Cormorant Garamond</option>
+                                <option value="'Playfair Display', Georgia, 'Times New Roman', serif">Display — Playfair</option>
+                            </select>
                         </div>
                     </div>
                 </details>
@@ -160,6 +185,154 @@
                                 placeholder="This book may contain material that some readers may find disturbing. Reader discretion is advised."
                             ></textarea>
                         </div>
+                        </div>
+                    </div>
+                </details>
+
+                <details class="ne-fold-details" aria-label="Acknowledgements page">
+                    <summary class="ne-fold-summary">
+                        <span class="ne-fold-summary-title">Acknowledgements</span>
+                        <span class="ne-fold-summary-chev" aria-hidden="true"></span>
+                    </summary>
+                    <div class="ne-fold-body">
+                        <p class="ne-copyright-hint">
+                            If you leave the box empty, no acknowledgements page is included in export or preview.
+                        </p>
+                        <div class="ne-field">
+                            <label class="ne-field-label" for="neAckFontSelect">Acknowledgements typeface</label>
+                            <select class="ne-field-select" id="neAckFontSelect" name="ackFont" aria-label="Acknowledgements typeface">
+                                <option value="Georgia, 'Times New Roman', Times, serif">Classic serif — Georgia</option>
+                                <option value="'Palatino Linotype', Palatino, 'Book Antiqua', serif">Book serif — Palatino</option>
+                                <option value="Charter, 'Bitstream Charter', 'Sitka Text', Cambria, serif">Editorial — Charter / Cambria</option>
+                                <option value="'Lora', Georgia, 'Times New Roman', serif">Refined — Lora</option>
+                                <option value="'Cormorant Garamond', 'Palatino Linotype', Palatino, serif">Fancy — Cormorant Garamond</option>
+                                <option value="'Playfair Display', Georgia, 'Times New Roman', serif">Display — Playfair</option>
+                            </select>
+                        </div>
+                        <div class="ne-field">
+                            <label class="ne-field-label" for="neAckText">Acknowledgements text</label>
+                            <textarea
+                                class="ne-field-input ne-copy-textarea"
+                                id="neAckText"
+                                name="acknowledgements"
+                                rows="6"
+                                spellcheck="true"
+                                placeholder="This book would not be possible without…"
+                                aria-label="Acknowledgements text"
+                            ></textarea>
+                        </div>
+                    </div>
+                </details>
+
+                <details class="ne-fold-details" aria-label="Table of contents">
+                    <summary class="ne-fold-summary">
+                        <span class="ne-fold-summary-title">Table of contents</span>
+                        <span class="ne-fold-summary-chev" aria-hidden="true"></span>
+                    </summary>
+                    <div class="ne-fold-body">
+                        <p class="ne-copyright-hint">Turn off if you do not want a contents page in the export.</p>
+                        <label class="ne-copy-check-row" for="neIncludeToc">
+                            <input type="checkbox" id="neIncludeToc" name="includeToc" checked />
+                            <span class="ne-copy-check-text">Include table of contents page</span>
+                        </label>
+                    </div>
+                </details>
+
+                <details class="ne-fold-details" aria-label="Author notes">
+                    <summary class="ne-fold-summary">
+                        <span class="ne-fold-summary-title">Author’s notes</span>
+                        <span class="ne-fold-summary-chev" aria-hidden="true"></span>
+                    </summary>
+                    <div class="ne-fold-body">
+                        <p class="ne-copyright-hint">Only generates if you enter text below.</p>
+                        <div class="ne-field">
+                            <label class="ne-field-label" for="neAuthorNotesFont">Typeface</label>
+                            <select class="ne-field-select" id="neAuthorNotesFont" name="authorNotesFont" aria-label="Author notes typeface">
+                                <option value="Georgia, 'Times New Roman', Times, serif">Classic serif — Georgia</option>
+                                <option value="'Palatino Linotype', Palatino, 'Book Antiqua', serif">Book serif — Palatino</option>
+                                <option value="Charter, 'Bitstream Charter', 'Sitka Text', Cambria, serif">Editorial — Charter / Cambria</option>
+                                <option value="'Lora', Georgia, 'Times New Roman', serif">Refined — Lora</option>
+                                <option value="'Cormorant Garamond', 'Palatino Linotype', Palatino, serif">Fancy — Cormorant Garamond</option>
+                                <option value="'Playfair Display', Georgia, 'Times New Roman', serif">Display — Playfair</option>
+                            </select>
+                        </div>
+                        <div class="ne-field">
+                            <label class="ne-field-label" for="neAuthorNotesText">Author’s notes</label>
+                            <textarea
+                                class="ne-field-input ne-copy-textarea"
+                                id="neAuthorNotesText"
+                                name="authorNotes"
+                                rows="6"
+                                spellcheck="true"
+                                placeholder="Optional author’s notes…"
+                                aria-label="Author’s notes text"
+                            ></textarea>
+                        </div>
+                    </div>
+                </details>
+
+                <details class="ne-fold-details" aria-label="Glossary">
+                    <summary class="ne-fold-summary">
+                        <span class="ne-fold-summary-title">Glossary</span>
+                        <span class="ne-fold-summary-chev" aria-hidden="true"></span>
+                    </summary>
+                    <div class="ne-fold-body">
+                        <p class="ne-copyright-hint">Only generates if you enter text below.</p>
+                        <div class="ne-field">
+                            <label class="ne-field-label" for="neGlossaryFont">Typeface</label>
+                            <select class="ne-field-select" id="neGlossaryFont" name="glossaryFont" aria-label="Glossary typeface">
+                                <option value="Georgia, 'Times New Roman', Times, serif">Classic serif — Georgia</option>
+                                <option value="'Palatino Linotype', Palatino, 'Book Antiqua', serif">Book serif — Palatino</option>
+                                <option value="Charter, 'Bitstream Charter', 'Sitka Text', Cambria, serif">Editorial — Charter / Cambria</option>
+                                <option value="'Lora', Georgia, 'Times New Roman', serif">Refined — Lora</option>
+                                <option value="'Cormorant Garamond', 'Palatino Linotype', Palatino, serif">Fancy — Cormorant Garamond</option>
+                                <option value="'Playfair Display', Georgia, 'Times New Roman', serif">Display — Playfair</option>
+                            </select>
+                        </div>
+                        <div class="ne-field">
+                            <label class="ne-field-label" for="neGlossaryText">Glossary</label>
+                            <textarea
+                                class="ne-field-input ne-copy-textarea"
+                                id="neGlossaryText"
+                                name="glossary"
+                                rows="6"
+                                spellcheck="true"
+                                placeholder="Optional glossary entries…"
+                                aria-label="Glossary text"
+                            ></textarea>
+                        </div>
+                    </div>
+                </details>
+
+                <details class="ne-fold-details" aria-label="About the author">
+                    <summary class="ne-fold-summary">
+                        <span class="ne-fold-summary-title">About the author</span>
+                        <span class="ne-fold-summary-chev" aria-hidden="true"></span>
+                    </summary>
+                    <div class="ne-fold-body">
+                        <p class="ne-copyright-hint">Only generates if you enter text below.</p>
+                        <div class="ne-field">
+                            <label class="ne-field-label" for="neAboutAuthorFont">Typeface</label>
+                            <select class="ne-field-select" id="neAboutAuthorFont" name="aboutAuthorFont" aria-label="About the author typeface">
+                                <option value="Georgia, 'Times New Roman', Times, serif">Classic serif — Georgia</option>
+                                <option value="'Palatino Linotype', Palatino, 'Book Antiqua', serif">Book serif — Palatino</option>
+                                <option value="Charter, 'Bitstream Charter', 'Sitka Text', Cambria, serif">Editorial — Charter / Cambria</option>
+                                <option value="'Lora', Georgia, 'Times New Roman', serif">Refined — Lora</option>
+                                <option value="'Cormorant Garamond', 'Palatino Linotype', Palatino, serif">Fancy — Cormorant Garamond</option>
+                                <option value="'Playfair Display', Georgia, 'Times New Roman', serif">Display — Playfair</option>
+                            </select>
+                        </div>
+                        <div class="ne-field">
+                            <label class="ne-field-label" for="neAboutAuthorText">About the author</label>
+                            <textarea
+                                class="ne-field-input ne-copy-textarea"
+                                id="neAboutAuthorText"
+                                name="aboutAuthor"
+                                rows="6"
+                                spellcheck="true"
+                                placeholder="Optional about the author…"
+                                aria-label="About the author text"
+                            ></textarea>
                         </div>
                     </div>
                 </details>

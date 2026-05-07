@@ -805,6 +805,29 @@
     margin: 0 0 0.65em;
 }
 
+.ne-preview-page-extra {
+    padding: 1rem 0.95rem;
+    font-size: 10.75pt;
+    line-height: 1.48;
+    color: rgba(15, 23, 42, 0.92);
+}
+
+.ne-extra-h2 {
+    margin: 0 0 0.75rem;
+    font-family: "Playfair Display", Georgia, "Times New Roman", serif;
+    font-size: 15pt;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-align: center;
+    color: #0f172a;
+}
+
+.ne-extra-body .ne-ms-para {
+    margin: 0 0 0.65em;
+    text-align: left;
+    text-indent: 0;
+}
+
 .ne-preview-page-toc {
     padding: 1.1rem 1.05rem;
     font-family: Georgia, "Times New Roman", Times, serif;

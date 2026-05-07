@@ -8,6 +8,21 @@ import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase
 const params = new URLSearchParams(window.location.search);
 const bookId = params.get("book");
 
+/** Only stacks exposed in `Novel_Exporter.html` selects — used for preview `style` and coercion. */
+const NE_FONT_WHITELIST = new Set([
+    "Georgia, 'Times New Roman', Times, serif",
+    "'Palatino Linotype', Palatino, 'Book Antiqua', serif",
+    "Charter, 'Bitstream Charter', 'Sitka Text', Cambria, serif",
+    "'Lora', Georgia, 'Times New Roman', serif",
+    "'Cormorant Garamond', 'Palatino Linotype', Palatino, serif",
+    "'Playfair Display', Georgia, 'Times New Roman', serif"
+]);
+
+function coerceFontStack(value) {
+    const s = safeString(value, "");
+    return NE_FONT_WHITELIST.has(s) ? s : "Georgia, 'Times New Roman', Times, serif";
+}
+
 function safeString(value, fallback = "") {
     return typeof value === "string" ? value : fallback;
 }
@@ -188,10 +203,32 @@ function normalizeChapterBodyHtml(html) {
 function currentPreviewInputs() {
     const title = safeString(document.getElementById("neBookTitleInput")?.value, "").trim();
     const pen = normalizeAtName(safeString(document.getElementById("neAuthorUsernameInput")?.value, "").trim());
+    const titleFont = coerceFontStack(document.getElementById("neTitleFontSelect")?.value);
+    const penFont = coerceFontStack(document.getElementById("nePenFontSelect")?.value);
+    const acknowledgements = safeString(document.getElementById("neAckText")?.value, "").trim();
+    const ackFont = coerceFontStack(document.getElementById("neAckFontSelect")?.value);
+    const includeToc = Boolean(document.getElementById("neIncludeToc")?.checked);
+    const authorsNotes = safeString(document.getElementById("neAuthorNotesText")?.value, "").trim();
+    const authorsNotesFont = coerceFontStack(document.getElementById("neAuthorNotesFont")?.value);
+    const glossary = safeString(document.getElementById("neGlossaryText")?.value, "").trim();
+    const glossaryFont = coerceFontStack(document.getElementById("neGlossaryFont")?.value);
+    const aboutAuthor = safeString(document.getElementById("neAboutAuthorText")?.value, "").trim();
+    const aboutAuthorFont = coerceFontStack(document.getElementById("neAboutAuthorFont")?.value);
 
     return {
         title,
         pen,
+        titleFont,
+        penFont,
+        acknowledgements,
+        ackFont,
+        includeToc,
+        authorsNotes,
+        authorsNotesFont,
+        glossary,
+        glossaryFont,
+        aboutAuthor,
+        aboutAuthorFont,
         cp: {
             year: safeString(document.getElementById("neCpYear")?.value, "").trim(),
             holder: safeString(document.getElementById("neCpHolderName")?.value, "").trim(),
@@ -209,18 +246,32 @@ function currentPreviewInputs() {
     };
 }
 
-function titlePageHtml(title, pen) {
+function plainTextToBodyHtml(text) {
+    const raw = safeString(text, "").trim();
+    if (!raw) return "";
+    return raw
+        .split(/\n\s*\n+/)
+        .map(block => {
+            const inner = escapeHtml(block.trim()).replace(/\n/g, "<br>");
+            return `<p class="ne-ms-para">${inner}</p>`;
+        })
+        .join("");
+}
+
+function titlePageHtml(title, pen, titleFont, penFont) {
+    const tf = coerceFontStack(titleFont);
+    const pf = coerceFontStack(penFont);
     const t = escapeHtml(title || "Untitled");
     const penClean = safeString(pen, "").replace(/^@/, "").trim();
     const authorLine = penClean
-        ? `<p class="ne-preview-title-author">${escapeHtml(penClean)}</p>`
-        : `<p class="ne-preview-title-author">&nbsp;</p>`;
+        ? `<p class="ne-preview-title-author" style="font-family:${pf}">${escapeHtml(penClean)}</p>`
+        : `<p class="ne-preview-title-author" style="font-family:${pf}">&nbsp;</p>`;
 
     return (
         `<div class="ne-preview-page-frame ne-preview-page-title">` +
         `${authorLine}` +
         `<div class="ne-preview-title-rule" aria-hidden="true"></div>` +
-        `<h1 class="ne-preview-title-work">${t}</h1>` +
+        `<h1 class="ne-preview-title-work" style="font-family:${tf}">${t}</h1>` +
         `</div>`
     );
 }
@@ -261,27 +312,60 @@ function copyrightPageHtml(cp) {
     return `<div class="ne-preview-page-frame ne-preview-page-copyright">${blocks.join("")}</div>`;
 }
 
-function tocPageHtml(book, firstChapterPageNumber) {
-    const chapters = (book.sections?.body || []).map((ch, i) => ({
-        label: safeString(ch.title, "").trim() || `Chapter ${i + 1}`
-    }));
-    const rows = chapters
-        .map((e, idx) => {
-            const pageNum = firstChapterPageNumber + idx;
-            return (
-                `<li class="ne-preview-toc-row">` +
-                `<span>${escapeHtml(e.label)}</span>` +
+function acknowledgementsPageHtml(plain, fontStack) {
+    const fs = coerceFontStack(fontStack);
+    const inner = plainTextToBodyHtml(plain);
+    return (
+        `<div class="ne-preview-page-frame ne-preview-page-extra" style="font-family:${fs}">` +
+        `<h2 class="ne-extra-h2">Acknowledgements</h2>` +
+        `<div class="ne-extra-body">${inner}</div>` +
+        `</div>`
+    );
+}
+
+function optionalBackMatterPageHtml(heading, plain, fontStack) {
+    const fs = coerceFontStack(fontStack);
+    const inner = plainTextToBodyHtml(plain);
+    return (
+        `<div class="ne-preview-page-frame ne-preview-page-extra" style="font-family:${fs}">` +
+        `<h2 class="ne-extra-h2">${escapeHtml(heading)}</h2>` +
+        `<div class="ne-extra-body">${inner}</div>` +
+        `</div>`
+    );
+}
+
+function tocPageHtml(chapterLabels, backLabels, firstChapterPageNumber) {
+    let p = firstChapterPageNumber;
+    const rows = [];
+
+    chapterLabels.forEach(lab => {
+        rows.push(
+            `<li class="ne-preview-toc-row">` +
+                `<span>${escapeHtml(lab)}</span>` +
                 `<span class="ne-preview-toc-dots" aria-hidden="true"></span>` +
-                `<span>${escapeHtml(String(pageNum))}</span>` +
+                `<span>${escapeHtml(String(p))}</span>` +
                 `</li>`
-            );
-        })
-        .join("");
+        );
+        p += 1;
+    });
+
+    backLabels.forEach(lab => {
+        rows.push(
+            `<li class="ne-preview-toc-row">` +
+                `<span>${escapeHtml(lab)}</span>` +
+                `<span class="ne-preview-toc-dots" aria-hidden="true"></span>` +
+                `<span>${escapeHtml(String(p))}</span>` +
+                `</li>`
+        );
+        p += 1;
+    });
+
+    const list = rows.length ? rows.join("") : "<li>—</li>";
 
     return (
         `<div class="ne-preview-page-frame ne-preview-page-toc">` +
         `<h2 class="ne-preview-toc-title">Contents</h2>` +
-        `<ol class="ne-preview-toc-list">${rows || "<li>—</li>"}</ol>` +
+        `<ol class="ne-preview-toc-list">${list}</ol>` +
         `</div>`
     );
 }
@@ -361,19 +445,63 @@ function buildPreviewPages(book) {
     const pen = inputs.pen;
 
     const pages = [];
-    pages.push({ kind: "title", label: "Title page", html: titlePageHtml(title, pen) });
+    pages.push({
+        kind: "title",
+        label: "Title page",
+        html: titlePageHtml(title, pen, inputs.titleFont, inputs.penFont)
+    });
     pages.push({ kind: "copyright", label: "Copyright", html: copyrightPageHtml(inputs.cp) });
 
-    const tocIndex = pages.length;
-    pages.push({ kind: "toc", label: "Contents", html: "" });
+    if (inputs.acknowledgements) {
+        pages.push({
+            kind: "ack",
+            label: "Acknowledgements",
+            html: acknowledgementsPageHtml(inputs.acknowledgements, inputs.ackFont)
+        });
+    }
 
-    const chapterStartPageNumber = 1 + pages.length; // 1-based
-    pages[tocIndex].html = tocPageHtml(book, chapterStartPageNumber);
+    const bodyChapters = allChaptersFlat(book).filter(ch => ch.section === "body");
+    const chapterLabels = bodyChapters.map((ch, i) => safeString(ch.title, "").trim() || `Chapter ${i + 1}`);
 
-    const chapters = allChaptersFlat(book).filter(ch => ch.section === "body");
-    chapters.forEach((ch, i) => {
+    const backTocLabels = [];
+    if (inputs.authorsNotes) backTocLabels.push("Author’s notes");
+    if (inputs.glossary) backTocLabels.push("Glossary");
+    if (inputs.aboutAuthor) backTocLabels.push("About the author");
+
+    if (inputs.includeToc) {
+        const firstChapterPageNumber = pages.length + 2;
+        pages.push({
+            kind: "toc",
+            label: "Contents",
+            html: tocPageHtml(chapterLabels, backTocLabels, firstChapterPageNumber)
+        });
+    }
+
+    bodyChapters.forEach((ch, i) => {
         pages.push({ kind: "chapter", label: ch.title || `Chapter ${i + 1}`, html: chapterPageHtml(ch) });
     });
+
+    if (inputs.authorsNotes) {
+        pages.push({
+            kind: "authorNotes",
+            label: "Author’s notes",
+            html: optionalBackMatterPageHtml("Author’s notes", inputs.authorsNotes, inputs.authorsNotesFont)
+        });
+    }
+    if (inputs.glossary) {
+        pages.push({
+            kind: "glossary",
+            label: "Glossary",
+            html: optionalBackMatterPageHtml("Glossary", inputs.glossary, inputs.glossaryFont)
+        });
+    }
+    if (inputs.aboutAuthor) {
+        pages.push({
+            kind: "aboutAuthor",
+            label: "About the author",
+            html: optionalBackMatterPageHtml("About the author", inputs.aboutAuthor, inputs.aboutAuthorFont)
+        });
+    }
 
     return pages;
 }
@@ -705,7 +833,18 @@ function wirePreviewPager() {
 function wirePreviewLiveInputs() {
     const ids = [
         "neBookTitleInput",
+        "neTitleFontSelect",
         "neAuthorUsernameInput",
+        "nePenFontSelect",
+        "neAckFontSelect",
+        "neAckText",
+        "neIncludeToc",
+        "neAuthorNotesFont",
+        "neAuthorNotesText",
+        "neGlossaryFont",
+        "neGlossaryText",
+        "neAboutAuthorFont",
+        "neAboutAuthorText",
         "neCpYear",
         "neCpHolderName",
         "neCpContact",
