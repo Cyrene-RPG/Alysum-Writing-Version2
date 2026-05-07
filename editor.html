@@ -403,29 +403,6 @@
             cursor: not-allowed;
         }
 
-        .sprint-pop {
-            position: absolute;
-            top: calc(100% + 10px);
-            right: 0;
-            width: 240px;
-            background: var(--page-bg);
-            color: var(--page-text);
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            box-shadow: 0 16px 40px rgba(0,0,0,0.22);
-            padding: 12px;
-            z-index: 2000;
-            display: none;
-        }
-
-        .sprint-pop.open { display: block; }
-
-        .sprint-pop-title {
-            font-weight: 900;
-            margin: 0 0 8px;
-            font-size: 14px;
-        }
-
         .sprint-opt-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -443,14 +420,6 @@
         }
 
         body.dark .sprint-opt { background: rgba(255,255,255,0.04); }
-
-        .sprint-pop-sub {
-            margin-top: 10px;
-            font-size: 12px;
-            color: var(--page-subtle);
-            font-weight: 700;
-            line-height: 1.35;
-        }
 
         .sprint-float {
             position: fixed;
@@ -951,16 +920,6 @@
             <div class="toolbar-spacer"></div>
             <span class="sprint-anchor" id="sprintAnchor">
                 <button class="sprint-btn" id="sprintToolbarBtn" type="button" aria-label="Sprint timer">⏱ Sprint</button>
-                <div class="sprint-pop" id="sprintPop" role="dialog" aria-label="Sprint timer options">
-                    <div class="sprint-pop-title">Choose a timer</div>
-                    <div class="sprint-opt-grid">
-                        <button class="sprint-opt" type="button" data-min="10">10 min</button>
-                        <button class="sprint-opt" type="button" data-min="15">15 min</button>
-                        <button class="sprint-opt" type="button" data-min="25">25 min</button>
-                        <button class="sprint-opt" type="button" data-min="60">1 hour</button>
-                    </div>
-                    <div class="sprint-pop-sub" id="sprintPopSub">Tracks words written during the sprint.</div>
-                </div>
             </span>
         </div>
 
@@ -995,6 +954,22 @@
             <div class="sprint-modal-actions">
                 <button class="secondary" id="sprintConfirmNo" type="button">Not yet</button>
                 <button class="primary" id="sprintConfirmYes" type="button">Yes, start</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="sprint-modal" id="sprintOptionsModal" role="dialog" aria-label="Sprint timer options">
+        <div class="sprint-modal-box">
+            <h2 class="sprint-modal-title">Choose a timer</h2>
+            <p class="sprint-modal-text" id="sprintOptionsSub">Tracks words written during the sprint.</p>
+            <div class="sprint-opt-grid" id="sprintOptionsGrid">
+                <button class="sprint-opt" type="button" data-min="10">10 min</button>
+                <button class="sprint-opt" type="button" data-min="15">15 min</button>
+                <button class="sprint-opt" type="button" data-min="25">25 min</button>
+                <button class="sprint-opt" type="button" data-min="60">1 hour</button>
+            </div>
+            <div class="sprint-modal-actions" style="margin-top: 14px;">
+                <button class="secondary" id="sprintOptionsClose" type="button">Close</button>
             </div>
         </div>
     </div>
@@ -1057,8 +1032,6 @@ homeBtn.onclick = () => {
         // Sprint timer (editor)
         const sprintToolbarBtn = document.getElementById("sprintToolbarBtn");
         const sprintAnchor = document.getElementById("sprintAnchor");
-        const sprintPop = document.getElementById("sprintPop");
-        const sprintPopSub = document.getElementById("sprintPopSub");
         const sprintFloat = document.getElementById("sprintFloat");
         const sprintFloatTime = document.getElementById("sprintFloatTime");
         const sprintStopBtn = document.getElementById("sprintStopBtn");
@@ -1066,6 +1039,9 @@ homeBtn.onclick = () => {
         const sprintConfirmText = document.getElementById("sprintConfirmText");
         const sprintConfirmYes = document.getElementById("sprintConfirmYes");
         const sprintConfirmNo = document.getElementById("sprintConfirmNo");
+        const sprintOptionsModal = document.getElementById("sprintOptionsModal");
+        const sprintOptionsSub = document.getElementById("sprintOptionsSub");
+        const sprintOptionsClose = document.getElementById("sprintOptionsClose");
         const sprintResultModal = document.getElementById("sprintResultModal");
         const sprintResultTitle = document.getElementById("sprintResultTitle");
         const sprintResultText = document.getElementById("sprintResultText");
@@ -1096,14 +1072,6 @@ homeBtn.onclick = () => {
             const m = Math.floor(s / 60);
             const r = s % 60;
             return `${String(m).padStart(2, "0")}:${String(r).padStart(2, "0")}`;
-        }
-
-        function openSprintPop() {
-            sprintPop.classList.add("open");
-        }
-
-        function closeSprintPop() {
-            sprintPop.classList.remove("open");
         }
 
         function openModal(el) {
@@ -1141,7 +1109,6 @@ homeBtn.onclick = () => {
             sprintFloat.classList.remove("open");
             sprintToolbarBtn.disabled = false;
             sprintToolbarBtn.textContent = "⏱ Sprint";
-            sprintPopSub.textContent = "Tracks words written during the sprint.";
 
             if (reason === "done") {
                 showResult(delta);
@@ -1179,8 +1146,8 @@ homeBtn.onclick = () => {
                 minutes: mins
             });
 
-            closeSprintPop();
             closeModal(sprintConfirmModal);
+            closeModal(sprintOptionsModal);
 
             if (sprintTick) clearInterval(sprintTick);
             renderSprintUI();
@@ -1196,27 +1163,28 @@ homeBtn.onclick = () => {
         sprintToolbarBtn?.addEventListener("click", () => {
             const state = loadEditorSprint();
             if (state && state.end && state.bookId === bookId && state.end > Date.now()) {
-                sprintPopSub.textContent = "A sprint is running. Use Stop to end early.";
+                sprintOptionsSub.textContent = "A sprint is already running. Use Stop to end early.";
+                sprintOptionsModal.querySelectorAll("[data-min]").forEach(b => (b.disabled = true));
             } else {
-                sprintPopSub.textContent = "Tracks words written during the sprint.";
+                sprintOptionsSub.textContent = "Tracks words written during the sprint.";
+                sprintOptionsModal.querySelectorAll("[data-min]").forEach(b => (b.disabled = false));
             }
-            sprintPop.classList.toggle("open");
+            openModal(sprintOptionsModal);
         });
 
-        document.addEventListener("click", (e) => {
-            if (!sprintAnchor) return;
-            if (!sprintPop.classList.contains("open")) return;
-            if (sprintAnchor.contains(e.target)) return;
-            closeSprintPop();
-        });
-
-        sprintPop?.querySelectorAll("[data-min]")?.forEach(btn => {
+        sprintOptionsModal?.querySelectorAll("[data-min]")?.forEach(btn => {
             btn.addEventListener("click", () => {
+                if (btn.disabled) return;
                 const mins = Number(btn.dataset.min);
                 if (!mins) return;
-                closeSprintPop();
+                closeModal(sprintOptionsModal);
                 requestStartSprint(mins);
             });
+        });
+
+        sprintOptionsClose?.addEventListener("click", () => closeModal(sprintOptionsModal));
+        sprintOptionsModal?.addEventListener("click", (e) => {
+            if (e.target === sprintOptionsModal) closeModal(sprintOptionsModal);
         });
 
         sprintConfirmNo?.addEventListener("click", () => closeModal(sprintConfirmModal));
