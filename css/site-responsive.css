@@ -1,6 +1,7 @@
 /**
- * Alysum — site-wide responsive baseline (additive, low specificity).
+ * Alysum — site-wide responsive baseline.
  * Linked from all HTML entry points so phones and desktops share sensible defaults.
+ * Mobile rules use targeted overrides because most pages define inline styles after this file.
  */
 
 html {
