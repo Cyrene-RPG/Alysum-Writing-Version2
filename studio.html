@@ -236,6 +236,18 @@
             align-items: start;
         }
 
+        .hero-right-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            min-width: 0;
+        }
+
+        .hero-right-stack .timer {
+            font-size: 42px;
+            margin: 10px 0 12px;
+        }
+
         .welcome-copy h2 {
             margin: 0;
             font-size: 30px;
@@ -723,12 +735,26 @@
                             </div>
                         </div>
 
-                        <div class="current-project-card">
-                            <div class="project-label">Current Project</div>
-                            <div class="project-title" id="currentProjectTitle">No book yet</div>
-                            <div class="project-meta" id="currentProjectMeta">
-                                Create your first book to begin.
+                        <div class="hero-right-stack">
+                            <div class="current-project-card">
+                                <div class="project-label">Current Project</div>
+                                <div class="project-title" id="currentProjectTitle">No book yet</div>
+                                <div class="project-meta" id="currentProjectMeta">
+                                    Create your first book to begin.
+                                </div>
                             </div>
+
+                            <section class="panel rail-card" id="sprintCard">
+                                <h3>Writing Sprint</h3>
+                                <div class="rail-sub">25-minute focus session</div>
+
+                                <div class="timer" id="timer">25:00</div>
+
+                                <div class="sprint-controls">
+                                    <button class="sprint-btn primary" id="startSprint" type="button">Start</button>
+                                    <button class="sprint-btn secondary" id="resetSprint" type="button">Reset</button>
+                                </div>
+                            </section>
                         </div>
                     </div>
 
@@ -784,18 +810,6 @@
 
             <!-- RIGHT RAIL -->
             <aside class="right-rail">
-                <section class="panel rail-card" id="sprintCard">
-                    <h3>Writing Sprint</h3>
-                    <div class="rail-sub">25-minute focus session</div>
-
-                    <div class="timer" id="timer">25:00</div>
-
-                    <div class="sprint-controls">
-                        <button class="sprint-btn primary" id="startSprint" type="button">Start</button>
-                        <button class="sprint-btn secondary" id="resetSprint" type="button">Reset</button>
-                    </div>
-                </section>
-
                 <section class="panel rail-card">
                     <h3>Daily Goal</h3>
                     <div class="rail-sub">A small target makes it easier to come back tomorrow.</div>

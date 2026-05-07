@@ -481,8 +481,9 @@ function getPreviewMountLayoutMetrics() {
     const innerHIn = Math.max(0.1, ph - mt - mb);
     const scrollLeftPx = (trimW * gutterIn) / pw;
     const scrollTopPx = (trimH * mt) / ph;
-    let liveW = Math.round((innerWIn * trimW) / pw);
-    let liveH = Math.round((innerHIn * trimH) / ph);
+    /* Floor when deriving from inches × trim: Math.round can overshoot the real clip box by 1px. */
+    let liveW = Math.floor((innerWIn * trimW) / pw);
+    let liveH = Math.floor((innerHIn * trimH) / ph);
     if (sc && !sc.hidden && sc.clientWidth > 24 && sc.clientHeight > 24) {
         liveW = sc.clientWidth;
         liveH = sc.clientHeight;
@@ -608,8 +609,8 @@ function measureChapterSliceOverflow(includeHead, headFragmentHtml, bodyNodes, l
     try {
         const ch = fauxScroll.clientHeight;
         const sh = fauxScroll.scrollHeight;
-        /* Bottom padding on the page frame keeps text off the clip; overflow = any real scroll past the box. */
-        over = sh > ch + 0.5;
+        /* Bottom padding + subpixel/font rounding: treat near-equality as overflow so we don't keep a clipped line. */
+        over = sh > ch + 2;
     } finally {
         shell.remove();
     }
@@ -872,8 +873,27 @@ function flushPreviewBuild() {
         return;
     }
     if (!previewPagesDirty && previewPages.length > 0) return;
+
+    const sc = document.getElementById("nePreviewScroll");
+    if (sc && !sc.hidden) void sc.offsetHeight;
+
     previewPages = buildPreviewPages(loadedBook);
     previewPagesDirty = false;
+
+    let fontsStillLoading = false;
+    try {
+        fontsStillLoading = Boolean(document.fonts && document.fonts.status !== "loaded");
+    } catch (e) {
+        fontsStillLoading = false;
+    }
+    if (fontsStillLoading && document.fonts?.ready) {
+        void document.fonts.ready.then(() => {
+            if (!loadedBook) return;
+            previewPagesDirty = true;
+            flushPreviewBuild();
+            applyPreviewPageHtml();
+        });
+    }
 }
 
 function scheduleDebouncedPreviewRebuild() {

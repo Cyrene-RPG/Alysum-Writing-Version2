@@ -827,7 +827,7 @@
  */
 .ne-preview-scroll > .ne-preview-page-frame {
     box-sizing: border-box;
-    padding-bottom: calc(1.48em + 14px);
+    padding-bottom: calc(1.48em + 22px);
 }
 
 /*
