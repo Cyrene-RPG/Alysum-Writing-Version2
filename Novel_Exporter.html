@@ -32,7 +32,9 @@
         <div class="ne-toolbar" role="navigation" aria-label="Novel exporter">
             <a class="ne-bar-btn ne-bar-btn-back" id="neBackLink" href="studio.html">Back</a>
             <span class="ne-toolbar-kicker">Export workspace</span>
-            <button type="button" class="ne-bar-btn ne-bar-btn-settings" aria-label="Settings">Settings</button>
+            <button type="button" class="ne-bar-btn ne-bar-btn-export" id="neExportPdfBtn" aria-label="Export PDF">
+                Export PDF
+            </button>
         </div>
     </header>
 
@@ -551,6 +553,9 @@
             </aside>
         </div>
     </main>
+    <div id="nePdfExportHost" class="ne-pdf-export-host" aria-hidden="true"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" crossorigin="anonymous"></script>
     <script type="module" src="js/Novel_Exporter.js"></script>
 </body>
 </html>

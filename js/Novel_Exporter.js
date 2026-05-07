@@ -1318,6 +1318,136 @@ function preventPreviewScrollChaining() {
     sc.addEventListener("touchmove", stop, { passive: false });
 }
 
+function slugForPdfFilename(title) {
+    const raw = safeString(title, "manuscript")
+        .replace(/[^\w\s-]+/g, "")
+        .replace(/^[\s_-]+|[\s_-]+$/g, "")
+        .replace(/\s+/g, "-");
+    return (raw || "manuscript").slice(0, 88);
+}
+
+/**
+ * Clone `#pdfPreviewMount` shell (classes, data-*, guide CSS vars) without guides or id — matches preview trim for export.
+ * @param {HTMLElement} mount
+ */
+function cloneExportPageShell(mount) {
+    const page = document.createElement("div");
+    page.className = [...mount.classList].filter(Boolean).join(" ");
+    for (const name of mount.getAttributeNames()) {
+        if (name === "id") continue;
+        page.setAttribute(name, mount.getAttribute(name) ?? "");
+    }
+    if (mount.style && mount.style.cssText) {
+        page.style.cssText = mount.style.cssText;
+    }
+    return page;
+}
+
+/**
+ * Rasterize each preview page (same HTML as `buildPreviewPages`) at trim size and save a multi-page PDF locally.
+ */
+async function exportManuscriptPdf() {
+    const btn = document.getElementById("neExportPdfBtn");
+    const mount = document.getElementById("pdfPreviewMount");
+    const host = document.getElementById("nePdfExportHost");
+    if (!mount || !host) return;
+
+    if (!loadedBook) {
+        alert("Load a manuscript first (open this page with ?book=…).");
+        return;
+    }
+
+    const jspdfNs = /** @type {{ jsPDF?: new (opts?: object) => object }} */ (window).jspdf;
+    const h2c = /** @type {undefined | ((el: HTMLElement, opts?: object) => Promise<HTMLCanvasElement>)} */ (
+        /** @type {*} */ (window).html2canvas
+    );
+    if (typeof h2c !== "function" || !jspdfNs?.jsPDF) {
+        alert("PDF libraries did not load. Check your network connection and try again.");
+        return;
+    }
+
+    const label = (btn?.textContent && btn.textContent.trim()) || "Export PDF";
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = "Exporting…";
+    }
+
+    try {
+        await document.fonts.ready.catch(() => {});
+        const pages = buildPreviewPages(loadedBook);
+        if (!pages.length) {
+            throw new Error("Nothing to export.");
+        }
+
+        const pw = parseFloat(mount.getAttribute("data-page-width-in")) || 5;
+        const ph = parseFloat(mount.getAttribute("data-page-height-in")) || 8;
+        const portrait = pw <= ph;
+        const { jsPDF } = jspdfNs;
+        const pdf = new jsPDF({
+            unit: "in",
+            format: [pw, ph],
+            orientation: portrait ? "portrait" : "landscape",
+            compress: true
+        });
+
+        for (let i = 0; i < pages.length; i += 1) {
+            host.replaceChildren();
+            const pageEl = cloneExportPageShell(mount);
+            const sc = document.createElement("div");
+            sc.className = "ne-preview-scroll";
+            sc.innerHTML = pages[i].html;
+            pageEl.appendChild(sc);
+            host.appendChild(pageEl);
+
+            await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+            const wPx = Math.ceil(pageEl.offsetWidth);
+            const hPx = Math.ceil(pageEl.offsetHeight);
+            if (wPx < 8 || hPx < 8) {
+                throw new Error("Export page had no measurable layout.");
+            }
+
+            const canvas = await h2c(pageEl, {
+                scale: 2,
+                useCORS: true,
+                allowTaint: false,
+                logging: false,
+                backgroundColor: null,
+                width: wPx,
+                height: hPx,
+                windowWidth: wPx,
+                windowHeight: hPx
+            });
+
+            const img = canvas.toDataURL("image/jpeg", 0.94);
+            if (i > 0) {
+                pdf.addPage([pw, ph], portrait ? "portrait" : "landscape");
+            }
+            pdf.addImage(img, "JPEG", 0, 0, pw, ph);
+        }
+
+        const inputs = currentPreviewInputs();
+        const base = slugForPdfFilename(inputs.title || loadedBook.title || "manuscript");
+        pdf.save(`${base}.pdf`);
+    } catch (err) {
+        console.error(err);
+        const msg = err && typeof err === "object" && "message" in err ? String(err.message) : String(err);
+        alert(msg || "Could not export PDF.");
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = label;
+        }
+    }
+}
+
+function wireExportPdfButton() {
+    const btn = document.getElementById("neExportPdfBtn");
+    if (!btn) return;
+    btn.addEventListener("click", () => {
+        void exportManuscriptPdf();
+    });
+}
+
 function init() {
     wireBackLink();
     initLayoutControls();
@@ -1325,6 +1455,7 @@ function init() {
     wirePreviewPager();
     wirePreviewLiveInputs();
     preventPreviewScrollChaining();
+    wireExportPdfButton();
 
     window.addEventListener("resize", scheduleNePreviewReflow);
     const pm = document.getElementById("pdfPreviewMount");

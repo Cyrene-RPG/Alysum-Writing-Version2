@@ -222,6 +222,63 @@
     outline-offset: 2px;
 }
 
+.ne-bar-btn-export {
+    border-color: rgba(245, 212, 137, 0.45);
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.45), rgba(168, 85, 247, 0.32));
+}
+
+.ne-bar-btn-export:hover {
+    border-color: rgba(245, 212, 137, 0.6);
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.58), rgba(168, 85, 247, 0.42));
+}
+
+.ne-bar-btn-export:disabled {
+    opacity: 0.55;
+    cursor: wait;
+}
+
+/* Off-screen render target for raster PDF export (matches on-screen trim in inches). */
+.ne-pdf-export-host {
+    position: fixed;
+    left: -32000px;
+    top: 0;
+    pointer-events: none;
+    z-index: -3;
+    width: max-content;
+    height: max-content;
+    overflow: visible;
+}
+
+.ne-pdf-export-host .ne-preview-page {
+    margin: 0 !important;
+    float: none !important;
+    box-sizing: border-box !important;
+}
+
+.ne-pdf-export-host .ne-preview-page[data-format="5x8"] {
+    width: 5in !important;
+    height: 8in !important;
+    min-width: 5in !important;
+    max-width: none !important;
+    aspect-ratio: unset !important;
+}
+
+.ne-pdf-export-host .ne-preview-page[data-format="6x9"] {
+    width: 6in !important;
+    height: 9in !important;
+    min-width: 6in !important;
+    max-width: none !important;
+    aspect-ratio: unset !important;
+}
+
+.ne-pdf-export-host .ne-preview-page[data-format="letter"] {
+    width: 8.5in !important;
+    height: 11in !important;
+    min-width: 8.5in !important;
+    max-width: none !important;
+    aspect-ratio: unset !important;
+}
+
 .ne-main {
     flex: 1 1 auto;
     width: 100%;
