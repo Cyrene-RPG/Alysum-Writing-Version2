@@ -23,6 +23,44 @@ function coerceFontStack(value) {
     return NE_FONT_WHITELIST.has(s) ? s : "Georgia, 'Times New Roman', Times, serif";
 }
 
+/** Typography panel — body (preview chapter “match body”). */
+const NE_TYPO_BODY_WHITELIST = new Set([
+    "Georgia, 'Times New Roman', Times, serif",
+    "'Palatino Linotype', Palatino Linotype, Palatino, 'Book Antiqua', serif",
+    "'Times New Roman', Times, serif",
+    "Charter, 'Bitstream Charter', 'Sitka Text', Cambria, serif",
+    "Baskerville, 'Baskerville Old Face', Garamond, serif",
+    "system-ui, -apple-system, 'Segoe UI', sans-serif"
+]);
+
+const NE_TYPO_CHAPTER_WHITELIST = new Set([
+    "'Playfair Display', Georgia, 'Times New Roman', serif",
+    "Georgia, 'Times New Roman', Times, serif",
+    "'Palatino Linotype', Palatino, serif",
+    "'Times New Roman', Times, serif",
+    "match-body"
+]);
+
+function getPreviewBodyFontStack() {
+    const v = safeString(document.getElementById("neTypoBodyFace")?.value, "");
+    return NE_TYPO_BODY_WHITELIST.has(v) ? v : "Georgia, 'Times New Roman', Times, serif";
+}
+
+/** Chapter title face in preview — follows Typography → Chapter titles (or body when “Match body”). */
+function getPreviewChapterTitleFontStack() {
+    const ch = safeString(document.getElementById("neTypoChapterFace")?.value, "'Playfair Display', Georgia, 'Times New Roman', serif");
+    if (ch === "match-body") {
+        return getPreviewBodyFontStack();
+    }
+    return NE_TYPO_CHAPTER_WHITELIST.has(ch) ? ch : "'Playfair Display', Georgia, 'Times New Roman', serif";
+}
+
+function getPreviewBodySizePt() {
+    const raw = parseFloat(safeString(document.getElementById("neTypoBodySizePt")?.value, "11"));
+    if (!Number.isFinite(raw)) return 11;
+    return Math.min(16, Math.max(8, raw));
+}
+
 function safeString(value, fallback = "") {
     return typeof value === "string" ? value : fallback;
 }
@@ -370,13 +408,25 @@ function tocPageHtml(chapterLabels, backLabels, firstChapterPageNumber) {
     );
 }
 
-function chapterPageHtml(ch) {
+function chapterPageHtml(ch, chapterNumber) {
+    const titleFont = getPreviewChapterTitleFontStack();
     const title = escapeHtml(ch.title || "Untitled");
     const body = normalizeChapterBodyHtml(ch.content);
+    const n = typeof chapterNumber === "number" && chapterNumber > 0 ? chapterNumber : 0;
+    const numLine =
+        n > 0
+            ? `<p class="ne-chapter-num"><span class="ne-chapter-num-inner">Chapter ${n}</span></p>`
+            : "";
+    const bodyFont = getPreviewBodyFontStack();
+    const bodyPt = getPreviewBodySizePt();
     return (
-        `<div class="ne-preview-page-frame ne-preview-manuscript">` +
-        `<section class="ne-ms-ch" data-section="${escapeHtml(ch.section || "")}">` +
-        `<h2 class="ne-ms-ch-title">${title}</h2>` +
+        `<div class="ne-preview-page-frame ne-preview-manuscript" style="font-family:${bodyFont};font-size:${bodyPt}pt">` +
+        `<section class="ne-ms-ch ne-ms-ch--book" data-section="${escapeHtml(ch.section || "")}">` +
+        `<header class="ne-chapter-head">` +
+        numLine +
+        `<h2 class="ne-ms-ch-title" style="font-family:${titleFont}"><span class="ne-ms-ch-title-text">${title}</span></h2>` +
+        `<div class="ne-chapter-rule" aria-hidden="true"></div>` +
+        `</header>` +
         `<div class="ne-ms-ch-body">${body}</div>` +
         `</section>` +
         `</div>`
@@ -478,7 +528,11 @@ function buildPreviewPages(book) {
     }
 
     bodyChapters.forEach((ch, i) => {
-        pages.push({ kind: "chapter", label: ch.title || `Chapter ${i + 1}`, html: chapterPageHtml(ch) });
+        pages.push({
+            kind: "chapter",
+            label: ch.title || `Chapter ${i + 1}`,
+            html: chapterPageHtml(ch, i + 1)
+        });
     });
 
     if (inputs.authorsNotes) {
@@ -845,6 +899,9 @@ function wirePreviewLiveInputs() {
         "neGlossaryText",
         "neAboutAuthorFont",
         "neAboutAuthorText",
+        "neTypoChapterFace",
+        "neTypoBodyFace",
+        "neTypoBodySizePt",
         "neCpYear",
         "neCpHolderName",
         "neCpContact",

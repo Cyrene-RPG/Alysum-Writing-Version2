@@ -922,6 +922,67 @@
     border-top: 1px solid rgba(15, 23, 42, 0.1);
 }
 
+/* Book-style chapter opening (trade paperback / literary) */
+.ne-ms-ch--book .ne-chapter-head {
+    text-align: center;
+    padding: 0.28in 0.12in 0;
+    margin: 0 0 0.14in;
+}
+
+.ne-ms-ch--book .ne-chapter-num {
+    margin: 0 0 0.42rem;
+    padding: 0;
+    font-family: Georgia, "Times New Roman", Times, serif;
+    font-size: 9pt;
+    font-weight: 600;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: rgba(15, 23, 42, 0.48);
+}
+
+.ne-ms-ch--book .ne-chapter-num-inner {
+    display: inline-block;
+    padding-bottom: 0.06rem;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.18);
+}
+
+.ne-ms-ch--book .ne-ms-ch-title {
+    margin: 0;
+    padding: 0 0.12rem;
+    font-weight: 700;
+    font-size: clamp(15pt, 3.8vw, 18pt);
+    line-height: 1.14;
+    letter-spacing: 0.035em;
+    color: #0f172a;
+    text-wrap: balance;
+    font-kerning: normal;
+    font-feature-settings: "kern" 1, "liga" 1;
+}
+
+.ne-ms-ch--book .ne-ms-ch-title-text {
+    display: inline-block;
+    max-width: 100%;
+}
+
+.ne-ms-ch--book .ne-chapter-rule {
+    width: min(3.25rem, 42%);
+    height: 2px;
+    margin: 0.55rem auto 0;
+    border-radius: 1px;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(15, 23, 42, 0.22) 18%,
+        rgba(15, 23, 42, 0.55) 50%,
+        rgba(15, 23, 42, 0.22) 82%,
+        transparent 100%
+    );
+}
+
+.ne-ms-ch--book .ne-ms-ch-body {
+    margin-top: 0.2rem;
+}
+
 .ne-ms-ch-title {
     margin: 0 0 0.55rem;
     font-family: "Playfair Display", Georgia, "Times New Roman", serif;
