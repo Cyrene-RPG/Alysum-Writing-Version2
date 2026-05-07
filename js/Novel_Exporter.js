@@ -436,37 +436,83 @@ function wrapChapterSliceHtml(sectionAttr, headFragmentHtml, bodyInnerHtml, body
     );
 }
 
-function getLiveAreaDimensions() {
+/**
+ * Single source of truth for preview trim + live (type) area in CSS pixels.
+ * Pagination must mirror the on-screen DOM: chapter titles use `cqw` against `.ne-preview-page`
+ * (trim width), not the scroll box — an off-screen measure shell without that ancestor mis-sized
+ * the chapter head and broke pages early, leaving empty bands inside the margins.
+ */
+function getPreviewMountLayoutMetrics() {
     const mount = document.getElementById("pdfPreviewMount");
     const sc = document.getElementById("nePreviewScroll");
-    if (!mount) return { w: 320, h: 520 };
-    const mr = mount.getBoundingClientRect();
+    if (!mount) {
+        return {
+            trimW: 400,
+            trimH: 640,
+            liveW: 320,
+            liveH: 520,
+            scrollLeftPx: 60,
+            scrollTopPx: 40,
+            pw: 5,
+            ph: 8,
+            mt: 0.5,
+            mb: 0.5,
+            mi: 0.75,
+            mo: 0.5,
+            verso: false
+        };
+    }
+    /*
+     * Use padding-box dimensions (clientWidth/Height), not getBoundingClientRect().
+     * The preview page has a border; insets and .ne-preview-scroll use % of the padding box.
+     * Border-box rect skewed gutter math and live-area height vs print guides + pagination.
+     */
+    const trimW = mount.clientWidth || mount.getBoundingClientRect().width || 400;
+    const trimH = mount.clientHeight || mount.getBoundingClientRect().height || 640;
     const pw = parseFloat(mount.getAttribute("data-page-width-in")) || 5;
     const ph = parseFloat(mount.getAttribute("data-page-height-in")) || 8;
     const mt = parseFloat(mount.getAttribute("data-margin-top-in") ?? "0.5") || 0.5;
     const mb = parseFloat(mount.getAttribute("data-margin-bottom-in") ?? "0.5") || 0.5;
     const mi = parseFloat(mount.getAttribute("data-margin-inner-in") ?? "0.75") || 0.75;
     const mo = parseFloat(mount.getAttribute("data-margin-outer-in") ?? "0.5") || 0.5;
+    const verso = mount.getAttribute("data-page-hand") === "verso" || mount.classList.contains("ne-preview-page--verso");
+    const gutterIn = verso ? mo : mi;
     const innerWIn = Math.max(0.1, pw - mi - mo);
     const innerHIn = Math.max(0.1, ph - mt - mb);
-    const scaleX = mr.width / pw;
-    const scaleY = mr.height / ph;
-    /*
-     * Use ceil + getBoundingClientRect so the measure box is >= the painted live area.
-     * Flooring clientWidth/height made the column slightly too narrow/tall in the math model,
-     * which triggered overflow early and left big empty bands at the bottom of real pages.
-     */
-    let w = Math.ceil(innerWIn * scaleX);
-    let h = Math.ceil(innerHIn * scaleY);
+    const scrollLeftPx = (trimW * gutterIn) / pw;
+    const scrollTopPx = (trimH * mt) / ph;
+    let liveW = Math.round((innerWIn * trimW) / pw);
+    let liveH = Math.round((innerHIn * trimH) / ph);
     if (sc && !sc.hidden && sc.clientWidth > 24 && sc.clientHeight > 24) {
-        const br = sc.getBoundingClientRect();
-        w = Math.ceil(br.width);
-        h = Math.ceil(br.height);
+        liveW = sc.clientWidth;
+        liveH = sc.clientHeight;
     }
-    return { w: Math.max(64, w), h: Math.max(64, h) };
+    return {
+        trimW,
+        trimH,
+        liveW: Math.max(64, liveW),
+        liveH: Math.max(64, liveH),
+        scrollLeftPx,
+        scrollTopPx,
+        pw,
+        ph,
+        mt,
+        mb,
+        mi,
+        mo,
+        verso
+    };
 }
 
-function measureChapterSliceOverflow(includeHead, headFragmentHtml, bodyNodes, w, h, bodyFont, bodyPt) {
+function getLiveAreaDimensions() {
+    const m = getPreviewMountLayoutMetrics();
+    return { w: m.liveW, h: m.liveH };
+}
+
+function measureChapterSliceOverflow(includeHead, headFragmentHtml, bodyNodes, layout, bodyFont, bodyPt) {
+    const mount = document.getElementById("pdfPreviewMount");
+    const { liveW: w, liveH: h, trimW, trimH, scrollLeftPx, scrollTopPx } = layout;
+
     const shell = document.createElement("div");
     shell.setAttribute("data-ne-measure", "1");
     shell.style.cssText = [
@@ -482,6 +528,44 @@ function measureChapterSliceOverflow(includeHead, headFragmentHtml, bodyNodes, w
         "margin:0",
         "padding:0"
     ].join(";");
+
+    const fauxPage = document.createElement("div");
+    if (mount) {
+        fauxPage.className = mount.className;
+        ["data-format", "data-page-hand", "data-chapter-new-page", "data-chapter-drop-cap"].forEach(attr => {
+            if (mount.hasAttribute(attr)) {
+                fauxPage.setAttribute(attr, mount.getAttribute(attr));
+            }
+        });
+    } else {
+        fauxPage.className = "ne-preview-page";
+    }
+    fauxPage.style.cssText = [
+        "position:absolute",
+        `left:${-scrollLeftPx}px`,
+        `top:${-scrollTopPx}px`,
+        `width:${trimW}px`,
+        `height:${trimH}px`,
+        "box-sizing:border-box",
+        "margin:0",
+        "padding:0",
+        "overflow:visible"
+    ].join(";");
+
+    const fauxScroll = document.createElement("div");
+    fauxScroll.className = "ne-preview-scroll";
+    fauxScroll.style.cssText = [
+        "position:absolute",
+        `left:${scrollLeftPx}px`,
+        `top:${scrollTopPx}px`,
+        `width:${w}px`,
+        `height:${h}px`,
+        "overflow:hidden",
+        "box-sizing:border-box",
+        "margin:0",
+        "padding:0"
+    ].join(";");
+
     const ms = document.createElement("div");
     ms.className = "ne-preview-page-frame ne-preview-manuscript";
     ms.style.cssText = [
@@ -512,19 +596,22 @@ function measureChapterSliceOverflow(includeHead, headFragmentHtml, bodyNodes, w
     });
     section.appendChild(bodyEl);
     ms.appendChild(section);
-    shell.appendChild(ms);
+    fauxScroll.appendChild(ms);
+    fauxPage.appendChild(fauxScroll);
+    shell.appendChild(fauxPage);
     document.body.appendChild(shell);
     let over = false;
     try {
+        /* Match `.ne-preview-scroll { overflow: hidden }` — compare scroll height on the live box, not the trim shell. */
         /* Small slack: subpixel / flex rounding otherwise marks a “full” page as overflow and drops a whole line. */
-        over = shell.scrollHeight > shell.clientHeight + 5;
+        over = fauxScroll.scrollHeight > fauxScroll.clientHeight + 5;
     } finally {
         shell.remove();
     }
     return over;
 }
 
-function splitTextParagraphToFit(pEl, includeHead, headFragmentHtml, w, h, bodyFont, bodyPt) {
+function splitTextParagraphToFit(pEl, includeHead, headFragmentHtml, layout, bodyFont, bodyPt) {
     const text = (pEl.textContent || "").replace(/\s+/g, " ").trim();
     if (!text) return null;
     const cls = pEl.getAttribute("class") || "ne-ms-para";
@@ -536,7 +623,7 @@ function splitTextParagraphToFit(pEl, includeHead, headFragmentHtml, w, h, bodyF
         const p = document.createElement("p");
         p.setAttribute("class", cls);
         p.textContent = text.slice(0, mid);
-        if (!measureChapterSliceOverflow(includeHead, headFragmentHtml, [p], w, h, bodyFont, bodyPt)) {
+        if (!measureChapterSliceOverflow(includeHead, headFragmentHtml, [p], layout, bodyFont, bodyPt)) {
             best = mid;
             lo = mid + 1;
         } else {
@@ -576,7 +663,7 @@ function serializeBodyNodes(nodes) {
  * Split one chapter into multiple preview pages using live-area height (no Paged.js).
  * First slice includes the chapter head; later slices are body-only continuations.
  */
-function paginateChapterSlices(ch, chapterNumber, liveW, liveH) {
+function paginateChapterSlices(ch, chapterNumber, layout) {
     const bodyFont = getPreviewBodyFontStack();
     const bodyPt = getPreviewBodySizePt();
     const titleFont = getPreviewChapterTitleFontStack();
@@ -598,12 +685,12 @@ function paginateChapterSlices(ch, chapterNumber, liveW, liveH) {
         while (remaining.length) {
             const next = remaining[0];
             const trial = pageNodes.concat([next]);
-            if (!measureChapterSliceOverflow(first, headHtml, trial, liveW, liveH, bodyFont, bodyPt)) {
+            if (!measureChapterSliceOverflow(first, headHtml, trial, layout, bodyFont, bodyPt)) {
                 pageNodes.push(remaining.shift());
             } else {
                 if (pageNodes.length) break;
                 if (next.tagName === "P") {
-                    const sp = splitTextParagraphToFit(next, first, headHtml, liveW, liveH, bodyFont, bodyPt);
+                    const sp = splitTextParagraphToFit(next, first, headHtml, layout, bodyFont, bodyPt);
                     if (sp && sp.first.textContent) {
                         pageNodes.push(sp.first);
                         if (sp.rest && sp.rest.textContent) {
@@ -733,8 +820,8 @@ function buildPreviewPages(book) {
     if (inputs.glossary) backTocLabels.push("Glossary");
     if (inputs.aboutAuthor) backTocLabels.push("About the author");
 
-    const live = getLiveAreaDimensions();
-    const chapterBundles = bodyChapters.map((ch, i) => paginateChapterSlices(ch, i + 1, live.w, live.h));
+    const layout = getPreviewMountLayoutMetrics();
+    const chapterBundles = bodyChapters.map((ch, i) => paginateChapterSlices(ch, i + 1, layout));
 
     const chapterStartPages = [];
     let cursor = pages.length + (inputs.includeToc ? 2 : 1);
