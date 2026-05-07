@@ -611,31 +611,43 @@ function measureChapterSliceOverflow(includeHead, headFragmentHtml, bodyNodes, l
     return over;
 }
 
-function splitTextParagraphToFit(pEl, includeHead, headFragmentHtml, layout, bodyFont, bodyPt) {
+/**
+ * Split a text paragraph so `prefixBodyNodes` + first part fits the live area; remainder continues on the next page.
+ * @param {Element} pEl
+ * @param {Element[]} prefixBodyNodes Nodes already placed on this page (same order as in body).
+ * @param rest same as measureChapterSliceOverflow
+ */
+function splitTextParagraphToFit(pEl, prefixBodyNodes, includeHead, headFragmentHtml, layout, bodyFont, bodyPt) {
+    const prefix = prefixBodyNodes && prefixBodyNodes.length ? prefixBodyNodes : [];
     const text = (pEl.textContent || "").replace(/\s+/g, " ").trim();
     if (!text) return null;
     const cls = pEl.getAttribute("class") || "ne-ms-para";
-    let lo = 1;
-    let hi = text.length;
-    let best = 1;
-    while (lo <= hi) {
-        const mid = (lo + hi) >> 1;
+    const trialWithMid = mid => {
+        const nodes = prefix.map(n => n.cloneNode(true));
         const p = document.createElement("p");
         p.setAttribute("class", cls);
         p.textContent = text.slice(0, mid);
-        if (!measureChapterSliceOverflow(includeHead, headFragmentHtml, [p], layout, bodyFont, bodyPt)) {
+        nodes.push(p);
+        return nodes;
+    };
+    let lo = 1;
+    let hi = text.length;
+    let best = 0;
+    while (lo <= hi) {
+        const mid = (lo + hi) >> 1;
+        if (!measureChapterSliceOverflow(includeHead, headFragmentHtml, trialWithMid(mid), layout, bodyFont, bodyPt)) {
             best = mid;
             lo = mid + 1;
         } else {
             hi = mid - 1;
         }
     }
-    best = Math.max(1, best);
+    if (best === 0) return null;
     const first = document.createElement("p");
     first.setAttribute("class", cls);
     first.textContent = text.slice(0, best);
     const rest = document.createElement("p");
-    rest.setAttribute("class", cls);
+    rest.setAttribute("class", cls + " ne-ms-para--split-cont");
     rest.textContent = text.slice(best).trim();
     return { first, rest: rest.textContent ? rest : null };
 }
@@ -688,9 +700,22 @@ function paginateChapterSlices(ch, chapterNumber, layout) {
             if (!measureChapterSliceOverflow(first, headHtml, trial, layout, bodyFont, bodyPt)) {
                 pageNodes.push(remaining.shift());
             } else {
-                if (pageNodes.length) break;
+                if (pageNodes.length) {
+                    if (next.tagName === "P") {
+                        const sp = splitTextParagraphToFit(next, pageNodes, first, headHtml, layout, bodyFont, bodyPt);
+                        if (sp && sp.first.textContent) {
+                            pageNodes.push(sp.first);
+                            if (sp.rest && sp.rest.textContent) {
+                                remaining[0] = sp.rest;
+                            } else {
+                                remaining.shift();
+                            }
+                        }
+                    }
+                    break;
+                }
                 if (next.tagName === "P") {
-                    const sp = splitTextParagraphToFit(next, first, headHtml, layout, bodyFont, bodyPt);
+                    const sp = splitTextParagraphToFit(next, [], first, headHtml, layout, bodyFont, bodyPt);
                     if (sp && sp.first.textContent) {
                         pageNodes.push(sp.first);
                         if (sp.rest && sp.rest.textContent) {
