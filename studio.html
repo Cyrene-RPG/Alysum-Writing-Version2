@@ -899,6 +899,7 @@
 <script type="module">
         import { auth, db } from "./firebase.js";
         import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import { WEEKLY_PROMPTS_52, DAILY_CHARACTER_Q, DAILY_WORLDBUILD_Q } from "./js/prompts-data.js?v=1";
         import {
             doc,
             getDoc,
@@ -1076,81 +1077,7 @@
             badgeBar.style.width = pct + "%";
         }
 
-        // Prompts (simple slideshow; notebook page handles saving/history)
-        const WEEKLY_PROMPTS_52 = [
-            "Write a scene where a character must choose between comfort and truth.",
-            "Describe a place that feels safe—then reveal the hidden danger.",
-            "Write dialogue where nobody says what they mean.",
-            "Your character finds an object that shouldn’t exist. What is it?",
-            "Write a scene that starts with a lie and ends with an apology.",
-            "A storm interrupts something important. What changes after?",
-            "A minor decision triggers major consequences.",
-            "Write a reunion that goes worse than expected.",
-            "A character receives a message meant for someone else.",
-            "Write a moment of victory that doesn’t feel good.",
-            "A secret is accidentally revealed in public.",
-            "Write a scene where a promise is tested.",
-            "A character must ask for help and hates it.",
-            "Write a scene using only senses (no internal thoughts).",
-            "Your setting’s rules break for one day. What happens?",
-            "Write a scene where time is running out—quietly.",
-            "A character confronts their younger self (literally or metaphorically).",
-            "Write a scene that begins in celebration and ends in silence.",
-            "Someone returns with news that changes everything.",
-            "Write a scene where a doorway is a boundary (literal or social).",
-            "Your protagonist loses something small that matters a lot.",
-            "Write a scene where the wrong person is trusted.",
-            "A character makes an offer they can’t keep.",
-            "Write an argument where both sides are right.",
-            "A character is forced to slow down and notice.",
-            "Write a scene where a rule is broken for the first time.",
-            "A character discovers a map to somewhere impossible.",
-            "Write a scene where silence is the weapon.",
-            "A character hears a rumor about themselves—true or false?",
-            "Write a scene where a gift becomes a burden.",
-            "A character meets someone who knows their future.",
-            "Write a scene where the world feels too bright.",
-            "A character must forgive, but doesn’t forget.",
-            "Write a scene where a plan fails beautifully.",
-            "Your character has to say goodbye without words.",
-            "Write a scene where a stranger sees through the mask.",
-            "A character finds a note addressed to them from years ago.",
-            "Write a scene where a door won’t open—why?",
-            "Someone offers a shortcut with a cost.",
-            "Write a scene where laughter hides fear.",
-            "A character realizes they’re the villain in someone else’s story.",
-            "Write a scene where an apology is refused.",
-            "A character must tell the truth to the person who least deserves it.",
-            "Write a scene that turns on a single sentence.",
-            "A character is offered exactly what they want—too late.",
-            "Write a scene where the setting itself is watching.",
-            "A character makes peace with a past version of themselves.",
-            "Write a scene where a small kindness changes the outcome.",
-            "A character breaks a tradition—what do they lose?",
-            "Write a scene where the last line is a question.",
-            "A character chooses the harder path on purpose.",
-            "Write a scene where the ending is a beginning."
-        ];
-
-        const DAILY_CHARACTER_Q = [
-            "What does your character want today, and what are they afraid it costs?",
-            "What lie does your character tell themselves most often?",
-            "What would make your character forgive the unforgivable?",
-            "What is your character’s comfort habit—and why do they hide it?",
-            "Who does your character envy, and what do they envy about them?",
-            "What boundary would your character never cross—until now?",
-            "What is your character’s most misunderstood trait?"
-        ];
-
-        const DAILY_WORLDBUILD_Q = [
-            "What is a normal custom in your world that would shock an outsider?",
-            "What does your world value more than money?",
-            "What is something everyone believes that is actually wrong?",
-            "What resource is scarce—and who controls it?",
-            "What does your world celebrate, and what do they mourn?",
-            "What law exists because of an ancient disaster?",
-            "What technology/magic has an unexpected side effect?"
-        ];
+        // Prompts: loaded from shared module `js/prompts-data.js`.
 
         function nyDateParts(now = new Date()) {
             const fmt = new Intl.DateTimeFormat("en-US", {
@@ -1222,7 +1149,8 @@
             ];
             const s = slides[ix] || slides[0];
             promptKicker.textContent = s.kicker;
-            promptText.textContent = s.text;
+            // Weekly prompt strings are curated (hardcoded) and may include <em>…</em> for italics.
+            promptText.innerHTML = s.text;
             promptDots.forEach((d, i) => d?.classList.toggle("active", i === ix));
             promptSlide.dataset.type = s.type;
             promptSlide.dataset.weekKey = p.weekKey;
