@@ -571,6 +571,8 @@ function measureChapterSliceOverflow(includeHead, headFragmentHtml, bodyNodes, l
 
     const ms = document.createElement("div");
     ms.className = "ne-preview-page-frame ne-preview-manuscript";
+    /* Omit padding — must match `.ne-preview-scroll > .ne-preview-page-frame` bottom gutter
+     * or pagination fits one extra line and the last row is clipped by overflow:hidden. */
     ms.style.cssText = [
         `font-family:${bodyFont}`,
         `font-size:${bodyPt}pt`,
@@ -579,8 +581,7 @@ function measureChapterSliceOverflow(includeHead, headFragmentHtml, bodyNodes, l
         "width:100%",
         "max-width:100%",
         "box-sizing:border-box",
-        "margin:0",
-        "padding:0"
+        "margin:0"
     ].join(";");
     const section = document.createElement("section");
     section.className = "ne-ms-ch ne-ms-ch--book";
