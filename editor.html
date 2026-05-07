@@ -372,6 +372,209 @@
             font-size: 14px;                                        font-weight: 700;
             padding: 0 12px;
             cursor: pointer;                                    }
+
+        .toolbar-spacer {
+            flex: 1;
+            min-width: 8px;
+        }
+
+        .sprint-anchor {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            overflow: visible;
+        }
+
+        .sprint-btn {
+            height: 36px;
+            border: 1px solid var(--border);
+            background: linear-gradient(135deg, var(--alysum-purple), #a855f7);
+            color: white;
+            border-radius: 999px;
+            padding: 0 14px;
+            font-size: 14px;
+            font-weight: 900;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .sprint-btn[disabled] {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .sprint-pop {
+            position: absolute;
+            top: calc(100% + 10px);
+            right: 0;
+            width: 240px;
+            background: var(--page-bg);
+            color: var(--page-text);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            box-shadow: 0 16px 40px rgba(0,0,0,0.22);
+            padding: 12px;
+            z-index: 2000;
+            display: none;
+        }
+
+        .sprint-pop.open { display: block; }
+
+        .sprint-pop-title {
+            font-weight: 900;
+            margin: 0 0 8px;
+            font-size: 14px;
+        }
+
+        .sprint-opt-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        .sprint-opt {
+            border: 1px solid var(--border);
+            background: rgba(0,0,0,0.03);
+            color: var(--page-text);
+            border-radius: 12px;
+            padding: 10px 10px;
+            font-weight: 900;
+            cursor: pointer;
+        }
+
+        body.dark .sprint-opt { background: rgba(255,255,255,0.04); }
+
+        .sprint-pop-sub {
+            margin-top: 10px;
+            font-size: 12px;
+            color: var(--page-subtle);
+            font-weight: 700;
+            line-height: 1.35;
+        }
+
+        .sprint-float {
+            position: fixed;
+            top: 122px; /* under topbar + toolbar */
+            right: 14px;
+            z-index: 2500;
+            display: none;
+        }
+
+        .sprint-float.open { display: block; }
+
+        .sprint-float-box {
+            background: var(--page-bg);
+            color: var(--page-text);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            box-shadow: 0 18px 46px rgba(0,0,0,0.22);
+            padding: 12px 12px;
+            min-width: 190px;
+        }
+
+        .sprint-float-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .sprint-float-label {
+            font-weight: 900;
+            font-size: 12px;
+            color: var(--page-subtle);
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+
+        .sprint-float-time {
+            margin-top: 6px;
+            font-size: 24px;
+            font-weight: 900;
+            letter-spacing: 0.04em;
+        }
+
+        .sprint-mini-btn {
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--page-text);
+            border-radius: 10px;
+            font-weight: 900;
+            padding: 6px 10px;
+            cursor: pointer;
+        }
+
+        .sprint-mini-btn.danger {
+            background: var(--danger);
+            border-color: var(--danger);
+            color: white;
+        }
+
+        .sprint-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.65);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 99999;
+            padding: 20px;
+        }
+
+        .sprint-modal.open { display: flex; }
+
+        .sprint-modal-box {
+            width: 100%;
+            max-width: 520px;
+            background: var(--page-bg);
+            color: var(--page-text);
+            border-radius: 18px;
+            padding: 20px;
+            box-shadow: 0 16px 40px rgba(0,0,0,0.3);
+        }
+
+        .sprint-modal-title {
+            margin: 0 0 10px;
+            font-size: 22px;
+            font-weight: 900;
+        }
+
+        .sprint-modal-text {
+            margin: 0 0 16px;
+            color: var(--page-subtle);
+            font-size: 14px;
+            line-height: 1.55;
+            font-weight: 700;
+        }
+
+        .sprint-modal-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .sprint-modal-actions button {
+            flex: 1;
+            border: none;
+            border-radius: 12px;
+            padding: 12px 14px;
+            font-weight: 900;
+            cursor: pointer;
+        }
+
+        .sprint-modal-actions .primary {
+            background: var(--alysum-purple);
+            color: white;
+        }
+
+        .sprint-modal-actions .secondary {
+            background: #e5e7eb;
+            color: #111827;
+        }
+
+        body.dark .sprint-modal-actions .secondary {
+            background: #334155;
+            color: #e5e7eb;
+        }
                                                                 .workspace {
             flex: 1;
             overflow: auto;                                         padding: 34px 18px 60px;
@@ -744,7 +947,32 @@
                 <option value="Inter">Inter</option>                    <option value="Courier New">Courier New</option>
             </select>                                               <select class="tool-select" id="fontSizeSelect">                                                                    <option value="18">Compact</option>                     <option value="20">Book</option>
                 <option value="22">Comfort</option>                     <option value="26">Large</option>
-            </select>                                           </div>
+            </select>
+            <div class="toolbar-spacer"></div>
+            <span class="sprint-anchor" id="sprintAnchor">
+                <button class="sprint-btn" id="sprintToolbarBtn" type="button" aria-label="Sprint timer">⏱ Sprint</button>
+                <div class="sprint-pop" id="sprintPop" role="dialog" aria-label="Sprint timer options">
+                    <div class="sprint-pop-title">Choose a timer</div>
+                    <div class="sprint-opt-grid">
+                        <button class="sprint-opt" type="button" data-min="10">10 min</button>
+                        <button class="sprint-opt" type="button" data-min="15">15 min</button>
+                        <button class="sprint-opt" type="button" data-min="25">25 min</button>
+                        <button class="sprint-opt" type="button" data-min="60">1 hour</button>
+                    </div>
+                    <div class="sprint-pop-sub" id="sprintPopSub">Tracks words written during the sprint.</div>
+                </div>
+            </span>
+        </div>
+
+        <div class="sprint-float" id="sprintFloat" aria-live="polite">
+            <div class="sprint-float-box">
+                <div class="sprint-float-top">
+                    <div class="sprint-float-label">Sprint</div>
+                    <button class="sprint-mini-btn danger" id="sprintStopBtn" type="button" aria-label="Stop sprint">Stop</button>
+                </div>
+                <div class="sprint-float-time" id="sprintFloatTime">00:00</div>
+            </div>
+        </div>
 
         <div class="workspace">                                     <div class="page-wrap">
                 <div class="page">                                          <div class="chapter-number" id="chapterNumber">1</div>                                                          <div class="chapter-title" id="chapterTitle" contenteditable="true">Chapter 1</div>
@@ -759,6 +987,27 @@
                                                                     <div class="publish-list" id="publishList"></div>                                                   
             <div class="publish-modal-actions">                         <button class="publish-modal-btn secondary" id="closePublishBtn" type="button">Cancel</button>                  <button class="publish-modal-btn primary" id="publishNextBtn" type="button">Next</button>                   </div>
         </div>                                              </div>
+
+    <div class="sprint-modal" id="sprintConfirmModal" role="dialog" aria-label="Start sprint confirmation">
+        <div class="sprint-modal-box">
+            <h2 class="sprint-modal-title">Ready to start?</h2>
+            <p class="sprint-modal-text" id="sprintConfirmText">Start a sprint?</p>
+            <div class="sprint-modal-actions">
+                <button class="secondary" id="sprintConfirmNo" type="button">Not yet</button>
+                <button class="primary" id="sprintConfirmYes" type="button">Yes, start</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="sprint-modal" id="sprintResultModal" role="dialog" aria-label="Sprint results">
+        <div class="sprint-modal-box">
+            <h2 class="sprint-modal-title" id="sprintResultTitle">Sprint complete</h2>
+            <p class="sprint-modal-text" id="sprintResultText">...</p>
+            <div class="sprint-modal-actions">
+                <button class="primary" id="sprintResultOk" type="button">OK</button>
+            </div>
+        </div>
+    </div>
 
     <script type="module">
         import { auth, db } from "./firebase.js";
@@ -804,6 +1053,189 @@ homeBtn.onclick = () => {
         let currentSection = "body";
         let currentChapterIndex = 0;
         let saveTimer = null;                                   let dragged = null;
+
+        // Sprint timer (editor)
+        const sprintToolbarBtn = document.getElementById("sprintToolbarBtn");
+        const sprintAnchor = document.getElementById("sprintAnchor");
+        const sprintPop = document.getElementById("sprintPop");
+        const sprintPopSub = document.getElementById("sprintPopSub");
+        const sprintFloat = document.getElementById("sprintFloat");
+        const sprintFloatTime = document.getElementById("sprintFloatTime");
+        const sprintStopBtn = document.getElementById("sprintStopBtn");
+        const sprintConfirmModal = document.getElementById("sprintConfirmModal");
+        const sprintConfirmText = document.getElementById("sprintConfirmText");
+        const sprintConfirmYes = document.getElementById("sprintConfirmYes");
+        const sprintConfirmNo = document.getElementById("sprintConfirmNo");
+        const sprintResultModal = document.getElementById("sprintResultModal");
+        const sprintResultTitle = document.getElementById("sprintResultTitle");
+        const sprintResultText = document.getElementById("sprintResultText");
+        const sprintResultOk = document.getElementById("sprintResultOk");
+
+        const SPRINT_KEY = "alysum-editor-sprint";
+        let sprintTick = null;
+        let pendingSprintMinutes = null;
+
+        function loadEditorSprint() {
+            try {
+                return JSON.parse(localStorage.getItem(SPRINT_KEY) || "null");
+            } catch {
+                return null;
+            }
+        }
+
+        function saveEditorSprint(state) {
+            localStorage.setItem(SPRINT_KEY, JSON.stringify(state));
+        }
+
+        function clearEditorSprint() {
+            localStorage.removeItem(SPRINT_KEY);
+        }
+
+        function formatMMSS(totalSeconds) {
+            const s = Math.max(0, Math.floor(totalSeconds));
+            const m = Math.floor(s / 60);
+            const r = s % 60;
+            return `${String(m).padStart(2, "0")}:${String(r).padStart(2, "0")}`;
+        }
+
+        function openSprintPop() {
+            sprintPop.classList.add("open");
+        }
+
+        function closeSprintPop() {
+            sprintPop.classList.remove("open");
+        }
+
+        function openModal(el) {
+            el.classList.add("open");
+        }
+
+        function closeModal(el) {
+            el.classList.remove("open");
+        }
+
+        function showResult(wordsWritten) {
+            const wrote = Number.isFinite(wordsWritten) ? wordsWritten : 0;
+            if (wrote > 0) {
+                sprintResultTitle.textContent = "Congragulations! 🎉";
+                sprintResultText.textContent = `You wrote ${wrote.toLocaleString()} words!`;
+            } else {
+                sprintResultTitle.textContent = "Oh no! 😞";
+                sprintResultText.textContent = "You wrote 0 words";
+            }
+            openModal(sprintResultModal);
+        }
+
+        function endSprintAndReport(reason = "done") {
+            const state = loadEditorSprint();
+            if (!state) return;
+
+            const startTotal = safeNumber(state.startTotal, 0);
+            const endTotal = totalWords();
+            const delta = Math.max(0, endTotal - startTotal);
+
+            clearInterval(sprintTick);
+            sprintTick = null;
+            clearEditorSprint();
+
+            sprintFloat.classList.remove("open");
+            sprintToolbarBtn.disabled = false;
+            sprintToolbarBtn.textContent = "⏱ Sprint";
+            sprintPopSub.textContent = "Tracks words written during the sprint.";
+
+            if (reason === "done") {
+                showResult(delta);
+            }
+        }
+
+        function renderSprintUI() {
+            const state = loadEditorSprint();
+            if (!state || !state.end || state.bookId !== bookId) {
+                sprintFloat.classList.remove("open");
+                sprintToolbarBtn.disabled = false;
+                sprintToolbarBtn.textContent = "⏱ Sprint";
+                return;
+            }
+
+            const remainingSec = Math.max(0, Math.floor((state.end - Date.now()) / 1000));
+            sprintFloatTime.textContent = formatMMSS(remainingSec);
+            sprintFloat.classList.add("open");
+            sprintToolbarBtn.disabled = false;
+            sprintToolbarBtn.textContent = `⏱ ${formatMMSS(remainingSec)}`;
+
+            if (remainingSec <= 0) {
+                endSprintAndReport("done");
+            }
+        }
+
+        function startSprint(minutes) {
+            const mins = safeNumber(minutes, 25);
+            const durationMs = Math.max(1, Math.floor(mins * 60 * 1000));
+            saveEditorSprint({
+                bookId,
+                start: Date.now(),
+                end: Date.now() + durationMs,
+                startTotal: totalWords(),
+                minutes: mins
+            });
+
+            closeSprintPop();
+            closeModal(sprintConfirmModal);
+
+            if (sprintTick) clearInterval(sprintTick);
+            renderSprintUI();
+            sprintTick = setInterval(renderSprintUI, 500);
+        }
+
+        function requestStartSprint(minutes) {
+            pendingSprintMinutes = minutes;
+            sprintConfirmText.textContent = `Start a ${minutes === 60 ? "1 hour" : `${minutes} minute`} sprint?`;
+            openModal(sprintConfirmModal);
+        }
+
+        sprintToolbarBtn?.addEventListener("click", () => {
+            const state = loadEditorSprint();
+            if (state && state.end && state.bookId === bookId && state.end > Date.now()) {
+                sprintPopSub.textContent = "A sprint is running. Use Stop to end early.";
+            } else {
+                sprintPopSub.textContent = "Tracks words written during the sprint.";
+            }
+            sprintPop.classList.toggle("open");
+        });
+
+        document.addEventListener("click", (e) => {
+            if (!sprintAnchor) return;
+            if (!sprintPop.classList.contains("open")) return;
+            if (sprintAnchor.contains(e.target)) return;
+            closeSprintPop();
+        });
+
+        sprintPop?.querySelectorAll("[data-min]")?.forEach(btn => {
+            btn.addEventListener("click", () => {
+                const mins = Number(btn.dataset.min);
+                if (!mins) return;
+                closeSprintPop();
+                requestStartSprint(mins);
+            });
+        });
+
+        sprintConfirmNo?.addEventListener("click", () => closeModal(sprintConfirmModal));
+        sprintConfirmYes?.addEventListener("click", () => {
+            const mins = pendingSprintMinutes ?? 25;
+            pendingSprintMinutes = null;
+            startSprint(mins);
+        });
+
+        sprintConfirmModal?.addEventListener("click", (e) => {
+            if (e.target === sprintConfirmModal) closeModal(sprintConfirmModal);
+        });
+
+        sprintResultOk?.addEventListener("click", () => closeModal(sprintResultModal));
+        sprintResultModal?.addEventListener("click", (e) => {
+            if (e.target === sprintResultModal) closeModal(sprintResultModal);
+        });
+
+        sprintStopBtn?.addEventListener("click", () => endSprintAndReport("stopped"));
 
         function setSaveStatus(text) {
             saveStatus.textContent = text;
@@ -1364,5 +1796,15 @@ homeBtn.onclick = () => {
                 }
                 window.location.href = `/Novel_Exporter.html?book=${encodeURIComponent(bookId)}`;
             });
+
+            // Resume sprint if it exists for this book.
+            const s = loadEditorSprint();
+            if (s && s.bookId === bookId && s.end && s.end > Date.now()) {
+                renderSprintUI();
+                if (sprintTick) clearInterval(sprintTick);
+                sprintTick = setInterval(renderSprintUI, 500);
+            } else if (s && s.bookId === bookId) {
+                clearEditorSprint();
+            }
         });                                                 </script>
                                                         </body>
