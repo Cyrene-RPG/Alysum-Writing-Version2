@@ -509,21 +509,83 @@ function getLiveAreaDimensions() {
     return { w: m.liveW, h: m.liveH };
 }
 
+function bottomReservePxForMeasure(bodyPt) {
+    /*
+     * Keep a band free at the bottom of the live area so the last rendered line cannot sit on the clip edge:
+     * scrollHeight/clientHeight rounding, flex min-height vs text metrics, subpixels, drop caps —
+     * all can report “fits” while glyphs are still clipped.
+     */
+    const linePx = ((bodyPt / 72) * 96) * 1.48;
+    return Math.max(12, Math.min(42, Math.round(linePx * 0.92)));
+}
+
+/**
+ * Whether any painted line/content in scrollEl protrudes below the drawable band (respecting bottom reserve).
+ * @param {HTMLElement} scrollEl
+ * @param {number} bottomReservePx
+ */
+function scrollContentExtendsPastLiveArea(scrollEl, bottomReservePx) {
+    const clip = scrollEl.getBoundingClientRect();
+    const drawBottom = clip.bottom - bottomReservePx;
+    const section = scrollEl.querySelector(".ne-ms-ch--book");
+    if (!section) return false;
+    const doc = scrollEl.ownerDocument;
+    /** @type {number} */
+    let maxBottom = -Infinity;
+
+    const bumpRange = container => {
+        if (!container) return;
+        const range = doc.createRange();
+        try {
+            range.selectNodeContents(container);
+            const rects = range.getClientRects();
+            for (let i = 0; i < rects.length; i += 1) {
+                const r = rects.item(i);
+                if (r && r.height > 0.5 && r.width > 0.5) {
+                    maxBottom = Math.max(maxBottom, r.bottom);
+                }
+            }
+        } catch (_) {
+            /* empty */
+        }
+    };
+
+    bumpRange(section.querySelector(".ne-chapter-head"));
+    bumpRange(section.querySelector(".ne-ms-ch-body"));
+
+    /*
+     * Floated ::first-letter is weak in Range line boxes; union block bottoms catches drop caps + tables.
+     */
+    section.querySelectorAll("p, li, blockquote, h1, h2, h3, hr, table").forEach(el => {
+        const r = /** @type {HTMLElement} */ (el).getBoundingClientRect();
+        if (r.height > 0) maxBottom = Math.max(maxBottom, r.bottom);
+    });
+
+    if (maxBottom === -Infinity) return false;
+    return maxBottom > drawBottom + 0.75;
+}
+
 function measureChapterSliceOverflow(includeHead, headFragmentHtml, bodyNodes, layout, bodyFont, bodyPt) {
     const mount = document.getElementById("pdfPreviewMount");
     const { liveW: w, liveH: h, trimW, trimH, scrollLeftPx, scrollTopPx } = layout;
+    const reserve = bottomReservePxForMeasure(bodyPt);
 
+    /*
+     * Sandbox must wrap the whole trim sheet: the old wrapper used only the live-area w×h with overflow:hidden,
+     * which clipped the simulated page subtree and distorted scroll/layout vs the real `#pdfPreviewMount`.
+     */
     const shell = document.createElement("div");
     shell.setAttribute("data-ne-measure", "1");
     shell.style.cssText = [
         "position:fixed",
-        "left:-14000px",
+        "left:-20000px",
         "top:0",
-        `width:${w}px`,
-        `height:${h}px`,
-        "overflow:hidden",
+        `width:${Math.ceil(trimW)}px`,
+        `height:${Math.ceil(trimH)}px`,
+        "overflow:visible",
         "box-sizing:border-box",
-        "visibility:hidden",
+        "visibility:visible",
+        "opacity:0",
         "pointer-events:none",
         "margin:0",
         "padding:0"
@@ -602,21 +664,10 @@ function measureChapterSliceOverflow(includeHead, headFragmentHtml, bodyNodes, l
     document.body.appendChild(shell);
     let over = false;
     try {
-        /* Match `.ne-preview-scroll { overflow: hidden }` — never treat clipped overflow as “fits”.
-         * Old `scrollHeight > clientHeight + 5` wrongly allowed ~5px of spill → half-lines at page bottom. */
         const ch = fauxScroll.clientHeight;
         const sh = fauxScroll.scrollHeight;
-        /* Subpixel slack only — old `...+ 5` allowed several px of clipped text at the bottom. */
-        over = Math.ceil(sh) > Math.floor(ch) + 1;
-        if (!over) {
-            const clip = fauxScroll.getBoundingClientRect();
-            const frame = fauxScroll.querySelector(".ne-preview-page-frame");
-            if (frame) {
-                const br = frame.getBoundingClientRect();
-                /* Any real extension past the clip = partial line / glyph crop; 2px fudge for subpixels only. */
-                if (br.bottom > clip.bottom + 2) over = true;
-            }
-        }
+        const effectiveLimit = Math.max(32, ch - reserve);
+        over = Math.ceil(sh) > effectiveLimit || scrollContentExtendsPastLiveArea(fauxScroll, reserve);
     } finally {
         shell.remove();
     }
