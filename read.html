@@ -283,7 +283,7 @@
     .hero-stats {
       margin-top: 18px;
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(5, minmax(0, 1fr));
       gap: 12px;
     }
 
@@ -663,6 +663,10 @@
               <div class="stat-value" id="statWords">0</div>
             </div>
             <div class="stat">
+              <div class="stat-label">Reads</div>
+              <div class="stat-value" id="statReads">0</div>
+            </div>
+            <div class="stat">
               <div class="stat-label">Type</div>
               <div class="stat-value" id="statType">—</div>
             </div>
@@ -782,6 +786,7 @@
     const bookSummary = document.getElementById("bookSummary");
     const statChapters = document.getElementById("statChapters");
     const statWords = document.getElementById("statWords");
+    const statReads = document.getElementById("statReads");
     const statType = document.getElementById("statType");
     const statRating = document.getElementById("statRating");
     const tagList = document.getElementById("tagList");
@@ -949,6 +954,7 @@
         warnings: flattenWarnings(data.warnings),
         chapterCount: safeNumber(data.chapterCount, chapters.length),
         words: totalWords,
+        views: safeNumber(data.views, 0),
         likes: safeNumber(data.likes, 0),
         chapters
       };
@@ -1012,12 +1018,15 @@
         return;
       }
 
-      localStorage.setItem(key, String(Date.now()));
-
       try {
         await updateDoc(doc(db, "library", bookId), {
           views: increment(1)
         });
+
+        localStorage.setItem(key, String(Date.now()));
+        if (currentBook) {
+          currentBook.views = safeNumber(currentBook.views, 0) + 1;
+        }
       } catch (error) {
         console.warn("Could not update story view count.", error);
       }
@@ -1072,6 +1081,7 @@
       topbarTitle.textContent = currentBook.title;
       statChapters.textContent = formatNumber(currentBook.chapterCount || currentBook.chapters.length);
       statWords.textContent = formatNumber(currentBook.words);
+      statReads.textContent = formatNumber(currentBook.views);
       statType.textContent = currentBook.type || "—";
       statRating.textContent = currentBook.rating || "—";
 
@@ -1205,7 +1215,7 @@
         }
 
         currentBook = normalizeBook(snap.data());
-        recordStoryView();
+        await recordStoryView();
 
         if (!currentBook.chapters.length) {
           showError("This story has no readable chapters.");
