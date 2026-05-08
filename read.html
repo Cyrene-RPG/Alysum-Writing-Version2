@@ -1007,6 +1007,18 @@
       }
     }
 
+    function readerTrackingId() {
+      if (currentUser) return `user-${currentUser.uid}`;
+
+      const key = "alysum-reader-anon-id";
+      let id = localStorage.getItem(key);
+      if (!id) {
+        id = `anon-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+        localStorage.setItem(key, id);
+      }
+      return id;
+    }
+
     async function recordStoryView() {
       if (!bookId) return;
 
@@ -1018,17 +1030,48 @@
         return;
       }
 
+      const now = Date.now();
+      const readerId = readerTrackingId();
+      const readBucket = Math.floor(now / sixHours);
+      const readRef = doc(db, "library", bookId, "reads", `${readerId}-${readBucket}`);
+
+      try {
+        const existingRead = await getDoc(readRef);
+        if (existingRead.exists()) {
+          localStorage.setItem(key, String(now));
+          return;
+        }
+      } catch (error) {
+        console.warn("Could not check existing story read.", error);
+      }
+
+      let recorded = false;
+
+      try {
+        await setDoc(readRef, {
+          uid: currentUser ? currentUser.uid : null,
+          readerId,
+          createdAt: serverTimestamp()
+        });
+        recorded = true;
+      } catch (error) {
+        console.warn("Could not create story read record.", error);
+      }
+
       try {
         await updateDoc(doc(db, "library", bookId), {
           views: increment(1)
         });
+        recorded = true;
+      } catch (error) {
+        console.warn("Could not update story view count.", error);
+      }
 
-        localStorage.setItem(key, String(Date.now()));
+      if (recorded) {
+        localStorage.setItem(key, String(now));
         if (currentBook) {
           currentBook.views = safeNumber(currentBook.views, 0) + 1;
         }
-      } catch (error) {
-        console.warn("Could not update story view count.", error);
       }
     }
 

@@ -780,6 +780,8 @@
     let books = [];
     const kudosCounts = new Map();
     const kudosUnsubscribers = new Map();
+    const readCounts = new Map();
+    const readUnsubscribers = new Map();
 
     function setActiveSortButton() {
       document.querySelectorAll(".sort-btn").forEach(btn => {
@@ -813,8 +815,12 @@
       return kudosCounts.get(bookId) || 0;
     }
 
+    function realReadCount(book) {
+      return Math.max(safeNumber(book.views), readCounts.get(book.id) || 0);
+    }
+
     function popularityScore(book) {
-      return (realKudosCount(book.id) * 3) + safeNumber(book.views);
+      return (realKudosCount(book.id) * 3) + realReadCount(book);
     }
 
     function renderBooks() {
@@ -860,7 +866,7 @@
         const title = safeString(data.title, "Untitled");
         const author = safeString(data.author, "Unknown");
         const chapterCount = safeNumber(data.chapterCount);
-        const views = safeNumber(data.views);
+        const views = realReadCount(data);
         const likes = realKudosCount(data.id);
         const badge = title.slice(0, 2).toUpperCase();
 
@@ -926,6 +932,37 @@
       });
     }
 
+    function syncReadSubscriptions() {
+      const liveIds = new Set(books.map(book => book.id));
+
+      readUnsubscribers.forEach((unsubscribe, bookId) => {
+        if (!liveIds.has(bookId)) {
+          unsubscribe();
+          readUnsubscribers.delete(bookId);
+          readCounts.delete(bookId);
+        }
+      });
+
+      books.forEach(book => {
+        if (readUnsubscribers.has(book.id)) return;
+
+        const unsubscribe = onSnapshot(
+          collection(db, "library", book.id, "reads"),
+          (snap) => {
+            readCounts.set(book.id, snap.size);
+            renderBooks();
+          },
+          (err) => {
+            console.warn(`Could not load reads for ${book.id}.`, err);
+            readCounts.set(book.id, 0);
+            renderBooks();
+          }
+        );
+
+        readUnsubscribers.set(book.id, unsubscribe);
+      });
+    }
+
     function subscribeBooks() {
       const container = document.getElementById("books");
       container.innerHTML = `
@@ -944,6 +981,7 @@
         (snap) => {
           books = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
           syncKudosSubscriptions();
+          syncReadSubscriptions();
           renderBooks();
         },
         (err) => {
