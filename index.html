@@ -762,7 +762,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCVEnkx--46VyGPw00kJZpICpJ7b5qyXOI",
@@ -777,6 +777,7 @@
     const db = getFirestore(app);
 
     let currentSort = "popular";
+    let books = [];
 
     function setActiveSortButton() {
       document.querySelectorAll(".sort-btn").forEach(btn => {
@@ -788,84 +789,144 @@
       btn.addEventListener("click", () => {
         currentSort = btn.dataset.sort;
         setActiveSortButton();
-        loadBooks();
+        renderBooks();
       });
     });
 
-    async function loadBooks() {
+    function safeString(value, fallback = "") {
+      return typeof value === "string" ? value : fallback;
+    }
+
+    function safeNumber(value, fallback = 0) {
+      return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+    }
+
+    function toMillis(value) {
+      if (typeof value === "number" && Number.isFinite(value)) return value;
+      if (value && typeof value.seconds === "number") return value.seconds * 1000;
+      return 0;
+    }
+
+    function popularityScore(book) {
+      return (safeNumber(book.likes) * 3) + safeNumber(book.views);
+    }
+
+    function renderBooks() {
       const container = document.getElementById("books");
       container.innerHTML = "";
 
-      try {
-        const snap = await getDocs(collection(db, "library"));
+      const sortedBooks = books
+        .filter(book => book.isPublished !== false)
+        .slice();
 
-        let books = [];
-
-        snap.forEach(doc => {
-          books.push({ id: doc.id, ...doc.data() });
+      if (currentSort === "popular") {
+        sortedBooks.sort((a, b) => {
+          const scoreDiff = popularityScore(b) - popularityScore(a);
+          if (scoreDiff) return scoreDiff;
+          return toMillis(b.updated || b.publishedAt || b.createdAt) - toMillis(a.updated || a.publishedAt || a.createdAt);
         });
-
-        if (currentSort === "popular") {
-          books.sort((a, b) => (b.views || 0) - (a.views || 0));
-        } else {
-          books.sort((a, b) => {
-            const aTime = a.createdAt?.seconds || 0;
-            const bTime = b.createdAt?.seconds || 0;
-            return bTime - aTime;
-          });
-        }
-
-        if (!books.length) {
-          container.innerHTML = `
-            <div class="book-card">
-              <div class="book-cover">BK</div>
-              <div class="book-info">
-                <h3>No library books yet</h3>
-                <p>Published books from your public library will appear here.</p>
-                <div class="book-meta">0 chapters</div>
-              </div>
-            </div>
-          `;
-          return;
-        }
-
-        books.forEach(data => {
-          const el = document.createElement("div");
-          el.className = "book-card";
-
-          const title = data.title || "Untitled";
-          const author = data.author || "Unknown";
-          const chapterCount = data.chapterCount || 0;
-          const badge = title.slice(0, 2).toUpperCase();
-
-          el.innerHTML = `
-            <div class="book-cover">${badge}</div>
-            <div class="book-info">
-              <h3>${title}</h3>
-              <p>by ${author}</p>
-              <div class="book-meta">${chapterCount} chapters</div>
-            </div>
-          `;
-
-          container.appendChild(el);
+      } else {
+        sortedBooks.sort((a, b) => {
+          return toMillis(b.publishedAt || b.createdAt || b.updated) - toMillis(a.publishedAt || a.createdAt || a.updated);
         });
-      } catch (err) {
-        console.error(err);
+      }
+
+      if (!sortedBooks.length) {
         container.innerHTML = `
           <div class="book-card">
-            <div class="book-cover">!</div>
+            <div class="book-cover">BK</div>
             <div class="book-info">
-              <h3>Couldn’t load books</h3>
-              <p>Check your Firebase rules or your library collection data.</p>
-              <div class="book-meta">library collection</div>
+              <h3>No library books yet</h3>
+              <p>Published books from your public library will appear here.</p>
+              <div class="book-meta">0 chapters</div>
             </div>
           </div>
         `;
+        return;
       }
+
+      sortedBooks.slice(0, 6).forEach(data => {
+        const el = document.createElement("div");
+        el.className = "book-card";
+        el.tabIndex = 0;
+        el.setAttribute("role", "link");
+
+        const title = safeString(data.title, "Untitled");
+        const author = safeString(data.author, "Unknown");
+        const chapterCount = safeNumber(data.chapterCount);
+        const views = safeNumber(data.views);
+        const likes = safeNumber(data.likes);
+        const badge = title.slice(0, 2).toUpperCase();
+
+        el.innerHTML = `
+          <div class="book-cover"></div>
+          <div class="book-info">
+            <h3></h3>
+            <p></p>
+            <div class="book-meta"></div>
+          </div>
+        `;
+
+        el.querySelector(".book-cover").textContent = badge || "BK";
+        el.querySelector("h3").textContent = title;
+        el.querySelector("p").textContent = `by ${author}`;
+        el.querySelector(".book-meta").textContent =
+          `${chapterCount} chapters • ${likes} kudos • ${views} reads`;
+
+        const openBook = () => {
+          window.location.href = "/read.html?book=" + encodeURIComponent(data.id);
+        };
+
+        el.addEventListener("click", openBook);
+        el.addEventListener("keydown", (event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            openBook();
+          }
+        });
+
+        container.appendChild(el);
+      });
+    }
+
+    function subscribeBooks() {
+      const container = document.getElementById("books");
+      container.innerHTML = `
+        <div class="book-card">
+          <div class="book-cover">…</div>
+          <div class="book-info">
+            <h3>Loading library…</h3>
+            <p>Fetching popular stories.</p>
+            <div class="book-meta">live updates</div>
+          </div>
+        </div>
+      `;
+
+      onSnapshot(
+        collection(db, "library"),
+        (snap) => {
+          books = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          renderBooks();
+        },
+        (err) => {
+          console.error(err);
+          books = [];
+          container.innerHTML = `
+            <div class="book-card">
+              <div class="book-cover">!</div>
+              <div class="book-info">
+                <h3>Couldn’t load books</h3>
+                <p>Check your Firebase rules or your library collection data.</p>
+                <div class="book-meta">library collection</div>
+              </div>
+            </div>
+          `;
+        }
+      );
     }
 
     setActiveSortButton();
-    loadBooks();
+    subscribeBooks();
   </script>
 </body>
 </html>

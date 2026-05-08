@@ -1001,6 +1001,28 @@
       }
     }
 
+    async function recordStoryView() {
+      if (!bookId) return;
+
+      const key = `alysum-reader-viewed-${bookId}`;
+      const lastViewed = Number(localStorage.getItem(key) || 0);
+      const sixHours = 6 * 60 * 60 * 1000;
+
+      if (Number.isFinite(lastViewed) && Date.now() - lastViewed < sixHours) {
+        return;
+      }
+
+      localStorage.setItem(key, String(Date.now()));
+
+      try {
+        await updateDoc(doc(db, "library", bookId), {
+          views: increment(1)
+        });
+      } catch (error) {
+        console.warn("Could not update story view count.", error);
+      }
+    }
+
     function applyTheme(theme) {
       if (theme === "light") {
         document.body.classList.add("light");
@@ -1137,6 +1159,14 @@
       createdAt: serverTimestamp()
     });
 
+    try {
+      await updateDoc(doc(db, "library", bookId), {
+        likes: increment(1)
+      });
+    } catch (error) {
+      console.warn("Could not update story kudos count.", error);
+    }
+
     hasLikedThisBook = true;
     await loadLikeState();
     showStatus("Kudos left ❤️");
@@ -1169,6 +1199,7 @@
         }
 
         currentBook = normalizeBook(snap.data());
+        recordStoryView();
 
         if (!currentBook.chapters.length) {
           showError("This story has no readable chapters.");
