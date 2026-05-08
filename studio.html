@@ -333,7 +333,7 @@
 
         .action-row {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(5, 1fr);
             gap: 10px;
             margin-top: 14px;
         }
@@ -738,6 +738,7 @@
         <div class="menu-title">Alysum</div>
         <a href="/studio.html" class="menu-link">✍️ Studio</a>
         <a href="/library.html" class="menu-link">📚 Library</a>
+        <a href="/author-dashboard.html" class="menu-link">📊 Author Dashboard</a>
         <a href="/scratch.html" class="menu-link">📝 Scratch notes</a>
         <a href="/vault.html" class="menu-link">📓 Notes library</a>
         <a href="/index.html" class="menu-link">🏠 Home</a>
@@ -757,6 +758,7 @@
                 <div class="sidebar-group-label">Workspace</div>
                 <a href="/studio.html" class="sidebar-item active">✍️ Studio</a>
                 <a href="/library.html" class="sidebar-item">📚 Library</a>
+                <a href="/author-dashboard.html" class="sidebar-item">📊 Author Dashboard</a>
                 <a href="/scratch.html" class="sidebar-item">📝 Scratch notes</a>
                 <a href="/vault.html" class="sidebar-item">📓 Notes library</a>
                 <a href="/badges.html" class="sidebar-item">🏆 Achievements</a>
@@ -817,6 +819,7 @@
                         <div class="action-tile" id="continueBtn">Continue Writing</div>
                         <div class="action-tile" id="newBookTile">New Book</div>
                         <div class="action-tile" id="openLibraryTile">Open Library</div>
+                        <div class="action-tile" id="openDashboardTile">Author Dashboard</div>
                         <div class="action-tile" id="openBadgesTile">View Badges</div>
                     </div>
                 </section>
@@ -927,6 +930,7 @@
         const continueBtn = document.getElementById("continueBtn");
         const newBookTile = document.getElementById("newBookTile");
         const openLibraryTile = document.getElementById("openLibraryTile");
+        const openDashboardTile = document.getElementById("openDashboardTile");
         const openBadgesTile = document.getElementById("openBadgesTile");
 
         const sidebarContinueBtn = document.getElementById("sidebarContinueBtn");
@@ -1289,10 +1293,15 @@
             window.location.href = "/badges.html";
         }
 
+        function openDashboard() {
+            window.location.href = "/author-dashboard.html";
+        }
+
         createBtn.addEventListener("click", createBookNow);
         newBookTile.addEventListener("click", createBookNow);
         continueBtn.addEventListener("click", continueWriting);
         openLibraryTile.addEventListener("click", openLibrary);
+        openDashboardTile.addEventListener("click", openDashboard);
         openBadgesTile.addEventListener("click", openBadges);
 
         sidebarContinueBtn.addEventListener("click", continueWriting);
