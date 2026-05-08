@@ -386,6 +386,80 @@
             font-weight: 700;
         }
 
+        .rating-guide-card {
+            margin-top: 16px;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            background: var(--panel-soft);
+            padding: 18px;
+            box-shadow: var(--shadow);
+        }
+
+        .rating-guide-kicker {
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--text-soft);
+            margin-bottom: 6px;
+        }
+
+        .rating-guide-title {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 900;
+            color: var(--text);
+        }
+
+        .rating-guide-summary {
+            margin: 8px 0 14px;
+            color: var(--text-soft);
+            font-size: 14px;
+            line-height: 1.65;
+        }
+
+        .rating-guide-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+        }
+
+        .rating-guide-block {
+            min-width: 0;
+        }
+
+        .rating-guide-block h4 {
+            margin: 0 0 8px;
+            font-size: 13px;
+            font-weight: 900;
+            color: var(--text);
+        }
+
+        .rating-guide-block ul {
+            margin: 0;
+            padding-left: 18px;
+            color: var(--text-soft);
+            font-size: 13px;
+            line-height: 1.55;
+        }
+
+        .rating-guide-block li + li {
+            margin-top: 5px;
+        }
+
+        .rating-principles {
+            margin-top: 14px;
+            padding-top: 14px;
+            border-top: 1px solid var(--border);
+            color: var(--text-soft);
+            font-size: 13px;
+            line-height: 1.55;
+        }
+
+        .rating-principles strong {
+            color: var(--text);
+        }
+
         .genre-tools {
             display: flex;
             align-items: center;
@@ -680,6 +754,7 @@
 
             .field-grid,
             .rating-grid,
+            .rating-guide-grid,
             .check-grid,
             .hero-meta {
                 grid-template-columns: 1fr;
@@ -841,30 +916,44 @@
                 </p>
 
                 <div class="rating-grid" id="ratingGrid">
-                    <button class="rating-btn" type="button" data-rating="General">
+                    <button class="rating-btn" type="button" data-rating="General" aria-describedby="ratingGuidePanel">
                         <div class="rating-emoji">🟢</div>
                         <div class="rating-name">General</div>
                         <div class="rating-code">G</div>
                     </button>
 
-                    <button class="rating-btn" type="button" data-rating="Teen">
+                    <button class="rating-btn" type="button" data-rating="Teen" aria-describedby="ratingGuidePanel">
                         <div class="rating-emoji">🟡</div>
                         <div class="rating-name">Teen</div>
                         <div class="rating-code">T</div>
                     </button>
 
-                    <button class="rating-btn" type="button" data-rating="Mature">
+                    <button class="rating-btn" type="button" data-rating="Mature" aria-describedby="ratingGuidePanel">
                         <div class="rating-emoji">🟠</div>
                         <div class="rating-name">Mature</div>
                         <div class="rating-code">M</div>
                     </button>
 
-                    <button class="rating-btn" type="button" data-rating="Explicit">
+                    <button class="rating-btn" type="button" data-rating="Explicit" aria-describedby="ratingGuidePanel">
                         <div class="rating-emoji">🔴</div>
                         <div class="rating-name">Explicit</div>
                         <div class="rating-code">E</div>
                     </button>
                 </div>
+
+                <article class="rating-guide-card" id="ratingGuidePanel" aria-live="polite">
+                    <div class="rating-guide-kicker">Rating guide</div>
+                    <h3 class="rating-guide-title" id="ratingGuideTitle">Pick or hover a rating</h3>
+                    <p class="rating-guide-summary" id="ratingGuideSummary">
+                        Use the guide here to choose the safest rating for the most intense content anywhere in your story.
+                    </p>
+                    <div class="rating-guide-grid" id="ratingGuideGrid"></div>
+                    <div class="rating-principles">
+                        <strong>Rate by the highest-intensity content.</strong> A single intense scene can set the rating.
+                        Themes alone do not always require a higher rating; detail, realism, frequency, and emotional intensity matter.
+                        When uncertain, choose the safer higher rating.
+                    </div>
+                </article>
             </section>
 
             <section class="content-card">
@@ -1210,6 +1299,9 @@
     const genreGroups = document.getElementById("genreGroups");
 
     const ratingGrid = document.getElementById("ratingGrid");
+    const ratingGuideTitle = document.getElementById("ratingGuideTitle");
+    const ratingGuideSummary = document.getElementById("ratingGuideSummary");
+    const ratingGuideGrid = document.getElementById("ratingGuideGrid");
 
     const warningSection = document.getElementById("warningSection");
 
@@ -1233,6 +1325,147 @@
     let genreOpenState = {};
     let warningOpenState = {};
     let isPublished = false;
+
+    const RATING_GUIDES = {
+        General: {
+            title: "General (G)",
+            summary: "Suitable for all audiences, including children. Conflict, danger, sadness, romance, or emotional growth should be mild, age-appropriate, and non-graphic.",
+            blocks: [
+                {
+                    heading: "May include",
+                    items: [
+                        "Mild fantasy or adventure violence without graphic injury.",
+                        "Brief, non-detailed peril, conflict, or danger.",
+                        "Innocent romance such as hand-holding, hugging, or kissing.",
+                        "Mild emotional themes like embarrassment, grief, loneliness, or fear.",
+                        "Very mild language and non-graphic references to illness, death, or conflict."
+                    ]
+                },
+                {
+                    heading: "Should not include",
+                    items: [
+                        "Explicit sexual acts or sustained sexual themes.",
+                        "Graphic violence, gore, torture, or realistic bodily injury detail.",
+                        "Strong profanity or repeated crude language.",
+                        "Detailed abuse, coercion, predatory dynamics, self-harm, suicide, addiction, or severe psychological trauma.",
+                        "Horror intended to deeply disturb or traumatize readers."
+                    ]
+                },
+                {
+                    heading: "Choose General if",
+                    items: [
+                        "The story is broadly appropriate for children and families.",
+                        "Romance remains innocent and non-sexual.",
+                        "Violence is brief, stylized, or emotionally light.",
+                        "Disturbing themes are absent or only lightly referenced."
+                    ]
+                }
+            ]
+        },
+        Teen: {
+            title: "Teen (T)",
+            summary: "Suitable for teen audiences. Teen stories may include moderate violence, emotional intensity, suggestive material, stronger language, or mature themes without graphic or prolonged depiction.",
+            blocks: [
+                {
+                    heading: "May include",
+                    items: [
+                        "Moderate violence, fights, weapon use, or injury without graphic gore.",
+                        "Some blood or aftermath detail that is not prolonged.",
+                        "Kissing, sexual tension, suggestive dialogue, implied intimacy, or fade-to-black sex.",
+                        "Moderate profanity, crude humor, horror, suspense, stalking, fear, or supernatural danger.",
+                        "Bullying, manipulation, unhealthy relationships, grief, anxiety, depression, or trauma without graphic detail."
+                    ]
+                },
+                {
+                    heading: "Should not include",
+                    items: [
+                        "Graphic sexual content or explicit nudity.",
+                        "Explicit depictions of rape or sexual assault.",
+                        "Graphic torture, mutilation, or extreme gore.",
+                        "Detailed self-harm or suicide acts.",
+                        "Sustained sadistic abuse or content focused mainly on eroticism or shock value."
+                    ]
+                },
+                {
+                    heading: "Choose Teen if",
+                    items: [
+                        "The story has stronger themes but avoids graphic detail.",
+                        "Violence or sexuality is restrained, implied, or fade-to-black.",
+                        "Emotional intensity is significant but appropriate for older teens.",
+                        "The tone resembles common YA or PG-13 / light R material."
+                    ]
+                }
+            ]
+        },
+        Mature: {
+            title: "Mature (M)",
+            summary: "Intended for older teens or adult readers. Mature stories contain strong themes, intense emotional material, significant violence, sexual content, or disturbing subject matter without becoming fully graphic or prolonged.",
+            blocks: [
+                {
+                    heading: "May include",
+                    items: [
+                        "Strong violence with visible injury, blood, or suffering.",
+                        "Threats, torture, captivity, abuse, or brutality without extreme graphic detail.",
+                        "On-page sexual situations with moderate descriptive detail, nudity, or erotic themes beyond implication.",
+                        "Strong repeated profanity and dark psychological themes such as obsession, coercion, paranoia, or corruption.",
+                        "Trauma, PTSD, addiction, suicidal ideation, self-destructive behavior, emotional breakdowns, or mature horror."
+                    ]
+                },
+                {
+                    heading: "Generally avoid",
+                    items: [
+                        "Graphic step-by-step sexual description.",
+                        "Prolonged or highly graphic gore and bodily mutilation.",
+                        "Explicit rape or sadistic violence in extreme detail.",
+                        "Repeated explicit content as the dominant feature of the work."
+                    ]
+                },
+                {
+                    heading: "Choose Mature if",
+                    items: [
+                        "The story is clearly intended for older readers.",
+                        "Sexual or violent material is on-page and intense, but not fully graphic.",
+                        "The emotional or psychological content may distress many readers.",
+                        "Adult themes are central to the story's tone or atmosphere."
+                    ]
+                }
+            ]
+        },
+        Explicit: {
+            title: "Explicit (E)",
+            summary: "Adults-only content. Explicit stories directly and unambiguously depict graphic sexual content, graphic violence, or intensely disturbing material.",
+            blocks: [
+                {
+                    heading: "May include",
+                    items: [
+                        "Fully described sexual acts, repeated erotic scenes, explicit nudity, or sexual detail.",
+                        "Graphic kink, fetish, or BDSM content where permitted.",
+                        "Graphic rape or sexual assault depictions where permitted.",
+                        "Extreme gore, mutilation, dismemberment, body horror, torture, cruelty, or sadistic violence.",
+                        "Highly detailed self-harm, suicide, or other disturbing acts."
+                    ]
+                },
+                {
+                    heading: "Characterized by",
+                    items: [
+                        "Direct descriptive detail intended to fully depict the act or experience.",
+                        "Graphic visualization of sex, injury, or bodily harm.",
+                        "Adults-only material that reasonably requires strong warnings before reading.",
+                        "Intensity that exceeds standard mature boundaries."
+                    ]
+                },
+                {
+                    heading: "Choose Explicit if",
+                    items: [
+                        "Sexual acts are directly and graphically described.",
+                        "Violence includes explicit gore or bodily destruction.",
+                        "The work repeatedly focuses on explicit adult content.",
+                        "Readers would reasonably expect an adults-only warning before proceeding."
+                    ]
+                }
+            ]
+        }
+    };
 
     function safeString(value, fallback = "") {
         return typeof value === "string" ? value : fallback;
@@ -1557,9 +1790,47 @@
         ratingGrid.querySelectorAll(".rating-btn").forEach(btn => {
             btn.classList.toggle("selected", btn.dataset.rating === selectedRating);
         });
+        renderRatingGuide(selectedRating || "General");
+    }
+
+    function renderRatingGuide(rating) {
+        const guide = RATING_GUIDES[rating] || RATING_GUIDES.General;
+        ratingGuideTitle.textContent = guide.title;
+        ratingGuideSummary.textContent = guide.summary;
+        ratingGuideGrid.innerHTML = "";
+
+        guide.blocks.forEach(block => {
+            const section = document.createElement("div");
+            section.className = "rating-guide-block";
+
+            const heading = document.createElement("h4");
+            heading.textContent = block.heading;
+            section.appendChild(heading);
+
+            const list = document.createElement("ul");
+            block.items.forEach(item => {
+                const li = document.createElement("li");
+                li.textContent = item;
+                list.appendChild(li);
+            });
+            section.appendChild(list);
+            ratingGuideGrid.appendChild(section);
+        });
     }
 
     ratingGrid.querySelectorAll(".rating-btn").forEach(btn => {
+        btn.addEventListener("mouseenter", () => {
+            renderRatingGuide(btn.dataset.rating || selectedRating || "General");
+        });
+
+        btn.addEventListener("focus", () => {
+            renderRatingGuide(btn.dataset.rating || selectedRating || "General");
+        });
+
+        btn.addEventListener("mouseleave", () => {
+            renderRatingGuide(selectedRating || "General");
+        });
+
         btn.addEventListener("click", () => {
             selectedRating = btn.dataset.rating || "";
             renderRating();
