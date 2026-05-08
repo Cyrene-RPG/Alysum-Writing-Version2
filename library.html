@@ -500,6 +500,7 @@
                 warnings,
                 chapterCount: safeNumber(data.chapterCount, chapters.length),
                 words: safeNumber(data.words, 0),
+                views: safeNumber(data.views, 0),
                 updated: safeNumber(data.updated, 0),
                 isPublished: !!data.isPublished
             };
@@ -614,6 +615,7 @@
                         <div class="chip">${escapeHtml(book.type)}</div>
                         <div class="chip soft">${book.chapterCount} chapter${book.chapterCount === 1 ? "" : "s"}</div>
                         <div class="chip soft">${formatNumber(book.words)} words</div>
+                        <div class="chip soft">${formatNumber(book.views)} reads</div>
                     </div>
 
                     <div class="summary">${escapeHtml(book.summary || "No summary yet.")}</div>
