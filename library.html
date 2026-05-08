@@ -406,7 +406,7 @@
         import { db, auth } from "./firebase.js";
         import {
             collection,
-            getDocs,
+            onSnapshot,
             doc,
             getDoc
         } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -428,6 +428,7 @@
         let allBooks = [];
         let currentFilter = "fiction";
         let currentUser = null;
+        let libraryUnsubscribe = null;
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
@@ -676,20 +677,27 @@
                 .replaceAll("'", "&#039;");
         }
 
-        async function loadBooks() {
+        function loadBooks() {
             showState("loading");
             resultsText.textContent = "Loading stories...";
 
-            try {
-                const snap = await getDocs(collection(db, "library"));
-
-                allBooks = snap.docs.map(docSnap => normalizeBook(docSnap.id, docSnap.data()));
-                renderBooks();
-            } catch (error) {
-                console.error(error);
-                showState("error");
-                resultsText.textContent = "Library unavailable";
+            if (libraryUnsubscribe) {
+                libraryUnsubscribe();
+                libraryUnsubscribe = null;
             }
+
+            libraryUnsubscribe = onSnapshot(
+                collection(db, "library"),
+                (snap) => {
+                    allBooks = snap.docs.map(docSnap => normalizeBook(docSnap.id, docSnap.data()));
+                    renderBooks();
+                },
+                (error) => {
+                    console.error(error);
+                    showState("error");
+                    resultsText.textContent = "Library unavailable";
+                }
+            );
         }
 
         navButtons.forEach(btn => {
