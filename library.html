@@ -429,6 +429,8 @@
         let currentFilter = "fiction";
         let currentUser = null;
         let libraryUnsubscribe = null;
+        const readCounts = new Map();
+        const readUnsubscribers = new Map();
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
@@ -509,6 +511,10 @@
 
         function formatNumber(num) {
             return new Intl.NumberFormat().format(num || 0);
+        }
+
+        function realReadCount(book) {
+            return Math.max(safeNumber(book.views, 0), readCounts.get(book.id) || 0);
         }
 
         function formatRelativeUpdate(timestamp) {
@@ -616,7 +622,7 @@
                         <div class="chip">${escapeHtml(book.type)}</div>
                         <div class="chip soft">${book.chapterCount} chapter${book.chapterCount === 1 ? "" : "s"}</div>
                         <div class="chip soft">${formatNumber(book.words)} words</div>
-                        <div class="chip soft">${formatNumber(book.views)} reads</div>
+                        <div class="chip soft">${formatNumber(realReadCount(book))} reads</div>
                     </div>
 
                     <div class="summary">${escapeHtml(book.summary || "No summary yet.")}</div>
@@ -677,6 +683,37 @@
                 .replaceAll("'", "&#039;");
         }
 
+        function syncReadSubscriptions() {
+            const liveIds = new Set(allBooks.map(book => book.id));
+
+            readUnsubscribers.forEach((unsubscribe, bookId) => {
+                if (!liveIds.has(bookId)) {
+                    unsubscribe();
+                    readUnsubscribers.delete(bookId);
+                    readCounts.delete(bookId);
+                }
+            });
+
+            allBooks.forEach(book => {
+                if (readUnsubscribers.has(book.id)) return;
+
+                const unsubscribe = onSnapshot(
+                    collection(db, "library", book.id, "reads"),
+                    (snap) => {
+                        readCounts.set(book.id, snap.size);
+                        renderBooks();
+                    },
+                    (error) => {
+                        console.warn(`Could not load read records for ${book.id}.`, error);
+                        readCounts.set(book.id, 0);
+                        renderBooks();
+                    }
+                );
+
+                readUnsubscribers.set(book.id, unsubscribe);
+            });
+        }
+
         function loadBooks() {
             showState("loading");
             resultsText.textContent = "Loading stories...";
@@ -690,6 +727,7 @@
                 collection(db, "library"),
                 (snap) => {
                     allBooks = snap.docs.map(docSnap => normalizeBook(docSnap.id, docSnap.data()));
+                    syncReadSubscriptions();
                     renderBooks();
                 },
                 (error) => {
