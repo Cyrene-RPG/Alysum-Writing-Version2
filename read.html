@@ -1111,6 +1111,12 @@
         const likes = countSnap.data().count || 0;
     
         likeCount.textContent = `${formatNumber(likes)} kudos`;
+
+        try {
+          await updateDoc(doc(db, "library", bookId), { likes });
+        } catch (error) {
+          console.warn("Could not sync story kudos count.", error);
+        }
     
         hasLikedThisBook = false;
     

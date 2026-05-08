@@ -778,6 +778,8 @@
 
     let currentSort = "popular";
     let books = [];
+    const kudosCounts = new Map();
+    const kudosUnsubscribers = new Map();
 
     function setActiveSortButton() {
       document.querySelectorAll(".sort-btn").forEach(btn => {
@@ -807,8 +809,12 @@
       return 0;
     }
 
+    function realKudosCount(bookId) {
+      return kudosCounts.get(bookId) || 0;
+    }
+
     function popularityScore(book) {
-      return (safeNumber(book.likes) * 3) + safeNumber(book.views);
+      return (realKudosCount(book.id) * 3) + safeNumber(book.views);
     }
 
     function renderBooks() {
@@ -855,7 +861,7 @@
         const author = safeString(data.author, "Unknown");
         const chapterCount = safeNumber(data.chapterCount);
         const views = safeNumber(data.views);
-        const likes = safeNumber(data.likes);
+        const likes = realKudosCount(data.id);
         const badge = title.slice(0, 2).toUpperCase();
 
         el.innerHTML = `
@@ -889,6 +895,37 @@
       });
     }
 
+    function syncKudosSubscriptions() {
+      const liveIds = new Set(books.map(book => book.id));
+
+      kudosUnsubscribers.forEach((unsubscribe, bookId) => {
+        if (!liveIds.has(bookId)) {
+          unsubscribe();
+          kudosUnsubscribers.delete(bookId);
+          kudosCounts.delete(bookId);
+        }
+      });
+
+      books.forEach(book => {
+        if (kudosUnsubscribers.has(book.id)) return;
+
+        const unsubscribe = onSnapshot(
+          collection(db, "library", book.id, "likes"),
+          (snap) => {
+            kudosCounts.set(book.id, snap.size);
+            renderBooks();
+          },
+          (err) => {
+            console.warn(`Could not load kudos for ${book.id}.`, err);
+            kudosCounts.set(book.id, 0);
+            renderBooks();
+          }
+        );
+
+        kudosUnsubscribers.set(book.id, unsubscribe);
+      });
+    }
+
     function subscribeBooks() {
       const container = document.getElementById("books");
       container.innerHTML = `
@@ -906,6 +943,7 @@
         collection(db, "library"),
         (snap) => {
           books = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          syncKudosSubscriptions();
           renderBooks();
         },
         (err) => {
