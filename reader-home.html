@@ -399,6 +399,84 @@
             background: rgba(255,255,255,0.06);
         }
 
+        .beta-panel {
+            padding: 18px;
+        }
+
+        .section-head h2 {
+            margin: 0;
+            font-size: 22px;
+            font-weight: 900;
+            color: var(--gold);
+        }
+
+        .section-hint {
+            margin: 8px 0 0;
+            font-size: 14px;
+            color: var(--muted-2);
+            line-height: 1.45;
+            max-width: 720px;
+        }
+
+        .beta-books {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 14px;
+            margin-top: 16px;
+        }
+
+        .beta-book-card {
+            display: block;
+            text-decoration: none;
+            color: inherit;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 14px 14px;
+            transition: transform 0.15s ease, background 0.15s ease;
+            min-height: 100px;
+        }
+
+        .beta-book-card:hover {
+            transform: translateY(-2px);
+            background: rgba(255,255,255,0.07);
+        }
+
+        .beta-book-card .t {
+            font-size: 16px;
+            font-weight: 900;
+            color: #fff7ed;
+            line-height: 1.25;
+        }
+
+        .beta-book-card .a {
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 800;
+            color: var(--muted);
+        }
+
+        .beta-book-card .k {
+            margin-top: 10px;
+            font-size: 11px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #c4b5fd;
+        }
+
+        .beta-empty {
+            margin-top: 14px;
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--muted);
+            line-height: 1.45;
+        }
+
+        .beta-empty.hidden {
+            display: none;
+        }
+
         .loading-msg {
             text-align: center;
             padding: 48px 16px;
@@ -507,6 +585,19 @@
                     </div>
                 </section>
 
+                <section class="panel beta-panel hidden" id="betaReadsPanel">
+                    <div class="section-head">
+                        <h2>Beta reads</h2>
+                        <p class="section-hint">
+                            When you open a story from the Library, a read-only copy is saved here. Open one to highlight passages and capture private notes on the right — your feedback workspace.
+                        </p>
+                    </div>
+                    <div class="beta-books" id="betaReadsGrid"></div>
+                    <p class="beta-empty hidden" id="betaReadsEmpty">
+                        Nothing on your beta shelf yet. Visit the Library, open a story, and it will appear here automatically.
+                    </p>
+                </section>
+
                 <p class="loading-msg" id="loadingMsg">Loading your profile…</p>
             </main>
         </div>
@@ -515,7 +606,7 @@
     <script type="module">
         import { auth, db } from "./firebase.js";
         import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-        import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { doc, getDoc, setDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
         import { permanentHandleFromUserData, publicDisplayNameFromUserData } from "./js/profile-display.js?v=1";
         import {
             normalizeAccountType,
@@ -525,8 +616,63 @@
             setUiMode,
         } from "./js/account-mode.js?v=1";
 
+        const BETA_READ_PAGE = "/beta-read.html";
+
         function safeString(value, fallback = "") {
             return typeof value === "string" ? value : fallback;
+        }
+
+        function millisFromFirestore(ts) {
+            if (ts && typeof ts.toMillis === "function") return ts.toMillis();
+            return 0;
+        }
+
+        async function loadBetaReads(uid) {
+            if (!betaReadsGrid || !betaReadsEmpty || !betaReadsPanel) return;
+            betaReadsGrid.innerHTML = "";
+            try {
+                const snap = await getDocs(collection(db, "users", uid, "betaReads"));
+                const rows = [];
+                snap.forEach((d) => rows.push({ id: d.id, data: d.data() || {} }));
+                rows.sort((a, b) => {
+                    const tb =
+                        millisFromFirestore(b.data.lastOpenedAt) ||
+                        millisFromFirestore(b.data.shelvedAt);
+                    const ta =
+                        millisFromFirestore(a.data.lastOpenedAt) ||
+                        millisFromFirestore(a.data.shelvedAt);
+                    return tb - ta;
+                });
+
+                betaReadsPanel.classList.remove("hidden");
+
+                if (!rows.length) {
+                    betaReadsEmpty.classList.remove("hidden");
+                    return;
+                }
+                betaReadsEmpty.classList.add("hidden");
+
+                rows.forEach((row) => {
+                    const title = safeString(row.data.title, "Untitled");
+                    const author = safeString(row.data.author, "");
+                    const a = document.createElement("a");
+                    a.className = "beta-book-card";
+                    a.href = `${BETA_READ_PAGE}?book=${encodeURIComponent(row.id)}`;
+                    a.innerHTML = `
+                        <div class="t"></div>
+                        <div class="a"></div>
+                        <div class="k">Open beta workspace →</div>
+                    `;
+                    a.querySelector(".t").textContent = title;
+                    a.querySelector(".a").textContent = author ? "@" + author : "";
+                    betaReadsGrid.appendChild(a);
+                });
+            } catch (e) {
+                console.error(e);
+                betaReadsPanel.classList.remove("hidden");
+                betaReadsEmpty.classList.remove("hidden");
+                betaReadsEmpty.textContent = "Could not load your beta shelf.";
+            }
         }
 
         function pickLatestBookmarkFromLocalStorage() {
@@ -622,6 +768,9 @@
         const currentReadTitle = document.getElementById("currentReadTitle");
         const currentReadMeta = document.getElementById("currentReadMeta");
         const currentReadLink = document.getElementById("currentReadLink");
+        const betaReadsPanel = document.getElementById("betaReadsPanel");
+        const betaReadsGrid = document.getElementById("betaReadsGrid");
+        const betaReadsEmpty = document.getElementById("betaReadsEmpty");
 
         function openMenu() {
             sideMenu.classList.add("open");
@@ -718,6 +867,7 @@
 
                 loadingMsg.hidden = true;
                 heroPanel.hidden = false;
+                await loadBetaReads(user.uid);
             } catch (e) {
                 console.error(e);
                 loadingMsg.textContent = "Could not load your profile. Try refreshing.";

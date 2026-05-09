@@ -1332,11 +1332,32 @@
         await loadLikeState();
         hideStatus();
         isLoaded = true;
+        void ensureBetaReadShelved();
       } catch (error) {
         console.error(error);
         showError("Failed to load story.");
         topbarTitle.textContent = "Load error";
         hideStatus();
+      }
+    }
+
+    async function ensureBetaReadShelved() {
+      if (!currentUser || !bookId || !currentBook) return;
+      try {
+        const ref = doc(db, "users", currentUser.uid, "betaReads", bookId);
+        await setDoc(
+          ref,
+          {
+            libraryBookId: bookId,
+            title: safeString(currentBook.title, "Untitled"),
+            author: safeString(currentBook.author, ""),
+            shelvedAt: serverTimestamp(),
+            lastOpenedAt: serverTimestamp()
+          },
+          { merge: true }
+        );
+      } catch (err) {
+        console.warn("Could not add this story to your beta reads shelf.", err);
       }
     }
 
@@ -1534,6 +1555,7 @@ async function postComment() {
         loadLikeState();
         if (currentUser && bookId && currentBook) {
           syncProfileCurrentReadNow();
+          void ensureBetaReadShelved();
         }
       }
     });
