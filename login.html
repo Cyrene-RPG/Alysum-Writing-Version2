@@ -78,6 +78,50 @@
             font-weight: 600;
         }
 
+        .forgot-row {
+            text-align: right;
+            margin: -4px 0 6px;
+        }
+
+        .text-link {
+            background: none;
+            border: none;
+            padding: 0;
+            margin: 0;
+            width: auto;
+            font-size: 14px;
+            color: #6d28d9;
+            font-weight: 600;
+            text-decoration: underline;
+            cursor: pointer;
+            display: inline;
+        }
+
+        .text-link:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+        }
+
+        .text-link:active {
+            transform: none;
+        }
+
+        #success-msg {
+            display: none;
+            margin-top: 12px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            font-size: 14px;
+            line-height: 1.45;
+            color: #14532d;
+            background: #dcfce7;
+            border: 1px solid #bbf7d0;
+        }
+
+        #success-msg.visible {
+            display: block;
+        }
+
         #error-msg {
             display: none;
             margin-top: 12px;
@@ -119,7 +163,12 @@
     <input id="email" type="email" placeholder="Email" autocomplete="username">
     <input id="password" type="password" placeholder="Password" autocomplete="current-password">
 
+    <div class="forgot-row">
+        <button type="button" class="text-link" id="forgot-btn">Forgot password?</button>
+    </div>
+
     <button type="button" id="login-btn" onclick="login()">Enter Studio</button>
+    <p id="success-msg" role="status"></p>
     <p id="error-msg" role="alert"></p>
 
     <div class="signup-link">
@@ -129,12 +178,19 @@
 
 <script type="module">
 import { auth } from "./firebase.js";
-import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import {
+    signInWithEmailAndPassword,
+    sendPasswordResetEmail,
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 const errorEl = document.getElementById("error-msg");
+const successEl = document.getElementById("success-msg");
 const loginBtn = document.getElementById("login-btn");
+const forgotBtn = document.getElementById("forgot-btn");
 
 function showError(text) {
+    successEl.textContent = "";
+    successEl.classList.remove("visible");
     errorEl.textContent = text;
     errorEl.classList.add("visible");
 }
@@ -142,6 +198,17 @@ function showError(text) {
 function clearError() {
     errorEl.textContent = "";
     errorEl.classList.remove("visible");
+}
+
+function showSuccess(text) {
+    clearError();
+    successEl.textContent = text;
+    successEl.classList.add("visible");
+}
+
+function clearSuccess() {
+    successEl.textContent = "";
+    successEl.classList.remove("visible");
 }
 
 function authMessage(code) {
@@ -160,10 +227,43 @@ function authMessage(code) {
             return "That email address does not look valid.";
         case "auth/network-request-failed":
             return "Network error. Check your connection and try again.";
+        case "auth/missing-email":
+            return "Enter your email address first.";
         default:
             return null;
     }
 }
+
+let resetInFlight = false;
+
+forgotBtn.addEventListener("click", async () => {
+    if (resetInFlight) return;
+
+    const email = document.getElementById("email").value.trim();
+    if (!email) {
+        showError("Enter your email address, then use Forgot password.");
+        return;
+    }
+
+    clearError();
+    clearSuccess();
+    resetInFlight = true;
+    forgotBtn.disabled = true;
+
+    try {
+        await sendPasswordResetEmail(auth, email);
+        showSuccess(
+            "If an account exists for that email, we sent a link to reset your password. Check your inbox and spam folder."
+        );
+    } catch (e) {
+        const code = e && e.code;
+        const friendly = authMessage(code) || (e && e.message) || "Could not send reset email.";
+        showError(friendly);
+    } finally {
+        resetInFlight = false;
+        forgotBtn.disabled = false;
+    }
+});
 
 let loginInFlight = false;
 let cooldownUntil = 0;
@@ -184,6 +284,7 @@ window.login = async function () {
         return;
     }
 
+    clearSuccess();
     clearError();
     loginInFlight = true;
     loginBtn.disabled = true;
