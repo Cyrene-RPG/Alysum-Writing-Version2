@@ -205,9 +205,31 @@ function authMessage(code) {
             return "Network error. Check your connection and try again.";
         case "auth/missing-email":
             return "Enter your email address first.";
+        case "auth/operation-not-allowed":
+            return "Password reset is turned off for this app in Firebase (Authentication → Sign-in method: enable Email/Password).";
+        case "auth/unauthorized-continue-uri":
+        case "auth/invalid-continue-uri":
+            return "This site’s address is not allowed for password reset. In Firebase Console → Authentication → Settings, add this exact domain to Authorized domains (include localhost if you test locally).";
+        case "auth/missing-continue-uri":
+            return "Password reset could not build a valid return link. Open the login page over http(s), not as a saved file.";
         default:
             return null;
     }
+}
+
+/** Continue URL in the reset email; domain must be listed under Authentication → Settings → Authorized domains. */
+function passwordResetActionCodeSettings() {
+    if (typeof window === "undefined" || window.location.protocol === "file:") {
+        return undefined;
+    }
+    const origin = window.location.origin;
+    if (!origin || origin === "null") {
+        return undefined;
+    }
+    return {
+        url: `${origin}/login.html`,
+        handleCodeInApp: false,
+    };
 }
 
 let resetInFlight = false;
@@ -228,9 +250,14 @@ forgotLink.addEventListener("click", async (e) => {
     forgotLink.classList.add("is-busy");
 
     try {
-        await sendPasswordResetEmail(auth, email);
+        const actionCodeSettings = passwordResetActionCodeSettings();
+        if (actionCodeSettings) {
+            await sendPasswordResetEmail(auth, email, actionCodeSettings);
+        } else {
+            await sendPasswordResetEmail(auth, email);
+        }
         showSuccess(
-            "If an account exists for that email, we sent a link to reset your password. Check your inbox and spam folder."
+            "If that email is on file, a reset link usually arrives within a few minutes. Check spam and promotions. Use the exact address you use to sign in with email and password."
         );
     } catch (err) {
         const code = err && err.code;
