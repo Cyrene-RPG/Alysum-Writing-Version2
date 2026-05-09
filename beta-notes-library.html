@@ -678,8 +678,14 @@
                 }
             } catch (err) {
                 console.error(err);
-                errorBox.textContent =
-                    "Could not share those notes. You may be offline, or the author no longer owns this listing.";
+                const code = err && err.code;
+                if (code === "permission-denied") {
+                    errorBox.textContent =
+                        "Could not share those notes (permission denied). If this keeps happening after a refresh, the story listing may be missing or the author may no longer own it.";
+                } else {
+                    errorBox.textContent =
+                        "Could not share those notes. You may be offline, or the author no longer owns this listing.";
+                }
                 errorBox.classList.remove("hidden");
             } finally {
                 shareSelectedBtn.disabled = false;

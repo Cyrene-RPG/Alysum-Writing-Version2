@@ -59,7 +59,10 @@ service cloud.firestore {
           && request.resource.data.quote.size() < 2200
           && request.resource.data.comment is string
           && request.resource.data.comment.size() < 8200
-          && exists(/databases/$(database)/documents/users/$(request.auth.uid)/betaSharesIndex/$(request.resource.data.shareKey));
+          // Same-batch pair: exists() only sees committed docs; getAfter() sees this atomic batch.
+          && getAfter(/databases/$(database)/documents/users/$(request.auth.uid)/betaSharesIndex/$(request.resource.data.shareKey)).data.authorUid == request.resource.data.authorUid
+          && getAfter(/databases/$(database)/documents/users/$(request.auth.uid)/betaSharesIndex/$(request.resource.data.shareKey)).data.bookId == request.resource.data.bookId
+          && getAfter(/databases/$(database)/documents/users/$(request.auth.uid)/betaSharesIndex/$(request.resource.data.shareKey)).data.noteId == request.resource.data.noteId;
 
         allow update: if isUser(userId)
           && resource.data.authorUid == userId
