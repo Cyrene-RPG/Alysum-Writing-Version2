@@ -284,77 +284,251 @@
         .rail {
             position: sticky;
             top: 62px;
-            background: linear-gradient(180deg, rgba(17,24,39,0.98), rgba(15,23,42,0.98));
-            border: 1px solid var(--border);
-            border-radius: 20px;
-            padding: 18px;
+            --rail-glow: rgba(124, 58, 237, 0.22);
+            background-image:
+                linear-gradient(
+                    90deg,
+                    rgba(91, 33, 182, 0.95),
+                    rgba(124, 58, 237, 0.85),
+                    rgba(236, 72, 153, 0.65),
+                    rgba(245, 212, 137, 0.75)
+                ),
+                linear-gradient(
+                    168deg,
+                    rgba(30, 27, 75, 0.72) 0%,
+                    rgba(17, 24, 39, 0.96) 38%,
+                    rgba(11, 18, 32, 0.99) 100%
+                );
+            background-size: 100% 3px, 100% 100%;
+            background-repeat: no-repeat;
+            background-position: top, center;
+            background-color: #0b1220;
+            border: 1px solid rgba(167, 139, 250, 0.28);
+            border-radius: 22px;
+            padding: 20px 18px 22px;
             max-height: calc(100vh - 76px);
+            overflow-x: hidden;
             overflow-y: auto;
-            box-shadow: var(--shadow);
+            box-shadow:
+                0 0 0 1px rgba(109, 40, 217, 0.14) inset,
+                0 26px 64px rgba(0, 0, 0, 0.5),
+                0 0 100px -30px var(--rail-glow);
+        }
+        .rail-head {
+            margin-bottom: 18px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        .rail-head-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 6px;
+        }
+        .rail-spark {
+            flex-shrink: 0;
+            width: 36px;
+            height: 36px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background:
+                radial-gradient(circle at 28% 22%, rgba(255, 255, 255, 0.35), transparent 45%),
+                linear-gradient(145deg, rgba(109, 40, 217, 0.65), rgba(236, 72, 153, 0.28));
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            box-shadow:
+                0 0 28px rgba(124, 58, 237, 0.45),
+                0 2px 8px rgba(0, 0, 0, 0.35);
+            font-size: 17px;
+            line-height: 1;
         }
         .rail h2 {
-            margin: 0 0 6px;
-            font-size: 17px;
+            margin: 0;
+            font-size: 1.35rem;
             font-weight: 900;
-            color: var(--gold, #f5d489);
-            letter-spacing: -0.02em;
+            letter-spacing: -0.03em;
+            line-height: 1.15;
+        }
+        .rail-title-gradient {
+            background: linear-gradient(102deg, #faf5ff 0%, #e9d5ff 38%, #f0abfc 72%, #f5d489 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        @supports not (background-clip: text) {
+            .rail-title-gradient {
+                color: var(--gold, #f5d489);
+                background: none;
+            }
+        }
+        .rail-tagline {
+            margin: 0 0 10px;
+            padding-left: 48px;
+            font-size: 13px;
+            font-weight: 700;
+            font-style: italic;
+            color: color-mix(in srgb, var(--theme-brand-kicker, #c4b5fd) 92%, transparent);
+            line-height: 1.4;
         }
         .rail-sub {
+            margin: 0;
             font-size: 12px;
             color: var(--muted);
             font-weight: 700;
-            margin-bottom: 16px;
-            line-height: 1.45;
+            line-height: 1.5;
+            padding: 10px 12px;
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.06);
         }
-        .draft-box {
-            background: rgba(0,0,0,0.22);
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 14px;
-            margin-bottom: 16px;
+        .rail-sub-hint {
+            display: block;
+            margin-top: 6px;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: rgba(196, 181, 253, 0.75);
+        }
+        .draft-box.composer {
+            position: relative;
+            margin-bottom: 18px;
+            padding: 16px 15px 17px;
+            border-radius: 18px;
+            background:
+                linear-gradient(155deg, rgba(109, 40, 217, 0.18) 0%, transparent 55%),
+                linear-gradient(210deg, rgba(236, 72, 153, 0.08) 0%, transparent 40%),
+                rgba(7, 11, 22, 0.72);
+            border: 1px solid rgba(167, 139, 250, 0.32);
+            box-shadow:
+                0 12px 36px rgba(0, 0, 0, 0.4),
+                0 0 0 1px rgba(255, 255, 255, 0.04) inset,
+                0 -20px 40px -24px rgba(124, 58, 237, 0.35) inset;
+        }
+        .draft-box.composer::before {
+            content: "";
+            position: absolute;
+            top: 10px;
+            right: 12px;
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(167, 139, 250, 0.14), transparent 68%);
+            pointer-events: none;
         }
         .draft-box label {
-            display: block;
-            font-size: 11px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 10px;
             font-weight: 900;
             text-transform: uppercase;
-            letter-spacing: 0.06em;
-            color: var(--muted);
-            margin-bottom: 6px;
+            letter-spacing: 0.1em;
+            color: color-mix(in srgb, var(--muted) 88%, #e9d5ff);
+            margin-bottom: 8px;
+        }
+        .draft-box label::before {
+            content: "";
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            box-shadow: 0 0 10px currentColor;
+        }
+        .draft-box label[for="draftQuote"]::before {
+            background: linear-gradient(135deg, #a78bfa, #7c3aed);
+            color: #a78bfa;
+        }
+        .draft-box label[for="draftComment"]::before {
+            background: linear-gradient(135deg, #f472b6, #ec4899);
+            color: #f472b6;
         }
         .draft-box label.draft-label-spaced {
-            margin-top: 12px;
+            margin-top: 14px;
         }
         .draft-box textarea {
             width: 100%;
-            border-radius: 10px;
-            border: 1px solid var(--border);
-            background: rgba(0,0,0,0.25);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(3, 7, 18, 0.75);
             color: var(--text);
             font-size: 13px;
-            line-height: 1.45;
-            padding: 10px 12px;
+            line-height: 1.5;
+            padding: 11px 13px;
             resize: vertical;
             min-height: 56px;
             font-family: inherit;
             outline: none;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+        #draftQuote {
+            border-left: 3px solid rgba(167, 139, 250, 0.75);
+            background: linear-gradient(90deg, rgba(109, 40, 217, 0.12), rgba(3, 7, 18, 0.82));
+            font-style: italic;
+            color: color-mix(in srgb, var(--text) 92%, #ddd6fe);
+        }
+        #draftComment {
+            min-height: 88px;
+        }
+        .draft-box textarea::placeholder {
+            color: rgba(156, 163, 175, 0.72);
+            font-style: normal;
         }
         .draft-box textarea:focus {
-            border-color: rgba(124, 58, 237, 0.45);
-            box-shadow: 0 0 0 3px rgba(109, 40, 217, 0.18);
+            border-color: rgba(167, 139, 250, 0.55);
+            box-shadow:
+                0 0 0 3px rgba(109, 40, 217, 0.22),
+                0 8px 24px rgba(0, 0, 0, 0.25);
         }
         .draft-box textarea:read-only {
-            opacity: 0.92;
+            opacity: 0.95;
         }
-        .save-note-btn {
-            margin-top: 12px;
+        .rail .save-note-btn {
+            margin-top: 14px;
             width: 100%;
             justify-content: center;
+            font-size: 14px;
+            font-weight: 900;
+            letter-spacing: 0.03em;
+            border: none;
+            background: linear-gradient(135deg, #5b21b6 0%, #6d28d9 38%, #a855f7 88%, #c084fc 100%);
+            box-shadow:
+                0 6px 26px rgba(109, 40, 217, 0.5),
+                0 0 0 1px rgba(255, 255, 255, 0.12) inset;
+        }
+        .rail .save-note-btn:hover:not(:disabled) {
+            filter: brightness(1.09);
+            box-shadow:
+                0 8px 32px rgba(109, 40, 217, 0.58),
+                0 0 0 1px rgba(255, 255, 255, 0.16) inset;
+        }
+        .notes-feed-head {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 4px 0 12px;
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: rgba(196, 181, 253, 0.85);
+        }
+        .notes-feed-head::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, rgba(167, 139, 250, 0.45), transparent);
+            min-width: 24px;
+        }
+        .notes-feed-icon {
+            font-size: 10px;
+            opacity: 0.9;
         }
         .notes-list {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 12px;
         }
         .notes-empty,
         .notes-error {
@@ -362,67 +536,121 @@
             color: var(--muted);
             font-weight: 700;
             margin: 0;
-            padding: 12px;
-            border-radius: 12px;
-            background: rgba(255,255,255,0.03);
-            border: 1px dashed var(--border);
+            padding: 14px 14px;
+            border-radius: 14px;
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.04), rgba(0, 0, 0, 0.15));
+            border: 1px dashed rgba(167, 139, 250, 0.28);
         }
         .notes-error {
             color: #fecaca;
             border-style: solid;
-            background: rgba(248,113,113,0.08);
+            border-color: rgba(248, 113, 113, 0.45);
+            background: linear-gradient(145deg, rgba(248, 113, 113, 0.12), rgba(0, 0, 0, 0.2));
         }
         .note-card {
-            background: rgba(255,255,255,0.04);
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 12px 12px 10px;
+            position: relative;
+            overflow: hidden;
+            border-radius: 16px;
+            padding: 14px 14px 12px 15px;
+            background: linear-gradient(165deg, rgba(255, 255, 255, 0.06) 0%, rgba(0, 0, 0, 0.22) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
+            transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+        }
+        .note-card::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 10px;
+            bottom: 10px;
+            width: 3px;
+            border-radius: 3px;
+            background: linear-gradient(180deg, var(--purple, #6d28d9), var(--pink, #ec4899));
+            opacity: 0.85;
+        }
+        .note-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(167, 139, 250, 0.35);
+            box-shadow:
+                0 16px 40px rgba(0, 0, 0, 0.38),
+                0 0 40px -12px rgba(124, 58, 237, 0.25);
         }
         .note-card .note-meta {
             display: flex;
             flex-wrap: wrap;
             align-items: center;
             gap: 6px 10px;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
             font-size: 11px;
             font-weight: 800;
             color: var(--muted);
         }
         .note-card .note-meta .chip {
-            padding: 3px 8px;
+            padding: 4px 10px;
             border-radius: 999px;
-            background: rgba(124, 58, 237, 0.15);
-            color: var(--theme-brand-kicker, #ddd6fe);
+            background: linear-gradient(135deg, rgba(109, 40, 217, 0.35), rgba(236, 72, 153, 0.15));
+            border: 1px solid rgba(167, 139, 250, 0.35);
+            color: #f5f3ff;
+            box-shadow: 0 0 16px rgba(109, 40, 217, 0.2);
         }
         .note-card .q {
+            position: relative;
             font-size: 13px;
             font-style: italic;
-            color: #e9d5ff;
-            line-height: 1.5;
-            margin-bottom: 10px;
-            border-left: 3px solid color-mix(in srgb, var(--pink, #ec4899) 55%, transparent);
-            padding-left: 10px;
+            color: #ede9fe;
+            line-height: 1.55;
+            margin-bottom: 12px;
+            padding: 12px 12px 12px 22px;
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.28);
+            border: 1px solid rgba(236, 72, 153, 0.18);
+            border-left: 3px solid color-mix(in srgb, var(--pink, #ec4899) 70%, transparent);
+        }
+        .note-card .q::before {
+            content: "“";
+            position: absolute;
+            left: 8px;
+            top: 6px;
+            font-size: 26px;
+            font-weight: 900;
+            font-style: normal;
+            line-height: 1;
+            color: rgba(167, 139, 250, 0.28);
+            pointer-events: none;
         }
         .note-card .c {
             font-size: 14px;
-            line-height: 1.5;
+            line-height: 1.55;
             white-space: pre-wrap;
+            color: color-mix(in srgb, var(--text) 96%, #c4b5fd);
         }
         .note-card .note-time {
-            margin-top: 10px;
+            margin-top: 12px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
             font-size: 11px;
-            color: var(--muted);
+            color: rgba(156, 163, 175, 0.95);
             font-weight: 700;
         }
         .status {
-            padding: 10px 12px;
+            padding: 11px 13px;
             border-radius: 12px;
             font-size: 13px;
             font-weight: 800;
-            margin-bottom: 12px;
+            margin-bottom: 14px;
         }
-        .status.ok { background: rgba(34,197,94,0.15); color: #86efac; }
-        .status.err { background: rgba(248,113,113,0.12); color: #fca5a5; }
+        .status.ok {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(16, 185, 129, 0.08));
+            color: #bbf7d0;
+            border: 1px solid rgba(52, 211, 153, 0.35);
+            box-shadow: 0 0 24px rgba(34, 197, 94, 0.12);
+        }
+        .status.err {
+            background: linear-gradient(135deg, rgba(248, 113, 113, 0.18), rgba(239, 68, 68, 0.06));
+            color: #fecaca;
+            border: 1px solid rgba(248, 113, 113, 0.4);
+            box-shadow: 0 0 24px rgba(248, 113, 113, 0.1);
+        }
         .err-banner {
             padding: 16px 18px;
             border-radius: 16px;
@@ -448,6 +676,11 @@
                 order: 3;
                 flex: 1 1 100%;
                 padding-top: 4px;
+            }
+        }
+        @media (max-width: 400px) {
+            .rail-tagline {
+                padding-left: 0;
             }
         }
     </style>
@@ -496,18 +729,31 @@
             </div>
 
             <aside class="rail" id="noteRail">
-                <h2>Beta notes</h2>
-                <p class="rail-sub">Attached to this story on your shelf. Select text in the chapter to start a note. Use ← → when focus is outside the note fields to change chapters.</p>
+                <header class="rail-head">
+                    <div class="rail-head-row">
+                        <span class="rail-spark" aria-hidden="true">✦</span>
+                        <h2><span class="rail-title-gradient">Notes & feedback</span></h2>
+                    </div>
+                    <p class="rail-tagline">Your private lane for reactions, nitpicks, and love letters to the prose.</p>
+                    <p class="rail-sub">
+                        Select text in the chapter, then capture it here. Everything syncs to your shelf for this book.
+                        <span class="rail-sub-hint">Tip: ← → changes chapters when a note field is not focused.</span>
+                    </p>
+                </header>
                 <div id="railStatus" class="status hidden" role="status" aria-live="polite"></div>
 
-                <div class="draft-box" id="draftBox">
-                    <label for="draftQuote">Selected passage</label>
+                <div class="draft-box composer" id="draftBox">
+                    <label for="draftQuote">Marked passage</label>
                     <textarea id="draftQuote" readonly rows="3" placeholder="Highlight text in the chapter…"></textarea>
-                    <label class="draft-label-spaced" for="draftComment">Your comment</label>
-                    <textarea id="draftComment" rows="4" placeholder="What stood out, felt unclear, or delighted you?"></textarea>
+                    <label class="draft-label-spaced" for="draftComment">Your feedback</label>
+                    <textarea id="draftComment" rows="4" placeholder="Tone, pacing, clarity, favorite lines — anything goes."></textarea>
                     <button type="button" class="btn primary save-note-btn" id="saveNoteBtn">Save note</button>
                 </div>
 
+                <div class="notes-feed-head">
+                    <span class="notes-feed-icon" aria-hidden="true">◇</span>
+                    <span>Saved notes</span>
+                </div>
                 <div class="notes-list" id="notesList"></div>
             </aside>
         </div>
@@ -789,9 +1035,9 @@
                         const ch = escapeHtml(safeString(n.chapterTitle, `Chapter ${(n.chapterIndex ?? 0) + 1}`));
                         const when = escapeHtml(formatNoteTime(n.createdAt));
                         card.innerHTML = `
+                            <div class="note-meta"><span class="chip">${ch}</span></div>
                             <div class="q">${quote}</div>
                             <div class="c">${body}</div>
-                            <div class="note-meta"><span class="chip">${ch}</span></div>
                             <div class="note-time">${when}</div>
                         `;
                         notesList.appendChild(card);
