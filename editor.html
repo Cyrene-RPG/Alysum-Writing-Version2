@@ -666,12 +666,67 @@
         }
 
         .publish-modal-box {
+            position: relative;
             width: 100%;
             max-width: 560px;
             background: var(--page-bg);
             color: var(--page-text);
             border-radius: 18px;
             padding: 20px;                                          box-shadow: 0 16px 40px rgba(0,0,0,0.3);
+        }
+
+        .publish-bypass-overlay {
+            display: none;
+            position: absolute;
+            inset: 0;
+            z-index: 2;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            border-radius: 18px;
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .publish-bypass-overlay.open {
+            display: flex;
+        }
+
+        .publish-bypass-card {
+            width: 100%;
+            max-width: 400px;
+            background: var(--page-bg);
+            color: var(--page-text);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 18px;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+        }
+
+        .publish-bypass-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 14px;
+        }
+
+        .publish-bypass-actions .publish-modal-btn {
+            flex: none;
+        }
+
+        .publish-quick-wrap {
+            margin-top: 14px;
+            display: none;
+        }
+
+        .publish-quick-wrap.visible {
+            display: block;
+        }
+
+        .publish-quick-status {
+            margin: 10px 0 0;
+            font-size: 13px;
+            color: var(--page-subtle);
+            min-height: 1.2em;
         }
 
         .publish-modal-title {
@@ -970,6 +1025,21 @@
             </p>
                                                                     <div class="publish-list" id="publishList"></div>                                                   
             <div class="publish-modal-actions">                         <button class="publish-modal-btn secondary" id="closePublishBtn" type="button">Cancel</button>                  <button class="publish-modal-btn primary" id="publishNextBtn" type="button">Next</button>                   </div>
+            <div class="publish-bypass-overlay" id="publishBypassOverlay" aria-hidden="true">
+                <div class="publish-bypass-card">
+                    <p class="publish-modal-text" style="margin:0;">
+                        You have already filled out the required information for this book. Would you like to skip this and publish anyway?
+                    </p>
+                    <div class="publish-bypass-actions" id="publishBypassChoiceRow">
+                        <button class="publish-modal-btn secondary" id="publishBypassNo" type="button">No</button>
+                        <button class="publish-modal-btn primary" id="publishBypassYes" type="button">Yes</button>
+                    </div>
+                    <div class="publish-quick-wrap" id="publishQuickWrap">
+                        <button class="publish-modal-btn primary" id="publishQuickPublishBtn" type="button">Publish update</button>
+                    </div>
+                    <p class="publish-quick-status" id="publishQuickStatus" aria-live="polite"></p>
+                </div>
+            </div>
         </div>                                              </div>
 
     <div class="sprint-modal" id="sprintConfirmModal" role="dialog" aria-label="Start sprint confirmation">
@@ -1015,9 +1085,11 @@
             doc,
             getDoc,
             updateDoc,
+            setDoc,
             deleteDoc,
             increment
         } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { publicDisplayNameFromUserData } from "./js/profile-display.js?v=1";
         import { localDayKey } from "./js/writing-day-stats.js?v=1";
         const params = new URLSearchParams(window.location.search);
         const bookId = params.get("book");                                                                              const sidebar = document.getElementById("sidebar");
@@ -1054,6 +1126,13 @@ homeBtn.onclick = () => {
         const fontSelect = document.getElementById("fontSelect");                                                       const fontSizeSelect = document.getElementById("fontSizeSelect");                                       
         const publishModal = document.getElementById("publishModal");
         const publishList = document.getElementById("publishList");                                                     const closePublishBtn = document.getElementById("closePublishBtn");                                             const publishNextBtn = document.getElementById("publishNextBtn");
+        const publishBypassOverlay = document.getElementById("publishBypassOverlay");
+        const publishBypassChoiceRow = document.getElementById("publishBypassChoiceRow");
+        const publishBypassYes = document.getElementById("publishBypassYes");
+        const publishBypassNo = document.getElementById("publishBypassNo");
+        const publishQuickWrap = document.getElementById("publishQuickWrap");
+        const publishQuickPublishBtn = document.getElementById("publishQuickPublishBtn");
+        const publishQuickStatus = document.getElementById("publishQuickStatus");
 
                                                                 let currentUser = null;
         let currentBook = null;
@@ -1288,12 +1367,52 @@ homeBtn.onclick = () => {
                 : [                                                         { id: generateId(), title: "Chapter 1", content: "" }                                                       ];
                                                                     const back = backRaw.map((ch, index) => normalizeChapter(ch, `Back Matter ${index + 1}`));                                                                              return { front, body, back };                       }
 
+        /** Must match warning keys in publish.html for metadata validation. */
+        const PUBLISH_WARNING_KEYS = [
+            "violence",
+            "abuse",
+            "sexual_content",
+            "mental_health",
+            "self_harm",
+            "substance_use",
+            "eating_body",
+            "moral_dark",
+            "fear_disturbing",
+            "body_medical",
+            "identity_social",
+            "sensitive_life_events"
+        ];
+
+        function normalizeWarningDataForPublish(rawWarnings) {
+            const source = safeObject(rawWarnings, {});
+            const out = {};
+            PUBLISH_WARNING_KEYS.forEach(key => {
+                out[key] = safeArray(source[key], []).filter(item => typeof item === "string");
+            });
+            return out;
+        }
+
+        function normalizePublishMetaForBook(rawPublishMeta) {
+            const meta = safeObject(rawPublishMeta, {});
+            return {
+                genres: safeArray(meta.genres, []).filter(item => typeof item === "string"),
+                rating: safeString(meta.rating, ""),
+                warnings: normalizeWarningDataForPublish(meta.warnings),
+                summary: safeString(meta.summary, ""),
+                extraTags: safeArray(meta.extraTags, []).filter(item => typeof item === "string")
+            };
+        }
+
         function normalizeBookData(rawData) {
             const data = safeObject(rawData, {});
             return {
                 title: safeString(data.title, "Untitled Book"),
                 sections: normalizeSections(data.sections),                                                                     words: safeNumber(data.words, 0),
-                updated: safeNumber(data.updated, Date.now())
+                updated: safeNumber(data.updated, Date.now()),
+                isPublished: !!data.isPublished,
+                libraryType: safeString(data.libraryType, ""),
+                publishedChapterIds: safeArray(data.publishedChapterIds, []).filter(item => typeof item === "string"),
+                publishMeta: normalizePublishMetaForBook(data.publishMeta)
             };                                                  }
 
         function ensureChapterIds(list) {
@@ -1357,7 +1476,7 @@ homeBtn.onclick = () => {
         function stripHtmlToText(html) {
             const text = safeString(html, "")
                 .replace(/<br\s*\/?>/gi, " ")
-                .replace(/<\/(div|p|h1|h2|h3|li|blockquote)>/gi, " ")
+                .replace(/<\/(div|p|h1|h2|h3|li|blockquote|ul|ol)>/gi, " ")
                 .replace(/<[^>]*>/g, " ")                               .replace(/\s+/g, " ")
                 .trim();
 
@@ -1518,25 +1637,193 @@ homeBtn.onclick = () => {
                     <label for="publish-ch-${index}">${ch.title || "Untitled"}</label>                                          `;
                                                                         publishList.appendChild(row);
             });                                                 }
+
+        function resetPublishBypassUI() {
+            publishBypassOverlay?.classList.remove("open");
+            publishBypassOverlay?.setAttribute("aria-hidden", "true");
+            publishQuickWrap?.classList.remove("visible");
+            publishBypassChoiceRow?.classList.remove("hidden");
+            if (publishQuickStatus) publishQuickStatus.textContent = "";
+        }
+
                                                                 function openPublishModal() {
             if (!currentBook) return;
+            resetPublishBypassUI();
             buildPublishChapterList();
             publishModal.classList.add("open");
         }
 
         function closePublishModal() {
+            resetPublishBypassUI();
             publishModal.classList.remove("open");
         }
 
-        function goToPublishPage() {                                const selectedIds = [...publishList.querySelectorAll("input[type='checkbox']:checked")]
+        function getSelectedPublishChapterIds() {
+            return [...publishList.querySelectorAll("input[type='checkbox']:checked")]
                 .map(input => input.dataset.id)
                 .filter(Boolean);
+        }
+
+        function everyEditorWarningCategoryHasChoice(warnings) {
+            const w = safeObject(warnings, {});
+            return PUBLISH_WARNING_KEYS.every(key => safeArray(w[key], []).length > 0);
+        }
+
+        function countNonNoneWarningsEditor(warnings) {
+            let total = 0;
+            const w = safeObject(warnings, {});
+            PUBLISH_WARNING_KEYS.forEach(key => {
+                safeArray(w[key], []).forEach(value => {
+                    if (value !== "None") total += 1;
+                });
+            });
+            return total;
+        }
+
+        function canOfferPublishBypass() {
+            if (!currentBook?.isPublished) return false;
+            const shelf = currentBook.libraryType;
+            if (!shelf || !["fiction", "nonfiction", "fanfiction"].includes(shelf)) return false;
+            const meta = safeObject(currentBook.publishMeta, {});
+            const genres = safeArray(meta.genres, []);
+            if (!genres.length || !safeString(meta.rating, "")) return false;
+            if (!everyEditorWarningCategoryHasChoice(meta.warnings)) return false;
+            if (!safeString(meta.summary, "").trim()) return false;
+            const r = meta.rating;
+            if ((r === "Mature" || r === "Explicit") && countNonNoneWarningsEditor(meta.warnings) === 0) return false;
+            return true;
+        }
+
+        function chapterWordTotalForPublish(chapters) {
+            return chapters.reduce((sum, ch) => sum + countWords(ch.content || ""), 0);
+        }
+
+        function goToPublishPage() {
+            const selectedIds = getSelectedPublishChapterIds();
             if (!selectedIds.length) {                                  alert("Choose at least one chapter.");
                 return;                                             }
                                                                     const query = new URLSearchParams({
                 book: bookId,                                           chapters: selectedIds.join(",")
             });
             window.location.href = "/publish.html?" + query.toString();                                                 }
+
+        function onPublishNextClick() {
+            const selectedIds = getSelectedPublishChapterIds();
+            if (!selectedIds.length) {
+                alert("Choose at least one chapter.");
+                return;
+            }
+            if (canOfferPublishBypass()) {
+                publishBypassOverlay?.classList.add("open");
+                publishBypassOverlay?.setAttribute("aria-hidden", "false");
+                publishQuickWrap?.classList.remove("visible");
+                publishBypassChoiceRow?.classList.remove("hidden");
+                if (publishQuickStatus) publishQuickStatus.textContent = "";
+            } else {
+                goToPublishPage();
+            }
+        }
+
+        async function quickRepublishFromEditor() {
+            if (!currentUser || !bookId || !currentBook) return;
+            const selectedIds = getSelectedPublishChapterIds();
+            if (!selectedIds.length) {
+                alert("Choose at least one chapter.");
+                return;
+            }
+            if (!canOfferPublishBypass()) {
+                if (publishQuickStatus) publishQuickStatus.textContent = "Saved publish details are incomplete. Opening full publish…";
+                setTimeout(() => goToPublishPage(), 600);
+                return;
+            }
+
+            const bodyList = safeArray(currentBook.sections?.body, []);
+            const wanted = new Set(selectedIds);
+            const selectedChapterObjects = bodyList.filter(ch => wanted.has(ch.id));
+            if (!selectedChapterObjects.length) {
+                if (publishQuickStatus) publishQuickStatus.textContent = "Could not match selected chapters.";
+                return;
+            }
+
+            const publishMeta = normalizePublishMetaForBook(currentBook.publishMeta);
+            const payloadTitle = safeString(currentBook.title, "Untitled Book").trim() || "Untitled Book";
+            const chapterIds = selectedChapterObjects.map(ch => ch.id);
+            const wordCount = chapterWordTotalForPublish(selectedChapterObjects);
+            const now = Date.now();
+            const libraryRef = doc(db, "library", bookId);
+
+            publishQuickPublishBtn.disabled = true;
+            if (publishQuickStatus) publishQuickStatus.textContent = "Publishing…";
+
+            try {
+                let authorName = "unknown";
+                const userSnap = await getDoc(doc(db, "users", currentUser.uid));
+                if (userSnap.exists()) {
+                    authorName = publicDisplayNameFromUserData(userSnap.data() || {});
+                }
+
+                const existingLibrarySnap = await getDoc(libraryRef);
+                const existingLibrary = existingLibrarySnap.exists() ? existingLibrarySnap.data() : {};
+                const firstPublishedAt = safeNumber(
+                    existingLibrary.publishedAt,
+                    safeNumber(existingLibrary.createdAt, now)
+                );
+
+                const userBookPayload = {
+                    title: payloadTitle,
+                    libraryType: currentBook.libraryType,
+                    publishMeta,
+                    publishedChapterIds: chapterIds,
+                    isPublished: true,
+                    updated: now
+                };
+
+                const libraryPayload = {
+                    bookId,
+                    ownerUid: currentUser.uid,
+                    title: payloadTitle,
+                    author: authorName || "unknown",
+                    type: currentBook.libraryType,
+                    genres: publishMeta.genres,
+                    rating: publishMeta.rating,
+                    warnings: publishMeta.warnings,
+                    summary: publishMeta.summary,
+                    extraTags: publishMeta.extraTags,
+                    chapters: selectedChapterObjects.map((ch, index) => ({
+                        id: ch.id,
+                        order: index + 1,
+                        title: ch.title || `Chapter ${index + 1}`,
+                        content: ch.content || "",
+                        words: countWords(ch.content || "")
+                    })),
+                    publishedChapterIds: chapterIds,
+                    chapterCount: selectedChapterObjects.length,
+                    words: wordCount,
+                    createdAt: firstPublishedAt,
+                    publishedAt: firstPublishedAt,
+                    updated: now,
+                    views: safeNumber(existingLibrary.views, 0),
+                    likes: safeNumber(existingLibrary.likes, 0),
+                    isPublished: true
+                };
+
+                await updateDoc(doc(db, "users", currentUser.uid, "books", bookId), userBookPayload);
+                await setDoc(libraryRef, libraryPayload, { merge: true });
+
+                currentBook.title = payloadTitle;
+                currentBook.publishMeta = publishMeta;
+                currentBook.publishedChapterIds = chapterIds;
+                currentBook.isPublished = true;
+
+                if (publishQuickStatus) publishQuickStatus.textContent = "Published successfully.";
+                renderTitles();
+            } catch (error) {
+                console.error(error);
+                if (publishQuickStatus) publishQuickStatus.textContent = "Publish failed. Try the full publish page.";
+            } finally {
+                publishQuickPublishBtn.disabled = false;
+            }
+        }
                                                                 async function recordTypedWordsToUserProfile(uid, delta) {
             if (!uid || !delta || delta <= 0) return;
             const dayKey = localDayKey();
@@ -1634,7 +1921,16 @@ homeBtn.onclick = () => {
         deleteBookTopBtn.addEventListener("click", deleteBook);
         publishBtn.addEventListener("click", openPublishModal);                                                         publishTopBtn.addEventListener("click", openPublishModal);
         closePublishBtn.addEventListener("click", closePublishModal);
-        publishNextBtn.addEventListener("click", goToPublishPage);
+        publishNextBtn.addEventListener("click", onPublishNextClick);
+        publishBypassNo?.addEventListener("click", () => {
+            resetPublishBypassUI();
+            goToPublishPage();
+        });
+        publishBypassYes?.addEventListener("click", () => {
+            publishBypassChoiceRow?.classList.add("hidden");
+            publishQuickWrap?.classList.add("visible");
+        });
+        publishQuickPublishBtn?.addEventListener("click", () => void quickRepublishFromEditor());
                                                                 publishModal.addEventListener("click", (e) => {
             if (e.target === publishModal) {                            closePublishModal();
             }
