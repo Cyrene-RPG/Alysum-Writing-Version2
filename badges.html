@@ -197,6 +197,10 @@ body {
 <h3 id="books">0</h3>
 <p>Books</p>
 </div>
+<div class="stat">
+<h3 id="dailyGoalStreak">0</h3>
+<p>Daily goal streak 🎯</p>
+</div>
 </div>
 
 <div class="badges" id="badgeGrid"></div>
@@ -207,11 +211,17 @@ body {
 import { auth, db } from "./firebase.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { doc, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import {
+    clampDailyWordGoal,
+    computeGoalStreakFromTotals,
+    DEFAULT_DAILY_WORD_GOAL
+} from "./js/writing-day-stats.js?v=1";
 
 const grid = document.getElementById("badgeGrid");
 const wordsEl = document.getElementById("totalWords");
 const streakEl = document.getElementById("streak");
 const booksEl = document.getElementById("books");
+const dailyGoalStreakEl = document.getElementById("dailyGoalStreak");
 
 /* FULL BADGES */
 const BADGES = [
@@ -239,7 +249,9 @@ const BADGES = [
 { icon:"📚", title:"First Book", goal:1, getValue:d=>d.books, desc:"You started" },
 { icon:"📦", title:"5 Books", goal:5, getValue:d=>d.books, desc:"Library growing" },
 { icon:"🏗️", title:"10 Books", goal:10, getValue:d=>d.books, desc:"Builder" },
-{ icon:"🏛️", title:"25 Books", goal:25, getValue:d=>d.books, desc:"Empire" }
+{ icon:"🏛️", title:"25 Books", goal:25, getValue:d=>d.books, desc:"Empire" },
+
+{ icon:"🎯", title:"3-Day Goal Streak", goal:3, getValue:d=>d.dailyGoalStreak, desc:"Hit your daily word goal three days in a row" }
 
 ];
 
@@ -275,11 +287,14 @@ totalWords += countBookWords(docSnap.data());
 });
 
 const data = userSnap.data() || {};
+const dailyGoal = clampDailyWordGoal(data.dailyWordGoal ?? DEFAULT_DAILY_WORD_GOAL);
+const dailyGoalStreak = computeGoalStreakFromTotals(data.writingDayTotals || {}, dailyGoal);
 
 return {
 words: totalWords,
 streak: data.streak || 0,
-books: booksSnap.size
+books: booksSnap.size,
+dailyGoalStreak
 };
 }
 
@@ -325,6 +340,7 @@ const data = await loadData(user.uid);
 wordsEl.textContent = data.words.toLocaleString();
 streakEl.textContent = data.streak;
 booksEl.textContent = data.books;
+dailyGoalStreakEl.textContent = data.dailyGoalStreak.toLocaleString();
 
 renderBadges(data);
 

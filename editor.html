@@ -986,7 +986,14 @@
 
     <script type="module">
         import { auth, db } from "./firebase.js";
-        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";               import { doc, getDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";               import {
+            doc,
+            getDoc,
+            updateDoc,
+            deleteDoc,
+            increment
+        } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { localDayKey } from "./js/writing-day-stats.js?v=1";
         const params = new URLSearchParams(window.location.search);
         const bookId = params.get("book");                                                                              const sidebar = document.getElementById("sidebar");
         const overlay = document.getElementById("overlay");
@@ -1027,7 +1034,10 @@ homeBtn.onclick = () => {
         let currentBook = null;
         let currentSection = "body";
         let currentChapterIndex = 0;
-        let saveTimer = null;                                   let dragged = null;
+        let saveTimer = null;
+        let dragged = null;
+        /** Last saved total manuscript word count (for daily-typed delta). */
+        let persistedBookWordCount = null;
 
         // Sprint timer (editor)
         const sprintToolbarBtn = document.getElementById("sprintToolbarBtn");
@@ -1502,18 +1512,42 @@ homeBtn.onclick = () => {
                 book: bookId,                                           chapters: selectedIds.join(",")
             });
             window.location.href = "/publish.html?" + query.toString();                                                 }
-                                                                async function saveBook(doneText = "Saved") {
-            if (!currentUser || !bookId || !currentBook) return;
-                                                                    setSaveStatus("Saving...");
+                                                                async function recordTypedWordsToUserProfile(uid, delta) {
+            if (!uid || !delta || delta <= 0) return;
+            const dayKey = localDayKey();
+            try {
+                await updateDoc(doc(db, "users", uid), {
+                    [`writingDayTotals.${dayKey}`]: increment(delta)
+                });
+            } catch (e) {
+                console.error("Daily writing totals update failed:", e);
+            }
+        }
 
-            await updateDoc(
-                doc(db, "users", currentUser.uid, "books", bookId),
-                {
-                    title: currentBook.title || "Untitled Book",
-                    sections: currentBook.sections,                         words: totalWords(),
-                    updated: Date.now()                                 }
-            );
-                                                                    setSaveStatus(doneText);                            }
+        async function saveBook(doneText = "Saved") {
+            if (!currentUser || !bookId || !currentBook) return;
+            setSaveStatus("Saving...");
+
+            const nextWords = totalWords();
+            const prevPersisted = persistedBookWordCount;
+
+            await updateDoc(doc(db, "users", currentUser.uid, "books", bookId), {
+                title: currentBook.title || "Untitled Book",
+                sections: currentBook.sections,
+                words: nextWords,
+                updated: Date.now()
+            });
+
+            if (typeof prevPersisted === "number" && Number.isFinite(prevPersisted)) {
+                const delta = Math.max(0, nextWords - prevPersisted);
+                if (delta > 0) {
+                    await recordTypedWordsToUserProfile(currentUser.uid, delta);
+                }
+            }
+            persistedBookWordCount = nextWords;
+
+            setSaveStatus(doneText);
+        }
 
         async function migrateBookIfNeeded() {
             if (!currentUser || !bookId || !currentBook) return;
@@ -1688,9 +1722,13 @@ homeBtn.onclick = () => {
                 renderAllSections();
 
                 if (currentBook.sections.body.length > 0) {
-                    loadChapter("body", 0, false);                      } else {
-                    loadChapter("front", 0, false);                     }
-                                                                        setSaveStatus("Ready");
+                    loadChapter("body", 0, false);
+                } else {
+                    loadChapter("front", 0, false);
+                }
+                syncStats();
+                persistedBookWordCount = totalWords();
+                setSaveStatus("Ready");
             } catch (e) {
                 console.error("LOAD ERROR:", e);
                 setSaveStatus("Error loading");                         topBookTitle.textContent = "Error loading";

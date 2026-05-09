@@ -544,6 +544,155 @@
             color: var(--muted-2);
         }
 
+        .goal-panel-click {
+            cursor: pointer;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .goal-panel-click:hover {
+            border-color: rgba(236, 72, 153, 0.35);
+            box-shadow: 0 0 0 1px rgba(147, 51, 234, 0.2);
+        }
+
+        .goal-panel-click:focus {
+            outline: 2px solid rgba(167, 139, 250, 0.9);
+            outline-offset: 2px;
+        }
+
+        .goal-streak-row {
+            margin-top: 10px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--gold);
+        }
+
+        .goal-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.55);
+            z-index: 130;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 18px;
+        }
+
+        .goal-modal-overlay.hidden {
+            display: none;
+        }
+
+        .goal-modal {
+            width: min(520px, 100%);
+            max-height: min(92vh, 720px);
+            overflow: auto;
+            background: linear-gradient(180deg, #111827, #0f172a);
+            border: 1px solid var(--border);
+            border-radius: 22px;
+            padding: 22px 20px 20px;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .goal-modal-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .goal-modal-title {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 900;
+            color: #fff7ed;
+        }
+
+        .goal-modal-sub {
+            margin: 0 0 16px;
+            font-size: 13px;
+            color: var(--muted-2);
+            line-height: 1.45;
+        }
+
+        .goal-modal-close {
+            flex-shrink: 0;
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.06);
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .goal-preset-label {
+            font-size: 11px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--muted);
+            margin: 14px 0 8px;
+        }
+
+        .goal-preset-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .goal-preset-btn {
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            font-size: 13px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .goal-preset-btn:hover {
+            background: rgba(147, 51, 234, 0.35);
+            border-color: rgba(236, 72, 153, 0.35);
+        }
+
+        .goal-custom-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+            align-items: center;
+        }
+
+        .goal-custom-input {
+            flex: 1 1 140px;
+            min-width: 0;
+            padding: 12px 14px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: rgba(0, 0, 0, 0.25);
+            color: white;
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .goal-custom-input::placeholder {
+            color: var(--muted);
+        }
+
+        .goal-save-btn {
+            padding: 12px 18px;
+            border-radius: 12px;
+            border: none;
+            background: linear-gradient(135deg, var(--purple), var(--pink));
+            color: white;
+            font-size: 14px;
+            font-weight: 900;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+        }
+
         .badge-box {
             margin-top: 14px;
             background: rgba(255,255,255,0.04);
@@ -860,9 +1009,15 @@
                     </div>
                 </section>
 
-                <section class="panel rail-card">
+                <section
+                    class="panel rail-card goal-panel-click"
+                    id="dailyGoalPanel"
+                    role="button"
+                    tabindex="0"
+                    aria-label="Open daily word goal settings"
+                >
                     <h3>Daily Goal</h3>
-                    <div class="rail-sub">A small target makes it easier to come back tomorrow.</div>
+                    <div class="rail-sub">Tap to set your target. Words you add in the editor count toward today.</div>
 
                     <div class="goal-top">
                         <span id="goalCurrentText">0 written</span>
@@ -874,6 +1029,7 @@
                     </div>
 
                     <div class="goal-note" id="goalNote">You’re just getting started.</div>
+                    <div class="goal-streak-row" id="goalStreakRow"></div>
                 </section>
 
                 <section class="panel rail-card">
@@ -899,6 +1055,33 @@
         </div>
     </div>
 
+    <div class="goal-modal-overlay hidden" id="goalModalOverlay" aria-hidden="true">
+        <div class="goal-modal" id="goalModalCard" role="dialog" aria-modal="true" aria-labelledby="goalModalTitle">
+            <div class="goal-modal-head">
+                <h2 class="goal-modal-title" id="goalModalTitle">Set daily word count goal</h2>
+                <button type="button" class="goal-modal-close" id="goalModalClose" aria-label="Close">×</button>
+            </div>
+            <p class="goal-modal-sub">
+                Choose a preset or enter your own. When you write in any book, new words you add today move this bar. Hit your goal each day to build a streak; three days in a row unlocks a badge on Achievements.
+            </p>
+            <div class="goal-preset-label">Quick picks</div>
+            <div class="goal-preset-grid" id="goalPresetGrid"></div>
+            <div class="goal-preset-label">Custom</div>
+            <div class="goal-custom-row">
+                <input
+                    class="goal-custom-input"
+                    id="goalCustomInput"
+                    type="number"
+                    min="50"
+                    max="20000"
+                    step="50"
+                    placeholder="e.g. 1200"
+                >
+                <button type="button" class="goal-save-btn" id="goalCustomSave">Save custom</button>
+            </div>
+        </div>
+    </div>
+
 <script type="module">
         import { auth, db } from "./firebase.js";
         import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
@@ -912,6 +1095,14 @@
             addDoc,
             getDocs
         } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import {
+            localDayKey,
+            clampDailyWordGoal,
+            wordsTypedOnDay,
+            computeGoalStreakFromTotals,
+            DAILY_GOAL_PRESETS,
+            DEFAULT_DAILY_WORD_GOAL
+        } from "./js/writing-day-stats.js?v=1";
 
         const status = document.getElementById("status");
         const username = document.getElementById("username");
@@ -944,6 +1135,14 @@
         const goalTargetText = document.getElementById("goalTargetText");
         const goalBar = document.getElementById("goalBar");
         const goalNote = document.getElementById("goalNote");
+        const goalStreakRow = document.getElementById("goalStreakRow");
+        const dailyGoalPanel = document.getElementById("dailyGoalPanel");
+        const goalModalOverlay = document.getElementById("goalModalOverlay");
+        const goalModalCard = document.getElementById("goalModalCard");
+        const goalModalClose = document.getElementById("goalModalClose");
+        const goalCustomInput = document.getElementById("goalCustomInput");
+        const goalCustomSave = document.getElementById("goalCustomSave");
+        const goalPresetGrid = document.getElementById("goalPresetGrid");
 
         const badgeName = document.getElementById("badgeName");
         const badgeProgressText = document.getElementById("badgeProgressText");
@@ -960,6 +1159,8 @@
         let currentUser = null;
         let firstBookId = null;
         let firstBookData = null;
+        /** Latest user profile fields used for daily goal (kept in sync after saves). */
+        let studioUserProfile = {};
 
         function openMenu() {
             sideMenu.classList.add("open");
@@ -1057,23 +1258,147 @@
             currentProjectMeta.textContent = getBookPreviewMeta(firstBookData);
         }
 
-        function updateGoalUI(wordsToday, goalTarget = 2000) {
-            const pct = Math.max(0, Math.min(100, Math.round((wordsToday / goalTarget) * 100)));
+        function updateGoalUI(wordsToday, goalTarget = DEFAULT_DAILY_WORD_GOAL) {
+            const safeTarget = Math.max(1, goalTarget);
+            const pct = Math.max(0, Math.min(100, Math.round((wordsToday / safeTarget) * 100)));
 
             goalCurrentText.textContent = `${wordsToday.toLocaleString()} written`;
-            goalTargetText.textContent = `${goalTarget} goal`;
+            goalTargetText.textContent = `${safeTarget.toLocaleString()} goal`;
             goalBar.style.width = pct + "%";
 
             if (wordsToday <= 0) {
                 goalNote.textContent = "You’re just getting started.";
-            } else if (wordsToday < goalTarget / 2) {
+            } else if (wordsToday < safeTarget / 2) {
                 goalNote.textContent = "Momentum is building.";
-            } else if (wordsToday < goalTarget) {
+            } else if (wordsToday < safeTarget) {
                 goalNote.textContent = "You’re over halfway there.";
             } else {
                 goalNote.textContent = "Daily goal completed.";
             }
         }
+
+        function getDailyGoalTarget() {
+            return clampDailyWordGoal(studioUserProfile?.dailyWordGoal ?? DEFAULT_DAILY_WORD_GOAL);
+        }
+
+        function refreshDailyGoalUIFromProfile() {
+            const day = localDayKey();
+            const totals = studioUserProfile?.writingDayTotals || {};
+            const wordsToday = wordsTypedOnDay(totals, day);
+            const goal = getDailyGoalTarget();
+            const gStreak = computeGoalStreakFromTotals(totals, goal, day);
+
+            updateGoalUI(wordsToday, goal);
+            todayEl.textContent = wordsToday.toLocaleString();
+
+            if (goalStreakRow) {
+                if (gStreak <= 0) {
+                    goalStreakRow.textContent = "Hit your goal to start a streak.";
+                } else if (gStreak < 3) {
+                    goalStreakRow.textContent = `Goal streak: ${gStreak} day${gStreak === 1 ? "" : "s"}. Reach 3 for a badge.`;
+                } else {
+                    goalStreakRow.textContent = `Goal streak: ${gStreak} day${gStreak === 1 ? "" : "s"} in a row — badge earned.`;
+                }
+            }
+        }
+
+        function initGoalPresetButtons() {
+            if (!goalPresetGrid || goalPresetGrid.dataset.ready === "1") return;
+            goalPresetGrid.dataset.ready = "1";
+            DAILY_GOAL_PRESETS.forEach(n => {
+                const b = document.createElement("button");
+                b.type = "button";
+                b.className = "goal-preset-btn";
+                b.textContent = `${n.toLocaleString()} words`;
+                b.addEventListener("click", async () => {
+                    if (!currentUser) return;
+                    await applyDailyWordGoalToServer(n);
+                });
+                goalPresetGrid.appendChild(b);
+            });
+        }
+
+        function openGoalModal() {
+            if (!goalModalOverlay) return;
+            initGoalPresetButtons();
+            if (goalCustomInput) {
+                goalCustomInput.value = String(getDailyGoalTarget());
+            }
+            goalModalOverlay.classList.remove("hidden");
+            goalModalOverlay.setAttribute("aria-hidden", "false");
+        }
+
+        function closeGoalModal() {
+            if (!goalModalOverlay) return;
+            goalModalOverlay.classList.add("hidden");
+            goalModalOverlay.setAttribute("aria-hidden", "true");
+        }
+
+        async function applyDailyWordGoalToServer(rawGoal) {
+            if (!currentUser) return;
+            const v = clampDailyWordGoal(rawGoal);
+            try {
+                await updateDoc(doc(db, "users", currentUser.uid), { dailyWordGoal: v });
+                studioUserProfile.dailyWordGoal = v;
+                refreshDailyGoalUIFromProfile();
+                closeGoalModal();
+            } catch (e) {
+                console.error(e);
+                alert(e?.message || "Could not save goal.");
+            }
+        }
+
+        goalModalClose?.addEventListener("click", closeGoalModal);
+        goalModalOverlay?.addEventListener("click", closeGoalModal);
+        goalModalCard?.addEventListener("click", e => e.stopPropagation());
+
+        goalCustomSave?.addEventListener("click", async () => {
+            const raw = goalCustomInput?.valueAsNumber ?? Number(goalCustomInput?.value);
+            if (!Number.isFinite(raw)) {
+                alert("Enter a number for your custom goal.");
+                return;
+            }
+            await applyDailyWordGoalToServer(raw);
+        });
+
+        document.addEventListener("keydown", e => {
+            if (e.key === "Escape" && goalModalOverlay && !goalModalOverlay.classList.contains("hidden")) {
+                closeGoalModal();
+            }
+        });
+
+        function wireDailyGoalPanel() {
+            if (!dailyGoalPanel) return;
+            dailyGoalPanel.addEventListener("click", () => openGoalModal());
+            dailyGoalPanel.addEventListener("keydown", e => {
+                if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    openGoalModal();
+                }
+            });
+        }
+
+        wireDailyGoalPanel();
+
+        document.addEventListener("visibilitychange", () => {
+            if (document.visibilityState !== "visible" || !currentUser) return;
+            void (async () => {
+                try {
+                    const s = await getDoc(doc(db, "users", currentUser.uid));
+                    if (s.exists()) {
+                        const d = s.data() || {};
+                        studioUserProfile = {
+                            writingDayTotals: {},
+                            dailyWordGoal: DEFAULT_DAILY_WORD_GOAL,
+                            ...d
+                        };
+                        refreshDailyGoalUIFromProfile();
+                    }
+                } catch (e) {
+                    console.error(e);
+                }
+            })();
+        });
 
         function updateBadgeUI(totalWords) {
             const badges = [
@@ -1204,7 +1529,6 @@
 
             const snap = await getDocs(collection(db, "users", uid, "books"));
             let totalWords = 0;
-            let totalTodayWords = 0;
 
             const rows = [];
             snap.forEach(docSnap => {
@@ -1247,9 +1571,8 @@
             booksCountPill.textContent = `${snap.size} ${snap.size === 1 ? "book" : "books"}`;
             wordsEl.textContent = totalWords.toLocaleString();
 
-            todayEl.textContent = totalTodayWords.toLocaleString();
             updateCurrentProjectUI();
-            updateGoalUI(totalTodayWords, 2000);
+            refreshDailyGoalUIFromProfile();
             updateBadgeUI(totalWords);
 
             const formatLink = document.getElementById("sidebarFormatLink");
@@ -1384,13 +1707,20 @@
                         username: "newuser",
                         words: 0,
                         streak: 1,
-                        lastLogin: todayKey()
+                        lastLogin: todayKey(),
+                        dailyWordGoal: DEFAULT_DAILY_WORD_GOAL,
+                        writingDayTotals: {}
                     });
 
                     snap = await getDoc(userRef);
                 }
 
-                const data = snap.data();
+                const data = snap.data() || {};
+                studioUserProfile = {
+                    writingDayTotals: {},
+                    dailyWordGoal: DEFAULT_DAILY_WORD_GOAL,
+                    ...data
+                };
                 const streak = await ensureUserStreak(userRef, data);
 
                 status.textContent = "Welcome back, writer.";
