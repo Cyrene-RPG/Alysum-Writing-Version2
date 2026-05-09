@@ -353,6 +353,81 @@
             background: rgba(255,255,255,0.035);
         }
 
+        .notif-list {
+            display: grid;
+            gap: 12px;
+        }
+
+        .notif-card {
+            border-radius: 18px;
+            border: 1px solid var(--border);
+            background: var(--panel-2);
+            padding: 14px 16px;
+            text-align: left;
+        }
+
+        .notif-card.unread {
+            border-left: 4px solid var(--pink);
+            box-shadow: 0 0 0 1px color-mix(in srgb, var(--pink) 22%, transparent);
+        }
+
+        .notif-top {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+
+        .notif-kicker {
+            font-size: 11px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--theme-brand-kicker);
+        }
+
+        .notif-title {
+            margin: 4px 0 0;
+            font-size: 17px;
+            font-weight: 900;
+            line-height: 1.25;
+        }
+
+        .notif-meta {
+            margin-top: 6px;
+            font-size: 13px;
+            color: var(--muted);
+            font-weight: 700;
+        }
+
+        .notif-quote {
+            margin-top: 10px;
+            font-size: 13px;
+            font-style: italic;
+            color: var(--muted-2);
+            line-height: 1.5;
+            border-left: 3px solid rgba(167,139,250,0.45);
+            padding-left: 12px;
+        }
+
+        .notif-comment {
+            margin-top: 10px;
+            font-size: 14px;
+            line-height: 1.55;
+            color: var(--text);
+            white-space: pre-wrap;
+        }
+
+        .notif-actions {
+            margin-top: 12px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+
         .hidden { display: none !important; }
 
         @media (max-width: 860px) {
@@ -448,6 +523,22 @@
             </div>
         </section>
 
+        <section class="panel" id="notifPanel">
+            <div class="panel-head">
+                <div>
+                    <h2>Notifications</h2>
+                    <p>
+                        When beta readers share a saved note from their library, it appears here. Mark items read when
+                        you have seen them.
+                    </p>
+                </div>
+                <button class="btn" type="button" id="markAllNotifsRead" disabled>Mark all read</button>
+            </div>
+            <div class="loading-state" id="notifLoading">Loading notifications…</div>
+            <div class="empty-state hidden" id="notifEmpty">No reader-shared notes yet.</div>
+            <div class="notif-list hidden" id="notifList" role="list"></div>
+        </section>
+
         <section class="panel">
             <div class="panel-head">
                 <div>
@@ -474,9 +565,12 @@
             getDoc,
             getDocs,
             limit,
+            onSnapshot,
             orderBy,
             query,
-            where
+            updateDoc,
+            where,
+            writeBatch
         } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
         import { publicDisplayNameFromUserData } from "./js/profile-display.js?v=1";
 
@@ -490,8 +584,13 @@
         const emptyState = document.getElementById("emptyState");
         const bookGrid = document.getElementById("bookGrid");
         const refreshBtn = document.getElementById("refreshBtn");
+        const notifLoading = document.getElementById("notifLoading");
+        const notifEmpty = document.getElementById("notifEmpty");
+        const notifList = document.getElementById("notifList");
+        const markAllNotifsRead = document.getElementById("markAllNotifsRead");
 
         let currentUser = null;
+        let notifUnsub = null;
 
         function safeString(value, fallback = "") {
             return typeof value === "string" ? value : fallback;
@@ -650,6 +749,131 @@
                 .replaceAll("'", "&#039;");
         }
 
+        function truncateText(text, maxLen) {
+            const s = safeString(text, "");
+            if (s.length <= maxLen) return s;
+            return `${s.slice(0, maxLen - 1)}…`;
+        }
+
+        function startNotificationInbox(uid) {
+            if (notifUnsub) {
+                notifUnsub();
+                notifUnsub = null;
+            }
+
+            const notifQuery = query(
+                collection(db, "users", uid, "notifications"),
+                orderBy("createdAt", "desc"),
+                limit(60)
+            );
+
+            notifUnsub = onSnapshot(
+                notifQuery,
+                (snap) => {
+                    renderNotifications(snap.docs);
+                },
+                (err) => {
+                    console.error(err);
+                    notifLoading.textContent = "Could not load notifications.";
+                }
+            );
+        }
+
+        function renderNotifications(docs) {
+            notifLoading.classList.add("hidden");
+
+            if (!docs.length) {
+                notifEmpty.classList.remove("hidden");
+                notifList.classList.add("hidden");
+                notifList.innerHTML = "";
+                markAllNotifsRead.disabled = true;
+                return;
+            }
+
+            notifEmpty.classList.add("hidden");
+            notifList.classList.remove("hidden");
+
+            const unreadDocs = docs.filter((d) => d.data()?.read !== true);
+            markAllNotifsRead.disabled = unreadDocs.length === 0;
+
+            notifList.innerHTML = docs
+                .map((docSnap) => {
+                    const data = docSnap.data() || {};
+                    const unread = data.read !== true;
+                    const reader = escapeHtml(safeString(data.readerName, "Reader"));
+                    const book = escapeHtml(safeString(data.bookTitle, "Story"));
+                    const chapter = escapeHtml(safeString(data.chapterTitle, ""));
+                    const quote = escapeHtml(truncateText(data.quote, 320));
+                    const comment = escapeHtml(truncateText(data.comment, 900));
+                    const bookId = safeString(data.bookId, "");
+                    const betaUrl = bookId
+                        ? `/beta-read.html?book=${encodeURIComponent(bookId)}`
+                        : "#";
+                    return `
+                        <article class="notif-card${unread ? " unread" : ""}" role="listitem" data-notif-id="${escapeHtml(docSnap.id)}">
+                            <div class="notif-top">
+                                <div>
+                                    <div class="notif-kicker">Beta note shared</div>
+                                    <h3 class="notif-title">${reader} · ${book}</h3>
+                                    <div class="notif-meta">${chapter ? `${chapter} · ` : ""}${escapeHtml(formatDate(data.createdAt))}</div>
+                                </div>
+                            </div>
+                            ${quote ? `<div class="notif-quote">${quote}</div>` : ""}
+                            ${comment ? `<div class="notif-comment">${comment}</div>` : ""}
+                            <div class="notif-actions">
+                                <a class="mini-btn" href="${betaUrl}">Open beta workspace</a>
+                                ${
+                                    unread
+                                        ? `<button type="button" class="mini-btn" data-mark-read="${escapeHtml(docSnap.id)}">Mark read</button>`
+                                        : `<span class="mini-btn" style="opacity:0.55;cursor:default;">Read</span>`
+                                }
+                            </div>
+                        </article>
+                    `;
+                })
+                .join("");
+        }
+
+        notifList.addEventListener("click", async (ev) => {
+            const btn = ev.target.closest("[data-mark-read]");
+            if (!btn || !currentUser) return;
+            const id = btn.getAttribute("data-mark-read");
+            if (!id) return;
+            try {
+                await updateDoc(doc(db, "users", currentUser.uid, "notifications", id), { read: true });
+            } catch (e) {
+                console.error(e);
+            }
+        });
+
+        markAllNotifsRead.addEventListener("click", async () => {
+            if (!currentUser) return;
+            try {
+                const unreadSnap = await getDocs(
+                    query(
+                        collection(db, "users", currentUser.uid, "notifications"),
+                        where("read", "==", false),
+                        limit(400)
+                    )
+                );
+                if (!unreadSnap.docs.length) return;
+                let batch = writeBatch(db);
+                let n = 0;
+                for (const d of unreadSnap.docs) {
+                    batch.update(d.ref, { read: true });
+                    n += 1;
+                    if (n >= 450) {
+                        await batch.commit();
+                        batch = writeBatch(db);
+                        n = 0;
+                    }
+                }
+                if (n) await batch.commit();
+            } catch (e) {
+                console.error(e);
+            }
+        });
+
         async function loadDashboard() {
             if (!currentUser) return;
             showState("loading");
@@ -686,6 +910,7 @@
                 return;
             }
             currentUser = user;
+            startNotificationInbox(user.uid);
             loadDashboard();
         });
     </script>

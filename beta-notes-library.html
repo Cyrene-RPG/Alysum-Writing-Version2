@@ -138,6 +138,34 @@
             align-items: center;
             margin-bottom: 16px;
         }
+        .toolbar-actions {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+        }
+        .btn-share {
+            border: 1px solid color-mix(in srgb, var(--pink, #ec4899) 40%, var(--border));
+            background: color-mix(in srgb, var(--pink, #ec4899) 18%, var(--panel));
+            color: var(--text);
+            border-radius: 12px;
+            padding: 10px 14px;
+            font-weight: 900;
+            font-size: 14px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .btn-share:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+        .share-hint {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--muted);
+            max-width: 320px;
+            line-height: 1.4;
+        }
         .search {
             flex: 1;
             min-width: 200px;
@@ -170,12 +198,45 @@
             background: var(--panel);
         }
         .note-row {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
             background: linear-gradient(180deg, var(--panel) 0%, color-mix(in srgb, var(--panel-2) 85%, black) 100%);
             border: 1px solid var(--border);
             border-radius: 16px;
             padding: 16px 16px 14px;
             margin-bottom: 12px;
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        }
+        .note-row .share-cell {
+            flex: 0 0 auto;
+            width: 72px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            padding-top: 4px;
+            font-size: 11px;
+            font-weight: 900;
+            color: var(--muted);
+            text-align: center;
+        }
+        .note-row .share-cell input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: var(--pink, #ec4899);
+        }
+        .note-row .share-sent {
+            font-size: 10px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: color-mix(in srgb, var(--green, #22c55e) 85%, var(--muted));
+        }
+        .note-row .note-body {
+            flex: 1;
+            min-width: 0;
         }
         .note-row .bookline {
             display: flex;
@@ -270,8 +331,9 @@
         <div class="hero">
             <h1>Your note shelf</h1>
             <p>
-                Notes from <strong>Beta read</strong> live here, grouped by story. Open a row to jump back into the beta
-                workspace for that book.
+                Notes from <strong>Beta read</strong> live here, grouped by story. Tick notes you want the story’s
+                author to see, then use <strong>Share with author</strong> — they get a notice on their author dashboard.
+                Open a row to jump back into the beta workspace for that book.
             </p>
         </div>
 
@@ -281,6 +343,10 @@
         <div id="mainBlock" class="hidden">
             <div class="toolbar">
                 <input type="search" class="search" id="filterInput" placeholder="Search by story, chapter, or note text…" autocomplete="off" />
+                <div class="toolbar-actions">
+                    <button type="button" class="btn-share" id="shareSelectedBtn">Share with author</button>
+                    <span class="share-hint">Only for books you don’t own. Each note is sent once.</span>
+                </div>
                 <span class="stat" id="statLine"></span>
             </div>
             <div id="listRoot"></div>
@@ -291,8 +357,16 @@
     <script type="module">
         import { auth, db } from "./firebase.js";
         import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-        import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import {
+            collection,
+            doc,
+            getDoc,
+            onSnapshot,
+            writeBatch,
+            serverTimestamp
+        } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
         import { readBetaShelfFromLocalStorage } from "./js/beta-shelf-local.js?v=1";
+        import { publicDisplayNameFromUserData } from "./js/profile-display.js?v=1";
 
         const loadingState = document.getElementById("loadingState");
         const mainBlock = document.getElementById("mainBlock");
@@ -301,9 +375,18 @@
         const emptyState = document.getElementById("emptyState");
         const filterInput = document.getElementById("filterInput");
         const statLine = document.getElementById("statLine");
+        const shareSelectedBtn = document.getElementById("shareSelectedBtn");
 
         let allRows = [];
         let localShelf = {};
+        const bookOwners = new Map();
+        let sharedKeys = new Set();
+        let currentUid = null;
+        let readerDisplayName = "Reader";
+        let unsubUser = null;
+        let unsubShares = null;
+        let lastNotesMap = {};
+        let lastCloudShelf = {};
 
         function safeString(value, fallback = "") {
             return typeof value === "string" ? value : fallback;
@@ -350,7 +433,37 @@
             return `Story (${short})`;
         }
 
-        function flattenNotes(mapByBook, cloudShelf) {
+        function shareKeyForNote(bookId, noteId) {
+            const b = String(bookId).replace(/\//g, "_");
+            const n = String(noteId || "n0").replace(/\//g, "_");
+            return `${b}__${n}`.slice(0, 700);
+        }
+
+        function notifDocId(readerUid, shareKey) {
+            const raw = `bn_${readerUid}_${shareKey}`.replace(/\//g, "_");
+            return raw.slice(0, 780);
+        }
+
+        async function hydrateBookOwners(bookIds) {
+            const pending = bookIds.filter((id) => !bookOwners.has(id));
+            await Promise.all(
+                pending.map(async (bookId) => {
+                    try {
+                        const libSnap = await getDoc(doc(db, "library", bookId));
+                        if (!libSnap.exists()) {
+                            bookOwners.set(bookId, null);
+                            return;
+                        }
+                        const owner = safeString(libSnap.data()?.ownerUid, "").trim() || null;
+                        bookOwners.set(bookId, owner);
+                    } catch {
+                        bookOwners.set(bookId, null);
+                    }
+                })
+            );
+        }
+
+        function flattenNotes(mapByBook, cloudShelf, uid) {
             const out = [];
             Object.keys(mapByBook).forEach((bookId) => {
                 const arr = mapByBook[bookId];
@@ -358,9 +471,23 @@
                 const storyTitle = storyTitleFor(bookId, cloudShelf);
                 arr.forEach((n, idx) => {
                     const note = safeObject(n, {});
+                    const noteId = safeString(note.id, "") || `idx${idx}`;
+                    const shareKey = shareKeyForNote(bookId, noteId);
+                    const ownerUid = bookOwners.get(bookId) ?? null;
+                    const alreadyShared = sharedKeys.has(shareKey);
+                    const canShare =
+                        !!ownerUid &&
+                        ownerUid !== uid &&
+                        !!noteId;
+
                     out.push({
-                        key: `${bookId}-${note.id || idx}-${note.createdAt || idx}`,
+                        key: `${bookId}-${noteId}-${note.createdAt || idx}`,
                         bookId,
+                        noteId,
+                        shareKey,
+                        ownerUid,
+                        canShare,
+                        alreadyShared,
                         storyTitle,
                         author: safeString(safeObject(cloudShelf[bookId], {}).author, ""),
                         quote: safeString(note.quote, ""),
@@ -378,6 +505,29 @@
             return out;
         }
 
+        function shareCellHtml(row) {
+            if (!row.canShare) {
+                return `<div class="share-cell" aria-hidden="true"></div>`;
+            }
+            if (row.alreadyShared) {
+                return `<div class="share-cell"><span class="share-sent">Sent</span></div>`;
+            }
+            const sk = escapeHtml(row.shareKey);
+            return `
+                <div class="share-cell">
+                    <input
+                        type="checkbox"
+                        class="note-share-cb"
+                        data-share-key="${sk}"
+                        data-book-id="${escapeHtml(row.bookId)}"
+                        data-note-id="${escapeHtml(row.noteId)}"
+                        aria-label="Select to share with author"
+                    />
+                    <span>Share</span>
+                </div>
+            `;
+        }
+
         function rowHtml(row) {
             const betaUrl = `/beta-read.html?book=${encodeURIComponent(row.bookId)}`;
             const au = escapeHtml(row.author);
@@ -389,15 +539,18 @@
             const when = escapeHtml(formatTime(row.createdAt));
             return `
                 <article class="note-row" data-key="${escapeHtml(row.key)}">
-                    <div class="bookline">
-                        <a class="story" href="${betaUrl}">${st}</a>
-                        <span class="chip">${ch}</span>
-                    </div>
-                    <div class="quote">${q}</div>
-                    <div class="comment">${c}</div>
-                    <div class="meta">
-                        <span>${when}${authorBit}</span>
-                        <a href="${betaUrl}">Open beta workspace →</a>
+                    ${shareCellHtml(row)}
+                    <div class="note-body">
+                        <div class="bookline">
+                            <a class="story" href="${betaUrl}">${st}</a>
+                            <span class="chip">${ch}</span>
+                        </div>
+                        <div class="quote">${q}</div>
+                        <div class="comment">${c}</div>
+                        <div class="meta">
+                            <span>${when}${authorBit}</span>
+                            <a href="${betaUrl}">Open beta workspace →</a>
+                        </div>
                     </div>
                 </article>
             `;
@@ -433,11 +586,15 @@
             listRoot.innerHTML = filtered.map(rowHtml).join("");
         }
 
-        function ingestUserData(data, uid) {
+        async function ingestUserData(data, uid) {
             localShelf = readBetaShelfFromLocalStorage(uid);
             const map = safeObject(data.betaReadNotesByBook, {});
             const cloudShelf = safeObject(data.betaReadShelf, {});
-            allRows = flattenNotes(map, cloudShelf);
+            lastNotesMap = map;
+            lastCloudShelf = cloudShelf;
+            const bookIds = Object.keys(map);
+            await hydrateBookOwners(bookIds);
+            allRows = flattenNotes(map, cloudShelf, uid);
             loadingState.classList.add("hidden");
             mainBlock.classList.remove("hidden");
             errorBox.classList.add("hidden");
@@ -446,17 +603,109 @@
 
         filterInput.addEventListener("input", () => applyFilter());
 
-        onAuthStateChanged(auth, (user) => {
+        async function runShareWithAuthor(user) {
+            const boxes = Array.from(listRoot.querySelectorAll("input.note-share-cb:checked"));
+            if (!boxes.length) {
+                errorBox.textContent = "Select at least one note to share.";
+                errorBox.classList.remove("hidden");
+                return;
+            }
+
+            const rowsByShare = new Map();
+            for (const el of boxes) {
+                const shareKey = el.getAttribute("data-share-key") || "";
+                const bookId = el.getAttribute("data-book-id") || "";
+                if (!shareKey || !bookId || sharedKeys.has(shareKey)) continue;
+                const row = allRows.find((r) => r.shareKey === shareKey && r.bookId === bookId);
+                if (!row || !row.canShare || row.alreadyShared) continue;
+                rowsByShare.set(shareKey, row);
+            }
+
+            if (!rowsByShare.size) {
+                errorBox.textContent = "Nothing new to share for the notes you selected.";
+                errorBox.classList.remove("hidden");
+                return;
+            }
+
+            shareSelectedBtn.disabled = true;
+            errorBox.classList.add("hidden");
+
+            try {
+                const rows = [...rowsByShare.values()].filter(
+                    (row) => row.ownerUid && row.ownerUid !== user.uid
+                );
+                for (let i = 0; i < rows.length; i += 200) {
+                    const chunk = rows.slice(i, i + 200);
+                    const batch = writeBatch(db);
+                    for (const row of chunk) {
+                        const authorUid = row.ownerUid;
+                        const shareRef = doc(db, "users", user.uid, "betaSharesIndex", row.shareKey);
+                        const notifRef = doc(db, "users", authorUid, "notifications", notifDocId(user.uid, row.shareKey));
+
+                        batch.set(shareRef, {
+                            bookId: row.bookId,
+                            noteId: row.noteId,
+                            authorUid,
+                            sharedAt: serverTimestamp()
+                        });
+
+                        batch.set(notifRef, {
+                            type: "beta_note_shared",
+                            read: false,
+                            readerUid: user.uid,
+                            readerName: readerDisplayName,
+                            authorUid,
+                            bookId: row.bookId,
+                            bookTitle: row.storyTitle,
+                            noteId: row.noteId,
+                            shareKey: row.shareKey,
+                            quote: row.quote,
+                            comment: row.comment,
+                            chapterTitle: row.chapterTitle,
+                            createdAt: serverTimestamp()
+                        });
+                    }
+                    await batch.commit();
+                }
+            } catch (err) {
+                console.error(err);
+                errorBox.textContent =
+                    "Could not share those notes. You may be offline, or the author no longer owns this listing.";
+                errorBox.classList.remove("hidden");
+            } finally {
+                shareSelectedBtn.disabled = false;
+            }
+        }
+
+        shareSelectedBtn.addEventListener("click", () => {
+            const u = auth.currentUser;
+            if (u) runShareWithAuthor(u);
+        });
+
+        onAuthStateChanged(auth, async (user) => {
             if (!user) {
                 window.location.href = "/login.html?next=" + encodeURIComponent("/beta-notes-library.html");
                 return;
             }
+
+            currentUid = user.uid;
+            if (unsubUser) unsubUser();
+            if (unsubShares) unsubShares();
+
+            try {
+                const profSnap = await getDoc(doc(db, "users", user.uid));
+                const pdata = profSnap.exists() ? profSnap.data() || {} : {};
+                readerDisplayName = publicDisplayNameFromUserData(pdata) || user.displayName || "Reader";
+            } catch {
+                readerDisplayName = user.displayName || "Reader";
+            }
+
             const userRef = doc(db, "users", user.uid);
-            onSnapshot(
+            unsubUser = onSnapshot(
                 userRef,
-                (snap) => {
+                async (snap) => {
                     const data = snap.exists() ? snap.data() || {} : {};
-                    ingestUserData(data, user.uid);
+                    await ingestUserData(data, user.uid);
                 },
                 (err) => {
                     console.error(err);
@@ -464,6 +713,19 @@
                     errorBox.textContent = "Could not load your notes. Check your connection and try again.";
                     errorBox.classList.remove("hidden");
                 }
+            );
+
+            const sharesCol = collection(db, "users", user.uid, "betaSharesIndex");
+            unsubShares = onSnapshot(
+                sharesCol,
+                (snap) => {
+                    sharedKeys = new Set(snap.docs.map((d) => d.id));
+                    if (currentUid && Object.keys(lastNotesMap).length) {
+                        allRows = flattenNotes(lastNotesMap, lastCloudShelf, currentUid);
+                        applyFilter();
+                    }
+                },
+                (err) => console.error(err)
             );
         });
 

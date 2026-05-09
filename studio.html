@@ -188,6 +188,43 @@
             background: #1f2937;
         }
 
+        .menu-link-with-badge,
+        .sidebar-item-with-badge {
+            position: relative;
+            padding-right: 32px;
+        }
+
+        .dash-unread-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            min-width: 20px;
+            height: 20px;
+            padding: 0 6px;
+            border-radius: 999px;
+            background: #ef4444;
+            color: #fff;
+            font-size: 11px;
+            font-weight: 900;
+            line-height: 20px;
+            text-align: center;
+            box-sizing: border-box;
+            pointer-events: none;
+        }
+
+        .dash-unread-badge.hidden {
+            display: none !important;
+        }
+
+        .action-tile-with-badge {
+            position: relative;
+        }
+
+        .action-tile-with-badge .dash-unread-badge {
+            top: 8px;
+            right: 8px;
+        }
+
         .container {
             max-width: 1480px;
             margin: 0 auto;
@@ -953,7 +990,10 @@
         <div class="menu-title">Alysum</div>
         <a href="/studio.html" class="menu-link">✍️ Studio</a>
         <a href="/library.html" class="menu-link">📚 Library</a>
-        <a href="/author-dashboard.html" class="menu-link">📊 Author Dashboard</a>
+        <a href="/author-dashboard.html" class="menu-link menu-link-with-badge">
+            📊 Author Dashboard
+            <span class="dash-unread-badge hidden" data-dash-unread-badge aria-hidden="true">0</span>
+        </a>
         <a href="/scratch.html" class="menu-link">📝 Scratch notes</a>
         <a href="/vault.html" class="menu-link">📓 Notes library</a>
         <a href="/index.html" class="menu-link">🏠 Home</a>
@@ -974,7 +1014,10 @@
                 <div class="sidebar-group-label">Workspace</div>
                 <a href="/studio.html" class="sidebar-item active">✍️ Studio</a>
                 <a href="/library.html" class="sidebar-item">📚 Library</a>
-                <a href="/author-dashboard.html" class="sidebar-item">📊 Author Dashboard</a>
+                <a href="/author-dashboard.html" class="sidebar-item sidebar-item-with-badge">
+                    📊 Author Dashboard
+                    <span class="dash-unread-badge hidden" data-dash-unread-badge aria-hidden="true">0</span>
+                </a>
                 <a href="/scratch.html" class="sidebar-item">📝 Scratch notes</a>
                 <a href="/vault.html" class="sidebar-item">📓 Notes library</a>
                 <a href="/badges.html" class="sidebar-item">🏆 Achievements</a>
@@ -1037,7 +1080,10 @@
                         <div class="action-tile" id="continueBtn">Continue Writing</div>
                         <div class="action-tile" id="newBookTile">New Book</div>
                         <div class="action-tile" id="openLibraryTile">Open Library</div>
-                        <div class="action-tile" id="openDashboardTile">Author Dashboard</div>
+                        <div class="action-tile action-tile-with-badge" id="openDashboardTile">
+                            Author Dashboard
+                            <span class="dash-unread-badge hidden" data-dash-unread-badge aria-hidden="true">0</span>
+                        </div>
                         <div class="action-tile" id="openBadgesTile">View Badges</div>
                     </div>
                 </section>
@@ -1162,7 +1208,8 @@
             setDoc,
             collection,
             addDoc,
-            getDocs
+            getDocs,
+            onSnapshot
         } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
         import {
             localDayKey,
@@ -1237,6 +1284,7 @@
         let promptTimer = null;
 
         let currentUser = null;
+        let unsubDashNotifs = null;
         let firstBookId = null;
         let firstBookData = null;
         /** Latest user profile fields used for daily goal (kept in sync after saves). */
@@ -1285,6 +1333,34 @@
                 .replace(/&/g, "&amp;")
                 .replace(/</g, "&lt;")
                 .replace(/>/g, "&gt;");
+        }
+
+        function updateDashUnreadBadges(count) {
+            const label = count > 0 ? `Unread author notifications: ${count}` : "";
+            document.querySelectorAll("[data-dash-unread-badge]").forEach((el) => {
+                el.textContent = count > 99 ? "99+" : String(count);
+                el.classList.toggle("hidden", count === 0);
+                el.setAttribute("aria-label", label);
+                el.setAttribute("aria-hidden", count === 0 ? "true" : "false");
+            });
+        }
+
+        function startDashUnreadListener(uid) {
+            if (unsubDashNotifs) {
+                unsubDashNotifs();
+                unsubDashNotifs = null;
+            }
+            unsubDashNotifs = onSnapshot(
+                collection(db, "users", uid, "notifications"),
+                (snap) => {
+                    const unread = snap.docs.filter((d) => d.data()?.read !== true).length;
+                    updateDashUnreadBadges(unread);
+                },
+                (err) => {
+                    console.warn("Author notification badge:", err);
+                    updateDashUnreadBadges(0);
+                }
+            );
         }
 
         function stripHtml(html = "") {
@@ -1834,6 +1910,7 @@
                     window.location.replace(READER_HOME_URL);
                     return;
                 }
+                startDashUnreadListener(user.uid);
                 studioUserProfile = {
                     writingDayTotals: {},
                     dailyWordGoal: DEFAULT_DAILY_WORD_GOAL,

@@ -27,6 +27,45 @@ service cloud.firestore {
       match /notebookVault/{docId} {
         allow read, write: if isUser(userId);
       }
+
+      // Reader-only index: which beta notes this user has already shared with authors (dedupe + UI).
+      match /betaSharesIndex/{shareId} {
+        allow read, write: if isUser(userId);
+      }
+
+      // Author inbox: beta readers can create notifications only for the real library owner of that book.
+      match /notifications/{notifId} {
+        allow read: if isUser(userId);
+        allow delete: if isUser(userId);
+
+        allow create: if signedIn()
+          && request.resource.data.keys().hasAll([
+            'type', 'read', 'readerUid', 'readerName', 'authorUid', 'bookId',
+            'bookTitle', 'noteId', 'quote', 'comment', 'chapterTitle', 'shareKey'
+          ])
+          && request.resource.data.type == 'beta_note_shared'
+          && request.resource.data.read == false
+          && request.resource.data.readerUid == request.auth.uid
+          && request.resource.data.authorUid == userId
+          && userId == get(/databases/$(database)/documents/library/$(request.resource.data.bookId)).data.ownerUid
+          && request.auth.uid != userId
+          && request.resource.data.bookId is string
+          && request.resource.data.noteId is string
+          && request.resource.data.shareKey is string
+          && request.resource.data.readerName is string
+          && request.resource.data.bookTitle is string
+          && request.resource.data.chapterTitle is string
+          && request.resource.data.quote is string
+          && request.resource.data.quote.size() < 2200
+          && request.resource.data.comment is string
+          && request.resource.data.comment.size() < 8200
+          && exists(/databases/$(database)/documents/users/$(request.auth.uid)/betaSharesIndex/$(request.resource.data.shareKey));
+
+        allow update: if isUser(userId)
+          && resource.data.authorUid == userId
+          && request.resource.data.diff(resource.data).changedKeys().hasOnly(['read'])
+          && request.resource.data.read == true;
+      }
     }
 
     // --- Published library listing & engagement ---
