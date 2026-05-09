@@ -627,6 +627,15 @@
                 return;
             }
 
+            const sendCount = rowsByShare.size;
+            const confirmMsg =
+                sendCount === 1
+                    ? "Are you sure you want to send this note to the author? They will see your highlight and comment in Notifications on their author dashboard."
+                    : `Are you sure you want to send these ${sendCount} notes to the author(s)? They will see your highlights and comments in Notifications on their author dashboard.`;
+            if (!window.confirm(confirmMsg)) {
+                return;
+            }
+
             shareSelectedBtn.disabled = true;
             errorBox.classList.add("hidden");
 
