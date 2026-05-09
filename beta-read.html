@@ -324,11 +324,13 @@
         import {
             doc,
             getDoc,
+            setDoc,
             updateDoc,
             onSnapshot,
             serverTimestamp,
             arrayUnion
         } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { writeBetaShelfEntryLocal } from "./js/beta-shelf-local.js?v=1";
 
         const params = new URLSearchParams(window.location.search);
         const bookId = params.get("book");
@@ -550,17 +552,38 @@
         }
 
         async function touchShelf(uid) {
+            const title = safeString(currentBook.title, "Untitled");
+            const author = safeString(currentBook.author, "");
+            writeBetaShelfEntryLocal(bookId, { title, author });
+
             const userRef = doc(db, "users", uid);
             const uSnap = await getDoc(userRef);
-            if (!uSnap.exists()) return;
+            if (!uSnap.exists()) {
+                await setDoc(
+                    userRef,
+                    {
+                        betaReadShelf: {
+                            [bookId]: {
+                                libraryBookId: bookId,
+                                title,
+                                author,
+                                shelvedAt: serverTimestamp(),
+                                lastOpenedAt: serverTimestamp()
+                            }
+                        }
+                    },
+                    { merge: true }
+                );
+                return;
+            }
 
             const prevShelf = safeObject(uSnap.data().betaReadShelf, {});
             const prevEntry = safeObject(prevShelf[bookId], {});
             await updateDoc(userRef, {
                 [`betaReadShelf.${bookId}`]: {
                     libraryBookId: bookId,
-                    title: safeString(currentBook.title, "Untitled"),
-                    author: safeString(currentBook.author, ""),
+                    title,
+                    author,
                     lastOpenedAt: serverTimestamp(),
                     shelvedAt: prevEntry.shelvedAt || serverTimestamp()
                 }

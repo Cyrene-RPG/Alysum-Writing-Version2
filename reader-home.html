@@ -615,6 +615,7 @@
             accountSupportsModeToggle,
             setUiMode,
         } from "./js/account-mode.js?v=1";
+        import { readBetaShelfFromLocalStorage } from "./js/beta-shelf-local.js?v=1";
 
         const BETA_READ_PAGE = "/beta-read.html";
 
@@ -631,58 +632,59 @@
             return 0;
         }
 
+        function shelfEntryMillis(data) {
+            const d = safeObject(data, {});
+            if (typeof d.lastOpenedAt === "number" && Number.isFinite(d.lastOpenedAt)) {
+                return d.lastOpenedAt;
+            }
+            return (
+                millisFromFirestore(d.lastOpenedAt) ||
+                millisFromFirestore(d.shelvedAt) ||
+                (typeof d.shelvedAt === "number" ? d.shelvedAt : 0)
+            );
+        }
+
         async function loadBetaReads(uid) {
             if (!betaReadsGrid || !betaReadsEmpty || !betaReadsPanel) return;
             betaReadsGrid.innerHTML = "";
+            const localShelf = readBetaShelfFromLocalStorage();
+            let cloudShelf = {};
             try {
                 const uSnap = await getDoc(doc(db, "users", uid));
-                const shelf = uSnap.exists() ? safeObject(uSnap.data().betaReadShelf, {}) : {};
-                const rows = Object.keys(shelf).map((id) => ({ id, data: safeObject(shelf[id], {}) }));
-                rows.sort((a, b) => {
-                    const tb =
-                        millisFromFirestore(b.data.lastOpenedAt) ||
-                        millisFromFirestore(b.data.shelvedAt);
-                    const ta =
-                        millisFromFirestore(a.data.lastOpenedAt) ||
-                        millisFromFirestore(a.data.shelvedAt);
-                    return tb - ta;
-                });
-
-                betaReadsPanel.classList.remove("hidden");
-
-                if (!rows.length) {
-                    betaReadsEmpty.classList.remove("hidden");
-                    betaReadsEmpty.textContent =
-                        "Nothing on your beta shelf yet. Visit the Library, open a story, and it will appear here automatically.";
-                    return;
-                }
-                betaReadsEmpty.classList.add("hidden");
-
-                rows.forEach((row) => {
-                    const title = safeString(row.data.title, "Untitled");
-                    const author = safeString(row.data.author, "");
-                    const a = document.createElement("a");
-                    a.className = "beta-book-card";
-                    a.href = `${BETA_READ_PAGE}?book=${encodeURIComponent(row.id)}`;
-                    a.innerHTML = `
-                        <div class="t"></div>
-                        <div class="a"></div>
-                        <div class="k">Open beta workspace →</div>
-                    `;
-                    a.querySelector(".t").textContent = title;
-                    a.querySelector(".a").textContent = author ? "@" + author : "";
-                    betaReadsGrid.appendChild(a);
-                });
+                cloudShelf = uSnap.exists() ? safeObject(uSnap.data().betaReadShelf, {}) : {};
             } catch (e) {
                 console.error(e);
-                betaReadsPanel.classList.remove("hidden");
-                betaReadsEmpty.classList.remove("hidden");
-                const code = e && e.code;
-                betaReadsEmpty.textContent =
-                    code === "permission-denied"
-                        ? "Could not load your beta shelf (Firestore permission denied). Your rules must allow the signed-in user to read and update their own user document (users/{uid}), including the betaReadShelf field."
-                        : "Could not load your beta shelf.";
             }
+
+            const merged = { ...localShelf, ...cloudShelf };
+            const rows = Object.keys(merged).map((id) => ({ id, data: safeObject(merged[id], {}) }));
+            rows.sort((a, b) => shelfEntryMillis(b.data) - shelfEntryMillis(a.data));
+
+            betaReadsPanel.classList.remove("hidden");
+
+            if (!rows.length) {
+                betaReadsEmpty.classList.remove("hidden");
+                betaReadsEmpty.textContent =
+                    "Nothing on your beta shelf yet. Visit the Library, open a story, and it will appear here automatically.";
+                return;
+            }
+            betaReadsEmpty.classList.add("hidden");
+
+            rows.forEach((row) => {
+                const title = safeString(row.data.title, "Untitled");
+                const author = safeString(row.data.author, "");
+                const a = document.createElement("a");
+                a.className = "beta-book-card";
+                a.href = `${BETA_READ_PAGE}?book=${encodeURIComponent(row.id)}`;
+                a.innerHTML = `
+                    <div class="t"></div>
+                    <div class="a"></div>
+                    <div class="k">Open beta workspace →</div>
+                `;
+                a.querySelector(".t").textContent = title;
+                a.querySelector(".a").textContent = author ? "@" + author : "";
+                betaReadsGrid.appendChild(a);
+            });
         }
 
         function pickLatestBookmarkFromLocalStorage() {

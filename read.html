@@ -785,6 +785,7 @@
     import {
       onAuthStateChanged
     } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { writeBetaShelfEntryLocal } from "./js/beta-shelf-local.js?v=1";
 
     const params = new URLSearchParams(window.location.search);
     const bookId = params.get("book");
@@ -1343,26 +1344,39 @@
 
     async function ensureBetaReadShelved() {
       if (!currentUser || !bookId || !currentBook) return;
+
+      const title = safeString(currentBook.title, "Untitled");
+      const author = safeString(currentBook.author, "");
+      writeBetaShelfEntryLocal(bookId, { title, author });
+
       try {
         const userRef = doc(db, "users", currentUser.uid);
         const uSnap = await getDoc(userRef);
-        if (!uSnap.exists()) return;
+
+        const buildEntry = (keepShelvedAt) => ({
+          libraryBookId: bookId,
+          title,
+          author,
+          lastOpenedAt: serverTimestamp(),
+          shelvedAt: keepShelvedAt || serverTimestamp()
+        });
+
+        if (!uSnap.exists()) {
+          await setDoc(
+            userRef,
+            { betaReadShelf: { [bookId]: buildEntry(null) } },
+            { merge: true }
+          );
+          return;
+        }
 
         const prevShelf = safeObject(uSnap.data().betaReadShelf, {});
         const prevEntry = safeObject(prevShelf[bookId], {});
-        const entry = {
-          libraryBookId: bookId,
-          title: safeString(currentBook.title, "Untitled"),
-          author: safeString(currentBook.author, ""),
-          lastOpenedAt: serverTimestamp(),
-          shelvedAt: prevEntry.shelvedAt || serverTimestamp()
-        };
-
         await updateDoc(userRef, {
-          [`betaReadShelf.${bookId}`]: entry
+          [`betaReadShelf.${bookId}`]: buildEntry(prevEntry.shelvedAt)
         });
       } catch (err) {
-        console.warn("Could not add this story to your beta reads shelf.", err);
+        console.warn("Could not sync beta shelf to Firestore (local shelf still updated).", err);
       }
     }
 
