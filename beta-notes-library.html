@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- ALYSUM:PWA:START -->
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta name="theme-color" content="#7c3aed" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#020b18" media="(prefers-color-scheme: dark)">
+    <meta name="color-scheme" content="dark light">
+    <meta name="application-name" content="Alysum">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Alysum">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="msapplication-TileColor" content="#7c3aed">
+    <meta name="msapplication-TileImage" content="/Alysum-3.png">
+    <link rel="icon" type="image/png" sizes="any" href="/Alysum-3.png">
+    <link rel="apple-touch-icon" href="/Alysum-3.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/Alysum-3.png">
+    <script src="/js/pwa-register.js" defer></script>
+    <!-- ALYSUM:PWA:END -->
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Beta notes library — Alysum</title>
+    <script>
+        try {
+            var __g = localStorage.getItem("alysum-gradient-theme");
+            if (__g && __g !== "classic") document.documentElement.setAttribute("data-gradient-theme", __g);
+        } catch (e) {}
+    </script>
+    <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
+    <style>
+        * { box-sizing: border-box; }
+        :root {
+            --bg: #0b1220;
+            --panel: #111827;
+            --panel-2: #172132;
+            --text: #f9fafb;
+            --muted: #9ca3af;
+            --border: rgba(255, 255, 255, 0.1);
+            --shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+        }
+        body.light {
+            --bg: #f4f6fb;
+            --panel: #ffffff;
+            --panel-2: #f7f9fc;
+            --text: #171717;
+            --muted: #5f6470;
+            --border: rgba(0, 0, 0, 0.08);
+            --shadow: 0 16px 40px rgba(0, 0, 0, 0.08);
+        }
+        html,
+        body {
+            margin: 0;
+            min-height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: var(--bg);
+            color: var(--text);
+        }
+        .hidden {
+            display: none !important;
+        }
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 40;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            background: color-mix(in srgb, var(--bg) 90%, transparent);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
+        }
+        .topbar a.btn,
+        .topbar .btn {
+            border: 1px solid var(--border);
+            background: var(--panel);
+            color: var(--text);
+            border-radius: 12px;
+            padding: 10px 14px;
+            font-weight: 800;
+            font-size: 14px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        .topbar .btn.ghost {
+            background: transparent;
+            color: var(--muted);
+        }
+        .topbar-fill {
+            flex: 1;
+            min-width: 0;
+            text-align: center;
+        }
+        .topbar-title {
+            font-size: 16px;
+            font-weight: 900;
+        }
+        .topbar-sub {
+            font-size: 12px;
+            color: var(--muted);
+            font-weight: 700;
+            margin-top: 2px;
+        }
+        .wrap {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px 16px 56px;
+        }
+        .hero {
+            background: linear-gradient(180deg, var(--panel) 0%, color-mix(in srgb, var(--panel-2) 90%, black) 100%);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 22px 20px;
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+        }
+        .hero h1 {
+            margin: 0 0 8px;
+            font-size: 1.5rem;
+            font-weight: 900;
+            letter-spacing: -0.02em;
+        }
+        .hero p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 14px;
+            font-weight: 700;
+            line-height: 1.5;
+        }
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .search {
+            flex: 1;
+            min-width: 200px;
+            border: 1px solid var(--border);
+            background: var(--panel);
+            color: var(--text);
+            border-radius: 14px;
+            padding: 12px 14px;
+            font-size: 15px;
+            font-weight: 600;
+            outline: none;
+        }
+        .search:focus {
+            border-color: color-mix(in srgb, var(--purple, #6d28d9) 35%, var(--border));
+        }
+        .stat {
+            font-size: 13px;
+            font-weight: 800;
+            color: var(--muted);
+            white-space: nowrap;
+        }
+        .empty {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--muted);
+            font-weight: 800;
+            font-size: 15px;
+            border: 1px dashed var(--border);
+            border-radius: 16px;
+            background: var(--panel);
+        }
+        .note-row {
+            background: linear-gradient(180deg, var(--panel) 0%, color-mix(in srgb, var(--panel-2) 85%, black) 100%);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 16px 16px 14px;
+            margin-bottom: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        }
+        .note-row .bookline {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px 12px;
+            margin-bottom: 10px;
+        }
+        .note-row .bookline a.story {
+            font-size: 15px;
+            font-weight: 900;
+            color: var(--theme-brand-kicker, #c4b5fd);
+            text-decoration: none;
+        }
+        .note-row .bookline a.story:hover {
+            text-decoration: underline;
+        }
+        .note-row .chip {
+            font-size: 11px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: color-mix(in srgb, var(--purple, #6d28d9) 22%, transparent);
+            border: 1px solid color-mix(in srgb, var(--purple, #6d28d9) 35%, var(--border));
+            color: var(--text);
+        }
+        .note-row .quote {
+            font-size: 13px;
+            font-style: italic;
+            color: color-mix(in srgb, var(--text) 90%, var(--theme-brand-kicker, #c4b5fd));
+            line-height: 1.5;
+            margin-bottom: 10px;
+            padding-left: 12px;
+            border-left: 3px solid color-mix(in srgb, var(--pink, #ec4899) 55%, transparent);
+        }
+        .note-row .comment {
+            font-size: 14px;
+            line-height: 1.55;
+            white-space: pre-wrap;
+            color: var(--text);
+        }
+        .note-row .meta {
+            margin-top: 12px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--muted);
+        }
+        .note-row .meta a {
+            color: var(--link, var(--purple, #6d28d9));
+            font-weight: 800;
+            text-decoration: none;
+        }
+        .note-row .meta a:hover {
+            text-decoration: underline;
+        }
+        .err {
+            padding: 14px 16px;
+            border-radius: 14px;
+            background: rgba(248, 113, 113, 0.12);
+            border: 1px solid rgba(248, 113, 113, 0.35);
+            color: #fecaca;
+            font-weight: 800;
+            margin-bottom: 16px;
+        }
+        .loading {
+            text-align: center;
+            padding: 48px 16px;
+            color: var(--muted);
+            font-weight: 800;
+        }
+    </style>
+    <link rel="stylesheet" href="/css/gradient-themes.css?v=2" />
+</head>
+<body>
+    <div class="topbar">
+        <a class="btn" href="/reader-home.html">← Reading profile</a>
+        <div class="topbar-fill">
+            <div class="topbar-title">Beta notes library</div>
+            <div class="topbar-sub">Every highlight you saved, across every story</div>
+        </div>
+        <a class="btn ghost" href="/library.html">Library</a>
+    </div>
+
+    <div class="wrap">
+        <div class="hero">
+            <h1>Your note shelf</h1>
+            <p>
+                Notes from <strong>Beta read</strong> live here, grouped by story. Open a row to jump back into the beta
+                workspace for that book.
+            </p>
+        </div>
+
+        <div id="errorBox" class="err hidden" role="alert"></div>
+        <div id="loadingState" class="loading">Loading your notes…</div>
+
+        <div id="mainBlock" class="hidden">
+            <div class="toolbar">
+                <input type="search" class="search" id="filterInput" placeholder="Search by story, chapter, or note text…" autocomplete="off" />
+                <span class="stat" id="statLine"></span>
+            </div>
+            <div id="listRoot"></div>
+            <div id="emptyState" class="empty hidden">No saved notes yet. Open a story in Beta read and highlight a passage to create your first note.</div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { auth, db } from "./firebase.js";
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { readBetaShelfFromLocalStorage } from "./js/beta-shelf-local.js?v=1";
+
+        const loadingState = document.getElementById("loadingState");
+        const mainBlock = document.getElementById("mainBlock");
+        const errorBox = document.getElementById("errorBox");
+        const listRoot = document.getElementById("listRoot");
+        const emptyState = document.getElementById("emptyState");
+        const filterInput = document.getElementById("filterInput");
+        const statLine = document.getElementById("statLine");
+
+        let allRows = [];
+        let localShelf = {};
+
+        function safeString(value, fallback = "") {
+            return typeof value === "string" ? value : fallback;
+        }
+        function safeObject(value, fallback = {}) {
+            return value && typeof value === "object" && !Array.isArray(value) ? value : fallback;
+        }
+
+        function escapeHtml(s) {
+            return String(s)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;");
+        }
+
+        function formatTime(ts) {
+            if (ts == null) return "";
+            if (typeof ts === "number" && Number.isFinite(ts)) {
+                try {
+                    return new Date(ts).toLocaleString();
+                } catch {
+                    return "";
+                }
+            }
+            if (typeof ts.toDate === "function") {
+                try {
+                    return ts.toDate().toLocaleString();
+                } catch {
+                    return "";
+                }
+            }
+            return "";
+        }
+
+        function storyTitleFor(bookId, cloudShelf) {
+            const s = safeObject(cloudShelf[bookId], {});
+            const t = safeString(s.title, "").trim();
+            if (t) return t;
+            const l = safeObject(localShelf[bookId], {});
+            const lt = safeString(l.title, "").trim();
+            if (lt) return lt;
+            const short = bookId.length > 10 ? `${bookId.slice(0, 8)}…` : bookId;
+            return `Story (${short})`;
+        }
+
+        function flattenNotes(mapByBook, cloudShelf) {
+            const out = [];
+            Object.keys(mapByBook).forEach((bookId) => {
+                const arr = mapByBook[bookId];
+                if (!Array.isArray(arr)) return;
+                const storyTitle = storyTitleFor(bookId, cloudShelf);
+                arr.forEach((n, idx) => {
+                    const note = safeObject(n, {});
+                    out.push({
+                        key: `${bookId}-${note.id || idx}-${note.createdAt || idx}`,
+                        bookId,
+                        storyTitle,
+                        author: safeString(safeObject(cloudShelf[bookId], {}).author, ""),
+                        quote: safeString(note.quote, ""),
+                        comment: safeString(note.comment, ""),
+                        chapterTitle: safeString(note.chapterTitle, `Chapter ${(note.chapterIndex ?? 0) + 1}`),
+                        createdAt: note.createdAt
+                    });
+                });
+            });
+            out.sort((a, b) => {
+                const ta = typeof a.createdAt === "number" ? a.createdAt : a.createdAt?.toMillis?.() || 0;
+                const tb = typeof b.createdAt === "number" ? b.createdAt : b.createdAt?.toMillis?.() || 0;
+                return tb - ta;
+            });
+            return out;
+        }
+
+        function rowHtml(row) {
+            const betaUrl = `/beta-read.html?book=${encodeURIComponent(row.bookId)}`;
+            const au = escapeHtml(row.author);
+            const authorBit = row.author ? ` · @${au}` : "";
+            const q = escapeHtml(row.quote);
+            const c = escapeHtml(row.comment);
+            const st = escapeHtml(row.storyTitle);
+            const ch = escapeHtml(row.chapterTitle);
+            const when = escapeHtml(formatTime(row.createdAt));
+            return `
+                <article class="note-row" data-key="${escapeHtml(row.key)}">
+                    <div class="bookline">
+                        <a class="story" href="${betaUrl}">${st}</a>
+                        <span class="chip">${ch}</span>
+                    </div>
+                    <div class="quote">${q}</div>
+                    <div class="comment">${c}</div>
+                    <div class="meta">
+                        <span>${when}${authorBit}</span>
+                        <a href="${betaUrl}">Open beta workspace →</a>
+                    </div>
+                </article>
+            `;
+        }
+
+        function applyFilter() {
+            const q = (filterInput.value || "").trim().toLowerCase();
+            const filtered = q
+                ? allRows.filter((row) => {
+                      const blob = `${row.storyTitle} ${row.author} ${row.chapterTitle} ${row.quote} ${row.comment}`.toLowerCase();
+                      return blob.includes(q);
+                  })
+                : allRows;
+            const bookCount = new Set(allRows.map((r) => r.bookId)).size;
+            const storyWord = bookCount === 1 ? "story" : "stories";
+            if (q) {
+                statLine.textContent = `${filtered.length} match${filtered.length === 1 ? "" : "es"} · ${allRows.length} total · ${bookCount} ${storyWord}`;
+            } else {
+                statLine.textContent = `${allRows.length} note${allRows.length === 1 ? "" : "s"} · ${bookCount} ${storyWord}`;
+            }
+            if (!filtered.length) {
+                listRoot.innerHTML = "";
+                if (allRows.length > 0) {
+                    emptyState.textContent = "No notes match your search.";
+                } else {
+                    emptyState.textContent =
+                        "No saved notes yet. Open a story in Beta read and highlight a passage to create your first note.";
+                }
+                emptyState.classList.remove("hidden");
+                return;
+            }
+            emptyState.classList.add("hidden");
+            listRoot.innerHTML = filtered.map(rowHtml).join("");
+        }
+
+        function ingestUserData(data, uid) {
+            localShelf = readBetaShelfFromLocalStorage(uid);
+            const map = safeObject(data.betaReadNotesByBook, {});
+            const cloudShelf = safeObject(data.betaReadShelf, {});
+            allRows = flattenNotes(map, cloudShelf);
+            loadingState.classList.add("hidden");
+            mainBlock.classList.remove("hidden");
+            errorBox.classList.add("hidden");
+            applyFilter();
+        }
+
+        filterInput.addEventListener("input", () => applyFilter());
+
+        onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                window.location.href = "/login.html?next=" + encodeURIComponent("/beta-notes-library.html");
+                return;
+            }
+            const userRef = doc(db, "users", user.uid);
+            onSnapshot(
+                userRef,
+                (snap) => {
+                    const data = snap.exists() ? snap.data() || {} : {};
+                    ingestUserData(data, user.uid);
+                },
+                (err) => {
+                    console.error(err);
+                    loadingState.classList.add("hidden");
+                    errorBox.textContent = "Could not load your notes. Check your connection and try again.";
+                    errorBox.classList.remove("hidden");
+                }
+            );
+        });
+
+        try {
+            const t = localStorage.getItem("alysum-reader-theme");
+            if (t === "light") document.body.classList.add("light");
+        } catch (e) {}
+    </script>
+</body>
+</html>

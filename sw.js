@@ -8,7 +8,7 @@
  * Bump SW_VERSION when shipping breaking shell changes to force a refresh.
  */
 
-const SW_VERSION = 'v1.0.7';
+const SW_VERSION = 'v1.0.8';
 const SHELL_CACHE = `alysum-shell-${SW_VERSION}`;
 const ASSET_CACHE = `alysum-assets-${SW_VERSION}`;
 
@@ -22,6 +22,7 @@ const APP_SHELL = [
   '/studio.html',
   '/read.html',
   '/beta-read.html',
+  '/beta-notes-library.html',
   '/reader-home.html',
   '/vault.html',
   '/settings.html',

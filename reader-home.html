@@ -477,6 +477,17 @@
             display: none;
         }
 
+        .beta-notes-crosslink {
+            display: inline-block;
+            margin-top: 10px;
+            font-weight: 900;
+            color: var(--theme-brand-kicker, #c4b5fd);
+            text-decoration: none;
+        }
+        .beta-notes-crosslink:hover {
+            text-decoration: underline;
+        }
+
         .loading-msg {
             text-align: center;
             padding: 48px 16px;
@@ -532,6 +543,7 @@
     <nav class="side-menu" id="sideMenu" aria-label="Main menu">
         <div class="menu-title">Navigate</div>
         <a class="menu-link" href="/reader-home.html">📖 Your reading profile</a>
+        <a class="menu-link" href="/beta-notes-library.html">📝 All beta notes</a>
         <a class="menu-link" href="/library.html">📚 Library</a>
         <a class="menu-link hidden" id="menuStudioLink" href="/studio.html">✍️ Studio</a>
         <a class="menu-link" href="/settings.html">⚙️ Account settings</a>
@@ -547,6 +559,7 @@
                 </div>
                 <div class="sidebar-group-label">Your space</div>
                 <a class="sidebar-item active" href="/reader-home.html">📖 Reading profile</a>
+                <a class="sidebar-item" href="/beta-notes-library.html">📝 All beta notes</a>
                 <a class="sidebar-item" href="/library.html">📚 Library</a>
                 <a class="sidebar-item hidden" id="sidebarStudioLink" href="/studio.html">✍️ Studio</a>
                 <a class="sidebar-item" href="/settings.html">⚙️ Settings</a>
@@ -590,6 +603,7 @@
                         <h2>Beta reads</h2>
                         <p class="section-hint">
                             When you open a story from the Library, a read-only copy is saved here. Open one to highlight passages and capture private notes on the right — your feedback workspace.
+                            <a class="beta-notes-crosslink" href="/beta-notes-library.html">View all saved notes across books →</a>
                         </p>
                     </div>
                     <div class="beta-books" id="betaReadsGrid"></div>
