@@ -39,10 +39,20 @@
             --border: rgba(255,255,255,0.1);
             --purple: #6d28d9;
             --purple-dark: #5b21b6;
+            --purple-bright: #9333ea;
+            --pink: #ec4899;
+            --gold: #f5d489;
             --font-size: 20px;
             --line-height: 1.85;
             --doc-max: min(900px, 100%);
             --shadow: 0 16px 40px rgba(0,0,0,0.35);
+            /* Mirrors gradient-themes.css classic until that sheet loads */
+            --theme-hero-bg: linear-gradient(135deg, rgba(147, 51, 234, 0.28), rgba(236, 72, 153, 0.12)), var(--panel);
+            --nb-float-bg: linear-gradient(145deg, #1e1b4b 0%, #0f172a 42%, #0b1220 100%);
+            --theme-accent-soft-bg: rgba(109, 40, 217, 0.16);
+            --accent-muted: rgba(109, 40, 217, 0.18);
+            --accent-soft: #7c3aed;
+            --link: #6d28d9;
         }
         html, body {
             margin: 0;
@@ -50,6 +60,15 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
             background: var(--bg);
             color: var(--text);
+        }
+        body.light {
+            --bg: #f4f6fb;
+            --panel: #ffffff;
+            --panel-2: #f7f9fc;
+            --text: #171717;
+            --muted: #5f6470;
+            --border: rgba(0, 0, 0, 0.08);
+            --shadow: 0 16px 40px rgba(0, 0, 0, 0.08);
         }
         .hidden { display: none !important; }
         .topbar {
@@ -142,7 +161,7 @@
             margin: 32px auto;
             padding: 28px 22px;
             text-align: center;
-            background: linear-gradient(180deg, rgba(17,24,39,0.95), rgba(15,23,42,0.92));
+            background: var(--theme-hero-bg);
             border: 1px solid var(--border);
             border-radius: 20px;
             box-shadow: var(--shadow);
@@ -152,7 +171,7 @@
             height: 40px;
             margin: 0 auto 16px;
             border-radius: 50%;
-            border: 3px solid rgba(255,255,255,0.12);
+            border: 3px solid color-mix(in srgb, var(--muted) 35%, transparent);
             border-top-color: var(--purple);
             animation: beta-spin 0.75s linear infinite;
         }
@@ -179,7 +198,7 @@
             align-items: start;
         }
         .doc-panel {
-            background: linear-gradient(180deg, rgba(17,24,39,0.98), rgba(15,23,42,0.98));
+            background: var(--theme-hero-bg);
             border: 1px solid var(--border);
             border-radius: 20px;
             padding: 20px;
@@ -204,8 +223,8 @@
             line-height: 1.5;
             padding: 12px 14px;
             border-radius: 14px;
-            background: rgba(109, 40, 217, 0.08);
-            border: 1px solid rgba(124, 58, 237, 0.22);
+            background: var(--theme-accent-soft-bg);
+            border: 1px solid color-mix(in srgb, var(--purple) 24%, var(--border));
         }
         .hint-bar .hint-icon {
             flex-shrink: 0;
@@ -216,7 +235,7 @@
             align-items: center;
             justify-content: center;
             font-size: 15px;
-            background: rgba(124, 58, 237, 0.2);
+            background: var(--accent-muted);
             color: var(--theme-brand-kicker, #ddd6fe);
         }
         .nav-row {
@@ -269,14 +288,14 @@
             font-weight: 900;
         }
         #betaContent a {
-            color: var(--theme-brand-kicker, #c4b5fd);
+            color: var(--link, var(--theme-brand-kicker, #c4b5fd));
             text-decoration: underline;
             text-underline-offset: 3px;
         }
         #betaContent blockquote {
             margin: 1em 0;
             padding: 0.4em 0 0.4em 1em;
-            border-left: 3px solid rgba(124, 58, 237, 0.45);
+            border-left: 3px solid color-mix(in srgb, var(--purple) 48%, transparent);
             color: color-mix(in srgb, var(--text) 88%, var(--muted));
         }
         #betaContent ul, #betaContent ol {
@@ -287,40 +306,29 @@
         .rail {
             position: sticky;
             top: 62px;
-            --rail-glow: rgba(124, 58, 237, 0.22);
+            --rail-glow: color-mix(in srgb, var(--purple) 24%, transparent);
             background-image:
-                linear-gradient(
-                    90deg,
-                    rgba(91, 33, 182, 0.95),
-                    rgba(124, 58, 237, 0.85),
-                    rgba(236, 72, 153, 0.65),
-                    rgba(245, 212, 137, 0.75)
-                ),
-                linear-gradient(
-                    168deg,
-                    rgba(30, 27, 75, 0.72) 0%,
-                    rgba(17, 24, 39, 0.96) 38%,
-                    rgba(11, 18, 32, 0.99) 100%
-                );
+                linear-gradient(90deg, var(--purple-dark), var(--purple), var(--pink), var(--gold)),
+                var(--nb-float-bg);
             background-size: 100% 3px, 100% 100%;
             background-repeat: no-repeat;
             background-position: top, center;
-            background-color: #0b1220;
-            border: 1px solid rgba(167, 139, 250, 0.28);
+            background-color: var(--bg);
+            border: 1px solid color-mix(in srgb, var(--purple) 26%, var(--border));
             border-radius: 22px;
             padding: 20px 18px 22px;
             max-height: calc(100vh - 76px);
             overflow-x: hidden;
             overflow-y: auto;
             box-shadow:
-                0 0 0 1px rgba(109, 40, 217, 0.14) inset,
+                0 0 0 1px color-mix(in srgb, var(--purple) 14%, transparent) inset,
                 0 26px 64px rgba(0, 0, 0, 0.5),
                 0 0 100px -30px var(--rail-glow);
         }
         .rail-head {
             margin-bottom: 18px;
             padding-bottom: 16px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            border-bottom: 1px solid var(--border);
         }
         .rail-head-row {
             display: flex;
@@ -338,10 +346,10 @@
             justify-content: center;
             background:
                 radial-gradient(circle at 28% 22%, rgba(255, 255, 255, 0.35), transparent 45%),
-                linear-gradient(145deg, rgba(109, 40, 217, 0.65), rgba(236, 72, 153, 0.28));
-            border: 1px solid rgba(255, 255, 255, 0.14);
+                linear-gradient(145deg, color-mix(in srgb, var(--purple) 62%, transparent), color-mix(in srgb, var(--pink) 32%, transparent));
+            border: 1px solid color-mix(in srgb, var(--text) 12%, transparent);
             box-shadow:
-                0 0 28px rgba(124, 58, 237, 0.45),
+                0 0 28px color-mix(in srgb, var(--purple) 42%, transparent),
                 0 2px 8px rgba(0, 0, 0, 0.35);
             font-size: 17px;
             line-height: 1;
@@ -354,14 +362,20 @@
             line-height: 1.15;
         }
         .rail-title-gradient {
-            background: linear-gradient(102deg, #faf5ff 0%, #e9d5ff 38%, #f0abfc 72%, #f5d489 100%);
+            background: linear-gradient(
+                102deg,
+                var(--theme-brand-kicker, #c4b5fd) 0%,
+                var(--accent-soft, #a855f7) 42%,
+                var(--pink, #ec4899) 72%,
+                var(--gold, #f5d489) 100%
+            );
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
         }
         @supports not (background-clip: text) {
             .rail-title-gradient {
-                color: var(--gold, #f5d489);
+                color: var(--accent-soft, var(--purple-bright));
                 background: none;
             }
         }
@@ -382,8 +396,8 @@
             line-height: 1.5;
             padding: 10px 12px;
             border-radius: 12px;
-            background: rgba(0, 0, 0, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.06);
+            background: color-mix(in srgb, var(--panel-2) 88%, var(--purple) 6%);
+            border: 1px solid var(--border);
         }
         .rail-sub-hint {
             display: block;
@@ -392,7 +406,7 @@
             font-weight: 800;
             letter-spacing: 0.04em;
             text-transform: uppercase;
-            color: rgba(196, 181, 253, 0.75);
+            color: color-mix(in srgb, var(--theme-brand-kicker, #c4b5fd) 78%, var(--muted));
         }
         .draft-box.composer {
             position: relative;
@@ -400,14 +414,14 @@
             padding: 16px 15px 17px;
             border-radius: 18px;
             background:
-                linear-gradient(155deg, rgba(109, 40, 217, 0.18) 0%, transparent 55%),
-                linear-gradient(210deg, rgba(236, 72, 153, 0.08) 0%, transparent 40%),
-                rgba(7, 11, 22, 0.72);
-            border: 1px solid rgba(167, 139, 250, 0.32);
+                linear-gradient(155deg, var(--theme-accent-soft-bg) 0%, transparent 55%),
+                linear-gradient(210deg, color-mix(in srgb, var(--pink) 12%, transparent), transparent 40%),
+                color-mix(in srgb, var(--panel) 78%, var(--purple) 8%);
+            border: 1px solid color-mix(in srgb, var(--purple) 28%, var(--border));
             box-shadow:
                 0 12px 36px rgba(0, 0, 0, 0.4),
-                0 0 0 1px rgba(255, 255, 255, 0.04) inset,
-                0 -20px 40px -24px rgba(124, 58, 237, 0.35) inset;
+                0 0 0 1px color-mix(in srgb, var(--text) 6%, transparent) inset,
+                0 -20px 40px -24px color-mix(in srgb, var(--purple) 28%, transparent) inset;
         }
         .draft-box.composer::before {
             content: "";
@@ -417,7 +431,7 @@
             width: 72px;
             height: 72px;
             border-radius: 50%;
-            background: radial-gradient(circle, rgba(167, 139, 250, 0.14), transparent 68%);
+            background: radial-gradient(circle, color-mix(in srgb, var(--purple) 18%, transparent), transparent 68%);
             pointer-events: none;
         }
         .draft-box label {
@@ -440,12 +454,12 @@
             box-shadow: 0 0 10px currentColor;
         }
         .draft-box label[for="draftQuote"]::before {
-            background: linear-gradient(135deg, #a78bfa, #7c3aed);
-            color: #a78bfa;
+            background: linear-gradient(135deg, var(--accent-soft, #a855f7), var(--purple));
+            color: var(--accent-soft, #a855f7);
         }
         .draft-box label[for="draftComment"]::before {
-            background: linear-gradient(135deg, #f472b6, #ec4899);
-            color: #f472b6;
+            background: linear-gradient(135deg, color-mix(in srgb, var(--pink) 75%, white), var(--pink));
+            color: var(--pink);
         }
         .draft-box label.draft-label-spaced {
             margin-top: 14px;
@@ -453,8 +467,8 @@
         .draft-box textarea {
             width: 100%;
             border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            background: rgba(3, 7, 18, 0.75);
+            border: 1px solid var(--border);
+            background: color-mix(in srgb, var(--panel-2) 92%, black);
             color: var(--text);
             font-size: 13px;
             line-height: 1.5;
@@ -465,23 +479,29 @@
             outline: none;
             transition: border-color 0.15s ease, box-shadow 0.15s ease;
         }
+        body.light .draft-box textarea {
+            background: var(--panel-2);
+        }
         #draftQuote {
-            border-left: 3px solid rgba(167, 139, 250, 0.75);
-            background: linear-gradient(90deg, rgba(109, 40, 217, 0.12), rgba(3, 7, 18, 0.82));
+            border-left: 3px solid color-mix(in srgb, var(--purple) 58%, transparent);
+            background: linear-gradient(90deg, var(--theme-accent-soft-bg), color-mix(in srgb, var(--panel-2) 90%, black));
             font-style: italic;
-            color: color-mix(in srgb, var(--text) 92%, #ddd6fe);
+            color: color-mix(in srgb, var(--text) 92%, var(--theme-brand-kicker, #c4b5fd));
+        }
+        body.light #draftQuote {
+            background: linear-gradient(90deg, var(--theme-accent-soft-bg), var(--panel-2));
         }
         #draftComment {
             min-height: 88px;
         }
         .draft-box textarea::placeholder {
-            color: rgba(156, 163, 175, 0.72);
+            color: color-mix(in srgb, var(--muted) 85%, transparent);
             font-style: normal;
         }
         .draft-box textarea:focus {
-            border-color: rgba(167, 139, 250, 0.55);
+            border-color: color-mix(in srgb, var(--purple) 42%, var(--border));
             box-shadow:
-                0 0 0 3px rgba(109, 40, 217, 0.22),
+                0 0 0 3px var(--accent-muted),
                 0 8px 24px rgba(0, 0, 0, 0.25);
         }
         .draft-box textarea:read-only {
@@ -495,16 +515,22 @@
             font-weight: 900;
             letter-spacing: 0.03em;
             border: none;
-            background: linear-gradient(135deg, #5b21b6 0%, #6d28d9 38%, #a855f7 88%, #c084fc 100%);
+            background: linear-gradient(
+                135deg,
+                var(--purple-dark) 0%,
+                var(--purple) 40%,
+                var(--purple-bright, var(--accent-soft)) 78%,
+                color-mix(in srgb, var(--purple-bright, var(--accent-soft)) 85%, white) 100%
+            );
             box-shadow:
-                0 6px 26px rgba(109, 40, 217, 0.5),
-                0 0 0 1px rgba(255, 255, 255, 0.12) inset;
+                0 6px 26px color-mix(in srgb, var(--purple) 48%, transparent),
+                0 0 0 1px color-mix(in srgb, var(--text) 10%, transparent) inset;
         }
         .rail .save-note-btn:hover:not(:disabled) {
             filter: brightness(1.09);
             box-shadow:
-                0 8px 32px rgba(109, 40, 217, 0.58),
-                0 0 0 1px rgba(255, 255, 255, 0.16) inset;
+                0 8px 32px color-mix(in srgb, var(--purple) 55%, transparent),
+                0 0 0 1px color-mix(in srgb, var(--text) 14%, transparent) inset;
         }
         .notes-feed-head {
             display: flex;
@@ -515,13 +541,13 @@
             font-weight: 900;
             letter-spacing: 0.12em;
             text-transform: uppercase;
-            color: rgba(196, 181, 253, 0.85);
+            color: color-mix(in srgb, var(--theme-brand-kicker, #c4b5fd) 88%, var(--muted));
         }
         .notes-feed-head::after {
             content: "";
             flex: 1;
             height: 1px;
-            background: linear-gradient(90deg, rgba(167, 139, 250, 0.45), transparent);
+            background: linear-gradient(90deg, color-mix(in srgb, var(--purple) 42%, transparent), transparent);
             min-width: 24px;
         }
         .notes-feed-icon {
@@ -541,8 +567,8 @@
             margin: 0;
             padding: 14px 14px;
             border-radius: 14px;
-            background: linear-gradient(145deg, rgba(255, 255, 255, 0.04), rgba(0, 0, 0, 0.15));
-            border: 1px dashed rgba(167, 139, 250, 0.28);
+            background: linear-gradient(145deg, color-mix(in srgb, var(--text) 5%, transparent), color-mix(in srgb, var(--panel) 40%, black));
+            border: 1px dashed color-mix(in srgb, var(--purple) 30%, var(--border));
         }
         .notes-error {
             color: #fecaca;
@@ -555,8 +581,12 @@
             overflow: hidden;
             border-radius: 16px;
             padding: 14px 14px 12px 15px;
-            background: linear-gradient(165deg, rgba(255, 255, 255, 0.06) 0%, rgba(0, 0, 0, 0.22) 100%);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: linear-gradient(
+                165deg,
+                color-mix(in srgb, var(--text) 6%, transparent) 0%,
+                color-mix(in srgb, var(--panel) 55%, black) 100%
+            );
+            border: 1px solid var(--border);
             box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
             transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
         }
@@ -573,10 +603,10 @@
         }
         .note-card:hover {
             transform: translateY(-2px);
-            border-color: rgba(167, 139, 250, 0.35);
+            border-color: color-mix(in srgb, var(--purple) 32%, var(--border));
             box-shadow:
                 0 16px 40px rgba(0, 0, 0, 0.38),
-                0 0 40px -12px rgba(124, 58, 237, 0.25);
+                0 0 40px -12px color-mix(in srgb, var(--purple) 28%, transparent);
         }
         .note-card .note-meta {
             display: flex;
@@ -591,23 +621,30 @@
         .note-card .note-meta .chip {
             padding: 4px 10px;
             border-radius: 999px;
-            background: linear-gradient(135deg, rgba(109, 40, 217, 0.35), rgba(236, 72, 153, 0.15));
-            border: 1px solid rgba(167, 139, 250, 0.35);
-            color: #f5f3ff;
-            box-shadow: 0 0 16px rgba(109, 40, 217, 0.2);
+            background: linear-gradient(
+                135deg,
+                color-mix(in srgb, var(--purple) 38%, transparent),
+                color-mix(in srgb, var(--pink) 16%, transparent)
+            );
+            border: 1px solid color-mix(in srgb, var(--purple) 32%, var(--border));
+            color: color-mix(in srgb, var(--text) 8%, white);
+            box-shadow: 0 0 16px color-mix(in srgb, var(--purple) 22%, transparent);
         }
         .note-card .q {
             position: relative;
             font-size: 13px;
             font-style: italic;
-            color: #ede9fe;
+            color: color-mix(in srgb, var(--text) 6%, #ede9fe);
             line-height: 1.55;
             margin-bottom: 12px;
             padding: 12px 12px 12px 22px;
             border-radius: 12px;
-            background: rgba(0, 0, 0, 0.28);
-            border: 1px solid rgba(236, 72, 153, 0.18);
-            border-left: 3px solid color-mix(in srgb, var(--pink, #ec4899) 70%, transparent);
+            background: color-mix(in srgb, var(--panel) 35%, black);
+            border: 1px solid color-mix(in srgb, var(--pink) 20%, var(--border));
+            border-left: 3px solid color-mix(in srgb, var(--pink) 70%, transparent);
+        }
+        body.light .note-card .q {
+            background: color-mix(in srgb, var(--panel-2) 92%, var(--pink) 4%);
         }
         .note-card .q::before {
             content: "“";
@@ -618,21 +655,21 @@
             font-weight: 900;
             font-style: normal;
             line-height: 1;
-            color: rgba(167, 139, 250, 0.28);
+            color: color-mix(in srgb, var(--purple) 26%, transparent);
             pointer-events: none;
         }
         .note-card .c {
             font-size: 14px;
             line-height: 1.55;
             white-space: pre-wrap;
-            color: color-mix(in srgb, var(--text) 96%, #c4b5fd);
+            color: color-mix(in srgb, var(--text) 96%, var(--theme-brand-kicker, #c4b5fd));
         }
         .note-card .note-time {
             margin-top: 12px;
             padding-top: 10px;
-            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            border-top: 1px solid var(--border);
             font-size: 11px;
-            color: rgba(156, 163, 175, 0.95);
+            color: var(--muted);
             font-weight: 700;
         }
         .status {
@@ -699,6 +736,9 @@
             <div class="topbar-sub" id="topSub"></div>
         </div>
         <div class="topbar-right">
+            <button type="button" class="btn" id="themeBtn" title="Light / dark">Theme</button>
+            <button type="button" class="btn" id="fontMinusBtn" title="Smaller text">A-</button>
+            <button type="button" class="btn" id="fontPlusBtn" title="Larger text">A+</button>
             <a class="btn ghost" id="publicReadLink" href="#" title="Open the standard reader (no notes rail)">Public reader</a>
         </div>
     </div>
@@ -796,6 +836,9 @@
         const saveNoteBtn = document.getElementById("saveNoteBtn");
         const notesList = document.getElementById("notesList");
         const railStatus = document.getElementById("railStatus");
+        const themeBtn = document.getElementById("themeBtn");
+        const fontMinusBtn = document.getElementById("fontMinusBtn");
+        const fontPlusBtn = document.getElementById("fontPlusBtn");
 
         let currentUser = null;
         let currentBook = null;
@@ -819,6 +862,32 @@
                 shelfTouchTimer = null;
                 void touchShelf(uid).catch(() => {});
             }, 650);
+        }
+
+        function applyTheme(theme) {
+            if (theme === "light") {
+                document.body.classList.add("light");
+            } else {
+                document.body.classList.remove("light");
+            }
+            try {
+                localStorage.setItem("alysum-reader-theme", theme);
+            } catch (e) {
+                /* ignore */
+            }
+            if (themeBtn) {
+                themeBtn.textContent = theme === "light" ? "Dark" : "Light";
+            }
+        }
+
+        function applyFontSize(size) {
+            const next = Math.max(16, Math.min(32, size));
+            document.documentElement.style.setProperty("--font-size", `${next}px`);
+            try {
+                localStorage.setItem("alysum-reader-font-size", String(next));
+            } catch (e) {
+                /* ignore */
+            }
         }
 
         function safeString(value, fallback = "") {
@@ -1196,6 +1265,37 @@
                 saveNoteBtn.disabled = false;
                 saveNoteBtn.textContent = SAVE_NOTE_LABEL;
             }
+        });
+
+        let currentFontSize = 22;
+        try {
+            const raw = parseInt(localStorage.getItem("alysum-reader-font-size") || "22", 10);
+            if (Number.isFinite(raw)) currentFontSize = raw;
+        } catch (e) {
+            /* ignore */
+        }
+        applyFontSize(currentFontSize);
+
+        const savedReaderTheme = (() => {
+            try {
+                return localStorage.getItem("alysum-reader-theme") || "dark";
+            } catch (e) {
+                return "dark";
+            }
+        })();
+        applyTheme(savedReaderTheme);
+
+        themeBtn?.addEventListener("click", () => {
+            const next = document.body.classList.contains("light") ? "dark" : "light";
+            applyTheme(next);
+        });
+        fontMinusBtn?.addEventListener("click", () => {
+            currentFontSize = Math.max(16, currentFontSize - 2);
+            applyFontSize(currentFontSize);
+        });
+        fontPlusBtn?.addEventListener("click", () => {
+            currentFontSize = Math.min(32, currentFontSize + 2);
+            applyFontSize(currentFontSize);
         });
 
         const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
