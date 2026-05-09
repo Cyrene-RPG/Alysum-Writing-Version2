@@ -3,6 +3,12 @@
 <head>
     <title>Sign Up - Alysum</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+        try {
+            var __g = localStorage.getItem("alysum-gradient-theme");
+            if (__g && __g !== "classic") document.documentElement.setAttribute("data-gradient-theme", __g);
+        } catch (e) {}
+    </script>
     <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
 
     <style>
@@ -17,7 +23,7 @@
             justify-content: center;
             align-items: center;
             font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-            background: linear-gradient(135deg, #5b21b6, #7c3aed, #a78bfa);
+            background: var(--login-page-bg);
         }
 
         .card {
@@ -98,6 +104,7 @@
             }
         }
     </style>
+    <link rel="stylesheet" href="/css/gradient-themes.css?v=1" />
 </head>
 
 <body>

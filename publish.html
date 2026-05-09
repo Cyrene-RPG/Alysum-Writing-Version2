@@ -3,6 +3,12 @@
 <head>
     <title>Publish Story • Alysum</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+        try {
+            var __g = localStorage.getItem("alysum-gradient-theme");
+            if (__g && __g !== "classic") document.documentElement.setAttribute("data-gradient-theme", __g);
+        } catch (e) {}
+    </script>
     <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
 
     <style>
@@ -11,8 +17,6 @@
         }
 
         :root {
-            --alysum-purple: #6d28d9;
-            --alysum-purple-dark: #5b21b6;
             --bg: #eef2f7;
             --panel: #ffffff;
             --panel-soft: #f8fafc;
@@ -783,6 +787,7 @@
             }
         }
     </style>
+    <link rel="stylesheet" href="/css/gradient-themes.css?v=1" />
 </head>
 <body>
 

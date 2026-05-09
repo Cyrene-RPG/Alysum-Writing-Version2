@@ -4,6 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Account settings - Alysum</title>
+    <script>
+        try {
+            var __g = localStorage.getItem("alysum-gradient-theme");
+            if (__g && __g !== "classic") document.documentElement.setAttribute("data-gradient-theme", __g);
+        } catch (e) {}
+    </script>
     <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
     <style>
         * { box-sizing: border-box; }
@@ -14,9 +20,6 @@
             --text: #fff;
             --muted: #9ca3af;
             --border: rgba(255,255,255,0.1);
-            --purple: #6d28d9;
-            --pink: #ec4899;
-            --gold: #f5d489;
             --danger: #f87171;
             --ok: #4ade80;
         }
@@ -24,7 +27,7 @@
             margin: 0;
             min-height: 100vh;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            background: radial-gradient(circle at top, rgba(109,40,217,0.2), transparent 40%), var(--bg);
+            background: radial-gradient(circle at top, var(--theme-body-spot-strong) 0%, transparent 40%), var(--bg);
             color: var(--text);
         }
         .header {
@@ -35,7 +38,7 @@
             align-items: center;
             gap: 14px;
             padding: 14px 18px;
-            background: linear-gradient(135deg, #5b21b6, #7c3aed);
+            background: linear-gradient(135deg, var(--purple-dark), var(--theme-header-mid));
             border-bottom: 1px solid var(--border);
         }
         .back-btn {
@@ -159,7 +162,38 @@
         .hidden {
             display: none !important;
         }
+
+        .theme-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 4px;
+        }
+
+        .theme-chip {
+            padding: 10px 14px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.06);
+            color: white;
+            font-weight: 800;
+            font-size: 13px;
+            cursor: pointer;
+            transition: background 0.15s ease, border-color 0.15s ease;
+        }
+
+        .theme-chip:hover {
+            background: color-mix(in srgb, var(--purple-bright) 28%, transparent);
+            border-color: color-mix(in srgb, var(--pink) 35%, transparent);
+        }
+
+        .theme-chip.active {
+            border-color: color-mix(in srgb, var(--pink) 55%, transparent);
+            background: linear-gradient(135deg, var(--theme-card-a), var(--theme-card-b));
+            box-shadow: 0 0 0 1px color-mix(in srgb, var(--purple) 22%, transparent);
+        }
     </style>
+    <link rel="stylesheet" href="/css/gradient-themes.css?v=1" />
 </head>
 <body>
     <header class="header">
@@ -170,6 +204,14 @@
     <div class="wrap">
         <div class="panel" id="loadingPanel">
             <p class="hint" style="margin:0">Loading your account…</p>
+        </div>
+
+        <div class="panel hidden" id="appearancePanel">
+            <h2>Appearance</h2>
+            <p class="hint">
+                Gradient accent for Studio, editor, library, and the rest of the app (the marketing home page stays as-is). Your choice is saved on this device.
+            </p>
+            <div class="theme-grid" id="themeChipRow" aria-label="Accent themes"></div>
         </div>
 
         <div class="panel hidden" id="profilePanel">
@@ -225,6 +267,7 @@
         import { onAuthStateChanged, EmailAuthProvider, reauthenticateWithCredential, updatePassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
         import { doc, getDoc, updateDoc, deleteField } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
         import { permanentHandleFromUserData } from "./js/profile-display.js?v=1";
+        import { GRADIENT_THEMES, applyGradientTheme, getStoredGradientThemeId } from "./js/gradient-theme.js?v=1";
 
         const backBtn = document.getElementById("backBtn");
         const loadingPanel = document.getElementById("loadingPanel");
@@ -240,6 +283,28 @@
         const confirmPw = document.getElementById("confirmPw");
         const savePasswordBtn = document.getElementById("savePasswordBtn");
         const passwordMsg = document.getElementById("passwordMsg");
+        const appearancePanel = document.getElementById("appearancePanel");
+        const themeChipRow = document.getElementById("themeChipRow");
+
+        function initThemePicker() {
+            if (!themeChipRow || themeChipRow.dataset.ready === "1") return;
+            themeChipRow.dataset.ready = "1";
+            themeChipRow.innerHTML = "";
+            const cur = getStoredGradientThemeId();
+            GRADIENT_THEMES.forEach(t => {
+                const b = document.createElement("button");
+                b.type = "button";
+                b.className = "theme-chip" + (t.id === cur ? " active" : "");
+                b.textContent = t.label;
+                b.title = t.hint || "";
+                b.addEventListener("click", () => {
+                    applyGradientTheme(t.id);
+                    themeChipRow.querySelectorAll(".theme-chip").forEach(x => x.classList.remove("active"));
+                    b.classList.add("active");
+                });
+                themeChipRow.appendChild(b);
+            });
+        }
 
         backBtn.addEventListener("click", () => {
             window.location.href = "/studio.html";
@@ -280,8 +345,10 @@
                 displayNameInput.value = String(data.displayName ?? "").trim();
 
                 loadingPanel.classList.add("hidden");
+                appearancePanel.classList.remove("hidden");
                 profilePanel.classList.remove("hidden");
                 securityPanel.classList.remove("hidden");
+                initThemePicker();
 
                 const hasPassword = user.providerData?.some(p => p.providerId === "password");
                 const ssoNote = document.getElementById("ssoPasswordNote");

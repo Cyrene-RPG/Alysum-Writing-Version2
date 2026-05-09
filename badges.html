@@ -4,6 +4,12 @@
 <meta charset="UTF-8" />
 <title>Alysum Achievements</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>
+try {
+  var __g = localStorage.getItem("alysum-gradient-theme");
+  if (__g && __g !== "classic") document.documentElement.setAttribute("data-gradient-theme", __g);
+} catch (e) {}
+</script>
 <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
 <style>
 * { box-sizing: border-box; }
@@ -34,7 +40,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #5b21b6, #7c3aed);
+    background: linear-gradient(135deg, var(--purple-dark), var(--theme-header-mid));
 }
 
 .header-title {
@@ -108,7 +114,7 @@ body {
 }
 
 .badge.unlocked {
-    background: linear-gradient(135deg, #6d28d9, #9333ea);
+    background: linear-gradient(135deg, var(--purple), var(--purple-bright));
 }
 
 .badge.locked {
@@ -140,7 +146,7 @@ body {
 
 .progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, #6d28d9, #a78bfa);
+    background: linear-gradient(90deg, var(--purple), var(--theme-header-end));
     width: 0%;
 }
 
@@ -173,6 +179,7 @@ body {
     }
 }
 </style>
+<link rel="stylesheet" href="/css/gradient-themes.css?v=1" />
 </head>
 
 <body>

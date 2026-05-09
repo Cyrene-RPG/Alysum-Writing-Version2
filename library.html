@@ -3,6 +3,12 @@
 <head>
     <title>Alysum Library</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+        try {
+            var __g = localStorage.getItem("alysum-gradient-theme");
+            if (__g && __g !== "classic") document.documentElement.setAttribute("data-gradient-theme", __g);
+        } catch (e) {}
+    </script>
     <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
 
     <style>
@@ -61,7 +67,7 @@
             font-weight: 800;
             letter-spacing: 0.06em;
             text-transform: uppercase;
-            color: #c4b5fd;
+            color: var(--theme-brand-kicker, #c4b5fd);
             margin-bottom: 6px;
         }                                             
         .title {
@@ -211,7 +217,7 @@
             flex: 0 0 auto;
             border-radius: 999px;
             padding: 8px 12px;
-            background: rgba(109,40,217,0.16);
+            background: var(--theme-accent-soft-bg);
             color: #ddd6fe;
             font-size: 12px;
             font-weight: 900;
@@ -352,6 +358,7 @@
             }
         }
     </style>
+    <link rel="stylesheet" href="/css/gradient-themes.css?v=1" />
 </head>
 <body>
     <div class="topbar">
