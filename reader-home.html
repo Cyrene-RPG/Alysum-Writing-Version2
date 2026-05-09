@@ -18,7 +18,7 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/Alysum-3.png">
     <script src="/js/pwa-register.js" defer></script>
     <!-- ALYSUM:PWA:END -->
-    <title>Reading home - Alysum</title>
+    <title>Your reading profile - Alysum</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script>
         try {
@@ -48,6 +48,10 @@
                 radial-gradient(circle at top center, var(--theme-body-spot) 0%, transparent 26%),
                 linear-gradient(180deg, #0d1426 0%, #0b1220 100%);
             color: var(--text);
+        }
+
+        body {
+            overflow-x: hidden;
         }
 
         .header {
@@ -174,99 +178,225 @@
             border-color: rgba(255,255,255,0.08);
         }
 
-        .wrap {
-            max-width: 920px;
+        .container {
+            max-width: 1180px;
             margin: 0 auto;
-            padding: 22px 16px 48px;
+            padding: 18px 16px 48px;
         }
 
-        .hero-panel {
+        .app-shell {
+            display: grid;
+            grid-template-columns: 255px 1fr;
+            gap: 18px;
+            align-items: start;
+        }
+
+        .desktop-sidebar {
+            background: linear-gradient(180deg, rgba(17,24,39,0.96), rgba(15,23,42,0.98));
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 16px;
+            box-shadow: var(--shadow-lg);
+            position: sticky;
+            top: 92px;
+        }
+
+        .sidebar-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+
+        .brand-badge {
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--purple-bright), var(--pink));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            color: white;
+            box-shadow: 0 14px 28px rgba(0,0,0,0.35);
+            flex-shrink: 0;
+        }
+
+        .brand-name {
+            font-size: 16px;
+            font-weight: 900;
+            color: var(--gold);
+        }
+
+        .sidebar-group-label {
+            margin: 14px 0 8px;
+            font-size: 11px;
+            font-weight: 900;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .sidebar-item {
+            display: block;
+            width: 100%;
+            padding: 13px 14px;
+            border-radius: 14px;
+            margin-bottom: 8px;
+            background: transparent;
+            border: 1px solid transparent;
+            color: white;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .sidebar-item.active {
+            background: linear-gradient(135deg, var(--theme-card-a), var(--theme-card-b));
+            border-color: color-mix(in srgb, var(--pink) 24%, transparent);
+        }
+
+        .sidebar-item:not(.active):hover {
+            background: rgba(255,255,255,0.06);
+        }
+
+        .main-col {
+            display: grid;
+            gap: 18px;
+        }
+
+        .panel {
             background: linear-gradient(180deg, rgba(17,24,39,0.98), rgba(15,23,42,0.98));
             border: 1px solid var(--border);
             border-radius: 24px;
             box-shadow: var(--shadow-lg);
-            padding: 22px 20px;
         }
 
-        .hero-panel h1 {
+        .hero-panel {
+            padding: 18px;
+        }
+
+        .hero-top {
+            display: grid;
+            grid-template-columns: 1fr 280px;
+            gap: 16px;
+            align-items: start;
+        }
+
+        .hero-right-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            min-width: 0;
+        }
+
+        .welcome-copy h2 {
             margin: 0;
-            font-size: 28px;
+            font-size: 30px;
+            line-height: 1.05;
             font-weight: 900;
-            line-height: 1.1;
             color: var(--gold);
         }
 
-        .display-line {
-            margin-top: 8px;
-            font-size: 20px;
-            font-weight: 800;
+        .welcome-copy .username {
+            margin-top: 6px;
             color: var(--muted-2);
+            font-size: 22px;
+            font-weight: 800;
         }
 
-        .handle-line {
+        .welcome-copy .user-handle-meta {
             margin-top: 4px;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 700;
             color: var(--muted);
         }
 
-        .welcome-sub {
-            margin-top: 12px;
-            max-width: 640px;
-            font-size: 15px;
-            line-height: 1.5;
+        .welcome-copy .welcome-sub {
+            margin-top: 10px;
+            max-width: 620px;
             color: var(--muted-2);
+            font-size: 15px;
+            line-height: 1.55;
         }
 
-        .actions {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-top: 22px;
-        }
-
-        @media (max-width: 560px) {
-            .actions {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .action-primary,
-        .action-secondary {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 6px;
-            padding: 18px 18px;
-            border-radius: 18px;
-            text-decoration: none;
-            font-weight: 900;
-            font-size: 16px;
-            border: 1px solid var(--border);
-            transition: transform 0.15s ease, background 0.15s ease;
-        }
-
-        .action-primary {
+        .current-read-card {
             background: linear-gradient(135deg, var(--theme-card-a), var(--theme-card-b));
-            border-color: color-mix(in srgb, var(--pink) 22%, transparent);
-            color: #fff7ed;
+            border: 1px solid color-mix(in srgb, var(--pink) 22%, transparent);
+            border-radius: 18px;
+            padding: 16px;
+            min-height: 130px;
         }
 
-        .action-secondary {
-            background: rgba(255,255,255,0.05);
-            color: #fff7ed;
-        }
-
-        .action-primary:hover,
-        .action-secondary:hover {
-            transform: translateY(-2px);
-        }
-
-        .action-primary span.k,
-        .action-secondary span.k {
+        .current-read-label {
             font-size: 12px;
-            font-weight: 700;
-            opacity: 0.88;
+            font-weight: 900;
+            color: #f5d0fe;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+        }
+
+        .current-read-title {
+            margin-top: 8px;
+            font-size: 20px;
+            font-weight: 900;
+            color: #fff7ed;
+            line-height: 1.2;
+        }
+
+        .current-read-meta {
+            margin-top: 6px;
+            color: #f3e8ff;
+            font-size: 14px;
+            line-height: 1.45;
+        }
+
+        .current-read-cta {
+            display: inline-flex;
+            margin-top: 12px;
+            padding: 10px 16px;
+            border-radius: 12px;
+            background: rgba(0,0,0,0.28);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #fff;
+            font-weight: 900;
+            font-size: 13px;
+            text-decoration: none;
+        }
+
+        .current-read-cta:hover {
+            background: rgba(0,0,0,0.4);
+        }
+
+        .current-read-cta.hidden {
+            display: none;
+        }
+
+        .action-row {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+            margin-top: 14px;
+        }
+
+        .action-tile {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 14px 12px;
+            text-align: center;
+            font-weight: 900;
+            font-size: 14px;
+            color: #fff7ed;
+            text-decoration: none;
+            cursor: pointer;
+            transition: transform 0.16s ease, background 0.16s ease;
+        }
+
+        .action-tile:hover {
+            transform: translateY(-2px);
+            background: rgba(255,255,255,0.06);
         }
 
         .loading-msg {
@@ -274,6 +404,38 @@
             padding: 48px 16px;
             color: var(--muted);
             font-weight: 800;
+        }
+
+        @media (max-width: 1050px) {
+            .app-shell {
+                grid-template-columns: 1fr;
+            }
+
+            .desktop-sidebar {
+                display: none;
+            }
+
+            .hero-top {
+                grid-template-columns: 1fr;
+            }
+
+            .action-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 680px) {
+            .container {
+                padding: 14px 12px 42px;
+            }
+
+            .welcome-copy h2 {
+                font-size: 26px;
+            }
+
+            .welcome-copy .username {
+                font-size: 18px;
+            }
         }
     </style>
     <link rel="stylesheet" href="/css/gradient-themes.css?v=2" />
@@ -291,33 +453,63 @@
     <div class="menu-overlay hidden" id="menuOverlay"></div>
     <nav class="side-menu" id="sideMenu" aria-label="Main menu">
         <div class="menu-title">Navigate</div>
-        <a class="menu-link" href="/reader-home.html">📖 Reading home</a>
+        <a class="menu-link" href="/reader-home.html">📖 Your reading profile</a>
         <a class="menu-link" href="/library.html">📚 Library</a>
         <a class="menu-link hidden" id="menuStudioLink" href="/studio.html">✍️ Studio</a>
         <a class="menu-link" href="/settings.html">⚙️ Account settings</a>
         <a class="menu-link" href="/index.html">🏠 Alysum home</a>
     </nav>
 
-    <div class="wrap">
-        <div class="hero-panel" id="heroPanel" hidden>
-            <h1 id="statusLine">Welcome back</h1>
-            <div class="display-line" id="profileDisplayName"></div>
-            <div class="handle-line" id="profileHandleLine"></div>
-            <p class="welcome-sub">
-                Your Library is where published stories live. Open a book, read at your pace, and share feedback with writers.
-            </p>
-            <div class="actions">
-                <a class="action-primary" href="/library.html">
-                    Open Library
-                    <span class="k">Browse fiction, nonfiction, and fanfiction</span>
-                </a>
-                <a class="action-secondary" href="/settings.html">
-                    Account settings
-                    <span class="k">Display name, password, and how you use Alysum</span>
-                </a>
-            </div>
+    <div class="container">
+        <div class="app-shell">
+            <aside class="desktop-sidebar">
+                <div class="sidebar-brand">
+                    <div class="brand-badge">A</div>
+                    <div class="brand-name">Alysum Reading</div>
+                </div>
+                <div class="sidebar-group-label">Your space</div>
+                <a class="sidebar-item active" href="/reader-home.html">📖 Reading profile</a>
+                <a class="sidebar-item" href="/library.html">📚 Library</a>
+                <a class="sidebar-item hidden" id="sidebarStudioLink" href="/studio.html">✍️ Studio</a>
+                <a class="sidebar-item" href="/settings.html">⚙️ Settings</a>
+                <div class="sidebar-group-label">More</div>
+                <a class="sidebar-item" href="/index.html">🏠 Home</a>
+            </aside>
+
+            <main class="main-col">
+                <section class="panel hero-panel" id="heroPanel" hidden>
+                    <div class="hero-top">
+                        <div class="welcome-copy">
+                            <h2 id="statusLine">Every chapter is a door.</h2>
+                            <div class="username" id="profileDisplayName"></div>
+                            <div class="user-handle-meta" id="profileHandleLine"></div>
+                            <div class="welcome-sub" id="readerWelcomeSub">
+                                You are part of the shelf life of these stories: turning pages, noticing details, and cheering writers on with honest feedback. Wander the Library, fall into a voice that sticks with you, and say what landed — that is how worlds stay alive here.
+                            </div>
+                        </div>
+
+                        <div class="hero-right-stack">
+                            <div class="current-read-card">
+                                <div class="current-read-label">Current read</div>
+                                <div class="current-read-title" id="currentReadTitle">Nothing in progress</div>
+                                <div class="current-read-meta" id="currentReadMeta">
+                                    Open the Library, choose a story, and read at your own pace. We save your chapter automatically.
+                                </div>
+                                <a class="current-read-cta hidden" id="currentReadLink" href="/library.html">Continue reading</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="action-row">
+                        <a class="action-tile" href="/library.html">📚 Browse Library</a>
+                        <a class="action-tile" href="/settings.html">⚙️ Account settings</a>
+                        <a class="action-tile" href="/index.html">🏠 Alysum home</a>
+                    </div>
+                </section>
+
+                <p class="loading-msg" id="loadingMsg">Loading your profile…</p>
+            </main>
         </div>
-        <p class="loading-msg" id="loadingMsg">Loading your profile…</p>
     </div>
 
     <script type="module">
@@ -333,16 +525,103 @@
             setUiMode,
         } from "./js/account-mode.js?v=1";
 
+        function safeString(value, fallback = "") {
+            return typeof value === "string" ? value : fallback;
+        }
+
+        function pickLatestBookmarkFromLocalStorage() {
+            let best = null;
+            try {
+                for (let i = 0; i < localStorage.length; i++) {
+                    const k = localStorage.key(i);
+                    if (!k || !k.startsWith("alysum-reader-bookmark-")) continue;
+                    const id = k.slice("alysum-reader-bookmark-".length);
+                    if (!id) continue;
+                    try {
+                        const obj = JSON.parse(localStorage.getItem(k) || "null");
+                        if (!obj || typeof obj.savedAt !== "number") continue;
+                        if (!best || obj.savedAt > best.savedAt) {
+                            best = {
+                                bookId: id,
+                                chapterIndex: typeof obj.chapterIndex === "number" ? obj.chapterIndex : 0,
+                                chapterTitle: safeString(obj.chapterTitle, ""),
+                                savedAt: obj.savedAt
+                            };
+                        }
+                    } catch {
+                        /* ignore */
+                    }
+                }
+            } catch {
+                /* ignore */
+            }
+            return best;
+        }
+
+        async function resolveCurrentRead(uid, data) {
+            let bookId = safeString(data.currentReadBookId, "").trim();
+            let chapterIndex =
+                typeof data.currentReadChapterIndex === "number" && Number.isFinite(data.currentReadChapterIndex)
+                    ? data.currentReadChapterIndex
+                    : 0;
+            let storyTitle = safeString(data.currentReadStoryTitle, "");
+            let author = safeString(data.currentReadAuthor, "");
+            let chapterTitle = safeString(data.currentReadChapterTitle, "");
+
+            if (!bookId) {
+                const bm = pickLatestBookmarkFromLocalStorage();
+                if (bm && bm.bookId) {
+                    bookId = bm.bookId;
+                    chapterIndex = bm.chapterIndex;
+                    chapterTitle = bm.chapterTitle || chapterTitle;
+                }
+            }
+
+            if (!bookId) {
+                return { bookId: null };
+            }
+
+            try {
+                const libSnap = await getDoc(doc(db, "library", bookId));
+                if (libSnap.exists()) {
+                    const lib = libSnap.data() || {};
+                    storyTitle = safeString(lib.title, storyTitle || "Untitled");
+                    author = safeString(lib.author, author || "");
+                }
+            } catch (e) {
+                console.warn(e);
+            }
+
+            if (!storyTitle) storyTitle = "Untitled story";
+
+            const authorLine = author ? `by @${author}` : "";
+            const ch =
+                chapterTitle ||
+                (typeof chapterIndex === "number" ? `Chapter ${chapterIndex + 1}` : "Saved place");
+
+            return {
+                bookId,
+                storyTitle,
+                authorLine,
+                chapterLine: ch,
+                readUrl: `/read.html?book=${encodeURIComponent(bookId)}`
+            };
+        }
+
         const menuBtn = document.getElementById("menuBtn");
         const menuOverlay = document.getElementById("menuOverlay");
         const sideMenu = document.getElementById("sideMenu");
         const menuStudioLink = document.getElementById("menuStudioLink");
+        const sidebarStudioLink = document.getElementById("sidebarStudioLink");
         const headerModeSwitch = document.getElementById("headerModeSwitch");
         const loadingMsg = document.getElementById("loadingMsg");
         const heroPanel = document.getElementById("heroPanel");
         const statusLine = document.getElementById("statusLine");
         const profileDisplayName = document.getElementById("profileDisplayName");
         const profileHandleLine = document.getElementById("profileHandleLine");
+        const currentReadTitle = document.getElementById("currentReadTitle");
+        const currentReadMeta = document.getElementById("currentReadMeta");
+        const currentReadLink = document.getElementById("currentReadLink");
 
         function openMenu() {
             sideMenu.classList.add("open");
@@ -389,7 +668,7 @@
                             books: 0,
                             streak: 0,
                             dailyWordGoal: 2000,
-                            writingDayTotals: {},
+                            writingDayTotals: {}
                         },
                         { merge: true }
                     );
@@ -406,6 +685,7 @@
 
                 if (accountSupportsModeToggle(data.accountType)) {
                     menuStudioLink.classList.remove("hidden");
+                    sidebarStudioLink.classList.remove("hidden");
                     headerModeSwitch.classList.remove("hidden");
                     headerModeSwitch.querySelectorAll(".mode-seg").forEach((b) => {
                         const m = b.getAttribute("data-mode");
@@ -413,13 +693,28 @@
                     });
                 } else {
                     menuStudioLink.classList.add("hidden");
+                    sidebarStudioLink.classList.add("hidden");
                     headerModeSwitch.classList.add("hidden");
                 }
 
-                statusLine.textContent = "Welcome back, reader.";
+                statusLine.textContent = "Every chapter is a door.";
                 profileDisplayName.textContent = publicDisplayNameFromUserData(data);
                 profileHandleLine.textContent =
                     "Permanent handle @" + permanentHandleFromUserData(data);
+
+                const read = await resolveCurrentRead(user.uid, data);
+                if (read.bookId) {
+                    currentReadTitle.textContent = read.storyTitle;
+                    currentReadMeta.textContent = [read.authorLine, read.chapterLine].filter(Boolean).join(" · ");
+                    currentReadLink.href = read.readUrl;
+                    currentReadLink.textContent = "Continue reading";
+                    currentReadLink.classList.remove("hidden");
+                } else {
+                    currentReadTitle.textContent = "Nothing in progress";
+                    currentReadMeta.textContent =
+                        "Open the Library, choose a story, and read at your own pace. We save your chapter automatically when you are logged in.";
+                    currentReadLink.classList.add("hidden");
+                }
 
                 loadingMsg.hidden = true;
                 heroPanel.hidden = false;

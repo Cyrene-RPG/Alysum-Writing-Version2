@@ -996,9 +996,37 @@
       return currentBook.chapters[currentChapterIndex] || currentBook.chapters[0];
     }
 
+    let currentReadProfileTimer = null;
+
+    async function syncProfileCurrentReadNow() {
+      if (!currentUser || !bookId || !currentBook || !currentBook.chapters?.length) return;
+      try {
+        const chapter = currentChapter();
+        await updateDoc(doc(db, "users", currentUser.uid), {
+          currentReadBookId: bookId,
+          currentReadChapterIndex: currentChapterIndex,
+          currentReadChapterTitle: safeString(chapter.title, ""),
+          currentReadStoryTitle: safeString(currentBook.title, ""),
+          currentReadAuthor: safeString(currentBook.author, ""),
+          currentReadUpdatedAt: serverTimestamp()
+        });
+      } catch (err) {
+        console.warn("Could not save current read to your profile.", err);
+      }
+    }
+
+    function scheduleProfileCurrentRead() {
+      if (!currentUser || !bookId || !currentBook) return;
+      clearTimeout(currentReadProfileTimer);
+      currentReadProfileTimer = setTimeout(() => {
+        syncProfileCurrentReadNow();
+      }, 700);
+    }
+
     function saveResumePosition() {
       if (!bookId) return;
       localStorage.setItem(`alysum-reader-resume-${bookId}`, String(currentChapterIndex));
+      scheduleProfileCurrentRead();
     }
 
     function saveBookmark() {
@@ -1012,6 +1040,7 @@
           savedAt: Date.now()
         })
       );
+      scheduleProfileCurrentRead();
     }
 
     function loadResumePosition() {
@@ -1503,6 +1532,9 @@ async function postComment() {
         loadBook();
       } else {
         loadLikeState();
+        if (currentUser && bookId && currentBook) {
+          syncProfileCurrentReadNow();
+        }
       }
     });
 
