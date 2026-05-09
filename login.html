@@ -180,6 +180,24 @@
             opacity: 0.65;
         }
 
+        .support-footnote {
+            margin: 18px 0 0;
+            text-align: center;
+            font-size: 12px;
+            line-height: 1.45;
+            color: #64748b;
+        }
+
+        .support-footnote a {
+            color: #6d28d9;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .support-footnote a:hover {
+            text-decoration: underline;
+        }
+
         @media (max-width: 480px) {
             body {
                 padding: 12px;
@@ -222,6 +240,9 @@
     <div class="signup-link">
         New here? <a href="/signup.html">Create account</a>
     </div>
+    <p class="support-footnote" id="support-footnote">
+        Questions or no email after a reset? <a href="mailto:alysum.support@gmail.com">alysum.support@gmail.com</a>
+    </p>
 </div>
 
 <script type="module">
@@ -346,13 +367,27 @@ forgotLink.addEventListener("click", async (e) => {
 
     try {
         const actionCodeSettings = passwordResetActionCodeSettings();
-        if (actionCodeSettings) {
-            await sendPasswordResetEmail(auth, email, actionCodeSettings);
-        } else {
-            await sendPasswordResetEmail(auth, email);
+        try {
+            if (actionCodeSettings) {
+                await sendPasswordResetEmail(auth, email, actionCodeSettings);
+            } else {
+                await sendPasswordResetEmail(auth, email);
+            }
+        } catch (firstErr) {
+            const c = firstErr && firstErr.code;
+            const retryWithoutContinue =
+                actionCodeSettings &&
+                (c === "auth/unauthorized-continue-uri" ||
+                    c === "auth/invalid-continue-uri" ||
+                    c === "auth/missing-continue-uri");
+            if (retryWithoutContinue) {
+                await sendPasswordResetEmail(auth, email);
+            } else {
+                throw firstErr;
+            }
         }
         showSuccess(
-            "If that email is on file, a reset link usually arrives within a few minutes. Check spam and promotions. Use the exact address you use to sign in with email and password."
+            "If that address has an email-and-password account, Firebase sends the reset (sender looks like noreply@… from Google). It can take a few minutes—check spam and Promotions. If you only ever signed in with Google, use “Continue with Google” instead; password reset does not apply. Still stuck? alysum.support@gmail.com"
         );
     } catch (err) {
         const code = err && err.code;
