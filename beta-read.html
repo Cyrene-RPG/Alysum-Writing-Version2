@@ -27,18 +27,22 @@
         } catch (e) {}
     </script>
     <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
-    <title>Beta read - Alysum</title>
+    <title>Beta read — Alysum</title>
     <style>
         * { box-sizing: border-box; }
         :root {
             --bg: #0b1220;
             --panel: #111827;
+            --panel-2: #172132;
             --text: #f9fafb;
             --muted: #9ca3af;
             --border: rgba(255,255,255,0.1);
+            --purple: #6d28d9;
+            --purple-dark: #5b21b6;
             --font-size: 20px;
             --line-height: 1.85;
             --doc-max: 720px;
+            --shadow: 0 16px 40px rgba(0,0,0,0.35);
         }
         html, body {
             margin: 0;
@@ -54,11 +58,24 @@
             z-index: 40;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             padding: 12px 14px;
-            background: color-mix(in srgb, var(--bg) 90%, transparent);
-            backdrop-filter: blur(10px);
+            background: color-mix(in srgb, var(--bg) 88%, transparent);
+            backdrop-filter: blur(12px);
             border-bottom: 1px solid var(--border);
+        }
+        .topbar-left,
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+        .topbar-fill {
+            flex: 1;
+            min-width: 0;
+            text-align: center;
+            padding: 0 6px;
         }
         .btn {
             border: 1px solid var(--border);
@@ -72,20 +89,32 @@
             font-size: 14px;
             display: inline-flex;
             align-items: center;
+            justify-content: center;
+            min-height: 44px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.12);
+            transition: filter 0.15s ease, border-color 0.15s ease;
+        }
+        .btn:hover:not(:disabled) {
+            filter: brightness(1.06);
+        }
+        .btn.ghost {
+            background: transparent;
+            box-shadow: none;
+            color: var(--muted);
+        }
+        .btn.ghost:hover:not(:disabled) {
+            color: var(--text);
+            border-color: rgba(255,255,255,0.16);
         }
         .btn.primary {
             background: linear-gradient(135deg, var(--purple-dark), var(--purple));
             color: #fff;
             border-color: transparent;
+            box-shadow: var(--shadow);
         }
         .btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
-        }
-        .topbar-fill {
-            flex: 1;
-            min-width: 0;
-            text-align: center;
         }
         .topbar-title {
             font-size: 15px;
@@ -98,50 +127,125 @@
             font-size: 12px;
             color: var(--muted);
             margin-top: 2px;
+            font-weight: 700;
         }
         .wrap {
             max-width: 1320px;
             margin: 0 auto;
-            padding: 16px 14px 48px;
+            padding: 16px 14px 56px;
+        }
+        .loading-panel {
+            max-width: 520px;
+            margin: 32px auto;
+            padding: 28px 22px;
+            text-align: center;
+            background: linear-gradient(180deg, rgba(17,24,39,0.95), rgba(15,23,42,0.92));
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+        }
+        .loading-panel .spinner {
+            width: 40px;
+            height: 40px;
+            margin: 0 auto 16px;
+            border-radius: 50%;
+            border: 3px solid rgba(255,255,255,0.12);
+            border-top-color: var(--purple);
+            animation: beta-spin 0.75s linear infinite;
+        }
+        @keyframes beta-spin {
+            to { transform: rotate(360deg); }
+        }
+        .loading-panel p {
+            margin: 0;
+            font-size: 15px;
+            font-weight: 800;
+            color: var(--text);
+        }
+        .loading-panel .sub {
+            margin-top: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--muted);
+            line-height: 1.5;
         }
         .beta-layout {
             display: grid;
             grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
-            gap: 18px;
+            gap: 20px;
             align-items: start;
         }
         .doc-panel {
             background: linear-gradient(180deg, rgba(17,24,39,0.98), rgba(15,23,42,0.98));
             border: 1px solid var(--border);
             border-radius: 20px;
-            padding: 18px;
-            box-shadow: 0 16px 40px rgba(0,0,0,0.35);
+            padding: 20px;
+            box-shadow: var(--shadow);
+        }
+        .eyebrow {
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.07em;
+            text-transform: uppercase;
+            color: var(--theme-brand-kicker, #c4b5fd);
+            margin-bottom: 8px;
         }
         .hint-bar {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
             font-size: 13px;
             font-weight: 700;
             color: var(--muted);
-            margin-bottom: 14px;
-            line-height: 1.45;
+            margin-bottom: 16px;
+            line-height: 1.5;
+            padding: 12px 14px;
+            border-radius: 14px;
+            background: rgba(109, 40, 217, 0.08);
+            border: 1px solid rgba(124, 58, 237, 0.22);
+        }
+        .hint-bar .hint-icon {
+            flex-shrink: 0;
+            width: 28px;
+            height: 28px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            background: rgba(124, 58, 237, 0.2);
+            color: var(--theme-brand-kicker, #ddd6fe);
         }
         .nav-row {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 10px;
-            margin-bottom: 14px;
+            gap: 12px;
+            margin-bottom: 16px;
             flex-wrap: wrap;
         }
+        .nav-chapter-pill {
+            font-size: 13px;
+            font-weight: 900;
+            color: var(--text);
+            padding: 8px 14px;
+            border-radius: 999px;
+            background: var(--panel-2);
+            border: 1px solid var(--border);
+            white-space: nowrap;
+        }
         .chapter-head {
-            margin-bottom: 12px;
+            margin-bottom: 16px;
+            scroll-margin-top: 72px;
         }
         .chapter-head h1 {
             margin: 0;
-            font-size: 22px;
+            font-size: clamp(1.15rem, 2.8vw, 1.45rem);
             font-weight: 900;
+            line-height: 1.2;
         }
         .chapter-meta {
-            margin-top: 4px;
+            margin-top: 6px;
             font-size: 13px;
             color: var(--muted);
             font-weight: 700;
@@ -152,38 +256,62 @@
             font-size: var(--font-size);
             line-height: var(--line-height);
             user-select: text;
+            color: var(--text);
         }
-        #betaContent img { max-width: 100%; height: auto; }
+        #betaContent :first-child { margin-top: 0; }
+        #betaContent p { margin: 0.85em 0; }
+        #betaContent h1, #betaContent h2, #betaContent h3 {
+            margin: 1.1em 0 0.45em;
+            line-height: 1.25;
+            font-weight: 900;
+        }
+        #betaContent a {
+            color: var(--theme-brand-kicker, #c4b5fd);
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+        #betaContent blockquote {
+            margin: 1em 0;
+            padding: 0.4em 0 0.4em 1em;
+            border-left: 3px solid rgba(124, 58, 237, 0.45);
+            color: color-mix(in srgb, var(--text) 88%, var(--muted));
+        }
+        #betaContent ul, #betaContent ol {
+            margin: 0.75em 0;
+            padding-left: 1.35em;
+        }
+        #betaContent img { max-width: 100%; height: auto; border-radius: 8px; }
         .rail {
             position: sticky;
-            top: 58px;
+            top: 62px;
             background: linear-gradient(180deg, rgba(17,24,39,0.98), rgba(15,23,42,0.98));
             border: 1px solid var(--border);
             border-radius: 20px;
-            padding: 16px;
-            max-height: calc(100vh - 72px);
+            padding: 18px;
+            max-height: calc(100vh - 76px);
             overflow-y: auto;
-            box-shadow: 0 16px 40px rgba(0,0,0,0.35);
+            box-shadow: var(--shadow);
         }
         .rail h2 {
-            margin: 0 0 8px;
-            font-size: 16px;
+            margin: 0 0 6px;
+            font-size: 17px;
             font-weight: 900;
-            color: var(--gold);
+            color: var(--gold, #f5d489);
+            letter-spacing: -0.02em;
         }
         .rail-sub {
             font-size: 12px;
             color: var(--muted);
             font-weight: 700;
-            margin-bottom: 14px;
-            line-height: 1.4;
+            margin-bottom: 16px;
+            line-height: 1.45;
         }
         .draft-box {
             background: rgba(0,0,0,0.22);
             border: 1px solid var(--border);
             border-radius: 14px;
-            padding: 12px;
-            margin-bottom: 14px;
+            padding: 14px;
+            margin-bottom: 16px;
         }
         .draft-box label {
             display: block;
@@ -194,6 +322,9 @@
             color: var(--muted);
             margin-bottom: 6px;
         }
+        .draft-box label.draft-label-spaced {
+            margin-top: 12px;
+        }
         .draft-box textarea {
             width: 100%;
             border-radius: 10px;
@@ -201,41 +332,84 @@
             background: rgba(0,0,0,0.25);
             color: var(--text);
             font-size: 13px;
-            padding: 10px;
+            line-height: 1.45;
+            padding: 10px 12px;
             resize: vertical;
             min-height: 56px;
             font-family: inherit;
+            outline: none;
+        }
+        .draft-box textarea:focus {
+            border-color: rgba(124, 58, 237, 0.45);
+            box-shadow: 0 0 0 3px rgba(109, 40, 217, 0.18);
         }
         .draft-box textarea:read-only {
             opacity: 0.92;
+        }
+        .save-note-btn {
+            margin-top: 12px;
+            width: 100%;
+            justify-content: center;
         }
         .notes-list {
             display: flex;
             flex-direction: column;
             gap: 10px;
         }
+        .notes-empty,
+        .notes-error {
+            font-size: 13px;
+            color: var(--muted);
+            font-weight: 700;
+            margin: 0;
+            padding: 12px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.03);
+            border: 1px dashed var(--border);
+        }
+        .notes-error {
+            color: #fecaca;
+            border-style: solid;
+            background: rgba(248,113,113,0.08);
+        }
         .note-card {
             background: rgba(255,255,255,0.04);
             border: 1px solid var(--border);
             border-radius: 14px;
-            padding: 12px;
+            padding: 12px 12px 10px;
+        }
+        .note-card .note-meta {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 6px 10px;
+            margin-bottom: 8px;
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--muted);
+        }
+        .note-card .note-meta .chip {
+            padding: 3px 8px;
+            border-radius: 999px;
+            background: rgba(124, 58, 237, 0.15);
+            color: var(--theme-brand-kicker, #ddd6fe);
         }
         .note-card .q {
             font-size: 13px;
             font-style: italic;
             color: #e9d5ff;
-            line-height: 1.45;
-            margin-bottom: 8px;
-            border-left: 3px solid color-mix(in srgb, var(--pink) 55%, transparent);
+            line-height: 1.5;
+            margin-bottom: 10px;
+            border-left: 3px solid color-mix(in srgb, var(--pink, #ec4899) 55%, transparent);
             padding-left: 10px;
         }
         .note-card .c {
             font-size: 14px;
-            line-height: 1.45;
+            line-height: 1.5;
             white-space: pre-wrap;
         }
-        .note-card .m {
-            margin-top: 8px;
+        .note-card .note-time {
+            margin-top: 10px;
             font-size: 11px;
             color: var(--muted);
             font-weight: 700;
@@ -250,12 +424,14 @@
         .status.ok { background: rgba(34,197,94,0.15); color: #86efac; }
         .status.err { background: rgba(248,113,113,0.12); color: #fca5a5; }
         .err-banner {
-            padding: 14px;
-            border-radius: 14px;
+            padding: 16px 18px;
+            border-radius: 16px;
             background: rgba(248,113,113,0.12);
             border: 1px solid rgba(248,113,113,0.35);
             color: #fecaca;
             font-weight: 800;
+            line-height: 1.45;
+            margin-bottom: 16px;
         }
         @media (max-width: 960px) {
             .beta-layout {
@@ -265,31 +441,52 @@
                 position: static;
                 max-height: none;
             }
+            .topbar {
+                flex-wrap: wrap;
+            }
+            .topbar-fill {
+                order: 3;
+                flex: 1 1 100%;
+                padding-top: 4px;
+            }
         }
     </style>
     <link rel="stylesheet" href="/css/gradient-themes.css?v=2" />
 </head>
 <body>
     <div class="topbar">
-        <a class="btn" href="/reader-home.html">← Profile</a>
-        <a class="btn" id="publicReadLink" href="#">Public reader</a>
+        <div class="topbar-left">
+            <a class="btn" href="/reader-home.html">← Profile</a>
+        </div>
         <div class="topbar-fill">
             <div class="topbar-title" id="topTitle">Beta read</div>
             <div class="topbar-sub" id="topSub"></div>
         </div>
+        <div class="topbar-right">
+            <a class="btn ghost" id="publicReadLink" href="#" title="Open the standard reader (no notes rail)">Public reader</a>
+        </div>
     </div>
 
     <div class="wrap">
-        <div id="fatalError" class="err-banner hidden"></div>
+        <div id="loadingPanel" class="loading-panel" aria-busy="true" aria-live="polite">
+            <div class="spinner" aria-hidden="true"></div>
+            <p>Opening beta workspace…</p>
+            <p class="sub">Loading this story and your notes from the shelf.</p>
+        </div>
+
+        <div id="fatalError" class="err-banner hidden" role="alert"></div>
 
         <div class="beta-layout hidden" id="mainLayout">
             <div class="doc-panel">
+                <div class="eyebrow">Beta reader</div>
                 <div class="hint-bar">
-                    Highlight any passage in the chapter, then add a note in the panel on the right. This workspace is private to your account until you share feedback with the author elsewhere.
+                    <span class="hint-icon" aria-hidden="true">✦</span>
+                    <span>Highlight any passage in the chapter, then add a note in the panel on the right. Notes stay on your account until you share feedback with the author elsewhere.</span>
                 </div>
                 <div class="nav-row">
-                    <button type="button" class="btn" id="prevBtn">← Prev</button>
-                    <button type="button" class="btn" id="nextBtn">Next →</button>
+                    <button type="button" class="btn" id="prevBtn" aria-label="Previous chapter">← Prev</button>
+                    <span class="nav-chapter-pill" id="chapterNavPill" aria-live="polite">—</span>
+                    <button type="button" class="btn" id="nextBtn" aria-label="Next chapter">Next →</button>
                 </div>
                 <div class="chapter-head">
                     <h1 id="chapterTitle">…</h1>
@@ -300,17 +497,15 @@
 
             <aside class="rail" id="noteRail">
                 <h2>Beta notes</h2>
-                <p class="rail-sub">Attached to this story on your shelf. Select text in the chapter to start a new note.</p>
-                <div id="railStatus" class="status hidden" role="status"></div>
+                <p class="rail-sub">Attached to this story on your shelf. Select text in the chapter to start a note. Use ← → when focus is outside the note fields to change chapters.</p>
+                <div id="railStatus" class="status hidden" role="status" aria-live="polite"></div>
 
                 <div class="draft-box" id="draftBox">
                     <label for="draftQuote">Selected passage</label>
                     <textarea id="draftQuote" readonly rows="3" placeholder="Highlight text in the chapter…"></textarea>
-                    <label for="draftComment" style="margin-top:10px">Your comment</label>
+                    <label class="draft-label-spaced" for="draftComment">Your comment</label>
                     <textarea id="draftComment" rows="4" placeholder="What stood out, felt unclear, or delighted you?"></textarea>
-                    <button type="button" class="btn primary" style="margin-top:10px;width:100%;justify-content:center" id="saveNoteBtn">
-                        Save note
-                    </button>
+                    <button type="button" class="btn primary save-note-btn" id="saveNoteBtn">Save note</button>
                 </div>
 
                 <div class="notes-list" id="notesList"></div>
@@ -336,12 +531,14 @@
         const bookId = params.get("book");
 
         const fatalError = document.getElementById("fatalError");
+        const loadingPanel = document.getElementById("loadingPanel");
         const mainLayout = document.getElementById("mainLayout");
         const topTitle = document.getElementById("topTitle");
         const topSub = document.getElementById("topSub");
         const publicReadLink = document.getElementById("publicReadLink");
         const prevBtn = document.getElementById("prevBtn");
         const nextBtn = document.getElementById("nextBtn");
+        const chapterNavPill = document.getElementById("chapterNavPill");
         const chapterTitle = document.getElementById("chapterTitle");
         const chapterMeta = document.getElementById("chapterMeta");
         const betaContent = document.getElementById("betaContent");
@@ -355,6 +552,25 @@
         let currentBook = null;
         let currentChapterIndex = 0;
         let notesUnsub = null;
+        let selectionDebounceTimer = null;
+        let shelfTouchTimer = null;
+        const SAVE_NOTE_LABEL = "Save note";
+
+        function hideLoadingPanel() {
+            if (!loadingPanel) return;
+            loadingPanel.classList.add("hidden");
+            loadingPanel.setAttribute("aria-busy", "false");
+        }
+
+        function scheduleShelfTouch() {
+            const uid = currentUser && currentUser.uid;
+            if (!uid || !currentBook) return;
+            clearTimeout(shelfTouchTimer);
+            shelfTouchTimer = setTimeout(() => {
+                shelfTouchTimer = null;
+                void touchShelf(uid).catch(() => {});
+            }, 650);
+        }
 
         function safeString(value, fallback = "") {
             return typeof value === "string" ? value : fallback;
@@ -442,6 +658,9 @@
             const ch = currentChapter();
             chapterTitle.textContent = ch.title;
             chapterMeta.textContent = `Chapter ${currentChapterIndex + 1} of ${currentBook.chapters.length}`;
+            if (chapterNavPill) {
+                chapterNavPill.textContent = `${currentChapterIndex + 1} / ${currentBook.chapters.length}`;
+            }
             betaContent.innerHTML = ch.content || "<p></p>";
             prevBtn.disabled = currentChapterIndex === 0;
             nextBtn.disabled = currentChapterIndex >= currentBook.chapters.length - 1;
@@ -469,9 +688,43 @@
             return text.slice(0, 2000);
         }
 
-        betaContent.addEventListener("mouseup", () => {
+        function applySelectionToDraft() {
             const t = selectionInsideContent();
             if (t) draftQuote.value = t;
+        }
+
+        function queueSelectionCapture() {
+            clearTimeout(selectionDebounceTimer);
+            selectionDebounceTimer = setTimeout(() => {
+                selectionDebounceTimer = null;
+                applySelectionToDraft();
+            }, 100);
+        }
+
+        betaContent.addEventListener("mouseup", queueSelectionCapture);
+        betaContent.addEventListener("keyup", queueSelectionCapture);
+        document.addEventListener("selectionchange", () => {
+            if (document.activeElement && draftComment && document.activeElement === draftComment) {
+                return;
+            }
+            queueSelectionCapture();
+        });
+
+        document.addEventListener("keydown", (e) => {
+            if (e.defaultPrevented) return;
+            const t = e.target;
+            if (t && (t.closest && t.closest("textarea"))) return;
+            if (e.key === "ArrowLeft" && prevBtn && !prevBtn.disabled) {
+                e.preventDefault();
+                currentChapterIndex--;
+                renderChapter();
+                scheduleShelfTouch();
+            } else if (e.key === "ArrowRight" && nextBtn && !nextBtn.disabled) {
+                e.preventDefault();
+                currentChapterIndex++;
+                renderChapter();
+                scheduleShelfTouch();
+            }
         });
 
         function escapeHtml(s) {
@@ -513,7 +766,7 @@
                     notesList.innerHTML = "";
                     if (!snap.exists()) {
                         const p = document.createElement("p");
-                        p.style.cssText = "font-size:13px;color:var(--muted);font-weight:700;margin:0";
+                        p.className = "notes-empty";
                         p.textContent = "No notes yet. Highlight a passage to add one.";
                         notesList.appendChild(p);
                         return;
@@ -523,7 +776,7 @@
                     const sorted = list.slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
                     if (!sorted.length) {
                         const p = document.createElement("p");
-                        p.style.cssText = "font-size:13px;color:var(--muted);font-weight:700;margin:0";
+                        p.className = "notes-empty";
                         p.textContent = "No notes yet. Highlight a passage to add one.";
                         notesList.appendChild(p);
                         return;
@@ -536,17 +789,17 @@
                         const ch = escapeHtml(safeString(n.chapterTitle, `Chapter ${(n.chapterIndex ?? 0) + 1}`));
                         const when = escapeHtml(formatNoteTime(n.createdAt));
                         card.innerHTML = `
-                            <div class="m">${ch}</div>
                             <div class="q">${quote}</div>
                             <div class="c">${body}</div>
-                            <div class="m">${when}</div>
+                            <div class="note-meta"><span class="chip">${ch}</span></div>
+                            <div class="note-time">${when}</div>
                         `;
                         notesList.appendChild(card);
                     });
                 },
                 (err) => {
                     console.error(err);
-                    notesList.innerHTML = `<p class="note-card" style="color:#fecaca">Could not load notes.</p>`;
+                    notesList.innerHTML = `<p class="notes-error">Could not load notes.</p>`;
                 }
             );
         }
@@ -592,6 +845,7 @@
 
         async function initForUser(user) {
             if (!bookId) {
+                hideLoadingPanel();
                 fatalError.textContent = "Missing book in the URL.";
                 fatalError.classList.remove("hidden");
                 return;
@@ -603,6 +857,7 @@
             try {
                 const libSnap = await getDoc(doc(db, "library", bookId));
                 if (!libSnap.exists()) {
+                    hideLoadingPanel();
                     fatalError.textContent = "That story is not in the Library.";
                     fatalError.classList.remove("hidden");
                     return;
@@ -610,6 +865,7 @@
 
                 currentBook = normalizeBook(libSnap.data());
                 if (!currentBook.chapters.length) {
+                    hideLoadingPanel();
                     fatalError.textContent = "This story has no published chapters to beta read.";
                     fatalError.classList.remove("hidden");
                     return;
@@ -623,9 +879,11 @@
 
                 currentChapterIndex = 0;
                 renderChapter();
+                hideLoadingPanel();
                 mainLayout.classList.remove("hidden");
             } catch (e) {
                 console.error(e);
+                hideLoadingPanel();
                 fatalError.textContent = "Could not load this story.";
                 fatalError.classList.remove("hidden");
             }
@@ -635,12 +893,14 @@
             if (currentChapterIndex > 0) {
                 currentChapterIndex--;
                 renderChapter();
+                scheduleShelfTouch();
             }
         });
         nextBtn.addEventListener("click", () => {
             if (currentBook && currentChapterIndex < currentBook.chapters.length - 1) {
                 currentChapterIndex++;
                 renderChapter();
+                scheduleShelfTouch();
             }
         });
 
@@ -657,6 +917,7 @@
                 return;
             }
             saveNoteBtn.disabled = true;
+            saveNoteBtn.textContent = "Saving…";
             try {
                 const ch = currentChapter();
                 const noteId =
@@ -684,6 +945,7 @@
                 showRail(e?.message || "Could not save note.", false);
             } finally {
                 saveNoteBtn.disabled = false;
+                saveNoteBtn.textContent = SAVE_NOTE_LABEL;
             }
         });
 
