@@ -1014,6 +1014,16 @@
             return total;
         }
 
+        function bookLastTouchedMs(data) {
+            const d = data || {};
+            const u = d.updated;
+            const c = d.created;
+            const updated = typeof u === "number" && Number.isFinite(u) && u > 0 ? u : 0;
+            const created = typeof c === "number" && Number.isFinite(c) && c > 0 ? c : 0;
+            // `updated` is set on every editor save; prefer it over creation time.
+            return updated > 0 ? updated : created;
+        }
+
         function getBookPreviewMeta(bookData) {
             const sections = bookData?.sections || {};
             const body = Array.isArray(sections.body) ? sections.body : [];
@@ -1195,7 +1205,12 @@
             const snap = await getDocs(collection(db, "users", uid, "books"));
             let totalWords = 0;
             let totalTodayWords = 0;
-            let index = 0;
+
+            const rows = [];
+            snap.forEach(docSnap => {
+                rows.push({ id: docSnap.id, data: docSnap.data() });
+            });
+            rows.sort((a, b) => bookLastTouchedMs(b.data) - bookLastTouchedMs(a.data));
 
             if (snap.empty) {
                 const empty = document.createElement("div");
@@ -1204,21 +1219,21 @@
                 bookList.appendChild(empty);
             }
 
-            snap.forEach(docSnap => {
-                const data = docSnap.data();
+            rows.forEach((row, index) => {
+                const data = row.data;
                 const bookWords = countBookWords(data);
 
                 totalWords += bookWords;
 
                 if (index === 0) {
-                    firstBookId = docSnap.id;
+                    firstBookId = row.id;
                     firstBookData = data;
                 }
 
                 const div = document.createElement("div");
                 div.className = "book";
                 div.onclick = () => {
-                    window.location.href = "/editor.html?book=" + encodeURIComponent(docSnap.id);
+                    window.location.href = "/editor.html?book=" + encodeURIComponent(row.id);
                 };
 
                 div.innerHTML = `
@@ -1226,7 +1241,6 @@
                 `;
 
                 bookList.appendChild(div);
-                index += 1;
             });
 
             booksEl.textContent = snap.size.toLocaleString();
