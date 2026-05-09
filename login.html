@@ -1,6 +1,23 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <!-- ALYSUM:PWA:START -->
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta name="theme-color" content="#7c3aed" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#020b18" media="(prefers-color-scheme: dark)">
+    <meta name="color-scheme" content="dark light">
+    <meta name="application-name" content="Alysum">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Alysum">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="msapplication-TileColor" content="#7c3aed">
+    <meta name="msapplication-TileImage" content="/Alysum-3.png">
+    <link rel="icon" type="image/png" sizes="any" href="/Alysum-3.png">
+    <link rel="apple-touch-icon" href="/Alysum-3.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/Alysum-3.png">
+    <script src="/js/pwa-register.js" defer></script>
+    <!-- ALYSUM:PWA:END -->
     <title>Login - Alysum</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script>
@@ -208,7 +225,9 @@
 </div>
 
 <script type="module">
-import { auth } from "./firebase.js";
+import { auth, db } from "./firebase.js";
+import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { homeUrlForUserData } from "./js/account-mode.js?v=1";
 import {
     signInWithEmailAndPassword,
     sendPasswordResetEmail,
@@ -345,19 +364,35 @@ forgotLink.addEventListener("click", async (e) => {
     }
 });
 
-function redirectAfterLogin() {
+async function redirectAfterLogin() {
     const params = new URLSearchParams(window.location.search);
     const next = params.get("next");
     const safe =
-        next && next.startsWith("/") && !next.startsWith("//") ? next : "/studio.html";
-    window.location.href = safe;
+        next && next.startsWith("/") && !next.startsWith("//") ? next : null;
+    if (safe) {
+        window.location.href = safe;
+        return;
+    }
+    const user = auth.currentUser;
+    if (!user) {
+        window.location.href = "/studio.html";
+        return;
+    }
+    try {
+        const snap = await getDoc(doc(db, "users", user.uid));
+        const data = snap.exists() ? snap.data() || {} : {};
+        window.location.href = homeUrlForUserData(data);
+    } catch (e) {
+        console.error(e);
+        window.location.href = "/studio.html";
+    }
 }
 
 /** After signInWithRedirect, Firebase sends the user back here; finish sign-in. */
 getRedirectResult(auth)
-    .then((result) => {
+    .then(async (result) => {
         if (result && result.user) {
-            redirectAfterLogin();
+            await redirectAfterLogin();
         }
     })
     .catch((err) => {
@@ -380,7 +415,7 @@ googleBtn.addEventListener("click", async () => {
 
     try {
         await signInWithPopup(auth, googleProvider);
-        redirectAfterLogin();
+        await redirectAfterLogin();
     } catch (err) {
         const code = err && err.code;
         if (code === "auth/popup-closed-by-user" || code === "auth/cancelled-popup-request") {
@@ -431,7 +466,7 @@ window.login = async function () {
 
     try {
         await signInWithEmailAndPassword(auth, email, password);
-        redirectAfterLogin();
+        await redirectAfterLogin();
     } catch (e) {
         const code = e && e.code;
         const friendly = authMessage(code) || (e && e.message) || "Sign-in failed.";

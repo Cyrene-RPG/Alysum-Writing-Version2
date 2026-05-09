@@ -1,6 +1,23 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <!-- ALYSUM:PWA:START -->
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta name="theme-color" content="#7c3aed" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#020b18" media="(prefers-color-scheme: dark)">
+    <meta name="color-scheme" content="dark light">
+    <meta name="application-name" content="Alysum">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Alysum">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="msapplication-TileColor" content="#7c3aed">
+    <meta name="msapplication-TileImage" content="/Alysum-3.png">
+    <link rel="icon" type="image/png" sizes="any" href="/Alysum-3.png">
+    <link rel="apple-touch-icon" href="/Alysum-3.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/Alysum-3.png">
+    <script src="/js/pwa-register.js" defer></script>
+    <!-- ALYSUM:PWA:END -->
     <title>Alysum Library</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script>
@@ -96,6 +113,49 @@
             border-radius: 14px;
             font-weight: 800;
             white-space: nowrap;
+        }
+
+        .home-link.hidden {
+            display: none;
+        }
+
+        #readerHomeLink.home-link {
+            padding: 10px 14px;
+            font-size: 13px;
+        }
+
+        .library-mode-switch {
+            display: inline-flex;
+            border-radius: 12px;
+            padding: 3px;
+            background: rgba(0,0,0,0.35);
+            border: 1px solid var(--border);
+            gap: 2px;
+        }
+
+        .library-mode-switch.hidden {
+            display: none;
+        }
+
+        .library-mode-seg {
+            border: none;
+            background: transparent;
+            color: var(--text-soft);
+            font-size: 12px;
+            font-weight: 800;
+            padding: 8px 12px;
+            border-radius: 9px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .library-mode-seg.active {
+            background: rgba(255,255,255,0.1);
+            color: var(--text);
+        }
+
+        .library-mode-seg:not(.active):hover {
+            color: var(--text);
         }
                                                              
         .nav-row {
@@ -374,7 +434,12 @@
 
                 <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
                     <div id="userStatus" style="font-size:13px; font-weight:900; color:#c4b5fd;"></div>
-                    <a class="home-link" href="/studio.html">Back to Studio</a>
+                    <a class="home-link hidden" id="readerHomeLink" href="/reader-home.html">Reading home</a>
+                    <div class="library-mode-switch hidden" id="libraryModeSwitch" role="group" aria-label="Reading or studio">
+                        <button type="button" class="library-mode-seg active" data-mode="library">Reading</button>
+                        <button type="button" class="library-mode-seg" data-mode="studio">Studio</button>
+                    </div>
+                    <a class="home-link" id="libraryBackStudio" href="/studio.html">Back to Studio</a>
                 </div>
             </div>
 
@@ -421,6 +486,14 @@
             onAuthStateChanged
         } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
         import { publicDisplayNameFromUserData } from "./js/profile-display.js?v=1";
+        import {
+            accountSupportsModeToggle,
+            normalizeAccountType,
+            ACCOUNT_AUTHOR,
+            ACCOUNT_READER,
+            READER_HOME_URL,
+            setUiMode,
+        } from "./js/account-mode.js?v=1";
 
         const navButtons = document.querySelectorAll(".nav-btn");
         const searchInput = document.getElementById("searchInput");
@@ -432,6 +505,47 @@
         const emptyState = document.getElementById("emptyState");
         const bookGrid = document.getElementById("bookGrid");
         const userStatus = document.getElementById("userStatus");
+        const libraryModeSwitch = document.getElementById("libraryModeSwitch");
+        const libraryBackStudio = document.getElementById("libraryBackStudio");
+        const readerHomeLink = document.getElementById("readerHomeLink");
+
+        if (readerHomeLink) {
+            readerHomeLink.href = READER_HOME_URL;
+        }
+
+        function applyLibraryTopNav(accountType) {
+            const t = normalizeAccountType(accountType);
+            if (accountSupportsModeToggle(accountType)) {
+                libraryModeSwitch?.classList.remove("hidden");
+                libraryBackStudio?.classList.add("hidden");
+                readerHomeLink?.classList.add("hidden");
+                libraryModeSwitch?.querySelectorAll(".library-mode-seg").forEach((b) => {
+                    const m = b.getAttribute("data-mode");
+                    b.classList.toggle("active", m === "library");
+                });
+                return;
+            }
+            libraryModeSwitch?.classList.add("hidden");
+            if (t === ACCOUNT_READER) {
+                libraryBackStudio?.classList.add("hidden");
+                readerHomeLink?.classList.remove("hidden");
+            } else {
+                libraryBackStudio?.classList.remove("hidden");
+                readerHomeLink?.classList.add("hidden");
+            }
+        }
+
+        if (libraryModeSwitch) {
+            libraryModeSwitch.addEventListener("click", (ev) => {
+                const btn = ev.target.closest("[data-mode]");
+                if (!btn || btn.classList.contains("active")) return;
+                const mode = btn.getAttribute("data-mode");
+                if (mode === "studio") {
+                    setUiMode("studio");
+                    window.location.href = "/studio.html";
+                }
+            });
+        }
 
         let allBooks = [];
         let currentFilter = "fiction";
@@ -446,18 +560,24 @@
 
                 try {
                     const snap = await getDoc(doc(db, "users", user.uid));
+                    const data = snap.exists() ? snap.data() || {} : {};
                     const label = snap.exists()
-                        ? publicDisplayNameFromUserData(snap.data() || {})
+                        ? publicDisplayNameFromUserData(data)
                         : "user";
 
                     userStatus.textContent = label;
+                    applyLibraryTopNav(data.accountType);
                 } catch (e) {
                     console.error(e);
                     userStatus.textContent = "Logged in";
+                    applyLibraryTopNav(undefined);
                 }
             } else {
                 currentUser = null;
                 userStatus.innerHTML = `<a href="/login.html" style="color:#c4b5fd; font-weight:900; text-decoration:none;">Log in</a>`;
+                libraryModeSwitch?.classList.add("hidden");
+                libraryBackStudio?.classList.remove("hidden");
+                readerHomeLink?.classList.add("hidden");
             }
         });
 

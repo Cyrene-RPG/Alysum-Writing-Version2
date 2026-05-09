@@ -1,6 +1,23 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <!-- ALYSUM:PWA:START -->
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta name="theme-color" content="#7c3aed" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#020b18" media="(prefers-color-scheme: dark)">
+    <meta name="color-scheme" content="dark light">
+    <meta name="application-name" content="Alysum">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Alysum">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="msapplication-TileColor" content="#7c3aed">
+    <meta name="msapplication-TileImage" content="/Alysum-3.png">
+    <link rel="icon" type="image/png" sizes="any" href="/Alysum-3.png">
+    <link rel="apple-touch-icon" href="/Alysum-3.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/Alysum-3.png">
+    <script src="/js/pwa-register.js" defer></script>
+    <!-- ALYSUM:PWA:END -->
     <title>Studio - Alysum</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script>
@@ -83,6 +100,42 @@
             color: white;
             font-size: 22px;
             cursor: pointer;
+        }
+
+        .header-mode-switch {
+            position: absolute;
+            right: 14px;
+            display: inline-flex;
+            border-radius: 12px;
+            padding: 3px;
+            background: rgba(0,0,0,0.28);
+            border: 1px solid rgba(255,255,255,0.12);
+            gap: 2px;
+        }
+
+        .header-mode-switch.hidden {
+            display: none;
+        }
+
+        .header-mode-switch .mode-seg {
+            border: none;
+            background: transparent;
+            color: rgba(255,255,255,0.75);
+            font-size: 12px;
+            font-weight: 800;
+            padding: 8px 12px;
+            border-radius: 9px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .header-mode-switch .mode-seg.active {
+            background: rgba(255,255,255,0.16);
+            color: #fff;
+        }
+
+        .header-mode-switch .mode-seg:not(.active):hover {
+            color: #fff;
         }
 
         .menu-overlay {
@@ -888,6 +941,10 @@
     <div class="header">
         <button class="menu-btn" id="menuBtn" type="button">☰</button>
         <div class="header-center">Alysum Studio</div>
+        <div class="header-mode-switch hidden" id="headerModeSwitch" role="group" aria-label="Writing or reading">
+            <button type="button" class="mode-seg active" data-mode="studio">Studio</button>
+            <button type="button" class="mode-seg" data-mode="library">Reading</button>
+        </div>
     </div>
 
     <div class="menu-overlay hidden" id="menuOverlay"></div>
@@ -1116,6 +1173,14 @@
             DEFAULT_DAILY_WORD_GOAL
         } from "./js/writing-day-stats.js?v=1";
         import { permanentHandleFromUserData, publicDisplayNameFromUserData } from "./js/profile-display.js?v=1";
+        import {
+            accountSupportsModeToggle,
+            setUiMode,
+            ACCOUNT_BOTH,
+            normalizeAccountType,
+            ACCOUNT_READER,
+            READER_HOME_URL,
+        } from "./js/account-mode.js?v=1";
 
         const status = document.getElementById("status");
         const profileDisplayName = document.getElementById("profileDisplayName");
@@ -1144,6 +1209,7 @@
         const menuBtn = document.getElementById("menuBtn");
         const sideMenu = document.getElementById("sideMenu");
         const menuOverlay = document.getElementById("menuOverlay");
+        const headerModeSwitch = document.getElementById("headerModeSwitch");
 
         const goalCurrentText = document.getElementById("goalCurrentText");
         const goalTargetText = document.getElementById("goalTargetText");
@@ -1184,6 +1250,31 @@
         function closeMenu() {
             sideMenu.classList.remove("open");
             menuOverlay.classList.add("hidden");
+        }
+
+        function syncHeaderModeToggle(accountType) {
+            if (!headerModeSwitch) return;
+            if (accountSupportsModeToggle(accountType)) {
+                headerModeSwitch.classList.remove("hidden");
+                headerModeSwitch.querySelectorAll(".mode-seg").forEach((b) => {
+                    const m = b.getAttribute("data-mode");
+                    b.classList.toggle("active", m === "studio");
+                });
+            } else {
+                headerModeSwitch.classList.add("hidden");
+            }
+        }
+
+        if (headerModeSwitch) {
+            headerModeSwitch.addEventListener("click", (ev) => {
+                const btn = ev.target.closest("[data-mode]");
+                if (!btn || btn.classList.contains("active")) return;
+                const mode = btn.getAttribute("data-mode");
+                if (mode === "library") {
+                    setUiMode("library");
+                    window.location.href = "/library.html";
+                }
+            });
         }
 
         menuBtn.addEventListener("click", openMenu);
@@ -1727,6 +1818,7 @@
                     await setDoc(userRef, {
                         username: "newuser",
                         displayName: "newuser",
+                        accountType: ACCOUNT_BOTH,
                         words: 0,
                         streak: 1,
                         lastLogin: todayKey(),
@@ -1738,11 +1830,16 @@
                 }
 
                 const data = snap.data() || {};
+                if (normalizeAccountType(data.accountType) === ACCOUNT_READER) {
+                    window.location.replace(READER_HOME_URL);
+                    return;
+                }
                 studioUserProfile = {
                     writingDayTotals: {},
                     dailyWordGoal: DEFAULT_DAILY_WORD_GOAL,
                     ...data
                 };
+                syncHeaderModeToggle(data.accountType);
                 const streak = await ensureUserStreak(userRef, data);
 
                 status.textContent = "Welcome back, writer.";

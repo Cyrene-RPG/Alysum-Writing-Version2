@@ -1,0 +1,60 @@
+{
+  "name": "Alysum Studio",
+  "short_name": "Alysum",
+  "description": "Alysum — write, organize, and publish your stories.",
+  "id": "/",
+  "start_url": "/index.html",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui", "browser"],
+  "orientation": "any",
+  "background_color": "#020b18",
+  "theme_color": "#7c3aed",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["productivity", "books", "education"],
+  "icons": [
+    {
+      "src": "/Alysum-3.png",
+      "sizes": "192x192 256x256 384x384 512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/Alysum-3.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Open Editor",
+      "short_name": "Editor",
+      "description": "Jump straight into the writing editor",
+      "url": "/editor.html",
+      "icons": [{ "src": "/Alysum-3.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Library",
+      "short_name": "Library",
+      "description": "Browse your stories",
+      "url": "/library.html",
+      "icons": [{ "src": "/Alysum-3.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Notes Vault",
+      "short_name": "Vault",
+      "description": "Open your notes vault",
+      "url": "/vault.html",
+      "icons": [{ "src": "/Alysum-3.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Studio",
+      "short_name": "Studio",
+      "description": "Open Alysum Studio",
+      "url": "/studio.html",
+      "icons": [{ "src": "/Alysum-3.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ]
+}

@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- ALYSUM:PWA:START -->
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta name="theme-color" content="#7c3aed" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#020b18" media="(prefers-color-scheme: dark)">
+    <meta name="color-scheme" content="dark light">
+    <meta name="application-name" content="Alysum">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Alysum">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="msapplication-TileColor" content="#7c3aed">
+    <meta name="msapplication-TileImage" content="/Alysum-3.png">
+    <link rel="icon" type="image/png" sizes="any" href="/Alysum-3.png">
+    <link rel="apple-touch-icon" href="/Alysum-3.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/Alysum-3.png">
+    <script src="/js/pwa-register.js" defer></script>
+    <!-- ALYSUM:PWA:END -->
+    <title>Reading home - Alysum</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+        try {
+            var __g = localStorage.getItem("alysum-gradient-theme");
+            if (__g && __g !== "classic") document.documentElement.setAttribute("data-gradient-theme", __g);
+        } catch (e) {}
+    </script>
+    <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
+    <style>
+        * { box-sizing: border-box; }
+
+        :root {
+            --bg: #0b1220;
+            --panel: #111827;
+            --text: #ffffff;
+            --muted: #9ca3af;
+            --muted-2: #cbd5e1;
+            --border: rgba(255,255,255,0.08);
+            --shadow-lg: 0 20px 50px rgba(0,0,0,0.42);
+        }
+
+        html, body {
+            margin: 0;
+            min-height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background:
+                radial-gradient(circle at top center, var(--theme-body-spot) 0%, transparent 26%),
+                linear-gradient(180deg, #0d1426 0%, #0b1220 100%);
+            color: var(--text);
+        }
+
+        .header {
+            position: sticky;
+            top: 0;
+            z-index: 80;
+            height: 74px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--purple-dark), var(--theme-header-mid), var(--theme-header-end));
+            box-shadow: 0 4px 20px rgba(0,0,0,0.28);
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .menu-btn {
+            position: absolute;
+            left: 16px;
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            border: none;
+            background: rgba(0,0,0,0.22);
+            color: white;
+            font-size: 22px;
+            cursor: pointer;
+        }
+
+        .header-center {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 20px;
+            font-weight: 900;
+            letter-spacing: 0.01em;
+            color: #fff7ed;
+            white-space: nowrap;
+        }
+
+        .header-mode-switch {
+            position: absolute;
+            right: 14px;
+            display: inline-flex;
+            border-radius: 12px;
+            padding: 3px;
+            background: rgba(0,0,0,0.28);
+            border: 1px solid rgba(255,255,255,0.12);
+            gap: 2px;
+        }
+
+        .header-mode-switch.hidden {
+            display: none;
+        }
+
+        .header-mode-switch .mode-seg {
+            border: none;
+            background: transparent;
+            color: rgba(255,255,255,0.75);
+            font-size: 12px;
+            font-weight: 800;
+            padding: 8px 11px;
+            border-radius: 9px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .header-mode-switch .mode-seg.active {
+            background: rgba(255,255,255,0.16);
+            color: #fff;
+        }
+
+        .menu-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.45);
+            z-index: 90;
+        }
+
+        .menu-overlay.hidden {
+            display: none;
+        }
+
+        .side-menu {
+            position: fixed;
+            top: 0;
+            left: -290px;
+            width: 290px;
+            height: 100%;
+            background: linear-gradient(180deg, #111827, #0f172a);
+            z-index: 100;
+            padding: 22px 18px;
+            box-shadow: 8px 0 40px rgba(0,0,0,0.45);
+            transition: left 0.22s ease;
+            border-right: 1px solid var(--border);
+        }
+
+        .side-menu.open {
+            left: 0;
+        }
+
+        .menu-title {
+            font-size: 13px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--muted);
+            margin-bottom: 14px;
+        }
+
+        .menu-link {
+            display: block;
+            padding: 13px 14px;
+            border-radius: 14px;
+            margin-bottom: 6px;
+            color: #fff;
+            text-decoration: none;
+            font-weight: 800;
+            font-size: 14px;
+            border: 1px solid transparent;
+        }
+
+        .menu-link:hover {
+            background: rgba(255,255,255,0.06);
+            border-color: rgba(255,255,255,0.08);
+        }
+
+        .wrap {
+            max-width: 920px;
+            margin: 0 auto;
+            padding: 22px 16px 48px;
+        }
+
+        .hero-panel {
+            background: linear-gradient(180deg, rgba(17,24,39,0.98), rgba(15,23,42,0.98));
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            box-shadow: var(--shadow-lg);
+            padding: 22px 20px;
+        }
+
+        .hero-panel h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 900;
+            line-height: 1.1;
+            color: var(--gold);
+        }
+
+        .display-line {
+            margin-top: 8px;
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--muted-2);
+        }
+
+        .handle-line {
+            margin-top: 4px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--muted);
+        }
+
+        .welcome-sub {
+            margin-top: 12px;
+            max-width: 640px;
+            font-size: 15px;
+            line-height: 1.5;
+            color: var(--muted-2);
+        }
+
+        .actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 22px;
+        }
+
+        @media (max-width: 560px) {
+            .actions {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .action-primary,
+        .action-secondary {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 6px;
+            padding: 18px 18px;
+            border-radius: 18px;
+            text-decoration: none;
+            font-weight: 900;
+            font-size: 16px;
+            border: 1px solid var(--border);
+            transition: transform 0.15s ease, background 0.15s ease;
+        }
+
+        .action-primary {
+            background: linear-gradient(135deg, var(--theme-card-a), var(--theme-card-b));
+            border-color: color-mix(in srgb, var(--pink) 22%, transparent);
+            color: #fff7ed;
+        }
+
+        .action-secondary {
+            background: rgba(255,255,255,0.05);
+            color: #fff7ed;
+        }
+
+        .action-primary:hover,
+        .action-secondary:hover {
+            transform: translateY(-2px);
+        }
+
+        .action-primary span.k,
+        .action-secondary span.k {
+            font-size: 12px;
+            font-weight: 700;
+            opacity: 0.88;
+        }
+
+        .loading-msg {
+            text-align: center;
+            padding: 48px 16px;
+            color: var(--muted);
+            font-weight: 800;
+        }
+    </style>
+    <link rel="stylesheet" href="/css/gradient-themes.css?v=2" />
+</head>
+<body>
+    <div class="header">
+        <button type="button" class="menu-btn" id="menuBtn" aria-label="Open menu">☰</button>
+        <div class="header-center">Alysum Reading</div>
+        <div class="header-mode-switch hidden" id="headerModeSwitch" role="group" aria-label="Studio or reading">
+            <button type="button" class="mode-seg" data-mode="studio">Studio</button>
+            <button type="button" class="mode-seg active" data-mode="reading">Reading</button>
+        </div>
+    </div>
+
+    <div class="menu-overlay hidden" id="menuOverlay"></div>
+    <nav class="side-menu" id="sideMenu" aria-label="Main menu">
+        <div class="menu-title">Navigate</div>
+        <a class="menu-link" href="/reader-home.html">📖 Reading home</a>
+        <a class="menu-link" href="/library.html">📚 Library</a>
+        <a class="menu-link hidden" id="menuStudioLink" href="/studio.html">✍️ Studio</a>
+        <a class="menu-link" href="/settings.html">⚙️ Account settings</a>
+        <a class="menu-link" href="/index.html">🏠 Alysum home</a>
+    </nav>
+
+    <div class="wrap">
+        <div class="hero-panel" id="heroPanel" hidden>
+            <h1 id="statusLine">Welcome back</h1>
+            <div class="display-line" id="profileDisplayName"></div>
+            <div class="handle-line" id="profileHandleLine"></div>
+            <p class="welcome-sub">
+                Your Library is where published stories live. Open a book, read at your pace, and share feedback with writers.
+            </p>
+            <div class="actions">
+                <a class="action-primary" href="/library.html">
+                    Open Library
+                    <span class="k">Browse fiction, nonfiction, and fanfiction</span>
+                </a>
+                <a class="action-secondary" href="/settings.html">
+                    Account settings
+                    <span class="k">Display name, password, and how you use Alysum</span>
+                </a>
+            </div>
+        </div>
+        <p class="loading-msg" id="loadingMsg">Loading your profile…</p>
+    </div>
+
+    <script type="module">
+        import { auth, db } from "./firebase.js";
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { permanentHandleFromUserData, publicDisplayNameFromUserData } from "./js/profile-display.js?v=1";
+        import {
+            normalizeAccountType,
+            ACCOUNT_AUTHOR,
+            ACCOUNT_BOTH,
+            accountSupportsModeToggle,
+            setUiMode,
+        } from "./js/account-mode.js?v=1";
+
+        const menuBtn = document.getElementById("menuBtn");
+        const menuOverlay = document.getElementById("menuOverlay");
+        const sideMenu = document.getElementById("sideMenu");
+        const menuStudioLink = document.getElementById("menuStudioLink");
+        const headerModeSwitch = document.getElementById("headerModeSwitch");
+        const loadingMsg = document.getElementById("loadingMsg");
+        const heroPanel = document.getElementById("heroPanel");
+        const statusLine = document.getElementById("statusLine");
+        const profileDisplayName = document.getElementById("profileDisplayName");
+        const profileHandleLine = document.getElementById("profileHandleLine");
+
+        function openMenu() {
+            sideMenu.classList.add("open");
+            menuOverlay.classList.remove("hidden");
+        }
+
+        function closeMenu() {
+            sideMenu.classList.remove("open");
+            menuOverlay.classList.add("hidden");
+        }
+
+        menuBtn.addEventListener("click", openMenu);
+        menuOverlay.addEventListener("click", closeMenu);
+
+        if (headerModeSwitch) {
+            headerModeSwitch.addEventListener("click", (ev) => {
+                const btn = ev.target.closest("[data-mode]");
+                if (!btn || btn.classList.contains("active")) return;
+                if (btn.getAttribute("data-mode") === "studio") {
+                    setUiMode("studio");
+                    window.location.href = "/studio.html";
+                }
+            });
+        }
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = "/login.html";
+                return;
+            }
+
+            try {
+                const userRef = doc(db, "users", user.uid);
+                let snap = await getDoc(userRef);
+
+                if (!snap.exists()) {
+                    await setDoc(
+                        userRef,
+                        {
+                            username: "newuser",
+                            displayName: "newuser",
+                            accountType: ACCOUNT_BOTH,
+                            words: 0,
+                            books: 0,
+                            streak: 0,
+                            dailyWordGoal: 2000,
+                            writingDayTotals: {},
+                        },
+                        { merge: true }
+                    );
+                    snap = await getDoc(userRef);
+                }
+
+                const data = snap.exists() ? snap.data() || {} : {};
+                const t = normalizeAccountType(data.accountType);
+
+                if (t === ACCOUNT_AUTHOR) {
+                    window.location.replace("/studio.html");
+                    return;
+                }
+
+                if (accountSupportsModeToggle(data.accountType)) {
+                    menuStudioLink.classList.remove("hidden");
+                    headerModeSwitch.classList.remove("hidden");
+                    headerModeSwitch.querySelectorAll(".mode-seg").forEach((b) => {
+                        const m = b.getAttribute("data-mode");
+                        b.classList.toggle("active", m === "reading");
+                    });
+                } else {
+                    menuStudioLink.classList.add("hidden");
+                    headerModeSwitch.classList.add("hidden");
+                }
+
+                statusLine.textContent = "Welcome back, reader.";
+                profileDisplayName.textContent = publicDisplayNameFromUserData(data);
+                profileHandleLine.textContent =
+                    "Permanent handle @" + permanentHandleFromUserData(data);
+
+                loadingMsg.hidden = true;
+                heroPanel.hidden = false;
+            } catch (e) {
+                console.error(e);
+                loadingMsg.textContent = "Could not load your profile. Try refreshing.";
+            }
+        });
+    </script>
+</body>
+</html>

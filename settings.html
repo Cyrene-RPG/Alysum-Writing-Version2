@@ -1,6 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- ALYSUM:PWA:START -->
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta name="theme-color" content="#7c3aed" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#020b18" media="(prefers-color-scheme: dark)">
+    <meta name="color-scheme" content="dark light">
+    <meta name="application-name" content="Alysum">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Alysum">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="msapplication-TileColor" content="#7c3aed">
+    <meta name="msapplication-TileImage" content="/Alysum-3.png">
+    <link rel="icon" type="image/png" sizes="any" href="/Alysum-3.png">
+    <link rel="apple-touch-icon" href="/Alysum-3.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/Alysum-3.png">
+    <script src="/js/pwa-register.js" defer></script>
+    <!-- ALYSUM:PWA:END -->
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Account settings - Alysum</title>
@@ -192,12 +209,47 @@
             background: linear-gradient(135deg, var(--theme-card-a), var(--theme-card-b));
             box-shadow: 0 0 0 1px color-mix(in srgb, var(--purple) 22%, transparent);
         }
+
+        .account-type-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: rgba(255,255,255,0.04);
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+
+        .account-type-row input {
+            margin-top: 3px;
+            accent-color: var(--purple-bright, #a78bfa);
+        }
+
+        .account-type-row strong {
+            display: block;
+            font-size: 14px;
+            margin-bottom: 2px;
+        }
+
+        .account-type-row span.desc {
+            font-size: 12px;
+            color: var(--muted);
+            font-weight: 600;
+            line-height: 1.4;
+        }
+
+        .account-type-row:has(input:checked) {
+            border-color: color-mix(in srgb, var(--pink) 45%, transparent);
+            background: rgba(255,255,255,0.07);
+        }
     </style>
     <link rel="stylesheet" href="/css/gradient-themes.css?v=2" />
 </head>
 <body>
     <header class="header">
-        <button type="button" class="back-btn" id="backBtn" aria-label="Back to studio">←</button>
+        <button type="button" class="back-btn" id="backBtn" aria-label="Back">←</button>
         <div class="header-title">Account settings</div>
     </header>
 
@@ -212,6 +264,38 @@
                 Gradient accent for Studio, editor, library, and the rest of the app (the marketing home page stays as-is). Your choice is saved on this device.
             </p>
             <div class="theme-grid" id="themeChipRow" aria-label="Accent themes"></div>
+        </div>
+
+        <div class="panel hidden" id="accountModePanel">
+            <h2>How you use Alysum</h2>
+            <p class="hint">
+                Controls your default home after login and the Studio / Reading switch in the header. Existing accounts without a choice here behave like “Both”.
+            </p>
+            <div id="accountTypeGroup" role="radiogroup" aria-label="Account focus">
+                <label class="account-type-row">
+                    <input type="radio" name="settingsAccountType" value="author" />
+                    <span>
+                        <strong>Author</strong>
+                        <span class="desc">Studio first. Use the menu to open the Library when you want to read.</span>
+                    </span>
+                </label>
+                <label class="account-type-row">
+                    <input type="radio" name="settingsAccountType" value="reader" />
+                    <span>
+                        <strong>Reader</strong>
+                        <span class="desc">Reading home first, then the Library for browsing and feedback.</span>
+                    </span>
+                </label>
+                <label class="account-type-row">
+                    <input type="radio" name="settingsAccountType" value="both" />
+                    <span>
+                        <strong>Both</strong>
+                        <span class="desc">Switch between Studio and Reading from the top bar on Studio and Library.</span>
+                    </span>
+                </label>
+            </div>
+            <button type="button" class="btn btn-primary" id="saveAccountTypeBtn">Save account focus</button>
+            <div class="msg" id="accountTypeMsg" role="status"></div>
         </div>
 
         <div class="panel hidden" id="profilePanel">
@@ -268,6 +352,7 @@
         import { doc, getDoc, updateDoc, deleteField } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
         import { permanentHandleFromUserData } from "./js/profile-display.js?v=1";
         import { GRADIENT_THEMES, applyGradientTheme, getStoredGradientThemeId } from "./js/gradient-theme.js?v=2";
+        import { normalizeAccountType, ACCOUNT_AUTHOR, ACCOUNT_READER, ACCOUNT_BOTH, homeUrlForUserData } from "./js/account-mode.js?v=1";
 
         const backBtn = document.getElementById("backBtn");
         const loadingPanel = document.getElementById("loadingPanel");
@@ -285,6 +370,11 @@
         const passwordMsg = document.getElementById("passwordMsg");
         const appearancePanel = document.getElementById("appearancePanel");
         const themeChipRow = document.getElementById("themeChipRow");
+        const accountModePanel = document.getElementById("accountModePanel");
+        const saveAccountTypeBtn = document.getElementById("saveAccountTypeBtn");
+        const accountTypeMsg = document.getElementById("accountTypeMsg");
+
+        let settingsHomeUrl = "/studio.html";
 
         function initThemePicker() {
             if (!themeChipRow || themeChipRow.dataset.ready === "1") return;
@@ -307,7 +397,7 @@
         }
 
         backBtn.addEventListener("click", () => {
-            window.location.href = "/studio.html";
+            window.location.href = settingsHomeUrl;
         });
 
         function showMsg(el, text, ok) {
@@ -344,8 +434,15 @@
                 handleField.textContent = "@" + handle;
                 displayNameInput.value = String(data.displayName ?? "").trim();
 
+                const acct = normalizeAccountType(data.accountType);
+                settingsHomeUrl = homeUrlForUserData({ ...data, accountType: acct });
+                document.querySelectorAll('input[name="settingsAccountType"]').forEach((r) => {
+                    r.checked = r.value === acct;
+                });
+
                 loadingPanel.classList.add("hidden");
                 appearancePanel.classList.remove("hidden");
+                accountModePanel.classList.remove("hidden");
                 profilePanel.classList.remove("hidden");
                 securityPanel.classList.remove("hidden");
                 initThemePicker();
@@ -368,6 +465,32 @@
             } catch (e) {
                 console.error(e);
                 loadingPanel.innerHTML = "<p class=\"hint\" style=\"margin:0;color:#f87171\">Could not load profile.</p>";
+            }
+        });
+
+        saveAccountTypeBtn.addEventListener("click", async () => {
+            hideMsg(accountTypeMsg);
+            const user = auth.currentUser;
+            if (!user) return;
+
+            const picked = document.querySelector('input[name="settingsAccountType"]:checked');
+            const v = picked ? picked.value : "";
+            if (v !== ACCOUNT_AUTHOR && v !== ACCOUNT_READER && v !== ACCOUNT_BOTH) {
+                showMsg(accountTypeMsg, "Pick one option.", false);
+                return;
+            }
+
+            saveAccountTypeBtn.disabled = true;
+            try {
+                const userRef = doc(db, "users", user.uid);
+                await updateDoc(userRef, { accountType: v });
+                settingsHomeUrl = homeUrlForUserData({ accountType: v });
+                showMsg(accountTypeMsg, "Saved. Sign-in home and header switch update on your next login (or open Studio / Library now).", true);
+            } catch (e) {
+                console.error(e);
+                showMsg(accountTypeMsg, e?.message || "Could not save.", false);
+            } finally {
+                saveAccountTypeBtn.disabled = false;
             }
         });
 
