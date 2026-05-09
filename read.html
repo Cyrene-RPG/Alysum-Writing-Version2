@@ -154,15 +154,28 @@
       filter: brightness(1.06);
     }
 
+    a.btn.ghost {
+      background: transparent;
+      color: var(--muted);
+      box-shadow: none;
+    }
+
+    a.btn.ghost:hover {
+      color: var(--text);
+      border-color: color-mix(in srgb, var(--text) 14%, var(--border));
+    }
+
     #betaReadTopBtn,
-    #readerProfileTopBtn {
+    #readerProfileTopBtn,
+    #allNotesTopBtn {
       font-size: 13px;
       padding: 9px 12px;
     }
 
     @media (max-width: 520px) {
       #betaReadTopBtn,
-      #readerProfileTopBtn {
+      #readerProfileTopBtn,
+      #allNotesTopBtn {
         padding: 8px 10px;
         font-size: 12px;
       }
@@ -175,6 +188,16 @@
       #readerProfileTopBtn .reader-profile-label-short {
         display: inline;
       }
+      #allNotesTopBtn .all-notes-label-long {
+        display: none;
+      }
+      #allNotesTopBtn .all-notes-label-short {
+        display: inline;
+      }
+    }
+
+    .all-notes-label-short {
+      display: none;
     }
 
     .reader-profile-label-short {
@@ -682,6 +705,9 @@
 
     <div class="topbar-right">
       <a class="btn primary hidden" id="betaReadTopBtn" href="/beta-read.html">Beta reads</a>
+      <a class="btn ghost hidden" id="allNotesTopBtn" href="/beta-notes-library.html" title="Every highlight you saved, across all books">
+        <span class="all-notes-label-long">All notes</span><span class="all-notes-label-short">Notes</span>
+      </a>
       <button type="button" class="btn hidden" id="readerProfileTopBtn" aria-label="Reading profile">
         <span class="reader-profile-label-long">Reading profile</span><span class="reader-profile-label-short">Profile</span>
       </button>
@@ -855,6 +881,11 @@
     }
     if (readerProfileTopBtn && bookId) {
       readerProfileTopBtn.classList.remove("hidden");
+    }
+
+    const allNotesTopBtn = document.getElementById("allNotesTopBtn");
+    if (allNotesTopBtn && bookId) {
+      allNotesTopBtn.classList.remove("hidden");
     }
 
     const statusBox = document.getElementById("statusBox");
