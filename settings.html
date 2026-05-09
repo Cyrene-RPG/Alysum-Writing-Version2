@@ -193,7 +193,7 @@
             box-shadow: 0 0 0 1px color-mix(in srgb, var(--purple) 22%, transparent);
         }
     </style>
-    <link rel="stylesheet" href="/css/gradient-themes.css?v=1" />
+    <link rel="stylesheet" href="/css/gradient-themes.css?v=2" />
 </head>
 <body>
     <header class="header">
@@ -267,7 +267,7 @@
         import { onAuthStateChanged, EmailAuthProvider, reauthenticateWithCredential, updatePassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
         import { doc, getDoc, updateDoc, deleteField } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
         import { permanentHandleFromUserData } from "./js/profile-display.js?v=1";
-        import { GRADIENT_THEMES, applyGradientTheme, getStoredGradientThemeId } from "./js/gradient-theme.js?v=1";
+        import { GRADIENT_THEMES, applyGradientTheme, getStoredGradientThemeId } from "./js/gradient-theme.js?v=2";
 
         const backBtn = document.getElementById("backBtn");
         const loadingPanel = document.getElementById("loadingPanel");

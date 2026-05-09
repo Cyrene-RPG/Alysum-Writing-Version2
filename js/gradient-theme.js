@@ -5,14 +5,19 @@ export const GRADIENT_THEME_KEY = "alysum-gradient-theme";
 
 export const GRADIENT_THEMES = [
     { id: "classic", label: "Classic violet", hint: "Original Alysum accents" },
-    { id: "rose", label: "Rose pink", hint: "Warm pinks & magentas" },
-    { id: "ocean", label: "Ocean blue", hint: "Blues & cyan" },
+    { id: "midnight", label: "Midnight blue", hint: "Deep navy & cobalt glow" },
+    { id: "ocean", label: "Ocean blue", hint: "Bright blues & cyan" },
+    { id: "arctic", label: "Arctic ice", hint: "Frost, teal & pale ice" },
+    { id: "sunset", label: "Sunset sky", hint: "Twilight → magenta → coral → gold" },
+    { id: "inferno", label: "Inferno", hint: "Coals, crimson, orange & gold flame" },
     { id: "ember", label: "Ember", hint: "Red & orange heat" },
-    { id: "aurora", label: "Aurora", hint: "Violet with cyan glow" },
+    { id: "rose", label: "Rose pink", hint: "Warm pinks & magentas" },
+    { id: "wine", label: "Wine", hint: "Burgundy & rose gold" },
     { id: "gold", label: "Gold", hint: "Amber & sunshine" },
-    { id: "silver", label: "Silver", hint: "Cool slate & chrome" },
+    { id: "aurora", label: "Aurora", hint: "Violet with cyan glow" },
     { id: "forest", label: "Forest", hint: "Emerald & teal" },
-    { id: "sunset", label: "Sunset", hint: "Orange into magenta" }
+    { id: "neon", label: "Neon", hint: "Cyber magenta & electric mint" },
+    { id: "silver", label: "Silver", hint: "Cool slate & chrome" }
 ];
 
 export function getStoredGradientThemeId() {
