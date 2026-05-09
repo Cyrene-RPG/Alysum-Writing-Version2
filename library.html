@@ -518,7 +518,10 @@
             if (accountSupportsModeToggle(accountType)) {
                 libraryModeSwitch?.classList.remove("hidden");
                 libraryBackStudio?.classList.add("hidden");
-                readerHomeLink?.classList.add("hidden");
+                if (readerHomeLink) {
+                    readerHomeLink.textContent = "Reading profile";
+                    readerHomeLink.classList.remove("hidden");
+                }
                 libraryModeSwitch?.querySelectorAll(".library-mode-seg").forEach((b) => {
                     const m = b.getAttribute("data-mode");
                     b.classList.toggle("active", m === "library");
@@ -528,7 +531,10 @@
             libraryModeSwitch?.classList.add("hidden");
             if (t === ACCOUNT_READER) {
                 libraryBackStudio?.classList.add("hidden");
-                readerHomeLink?.classList.remove("hidden");
+                if (readerHomeLink) {
+                    readerHomeLink.textContent = "Reading home";
+                    readerHomeLink.classList.remove("hidden");
+                }
             } else {
                 libraryBackStudio?.classList.remove("hidden");
                 readerHomeLink?.classList.add("hidden");
