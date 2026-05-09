@@ -78,32 +78,9 @@
             font-weight: 600;
         }
 
-        .forgot-row {
-            text-align: right;
-            margin: -4px 0 6px;
-        }
-
-        .text-link {
-            background: none;
-            border: none;
-            padding: 0;
-            margin: 0;
-            width: auto;
-            font-size: 14px;
-            color: #6d28d9;
-            font-weight: 600;
-            text-decoration: underline;
-            cursor: pointer;
-            display: inline;
-        }
-
-        .text-link:disabled {
+        .signup-link a.is-busy {
+            pointer-events: none;
             opacity: 0.65;
-            cursor: not-allowed;
-        }
-
-        .text-link:active {
-            transform: none;
         }
 
         #success-msg {
@@ -163,14 +140,13 @@
     <input id="email" type="email" placeholder="Email" autocomplete="username">
     <input id="password" type="password" placeholder="Password" autocomplete="current-password">
 
-    <div class="forgot-row">
-        <button type="button" class="text-link" id="forgot-btn">Forgot password?</button>
-    </div>
-
     <button type="button" id="login-btn" onclick="login()">Enter Studio</button>
     <p id="success-msg" role="status"></p>
     <p id="error-msg" role="alert"></p>
 
+    <div class="signup-link">
+        <a href="#" id="forgot-link">Forgot password?</a>
+    </div>
     <div class="signup-link">
         New here? <a href="/signup.html">Create account</a>
     </div>
@@ -186,7 +162,7 @@ import {
 const errorEl = document.getElementById("error-msg");
 const successEl = document.getElementById("success-msg");
 const loginBtn = document.getElementById("login-btn");
-const forgotBtn = document.getElementById("forgot-btn");
+const forgotLink = document.getElementById("forgot-link");
 
 function showError(text) {
     successEl.textContent = "";
@@ -236,32 +212,33 @@ function authMessage(code) {
 
 let resetInFlight = false;
 
-forgotBtn.addEventListener("click", async () => {
+forgotLink.addEventListener("click", async (e) => {
+    e.preventDefault();
     if (resetInFlight) return;
 
     const email = document.getElementById("email").value.trim();
     if (!email) {
-        showError("Enter your email address, then use Forgot password.");
+        showError("Enter your email address, then tap Forgot password.");
         return;
     }
 
     clearError();
     clearSuccess();
     resetInFlight = true;
-    forgotBtn.disabled = true;
+    forgotLink.classList.add("is-busy");
 
     try {
         await sendPasswordResetEmail(auth, email);
         showSuccess(
             "If an account exists for that email, we sent a link to reset your password. Check your inbox and spam folder."
         );
-    } catch (e) {
-        const code = e && e.code;
-        const friendly = authMessage(code) || (e && e.message) || "Could not send reset email.";
+    } catch (err) {
+        const code = err && err.code;
+        const friendly = authMessage(code) || (err && err.message) || "Could not send reset email.";
         showError(friendly);
     } finally {
         resetInFlight = false;
-        forgotBtn.disabled = false;
+        forgotLink.classList.remove("is-busy");
     }
 });
 
