@@ -154,16 +154,31 @@
       filter: brightness(1.06);
     }
 
-    #betaReadTopBtn {
+    #betaReadTopBtn,
+    #readerProfileTopBtn {
       font-size: 13px;
       padding: 9px 12px;
     }
 
     @media (max-width: 520px) {
-      #betaReadTopBtn {
+      #betaReadTopBtn,
+      #readerProfileTopBtn {
         padding: 8px 10px;
         font-size: 12px;
       }
+    }
+
+    @media (max-width: 420px) {
+      #readerProfileTopBtn .reader-profile-label-long {
+        display: none;
+      }
+      #readerProfileTopBtn .reader-profile-label-short {
+        display: inline;
+      }
+    }
+
+    .reader-profile-label-short {
+      display: none;
     }
 
     .page {
@@ -667,6 +682,9 @@
 
     <div class="topbar-right">
       <a class="btn primary hidden" id="betaReadTopBtn" href="/beta-read.html">Beta reads</a>
+      <button type="button" class="btn hidden" id="readerProfileTopBtn" aria-label="Reading profile">
+        <span class="reader-profile-label-long">Reading profile</span><span class="reader-profile-label-short">Profile</span>
+      </button>
       <button class="btn" id="themeBtn">Theme</button>
       <button class="btn" id="fontMinusBtn">A-</button>
       <button class="btn" id="fontPlusBtn">A+</button>
@@ -810,6 +828,7 @@
       onAuthStateChanged
     } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
     import { writeBetaShelfEntryLocal } from "./js/beta-shelf-local.js?v=1";
+    import { READER_HOME_URL } from "./js/account-mode.js";
 
     const params = new URLSearchParams(window.location.search);
     const bookId = params.get("book");
@@ -828,9 +847,14 @@
     const topbarSubtitle = document.getElementById("topbarSubtitle");
     const betaReadTopBtn = document.getElementById("betaReadTopBtn");
 
+    const readerProfileTopBtn = document.getElementById("readerProfileTopBtn");
+
     if (betaReadTopBtn && bookId) {
       betaReadTopBtn.href = `/beta-read.html?book=${encodeURIComponent(bookId)}`;
       betaReadTopBtn.classList.remove("hidden");
+    }
+    if (readerProfileTopBtn && bookId) {
+      readerProfileTopBtn.classList.remove("hidden");
     }
 
     const statusBox = document.getElementById("statusBox");
@@ -1525,6 +1549,35 @@ async function postComment() {
 
     backBtn.addEventListener("click", () => {
       window.location.href = "/library.html";
+    });
+
+    readerProfileTopBtn?.addEventListener("click", async () => {
+      if (!bookId) return;
+      if (!currentBook) {
+        showStatus("Wait until this story finishes loading.");
+        setTimeout(hideStatus, 2200);
+        return;
+      }
+      try {
+        if (typeof auth.authStateReady === "function") {
+          await auth.authStateReady();
+        }
+      } catch {
+        /* ignore */
+      }
+      const user = currentUser || auth.currentUser;
+      if (!user) {
+        window.location.href =
+          "/login.html?next=" + encodeURIComponent(READER_HOME_URL);
+        return;
+      }
+      readerProfileTopBtn.disabled = true;
+      try {
+        await ensureBetaReadShelved();
+      } finally {
+        readerProfileTopBtn.disabled = false;
+      }
+      window.location.href = READER_HOME_URL;
     });
 
     prevBtn.addEventListener("click", () => {
