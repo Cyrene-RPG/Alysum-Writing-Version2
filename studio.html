@@ -1219,6 +1219,7 @@
             DEFAULT_DAILY_WORD_GOAL
         } from "./js/writing-day-stats.js?v=1";
         import { permanentHandleFromUserData, publicDisplayNameFromUserData } from "./js/profile-display.js?v=1";
+        import { countBookWords, countWordsFromHTML } from "./js/book-word-count.js?v=1";
         import {
             accountSupportsModeToggle,
             setUiMode,
@@ -1361,39 +1362,6 @@
                     updateDashUnreadBadges(0);
                 }
             );
-        }
-
-        function stripHtml(html = "") {
-            return String(html)
-                .replace(/<br\s*\/?>/gi, " ")
-                .replace(/<\/(div|p|h1|h2|h3|li|blockquote)>/gi, " ")
-                .replace(/<[^>]*>/g, " ")
-                .replace(/\s+/g, " ")
-                .trim();
-        }
-
-        function countWordsFromHTML(html = "") {
-            const text = stripHtml(html);
-            if (!text) return 0;
-            return text.split(" ").length;
-        }
-
-        function countBookWords(bookData) {
-            let total = 0;
-            const sections = bookData?.sections || {};
-
-            ["front", "body", "back"].forEach(sectionName => {
-                const list = Array.isArray(sections[sectionName]) ? sections[sectionName] : [];
-                list.forEach(chapter => {
-                    total += countWordsFromHTML(chapter?.content || "");
-                });
-            });
-
-            if (total === 0 && typeof bookData?.content === "string") {
-                total += countWordsFromHTML(bookData.content);
-            }
-
-            return total;
         }
 
         function bookLastTouchedMs(data) {
@@ -1588,16 +1556,32 @@
             })();
         });
 
+        /** Word-only tiers — same order/targets as Achievements (`badges.html`). */
         function updateBadgeUI(totalWords) {
-            const badges = [
+            const wordMilestones = [
+                { name: "500 Words", target: 500 },
                 { name: "1K Words", target: 1000 },
                 { name: "10K Words", target: 10000 },
-                { name: "50K Words", target: 50000 }
+                { name: "50K Words", target: 50000 },
+                { name: "100K Words", target: 100000 },
+                { name: "200K Words", target: 200000 },
+                { name: "500K Words", target: 500000 },
+                { name: "1M Words", target: 1000000 }
             ];
 
-            let nextBadge = badges.find(b => totalWords < b.target) || badges[badges.length - 1];
-            let progressTarget = nextBadge.target;
-            let pct = Math.max(0, Math.min(100, Math.round((totalWords / progressTarget) * 100)));
+            const maxTarget = wordMilestones[wordMilestones.length - 1].target;
+            if (totalWords >= maxTarget) {
+                if (badgeName) badgeName.textContent = "All word milestones";
+                if (badgeProgressText) {
+                    badgeProgressText.textContent = `${totalWords.toLocaleString()} words · every tier unlocked`;
+                }
+                if (badgeBar) badgeBar.style.width = "100%";
+                return;
+            }
+
+            const nextBadge = wordMilestones.find(b => totalWords < b.target);
+            const progressTarget = nextBadge.target;
+            const pct = Math.max(0, Math.min(100, Math.round((totalWords / progressTarget) * 100)));
 
             if (badgeName) badgeName.textContent = nextBadge.name;
             if (badgeProgressText) {

@@ -234,18 +234,24 @@ body {
 <script type="module">
 import { auth, db } from "./firebase.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { doc, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { doc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import {
     clampDailyWordGoal,
     computeGoalStreakFromTotals,
     DEFAULT_DAILY_WORD_GOAL
 } from "./js/writing-day-stats.js?v=1";
+import { countBookWords } from "./js/book-word-count.js?v=1";
 
 const grid = document.getElementById("badgeGrid");
 const wordsEl = document.getElementById("totalWords");
 const streakEl = document.getElementById("streak");
 const booksEl = document.getElementById("books");
 const dailyGoalStreakEl = document.getElementById("dailyGoalStreak");
+
+let unsubUser = null;
+let unsubBooks = null;
+let userData = {};
+let booksSnap = null;
 
 /* FULL BADGES */
 const BADGES = [
@@ -279,47 +285,30 @@ const BADGES = [
 
 ];
 
-/* WORD COUNT */
-function stripHtml(html=""){
-return html.replace(/<[^>]*>/g," ").replace(/\s+/g," ").trim();
-}
+function renderAchievementsFromCache() {
+    if (!booksSnap) return;
 
-function countWords(html=""){
-const text = stripHtml(html);
-return text ? text.split(" ").length : 0;
-}
+    let totalWords = 0;
+    booksSnap.forEach((docSnap) => {
+        totalWords += countBookWords(docSnap.data());
+    });
 
-function countBookWords(book){
-let total = 0;
-const sections = book.sections || {};
-["front","body","back"].forEach(sec=>{
-(sections[sec]||[]).forEach(ch=>{
-total += countWords(ch.content || "");
-});
-});
-return total;
-}
+    const dailyGoal = clampDailyWordGoal(userData.dailyWordGoal ?? DEFAULT_DAILY_WORD_GOAL);
+    const dailyGoalStreak = computeGoalStreakFromTotals(userData.writingDayTotals || {}, dailyGoal);
 
-async function loadData(uid){
-const userSnap = await getDoc(doc(db,"users",uid));
-const booksSnap = await getDocs(collection(db,"users",uid,"books"));
+    const data = {
+        words: totalWords,
+        streak: userData.streak || 0,
+        books: booksSnap.size,
+        dailyGoalStreak
+    };
 
-let totalWords = 0;
+    wordsEl.textContent = data.words.toLocaleString();
+    streakEl.textContent = data.streak;
+    booksEl.textContent = data.books;
+    dailyGoalStreakEl.textContent = data.dailyGoalStreak.toLocaleString();
 
-booksSnap.forEach(docSnap=>{
-totalWords += countBookWords(docSnap.data());
-});
-
-const data = userSnap.data() || {};
-const dailyGoal = clampDailyWordGoal(data.dailyWordGoal ?? DEFAULT_DAILY_WORD_GOAL);
-const dailyGoalStreak = computeGoalStreakFromTotals(data.writingDayTotals || {}, dailyGoal);
-
-return {
-words: totalWords,
-streak: data.streak || 0,
-books: booksSnap.size,
-dailyGoalStreak
-};
+    renderBadges(data);
 }
 
 /* RENDER */
@@ -352,25 +341,55 @@ grid.appendChild(el);
 });
 }
 
-/* AUTH */
-onAuthStateChanged(auth, async (user)=>{
-if(!user){
-location.href="/login.html";
-return;
-}
+/* AUTH — live Firestore so word badges match the editor without reloading. */
+onAuthStateChanged(auth, (user) => {
+    if (!user) {
+        if (unsubUser) {
+            unsubUser();
+            unsubUser = null;
+        }
+        if (unsubBooks) {
+            unsubBooks();
+            unsubBooks = null;
+        }
+        location.href = "/login.html";
+        return;
+    }
 
-const data = await loadData(user.uid);
+    if (unsubUser) {
+        unsubUser();
+        unsubUser = null;
+    }
+    if (unsubBooks) {
+        unsubBooks();
+        unsubBooks = null;
+    }
 
-wordsEl.textContent = data.words.toLocaleString();
-streakEl.textContent = data.streak;
-booksEl.textContent = data.books;
-dailyGoalStreakEl.textContent = data.dailyGoalStreak.toLocaleString();
+    const uid = user.uid;
+    userData = {};
+    booksSnap = null;
 
-renderBadges(data);
+    unsubUser = onSnapshot(
+        doc(db, "users", uid),
+        (snap) => {
+            userData = snap.exists() ? snap.data() || {} : {};
+            renderAchievementsFromCache();
+        },
+        (err) => console.warn("Achievements profile listener:", err)
+    );
 
-document.getElementById("backBtn").onclick = () => {
-window.location.href = "/studio.html";
-};
+    unsubBooks = onSnapshot(
+        collection(db, "users", uid, "books"),
+        (snap) => {
+            booksSnap = snap;
+            renderAchievementsFromCache();
+        },
+        (err) => console.warn("Achievements books listener:", err)
+    );
+
+    document.getElementById("backBtn").onclick = () => {
+        window.location.href = "/studio.html";
+    };
 });
 </script>
 
