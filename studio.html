@@ -258,9 +258,16 @@
 
         .username {
             margin-top: 6px;
-            color: var(--muted);
-            font-size: 15px;
+            color: var(--muted-2);
+            font-size: 18px;
+            font-weight: 800;
+        }
+
+        .user-handle-meta {
+            margin-top: 4px;
+            font-size: 12px;
             font-weight: 700;
+            color: var(--muted);
         }
 
         .welcome-sub {
@@ -892,6 +899,7 @@
         <a href="/vault.html" class="menu-link">📓 Notes library</a>
         <a href="/index.html" class="menu-link">🏠 Home</a>
         <a href="/badges.html" class="menu-link">🎖️ Badges</a>
+        <a href="/settings.html" class="menu-link">⚙️ Settings</a>
     </div>
 
     <div class="container">
@@ -911,6 +919,7 @@
                 <a href="/scratch.html" class="sidebar-item">📝 Scratch notes</a>
                 <a href="/vault.html" class="sidebar-item">📓 Notes library</a>
                 <a href="/badges.html" class="sidebar-item">🏆 Achievements</a>
+                <a href="/settings.html" class="sidebar-item">⚙️ Settings</a>
 				<a href="/Novel_Exporter.html" class="sidebar-item" id="sidebarFormatLink">📃 Novel exporter</a>
                 <a href="/index.html" class="sidebar-item">🏠 Home</a>
 
@@ -925,7 +934,8 @@
                     <div class="hero-top">
                         <div class="welcome-copy">
                             <h2 id="status">Loading...</h2>
-                            <div class="username" id="username"></div>
+                            <div class="username" id="profileDisplayName"></div>
+                            <div class="user-handle-meta" id="profileHandleLine"></div>
                             <div class="welcome-sub">
                                 Keep going. You’re building something real, and your progress is waiting for you.
                             </div>
@@ -1103,9 +1113,11 @@
             DAILY_GOAL_PRESETS,
             DEFAULT_DAILY_WORD_GOAL
         } from "./js/writing-day-stats.js?v=1";
+        import { permanentHandleFromUserData, publicDisplayNameFromUserData } from "./js/profile-display.js?v=1";
 
         const status = document.getElementById("status");
-        const username = document.getElementById("username");
+        const profileDisplayName = document.getElementById("profileDisplayName");
+        const profileHandleLine = document.getElementById("profileHandleLine");
         const wordsEl = document.getElementById("words");
         const booksEl = document.getElementById("books");
         const streakEl = document.getElementById("streak");
@@ -1393,6 +1405,13 @@
                             ...d
                         };
                         refreshDailyGoalUIFromProfile();
+                        if (profileDisplayName) {
+                            profileDisplayName.textContent = publicDisplayNameFromUserData(d);
+                        }
+                        if (profileHandleLine) {
+                            profileHandleLine.textContent =
+                                "Permanent handle @" + permanentHandleFromUserData(d);
+                        }
                     }
                 } catch (e) {
                     console.error(e);
@@ -1705,6 +1724,7 @@
                 if (!snap.exists()) {
                     await setDoc(userRef, {
                         username: "newuser",
+                        displayName: "newuser",
                         words: 0,
                         streak: 1,
                         lastLogin: todayKey(),
@@ -1724,7 +1744,13 @@
                 const streak = await ensureUserStreak(userRef, data);
 
                 status.textContent = "Welcome back, writer.";
-                username.textContent = "@" + (data.username || "user");
+                if (profileDisplayName) {
+                    profileDisplayName.textContent = publicDisplayNameFromUserData(data);
+                }
+                if (profileHandleLine) {
+                    profileHandleLine.textContent =
+                        "Permanent handle @" + permanentHandleFromUserData(data);
+                }
                 streakEl.textContent = streak.toLocaleString();
 
                 await loadBooks(user.uid);
@@ -1733,7 +1759,8 @@
             } catch (e) {
                 console.error(e);
                 status.textContent = "Error loading profile";
-                username.textContent = "@error";
+                if (profileDisplayName) profileDisplayName.textContent = "Error";
+                if (profileHandleLine) profileHandleLine.textContent = "";
                 currentProjectTitle.textContent = "Could not load";
                 currentProjectMeta.textContent = "Try refreshing the page.";
             }

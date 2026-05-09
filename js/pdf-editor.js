@@ -6,6 +6,7 @@
 import { auth, db } from "../firebase.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { publicDisplayNameFromUserData } from "./profile-display.js?v=1";
 
 const params = new URLSearchParams(window.location.search);
 const bookId = params.get("book");
@@ -1617,11 +1618,7 @@ async function loadBook(uid) {
       const userSnap = await getDoc(doc(db, "users", uid));
       if (userSnap.exists()) {
         const u = userSnap.data();
-        state.authorDisplay =
-          safeString(u.username, "").trim() ||
-          safeString(u.displayName, "").trim() ||
-          safeString(u.name, "").trim() ||
-          safeString(u.penName, "").trim();
+        state.authorDisplay = publicDisplayNameFromUserData(u);
       }
     } catch (_) {
       state.authorDisplay = "";

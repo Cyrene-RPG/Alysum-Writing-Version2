@@ -2,6 +2,7 @@
  * Novel exporter — loads the same Firestore document as editor.html (`users/{uid}/books/{bookId}`).
  */
 import { auth, db } from "../firebase.js";
+import { publicDisplayNameFromUserData } from "./profile-display.js?v=1";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
@@ -1088,12 +1089,7 @@ async function fetchAuthorDisplay(uid) {
         const userSnap = await getDoc(doc(db, "users", uid));
         if (userSnap.exists()) {
             const u = userSnap.data();
-            return (
-                safeString(u.username, "").trim() ||
-                safeString(u.displayName, "").trim() ||
-                safeString(u.name, "").trim() ||
-                safeString(u.penName, "").trim()
-            );
+            return publicDisplayNameFromUserData(u);
         }
     } catch (_) {
         /* ignore */

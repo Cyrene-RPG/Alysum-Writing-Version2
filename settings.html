@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Account settings - Alysum</title>
+    <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
+    <style>
+        * { box-sizing: border-box; }
+        :root {
+            --bg: #0b1220;
+            --panel: #111827;
+            --panel-2: #1f2937;
+            --text: #fff;
+            --muted: #9ca3af;
+            --border: rgba(255,255,255,0.1);
+            --purple: #6d28d9;
+            --pink: #ec4899;
+            --gold: #f5d489;
+            --danger: #f87171;
+            --ok: #4ade80;
+        }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: radial-gradient(circle at top, rgba(109,40,217,0.2), transparent 40%), var(--bg);
+            color: var(--text);
+        }
+        .header {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 18px;
+            background: linear-gradient(135deg, #5b21b6, #7c3aed);
+            border-bottom: 1px solid var(--border);
+        }
+        .back-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            border: none;
+            background: rgba(0,0,0,0.22);
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+        }
+        .header-title {
+            font-size: 20px;
+            font-weight: 900;
+            color: #fff7ed;
+        }
+        .wrap {
+            max-width: 560px;
+            margin: 0 auto;
+            padding: 22px 16px 48px;
+        }
+        .panel {
+            background: linear-gradient(180deg, rgba(17,24,39,0.98), rgba(15,23,42,0.98));
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 20px 18px;
+            margin-bottom: 18px;
+            box-shadow: 0 16px 40px rgba(0,0,0,0.35);
+        }
+        .panel h2 {
+            margin: 0 0 6px;
+            font-size: 17px;
+            font-weight: 900;
+            color: var(--gold);
+        }
+        .hint {
+            margin: 0 0 16px;
+            font-size: 13px;
+            color: var(--muted);
+            line-height: 1.45;
+        }
+        label {
+            display: block;
+            font-size: 12px;
+            font-weight: 800;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-bottom: 6px;
+        }
+        .field {
+            margin-bottom: 14px;
+        }
+        input[type="text"],
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: rgba(0,0,0,0.25);
+            color: var(--text);
+            font-size: 15px;
+        }
+        input:disabled {
+            opacity: 0.65;
+        }
+        .readonly {
+            padding: 12px 14px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border);
+            font-size: 15px;
+            font-weight: 700;
+            color: #e5e7eb;
+        }
+        .mono {
+            font-family: ui-monospace, monospace;
+            font-size: 14px;
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 20px;
+            border-radius: 12px;
+            border: none;
+            font-size: 14px;
+            font-weight: 900;
+            cursor: pointer;
+            margin-top: 6px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--purple), var(--pink));
+            color: white;
+        }
+        .btn:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+        }
+        .msg {
+            margin-top: 12px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            font-size: 14px;
+            line-height: 1.45;
+            display: none;
+        }
+        .msg.visible { display: block; }
+        .msg.err {
+            background: rgba(248,113,113,0.12);
+            border: 1px solid rgba(248,113,113,0.35);
+            color: var(--danger);
+        }
+        .msg.ok {
+            background: rgba(74,222,128,0.12);
+            border: 1px solid rgba(74,222,128,0.3);
+            color: var(--ok);
+        }
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <button type="button" class="back-btn" id="backBtn" aria-label="Back to studio">←</button>
+        <div class="header-title">Account settings</div>
+    </header>
+
+    <div class="wrap">
+        <div class="panel" id="loadingPanel">
+            <p class="hint" style="margin:0">Loading your account…</p>
+        </div>
+
+        <div class="panel hidden" id="profilePanel">
+            <h2>Profile</h2>
+            <p class="hint">Your permanent handle is like a Discord tag: it never changes and identifies you. Your display name is what others see next to comments and on your studio home.</p>
+
+            <div class="field">
+                <label>Email</label>
+                <input type="email" id="emailField" disabled />
+            </div>
+
+            <div class="field">
+                <label>Permanent handle</label>
+                <div class="readonly mono" id="handleField">@…</div>
+                <p class="hint" style="margin-top:8px;margin-bottom:0">This cannot be changed.</p>
+            </div>
+
+            <div class="field">
+                <label for="displayNameInput">Display name</label>
+                <input type="text" id="displayNameInput" maxlength="40" autocomplete="nickname" placeholder="How your name appears" />
+                <p class="hint" style="margin-top:8px;margin-bottom:0">Leave blank and save to show only your permanent handle everywhere.</p>
+            </div>
+
+            <button type="button" class="btn btn-primary" id="saveDisplayBtn">Save display name</button>
+            <div class="msg" id="profileMsg" role="status"></div>
+        </div>
+
+        <div class="panel hidden" id="securityPanel">
+            <h2>Password</h2>
+            <p class="hint hidden" id="ssoPasswordNote"></p>
+            <p class="hint" id="passwordFormHint">Enter your current password, then choose a new one.</p>
+
+            <div class="field">
+                <label for="currentPw">Current password</label>
+                <input type="password" id="currentPw" autocomplete="current-password" />
+            </div>
+            <div class="field">
+                <label for="newPw">New password</label>
+                <input type="password" id="newPw" autocomplete="new-password" />
+            </div>
+            <div class="field">
+                <label for="confirmPw">Confirm new password</label>
+                <input type="password" id="confirmPw" autocomplete="new-password" />
+            </div>
+
+            <button type="button" class="btn btn-primary" id="savePasswordBtn">Update password</button>
+            <div class="msg" id="passwordMsg" role="status"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { auth, db } from "./firebase.js";
+        import { onAuthStateChanged, EmailAuthProvider, reauthenticateWithCredential, updatePassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import { doc, getDoc, updateDoc, deleteField } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { permanentHandleFromUserData } from "./js/profile-display.js?v=1";
+
+        const backBtn = document.getElementById("backBtn");
+        const loadingPanel = document.getElementById("loadingPanel");
+        const profilePanel = document.getElementById("profilePanel");
+        const securityPanel = document.getElementById("securityPanel");
+        const emailField = document.getElementById("emailField");
+        const handleField = document.getElementById("handleField");
+        const displayNameInput = document.getElementById("displayNameInput");
+        const saveDisplayBtn = document.getElementById("saveDisplayBtn");
+        const profileMsg = document.getElementById("profileMsg");
+        const currentPw = document.getElementById("currentPw");
+        const newPw = document.getElementById("newPw");
+        const confirmPw = document.getElementById("confirmPw");
+        const savePasswordBtn = document.getElementById("savePasswordBtn");
+        const passwordMsg = document.getElementById("passwordMsg");
+
+        backBtn.addEventListener("click", () => {
+            window.location.href = "/studio.html";
+        });
+
+        function showMsg(el, text, ok) {
+            el.textContent = text;
+            el.classList.remove("err", "ok");
+            el.classList.add("visible", ok ? "ok" : "err");
+        }
+
+        function hideMsg(el) {
+            el.classList.remove("visible", "err", "ok");
+            el.textContent = "";
+        }
+
+        function normalizeDisplayName(raw) {
+            const s = String(raw ?? "").trim().replace(/\s+/g, " ");
+            if (!s) return "";
+            if (s.length > 40) return s.slice(0, 40);
+            return s;
+        }
+
+        onAuthStateChanged(auth, async user => {
+            if (!user) {
+                window.location.href = "/login.html";
+                return;
+            }
+
+            try {
+                const userRef = doc(db, "users", user.uid);
+                const snap = await getDoc(userRef);
+                const data = snap.exists() ? snap.data() || {} : {};
+
+                emailField.value = user.email || "";
+                const handle = permanentHandleFromUserData(data);
+                handleField.textContent = "@" + handle;
+                displayNameInput.value = String(data.displayName ?? "").trim();
+
+                loadingPanel.classList.add("hidden");
+                profilePanel.classList.remove("hidden");
+                securityPanel.classList.remove("hidden");
+
+                const hasPassword = user.providerData?.some(p => p.providerId === "password");
+                const ssoNote = document.getElementById("ssoPasswordNote");
+                const formHint = document.getElementById("passwordFormHint");
+                if (!hasPassword) {
+                    savePasswordBtn.disabled = true;
+                    currentPw.disabled = true;
+                    newPw.disabled = true;
+                    confirmPw.disabled = true;
+                    if (ssoNote) {
+                        ssoNote.textContent =
+                            "Password updates are only available for accounts that use email and password sign-in.";
+                        ssoNote.classList.remove("hidden");
+                    }
+                    if (formHint) formHint.classList.add("hidden");
+                }
+            } catch (e) {
+                console.error(e);
+                loadingPanel.innerHTML = "<p class=\"hint\" style=\"margin:0;color:#f87171\">Could not load profile.</p>";
+            }
+        });
+
+        saveDisplayBtn.addEventListener("click", async () => {
+            hideMsg(profileMsg);
+            const user = auth.currentUser;
+            if (!user) return;
+
+            const name = normalizeDisplayName(displayNameInput.value);
+
+            saveDisplayBtn.disabled = true;
+            try {
+                const userRef = doc(db, "users", user.uid);
+                if (!name) {
+                    await updateDoc(userRef, { displayName: deleteField() });
+                    await updateProfile(user, { displayName: "" });
+                    displayNameInput.value = "";
+                    showMsg(
+                        profileMsg,
+                        "Cosmetic name cleared. Others will see your permanent handle until you set a display name again.",
+                        true
+                    );
+                } else {
+                    await updateDoc(userRef, { displayName: name });
+                    await updateProfile(user, { displayName: name });
+                    showMsg(profileMsg, "Display name saved. It will show on comments, publish, and your studio page.", true);
+                }
+            } catch (e) {
+                console.error(e);
+                showMsg(profileMsg, e?.message || "Could not save display name.", false);
+            } finally {
+                saveDisplayBtn.disabled = false;
+            }
+        });
+
+        savePasswordBtn.addEventListener("click", async () => {
+            hideMsg(passwordMsg);
+            const user = auth.currentUser;
+            if (!user || !user.email) {
+                showMsg(passwordMsg, "Email sign-in is required to change password.", false);
+                return;
+            }
+
+            const cur = currentPw.value;
+            const next = newPw.value;
+            const again = confirmPw.value;
+
+            if (!cur || !next) {
+                showMsg(passwordMsg, "Fill in all password fields.", false);
+                return;
+            }
+            if (next.length < 6) {
+                showMsg(passwordMsg, "New password must be at least 6 characters.", false);
+                return;
+            }
+            if (next !== again) {
+                showMsg(passwordMsg, "New password and confirmation do not match.", false);
+                return;
+            }
+
+            savePasswordBtn.disabled = true;
+            try {
+                const cred = EmailAuthProvider.credential(user.email, cur);
+                await reauthenticateWithCredential(user, cred);
+                await updatePassword(user, next);
+                currentPw.value = "";
+                newPw.value = "";
+                confirmPw.value = "";
+                showMsg(passwordMsg, "Password updated successfully.", true);
+            } catch (e) {
+                console.error(e);
+                const code = e?.code || "";
+                let msg = e?.message || "Could not update password.";
+                if (code === "auth/wrong-password" || code === "auth/invalid-credential") {
+                    msg = "Current password is incorrect.";
+                } else if (code === "auth/weak-password") {
+                    msg = "New password is too weak.";
+                }
+                showMsg(passwordMsg, msg, false);
+            } finally {
+                savePasswordBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

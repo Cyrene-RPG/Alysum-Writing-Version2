@@ -454,6 +454,7 @@
             query,
             where
         } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { publicDisplayNameFromUserData } from "./js/profile-display.js?v=1";
 
         const authorStatus = document.getElementById("authorStatus");
         const totalBooks = document.getElementById("totalBooks");
@@ -537,7 +538,10 @@
                 const data = docSnap.data() || {};
                 return {
                     id: docSnap.id,
-                    username: safeString(data.username || data.displayName || data.name, "reader"),
+                    displayLabel: safeString(
+                        data.displayName || data.username || data.name,
+                        "reader"
+                    ),
                     text: safeString(data.text, ""),
                     createdAt: data.createdAt || 0
                 };
@@ -580,7 +584,7 @@
                 const commentsHtml = book.recentComments.length
                     ? book.recentComments.map(comment => `
                         <div class="comment-item">
-                            <div class="comment-meta">@${escapeHtml(comment.username)} - ${escapeHtml(formatDate(comment.createdAt))}</div>
+                            <div class="comment-meta">${escapeHtml(comment.displayLabel)} — ${escapeHtml(formatDate(comment.createdAt))}</div>
                             <div class="comment-text">${escapeHtml(comment.text || "(empty comment)")}</div>
                         </div>
                     `).join("")
@@ -628,8 +632,10 @@
 
             try {
                 const userSnap = await getDoc(doc(db, "users", currentUser.uid));
-                const username = userSnap.exists() ? safeString(userSnap.data().username, "author") : "author";
-                authorStatus.textContent = "@" + username;
+                const label = userSnap.exists()
+                    ? publicDisplayNameFromUserData(userSnap.data() || {})
+                    : "author";
+                authorStatus.textContent = label;
 
                 const ownedBooks = await loadPublishedBooks(currentUser.uid);
                 const enriched = await Promise.all(ownedBooks.map(async book => {

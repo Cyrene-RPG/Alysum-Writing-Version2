@@ -1291,8 +1291,8 @@
       if (!user) return fallback;
 
       const rawUsername =
-        user.username ||
         user.displayName ||
+        user.username ||
         user.handle ||
         user.penName ||
         user.name ||
@@ -1329,7 +1329,7 @@
           const item = document.createElement("div");
           item.className = "comment-item";
           item.innerHTML = `
-            <div class="comment-user">@${getBestUsername(comment)}</div>
+            <div class="comment-user">${getBestUsername(comment)}</div>
             <div class="comment-text">${safeString(comment.text, "")}</div>
           `;
           commentList.appendChild(item);
@@ -1363,15 +1363,19 @@ async function postComment() {
       throw new Error("User profile not found.");
     }
 
-    const username = userSnap.data()?.username?.trim();
+    const profile = userSnap.data() || {};
+    const handle = String(profile.username || "").trim();
+    const displayName =
+      String(profile.displayName || "").trim() || handle;
 
-    if (!username) {
+    if (!handle) {
       throw new Error("Username not found.");
     }
 
     await addDoc(collection(db, "library", bookId, "comments"), {
       uid: currentUser.uid,
-      username,
+      username: handle,
+      displayName,
       text,
       createdAt: Date.now()
     });

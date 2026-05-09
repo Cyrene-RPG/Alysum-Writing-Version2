@@ -413,6 +413,7 @@
         import {
             onAuthStateChanged
         } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import { publicDisplayNameFromUserData } from "./js/profile-display.js?v=1";
 
         const navButtons = document.querySelectorAll(".nav-btn");
         const searchInput = document.getElementById("searchInput");
@@ -438,11 +439,11 @@
 
                 try {
                     const snap = await getDoc(doc(db, "users", user.uid));
-                    const username = snap.exists()
-                        ? snap.data().username || "user"
+                    const label = snap.exists()
+                        ? publicDisplayNameFromUserData(snap.data() || {})
                         : "user";
 
-                    userStatus.textContent = "@" + username;
+                    userStatus.textContent = label;
                 } catch (e) {
                     console.error(e);
                     userStatus.textContent = "Logged in";
