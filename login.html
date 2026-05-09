@@ -210,6 +210,8 @@ import {
     sendPasswordResetEmail,
     GoogleAuthProvider,
     signInWithPopup,
+    signInWithRedirect,
+    getRedirectResult,
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 const errorEl = document.getElementById("error-msg");
@@ -271,9 +273,15 @@ function authMessage(code) {
             return "Your browser blocked the sign-in popup. Allow popups for this site or try again.";
         case "auth/account-exists-with-different-credential":
             return "This email is already registered with a different sign-in method. Try email and password, or the provider you used before.";
+        case "auth/web-storage-unsupported":
+            return "This browser blocks storage needed for Google sign-in. Try a normal (non-private) window or another browser.";
+        case "auth/internal-error":
+            return "Google sign-in had an internal error. Check Google Cloud → APIs & Services → OAuth consent screen for this project, then try again.";
+        case "auth/unauthorized-domain":
+            return "This website’s domain is not allowed for sign-in yet. In Firebase Console go to Authentication → Settings → Authorized domains, and add the exact host from your address bar (for example www.yoursite.com or your-preview-url.web.app).";
         case "auth/unauthorized-continue-uri":
         case "auth/invalid-continue-uri":
-            return "This site’s address is not allowed for password reset. In Firebase Console → Authentication → Settings, add this exact domain to Authorized domains (include localhost if you test locally).";
+            return "This site’s address is not allowed for that link. In Firebase Console → Authentication → Settings, add this exact domain under Authorized domains (include localhost if you test locally).";
         case "auth/missing-continue-uri":
             return "Password reset could not build a valid return link. Open the login page over http(s), not as a saved file.";
         default:
@@ -341,6 +349,20 @@ function redirectAfterLogin() {
     window.location.href = safe;
 }
 
+/** After signInWithRedirect, Firebase sends the user back here; finish sign-in. */
+getRedirectResult(auth)
+    .then((result) => {
+        if (result && result.user) {
+            redirectAfterLogin();
+        }
+    })
+    .catch((err) => {
+        const code = err && err.code;
+        if (!code) return;
+        const friendly = authMessage(code) || (err && err.message);
+        if (friendly) showError(friendly);
+    });
+
 let googleLoginInFlight = false;
 
 googleBtn.addEventListener("click", async () => {
@@ -359,6 +381,14 @@ googleBtn.addEventListener("click", async () => {
         const code = err && err.code;
         if (code === "auth/popup-closed-by-user" || code === "auth/cancelled-popup-request") {
             clearError();
+        } else if (code === "auth/popup-blocked") {
+            clearError();
+            try {
+                await signInWithRedirect(auth, googleProvider);
+            } catch (e2) {
+                const c2 = e2 && e2.code;
+                showError(authMessage(c2) || (e2 && e2.message) || "Could not start Google sign-in.");
+            }
         } else {
             const friendly = authMessage(code) || (err && err.message) || "Google sign-in failed.";
             showError(friendly);
