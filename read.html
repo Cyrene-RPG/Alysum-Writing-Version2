@@ -796,8 +796,12 @@
             <div class="chapter-meta" id="chapterMeta"></div>
           </div>
 
-          <div class="reader-body">
-            <div class="content" id="content"></div>
+          <div class="reader-chapter-wrap alysum-rw-wrap">
+            <div class="alysum-rw-sheet" id="readerWatermarkSheet" aria-hidden="true"></div>
+            <div class="reader-body alysum-rw-body">
+              <div class="content" id="content"></div>
+            </div>
+            <div class="alysum-rw-footer" id="readerWatermarkFooter"></div>
           </div>
         </div>
 
@@ -855,6 +859,8 @@
     } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
     import { writeBetaShelfEntryLocal } from "./js/beta-shelf-local.js?v=1";
     import { READER_HOME_URL } from "./js/account-mode.js";
+    import { installReaderCopyGuards } from "./js/reader-copy-guards.js?v=1";
+    import { applyReaderWatermark } from "./js/reader-watermark.js?v=1";
 
     const params = new URLSearchParams(window.location.search);
     const bookId = params.get("book");
@@ -937,6 +943,11 @@
     let isLoaded = false;
     let currentFontSize = 22;
     let hasLikedThisBook = false;
+    let readerWatermarkProfileUser = null;
+
+    installReaderCopyGuards(content, {
+      isActive: () => isLoaded && !!currentBook
+    });
 
     function safeString(value, fallback = "") {
       return typeof value === "string" ? value : fallback;
@@ -1377,10 +1388,48 @@
 
     }
 
+    function updateReaderWatermark() {
+      const sheet = document.getElementById("readerWatermarkSheet");
+      const footer = document.getElementById("readerWatermarkFooter");
+      if (!sheet || !footer) return;
+      if (!bookId || !currentBook) {
+        sheet.innerHTML = "";
+        footer.textContent = "";
+        return;
+      }
+      applyReaderWatermark(sheet, footer, {
+        bookId,
+        currentUser: currentUser || auth.currentUser,
+        profileUsername: readerWatermarkProfileUser
+      });
+    }
+
+    async function syncReaderWatermarkProfile() {
+      const u = currentUser || auth.currentUser;
+      if (!u?.uid) {
+        readerWatermarkProfileUser = null;
+        updateReaderWatermark();
+        return;
+      }
+      try {
+        const snap = await getDoc(doc(db, "users", u.uid));
+        if (snap.exists()) {
+          const p = snap.data() || {};
+          readerWatermarkProfileUser = String(p.username || "").trim() || null;
+        } else {
+          readerWatermarkProfileUser = null;
+        }
+      } catch {
+        readerWatermarkProfileUser = null;
+      }
+      updateReaderWatermark();
+    }
+
     async function loadBook() {
       if (!bookId) {
         showError("Missing book ID in URL.");
         topbarTitle.textContent = "Missing book";
+        updateReaderWatermark();
         return;
       }
 
@@ -1394,6 +1443,7 @@
           showError(`Story not found: ${bookId}`);
           topbarTitle.textContent = "Story not found";
           hideStatus();
+          updateReaderWatermark();
           return;
         }
 
@@ -1406,6 +1456,8 @@
           renderMeta();
           await loadLikeState();
           hideStatus();
+          updateReaderWatermark();
+          void syncReaderWatermarkProfile();
           return;
         }
 
@@ -1427,11 +1479,14 @@
           /* ignore */
         }
         void ensureBetaReadShelved();
+        updateReaderWatermark();
+        void syncReaderWatermarkProfile();
       } catch (error) {
         console.error(error);
         showError("Failed to load story.");
         topbarTitle.textContent = "Load error";
         hideStatus();
+        updateReaderWatermark();
       }
     }
 
@@ -1687,8 +1742,11 @@ async function postComment() {
 
       if (currentUser) {
         hideStatus();
+        void syncReaderWatermarkProfile();
       } else {
+        readerWatermarkProfileUser = null;
         showStatus("Read-only mode. Log in to leave comments or kudos.");
+        updateReaderWatermark();
       }
 
       if (!isLoaded) {

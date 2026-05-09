@@ -273,9 +273,13 @@
             color: var(--muted);
             font-weight: 700;
         }
-        #betaContent {
+        .beta-chapter-wrap {
             max-width: var(--doc-max);
             margin: 0 auto;
+        }
+        #betaContent {
+            max-width: none;
+            margin: 0;
             font-size: var(--font-size);
             line-height: var(--line-height);
             user-select: text;
@@ -779,7 +783,11 @@
                     <h1 id="chapterTitle">…</h1>
                     <div class="chapter-meta" id="chapterMeta"></div>
                 </div>
-                <div id="betaContent"></div>
+                <div class="beta-chapter-wrap alysum-rw-wrap">
+                    <div class="alysum-rw-sheet" id="betaWatermarkSheet" aria-hidden="true"></div>
+                    <div id="betaContent" class="alysum-rw-body"></div>
+                    <div class="alysum-rw-footer" id="betaWatermarkFooter"></div>
+                </div>
             </div>
 
             <aside class="rail" id="noteRail">
@@ -826,6 +834,8 @@
             arrayUnion
         } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
         import { writeBetaShelfEntryLocal } from "./js/beta-shelf-local.js?v=1";
+        import { installReaderCopyGuards } from "./js/reader-copy-guards.js?v=1";
+        import { applyReaderWatermark } from "./js/reader-watermark.js?v=1";
 
         const params = new URLSearchParams(window.location.search);
         const bookId = params.get("book");
@@ -854,6 +864,12 @@
         let currentUser = null;
         let currentBook = null;
         let currentChapterIndex = 0;
+        let readerWatermarkProfileUser = null;
+
+        installReaderCopyGuards(betaContent, {
+            isActive: () => !!currentBook,
+            allowTextSelection: true
+        });
         let notesUnsub = null;
         let selectionDebounceTimer = null;
         let shelfTouchTimer = null;
@@ -982,6 +998,42 @@
             return currentBook.chapters[currentChapterIndex] || currentBook.chapters[0];
         }
 
+        function updateBetaReaderWatermark() {
+            const sheet = document.getElementById("betaWatermarkSheet");
+            const footer = document.getElementById("betaWatermarkFooter");
+            if (!sheet || !footer) return;
+            if (!bookId || !currentBook) {
+                sheet.innerHTML = "";
+                footer.textContent = "";
+                return;
+            }
+            applyReaderWatermark(sheet, footer, {
+                bookId,
+                currentUser,
+                profileUsername: readerWatermarkProfileUser
+            });
+        }
+
+        async function syncBetaReaderWatermarkProfile() {
+            if (!currentUser?.uid) {
+                readerWatermarkProfileUser = null;
+                updateBetaReaderWatermark();
+                return;
+            }
+            try {
+                const snap = await getDoc(doc(db, "users", currentUser.uid));
+                if (snap.exists()) {
+                    const p = snap.data() || {};
+                    readerWatermarkProfileUser = String(p.username || "").trim() || null;
+                } else {
+                    readerWatermarkProfileUser = null;
+                }
+            } catch {
+                readerWatermarkProfileUser = null;
+            }
+            updateBetaReaderWatermark();
+        }
+
         function renderChapter() {
             if (!currentBook) return;
             const ch = currentChapter();
@@ -995,6 +1047,7 @@
             nextBtn.disabled = currentChapterIndex >= currentBook.chapters.length - 1;
             draftQuote.value = "";
             window.getSelection()?.removeAllRanges();
+            updateBetaReaderWatermark();
         }
 
         function showRail(msg, ok) {
@@ -1208,6 +1261,7 @@
 
                 currentChapterIndex = 0;
                 renderChapter();
+                void syncBetaReaderWatermarkProfile();
                 hideLoadingPanel();
                 mainLayout.classList.remove("hidden");
             } catch (e) {
