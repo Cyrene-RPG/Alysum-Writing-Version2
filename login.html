@@ -138,12 +138,12 @@
             background: #e2e8f0;
         }
 
-        .btn-google {
+        .btn-oauth {
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 10px;
-            margin-top: 0;
+            margin-top: 10px;
             background: #fff;
             color: #1e293b;
             border: 1px solid #e2e8f0;
@@ -151,11 +151,15 @@
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
         }
 
-        .btn-google svg {
+        .btn-oauth:first-of-type {
+            margin-top: 0;
+        }
+
+        .btn-oauth svg {
             flex-shrink: 0;
         }
 
-        .btn-google:disabled {
+        .btn-oauth:disabled {
             opacity: 0.65;
         }
 
@@ -176,7 +180,7 @@
 <div class="card">
     <h2>Welcome Back</h2>
 
-    <button type="button" id="google-btn" class="btn-google" aria-label="Sign in with Google">
+    <button type="button" id="google-btn" class="btn-oauth" aria-label="Sign in with Google">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="22" height="22" aria-hidden="true">
             <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/>
             <path fill="#FF3D00" d="m6.306 14.691 6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z"/>
@@ -274,9 +278,9 @@ function authMessage(code) {
         case "auth/account-exists-with-different-credential":
             return "This email is already registered with a different sign-in method. Try email and password, or the provider you used before.";
         case "auth/web-storage-unsupported":
-            return "This browser blocks storage needed for Google sign-in. Try a normal (non-private) window or another browser.";
+            return "This browser blocks storage needed for sign-in. Try a normal (non-private) window or another browser.";
         case "auth/internal-error":
-            return "Google sign-in had an internal error. Check Google Cloud → APIs & Services → OAuth consent screen for this project, then try again.";
+            return "Sign-in had an internal error. For Google, check OAuth consent in Google Cloud for this Firebase project.";
         case "auth/unauthorized-domain":
             return "This website’s domain is not allowed for sign-in yet. In Firebase Console go to Authentication → Settings → Authorized domains, and add the exact host from your address bar (for example www.yoursite.com or your-preview-url.web.app).";
         case "auth/unauthorized-continue-uri":
