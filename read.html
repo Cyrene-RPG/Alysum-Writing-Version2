@@ -143,6 +143,29 @@
       border-color: transparent;
     }
 
+    a.btn {
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    a.btn.primary:hover {
+      filter: brightness(1.06);
+    }
+
+    #betaReadTopBtn {
+      font-size: 13px;
+      padding: 9px 12px;
+    }
+
+    @media (max-width: 520px) {
+      #betaReadTopBtn {
+        padding: 8px 10px;
+        font-size: 12px;
+      }
+    }
+
     .page {
       width: 100%;
       max-width: var(--page-max);
@@ -643,6 +666,7 @@
     </div>
 
     <div class="topbar-right">
+      <a class="btn primary hidden" id="betaReadTopBtn" href="/beta-read.html">Beta reads</a>
       <button class="btn" id="themeBtn">Theme</button>
       <button class="btn" id="fontMinusBtn">A-</button>
       <button class="btn" id="fontPlusBtn">A+</button>
@@ -802,6 +826,12 @@
 
     const topbarTitle = document.getElementById("topbarTitle");
     const topbarSubtitle = document.getElementById("topbarSubtitle");
+    const betaReadTopBtn = document.getElementById("betaReadTopBtn");
+
+    if (betaReadTopBtn && bookId) {
+      betaReadTopBtn.href = `/beta-read.html?book=${encodeURIComponent(bookId)}`;
+      betaReadTopBtn.classList.remove("hidden");
+    }
 
     const statusBox = document.getElementById("statusBox");
     const errorBox = document.getElementById("errorBox");
