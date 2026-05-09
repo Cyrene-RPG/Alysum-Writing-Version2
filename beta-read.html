@@ -41,7 +41,7 @@
             --purple-dark: #5b21b6;
             --font-size: 20px;
             --line-height: 1.85;
-            --doc-max: 720px;
+            --doc-max: min(900px, 100%);
             --shadow: 0 16px 40px rgba(0,0,0,0.35);
         }
         html, body {
@@ -130,9 +130,12 @@
             font-weight: 700;
         }
         .wrap {
-            max-width: 1320px;
+            box-sizing: border-box;
+            width: 100%;
+            max-width: min(1840px, calc(100vw - 16px));
             margin: 0 auto;
-            padding: 16px 14px 56px;
+            /* Tighter left / looser right nudges the pair toward the left and gives the rail room to breathe */
+            padding: 16px clamp(16px, 3.5vw, 48px) 56px clamp(6px, 1.25vw, 16px);
         }
         .loading-panel {
             max-width: 520px;
@@ -171,8 +174,8 @@
         }
         .beta-layout {
             display: grid;
-            grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
-            gap: 20px;
+            grid-template-columns: minmax(0, 1fr) minmax(320px, clamp(360px, 38vw, 680px));
+            gap: clamp(14px, 2.2vw, 28px);
             align-items: start;
         }
         .doc-panel {
