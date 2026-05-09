@@ -223,8 +223,9 @@
             line-height: 1.5;
             padding: 12px 14px;
             border-radius: 14px;
-            background: color-mix(in srgb, var(--panel-2) 94%, var(--text) 3.5%);
-            border: 1px solid var(--border);
+            background:
+                linear-gradient(135deg, var(--theme-accent-soft-bg) 0%, color-mix(in srgb, var(--purple) 14%, transparent) 100%);
+            border: 1px solid color-mix(in srgb, var(--purple) 26%, var(--border));
         }
         .hint-bar .hint-icon {
             flex-shrink: 0;
@@ -235,8 +236,8 @@
             align-items: center;
             justify-content: center;
             font-size: 15px;
-            background: color-mix(in srgb, var(--panel) 88%, var(--text) 5%);
-            color: var(--theme-brand-kicker, #c4b5fd);
+            background: var(--accent-muted);
+            color: var(--theme-brand-kicker, #ddd6fe);
         }
         .nav-row {
             display: flex;
