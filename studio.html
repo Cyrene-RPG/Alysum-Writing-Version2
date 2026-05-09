@@ -1208,7 +1208,6 @@
             setDoc,
             collection,
             addDoc,
-            getDocs,
             onSnapshot
         } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
         import {
@@ -1285,6 +1284,7 @@
 
         let currentUser = null;
         let unsubDashNotifs = null;
+        let unsubBooks = null;
         let firstBookId = null;
         let firstBookData = null;
         /** Latest user profile fields used for daily goal (kept in sync after saves). */
@@ -1599,9 +1599,11 @@
             let progressTarget = nextBadge.target;
             let pct = Math.max(0, Math.min(100, Math.round((totalWords / progressTarget) * 100)));
 
-            badgeName.textContent = nextBadge.name;
-            badgeProgressText.textContent = `${Math.min(totalWords, progressTarget).toLocaleString()} / ${progressTarget.toLocaleString()}`;
-            badgeBar.style.width = pct + "%";
+            if (badgeName) badgeName.textContent = nextBadge.name;
+            if (badgeProgressText) {
+                badgeProgressText.textContent = `${Math.min(totalWords, progressTarget).toLocaleString()} / ${progressTarget.toLocaleString()}`;
+            }
+            if (badgeBar) badgeBar.style.width = pct + "%";
         }
 
         // Prompts: loaded from shared module `js/prompts-data.js`.
@@ -1710,12 +1712,11 @@
             }
         });
 
-        async function loadBooks(uid) {
+        function applyBooksSnapshot(snap) {
             bookList.innerHTML = "";
             firstBookId = null;
             firstBookData = null;
 
-            const snap = await getDocs(collection(db, "users", uid, "books"));
             let totalWords = 0;
 
             const rows = [];
@@ -1771,6 +1772,20 @@
             }
         }
 
+        function startBooksListener(uid) {
+            if (unsubBooks) {
+                unsubBooks();
+                unsubBooks = null;
+            }
+            unsubBooks = onSnapshot(
+                collection(db, "users", uid, "books"),
+                (snap) => applyBooksSnapshot(snap),
+                (err) => {
+                    console.warn("Studio books snapshot:", err);
+                }
+            );
+        }
+
         async function createBookNow() {
             if (!currentUser) return;
 
@@ -1795,7 +1810,7 @@
                     }
                 });
 
-                await loadBooks(currentUser.uid);
+                // Book list + badges refresh via `startBooksListener` snapshot.
             } catch (e) {
                 console.error(e);
                 alert(e.message);
@@ -1879,6 +1894,14 @@
 
         onAuthStateChanged(auth, async (user) => {
             if (!user) {
+                if (unsubDashNotifs) {
+                    unsubDashNotifs();
+                    unsubDashNotifs = null;
+                }
+                if (unsubBooks) {
+                    unsubBooks();
+                    unsubBooks = null;
+                }
                 status.textContent = "Not logged in";
                 window.location.href = "/login.html";
                 return;
@@ -1929,7 +1952,7 @@
                 }
                 streakEl.textContent = streak.toLocaleString();
 
-                await loadBooks(user.uid);
+                startBooksListener(user.uid);
                 startPromptSlideshow();
 
             } catch (e) {
