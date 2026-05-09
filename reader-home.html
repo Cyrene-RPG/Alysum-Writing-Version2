@@ -606,7 +606,7 @@
     <script type="module">
         import { auth, db } from "./firebase.js";
         import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-        import { doc, getDoc, setDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
         import { permanentHandleFromUserData, publicDisplayNameFromUserData } from "./js/profile-display.js?v=1";
         import {
             normalizeAccountType,
@@ -622,6 +622,10 @@
             return typeof value === "string" ? value : fallback;
         }
 
+        function safeObject(value, fallback = {}) {
+            return value && typeof value === "object" && !Array.isArray(value) ? value : fallback;
+        }
+
         function millisFromFirestore(ts) {
             if (ts && typeof ts.toMillis === "function") return ts.toMillis();
             return 0;
@@ -631,9 +635,9 @@
             if (!betaReadsGrid || !betaReadsEmpty || !betaReadsPanel) return;
             betaReadsGrid.innerHTML = "";
             try {
-                const snap = await getDocs(collection(db, "users", uid, "betaReads"));
-                const rows = [];
-                snap.forEach((d) => rows.push({ id: d.id, data: d.data() || {} }));
+                const uSnap = await getDoc(doc(db, "users", uid));
+                const shelf = uSnap.exists() ? safeObject(uSnap.data().betaReadShelf, {}) : {};
+                const rows = Object.keys(shelf).map((id) => ({ id, data: safeObject(shelf[id], {}) }));
                 rows.sort((a, b) => {
                     const tb =
                         millisFromFirestore(b.data.lastOpenedAt) ||
@@ -648,6 +652,8 @@
 
                 if (!rows.length) {
                     betaReadsEmpty.classList.remove("hidden");
+                    betaReadsEmpty.textContent =
+                        "Nothing on your beta shelf yet. Visit the Library, open a story, and it will appear here automatically.";
                     return;
                 }
                 betaReadsEmpty.classList.add("hidden");
@@ -671,7 +677,11 @@
                 console.error(e);
                 betaReadsPanel.classList.remove("hidden");
                 betaReadsEmpty.classList.remove("hidden");
-                betaReadsEmpty.textContent = "Could not load your beta shelf.";
+                const code = e && e.code;
+                betaReadsEmpty.textContent =
+                    code === "permission-denied"
+                        ? "Could not load your beta shelf (Firestore permission denied). Your rules must allow the signed-in user to read and update their own user document (users/{uid}), including the betaReadShelf field."
+                        : "Could not load your beta shelf.";
             }
         }
 

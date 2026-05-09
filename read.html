@@ -1344,18 +1344,23 @@
     async function ensureBetaReadShelved() {
       if (!currentUser || !bookId || !currentBook) return;
       try {
-        const ref = doc(db, "users", currentUser.uid, "betaReads", bookId);
-        await setDoc(
-          ref,
-          {
-            libraryBookId: bookId,
-            title: safeString(currentBook.title, "Untitled"),
-            author: safeString(currentBook.author, ""),
-            shelvedAt: serverTimestamp(),
-            lastOpenedAt: serverTimestamp()
-          },
-          { merge: true }
-        );
+        const userRef = doc(db, "users", currentUser.uid);
+        const uSnap = await getDoc(userRef);
+        if (!uSnap.exists()) return;
+
+        const prevShelf = safeObject(uSnap.data().betaReadShelf, {});
+        const prevEntry = safeObject(prevShelf[bookId], {});
+        const entry = {
+          libraryBookId: bookId,
+          title: safeString(currentBook.title, "Untitled"),
+          author: safeString(currentBook.author, ""),
+          lastOpenedAt: serverTimestamp(),
+          shelvedAt: prevEntry.shelvedAt || serverTimestamp()
+        };
+
+        await updateDoc(userRef, {
+          [`betaReadShelf.${bookId}`]: entry
+        });
       } catch (err) {
         console.warn("Could not add this story to your beta reads shelf.", err);
       }

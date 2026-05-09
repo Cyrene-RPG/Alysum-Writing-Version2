@@ -324,15 +324,11 @@
         import {
             doc,
             getDoc,
-            setDoc,
-            collection,
-            addDoc,
-            query,
-            orderBy,
+            updateDoc,
             onSnapshot,
-            serverTimestamp
+            serverTimestamp,
+            arrayUnion
         } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-        import { READER_HOME_URL } from "./js/account-mode.js?v=1";
 
         const params = new URLSearchParams(window.location.search);
         const bookId = params.get("book");
@@ -485,12 +481,22 @@
         }
 
         function formatNoteTime(ts) {
-            if (!ts || typeof ts.toDate !== "function") return "";
-            try {
-                return ts.toDate().toLocaleString();
-            } catch {
-                return "";
+            if (ts == null) return "";
+            if (typeof ts === "number" && Number.isFinite(ts)) {
+                try {
+                    return new Date(ts).toLocaleString();
+                } catch {
+                    return "";
+                }
             }
+            if (typeof ts.toDate === "function") {
+                try {
+                    return ts.toDate().toLocaleString();
+                } catch {
+                    return "";
+                }
+            }
+            return "";
         }
 
         function subscribeNotes(uid) {
@@ -498,33 +504,40 @@
                 notesUnsub();
                 notesUnsub = null;
             }
-            const q = query(
-                collection(db, "users", uid, "betaReads", bookId, "notes"),
-                orderBy("createdAt", "desc")
-            );
+            const userRef = doc(db, "users", uid);
             notesUnsub = onSnapshot(
-                q,
+                userRef,
                 (snap) => {
                     notesList.innerHTML = "";
-                    if (snap.empty) {
+                    if (!snap.exists()) {
                         const p = document.createElement("p");
                         p.style.cssText = "font-size:13px;color:var(--muted);font-weight:700;margin:0";
                         p.textContent = "No notes yet. Highlight a passage to add one.";
                         notesList.appendChild(p);
                         return;
                     }
-                    snap.forEach((d) => {
-                        const n = d.data() || {};
+                    const map = safeObject(snap.data().betaReadNotesByBook, {});
+                    const list = Array.isArray(map[bookId]) ? map[bookId] : [];
+                    const sorted = list.slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+                    if (!sorted.length) {
+                        const p = document.createElement("p");
+                        p.style.cssText = "font-size:13px;color:var(--muted);font-weight:700;margin:0";
+                        p.textContent = "No notes yet. Highlight a passage to add one.";
+                        notesList.appendChild(p);
+                        return;
+                    }
+                    sorted.forEach((n) => {
                         const card = document.createElement("div");
                         card.className = "note-card";
                         const quote = escapeHtml(safeString(n.quote, ""));
                         const body = escapeHtml(safeString(n.comment, ""));
                         const ch = escapeHtml(safeString(n.chapterTitle, `Chapter ${(n.chapterIndex ?? 0) + 1}`));
+                        const when = escapeHtml(formatNoteTime(n.createdAt));
                         card.innerHTML = `
                             <div class="m">${ch}</div>
                             <div class="q">${quote}</div>
                             <div class="c">${body}</div>
-                            <div class="m">${formatNoteTime(n.createdAt)}</div>
+                            <div class="m">${when}</div>
                         `;
                         notesList.appendChild(card);
                     });
@@ -537,18 +550,21 @@
         }
 
         async function touchShelf(uid) {
-            const ref = doc(db, "users", uid, "betaReads", bookId);
-            const snap = await getDoc(ref);
-            const base = {
-                libraryBookId: bookId,
-                title: safeString(currentBook.title, "Untitled"),
-                author: safeString(currentBook.author, ""),
-                lastOpenedAt: serverTimestamp()
-            };
-            if (!snap.exists()) {
-                base.shelvedAt = serverTimestamp();
-            }
-            await setDoc(ref, base, { merge: true });
+            const userRef = doc(db, "users", uid);
+            const uSnap = await getDoc(userRef);
+            if (!uSnap.exists()) return;
+
+            const prevShelf = safeObject(uSnap.data().betaReadShelf, {});
+            const prevEntry = safeObject(prevShelf[bookId], {});
+            await updateDoc(userRef, {
+                [`betaReadShelf.${bookId}`]: {
+                    libraryBookId: bookId,
+                    title: safeString(currentBook.title, "Untitled"),
+                    author: safeString(currentBook.author, ""),
+                    lastOpenedAt: serverTimestamp(),
+                    shelvedAt: prevEntry.shelvedAt || serverTimestamp()
+                }
+            });
         }
 
         async function initForUser(user) {
@@ -620,13 +636,21 @@
             saveNoteBtn.disabled = true;
             try {
                 const ch = currentChapter();
-                await addDoc(collection(db, "users", currentUser.uid, "betaReads", bookId, "notes"), {
+                const noteId =
+                    typeof crypto !== "undefined" && crypto.randomUUID
+                        ? crypto.randomUUID()
+                        : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+                const note = {
+                    id: noteId,
                     quote: quote.slice(0, 2000),
                     comment: comment.slice(0, 8000),
                     chapterIndex: currentChapterIndex,
                     chapterId: safeString(ch.id, ""),
                     chapterTitle: safeString(ch.title, ""),
-                    createdAt: serverTimestamp()
+                    createdAt: Date.now()
+                };
+                await updateDoc(doc(db, "users", currentUser.uid), {
+                    [`betaReadNotesByBook.${bookId}`]: arrayUnion(note)
                 });
                 draftComment.value = "";
                 draftQuote.value = "";
