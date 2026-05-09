@@ -554,7 +554,7 @@
         async function touchShelf(uid) {
             const title = safeString(currentBook.title, "Untitled");
             const author = safeString(currentBook.author, "");
-            writeBetaShelfEntryLocal(bookId, { title, author });
+            writeBetaShelfEntryLocal(uid, bookId, { title, author });
 
             const userRef = doc(db, "users", uid);
             const uSnap = await getDoc(userRef);

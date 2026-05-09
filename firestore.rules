@@ -1,0 +1,82 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isUser(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+
+    // --- User profile & private subcollections ---
+    match /users/{userId} {
+      allow read: if true;
+      allow create: if isUser(userId);
+      allow update, delete: if isUser(userId);
+
+      match /books/{bookId} {
+        allow read, write: if isUser(userId);
+      }
+
+      match /promptEntries/{entryId} {
+        allow read, write: if isUser(userId);
+      }
+
+      match /notebookVault/{docId} {
+        allow read, write: if isUser(userId);
+      }
+    }
+
+    // --- Published library listing & engagement ---
+    match /library/{bookId} {
+      allow read: if true;
+
+      allow create: if signedIn()
+        && request.resource.data.ownerUid == request.auth.uid;
+
+      allow delete: if signedIn()
+        && resource.data.ownerUid == request.auth.uid;
+
+      // Owner can update any fields on their listing.
+      allow update: if signedIn()
+        && resource.data.ownerUid == request.auth.uid;
+
+      // Readers can only adjust aggregate counters; owner uid must stay the same.
+      allow update: if signedIn()
+        && resource.data.ownerUid == request.resource.data.ownerUid
+        && request.resource.data.diff(resource.data).changedKeys().hasOnly(['views', 'likes']);
+
+      match /reads/{readId} {
+        allow read: if true;
+        // Anonymous view tracking (read.html) + optional signed uid on the row.
+        allow create: if request.resource.data.keys().hasAll(['readerId', 'createdAt'])
+          && request.resource.data.readerId is string
+          && (
+            request.auth == null
+              ? (!('uid' in request.resource.data) || request.resource.data.uid == null)
+              : (!('uid' in request.resource.data)
+                || request.resource.data.uid == null
+                || request.resource.data.uid == request.auth.uid)
+          );
+      }
+
+      match /likes/{likerId} {
+        allow read: if true;
+        allow create: if signedIn()
+          && likerId == request.auth.uid
+          && request.resource.data.uid == request.auth.uid;
+        allow delete: if signedIn() && likerId == request.auth.uid;
+      }
+
+      match /comments/{commentId} {
+        allow read: if true;
+        allow create: if signedIn()
+          && request.resource.data.uid == request.auth.uid;
+        allow update, delete: if signedIn()
+          && resource.data.uid == request.auth.uid;
+      }
+    }
+  }
+}

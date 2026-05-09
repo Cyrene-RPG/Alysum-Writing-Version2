@@ -1000,10 +1000,11 @@
     let currentReadProfileTimer = null;
 
     async function syncProfileCurrentReadNow() {
-      if (!currentUser || !bookId || !currentBook || !currentBook.chapters?.length) return;
+      const user = currentUser || auth.currentUser;
+      if (!user || !bookId || !currentBook || !currentBook.chapters?.length) return;
       try {
         const chapter = currentChapter();
-        await updateDoc(doc(db, "users", currentUser.uid), {
+        await updateDoc(doc(db, "users", user.uid), {
           currentReadBookId: bookId,
           currentReadChapterIndex: currentChapterIndex,
           currentReadChapterTitle: safeString(chapter.title, ""),
@@ -1017,7 +1018,7 @@
     }
 
     function scheduleProfileCurrentRead() {
-      if (!currentUser || !bookId || !currentBook) return;
+      if (!(currentUser || auth.currentUser) || !bookId || !currentBook) return;
       clearTimeout(currentReadProfileTimer);
       currentReadProfileTimer = setTimeout(() => {
         syncProfileCurrentReadNow();
@@ -1333,6 +1334,13 @@
         await loadLikeState();
         hideStatus();
         isLoaded = true;
+        try {
+          if (typeof auth.authStateReady === "function") {
+            await auth.authStateReady();
+          }
+        } catch (e) {
+          /* ignore */
+        }
         void ensureBetaReadShelved();
       } catch (error) {
         console.error(error);
@@ -1343,14 +1351,15 @@
     }
 
     async function ensureBetaReadShelved() {
-      if (!currentUser || !bookId || !currentBook) return;
+      const user = currentUser || auth.currentUser;
+      if (!user || !bookId || !currentBook) return;
 
       const title = safeString(currentBook.title, "Untitled");
       const author = safeString(currentBook.author, "");
-      writeBetaShelfEntryLocal(bookId, { title, author });
+      writeBetaShelfEntryLocal(user.uid, bookId, { title, author });
 
       try {
-        const userRef = doc(db, "users", currentUser.uid);
+        const userRef = doc(db, "users", user.uid);
         const uSnap = await getDoc(userRef);
 
         const buildEntry = (keepShelvedAt) => ({
@@ -1572,7 +1581,8 @@ async function postComment() {
         loadBook();
       } else {
         loadLikeState();
-        if (currentUser && bookId && currentBook) {
+        const u = currentUser || auth.currentUser;
+        if (u && bookId && currentBook) {
           syncProfileCurrentReadNow();
           void ensureBetaReadShelved();
         }

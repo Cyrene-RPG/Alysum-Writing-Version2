@@ -645,9 +645,12 @@
         }
 
         async function loadBetaReads(uid) {
-            if (!betaReadsGrid || !betaReadsEmpty || !betaReadsPanel) return;
-            betaReadsGrid.innerHTML = "";
-            const localShelf = readBetaShelfFromLocalStorage();
+            const grid = document.getElementById("betaReadsGrid");
+            const empty = document.getElementById("betaReadsEmpty");
+            const panel = document.getElementById("betaReadsPanel");
+            if (!grid || !empty || !panel || !uid) return;
+            grid.innerHTML = "";
+            const localShelf = readBetaShelfFromLocalStorage(uid);
             let cloudShelf = {};
             try {
                 const uSnap = await getDoc(doc(db, "users", uid));
@@ -660,15 +663,15 @@
             const rows = Object.keys(merged).map((id) => ({ id, data: safeObject(merged[id], {}) }));
             rows.sort((a, b) => shelfEntryMillis(b.data) - shelfEntryMillis(a.data));
 
-            betaReadsPanel.classList.remove("hidden");
+            panel.classList.remove("hidden");
 
             if (!rows.length) {
-                betaReadsEmpty.classList.remove("hidden");
-                betaReadsEmpty.textContent =
+                empty.classList.remove("hidden");
+                empty.textContent =
                     "Nothing on your beta shelf yet. Visit the Library, open a story, and it will appear here automatically.";
                 return;
             }
-            betaReadsEmpty.classList.add("hidden");
+            empty.classList.add("hidden");
 
             rows.forEach((row) => {
                 const title = safeString(row.data.title, "Untitled");
@@ -683,7 +686,7 @@
                 `;
                 a.querySelector(".t").textContent = title;
                 a.querySelector(".a").textContent = author ? "@" + author : "";
-                betaReadsGrid.appendChild(a);
+                grid.appendChild(a);
             });
         }
 
@@ -780,9 +783,6 @@
         const currentReadTitle = document.getElementById("currentReadTitle");
         const currentReadMeta = document.getElementById("currentReadMeta");
         const currentReadLink = document.getElementById("currentReadLink");
-        const betaReadsPanel = document.getElementById("betaReadsPanel");
-        const betaReadsGrid = document.getElementById("betaReadsGrid");
-        const betaReadsEmpty = document.getElementById("betaReadsEmpty");
 
         function openMenu() {
             sideMenu.classList.add("open");
@@ -884,6 +884,12 @@
                 console.error(e);
                 loadingMsg.textContent = "Could not load your profile. Try refreshing.";
             }
+        });
+
+        document.addEventListener("visibilitychange", () => {
+            if (document.visibilityState !== "visible") return;
+            const u = auth.currentUser;
+            if (u) void loadBetaReads(u.uid);
         });
     </script>
 </body>
