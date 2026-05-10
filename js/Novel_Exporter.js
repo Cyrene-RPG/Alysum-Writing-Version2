@@ -1464,9 +1464,90 @@ function cloneExportPageShell(mount) {
 }
 
 /**
- * Rasterize each preview page (same HTML as `buildPreviewPages`) at trim size and open the resulting
- * multi-page PDF in a new tab using the browser's built-in PDF viewer. Falls back to a download if the
- * popup is blocked.
+ * Full-screen overlay with the browser PDF viewer (iframe) so export is never “behind” another tab.
+ * @param {string} blobUrl
+ * @param {string} filename
+ */
+function showPdfResultOverlay(blobUrl, filename) {
+    const existing = document.getElementById("nePdfResultOverlay");
+    if (existing) {
+        const prev = existing.querySelector("iframe");
+        if (prev?.src?.startsWith("blob:")) URL.revokeObjectURL(prev.src);
+        existing.remove();
+    }
+
+    const prevHtmlOverflow = document.documentElement.style.overflow;
+    const prevBodyOverflow = document.body.style.overflow;
+    document.documentElement.style.overflow = "hidden";
+    document.body.style.overflow = "hidden";
+
+    const root = document.createElement("div");
+    root.id = "nePdfResultOverlay";
+    root.className = "ne-pdf-overlay";
+    root.setAttribute("role", "dialog");
+    root.setAttribute("aria-modal", "true");
+    root.setAttribute("aria-label", "Exported PDF");
+
+    const toolbar = document.createElement("div");
+    toolbar.className = "ne-pdf-overlay-toolbar";
+
+    const titleEl = document.createElement("span");
+    titleEl.className = "ne-pdf-overlay-title";
+    titleEl.textContent = filename;
+    titleEl.title = filename;
+
+    const actions = document.createElement("div");
+    actions.className = "ne-pdf-overlay-actions";
+
+    const dl = document.createElement("a");
+    dl.className = "ne-bar-btn ne-bar-btn-back";
+    dl.href = blobUrl;
+    dl.download = filename;
+    dl.textContent = "Download";
+
+    const closeBtn = document.createElement("button");
+    closeBtn.type = "button";
+    closeBtn.className = "ne-bar-btn ne-bar-btn-export";
+    closeBtn.textContent = "Close";
+
+    const frame = document.createElement("iframe");
+    frame.className = "ne-pdf-overlay-frame";
+    frame.title = "Exported PDF";
+    frame.src = blobUrl;
+
+    const closeOverlay = () => {
+        document.removeEventListener("keydown", onKeydown, true);
+        URL.revokeObjectURL(blobUrl);
+        document.documentElement.style.overflow = prevHtmlOverflow;
+        document.body.style.overflow = prevBodyOverflow;
+        root.remove();
+    };
+
+    /** @param {KeyboardEvent} ev */
+    const onKeydown = ev => {
+        if (ev.key === "Escape") {
+            ev.preventDefault();
+            closeOverlay();
+        }
+    };
+    document.addEventListener("keydown", onKeydown, true);
+
+    closeBtn.addEventListener("click", closeOverlay);
+
+    actions.appendChild(dl);
+    actions.appendChild(closeBtn);
+    toolbar.appendChild(titleEl);
+    toolbar.appendChild(actions);
+    root.appendChild(toolbar);
+    root.appendChild(frame);
+    document.body.appendChild(root);
+
+    closeBtn.focus();
+}
+
+/**
+ * Rasterize each preview page (same HTML as `buildPreviewPages`) at trim size, then show the PDF
+ * full-screen on this page (browser PDF UI in an iframe). Avoids background tabs / silent downloads.
  */
 async function exportManuscriptPdf() {
     const btn = document.getElementById("neExportPdfBtn");
@@ -1486,29 +1567,6 @@ async function exportManuscriptPdf() {
     if (typeof h2c !== "function" || !jspdfNs?.jsPDF) {
         alert("PDF libraries did not load. Check your network connection and try again.");
         return;
-    }
-
-    /* Open a placeholder tab synchronously so the popup is tied to the user click and not blocked. */
-    const previewWin = window.open("", "_blank");
-    if (previewWin && previewWin.document) {
-        try {
-            previewWin.document.open();
-            previewWin.document.write(
-                "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><title>Generating PDF…</title>" +
-                "<style>html,body{margin:0;height:100%;background:#0b1220;color:#e5e7eb;" +
-                "font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}" +
-                ".wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;" +
-                "height:100%;gap:14px;}" +
-                ".dot{width:10px;height:10px;border-radius:50%;background:#7c3aed;" +
-                "animation:pulse 1s ease-in-out infinite;}" +
-                "@keyframes pulse{0%,100%{transform:scale(0.7);opacity:0.5;}50%{transform:scale(1.2);opacity:1;}}" +
-                "</style></head><body><div class=\"wrap\"><div class=\"dot\"></div>" +
-                "<div>Generating your PDF…</div></div></body></html>"
-            );
-            previewWin.document.close();
-        } catch (_) {
-            /* ignore — placeholder is best-effort. */
-        }
     }
 
     const label = (btn?.textContent && btn.textContent.trim()) || "Export PDF";
@@ -1583,28 +1641,14 @@ async function exportManuscriptPdf() {
         const base = slugForPdfFilename(inputs.title || loadedBook.title || "manuscript");
         const filename = `${base}.pdf`;
 
-        const blob = pdf.output("blob");
-        const blobUrl = URL.createObjectURL(blob);
-
-        if (previewWin && !previewWin.closed) {
-            try {
-                previewWin.document.title = filename;
-            } catch (_) {
-                /* cross-origin once the PDF is loaded — title rename is just a nicety. */
-            }
-            previewWin.location.replace(blobUrl);
-            /* Revoke the URL after the viewer has had time to fetch it. */
-            setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
-        } else {
-            /* Popup blocked — fall back to a normal download so the user still gets the file. */
-            URL.revokeObjectURL(blobUrl);
-            pdf.save(filename);
+        let blob = pdf.output("blob");
+        if (!blob.type || blob.type === "application/octet-stream") {
+            blob = new Blob([blob], { type: "application/pdf" });
         }
+        const blobUrl = URL.createObjectURL(blob);
+        showPdfResultOverlay(blobUrl, filename);
     } catch (err) {
         console.error(err);
-        if (previewWin && !previewWin.closed) {
-            try { previewWin.close(); } catch (_) { /* noop */ }
-        }
         const msg = err && typeof err === "object" && "message" in err ? String(err.message) : String(err);
         alert(msg || "Could not export PDF.");
     } finally {
