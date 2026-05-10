@@ -1464,7 +1464,9 @@ function cloneExportPageShell(mount) {
 }
 
 /**
- * Rasterize each preview page (same HTML as `buildPreviewPages`) at trim size and save a multi-page PDF locally.
+ * Rasterize each preview page (same HTML as `buildPreviewPages`) at trim size and open the resulting
+ * multi-page PDF in a new tab using the browser's built-in PDF viewer. Falls back to a download if the
+ * popup is blocked.
  */
 async function exportManuscriptPdf() {
     const btn = document.getElementById("neExportPdfBtn");
@@ -1484,6 +1486,29 @@ async function exportManuscriptPdf() {
     if (typeof h2c !== "function" || !jspdfNs?.jsPDF) {
         alert("PDF libraries did not load. Check your network connection and try again.");
         return;
+    }
+
+    /* Open a placeholder tab synchronously so the popup is tied to the user click and not blocked. */
+    const previewWin = window.open("", "_blank");
+    if (previewWin && previewWin.document) {
+        try {
+            previewWin.document.open();
+            previewWin.document.write(
+                "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><title>Generating PDF…</title>" +
+                "<style>html,body{margin:0;height:100%;background:#0b1220;color:#e5e7eb;" +
+                "font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}" +
+                ".wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;" +
+                "height:100%;gap:14px;}" +
+                ".dot{width:10px;height:10px;border-radius:50%;background:#7c3aed;" +
+                "animation:pulse 1s ease-in-out infinite;}" +
+                "@keyframes pulse{0%,100%{transform:scale(0.7);opacity:0.5;}50%{transform:scale(1.2);opacity:1;}}" +
+                "</style></head><body><div class=\"wrap\"><div class=\"dot\"></div>" +
+                "<div>Generating your PDF…</div></div></body></html>"
+            );
+            previewWin.document.close();
+        } catch (_) {
+            /* ignore — placeholder is best-effort. */
+        }
     }
 
     const label = (btn?.textContent && btn.textContent.trim()) || "Export PDF";
@@ -1556,9 +1581,30 @@ async function exportManuscriptPdf() {
 
         const inputs = currentPreviewInputs();
         const base = slugForPdfFilename(inputs.title || loadedBook.title || "manuscript");
-        pdf.save(`${base}.pdf`);
+        const filename = `${base}.pdf`;
+
+        const blob = pdf.output("blob");
+        const blobUrl = URL.createObjectURL(blob);
+
+        if (previewWin && !previewWin.closed) {
+            try {
+                previewWin.document.title = filename;
+            } catch (_) {
+                /* cross-origin once the PDF is loaded — title rename is just a nicety. */
+            }
+            previewWin.location.replace(blobUrl);
+            /* Revoke the URL after the viewer has had time to fetch it. */
+            setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+        } else {
+            /* Popup blocked — fall back to a normal download so the user still gets the file. */
+            URL.revokeObjectURL(blobUrl);
+            pdf.save(filename);
+        }
     } catch (err) {
         console.error(err);
+        if (previewWin && !previewWin.closed) {
+            try { previewWin.close(); } catch (_) { /* noop */ }
+        }
         const msg = err && typeof err === "object" && "message" in err ? String(err.message) : String(err);
         alert(msg || "Could not export PDF.");
     } finally {
