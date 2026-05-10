@@ -586,8 +586,8 @@ function measureChapterSliceOverflow(includeHead, headFragmentHtml, bodyNodes, l
 
     const ms = document.createElement("div");
     ms.className = "ne-preview-page-frame ne-preview-manuscript";
-    /* Omit padding — must match `.ne-preview-scroll > .ne-preview-page-frame` bottom gutter
-     * or pagination fits one extra line and the last row is clipped by overflow:hidden. */
+    /* No extra inline padding — pagination uses the same stylesheet gutter as the live preview
+     * (see `.ne-preview-scroll > .ne-preview-page-frame` padding-bottom). */
     ms.style.cssText = [
         `font-family:${bodyFont}`,
         `font-size:${bodyPt}pt`,
@@ -1464,90 +1464,80 @@ function cloneExportPageShell(mount) {
 }
 
 /**
- * Full-screen overlay with the browser PDF viewer (iframe) so export is never “behind” another tab.
+ * Build the HTML for the new export tab — top bar (filename + Download) plus a full-bleed iframe that
+ * loads the generated PDF via a blob URL (browser uses its own native PDF viewer inside the frame).
  * @param {string} blobUrl
  * @param {string} filename
  */
-function showPdfResultOverlay(blobUrl, filename) {
-    const existing = document.getElementById("nePdfResultOverlay");
-    if (existing) {
-        const prev = existing.querySelector("iframe");
-        if (prev?.src?.startsWith("blob:")) URL.revokeObjectURL(prev.src);
-        existing.remove();
-    }
-
-    const prevHtmlOverflow = document.documentElement.style.overflow;
-    const prevBodyOverflow = document.body.style.overflow;
-    document.documentElement.style.overflow = "hidden";
-    document.body.style.overflow = "hidden";
-
-    const root = document.createElement("div");
-    root.id = "nePdfResultOverlay";
-    root.className = "ne-pdf-overlay";
-    root.setAttribute("role", "dialog");
-    root.setAttribute("aria-modal", "true");
-    root.setAttribute("aria-label", "Exported PDF");
-
-    const toolbar = document.createElement("div");
-    toolbar.className = "ne-pdf-overlay-toolbar";
-
-    const titleEl = document.createElement("span");
-    titleEl.className = "ne-pdf-overlay-title";
-    titleEl.textContent = filename;
-    titleEl.title = filename;
-
-    const actions = document.createElement("div");
-    actions.className = "ne-pdf-overlay-actions";
-
-    const dl = document.createElement("a");
-    dl.className = "ne-bar-btn ne-bar-btn-back";
-    dl.href = blobUrl;
-    dl.download = filename;
-    dl.textContent = "Download";
-
-    const closeBtn = document.createElement("button");
-    closeBtn.type = "button";
-    closeBtn.className = "ne-bar-btn ne-bar-btn-export";
-    closeBtn.textContent = "Close";
-
-    const frame = document.createElement("iframe");
-    frame.className = "ne-pdf-overlay-frame";
-    frame.title = "Exported PDF";
-    frame.src = blobUrl;
-
-    const closeOverlay = () => {
-        document.removeEventListener("keydown", onKeydown, true);
-        URL.revokeObjectURL(blobUrl);
-        document.documentElement.style.overflow = prevHtmlOverflow;
-        document.body.style.overflow = prevBodyOverflow;
-        root.remove();
-    };
-
-    /** @param {KeyboardEvent} ev */
-    const onKeydown = ev => {
-        if (ev.key === "Escape") {
-            ev.preventDefault();
-            closeOverlay();
-        }
-    };
-    document.addEventListener("keydown", onKeydown, true);
-
-    closeBtn.addEventListener("click", closeOverlay);
-
-    actions.appendChild(dl);
-    actions.appendChild(closeBtn);
-    toolbar.appendChild(titleEl);
-    toolbar.appendChild(actions);
-    root.appendChild(toolbar);
-    root.appendChild(frame);
-    document.body.appendChild(root);
-
-    closeBtn.focus();
+function buildExportTabHtml(blobUrl, filename) {
+    const safeName = String(filename).replace(/[<>"&]/g, ch =>
+        ({ "<": "&lt;", ">": "&gt;", "\"": "&quot;", "&": "&amp;" }[ch])
+    );
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>${safeName}</title>
+<style>
+    html, body { margin: 0; height: 100%; background: #0b1220; color: #f9fafb;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .bar { display: flex; align-items: center; justify-content: space-between;
+        gap: 12px; padding: 10px 14px; border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+        background: linear-gradient(180deg, rgba(13, 20, 38, 0.98), rgba(11, 18, 32, 0.96)); }
+    .name { font-size: 14px; font-weight: 700; min-width: 0; overflow: hidden;
+        text-overflow: ellipsis; white-space: nowrap; }
+    .dl { background: linear-gradient(180deg, #7c3aed, #5b21b6); color: #fff;
+        text-decoration: none; font-weight: 700; font-size: 14px;
+        padding: 8px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); }
+    .dl:hover { filter: brightness(1.08); }
+    .wrap { position: fixed; inset: 0; display: flex; flex-direction: column; }
+    .frame { flex: 1; min-height: 0; width: 100%; border: 0; background: #111827; }
+</style>
+</head>
+<body>
+<div class="wrap">
+    <div class="bar">
+        <span class="name" title="${safeName}">${safeName}</span>
+        <a class="dl" href="${blobUrl}" download="${safeName}">Download PDF</a>
+    </div>
+    <iframe class="frame" src="${blobUrl}" title="${safeName}"></iframe>
+</div>
+</body>
+</html>`;
 }
 
 /**
- * Rasterize each preview page (same HTML as `buildPreviewPages`) at trim size, then show the PDF
- * full-screen on this page (browser PDF UI in an iframe). Avoids background tabs / silent downloads.
+ * HTML for the placeholder we write into the new tab the instant the user clicks Export.
+ * Shown while the PDF is being rasterized so the new tab is never blank.
+ */
+function buildExportTabPlaceholderHtml() {
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Generating PDF…</title>
+<style>
+    html, body { margin: 0; height: 100%; background: #0b1220; color: #e5e7eb;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .wrap { display: flex; flex-direction: column; align-items: center;
+        justify-content: center; height: 100%; gap: 14px; }
+    .dot { width: 12px; height: 12px; border-radius: 50%; background: #7c3aed;
+        animation: pulse 1s ease-in-out infinite; }
+    .label { font-size: 14px; font-weight: 600; letter-spacing: 0.02em; }
+    @keyframes pulse { 0%,100% { transform: scale(0.7); opacity: 0.5; }
+        50% { transform: scale(1.2); opacity: 1; } }
+</style>
+</head>
+<body>
+<div class="wrap"><div class="dot"></div><div class="label">Generating your PDF…</div></div>
+</body>
+</html>`;
+}
+
+/**
+ * Rasterize each preview page (same HTML as `buildPreviewPages`) at trim size, then open the PDF
+ * in a new tab with a Download button. The tab is opened synchronously on click so popup blockers
+ * don't trip; we focus it after the PDF is ready.
  */
 async function exportManuscriptPdf() {
     const btn = document.getElementById("neExportPdfBtn");
@@ -1567,6 +1557,20 @@ async function exportManuscriptPdf() {
     if (typeof h2c !== "function" || !jspdfNs?.jsPDF) {
         alert("PDF libraries did not load. Check your network connection and try again.");
         return;
+    }
+
+    /* Open the tab synchronously while we're still inside the user-gesture stack.
+       If the popup is blocked, exportWin will be null and we fall back to a download. */
+    const exportWin = window.open("about:blank", "_blank");
+    if (exportWin && exportWin.document) {
+        try {
+            exportWin.document.open();
+            exportWin.document.write(buildExportTabPlaceholderHtml());
+            exportWin.document.close();
+            exportWin.focus();
+        } catch (_) {
+            /* placeholder is best-effort. */
+        }
     }
 
     const label = (btn?.textContent && btn.textContent.trim()) || "Export PDF";
@@ -1646,9 +1650,34 @@ async function exportManuscriptPdf() {
             blob = new Blob([blob], { type: "application/pdf" });
         }
         const blobUrl = URL.createObjectURL(blob);
-        showPdfResultOverlay(blobUrl, filename);
+
+        if (exportWin && !exportWin.closed) {
+            try {
+                exportWin.document.open();
+                exportWin.document.write(buildExportTabHtml(blobUrl, filename));
+                exportWin.document.close();
+                exportWin.focus();
+                /* Revoke after the iframe has had time to fetch the blob. */
+                setTimeout(() => URL.revokeObjectURL(blobUrl), 5 * 60 * 1000);
+            } catch (writeErr) {
+                console.error("Failed to write export tab:", writeErr);
+                URL.revokeObjectURL(blobUrl);
+                pdf.save(filename);
+            }
+        } else {
+            /* Popup blocked — fall back to a download so the user still gets the file. */
+            URL.revokeObjectURL(blobUrl);
+            pdf.save(filename);
+            alert(
+                "Your browser blocked the new tab, so the PDF was downloaded instead.\n" +
+                "Allow popups for this site to open the PDF in a new tab next time."
+            );
+        }
     } catch (err) {
         console.error(err);
+        if (exportWin && !exportWin.closed) {
+            try { exportWin.close(); } catch (_) { /* noop */ }
+        }
         const msg = err && typeof err === "object" && "message" in err ? String(err.message) : String(err);
         alert(msg || "Could not export PDF.");
     } finally {

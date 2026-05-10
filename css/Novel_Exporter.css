@@ -845,12 +845,12 @@
 }
 
 /*
- * Mandatory bottom gutter inside the live (clip) box so the final line cannot straddle overflow:hidden —
- * fractional layout, ascenders/descenders, and flex rounding can otherwise crop text.
+ * Small bottom gutter inside the live (clip) box: enough for descenders + subpixel rounding under
+ * overflow:hidden. A full line + fixed px was overly conservative and left a visible band above the folio.
  */
 .ne-preview-scroll > .ne-preview-page-frame {
     box-sizing: border-box;
-    padding-bottom: calc(1.48em + 22px);
+    padding-bottom: max(0.42em, 12px);
 }
 
 /*
@@ -1739,49 +1739,3 @@
     }
 }
 
-/* Full-screen PDF after export — always visible on this page (not a background tab). */
-.ne-pdf-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 200000;
-    display: flex;
-    flex-direction: column;
-    background: #0b1220;
-    box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.45);
-}
-
-.ne-pdf-overlay-toolbar {
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 10px 14px;
-    border-bottom: 1px solid rgba(148, 163, 184, 0.25);
-    background: linear-gradient(180deg, rgba(13, 20, 38, 0.98) 0%, rgba(11, 18, 32, 0.96) 100%);
-}
-
-.ne-pdf-overlay-title {
-    font-size: 14px;
-    font-weight: 700;
-    color: #f9fafb;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.ne-pdf-overlay-actions {
-    display: flex;
-    flex-shrink: 0;
-    align-items: center;
-    gap: 10px;
-}
-
-.ne-pdf-overlay-frame {
-    flex: 1;
-    min-height: 0;
-    width: 100%;
-    border: none;
-    background: #111827;
-}
