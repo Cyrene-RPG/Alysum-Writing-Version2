@@ -433,8 +433,8 @@
                 </div>
 
                 <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                    <a class="home-link hidden" id="readerHomeLink" href="/reader-home.html">← Reading profile</a>
                     <div id="userStatus" style="font-size:13px; font-weight:900; color:#c4b5fd;"></div>
-                    <a class="home-link hidden" id="readerHomeLink" href="/reader-home.html">Reading home</a>
                     <div class="library-mode-switch hidden" id="libraryModeSwitch" role="group" aria-label="Reading or studio">
                         <button type="button" class="library-mode-seg active" data-mode="library">Reading</button>
                         <button type="button" class="library-mode-seg" data-mode="studio">Studio</button>
@@ -513,13 +513,18 @@
             readerHomeLink.href = READER_HOME_URL;
         }
 
+        const studioLinkDefaultLabel = "Back to Studio";
+        const studioLinkAuthorLabel = "← Profile & studio";
+
         function applyLibraryTopNav(accountType) {
             const t = normalizeAccountType(accountType);
             if (accountSupportsModeToggle(accountType)) {
                 libraryModeSwitch?.classList.remove("hidden");
                 libraryBackStudio?.classList.add("hidden");
+                if (libraryBackStudio) {
+                    libraryBackStudio.textContent = studioLinkDefaultLabel;
+                }
                 if (readerHomeLink) {
-                    readerHomeLink.textContent = "Reading profile";
                     readerHomeLink.classList.remove("hidden");
                 }
                 libraryModeSwitch?.querySelectorAll(".library-mode-seg").forEach((b) => {
@@ -531,13 +536,17 @@
             libraryModeSwitch?.classList.add("hidden");
             if (t === ACCOUNT_READER) {
                 libraryBackStudio?.classList.add("hidden");
-                if (readerHomeLink) {
-                    readerHomeLink.textContent = "Reading home";
-                    readerHomeLink.classList.remove("hidden");
+                if (libraryBackStudio) {
+                    libraryBackStudio.textContent = studioLinkDefaultLabel;
                 }
+                readerHomeLink?.classList.remove("hidden");
             } else {
                 libraryBackStudio?.classList.remove("hidden");
                 readerHomeLink?.classList.add("hidden");
+                if (libraryBackStudio) {
+                    libraryBackStudio.textContent =
+                        t === ACCOUNT_AUTHOR ? studioLinkAuthorLabel : studioLinkDefaultLabel;
+                }
             }
         }
 
@@ -583,6 +592,9 @@
                 userStatus.innerHTML = `<a href="/login.html" style="color:#c4b5fd; font-weight:900; text-decoration:none;">Log in</a>`;
                 libraryModeSwitch?.classList.add("hidden");
                 libraryBackStudio?.classList.remove("hidden");
+                if (libraryBackStudio) {
+                    libraryBackStudio.textContent = studioLinkDefaultLabel;
+                }
                 readerHomeLink?.classList.add("hidden");
             }
         });
