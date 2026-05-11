@@ -129,6 +129,13 @@ export async function mountStoryBiblePage(opts) {
         statusEl.style.color = isError ? "#fca5a5" : "";
     }
 
+    function formatFirestoreErr(e, label = "Save") {
+        const code = e && typeof e.code === "string" ? e.code : "";
+        const message = e && typeof e.message === "string" ? e.message : String(e ?? "Unknown error");
+        const short = message.length > 120 ? message.slice(0, 117) + "…" : message;
+        return code ? `${label} failed (${code}). ${short}` : `${label} failed. ${short}`;
+    }
+
     function escapeHtml(s) {
         return String(s)
             .replace(/&/g, "&amp;")
@@ -298,6 +305,85 @@ export async function mountStoryBiblePage(opts) {
         );
     }
 
+    /**
+     * Writes the open character or place to Firestore when the form has a name.
+     * @param {{ silent?: boolean, requireName?: boolean }} opts
+     */
+    async function persistCurrentEntryFromForm(opts = {}) {
+        const { silent = false, requireName = false } = opts;
+        if (bibleTab === "characters") {
+            if (!selectedCharId) {
+                if (requireName) {
+                    setStatus("Select or create a character first.", true);
+                    return { ok: false };
+                }
+                return { ok: true, skipped: true };
+            }
+            const base = characters.find(x => x.id === selectedCharId);
+            if (!base) return { ok: true, skipped: true };
+            const next = readFormIntoCharacter(base);
+            if (!next.name.trim()) {
+                if (requireName) setStatus("Name is required before saving.", true);
+                return { ok: false, skipped: !requireName };
+            }
+            if (!silent) setStatus("Saving…");
+            try {
+                await saveBibleCharacter(db, uid, bookId, next);
+                const idx = characters.findIndex(x => x.id === next.id);
+                if (idx >= 0) characters[idx] = next;
+                characters.sort((a, b) =>
+                    (a.sortKey || "").localeCompare(b.sortKey || "", undefined, { sensitivity: "base" })
+                );
+                renderCharList();
+                refreshScanFromCache();
+                if (!silent) {
+                    setStatus("Saved.");
+                    setTimeout(() => setStatus(""), 2000);
+                }
+                return { ok: true };
+            } catch (e) {
+                console.error(e);
+                setStatus(formatFirestoreErr(e, "Save"), true);
+                return { ok: false };
+            }
+        }
+
+        if (!selectedPlaceId) {
+            if (requireName) {
+                setStatus("Select or create a place first.", true);
+                return { ok: false };
+            }
+            return { ok: true, skipped: true };
+        }
+        const base = places.find(x => x.id === selectedPlaceId);
+        if (!base) return { ok: true, skipped: true };
+        const next = readFormIntoPlace(base);
+        if (!next.name.trim()) {
+            if (requireName) setStatus("Place name is required before saving.", true);
+            return { ok: false, skipped: !requireName };
+        }
+        if (!silent) setStatus("Saving…");
+        try {
+            await saveBiblePlace(db, uid, bookId, next);
+            const idx = places.findIndex(x => x.id === next.id);
+            if (idx >= 0) places[idx] = next;
+            places.sort((a, b) =>
+                (a.sortKey || "").localeCompare(b.sortKey || "", undefined, { sensitivity: "base" })
+            );
+            renderPlaceList();
+            refreshScanFromCache();
+            if (!silent) {
+                setStatus("Saved.");
+                setTimeout(() => setStatus(""), 2000);
+            }
+            return { ok: true };
+        } catch (e) {
+            console.error(e);
+            setStatus(formatFirestoreErr(e, "Save"), true);
+            return { ok: false };
+        }
+    }
+
     function clearCharacterFields() {
         fields.age.value = "";
         fields.eyes.value = "";
@@ -368,7 +454,7 @@ export async function mountStoryBiblePage(opts) {
             btn.className = "sb-char-item" + (c.id === selectedCharId ? " is-active" : "");
             btn.textContent = c.name.trim() || "(unnamed)";
             btn.dataset.id = c.id;
-            btn.addEventListener("click", () => selectCharacter(c.id));
+            btn.addEventListener("click", () => void selectCharacter(c.id));
             li.appendChild(btn);
             charList.appendChild(li);
         });
@@ -384,13 +470,15 @@ export async function mountStoryBiblePage(opts) {
             const label = p.kind ? `${p.name.trim() || "(unnamed)"} (${p.kind})` : p.name.trim() || "(unnamed)";
             btn.textContent = label;
             btn.dataset.id = p.id;
-            btn.addEventListener("click", () => selectPlace(p.id));
+            btn.addEventListener("click", () => void selectPlace(p.id));
             li.appendChild(btn);
             placeList.appendChild(li);
         });
     }
 
-    function selectCharacter(id) {
+    async function selectCharacter(id) {
+        if (id === selectedCharId) return;
+        await persistCurrentEntryFromForm({ silent: true });
         selectedCharId = id;
         const c = characters.find(x => x.id === id);
         if (!c) return;
@@ -401,7 +489,9 @@ export async function mountStoryBiblePage(opts) {
         persistBibleTab();
     }
 
-    function selectPlace(id) {
+    async function selectPlace(id) {
+        if (id === selectedPlaceId) return;
+        await persistCurrentEntryFromForm({ silent: true });
         selectedPlaceId = id;
         const p = places.find(x => x.id === id);
         if (!p) return;
@@ -457,7 +547,7 @@ export async function mountStoryBiblePage(opts) {
 
             if (bibleTab === "places") {
                 selectedCharId = characters[0]?.id ?? null;
-                if (places.length) selectPlace(places[0].id);
+                if (places.length) await selectPlace(places[0].id);
                 else {
                     selectedPlaceId = null;
                     clearSharedForm();
@@ -468,7 +558,7 @@ export async function mountStoryBiblePage(opts) {
                 }
             } else {
                 selectedPlaceId = places[0]?.id ?? null;
-                if (characters.length) selectCharacter(characters[0].id);
+                if (characters.length) await selectCharacter(characters[0].id);
                 else {
                     selectedCharId = null;
                     clearSharedForm();
@@ -485,13 +575,14 @@ export async function mountStoryBiblePage(opts) {
         }
     }
 
-    tabCharsBtn?.addEventListener("click", () => {
+    tabCharsBtn?.addEventListener("click", async () => {
+        await persistCurrentEntryFromForm({ silent: true });
         bibleTab = "characters";
         updateBibleTabChrome();
         persistBibleTab();
         const c = characters.find(x => x.id === selectedCharId);
         if (c) fillCharacterForm(c);
-        else if (characters.length) selectCharacter(characters[0].id);
+        else if (characters.length) await selectCharacter(characters[0].id);
         else {
             selectedCharId = null;
             clearSharedForm();
@@ -502,13 +593,14 @@ export async function mountStoryBiblePage(opts) {
         }
     });
 
-    tabPlacesBtn?.addEventListener("click", () => {
+    tabPlacesBtn?.addEventListener("click", async () => {
+        await persistCurrentEntryFromForm({ silent: true });
         bibleTab = "places";
         updateBibleTabChrome();
         persistBibleTab();
         const p = places.find(x => x.id === selectedPlaceId);
         if (p) fillPlaceForm(p);
-        else if (places.length) selectPlace(places[0].id);
+        else if (places.length) await selectPlace(places[0].id);
         else {
             selectedPlaceId = null;
             clearSharedForm();
@@ -519,88 +611,32 @@ export async function mountStoryBiblePage(opts) {
         }
     });
 
-    newCharBtn.addEventListener("click", () => {
+    newCharBtn.addEventListener("click", async () => {
+        await persistCurrentEntryFromForm({ silent: true });
         bibleTab = "characters";
         updateBibleTabChrome();
         persistBibleTab();
         const c = emptyCharacter();
         characters = [c, ...characters];
-        selectCharacter(c.id);
+        await selectCharacter(c.id);
         saveCharBtn.focus();
     });
 
-    newPlaceBtn.addEventListener("click", () => {
+    newPlaceBtn.addEventListener("click", async () => {
+        await persistCurrentEntryFromForm({ silent: true });
         bibleTab = "places";
         updateBibleTabChrome();
         persistBibleTab();
         const p = emptyPlace();
         places = [p, ...places];
-        selectPlace(p.id);
+        await selectPlace(p.id);
         saveCharBtn.focus();
     });
 
     saveCharBtn.addEventListener("click", async () => {
-        if (bibleTab === "characters") {
-            if (!selectedCharId) {
-                setStatus("Select or create a character first.", true);
-                return;
-            }
-            const base = characters.find(x => x.id === selectedCharId);
-            if (!base) return;
-            const next = readFormIntoCharacter(base);
-            if (!next.name.trim()) {
-                setStatus("Name is required before saving.", true);
-                return;
-            }
-            setStatus("Saving…");
-            saveCharBtn.disabled = true;
-            try {
-                await saveBibleCharacter(db, uid, bookId, next);
-                const idx = characters.findIndex(x => x.id === next.id);
-                if (idx >= 0) characters[idx] = next;
-                characters.sort((a, b) =>
-                    (a.sortKey || "").localeCompare(b.sortKey || "", undefined, { sensitivity: "base" })
-                );
-                renderCharList();
-                refreshScanFromCache();
-                setStatus("Saved.");
-                setTimeout(() => setStatus(""), 2000);
-            } catch (e) {
-                console.error(e);
-                setStatus("Save failed. Try again.", true);
-            } finally {
-                saveCharBtn.disabled = false;
-            }
-            return;
-        }
-
-        if (!selectedPlaceId) {
-            setStatus("Select or create a place first.", true);
-            return;
-        }
-        const base = places.find(x => x.id === selectedPlaceId);
-        if (!base) return;
-        const next = readFormIntoPlace(base);
-        if (!next.name.trim()) {
-            setStatus("Place name is required before saving.", true);
-            return;
-        }
-        setStatus("Saving…");
         saveCharBtn.disabled = true;
         try {
-            await saveBiblePlace(db, uid, bookId, next);
-            const idx = places.findIndex(x => x.id === next.id);
-            if (idx >= 0) places[idx] = next;
-            places.sort((a, b) =>
-                (a.sortKey || "").localeCompare(b.sortKey || "", undefined, { sensitivity: "base" })
-            );
-            renderPlaceList();
-            refreshScanFromCache();
-            setStatus("Saved.");
-            setTimeout(() => setStatus(""), 2000);
-        } catch (e) {
-            console.error(e);
-            setStatus("Save failed. Try again.", true);
+            await persistCurrentEntryFromForm({ silent: false, requireName: true });
         } finally {
             saveCharBtn.disabled = false;
         }
@@ -616,7 +652,7 @@ export async function mountStoryBiblePage(opts) {
                 await deleteBibleCharacter(db, uid, bookId, selectedCharId);
                 characters = characters.filter(x => x.id !== selectedCharId);
                 selectedCharId = null;
-                if (characters.length) selectCharacter(characters[0].id);
+                if (characters.length) await selectCharacter(characters[0].id);
                 else {
                     clearSharedForm();
                     clearCharacterFields();
@@ -629,7 +665,7 @@ export async function mountStoryBiblePage(opts) {
                 refreshScanFromCache();
             } catch (e) {
                 console.error(e);
-                setStatus("Delete failed.", true);
+                setStatus(formatFirestoreErr(e, "Delete"), true);
             } finally {
                 deleteCharBtn.disabled = false;
             }
@@ -644,7 +680,7 @@ export async function mountStoryBiblePage(opts) {
             await deleteBiblePlace(db, uid, bookId, selectedPlaceId);
             places = places.filter(x => x.id !== selectedPlaceId);
             selectedPlaceId = null;
-            if (places.length) selectPlace(places[0].id);
+            if (places.length) await selectPlace(places[0].id);
             else {
                 clearSharedForm();
                 clearCharacterFields();
@@ -657,7 +693,7 @@ export async function mountStoryBiblePage(opts) {
             refreshScanFromCache();
         } catch (e) {
             console.error(e);
-            setStatus("Delete failed.", true);
+            setStatus(formatFirestoreErr(e, "Delete"), true);
         } finally {
             deleteCharBtn.disabled = false;
         }
@@ -712,7 +748,7 @@ export async function mountStoryBiblePage(opts) {
             addChar.type = "button";
             addChar.className = "sb-scan-add";
             addChar.textContent = "Character";
-            addChar.addEventListener("click", () => {
+            addChar.addEventListener("click", async () => {
                 const notes = draftNotesFromScan(row, plain);
                 const c = normalizeBibleCharacter(
                     {
@@ -730,16 +766,22 @@ export async function mountStoryBiblePage(opts) {
                 bibleTab = "characters";
                 updateBibleTabChrome();
                 persistBibleTab();
-                selectCharacter(c.id);
-                setStatus(`Draft character “${row.name}” — check Notes, then Save character.`);
-                refreshScanFromCache();
+                saveCharBtn.disabled = true;
+                try {
+                    await selectCharacter(c.id);
+                    const r = await persistCurrentEntryFromForm({ silent: true, requireName: true });
+                    if (r.ok) setStatus(`Character “${row.name}” saved to your bible.`);
+                } finally {
+                    saveCharBtn.disabled = false;
+                    refreshScanFromCache();
+                }
             });
 
             const addPlace = document.createElement("button");
             addPlace.type = "button";
             addPlace.className = "sb-scan-add sb-scan-add-secondary";
             addPlace.textContent = "Place";
-            addPlace.addEventListener("click", () => {
+            addPlace.addEventListener("click", async () => {
                 const notes = draftNotesFromScan(row, plain);
                 const p = normalizeBiblePlace(
                     {
@@ -758,9 +800,15 @@ export async function mountStoryBiblePage(opts) {
                 bibleTab = "places";
                 updateBibleTabChrome();
                 persistBibleTab();
-                selectPlace(p.id);
-                setStatus(`Draft place “${row.name}” — set Kind if you like, then Save place.`);
-                refreshScanFromCache();
+                saveCharBtn.disabled = true;
+                try {
+                    await selectPlace(p.id);
+                    const r = await persistCurrentEntryFromForm({ silent: true, requireName: true });
+                    if (r.ok) setStatus(`Place “${row.name}” saved to your bible.`);
+                } finally {
+                    saveCharBtn.disabled = false;
+                    refreshScanFromCache();
+                }
             });
 
             btnRow.appendChild(addChar);
@@ -795,7 +843,7 @@ export async function mountStoryBiblePage(opts) {
                 renderScanSuggestions(filtered);
                 setStatus(
                     filtered.length
-                        ? `${filtered.length} match(es). Character / Place adds a draft — then Save.`
+                        ? `${filtered.length} match(es). Character / Place saves it to your bible immediately.`
                         : "No new pattern matches (or already in your bible). Try adding manually."
                 );
             } catch (e) {
@@ -809,6 +857,12 @@ export async function mountStoryBiblePage(opts) {
         scanStrictCheck?.addEventListener("change", refreshScanFromCache);
         scanLooseCheck?.addEventListener("change", refreshScanFromCache);
     }
+
+    document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "hidden") {
+            void persistCurrentEntryFromForm({ silent: true });
+        }
+    });
 
     updateBibleTabChrome();
     await reloadFromServer();

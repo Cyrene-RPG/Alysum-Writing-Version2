@@ -64,67 +64,167 @@
         .sb-wrap {
             max-width: 1180px;
             margin: 0 auto;
-            padding: 28px 22px 56px;
+            padding: 20px 22px 56px;
         }
         .sb-top {
+            margin-bottom: 28px;
+        }
+        .sb-top-card {
+            position: relative;
             display: flex;
             flex-wrap: wrap;
-            align-items: flex-start;
+            align-items: center;
             justify-content: space-between;
-            gap: 16px;
-            margin-bottom: 24px;
+            gap: clamp(20px, 4vw, 36px);
+            padding: clamp(22px, 4vw, 34px) clamp(22px, 3vw, 36px);
+            border-radius: var(--radius-lg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: linear-gradient(
+                155deg,
+                rgba(255, 255, 255, 0.09) 0%,
+                rgba(22, 30, 48, 0.92) 38%,
+                rgba(10, 14, 26, 0.94) 100%
+            );
+            box-shadow:
+                var(--shadow-panel),
+                0 28px 56px rgba(0, 0, 0, 0.35),
+                inset 0 1px 0 rgba(255, 255, 255, 0.06);
+            overflow: hidden;
+        }
+        @supports (backdrop-filter: blur(12px)) {
+            .sb-top-card {
+                backdrop-filter: blur(16px);
+                -webkit-backdrop-filter: blur(16px);
+            }
+        }
+        .sb-top-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(
+                90deg,
+                transparent 0%,
+                #5b21b6 15%,
+                #7c3aed 40%,
+                #c4b5fd 50%,
+                #7c3aed 60%,
+                #5b21b6 85%,
+                transparent 100%
+            );
+            opacity: 0.95;
+        }
+        .sb-top-card::after {
+            content: "";
+            position: absolute;
+            top: -40%;
+            right: -15%;
+            width: min(420px, 55vw);
+            height: min(320px, 50vw);
+            background: radial-gradient(circle, rgba(124, 58, 237, 0.22) 0%, transparent 68%);
+            pointer-events: none;
+        }
+        .sb-top-copy {
+            position: relative;
+            z-index: 1;
+            flex: 1;
+            min-width: min(100%, 260px);
+            max-width: 58ch;
         }
         .sb-eyebrow {
-            font-size: 11px;
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
+            margin: 0 0 14px;
+            padding: 6px 14px 6px 12px;
+            border-radius: 999px;
+            font-size: 10px;
             font-weight: 800;
-            letter-spacing: 0.12em;
+            letter-spacing: 0.14em;
             text-transform: uppercase;
-            color: #c4b5fd;
-            margin: 0 0 8px;
-            opacity: 0.95;
+            color: #e9d5ff;
+            background: rgba(109, 40, 217, 0.28);
+            border: 1px solid rgba(196, 181, 253, 0.35);
+            box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15) inset, 0 8px 28px rgba(109, 40, 217, 0.2);
+        }
+        .sb-eyebrow::before {
+            content: "";
+            flex-shrink: 0;
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: linear-gradient(145deg, #f5f3ff 0%, #a78bfa 45%, #6d28d9 100%);
+            box-shadow: 0 0 12px rgba(196, 181, 253, 0.75);
         }
         .sb-title {
             margin: 0;
-            font-size: clamp(1.75rem, 4vw, 2.25rem);
+            font-size: clamp(1.85rem, 4.5vw, 2.5rem);
             font-weight: 900;
-            letter-spacing: -0.03em;
-            line-height: 1.1;
-            background: linear-gradient(105deg, #fff 0%, #e9d5ff 55%, #ddd6fe 100%);
+            letter-spacing: -0.035em;
+            line-height: 1.08;
+            background: linear-gradient(105deg, #ffffff 0%, #f5f3ff 35%, #e9d5ff 70%, #ddd6fe 100%);
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
+            filter: drop-shadow(0 2px 18px rgba(91, 33, 182, 0.35));
         }
         @supports not (background-clip: text) {
-            .sb-title { color: #faf5ff; }
+            .sb-title {
+                color: #faf5ff;
+                filter: none;
+            }
         }
-        .sb-sub {
+        .sb-top-copy .sb-sub {
+            margin: 14px 0 0;
+            padding-left: 16px;
+            border-left: 3px solid rgba(167, 139, 250, 0.55);
+            color: #c4c4cc;
+            font-size: 15px;
+            line-height: 1.65;
+        }
+        .sb-top-card .sb-nav {
+            position: relative;
+            z-index: 1;
+            flex-shrink: 0;
+            display: inline-flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-self: center;
+            padding: 10px;
+            border-radius: 16px;
+            background: rgba(0, 0, 0, 0.32);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        }
+        .sb-top-card .sb-nav a {
+            text-decoration: none;
+            border: 1px solid transparent;
+            background: rgba(255, 255, 255, 0.04);
+            color: #f4f4f5;
+            padding: 10px 18px;
+            border-radius: 11px;
+            font-weight: 700;
+            font-size: 13px;
+            letter-spacing: 0.01em;
+            transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease, transform 0.12s ease;
+        }
+        .sb-top-card .sb-nav a:hover {
+            border-color: rgba(196, 181, 253, 0.35);
+            background: rgba(124, 58, 237, 0.22);
+            box-shadow: 0 4px 18px rgba(109, 40, 217, 0.25);
+            transform: translateY(-1px);
+        }
+        /* Standalone .sb-sub (e.g. disabled panel) */
+        .sb-panel .sb-sub {
             margin: 12px 0 0;
+            padding-left: 0;
+            border-left: none;
             color: var(--text-soft);
             font-size: 15px;
             line-height: 1.6;
-            max-width: 52ch;
-        }
-        .sb-nav {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            align-items: flex-start;
-        }
-        .sb-nav a {
-            text-decoration: none;
-            border: 1px solid var(--border);
-            background: linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, transparent 100%), var(--panel-soft);
-            color: var(--text);
-            padding: 11px 16px;
-            border-radius: var(--radius-md);
-            font-weight: 700;
-            font-size: 13px;
-            transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
-        }
-        .sb-nav a:hover {
-            border-color: var(--border-strong);
-            box-shadow: 0 4px 20px rgba(109, 40, 217, 0.2);
-            transform: translateY(-1px);
+            max-width: none;
         }
         .sb-status {
             min-height: 24px;
@@ -566,18 +666,20 @@
 <body>
     <div class="sb-wrap">
         <header class="sb-top">
-            <div>
-                <p class="sb-eyebrow">Reference</p>
-                <h1 class="sb-title">Story Bible</h1>
-                <p class="sb-sub">
-                    Searchable character and place notes per book. Open a book’s bible from here or from the editor while you write.
-                </p>
+            <div class="sb-top-card">
+                <div class="sb-top-copy">
+                    <p class="sb-eyebrow">Reference</p>
+                    <h1 class="sb-title">Story Bible</h1>
+                    <p class="sb-sub">
+                        Searchable character and place notes per book. Open a book’s bible from here or from the editor while you write.
+                    </p>
+                </div>
+                <nav class="sb-nav" aria-label="Site">
+                    <a href="/studio.html">Studio</a>
+                    <a href="/library.html">Library</a>
+                    <a href="/vault.html">Notes</a>
+                </nav>
             </div>
-            <nav class="sb-nav" aria-label="Site">
-                <a href="/studio.html">Studio</a>
-                <a href="/library.html">Library</a>
-                <a href="/vault.html">Notes</a>
-            </nav>
         </header>
 
         <div id="sbDisabled" class="sb-panel sb-panel-muted hidden">
@@ -744,7 +846,7 @@
     <script type="module">
         import { auth, db } from "./firebase.js";
         import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-        import { mountStoryBiblePage } from "./js/story-bible-page.js?v=11";
+        import { mountStoryBiblePage } from "./js/story-bible-page.js?v=12";
         import {
             isStoryBibleUiEnabled,
             STORY_BIBLE_PREF_KEY,
