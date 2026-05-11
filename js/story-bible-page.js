@@ -1,5 +1,5 @@
 /**
- * Story Bible hub + per-book character UI. Keeps DOM logic out of HTML.
+ * Story Bible hub + per-book character and place UI. Keeps DOM logic out of HTML.
  */
 
 import {
@@ -8,16 +8,23 @@ import {
     listBibleCharacters,
     saveBibleCharacter,
     deleteBibleCharacter,
+    normalizeBiblePlace,
+    generateBiblePlaceId,
+    listBiblePlaces,
+    saveBiblePlace,
+    deleteBiblePlace,
     listUserBooksWithBibleCounts,
     loadBookChapterOptions,
     getBookTitle,
     loadBookPlainTextForScan
-} from "./story-bible-api.js?v=3";
+} from "./story-bible-api.js?v=5";
 import {
     extractNameCandidatesFromPlainText,
     subtractBibleNames,
     snippetContextsForPhrase
-} from "./story-bible-scan.js?v=3";
+} from "./story-bible-scan.js?v=4";
+
+const SB_TAB_STORAGE_KEY = "alysum-story-bible-tab";
 
 function emptyCharacter() {
     const id = generateBibleCharacterId();
@@ -26,6 +33,23 @@ function emptyCharacter() {
             name: "",
             aliases: [],
             appearance: {},
+            notes: "",
+            tags: [],
+            introducedSection: "",
+            introducedChapterId: ""
+        },
+        id
+    );
+}
+
+function emptyPlace() {
+    const id = generateBiblePlaceId();
+    return normalizeBiblePlace(
+        {
+            name: "",
+            aliases: [],
+            kind: "",
+            parentPlace: "",
             notes: "",
             tags: [],
             introducedSection: "",
@@ -44,7 +68,18 @@ function emptyCharacter() {
  * @param {HTMLElement} opts.bookView
  * @param {HTMLTableSectionElement} opts.booksTbody
  * @param {HTMLUListElement} opts.charList
+ * @param {HTMLUListElement} opts.placeList
  * @param {HTMLButtonElement} opts.newCharBtn
+ * @param {HTMLButtonElement} opts.newPlaceBtn
+ * @param {HTMLButtonElement} opts.tabCharsBtn
+ * @param {HTMLButtonElement} opts.tabPlacesBtn
+ * @param {HTMLElement} opts.asideCharsEl
+ * @param {HTMLElement} opts.asidePlacesEl
+ * @param {HTMLElement} opts.charFieldsEl
+ * @param {HTMLElement} opts.placeFieldsEl
+ * @param {HTMLElement} opts.placeParentEl
+ * @param {HTMLElement} [opts.labelNameEl]
+ * @param {HTMLElement} [opts.labelAliasesEl]
  * @param {HTMLButtonElement} opts.saveCharBtn
  * @param {HTMLButtonElement} opts.deleteCharBtn
  * @param {HTMLAnchorElement} opts.openEditorLink
@@ -52,6 +87,8 @@ function emptyCharacter() {
  * @param {Record<string, HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>} opts.fields
  * @param {HTMLButtonElement} [opts.scanBtn]
  * @param {HTMLElement} [opts.scanResultsEl]
+ * @param {HTMLInputElement} [opts.scanStrictCheck]
+ * @param {HTMLInputElement} [opts.scanLooseCheck]
  */
 export async function mountStoryBiblePage(opts) {
     const {
@@ -62,14 +99,27 @@ export async function mountStoryBiblePage(opts) {
         bookView,
         booksTbody,
         charList,
+        placeList,
         newCharBtn,
+        newPlaceBtn,
+        tabCharsBtn,
+        tabPlacesBtn,
+        asideCharsEl,
+        asidePlacesEl,
+        charFieldsEl,
+        placeFieldsEl,
+        placeParentEl,
+        labelNameEl,
+        labelAliasesEl,
         saveCharBtn,
         deleteCharBtn,
         openEditorLink,
         bookTitleEl,
         fields,
         scanBtn,
-        scanResultsEl
+        scanResultsEl,
+        scanStrictCheck,
+        scanLooseCheck
     } = opts;
 
     const bookId = (new URLSearchParams(window.location.search).get("book") || "").trim();
@@ -109,7 +159,7 @@ export async function mountStoryBiblePage(opts) {
             if (!rows.length) {
                 const tr = document.createElement("tr");
                 tr.innerHTML =
-                    '<td colspan="4" class="sb-muted">No books yet. Create one in Studio, then add characters here.</td>';
+                    '<td colspan="5" class="sb-muted">No books yet. Create one in Studio, then add characters and places here.</td>';
                 booksTbody.appendChild(tr);
             } else {
                 for (const r of rows) {
@@ -119,6 +169,7 @@ export async function mountStoryBiblePage(opts) {
                     tr.innerHTML = `
                         <td class="sb-nowrap"><a class="sb-link" href="${open}">${escapeHtml(r.title)}</a></td>
                         <td class="sb-num">${r.characterCount}</td>
+                        <td class="sb-num">${r.placeCount ?? 0}</td>
                         <td class="sb-muted sb-nowrap">${formatUpdated(r.updated)}</td>
                         <td class="sb-actions"><a class="sb-btn sb-btn-ghost" href="${ed}">Editor</a> <a class="sb-btn sb-btn-primary" href="${open}">Bible</a></td>
                     `;
@@ -139,8 +190,43 @@ export async function mountStoryBiblePage(opts) {
 
     /** @type {ReturnType<typeof normalizeBibleCharacter>[]} */
     let characters = [];
+    /** @type {ReturnType<typeof normalizeBiblePlace>[]} */
+    let places = [];
+    /** @type {"characters"|"places"} */
+    let bibleTab = "characters";
     /** @type {string | null} */
-    let selectedId = null;
+    let selectedCharId = null;
+    /** @type {string | null} */
+    let selectedPlaceId = null;
+
+    function knownEntriesForScan() {
+        return [...characters, ...places];
+    }
+
+    function updateBibleTabChrome() {
+        const isChar = bibleTab === "characters";
+        tabCharsBtn?.classList.toggle("is-active", isChar);
+        tabPlacesBtn?.classList.toggle("is-active", !isChar);
+        tabCharsBtn?.setAttribute("aria-selected", isChar ? "true" : "false");
+        tabPlacesBtn?.setAttribute("aria-selected", isChar ? "false" : "true");
+        asideCharsEl?.classList.toggle("hidden", !isChar);
+        asidePlacesEl?.classList.toggle("hidden", isChar);
+        charFieldsEl?.classList.toggle("hidden", !isChar);
+        placeFieldsEl?.classList.toggle("hidden", isChar);
+        placeParentEl?.classList.toggle("hidden", isChar);
+        if (labelNameEl) labelNameEl.textContent = isChar ? "Name" : "Place name";
+        if (labelAliasesEl)
+            labelAliasesEl.textContent = isChar ? "Also known as (comma-separated)" : "Alternate names (comma-separated)";
+        fields.name.placeholder = isChar ? "Character name" : "e.g. Chicago, The Old Mill";
+        fields.aliases.placeholder = isChar ? "Nicknames, titles…" : "NYC, Second City…";
+        saveCharBtn.textContent = isChar ? "Save character" : "Save place";
+    }
+
+    function persistBibleTab() {
+        try {
+            sessionStorage.setItem(SB_TAB_STORAGE_KEY, bibleTab);
+        } catch (_) {}
+    }
 
     function readFormIntoCharacter(base) {
         const name = (fields.name?.value || "").trim();
@@ -180,11 +266,39 @@ export async function mountStoryBiblePage(opts) {
         );
     }
 
-    function clearForm() {
-        fields.name.value = "";
-        fields.aliases.value = "";
-        fields.tags.value = "";
-        fields.notes.value = "";
+    function readFormIntoPlace(base) {
+        const name = (fields.name?.value || "").trim();
+        const aliases = (fields.aliases?.value || "")
+            .split(",")
+            .map(s => s.trim())
+            .filter(Boolean);
+        const tags = (fields.tags?.value || "")
+            .split(",")
+            .map(s => s.trim())
+            .filter(Boolean);
+        const introVal = fields.introduced?.value || "|";
+        const parts = introVal.split("|", 2);
+        const section = parts[0] || "";
+        const chapterId = parts[1] || "";
+        const kind = (fields.placeKind?.value || "").trim().toLowerCase();
+
+        return normalizeBiblePlace(
+            {
+                ...base,
+                name,
+                aliases,
+                tags,
+                notes: fields.notes?.value || "",
+                kind,
+                parentPlace: fields.placeParent?.value || "",
+                introducedSection: chapterId ? section : "",
+                introducedChapterId: chapterId || ""
+            },
+            base.id
+        );
+    }
+
+    function clearCharacterFields() {
         fields.age.value = "";
         fields.eyes.value = "";
         fields.hair.value = "";
@@ -192,10 +306,23 @@ export async function mountStoryBiblePage(opts) {
         fields.skin.value = "";
         fields.build.value = "";
         fields.distinctive.value = "";
-        fields.introduced.value = "|";
     }
 
-    function fillForm(c) {
+    function clearSharedForm() {
+        fields.name.value = "";
+        fields.aliases.value = "";
+        fields.tags.value = "";
+        fields.notes.value = "";
+        fields.introduced.value = "|";
+        fields.placeKind.value = "";
+        fields.placeParent.value = "";
+    }
+
+    function fillCharacterForm(c) {
+        bibleTab = "characters";
+        updateBibleTabChrome();
+        clearSharedForm();
+        clearCharacterFields();
         fields.name.value = c.name || "";
         fields.aliases.value = (c.aliases || []).join(", ");
         fields.tags.value = (c.tags || []).join(", ");
@@ -210,11 +337,26 @@ export async function mountStoryBiblePage(opts) {
 
         const sel = fields.introduced;
         const key = c.introducedChapterId ? `${c.introducedSection}|${c.introducedChapterId}` : "";
-        if (key && [...sel.options].some(o => o.value === key)) {
-            sel.value = key;
-        } else {
-            sel.value = "|";
-        }
+        if (key && [...sel.options].some(o => o.value === key)) sel.value = key;
+        else sel.value = "|";
+    }
+
+    function fillPlaceForm(p) {
+        bibleTab = "places";
+        updateBibleTabChrome();
+        clearSharedForm();
+        clearCharacterFields();
+        fields.name.value = p.name || "";
+        fields.aliases.value = (p.aliases || []).join(", ");
+        fields.tags.value = (p.tags || []).join(", ");
+        fields.notes.value = p.notes || "";
+        fields.placeKind.value = p.kind || "";
+        fields.placeParent.value = p.parentPlace || "";
+
+        const sel = fields.introduced;
+        const key = p.introducedChapterId ? `${p.introducedSection}|${p.introducedChapterId}` : "";
+        if (key && [...sel.options].some(o => o.value === key)) sel.value = key;
+        else sel.value = "|";
     }
 
     function renderCharList() {
@@ -223,7 +365,7 @@ export async function mountStoryBiblePage(opts) {
             const li = document.createElement("li");
             const btn = document.createElement("button");
             btn.type = "button";
-            btn.className = "sb-char-item" + (c.id === selectedId ? " is-active" : "");
+            btn.className = "sb-char-item" + (c.id === selectedCharId ? " is-active" : "");
             btn.textContent = c.name.trim() || "(unnamed)";
             btn.dataset.id = c.id;
             btn.addEventListener("click", () => selectCharacter(c.id));
@@ -232,21 +374,51 @@ export async function mountStoryBiblePage(opts) {
         });
     }
 
+    function renderPlaceList() {
+        placeList.innerHTML = "";
+        places.forEach(p => {
+            const li = document.createElement("li");
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "sb-char-item" + (p.id === selectedPlaceId ? " is-active" : "");
+            const label = p.kind ? `${p.name.trim() || "(unnamed)"} (${p.kind})` : p.name.trim() || "(unnamed)";
+            btn.textContent = label;
+            btn.dataset.id = p.id;
+            btn.addEventListener("click", () => selectPlace(p.id));
+            li.appendChild(btn);
+            placeList.appendChild(li);
+        });
+    }
+
     function selectCharacter(id) {
-        selectedId = id;
+        selectedCharId = id;
         const c = characters.find(x => x.id === id);
         if (!c) return;
-        fillForm(c);
+        fillCharacterForm(c);
         renderCharList();
+        renderPlaceList();
         deleteCharBtn.disabled = false;
+        persistBibleTab();
+    }
+
+    function selectPlace(id) {
+        selectedPlaceId = id;
+        const p = places.find(x => x.id === id);
+        if (!p) return;
+        fillPlaceForm(p);
+        renderCharList();
+        renderPlaceList();
+        deleteCharBtn.disabled = false;
+        persistBibleTab();
     }
 
     async function reloadFromServer() {
         setStatus("Loading…");
         try {
-            const [title, list, chapters] = await Promise.all([
+            const [title, charListResult, placeListResult, chapters] = await Promise.all([
                 getBookTitle(db, uid, bookId),
                 listBibleCharacters(db, uid, bookId),
+                listBiblePlaces(db, uid, bookId),
                 loadBookChapterOptions(db, uid, bookId)
             ]);
 
@@ -254,12 +426,21 @@ export async function mountStoryBiblePage(opts) {
                 setStatus("Book not found.", true);
                 bookTitleEl.textContent = "Missing book";
                 characters = [];
+                places = [];
                 renderCharList();
+                renderPlaceList();
                 return;
             }
 
             bookTitleEl.textContent = title;
-            characters = list;
+            characters = charListResult;
+            places = placeListResult;
+
+            let savedTab = "characters";
+            try {
+                const t = sessionStorage.getItem(SB_TAB_STORAGE_KEY);
+                if (t === "places") savedTab = "places";
+            } catch (_) {}
 
             const sel = fields.introduced;
             sel.innerHTML = '<option value="|">Not set</option>';
@@ -271,13 +452,31 @@ export async function mountStoryBiblePage(opts) {
                 sel.appendChild(opt);
             });
 
-            renderCharList();
-            if (characters.length) {
-                selectCharacter(characters[0].id);
+            bibleTab = savedTab === "places" ? "places" : "characters";
+            updateBibleTabChrome();
+
+            if (bibleTab === "places") {
+                selectedCharId = characters[0]?.id ?? null;
+                if (places.length) selectPlace(places[0].id);
+                else {
+                    selectedPlaceId = null;
+                    clearSharedForm();
+                    clearCharacterFields();
+                    deleteCharBtn.disabled = true;
+                    renderCharList();
+                    renderPlaceList();
+                }
             } else {
-                selectedId = null;
-                clearForm();
-                deleteCharBtn.disabled = true;
+                selectedPlaceId = places[0]?.id ?? null;
+                if (characters.length) selectCharacter(characters[0].id);
+                else {
+                    selectedCharId = null;
+                    clearSharedForm();
+                    clearCharacterFields();
+                    deleteCharBtn.disabled = true;
+                    renderCharList();
+                    renderPlaceList();
+                }
             }
             setStatus("");
         } catch (e) {
@@ -286,37 +485,116 @@ export async function mountStoryBiblePage(opts) {
         }
     }
 
+    tabCharsBtn?.addEventListener("click", () => {
+        bibleTab = "characters";
+        updateBibleTabChrome();
+        persistBibleTab();
+        const c = characters.find(x => x.id === selectedCharId);
+        if (c) fillCharacterForm(c);
+        else if (characters.length) selectCharacter(characters[0].id);
+        else {
+            selectedCharId = null;
+            clearSharedForm();
+            clearCharacterFields();
+            deleteCharBtn.disabled = true;
+            renderCharList();
+            renderPlaceList();
+        }
+    });
+
+    tabPlacesBtn?.addEventListener("click", () => {
+        bibleTab = "places";
+        updateBibleTabChrome();
+        persistBibleTab();
+        const p = places.find(x => x.id === selectedPlaceId);
+        if (p) fillPlaceForm(p);
+        else if (places.length) selectPlace(places[0].id);
+        else {
+            selectedPlaceId = null;
+            clearSharedForm();
+            clearCharacterFields();
+            deleteCharBtn.disabled = true;
+            renderCharList();
+            renderPlaceList();
+        }
+    });
+
     newCharBtn.addEventListener("click", () => {
+        bibleTab = "characters";
+        updateBibleTabChrome();
+        persistBibleTab();
         const c = emptyCharacter();
         characters = [c, ...characters];
         selectCharacter(c.id);
         saveCharBtn.focus();
     });
 
+    newPlaceBtn.addEventListener("click", () => {
+        bibleTab = "places";
+        updateBibleTabChrome();
+        persistBibleTab();
+        const p = emptyPlace();
+        places = [p, ...places];
+        selectPlace(p.id);
+        saveCharBtn.focus();
+    });
+
     saveCharBtn.addEventListener("click", async () => {
-        if (!selectedId) {
-            setStatus("Select or create a character first.", true);
+        if (bibleTab === "characters") {
+            if (!selectedCharId) {
+                setStatus("Select or create a character first.", true);
+                return;
+            }
+            const base = characters.find(x => x.id === selectedCharId);
+            if (!base) return;
+            const next = readFormIntoCharacter(base);
+            if (!next.name.trim()) {
+                setStatus("Name is required before saving.", true);
+                return;
+            }
+            setStatus("Saving…");
+            saveCharBtn.disabled = true;
+            try {
+                await saveBibleCharacter(db, uid, bookId, next);
+                const idx = characters.findIndex(x => x.id === next.id);
+                if (idx >= 0) characters[idx] = next;
+                characters.sort((a, b) =>
+                    (a.sortKey || "").localeCompare(b.sortKey || "", undefined, { sensitivity: "base" })
+                );
+                renderCharList();
+                refreshScanFromCache();
+                setStatus("Saved.");
+                setTimeout(() => setStatus(""), 2000);
+            } catch (e) {
+                console.error(e);
+                setStatus("Save failed. Try again.", true);
+            } finally {
+                saveCharBtn.disabled = false;
+            }
             return;
         }
-        const base = characters.find(x => x.id === selectedId);
+
+        if (!selectedPlaceId) {
+            setStatus("Select or create a place first.", true);
+            return;
+        }
+        const base = places.find(x => x.id === selectedPlaceId);
         if (!base) return;
-
-        const next = readFormIntoCharacter(base);
+        const next = readFormIntoPlace(base);
         if (!next.name.trim()) {
-            setStatus("Name is required before saving.", true);
+            setStatus("Place name is required before saving.", true);
             return;
         }
-
         setStatus("Saving…");
         saveCharBtn.disabled = true;
         try {
-            await saveBibleCharacter(db, uid, bookId, next);
-            const idx = characters.findIndex(x => x.id === next.id);
-            if (idx >= 0) characters[idx] = next;
-            characters.sort((a, b) =>
+            await saveBiblePlace(db, uid, bookId, next);
+            const idx = places.findIndex(x => x.id === next.id);
+            if (idx >= 0) places[idx] = next;
+            places.sort((a, b) =>
                 (a.sortKey || "").localeCompare(b.sortKey || "", undefined, { sensitivity: "base" })
             );
-            renderCharList();
+            renderPlaceList();
             refreshScanFromCache();
             setStatus("Saved.");
             setTimeout(() => setStatus(""), 2000);
@@ -329,21 +607,50 @@ export async function mountStoryBiblePage(opts) {
     });
 
     deleteCharBtn.addEventListener("click", async () => {
-        if (!selectedId) return;
-        if (!confirm("Delete this character from your Story Bible? This cannot be undone.")) return;
+        if (bibleTab === "characters") {
+            if (!selectedCharId) return;
+            if (!confirm("Delete this character from your Story Bible? This cannot be undone.")) return;
+            setStatus("Deleting…");
+            deleteCharBtn.disabled = true;
+            try {
+                await deleteBibleCharacter(db, uid, bookId, selectedCharId);
+                characters = characters.filter(x => x.id !== selectedCharId);
+                selectedCharId = null;
+                if (characters.length) selectCharacter(characters[0].id);
+                else {
+                    clearSharedForm();
+                    clearCharacterFields();
+                    deleteCharBtn.disabled = true;
+                    renderCharList();
+                    renderPlaceList();
+                }
+                setStatus("Deleted.");
+                setTimeout(() => setStatus(""), 2000);
+                refreshScanFromCache();
+            } catch (e) {
+                console.error(e);
+                setStatus("Delete failed.", true);
+            } finally {
+                deleteCharBtn.disabled = false;
+            }
+            return;
+        }
 
+        if (!selectedPlaceId) return;
+        if (!confirm("Delete this place from your Story Bible? This cannot be undone.")) return;
         setStatus("Deleting…");
         deleteCharBtn.disabled = true;
         try {
-            await deleteBibleCharacter(db, uid, bookId, selectedId);
-            characters = characters.filter(x => x.id !== selectedId);
-            selectedId = null;
-            if (characters.length) {
-                selectCharacter(characters[0].id);
-            } else {
-                clearForm();
+            await deleteBiblePlace(db, uid, bookId, selectedPlaceId);
+            places = places.filter(x => x.id !== selectedPlaceId);
+            selectedPlaceId = null;
+            if (places.length) selectPlace(places[0].id);
+            else {
+                clearSharedForm();
+                clearCharacterFields();
                 deleteCharBtn.disabled = true;
                 renderCharList();
+                renderPlaceList();
             }
             setStatus("Deleted.");
             setTimeout(() => setStatus(""), 2000);
@@ -356,10 +663,24 @@ export async function mountStoryBiblePage(opts) {
         }
     });
 
-    /** Plain text from last pattern scan — used to refresh suggestions after Add. */
     let cachedPlainForScan = "";
-    /** @type {"none"|"rules"} */
     let lastScanKind = "none";
+
+    function buildScanExtractOpts() {
+        const loose = scanLooseCheck?.checked === true;
+        const strict = scanStrictCheck?.checked === true;
+        return { firstPerson: strict, balanced: !loose };
+    }
+
+    function draftNotesFromScan(row, plain) {
+        const snippets = snippetContextsForPhrase(plain, row.name, { max: 4, radius: 100 });
+        let notes =
+            `[Added from manuscript scan — about ${row.occurrences}× in this book.]\n` +
+            `Edit or replace this note; it is not updated automatically.\n`;
+        if (snippets.length) notes += "\nExcerpts:\n" + snippets.map(s => `• ${s}`).join("\n\n");
+        else notes += "\n(No excerpts captured for this phrase.)";
+        return notes;
+    }
 
     function renderScanSuggestions(rows) {
         if (!scanResultsEl) return;
@@ -374,27 +695,25 @@ export async function mountStoryBiblePage(opts) {
         head.textContent = "Suggestions (pattern scan)";
         scanResultsEl.appendChild(head);
 
+        const plain = cachedPlainForScan || "";
+
         for (const row of rows) {
             const line = document.createElement("div");
             line.className = "sb-scan-row";
             const label = document.createElement("span");
             label.className = "sb-scan-name";
             label.textContent = `${row.name} (${row.occurrences}×)`;
-            const add = document.createElement("button");
-            add.type = "button";
-            add.className = "sb-scan-add";
-            add.textContent = "Add";
-            add.addEventListener("click", () => {
-                const plain = cachedPlainForScan || "";
-                const snippets = snippetContextsForPhrase(plain, row.name, { max: 4, radius: 100 });
-                let notes =
-                    `[Added from manuscript scan — about ${row.occurrences}× in this book.]\n` +
-                    `Edit or replace this note; it is not updated automatically.\n`;
-                if (snippets.length) {
-                    notes += "\nExcerpts:\n" + snippets.map(s => `• ${s}`).join("\n\n");
-                } else {
-                    notes += "\n(No excerpts captured for this phrase.)";
-                }
+            const btnRow = document.createElement("div");
+            btnRow.style.display = "flex";
+            btnRow.style.gap = "6px";
+            btnRow.style.flexShrink = "0";
+
+            const addChar = document.createElement("button");
+            addChar.type = "button";
+            addChar.className = "sb-scan-add";
+            addChar.textContent = "Character";
+            addChar.addEventListener("click", () => {
+                const notes = draftNotesFromScan(row, plain);
                 const c = normalizeBibleCharacter(
                     {
                         name: row.name,
@@ -408,20 +727,54 @@ export async function mountStoryBiblePage(opts) {
                     generateBibleCharacterId()
                 );
                 characters = [c, ...characters];
+                bibleTab = "characters";
+                updateBibleTabChrome();
+                persistBibleTab();
                 selectCharacter(c.id);
-                setStatus(`Draft “${row.name}” — Notes has excerpts; adjust fields, then Save character.`);
+                setStatus(`Draft character “${row.name}” — check Notes, then Save character.`);
                 refreshScanFromCache();
             });
+
+            const addPlace = document.createElement("button");
+            addPlace.type = "button";
+            addPlace.className = "sb-scan-add sb-scan-add-secondary";
+            addPlace.textContent = "Place";
+            addPlace.addEventListener("click", () => {
+                const notes = draftNotesFromScan(row, plain);
+                const p = normalizeBiblePlace(
+                    {
+                        name: row.name,
+                        aliases: [],
+                        kind: "",
+                        parentPlace: "",
+                        notes,
+                        tags: [],
+                        introducedSection: "",
+                        introducedChapterId: ""
+                    },
+                    generateBiblePlaceId()
+                );
+                places = [p, ...places];
+                bibleTab = "places";
+                updateBibleTabChrome();
+                persistBibleTab();
+                selectPlace(p.id);
+                setStatus(`Draft place “${row.name}” — set Kind if you like, then Save place.`);
+                refreshScanFromCache();
+            });
+
+            btnRow.appendChild(addChar);
+            btnRow.appendChild(addPlace);
             line.appendChild(label);
-            line.appendChild(add);
+            line.appendChild(btnRow);
             scanResultsEl.appendChild(line);
         }
     }
 
     function refreshScanFromCache() {
         if (!scanResultsEl || lastScanKind !== "rules" || !cachedPlainForScan) return;
-        const raw = extractNameCandidatesFromPlainText(cachedPlainForScan);
-        renderScanSuggestions(subtractBibleNames(raw, characters));
+        const raw = extractNameCandidatesFromPlainText(cachedPlainForScan, buildScanExtractOpts());
+        renderScanSuggestions(subtractBibleNames(raw, knownEntriesForScan()));
     }
 
     if (scanBtn && scanResultsEl) {
@@ -437,13 +790,13 @@ export async function mountStoryBiblePage(opts) {
                     setStatus("No chapter text found to scan yet.");
                     return;
                 }
-                const raw = extractNameCandidatesFromPlainText(cachedPlainForScan);
-                const filtered = subtractBibleNames(raw, characters);
+                const raw = extractNameCandidatesFromPlainText(cachedPlainForScan, buildScanExtractOpts());
+                const filtered = subtractBibleNames(raw, knownEntriesForScan());
                 renderScanSuggestions(filtered);
                 setStatus(
                     filtered.length
-                        ? `${filtered.length} likely name(s). Tap Add to draft — then Save character (notes include excerpts).`
-                        : "No new pattern matches (or already in your bible). Try adding characters manually."
+                        ? `${filtered.length} match(es). Character / Place adds a draft — then Save.`
+                        : "No new pattern matches (or already in your bible). Try adding manually."
                 );
             } catch (e) {
                 console.error(e);
@@ -453,7 +806,10 @@ export async function mountStoryBiblePage(opts) {
                 scanBtn.disabled = false;
             }
         });
+        scanStrictCheck?.addEventListener("change", refreshScanFromCache);
+        scanLooseCheck?.addEventListener("change", refreshScanFromCache);
     }
 
+    updateBibleTabChrome();
     await reloadFromServer();
 }

@@ -765,6 +765,33 @@ function extractTitleNames(s) {
 }
 
 /**
+ * Capital that follows a lowercase letter, clause punctuation, quotes, or an opener bracket —
+ * typical for names in running prose (1st or 3rd person), not bare sentence-initial scenery.
+ */
+function isLikelyMidClauseCapital(index, s) {
+    if (index <= 0) return false;
+    let j = index - 1;
+    while (j >= 0 && /\s/.test(s[j])) j--;
+    if (j < 0) return false;
+    const c = s[j];
+    if (c >= "a" && c <= "z") return true;
+    if (",;:!?\u2014\u2013".includes(c)) return true;
+    if (c === '"' || c === "\u201c" || c === "\u201d") return true;
+    if (c === "'" || c === "\u2019") return true;
+    if ("([{\u2018".includes(c)) return true;
+    return false;
+}
+
+/** Stems of words that appear as Name's / Name's (possessive) — strong person cue. */
+function possessiveWordStems(s) {
+    const set = new Set();
+    const re = /\b([A-Z][a-z]{2,})(?:'|\u2019)s\b/g;
+    let m;
+    while ((m = re.exec(s)) !== null) set.add(m[1].toLowerCase());
+    return set;
+}
+
+/**
  * Single-token capitalized hits that are usually scenery / objects / institutions in fiction,
  * not character names (multi-word phrases use PHRASE_DENY / first token).
  */
@@ -792,7 +819,19 @@ const SCAN_SINGLEWORD_EXTRA_DENY = new Set(
         "sink", "toilet", "stove", "oven", "fridge", "microwave", "dishwasher", "counter",
         "appliance", "vehicle", "truck", "bus", "train", "plane", "boat", "ship", "bike",
         "bicycle", "motorcycle", "scooter", "subway", "tunnel", "runway", "terminal",
-        "lobby", "suite", "hall", "corridor", "stairwell", "escalator", "sidewalk"
+        "lobby", "suite", "hall", "corridor", "stairwell", "escalator", "sidewalk",
+        "statue", "monument", "fountain", "billboard", "sign", "signs", "poster", "banner",
+        "curtain", "carpet", "rug", "vase", "urn", "crate", "barrel",
+        "bucket", "basket", "bin", "canister", "jar", "can", "bottle", "envelope", "folder",
+        "notebook", "backpack", "suitcase", "briefcase", "handbag", "purse", "wallet",
+        "ticket", "receipt", "invoice", "bookmark", "keyboard", "monitor", "headphones",
+        "microphone", "projector", "clipboard", "bulletin", "stapler", "hammer", "nail",
+        "screw", "bolt", "socket", "charger", "cable", "cord", "handle", "knob", "hinge",
+        "frame", "canvas", "easel", "podium", "lectern", "altar", "aisle", "pew", "bench",
+        "boulder", "cliff", "ridge", "plateau", "glacier", "volcano", "tornado", "hurricane",
+        "earthquake", "tsunami", "drought", "flood", "wildfire", "embers", "ashes", "cinders",
+        "paragraph", "margin", "footnote", "headline", "caption", "logo", "brand", "sticker",
+        "decal", "wrapper", "packaging", "carton", "cardboard", "plastic", "polyester", "nylon"
     ].map(w => w.toLowerCase())
 );
 
@@ -846,6 +885,7 @@ const PHRASE_DENY = new Set(
  *   minOccurrences?: number,
  *   minOccurrencesIfOnlyAfterBreak?: number,
  *   firstPerson?: boolean,
+ *   balanced?: boolean,
  *   maxResults?: number
  * }} [opts]
  * @returns {{ name: string, occurrences: number }[]}
@@ -858,7 +898,10 @@ export function extractNameCandidatesFromPlainText(text, opts = {}) {
             : 5;
     const maxResults =
         typeof opts.maxResults === "number" && opts.maxResults > 0 ? opts.maxResults : 50;
-    const firstPerson = opts.firstPerson !== false;
+    /** Opt-in: extra sentence-break filter for very chatty first-person introspection. */
+    const firstPerson = opts.firstPerson === true;
+    /** Default on: single-word junk (mostly sentence-initial objects) dropped unless it looks name-like. */
+    const balanced = opts.balanced !== false;
 
     /** Collapse whitespace but keep newlines for sentence-break detection. */
     const source = safeString(text, "")
@@ -869,10 +912,10 @@ export function extractNameCandidatesFromPlainText(text, opts = {}) {
 
     const capRe = /\b([A-Z][a-z]{2,}(?:\s+[A-Z][a-z]{2,})*)\b/g;
 
-    /** @type {Map<string, { name: string, n: number, mid: number }>} */
+    /** @type {Map<string, { name: string, n: number, mid: number, midClause: number }>} */
     const map = new Map();
 
-    function bumpPhrase(phrase, { countAsMid }) {
+    function bumpPhrase(phrase, { countAsMid, midClauseHit }) {
         const p = phrase.trim();
         if (p.length < 3) return;
         const first = p.split(/\s+/)[0].toLowerCase();
@@ -884,12 +927,13 @@ export function extractNameCandidatesFromPlainText(text, opts = {}) {
 
         let row = map.get(key);
         if (!row) {
-            row = { name: p, n: 0, mid: 0 };
+            row = { name: p, n: 0, mid: 0, midClause: 0 };
             map.set(key, row);
         }
         row.n += 1;
         if (p.length > row.name.length) row.name = p;
         if (countAsMid) row.mid += 1;
+        if (midClauseHit) row.midClause += 1;
     }
 
     /** Extra signal without double-counting occurrences already found by capRe on full text. */
@@ -906,27 +950,49 @@ export function extractNameCandidatesFromPlainText(text, opts = {}) {
         if (row) row.mid += 1;
     }
 
+    let possessiveSet = new Set();
+    const speechOrTitleSet = new Set();
+    if (balanced || firstPerson) {
+        possessiveSet = possessiveWordStems(source);
+        for (const n of extractAttributionNames(source)) {
+            speechOrTitleSet.add(n.toLowerCase());
+            if (firstPerson) boostMidOnly(n);
+        }
+        for (const n of extractTitleNames(source)) {
+            speechOrTitleSet.add(n.toLowerCase());
+            if (firstPerson) boostMidOnly(n);
+        }
+    }
+
     capRe.lastIndex = 0;
     let m;
     while ((m = capRe.exec(source)) !== null) {
         const phrase = m[1].trim();
         const atBreak = isCapitalAfterHardSentenceBreak(m.index, source);
-        if (firstPerson) bumpPhrase(phrase, { countAsMid: !atBreak });
-        else bumpPhrase(phrase, { countAsMid: true });
-    }
-
-    if (firstPerson) {
-        for (const n of extractAttributionNames(source)) boostMidOnly(n);
-        for (const n of extractTitleNames(source)) boostMidOnly(n);
+        const midClauseHit = isLikelyMidClauseCapital(m.index, source);
+        if (firstPerson) bumpPhrase(phrase, { countAsMid: !atBreak, midClauseHit });
+        else bumpPhrase(phrase, { countAsMid: true, midClauseHit });
     }
 
     return [...map.values()]
         .filter(x => {
             if (x.n < minOcc) return false;
-            if (!firstPerson) return true;
-            /** Kept if it ever appears mid-narrative / dialogue / attribution, or repeats often enough while only after hard breaks. */
-            if (x.mid >= 1) return true;
-            return x.n >= minIfOnlyBreak;
+            const key = x.name.toLowerCase();
+            const multi = x.name.includes(" ");
+            if (firstPerson) {
+                if (possessiveSet.has(key)) return true;
+                if (speechOrTitleSet.has(key)) return true;
+                if (x.mid >= 1) return true;
+                return x.n >= minIfOnlyBreak;
+            }
+            if (balanced && !multi) {
+                if (possessiveSet.has(key)) return true;
+                if (speechOrTitleSet.has(key)) return true;
+                if (x.midClause >= 1) return true;
+                if (x.n >= 6) return true;
+                return false;
+            }
+            return true;
         })
         .sort((a, b) => b.n - a.n)
         .slice(0, maxResults)

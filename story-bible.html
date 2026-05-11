@@ -282,6 +282,23 @@
         .sb-scan-btn:hover { border-color: #c4b5fd; }
         .sb-scan-btn:disabled { opacity: 0.55; cursor: not-allowed; }
         .sb-scan-hint { font-size: 12px; line-height: 1.45; margin: 8px 0 0; }
+        .sb-scan-opts {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-top: 10px;
+            font-size: 11px;
+            line-height: 1.35;
+            color: var(--text-soft);
+        }
+        .sb-scan-opts label {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .sb-scan-opts input { margin-top: 2px; flex-shrink: 0; }
         .sb-scan-results { margin-top: 10px; max-height: 220px; overflow-y: auto; }
         .sb-scan-title { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-soft); margin-bottom: 8px; }
         .sb-scan-row {
@@ -308,6 +325,36 @@
             cursor: pointer;
         }
         .sb-scan-add:hover { border-color: #c4b5fd; }
+        .sb-scan-add-secondary {
+            opacity: 0.92;
+            font-weight: 700;
+            font-size: 11px;
+            padding: 6px 10px;
+        }
+        .sb-bible-tabs {
+            display: flex;
+            gap: 0;
+            margin-bottom: 12px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            background: rgba(0, 0, 0, 0.2);
+        }
+        .sb-bible-tab {
+            flex: 1;
+            padding: 9px 10px;
+            border: none;
+            background: transparent;
+            color: var(--text-soft);
+            font-weight: 800;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .sb-bible-tab.is-active {
+            background: rgba(109, 40, 217, 0.35);
+            color: #f5f3ff;
+        }
+        .sb-aside-panel { margin-bottom: 0; }
     </style>
 </head>
 <body>
@@ -317,7 +364,7 @@
                 <p class="sb-eyebrow">Reference</p>
                 <h1 class="sb-title">Story Bible</h1>
                 <p class="sb-sub">
-                    Searchable character sheets per book. Open a book’s bible from here or from the editor while you write.
+                    Searchable character and place notes per book. Open a book’s bible from here or from the editor while you write.
                 </p>
             </div>
             <nav class="sb-nav" aria-label="Site">
@@ -332,7 +379,7 @@
                 Story Bible is turned off for this browser.
             </p>
             <p class="sb-muted" style="margin: 14px 0 0; line-height: 1.5">
-                Your saved character sheets are still in your account. Turn links and this page back on under
+                Your saved character and place sheets are still in your account. Turn links and this page back on under
                 <strong>Profile</strong> in <a class="sb-link" href="/settings.html">Account settings</a>.
             </p>
         </div>
@@ -343,11 +390,12 @@
         <section id="sbHubView" class="sb-panel hidden">
             <h2>Your books</h2>
             <div class="sb-table-wrap">
-                <table class="sb-table" aria-label="Books and character counts">
+                <table class="sb-table" aria-label="Books and bible counts">
                     <thead>
                         <tr>
                             <th>Book</th>
                             <th class="sb-num">Characters</th>
+                            <th class="sb-num">Places</th>
                             <th>Updated</th>
                             <th></th>
                         </tr>
@@ -365,28 +413,76 @@
             </div>
             <div class="sb-split sb-panel">
                 <aside>
-                    <button type="button" class="sb-new-btn" id="sbNewChar">+ New character</button>
-                    <ul class="sb-char-list" id="sbCharList" aria-label="Characters"></ul>
-                    <div class="sb-scan">
-                        <button type="button" class="sb-scan-btn" id="sbScanBtn">Scan manuscript for names</button>
-                        <p class="sb-muted sb-scan-hint">
-                            Finds repeated capitalized words and phrases, tuned for first person. Common scene words
-                            are filtered out. Tap <strong>Add</strong> to draft a row (notes get short excerpts from
-                            your text), then <strong>Save character</strong>.
+                    <div class="sb-bible-tabs" role="tablist" aria-label="Bible section">
+                        <button type="button" class="sb-bible-tab is-active" id="sbTabChars" role="tab" aria-selected="true">
+                            Characters
+                        </button>
+                        <button type="button" class="sb-bible-tab" id="sbTabPlaces" role="tab" aria-selected="false">
+                            Places
+                        </button>
+                    </div>
+                    <div id="sbAsideChars" class="sb-aside-panel">
+                        <button type="button" class="sb-new-btn" id="sbNewChar">+ New character</button>
+                        <ul class="sb-char-list" id="sbCharList" aria-label="Characters"></ul>
+                        <div class="sb-scan">
+                            <button type="button" class="sb-scan-btn" id="sbScanBtn">Scan manuscript for names</button>
+                            <div class="sb-scan-opts" id="sbScanOpts">
+                                <label>
+                                    <input type="checkbox" id="sbScanStrict" />
+                                    Stricter scan (very chatty first person — drops more sentence-start caps)
+                                </label>
+                                <label>
+                                    <input type="checkbox" id="sbScanLoose" />
+                                    Show more matches (turns off balanced filter — noisier)
+                                </label>
+                            </div>
+                            <p class="sb-muted sb-scan-hint">
+                                Suggestions add to <strong>Characters</strong> by default; use <strong>Place</strong> for
+                                cities and locations. Notes get excerpts. Then save from the form.
+                            </p>
+                            <div id="sbScanResults" class="sb-scan-results hidden" aria-live="polite"></div>
+                        </div>
+                    </div>
+                    <div id="sbAsidePlaces" class="sb-aside-panel hidden">
+                        <button type="button" class="sb-new-btn" id="sbNewPlace">+ New place</button>
+                        <ul class="sb-char-list" id="sbPlaceList" aria-label="Places"></ul>
+                        <p class="sb-muted sb-scan-hint" style="margin-top: 12px">
+                            Add cities, regions, buildings, or fictional locations. Use the scan’s <strong>Place</strong>
+                            button when a match is a location, not a person.
                         </p>
-                        <div id="sbScanResults" class="sb-scan-results hidden" aria-live="polite"></div>
                     </div>
                 </aside>
                 <div class="sb-form">
                     <div class="sb-form-grid">
                         <div class="sb-field sb-field-full">
-                            <label for="sbName">Name</label>
+                            <label for="sbName" id="sbLabelName">Name</label>
                             <input id="sbName" type="text" autocomplete="off" placeholder="Character name" />
                         </div>
                         <div class="sb-field sb-field-full">
-                            <label for="sbAliases">Aliases (comma-separated)</label>
+                            <label for="sbAliases" id="sbLabelAliases">Also known as (comma-separated)</label>
                             <input id="sbAliases" type="text" autocomplete="off" placeholder="Nicknames, titles…" />
                         </div>
+                        <div id="sbFormPlaceFields" class="sb-field sb-field-full hidden">
+                            <label for="sbPlaceKind">Kind</label>
+                            <select id="sbPlaceKind">
+                                <option value="">Not specified</option>
+                                <option value="city">City</option>
+                                <option value="town">Town</option>
+                                <option value="village">Village</option>
+                                <option value="region">Region / state</option>
+                                <option value="country">Country</option>
+                                <option value="building">Building</option>
+                                <option value="landmark">Landmark</option>
+                                <option value="fictional">Fictional place</option>
+                                <option value="world">World / plane</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div id="sbFormPlaceParent" class="sb-field sb-field-full hidden">
+                            <label for="sbPlaceParent">Inside / near / country</label>
+                            <input id="sbPlaceParent" type="text" autocomplete="off" placeholder="e.g. Illinois, UK, the Northern Reach…" />
+                        </div>
+                        <div id="sbFormCharFields">
                         <div class="sb-field">
                             <label for="sbAge">Age</label>
                             <input id="sbAge" type="text" autocomplete="off" />
@@ -415,6 +511,7 @@
                             <label for="sbDistinctive">Distinctive</label>
                             <input id="sbDistinctive" type="text" autocomplete="off" placeholder="Scars, voice, habits…" />
                         </div>
+                        </div>
                         <div class="sb-field sb-field-full">
                             <label for="sbTags">Tags (comma-separated)</label>
                             <input id="sbTags" type="text" autocomplete="off" placeholder="POV, faction…" />
@@ -429,7 +526,7 @@
                         </div>
                     </div>
                     <div class="sb-form-actions">
-                        <button type="button" class="sb-save" id="sbSaveChar">Save character</button>
+                        <button type="button" class="sb-save" id="sbSaveChar">Save</button>
                         <button type="button" class="sb-del" id="sbDeleteChar">Delete</button>
                     </div>
                 </div>
@@ -441,7 +538,7 @@
     <script type="module">
         import { auth, db } from "./firebase.js";
         import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-        import { mountStoryBiblePage } from "./js/story-bible-page.js?v=7";
+        import { mountStoryBiblePage } from "./js/story-bible-page.js?v=9";
         import {
             isStoryBibleUiEnabled,
             STORY_BIBLE_PREF_KEY,
@@ -481,7 +578,18 @@
                 bookView: document.getElementById("sbBookView"),
                 booksTbody: document.getElementById("sbBooksTbody"),
                 charList: document.getElementById("sbCharList"),
+                placeList: document.getElementById("sbPlaceList"),
                 newCharBtn: document.getElementById("sbNewChar"),
+                newPlaceBtn: document.getElementById("sbNewPlace"),
+                tabCharsBtn: document.getElementById("sbTabChars"),
+                tabPlacesBtn: document.getElementById("sbTabPlaces"),
+                asideCharsEl: document.getElementById("sbAsideChars"),
+                asidePlacesEl: document.getElementById("sbAsidePlaces"),
+                charFieldsEl: document.getElementById("sbFormCharFields"),
+                placeFieldsEl: document.getElementById("sbFormPlaceFields"),
+                placeParentEl: document.getElementById("sbFormPlaceParent"),
+                labelNameEl: document.getElementById("sbLabelName"),
+                labelAliasesEl: document.getElementById("sbLabelAliases"),
                 saveCharBtn: document.getElementById("sbSaveChar"),
                 deleteCharBtn: document.getElementById("sbDeleteChar"),
                 openEditorLink: document.getElementById("sbOpenEditor"),
@@ -489,6 +597,8 @@
                 fields: {
                     name: document.getElementById("sbName"),
                     aliases: document.getElementById("sbAliases"),
+                    placeKind: document.getElementById("sbPlaceKind"),
+                    placeParent: document.getElementById("sbPlaceParent"),
                     age: document.getElementById("sbAge"),
                     eyes: document.getElementById("sbEyes"),
                     hair: document.getElementById("sbHair"),
@@ -501,7 +611,9 @@
                     notes: document.getElementById("sbNotes")
                 },
                 scanBtn: document.getElementById("sbScanBtn"),
-                scanResultsEl: document.getElementById("sbScanResults")
+                scanResultsEl: document.getElementById("sbScanResults"),
+                scanStrictCheck: document.getElementById("sbScanStrict"),
+                scanLooseCheck: document.getElementById("sbScanLoose")
             });
         });
     </script>
