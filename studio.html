@@ -996,6 +996,7 @@
         </a>
         <a href="/scratch.html" class="menu-link">📝 Scratch notes</a>
         <a href="/vault.html" class="menu-link">📓 Notes library</a>
+        <a href="/story-bible.html" class="menu-link" id="storyBibleMenuLink">📖 Story Bible</a>
         <a href="/index.html" class="menu-link">🏠 Home</a>
         <a href="/badges.html" class="menu-link">🎖️ Badges</a>
         <a href="/settings.html" class="menu-link">⚙️ Settings</a>
@@ -1020,6 +1021,7 @@
                 </a>
                 <a href="/scratch.html" class="sidebar-item">📝 Scratch notes</a>
                 <a href="/vault.html" class="sidebar-item">📓 Notes library</a>
+                <a href="/story-bible.html" class="sidebar-item" id="storyBibleSidebarLink">📖 Story Bible</a>
                 <a href="/badges.html" class="sidebar-item">🏆 Achievements</a>
                 <a href="/settings.html" class="sidebar-item">⚙️ Settings</a>
 				<a href="/Novel_Exporter.html" class="sidebar-item" id="sidebarFormatLink">📃 Novel exporter</a>
@@ -1228,6 +1230,27 @@
             ACCOUNT_READER,
             READER_HOME_URL,
         } from "./js/account-mode.js?v=1";
+        import {
+            isStoryBibleUiEnabled,
+            STORY_BIBLE_PREF_KEY,
+            STORY_BIBLE_PREF_EVENT
+        } from "./js/story-bible-prefs.js?v=1";
+
+        function applyStudioStoryBibleNav() {
+            const on = isStoryBibleUiEnabled();
+            const menu = document.getElementById("storyBibleMenuLink");
+            const side = document.getElementById("storyBibleSidebarLink");
+            if (menu) menu.style.display = on ? "" : "none";
+            if (side) side.style.display = on ? "" : "none";
+        }
+        applyStudioStoryBibleNav();
+        window.addEventListener("storage", e => {
+            if (e.key === STORY_BIBLE_PREF_KEY) applyStudioStoryBibleNav();
+        });
+        window.addEventListener(STORY_BIBLE_PREF_EVENT, applyStudioStoryBibleNav);
+        document.addEventListener("visibilitychange", () => {
+            if (!document.hidden) applyStudioStoryBibleNav();
+        });
 
         const status = document.getElementById("status");
         const profileDisplayName = document.getElementById("profileDisplayName");

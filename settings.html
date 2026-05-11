@@ -321,6 +321,42 @@
 
             <button type="button" class="btn btn-primary" id="saveDisplayBtn">Save display name</button>
             <div class="msg" id="profileMsg" role="status"></div>
+
+            <div class="field" style="margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--border)">
+                <label>Story Bible</label>
+                <p class="hint" style="margin-bottom: 12px">
+                    Character notes per book. Alysum does <strong>not</strong> read your existing chapters to fill this in — you add entries yourself. It applies to all books, including ones you already wrote.
+                </p>
+                <a href="/story-bible.html" class="btn btn-primary" style="text-decoration: none; margin-top: 0">Open Story Bible</a>
+                <label
+                    style="
+                        display: flex;
+                        align-items: flex-start;
+                        gap: 10px;
+                        cursor: pointer;
+                        margin: 16px 0 0;
+                        padding: 12px 14px;
+                        border-radius: 12px;
+                        border: 1px solid var(--border);
+                        background: rgba(255, 255, 255, 0.04);
+                    "
+                >
+                    <input
+                        type="checkbox"
+                        id="storyBibleUiToggle"
+                        style="margin-top: 3px; accent-color: var(--purple-bright, #a78bfa)"
+                    />
+                    <span>
+                        <strong style="display: block; font-size: 14px; margin-bottom: 4px; color: #fff"
+                            >Show Story Bible in the app</strong
+                        >
+                        <span class="hint" style="margin: 0; display: block"
+                            >When off, editor and Studio hide Story Bible links. This device only; your saved bible data
+                            stays in your account.</span
+                        >
+                    </span>
+                </label>
+            </div>
         </div>
 
         <div class="panel hidden" id="securityPanel">
@@ -353,6 +389,7 @@
         import { permanentHandleFromUserData } from "./js/profile-display.js?v=1";
         import { GRADIENT_THEMES, applyGradientTheme, getStoredGradientThemeId } from "./js/gradient-theme.js?v=2";
         import { normalizeAccountType, ACCOUNT_AUTHOR, ACCOUNT_READER, ACCOUNT_BOTH, homeUrlForUserData } from "./js/account-mode.js?v=1";
+        import { isStoryBibleUiEnabled, setStoryBibleUiEnabled } from "./js/story-bible-prefs.js?v=1";
 
         const backBtn = document.getElementById("backBtn");
         const loadingPanel = document.getElementById("loadingPanel");
@@ -446,6 +483,15 @@
                 profilePanel.classList.remove("hidden");
                 securityPanel.classList.remove("hidden");
                 initThemePicker();
+
+                const storyBibleUiToggle = document.getElementById("storyBibleUiToggle");
+                if (storyBibleUiToggle && storyBibleUiToggle.dataset.bound !== "1") {
+                    storyBibleUiToggle.dataset.bound = "1";
+                    storyBibleUiToggle.checked = isStoryBibleUiEnabled();
+                    storyBibleUiToggle.addEventListener("change", () => {
+                        setStoryBibleUiEnabled(storyBibleUiToggle.checked);
+                    });
+                }
 
                 const hasPassword = user.providerData?.some(p => p.providerId === "password");
                 const ssoNote = document.getElementById("ssoPasswordNote");

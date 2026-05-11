@@ -18,6 +18,11 @@ service cloud.firestore {
 
       match /books/{bookId} {
         allow read, write: if isUser(userId);
+
+        // Story Bible — character sheets for this book (same owner as the book doc).
+        match /bibleCharacters/{characterId} {
+          allow read, write: if isUser(userId);
+        }
       }
 
       match /promptEntries/{entryId} {

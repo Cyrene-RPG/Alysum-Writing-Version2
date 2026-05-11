@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- ALYSUM:PWA:START -->
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta name="theme-color" content="#7c3aed" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#020b18" media="(prefers-color-scheme: dark)">
+    <meta name="color-scheme" content="dark light">
+    <meta name="application-name" content="Alysum">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Alysum">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="msapplication-TileColor" content="#7c3aed">
+    <meta name="msapplication-TileImage" content="/Alysum-3.png">
+    <link rel="icon" type="image/png" sizes="any" href="/Alysum-3.png">
+    <link rel="apple-touch-icon" href="/Alysum-3.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/Alysum-3.png">
+    <script src="/js/pwa-register.js" defer></script>
+    <!-- ALYSUM:PWA:END -->
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Story Bible — Alysum</title>
+    <script>
+        try {
+            var __g = localStorage.getItem("alysum-gradient-theme");
+            if (__g && __g !== "classic") document.documentElement.setAttribute("data-gradient-theme", __g);
+        } catch (e) {}
+    </script>
+    <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
+    <style>
+        * { box-sizing: border-box; }
+        :root {
+            --alysum-purple: #6d28d9;
+            --bg: #0b1220;
+            --panel: #111827;
+            --panel-soft: #172132;
+            --text: #f9fafb;
+            --text-soft: #9ca3af;
+            --border: rgba(255,255,255,0.1);
+        }
+        html, body {
+            margin: 0;
+            min-height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: var(--bg);
+            color: var(--text);
+        }
+        .sb-wrap {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px 18px 48px;
+        }
+        .sb-top {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .sb-eyebrow {
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: #c4b5fd;
+            margin: 0 0 6px;
+        }
+        .sb-title {
+            margin: 0;
+            font-size: 32px;
+            font-weight: 900;
+            letter-spacing: -0.02em;
+        }
+        .sb-sub {
+            margin: 8px 0 0;
+            color: var(--text-soft);
+            font-size: 15px;
+            line-height: 1.5;
+            max-width: 640px;
+        }
+        .sb-nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .sb-nav a {
+            text-decoration: none;
+            border: 1px solid var(--border);
+            background: var(--panel);
+            color: var(--text);
+            padding: 10px 14px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 14px;
+        }
+        .sb-nav a:hover {
+            border-color: rgba(196, 181, 253, 0.45);
+        }
+        .sb-status {
+            min-height: 22px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-soft);
+            margin-bottom: 12px;
+        }
+        .sb-panel {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 18px;
+        }
+        .sb-panel h2 {
+            margin: 0 0 14px;
+            font-size: 18px;
+            font-weight: 800;
+        }
+        .sb-table-wrap { overflow-x: auto; }
+        table.sb-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        table.sb-table th, table.sb-table td {
+            text-align: left;
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border);
+        }
+        table.sb-table th {
+            color: var(--text-soft);
+            font-weight: 700;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        .sb-muted { color: var(--text-soft); }
+        .sb-nowrap { white-space: nowrap; }
+        .sb-num { text-align: right; font-variant-numeric: tabular-nums; }
+        .sb-actions { white-space: nowrap; }
+        a.sb-link {
+            color: #e9d5ff;
+            font-weight: 700;
+            text-decoration: none;
+        }
+        a.sb-link:hover { text-decoration: underline; }
+        .sb-btn {
+            display: inline-block;
+            padding: 6px 10px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            text-decoration: none;
+            border: 1px solid var(--border);
+            margin-right: 6px;
+        }
+        .sb-btn-ghost {
+            background: transparent;
+            color: var(--text);
+        }
+        .sb-btn-primary {
+            background: var(--alysum-purple);
+            border-color: var(--alysum-purple);
+            color: #fff;
+        }
+        .hidden { display: none !important; }
+        .sb-book-head {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+        .sb-book-head h2 {
+            margin: 0;
+            flex: 1;
+            min-width: 0;
+            font-size: 22px;
+            font-weight: 900;
+        }
+        .sb-split {
+            display: grid;
+            grid-template-columns: 220px 1fr;
+            gap: 18px;
+        }
+        @media (max-width: 760px) {
+            .sb-split { grid-template-columns: 1fr; }
+        }
+        .sb-char-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            max-height: 52vh;
+            overflow-y: auto;
+        }
+        .sb-char-list li { margin-bottom: 6px; }
+        .sb-char-item {
+            width: 100%;
+            text-align: left;
+            border: 1px solid var(--border);
+            background: var(--panel-soft);
+            color: var(--text);
+            border-radius: 10px;
+            padding: 10px 12px;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .sb-char-item:hover { border-color: rgba(196, 181, 253, 0.35); }
+        .sb-char-item.is-active {
+            border-color: var(--alysum-purple);
+            box-shadow: 0 0 0 1px var(--alysum-purple);
+        }
+        .sb-new-btn {
+            width: 100%;
+            margin-bottom: 12px;
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px dashed var(--border);
+            background: transparent;
+            color: var(--text);
+            font-weight: 800;
+            cursor: pointer;
+        }
+        .sb-new-btn:hover { border-color: #c4b5fd; color: #e9d5ff; }
+        .sb-form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px 16px;
+        }
+        @media (max-width: 640px) {
+            .sb-form-grid { grid-template-columns: 1fr; }
+        }
+        .sb-field label {
+            display: block;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-soft);
+            margin-bottom: 4px;
+        }
+        .sb-field input, .sb-field textarea, .sb-field select {
+            width: 100%;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 12px;
+            background: var(--panel-soft);
+            color: var(--text);
+            font-size: 14px;
+        }
+        .sb-field textarea { min-height: 100px; resize: vertical; }
+        .sb-field-full { grid-column: 1 / -1; }
+        .sb-form-actions {
+            margin-top: 16px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .sb-form-actions button {
+            padding: 10px 18px;
+            border-radius: 10px;
+            font-weight: 800;
+            cursor: pointer;
+            border: none;
+            font-size: 14px;
+        }
+        .sb-save { background: var(--alysum-purple); color: #fff; }
+        .sb-del { background: #7f1d1d; color: #fecaca; }
+        .sb-save:disabled, .sb-del:disabled { opacity: 0.5; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+    <div class="sb-wrap">
+        <header class="sb-top">
+            <div>
+                <p class="sb-eyebrow">Reference</p>
+                <h1 class="sb-title">Story Bible</h1>
+                <p class="sb-sub">
+                    Searchable character sheets per book. Open a book’s bible from here or from the editor while you write.
+                </p>
+            </div>
+            <nav class="sb-nav" aria-label="Site">
+                <a href="/studio.html">Studio</a>
+                <a href="/library.html">Library</a>
+                <a href="/vault.html">Notes</a>
+            </nav>
+        </header>
+
+        <div id="sbDisabled" class="sb-panel hidden" style="margin-top: 8px">
+            <p class="sb-sub" style="margin: 0; max-width: none">
+                Story Bible is turned off for this browser.
+            </p>
+            <p class="sb-muted" style="margin: 14px 0 0; line-height: 1.5">
+                Your saved character sheets are still in your account. Turn links and this page back on under
+                <strong>Profile</strong> in <a class="sb-link" href="/settings.html">Account settings</a>.
+            </p>
+        </div>
+
+        <div id="sbEnabledRoot">
+        <div id="sbStatus" class="sb-status" role="status"></div>
+
+        <section id="sbHubView" class="sb-panel hidden">
+            <h2>Your books</h2>
+            <div class="sb-table-wrap">
+                <table class="sb-table" aria-label="Books and character counts">
+                    <thead>
+                        <tr>
+                            <th>Book</th>
+                            <th class="sb-num">Characters</th>
+                            <th>Updated</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="sbBooksTbody"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="sbBookView" class="hidden">
+            <div class="sb-book-head">
+                <a class="sb-btn sb-btn-ghost" href="/story-bible.html">← All bibles</a>
+                <h2 id="sbBookTitle">…</h2>
+                <a class="sb-btn sb-btn-primary" id="sbOpenEditor" href="#">Open editor</a>
+            </div>
+            <div class="sb-split sb-panel">
+                <aside>
+                    <button type="button" class="sb-new-btn" id="sbNewChar">+ New character</button>
+                    <ul class="sb-char-list" id="sbCharList" aria-label="Characters"></ul>
+                </aside>
+                <div class="sb-form">
+                    <div class="sb-form-grid">
+                        <div class="sb-field sb-field-full">
+                            <label for="sbName">Name</label>
+                            <input id="sbName" type="text" autocomplete="off" placeholder="Character name" />
+                        </div>
+                        <div class="sb-field sb-field-full">
+                            <label for="sbAliases">Aliases (comma-separated)</label>
+                            <input id="sbAliases" type="text" autocomplete="off" placeholder="Nicknames, titles…" />
+                        </div>
+                        <div class="sb-field">
+                            <label for="sbAge">Age</label>
+                            <input id="sbAge" type="text" autocomplete="off" />
+                        </div>
+                        <div class="sb-field">
+                            <label for="sbEyes">Eyes</label>
+                            <input id="sbEyes" type="text" autocomplete="off" />
+                        </div>
+                        <div class="sb-field">
+                            <label for="sbHair">Hair</label>
+                            <input id="sbHair" type="text" autocomplete="off" />
+                        </div>
+                        <div class="sb-field">
+                            <label for="sbHeight">Height</label>
+                            <input id="sbHeight" type="text" autocomplete="off" />
+                        </div>
+                        <div class="sb-field">
+                            <label for="sbSkin">Skin</label>
+                            <input id="sbSkin" type="text" autocomplete="off" />
+                        </div>
+                        <div class="sb-field">
+                            <label for="sbBuild">Build</label>
+                            <input id="sbBuild" type="text" autocomplete="off" />
+                        </div>
+                        <div class="sb-field sb-field-full">
+                            <label for="sbDistinctive">Distinctive</label>
+                            <input id="sbDistinctive" type="text" autocomplete="off" placeholder="Scars, voice, habits…" />
+                        </div>
+                        <div class="sb-field sb-field-full">
+                            <label for="sbTags">Tags (comma-separated)</label>
+                            <input id="sbTags" type="text" autocomplete="off" placeholder="POV, faction…" />
+                        </div>
+                        <div class="sb-field sb-field-full">
+                            <label for="sbIntroduced">Introduced in</label>
+                            <select id="sbIntroduced"></select>
+                        </div>
+                        <div class="sb-field sb-field-full">
+                            <label for="sbNotes">Notes</label>
+                            <textarea id="sbNotes" placeholder="Anything else you want to remember…"></textarea>
+                        </div>
+                    </div>
+                    <div class="sb-form-actions">
+                        <button type="button" class="sb-save" id="sbSaveChar">Save character</button>
+                        <button type="button" class="sb-del" id="sbDeleteChar">Delete</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+        </div>
+    </div>
+
+    <script type="module">
+        import { auth, db } from "./firebase.js";
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import { mountStoryBiblePage } from "./js/story-bible-page.js?v=1";
+        import {
+            isStoryBibleUiEnabled,
+            STORY_BIBLE_PREF_KEY,
+            STORY_BIBLE_PREF_EVENT
+        } from "./js/story-bible-prefs.js?v=1";
+
+        function applyStoryBiblePageGate() {
+            const disabled = document.getElementById("sbDisabled");
+            const root = document.getElementById("sbEnabledRoot");
+            if (!disabled || !root) return !isStoryBibleUiEnabled();
+            const off = !isStoryBibleUiEnabled();
+            disabled.classList.toggle("hidden", !off);
+            root.classList.toggle("hidden", off);
+            return off;
+        }
+
+        window.addEventListener("storage", e => {
+            if (e.key === STORY_BIBLE_PREF_KEY) location.reload();
+        });
+        window.addEventListener(STORY_BIBLE_PREF_EVENT, () => location.reload());
+
+        onAuthStateChanged(auth, user => {
+            if (!user) {
+                window.location.href = "/login.html?next=" + encodeURIComponent("/story-bible.html" + window.location.search);
+                return;
+            }
+
+            if (applyStoryBiblePageGate()) {
+                return;
+            }
+
+            mountStoryBiblePage({
+                db,
+                uid: user.uid,
+                statusEl: document.getElementById("sbStatus"),
+                hubView: document.getElementById("sbHubView"),
+                bookView: document.getElementById("sbBookView"),
+                booksTbody: document.getElementById("sbBooksTbody"),
+                charList: document.getElementById("sbCharList"),
+                newCharBtn: document.getElementById("sbNewChar"),
+                saveCharBtn: document.getElementById("sbSaveChar"),
+                deleteCharBtn: document.getElementById("sbDeleteChar"),
+                openEditorLink: document.getElementById("sbOpenEditor"),
+                bookTitleEl: document.getElementById("sbBookTitle"),
+                fields: {
+                    name: document.getElementById("sbName"),
+                    aliases: document.getElementById("sbAliases"),
+                    age: document.getElementById("sbAge"),
+                    eyes: document.getElementById("sbEyes"),
+                    hair: document.getElementById("sbHair"),
+                    height: document.getElementById("sbHeight"),
+                    skin: document.getElementById("sbSkin"),
+                    build: document.getElementById("sbBuild"),
+                    distinctive: document.getElementById("sbDistinctive"),
+                    tags: document.getElementById("sbTags"),
+                    introduced: document.getElementById("sbIntroduced"),
+                    notes: document.getElementById("sbNotes")
+                }
+            });
+        });
+    </script>
+</body>
+</html>
