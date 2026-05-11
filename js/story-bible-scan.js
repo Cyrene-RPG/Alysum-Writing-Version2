@@ -716,7 +716,85 @@ const FIRST_TOKEN_DENY = new Set(
         "died",
         "lived",
         "breathed",
-        "existed"
+        "existed",
+        "yeah",
+        "yep",
+        "yup",
+        "nah",
+        "nope",
+        "huh",
+        "hey",
+        "wow",
+        "whoa",
+        "ooh",
+        "aah",
+        "ugh",
+        "gosh",
+        "gee",
+        "okay",
+        "sure",
+        "alright",
+        "instead",
+        "however",
+        "therefore",
+        "otherwise",
+        "anyway",
+        "anyways",
+        "besides",
+        "moreover",
+        "furthermore",
+        "nevertheless",
+        "nonetheless",
+        "meanwhile",
+        "afterward",
+        "afterwards",
+        "indeed",
+        "plus",
+        "minus",
+        "regardless",
+        "basically",
+        "literally",
+        "seriously",
+        "obviously",
+        "clearly",
+        "definitely",
+        "probably",
+        "possibly",
+        "certainly",
+        "totally",
+        "essentially",
+        "generally",
+        "specifically",
+        "especially",
+        "particularly",
+        "simply",
+        "recently",
+        "lately",
+        "hopefully",
+        "thankfully",
+        "oddly",
+        "interestingly",
+        "surprisingly",
+        "unsurprisingly",
+        "ironically",
+        "technically",
+        "honestly",
+        "frankly",
+        "supposedly",
+        "apparently",
+        "arguably",
+        "luckily",
+        "unfortunately",
+        "fortunately",
+        "notably",
+        "mostly",
+        "partly",
+        "fully",
+        "please",
+        "thanks",
+        "sorry",
+        "yes",
+        "no"
     ].map(w => w.toLowerCase())
 );
 
@@ -765,17 +843,84 @@ function extractTitleNames(s) {
 }
 
 /**
+ * Words often written as ", Yeah" / "; Anyway" — comma alone is not enough to treat as a mid-clause name.
+ * (Lowercase first token of the matched phrase.)
+ */
+const COMMA_LEAD_DISCOURSE = new Set(
+    [
+        "yeah",
+        "yep",
+        "yup",
+        "nah",
+        "nope",
+        "huh",
+        "wow",
+        "whoa",
+        "please",
+        "thanks",
+        "sorry",
+        "sure",
+        "okay",
+        "yes",
+        "no",
+        "well",
+        "hey",
+        "oh",
+        "ah",
+        "um",
+        "uh",
+        "er",
+        "gosh",
+        "gee",
+        "anyway",
+        "anyways",
+        "instead",
+        "however",
+        "besides",
+        "still",
+        "yet",
+        "again",
+        "perhaps",
+        "maybe",
+        "honestly",
+        "seriously",
+        "basically",
+        "literally",
+        "obviously",
+        "clearly",
+        "probably",
+        "definitely",
+        "certainly",
+        "possibly",
+        "totally",
+        "especially",
+        "generally",
+        "usually",
+        "sometimes",
+        "often",
+        "never",
+        "always",
+        "either",
+        "neither"
+    ].map(w => w.toLowerCase())
+);
+
+/**
  * Capital that follows a lowercase letter, clause punctuation, quotes, or an opener bracket —
  * typical for names in running prose (1st or 3rd person), not bare sentence-initial scenery.
+ * @param {string} firstTokenLower — first word of the matched phrase, lowercased
  */
-function isLikelyMidClauseCapital(index, s) {
+function isLikelyMidClauseCapital(index, s, firstTokenLower) {
     if (index <= 0) return false;
     let j = index - 1;
     while (j >= 0 && /\s/.test(s[j])) j--;
     if (j < 0) return false;
     const c = s[j];
     if (c >= "a" && c <= "z") return true;
-    if (",;:!?\u2014\u2013".includes(c)) return true;
+    if (",;:!?\u2014\u2013".includes(c)) {
+        if (COMMA_LEAD_DISCOURSE.has(firstTokenLower)) return false;
+        return true;
+    }
     if (c === '"' || c === "\u201c" || c === "\u201d") return true;
     if (c === "'" || c === "\u2019") return true;
     if ("([{\u2018".includes(c)) return true;
@@ -831,7 +976,8 @@ const SCAN_SINGLEWORD_EXTRA_DENY = new Set(
         "boulder", "cliff", "ridge", "plateau", "glacier", "volcano", "tornado", "hurricane",
         "earthquake", "tsunami", "drought", "flood", "wildfire", "embers", "ashes", "cinders",
         "paragraph", "margin", "footnote", "headline", "caption", "logo", "brand", "sticker",
-        "decal", "wrapper", "packaging", "carton", "cardboard", "plastic", "polyester", "nylon"
+        "decal", "wrapper", "packaging", "carton", "cardboard", "plastic", "polyester", "nylon",
+        "ghost", "ghosts", "ghoul", "ghouls", "zombie", "zombies"
     ].map(w => w.toLowerCase())
 );
 
@@ -875,7 +1021,16 @@ const PHRASE_DENY = new Set(
         "good afternoon",
         "good evening",
         "thank you",
-        "you know"
+        "you know",
+        "instead of",
+        "because of",
+        "out of",
+        "inside of",
+        "outside of",
+        "regardless of",
+        "ahead of",
+        "in front of",
+        "in spite of"
     ]
 );
 
@@ -968,8 +1123,9 @@ export function extractNameCandidatesFromPlainText(text, opts = {}) {
     let m;
     while ((m = capRe.exec(source)) !== null) {
         const phrase = m[1].trim();
+        const firstTok = phrase.split(/\s+/)[0].toLowerCase();
         const atBreak = isCapitalAfterHardSentenceBreak(m.index, source);
-        const midClauseHit = isLikelyMidClauseCapital(m.index, source);
+        const midClauseHit = isLikelyMidClauseCapital(m.index, source, firstTok);
         if (firstPerson) bumpPhrase(phrase, { countAsMid: !atBreak, midClauseHit });
         else bumpPhrase(phrase, { countAsMid: true, midClauseHit });
     }
@@ -989,7 +1145,8 @@ export function extractNameCandidatesFromPlainText(text, opts = {}) {
                 if (possessiveSet.has(key)) return true;
                 if (speechOrTitleSet.has(key)) return true;
                 if (x.midClause >= 1) return true;
-                if (x.n >= 6) return true;
+                /** High repeat count alone (often scenery or repeated nouns); raised to cut generic caps. */
+                if (x.n >= 10) return true;
                 return false;
             }
             return true;

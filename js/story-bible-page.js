@@ -22,7 +22,7 @@ import {
     extractNameCandidatesFromPlainText,
     subtractBibleNames,
     snippetContextsForPhrase
-} from "./story-bible-scan.js?v=4";
+} from "./story-bible-scan.js?v=6";
 
 const SB_TAB_STORAGE_KEY = "alysum-story-bible-tab";
 
