@@ -17,6 +17,19 @@ export function stripHtmlToText(html) {
         .trim();
 }
 
+/** Like stripHtmlToText but keeps newlines after block tags — used for first-person–aware name scan. */
+export function stripHtmlForBibleScan(html) {
+    return safeString(html, "")
+        .replace(/<br\s*\/?>/gi, "\n")
+        .replace(/<\/(div|p|h1|h2|h3|li|blockquote|ul|ol)>/gi, "\n")
+        .replace(/<[^>]*>/g, " ")
+        .replace(/\r\n?/g, "\n")
+        .replace(/[ \t\f\v]+/g, " ")
+        .replace(/ *\n */g, "\n")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
+}
+
 /** First word of candidate (lowercase) — sentence/function words, not people names. */
 const FIRST_TOKEN_DENY = new Set(
     [
@@ -707,6 +720,50 @@ const FIRST_TOKEN_DENY = new Set(
     ].map(w => w.toLowerCase())
 );
 
+/** True if the period at dotIndex ends a common honorific (so the following capital is not a new sentence). */
+function isAbbreviationPeriod(dotIndex, s) {
+    const frag = s.slice(Math.max(0, dotIndex - 4), dotIndex + 1);
+    return /\b(?:Mrs|Mr|Ms|Dr)\.$/i.test(frag);
+}
+
+/** After . ! ? or newline (whitespace skipped) — capital here is often generic narration in first person. */
+function isCapitalAfterHardSentenceBreak(index, s) {
+    if (index <= 0) return true;
+    let j = index - 1;
+    while (j >= 0 && /\s/.test(s[j])) j--;
+    if (j < 0) return true;
+    const c = s[j];
+    if (c === "\n" || c === "!" || c === "?") return true;
+    if (c === ".") {
+        if (isAbbreviationPeriod(j, s)) return false;
+        return true;
+    }
+    return false;
+}
+
+/** said Name, told Sarah, met Kai — strong signal in first-person. */
+function extractAttributionNames(s) {
+    const re =
+        /\b(?:said|says|say|told|tell|tells|asks?|asked|called|calls?|replied|answered|muttered|mutters|whispered|whispers|shouted|shouts|yelled|yells|texted|emailed|met|introduced|mentions?|mentioned|wrote|texts)\s+([A-Z][a-z]{2,})\b/g;
+    const names = [];
+    let m;
+    while ((m = re.exec(s)) !== null) {
+        names.push(m[1].trim());
+    }
+    return names;
+}
+
+/** Mr. Smith, Dr. Lee */
+function extractTitleNames(s) {
+    const re = /\b(?:Mr|Mrs|Ms|Dr)\.\s+([A-Z][a-z]{2,})\b/g;
+    const names = [];
+    let m;
+    while ((m = re.exec(s)) !== null) {
+        names.push(m[1].trim());
+    }
+    return names;
+}
+
 const PHRASE_DENY = new Set(
     [
         "new york",
@@ -753,32 +810,85 @@ const PHRASE_DENY = new Set(
 
 /**
  * @param {string} text — plain text
- * @param {{ minOccurrences?: number }} [opts]
+ * @param {{
+ *   minOccurrences?: number,
+ *   minOccurrencesIfOnlyAfterBreak?: number,
+ *   firstPerson?: boolean
+ * }} [opts]
  * @returns {{ name: string, occurrences: number }[]}
  */
 export function extractNameCandidatesFromPlainText(text, opts = {}) {
     const minOcc = typeof opts.minOccurrences === "number" && opts.minOccurrences > 0 ? opts.minOccurrences : 2;
-    const source = safeString(text, "").replace(/\s+/g, " ").trim();
+    const minIfOnlyBreak =
+        typeof opts.minOccurrencesIfOnlyAfterBreak === "number" && opts.minOccurrencesIfOnlyAfterBreak > 0
+            ? opts.minOccurrencesIfOnlyAfterBreak
+            : 4;
+    const firstPerson = opts.firstPerson !== false;
+
+    /** Collapse whitespace but keep newlines for sentence-break detection. */
+    const source = safeString(text, "")
+        .replace(/[ \t\r\f\v]+/g, " ")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
     if (!source) return [];
 
-    const map = new Map();
-    const re = /\b([A-Z][a-z]{2,}(?:\s+[A-Z][a-z]{2,})*)\b/g;
-    let m;
-    while ((m = re.exec(source)) !== null) {
-        const phrase = m[1].trim();
-        if (phrase.length < 3) continue;
-        const first = phrase.split(/\s+/)[0].toLowerCase();
-        if (FIRST_TOKEN_DENY.has(first)) continue;
-        const key = phrase.toLowerCase();
-        if (PHRASE_DENY.has(key)) continue;
+    const capRe = /\b([A-Z][a-z]{2,}(?:\s+[A-Z][a-z]{2,})*)\b/g;
 
-        const prev = map.get(key);
-        if (prev) prev.n += 1;
-        else map.set(key, { name: phrase, n: 1 });
+    /** @type {Map<string, { name: string, n: number, mid: number }>} */
+    const map = new Map();
+
+    function bumpPhrase(phrase, { countAsMid }) {
+        const p = phrase.trim();
+        if (p.length < 3) return;
+        const first = p.split(/\s+/)[0].toLowerCase();
+        if (FIRST_TOKEN_DENY.has(first)) return;
+        const key = p.toLowerCase();
+        if (PHRASE_DENY.has(key)) return;
+
+        let row = map.get(key);
+        if (!row) {
+            row = { name: p, n: 0, mid: 0 };
+            map.set(key, row);
+        }
+        row.n += 1;
+        if (p.length > row.name.length) row.name = p;
+        if (countAsMid) row.mid += 1;
+    }
+
+    /** Extra signal without double-counting occurrences already found by capRe on full text. */
+    function boostMidOnly(phrase) {
+        const p = phrase.trim();
+        if (p.length < 3) return;
+        const first = p.split(/\s+/)[0].toLowerCase();
+        if (FIRST_TOKEN_DENY.has(first)) return;
+        const key = p.toLowerCase();
+        if (PHRASE_DENY.has(key)) return;
+        const row = map.get(key);
+        if (row) row.mid += 1;
+    }
+
+    capRe.lastIndex = 0;
+    let m;
+    while ((m = capRe.exec(source)) !== null) {
+        const phrase = m[1].trim();
+        const atBreak = isCapitalAfterHardSentenceBreak(m.index, source);
+        if (firstPerson) bumpPhrase(phrase, { countAsMid: !atBreak });
+        else bumpPhrase(phrase, { countAsMid: true });
+    }
+
+    if (firstPerson) {
+        for (const n of extractAttributionNames(source)) boostMidOnly(n);
+        for (const n of extractTitleNames(source)) boostMidOnly(n);
     }
 
     return [...map.values()]
-        .filter(x => x.n >= minOcc)
+        .filter(x => {
+            if (x.n < minOcc) return false;
+            if (!firstPerson) return true;
+            /** Kept if it ever appears mid-narrative / dialogue / attribution, or repeats often enough while only after hard breaks. */
+            if (x.mid >= 1) return true;
+            return x.n >= minIfOnlyBreak;
+        })
         .sort((a, b) => b.n - a.n)
         .map(x => ({ name: x.name, occurrences: x.n }));
 }

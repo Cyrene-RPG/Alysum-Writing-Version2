@@ -13,7 +13,7 @@ import {
     getBookTitle,
     loadBookPlainTextForScan
 } from "./story-bible-api.js?v=2";
-import { extractNameCandidatesFromPlainText, subtractBibleNames } from "./story-bible-scan.js?v=1";
+import { extractNameCandidatesFromPlainText, subtractBibleNames } from "./story-bible-scan.js?v=2";
 
 function emptyCharacter() {
     const id = generateBibleCharacterId();
@@ -352,8 +352,10 @@ export async function mountStoryBiblePage(opts) {
         }
     });
 
-    /** Plain text from last “Scan manuscript” run — used to refresh suggestions after Add. */
+    /** Plain text from last pattern scan — used to refresh suggestions after Add. */
     let cachedPlainForScan = "";
+    /** @type {"none"|"rules"} */
+    let lastScanKind = "none";
 
     function renderScanSuggestions(rows) {
         if (!scanResultsEl) return;
@@ -365,7 +367,7 @@ export async function mountStoryBiblePage(opts) {
         scanResultsEl.classList.remove("hidden");
         const head = document.createElement("div");
         head.className = "sb-scan-title";
-        head.textContent = "Suggestions from your manuscript";
+        head.textContent = "Suggestions (pattern scan)";
         scanResultsEl.appendChild(head);
 
         for (const row of rows) {
@@ -393,11 +395,8 @@ export async function mountStoryBiblePage(opts) {
                 );
                 characters = [c, ...characters];
                 selectCharacter(c.id);
-                setStatus(`Draft “${row.name}” — edit fields, then Save character.`);
-                if (cachedPlainForScan) {
-                    const raw = extractNameCandidatesFromPlainText(cachedPlainForScan, { minOccurrences: 2 });
-                    renderScanSuggestions(subtractBibleNames(raw, characters));
-                }
+                setStatus(`Draft “${row.name}” — review fields, then Save character.`);
+                refreshScanFromCache();
             });
             line.appendChild(label);
             line.appendChild(add);
@@ -406,18 +405,20 @@ export async function mountStoryBiblePage(opts) {
     }
 
     function refreshScanFromCache() {
-        if (!cachedPlainForScan) return;
+        if (!scanResultsEl || lastScanKind !== "rules" || !cachedPlainForScan) return;
         const raw = extractNameCandidatesFromPlainText(cachedPlainForScan, { minOccurrences: 2 });
         renderScanSuggestions(subtractBibleNames(raw, characters));
     }
 
     if (scanBtn && scanResultsEl) {
         scanBtn.addEventListener("click", async () => {
+            lastScanKind = "rules";
             setStatus("Scanning manuscript…");
             scanBtn.disabled = true;
             try {
                 cachedPlainForScan = await loadBookPlainTextForScan(db, uid, bookId);
                 if (!cachedPlainForScan.trim()) {
+                    lastScanKind = "none";
                     renderScanSuggestions([]);
                     setStatus("No chapter text found to scan yet.");
                     return;
@@ -427,11 +428,12 @@ export async function mountStoryBiblePage(opts) {
                 renderScanSuggestions(filtered);
                 setStatus(
                     filtered.length
-                        ? `${filtered.length} repeating name pattern(s). Tap Add to draft — then Save character.`
-                        : "No new repeating capitalized names found (or already in your bible). Try adding characters manually."
+                        ? `${filtered.length} repeating capitalized phrase(s). Tap Add to draft — then Save character.`
+                        : "No new pattern matches (or already in your bible). Try adding characters manually."
                 );
             } catch (e) {
                 console.error(e);
+                lastScanKind = "none";
                 setStatus("Scan failed. Check connection and try again.", true);
             } finally {
                 scanBtn.disabled = false;

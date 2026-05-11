@@ -13,7 +13,7 @@ import {
     getCountFromServer
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-import { stripHtmlToText } from "./story-bible-scan.js?v=1";
+import { stripHtmlForBibleScan } from "./story-bible-scan.js?v=2";
 
 export const BIBLE_CHARACTERS = "bibleCharacters";
 
@@ -241,7 +241,7 @@ export async function loadBookPlainTextForScan(db, uid, bookId) {
     for (const sec of ["front", "body", "back"]) {
         const arr = Array.isArray(sections[sec]) ? sections[sec] : [];
         for (const ch of arr) {
-            parts.push(stripHtmlToText(ch?.content || ""));
+            parts.push(stripHtmlForBibleScan(ch?.content || ""));
         }
     }
     return parts.join("\n\n");

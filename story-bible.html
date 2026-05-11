@@ -370,8 +370,9 @@
                     <div class="sb-scan">
                         <button type="button" class="sb-scan-btn" id="sbScanBtn">Scan manuscript for names</button>
                         <p class="sb-muted sb-scan-hint">
-                            Finds capitalized words and phrases that repeat in your chapters (simple rules, not AI).
-                            Tap <strong>Add</strong> to draft a row, then <strong>Save character</strong>.
+                            Finds repeated capitalized words and phrases, tuned for first person (mid-sentence and
+                            dialogue carry more weight than line starts after a period or blank line). Tap
+                            <strong>Add</strong> to draft a row, then <strong>Save character</strong>.
                         </p>
                         <div id="sbScanResults" class="sb-scan-results hidden" aria-live="polite"></div>
                     </div>
@@ -440,7 +441,7 @@
     <script type="module">
         import { auth, db } from "./firebase.js";
         import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-        import { mountStoryBiblePage } from "./js/story-bible-page.js?v=2";
+        import { mountStoryBiblePage } from "./js/story-bible-page.js?v=6";
         import {
             isStoryBibleUiEnabled,
             STORY_BIBLE_PREF_KEY,
