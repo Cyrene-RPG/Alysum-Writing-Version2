@@ -13,6 +13,8 @@ import {
     getCountFromServer
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
+import { stripHtmlToText } from "./story-bible-scan.js?v=1";
+
 export const BIBLE_CHARACTERS = "bibleCharacters";
 
 /** @param {import("firebase/firestore").Firestore} db */
@@ -43,7 +45,8 @@ function safeObject(value, fallback = {}) {
 export function normalizeBibleCharacter(raw, id) {
     const r = safeObject(raw);
     const app = safeObject(r.appearance);
-    const name = safeString(r.name, "").trim();
+    const rawName = r.name != null && typeof r.name !== "object" ? String(r.name) : "";
+    const name = safeString(rawName, "").trim();
     return {
         id,
         schemaVersion: typeof r.schemaVersion === "number" ? r.schemaVersion : 1,
@@ -222,4 +225,24 @@ export async function getBookTitle(db, uid, bookId) {
     if (!snap.exists()) return null;
     const t = snap.data()?.title;
     return typeof t === "string" && t.trim() ? t.trim() : "Untitled Book";
+}
+
+/**
+ * All chapter bodies as one plain string (for name scan). Omits titles; content only.
+ * @param {import("firebase/firestore").Firestore} db
+ * @param {string} uid
+ * @param {string} bookId
+ */
+export async function loadBookPlainTextForScan(db, uid, bookId) {
+    const snap = await getDoc(doc(db, "users", uid, "books", bookId));
+    if (!snap.exists()) return "";
+    const sections = snap.data()?.sections || {};
+    const parts = [];
+    for (const sec of ["front", "body", "back"]) {
+        const arr = Array.isArray(sections[sec]) ? sections[sec] : [];
+        for (const ch of arr) {
+            parts.push(stripHtmlToText(ch?.content || ""));
+        }
+    }
+    return parts.join("\n\n");
 }

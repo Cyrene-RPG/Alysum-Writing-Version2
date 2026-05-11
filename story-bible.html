@@ -266,6 +266,48 @@
         .sb-save { background: var(--alysum-purple); color: #fff; }
         .sb-del { background: #7f1d1d; color: #fecaca; }
         .sb-save:disabled, .sb-del:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .sb-scan { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border); }
+        .sb-scan-btn {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(196, 181, 253, 0.45);
+            background: rgba(109, 40, 217, 0.25);
+            color: #f5f3ff;
+            font-weight: 800;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .sb-scan-btn:hover { border-color: #c4b5fd; }
+        .sb-scan-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+        .sb-scan-hint { font-size: 12px; line-height: 1.45; margin: 8px 0 0; }
+        .sb-scan-results { margin-top: 10px; max-height: 220px; overflow-y: auto; }
+        .sb-scan-title { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-soft); margin-bottom: 8px; }
+        .sb-scan-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 8px 10px;
+            border-radius: 8px;
+            background: rgba(0,0,0,0.2);
+            margin-bottom: 6px;
+            font-size: 13px;
+        }
+        .sb-scan-name { min-width: 0; font-weight: 700; }
+        .sb-scan-add {
+            flex-shrink: 0;
+            padding: 6px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--panel-soft);
+            color: var(--text);
+            font-weight: 800;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .sb-scan-add:hover { border-color: #c4b5fd; }
     </style>
 </head>
 <body>
@@ -325,6 +367,14 @@
                 <aside>
                     <button type="button" class="sb-new-btn" id="sbNewChar">+ New character</button>
                     <ul class="sb-char-list" id="sbCharList" aria-label="Characters"></ul>
+                    <div class="sb-scan">
+                        <button type="button" class="sb-scan-btn" id="sbScanBtn">Scan manuscript for names</button>
+                        <p class="sb-muted sb-scan-hint">
+                            Finds capitalized words and phrases that repeat in your chapters (simple rules, not AI).
+                            Tap <strong>Add</strong> to draft a row, then <strong>Save character</strong>.
+                        </p>
+                        <div id="sbScanResults" class="sb-scan-results hidden" aria-live="polite"></div>
+                    </div>
                 </aside>
                 <div class="sb-form">
                     <div class="sb-form-grid">
@@ -390,7 +440,7 @@
     <script type="module">
         import { auth, db } from "./firebase.js";
         import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-        import { mountStoryBiblePage } from "./js/story-bible-page.js?v=1";
+        import { mountStoryBiblePage } from "./js/story-bible-page.js?v=2";
         import {
             isStoryBibleUiEnabled,
             STORY_BIBLE_PREF_KEY,
@@ -448,7 +498,9 @@
                     tags: document.getElementById("sbTags"),
                     introduced: document.getElementById("sbIntroduced"),
                     notes: document.getElementById("sbNotes")
-                }
+                },
+                scanBtn: document.getElementById("sbScanBtn"),
+                scanResultsEl: document.getElementById("sbScanResults")
             });
         });
     </script>

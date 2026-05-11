@@ -10,8 +10,10 @@ import {
     deleteBibleCharacter,
     listUserBooksWithBibleCounts,
     loadBookChapterOptions,
-    getBookTitle
-} from "./story-bible-api.js?v=1";
+    getBookTitle,
+    loadBookPlainTextForScan
+} from "./story-bible-api.js?v=2";
+import { extractNameCandidatesFromPlainText, subtractBibleNames } from "./story-bible-scan.js?v=1";
 
 function emptyCharacter() {
     const id = generateBibleCharacterId();
@@ -44,6 +46,8 @@ function emptyCharacter() {
  * @param {HTMLAnchorElement} opts.openEditorLink
  * @param {HTMLElement} opts.bookTitleEl
  * @param {Record<string, HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>} opts.fields
+ * @param {HTMLButtonElement} [opts.scanBtn]
+ * @param {HTMLElement} [opts.scanResultsEl]
  */
 export async function mountStoryBiblePage(opts) {
     const {
@@ -59,10 +63,12 @@ export async function mountStoryBiblePage(opts) {
         deleteCharBtn,
         openEditorLink,
         bookTitleEl,
-        fields
+        fields,
+        scanBtn,
+        scanResultsEl
     } = opts;
 
-    const bookId = new URLSearchParams(window.location.search).get("book");
+    const bookId = (new URLSearchParams(window.location.search).get("book") || "").trim();
 
     function setStatus(msg, isError = false) {
         statusEl.textContent = msg;
@@ -307,6 +313,7 @@ export async function mountStoryBiblePage(opts) {
                 (a.sortKey || "").localeCompare(b.sortKey || "", undefined, { sensitivity: "base" })
             );
             renderCharList();
+            refreshScanFromCache();
             setStatus("Saved.");
             setTimeout(() => setStatus(""), 2000);
         } catch (e) {
@@ -330,12 +337,13 @@ export async function mountStoryBiblePage(opts) {
             if (characters.length) {
                 selectCharacter(characters[0].id);
             } else {
-                fillForm(emptyCharacter());
+                clearForm();
                 deleteCharBtn.disabled = true;
                 renderCharList();
             }
             setStatus("Deleted.");
             setTimeout(() => setStatus(""), 2000);
+            refreshScanFromCache();
         } catch (e) {
             console.error(e);
             setStatus("Delete failed.", true);
@@ -343,6 +351,93 @@ export async function mountStoryBiblePage(opts) {
             deleteCharBtn.disabled = false;
         }
     });
+
+    /** Plain text from last “Scan manuscript” run — used to refresh suggestions after Add. */
+    let cachedPlainForScan = "";
+
+    function renderScanSuggestions(rows) {
+        if (!scanResultsEl) return;
+        scanResultsEl.innerHTML = "";
+        if (!rows || !rows.length) {
+            scanResultsEl.classList.add("hidden");
+            return;
+        }
+        scanResultsEl.classList.remove("hidden");
+        const head = document.createElement("div");
+        head.className = "sb-scan-title";
+        head.textContent = "Suggestions from your manuscript";
+        scanResultsEl.appendChild(head);
+
+        for (const row of rows) {
+            const line = document.createElement("div");
+            line.className = "sb-scan-row";
+            const label = document.createElement("span");
+            label.className = "sb-scan-name";
+            label.textContent = `${row.name} (${row.occurrences}×)`;
+            const add = document.createElement("button");
+            add.type = "button";
+            add.className = "sb-scan-add";
+            add.textContent = "Add";
+            add.addEventListener("click", () => {
+                const c = normalizeBibleCharacter(
+                    {
+                        name: row.name,
+                        aliases: [],
+                        appearance: {},
+                        notes: "",
+                        tags: [],
+                        introducedSection: "",
+                        introducedChapterId: ""
+                    },
+                    generateBibleCharacterId()
+                );
+                characters = [c, ...characters];
+                selectCharacter(c.id);
+                setStatus(`Draft “${row.name}” — edit fields, then Save character.`);
+                if (cachedPlainForScan) {
+                    const raw = extractNameCandidatesFromPlainText(cachedPlainForScan, { minOccurrences: 2 });
+                    renderScanSuggestions(subtractBibleNames(raw, characters));
+                }
+            });
+            line.appendChild(label);
+            line.appendChild(add);
+            scanResultsEl.appendChild(line);
+        }
+    }
+
+    function refreshScanFromCache() {
+        if (!cachedPlainForScan) return;
+        const raw = extractNameCandidatesFromPlainText(cachedPlainForScan, { minOccurrences: 2 });
+        renderScanSuggestions(subtractBibleNames(raw, characters));
+    }
+
+    if (scanBtn && scanResultsEl) {
+        scanBtn.addEventListener("click", async () => {
+            setStatus("Scanning manuscript…");
+            scanBtn.disabled = true;
+            try {
+                cachedPlainForScan = await loadBookPlainTextForScan(db, uid, bookId);
+                if (!cachedPlainForScan.trim()) {
+                    renderScanSuggestions([]);
+                    setStatus("No chapter text found to scan yet.");
+                    return;
+                }
+                const raw = extractNameCandidatesFromPlainText(cachedPlainForScan, { minOccurrences: 2 });
+                const filtered = subtractBibleNames(raw, characters);
+                renderScanSuggestions(filtered);
+                setStatus(
+                    filtered.length
+                        ? `${filtered.length} repeating name pattern(s). Tap Add to draft — then Save character.`
+                        : "No new repeating capitalized names found (or already in your bible). Try adding characters manually."
+                );
+            } catch (e) {
+                console.error(e);
+                setStatus("Scan failed. Check connection and try again.", true);
+            } finally {
+                scanBtn.disabled = false;
+            }
+        });
+    }
 
     await reloadFromServer();
 }
