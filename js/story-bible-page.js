@@ -12,8 +12,12 @@ import {
     loadBookChapterOptions,
     getBookTitle,
     loadBookPlainTextForScan
-} from "./story-bible-api.js?v=2";
-import { extractNameCandidatesFromPlainText, subtractBibleNames } from "./story-bible-scan.js?v=2";
+} from "./story-bible-api.js?v=3";
+import {
+    extractNameCandidatesFromPlainText,
+    subtractBibleNames,
+    snippetContextsForPhrase
+} from "./story-bible-scan.js?v=3";
 
 function emptyCharacter() {
     const id = generateBibleCharacterId();
@@ -381,12 +385,22 @@ export async function mountStoryBiblePage(opts) {
             add.className = "sb-scan-add";
             add.textContent = "Add";
             add.addEventListener("click", () => {
+                const plain = cachedPlainForScan || "";
+                const snippets = snippetContextsForPhrase(plain, row.name, { max: 4, radius: 100 });
+                let notes =
+                    `[Added from manuscript scan — about ${row.occurrences}× in this book.]\n` +
+                    `Edit or replace this note; it is not updated automatically.\n`;
+                if (snippets.length) {
+                    notes += "\nExcerpts:\n" + snippets.map(s => `• ${s}`).join("\n\n");
+                } else {
+                    notes += "\n(No excerpts captured for this phrase.)";
+                }
                 const c = normalizeBibleCharacter(
                     {
                         name: row.name,
                         aliases: [],
                         appearance: {},
-                        notes: "",
+                        notes,
                         tags: [],
                         introducedSection: "",
                         introducedChapterId: ""
@@ -395,7 +409,7 @@ export async function mountStoryBiblePage(opts) {
                 );
                 characters = [c, ...characters];
                 selectCharacter(c.id);
-                setStatus(`Draft “${row.name}” — review fields, then Save character.`);
+                setStatus(`Draft “${row.name}” — Notes has excerpts; adjust fields, then Save character.`);
                 refreshScanFromCache();
             });
             line.appendChild(label);
@@ -406,7 +420,7 @@ export async function mountStoryBiblePage(opts) {
 
     function refreshScanFromCache() {
         if (!scanResultsEl || lastScanKind !== "rules" || !cachedPlainForScan) return;
-        const raw = extractNameCandidatesFromPlainText(cachedPlainForScan, { minOccurrences: 2 });
+        const raw = extractNameCandidatesFromPlainText(cachedPlainForScan);
         renderScanSuggestions(subtractBibleNames(raw, characters));
     }
 
@@ -423,12 +437,12 @@ export async function mountStoryBiblePage(opts) {
                     setStatus("No chapter text found to scan yet.");
                     return;
                 }
-                const raw = extractNameCandidatesFromPlainText(cachedPlainForScan, { minOccurrences: 2 });
+                const raw = extractNameCandidatesFromPlainText(cachedPlainForScan);
                 const filtered = subtractBibleNames(raw, characters);
                 renderScanSuggestions(filtered);
                 setStatus(
                     filtered.length
-                        ? `${filtered.length} repeating capitalized phrase(s). Tap Add to draft — then Save character.`
+                        ? `${filtered.length} likely name(s). Tap Add to draft — then Save character (notes include excerpts).`
                         : "No new pattern matches (or already in your bible). Try adding characters manually."
                 );
             } catch (e) {

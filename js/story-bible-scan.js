@@ -764,6 +764,38 @@ function extractTitleNames(s) {
     return names;
 }
 
+/**
+ * Single-token capitalized hits that are usually scenery / objects / institutions in fiction,
+ * not character names (multi-word phrases use PHRASE_DENY / first token).
+ */
+const SCAN_SINGLEWORD_EXTRA_DENY = new Set(
+    [
+        "airport", "apartment", "bathroom", "bedroom", "bridge", "building", "car", "ceiling",
+        "chair", "church", "city", "classroom", "coffee", "college", "corner", "country", "desk",
+        "diner", "door", "downtown", "driveway", "elevator", "evening", "forest", "garage",
+        "ground", "hallway", "highway", "hospital", "hotel", "house", "internet", "island",
+        "kitchen", "lake", "library", "light", "lights", "lobby", "morning", "mountain",
+        "neighborhood", "office", "parking", "path", "phone", "porch", "rain", "restaurant",
+        "river", "road", "roof", "room", "school", "shadow", "sidewalk", "sky", "snow",
+        "stairs", "station", "steps", "store", "street", "subway", "sun", "sunlight",
+        "sunshine", "table", "tea", "town", "traffic", "tree", "trees", "university",
+        "wall", "walls", "water", "window", "windows", "world", "yard",
+        "breeze", "silence", "darkness", "distance", "ocean", "beach", "sand", "grass",
+        "garden", "balcony", "basement", "attic", "closet", "mirror", "screen", "computer",
+        "laptop", "message", "email", "news", "paper", "letter", "package", "money",
+        "wallet", "keys", "button", "glass", "metal", "wood", "stone", "brick", "smoke",
+        "steam", "fog", "mist", "cloud", "moon", "stars", "storm", "thunder", "lightning",
+        "sidewalk", "crosswalk", "fence", "gate", "tower", "skyline", "horizon", "valley",
+        "canyon", "desert", "jungle", "swamp", "meadow", "plaza", "mall", "market", "bank",
+        "cafe", "pub", "bar", "kitchen", "dining", "bed", "couch", "sofa", "shelf", "cabinet",
+        "drawer", "closet", "pillow", "blanket", "sheet", "towel", "soap", "shower", "tub",
+        "sink", "toilet", "stove", "oven", "fridge", "microwave", "dishwasher", "counter",
+        "appliance", "vehicle", "truck", "bus", "train", "plane", "boat", "ship", "bike",
+        "bicycle", "motorcycle", "scooter", "subway", "tunnel", "runway", "terminal",
+        "lobby", "suite", "hall", "corridor", "stairwell", "escalator", "sidewalk"
+    ].map(w => w.toLowerCase())
+);
+
 const PHRASE_DENY = new Set(
     [
         "new york",
@@ -813,16 +845,19 @@ const PHRASE_DENY = new Set(
  * @param {{
  *   minOccurrences?: number,
  *   minOccurrencesIfOnlyAfterBreak?: number,
- *   firstPerson?: boolean
+ *   firstPerson?: boolean,
+ *   maxResults?: number
  * }} [opts]
  * @returns {{ name: string, occurrences: number }[]}
  */
 export function extractNameCandidatesFromPlainText(text, opts = {}) {
-    const minOcc = typeof opts.minOccurrences === "number" && opts.minOccurrences > 0 ? opts.minOccurrences : 2;
+    const minOcc = typeof opts.minOccurrences === "number" && opts.minOccurrences > 0 ? opts.minOccurrences : 3;
     const minIfOnlyBreak =
         typeof opts.minOccurrencesIfOnlyAfterBreak === "number" && opts.minOccurrencesIfOnlyAfterBreak > 0
             ? opts.minOccurrencesIfOnlyAfterBreak
-            : 4;
+            : 5;
+    const maxResults =
+        typeof opts.maxResults === "number" && opts.maxResults > 0 ? opts.maxResults : 50;
     const firstPerson = opts.firstPerson !== false;
 
     /** Collapse whitespace but keep newlines for sentence-break detection. */
@@ -844,6 +879,8 @@ export function extractNameCandidatesFromPlainText(text, opts = {}) {
         if (FIRST_TOKEN_DENY.has(first)) return;
         const key = p.toLowerCase();
         if (PHRASE_DENY.has(key)) return;
+        if (!p.includes(" ") && SCAN_SINGLEWORD_EXTRA_DENY.has(key)) return;
+        if (!p.includes(" ") && p.length > 15) return;
 
         let row = map.get(key);
         if (!row) {
@@ -863,6 +900,8 @@ export function extractNameCandidatesFromPlainText(text, opts = {}) {
         if (FIRST_TOKEN_DENY.has(first)) return;
         const key = p.toLowerCase();
         if (PHRASE_DENY.has(key)) return;
+        if (!p.includes(" ") && SCAN_SINGLEWORD_EXTRA_DENY.has(key)) return;
+        if (!p.includes(" ") && p.length > 15) return;
         const row = map.get(key);
         if (row) row.mid += 1;
     }
@@ -890,7 +929,45 @@ export function extractNameCandidatesFromPlainText(text, opts = {}) {
             return x.n >= minIfOnlyBreak;
         })
         .sort((a, b) => b.n - a.n)
+        .slice(0, maxResults)
         .map(x => ({ name: x.name, occurrences: x.n }));
+}
+
+function escapeRegExp(s) {
+    return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
+ * Short excerpts around where a phrase appears — saved into character notes when adding from scan.
+ * @param {string} plain
+ * @param {string} phrase
+ * @param {{ max?: number, radius?: number }} [opts]
+ * @returns {string[]}
+ */
+export function snippetContextsForPhrase(plain, phrase, opts = {}) {
+    const max = typeof opts.max === "number" && opts.max > 0 ? opts.max : 4;
+    const radius = typeof opts.radius === "number" && opts.radius > 0 ? opts.radius : 100;
+    const p = (phrase || "").trim();
+    if (!plain || !p) return [];
+    const inner = escapeRegExp(p).replace(/\s+/g, "\\s+");
+    const re = new RegExp(`(^|[^A-Za-z])(${inner})(?=[^A-Za-z]|$)`, "gi");
+    const seen = new Set();
+    const out = [];
+    let m;
+    let guard = 0;
+    while ((m = re.exec(plain)) !== null && guard++ < 800) {
+        const start = m.index + m[1].length;
+        if (seen.has(start)) continue;
+        seen.add(start);
+        const a = Math.max(0, start - radius);
+        const b = Math.min(plain.length, start + m[2].length + radius);
+        let chunk = plain.slice(a, b).replace(/[ \t\r\f\v]+/g, " ").trim();
+        if (a > 0) chunk = "..." + chunk;
+        if (b < plain.length) chunk = chunk + "...";
+        out.push(chunk);
+        if (out.length >= max) break;
+    }
+    return out;
 }
 
 /**

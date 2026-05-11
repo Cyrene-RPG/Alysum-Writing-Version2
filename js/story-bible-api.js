@@ -13,7 +13,7 @@ import {
     getCountFromServer
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-import { stripHtmlForBibleScan } from "./story-bible-scan.js?v=2";
+import { stripHtmlForBibleScan } from "./story-bible-scan.js?v=3";
 
 export const BIBLE_CHARACTERS = "bibleCharacters";
 
