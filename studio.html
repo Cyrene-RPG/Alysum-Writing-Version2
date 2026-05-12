@@ -246,6 +246,18 @@
             box-shadow: var(--shadow-lg);
             position: sticky;
             top: 92px;
+            max-height: calc(100vh - 104px);
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .desktop-sidebar::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .desktop-sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.12);
+            border-radius: 999px;
         }
 
         .sidebar-brand {
@@ -903,6 +915,12 @@
             }
         }
 
+        @media (min-width: 1051px) {
+            .menu-btn {
+                display: none;
+            }
+        }
+
         @media (max-width: 1050px) {
             .app-shell {
                 grid-template-columns: 1fr;
@@ -990,15 +1008,14 @@
         <div class="menu-title">Alysum</div>
         <a href="/studio.html" class="menu-link">✍️ Studio</a>
         <a href="/library.html" class="menu-link">📚 Library</a>
+        <a href="/writer-resources.html" class="menu-link">📚 Writer resources</a>
         <a href="/author-dashboard.html" class="menu-link menu-link-with-badge">
             📊 Author Dashboard
             <span class="dash-unread-badge hidden" data-dash-unread-badge aria-hidden="true">0</span>
         </a>
-        <a href="/scratch.html" class="menu-link">📝 Scratch notes</a>
         <a href="/vault.html" class="menu-link">📓 Notes library</a>
         <a href="/story-bible.html" class="menu-link" id="storyBibleMenuLink">📖 Story Bible</a>
         <a href="/index.html" class="menu-link">🏠 Home</a>
-        <a href="/writer-resources.html" class="menu-link">📚 Writer resources</a>
         <a href="/badges.html" class="menu-link">🎖️ Badges</a>
         <a href="/settings.html" class="menu-link">⚙️ Settings</a>
     </div>
@@ -1016,14 +1033,13 @@
                 <div class="sidebar-group-label">Workspace</div>
                 <a href="/studio.html" class="sidebar-item active">✍️ Studio</a>
                 <a href="/library.html" class="sidebar-item">📚 Library</a>
+                <a href="/writer-resources.html" class="sidebar-item">📚 Writer resources</a>
                 <a href="/author-dashboard.html" class="sidebar-item sidebar-item-with-badge">
                     📊 Author Dashboard
                     <span class="dash-unread-badge hidden" data-dash-unread-badge aria-hidden="true">0</span>
                 </a>
-                <a href="/scratch.html" class="sidebar-item">📝 Scratch notes</a>
                 <a href="/vault.html" class="sidebar-item">📓 Notes library</a>
                 <a href="/story-bible.html" class="sidebar-item" id="storyBibleSidebarLink">📖 Story Bible</a>
-                <a href="/writer-resources.html" class="sidebar-item">📚 Writer resources</a>
                 <a href="/badges.html" class="sidebar-item">🏆 Achievements</a>
                 <a href="/settings.html" class="sidebar-item">⚙️ Settings</a>
 				<a href="/Novel_Exporter.html" class="sidebar-item" id="sidebarFormatLink">📃 Novel exporter</a>
