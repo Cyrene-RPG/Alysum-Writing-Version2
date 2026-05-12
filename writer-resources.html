@@ -103,6 +103,10 @@
             text-overflow: ellipsis;
         }
 
+        a.btn {
+            text-decoration: none;
+        }
+
         .btn,
         .link-btn {
             border: 1px solid var(--wr-border);
@@ -482,10 +486,12 @@
                 grid-row: 1;
             }
 
-            .tool-card .btn {
+            .tool-card .btn,
+            .tool-card a.btn {
                 grid-column: 1 / -1;
                 grid-row: 2;
                 width: 100%;
+                justify-content: center;
             }
 
             .name-results-wrap {
@@ -513,7 +519,7 @@
     </header>
 
     <main class="layout">
-        <p class="layout-intro">Name search and copy-paste checklists.</p>
+        <p class="layout-intro">Name search and additional resources.</p>
 
         <div class="wr-board">
             <div class="wr-topband">
@@ -521,7 +527,7 @@
                     <nav class="wr-jump" aria-label="On this page">
                         <a href="#name-finder">Names</a>
                         ·
-                        <a href="#character-tools">Checklists</a>
+                        <a href="#additional-resources">Additional resources</a>
                         ·
                         <a href="#coming-soon">Roadmap</a>
                     </nav>
@@ -551,9 +557,11 @@
                     </div>
                 </section>
 
-                <section class="wr-col wr-col--tools" id="character-tools">
-                    <h2 class="wr-h">Checklists</h2>
-                    <p class="wr-section-lead">Each button copies one block of plain text.</p>
+                <section class="wr-col wr-col--tools" id="additional-resources">
+                    <h2 class="wr-h">Additional resources</h2>
+                    <p class="wr-section-lead">
+                        Character profile copies as one text block. Worldbuilding is on its own page.
+                    </p>
                     <div class="tool-list">
                         <article class="tool-card">
                             <div class="tool-card-icon" aria-hidden="true">🧍</div>
@@ -567,9 +575,9 @@
                             <div class="tool-card-icon" aria-hidden="true">🗺</div>
                             <div class="tool-card-body">
                                 <h3>Worldbuilding</h3>
-                                <p>Questions about society, power, daily life, conflict.</p>
+                                <p>Prompts and questions for your setting.</p>
                             </div>
-                            <button class="btn" type="button" onclick="copyWorldPrompts()">Copy</button>
+                            <a class="btn primary" href="/worldbuilding.html">Open</a>
                         </article>
                     </div>
                 </section>
@@ -702,14 +710,7 @@
             );
         }
 
-        function copyWorldPrompts() {
-            copyText(
-                `Worldbuilding Prompts\n\nWhat does this society value most?\nWho holds power?\nWhat do people fear?\nWhat is considered taboo?\nWhat technology or magic exists?\nWhat do people eat?\nWhat slang or greetings are common?\nWhat is the biggest current conflict?\nHow does daily life differ by class or region?`
-            );
-        }
-
         window.copyChecklist = copyChecklist;
-        window.copyWorldPrompts = copyWorldPrompts;
 
         nameSearch.addEventListener("input", searchNames);
         randomNameBtn.addEventListener("click", () => {
