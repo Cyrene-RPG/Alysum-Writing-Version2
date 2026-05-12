@@ -342,6 +342,22 @@
             overflow-wrap: anywhere;
         }
 
+        .comment-item .comment-row-actions {
+            margin-top: 8px;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .mini-btn.danger-outline {
+            border-color: rgba(248, 113, 113, 0.45);
+            color: #fecaca;
+        }
+
+        .mini-btn.danger-outline:hover {
+            border-color: rgba(248, 113, 113, 0.75);
+            color: #fff;
+        }
+
         .empty-state,
         .loading-state,
         .error-state {
@@ -560,6 +576,7 @@
         import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
         import {
             collection,
+            deleteDoc,
             doc,
             getCountFromServer,
             getDoc,
@@ -709,6 +726,9 @@
                         <div class="comment-item">
                             <div class="comment-meta">${escapeHtml(comment.displayLabel)} — ${escapeHtml(formatDate(comment.createdAt))}</div>
                             <div class="comment-text">${escapeHtml(comment.text || "(empty comment)")}</div>
+                            <div class="comment-row-actions">
+                                <button type="button" class="mini-btn danger-outline" data-remove-comment-book="${escapeHtml(book.id)}" data-remove-comment-id="${escapeHtml(comment.id)}">Remove comment</button>
+                            </div>
                         </div>
                     `).join("")
                     : `<div class="comment-item"><div class="comment-text">No comments yet.</div></div>`;
@@ -903,6 +923,24 @@
         }
 
         refreshBtn.addEventListener("click", loadDashboard);
+
+        bookGrid.addEventListener("click", async (ev) => {
+            const btn = ev.target.closest("[data-remove-comment-book]");
+            if (!btn || !currentUser) return;
+            const rmBookId = btn.getAttribute("data-remove-comment-book");
+            const rmCommentId = btn.getAttribute("data-remove-comment-id");
+            if (!rmBookId || !rmCommentId) return;
+            if (!window.confirm("Remove this comment from your story?")) return;
+            try {
+                btn.disabled = true;
+                await deleteDoc(doc(db, "library", rmBookId, "comments", rmCommentId));
+                await loadDashboard();
+            } catch (e) {
+                console.error(e);
+                btn.disabled = false;
+                window.alert("Could not remove comment. Check your connection or try again.");
+            }
+        });
 
         onAuthStateChanged(auth, user => {
             if (!user) {

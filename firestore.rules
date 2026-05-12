@@ -37,6 +37,10 @@ service cloud.firestore {
         allow read, write: if isUser(userId);
       }
 
+      match /worldbuilding/{docId} {
+        allow read, write: if isUser(userId);
+      }
+
       // Reader-only index: which beta notes this user has already shared with authors (dedupe + UI).
       match /betaSharesIndex/{shareId} {
         allow read, write: if isUser(userId);
@@ -125,8 +129,27 @@ service cloud.firestore {
         allow read: if true;
         allow create: if signedIn()
           && request.resource.data.uid == request.auth.uid;
-        allow update, delete: if signedIn()
-          && resource.data.uid == request.auth.uid;
+        // Authors may edit their own text; identity fields must stay the same.
+        allow update: if signedIn()
+          && resource.data.uid == request.auth.uid
+          && request.resource.data.uid == resource.data.uid
+          && request.resource.data.username == resource.data.username
+          && request.resource.data.createdAt == resource.data.createdAt
+          && (!('displayName' in resource.data)
+            || request.resource.data.displayName == resource.data.displayName)
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0
+          && request.resource.data.text.size() <= 8000
+          && (
+            request.resource.data.diff(resource.data).changedKeys().hasOnly(['text'])
+            || request.resource.data.diff(resource.data).changedKeys().hasOnly(['text', 'updatedAt'])
+          );
+        // Commenter may remove their note; the library owner may moderate (remove spam/abuse).
+        allow delete: if signedIn()
+          && (
+            resource.data.uid == request.auth.uid
+            || get(/databases/$(database)/documents/library/$(bookId)).data.ownerUid == request.auth.uid
+          );
       }
     }
   }

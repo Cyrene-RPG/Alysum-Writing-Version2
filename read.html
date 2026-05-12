@@ -584,6 +584,69 @@
       white-space: pre-wrap;
     }
 
+    .comment-item-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+
+    .comment-item-head .comment-user {
+      margin-bottom: 0;
+    }
+
+    .comment-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .comment-action-btn {
+      font: inherit;
+      font-size: 12px;
+      font-weight: 800;
+      padding: 5px 10px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      color: var(--muted);
+      cursor: pointer;
+    }
+
+    .comment-action-btn:hover {
+      color: var(--text);
+      border-color: color-mix(in srgb, var(--text) 18%, var(--border));
+    }
+
+    .comment-action-btn.danger:hover {
+      color: #fecaca;
+      border-color: rgba(248, 113, 113, 0.45);
+    }
+
+    .comment-edit-area {
+      width: 100%;
+      min-height: 88px;
+      margin-top: 8px;
+      resize: vertical;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      color: var(--text);
+      padding: 10px;
+      font: inherit;
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    .comment-edit-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
     .comment-form {
       display: grid;
       gap: 10px;
@@ -845,6 +908,7 @@
       getDoc,
       setDoc,
       updateDoc,
+      deleteDoc,
       increment,
       collection,
       addDoc,
@@ -1066,6 +1130,7 @@
 
       return {
         id: safeString(data.bookId, bookId),
+        ownerUid: safeString(data.ownerUid, ""),
         title: safeString(data.title, "Untitled"),
         author: safeString(data.author, "unknown"),
         summary: safeString(data.summary, ""),
@@ -1548,6 +1613,156 @@
       return value;
     }
 
+    function isBookOwnerModerator() {
+      return !!(currentUser && currentBook && currentBook.ownerUid && currentUser.uid === currentBook.ownerUid);
+    }
+
+    function buildCommentRow(docSnap, comment) {
+      const item = document.createElement("div");
+      item.className = "comment-item";
+      item.dataset.commentId = docSnap.id;
+
+      const head = document.createElement("div");
+      head.className = "comment-item-head";
+
+      const userEl = document.createElement("div");
+      userEl.className = "comment-user";
+      userEl.textContent = getBestUsername(comment);
+
+      head.appendChild(userEl);
+
+      const authorUid = safeString(comment.uid, "");
+      const canEdit = !!(currentUser && authorUid && currentUser.uid === authorUid);
+      const canModRemove = !!(currentUser && authorUid && currentUser.uid !== authorUid && isBookOwnerModerator());
+
+      if (canEdit || canModRemove) {
+        const actions = document.createElement("div");
+        actions.className = "comment-actions";
+
+        if (canEdit) {
+          const editBtn = document.createElement("button");
+          editBtn.type = "button";
+          editBtn.className = "comment-action-btn";
+          editBtn.textContent = "Edit";
+          editBtn.addEventListener("click", () => startCommentEdit(item, docSnap.id, safeString(comment.text, "")));
+          actions.appendChild(editBtn);
+
+          const delBtn = document.createElement("button");
+          delBtn.type = "button";
+          delBtn.className = "comment-action-btn danger";
+          delBtn.textContent = "Delete";
+          delBtn.addEventListener("click", () => removeComment(docSnap.id, "Delete your comment?"));
+          actions.appendChild(delBtn);
+        }
+
+        if (canModRemove) {
+          const modBtn = document.createElement("button");
+          modBtn.type = "button";
+          modBtn.className = "comment-action-btn danger";
+          modBtn.textContent = "Remove";
+          modBtn.title = "Remove as the author of this book";
+          modBtn.addEventListener("click", () =>
+            removeComment(docSnap.id, "Remove this comment from your story?")
+          );
+          actions.appendChild(modBtn);
+        }
+
+        head.appendChild(actions);
+      }
+
+      item.appendChild(head);
+
+      const body = document.createElement("div");
+      body.className = "comment-body";
+
+      const textEl = document.createElement("div");
+      textEl.className = "comment-text";
+      textEl.textContent = safeString(comment.text, "");
+
+      body.appendChild(textEl);
+      item.appendChild(body);
+
+      return item;
+    }
+
+    function startCommentEdit(item, commentDocId, initialText) {
+      const body = item.querySelector(".comment-body");
+      if (!body) return;
+
+      const head = item.querySelector(".comment-item-head");
+      const actionBar = head?.querySelector(".comment-actions");
+      if (actionBar) {
+        actionBar.querySelectorAll("button").forEach((b) => {
+          b.disabled = true;
+        });
+      }
+
+      body.innerHTML = "";
+      const ta = document.createElement("textarea");
+      ta.className = "comment-edit-area";
+      ta.value = initialText;
+      body.appendChild(ta);
+
+      const row = document.createElement("div");
+      row.className = "comment-edit-row";
+
+      const saveBtn = document.createElement("button");
+      saveBtn.type = "button";
+      saveBtn.className = "btn primary";
+      saveBtn.textContent = "Save";
+      saveBtn.addEventListener("click", async () => {
+        const next = ta.value.trim();
+        if (!next) {
+          showStatus("Comment cannot be empty.");
+          setTimeout(hideStatus, 1400);
+          return;
+        }
+        saveBtn.disabled = true;
+        cancelBtn.disabled = true;
+        try {
+          await updateDoc(doc(db, "library", bookId, "comments", commentDocId), {
+            text: next,
+            updatedAt: Date.now()
+          });
+          showStatus("Comment updated.");
+          setTimeout(hideStatus, 1200);
+          await loadComments();
+        } catch (err) {
+          console.error(err);
+          showError("Could not update comment.");
+          saveBtn.disabled = false;
+          cancelBtn.disabled = false;
+        }
+      });
+
+      const cancelBtn = document.createElement("button");
+      cancelBtn.type = "button";
+      cancelBtn.className = "btn";
+      cancelBtn.textContent = "Cancel";
+      cancelBtn.addEventListener("click", () => {
+        void loadComments();
+      });
+
+      row.appendChild(saveBtn);
+      row.appendChild(cancelBtn);
+      body.appendChild(row);
+      ta.focus();
+    }
+
+    async function removeComment(commentDocId, confirmMessage) {
+      if (!currentUser || !bookId) return;
+      if (!window.confirm(confirmMessage)) return;
+      try {
+        await deleteDoc(doc(db, "library", bookId, "comments", commentDocId));
+        showStatus("Comment removed.");
+        setTimeout(hideStatus, 1200);
+        await loadComments();
+      } catch (err) {
+        console.error(err);
+        showError("Could not remove comment.");
+      }
+    }
+
     async function loadComments() {
       commentList.innerHTML = "";
 
@@ -1566,15 +1781,9 @@
           return;
         }
 
-        snap.forEach(docSnap => {
+        snap.forEach((docSnap) => {
           const comment = safeObject(docSnap.data(), {});
-          const item = document.createElement("div");
-          item.className = "comment-item";
-          item.innerHTML = `
-            <div class="comment-user">${getBestUsername(comment)}</div>
-            <div class="comment-text">${safeString(comment.text, "")}</div>
-          `;
-          commentList.appendChild(item);
+          commentList.appendChild(buildCommentRow(docSnap, comment));
         });
       } catch (error) {
         console.error(error);
@@ -1757,6 +1966,9 @@ async function postComment() {
         if (u && bookId && currentBook) {
           syncProfileCurrentReadNow();
           void ensureBetaReadShelved();
+        }
+        if (isLoaded && currentBook) {
+          void loadComments();
         }
       }
     });
