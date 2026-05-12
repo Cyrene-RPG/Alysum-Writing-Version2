@@ -405,21 +405,6 @@
             font-weight: 600;
         }
 
-        .tool-card-actions {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            align-items: stretch;
-        }
-
-        @media (min-width: 801px) {
-            .tool-card-actions {
-                flex-direction: row;
-                flex-wrap: wrap;
-                justify-content: flex-end;
-            }
-        }
-
         .wr-roadmap {
             border-top: 1px solid var(--wr-border);
             padding: 16px 20px 18px;
@@ -501,14 +486,10 @@
                 grid-row: 1;
             }
 
-            .tool-card .tool-card-actions {
+            .tool-card .btn,
+            .tool-card a.btn {
                 grid-column: 1 / -1;
                 grid-row: 2;
-                width: 100%;
-            }
-
-            .tool-card .tool-card-actions .btn,
-            .tool-card .tool-card-actions a.btn {
                 width: 100%;
                 justify-content: center;
             }
@@ -579,19 +560,16 @@
                 <section class="wr-col wr-col--tools" id="additional-resources">
                     <h2 class="wr-h">Additional resources</h2>
                     <p class="wr-section-lead">
-                        Character profile opens a Story Bible–style worksheet (with more prompts). You can copy a short outline or save to your bible when signed in. Worldbuilding is on its own page.
+                        Character profile opens a Story Bible–style worksheet (with more prompts). Save drafts on the device or to your bible when signed in. Worldbuilding is on its own page.
                     </p>
                     <div class="tool-list">
                         <article class="tool-card">
                             <div class="tool-card-icon" aria-hidden="true">🧍</div>
                             <div class="tool-card-body">
                                 <h3>Character profile</h3>
-                                <p>Worksheet like the bible, with role, arc, wounds, and appearance — copy or save to a book.</p>
+                                <p>Worksheet like the bible, with role, arc, wounds, and appearance — save on the side or to a book.</p>
                             </div>
-                            <div class="tool-card-actions">
-                                <a class="btn primary" href="/character-profile.html">Open</a>
-                                <button class="btn" type="button" onclick="copyChecklist()">Copy outline</button>
-                            </div>
+                            <a class="btn primary" href="/character-profile.html">Open</a>
                         </article>
                         <article class="tool-card">
                             <div class="tool-card-icon" aria-hidden="true">🗺</div>
@@ -721,18 +699,6 @@
             );
             renderNames(filtered);
         }
-
-        function copyText(text) {
-            navigator.clipboard.writeText(text).then(() => alert("Copied."));
-        }
-
-        function copyChecklist() {
-            copyText(
-                `Character Profile Checklist\n\nName:\nAliases:\nAge:\nRole in story:\nAppearance:\nVoice / speech style:\nPersonality:\nGoal:\nFear:\nSecret:\nStrength:\nFlaw:\nBackstory wound:\nImportant relationships:\nArc / how they change:\nContinuity notes:`
-            );
-        }
-
-        window.copyChecklist = copyChecklist;
 
         nameSearch.addEventListener("input", searchNames);
         randomNameBtn.addEventListener("click", () => {

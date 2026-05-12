@@ -133,7 +133,7 @@
         .cp-status.cp-ok { color: #86efac; border-color: rgba(74, 222, 128, 0.2); }
         .cp-split {
             display: grid;
-            grid-template-columns: minmax(200px, 260px) 1fr;
+            grid-template-columns: minmax(220px, 290px) 1fr;
             gap: 0;
             align-items: start;
             background: linear-gradient(165deg, rgba(255, 255, 255, 0.04) 0%, transparent 42%), var(--panel);
@@ -174,6 +174,111 @@
         .cp-toc a:hover {
             background: rgba(124, 58, 237, 0.12);
             border-color: rgba(196, 181, 253, 0.2);
+        }
+        .cp-shelf-block {
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px dashed rgba(255, 255, 255, 0.1);
+        }
+        .cp-shelf-hint {
+            margin: 0 0 10px;
+            font-size: 11px;
+            line-height: 1.45;
+            color: var(--text-soft);
+            font-weight: 600;
+        }
+        .cp-shelf-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .cp-shelf-actions button {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text);
+            font-weight: 800;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .cp-shelf-actions button:hover {
+            border-color: var(--border-strong);
+            background: rgba(124, 58, 237, 0.15);
+        }
+        .cp-shelf-actions .cp-shelf-save {
+            background: linear-gradient(135deg, rgba(124, 58, 237, 0.55) 0%, rgba(91, 33, 182, 0.45) 100%);
+            border-color: rgba(196, 181, 253, 0.35);
+            color: #faf5ff;
+        }
+        .cp-shelf-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            max-height: min(36vh, 280px);
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(124, 58, 237, 0.45) transparent;
+        }
+        .cp-shelf-row {
+            display: flex;
+            align-items: stretch;
+            gap: 4px;
+            margin-bottom: 6px;
+        }
+        .cp-shelf-item {
+            flex: 1;
+            min-width: 0;
+            text-align: left;
+            border: 1px solid var(--border);
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(0, 0, 0, 0.08) 100%);
+            color: var(--text);
+            border-radius: 10px;
+            padding: 9px 10px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 700;
+            transition: border-color 0.15s ease, background 0.15s ease;
+        }
+        .cp-shelf-item:hover {
+            border-color: rgba(196, 181, 253, 0.35);
+        }
+        .cp-shelf-item.is-active {
+            border-color: rgba(167, 139, 250, 0.65);
+            background: linear-gradient(135deg, rgba(109, 40, 217, 0.35) 0%, rgba(30, 27, 75, 0.5) 100%);
+            color: #faf5ff;
+        }
+        .cp-shelf-name { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .cp-shelf-date { display: block; margin-top: 3px; font-size: 10px; font-weight: 600; color: #a1a1aa; }
+        .cp-shelf-item.is-active .cp-shelf-date { color: #e9d5ff; opacity: 0.85; }
+        .cp-shelf-remove {
+            flex-shrink: 0;
+            width: 34px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.25);
+            color: #fca5a5;
+            font-size: 16px;
+            line-height: 1;
+            cursor: pointer;
+            font-weight: 700;
+        }
+        .cp-shelf-remove:hover {
+            border-color: rgba(248, 113, 113, 0.45);
+            background: rgba(127, 29, 29, 0.35);
+        }
+        .cp-shelf-empty {
+            margin: 0;
+            padding: 10px 8px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-soft);
+            text-align: center;
+            border: 1px dashed rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            list-style: none;
         }
         .cp-aside-actions {
             margin-top: 20px;
@@ -316,7 +421,7 @@
                     <p class="cp-eyebrow">Writer resources</p>
                     <h1 class="cp-title">Character profile worksheet</h1>
                     <p class="cp-sub">
-                        Same spirit as the Story Bible character sheet, with more prompts. Fill what helps you; copy as text, or save straight into a book’s bible when you are signed in.
+                        Same spirit as the Story Bible character sheet, with more prompts. Save worksheets on the side in this browser, copy as text, or save into a book’s bible when you are signed in.
                     </p>
                 </div>
                 <nav class="cp-nav" aria-label="Navigate">
@@ -340,9 +445,17 @@
                     <li><a href="#cp-arc">Relationships &amp; arc</a></li>
                     <li><a href="#cp-extra">Tags &amp; continuity</a></li>
                 </ul>
+                <div class="cp-shelf-block">
+                    <p class="cp-aside-title">Saved on this device</p>
+                    <p class="cp-shelf-hint">Switch between characters; stored only in this browser.</p>
+                    <div class="cp-shelf-actions">
+                        <button type="button" class="cp-shelf-save" id="cpSaveSideBtn">Save to side</button>
+                        <button type="button" id="cpNewSheetBtn">New sheet</button>
+                    </div>
+                    <ul id="cpShelfList" class="cp-shelf-list" aria-label="Saved worksheets on this device"></ul>
+                </div>
                 <div class="cp-aside-actions">
                     <button type="button" id="cpCopyBtn">Copy as text</button>
-                    <button type="button" id="cpCopyOutlineBtn">Copy short outline</button>
                 </div>
             </aside>
 
@@ -525,24 +638,35 @@
         const cpNoBooksHint = document.getElementById("cpNoBooksHint");
         const cpSaveSection = document.getElementById("cpSaveSection");
 
-        const SHORT_OUTLINE = `Character Profile Checklist
+        const SHELF_KEY = "alysum-character-profile-shelf";
+        const SHELF_MAX = 48;
+        const FIELD_IDS = [
+            "cpName",
+            "cpAliases",
+            "cpRole",
+            "cpVoice",
+            "cpPersonality",
+            "cpGoal",
+            "cpFear",
+            "cpSecret",
+            "cpStrength",
+            "cpFlaw",
+            "cpWound",
+            "cpAge",
+            "cpHeight",
+            "cpEyes",
+            "cpHair",
+            "cpSkin",
+            "cpBuild",
+            "cpDistinctive",
+            "cpRelationships",
+            "cpArc",
+            "cpTags",
+            "cpContinuity",
+            "cpExtraNotes"
+        ];
 
-Name:
-Aliases:
-Age:
-Role in story:
-Appearance:
-Voice / speech style:
-Personality:
-Goal:
-Fear:
-Secret:
-Strength:
-Flaw:
-Backstory wound:
-Important relationships:
-Arc / how they change:
-Continuity notes:`;
+        let activeShelfId = null;
 
         function setStatus(msg, kind = "") {
             statusEl.textContent = msg || "";
@@ -554,6 +678,150 @@ Continuity notes:`;
         function val(id) {
             const el = document.getElementById(id);
             return el && "value" in el ? String(el.value || "").trim() : "";
+        }
+
+        function readShelfEntries() {
+            try {
+                const raw = localStorage.getItem(SHELF_KEY);
+                if (!raw) return [];
+                const o = JSON.parse(raw);
+                if (!o || o.version !== 1 || !Array.isArray(o.items)) return [];
+                return o.items.filter(x => x && typeof x.id === "string" && x.fields && typeof x.fields === "object");
+            } catch {
+                return [];
+            }
+        }
+
+        function writeShelfEntries(items) {
+            const sorted = [...items].sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+            const trim = sorted.slice(0, SHELF_MAX);
+            localStorage.setItem(SHELF_KEY, JSON.stringify({ version: 1, items: trim }));
+        }
+
+        function gatherFields() {
+            const fields = {};
+            for (const fid of FIELD_IDS) {
+                const el = document.getElementById(fid);
+                fields[fid] = el && "value" in el ? String(el.value) : "";
+            }
+            return fields;
+        }
+
+        function applyFields(fields) {
+            const f = fields && typeof fields === "object" ? fields : {};
+            for (const fid of FIELD_IDS) {
+                const el = document.getElementById(fid);
+                if (el && "value" in el) el.value = f[fid] != null ? String(f[fid]) : "";
+            }
+        }
+
+        function hasAnyWorksheetContent() {
+            for (const fid of FIELD_IDS) {
+                const el = document.getElementById(fid);
+                const v = el && "value" in el ? String(el.value || "").trim() : "";
+                if (v) return true;
+            }
+            return false;
+        }
+
+        function renderShelf() {
+            const ul = document.getElementById("cpShelfList");
+            if (!ul) return;
+            const items = readShelfEntries().sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+            ul.innerHTML = "";
+            if (!items.length) {
+                const li = document.createElement("li");
+                li.className = "cp-shelf-empty";
+                li.textContent = "No saves yet.";
+                ul.appendChild(li);
+                return;
+            }
+            for (const it of items) {
+                const label = ((it.fields.cpName || "").trim() || "Untitled");
+                const li = document.createElement("li");
+                li.className = "cp-shelf-row";
+                const main = document.createElement("button");
+                main.type = "button";
+                main.className = "cp-shelf-item" + (activeShelfId === it.id ? " is-active" : "");
+                main.dataset.shelfId = it.id;
+                const spName = document.createElement("span");
+                spName.className = "cp-shelf-name";
+                spName.textContent = label;
+                const spDate = document.createElement("span");
+                spDate.className = "cp-shelf-date";
+                try {
+                    spDate.textContent = new Date(it.updatedAt).toLocaleString(undefined, {
+                        dateStyle: "medium",
+                        timeStyle: "short"
+                    });
+                } catch {
+                    spDate.textContent = "—";
+                }
+                main.append(spName, spDate);
+                const del = document.createElement("button");
+                del.type = "button";
+                del.className = "cp-shelf-remove";
+                del.dataset.shelfRemove = it.id;
+                del.setAttribute("aria-label", "Remove " + label);
+                del.textContent = "×";
+                li.append(main, del);
+                ul.appendChild(li);
+            }
+        }
+
+        function loadShelfItem(id) {
+            const it = readShelfEntries().find(x => x.id === id);
+            if (!it) return;
+            activeShelfId = id;
+            applyFields(it.fields);
+            renderShelf();
+            document.getElementById("cp-identity")?.scrollIntoView({ behavior: "smooth", block: "start" });
+            setStatus("Loaded from side.", "ok");
+            setTimeout(() => setStatus(""), 1600);
+        }
+
+        function deleteShelfItem(id, ev) {
+            if (ev) ev.stopPropagation();
+            const list = readShelfEntries().filter(x => x.id !== id);
+            writeShelfEntries(list);
+            if (activeShelfId === id) {
+                activeShelfId = null;
+                applyFields({});
+            }
+            renderShelf();
+            setStatus("Removed from this device.", "ok");
+            setTimeout(() => setStatus(""), 1600);
+        }
+
+        function persistToShelf() {
+            if (!hasAnyWorksheetContent()) {
+                setStatus("Add at least one field before saving to the side.", "err");
+                return;
+            }
+            const now = Date.now();
+            const fields = gatherFields();
+            const list = readShelfEntries();
+            if (activeShelfId) {
+                const idx = list.findIndex(x => x.id === activeShelfId);
+                if (idx >= 0) list[idx] = { ...list[idx], updatedAt: now, fields };
+                else list.unshift({ id: activeShelfId, updatedAt: now, fields });
+            } else {
+                const id = "cpl_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 9);
+                activeShelfId = id;
+                list.unshift({ id, updatedAt: now, fields });
+            }
+            writeShelfEntries(list);
+            renderShelf();
+            setStatus("Saved on this device.", "ok");
+            setTimeout(() => setStatus(""), 2000);
+        }
+
+        function newSheet() {
+            activeShelfId = null;
+            applyFields({});
+            renderShelf();
+            setStatus("New blank sheet.", "ok");
+            setTimeout(() => setStatus(""), 1600);
         }
 
         function buildStructuredNotes() {
@@ -631,7 +899,19 @@ Continuity notes:`;
         }
 
         document.getElementById("cpCopyBtn").addEventListener("click", () => copyText(buildExportText()));
-        document.getElementById("cpCopyOutlineBtn").addEventListener("click", () => copyText(SHORT_OUTLINE));
+        document.getElementById("cpSaveSideBtn").addEventListener("click", () => persistToShelf());
+        document.getElementById("cpNewSheetBtn").addEventListener("click", () => newSheet());
+        document.getElementById("cpShelfList").addEventListener("click", e => {
+            const rm = e.target.closest("[data-shelf-remove]");
+            if (rm) {
+                deleteShelfItem(rm.getAttribute("data-shelf-remove"), e);
+                return;
+            }
+            const open = e.target.closest("[data-shelf-id]");
+            if (open) loadShelfItem(open.getAttribute("data-shelf-id"));
+        });
+
+        renderShelf();
 
         function parseIntro() {
             const raw = cpIntroduced.value || "|";
