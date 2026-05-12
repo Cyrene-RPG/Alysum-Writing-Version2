@@ -165,21 +165,12 @@
                 rgba(0, 0, 0, 0.15);
         }
 
-        .wr-topband-row {
+        .wr-topband-inner {
             display: flex;
             flex-wrap: wrap;
             align-items: center;
             justify-content: space-between;
             gap: 12px;
-        }
-
-        .wr-topband-lead {
-            margin: 0;
-            font-size: 14px;
-            line-height: 1.5;
-            color: #e2e8f0;
-            font-weight: 650;
-            max-width: 48rem;
         }
 
         .wr-pill {
@@ -201,9 +192,9 @@
         }
 
         .wr-jump {
-            margin-top: 12px;
-            padding-top: 12px;
-            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            margin-top: 0;
+            padding-top: 0;
+            border-top: none;
             font-size: 13px;
             font-weight: 700;
             color: #94a3b8;
@@ -522,32 +513,27 @@
     </header>
 
     <main class="layout">
-        <p class="layout-intro">
-            Look up names from the bundled list, grab a ready-made checklist, or skim what we might add next. Colors follow your Settings theme.
-        </p>
+        <p class="layout-intro">Name search and copy-paste checklists.</p>
 
         <div class="wr-board">
             <div class="wr-topband">
-                <div class="wr-topband-row">
-                    <p class="wr-topband-lead">
-                        Everything below lives on this one page: search stays in the results box so the rest of the layout does not stretch forever.
-                    </p>
+                <div class="wr-topband-inner">
+                    <nav class="wr-jump" aria-label="On this page">
+                        <a href="#name-finder">Names</a>
+                        ·
+                        <a href="#character-tools">Checklists</a>
+                        ·
+                        <a href="#coming-soon">Roadmap</a>
+                    </nav>
                     <span class="wr-pill muted" id="nameLibraryBadge" hidden>—</span>
                 </div>
-                <nav class="wr-jump" aria-label="On this page">
-                    <a href="#name-finder">Names</a>
-                    ·
-                    <a href="#character-tools">Checklists</a>
-                    ·
-                    <a href="#coming-soon">Roadmap</a>
-                </nav>
             </div>
 
             <div class="wr-main-grid">
                 <section class="wr-col wr-col--names" id="name-finder">
                     <h2 class="wr-h">Names</h2>
                     <p class="wr-section-lead">
-                        Type any part of a name, origin, meaning, or gender label. Very broad searches show the first chunk of matches so the list stays quick to scroll.
+                        Match any part of a name, origin, meaning, or gender label. If a search returns a lot of rows, only the first 120 are shown — type a bit more to narrow it.
                     </p>
                     <div class="name-toolbar">
                         <input
@@ -567,15 +553,13 @@
 
                 <section class="wr-col wr-col--tools" id="character-tools">
                     <h2 class="wr-h">Checklists</h2>
-                    <p class="wr-section-lead">
-                        Plain text you can paste into a manuscript note, doc, or the editor. One click copies the whole block.
-                    </p>
+                    <p class="wr-section-lead">Each button copies one block of plain text.</p>
                     <div class="tool-list">
                         <article class="tool-card">
                             <div class="tool-card-icon" aria-hidden="true">🧍</div>
                             <div class="tool-card-body">
                                 <h3>Character profile</h3>
-                                <p>Headings from name and age through goals, relationships, and arc — fill in or delete lines as you go.</p>
+                                <p>From basics through arc — edit the lines you keep.</p>
                             </div>
                             <button class="btn" type="button" onclick="copyChecklist()">Copy</button>
                         </article>
@@ -583,7 +567,7 @@
                             <div class="tool-card-icon" aria-hidden="true">🗺</div>
                             <div class="tool-card-body">
                                 <h3>Worldbuilding</h3>
-                                <p>Prompts for power, taboos, food, slang, conflict — good for a planning pass before you draft scenes.</p>
+                                <p>Questions about society, power, daily life, conflict.</p>
                             </div>
                             <button class="btn" type="button" onclick="copyWorldPrompts()">Copy</button>
                         </article>
@@ -594,9 +578,7 @@
             <div class="wr-roadmap" id="coming-soon">
                 <div class="wr-roadmap-head">
                     <span class="wr-roadmap-label">Roadmap</span>
-                    <p class="wr-roadmap-note">
-                        Features we are considering — not scheduled. If one of these would help your workflow, say so in feedback.
-                    </p>
+                    <p class="wr-roadmap-note">Not in the app yet.</p>
                 </div>
                 <div class="wr-chip-row">
                     <span class="chip">Surname encyclopedia</span>
@@ -628,16 +610,12 @@
         }
 
         function renderEmptyPrompt() {
-            nameResults.innerHTML = `
-                <div class="name-empty">
-                    <span class="hint-strong">Ready when you are</span>
-                    Start typing in the search box, or use Random 6 for a handful of ideas. The full list stays in the file — we only render matches so the page stays light.
-                </div>`;
+            nameResults.innerHTML = `<div class="name-empty">Search above, or tap <strong>Random 6</strong>.</div>`;
         }
 
         function renderNames(items) {
             if (!items.length) {
-                nameResults.innerHTML = `<div class="name-empty"><span class="hint-strong">No matches</span>Try a shorter fragment or a different spelling.</div>`;
+                nameResults.innerHTML = `<div class="name-empty"><span class="hint-strong">No matches</span>Try a different spelling or a shorter piece of text.</div>`;
                 nameLibraryStatus.textContent = "0 matches";
                 return;
             }
@@ -647,7 +625,7 @@
             const truncated = total > MAX_MATCH_DISPLAY;
 
             nameLibraryStatus.textContent = truncated
-                ? `Showing ${shown.length} of ${total.toLocaleString()} — refine your search for fewer hits.`
+                ? `First ${shown.length} of ${total.toLocaleString()} — keep typing to narrow the list.`
                 : `${total.toLocaleString()} shown`;
 
             nameResults.innerHTML = shown
@@ -679,13 +657,13 @@
 
                 NAME_LIBRARY = data.filter((item) => item && item.name && item.origin && item.meaning && item.type);
                 const n = NAME_LIBRARY.length;
-                nameLibraryStatus.textContent = `${n.toLocaleString()} names loaded`;
+                nameLibraryStatus.textContent = `${n.toLocaleString()} names`;
                 setBadge(`${n.toLocaleString()} names`);
             } catch (error) {
                 console.warn(error);
                 NAME_LIBRARY = [];
-                nameLibraryStatus.textContent = "Could not load names (see /resources/names.json)";
-                setBadge("Names offline");
+                nameLibraryStatus.textContent = "Name list could not be loaded.";
+                if (nameLibraryBadge) nameLibraryBadge.hidden = true;
             }
 
             searchNames();
@@ -693,14 +671,14 @@
 
         function searchNames() {
             if (!NAME_LIBRARY.length) {
-                nameResults.innerHTML = `<div class="name-empty"><span class="hint-strong">Names unavailable</span>The JSON file was not found on this host.</div>`;
+                nameResults.innerHTML = `<div class="name-empty">Name list is not available here.</div>`;
                 return;
             }
 
             const q = nameSearch.value.trim().toLowerCase();
             if (!q) {
                 renderEmptyPrompt();
-                nameLibraryStatus.textContent = `${NAME_LIBRARY.length.toLocaleString()} names — type to filter`;
+                nameLibraryStatus.textContent = `${NAME_LIBRARY.length.toLocaleString()} names`;
                 return;
             }
 
@@ -739,7 +717,7 @@
             const shuffled = [...NAME_LIBRARY].sort(() => Math.random() - 0.5);
             nameSearch.value = "";
             renderNames(shuffled.slice(0, 6));
-            nameLibraryStatus.textContent = "6 random names";
+            nameLibraryStatus.textContent = "6 random";
         });
 
         loadNameLibrary();
