@@ -133,7 +133,7 @@
         .cp-status.cp-ok { color: #86efac; border-color: rgba(74, 222, 128, 0.2); }
         .cp-split {
             display: grid;
-            grid-template-columns: minmax(220px, 290px) 1fr;
+            grid-template-columns: minmax(240px, 300px) 1fr;
             gap: 0;
             align-items: start;
             background: linear-gradient(165deg, rgba(255, 255, 255, 0.04) 0%, transparent 42%), var(--panel);
@@ -186,6 +186,21 @@
             line-height: 1.45;
             color: var(--text-soft);
             font-weight: 600;
+        }
+        .cp-cloud-guest {
+            margin: 0 0 12px;
+            padding: 12px 12px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: rgba(0, 0, 0, 0.22);
+            font-size: 12px;
+            line-height: 1.5;
+            color: #e4e4e7;
+            font-weight: 600;
+        }
+        .cp-cloud-guest a {
+            color: #e9d5ff;
+            font-weight: 800;
         }
         .cp-shelf-actions {
             display: flex;
@@ -421,7 +436,7 @@
                     <p class="cp-eyebrow">Writer resources</p>
                     <h1 class="cp-title">Character profile worksheet</h1>
                     <p class="cp-sub">
-                        Same spirit as the Story Bible character sheet, with more prompts. Save worksheets on the side in this browser, copy as text, or save into a book’s bible when you are signed in.
+                        Same spirit as the Story Bible character sheet, with more prompts. Worksheets you save on the side sync to your Alysum account; copy as text or push into a book’s bible when you are signed in.
                     </p>
                 </div>
                 <nav class="cp-nav" aria-label="Navigate">
@@ -435,8 +450,22 @@
         <div id="cpStatus" class="cp-status" role="status"></div>
 
         <div class="cp-split">
-            <aside aria-label="Sections">
-                <p class="cp-aside-title">On this sheet</p>
+            <aside aria-label="Worksheets and sheet sections">
+                <div class="cp-shelf-block" style="margin-top: 0; padding-top: 0; border-top: none">
+                    <p class="cp-aside-title">Your worksheets</p>
+                    <p class="cp-shelf-hint">Menu on the side — tap a name to open it. Syncs while you’re signed in.</p>
+                    <div id="cpCloudSignedOut" class="cp-cloud-guest">
+                        <a href="/login.html?next=%2Fcharacter-profile.html">Sign in</a> to save worksheets here and open them on any device.
+                    </div>
+                    <div id="cpCloudShell" class="hidden">
+                        <div class="cp-shelf-actions">
+                            <button type="button" class="cp-shelf-save" id="cpSaveSideBtn">Save to side</button>
+                            <button type="button" id="cpNewSheetBtn">New sheet</button>
+                        </div>
+                        <ul id="cpSheetMenu" class="cp-shelf-list" aria-label="Your saved worksheets"></ul>
+                    </div>
+                </div>
+                <p class="cp-aside-title" style="margin-top: 20px">On this sheet</p>
                 <ul class="cp-toc">
                     <li><a href="#cp-identity">Identity &amp; role</a></li>
                     <li><a href="#cp-voice">Voice &amp; inner life</a></li>
@@ -445,15 +474,6 @@
                     <li><a href="#cp-arc">Relationships &amp; arc</a></li>
                     <li><a href="#cp-extra">Tags &amp; continuity</a></li>
                 </ul>
-                <div class="cp-shelf-block">
-                    <p class="cp-aside-title">Saved on this device</p>
-                    <p class="cp-shelf-hint">Switch between characters; stored only in this browser.</p>
-                    <div class="cp-shelf-actions">
-                        <button type="button" class="cp-shelf-save" id="cpSaveSideBtn">Save to side</button>
-                        <button type="button" id="cpNewSheetBtn">New sheet</button>
-                    </div>
-                    <ul id="cpShelfList" class="cp-shelf-list" aria-label="Saved worksheets on this device"></ul>
-                </div>
                 <div class="cp-aside-actions">
                     <button type="button" id="cpCopyBtn">Copy as text</button>
                 </div>
@@ -627,6 +647,13 @@
             listUserBooksWithBibleCounts,
             loadBookChapterOptions
         } from "./js/story-bible-api.js?v=5";
+        import {
+            CHARACTER_PROFILE_FIELD_KEYS,
+            subscribeCharacterProfileSheets,
+            saveCharacterProfileSheet,
+            deleteCharacterProfileSheet,
+            generateCharacterProfileSheetId
+        } from "./js/character-profile-sheets-api.js?v=1";
 
         const statusEl = document.getElementById("cpStatus");
         const cpForm = document.getElementById("cpForm");
@@ -637,36 +664,13 @@
         const cpGuestHint = document.getElementById("cpGuestHint");
         const cpNoBooksHint = document.getElementById("cpNoBooksHint");
         const cpSaveSection = document.getElementById("cpSaveSection");
+        const cpCloudSignedOut = document.getElementById("cpCloudSignedOut");
+        const cpCloudShell = document.getElementById("cpCloudShell");
 
-        const SHELF_KEY = "alysum-character-profile-shelf";
-        const SHELF_MAX = 48;
-        const FIELD_IDS = [
-            "cpName",
-            "cpAliases",
-            "cpRole",
-            "cpVoice",
-            "cpPersonality",
-            "cpGoal",
-            "cpFear",
-            "cpSecret",
-            "cpStrength",
-            "cpFlaw",
-            "cpWound",
-            "cpAge",
-            "cpHeight",
-            "cpEyes",
-            "cpHair",
-            "cpSkin",
-            "cpBuild",
-            "cpDistinctive",
-            "cpRelationships",
-            "cpArc",
-            "cpTags",
-            "cpContinuity",
-            "cpExtraNotes"
-        ];
-
-        let activeShelfId = null;
+        let unsubscribeSheets = null;
+        let lastSheets = [];
+        let activeSheetId = null;
+        let activeSheetCreatedAt = null;
 
         function setStatus(msg, kind = "") {
             statusEl.textContent = msg || "";
@@ -680,27 +684,16 @@
             return el && "value" in el ? String(el.value || "").trim() : "";
         }
 
-        function readShelfEntries() {
-            try {
-                const raw = localStorage.getItem(SHELF_KEY);
-                if (!raw) return [];
-                const o = JSON.parse(raw);
-                if (!o || o.version !== 1 || !Array.isArray(o.items)) return [];
-                return o.items.filter(x => x && typeof x.id === "string" && x.fields && typeof x.fields === "object");
-            } catch {
-                return [];
+        function stopSheetsListener() {
+            if (typeof unsubscribeSheets === "function") {
+                unsubscribeSheets();
+                unsubscribeSheets = null;
             }
-        }
-
-        function writeShelfEntries(items) {
-            const sorted = [...items].sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
-            const trim = sorted.slice(0, SHELF_MAX);
-            localStorage.setItem(SHELF_KEY, JSON.stringify({ version: 1, items: trim }));
         }
 
         function gatherFields() {
             const fields = {};
-            for (const fid of FIELD_IDS) {
+            for (const fid of CHARACTER_PROFILE_FIELD_KEYS) {
                 const el = document.getElementById(fid);
                 fields[fid] = el && "value" in el ? String(el.value) : "";
             }
@@ -709,14 +702,14 @@
 
         function applyFields(fields) {
             const f = fields && typeof fields === "object" ? fields : {};
-            for (const fid of FIELD_IDS) {
+            for (const fid of CHARACTER_PROFILE_FIELD_KEYS) {
                 const el = document.getElementById(fid);
                 if (el && "value" in el) el.value = f[fid] != null ? String(f[fid]) : "";
             }
         }
 
         function hasAnyWorksheetContent() {
-            for (const fid of FIELD_IDS) {
+            for (const fid of CHARACTER_PROFILE_FIELD_KEYS) {
                 const el = document.getElementById(fid);
                 const v = el && "value" in el ? String(el.value || "").trim() : "";
                 if (v) return true;
@@ -724,26 +717,26 @@
             return false;
         }
 
-        function renderShelf() {
-            const ul = document.getElementById("cpShelfList");
+        function renderSheetMenu(sheets) {
+            lastSheets = sheets;
+            const ul = document.getElementById("cpSheetMenu");
             if (!ul) return;
-            const items = readShelfEntries().sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
             ul.innerHTML = "";
-            if (!items.length) {
+            if (!sheets.length) {
                 const li = document.createElement("li");
                 li.className = "cp-shelf-empty";
-                li.textContent = "No saves yet.";
+                li.textContent = "No worksheets yet — add a name or notes, then Save to side.";
                 ul.appendChild(li);
                 return;
             }
-            for (const it of items) {
-                const label = ((it.fields.cpName || "").trim() || "Untitled");
+            for (const it of sheets) {
+                const label = it.displayName || ((it.fields.cpName || "").trim() || "Untitled");
                 const li = document.createElement("li");
                 li.className = "cp-shelf-row";
                 const main = document.createElement("button");
                 main.type = "button";
-                main.className = "cp-shelf-item" + (activeShelfId === it.id ? " is-active" : "");
-                main.dataset.shelfId = it.id;
+                main.className = "cp-shelf-item" + (activeSheetId === it.id ? " is-active" : "");
+                main.dataset.sheetId = it.id;
                 const spName = document.createElement("span");
                 spName.className = "cp-shelf-name";
                 spName.textContent = label;
@@ -761,65 +754,78 @@
                 const del = document.createElement("button");
                 del.type = "button";
                 del.className = "cp-shelf-remove";
-                del.dataset.shelfRemove = it.id;
-                del.setAttribute("aria-label", "Remove " + label);
+                del.dataset.sheetRemove = it.id;
+                del.setAttribute("aria-label", "Delete " + label);
                 del.textContent = "×";
                 li.append(main, del);
                 ul.appendChild(li);
             }
         }
 
-        function loadShelfItem(id) {
-            const it = readShelfEntries().find(x => x.id === id);
-            if (!it) return;
-            activeShelfId = id;
-            applyFields(it.fields);
-            renderShelf();
+        function loadCloudSheetById(id) {
+            const sheet = lastSheets.find(s => s.id === id);
+            if (!sheet) return;
+            activeSheetId = sheet.id;
+            activeSheetCreatedAt = sheet.createdAt;
+            applyFields(sheet.fields);
+            renderSheetMenu(lastSheets);
             document.getElementById("cp-identity")?.scrollIntoView({ behavior: "smooth", block: "start" });
-            setStatus("Loaded from side.", "ok");
+            setStatus("Loaded worksheet.", "ok");
             setTimeout(() => setStatus(""), 1600);
         }
 
-        function deleteShelfItem(id, ev) {
+        async function deleteCloudSheet(id, ev) {
             if (ev) ev.stopPropagation();
-            const list = readShelfEntries().filter(x => x.id !== id);
-            writeShelfEntries(list);
-            if (activeShelfId === id) {
-                activeShelfId = null;
-                applyFields({});
+            const uid = window.__cpUid;
+            if (!uid) return;
+            try {
+                await deleteCharacterProfileSheet(db, uid, id);
+                if (activeSheetId === id) {
+                    activeSheetId = null;
+                    activeSheetCreatedAt = null;
+                    applyFields({});
+                }
+                setStatus("Worksheet deleted.", "ok");
+                setTimeout(() => setStatus(""), 1600);
+            } catch (e) {
+                const msg = e && typeof e.message === "string" ? e.message : String(e);
+                setStatus(`Delete failed. ${msg.length > 100 ? msg.slice(0, 97) + "…" : msg}`, "err");
             }
-            renderShelf();
-            setStatus("Removed from this device.", "ok");
-            setTimeout(() => setStatus(""), 1600);
         }
 
-        function persistToShelf() {
-            if (!hasAnyWorksheetContent()) {
-                setStatus("Add at least one field before saving to the side.", "err");
+        async function persistCloudSheet() {
+            const uid = window.__cpUid;
+            if (!uid) {
+                setStatus("Sign in to save worksheets to your account.", "err");
                 return;
             }
-            const now = Date.now();
-            const fields = gatherFields();
-            const list = readShelfEntries();
-            if (activeShelfId) {
-                const idx = list.findIndex(x => x.id === activeShelfId);
-                if (idx >= 0) list[idx] = { ...list[idx], updatedAt: now, fields };
-                else list.unshift({ id: activeShelfId, updatedAt: now, fields });
-            } else {
-                const id = "cpl_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 9);
-                activeShelfId = id;
-                list.unshift({ id, updatedAt: now, fields });
+            if (!hasAnyWorksheetContent()) {
+                setStatus("Add at least one field before saving.", "err");
+                return;
             }
-            writeShelfEntries(list);
-            renderShelf();
-            setStatus("Saved on this device.", "ok");
-            setTimeout(() => setStatus(""), 2000);
+            const fields = gatherFields();
+            const displayName = (fields.cpName || "").trim() || "Untitled";
+            const isNew = !activeSheetId;
+            const id = activeSheetId || generateCharacterProfileSheetId();
+            const createdAt = isNew ? Date.now() : activeSheetCreatedAt;
+            try {
+                setStatus("Saving…");
+                await saveCharacterProfileSheet(db, uid, { id, displayName, fields, createdAt });
+                activeSheetId = id;
+                activeSheetCreatedAt = createdAt;
+                setStatus("Saved to your account.", "ok");
+                setTimeout(() => setStatus(""), 2000);
+            } catch (e) {
+                const msg = e && typeof e.message === "string" ? e.message : String(e);
+                setStatus(`Save failed. ${msg.length > 120 ? msg.slice(0, 117) + "…" : msg}`, "err");
+            }
         }
 
         function newSheet() {
-            activeShelfId = null;
+            activeSheetId = null;
+            activeSheetCreatedAt = null;
             applyFields({});
-            renderShelf();
+            renderSheetMenu(lastSheets);
             setStatus("New blank sheet.", "ok");
             setTimeout(() => setStatus(""), 1600);
         }
@@ -899,19 +905,19 @@
         }
 
         document.getElementById("cpCopyBtn").addEventListener("click", () => copyText(buildExportText()));
-        document.getElementById("cpSaveSideBtn").addEventListener("click", () => persistToShelf());
+        document.getElementById("cpSaveSideBtn").addEventListener("click", () => persistCloudSheet());
         document.getElementById("cpNewSheetBtn").addEventListener("click", () => newSheet());
-        document.getElementById("cpShelfList").addEventListener("click", e => {
-            const rm = e.target.closest("[data-shelf-remove]");
+        document.getElementById("cpSheetMenu").addEventListener("click", e => {
+            const rm = e.target.closest("[data-sheet-remove]");
             if (rm) {
-                deleteShelfItem(rm.getAttribute("data-shelf-remove"), e);
+                deleteCloudSheet(rm.getAttribute("data-sheet-remove"), e);
                 return;
             }
-            const open = e.target.closest("[data-shelf-id]");
-            if (open) loadShelfItem(open.getAttribute("data-shelf-id"));
+            const open = e.target.closest("[data-sheet-id]");
+            if (open) loadCloudSheetById(open.getAttribute("data-sheet-id"));
         });
 
-        renderShelf();
+        renderSheetMenu([]);
 
         function parseIntro() {
             const raw = cpIntroduced.value || "|";
@@ -1025,16 +1031,33 @@
         });
 
         onAuthStateChanged(auth, async user => {
+            stopSheetsListener();
             window.__cpUid = user ? user.uid : "";
             cpGuestHint.classList.toggle("hidden", !!user);
             cpNoBooksHint.classList.add("hidden");
             cpSaveSection.classList.toggle("hidden", !user);
 
+            if (cpCloudSignedOut && cpCloudShell) {
+                cpCloudSignedOut.classList.toggle("hidden", !!user);
+                cpCloudShell.classList.toggle("hidden", !user);
+            }
+
             if (!user) {
+                activeSheetId = null;
+                activeSheetCreatedAt = null;
+                lastSheets = [];
+                renderSheetMenu([]);
                 cpBook.innerHTML = '<option value="">Choose a book…</option>';
                 cpSaveBibleBtn.disabled = true;
                 return;
             }
+
+            unsubscribeSheets = subscribeCharacterProfileSheets(
+                db,
+                user.uid,
+                sheets => renderSheetMenu(sheets),
+                () => setStatus("Could not sync worksheets. Check connection or try reloading.", "err")
+            );
 
             cpBook.innerHTML = '<option value="">Choose a book…</option>';
             try {
@@ -1042,6 +1065,7 @@
                 if (!rows.length) {
                     cpNoBooksHint.classList.remove("hidden");
                     cpSaveBibleBtn.disabled = true;
+                    updateSaveEnabled();
                     return;
                 }
                 for (const r of rows) {

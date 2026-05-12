@@ -41,6 +41,11 @@ service cloud.firestore {
         allow read, write: if isUser(userId);
       }
 
+      // Writer resources — character profile worksheets (synced drafts).
+      match /characterProfileSheets/{sheetId} {
+        allow read, write: if isUser(userId);
+      }
+
       // Reader-only index: which beta notes this user has already shared with authors (dedupe + UI).
       match /betaSharesIndex/{shareId} {
         allow read, write: if isUser(userId);
