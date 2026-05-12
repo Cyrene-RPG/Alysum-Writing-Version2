@@ -835,7 +835,7 @@
         } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
         import { writeBetaShelfEntryLocal } from "./js/beta-shelf-local.js?v=1";
         import { installReaderCopyGuards } from "./js/reader-copy-guards.js?v=1";
-        import { applyReaderWatermark } from "./js/reader-watermark.js?v=1";
+        import { applyReaderWatermark } from "./js/reader-watermark.js?v=3";
 
         const params = new URLSearchParams(window.location.search);
         const bookId = params.get("book");
@@ -865,6 +865,7 @@
         let currentBook = null;
         let currentChapterIndex = 0;
         let readerWatermarkProfileUser = null;
+        let bookOwnerHandle = null;
 
         installReaderCopyGuards(betaContent, {
             isActive: () => !!currentBook,
@@ -985,6 +986,7 @@
             return {
                 title: safeString(data.title, "Untitled"),
                 author: safeString(data.author, "unknown"),
+                ownerUid: safeString(data.ownerUid, ""),
                 chapters,
                 chapterCount: safeNumber(data.chapterCount, chapters.length),
                 words: totalWords
@@ -1007,29 +1009,33 @@
                 footer.textContent = "";
                 return;
             }
+            const ownerName = bookOwnerHandle || currentBook.author || null;
             applyReaderWatermark(sheet, footer, {
                 bookId,
                 currentUser,
-                profileUsername: readerWatermarkProfileUser
+                profileUsername: readerWatermarkProfileUser,
+                bookOwnerUsername: ownerName
             });
         }
 
-        async function syncBetaReaderWatermarkProfile() {
-            if (!currentUser?.uid) {
-                readerWatermarkProfileUser = null;
+        async function syncBetaBookOwnerHandle() {
+            const ownerUid = currentBook?.ownerUid;
+            if (!ownerUid) {
+                bookOwnerHandle = null;
                 updateBetaReaderWatermark();
                 return;
             }
             try {
-                const snap = await getDoc(doc(db, "users", currentUser.uid));
+                const snap = await getDoc(doc(db, "users", ownerUid));
                 if (snap.exists()) {
                     const p = snap.data() || {};
-                    readerWatermarkProfileUser = String(p.username || "").trim() || null;
+                    const handle = String(p.username || "").trim();
+                    bookOwnerHandle = handle || null;
                 } else {
-                    readerWatermarkProfileUser = null;
+                    bookOwnerHandle = null;
                 }
             } catch {
-                readerWatermarkProfileUser = null;
+                bookOwnerHandle = null;
             }
             updateBetaReaderWatermark();
         }
@@ -1261,7 +1267,7 @@
 
                 currentChapterIndex = 0;
                 renderChapter();
-                void syncBetaReaderWatermarkProfile();
+                void syncBetaBookOwnerHandle();
                 hideLoadingPanel();
                 mainLayout.classList.remove("hidden");
             } catch (e) {

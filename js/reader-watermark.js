@@ -79,12 +79,15 @@ export function getGuestReaderMark() {
 }
 
 /**
- * @param {{ bookId: string | null, currentUser: { uid?: string, email?: string | null, displayName?: string | null } | null, profileUsername?: string | null }} opts
+ * @param {{ bookId: string | null, currentUser: { uid?: string, email?: string | null, displayName?: string | null } | null, profileUsername?: string | null, bookOwnerUsername?: string | null }} opts
  */
 export function buildReaderWatermarkLines(opts) {
   const bookId = opts.bookId || "";
   const currentUser = opts.currentUser || null;
   const profileUsername = opts.profileUsername ? String(opts.profileUsername).trim() : "";
+  const ownerUsername = opts.bookOwnerUsername
+    ? String(opts.bookOwnerUsername).trim().replace(/^@/, "")
+    : "";
 
   const dateStr = new Date().toLocaleDateString(undefined, {
     year: "numeric",
@@ -94,7 +97,11 @@ export function buildReaderWatermarkLines(opts) {
   const bookPart = bookId.length >= 6 ? bookId.slice(0, 8) : "—";
 
   let who;
-  if (currentUser?.uid) {
+  let ownerLabel = "";
+  if (ownerUsername) {
+    who = `@${ownerUsername}`;
+    ownerLabel = `@${ownerUsername}`;
+  } else if (currentUser?.uid) {
     const fromEmail =
       currentUser.email && String(currentUser.email).includes("@")
         ? String(currentUser.email).split("@")[0]
@@ -106,7 +113,9 @@ export function buildReaderWatermarkLines(opts) {
     who = `read-as ${getGuestReaderMark()}`;
   }
 
-  const footer = `Personal read stamp · Alysum · ${who} · book ${bookPart} · ${dateStr}`;
+  const footer = ownerLabel
+    ? `© ${ownerLabel} on Alysum · book ${bookPart} · ${dateStr}`
+    : `Personal read stamp · Alysum · ${who} · book ${bookPart} · ${dateStr}`;
   const gridSource = `Alysum ${who} ${bookPart}`.replace(/\s+/g, " ");
   const grid = gridSource.length > 72 ? gridSource.slice(0, 72) : gridSource;
   return { footer, grid };
@@ -129,7 +138,7 @@ export function renderWatermarkCells(sheetEl, gridPhrase, cellCount = 20) {
 /**
  * @param {HTMLElement | null} sheetEl
  * @param {HTMLElement | null} footerEl
- * @param {{ bookId: string | null, currentUser: { uid?: string, email?: string | null, displayName?: string | null } | null, profileUsername?: string | null }} opts
+ * @param {{ bookId: string | null, currentUser: { uid?: string, email?: string | null, displayName?: string | null } | null, profileUsername?: string | null, bookOwnerUsername?: string | null }} opts
  */
 export function applyReaderWatermark(sheetEl, footerEl, opts) {
   injectStyles();

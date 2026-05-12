@@ -924,7 +924,7 @@
     import { writeBetaShelfEntryLocal } from "./js/beta-shelf-local.js?v=1";
     import { READER_HOME_URL } from "./js/account-mode.js";
     import { installReaderCopyGuards } from "./js/reader-copy-guards.js?v=1";
-    import { applyReaderWatermark } from "./js/reader-watermark.js?v=1";
+    import { applyReaderWatermark } from "./js/reader-watermark.js?v=3";
 
     const params = new URLSearchParams(window.location.search);
     const bookId = params.get("book");
@@ -1008,6 +1008,7 @@
     let currentFontSize = 22;
     let hasLikedThisBook = false;
     let readerWatermarkProfileUser = null;
+    let bookOwnerHandle = null;
 
     installReaderCopyGuards(content, {
       isActive: () => isLoaded && !!currentBook
@@ -1462,10 +1463,12 @@
         footer.textContent = "";
         return;
       }
+      const ownerName = bookOwnerHandle || currentBook.author || null;
       applyReaderWatermark(sheet, footer, {
         bookId,
         currentUser: currentUser || auth.currentUser,
-        profileUsername: readerWatermarkProfileUser
+        profileUsername: readerWatermarkProfileUser,
+        bookOwnerUsername: ownerName
       });
     }
 
@@ -1486,6 +1489,28 @@
         }
       } catch {
         readerWatermarkProfileUser = null;
+      }
+      updateReaderWatermark();
+    }
+
+    async function syncBookOwnerHandle() {
+      const ownerUid = currentBook?.ownerUid;
+      if (!ownerUid) {
+        bookOwnerHandle = null;
+        updateReaderWatermark();
+        return;
+      }
+      try {
+        const snap = await getDoc(doc(db, "users", ownerUid));
+        if (snap.exists()) {
+          const p = snap.data() || {};
+          const handle = String(p.username || "").trim();
+          bookOwnerHandle = handle || null;
+        } else {
+          bookOwnerHandle = null;
+        }
+      } catch {
+        bookOwnerHandle = null;
       }
       updateReaderWatermark();
     }
@@ -1523,6 +1548,7 @@
           hideStatus();
           updateReaderWatermark();
           void syncReaderWatermarkProfile();
+          void syncBookOwnerHandle();
           return;
         }
 
@@ -1546,6 +1572,7 @@
         void ensureBetaReadShelved();
         updateReaderWatermark();
         void syncReaderWatermarkProfile();
+        void syncBookOwnerHandle();
       } catch (error) {
         console.error(error);
         showError("Failed to load story.");

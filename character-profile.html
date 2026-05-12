@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- ALYSUM:PWA:START -->
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta name="theme-color" content="#7c3aed" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#020b18" media="(prefers-color-scheme: dark)">
+    <meta name="color-scheme" content="dark light">
+    <meta name="application-name" content="Alysum">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Alysum">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="msapplication-TileColor" content="#7c3aed">
+    <meta name="msapplication-TileImage" content="/Alysum-3.png">
+    <link rel="icon" type="image/png" sizes="any" href="/Alysum-3.png">
+    <link rel="apple-touch-icon" href="/Alysum-3.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/Alysum-3.png">
+    <script src="/js/pwa-register.js" defer></script>
+    <!-- ALYSUM:PWA:END -->
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Character profile worksheet — Alysum</title>
+    <script>
+        try {
+            var __g = localStorage.getItem("alysum-gradient-theme");
+            if (__g && __g !== "classic") document.documentElement.setAttribute("data-gradient-theme", __g);
+        } catch (e) {}
+    </script>
+    <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
+    <style>
+        * { box-sizing: border-box; }
+        :root {
+            --alysum-purple: #6d28d9;
+            --alysum-purple-bright: #7c3aed;
+            --bg: #070b14;
+            --panel: #121a2b;
+            --panel-muted: #151d2e;
+            --text: #f4f4f5;
+            --text-soft: #a1a1aa;
+            --border: rgba(255, 255, 255, 0.08);
+            --border-strong: rgba(196, 181, 253, 0.22);
+            --radius-lg: 18px;
+            --radius-md: 12px;
+            --shadow-panel: 0 4px 24px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+        }
+        html, body {
+            margin: 0;
+            min-height: 100%;
+            font-family: "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            background-image:
+                radial-gradient(ellipse 120% 80% at 100% -10%, rgba(109, 40, 217, 0.18), transparent 50%),
+                radial-gradient(ellipse 80% 60% at 0% 100%, rgba(30, 58, 138, 0.12), transparent 45%);
+            background-attachment: fixed;
+            color: var(--text);
+            -webkit-font-smoothing: antialiased;
+        }
+        .cp-wrap { max-width: 1180px; margin: 0 auto; padding: 20px 22px 56px; }
+        .cp-top { margin-bottom: 22px; }
+        .cp-top-card {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: clamp(16px, 3vw, 28px);
+            padding: clamp(18px, 3vw, 28px) clamp(18px, 3vw, 32px);
+            border-radius: var(--radius-lg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: linear-gradient(155deg, rgba(255, 255, 255, 0.07) 0%, rgba(22, 30, 48, 0.92) 40%, rgba(10, 14, 26, 0.94) 100%);
+            box-shadow: var(--shadow-panel), 0 20px 48px rgba(0, 0, 0, 0.32);
+        }
+        .cp-eyebrow {
+            display: inline-block;
+            margin: 0 0 10px;
+            padding: 5px 12px;
+            border-radius: 999px;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: #e9d5ff;
+            background: rgba(109, 40, 217, 0.28);
+            border: 1px solid rgba(196, 181, 253, 0.35);
+        }
+        .cp-title {
+            margin: 0;
+            font-size: clamp(1.5rem, 4vw, 2.1rem);
+            font-weight: 900;
+            letter-spacing: -0.03em;
+            line-height: 1.1;
+            color: #faf5ff;
+        }
+        .cp-sub {
+            margin: 12px 0 0;
+            max-width: 58ch;
+            font-size: 15px;
+            line-height: 1.6;
+            color: var(--text-soft);
+        }
+        .cp-nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+        .cp-nav a {
+            text-decoration: none;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text);
+            padding: 9px 16px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 13px;
+        }
+        .cp-nav a:hover {
+            border-color: var(--border-strong);
+            background: rgba(124, 58, 237, 0.18);
+        }
+        .cp-status {
+            min-height: 26px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-soft);
+            margin-bottom: 14px;
+            padding: 8px 12px;
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.22);
+            border: 1px solid transparent;
+        }
+        .cp-status.cp-err { color: #fca5a5; border-color: rgba(248, 113, 113, 0.25); }
+        .cp-status.cp-ok { color: #86efac; border-color: rgba(74, 222, 128, 0.2); }
+        .cp-split {
+            display: grid;
+            grid-template-columns: minmax(200px, 260px) 1fr;
+            gap: 0;
+            align-items: start;
+            background: linear-gradient(165deg, rgba(255, 255, 255, 0.04) 0%, transparent 42%), var(--panel);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-panel);
+            overflow: hidden;
+        }
+        .cp-split > aside {
+            padding: 20px 18px 22px 16px;
+            border-right: 1px solid var(--border);
+            background: rgba(0, 0, 0, 0.15);
+        }
+        .cp-aside-title {
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #a78bfa;
+            margin: 0 0 12px;
+        }
+        .cp-toc {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+        .cp-toc a {
+            display: block;
+            padding: 8px 10px;
+            margin-bottom: 4px;
+            border-radius: 8px;
+            color: #e4e4e7;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+            border: 1px solid transparent;
+        }
+        .cp-toc a:hover {
+            background: rgba(124, 58, 237, 0.12);
+            border-color: rgba(196, 181, 253, 0.2);
+        }
+        .cp-aside-actions {
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px dashed rgba(255, 255, 255, 0.1);
+        }
+        .cp-aside-actions button {
+            width: 100%;
+            margin-bottom: 8px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text);
+            font-weight: 800;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .cp-aside-actions button:hover {
+            border-color: var(--border-strong);
+            background: rgba(124, 58, 237, 0.15);
+        }
+        .cp-form-wrap { padding: 22px 22px 26px 24px; min-width: 0; }
+        .cp-section {
+            scroll-margin-top: 24px;
+            margin-bottom: 22px;
+        }
+        .cp-section:last-of-type { margin-bottom: 0; }
+        .cp-section-head {
+            font-size: 13px;
+            font-weight: 900;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: #c4b5fd;
+            margin: 0 0 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+        .cp-form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px 16px;
+        }
+        @media (max-width: 640px) {
+            .cp-form-grid { grid-template-columns: 1fr; }
+        }
+        .cp-field label {
+            display: block;
+            font-size: 11px;
+            font-weight: 700;
+            color: #a1a1aa;
+            margin-bottom: 6px;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+        .cp-field input, .cp-field textarea, .cp-field select {
+            width: 100%;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 11px 14px;
+            background: var(--panel-muted);
+            color: var(--text);
+            font-size: 14px;
+        }
+        .cp-field textarea { min-height: 88px; resize: vertical; line-height: 1.5; }
+        .cp-field textarea.cp-tall { min-height: 120px; }
+        .cp-field input:focus-visible, .cp-field textarea:focus-visible, .cp-field select:focus-visible {
+            outline: none;
+            border-color: rgba(167, 139, 250, 0.55);
+            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.22);
+        }
+        .cp-field-full { grid-column: 1 / -1; }
+        .cp-save-bar {
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: flex-end;
+        }
+        .cp-save-bar .cp-field { flex: 1 1 220px; margin: 0; }
+        .cp-btn-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+        .cp-btn {
+            padding: 11px 20px;
+            border-radius: 11px;
+            font-weight: 800;
+            font-size: 14px;
+            cursor: pointer;
+            border: none;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .cp-btn-primary {
+            background: linear-gradient(135deg, var(--alysum-purple-bright) 0%, #5b21b6 100%);
+            color: #fff;
+            box-shadow: 0 4px 20px rgba(109, 40, 217, 0.4);
+        }
+        .cp-btn-primary:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        .cp-btn-ghost {
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+        .cp-hint {
+            font-size: 12px;
+            color: var(--text-soft);
+            line-height: 1.5;
+            margin: 10px 0 0;
+            max-width: 62ch;
+        }
+        .cp-hint a { color: #e9d5ff; font-weight: 700; }
+        .hidden { display: none !important; }
+        @media (max-width: 760px) {
+            .cp-split { grid-template-columns: 1fr; }
+            .cp-split > aside {
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="/css/gradient-themes.css?v=2" />
+</head>
+<body>
+    <div class="cp-wrap">
+        <header class="cp-top">
+            <div class="cp-top-card">
+                <div>
+                    <p class="cp-eyebrow">Writer resources</p>
+                    <h1 class="cp-title">Character profile worksheet</h1>
+                    <p class="cp-sub">
+                        Same spirit as the Story Bible character sheet, with more prompts. Fill what helps you; copy as text, or save straight into a book’s bible when you are signed in.
+                    </p>
+                </div>
+                <nav class="cp-nav" aria-label="Navigate">
+                    <a href="/writer-resources.html">← Resources</a>
+                    <a href="/story-bible.html">Story Bible</a>
+                    <a href="/studio.html">Studio</a>
+                </nav>
+            </div>
+        </header>
+
+        <div id="cpStatus" class="cp-status" role="status"></div>
+
+        <div class="cp-split">
+            <aside aria-label="Sections">
+                <p class="cp-aside-title">On this sheet</p>
+                <ul class="cp-toc">
+                    <li><a href="#cp-identity">Identity &amp; role</a></li>
+                    <li><a href="#cp-voice">Voice &amp; inner life</a></li>
+                    <li><a href="#cp-plot">Goals, fears, secrets</a></li>
+                    <li><a href="#cp-look">Appearance</a></li>
+                    <li><a href="#cp-arc">Relationships &amp; arc</a></li>
+                    <li><a href="#cp-extra">Tags &amp; continuity</a></li>
+                </ul>
+                <div class="cp-aside-actions">
+                    <button type="button" id="cpCopyBtn">Copy as text</button>
+                    <button type="button" id="cpCopyOutlineBtn">Copy short outline</button>
+                </div>
+            </aside>
+
+            <div class="cp-form-wrap">
+                <form id="cpForm" autocomplete="off">
+                    <section class="cp-section" id="cp-identity">
+                        <h2 class="cp-section-head">Identity &amp; role</h2>
+                        <div class="cp-form-grid">
+                            <div class="cp-field cp-field-full">
+                                <label for="cpName">Name</label>
+                                <input id="cpName" type="text" placeholder="Character name" />
+                            </div>
+                            <div class="cp-field cp-field-full">
+                                <label for="cpAliases">Also known as (comma-separated)</label>
+                                <input id="cpAliases" type="text" placeholder="Nicknames, titles, codenames…" />
+                            </div>
+                            <div class="cp-field cp-field-full">
+                                <label for="cpRole">Role in the story</label>
+                                <textarea id="cpRole" class="cp-tall" placeholder="What do they do for the plot — ally, foil, mentor, antagonist…"></textarea>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="cp-section" id="cp-voice">
+                        <h2 class="cp-section-head">Voice &amp; inner life</h2>
+                        <div class="cp-form-grid">
+                            <div class="cp-field cp-field-full">
+                                <label for="cpVoice">Voice / speech style</label>
+                                <textarea id="cpVoice" placeholder="Rhythm, vocabulary, verbal tics, what they avoid saying…"></textarea>
+                            </div>
+                            <div class="cp-field cp-field-full">
+                                <label for="cpPersonality">Personality</label>
+                                <textarea id="cpPersonality" placeholder="Temperament, habits, values, contradictions…"></textarea>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="cp-section" id="cp-plot">
+                        <h2 class="cp-section-head">Goals, fears, secrets</h2>
+                        <div class="cp-form-grid">
+                            <div class="cp-field">
+                                <label for="cpGoal">Goal</label>
+                                <textarea id="cpGoal" rows="3" placeholder="What they want on page"></textarea>
+                            </div>
+                            <div class="cp-field">
+                                <label for="cpFear">Fear</label>
+                                <textarea id="cpFear" rows="3" placeholder="What they dread losing or facing"></textarea>
+                            </div>
+                            <div class="cp-field">
+                                <label for="cpSecret">Secret</label>
+                                <textarea id="cpSecret" rows="3" placeholder="What readers or other characters might not know"></textarea>
+                            </div>
+                            <div class="cp-field">
+                                <label for="cpStrength">Strength</label>
+                                <textarea id="cpStrength" rows="3" placeholder="Skill or trait that carries them"></textarea>
+                            </div>
+                            <div class="cp-field">
+                                <label for="cpFlaw">Flaw</label>
+                                <textarea id="cpFlaw" rows="3" placeholder="Blind spot or self-sabotage"></textarea>
+                            </div>
+                            <div class="cp-field">
+                                <label for="cpWound">Backstory wound</label>
+                                <textarea id="cpWound" rows="3" placeholder="Old hurt that still drives them"></textarea>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="cp-section" id="cp-look">
+                        <h2 class="cp-section-head">Appearance</h2>
+                        <p class="cp-hint" style="margin-top: 0">These map to the same fields as Story Bible so the sheet stays consistent after you save.</p>
+                        <div class="cp-form-grid">
+                            <div class="cp-field">
+                                <label for="cpAge">Age</label>
+                                <input id="cpAge" type="text" placeholder="Number, range, or ‘timeless’" />
+                            </div>
+                            <div class="cp-field">
+                                <label for="cpHeight">Height</label>
+                                <input id="cpHeight" type="text" />
+                            </div>
+                            <div class="cp-field">
+                                <label for="cpEyes">Eyes</label>
+                                <input id="cpEyes" type="text" />
+                            </div>
+                            <div class="cp-field">
+                                <label for="cpHair">Hair</label>
+                                <input id="cpHair" type="text" />
+                            </div>
+                            <div class="cp-field">
+                                <label for="cpSkin">Skin</label>
+                                <input id="cpSkin" type="text" />
+                            </div>
+                            <div class="cp-field">
+                                <label for="cpBuild">Build</label>
+                                <input id="cpBuild" type="text" />
+                            </div>
+                            <div class="cp-field cp-field-full">
+                                <label for="cpDistinctive">Distinctive</label>
+                                <input id="cpDistinctive" type="text" placeholder="Scars, gait, style, tells…" />
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="cp-section" id="cp-arc">
+                        <h2 class="cp-section-head">Relationships &amp; arc</h2>
+                        <div class="cp-form-grid">
+                            <div class="cp-field cp-field-full">
+                                <label for="cpRelationships">Important relationships</label>
+                                <textarea id="cpRelationships" class="cp-tall" placeholder="Who matters, dynamics, debts, betrayals…"></textarea>
+                            </div>
+                            <div class="cp-field cp-field-full">
+                                <label for="cpArc">Arc — how they change</label>
+                                <textarea id="cpArc" class="cp-tall" placeholder="Start state → pressure → choice → end state"></textarea>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="cp-section" id="cp-extra">
+                        <h2 class="cp-section-head">Tags &amp; continuity</h2>
+                        <div class="cp-form-grid">
+                            <div class="cp-field cp-field-full">
+                                <label for="cpTags">Tags (comma-separated)</label>
+                                <input id="cpTags" type="text" placeholder="POV, faction, era…" />
+                            </div>
+                            <div class="cp-field cp-field-full">
+                                <label for="cpContinuity">Continuity notes</label>
+                                <textarea id="cpContinuity" placeholder="Injuries, timelines, props, name spellings to keep straight…"></textarea>
+                            </div>
+                            <div class="cp-field cp-field-full">
+                                <label for="cpExtraNotes">Anything else</label>
+                                <textarea id="cpExtraNotes" class="cp-tall" placeholder="Freeform — appended after the structured sections when you save to the bible"></textarea>
+                            </div>
+                        </div>
+                    </section>
+
+                    <div class="cp-save-bar" id="cpSaveSection">
+                        <div class="cp-field" id="cpBookField">
+                            <label for="cpBook">Save to book</label>
+                            <select id="cpBook">
+                                <option value="">Choose a book…</option>
+                            </select>
+                        </div>
+                        <div class="cp-field" id="cpIntroField">
+                            <label for="cpIntroduced">Introduced in (optional)</label>
+                            <select id="cpIntroduced">
+                                <option value="|">Not specified</option>
+                            </select>
+                        </div>
+                        <div class="cp-btn-row">
+                            <button type="button" class="cp-btn cp-btn-primary" id="cpSaveBibleBtn" disabled>Save to Story Bible</button>
+                            <a class="cp-btn cp-btn-ghost hidden" id="cpOpenBibleLink" href="#">Open bible</a>
+                        </div>
+                    </div>
+                    <p class="cp-hint hidden" id="cpGuestHint">
+                        <a href="/login.html?next=%2Fcharacter-profile.html">Sign in</a> to save this sheet as a new character in one of your books.
+                    </p>
+                    <p class="cp-hint hidden" id="cpNoBooksHint">You do not have any books yet. Create one in <a href="/studio.html">Studio</a>, then return here to save.</p>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { auth, db } from "./firebase.js";
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import {
+            normalizeBibleCharacter,
+            generateBibleCharacterId,
+            saveBibleCharacter,
+            listUserBooksWithBibleCounts,
+            loadBookChapterOptions
+        } from "./js/story-bible-api.js?v=5";
+
+        const statusEl = document.getElementById("cpStatus");
+        const cpForm = document.getElementById("cpForm");
+        const cpBook = document.getElementById("cpBook");
+        const cpIntroduced = document.getElementById("cpIntroduced");
+        const cpSaveBibleBtn = document.getElementById("cpSaveBibleBtn");
+        const cpOpenBibleLink = document.getElementById("cpOpenBibleLink");
+        const cpGuestHint = document.getElementById("cpGuestHint");
+        const cpNoBooksHint = document.getElementById("cpNoBooksHint");
+        const cpSaveSection = document.getElementById("cpSaveSection");
+
+        const SHORT_OUTLINE = `Character Profile Checklist
+
+Name:
+Aliases:
+Age:
+Role in story:
+Appearance:
+Voice / speech style:
+Personality:
+Goal:
+Fear:
+Secret:
+Strength:
+Flaw:
+Backstory wound:
+Important relationships:
+Arc / how they change:
+Continuity notes:`;
+
+        function setStatus(msg, kind = "") {
+            statusEl.textContent = msg || "";
+            statusEl.classList.remove("cp-err", "cp-ok");
+            if (kind === "err") statusEl.classList.add("cp-err");
+            if (kind === "ok") statusEl.classList.add("cp-ok");
+        }
+
+        function val(id) {
+            const el = document.getElementById(id);
+            return el && "value" in el ? String(el.value || "").trim() : "";
+        }
+
+        function buildStructuredNotes() {
+            const pairs = [
+                ["Role in story", val("cpRole")],
+                ["Voice / speech style", val("cpVoice")],
+                ["Personality", val("cpPersonality")],
+                ["Goal", val("cpGoal")],
+                ["Fear", val("cpFear")],
+                ["Secret", val("cpSecret")],
+                ["Strength", val("cpStrength")],
+                ["Flaw", val("cpFlaw")],
+                ["Backstory wound", val("cpWound")],
+                ["Important relationships", val("cpRelationships")],
+                ["Arc / how they change", val("cpArc")],
+                ["Continuity notes", val("cpContinuity")]
+            ];
+            const body = pairs
+                .filter(([, v]) => v)
+                .map(([label, v]) => `${label}:\n${v}`)
+                .join("\n\n");
+            const extra = val("cpExtraNotes");
+            let out = "";
+            if (body) {
+                out = "Character worksheet\n────────────\n\n" + body;
+            }
+            if (extra) {
+                out = out ? out + "\n\n---\n\nAnything else:\n" + extra : "Character worksheet\n────────────\n\nAnything else:\n" + extra;
+            }
+            return out;
+        }
+
+        function buildExportText() {
+            const name = val("cpName");
+            const aliases = val("cpAliases");
+            const tags = val("cpTags");
+            const lines = ["Character profile (full worksheet)", ""];
+
+            if (name) lines.push(`Name: ${name}`);
+            if (aliases) lines.push(`Aliases: ${aliases}`);
+            if (tags) lines.push(`Tags: ${tags}`);
+            if (name || aliases || tags) lines.push("");
+
+            const appBits = [
+                ["Age", val("cpAge")],
+                ["Height", val("cpHeight")],
+                ["Eyes", val("cpEyes")],
+                ["Hair", val("cpHair")],
+                ["Skin", val("cpSkin")],
+                ["Build", val("cpBuild")],
+                ["Distinctive", val("cpDistinctive")]
+            ].filter(([, v]) => v);
+            if (appBits.length) {
+                lines.push("Appearance");
+                appBits.forEach(([k, v]) => lines.push(`${k}: ${v}`));
+                lines.push("");
+            }
+
+            const structured = buildStructuredNotes();
+            if (structured) {
+                lines.push(structured);
+            }
+
+            return lines.join("\n").trim() || "Character profile (full worksheet)\n\n(Fill fields and copy again.)";
+        }
+
+        async function copyText(text) {
+            try {
+                await navigator.clipboard.writeText(text);
+                setStatus("Copied to clipboard.", "ok");
+                setTimeout(() => setStatus(""), 2200);
+            } catch {
+                setStatus("Could not copy — try selecting text manually.", "err");
+            }
+        }
+
+        document.getElementById("cpCopyBtn").addEventListener("click", () => copyText(buildExportText()));
+        document.getElementById("cpCopyOutlineBtn").addEventListener("click", () => copyText(SHORT_OUTLINE));
+
+        function parseIntro() {
+            const raw = cpIntroduced.value || "|";
+            const parts = raw.split("|", 2);
+            const chapterId = parts[1] || "";
+            return {
+                introducedSection: chapterId ? parts[0] || "" : "",
+                introducedChapterId: chapterId || ""
+            };
+        }
+
+        function readTags() {
+            return val("cpTags")
+                .split(",")
+                .map(s => s.trim())
+                .filter(Boolean);
+        }
+
+        function readAliases() {
+            return val("cpAliases")
+                .split(",")
+                .map(s => s.trim())
+                .filter(Boolean);
+        }
+
+        function updateSaveEnabled() {
+            const nameOk = val("cpName").length > 0;
+            const bookOk = !!cpBook.value;
+            cpSaveBibleBtn.disabled = !nameOk || !bookOk;
+        }
+
+        ["cpName", "cpBook"].forEach(id => {
+            document.getElementById(id)?.addEventListener("input", updateSaveEnabled);
+            document.getElementById(id)?.addEventListener("change", updateSaveEnabled);
+        });
+
+        async function fillChapterOptions(bookId) {
+            cpIntroduced.innerHTML = '<option value="|">Not specified</option>';
+            if (!bookId || !window.__cpUid) return;
+            try {
+                const chapters = await loadBookChapterOptions(db, window.__cpUid, bookId);
+                for (const ch of chapters) {
+                    if (!ch.id) continue;
+                    const opt = document.createElement("option");
+                    opt.value = `${ch.section}|${ch.id}`;
+                    opt.textContent = ch.label;
+                    cpIntroduced.appendChild(opt);
+                }
+            } catch (e) {
+                console.warn(e);
+            }
+        }
+
+        cpBook.addEventListener("change", () => {
+            fillChapterOptions(cpBook.value);
+            cpOpenBibleLink.href = cpBook.value
+                ? `/story-bible.html?book=${encodeURIComponent(cpBook.value)}`
+                : "#";
+            cpOpenBibleLink.classList.toggle("hidden", !cpBook.value);
+            updateSaveEnabled();
+        });
+
+        cpSaveBibleBtn.addEventListener("click", async () => {
+            const name = val("cpName");
+            if (!name) {
+                setStatus("Add a name before saving to the bible.", "err");
+                return;
+            }
+            const bookId = cpBook.value;
+            if (!bookId || !window.__cpUid) {
+                setStatus("Choose a book first.", "err");
+                return;
+            }
+            const intro = parseIntro();
+            const notes = buildStructuredNotes();
+            const id = generateBibleCharacterId();
+            const character = normalizeBibleCharacter(
+                {
+                    name,
+                    aliases: readAliases(),
+                    appearance: {
+                        age: val("cpAge"),
+                        eyes: val("cpEyes"),
+                        hair: val("cpHair"),
+                        height: val("cpHeight"),
+                        skin: val("cpSkin"),
+                        build: val("cpBuild"),
+                        distinctive: val("cpDistinctive")
+                    },
+                    notes,
+                    tags: readTags(),
+                    introducedSection: intro.introducedSection,
+                    introducedChapterId: intro.introducedChapterId
+                },
+                id
+            );
+
+            cpSaveBibleBtn.disabled = true;
+            setStatus("Saving…");
+            try {
+                await saveBibleCharacter(db, window.__cpUid, bookId, character);
+                setStatus("Saved as a new character. Open the bible to edit or merge details.", "ok");
+                cpOpenBibleLink.href = `/story-bible.html?book=${encodeURIComponent(bookId)}`;
+                cpOpenBibleLink.classList.remove("hidden");
+            } catch (e) {
+                const msg = e && typeof e.message === "string" ? e.message : String(e);
+                setStatus(`Save failed. ${msg.length > 140 ? msg.slice(0, 137) + "…" : msg}`, "err");
+            } finally {
+                updateSaveEnabled();
+            }
+        });
+
+        onAuthStateChanged(auth, async user => {
+            window.__cpUid = user ? user.uid : "";
+            cpGuestHint.classList.toggle("hidden", !!user);
+            cpNoBooksHint.classList.add("hidden");
+            cpSaveSection.classList.toggle("hidden", !user);
+
+            if (!user) {
+                cpBook.innerHTML = '<option value="">Choose a book…</option>';
+                cpSaveBibleBtn.disabled = true;
+                return;
+            }
+
+            cpBook.innerHTML = '<option value="">Choose a book…</option>';
+            try {
+                const rows = await listUserBooksWithBibleCounts(db, user.uid);
+                if (!rows.length) {
+                    cpNoBooksHint.classList.remove("hidden");
+                    cpSaveBibleBtn.disabled = true;
+                    return;
+                }
+                for (const r of rows) {
+                    const opt = document.createElement("option");
+                    opt.value = r.bookId;
+                    opt.textContent = r.title;
+                    cpBook.appendChild(opt);
+                }
+            } catch (e) {
+                console.error(e);
+                setStatus("Could not load your books. Check your connection.", "err");
+            }
+            updateSaveEnabled();
+        });
+    </script>
+</body>
+</html>
