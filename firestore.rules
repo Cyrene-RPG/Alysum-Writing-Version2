@@ -41,6 +41,11 @@ service cloud.firestore {
         allow read, write: if isUser(userId);
       }
 
+      // Writer resources — multiple worldbuilding worksheets (synced).
+      match /worldbuildingSheets/{sheetId} {
+        allow read, write: if isUser(userId);
+      }
+
       // Writer resources — character profile worksheets (synced drafts).
       match /characterProfileSheets/{sheetId} {
         allow read, write: if isUser(userId);

@@ -102,12 +102,164 @@
         }
         .wb-wrap {
             position: relative;
-            max-width: 960px;
+            max-width: 1120px;
             margin: 0 auto;
             padding: 20px 18px 48px;
         }
         .wb-wrap.hidden {
-            display: none;
+            display: none !important;
+        }
+        .wb-shell {
+            display: grid;
+            grid-template-columns: minmax(232px, 270px) 1fr;
+            gap: 0;
+            align-items: start;
+            border-radius: 18px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: linear-gradient(165deg, rgba(30, 41, 59, 0.45), rgba(15, 23, 42, 0.75));
+            overflow: hidden;
+        }
+        .wb-aside {
+            padding: 18px 16px 20px;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.18);
+        }
+        .wb-aside-title {
+            margin: 0 0 8px;
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #c4b5fd;
+        }
+        .wb-aside-hint {
+            margin: 0 0 14px;
+            font-size: 12px;
+            line-height: 1.45;
+            color: #94a3b8;
+            font-weight: 600;
+        }
+        .wb-aside-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+        .wb-aside-actions .wb-btn {
+            width: 100%;
+            justify-content: center;
+        }
+        .wb-sheet-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            max-height: min(42vh, 320px);
+            overflow-y: auto;
+            scrollbar-width: thin;
+        }
+        .wb-sheet-row {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 6px;
+        }
+        .wb-sheet-item {
+            flex: 1;
+            min-width: 0;
+            text-align: left;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.22);
+            color: #fff;
+            border-radius: 10px;
+            padding: 9px 10px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 700;
+        }
+        .wb-sheet-item:hover {
+            border-color: color-mix(in srgb, var(--purple-bright) 40%, rgba(255, 255, 255, 0.1));
+        }
+        .wb-sheet-item.is-active {
+            border-color: color-mix(in srgb, var(--purple-bright) 55%, transparent);
+            background: rgba(109, 40, 217, 0.28);
+        }
+        .wb-sheet-name {
+            display: block;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .wb-sheet-date {
+            display: block;
+            margin-top: 3px;
+            font-size: 10px;
+            font-weight: 600;
+            color: #94a3b8;
+        }
+        .wb-sheet-item.is-active .wb-sheet-date {
+            color: #e9d5ff;
+        }
+        .wb-sheet-remove {
+            flex-shrink: 0;
+            width: 32px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 10px;
+            background: rgba(127, 29, 29, 0.25);
+            color: #fecaca;
+            font-size: 15px;
+            cursor: pointer;
+            font-weight: 800;
+        }
+        .wb-sheet-empty {
+            margin: 0;
+            padding: 10px 8px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #94a3b8;
+            text-align: center;
+            border: 1px dashed rgba(255, 255, 255, 0.12);
+            border-radius: 10px;
+            list-style: none;
+        }
+        .wb-main-col {
+            min-width: 0;
+            padding: 18px 18px 22px;
+        }
+        .wb-title-row {
+            margin-bottom: 16px;
+        }
+        .wb-title-row label {
+            display: block;
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #94a3b8;
+            margin-bottom: 6px;
+        }
+        .wb-title-input {
+            width: 100%;
+            max-width: 420px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 12px;
+            padding: 10px 14px;
+            background: rgba(0, 0, 0, 0.28);
+            color: #f1f5f9;
+            font: inherit;
+            font-size: 15px;
+            font-weight: 700;
+        }
+        .wb-title-input:focus {
+            outline: none;
+            border-color: color-mix(in srgb, var(--purple-bright) 45%, transparent);
+        }
+        @media (max-width: 760px) {
+            .wb-shell {
+                grid-template-columns: 1fr;
+            }
+            .wb-aside {
+                border-right: none;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            }
         }
         .wb-intro {
             margin-bottom: 22px;
@@ -457,30 +609,47 @@
     <p class="wb-loading" id="wbLoading">Checking sign-in…</p>
 
     <main class="wb-wrap hidden" id="wbMain">
-        <div class="wb-intro">
-            <p class="wb-lead">Your worldbuilding sheet</p>
-            <p class="wb-lead-sub">
-                Each card is a chapter of your world. Answer the prompts inside; everything rolls up into one compiled encyclopedia below. Text only (no maps). Saves to your Alysum account.
-            </p>
-        </div>
-        <p class="wb-status" id="saveStatus">Loading…</p>
+        <div class="wb-shell">
+            <aside class="wb-aside" aria-label="Your saved worldsheets">
+                <p class="wb-aside-title">Your worldsheets</p>
+                <p class="wb-aside-hint">Synced to your account. Typing in a topic auto-saves this sheet.</p>
+                <div class="wb-aside-actions">
+                    <button type="button" class="wb-btn wb-btn-primary" id="wbSaveNowBtn">Save now</button>
+                    <button type="button" class="wb-btn" id="wbNewSheetBtn">New sheet</button>
+                </div>
+                <ul id="wbSheetMenu" class="wb-sheet-list" aria-label="Worldbuilding worksheets"></ul>
+            </aside>
+            <div class="wb-main-col">
+                <div class="wb-intro">
+                    <p class="wb-lead">Your worldbuilding sheet</p>
+                    <p class="wb-lead-sub">
+                        Each card is a chapter of your world. Answer the prompts inside; everything rolls up into one compiled encyclopedia below. Your worldsheets list on the left — work saves as you type (and you can save now or start a new sheet anytime).
+                    </p>
+                </div>
+                <div class="wb-title-row">
+                    <label for="wbWorldTitle">World / project name</label>
+                    <input type="text" id="wbWorldTitle" class="wb-title-input" placeholder="e.g. Eos Corridor, Second Empire" autocomplete="off" />
+                </div>
+                <p class="wb-status" id="saveStatus">Loading…</p>
 
-        <div class="wb-grid" id="wbSections"></div>
+                <div class="wb-grid" id="wbSections"></div>
 
-        <details class="wb-enc" id="wbEncyclopedia">
-            <summary>Your world encyclopedia (compiled)</summary>
-            <p class="wb-enc-lead">
-                Non-empty answers appear in order by topic. Copy the whole thing into a manuscript bible, wiki, or notes app.
-            </p>
-            <div class="wb-enc-body" id="wbEncyclopediaBody"></div>
-            <div class="wb-enc-actions">
-                <button type="button" class="wb-btn wb-btn-primary" id="copyEncyclopediaBtn">Copy encyclopedia</button>
+                <details class="wb-enc" id="wbEncyclopedia">
+                    <summary>Your world encyclopedia (compiled)</summary>
+                    <p class="wb-enc-lead">
+                        Non-empty answers appear in order by topic. Copy the whole thing into a manuscript bible, wiki, or notes app.
+                    </p>
+                    <div class="wb-enc-body" id="wbEncyclopediaBody"></div>
+                    <div class="wb-enc-actions">
+                        <button type="button" class="wb-btn wb-btn-primary" id="copyEncyclopediaBtn">Copy encyclopedia</button>
+                    </div>
+                </details>
+
+                <div class="wb-toolbar">
+                    <button type="button" class="wb-btn wb-btn-primary" id="copyAllBtn">Copy full encyclopedia</button>
+                    <button type="button" class="wb-btn wb-danger" id="clearBtn">Clear this sheet (cloud)</button>
+                </div>
             </div>
-        </details>
-
-        <div class="wb-toolbar">
-            <button type="button" class="wb-btn wb-btn-primary" id="copyAllBtn">Copy full encyclopedia</button>
-            <button type="button" class="wb-btn wb-danger" id="clearBtn">Clear all (cloud)</button>
         </div>
     </main>
 
@@ -504,6 +673,13 @@
         import { auth, db } from "./firebase.js";
         import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
         import { doc, getDoc, setDoc, deleteField } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import {
+            generateWorldbuildingSheetId,
+            subscribeWorldbuildingSheets,
+            saveWorldbuildingSheet,
+            deleteWorldbuildingSheet,
+            WORLDBUILDING_SHEETS
+        } from "./js/worldbuilding-sheets-api.js?v=1";
 
         const LEGACY_LOCAL_KEY = "alysum-worldbuilding-sheet-v1";
         const SECTION_KEYS = ["geo", "people", "power", "economy", "belief", "daily", "tension", "magic"];
@@ -704,8 +880,17 @@
         const wbModalDone = document.getElementById("wbModalDone");
         const wbModalCopy = document.getElementById("wbModalCopy");
         const wbModalPanel = document.getElementById("wbModalPanel");
+        const wbWorldTitle = document.getElementById("wbWorldTitle");
+        const wbSheetMenu = document.getElementById("wbSheetMenu");
 
         let sheetRef = null;
+        let wbUid = null;
+        let activeSheetId = null;
+        let activeSheetCreatedAt = null;
+        let unsubscribeSheets = null;
+        let lastSheets = [];
+        let legacySheetsMigrated = false;
+        let userWantsBlank = false;
         let saveTimer = null;
         let migratedLocal = false;
         let activeModalKey = null;
@@ -974,7 +1159,11 @@
         }
 
         function closeModal() {
-            if (activeModalKey) syncFormFromDom(activeModalKey);
+            if (activeModalKey) {
+                syncFormFromDom(activeModalKey);
+                refreshEncyclopediaPreview();
+                scheduleCloudSave();
+            }
             wbModalBackdrop.classList.remove("is-open");
             wbModalBackdrop.setAttribute("aria-hidden", "true");
             document.body.style.overflow = "";
