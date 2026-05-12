@@ -35,7 +35,7 @@
             --wr-bg: #0b1220;
             --wr-border: rgba(255, 255, 255, 0.08);
             --wr-shadow: 0 20px 50px rgba(0, 0, 0, 0.42);
-            --wr-soft: rgba(255, 255, 255, 0.04);
+            --wr-soft: rgba(255, 255, 255, 0.05);
         }
 
         html, body {
@@ -52,12 +52,12 @@
             position: sticky;
             top: 0;
             z-index: 50;
-            min-height: 56px;
+            min-height: 58px;
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 12px;
-            padding: 10px 16px;
+            padding: 12px 18px;
             background: linear-gradient(135deg, var(--purple-dark), var(--theme-header-mid), var(--theme-header-end));
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.28);
             border-bottom: 1px solid rgba(255, 255, 255, 0.08);
@@ -72,16 +72,16 @@
         }
 
         .wr-brand {
-            width: 36px;
-            height: 36px;
-            border-radius: 10px;
+            width: 38px;
+            height: 38px;
+            border-radius: 11px;
             background: linear-gradient(135deg, var(--purple-bright), var(--pink));
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: 900;
             color: white;
-            font-size: 15px;
+            font-size: 16px;
             flex-shrink: 0;
         }
 
@@ -94,7 +94,7 @@
         }
 
         .wr-page-title {
-            font-size: 17px;
+            font-size: 18px;
             font-weight: 900;
             letter-spacing: -0.02em;
             color: #fff7ed;
@@ -109,9 +109,9 @@
             border-radius: 12px;
             background: rgba(0, 0, 0, 0.22);
             color: #fff;
-            padding: 8px 12px;
+            padding: 9px 14px;
             font-weight: 800;
-            font-size: 12px;
+            font-size: 13px;
             cursor: pointer;
             text-decoration: none;
             display: inline-flex;
@@ -135,46 +135,108 @@
         }
 
         .layout {
-            max-width: 1100px;
+            max-width: 1120px;
             margin: 0 auto;
-            padding: 16px;
+            padding: 18px 18px 40px;
+        }
+
+        .layout-intro {
+            margin: 0 0 16px;
+            font-size: 15px;
+            line-height: 1.55;
+            color: #cbd5e1;
+            font-weight: 600;
+            max-width: 62ch;
         }
 
         .wr-board {
-            background: linear-gradient(180deg, rgba(17, 24, 39, 0.98), rgba(15, 23, 42, 0.98));
+            background: linear-gradient(165deg, rgba(22, 30, 48, 0.98), rgba(15, 23, 42, 0.99));
             border: 1px solid var(--wr-border);
-            border-radius: 20px;
+            border-radius: 22px;
             box-shadow: var(--wr-shadow);
             overflow: hidden;
         }
 
-        .wr-jump {
-            padding: 10px 16px;
+        .wr-topband {
+            padding: 16px 20px 18px;
+            border-bottom: 1px solid var(--wr-border);
+            background:
+                linear-gradient(135deg, color-mix(in srgb, var(--theme-card-a) 35%, transparent), color-mix(in srgb, var(--theme-card-b) 22%, transparent)),
+                rgba(0, 0, 0, 0.15);
+        }
+
+        .wr-topband-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .wr-topband-lead {
+            margin: 0;
+            font-size: 14px;
+            line-height: 1.5;
+            color: #e2e8f0;
+            font-weight: 650;
+            max-width: 48rem;
+        }
+
+        .wr-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 8px 14px;
+            border-radius: 999px;
             font-size: 12px;
+            font-weight: 900;
+            color: #fff7ed;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(0, 0, 0, 0.25);
+            white-space: nowrap;
+        }
+
+        .wr-pill.muted {
+            color: #c4b5fd;
+            font-weight: 800;
+        }
+
+        .wr-jump {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            font-size: 13px;
             font-weight: 700;
             color: #94a3b8;
-            border-bottom: 1px solid var(--wr-border);
         }
 
         .wr-jump a {
-            color: #e2e8f0;
+            color: #f1f5f9;
             text-decoration: none;
             font-weight: 800;
         }
 
         .wr-jump a:hover {
+            color: #fff;
             text-decoration: underline;
         }
 
         .wr-main-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1.05fr 0.95fr;
             align-items: stretch;
         }
 
         .wr-col {
-            padding: 16px 18px 18px;
+            padding: 20px 22px 22px;
             min-width: 0;
+        }
+
+        .wr-col--names {
+            background: linear-gradient(180deg, rgba(109, 40, 217, 0.06), transparent 55%);
+        }
+
+        .wr-col--tools {
+            background: linear-gradient(180deg, rgba(236, 72, 153, 0.05), transparent 50%);
         }
 
         .wr-col + .wr-col {
@@ -182,57 +244,68 @@
         }
 
         .wr-h {
-            margin: 0 0 12px;
-            font-size: 15px;
+            margin: 0 0 6px;
+            font-size: 19px;
             font-weight: 900;
+            letter-spacing: -0.02em;
             color: var(--gold);
-            scroll-margin-top: 72px;
+            scroll-margin-top: 80px;
+        }
+
+        .wr-section-lead {
+            margin: 0 0 14px;
+            font-size: 13px;
+            line-height: 1.5;
+            color: #94a3b8;
+            font-weight: 600;
+            max-width: 42ch;
         }
 
         .name-toolbar {
             display: flex;
             flex-wrap: wrap;
-            gap: 8px;
+            gap: 10px;
             align-items: center;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
         }
 
         .name-toolbar input[type="search"] {
-            flex: 1 1 160px;
+            flex: 1 1 200px;
             min-width: 0;
             border: 1px solid var(--wr-border);
-            border-radius: 12px;
-            padding: 10px 12px;
-            background: rgba(15, 23, 42, 0.65);
+            border-radius: 14px;
+            padding: 11px 14px;
+            background: rgba(15, 23, 42, 0.72);
             color: #fff;
             outline: none;
             font: inherit;
-            font-size: 14px;
+            font-size: 15px;
             font-weight: 600;
         }
 
         .name-toolbar input:focus {
-            border-color: color-mix(in srgb, var(--purple-bright) 45%, transparent);
+            border-color: color-mix(in srgb, var(--purple-bright) 50%, transparent);
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--purple-bright) 18%, transparent);
         }
 
         .name-meta {
-            font-size: 12px;
-            font-weight: 600;
-            color: #94a3b8;
-            margin-bottom: 8px;
-            min-height: 1.25em;
+            font-size: 13px;
+            font-weight: 650;
+            color: #a8b3cf;
+            margin-bottom: 10px;
+            min-height: 1.3em;
         }
 
         .name-results-wrap {
             border: 1px solid var(--wr-border);
-            border-radius: 12px;
-            background: var(--wr-soft);
-            max-height: min(40vh, 300px);
+            border-radius: 14px;
+            background: rgba(0, 0, 0, 0.2);
+            max-height: min(42vh, 340px);
             overflow: auto;
         }
 
         .name-results-wrap::-webkit-scrollbar {
-            width: 8px;
+            width: 9px;
         }
 
         .name-results-wrap::-webkit-scrollbar-thumb {
@@ -241,11 +314,20 @@
         }
 
         .name-empty {
-            padding: 16px;
+            padding: 22px 18px;
             text-align: center;
             color: #94a3b8;
-            font-size: 13px;
-            font-weight: 600;
+            font-size: 14px;
+            font-weight: 650;
+            line-height: 1.55;
+        }
+
+        .name-empty .hint-strong {
+            display: block;
+            margin-bottom: 6px;
+            color: #e2e8f0;
+            font-weight: 800;
+            font-size: 15px;
         }
 
         .result-list {
@@ -255,7 +337,7 @@
 
         .result-item {
             border-bottom: 1px solid var(--wr-border);
-            padding: 8px 12px;
+            padding: 10px 14px;
             transition: background 0.12s ease;
         }
 
@@ -264,82 +346,114 @@
         }
 
         .result-item:hover {
-            background: rgba(255, 255, 255, 0.04);
+            background: rgba(255, 255, 255, 0.05);
         }
 
         .result-name {
             font-weight: 800;
-            font-size: 14px;
+            font-size: 15px;
             color: #fff7ed;
         }
 
         .result-meta {
-            margin-top: 2px;
+            margin-top: 4px;
             color: #94a3b8;
             font-size: 12px;
             font-weight: 600;
-            line-height: 1.35;
+            line-height: 1.4;
         }
 
         .tool-list {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 12px;
         }
 
-        .tool-row {
+        .tool-card {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: 14px;
+            align-items: center;
+            padding: 14px 16px;
+            border-radius: 16px;
+            border: 1px solid var(--wr-border);
+            background: rgba(0, 0, 0, 0.18);
+        }
+
+        .tool-card-body {
+            min-width: 0;
+        }
+
+        .tool-card-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            padding: 12px 12px;
-            border-radius: 12px;
-            border: 1px solid var(--wr-border);
-            background: var(--wr-soft);
+            justify-content: center;
+            font-size: 22px;
+            background: var(--theme-accent-soft-bg, rgba(109, 40, 217, 0.22));
         }
 
-        .tool-row h3 {
-            margin: 0;
-            font-size: 14px;
+        .tool-card h3 {
+            margin: 0 0 4px;
+            font-size: 15px;
             font-weight: 900;
             color: #fff7ed;
         }
 
+        .tool-card p {
+            margin: 0;
+            font-size: 13px;
+            line-height: 1.45;
+            color: #94a3b8;
+            font-weight: 600;
+        }
+
         .wr-roadmap {
             border-top: 1px solid var(--wr-border);
-            padding: 12px 16px 14px;
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: 8px 10px;
-            background: rgba(0, 0, 0, 0.12);
+            padding: 16px 20px 18px;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .wr-roadmap-head {
+            margin-bottom: 10px;
         }
 
         .wr-roadmap-label {
-            font-size: 11px;
+            display: block;
+            font-size: 12px;
             font-weight: 900;
-            letter-spacing: 0.08em;
+            letter-spacing: 0.06em;
             text-transform: uppercase;
-            color: #64748b;
-            width: 100%;
+            color: var(--gold);
+            margin-bottom: 4px;
         }
 
-        @media (min-width: 801px) {
-            .wr-roadmap-label {
-                width: auto;
-                margin-right: 6px;
-            }
+        .wr-roadmap-note {
+            margin: 0;
+            font-size: 13px;
+            color: #94a3b8;
+            font-weight: 600;
+            line-height: 1.45;
+        }
+
+        .wr-chip-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
         }
 
         .chip {
             display: inline-block;
-            padding: 6px 10px;
+            padding: 8px 12px;
             border-radius: 999px;
-            font-size: 11px;
+            font-size: 12px;
             font-weight: 800;
-            color: #cbd5e1;
-            border: 1px solid var(--wr-border);
-            background: rgba(255, 255, 255, 0.03);
+            color: #e2e8f0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.06);
         }
 
         @media (max-width: 800px) {
@@ -362,8 +476,29 @@
                 flex-wrap: nowrap;
             }
 
+            .tool-card {
+                grid-template-columns: auto 1fr;
+                grid-template-rows: auto auto;
+            }
+
+            .tool-card-icon {
+                grid-column: 1;
+                grid-row: 1;
+            }
+
+            .tool-card-body {
+                grid-column: 2;
+                grid-row: 1;
+            }
+
+            .tool-card .btn {
+                grid-column: 1 / -1;
+                grid-row: 2;
+                width: 100%;
+            }
+
             .name-results-wrap {
-                max-height: min(48vh, 280px);
+                max-height: min(48vh, 300px);
             }
         }
     </style>
@@ -387,23 +522,38 @@
     </header>
 
     <main class="layout">
+        <p class="layout-intro">
+            Look up names from the bundled list, grab a ready-made checklist, or skim what we might add next. Colors follow your Settings theme.
+        </p>
+
         <div class="wr-board">
-            <div class="wr-jump">
-                <a href="#name-finder">Names</a>
-                ·
-                <a href="#character-tools">Checklists</a>
-                ·
-                <a href="#coming-soon">Roadmap</a>
+            <div class="wr-topband">
+                <div class="wr-topband-row">
+                    <p class="wr-topband-lead">
+                        Everything below lives on this one page: search stays in the results box so the rest of the layout does not stretch forever.
+                    </p>
+                    <span class="wr-pill muted" id="nameLibraryBadge" hidden>—</span>
+                </div>
+                <nav class="wr-jump" aria-label="On this page">
+                    <a href="#name-finder">Names</a>
+                    ·
+                    <a href="#character-tools">Checklists</a>
+                    ·
+                    <a href="#coming-soon">Roadmap</a>
+                </nav>
             </div>
 
             <div class="wr-main-grid">
-                <section class="wr-col" id="name-finder">
+                <section class="wr-col wr-col--names" id="name-finder">
                     <h2 class="wr-h">Names</h2>
+                    <p class="wr-section-lead">
+                        Type any part of a name, origin, meaning, or gender label. Very broad searches show the first chunk of matches so the list stays quick to scroll.
+                    </p>
                     <div class="name-toolbar">
                         <input
                             id="nameSearch"
                             type="search"
-                            placeholder="Filter…"
+                            placeholder="Search name, origin, meaning…"
                             autocomplete="off"
                             aria-describedby="nameLibraryStatus"
                         />
@@ -415,29 +565,47 @@
                     </div>
                 </section>
 
-                <section class="wr-col" id="character-tools">
+                <section class="wr-col wr-col--tools" id="character-tools">
                     <h2 class="wr-h">Checklists</h2>
+                    <p class="wr-section-lead">
+                        Plain text you can paste into a manuscript note, doc, or the editor. One click copies the whole block.
+                    </p>
                     <div class="tool-list">
-                        <div class="tool-row">
-                            <h3>Character profile</h3>
+                        <article class="tool-card">
+                            <div class="tool-card-icon" aria-hidden="true">🧍</div>
+                            <div class="tool-card-body">
+                                <h3>Character profile</h3>
+                                <p>Headings from name and age through goals, relationships, and arc — fill in or delete lines as you go.</p>
+                            </div>
                             <button class="btn" type="button" onclick="copyChecklist()">Copy</button>
-                        </div>
-                        <div class="tool-row">
-                            <h3>Worldbuilding</h3>
+                        </article>
+                        <article class="tool-card">
+                            <div class="tool-card-icon" aria-hidden="true">🗺</div>
+                            <div class="tool-card-body">
+                                <h3>Worldbuilding</h3>
+                                <p>Prompts for power, taboos, food, slang, conflict — good for a planning pass before you draft scenes.</p>
+                            </div>
                             <button class="btn" type="button" onclick="copyWorldPrompts()">Copy</button>
-                        </div>
+                        </article>
                     </div>
                 </section>
             </div>
 
             <div class="wr-roadmap" id="coming-soon">
-                <span class="wr-roadmap-label">Roadmap</span>
-                <span class="chip">Surnames</span>
-                <span class="chip">Fantasy names</span>
-                <span class="chip">Places</span>
-                <span class="chip">Arc templates</span>
-                <span class="chip">Tropes</span>
-                <span class="chip">Publishing</span>
+                <div class="wr-roadmap-head">
+                    <span class="wr-roadmap-label">Roadmap</span>
+                    <p class="wr-roadmap-note">
+                        Features we are considering — not scheduled. If one of these would help your workflow, say so in feedback.
+                    </p>
+                </div>
+                <div class="wr-chip-row">
+                    <span class="chip">Surname encyclopedia</span>
+                    <span class="chip">Fantasy name builder</span>
+                    <span class="chip">Place name generator</span>
+                    <span class="chip">Arc templates</span>
+                    <span class="chip">Trope library</span>
+                    <span class="chip">Publishing checklist</span>
+                </div>
             </div>
         </div>
     </main>
@@ -450,14 +618,26 @@
         const nameResults = document.getElementById("nameResults");
         const randomNameBtn = document.getElementById("randomNameBtn");
         const nameLibraryStatus = document.getElementById("nameLibraryStatus");
+        const nameLibraryBadge = document.getElementById("nameLibraryBadge");
+
+        function setBadge(text) {
+            if (!nameLibraryBadge) return;
+            nameLibraryBadge.textContent = text;
+            nameLibraryBadge.hidden = false;
+            nameLibraryBadge.classList.remove("muted");
+        }
 
         function renderEmptyPrompt() {
-            nameResults.innerHTML = `<div class="name-empty">Type to filter, or Random 6.</div>`;
+            nameResults.innerHTML = `
+                <div class="name-empty">
+                    <span class="hint-strong">Ready when you are</span>
+                    Start typing in the search box, or use Random 6 for a handful of ideas. The full list stays in the file — we only render matches so the page stays light.
+                </div>`;
         }
 
         function renderNames(items) {
             if (!items.length) {
-                nameResults.innerHTML = `<div class="name-empty">No matches.</div>`;
+                nameResults.innerHTML = `<div class="name-empty"><span class="hint-strong">No matches</span>Try a shorter fragment or a different spelling.</div>`;
                 nameLibraryStatus.textContent = "0 matches";
                 return;
             }
@@ -467,7 +647,7 @@
             const truncated = total > MAX_MATCH_DISPLAY;
 
             nameLibraryStatus.textContent = truncated
-                ? `${shown.length} of ${total.toLocaleString()} (narrow search)`
+                ? `Showing ${shown.length} of ${total.toLocaleString()} — refine your search for fewer hits.`
                 : `${total.toLocaleString()} shown`;
 
             nameResults.innerHTML = shown
@@ -498,11 +678,14 @@
                 if (!Array.isArray(data)) throw new Error("names.json must be an array");
 
                 NAME_LIBRARY = data.filter((item) => item && item.name && item.origin && item.meaning && item.type);
-                nameLibraryStatus.textContent = `${NAME_LIBRARY.length.toLocaleString()} names`;
+                const n = NAME_LIBRARY.length;
+                nameLibraryStatus.textContent = `${n.toLocaleString()} names loaded`;
+                setBadge(`${n.toLocaleString()} names`);
             } catch (error) {
                 console.warn(error);
                 NAME_LIBRARY = [];
-                nameLibraryStatus.textContent = "Names file missing";
+                nameLibraryStatus.textContent = "Could not load names (see /resources/names.json)";
+                setBadge("Names offline");
             }
 
             searchNames();
@@ -510,14 +693,14 @@
 
         function searchNames() {
             if (!NAME_LIBRARY.length) {
-                nameResults.innerHTML = `<div class="name-empty">Names data not available.</div>`;
+                nameResults.innerHTML = `<div class="name-empty"><span class="hint-strong">Names unavailable</span>The JSON file was not found on this host.</div>`;
                 return;
             }
 
             const q = nameSearch.value.trim().toLowerCase();
             if (!q) {
                 renderEmptyPrompt();
-                nameLibraryStatus.textContent = `${NAME_LIBRARY.length.toLocaleString()} names`;
+                nameLibraryStatus.textContent = `${NAME_LIBRARY.length.toLocaleString()} names — type to filter`;
                 return;
             }
 
@@ -556,7 +739,7 @@
             const shuffled = [...NAME_LIBRARY].sort(() => Math.random() - 0.5);
             nameSearch.value = "";
             renderNames(shuffled.slice(0, 6));
-            nameLibraryStatus.textContent = "6 random";
+            nameLibraryStatus.textContent = "6 random names";
         });
 
         loadNameLibrary();
