@@ -135,85 +135,58 @@
         }
 
         .layout {
-            max-width: 960px;
+            max-width: 1100px;
             margin: 0 auto;
-            padding: 14px 16px 36px;
+            padding: 16px;
         }
 
-        .page-lead {
-            margin: 0 0 14px;
-            font-size: 14px;
-            line-height: 1.5;
-            color: #cbd5e1;
-            font-weight: 600;
-        }
-
-        .side-nav,
-        .panel {
+        .wr-board {
             background: linear-gradient(180deg, rgba(17, 24, 39, 0.98), rgba(15, 23, 42, 0.98));
             border: 1px solid var(--wr-border);
-            border-radius: 18px;
+            border-radius: 20px;
             box-shadow: var(--wr-shadow);
+            overflow: hidden;
         }
 
-        .side-nav {
-            position: sticky;
-            top: 62px;
-            z-index: 12;
-            padding: 8px;
-            margin-bottom: 12px;
-            display: flex;
-            gap: 6px;
-            flex-wrap: wrap;
+        .wr-jump {
+            padding: 10px 16px;
+            font-size: 12px;
+            font-weight: 700;
+            color: #94a3b8;
+            border-bottom: 1px solid var(--wr-border);
         }
 
-        .nav-link {
-            padding: 8px 12px;
-            border-radius: 10px;
-            color: #fff;
+        .wr-jump a {
+            color: #e2e8f0;
             text-decoration: none;
             font-weight: 800;
-            font-size: 13px;
         }
 
-        .nav-link:hover {
-            background: rgba(255, 255, 255, 0.06);
+        .wr-jump a:hover {
+            text-decoration: underline;
         }
 
-        .panel {
-            overflow: hidden;
-            margin-bottom: 14px;
-            scroll-margin-top: 72px;
+        .wr-main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            align-items: stretch;
         }
 
-        .panel-head {
-            padding: 12px 14px;
-            border-bottom: 1px solid var(--wr-border);
-            display: flex;
-            flex-wrap: wrap;
-            align-items: baseline;
-            justify-content: space-between;
-            gap: 8px;
+        .wr-col {
+            padding: 16px 18px 18px;
+            min-width: 0;
         }
 
-        .panel-title {
-            font-size: 17px;
+        .wr-col + .wr-col {
+            border-left: 1px solid var(--wr-border);
+        }
+
+        .wr-h {
+            margin: 0 0 12px;
+            font-size: 15px;
             font-weight: 900;
-            margin: 0;
             color: var(--gold);
-        }
-
-        .panel-subtitle {
-            margin: 0;
-            flex: 1 1 200px;
-            color: #94a3b8;
-            font-weight: 600;
-            font-size: 12px;
-            line-height: 1.4;
-        }
-
-        .panel-body {
-            padding: 12px 14px 14px;
+            scroll-margin-top: 72px;
         }
 
         .name-toolbar {
@@ -225,7 +198,7 @@
         }
 
         .name-toolbar input[type="search"] {
-            flex: 1 1 180px;
+            flex: 1 1 160px;
             min-width: 0;
             border: 1px solid var(--wr-border);
             border-radius: 12px;
@@ -244,7 +217,7 @@
 
         .name-meta {
             font-size: 12px;
-            font-weight: 650;
+            font-weight: 600;
             color: #94a3b8;
             margin-bottom: 8px;
             min-height: 1.25em;
@@ -252,9 +225,9 @@
 
         .name-results-wrap {
             border: 1px solid var(--wr-border);
-            border-radius: 14px;
+            border-radius: 12px;
             background: var(--wr-soft);
-            max-height: min(42vh, 320px);
+            max-height: min(40vh, 300px);
             overflow: auto;
         }
 
@@ -268,23 +241,16 @@
         }
 
         .name-empty {
-            padding: 20px 16px;
+            padding: 16px;
             text-align: center;
             color: #94a3b8;
             font-size: 13px;
-            font-weight: 650;
-            line-height: 1.5;
-        }
-
-        .name-empty strong {
-            color: #e2e8f0;
-            font-weight: 800;
+            font-weight: 600;
         }
 
         .result-list {
             display: flex;
             flex-direction: column;
-            gap: 0;
         }
 
         .result-item {
@@ -315,72 +281,77 @@
             line-height: 1.35;
         }
 
-        details.wr-tech {
-            margin-top: 10px;
-            font-size: 12px;
-            color: #94a3b8;
-        }
-
-        details.wr-tech summary {
-            cursor: pointer;
-            font-weight: 800;
-            color: var(--theme-brand-kicker, #c4b5fd);
-        }
-
-        .resource-grid {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
+        .tool-list {
+            display: flex;
+            flex-direction: column;
             gap: 10px;
         }
 
-        .resource-card {
+        .tool-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 12px 12px;
+            border-radius: 12px;
             border: 1px solid var(--wr-border);
             background: var(--wr-soft);
-            border-radius: 14px;
-            padding: 12px;
         }
 
-        .resource-icon {
-            font-size: 20px;
-            margin-bottom: 6px;
-        }
-
-        .resource-card h3 {
+        .tool-row h3 {
             margin: 0;
-            font-size: 15px;
+            font-size: 14px;
             font-weight: 900;
             color: #fff7ed;
         }
 
-        .resource-card p {
-            margin: 6px 0 10px;
-            color: #94a3b8;
-            line-height: 1.4;
-            font-weight: 600;
-            font-size: 12px;
+        .wr-roadmap {
+            border-top: 1px solid var(--wr-border);
+            padding: 12px 16px 14px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px 10px;
+            background: rgba(0, 0, 0, 0.12);
         }
 
-        .coming-grid {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 8px;
+        .wr-roadmap-label {
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #64748b;
+            width: 100%;
         }
 
-        .coming-card {
-            background: var(--wr-soft);
-            border: 1px solid var(--wr-border);
-            border-radius: 12px;
-            padding: 10px;
-            font-weight: 750;
-            font-size: 12px;
+        @media (min-width: 801px) {
+            .wr-roadmap-label {
+                width: auto;
+                margin-right: 6px;
+            }
+        }
+
+        .chip {
+            display: inline-block;
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 800;
             color: #cbd5e1;
+            border: 1px solid var(--wr-border);
+            background: rgba(255, 255, 255, 0.03);
         }
 
-        .hidden {
-            display: none !important;
-        }
+        @media (max-width: 800px) {
+            .wr-main-grid {
+                grid-template-columns: 1fr;
+            }
 
-        @media (max-width: 720px) {
+            .wr-col + .wr-col {
+                border-left: none;
+                border-top: 1px solid var(--wr-border);
+            }
+
             .wr-header {
                 flex-direction: column;
                 align-items: stretch;
@@ -391,13 +362,8 @@
                 flex-wrap: nowrap;
             }
 
-            .resource-grid,
-            .coming-grid {
-                grid-template-columns: 1fr;
-            }
-
             .name-results-wrap {
-                max-height: min(50vh, 280px);
+                max-height: min(48vh, 280px);
             }
         }
     </style>
@@ -421,82 +387,59 @@
     </header>
 
     <main class="layout">
-        <p class="page-lead">
-            Naming lookup and light character helpers. Matches your Alysum accent from Settings.
-        </p>
+        <div class="wr-board">
+            <div class="wr-jump">
+                <a href="#name-finder">Names</a>
+                ·
+                <a href="#character-tools">Checklists</a>
+                ·
+                <a href="#coming-soon">Roadmap</a>
+            </div>
 
-        <nav class="side-nav" aria-label="Sections">
-            <a class="nav-link" href="#name-finder">Name search</a>
-            <a class="nav-link" href="#character-tools">Character tools</a>
-            <a class="nav-link" href="#coming-soon">Coming soon</a>
-        </nav>
+            <div class="wr-main-grid">
+                <section class="wr-col" id="name-finder">
+                    <h2 class="wr-h">Names</h2>
+                    <div class="name-toolbar">
+                        <input
+                            id="nameSearch"
+                            type="search"
+                            placeholder="Filter…"
+                            autocomplete="off"
+                            aria-describedby="nameLibraryStatus"
+                        />
+                        <button class="btn primary" id="randomNameBtn" type="button">Random 6</button>
+                    </div>
+                    <div class="name-meta" id="nameLibraryStatus">Loading…</div>
+                    <div class="name-results-wrap">
+                        <div class="result-list" id="nameResults"></div>
+                    </div>
+                </section>
 
-        <section class="panel" id="name-finder">
-            <div class="panel-head">
-                <h2 class="panel-title">Name search</h2>
-                <p class="panel-subtitle">Filter by name, origin, meaning, or gender — results stay in the box below.</p>
+                <section class="wr-col" id="character-tools">
+                    <h2 class="wr-h">Checklists</h2>
+                    <div class="tool-list">
+                        <div class="tool-row">
+                            <h3>Character profile</h3>
+                            <button class="btn" type="button" onclick="copyChecklist()">Copy</button>
+                        </div>
+                        <div class="tool-row">
+                            <h3>Worldbuilding</h3>
+                            <button class="btn" type="button" onclick="copyWorldPrompts()">Copy</button>
+                        </div>
+                    </div>
+                </section>
             </div>
-            <div class="panel-body">
-                <div class="name-toolbar">
-                    <input
-                        id="nameSearch"
-                        type="search"
-                        placeholder="Start typing to filter…"
-                        autocomplete="off"
-                        aria-describedby="nameLibraryStatus"
-                    />
-                    <button class="btn primary" id="randomNameBtn" type="button">Random 6</button>
-                </div>
-                <div class="name-meta" id="nameLibraryStatus">Loading…</div>
-                <div class="name-results-wrap" id="nameResultsScroll">
-                    <div class="result-list" id="nameResults"></div>
-                </div>
-                <details class="wr-tech">
-                    <summary>Technical</summary>
-                    <p style="margin:8px 0 0">Loaded from <code>/resources/names.json</code> on this site.</p>
-                </details>
-            </div>
-        </section>
 
-        <section class="panel" id="character-tools">
-            <div class="panel-head">
-                <h2 class="panel-title">Character tools</h2>
-                <p class="panel-subtitle">Copy plain-text checklists — no AI.</p>
+            <div class="wr-roadmap" id="coming-soon">
+                <span class="wr-roadmap-label">Roadmap</span>
+                <span class="chip">Surnames</span>
+                <span class="chip">Fantasy names</span>
+                <span class="chip">Places</span>
+                <span class="chip">Arc templates</span>
+                <span class="chip">Tropes</span>
+                <span class="chip">Publishing</span>
             </div>
-            <div class="panel-body">
-                <div class="resource-grid">
-                    <article class="resource-card">
-                        <div class="resource-icon">🧍</div>
-                        <h3>Profile checklist</h3>
-                        <p>Name through arc — paste into your notes or doc.</p>
-                        <button class="btn" type="button" onclick="copyChecklist()">Copy</button>
-                    </article>
-                    <article class="resource-card">
-                        <div class="resource-icon">🗺</div>
-                        <h3>World prompts</h3>
-                        <p>Culture, power, conflict, daily life.</p>
-                        <button class="btn" type="button" onclick="copyWorldPrompts()">Copy</button>
-                    </article>
-                </div>
-            </div>
-        </section>
-
-        <section class="panel" id="coming-soon">
-            <div class="panel-head">
-                <h2 class="panel-title">Coming soon</h2>
-                <p class="panel-subtitle">Planned sections — same page shell.</p>
-            </div>
-            <div class="panel-body">
-                <div class="coming-grid">
-                    <div class="coming-card">Surname encyclopedia</div>
-                    <div class="coming-card">Fantasy name builder</div>
-                    <div class="coming-card">Place name generator</div>
-                    <div class="coming-card">Arc templates</div>
-                    <div class="coming-card">Trope library</div>
-                    <div class="coming-card">Publishing checklist</div>
-                </div>
-            </div>
-        </section>
+        </div>
     </main>
 
     <script>
@@ -508,18 +451,14 @@
         const randomNameBtn = document.getElementById("randomNameBtn");
         const nameLibraryStatus = document.getElementById("nameLibraryStatus");
 
-        function renderEmptyPrompt(totalLoaded) {
-            nameResults.innerHTML =
-                `<div class="name-empty"><strong>No scroll wall.</strong><br>Type a letter or two to filter ${
-                    totalLoaded ? totalLoaded.toLocaleString() + " names" : "names"
-                }, or tap <strong>Random 6</strong> for quick picks.</div>`;
+        function renderEmptyPrompt() {
+            nameResults.innerHTML = `<div class="name-empty">Type to filter, or Random 6.</div>`;
         }
 
         function renderNames(items) {
             if (!items.length) {
-                nameResults.innerHTML =
-                    `<div class="name-empty">No matches — try a shorter fragment or another spelling.</div>`;
-                nameLibraryStatus.textContent = "0 matches.";
+                nameResults.innerHTML = `<div class="name-empty">No matches.</div>`;
+                nameLibraryStatus.textContent = "0 matches";
                 return;
             }
 
@@ -528,8 +467,8 @@
             const truncated = total > MAX_MATCH_DISPLAY;
 
             nameLibraryStatus.textContent = truncated
-                ? `Showing ${shown.length} of ${total.toLocaleString()} matches — type more to narrow.`
-                : `${total.toLocaleString()} match${total === 1 ? "" : "es"}.`;
+                ? `${shown.length} of ${total.toLocaleString()} (narrow search)`
+                : `${total.toLocaleString()} shown`;
 
             nameResults.innerHTML = shown
                 .map(
@@ -559,11 +498,11 @@
                 if (!Array.isArray(data)) throw new Error("names.json must be an array");
 
                 NAME_LIBRARY = data.filter((item) => item && item.name && item.origin && item.meaning && item.type);
-                nameLibraryStatus.textContent = `${NAME_LIBRARY.length.toLocaleString()} names ready — type to filter.`;
+                nameLibraryStatus.textContent = `${NAME_LIBRARY.length.toLocaleString()} names`;
             } catch (error) {
                 console.warn(error);
                 NAME_LIBRARY = [];
-                nameLibraryStatus.textContent = "Could not load names.json.";
+                nameLibraryStatus.textContent = "Names file missing";
             }
 
             searchNames();
@@ -571,15 +510,14 @@
 
         function searchNames() {
             if (!NAME_LIBRARY.length) {
-                nameResults.innerHTML =
-                    `<div class="name-empty">Add <code>/resources/names.json</code> to this site to enable search.</div>`;
+                nameResults.innerHTML = `<div class="name-empty">Names data not available.</div>`;
                 return;
             }
 
             const q = nameSearch.value.trim().toLowerCase();
             if (!q) {
-                renderEmptyPrompt(NAME_LIBRARY.length);
-                nameLibraryStatus.textContent = `${NAME_LIBRARY.length.toLocaleString()} names — type to filter or use Random 6.`;
+                renderEmptyPrompt();
+                nameLibraryStatus.textContent = `${NAME_LIBRARY.length.toLocaleString()} names`;
                 return;
             }
 
@@ -618,7 +556,7 @@
             const shuffled = [...NAME_LIBRARY].sort(() => Math.random() - 0.5);
             nameSearch.value = "";
             renderNames(shuffled.slice(0, 6));
-            nameLibraryStatus.textContent = "6 random names.";
+            nameLibraryStatus.textContent = "6 random";
         });
 
         loadNameLibrary();
