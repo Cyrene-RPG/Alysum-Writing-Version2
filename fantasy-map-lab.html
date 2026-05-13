@@ -1,13 +1,546 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta name="theme-color" content="#7c3aed" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#020b18" media="(prefers-color-scheme: dark)">
+    <meta name="color-scheme" content="dark light">
+    <meta name="application-name" content="Alysum">
+    <link rel="icon" type="image/png" sizes="any" href="/Alysum-3.png">
+    <script src="/js/pwa-register.js" defer></script>
     <meta charset="UTF-8" />
-    <meta http-equiv="refresh" content="0;url=/chronicle-atlas.html" />
+    <title>Map Lab — Alysum</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Moved — Map Lab</title>
+    <meta name="description" content="Alysum procedural maps in your browser — no sign-in. Export PNG or project JSON." />
+    <script>
+        try {
+            var __g = localStorage.getItem("alysum-gradient-theme");
+            if (__g && __g !== "classic") document.documentElement.setAttribute("data-gradient-theme", __g);
+        } catch (e) {}
+    </script>
+    <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
+    <link rel="stylesheet" href="/css/gradient-themes.css?v=2" />
+    <style>
+        * { box-sizing: border-box; }
+        html, body.fml-page { margin: 0; min-height: 100%; height: 100%; max-height: 100dvh; overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #070b14; color: #fff; }
+        body.fml-page { display: flex; flex-direction: column; }
+        .fml-header { flex-shrink: 0; z-index: 20; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+            padding: 10px 14px; background: linear-gradient(135deg, var(--purple-dark), var(--theme-header-mid), var(--theme-header-end));
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.28); border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
+        .fml-brand { display: flex; flex-direction: column; gap: 2px; }
+        .fml-title { font-size: 18px; font-weight: 900; letter-spacing: -0.02em; color: #fff7ed; line-height: 1.1; }
+        .fml-subtitle { font-size: 11px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255, 247, 237, 0.55); }
+        .fml-header-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+        .fml-btn { border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 12px; background: rgba(0, 0, 0, 0.22); color: #fff;
+            padding: 8px 12px; font-weight: 800; font-size: 12px; cursor: pointer; text-decoration: none; display: inline-flex;
+            align-items: center; justify-content: center; gap: 6px; }
+        .fml-btn:hover { background: rgba(0, 0, 0, 0.35); }
+        .fml-btn:disabled { opacity: 0.45; pointer-events: none; }
+        .fml-btn-primary { background: linear-gradient(135deg, var(--purple-dark), var(--purple)); border-color: transparent; }
+        .fml-status { margin: 0; padding: 8px 14px; font-size: 11px; font-weight: 700; color: #94a3b8;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06); background: rgba(0, 0, 0, 0.25); }
+        .fml-status.ok { color: #86efac; }
+        .fml-status.warn { color: #fcd34d; }
+        .fml-main { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(260px, 300px) minmax(0, 1fr); align-items: stretch; }
+        .fml-rail { border-right: 1px solid rgba(255, 255, 255, 0.1);
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.92)); overflow: auto; padding: 14px;
+            display: flex; flex-direction: column; gap: 14px; }
+        .fml-panel-title { margin: 0 0 8px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: #94a3b8; }
+        .fml-field label { display: block; font-size: 11px; font-weight: 800; color: #cbd5e1; margin-bottom: 4px; }
+        .fml-input, .fml-select { width: 100%; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.12); background: rgba(0, 0, 0, 0.35);
+            color: #f1f5f9; padding: 9px 10px; font-size: 13px; font-weight: 650; }
+        .fml-row { display: flex; gap: 8px; }
+        .fml-row > * { flex: 1; }
+        .fml-hint { margin: 0; font-size: 11px; line-height: 1.5; color: #64748b; font-weight: 650; }
+        .fml-check { display: flex; align-items: flex-start; gap: 10px; font-size: 12px; font-weight: 750; color: #cbd5e1; cursor: pointer; user-select: none; }
+        .fml-check input { margin-top: 3px; accent-color: #a78bfa; }
+        .fml-workspace { min-width: 0; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 12px;
+            background: radial-gradient(circle at 30% 18%, rgba(59, 130, 246, 0.12), transparent 40%), linear-gradient(180deg, #0a1020, #070b14); }
+        .fml-canvas-wrap { position: relative; width: min(1120px, 100%); max-height: calc(100dvh - 200px); border-radius: 14px; overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45); background: #020617; }
+        #fmlCanvas { display: block; width: 100%; height: auto; vertical-align: middle; }
+        .fml-credit { margin-top: 10px; font-size: 11px; color: #64748b; text-align: center; max-width: 720px; }
+        .fml-credit a { color: #93c5fd; font-weight: 750; }
+        @media (max-width: 900px) {
+            .fml-main { grid-template-columns: 1fr; grid-template-rows: auto minmax(240px, 1fr); }
+            .fml-rail { border-right: none; border-bottom: 1px solid rgba(255, 255, 255, 0.1); max-height: 42vh; }
+        }
+    </style>
 </head>
-<body style="font-family:system-ui;background:#070b14;color:#e2e8f8;padding:24px">
-    <p>The map generator lives in <a href="/chronicle-atlas.html" style="color:#93c5fd">Chronicle Atlas</a> now.</p>
-    <script>window.location.replace("/chronicle-atlas.html");</script>
+<body class="fml-page">
+    <header class="fml-header">
+        <div class="fml-brand">
+            <div class="fml-title">Map Lab</div>
+            <div class="fml-subtitle">Alysum</div>
+        </div>
+        <nav class="fml-header-actions" aria-label="Navigation">
+            <a class="fml-btn" href="/writer-resources.html">Writer resources</a>
+            <a class="fml-btn" href="/worldbuilding.html">World building</a>
+            <a class="fml-btn" href="/studio.html">Studio</a>
+        </nav>
+    </header>
+    <p class="fml-status ok" id="fmlStatus">No sign-in — map generation stays in this browser. PNG export is yours to host or drop into any tool you use.</p>
+    <div class="fml-main">
+        <aside class="fml-rail" aria-label="Generator controls">
+            <div>
+                <p class="fml-panel-title">World shape</p>
+                <div class="fml-field">
+                    <label for="fmlPreset">Preset</label>
+                    <select id="fmlPreset" class="fml-select">
+                        <option value="continent">Single continent</option>
+                        <option value="archipelago">Archipelago</option>
+                        <option value="twin">Twin continents</option>
+                        <option value="inland">Inland sea</option>
+                        <option value="isthmus">Isthmus bridge</option>
+                    </select>
+                </div>
+            </div>
+            <div>
+                <p class="fml-panel-title">Seed</p>
+                <div class="fml-field">
+                    <label for="fmlSeed">Map seed</label>
+                    <input id="fmlSeed" class="fml-input" type="text" autocomplete="off" placeholder="Same seed + preset = same map" />
+                </div>
+            </div>
+            <div>
+                <p class="fml-panel-title">Tweak</p>
+                <div class="fml-field">
+                    <label for="fmlSea">Sea level <span id="fmlSeaVal"></span></label>
+                    <input id="fmlSea" class="fml-input" type="range" min="-0.08" max="0.12" step="0.005" value="0" />
+                </div>
+                <div class="fml-field" style="margin-top:10px">
+                    <label for="fmlChaos">Coast chaos <span id="fmlChaosVal"></span></label>
+                    <input id="fmlChaos" class="fml-input" type="range" min="0.55" max="0.95" step="0.01" value="0.78" />
+                </div>
+            </div>
+            <div>
+                <p class="fml-panel-title">Overlay</p>
+                <label class="fml-check">
+                    <input type="checkbox" id="fmlSettlements" checked />
+                    <span>Towns &amp; keeps (seeded)</span>
+                </label>
+            </div>
+            <div class="fml-row">
+                <button type="button" class="fml-btn fml-btn-primary" id="fmlGenBtn">Generate</button>
+                <button type="button" class="fml-btn" id="fmlRandBtn" title="Random seed">Random seed</button>
+            </div>
+            <div class="fml-row">
+                <button type="button" class="fml-btn" id="fmlPngBtn">Download PNG</button>
+                <button type="button" class="fml-btn" id="fmlJsonBtn">Save project</button>
+            </div>
+            <div class="fml-field">
+                <label for="fmlLoadInput">Load project</label>
+                <input id="fmlLoadInput" type="file" accept="application/json,.json" class="fml-input" style="padding:6px" />
+            </div>
+            <p class="fml-hint">PNG for hosting or print. JSON only stores seed and sliders so you can reproduce the same geography later.</p>
+        </aside>
+        <section class="fml-workspace" aria-label="Map preview">
+            <div class="fml-canvas-wrap">
+                <canvas id="fmlCanvas" width="1280" height="800" role="img" aria-label="Alysum generated map"></canvas>
+            </div>
+            <p class="fml-credit">Keep worlds and lore in <a href="/worldbuilding.html">World building</a> sheets; this page is only for generating map images.</p>
+        </section>
+    </div>
+    <script type="module">
+        const STATUS = document.getElementById("fmlStatus");
+        const seedInput = document.getElementById("fmlSeed");
+        const presetSelect = document.getElementById("fmlPreset");
+        const seaSlider = document.getElementById("fmlSea");
+        const chaosSlider = document.getElementById("fmlChaos");
+        const seaVal = document.getElementById("fmlSeaVal");
+        const chaosVal = document.getElementById("fmlChaosVal");
+        const settlementsCheck = document.getElementById("fmlSettlements");
+        const canvas = document.getElementById("fmlCanvas");
+        const ctx = canvas.getContext("2d", { willReadFrequently: true });
+        const GW = 160;
+        const GH = 100;
+
+        function setStatus(text, type = "") {
+            STATUS.textContent = text;
+            STATUS.classList.remove("ok", "warn");
+            if (type) STATUS.classList.add(type);
+        }
+
+        function hashStringToUint32(str) {
+            let h = 2166136261 >>> 0;
+            const s = String(str || "alysum");
+            for (let i = 0; i < s.length; i++) {
+                h ^= s.charCodeAt(i);
+                h = Math.imul(h, 16777619) >>> 0;
+            }
+            return h >>> 0;
+        }
+
+        function mulberry32(seed) {
+            let a = seed >>> 0;
+            return function rand() {
+                a |= 0;
+                a = (a + 0x6d2b79f5) | 0;
+                let t = Math.imul(a ^ (a >>> 15), 1 | a);
+                t ^= t + Math.imul(t ^ (t >>> 7), 61 | t);
+                return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+            };
+        }
+
+        function blurPass(dst, src, w, h) {
+            for (let y = 0; y < h; y++) {
+                for (let x = 0; x < w; x++) {
+                    let s = 0;
+                    let c = 0;
+                    for (let dy = -2; dy <= 2; dy++) {
+                        for (let dx = -2; dx <= 2; dx++) {
+                            const nx = Math.max(0, Math.min(w - 1, x + dx));
+                            const ny = Math.max(0, Math.min(h - 1, y + dy));
+                            s += src[ny * w + nx];
+                            c++;
+                        }
+                    }
+                    dst[y * w + x] = s / c;
+                }
+            }
+        }
+
+        function presetCenters(key, rng) {
+            const cx = () => 0.15 + rng() * 0.7;
+            const cy = () => 0.12 + rng() * 0.76;
+            const centers = [];
+            if (key === "continent") centers.push({ x: cx(), y: cy(), r: 0.38 + rng() * 0.12 });
+            if (key === "archipelago") {
+                const n = 5 + Math.floor(rng() * 6);
+                for (let i = 0; i < n; i++) centers.push({ x: rng(), y: rng(), r: 0.12 + rng() * 0.1 });
+            }
+            if (key === "twin") {
+                centers.push({ x: 0.28 + rng() * 0.08, y: cy(), r: 0.32 });
+                centers.push({ x: 0.64 + rng() * 0.08, y: cy(), r: 0.32 });
+            }
+            if (key === "inland") {
+                centers.push({ x: 0.5, y: 0.5, r: 0.48 + rng() * 0.06 });
+                return { centers, innerSea: true };
+            }
+            if (key === "isthmus") {
+                centers.push({ x: 0.22, y: 0.5, r: 0.36 });
+                centers.push({ x: 0.78, y: 0.5, r: 0.36 });
+            }
+            if (!centers.length) centers.push({ x: cx(), y: cy(), r: 0.4 });
+            return { centers, innerSea: false };
+        }
+
+        function islandMask(nx, ny, centers, chaos, rng) {
+            let v = 0;
+            for (const c of centers) {
+                const dx = nx - c.x;
+                const dy = (ny - c.y) * (GW / GH);
+                const d = Math.hypot(dx, dy) / Math.max(0.08, c.r);
+                const fall = Math.max(0, 1 - Math.pow(d, 1.4 + chaos * 0.8));
+                v = Math.max(v, fall);
+            }
+            if (centers.length > 1) v = v * 0.88 + (rng() * 0.04 - 0.02);
+            return Math.max(0, Math.min(1, v));
+        }
+
+        function placeSettlements(grid, gmin, gmax, seaTh, seedText) {
+            const span = gmax > gmin ? gmax - gmin : 1;
+            const rngP = mulberry32(hashStringToUint32(`${seedText}|alysum-places-v1`));
+            const settlements = [];
+            let tries = 0;
+            while (settlements.length < 68 && tries < 14000) {
+                tries++;
+                const gx = (rngP() * GW) | 0;
+                const gy = (rngP() * GH) | 0;
+                const e = (grid[gy * GW + gx] - gmin) / span;
+                if (e < seaTh + 0.018) continue;
+                if (e > 0.93) continue;
+                let ok = true;
+                for (const s of settlements) {
+                    if (Math.hypot(gx - s.gx, gy - s.gy) < 5) {
+                        ok = false;
+                        break;
+                    }
+                }
+                if (!ok) continue;
+                const tier = rngP() > 0.82 ? 2 : rngP() > 0.58 ? 1 : 0;
+                settlements.push({ gx, gy, tier });
+            }
+            return settlements;
+        }
+
+        function drawSettlements(state) {
+            if (!settlementsCheck.checked) return;
+            const settlements = state.settlements;
+            if (!settlements || !settlements.length) return;
+            const { gmin, gmax, grid, seaExtra } = state;
+            const span = gmax > gmin ? gmax - gmin : 1;
+            const sea = 0.42 + seaExtra;
+            const W = canvas.width;
+            const H = canvas.height;
+            ctx.save();
+            for (const s of settlements) {
+                const e = (grid[s.gy * GW + s.gx] - gmin) / span;
+                if (e < sea + 0.014) continue;
+                const x = ((s.gx + 0.5) / GW) * W;
+                const y = ((s.gy + 0.5) / GH) * H;
+                const r = s.tier === 2 ? 5.2 : s.tier === 1 ? 3.6 : 2.4;
+                ctx.fillStyle = s.tier === 2 ? "rgba(251, 191, 36, 0.95)" : "rgba(241, 245, 249, 0.92)";
+                ctx.strokeStyle = "rgba(15, 23, 42, 0.88)";
+                ctx.lineWidth = 1.6;
+                ctx.beginPath();
+                ctx.arc(x, y, r, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        function renderState(state) {
+            const { gmin, gmax, grid, seaExtra, chaos } = state;
+            const span = gmax > gmin ? gmax - gmin : 1;
+            const sea = 0.42 + seaExtra;
+            const W = canvas.width;
+            const H = canvas.height;
+            const img = ctx.createImageData(W, H);
+            const u8 = img.data;
+
+            function sampleElev(nx, ny) {
+                const x = nx * (GW - 1);
+                const y = ny * (GH - 1);
+                const x0 = Math.floor(x);
+                const y0 = Math.floor(y);
+                const tx = x - x0;
+                const ty = y - y0;
+                const x1 = Math.min(x0 + 1, GW - 1);
+                const y1 = Math.min(y0 + 1, GH - 1);
+                const g = (xx, yy) => (grid[yy * GW + xx] - gmin) / span;
+                const a = g(x0, y0) * (1 - tx) + g(x1, y0) * tx;
+                const b = g(x0, y1) * (1 - tx) + g(x1, y1) * tx;
+                return a * (1 - ty) + b * ty;
+            }
+
+            for (let py = 0; py < H; py++) {
+                for (let px = 0; px < W; px++) {
+                    const nx = px / W;
+                    const ny = py / H;
+                    let e = sampleElev(nx, ny);
+                    e = Math.max(0, Math.min(1, e));
+                    const j = (py * W + px) * 4;
+                    let r;
+                    let g;
+                    let b;
+                    if (e < sea) {
+                        const depth = (sea - e) / Math.max(sea, 1e-6);
+                        r = Math.floor(8 + depth * 42);
+                        g = Math.floor(22 + depth * 58);
+                        b = Math.floor(48 + depth * 95);
+                    } else {
+                        const t = (e - sea) / Math.max(1 - sea, 1e-6);
+                        if (t < 0.06) {
+                            r = 210;
+                            g = 192;
+                            b = 138;
+                        } else if (t < 0.28) {
+                            r = 46;
+                            g = 110;
+                            b = 62;
+                        } else if (t < 0.55) {
+                            r = 68;
+                            g = 132;
+                            b = 72;
+                        } else if (t < 0.78) {
+                            r = 98;
+                            g = 108;
+                            b = 96;
+                        } else {
+                            r = 226;
+                            g = 232;
+                            b = 238;
+                        }
+                        const shade = sampleElev(nx * 3.6, ny * 3.6) * 0.12 * chaos;
+                        r = Math.floor(Math.max(0, Math.min(255, r - shade * 55)));
+                        g = Math.floor(Math.max(0, Math.min(255, g - shade * 42)));
+                        b = Math.floor(Math.max(0, Math.min(255, b - shade * 36)));
+                    }
+                    u8[j] = r;
+                    u8[j + 1] = g;
+                    u8[j + 2] = b;
+                    u8[j + 3] = 255;
+                }
+            }
+            ctx.putImageData(img, 0, 0);
+            if (state.innerSea && sea < 0.48) {
+                ctx.save();
+                ctx.globalCompositeOperation = "multiply";
+                ctx.fillStyle = "rgba(40, 80, 120, 0.25)";
+                ctx.beginPath();
+                ctx.ellipse(W * 0.5, H * 0.5, W * 0.22, H * 0.18, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+            drawSettlements(state);
+        }
+
+        function generate() {
+            const seedText = (seedInput.value || "").trim() || `fml_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+            if (!seedInput.value.trim()) seedInput.value = seedText;
+            const preset = presetSelect.value;
+            const masterSeed = hashStringToUint32(`${seedText}|${preset}`);
+            const rng = mulberry32(masterSeed);
+            const grid = new Float32Array(GW * GH);
+            for (let i = 0; i < grid.length; i++) grid[i] = rng();
+            const tmp = new Float32Array(grid.length);
+            for (let pass = 0; pass < 6; pass++) {
+                blurPass(tmp, grid, GW, GH);
+                grid.set(tmp);
+            }
+            const { centers, innerSea } = presetCenters(preset, rng);
+            const chaos = parseFloat(chaosSlider.value, 10) || 0.78;
+            for (let y = 0; y < GH; y++) {
+                for (let x = 0; x < GW; x++) {
+                    const nx = x / (GW - 1);
+                    const ny = y / (GH - 1);
+                    const mask = islandMask(nx, ny, centers, chaos, rng);
+                    const i = y * GW + x;
+                    let e = grid[i] * 0.58 + mask * 0.52;
+                    const ed = Math.min(x, y, GW - 1 - x, GH - 1 - y);
+                    const margin = 0.06 * Math.min(GW, GH);
+                    e *= Math.min(1, ed / margin);
+                    grid[i] = Math.max(0, Math.min(1, e));
+                }
+            }
+            for (let pass = 0; pass < 2; pass++) {
+                blurPass(tmp, grid, GW, GH);
+                grid.set(tmp);
+            }
+            let gmin = 1;
+            let gmax = 0;
+            for (let i = 0; i < grid.length; i++) {
+                gmin = Math.min(gmin, grid[i]);
+                gmax = Math.max(gmax, grid[i]);
+            }
+            const seaExtra = parseFloat(seaSlider.value, 10) || 0;
+            const seaTh = 0.42 + seaExtra;
+            const settlements = placeSettlements(grid, gmin, gmax, seaTh, seedText);
+            lastState = {
+                gmin,
+                gmax,
+                grid: Float32Array.from(grid),
+                seaExtra,
+                chaos,
+                innerSea,
+                seedText,
+                preset,
+                settlements
+            };
+            renderState(lastState);
+            setStatus("Ready — download PNG or save project JSON.", "ok");
+        }
+
+        let lastState = null;
+
+        function readSliders() {
+            seaVal.textContent = `(${parseFloat(seaSlider.value).toFixed(3)})`;
+            chaosVal.textContent = `(${parseFloat(chaosSlider.value).toFixed(2)})`;
+        }
+
+        seaSlider.addEventListener("input", () => {
+            readSliders();
+            if (lastState) {
+                lastState.seaExtra = parseFloat(seaSlider.value) || 0;
+                renderState(lastState);
+            }
+        });
+
+        settlementsCheck.addEventListener("change", () => {
+            if (lastState) renderState(lastState);
+        });
+
+        let chaosRegenT = null;
+        chaosSlider.addEventListener("input", () => {
+            readSliders();
+            clearTimeout(chaosRegenT);
+            chaosRegenT = setTimeout(() => generate(), 200);
+        });
+
+        presetSelect.addEventListener("change", () => generate());
+
+        document.getElementById("fmlGenBtn").addEventListener("click", () => {
+            try {
+                document.getElementById("fmlGenBtn").disabled = true;
+                generate();
+            } catch (e) {
+                console.error(e);
+                setStatus("Generator failed — try another seed.", "warn");
+            } finally {
+                document.getElementById("fmlGenBtn").disabled = false;
+            }
+        });
+
+        document.getElementById("fmlRandBtn").addEventListener("click", () => {
+            seedInput.value = `rnd_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
+            generate();
+        });
+
+        document.getElementById("fmlPngBtn").addEventListener("click", () => {
+            if (!lastState) return setStatus("Generate a map first.", "warn");
+            canvas.toBlob((blob) => {
+                if (!blob) return setStatus("Could not create PNG.", "warn");
+                const a = document.createElement("a");
+                a.href = URL.createObjectURL(blob);
+                a.download = `alysum-map-${lastState.preset}-${String(lastState.seedText).replace(/[^\w\-]+/g, "_").slice(0, 40)}.png`;
+                a.click();
+                URL.revokeObjectURL(a.href);
+                setStatus("PNG downloaded.", "ok");
+            }, "image/png");
+        });
+
+        document.getElementById("fmlJsonBtn").addEventListener("click", () => {
+            if (!lastState) return setStatus("Generate a map first.", "warn");
+            const payload = {
+                v: 1,
+                app: "alysum-map-lab",
+                seed: lastState.seedText,
+                preset: lastState.preset,
+                seaLevel: parseFloat(seaSlider.value, 10),
+                chaos: parseFloat(chaosSlider.value, 10),
+                canvasW: canvas.width,
+                canvasH: canvas.height,
+                showSettlements: settlementsCheck.checked
+            };
+            const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = "alysum-map-project.json";
+            a.click();
+            URL.revokeObjectURL(a.href);
+            setStatus("Project file downloaded.", "ok");
+        });
+
+        document.getElementById("fmlLoadInput").addEventListener("change", async (ev) => {
+            const f = ev.target.files && ev.target.files[0];
+            ev.target.value = "";
+            if (!f) return;
+            try {
+                const text = await f.text();
+                const j = JSON.parse(text);
+                if (j.v !== 1 || !j.seed) throw new Error("bad");
+                if (j.app && j.app !== "alysum-map-lab" && j.app !== "alysum-chronicle-atlas-gen" && j.app !== "alysum-fantasy-map-lab") {
+                    throw new Error("bad app");
+                }
+                seedInput.value = j.seed;
+                if (j.preset) presetSelect.value = j.preset;
+                if (typeof j.seaLevel === "number") seaSlider.value = String(j.seaLevel);
+                if (typeof j.chaos === "number") chaosSlider.value = String(j.chaos);
+                if (typeof j.showSettlements === "boolean") settlementsCheck.checked = j.showSettlements;
+                readSliders();
+                generate();
+                setStatus("Project loaded.", "ok");
+            } catch (e) {
+                console.error(e);
+                setStatus("Could not read that project file.", "warn");
+            }
+        });
+
+        readSliders();
+        generate();
+    </script>
 </body>
 </html>
