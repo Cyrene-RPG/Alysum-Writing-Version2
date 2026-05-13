@@ -33,25 +33,30 @@
 <style>
     * { box-sizing: border-box; }
 
-    html, body {
+    html, body.atlas-page {
         margin: 0;
-        min-height: 100%;
+        height: 100%;
+        max-height: 100dvh;
+        overflow: hidden;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        background:
-            radial-gradient(circle at top center, var(--theme-body-spot) 0%, transparent 26%),
-            linear-gradient(180deg, #0d1426 0%, #0b1220 100%);
+        background: #070b14;
         color: #fff;
     }
 
+    body.atlas-page {
+        display: flex;
+        flex-direction: column;
+    }
+
     .atlas-header {
-        position: sticky;
-        top: 0;
-        z-index: 30;
+        flex-shrink: 0;
+        position: relative;
+        z-index: 50;
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 12px;
-        padding: 12px 18px;
+        padding: 10px 14px;
         background: linear-gradient(135deg, var(--purple-dark), var(--theme-header-mid), var(--theme-header-end));
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.28);
         border-bottom: 1px solid rgba(255, 255, 255, 0.08);
@@ -108,73 +113,94 @@
     }
 
     .atlas-loading {
-        max-width: 1120px;
-        margin: 0 auto;
-        padding: 32px 18px;
-        font-size: 15px;
+        flex-shrink: 0;
+        padding: 20px 16px;
+        font-size: 14px;
         font-weight: 700;
         color: #94a3b8;
     }
 
     .hidden, .atlas-loading.hidden, .atlas-wrap.hidden { display: none !important; }
 
+    .atlas-loading:not(.hidden) {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 0;
+    }
+
     .atlas-wrap {
-        max-width: 1280px;
-        margin: 0 auto;
-        padding: 20px 18px 48px;
-    }
-
-    .atlas-intro {
-        margin-bottom: 16px;
-        padding: 18px 20px;
-        border-radius: 18px;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        background: linear-gradient(145deg, rgba(30, 41, 59, 0.65), rgba(15, 23, 42, 0.85));
-        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.22);
-    }
-
-    .atlas-lead {
-        margin: 0 0 6px;
-        font-size: 16px;
-        line-height: 1.5;
-        color: #e2e8f0;
-        font-weight: 800;
-    }
-
-    .atlas-sub {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        max-width: none;
         margin: 0;
-        font-size: 13px;
-        line-height: 1.55;
-        color: #94a3b8;
-        font-weight: 600;
+        padding: 0;
     }
 
     .atlas-status {
-        margin: 0 0 14px;
-        font-size: 12px;
+        flex-shrink: 0;
+        margin: 0;
+        padding: 6px 14px;
+        font-size: 11px;
         font-weight: 700;
         color: #94a3b8;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        background: rgba(0, 0, 0, 0.25);
     }
 
     .atlas-status.ok { color: #86efac; }
     .atlas-status.warn { color: #fcd34d; }
 
     .atlas-shell {
+        flex: 1;
+        min-height: 0;
         display: grid;
-        grid-template-columns: 280px minmax(0, 1fr) 300px;
-        gap: 12px;
-        align-items: start;
+        grid-template-columns: minmax(248px, 288px) minmax(0, 1fr);
+        gap: 0;
+        align-items: stretch;
     }
 
-    .atlas-panel {
-        border-radius: 18px;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        background: linear-gradient(165deg, rgba(30, 41, 59, 0.72), rgba(15, 23, 42, 0.92));
-        box-shadow: 0 12px 34px rgba(0, 0, 0, 0.22);
-        overflow: hidden;
+    .atlas-rail {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        min-width: 0;
+        border-right: 1px solid rgba(255, 255, 255, 0.1);
+        background: linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.92));
+        box-shadow: 4px 0 24px rgba(0, 0, 0, 0.35);
     }
 
-    .atlas-panel-inner { padding: 16px; }
+    .atlas-rail-scroll {
+        flex: 1;
+        min-height: 0;
+        overflow-x: hidden;
+        overflow-y: auto;
+        padding: 12px 12px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+    }
+
+    .atlas-rail-hint {
+        margin: 0;
+        font-size: 11px;
+        font-weight: 650;
+        line-height: 1.45;
+        color: #64748b;
+    }
+
+    .atlas-rail-section {
+        padding-bottom: 12px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .atlas-save-cta {
+        width: 100%;
+        margin-top: 6px;
+    }
 
     .atlas-panel-title {
         margin: 0 0 10px;
@@ -268,62 +294,21 @@
         background: rgba(109, 40, 217, 0.3);
     }
 
-    .map-panel {
-        min-height: min(85vh, 820px);
+    .map-workspace {
+        position: relative;
         display: flex;
         flex-direction: column;
         min-width: 0;
-    }
-
-    .map-topbar {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 10px;
-        padding: 12px;
-        flex-wrap: wrap;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-        background: rgba(0, 0, 0, 0.18);
-    }
-
-    .map-topbar-left, .map-topbar-right {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        flex-wrap: wrap;
-    }
-
-    .map-topbar-left {
-        flex: 1;
-        min-width: 0;
-    }
-
-    .map-hint {
-        margin: 0;
-        font-size: 12px;
-        font-weight: 800;
-        color: #94a3b8;
-    }
-
-    .map-hint-sub {
-        margin: 2px 0 0;
-        font-size: 10px;
-        font-weight: 700;
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
-        color: #64748b;
+        min-height: 0;
+        background: #020617;
     }
 
     .map-studio-bar {
-        display: inline-flex;
+        display: flex;
         align-items: center;
         gap: 6px;
-        padding: 4px 8px;
-        border-radius: 14px;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        background: rgba(0, 0, 0, 0.35);
+        padding: 8px 0 0;
         flex-wrap: wrap;
-        justify-content: center;
     }
 
     .map-studio-label {
@@ -332,13 +317,13 @@
         letter-spacing: 0.1em;
         text-transform: uppercase;
         color: #94a3b8;
-        padding: 0 4px;
+        padding: 0 4px 0 0;
     }
 
     .map-zoom-readout {
-        min-width: 44px;
+        min-width: 40px;
         text-align: center;
-        font-size: 12px;
+        font-size: 11px;
         font-weight: 900;
         color: #e2e8f0;
     }
@@ -380,18 +365,18 @@
         flex: 1;
         min-height: 0;
         min-width: 0;
-        padding: 12px;
+        padding: 0;
         overflow: hidden;
         display: flex;
         flex-direction: column;
         touch-action: none;
         overscroll-behavior: contain;
         background:
-            linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px),
-            radial-gradient(circle at center, rgba(124, 58, 237, .12), transparent 45%),
+            linear-gradient(rgba(255,255,255,.028) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,.028) 1px, transparent 1px),
+            radial-gradient(ellipse 80% 60% at 50% 40%, rgba(124, 58, 237, .1), transparent 55%),
             #020617;
-        background-size: 28px 28px, 28px 28px, auto, auto;
+        background-size: 24px 24px, 24px 24px, auto, auto;
     }
 
     .map-viewport.is-panning {
@@ -403,24 +388,8 @@
     }
 
     .map-viewport.no-studio-grid {
-        background: radial-gradient(circle at center, rgba(124, 58, 237, .08), transparent 50%), #020617;
+        background: radial-gradient(ellipse 80% 60% at 50% 40%, rgba(124, 58, 237, .06), transparent 55%), #020617;
         background-size: auto, auto;
-    }
-
-    .map-dock {
-        position: absolute;
-        left: 50%;
-        bottom: 14px;
-        transform: translateX(-50%);
-        z-index: 40;
-        max-width: calc(100% - 20px);
-        pointer-events: none;
-    }
-
-    .map-dock .map-studio-bar {
-        pointer-events: auto;
-        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
-        backdrop-filter: blur(10px);
     }
 
     .map-panzoom {
@@ -428,8 +397,8 @@
         min-height: 0;
         width: 100%;
         display: flex;
-        align-items: center;
-        justify-content: center;
+        align-items: stretch;
+        justify-content: stretch;
         will-change: transform;
     }
 
@@ -438,28 +407,23 @@
         flex: 1;
         width: 100%;
         min-width: 0;
-        min-height: min(52vh, 560px);
+        min-height: 0;
         margin: 0;
-        border-radius: 18px;
+        border-radius: 0;
         overflow: hidden;
-        border: 1px solid rgba(255,255,255,.12);
+        border: none;
         background:
-            radial-gradient(circle at 30% 20%, rgba(34,197,94,.24), transparent 18%),
-            radial-gradient(circle at 72% 40%, rgba(59,130,246,.22), transparent 20%),
-            radial-gradient(circle at 44% 72%, rgba(234,179,8,.18), transparent 16%),
+            radial-gradient(circle at 30% 20%, rgba(34,197,94,.2), transparent 18%),
+            radial-gradient(circle at 72% 40%, rgba(59,130,246,.18), transparent 20%),
+            radial-gradient(circle at 44% 72%, rgba(234,179,8,.14), transparent 16%),
             linear-gradient(135deg, #173b2f, #1e293b 48%, #312e81);
-        box-shadow: inset 0 0 80px rgba(0,0,0,.38), 0 18px 50px rgba(0,0,0,.35);
+        box-shadow: inset 0 0 80px rgba(0,0,0,.35);
         cursor: crosshair;
     }
 
     .map-stage.has-image {
-        flex: 0 0 auto;
-        min-height: 0;
-        background: #050a12;
-        box-shadow:
-            inset 0 0 0 1px rgba(255,255,255,.06),
-            inset 0 0 120px rgba(0,0,0,.55),
-            0 22px 56px rgba(0,0,0,.45);
+        background: #030712;
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,.05), inset 0 0 100px rgba(0,0,0,.5);
     }
 
     .map-art {
@@ -611,7 +575,7 @@
         margin: 0;
         display: grid;
         gap: 7px;
-        max-height: 180px;
+        max-height: min(220px, 32vh);
         overflow: auto;
     }
 
@@ -642,22 +606,26 @@
         font-weight: 650;
     }
 
-    @media (max-width: 1100px) {
-        .atlas-shell { grid-template-columns: 260px minmax(0, 1fr); }
-        .selected-panel { grid-column: 1 / -1; }
+    @media (max-width: 900px) {
+        .atlas-shell {
+            grid-template-columns: 1fr;
+            grid-template-rows: minmax(0, 38vh) minmax(0, 1fr);
+        }
+        .atlas-rail {
+            border-right: none;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            max-height: 38vh;
+        }
     }
 
     @media (max-width: 760px) {
         .atlas-header { flex-direction: column; align-items: stretch; }
         .atlas-header-actions { justify-content: flex-start; }
-        .atlas-shell { grid-template-columns: 1fr; }
-        .map-panel { min-height: min(78vh, 720px); }
-        .map-stage { min-height: min(48vh, 420px); }
     }
 </style>
 
 </head>
-<body>
+<body class="atlas-page">
     <header class="atlas-header">
         <div class="atlas-title">Chronicle Atlas</div>
         <div class="atlas-header-actions">
@@ -666,42 +634,38 @@
             <a class="atlas-btn" href="/city-builder.html">City Builder</a>
             <a class="atlas-btn" href="/studio.html">Studio</a>
         </div>
-    </header><p class="atlas-loading" id="atlasLoading">Checking sign-in…</p>
+    </header>
+    <p class="atlas-loading" id="atlasLoading">Checking sign-in…</p>
 
 <main class="atlas-wrap hidden" id="atlasMain">
-    <section class="atlas-intro">
-        <p class="atlas-lead">Your map. Your canon. One atlas.</p>
-        <p class="atlas-sub">Drop in your own cartography, zoom and pan like a studio canvas, then mark eras, borders, routes, and cities — all synced to your worldsheets.</p>
-    </section>
-
     <p class="atlas-status" id="atlasStatus">Loading…</p>
 
     <div class="atlas-shell">
-        <aside class="atlas-panel">
-            <div class="atlas-panel-inner atlas-stack">
-                <div>
-                    <p class="atlas-panel-title">Atlas source</p>
+        <aside class="atlas-rail" aria-label="Atlas tools">
+            <div class="atlas-rail-scroll">
+                <div class="atlas-rail-section">
+                    <p class="atlas-panel-title">World</p>
                     <div class="atlas-field">
                         <label for="atlasWorldSelect">Worldsheet</label>
                         <select id="atlasWorldSelect" class="atlas-select"></select>
                     </div>
                 </div>
 
-                <div>
+                <div class="atlas-rail-section">
                     <p class="atlas-panel-title">Map image</p>
                     <div class="atlas-field">
                         <label for="atlasImageUrl">Image URL</label>
-                        <input id="atlasImageUrl" class="atlas-input" placeholder="https://… or host your map anywhere" />
+                        <input id="atlasImageUrl" class="atlas-input" placeholder="https://…" />
                     </div>
                     <div class="atlas-row">
                         <button type="button" class="atlas-btn atlas-btn-primary" id="atlasApplyImageBtn">Apply URL</button>
-                        <button type="button" class="atlas-btn" id="atlasPickImageBtn" title="Embed a small map into this sheet">Upload</button>
+                        <button type="button" class="atlas-btn" id="atlasPickImageBtn">Upload</button>
                     </div>
                     <input type="file" id="atlasImageFile" class="hidden" accept="image/png,image/jpeg,image/webp,image/gif" />
-                    <p class="atlas-file-hint">Upload keeps a copy in this sheet (best under ~400&nbsp;KB). Larger files: host the image and paste the URL.</p>
+                    <p class="atlas-file-hint">Upload ≤ ~400&nbsp;KB to embed; larger maps: host the file, then paste the URL.</p>
                 </div>
 
-                <div>
+                <div class="atlas-rail-section">
                     <p class="atlas-panel-title">Era</p>
                     <div class="atlas-field">
                         <label for="atlasEraSelect">Active era</label>
@@ -713,8 +677,9 @@
                     </div>
                 </div>
 
-                <div>
+                <div class="atlas-rail-section">
                     <p class="atlas-panel-title">Tools</p>
+                    <p class="atlas-rail-hint" id="mapHint">Select tool active. Click objects to edit.</p>
                     <div class="atlas-tools">
                         <button type="button" class="atlas-tool is-active" data-tool="select">Select</button>
                         <button type="button" class="atlas-tool" data-tool="city">City</button>
@@ -725,29 +690,59 @@
                     </div>
                 </div>
 
-                <div>
+                <div class="atlas-rail-section">
+                    <p class="atlas-panel-title">Shape</p>
+                    <div class="atlas-row">
+                        <button type="button" class="atlas-btn atlas-btn-primary" id="finishShapeBtn">Finish</button>
+                        <button type="button" class="atlas-btn" id="cancelShapeBtn">Cancel</button>
+                    </div>
+                </div>
+
+                <div class="atlas-rail-section">
                     <p class="atlas-panel-title">Layers</p>
                     <div class="atlas-layer-list" id="atlasLayerList"></div>
                 </div>
 
-                <button type="button" class="atlas-btn atlas-btn-primary" id="atlasSaveNowBtn">Save now</button>
+                <div class="atlas-rail-section">
+                    <p class="atlas-panel-title">Canvas</p>
+                    <p class="atlas-rail-hint">Scroll = zoom · middle mouse or Alt+drag = pan · 0 = reset</p>
+                    <div class="map-studio-bar" role="toolbar" aria-label="Canvas">
+                        <span class="map-studio-label">Zoom</span>
+                        <button type="button" class="atlas-btn" id="mapZoomOutBtn" title="Zoom out">−</button>
+                        <span class="map-zoom-readout" id="mapZoomReadout">100%</span>
+                        <button type="button" class="atlas-btn" id="mapZoomInBtn" title="Zoom in">+</button>
+                        <button type="button" class="atlas-btn" id="mapZoomResetBtn" title="Reset">Reset</button>
+                        <span class="map-studio-label">Fit</span>
+                        <div class="map-fit-seg" role="group">
+                            <button type="button" id="mapFitContainBtn">Contain</button>
+                            <button type="button" id="mapFitCoverBtn">Cover</button>
+                        </div>
+                        <button type="button" class="atlas-btn" id="mapGridToggleBtn">Grid</button>
+                    </div>
+                </div>
+
+                <div class="atlas-rail-section">
+                    <p class="atlas-panel-title">Selection</p>
+                    <div id="selectedEditor">
+                        <p class="selected-empty">Nothing selected. Place or click something on the map.</p>
+                    </div>
+                </div>
+
+                <div class="atlas-rail-section">
+                    <p class="atlas-panel-title">Era items</p>
+                    <ul class="atlas-list" id="atlasItemList"></ul>
+                </div>
+
+                <div class="atlas-row">
+                    <button type="button" class="atlas-btn" id="copyAtlasEntryBtn">Copy entry</button>
+                    <button type="button" class="atlas-btn atlas-btn-danger" id="deleteSelectedBtn">Delete</button>
+                </div>
+
+                <button type="button" class="atlas-btn atlas-btn-primary atlas-save-cta" id="atlasSaveNowBtn">Save now</button>
             </div>
         </aside>
 
-        <section class="atlas-panel map-panel">
-            <div class="map-topbar">
-                <div class="map-topbar-left">
-                    <div>
-                        <p class="map-hint" id="mapHint">Select tool active. Click objects to edit.</p>
-                        <p class="map-hint-sub" id="mapHintSub">Scroll to zoom · middle-drag or Alt+drag to pan · 0 resets · controls below</p>
-                    </div>
-                </div>
-                <div class="map-topbar-right">
-                    <button type="button" class="atlas-btn" id="finishShapeBtn">Finish shape</button>
-                    <button type="button" class="atlas-btn" id="cancelShapeBtn">Cancel shape</button>
-                </div>
-            </div>
-
+        <section class="map-workspace" aria-label="Map canvas">
             <div class="map-viewport" id="mapViewport">
                 <div class="map-panzoom" id="mapPanzoom">
                     <div class="map-stage" id="mapStage">
@@ -756,48 +751,14 @@
                         <div id="mapPins"></div>
                         <div class="map-empty" id="mapEmpty">
                             <div class="map-empty-card">
-                                <h2>Your atlas starts here</h2>
-                                <p>Add your map (URL or upload). The canvas <strong>matches your image proportions</strong> and scales to fill this space — then draw regions and drop pins on top.</p>
+                                <h2>Map workspace</h2>
+                                <p>Add your map from the left rail. This area uses the full window — draw regions and cities on top of your image.</p>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="map-dock" aria-label="Map canvas tools">
-                    <div class="map-studio-bar" role="toolbar">
-                        <span class="map-studio-label">Zoom</span>
-                        <button type="button" class="atlas-btn" id="mapZoomOutBtn" title="Zoom out (−)">−</button>
-                        <span class="map-zoom-readout" id="mapZoomReadout">100%</span>
-                        <button type="button" class="atlas-btn" id="mapZoomInBtn" title="Zoom in (+)">+</button>
-                        <button type="button" class="atlas-btn" id="mapZoomResetBtn" title="Reset pan & zoom (0)">Reset</button>
-                        <span class="map-studio-label">Frame</span>
-                        <div class="map-fit-seg" role="group" aria-label="How your image fills the canvas">
-                            <button type="button" id="mapFitContainBtn" title="Show entire map (letterbox if needed)">Contain</button>
-                            <button type="button" id="mapFitCoverBtn" title="Fill canvas (may crop edges)">Cover</button>
-                        </div>
-                        <button type="button" class="atlas-btn" id="mapGridToggleBtn" title="Toggle workspace grid">Grid</button>
-                    </div>
-                </div>
             </div>
         </section>
-
-        <aside class="atlas-panel selected-panel">
-            <div class="atlas-panel-inner atlas-stack">
-                <div>
-                    <p class="atlas-panel-title">Selected item</p>
-                    <div id="selectedEditor">
-                        <p class="selected-empty">Nothing selected. Choose a tool, place something on the map, then edit it here.</p>
-                    </div>
-                </div>
-
-                <div>
-                    <p class="atlas-panel-title">Era items</p>
-                    <ul class="atlas-list" id="atlasItemList"></ul>
-                </div>
-
-                <button type="button" class="atlas-btn" id="copyAtlasEntryBtn">Copy atlas entry</button>
-                <button type="button" class="atlas-btn atlas-btn-danger" id="deleteSelectedBtn">Delete selected</button>
-            </div>
-        </aside>
     </div>
 </main>
 
@@ -973,7 +934,7 @@
         mapZoom = 1;
         mapPanX = 0;
         mapPanY = 0;
-        queueMapLayout();
+        applyMapTransform();
     }
 
     function updateMapFitUi(atlas) {
@@ -988,48 +949,6 @@
         const d = draftPoints.length;
         if (finishShapeBtn) finishShapeBtn.disabled = !drafting || d === 0;
         if (cancelShapeBtn) cancelShapeBtn.disabled = d === 0;
-    }
-
-    function clearMapStageLayout() {
-        mapStage.style.width = "";
-        mapStage.style.height = "";
-        mapStage.style.flex = "";
-        mapStage.style.maxWidth = "";
-        mapStage.style.maxHeight = "";
-    }
-
-    function layoutMapStageToViewport() {
-        if (!mapPanzoom || !mapStage) return;
-        const url = (getAtlas().imageUrl || "").trim();
-        if (!url || mapArtImg.classList.contains("hidden")) {
-            clearMapStageLayout();
-            return;
-        }
-        const iw = mapArtImg.naturalWidth;
-        const ih = mapArtImg.naturalHeight;
-        if (!iw || !ih) return;
-        const ar = iw / ih;
-        const pw = mapPanzoom.clientWidth;
-        const ph = mapPanzoom.clientHeight;
-        if (pw < 24 || ph < 24) return;
-        let w = pw;
-        let h = w / ar;
-        if (h > ph) {
-            h = ph;
-            w = h * ar;
-        }
-        mapStage.style.flex = "0 0 auto";
-        mapStage.style.width = `${Math.floor(w)}px`;
-        mapStage.style.height = `${Math.floor(h)}px`;
-        mapStage.style.maxWidth = "100%";
-        mapStage.style.maxHeight = "100%";
-    }
-
-    function queueMapLayout() {
-        requestAnimationFrame(() => {
-            layoutMapStageToViewport();
-            applyMapTransform();
-        });
     }
 
     function setStatus(text, type = "") {
@@ -1122,7 +1041,6 @@
             mapArtImg.onerror = () => {
                 mapArtImg.classList.add("hidden");
                 mapStage.classList.remove("has-image");
-                clearMapStageLayout();
                 setStatus("Could not load that image — check the URL or try Upload.", "warn");
             };
             if (mapArtImg.src !== url) mapArtImg.src = url;
@@ -1132,7 +1050,6 @@
             mapArtImg.removeAttribute("src");
             mapArtImg.classList.add("hidden");
             mapArtImg.onerror = null;
-            clearMapStageLayout();
             mapEmpty.style.display = "flex";
         }
 
@@ -1170,7 +1087,7 @@
         renderSelectedEditor();
         updateHint();
         updateDraftShapeButtons();
-        queueMapLayout();
+        applyMapTransform();
     }
 
     function allEraItems() {
@@ -1211,7 +1128,7 @@
 
     function renderSelectedEditor() {
         if (!selected) {
-            selectedEditor.innerHTML = `<p class="selected-empty">Nothing selected. Choose a tool, place something on the map, then edit it here.</p>`;
+            selectedEditor.innerHTML = `<p class="selected-empty">Nothing selected. Place or click something on the map.</p>`;
             return;
         }
 
@@ -1527,17 +1444,6 @@
         const t = el && el.tagName;
         return t === "INPUT" || t === "TEXTAREA" || t === "SELECT";
     }
-
-    mapArtImg.addEventListener("load", () => {
-        layoutMapStageToViewport();
-        applyMapTransform();
-    });
-
-    const mapLayoutObserver = new ResizeObserver(() => {
-        layoutMapStageToViewport();
-        applyMapTransform();
-    });
-    mapLayoutObserver.observe(mapPanzoom);
 
     mapViewport.addEventListener("wheel", (e) => {
         if (atlasMain.classList.contains("hidden")) return;
