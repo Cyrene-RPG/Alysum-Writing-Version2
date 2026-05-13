@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Local Map Lab — Alysum</title>
+  <meta name="color-scheme" content="dark light" />
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      height: 100%;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: #0b1020;
+      color: #e8ecff;
+      overflow: hidden;
+    }
+    #mobile-gate {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      padding: 28px 22px;
+      text-align: center;
+      background: radial-gradient(circle at 50% 0%, #2a1f4a 0%, #0b1020 55%);
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+    }
+    #mobile-gate h1 {
+      margin: 0;
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    #mobile-gate p {
+      margin: 0;
+      max-width: 28rem;
+      line-height: 1.55;
+      color: rgba(232, 236, 255, 0.88);
+      font-size: 0.95rem;
+    }
+    #mobile-gate .badge {
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #c4b5fd;
+      border: 1px solid rgba(196, 181, 253, 0.35);
+      padding: 6px 12px;
+      border-radius: 999px;
+    }
+    body.show-mobile-gate #mobile-gate { display: flex; }
+    body.show-mobile-gate #app { display: none; }
+
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    header {
+      flex: 0 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px 14px;
+      padding: 10px 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      background: linear-gradient(135deg, #1e1040, #121a35);
+    }
+    header h1 {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-right: 8px;
+    }
+    header .hint {
+      font-size: 0.78rem;
+      opacity: 0.78;
+      flex: 1 1 200px;
+      min-width: 180px;
+    }
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+    button, label.file-btn {
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      background: rgba(0, 0, 0, 0.25);
+      color: #f8fafc;
+      padding: 7px 11px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    button:hover, label.file-btn:hover {
+      border-color: rgba(196, 181, 253, 0.45);
+      background: rgba(30, 16, 64, 0.45);
+    }
+    label.file-btn input { display: none; }
+    input[type="url"], input[type="text"] {
+      min-width: 200px;
+      flex: 1 1 220px;
+      max-width: 420px;
+      padding: 7px 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(0, 0, 0, 0.35);
+      color: #e8ecff;
+      font-size: 12px;
+    }
+    input[type="range"] { width: 120px; }
+    #viewport {
+      flex: 1 1 auto;
+      position: relative;
+      overflow: hidden;
+      background: #050814;
+      cursor: grab;
+    }
+    #viewport.panning { cursor: grabbing; }
+    #viewport.drawing { cursor: crosshair; }
+    #world {
+      position: absolute;
+      left: 0;
+      top: 0;
+      transform-origin: 0 0;
+      will-change: transform;
+    }
+    #world img {
+      display: block;
+      user-select: none;
+      pointer-events: none;
+    }
+    #overlay {
+      position: absolute;
+      left: 0;
+      top: 0;
+      pointer-events: auto;
+    }
+    #toast {
+      position: fixed;
+      bottom: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      max-width: min(520px, 92vw);
+      padding: 10px 14px;
+      border-radius: 12px;
+      background: rgba(15, 23, 42, 0.92);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      font-size: 13px;
+      color: #e2e8f0;
+      z-index: 50;
+      display: none;
+    }
+    #toast.show { display: block; }
+    #toast.err { border-color: rgba(248, 113, 113, 0.45); color: #fecaca; }
+  </style>
+</head>
+<body>
+  <div id="mobile-gate" role="dialog" aria-modal="true" aria-labelledby="mg-title">
+    <span class="badge">Desktop only</span>
+    <h1 id="mg-title">Local Map Lab needs a PC</h1>
+    <p>
+      This tool is built for mouse, keyboard, and large screens. Open this page on a Windows or Mac
+      computer to load a map background, sketch on top, and export a PNG — everything stays in your browser.
+    </p>
+  </div>
+
+  <div id="app">
+    <header>
+      <h1>Local Map Lab</h1>
+      <span class="hint">No cloud save: use <strong>Export PNG</strong>. Space+drag or middle-mouse = pan. Wheel = zoom.</span>
+      <div class="row" style="margin-left:auto;">
+        <label class="file-btn">Load map file<input id="file-bg" type="file" accept="image/*" /></label>
+        <input id="url-bg" type="url" placeholder="Image URL (may fail if host blocks CORS)" autocomplete="off" />
+        <button type="button" id="btn-load-url">Load URL</button>
+        <button type="button" id="btn-clear-draw">Clear drawing</button>
+        <button type="button" id="btn-export">Export PNG</button>
+      </div>
+      <div class="row" style="width:100%;">
+        <span>Brush</span>
+        <input id="brush" type="range" min="2" max="120" value="18" />
+        <span id="brush-lbl">18px</span>
+        <label style="font-size:12px;opacity:.85;">Color <input id="color" type="color" value="#c4b5fd" /></label>
+        <label style="font-size:12px;display:flex;align-items:center;gap:6px;">
+          <input id="eraser" type="checkbox" /> Eraser
+        </label>
+        <button type="button" id="btn-reset-view">Reset view</button>
+      </div>
+    </header>
+    <div id="viewport">
+      <div id="world">
+        <img id="bg" alt="" />
+        <canvas id="overlay"></canvas>
+      </div>
+    </div>
+  </div>
+  <div id="toast" role="status"></div>
+
+  <script>
+    (function () {
+      function isSmallOrTouch() {
+        var w = window.innerWidth || 0;
+        var touch = navigator.maxTouchPoints > 0;
+        return w < 900 || (touch && w < 1100);
+      }
+      function applyGate() {
+        document.body.classList.toggle("show-mobile-gate", isSmallOrTouch());
+      }
+      applyGate();
+      window.addEventListener("resize", applyGate);
+
+      var viewport = document.getElementById("viewport");
+      var world = document.getElementById("world");
+      var bg = document.getElementById("bg");
+      var overlay = document.getElementById("overlay");
+      var octx = overlay.getContext("2d", { alpha: true });
+
+      var scale = 1;
+      var tx = 0;
+      var ty = 0;
+      var drawing = false;
+      var panning = false;
+      var lastX = 0;
+      var lastY = 0;
+      var spaceDown = false;
+
+      var toastEl = document.getElementById("toast");
+      var toastTimer = null;
+      function toast(msg, isErr) {
+        toastEl.textContent = msg;
+        toastEl.className = "show" + (isErr ? " err" : "");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () {
+          toastEl.className = "";
+        }, 4200);
+      }
+
+      function clamp(n, a, b) {
+        return Math.max(a, Math.min(b, n));
+      }
+
+      function fitInitialView() {
+        var iw = bg.naturalWidth || 1;
+        var ih = bg.naturalHeight || 1;
+        var vw = viewport.clientWidth;
+        var vh = viewport.clientHeight;
+        var s = Math.min(vw / iw, vh / ih) * 0.92;
+        scale = clamp(s, 0.02, 80);
+        tx = (vw - iw * scale) / 2;
+        ty = (vh - ih * scale) / 2;
+        applyTransform();
+      }
+
+      function applyTransform() {
+        world.style.transform = "translate(" + tx + "px," + ty + "px) scale(" + scale + ")";
+      }
+
+      function screenToWorld(sx, sy) {
+        return {
+          x: (sx - tx) / scale,
+          y: (sy - ty) / scale
+        };
+      }
+
+      function setupOverlayFromImage() {
+        var w = bg.naturalWidth;
+        var h = bg.naturalHeight;
+        overlay.width = w;
+        overlay.height = h;
+        overlay.style.width = w + "px";
+        overlay.style.height = h + "px";
+        octx.lineCap = "round";
+        octx.lineJoin = "round";
+        octx.clearRect(0, 0, w, h);
+      }
+
+      function loadImageToBg(src, isBlobUrl) {
+        bg.onload = function () {
+          bg.style.width = bg.naturalWidth + "px";
+          bg.style.height = bg.naturalHeight + "px";
+          setupOverlayFromImage();
+          fitInitialView();
+          toast("Map loaded. Draw on top, then export.");
+        };
+        bg.onerror = function () {
+          toast("Could not load that image.", true);
+        };
+        bg.crossOrigin = isBlobUrl ? "anonymous" : "";
+        bg.src = src;
+      }
+
+      document.getElementById("file-bg").addEventListener("change", function (e) {
+        var f = e.target.files && e.target.files[0];
+        if (!f) return;
+        var url = URL.createObjectURL(f);
+        loadImageToBg(url, true);
+      });
+
+      document.getElementById("btn-load-url").addEventListener("click", function () {
+        var u = (document.getElementById("url-bg").value || "").trim();
+        if (!u) {
+          toast("Paste an image URL first.", true);
+          return;
+        }
+        fetch(u, { mode: "cors" })
+          .then(function (r) {
+            if (!r.ok) throw new Error("HTTP " + r.status);
+            return r.blob();
+          })
+          .then(function (b) {
+            var url = URL.createObjectURL(b);
+            loadImageToBg(url, true);
+          })
+          .catch(function () {
+            toast("URL blocked or unreachable (CORS). Save the image and use Load map file.", true);
+          });
+      });
+
+      function updateCursor() {
+        viewport.classList.toggle("panning", panning);
+        viewport.classList.toggle("drawing", !panning && !spaceDown && drawing);
+      }
+
+      viewport.addEventListener("wheel", function (e) {
+        if (!bg.naturalWidth) return;
+        e.preventDefault();
+        var rect = viewport.getBoundingClientRect();
+        var sx = e.clientX - rect.left;
+        var sy = e.clientY - rect.top;
+        var before = screenToWorld(sx, sy);
+        var factor = Math.exp(-e.deltaY * 0.0012);
+        var newScale = clamp(scale * factor, 0.02, 80);
+        scale = newScale;
+        tx = sx - before.x * scale;
+        ty = sy - before.y * scale;
+        applyTransform();
+      }, { passive: false });
+
+      window.addEventListener("keydown", function (e) {
+        if (e.code === "Space" && !e.repeat) {
+          spaceDown = true;
+          updateCursor();
+        }
+      });
+      window.addEventListener("keyup", function (e) {
+        if (e.code === "Space") {
+          spaceDown = false;
+          panning = false;
+          updateCursor();
+        }
+      });
+
+      viewport.addEventListener("mousedown", function (e) {
+        if (!bg.naturalWidth) return;
+        var rect = viewport.getBoundingClientRect();
+        var sx = e.clientX - rect.left;
+        var sy = e.clientY - rect.top;
+        if (e.button === 1 || spaceDown) {
+          panning = true;
+          lastX = sx;
+          lastY = sy;
+          updateCursor();
+          e.preventDefault();
+          return;
+        }
+        if (e.button !== 0) return;
+        drawing = true;
+        var w = screenToWorld(sx, sy);
+        octx.beginPath();
+        octx.moveTo(w.x, w.y);
+        updateCursor();
+      });
+
+      window.addEventListener("mouseup", function () {
+        drawing = false;
+        panning = false;
+        updateCursor();
+      });
+
+      viewport.addEventListener("mousemove", function (e) {
+        var rect = viewport.getBoundingClientRect();
+        var sx = e.clientX - rect.left;
+        var sy = e.clientY - rect.top;
+        if (panning) {
+          tx += sx - lastX;
+          ty += sy - lastY;
+          lastX = sx;
+          lastY = sy;
+          applyTransform();
+          return;
+        }
+        if (!drawing || !bg.naturalWidth) return;
+        var w = screenToWorld(sx, sy);
+        var brush = parseInt(document.getElementById("brush").value, 10);
+        var eraser = document.getElementById("eraser").checked;
+        octx.globalCompositeOperation = eraser ? "destination-out" : "source-over";
+        octx.strokeStyle = document.getElementById("color").value;
+        octx.lineWidth = brush / scale;
+        octx.lineTo(w.x, w.y);
+        octx.stroke();
+        octx.beginPath();
+        octx.moveTo(w.x, w.y);
+      });
+
+      document.getElementById("brush").addEventListener("input", function () {
+        document.getElementById("brush-lbl").textContent = this.value + "px";
+      });
+
+      document.getElementById("btn-reset-view").addEventListener("click", function () {
+        if (bg.naturalWidth) fitInitialView();
+      });
+
+      document.getElementById("btn-clear-draw").addEventListener("click", function () {
+        if (!overlay.width) return;
+        octx.clearRect(0, 0, overlay.width, overlay.height);
+        toast("Drawing layer cleared.");
+      });
+
+      document.getElementById("btn-export").addEventListener("click", function () {
+        if (!bg.naturalWidth) {
+          toast("Load a map first.", true);
+          return;
+        }
+        var w = bg.naturalWidth;
+        var h = bg.naturalHeight;
+        var c = document.createElement("canvas");
+        c.width = w;
+        c.height = h;
+        var x = c.getContext("2d");
+        x.drawImage(bg, 0, 0);
+        x.drawImage(overlay, 0, 0);
+        c.toBlob(function (blob) {
+          if (!blob) {
+            toast("Export failed (image may be tainted). Load via file or CORS-friendly URL.", true);
+            return;
+          }
+          var a = document.createElement("a");
+          a.href = URL.createObjectURL(blob);
+          a.download = "alysum-local-map.png";
+          a.click();
+          URL.revokeObjectURL(a.href);
+          toast("Download started.");
+        }, "image/png");
+      });
+
+      window.addEventListener("blur", function () {
+        spaceDown = false;
+        panning = false;
+        drawing = false;
+        updateCursor();
+      });
+    })();
+  </script>
+</body>
+</html>

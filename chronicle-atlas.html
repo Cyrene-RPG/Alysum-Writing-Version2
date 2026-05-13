@@ -202,10 +202,6 @@
         margin-top: 6px;
     }
 
-    .atlas-btn-block {
-        width: 100%;
-    }
-
     .atlas-panel-title {
         margin: 0 0 10px;
         font-size: 11px;
@@ -666,14 +662,7 @@
                         <button type="button" class="atlas-btn" id="atlasPickImageBtn">Upload</button>
                     </div>
                     <input type="file" id="atlasImageFile" class="hidden" accept="image/png,image/jpeg,image/webp,image/gif" />
-                    <p class="atlas-file-hint">Bitmap maps are kept <strong>on this device</strong> (IndexedDB). Firebase only stores pins, regions, and settings — not the image file.</p>
-                    <div class="atlas-field">
-                        <label for="atlasMapSeed">Generator seed</label>
-                        <input id="atlasMapSeed" class="atlas-input" placeholder="Leave blank for random; same text = same map" autocomplete="off" />
-                    </div>
-                    <button type="button" class="atlas-btn atlas-btn-primary atlas-btn-block" id="atlasGenerateMapBtn">Generate fantasy map</button>
-                    <p class="atlas-file-hint">High-res PNG, saved only on this PC. Same seed = same geography.</p>
-                    <p class="atlas-file-hint" id="atlasStorageModeLine" aria-live="polite"></p>
+                    <p class="atlas-file-hint">Upload ≤ ~400&nbsp;KB to embed; larger maps: host the file, then paste the URL.</p>
                 </div>
 
                 <div class="atlas-rail-section">
@@ -763,7 +752,7 @@
                         <div class="map-empty" id="mapEmpty">
                             <div class="map-empty-card">
                                 <h2>Map workspace</h2>
-                                <p>Add a map from the left rail, use <strong>Generate fantasy map</strong> for a quick continent, or paste a URL. Then draw regions and cities on top.</p>
+                                <p>Add your map from the left rail. This area uses the full window — draw regions and cities on top of your image.</p>
                             </div>
                         </div>
                     </div>
@@ -789,8 +778,6 @@
 
     const SHEETS_COLLECTION = "worldbuilding";
     const ACTIVE_ATLAS_WORLD_KEY = "alysum-active-atlas-world-v1";
-    /** Bump when map storage / save behavior changes (helps confirm deploy vs cache). */
-    const ATLAS_BUILD = "2026-05-12-localmaps";
 
     const atlasLoading = document.getElementById("atlasLoading");
     const atlasMain = document.getElementById("atlasMain");
@@ -811,8 +798,6 @@
     const mapGridToggleBtn = document.getElementById("mapGridToggleBtn");
     const atlasImageFile = document.getElementById("atlasImageFile");
     const atlasPickImageBtn = document.getElementById("atlasPickImageBtn");
-    const atlasMapSeedInput = document.getElementById("atlasMapSeed");
-    const atlasGenerateMapBtn = document.getElementById("atlasGenerateMapBtn");
     const finishShapeBtn = document.getElementById("finishShapeBtn");
     const cancelShapeBtn = document.getElementById("cancelShapeBtn");
 
@@ -837,8 +822,8 @@
     let suppressNextMapClick = false;
     let mapGridVisible = true;
 
-    let mapArtObjectUrl = null;
-    let mapArtSyncGen = 0;
+    const MAX_EMBED_IMAGE_BYTES = 420000;
+    const MAX_EMBED_DATA_URL_CHARS = 480000;
 
     const LAYERS = [
         ["cities", "Cities"],
@@ -848,124 +833,6 @@
         ["magic", "Magic zones"],
         ["ruins", "Ruins"]
     ];
-
-    const IDB_NAME = "alysum-atlas-local-maps";
-    const IDB_STORE = "maps";
-    const IDB_VER = 1;
-
-    function localMapKey(worldId) {
-        return `${uid || "guest"}_${worldId}`;
-    }
-
-    function idbOpenMaps() {
-        return new Promise((resolve, reject) => {
-            const req = indexedDB.open(IDB_NAME, IDB_VER);
-            req.onupgradeneeded = () => {
-                const db = req.result;
-                if (!db.objectStoreNames.contains(IDB_STORE)) {
-                    db.createObjectStore(IDB_STORE, { keyPath: "key" });
-                }
-            };
-            req.onsuccess = () => resolve(req.result);
-            req.onerror = () => reject(req.error);
-        });
-    }
-
-    async function saveLocalMapBlob(worldId, blob) {
-        if (!worldId || !blob) return;
-        const db = await idbOpenMaps();
-        const key = localMapKey(worldId);
-        return new Promise((resolve, reject) => {
-            const tx = db.transaction(IDB_STORE, "readwrite");
-            tx.objectStore(IDB_STORE).put({ key, blob, updatedAt: Date.now() });
-            tx.oncomplete = () => resolve();
-            tx.onerror = () => reject(tx.error);
-        });
-    }
-
-    async function loadLocalMapBlob(worldId) {
-        if (!worldId) return null;
-        const db = await idbOpenMaps();
-        const key = localMapKey(worldId);
-        return new Promise((resolve, reject) => {
-            const tx = db.transaction(IDB_STORE, "readonly");
-            const q = tx.objectStore(IDB_STORE).get(key);
-            q.onsuccess = () => resolve(q.result && q.result.blob ? q.result.blob : null);
-            q.onerror = () => reject(q.error);
-        });
-    }
-
-    async function deleteLocalMapBlob(worldId) {
-        if (!worldId) return;
-        const db = await idbOpenMaps();
-        const key = localMapKey(worldId);
-        return new Promise((resolve, reject) => {
-            const tx = db.transaction(IDB_STORE, "readwrite");
-            tx.objectStore(IDB_STORE).delete(key);
-            tx.oncomplete = () => resolve();
-            tx.onerror = () => reject(tx.error);
-        });
-    }
-
-    function revokeMapArtObjectUrl() {
-        if (mapArtObjectUrl) {
-            URL.revokeObjectURL(mapArtObjectUrl);
-            mapArtObjectUrl = null;
-        }
-    }
-
-    function atlasForFirestore(atlas) {
-        const a = normalizeAtlas(atlas);
-        const rawUrl = String(a.imageUrl || "").trim();
-        const isData = rawUrl.startsWith("data:");
-        const local = a.imageStorage === "local" || isData;
-        const imageUrl = local ? "" : rawUrl;
-        return {
-            imageUrl,
-            imageStorage: local ? "local" : "remote",
-            imageFit: a.imageFit === "cover" ? "cover" : "contain",
-            activeEraId: a.activeEraId || a.eras[0]?.id || "era_current",
-            eras: [...a.eras],
-            layers: { ...a.layers },
-            pins: [...a.pins],
-            regions: [...a.regions],
-            routes: [...a.routes],
-            zones: [...a.zones]
-        };
-    }
-
-    async function migrateAtlasImageToLocalIfNeeded(world) {
-        const a = world.atlas;
-        if (a.imageStorage === "local") {
-            if (a.imageUrl && String(a.imageUrl).startsWith("data:")) a.imageUrl = "";
-            return;
-        }
-        const url = a.imageUrl && String(a.imageUrl);
-        if (!url || !url.startsWith("data:")) return;
-        try {
-            const blob = await fetch(url).then((r) => r.blob());
-            if (!blob || blob.size < 64) throw new Error("empty or truncated image blob");
-            try {
-                await createImageBitmap(blob);
-            } catch (_) {
-                throw new Error("image could not be decoded (often a truncated cloud copy)");
-            }
-            await saveLocalMapBlob(world.id, blob);
-            a.imageStorage = "local";
-            a.imageUrl = "";
-        } catch (err) {
-            console.error(err);
-            try {
-                await deleteLocalMapBlob(world.id);
-            } catch (_) {}
-            a.imageStorage = "local";
-            a.imageUrl = "";
-            setStatus(
-                "Old embedded map could not be recovered (common if it was too large for the cloud). Generate or upload a map on this device.",
-                "warn"
-            );
-        }
-    }
 
     function escapeHtml(s) {
         return String(s ?? "")
@@ -991,7 +858,6 @@
     function defaultAtlas() {
         return {
             imageUrl: "",
-            imageStorage: "remote",
             imageFit: "contain",
             activeEraId: "era_current",
             eras: [
@@ -1016,12 +882,10 @@
         const base = defaultAtlas();
         const a = raw && typeof raw === "object" ? raw : {};
         const imageFit = a.imageFit === "cover" ? "cover" : "contain";
-        const imageStorage = a.imageStorage === "local" ? "local" : "remote";
         return {
             ...base,
             ...a,
             imageFit,
-            imageStorage,
             eras: Array.isArray(a.eras) && a.eras.length ? a.eras : base.eras,
             layers: { ...base.layers, ...(a.layers || {}) },
             pins: Array.isArray(a.pins) ? a.pins : [],
@@ -1042,163 +906,6 @@
             updated,
             raw: data || {}
         };
-    }
-
-    function hashStringToUint32(str) {
-        let h = 2166136261 >>> 0;
-        const s = String(str || "alysum");
-        for (let i = 0; i < s.length; i++) {
-            h ^= s.charCodeAt(i);
-            h = Math.imul(h, 16777619) >>> 0;
-        }
-        return h >>> 0;
-    }
-
-    function mulberry32(seed) {
-        let a = seed >>> 0;
-        return function rand() {
-            a |= 0;
-            a = (a + 0x6d2b79f5) | 0;
-            let t = Math.imul(a ^ (a >>> 15), 1 | a);
-            t ^= t + Math.imul(t ^ (t >>> 7), 61 | t);
-            return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-        };
-    }
-
-    /**
-     * Renders a seeded fantasy-style heightmap to a PNG Blob (high resolution, stored locally only).
-     */
-    async function generateFantasyMapBlob(seedText) {
-        const seed = hashStringToUint32(seedText);
-        const rng = mulberry32(seed);
-        const GW = 112;
-        const GH = 70;
-        const grid = new Float32Array(GW * GH);
-        for (let i = 0; i < grid.length; i++) grid[i] = rng();
-
-        const tmp = new Float32Array(grid.length);
-        for (let pass = 0; pass < 5; pass++) {
-            for (let y = 0; y < GH; y++) {
-                for (let x = 0; x < GW; x++) {
-                    let s = 0;
-                    let c = 0;
-                    for (let dy = -2; dy <= 2; dy++) {
-                        for (let dx = -2; dx <= 2; dx++) {
-                            const nx = Math.max(0, Math.min(GW - 1, x + dx));
-                            const ny = Math.max(0, Math.min(GH - 1, y + dy));
-                            s += grid[ny * GW + nx];
-                            c++;
-                        }
-                    }
-                    tmp[y * GW + x] = s / c;
-                }
-            }
-            grid.set(tmp);
-        }
-
-        let gmin = 1;
-        let gmax = 0;
-        for (let i = 0; i < grid.length; i++) {
-            gmin = Math.min(gmin, grid[i]);
-            gmax = Math.max(gmax, grid[i]);
-        }
-        const gspan = gmax > gmin ? gmax - gmin : 1;
-        function sampleNorm(nx, ny) {
-            const x = nx * (GW - 1);
-            const y = ny * (GH - 1);
-            const x0 = Math.floor(x);
-            const y0 = Math.floor(y);
-            const tx = x - x0;
-            const ty = y - y0;
-            const x1 = Math.min(x0 + 1, GW - 1);
-            const y1 = Math.min(y0 + 1, GH - 1);
-            const v00 = (grid[y0 * GW + x0] - gmin) / gspan;
-            const v10 = (grid[y0 * GW + x1] - gmin) / gspan;
-            const v01 = (grid[y1 * GW + x0] - gmin) / gspan;
-            const v11 = (grid[y1 * GW + x1] - gmin) / gspan;
-            const a = v00 * (1 - tx) + v10 * tx;
-            const b = v01 * (1 - tx) + v11 * tx;
-            return a * (1 - ty) + b * ty;
-        }
-
-        const islandCx = 0.4 + rng() * 0.2;
-        const islandCy = 0.42 + rng() * 0.16;
-        const islandR = 0.36 + rng() * 0.14;
-        const sea = 0.43;
-
-        function renderSize(W, H) {
-            const canvas = document.createElement("canvas");
-            canvas.width = W;
-            canvas.height = H;
-            const ctx = canvas.getContext("2d", { willReadFrequently: true });
-            const img = ctx.createImageData(W, H);
-            const u8 = img.data;
-
-            for (let py = 0; py < H; py++) {
-                for (let px = 0; px < W; px++) {
-                    const nx = px / W;
-                    const ny = py / H;
-                    let e = sampleNorm(nx, ny);
-                    const dx = nx - islandCx;
-                    const dy = (ny - islandCy) * (W / H);
-                    const dist = Math.hypot(dx, dy);
-                    e = e * 0.7 + Math.max(0, 1 - dist / islandR) * 0.38;
-                    const margin = 0.055 * Math.min(W, H);
-                    const ed = Math.min(px, py, W - 1 - px, H - 1 - py);
-                    e *= Math.min(1, ed / margin);
-                    e = Math.max(0, Math.min(1, e));
-
-                    const j = (py * W + px) * 4;
-                    let r;
-                    let g;
-                    let b;
-                    if (e < sea) {
-                        const depth = (sea - e) / sea;
-                        r = Math.floor(10 + depth * 38);
-                        g = Math.floor(24 + depth * 55);
-                        b = Math.floor(48 + depth * 88);
-                    } else {
-                        const t = (e - sea) / (1 - sea + 1e-6);
-                        if (t < 0.07) {
-                            r = 198;
-                            g = 182;
-                            b = 132;
-                        } else if (t < 0.34) {
-                            r = 52;
-                            g = 108;
-                            b = 60;
-                        } else if (t < 0.64) {
-                            r = 72;
-                            g = 128;
-                            b = 74;
-                        } else if (t < 0.87) {
-                            r = 105;
-                            g = 114;
-                            b = 104;
-                        } else {
-                            r = 230;
-                            g = 236;
-                            b = 242;
-                        }
-                        const shade = sampleNorm(nx * 3.7, ny * 3.7) * 0.14;
-                        r = Math.floor(Math.max(0, Math.min(255, r - shade * 60)));
-                        g = Math.floor(Math.max(0, Math.min(255, g - shade * 45)));
-                        b = Math.floor(Math.max(0, Math.min(255, b - shade * 38)));
-                    }
-                    u8[j] = r;
-                    u8[j + 1] = g;
-                    u8[j + 2] = b;
-                    u8[j + 3] = 255;
-                }
-            }
-            ctx.putImageData(img, 0, 0);
-            return canvas;
-        }
-
-        const canvas = renderSize(1600, 1000);
-        return new Promise((resolve) => {
-            canvas.toBlob((blob) => resolve(blob || null), "image/png");
-        });
     }
 
     function getActiveWorld() {
@@ -1265,7 +972,7 @@
         setStatus("Saving…");
         try {
             await setDoc(doc(db, "users", uid, SHEETS_COLLECTION, activeWorldId), {
-                atlas: atlasForFirestore(world.atlas),
+                atlas: normalizeAtlas(world.atlas),
                 updated: Date.now(),
                 updatedAt: serverTimestamp()
             }, { merge: true });
@@ -1312,101 +1019,39 @@
         return points.map((p) => `${p.x},${p.y}`).join(" ");
     }
 
-    async function syncMapArtDisplay(atlas) {
-        const gen = ++mapArtSyncGen;
-        revokeMapArtObjectUrl();
-        mapArtImg.removeAttribute("src");
-        mapArtImg.classList.add("hidden");
-        mapArtImg.onerror = null;
-        mapStage.classList.remove("has-image");
-
-        const wid = activeWorldId;
-        if (atlas.imageStorage === "local" && wid) {
-            try {
-                const blob = await loadLocalMapBlob(wid);
-                if (gen !== mapArtSyncGen) return;
-                if (blob && blob.size > 0) {
-                    mapArtObjectUrl = URL.createObjectURL(blob);
-                    mapArtImg.onerror = () => {
-                        mapArtImg.classList.add("hidden");
-                        mapStage.classList.remove("has-image");
-                        mapEmpty.style.display = "flex";
-                        setStatus("Could not read the map file from this device.", "warn");
-                    };
-                    mapArtImg.src = mapArtObjectUrl;
-                    mapArtImg.classList.remove("hidden");
-                    mapStage.classList.add("has-image");
-                    mapEmpty.style.display = "none";
-                    return;
-                }
-                if (gen === mapArtSyncGen) {
-                    mapEmpty.style.display = "flex";
-                    setStatus("This world uses a local map, but none is stored in this browser yet — generate, upload, or paste a URL.", "warn");
-                }
-            } catch (err) {
-                console.error(err);
-                if (gen === mapArtSyncGen) setStatus("Could not open local map storage.", "warn");
-            }
-        }
-
-        const remote = atlas.imageStorage !== "local" && atlas.imageUrl ? String(atlas.imageUrl).trim() : "";
-        if (remote && !remote.startsWith("data:")) {
-            mapArtImg.onerror = () => {
-                mapArtImg.classList.add("hidden");
-                mapStage.classList.remove("has-image");
-                mapEmpty.style.display = "flex";
-                setStatus("Could not load that image — check the URL.", "warn");
-            };
-            mapArtImg.src = remote;
-            mapArtImg.classList.remove("hidden");
-            mapStage.classList.add("has-image");
-            mapEmpty.style.display = "none";
-            return;
-        }
-
-        if (remote && remote.startsWith("data:")) {
-            mapArtImg.onerror = () => {
-                mapArtImg.classList.add("hidden");
-                mapStage.classList.remove("has-image");
-                mapEmpty.style.display = "flex";
-            };
-            mapArtImg.src = remote;
-            mapArtImg.classList.remove("hidden");
-            mapStage.classList.add("has-image");
-            mapEmpty.style.display = "none";
-            return;
-        }
-
-        mapEmpty.style.display = "flex";
-    }
-
     function renderMap() {
         const atlas = getAtlas();
         const eraId = activeEraId();
 
-        const modeLine = document.getElementById("atlasStorageModeLine");
-        if (modeLine) {
-            modeLine.textContent =
-                atlas.imageStorage === "local"
-                    ? `Storage: map file on this device only · ${ATLAS_BUILD}`
-                    : `Storage: image URL in your sheet (cloud) · ${ATLAS_BUILD}`;
-        }
-
-        const remoteUrl = atlas.imageStorage === "local" ? "" : String(atlas.imageUrl || "").trim();
-        if (atlas.imageStorage === "local") {
-            atlasImageUrl.placeholder = "Map stored on this device — paste URL to use a hosted image instead";
-            atlasImageUrl.value = remoteUrl;
-        } else if (remoteUrl.startsWith("data:")) {
-            atlasImageUrl.placeholder = "Legacy embedded map — will move to this device on save";
+        const url = atlas.imageUrl || "";
+        if (url.startsWith("data:")) {
+            atlasImageUrl.placeholder = "Embedded map — paste a URL to replace";
             atlasImageUrl.value = "";
         } else {
-            atlasImageUrl.placeholder = "https://…";
-            atlasImageUrl.value = remoteUrl;
+            atlasImageUrl.placeholder = "https://… or host your map anywhere";
+            atlasImageUrl.value = url;
         }
 
         mapStage.style.backgroundImage = "";
         updateMapFitUi(atlas);
-        void syncMapArtDisplay(atlas);
+
+        if (url) {
+            mapStage.classList.add("has-image");
+            mapArtImg.classList.remove("hidden");
+            mapArtImg.onerror = () => {
+                mapArtImg.classList.add("hidden");
+                mapStage.classList.remove("has-image");
+                setStatus("Could not load that image — check the URL or try Upload.", "warn");
+            };
+            if (mapArtImg.src !== url) mapArtImg.src = url;
+            mapEmpty.style.display = "none";
+        } else {
+            mapStage.classList.remove("has-image");
+            mapArtImg.removeAttribute("src");
+            mapArtImg.classList.add("hidden");
+            mapArtImg.onerror = null;
+            mapEmpty.style.display = "flex";
+        }
 
         const regions = atlas.layers.regions ? atlas.regions.filter((r) => r.eraId === eraId) : [];
         const routes = atlas.layers.routes ? atlas.routes.filter((r) => r.eraId === eraId) : [];
@@ -1635,18 +1280,12 @@
         navigator.clipboard.writeText(text).then(() => alert("Copied."), () => alert("Could not copy."));
     }
 
-    async function applySheetToUi(world) {
+    function applySheetToUi(world) {
         if (!world) return;
         isApplyingRemote = true;
         activeWorldId = world.id;
         localStorage.setItem(ACTIVE_ATLAS_WORLD_KEY, activeWorldId);
         world.atlas = normalizeAtlas(world.atlas);
-        try {
-            await migrateAtlasImageToLocalIfNeeded(world);
-        } catch (err) {
-            console.error(err);
-            setStatus("Could not prepare map on this device — try Generate, Upload, or a hosted image URL.", "warn");
-        }
         selected = null;
         draftPoints = [];
         resetMapView();
@@ -1655,7 +1294,6 @@
         renderLayerList();
         renderMap();
         isApplyingRemote = false;
-        if (uid && activeWorldId) scheduleSave();
     }
 
     function subscribeSheets() {
@@ -1673,10 +1311,10 @@
             const savedWorld = sheets.find((s) => s.id === saved);
 
             if (!activeWorldId || !current) {
-                await applySheetToUi(savedWorld || sheets[0]);
+                applySheetToUi(savedWorld || sheets[0]);
             } else if (!saveTimer) {
                 const incoming = sheets.find((s) => s.id === activeWorldId);
-                if (incoming) await applySheetToUi(incoming);
+                if (incoming) applySheetToUi(incoming);
             }
 
             setStatus("Atlas ready", "ok");
@@ -1731,9 +1369,9 @@
         renderMap();
     });
 
-    atlasWorldSelect.addEventListener("change", async () => {
+    atlasWorldSelect.addEventListener("change", () => {
         const world = sheets.find((s) => s.id === atlasWorldSelect.value);
-        if (world) await applySheetToUi(world);
+        if (world) applySheetToUi(world);
     });
 
     atlasEraSelect.addEventListener("change", () => {
@@ -1754,53 +1392,12 @@
         scheduleSave();
     });
 
-    document.getElementById("atlasApplyImageBtn").addEventListener("click", async () => {
+    document.getElementById("atlasApplyImageBtn").addEventListener("click", () => {
         const atlas = getAtlas();
-        const v = atlasImageUrl.value.trim();
-        if (v) {
-            atlas.imageUrl = v;
-            atlas.imageStorage = "remote";
-            if (activeWorldId) await deleteLocalMapBlob(activeWorldId);
-        } else {
-            atlas.imageUrl = "";
-            atlas.imageStorage = "remote";
-            if (activeWorldId) await deleteLocalMapBlob(activeWorldId);
-        }
-        revokeMapArtObjectUrl();
+        atlas.imageUrl = atlasImageUrl.value.trim();
         resetMapView();
         renderMap();
         scheduleSave();
-    });
-
-    atlasGenerateMapBtn.addEventListener("click", async () => {
-        const atlas = getAtlas();
-        const worldId = activeWorldId;
-        if (!worldId) return;
-        if ((atlas.imageStorage === "local" || atlas.imageUrl) && !confirm("Replace the current map? Pins and drawn regions stay on the canvas.")) return;
-        const typed = atlasMapSeedInput ? atlasMapSeedInput.value.trim() : "";
-        const seedUsed = typed || `gen_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-        if (!typed && atlasMapSeedInput) atlasMapSeedInput.value = seedUsed;
-        setStatus("Generating map (this device only)…");
-        atlasGenerateMapBtn.disabled = true;
-        try {
-            const blob = await generateFantasyMapBlob(seedUsed);
-            if (!blob) {
-                setStatus("Could not build map image.", "warn");
-                return;
-            }
-            await saveLocalMapBlob(worldId, blob);
-            atlas.imageStorage = "local";
-            atlas.imageUrl = "";
-            resetMapView();
-            renderMap();
-            scheduleSave();
-            setStatus("High-res map saved on this PC — Firebase keeps overlays only", "ok");
-        } catch (err) {
-            console.error(err);
-            setStatus("Map generator failed — try another seed.", "warn");
-        } finally {
-            atlasGenerateMapBtn.disabled = false;
-        }
     });
 
     document.getElementById("atlasNewEraBtn").addEventListener("click", () => {
@@ -1940,29 +1537,29 @@
     });
 
     atlasPickImageBtn.addEventListener("click", () => atlasImageFile.click());
-    atlasImageFile.addEventListener("change", async () => {
+    atlasImageFile.addEventListener("change", () => {
         const f = atlasImageFile.files && atlasImageFile.files[0];
         atlasImageFile.value = "";
         if (!f || !f.type.startsWith("image/")) return;
-        if (f.size > 18 * 1024 * 1024) {
-            alert("That file is too large for browser storage on this device (max about 18 MB). Use a hosted URL instead.");
+        if (f.size > MAX_EMBED_IMAGE_BYTES) {
+            alert(`That image is too large to embed in your sheet (${Math.round(f.size / 1000)} KB). Compress it or host it elsewhere, then paste the URL. Rough max embed: ${Math.round(MAX_EMBED_IMAGE_BYTES / 1000)} KB.`);
             return;
         }
-        const worldId = activeWorldId;
-        if (!worldId) return;
-        try {
-            await saveLocalMapBlob(worldId, f);
-            const atlas = getAtlas();
-            atlas.imageStorage = "local";
-            atlas.imageUrl = "";
+        const reader = new FileReader();
+        reader.onload = () => {
+            const dataUrl = String(reader.result || "");
+            if (dataUrl.length > MAX_EMBED_DATA_URL_CHARS) {
+                alert("Encoded image is too large for cloud sync. Use a hosted image URL instead.");
+                return;
+            }
+            getAtlas().imageUrl = dataUrl;
             resetMapView();
             renderMap();
             scheduleSave();
-            setStatus("Map saved on this device only", "ok");
-        } catch (err) {
-            console.error(err);
-            alert("Could not save the file to this browser's storage.");
-        }
+            setStatus("Map embedded in this sheet", "ok");
+        };
+        reader.onerror = () => alert("Could not read that file.");
+        reader.readAsDataURL(f);
     });
 
     onAuthStateChanged(auth, async (user) => {
