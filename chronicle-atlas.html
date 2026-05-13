@@ -1,0 +1,1209 @@
+<!DOCTYPE html><html lang="en">
+<head>
+    <!-- ALYSUM:PWA:START -->
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta name="theme-color" content="#7c3aed" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#020b18" media="(prefers-color-scheme: dark)">
+    <meta name="color-scheme" content="dark light">
+    <meta name="application-name" content="Alysum">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Alysum">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="msapplication-TileColor" content="#7c3aed">
+    <meta name="msapplication-TileImage" content="/Alysum-3.png">
+    <link rel="icon" type="image/png" sizes="any" href="/Alysum-3.png">
+    <link rel="apple-touch-icon" href="/Alysum-3.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/Alysum-3.png">
+    <script src="/js/pwa-register.js" defer></script>
+    <!-- ALYSUM:PWA:END --><meta charset="UTF-8" />
+<title>Chronicle Atlas — Alysum</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<script>
+    try {
+        var __g = localStorage.getItem("alysum-gradient-theme");
+        if (__g && __g !== "classic") document.documentElement.setAttribute("data-gradient-theme", __g);
+    } catch (e) {}
+</script>
+
+<link rel="stylesheet" href="/css/site-responsive.css?v=1" />
+<link rel="stylesheet" href="/css/gradient-themes.css?v=2" />
+
+<style>
+    * { box-sizing: border-box; }
+
+    html, body {
+        margin: 0;
+        min-height: 100%;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background:
+            radial-gradient(circle at top center, var(--theme-body-spot) 0%, transparent 26%),
+            linear-gradient(180deg, #0d1426 0%, #0b1220 100%);
+        color: #fff;
+    }
+
+    .atlas-header {
+        position: sticky;
+        top: 0;
+        z-index: 30;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 12px 18px;
+        background: linear-gradient(135deg, var(--purple-dark), var(--theme-header-mid), var(--theme-header-end));
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.28);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .atlas-title {
+        font-size: 18px;
+        font-weight: 900;
+        letter-spacing: -0.02em;
+        color: #fff7ed;
+    }
+
+    .atlas-header-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .atlas-btn {
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 12px;
+        background: rgba(0, 0, 0, 0.22);
+        color: #fff;
+        padding: 8px 12px;
+        font-weight: 800;
+        font-size: 12px;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+    }
+
+    .atlas-btn:hover { background: rgba(0, 0, 0, 0.35); }
+
+    .atlas-btn-primary {
+        background: linear-gradient(135deg, var(--purple-dark), var(--purple));
+        border-color: transparent;
+    }
+
+    .atlas-btn-danger {
+        border-color: rgba(248, 113, 113, 0.35);
+        color: #fecaca;
+        background: rgba(127, 29, 29, 0.25);
+    }
+
+    .atlas-loading {
+        max-width: 1120px;
+        margin: 0 auto;
+        padding: 32px 18px;
+        font-size: 15px;
+        font-weight: 700;
+        color: #94a3b8;
+    }
+
+    .hidden, .atlas-loading.hidden, .atlas-wrap.hidden { display: none !important; }
+
+    .atlas-wrap {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 20px 18px 48px;
+    }
+
+    .atlas-intro {
+        margin-bottom: 16px;
+        padding: 18px 20px;
+        border-radius: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: linear-gradient(145deg, rgba(30, 41, 59, 0.65), rgba(15, 23, 42, 0.85));
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.22);
+    }
+
+    .atlas-lead {
+        margin: 0 0 6px;
+        font-size: 16px;
+        line-height: 1.5;
+        color: #e2e8f0;
+        font-weight: 800;
+    }
+
+    .atlas-sub {
+        margin: 0;
+        font-size: 13px;
+        line-height: 1.55;
+        color: #94a3b8;
+        font-weight: 600;
+    }
+
+    .atlas-status {
+        margin: 0 0 14px;
+        font-size: 12px;
+        font-weight: 700;
+        color: #94a3b8;
+    }
+
+    .atlas-status.ok { color: #86efac; }
+    .atlas-status.warn { color: #fcd34d; }
+
+    .atlas-shell {
+        display: grid;
+        grid-template-columns: 280px minmax(0, 1fr) 300px;
+        gap: 12px;
+        align-items: start;
+    }
+
+    .atlas-panel {
+        border-radius: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: linear-gradient(165deg, rgba(30, 41, 59, 0.72), rgba(15, 23, 42, 0.92));
+        box-shadow: 0 12px 34px rgba(0, 0, 0, 0.22);
+        overflow: hidden;
+    }
+
+    .atlas-panel-inner { padding: 16px; }
+
+    .atlas-panel-title {
+        margin: 0 0 10px;
+        font-size: 11px;
+        font-weight: 900;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #c4b5fd;
+    }
+
+    .atlas-stack { display: flex; flex-direction: column; gap: 10px; }
+
+    .atlas-field label {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 11px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #94a3b8;
+    }
+
+    .atlas-input, .atlas-select, .atlas-textarea {
+        width: 100%;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 12px;
+        padding: 10px 12px;
+        background: rgba(0, 0, 0, 0.28);
+        color: #f1f5f9;
+        font: inherit;
+        font-size: 13px;
+        font-weight: 700;
+        outline: none;
+    }
+
+    .atlas-textarea {
+        min-height: 96px;
+        resize: vertical;
+        line-height: 1.45;
+        font-weight: 600;
+    }
+
+    .atlas-row { display: flex; gap: 8px; align-items: center; }
+    .atlas-row > * { flex: 1; }
+
+    .atlas-layer-list {
+        display: grid;
+        gap: 8px;
+    }
+
+    .atlas-check {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 10px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(0, 0, 0, 0.18);
+        font-size: 12px;
+        font-weight: 800;
+        color: #e2e8f0;
+    }
+
+    .atlas-tools {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .atlas-tool {
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 14px;
+        background: rgba(0, 0, 0, 0.22);
+        color: #fff;
+        padding: 10px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 900;
+    }
+
+    .atlas-tool.is-active {
+        border-color: color-mix(in srgb, var(--purple-bright) 55%, transparent);
+        background: rgba(109, 40, 217, 0.3);
+    }
+
+    .map-panel { min-height: 680px; }
+
+    .map-topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 12px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(0, 0, 0, 0.18);
+    }
+
+    .map-topbar-left, .map-topbar-right {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .map-hint {
+        margin: 0;
+        font-size: 12px;
+        font-weight: 800;
+        color: #94a3b8;
+    }
+
+    .map-viewport {
+        position: relative;
+        height: min(72vh, 720px);
+        min-height: 520px;
+        overflow: auto;
+        background:
+            linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px),
+            radial-gradient(circle at center, rgba(124, 58, 237, .12), transparent 45%),
+            #020617;
+        background-size: 28px 28px, 28px 28px, auto, auto;
+    }
+
+    .map-stage {
+        position: relative;
+        width: 1400px;
+        height: 900px;
+        margin: 24px;
+        border-radius: 18px;
+        overflow: hidden;
+        border: 1px solid rgba(255,255,255,.12);
+        background:
+            radial-gradient(circle at 30% 20%, rgba(34,197,94,.24), transparent 18%),
+            radial-gradient(circle at 72% 40%, rgba(59,130,246,.22), transparent 20%),
+            radial-gradient(circle at 44% 72%, rgba(234,179,8,.18), transparent 16%),
+            linear-gradient(135deg, #173b2f, #1e293b 48%, #312e81);
+        box-shadow: inset 0 0 80px rgba(0,0,0,.38), 0 18px 50px rgba(0,0,0,.35);
+        cursor: crosshair;
+    }
+
+    .map-stage.has-image {
+        background-size: cover;
+        background-position: center;
+    }
+
+    .map-svg {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+    }
+
+    .map-region {
+        fill: rgba(124, 58, 237, 0.24);
+        stroke: rgba(233, 213, 255, 0.9);
+        stroke-width: 2;
+    }
+
+    .map-region.is-selected {
+        fill: rgba(251, 191, 36, 0.24);
+        stroke: rgba(251, 191, 36, 0.95);
+        stroke-width: 3;
+    }
+
+    .map-route {
+        fill: none;
+        stroke: rgba(251, 191, 36, 0.9);
+        stroke-width: 4;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-dasharray: 10 8;
+    }
+
+    .map-route.is-selected {
+        stroke: rgba(255, 255, 255, 0.95);
+        stroke-width: 5;
+    }
+
+    .map-zone {
+        fill: rgba(239, 68, 68, 0.22);
+        stroke: rgba(252, 165, 165, 0.9);
+        stroke-width: 2;
+        stroke-dasharray: 8 6;
+    }
+
+    .map-pin {
+        position: absolute;
+        transform: translate(-50%, -100%);
+        border: 1px solid rgba(255,255,255,.18);
+        border-radius: 999px;
+        background: rgba(2, 6, 23, .78);
+        color: #fff;
+        padding: 5px 8px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 12px;
+        font-weight: 900;
+        box-shadow: 0 10px 22px rgba(0,0,0,.32);
+        max-width: 190px;
+        white-space: nowrap;
+    }
+
+    .map-pin.is-selected {
+        border-color: rgba(251, 191, 36, .95);
+        background: rgba(88, 28, 135, .9);
+    }
+
+    .map-pin-icon { font-size: 16px; }
+    .map-pin-name { overflow: hidden; text-overflow: ellipsis; }
+
+    .map-empty {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+        padding: 24px;
+        text-align: center;
+    }
+
+    .map-empty-card {
+        max-width: 460px;
+        padding: 20px;
+        border-radius: 18px;
+        border: 1px solid rgba(255,255,255,.12);
+        background: rgba(2,6,23,.72);
+        box-shadow: 0 18px 44px rgba(0,0,0,.34);
+    }
+
+    .map-empty-card h2 {
+        margin: 0 0 8px;
+        color: #fff7ed;
+        font-size: 20px;
+    }
+
+    .map-empty-card p {
+        margin: 0;
+        color: #cbd5e1;
+        font-weight: 650;
+        font-size: 13px;
+        line-height: 1.55;
+    }
+
+    .atlas-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: grid;
+        gap: 7px;
+        max-height: 180px;
+        overflow: auto;
+    }
+
+    .atlas-list button {
+        width: 100%;
+        text-align: left;
+        border: 1px solid rgba(255,255,255,.1);
+        border-radius: 12px;
+        background: rgba(0,0,0,.2);
+        color: #e2e8f0;
+        padding: 9px 10px;
+        font-size: 12px;
+        font-weight: 800;
+        cursor: pointer;
+    }
+
+    .atlas-list button.is-active {
+        border-color: rgba(251,191,36,.7);
+        color: #fff7ed;
+        background: rgba(109,40,217,.24);
+    }
+
+    .selected-empty {
+        margin: 0;
+        color: #94a3b8;
+        font-size: 13px;
+        line-height: 1.5;
+        font-weight: 650;
+    }
+
+    @media (max-width: 1100px) {
+        .atlas-shell { grid-template-columns: 260px minmax(0, 1fr); }
+        .selected-panel { grid-column: 1 / -1; }
+    }
+
+    @media (max-width: 760px) {
+        .atlas-header { flex-direction: column; align-items: stretch; }
+        .atlas-header-actions { justify-content: flex-start; }
+        .atlas-shell { grid-template-columns: 1fr; }
+        .map-stage { width: 1100px; height: 720px; }
+    }
+</style>
+
+</head>
+<body>
+    <header class="atlas-header">
+        <div class="atlas-title">Chronicle Atlas</div>
+        <div class="atlas-header-actions">
+            <a class="atlas-btn" href="/worldbuilding.html">← World building</a>
+            <a class="atlas-btn" href="/realm-builder.html">Realm Builder</a>
+            <a class="atlas-btn" href="/city-builder.html">City Builder</a>
+            <a class="atlas-btn" href="/studio.html">Studio</a>
+        </div>
+    </header><p class="atlas-loading" id="atlasLoading">Checking sign-in…</p>
+
+<main class="atlas-wrap hidden" id="atlasMain">
+    <section class="atlas-intro">
+        <p class="atlas-lead">Build a living historical atlas for your world.</p>
+        <p class="atlas-sub">Create eras, map kingdoms, place cities, sketch trade routes and conflict zones, then link everything back to your lore sheets.</p>
+    </section>
+
+    <p class="atlas-status" id="atlasStatus">Loading…</p>
+
+    <div class="atlas-shell">
+        <aside class="atlas-panel">
+            <div class="atlas-panel-inner atlas-stack">
+                <div>
+                    <p class="atlas-panel-title">Atlas source</p>
+                    <div class="atlas-field">
+                        <label for="atlasWorldSelect">Worldsheet</label>
+                        <select id="atlasWorldSelect" class="atlas-select"></select>
+                    </div>
+                </div>
+
+                <div>
+                    <p class="atlas-panel-title">Map image</p>
+                    <div class="atlas-field">
+                        <label for="atlasImageUrl">Image URL</label>
+                        <input id="atlasImageUrl" class="atlas-input" placeholder="Paste map image URL" />
+                    </div>
+                    <button type="button" class="atlas-btn atlas-btn-primary" id="atlasApplyImageBtn">Apply map image</button>
+                </div>
+
+                <div>
+                    <p class="atlas-panel-title">Era</p>
+                    <div class="atlas-field">
+                        <label for="atlasEraSelect">Active era</label>
+                        <select id="atlasEraSelect" class="atlas-select"></select>
+                    </div>
+                    <div class="atlas-row">
+                        <button type="button" class="atlas-btn" id="atlasNewEraBtn">New era</button>
+                        <button type="button" class="atlas-btn atlas-btn-danger" id="atlasDeleteEraBtn">Delete</button>
+                    </div>
+                </div>
+
+                <div>
+                    <p class="atlas-panel-title">Tools</p>
+                    <div class="atlas-tools">
+                        <button type="button" class="atlas-tool is-active" data-tool="select">Select</button>
+                        <button type="button" class="atlas-tool" data-tool="city">City</button>
+                        <button type="button" class="atlas-tool" data-tool="region">Region</button>
+                        <button type="button" class="atlas-tool" data-tool="route">Route</button>
+                        <button type="button" class="atlas-tool" data-tool="conflict">Conflict</button>
+                        <button type="button" class="atlas-tool" data-tool="magic">Magic zone</button>
+                    </div>
+                </div>
+
+                <div>
+                    <p class="atlas-panel-title">Layers</p>
+                    <div class="atlas-layer-list" id="atlasLayerList"></div>
+                </div>
+
+                <button type="button" class="atlas-btn atlas-btn-primary" id="atlasSaveNowBtn">Save now</button>
+            </div>
+        </aside>
+
+        <section class="atlas-panel map-panel">
+            <div class="map-topbar">
+                <div class="map-topbar-left">
+                    <p class="map-hint" id="mapHint">Select tool active. Click objects to edit.</p>
+                </div>
+                <div class="map-topbar-right">
+                    <button type="button" class="atlas-btn" id="finishShapeBtn">Finish shape</button>
+                    <button type="button" class="atlas-btn" id="cancelShapeBtn">Cancel shape</button>
+                </div>
+            </div>
+
+            <div class="map-viewport">
+                <div class="map-stage" id="mapStage">
+                    <svg class="map-svg" viewBox="0 0 100 100" preserveAspectRatio="none" id="mapSvg"></svg>
+                    <div id="mapPins"></div>
+                    <div class="map-empty" id="mapEmpty">
+                        <div class="map-empty-card">
+                            <h2>Your atlas starts here</h2>
+                            <p>Paste a map image URL, or start sketching directly on the parchment. Use City, Region, Route, Conflict, and Magic zone tools from the left panel.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <aside class="atlas-panel selected-panel">
+            <div class="atlas-panel-inner atlas-stack">
+                <div>
+                    <p class="atlas-panel-title">Selected item</p>
+                    <div id="selectedEditor">
+                        <p class="selected-empty">Nothing selected. Choose a tool, place something on the map, then edit it here.</p>
+                    </div>
+                </div>
+
+                <div>
+                    <p class="atlas-panel-title">Era items</p>
+                    <ul class="atlas-list" id="atlasItemList"></ul>
+                </div>
+
+                <button type="button" class="atlas-btn" id="copyAtlasEntryBtn">Copy atlas entry</button>
+                <button type="button" class="atlas-btn atlas-btn-danger" id="deleteSelectedBtn">Delete selected</button>
+            </div>
+        </aside>
+    </div>
+</main>
+
+<script type="module">
+    import { auth, db } from "./firebase.js";
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import {
+        collection,
+        doc,
+        getDocs,
+        onSnapshot,
+        orderBy,
+        query,
+        serverTimestamp,
+        setDoc
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    const SHEETS_COLLECTION = "worldbuilding";
+    const ACTIVE_ATLAS_WORLD_KEY = "alysum-active-atlas-world-v1";
+
+    const atlasLoading = document.getElementById("atlasLoading");
+    const atlasMain = document.getElementById("atlasMain");
+    const atlasStatus = document.getElementById("atlasStatus");
+    const atlasWorldSelect = document.getElementById("atlasWorldSelect");
+    const atlasImageUrl = document.getElementById("atlasImageUrl");
+    const atlasEraSelect = document.getElementById("atlasEraSelect");
+    const atlasLayerList = document.getElementById("atlasLayerList");
+    const mapStage = document.getElementById("mapStage");
+    const mapSvg = document.getElementById("mapSvg");
+    const mapPins = document.getElementById("mapPins");
+    const mapEmpty = document.getElementById("mapEmpty");
+    const mapHint = document.getElementById("mapHint");
+    const selectedEditor = document.getElementById("selectedEditor");
+    const atlasItemList = document.getElementById("atlasItemList");
+
+    let uid = null;
+    let sheetsColRef = null;
+    let unsubscribeSheets = null;
+    let sheets = [];
+    let activeWorldId = null;
+    let activeTool = "select";
+    let selected = null;
+    let draftPoints = [];
+    let saveTimer = null;
+    let isApplyingRemote = false;
+
+    const LAYERS = [
+        ["cities", "Cities"],
+        ["regions", "Political borders"],
+        ["routes", "Routes"],
+        ["conflicts", "Conflict zones"],
+        ["magic", "Magic zones"],
+        ["ruins", "Ruins"]
+    ];
+
+    function escapeHtml(s) {
+        return String(s ?? "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;");
+    }
+
+    function makeId(prefix = "atlas") {
+        if (crypto && typeof crypto.randomUUID === "function") return prefix + "_" + crypto.randomUUID();
+        return prefix + "_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2);
+    }
+
+    function numberFromTimestamp(value) {
+        if (!value) return 0;
+        if (typeof value === "number") return value;
+        if (typeof value.toMillis === "function") return value.toMillis();
+        if (typeof value.seconds === "number") return value.seconds * 1000;
+        return 0;
+    }
+
+    function defaultAtlas() {
+        return {
+            imageUrl: "",
+            activeEraId: "era_current",
+            eras: [
+                { id: "era_current", name: "Current Age", yearLabel: "Year 1", description: "" }
+            ],
+            layers: {
+                cities: true,
+                regions: true,
+                routes: true,
+                conflicts: true,
+                magic: true,
+                ruins: true
+            },
+            pins: [],
+            regions: [],
+            routes: [],
+            zones: []
+        };
+    }
+
+    function normalizeAtlas(raw) {
+        const base = defaultAtlas();
+        const a = raw && typeof raw === "object" ? raw : {};
+        return {
+            ...base,
+            ...a,
+            eras: Array.isArray(a.eras) && a.eras.length ? a.eras : base.eras,
+            layers: { ...base.layers, ...(a.layers || {}) },
+            pins: Array.isArray(a.pins) ? a.pins : [],
+            regions: Array.isArray(a.regions) ? a.regions : [],
+            routes: Array.isArray(a.routes) ? a.routes : [],
+            zones: Array.isArray(a.zones) ? a.zones : []
+        };
+    }
+
+    function normalizeSheet(data, id) {
+        const created = numberFromTimestamp(data.createdAt) || data.created || data.createdMs || Date.now();
+        const updated = numberFromTimestamp(data.updatedAt) || data.updated || data.updatedMs || created;
+        return {
+            id,
+            title: typeof data.title === "string" && data.title.trim() ? data.title.trim() : "Untitled world",
+            atlas: normalizeAtlas(data.atlas),
+            created,
+            updated,
+            raw: data || {}
+        };
+    }
+
+    function getActiveWorld() {
+        return sheets.find((s) => s.id === activeWorldId) || null;
+    }
+
+    function getAtlas() {
+        const world = getActiveWorld();
+        if (!world) return defaultAtlas();
+        world.atlas = normalizeAtlas(world.atlas);
+        return world.atlas;
+    }
+
+    function activeEraId() {
+        const atlas = getAtlas();
+        return atlas.activeEraId || atlas.eras[0]?.id || "era_current";
+    }
+
+    function setStatus(text, type = "") {
+        atlasStatus.textContent = text;
+        atlasStatus.classList.remove("ok", "warn");
+        if (type) atlasStatus.classList.add(type);
+    }
+
+    function scheduleSave() {
+        if (!uid || !activeWorldId || isApplyingRemote) return;
+        clearTimeout(saveTimer);
+        setStatus("Saving…");
+        saveTimer = setTimeout(() => saveNow(), 650);
+    }
+
+    async function saveNow() {
+        if (!uid || !activeWorldId || isApplyingRemote) return;
+        clearTimeout(saveTimer);
+        const world = getActiveWorld();
+        if (!world) return;
+        setStatus("Saving…");
+        try {
+            await setDoc(doc(db, "users", uid, SHEETS_COLLECTION, activeWorldId), {
+                atlas: normalizeAtlas(world.atlas),
+                updated: Date.now(),
+                updatedAt: serverTimestamp()
+            }, { merge: true });
+            setStatus("Atlas saved", "ok");
+        } catch (err) {
+            console.error(err);
+            setStatus("Could not save atlas — check connection and try again.", "warn");
+        }
+    }
+
+    function renderWorldSelect() {
+        atlasWorldSelect.innerHTML = sheets.map((s) => `
+            <option value="${escapeHtml(s.id)}" ${s.id === activeWorldId ? "selected" : ""}>${escapeHtml(s.title)}</option>
+        `).join("");
+    }
+
+    function renderEraSelect() {
+        const atlas = getAtlas();
+        atlasEraSelect.innerHTML = atlas.eras.map((era) => `
+            <option value="${escapeHtml(era.id)}" ${era.id === atlas.activeEraId ? "selected" : ""}>
+                ${escapeHtml(era.name)}${era.yearLabel ? " — " + escapeHtml(era.yearLabel) : ""}
+            </option>
+        `).join("");
+    }
+
+    function renderLayerList() {
+        const atlas = getAtlas();
+        atlasLayerList.innerHTML = LAYERS.map(([key, label]) => `
+            <label class="atlas-check">
+                <input type="checkbox" data-layer="${escapeHtml(key)}" ${atlas.layers[key] ? "checked" : ""} />
+                <span>${escapeHtml(label)}</span>
+            </label>
+        `).join("");
+    }
+
+    function pointFromEvent(ev) {
+        const rect = mapStage.getBoundingClientRect();
+        const x = Math.max(0, Math.min(100, ((ev.clientX - rect.left) / rect.width) * 100));
+        const y = Math.max(0, Math.min(100, ((ev.clientY - rect.top) / rect.height) * 100));
+        return { x: Number(x.toFixed(2)), y: Number(y.toFixed(2)) };
+    }
+
+    function pointsToSvg(points) {
+        return points.map((p) => `${p.x},${p.y}`).join(" ");
+    }
+
+    function renderMap() {
+        const atlas = getAtlas();
+        const eraId = activeEraId();
+
+        atlasImageUrl.value = atlas.imageUrl || "";
+        if (atlas.imageUrl) {
+            mapStage.classList.add("has-image");
+            mapStage.style.backgroundImage = `url("${String(atlas.imageUrl).replace(/"/g, "%22")}")`;
+            mapEmpty.style.display = "none";
+        } else {
+            mapStage.classList.remove("has-image");
+            mapStage.style.backgroundImage = "";
+            mapEmpty.style.display = "flex";
+        }
+
+        const regions = atlas.layers.regions ? atlas.regions.filter((r) => r.eraId === eraId) : [];
+        const routes = atlas.layers.routes ? atlas.routes.filter((r) => r.eraId === eraId) : [];
+        const zones = atlas.zones.filter((z) => z.eraId === eraId && atlas.layers[z.layerKey || z.type]) ;
+
+        let svg = "";
+        for (const region of regions) {
+            svg += `<polygon class="map-region ${selected?.id === region.id ? "is-selected" : ""}" data-id="${escapeHtml(region.id)}" points="${pointsToSvg(region.points || [])}"></polygon>`;
+        }
+        for (const route of routes) {
+            svg += `<polyline class="map-route ${selected?.id === route.id ? "is-selected" : ""}" data-id="${escapeHtml(route.id)}" points="${pointsToSvg(route.points || [])}"></polyline>`;
+        }
+        for (const zone of zones) {
+            svg += `<polygon class="map-zone ${selected?.id === zone.id ? "is-selected" : ""}" data-id="${escapeHtml(zone.id)}" points="${pointsToSvg(zone.points || [])}"></polygon>`;
+        }
+        if (draftPoints.length) {
+            svg += `<polyline class="map-route" points="${pointsToSvg(draftPoints)}"></polyline>`;
+            for (const p of draftPoints) {
+                svg += `<circle cx="${p.x}" cy="${p.y}" r="0.8" fill="white"></circle>`;
+            }
+        }
+        mapSvg.innerHTML = svg;
+
+        const pins = atlas.layers.cities ? atlas.pins.filter((p) => p.eraId === eraId) : [];
+        mapPins.innerHTML = pins.map((pin) => `
+            <button type="button" class="map-pin ${selected?.id === pin.id ? "is-selected" : ""}" style="left:${pin.x}%; top:${pin.y}%;" data-id="${escapeHtml(pin.id)}">
+                <span class="map-pin-icon">${pin.type === "capital" ? "★" : pin.type === "ruin" ? "◆" : "●"}</span>
+                <span class="map-pin-name">${escapeHtml(pin.name || "Unnamed")}</span>
+            </button>
+        `).join("");
+
+        renderItemList();
+        renderSelectedEditor();
+        updateHint();
+    }
+
+    function allEraItems() {
+        const atlas = getAtlas();
+        const eraId = activeEraId();
+        return [
+            ...atlas.pins.filter((x) => x.eraId === eraId).map((x) => ({ ...x, kind: "pin" })),
+            ...atlas.regions.filter((x) => x.eraId === eraId).map((x) => ({ ...x, kind: "region" })),
+            ...atlas.routes.filter((x) => x.eraId === eraId).map((x) => ({ ...x, kind: "route" })),
+            ...atlas.zones.filter((x) => x.eraId === eraId).map((x) => ({ ...x, kind: "zone" }))
+        ];
+    }
+
+    function findItemById(id) {
+        const atlas = getAtlas();
+        return atlas.pins.find((x) => x.id === id) ||
+            atlas.regions.find((x) => x.id === id) ||
+            atlas.routes.find((x) => x.id === id) ||
+            atlas.zones.find((x) => x.id === id) || null;
+    }
+
+    function renderItemList() {
+        const items = allEraItems();
+        atlasItemList.innerHTML = items.length ? items.map((item) => `
+            <li><button type="button" data-item-id="${escapeHtml(item.id)}" class="${selected?.id === item.id ? "is-active" : ""}">${escapeHtml(item.name || "Unnamed")} · ${escapeHtml(item.kind)}</button></li>
+        `).join("") : `<li><button type="button" disabled>No items in this era yet.</button></li>`;
+    }
+
+    function updateSelectedField(key, value) {
+        if (!selected) return;
+        const item = findItemById(selected.id);
+        if (!item) return;
+        item[key] = value;
+        selected = item;
+        renderMap();
+        scheduleSave();
+    }
+
+    function renderSelectedEditor() {
+        if (!selected) {
+            selectedEditor.innerHTML = `<p class="selected-empty">Nothing selected. Choose a tool, place something on the map, then edit it here.</p>`;
+            return;
+        }
+
+        const item = findItemById(selected.id);
+        if (!item) {
+            selected = null;
+            renderSelectedEditor();
+            return;
+        }
+
+        selectedEditor.innerHTML = `
+            <div class="atlas-stack">
+                <div class="atlas-field">
+                    <label>Name</label>
+                    <input class="atlas-input" id="selectedName" value="${escapeHtml(item.name || "")}" placeholder="Name" />
+                </div>
+                <div class="atlas-field">
+                    <label>Type</label>
+                    <input class="atlas-input" id="selectedType" value="${escapeHtml(item.type || "")}" placeholder="city, kingdom, war, route..." />
+                </div>
+                <div class="atlas-field">
+                    <label>Linked sheet ID</label>
+                    <input class="atlas-input" id="selectedLinkedId" value="${escapeHtml(item.linkedId || "")}" placeholder="Optional" />
+                </div>
+                <div class="atlas-field">
+                    <label>Notes</label>
+                    <textarea class="atlas-textarea" id="selectedNotes" placeholder="Atlas notes, history, ruler, conflict, importance...">${escapeHtml(item.notes || "")}</textarea>
+                </div>
+            </div>
+        `;
+
+        document.getElementById("selectedName")?.addEventListener("input", (ev) => updateSelectedField("name", ev.target.value));
+        document.getElementById("selectedType")?.addEventListener("input", (ev) => updateSelectedField("type", ev.target.value));
+        document.getElementById("selectedLinkedId")?.addEventListener("input", (ev) => updateSelectedField("linkedId", ev.target.value));
+        document.getElementById("selectedNotes")?.addEventListener("input", (ev) => updateSelectedField("notes", ev.target.value));
+    }
+
+    function updateHint() {
+        const hints = {
+            select: "Select tool active. Click objects to edit.",
+            city: "City tool active. Click the map to place a city or landmark.",
+            region: "Region tool active. Click points around a kingdom, then Finish shape.",
+            route: "Route tool active. Click points along a road, river, or trade route, then Finish shape.",
+            conflict: "Conflict tool active. Click points around a war zone, then Finish shape.",
+            magic: "Magic zone tool active. Click points around a magical area, then Finish shape."
+        };
+        mapHint.textContent = hints[activeTool] || hints.select;
+    }
+
+    function addCity(point) {
+        const atlas = getAtlas();
+        const item = {
+            id: makeId("pin"),
+            eraId: activeEraId(),
+            name: "Unnamed city",
+            type: "city",
+            x: point.x,
+            y: point.y,
+            linkedType: "city",
+            linkedId: "",
+            notes: ""
+        };
+        atlas.pins.push(item);
+        selected = item;
+        renderMap();
+        scheduleSave();
+    }
+
+    function finishShape() {
+        if (!draftPoints.length) return;
+        const atlas = getAtlas();
+
+        if (activeTool === "region" && draftPoints.length >= 3) {
+            const item = {
+                id: makeId("region"),
+                eraId: activeEraId(),
+                name: "Unnamed kingdom",
+                type: "kingdom",
+                points: [...draftPoints],
+                linkedType: "realm",
+                linkedId: "",
+                notes: ""
+            };
+            atlas.regions.push(item);
+            selected = item;
+        }
+
+        if (activeTool === "route" && draftPoints.length >= 2) {
+            const item = {
+                id: makeId("route"),
+                eraId: activeEraId(),
+                name: "Unnamed route",
+                type: "trade route",
+                points: [...draftPoints],
+                linkedType: "",
+                linkedId: "",
+                notes: ""
+            };
+            atlas.routes.push(item);
+            selected = item;
+        }
+
+        if ((activeTool === "conflict" || activeTool === "magic") && draftPoints.length >= 3) {
+            const item = {
+                id: makeId("zone"),
+                eraId: activeEraId(),
+                name: activeTool === "magic" ? "Unnamed magic zone" : "Unnamed conflict zone",
+                type: activeTool,
+                layerKey: activeTool === "magic" ? "magic" : "conflicts",
+                points: [...draftPoints],
+                linkedType: "event",
+                linkedId: "",
+                notes: ""
+            };
+            atlas.zones.push(item);
+            selected = item;
+        }
+
+        draftPoints = [];
+        renderMap();
+        scheduleSave();
+    }
+
+    function deleteSelected() {
+        if (!selected) return;
+        const atlas = getAtlas();
+        const id = selected.id;
+        atlas.pins = atlas.pins.filter((x) => x.id !== id);
+        atlas.regions = atlas.regions.filter((x) => x.id !== id);
+        atlas.routes = atlas.routes.filter((x) => x.id !== id);
+        atlas.zones = atlas.zones.filter((x) => x.id !== id);
+        selected = null;
+        renderMap();
+        scheduleSave();
+    }
+
+    function copyAtlasEntry() {
+        if (!selected) return alert("Select an atlas item first.");
+        const item = findItemById(selected.id);
+        if (!item) return;
+        const era = getAtlas().eras.find((e) => e.id === item.eraId);
+        const text = [
+            `${item.name || "Unnamed"}`,
+            `Type: ${item.type || "Unknown"}`,
+            `Era: ${era ? era.name : item.eraId}`,
+            item.linkedId ? `Linked sheet: ${item.linkedId}` : "",
+            item.notes ? `Notes:\n${item.notes}` : ""
+        ].filter(Boolean).join("\n");
+        navigator.clipboard.writeText(text).then(() => alert("Copied."), () => alert("Could not copy."));
+    }
+
+    function applySheetToUi(world) {
+        if (!world) return;
+        isApplyingRemote = true;
+        activeWorldId = world.id;
+        localStorage.setItem(ACTIVE_ATLAS_WORLD_KEY, activeWorldId);
+        world.atlas = normalizeAtlas(world.atlas);
+        selected = null;
+        draftPoints = [];
+        renderWorldSelect();
+        renderEraSelect();
+        renderLayerList();
+        renderMap();
+        isApplyingRemote = false;
+    }
+
+    function subscribeSheets() {
+        if (unsubscribeSheets) unsubscribeSheets();
+        const q = query(sheetsColRef, orderBy("updated", "desc"));
+        unsubscribeSheets = onSnapshot(q, async (snap) => {
+            sheets = snap.docs.map((d) => normalizeSheet(d.data(), d.id));
+            if (!sheets.length) {
+                setStatus("Create a worldbuilding sheet first, then return to the atlas.", "warn");
+                return;
+            }
+
+            const saved = localStorage.getItem(ACTIVE_ATLAS_WORLD_KEY);
+            const current = sheets.find((s) => s.id === activeWorldId);
+            const savedWorld = sheets.find((s) => s.id === saved);
+
+            if (!activeWorldId || !current) {
+                applySheetToUi(savedWorld || sheets[0]);
+            } else if (!saveTimer) {
+                const incoming = sheets.find((s) => s.id === activeWorldId);
+                if (incoming) applySheetToUi(incoming);
+            }
+
+            setStatus("Atlas ready", "ok");
+        }, (err) => {
+            console.error(err);
+            setStatus("Could not load atlas.", "warn");
+        });
+    }
+
+    document.querySelectorAll(".atlas-tool").forEach((btn) => {
+        btn.addEventListener("click", () => {
+            activeTool = btn.dataset.tool || "select";
+            draftPoints = [];
+            document.querySelectorAll(".atlas-tool").forEach((b) => b.classList.toggle("is-active", b === btn));
+            renderMap();
+        });
+    });
+
+    mapStage.addEventListener("click", (ev) => {
+        const pinBtn = ev.target.closest(".map-pin");
+        if (pinBtn) {
+            ev.stopPropagation();
+            selected = findItemById(pinBtn.dataset.id);
+            renderMap();
+            return;
+        }
+
+        const svgTarget = ev.target.closest("[data-id]");
+        if (svgTarget && activeTool === "select") {
+            selected = findItemById(svgTarget.dataset.id);
+            renderMap();
+            return;
+        }
+
+        const point = pointFromEvent(ev);
+        if (activeTool === "city") addCity(point);
+        else if (["region", "route", "conflict", "magic"].includes(activeTool)) {
+            draftPoints.push(point);
+            renderMap();
+        }
+    });
+
+    atlasItemList.addEventListener("click", (ev) => {
+        const btn = ev.target.closest("button[data-item-id]");
+        if (!btn) return;
+        selected = findItemById(btn.dataset.itemId);
+        renderMap();
+    });
+
+    atlasWorldSelect.addEventListener("change", () => {
+        const world = sheets.find((s) => s.id === atlasWorldSelect.value);
+        if (world) applySheetToUi(world);
+    });
+
+    atlasEraSelect.addEventListener("change", () => {
+        const atlas = getAtlas();
+        atlas.activeEraId = atlasEraSelect.value;
+        selected = null;
+        draftPoints = [];
+        renderMap();
+        scheduleSave();
+    });
+
+    atlasLayerList.addEventListener("change", (ev) => {
+        const input = ev.target.closest("input[data-layer]");
+        if (!input) return;
+        const atlas = getAtlas();
+        atlas.layers[input.dataset.layer] = input.checked;
+        renderMap();
+        scheduleSave();
+    });
+
+    document.getElementById("atlasApplyImageBtn").addEventListener("click", () => {
+        const atlas = getAtlas();
+        atlas.imageUrl = atlasImageUrl.value.trim();
+        renderMap();
+        scheduleSave();
+    });
+
+    document.getElementById("atlasNewEraBtn").addEventListener("click", () => {
+        const atlas = getAtlas();
+        const name = prompt("Era name:", "New Era");
+        if (!name) return;
+        const yearLabel = prompt("Year label:", "Year 1") || "";
+        const era = { id: makeId("era"), name: name.trim(), yearLabel: yearLabel.trim(), description: "" };
+        atlas.eras.push(era);
+        atlas.activeEraId = era.id;
+        selected = null;
+        renderEraSelect();
+        renderMap();
+        scheduleSave();
+    });
+
+    document.getElementById("atlasDeleteEraBtn").addEventListener("click", () => {
+        const atlas = getAtlas();
+        if (atlas.eras.length <= 1) return alert("You need at least one era.");
+        const eraId = activeEraId();
+        if (!confirm("Delete this era and all atlas items inside it?")) return;
+        atlas.eras = atlas.eras.filter((e) => e.id !== eraId);
+        atlas.pins = atlas.pins.filter((x) => x.eraId !== eraId);
+        atlas.regions = atlas.regions.filter((x) => x.eraId !== eraId);
+        atlas.routes = atlas.routes.filter((x) => x.eraId !== eraId);
+        atlas.zones = atlas.zones.filter((x) => x.eraId !== eraId);
+        atlas.activeEraId = atlas.eras[0].id;
+        selected = null;
+        renderEraSelect();
+        renderMap();
+        scheduleSave();
+    });
+
+    document.getElementById("finishShapeBtn").addEventListener("click", finishShape);
+    document.getElementById("cancelShapeBtn").addEventListener("click", () => {
+        draftPoints = [];
+        renderMap();
+    });
+    document.getElementById("deleteSelectedBtn").addEventListener("click", deleteSelected);
+    document.getElementById("copyAtlasEntryBtn").addEventListener("click", copyAtlasEntry);
+    document.getElementById("atlasSaveNowBtn").addEventListener("click", saveNow);
+
+    onAuthStateChanged(auth, async (user) => {
+        if (!user) {
+            window.location.href = "/login.html?next=" + encodeURIComponent("/chronicle-atlas.html");
+            return;
+        }
+
+        uid = user.uid;
+        sheetsColRef = collection(db, "users", uid, SHEETS_COLLECTION);
+        atlasLoading.classList.add("hidden");
+        atlasMain.classList.remove("hidden");
+        setStatus("Loading…");
+        subscribeSheets();
+    });
+
+    window.addEventListener("beforeunload", () => {
+        if (unsubscribeSheets) unsubscribeSheets();
+    });
+</script>
+
+</body>
+</html>
