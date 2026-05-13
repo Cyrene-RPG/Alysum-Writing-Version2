@@ -1,5 +1,4 @@
-﻿<!DOCTYPE html>
-<html>
+<!DOCTYPE html><html>
 <head>
     <!-- ALYSUM:PWA:START -->
     <link rel="manifest" href="/manifest.webmanifest">
@@ -17,876 +16,181 @@
     <link rel="apple-touch-icon" href="/Alysum-3.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/Alysum-3.png">
     <script src="/js/pwa-register.js" defer></script>
-    <!-- ALYSUM:PWA:END -->
-    <!-- If notes UI looks stale after deploy, bump v= on the next two lines (same number). -->
-    <link rel="stylesheet" href="/css/notebook.css?v=9" />
-    <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
-    <title>Alysum Editor</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script>
-        try {
-            var __g = localStorage.getItem("alysum-gradient-theme");
-            if (__g && __g !== "classic") document.documentElement.setAttribute("data-gradient-theme", __g);
-        } catch (e) {}
-    </script>
-
-    <style>                                                     * {
-            box-sizing: border-box;                             }
-
-        html, body {
-            margin: 0;
-            height: 100%;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            background: #e9edf2;                                }
-                                                                body {
-            display: flex;
-            overflow: hidden;
-        }
-
-        :root {
-            --alysum-purple: #6d28d9;
-            --alysum-purple-dark: #5b21b6;
-            --sidebar-bg: #263646;
-            --sidebar-panel: #314556;                               --sidebar-row: #34495b;
-            --sidebar-row-active: #1762a6;
-            --sidebar-text: #f3f4f6;
-            --muted: #a6b2bf;
-            --page-bg: #ffffff;
-            --page-text: #1f2a37;
-            --page-subtle: #9aa3ad;
-            --border: #d7dde4;
-            --topbar-bg: #ffffff;
-            --toolbar-bg: #ffffff;
-            --workspace-bg: #e9edf2;
-            --danger: #dc2626;
-        }
-
-        body.dark {
-            --sidebar-bg: #121826;
-            --sidebar-panel: #1a2233;
-            --sidebar-row: #263248;
-            --sidebar-row-active: var(--alysum-purple);
-            --sidebar-text: #eef2ff;
-            --muted: #94a3b8;
-            --page-bg: #111827;
-            --page-text: #e5e7eb;
-            --page-subtle: #94a3b8;
-            --border: #334155;
-            --topbar-bg: #0f172a;                                   --toolbar-bg: #0f172a;
-            --workspace-bg: #0b1220;                                --danger: #ef4444;
-        }
-
-        .sidebar {
-            width: 320px;
-            background: var(--sidebar-bg);
-            color: var(--sidebar-text);
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            border-right: 1px solid rgba(255,255,255,0.06);                                                                 transition: transform 0.25s ease, width 0.25s ease;                                                             overflow: hidden;
-            z-index: 30;
-        }                                               
-        .sidebar.collapsed-desktop {
-            width: 0;
-            border-right: none;
-        }
-
-        .sidebar.mobile-hidden {
-            transform: translateX(-100%);
-        }
-
-        .sidebar-top {
-            padding: 16px;
-            border-bottom: 1px solid rgba(255,255,255,0.08);
-            background: linear-gradient(135deg, var(--alysum-purple-dark), var(--alysum-purple));
-        }
-
-        .sidebar-title-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
-        }
-
-        .sidebar-mini {
-            font-size: 14px;
-            font-weight: 700;
-            opacity: 0.95;
-        }
-
-        .sidebar-book-title {
-            margin-top: 10px;
-            font-size: 28px;
-            font-weight: 800;
-            line-height: 1.1;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .sidebar-meta {
-            margin-top: 10px;
-            display: flex;
-            gap: 16px;
-            font-size: 13px;
-            color: #efe9ff;
-        }
-
-        .sidebar-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 14px;
-            flex-wrap: wrap;
-        }
-
-        .pill-btn {
-            border: none;
-            border-radius: 999px;
-            padding: 10px 14px;
-            font-size: 14px;
-            font-weight: 700;
-            cursor: pointer;
-        }
-
-        .pill-btn.primary {                                         background: white;
-            color: var(--alysum-purple-dark);
-        }
-                                                                .pill-btn.secondary {
-            background: rgba(255,255,255,0.18);
-            color: white;
-        }
-
-        .pill-btn.danger {
-            background: var(--danger);
-            color: white;
-        }
-
-        a.pill-btn {
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .manuscript {
-            flex: 1;
-            overflow-y: auto;
-            background: var(--sidebar-panel);
-        }
-
-        .group {
-            border-bottom: 1px solid rgba(255,255,255,0.08);
-        }
-
-        .group-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 14px 16px;
-            background: #3b5062;
-            font-size: 15px;
-            font-weight: 700;
-            cursor: pointer;
-        }
-
-        body.dark .group-header {
-            background: #223147;
-        }
-
-        .group-header .left {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .caret {
-            width: 16px;
-            display: inline-block;
-        }
-
-        .group-body {
-            padding: 8px 0;
-        }
-                                                                .group-body.hidden {
-            display: none;
-        }
-
-        .chapter-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 14px 14px;                                     background: transparent;
-            cursor: pointer;
-            user-select: none;
-        }
-
-        .chapter-item:hover {
-            background: rgba(255,255,255,0.06);
-        }
-
-        .chapter-item.active {
-            background: var(--sidebar-row-active);
-        }
-
-        .chapter-item.dragging {
-            opacity: 0.45;
-        }
-        .chapter-num {                                              width: 26px;
-            text-align: center;
-            font-size: 16px;
-            font-weight: 800;
-            color: #f8fafc;
-        }
-
-        .chapter-name {
-            flex: 1;
-            min-width: 0;
-            font-size: 16px;
-            font-weight: 700;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;                            }
-                                                                .chapter-drag {
-            color: #d5dee7;
-            font-size: 18px;
-        }
-
-        .empty-slot {
-            padding: 12px 18px 18px;
-            color: #aeb9c5;                                         font-style: italic;
-            font-size: 14px;
-        }
-
-        .side-footer {
-            padding: 14px 16px;
-            border-top: 1px solid rgba(255,255,255,0.08);
-            font-size: 13px;
-            color: #dbe3eb;
-            background: #2a3a49;
-        }
-                                                                body.dark .side-footer {
-            background: #162132;
-        }
-
-        .main {
-            flex: 1;
-            min-width: 0;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-        }
-
-        .topbar {                                                   height: 64px;
-            background: var(--topbar-bg);
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 12px;
-            gap: 10px;                                              position: relative;
-            z-index: 15;
-            overflow: visible;
-        }
-
-        .topbar-left,
-        .topbar-right {
-            display: flex;
-            align-items: center;
-            gap: 10px;                                              min-width: 0;
-            overflow: visible;
-        }
-        .icon-btn {
-            width: 42px;
-            height: 42px;
-            border-radius: 50%;
-            border: 1px solid var(--border);
-            background: var(--topbar-bg);
-            color: var(--page-text);
-            font-size: 22px;
-            line-height: 1;                                         cursor: pointer;
-            transition: box-shadow 0.12s ease;
-        }
-        .icon-btn.purple {
-            background: var(--alysum-purple);
-            border-color: var(--alysum-purple);
-            color: white;                                       }
-
-        .icon-btn.danger {
-            background: var(--danger);
-            border-color: var(--danger);
-            color: white;
-        }
-
-        .top-title {                                                font-size: 18px;
-            font-weight: 700;
-            color: var(--page-text);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 36vw;
-        }
-
-        .save-status {
-            font-size: 13px;
-            color: var(--page-subtle);
-            font-weight: 700;
-        }
-
-        /* Hover hints on .topbar-tip wrapper — ::after on <button> can block clicks in some browsers */
-        .topbar .topbar-tip {
-            position: relative;
-            display: inline-flex;
-            align-items: center;
-            vertical-align: middle;
-        }
-
-        .topbar .topbar-tip:hover > .icon-btn {
-            box-shadow: 0 0 0 2px rgba(109, 40, 217, 0.45);
-        }
-
-        .topbar .topbar-tip:hover > .icon-btn.purple,
-        .topbar .topbar-tip:hover > .icon-btn.danger {
-            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.55);
-        }
-
-        .topbar .save-status[data-tip] {
-            position: relative;
-        }
-
-        .topbar .topbar-tip[data-tip]::after,
-        .topbar .save-status[data-tip]::after {
-            content: attr(data-tip);
-            position: absolute;
-            top: calc(100% + 8px);
-            left: 50%;
-            transform: translateX(-50%) translateY(-2px);
-            padding: 4px 9px;
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: 600;
-            line-height: 1.25;
-            font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-            white-space: nowrap;
-            max-width: min(260px, 72vw);
-            overflow: hidden;
-            text-overflow: ellipsis;
-            color: #0a0a0a;
-            background: #ffffff;
-            border: 1px solid #0a0a0a;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
-            pointer-events: none;
-            z-index: 500;
-            opacity: 0;
-            transition: opacity 0.08s ease, transform 0.08s ease;
-        }
-
-        .topbar .topbar-tip[data-tip]:hover::after,
-        .topbar .save-status[data-tip]:hover::after {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-            transition: opacity 0.1s ease 0.08s, transform 0.1s ease 0.08s;
-        }
-
-        .toolbar {
-            min-height: 54px;
-            background: var(--toolbar-bg);                          border-bottom: 1px solid var(--border);
-            display: flex;                                          align-items: center;
-            gap: 8px;                                               padding: 8px 12px;
-            overflow-x: auto;
-            flex-wrap: wrap;                                    }
-
-        .tool-btn, .tool-select {
-            height: 36px;
-            border: 1px solid var(--border);                        background: var(--topbar-bg);
-            border-radius: 10px;                                    color: var(--page-text);
-            font-size: 14px;                                        font-weight: 700;
-            padding: 0 12px;
-            cursor: pointer;                                    }
-
-        .toolbar-spacer {
-            flex: 1;
-            min-width: 8px;
-        }
-
-        .sprint-anchor {
-            position: relative;
-            display: inline-flex;
-            align-items: center;
-            overflow: visible;
-        }
-
-        .sprint-btn {
-            height: 36px;
-            border: 1px solid var(--border);
-            background: linear-gradient(135deg, var(--alysum-purple), #a855f7);
-            color: white;
-            border-radius: 999px;
-            padding: 0 14px;
-            font-size: 14px;
-            font-weight: 900;
-            cursor: pointer;
-            white-space: nowrap;
-        }
-
-        .sprint-btn[disabled] {
-            opacity: 0.7;
-            cursor: not-allowed;
-        }
-
-        .sprint-opt-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 8px;
-        }
-
-        .sprint-opt {
-            border: 1px solid var(--border);
-            background: rgba(0,0,0,0.03);
-            color: var(--page-text);
-            border-radius: 12px;
-            padding: 10px 10px;
-            font-weight: 900;
-            cursor: pointer;
-        }
-
-        body.dark .sprint-opt { background: rgba(255,255,255,0.04); }
-
-        .sprint-float {
-            position: fixed;
-            top: 122px; /* under topbar + toolbar */
-            right: 14px;
-            z-index: 2500;
-            display: none;
-        }
-
-        .sprint-float.open { display: block; }
-
-        .sprint-float-box {
-            background: var(--page-bg);
-            color: var(--page-text);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            box-shadow: 0 18px 46px rgba(0,0,0,0.22);
-            padding: 12px 12px;
-            min-width: 190px;
-        }
-
-        .sprint-float-top {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
-        }
-
-        .sprint-float-label {
-            font-weight: 900;
-            font-size: 12px;
-            color: var(--page-subtle);
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-        }
-
-        .sprint-float-time {
-            margin-top: 6px;
-            font-size: 24px;
-            font-weight: 900;
-            letter-spacing: 0.04em;
-        }
-
-        .sprint-mini-btn {
-            border: 1px solid var(--border);
-            background: transparent;
-            color: var(--page-text);
-            border-radius: 10px;
-            font-weight: 900;
-            padding: 6px 10px;
-            cursor: pointer;
-        }
-
-        .sprint-mini-btn.danger {
-            background: var(--danger);
-            border-color: var(--danger);
-            color: white;
-        }
-
-        .sprint-modal {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.65);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 99999;
-            padding: 20px;
-        }
-
-        .sprint-modal.open { display: flex; }
-
-        .sprint-modal-box {
-            width: 100%;
-            max-width: 520px;
-            background: var(--page-bg);
-            color: var(--page-text);
-            border-radius: 18px;
-            padding: 20px;
-            box-shadow: 0 16px 40px rgba(0,0,0,0.3);
-        }
-
-        .sprint-modal-title {
-            margin: 0 0 10px;
-            font-size: 22px;
-            font-weight: 900;
-        }
-
-        .sprint-modal-text {
-            margin: 0 0 16px;
-            color: var(--page-subtle);
-            font-size: 14px;
-            line-height: 1.55;
-            font-weight: 700;
-        }
-
-        .sprint-modal-actions {
-            display: flex;
-            gap: 10px;
-        }
-
-        .sprint-modal-actions button {
-            flex: 1;
-            border: none;
-            border-radius: 12px;
-            padding: 12px 14px;
-            font-weight: 900;
-            cursor: pointer;
-        }
-
-        .sprint-modal-actions .primary {
-            background: var(--alysum-purple);
-            color: white;
-        }
-
-        .sprint-modal-actions .secondary {
-            background: #e5e7eb;
-            color: #111827;
-        }
-
-        body.dark .sprint-modal-actions .secondary {
-            background: #334155;
-            color: #e5e7eb;
-        }
-                                                                .workspace {
-            flex: 1;
-            overflow: auto;                                         padding: 34px 18px 60px;
-            background: var(--workspace-bg);                    }
-
-        .page-wrap {                                                max-width: 980px;
-            margin: 0 auto;                                     }
-                                                                .page {
-            background: var(--page-bg);                             min-height: calc(100vh - 180px);
-            border-radius: 8px;                                     box-shadow: 0 8px 32px rgba(0,0,0,0.10);
-            padding: 80px 120px 100px;                          }
-                                                                .chapter-number {
-            display: none;
-            text-align: center;                                     font-family: Georgia, serif;
-            color: var(--page-subtle);
-            font-size: 18px;
-            margin-bottom: 22px;
-        }
-        .chapter-title {                                            text-align: center;
-            font-family: Georgia, "Times New Roman", serif;
-            color: var(--page-text);
-            font-size: 28px;
-            font-weight: 700;                                       margin-bottom: 40px;
-            outline: none;                                      }
-
-        .editor {                                                   min-height: 440px;
-            outline: none;                                          font-family: Georgia, "Times New Roman", serif;                                                                 font-size: 20px;
-            line-height: 1.7;
-            letter-spacing: 0.2px;
-            color: var(--page-text);
-            white-space: normal;
-            word-break: break-word;
-        }
-
-        .editor div {                                               margin: 0 0 1.2em;
-        }
-
-        .editor p {
-            margin: 0 0 1.2em;                                  }
-
-        .editor h2,
-        .editor blockquote,
-        .editor ul,
-        .editor ol {
-            text-indent: 0;
-        }
-                                                                .editor ul, .editor ol {
-            margin: 0 0 1.15em 1.5em;
-        }
-
-        .editor blockquote {
-            border-left: 4px solid var(--alysum-purple);
-            margin: 0 0 1.15em;                                     padding-left: 16px;                                     color: #575f69;
-        }
-
-        body.dark .editor blockquote {
-            color: #cbd5e1;
-        }
-
-        .editor h2 {
-            font-size: 1.3em;
-            margin: 0 0 1em;
-            font-weight: 700;
-        }
-
-        .editor:empty:before {                                      content: attr(data-placeholder);
-            color: #a7afb8;
-        }
-
-        .bottom-meta {
-            margin-top: 16px;
-            text-align: center;
-            font-size: 13px;
-            color: #7b8490;                                         font-weight: 700;
-        }
-
-        .overlay {
-            display: none;                                      }
-
-        .hidden {
-            display: none !important;
-        }
-
-        .publish-modal {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.65);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-            padding: 20px;
-        }
-
-        .publish-modal.open {
-            display: flex;
-        }
-
-        .publish-modal-box {
-            position: relative;
-            width: 100%;
-            max-width: 560px;
-            background: var(--page-bg);
-            color: var(--page-text);
-            border-radius: 18px;
-            padding: 20px;                                          box-shadow: 0 16px 40px rgba(0,0,0,0.3);
-        }
-
-        .publish-bypass-overlay {
-            display: none;
-            position: absolute;
-            inset: 0;
-            z-index: 2;
-            align-items: center;
-            justify-content: center;
-            padding: 16px;
-            border-radius: 18px;
-            background: rgba(0, 0, 0, 0.5);
-        }
-
-        .publish-bypass-overlay.open {
-            display: flex;
-        }
-
-        .publish-bypass-card {
-            width: 100%;
-            max-width: 400px;
-            background: var(--page-bg);
-            color: var(--page-text);
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 18px;
-            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
-        }
-
-        .publish-bypass-actions {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-top: 14px;
-        }
-
-        .publish-bypass-actions .publish-modal-btn {
-            flex: none;
-        }
-
-        .publish-quick-wrap {
-            margin-top: 14px;
-            display: none;
-        }
-
-        .publish-quick-wrap.visible {
-            display: block;
-        }
-
-        .publish-quick-status {
-            margin: 10px 0 0;
-            font-size: 13px;
-            color: var(--page-subtle);
-            min-height: 1.2em;
-        }
-
-        .publish-modal-title {
-            margin: 0 0 10px;                                       font-size: 22px;
-            font-weight: 800;                                   }
-
-        .publish-modal-text {                                       margin: 0 0 14px;
-            color: var(--page-subtle);
-            font-size: 14px;
-            line-height: 1.5;                                   }
-                                                                .publish-list {
-            max-height: 320px;
-            overflow: auto;                                         border: 1px solid var(--border);
-            border-radius: 12px;                                    padding: 8px;
-            margin-bottom: 14px;
-            background: rgba(0,0,0,0.03);
-        }
-
-        body.dark .publish-list {                                   background: rgba(255,255,255,0.03);
-        }
-                                                                .publish-row {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 8px;                                      border-radius: 10px;
-        }
-
-        .publish-row:hover {
-            background: rgba(0,0,0,0.05);
-        }
-
-        body.dark .publish-row:hover {
-            background: rgba(255,255,255,0.05);
-        }
-                                                                .publish-row label {
-            flex: 1;
-            cursor: pointer;                                        font-weight: 600;
-        }
-
-        .publish-row input {
-            width: 18px;
-            height: 18px;
-        }
-                                                                .publish-modal-actions {
-            display: flex;
-            gap: 10px;
-        }
-
-        .publish-modal-btn {
-            flex: 1;
-            border: none;
-            border-radius: 12px;                                    padding: 12px 14px;
-            font-weight: 700;
-            cursor: pointer;
-        }
-
-        .publish-modal-btn.primary {                                background: var(--alysum-purple);
-            color: white;
-        }
-
-        .publish-modal-btn.secondary {
-            background: #e5e7eb;
-            color: #111827;
-        }
-
-        body.dark .publish-modal-btn.secondary {
-            background: #334155;
-            color: #e5e7eb;
-        }
-
-                                                                @media (max-width: 900px) {
-            .page {                                                     padding: 52px 56px 70px;                            }
-                                                                    .chapter-title {
-                font-size: 24px;                                    }
-                                                                    .editor {
-                font-size: 18px;                                    }                                           
-            .top-title {                                                max-width: 28vw;
-            }                                                   }
-                                                                @media (max-width: 760px) {
-            .sidebar {                                                  position: fixed;
-                left: 0;
-                top: 0;
-                width: 300px;                                       }
-
-            .overlay {
-                display: block;
-                position: fixed;
-                inset: 0;                                               background: rgba(0,0,0,0.35);
-                z-index: 20;                                        }
-
-            .overlay.hidden {                                           display: none;
-            }                                           
-            .top-title {                                                max-width: 40vw;
-            }
-
-            .page {
-                padding: 42px 24px 60px;                            }
-
-            .chapter-title {
-                font-size: 22px;
-                margin-bottom: 32px;
-            }
-
-            .editor {
-                font-size: 17px;
-                line-height: 1.7;                                   }
-
-            .publish-modal-box {
-                max-width: 100%;
-            }
-
-            .topbar {
-                height: auto;
-                min-height: 56px;
-                flex-wrap: wrap;
-                row-gap: 8px;
-                padding-top: 8px;
-                padding-bottom: 8px;
-            }
-
-            .topbar-left,
-            .topbar-right {
-                flex-wrap: wrap;
-            }
-
-            .topbar-right {
-                justify-content: flex-end;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .workspace {
-                padding: 16px 10px 40px;
-            }
-
-            .page {
-                padding: 32px 16px 48px;
-            }
-
-            .sidebar {
-                width: min(300px, 100vw);
-            }
-        }
-    </style>
-    <link rel="stylesheet" href="/css/gradient-themes.css?v=2" />
-</head>
-<body>
+    <!-- ALYSUM:PWA:END --><link rel="stylesheet" href="/css/notebook.css?v=9" />
+<link rel="stylesheet" href="/css/site-responsive.css?v=1" />
+<link rel="stylesheet" href="/css/gradient-themes.css?v=2" />
+<title>Alysum Editor</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<script>
+    try {
+        var __g = localStorage.getItem("alysum-gradient-theme");
+        if (__g && __g !== "classic") document.documentElement.setAttribute("data-gradient-theme", __g);
+    } catch (e) {}
+</script>
+
+<style>
+    * { box-sizing: border-box; }
+    html, body {
+        margin: 0;
+        height: 100%;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: #e9edf2;
+    }
+    body { display: flex; overflow: hidden; }
+    :root {
+        --alysum-purple: #6d28d9;
+        --alysum-purple-dark: #5b21b6;
+        --sidebar-bg: #263646;
+        --sidebar-panel: #314556;
+        --sidebar-row-active: #1762a6;
+        --sidebar-text: #f3f4f6;
+        --muted: #a6b2bf;
+        --page-bg: #ffffff;
+        --page-text: #1f2a37;
+        --page-subtle: #9aa3ad;
+        --border: #d7dde4;
+        --topbar-bg: #ffffff;
+        --toolbar-bg: #ffffff;
+        --workspace-bg: #e9edf2;
+        --danger: #dc2626;
+    }
+    body.dark {
+        --sidebar-bg: #121826;
+        --sidebar-panel: #1a2233;
+        --sidebar-row-active: var(--alysum-purple);
+        --sidebar-text: #eef2ff;
+        --muted: #94a3b8;
+        --page-bg: #111827;
+        --page-text: #e5e7eb;
+        --page-subtle: #94a3b8;
+        --border: #334155;
+        --topbar-bg: #0f172a;
+        --toolbar-bg: #0f172a;
+        --workspace-bg: #0b1220;
+        --danger: #ef4444;
+    }
+    .hidden { display: none !important; }
+    .sidebar {
+        width: 320px;
+        background: var(--sidebar-bg);
+        color: var(--sidebar-text);
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        border-right: 1px solid rgba(255,255,255,0.06);
+        transition: transform 0.25s ease, width 0.25s ease;
+        overflow: hidden;
+        z-index: 30;
+    }
+    .sidebar.collapsed-desktop { width: 0; border-right: none; }
+    .sidebar.mobile-hidden { transform: translateX(-100%); }
+    .sidebar-top {
+        padding: 16px;
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+        background: linear-gradient(135deg, var(--alysum-purple-dark), var(--alysum-purple));
+    }
+    .sidebar-title-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .sidebar-mini { font-size: 14px; font-weight: 700; opacity: 0.95; }
+    .sidebar-book-title { margin-top: 10px; font-size: 28px; font-weight: 800; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sidebar-meta { margin-top: 10px; display: flex; gap: 16px; font-size: 13px; color: #efe9ff; }
+    .sidebar-actions { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+    .pill-btn { border: none; border-radius: 999px; padding: 10px 14px; font-size: 14px; font-weight: 700; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
+    .pill-btn.primary { background: white; color: var(--alysum-purple-dark); }
+    .pill-btn.secondary { background: rgba(255,255,255,0.18); color: white; }
+    .pill-btn.danger { background: var(--danger); color: white; }
+    .manuscript { flex: 1; overflow-y: auto; background: var(--sidebar-panel); }
+    .group { border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .group-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; background: #3b5062; font-size: 15px; font-weight: 700; cursor: pointer; }
+    body.dark .group-header { background: #223147; }
+    .group-header .left { display: flex; align-items: center; gap: 10px; }
+    .caret { width: 16px; display: inline-block; }
+    .group-body { padding: 8px 0; }
+    .chapter-item { display: flex; align-items: center; gap: 10px; padding: 14px; background: transparent; cursor: pointer; user-select: none; }
+    .chapter-item:hover { background: rgba(255,255,255,0.06); }
+    .chapter-item.active { background: var(--sidebar-row-active); }
+    .chapter-item.dragging { opacity: 0.45; }
+    .chapter-num { width: 26px; text-align: center; font-size: 16px; font-weight: 800; color: #f8fafc; }
+    .chapter-name { flex: 1; min-width: 0; font-size: 16px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .chapter-drag { color: #d5dee7; font-size: 18px; }
+    .empty-slot { padding: 12px 18px 18px; color: #aeb9c5; font-style: italic; font-size: 14px; }
+    .side-footer { padding: 14px 16px; border-top: 1px solid rgba(255,255,255,0.08); font-size: 13px; color: #dbe3eb; background: #2a3a49; }
+    body.dark .side-footer { background: #162132; }
+    .main { flex: 1; min-width: 0; display: flex; flex-direction: column; height: 100vh; }
+    .topbar { min-height: 64px; background: var(--topbar-bg); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; gap: 10px; position: relative; z-index: 15; overflow: visible; }
+    .topbar-left, .topbar-right { display: flex; align-items: center; gap: 10px; min-width: 0; overflow: visible; }
+    .icon-btn { width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--border); background: var(--topbar-bg); color: var(--page-text); font-size: 22px; line-height: 1; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
+    .icon-btn.purple { background: var(--alysum-purple); border-color: var(--alysum-purple); color: white; }
+    .icon-btn.danger { background: var(--danger); border-color: var(--danger); color: white; }
+    .top-title { font-size: 18px; font-weight: 700; color: var(--page-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 36vw; }
+    .save-status { font-size: 13px; color: var(--page-subtle); font-weight: 700; }
+    .topbar .topbar-tip { position: relative; display: inline-flex; align-items: center; vertical-align: middle; }
+    .toolbar { min-height: 54px; background: var(--toolbar-bg); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; padding: 8px 12px; overflow-x: auto; flex-wrap: wrap; }
+    .tool-btn, .tool-select { height: 36px; border: 1px solid var(--border); background: var(--topbar-bg); border-radius: 10px; color: var(--page-text); font-size: 14px; font-weight: 700; padding: 0 12px; cursor: pointer; }
+    .toolbar-spacer { flex: 1; min-width: 8px; }
+    .sprint-btn { height: 36px; border: 1px solid var(--border); background: linear-gradient(135deg, var(--alysum-purple), #a855f7); color: white; border-radius: 999px; padding: 0 14px; font-size: 14px; font-weight: 900; cursor: pointer; white-space: nowrap; }
+    .sprint-float { position: fixed; top: 122px; right: 14px; z-index: 2500; display: none; }
+    .sprint-float.open { display: block; }
+    .sprint-float-box { background: var(--page-bg); color: var(--page-text); border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 18px 46px rgba(0,0,0,0.22); padding: 12px; min-width: 190px; }
+    .sprint-float-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .sprint-float-label { font-weight: 900; font-size: 12px; color: var(--page-subtle); letter-spacing: 0.06em; text-transform: uppercase; }
+    .sprint-float-time { margin-top: 6px; font-size: 24px; font-weight: 900; letter-spacing: 0.04em; }
+    .sprint-mini-btn { border: 1px solid var(--border); background: transparent; color: var(--page-text); border-radius: 10px; font-weight: 900; padding: 6px 10px; cursor: pointer; }
+    .sprint-mini-btn.danger { background: var(--danger); border-color: var(--danger); color: white; }
+    .workspace { flex: 1; overflow: auto; padding: 34px 18px 60px; background: var(--workspace-bg); }
+    .page-wrap { max-width: 980px; margin: 0 auto; }
+    .page { background: var(--page-bg); min-height: calc(100vh - 180px); border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.10); padding: 80px 120px 100px; }
+    .chapter-number { display: none; text-align: center; font-family: Georgia, serif; color: var(--page-subtle); font-size: 18px; margin-bottom: 22px; }
+    .chapter-title { text-align: center; font-family: Georgia, "Times New Roman", serif; color: var(--page-text); font-size: 28px; font-weight: 700; margin-bottom: 40px; outline: none; }
+    .editor { min-height: 440px; outline: none; font-family: Georgia, "Times New Roman", serif; font-size: 20px; line-height: 1.7; letter-spacing: 0.2px; color: var(--page-text); white-space: normal; word-break: break-word; }
+    .editor div, .editor p { margin: 0 0 1.2em; }
+    .editor h2, .editor blockquote, .editor ul, .editor ol { text-indent: 0; }
+    .editor ul, .editor ol { margin: 0 0 1.15em 1.5em; }
+    .editor blockquote { border-left: 4px solid var(--alysum-purple); margin: 0 0 1.15em; padding-left: 16px; color: #575f69; }
+    body.dark .editor blockquote { color: #cbd5e1; }
+    .editor h2 { font-size: 1.3em; margin: 0 0 1em; font-weight: 700; }
+    .editor:empty:before { content: attr(data-placeholder); color: #a7afb8; }
+    .bottom-meta { margin-top: 16px; text-align: center; font-size: 13px; color: #7b8490; font-weight: 700; }
+    .overlay { display: none; }
+    .publish-modal, .sprint-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.65); display: none; align-items: center; justify-content: center; z-index: 99999; padding: 20px; }
+    .publish-modal.open, .sprint-modal.open { display: flex; }
+    .publish-modal-box, .sprint-modal-box { width: 100%; max-width: 560px; background: var(--page-bg); color: var(--page-text); border-radius: 18px; padding: 20px; box-shadow: 0 16px 40px rgba(0,0,0,0.3); }
+    .publish-modal-title, .sprint-modal-title { margin: 0 0 10px; font-size: 22px; font-weight: 800; }
+    .publish-modal-text, .sprint-modal-text { margin: 0 0 14px; color: var(--page-subtle); font-size: 14px; line-height: 1.5; }
+    .publish-list { max-height: 320px; overflow: auto; border: 1px solid var(--border); border-radius: 12px; padding: 8px; margin-bottom: 14px; background: rgba(0,0,0,0.03); }
+    body.dark .publish-list { background: rgba(255,255,255,0.03); }
+    .publish-row { display: flex; align-items: center; gap: 10px; padding: 10px 8px; border-radius: 10px; }
+    .publish-row:hover { background: rgba(0,0,0,0.05); }
+    body.dark .publish-row:hover { background: rgba(255,255,255,0.05); }
+    .publish-row label { flex: 1; cursor: pointer; font-weight: 600; }
+    .publish-row input { width: 18px; height: 18px; }
+    .publish-modal-actions, .sprint-modal-actions { display: flex; gap: 10px; }
+    .publish-modal-btn, .sprint-modal-actions button { flex: 1; border: none; border-radius: 12px; padding: 12px 14px; font-weight: 700; cursor: pointer; }
+    .publish-modal-btn.primary, .sprint-modal-actions .primary { background: var(--alysum-purple); color: white; }
+    .publish-modal-btn.secondary, .sprint-modal-actions .secondary { background: #e5e7eb; color: #111827; }
+    body.dark .publish-modal-btn.secondary, body.dark .sprint-modal-actions .secondary { background: #334155; color: #e5e7eb; }
+    .publish-bypass-overlay { display: none; position: absolute; inset: 0; z-index: 2; align-items: center; justify-content: center; padding: 16px; border-radius: 18px; background: rgba(0,0,0,0.5); }
+    .publish-bypass-overlay.open { display: flex; }
+    .publish-bypass-card { width: 100%; max-width: 400px; background: var(--page-bg); color: var(--page-text); border: 1px solid var(--border); border-radius: 14px; padding: 18px; box-shadow: 0 12px 32px rgba(0,0,0,0.25); }
+    .publish-bypass-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
+    .publish-quick-wrap { margin-top: 14px; display: none; }
+    .publish-quick-wrap.visible { display: block; }
+    .publish-quick-status { margin: 10px 0 0; font-size: 13px; color: var(--page-subtle); min-height: 1.2em; }
+    .sprint-opt-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .sprint-opt { border: 1px solid var(--border); background: rgba(0,0,0,0.03); color: var(--page-text); border-radius: 12px; padding: 10px; font-weight: 900; cursor: pointer; }
+    body.dark .sprint-opt { background: rgba(255,255,255,0.04); }
+    @media (max-width: 900px) { .page { padding: 52px 56px 70px; } .chapter-title { font-size: 24px; } .editor { font-size: 18px; } .top-title { max-width: 28vw; } }
+    @media (max-width: 760px) { .sidebar { position: fixed; left: 0; top: 0; width: 300px; } .overlay { display: block; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 20; } .overlay.hidden { display: none; } .top-title { max-width: 40vw; } .page { padding: 42px 24px 60px; } .chapter-title { font-size: 22px; margin-bottom: 32px; } .editor { font-size: 17px; line-height: 1.7; } .topbar { height: auto; min-height: 56px; flex-wrap: wrap; row-gap: 8px; } .topbar-left, .topbar-right { flex-wrap: wrap; } .topbar-right { justify-content: flex-end; } }
+    @media (max-width: 480px) { .workspace { padding: 16px 10px 40px; } .page { padding: 32px 16px 48px; } .sidebar { width: min(300px, 100vw); } }
+</style>
+
+</head><body>
     <div id="nbPanel" class="nb-app nb-float nb-theme-mirror hidden" role="dialog" aria-label="Notes">
         <header class="nb-top-hat">
             <span class="nb-workspace-title" id="nbLabel">Notes</span>
             <div class="nb-hat-actions">
-                <button class="nb-hat-btn" id="nbNew" type="button" title="New note inside the selected folder (or same level as the selected note)">＋</button>
-                <button class="nb-hat-btn" id="nbNewFolder" type="button" title="New folder inside the selected folder (select a folder first to nest)">📁</button>
+                <button class="nb-hat-btn" id="nbNew" type="button" title="New note inside the selected folder">＋</button>
+                <button class="nb-hat-btn" id="nbNewFolder" type="button" title="New folder">📁</button>
                 <button class="nb-hat-btn" id="nbDel" type="button" title="Delete selected note or folder">⌫</button>
                 <button class="nb-hat-btn" id="nbFull" type="button" title="Open full page">⇱</button>
                 <button class="nb-hat-btn" id="nbClose" type="button" title="Close">×</button>
@@ -907,7 +211,7 @@
                     <div class="nb-main" role="main">
                         <div id="nbTabs" class="nb-tab-strip" role="tablist"></div>
                         <input id="nbTitle" type="text" class="nb-inline-title" placeholder="Untitled" />
-                        <div id="nbBody" class="nb-editor-host nb-body-ce" contenteditable="false" aria-label="Note body" spellcheck="true" data-placeholder="Write here. Use [[Note title]] for links — matching titles also link after you pause typing."></div>
+                        <div id="nbBody" class="nb-editor-host nb-body-ce" contenteditable="false" aria-label="Note body" spellcheck="true" data-placeholder="Write here. Use [[Note title]] for links."></div>
                         <footer class="nb-status">
                             <span class="nb-status-left" id="nbStatus">Ready</span>
                             <div class="nb-status-actions">
@@ -921,912 +225,495 @@
                 </div>
             </div>
         </div>
+    </div><div class="sidebar mobile-hidden" id="sidebar">
+    <div class="sidebar-top">
+        <div class="sidebar-title-row">
+            <div class="sidebar-mini">Manuscript</div>
+            <button class="pill-btn secondary" id="renameBookBtn" type="button">Rename</button>
+        </div>
+        <div class="sidebar-book-title" id="sidebarBookTitle">Loading...</div>
+        <div class="sidebar-meta">
+            <div><span id="totalWords">0</span> words</div>
+            <div><span id="chapterCount">0</span> chapters</div>
+        </div>
+        <div class="sidebar-actions">
+            <button class="pill-btn primary" id="addChapterBtn" type="button">Add Chapter</button>
+            <button class="pill-btn secondary" id="deleteChapterBtn" type="button">Delete Chapter</button>
+            <button class="pill-btn secondary" id="themeToggleBtn" type="button">Dark Mode</button>
+            <button class="pill-btn secondary" id="publishBtn" type="button">Publish</button>
+            <a class="pill-btn secondary" id="storyBibleLink" href="/story-bible.html">Story Bible</a>
+            <button class="pill-btn danger" id="deleteBookBtn" type="button">Delete Book</button>
+        </div>
     </div>
-                                                      <div class="sidebar mobile-hidden" id="sidebar">
-        <div class="sidebar-top">                                   <div class="sidebar-title-row">                             <div class="sidebar-mini">Manuscript</div>                                                                      <button class="pill-btn secondary" id="renameBookBtn" type="button">Rename</button>
-            </div>                                      
-            <div class="sidebar-book-title" id="sidebarBookTitle">Loading...</div>
-                                                                    <div class="sidebar-meta">                                  <div><span id="totalWords">0</span> words</div>                                                                 <div><span id="chapterCount">0</span> chapters</div>                                                        </div>
-                                                                    <div class="sidebar-actions">
-                <button class="pill-btn primary" id="addChapterBtn" type="button">Add Chapter</button>
-                <button class="pill-btn secondary" id="deleteChapterBtn" type="button">Delete Chapter</button>
-                <button class="pill-btn secondary" id="themeToggleBtn" type="button">Dark Mode</button>                         <button class="pill-btn secondary" id="publishBtn" type="button">Publish</button>
-                <a class="pill-btn secondary" id="storyBibleLink" href="/story-bible.html">Story Bible</a>
-                <button class="pill-btn danger" id="deleteBookBtn" type="button">Delete Book</button>                       </div>                                              </div>
+    <div class="manuscript">
+        <div class="group"><div class="group-header" data-group="front"><div class="left"><span class="caret" id="caret-front">▼</span>Front matter</div><div>edit</div></div><div class="group-body" id="group-front"></div></div>
+        <div class="group"><div class="group-header" data-group="body"><div class="left"><span class="caret" id="caret-body">▼</span>Body</div><div>edit</div></div><div class="group-body" id="group-body"></div></div>
+        <div class="group"><div class="group-header" data-group="back"><div class="left"><span class="caret" id="caret-back">▼</span>Back matter</div><div>edit</div></div><div class="group-body" id="group-back"></div></div>
+    </div>
+    <div class="side-footer"><span id="footerWords">0</span> words</div>
+</div>
 
-        <div class="manuscript">
-            <div class="group">
-                <div class="group-header" data-group="front">
-                    <div class="left"><span class="caret" id="caret-front">▼</span>Front matter</div>                               <div>edit</div>
-                </div>
-                <div class="group-body" id="group-front"></div>                                                             </div>                                      
-            <div class="group">                                         <div class="group-header" data-group="body">                                                                        <div class="left"><span class="caret" id="caret-body">▼</span>Body</div>                                        <div>edit</div>
-                </div>                                                  <div class="group-body" id="group-body"></div>                                                              </div>                                      
-            <div class="group">                                         <div class="group-header" data-group="back">                                                                        <div class="left"><span class="caret" id="caret-back">▼</span>Back matter</div>
-                    <div>edit</div>
-                </div>
-                <div class="group-body" id="group-back"></div>                                                              </div>
-        </div>                                          
-        <div class="side-footer">                                   <span id="footerWords">0</span> words               </div>                                              </div>
-                                                            <div class="overlay hidden" id="overlay"></div>     
-    <div class="main">
-        <div class="topbar">
-            <div class="topbar-left">
-                <span class="topbar-tip" data-tip="Sidebar on / off">
-                    <button class="icon-btn" id="toggleSidebarBtn" type="button" aria-label="Toggle sidebar">☰</button>
-                </span>
-                <span class="topbar-tip" data-tip="Studio — your books">
-                    <button class="icon-btn" id="homeBtn" type="button" aria-label="Back to Studio">🏠</button>
-                </span>
-                <div class="top-title" id="topBookTitle">Loading...</div>
-            </div>
+<div class="overlay hidden" id="overlay"></div>
 
-            <div class="topbar-right">
-                <span class="topbar-tip" data-tip="New chapter">
-                    <button class="icon-btn purple" id="quickAddBtn" type="button" aria-label="Add chapter">＋</button>
-                </span>
-                <span class="topbar-tip" data-tip="Publish to web">
-                    <button class="icon-btn purple" id="publishTopBtn" type="button" aria-label="Publish">🚀</button>
-                </span>
-                <span class="topbar-tip" data-tip="Export / print (PDF)">
-                    <button class="icon-btn purple" id="exportBtn" type="button" aria-label="Export">📄</button>
-                </span>
-                <span class="topbar-tip" data-tip="Story Bible — characters for this book" id="storyBibleTopLinkWrap">
-                    <a class="icon-btn" id="storyBibleTopLink" href="/story-bible.html" aria-label="Story Bible">📖</a>
-                </span>
-                <span class="topbar-tip" data-tip="Notes">
-                    <button
-                        class="icon-btn"
-                        id="nbBtn"
-                        type="button"
-                        aria-label="Notes"
-                        onclick="var p=document.getElementById('nbPanel');if(!p)return;var wasHidden=p.classList.contains('hidden');p.classList.toggle('hidden');if(wasHidden&&!p.classList.contains('hidden')){try{(window.__alysumNotesOpenPanel||function(){})( )}catch(e){console.error(e)}}"
-                    >
-                        ⌘
-                    </button>
-                </span>
-                <span class="topbar-tip" data-tip="Rename chapter">
-                    <button class="icon-btn" id="renameChapterBtn" type="button" aria-label="Rename chapter">⋯</button>
-                </span>
-                <span class="topbar-tip" data-tip="Light / dark">
-                    <button class="icon-btn" id="themeTopBtn" type="button" aria-label="Toggle theme">◐</button>
-                </span>
-                <span class="topbar-tip" data-tip="Delete entire book">
-                    <button class="icon-btn danger" id="deleteBookTopBtn" type="button" aria-label="Delete book">🗑</button>
-                </span>
-                <div class="save-status" id="saveStatus" data-tip="Save status" aria-live="polite">Loading...</div>
-            </div>
+<div class="main">
+    <div class="topbar">
+        <div class="topbar-left">
+            <span class="topbar-tip" data-tip="Sidebar on / off"><button class="icon-btn" id="toggleSidebarBtn" type="button" aria-label="Toggle sidebar">☰</button></span>
+            <span class="topbar-tip" data-tip="Studio — your books"><button class="icon-btn" id="homeBtn" type="button" aria-label="Back to Studio">🏠</button></span>
+            <div class="top-title" id="topBookTitle">Loading...</div>
         </div>
-        <div class="toolbar">
-            <button class="tool-btn" type="button" data-cmd="bold">B</button>
-            <button class="tool-btn" type="button" data-cmd="italic"><em>I</em></button>                                    <button class="tool-btn" type="button" data-cmd="underline"><u>U</u></button>                                   <button class="tool-btn" type="button" data-cmd="insertUnorderedList">• List</button>                           <button class="tool-btn" type="button" data-cmd="insertOrderedList">1. List</button>
-            <button class="tool-btn" type="button" id="quoteBtn">❝</button>
-            <select class="tool-select" id="formatSelect">
-                <option value="div">Body</option>                       <option value="h2">Heading</option>
-            </select>                                               <select class="tool-select" id="fontSelect">                <option value="Georgia">Georgia</option>                <option value="Times New Roman">Times New Roman</option>                                                        <option value="Arial">Arial</option>
-                <option value="Inter">Inter</option>                    <option value="Courier New">Courier New</option>
-            </select>                                               <select class="tool-select" id="fontSizeSelect">                                                                    <option value="18">Compact</option>                     <option value="20">Book</option>
-                <option value="22">Comfort</option>                     <option value="26">Large</option>
-            </select>
-            <div class="toolbar-spacer"></div>
-            <span class="sprint-anchor" id="sprintAnchor">
-                <button class="sprint-btn" id="sprintToolbarBtn" type="button" aria-label="Sprint timer">⏱ Sprint</button>
-            </span>
-        </div>
-
-        <div class="sprint-float" id="sprintFloat" aria-live="polite">
-            <div class="sprint-float-box">
-                <div class="sprint-float-top">
-                    <div class="sprint-float-label">Sprint</div>
-                    <button class="sprint-mini-btn danger" id="sprintStopBtn" type="button" aria-label="Stop sprint">Stop</button>
-                </div>
-                <div class="sprint-float-time" id="sprintFloatTime">00:00</div>
-            </div>
-        </div>
-
-        <div class="workspace">                                     <div class="page-wrap">
-                <div class="page">                                          <div class="chapter-number" id="chapterNumber">1</div>                                                          <div class="chapter-title" id="chapterTitle" contenteditable="true">Chapter 1</div>
-                    <div class="editor" id="editor" contenteditable="true" data-placeholder="Begin writing here..."></div>
-                    <div class="bottom-meta">                                   <span id="chapterWords">0</span> chapter words • <span id="bottomTotalWords">0</span> total words                                                                   </div>                                              </div>
-            </div>                                              </div>                                              </div>
-                                                            <div class="publish-modal" id="publishModal">
-        <div class="publish-modal-box">
-            <h2 class="publish-modal-title">Choose Chapters to Publish</h2>                                                 <p class="publish-modal-text">
-                Select the chapters you want to publish now. The next step will open on a separate page so publishing stays clean and doesn’t interfere with the editor.
-            </p>
-                                                                    <div class="publish-list" id="publishList"></div>                                                   
-            <div class="publish-modal-actions">                         <button class="publish-modal-btn secondary" id="closePublishBtn" type="button">Cancel</button>                  <button class="publish-modal-btn primary" id="publishNextBtn" type="button">Next</button>                   </div>
-            <div class="publish-bypass-overlay" id="publishBypassOverlay" aria-hidden="true">
-                <div class="publish-bypass-card">
-                    <p class="publish-modal-text" style="margin:0;">
-                        You have already filled out the required information for this book. Would you like to skip this and publish anyway?
-                    </p>
-                    <div class="publish-bypass-actions" id="publishBypassChoiceRow">
-                        <button class="publish-modal-btn secondary" id="publishBypassNo" type="button">No</button>
-                        <button class="publish-modal-btn primary" id="publishBypassYes" type="button">Yes</button>
-                    </div>
-                    <div class="publish-quick-wrap" id="publishQuickWrap">
-                        <button class="publish-modal-btn primary" id="publishQuickPublishBtn" type="button">Publish update</button>
-                    </div>
-                    <p class="publish-quick-status" id="publishQuickStatus" aria-live="polite"></p>
-                </div>
-            </div>
-        </div>                                              </div>
-
-    <div class="sprint-modal" id="sprintConfirmModal" role="dialog" aria-label="Start sprint confirmation">
-        <div class="sprint-modal-box">
-            <h2 class="sprint-modal-title">Ready to start?</h2>
-            <p class="sprint-modal-text" id="sprintConfirmText">Start a sprint?</p>
-            <div class="sprint-modal-actions">
-                <button class="secondary" id="sprintConfirmNo" type="button">Not yet</button>
-                <button class="primary" id="sprintConfirmYes" type="button">Yes, start</button>
-            </div>
+        <div class="topbar-right">
+            <span class="topbar-tip" data-tip="New chapter"><button class="icon-btn purple" id="quickAddBtn" type="button" aria-label="Add chapter">＋</button></span>
+            <span class="topbar-tip" data-tip="Publish to web"><button class="icon-btn purple" id="publishTopBtn" type="button" aria-label="Publish">🚀</button></span>
+            <span class="topbar-tip" data-tip="Export / print"><button class="icon-btn purple" id="exportBtn" type="button" aria-label="Export">📄</button></span>
+            <span class="topbar-tip" data-tip="Story Bible" id="storyBibleTopLinkWrap"><a class="icon-btn" id="storyBibleTopLink" href="/story-bible.html" aria-label="Story Bible">📖</a></span>
+            <span class="topbar-tip" data-tip="Notes"><button class="icon-btn" id="nbBtn" type="button" aria-label="Notes">⌘</button></span>
+            <span class="topbar-tip" data-tip="Rename chapter"><button class="icon-btn" id="renameChapterBtn" type="button" aria-label="Rename chapter">⋯</button></span>
+            <span class="topbar-tip" data-tip="Light / dark"><button class="icon-btn" id="themeTopBtn" type="button" aria-label="Toggle theme">◐</button></span>
+            <span class="topbar-tip" data-tip="Delete entire book"><button class="icon-btn danger" id="deleteBookTopBtn" type="button" aria-label="Delete book">🗑</button></span>
+            <div class="save-status" id="saveStatus" data-tip="Save status" aria-live="polite">Loading...</div>
         </div>
     </div>
 
-    <div class="sprint-modal" id="sprintOptionsModal" role="dialog" aria-label="Sprint timer options">
-        <div class="sprint-modal-box">
-            <h2 class="sprint-modal-title">Choose a timer</h2>
-            <p class="sprint-modal-text" id="sprintOptionsSub">Tracks words written during the sprint.</p>
-            <div class="sprint-opt-grid" id="sprintOptionsGrid">
-                <button class="sprint-opt" type="button" data-min="10">10 min</button>
-                <button class="sprint-opt" type="button" data-min="15">15 min</button>
-                <button class="sprint-opt" type="button" data-min="25">25 min</button>
-                <button class="sprint-opt" type="button" data-min="60">1 hour</button>
-            </div>
-            <div class="sprint-modal-actions" style="margin-top: 14px;">
-                <button class="secondary" id="sprintOptionsClose" type="button">Close</button>
+    <div class="toolbar">
+        <button class="tool-btn" type="button" data-cmd="bold">B</button>
+        <button class="tool-btn" type="button" data-cmd="italic"><em>I</em></button>
+        <button class="tool-btn" type="button" data-cmd="underline"><u>U</u></button>
+        <button class="tool-btn" type="button" data-cmd="insertUnorderedList">• List</button>
+        <button class="tool-btn" type="button" data-cmd="insertOrderedList">1. List</button>
+        <button class="tool-btn" type="button" id="quoteBtn">❝</button>
+        <select class="tool-select" id="formatSelect"><option value="div">Body</option><option value="h2">Heading</option></select>
+        <select class="tool-select" id="fontSelect"><option value="Georgia">Georgia</option><option value="Times New Roman">Times New Roman</option><option value="Arial">Arial</option><option value="Inter">Inter</option><option value="Courier New">Courier New</option></select>
+        <select class="tool-select" id="fontSizeSelect"><option value="18">Compact</option><option value="20">Book</option><option value="22">Comfort</option><option value="26">Large</option></select>
+        <div class="toolbar-spacer"></div>
+        <span class="sprint-anchor" id="sprintAnchor"><button class="sprint-btn" id="sprintToolbarBtn" type="button" aria-label="Sprint timer">⏱ Sprint</button></span>
+    </div>
+
+    <div class="sprint-float" id="sprintFloat" aria-live="polite"><div class="sprint-float-box"><div class="sprint-float-top"><div class="sprint-float-label">Sprint</div><button class="sprint-mini-btn danger" id="sprintStopBtn" type="button">Stop</button></div><div class="sprint-float-time" id="sprintFloatTime">00:00</div></div></div>
+
+    <div class="workspace">
+        <div class="page-wrap">
+            <div class="page">
+                <div class="chapter-number" id="chapterNumber">1</div>
+                <div class="chapter-title" id="chapterTitle" contenteditable="true">Chapter 1</div>
+                <div class="editor" id="editor" contenteditable="true" data-placeholder="Begin writing here..."></div>
+                <div class="bottom-meta"><span id="chapterWords">0</span> chapter words • <span id="bottomTotalWords">0</span> total words</div>
             </div>
         </div>
     </div>
+</div>
 
-    <div class="sprint-modal" id="sprintResultModal" role="dialog" aria-label="Sprint results">
-        <div class="sprint-modal-box">
-            <h2 class="sprint-modal-title" id="sprintResultTitle">Sprint complete</h2>
-            <p class="sprint-modal-text" id="sprintResultText">...</p>
-            <div class="sprint-modal-actions">
-                <button class="primary" id="sprintResultOk" type="button">OK</button>
+<div class="publish-modal" id="publishModal">
+    <div class="publish-modal-box">
+        <h2 class="publish-modal-title">Choose Chapters to Publish</h2>
+        <p class="publish-modal-text">Select the chapters you want to publish now.</p>
+        <div class="publish-list" id="publishList"></div>
+        <div class="publish-modal-actions">
+            <button class="publish-modal-btn secondary" id="closePublishBtn" type="button">Cancel</button>
+            <button class="publish-modal-btn primary" id="publishNextBtn" type="button">Next</button>
+        </div>
+        <div class="publish-bypass-overlay" id="publishBypassOverlay" aria-hidden="true">
+            <div class="publish-bypass-card">
+                <p class="publish-modal-text" style="margin:0;">You have already filled out the required information for this book. Would you like to skip this and publish anyway?</p>
+                <div class="publish-bypass-actions" id="publishBypassChoiceRow">
+                    <button class="publish-modal-btn secondary" id="publishBypassNo" type="button">No</button>
+                    <button class="publish-modal-btn primary" id="publishBypassYes" type="button">Yes</button>
+                </div>
+                <div class="publish-quick-wrap" id="publishQuickWrap"><button class="publish-modal-btn primary" id="publishQuickPublishBtn" type="button">Publish update</button></div>
+                <p class="publish-quick-status" id="publishQuickStatus" aria-live="polite"></p>
             </div>
         </div>
     </div>
+</div>
 
-    <script type="module">
-        import { auth, db } from "./firebase.js";
-        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";               import {
-            doc,
-            getDoc,
-            updateDoc,
-            setDoc,
-            deleteDoc,
-            increment
-        } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-        import { publicDisplayNameFromUserData } from "./js/profile-display.js?v=1";
-        import { localDayKey } from "./js/writing-day-stats.js?v=1";
-        import {
-            isStoryBibleUiEnabled,
-            STORY_BIBLE_PREF_KEY,
-            STORY_BIBLE_PREF_EVENT
-        } from "./js/story-bible-prefs.js?v=1";
+<div class="sprint-modal" id="sprintConfirmModal"><div class="sprint-modal-box"><h2 class="sprint-modal-title">Ready to start?</h2><p class="sprint-modal-text" id="sprintConfirmText">Start a sprint?</p><div class="sprint-modal-actions"><button class="secondary" id="sprintConfirmNo" type="button">Not yet</button><button class="primary" id="sprintConfirmYes" type="button">Yes, start</button></div></div></div>
+<div class="sprint-modal" id="sprintOptionsModal"><div class="sprint-modal-box"><h2 class="sprint-modal-title">Choose a timer</h2><p class="sprint-modal-text" id="sprintOptionsSub">Tracks words written during the sprint.</p><div class="sprint-opt-grid" id="sprintOptionsGrid"><button class="sprint-opt" type="button" data-min="10">10 min</button><button class="sprint-opt" type="button" data-min="15">15 min</button><button class="sprint-opt" type="button" data-min="25">25 min</button><button class="sprint-opt" type="button" data-min="60">1 hour</button></div><div class="sprint-modal-actions" style="margin-top:14px;"><button class="secondary" id="sprintOptionsClose" type="button">Close</button></div></div></div>
+<div class="sprint-modal" id="sprintResultModal"><div class="sprint-modal-box"><h2 class="sprint-modal-title" id="sprintResultTitle">Sprint complete</h2><p class="sprint-modal-text" id="sprintResultText">...</p><div class="sprint-modal-actions"><button class="primary" id="sprintResultOk" type="button">OK</button></div></div></div>
 
-        const params = new URLSearchParams(window.location.search);
-        const bookId = params.get("book");
-        const storyBibleLink = document.getElementById("storyBibleLink");
-        const storyBibleTopLink = document.getElementById("storyBibleTopLink");
-        const storyBibleTopLinkWrap = document.getElementById("storyBibleTopLinkWrap");
+<script type="module">
+    import { supabase } from "./firebase.js";
+    import { publicDisplayNameFromUserData } from "./js/profile-display.js?v=1";
+    import { localDayKey } from "./js/writing-day-stats.js?v=1";
+    import { isStoryBibleUiEnabled, STORY_BIBLE_PREF_KEY, STORY_BIBLE_PREF_EVENT } from "./js/story-bible-prefs.js?v=1";
 
-        function applyEditorStoryBibleLinks() {
-            const prefOn = isStoryBibleUiEnabled();
-            const hasBook = !!bookId;
-            const show = prefOn && hasBook;
-            if (storyBibleLink) {
-                storyBibleLink.style.display = show ? "" : "none";
-                if (hasBook) storyBibleLink.href = `/story-bible.html?book=${encodeURIComponent(bookId)}`;
-            }
-            if (storyBibleTopLinkWrap) {
-                storyBibleTopLinkWrap.classList.toggle("hidden", !show);
-            }
-            if (storyBibleTopLink && hasBook) {
-                storyBibleTopLink.href = `/story-bible.html?book=${encodeURIComponent(bookId)}`;
-            }
-        }
-        applyEditorStoryBibleLinks();
-        window.addEventListener("storage", e => {
-            if (e.key === STORY_BIBLE_PREF_KEY) applyEditorStoryBibleLinks();
-        });
-        window.addEventListener(STORY_BIBLE_PREF_EVENT, applyEditorStoryBibleLinks);
-        document.addEventListener("visibilitychange", () => {
-            if (!document.hidden) applyEditorStoryBibleLinks();
-        });
+    // ===== MOBILE / NO-BOOK FIX =====
+// Supports ?book=, ?id=, ?bookId= and remembers last opened book
+const params = new URLSearchParams(window.location.search);
+let bookId =
+    params.get("book") ||
+    params.get("id") ||
+    params.get("bookId") ||
+    localStorage.getItem("alysum-current-book-id") ||
+    sessionStorage.getItem("alysum-current-book-id") ||
+    "";
 
-        const sidebar = document.getElementById("sidebar");
-        const overlay = document.getElementById("overlay");
-        const toggleSidebarBtn = document.getElementById("toggleSidebarBtn");
-                                                        const homeBtn = document.getElementById("homeBtn");
+// Persist active book across reloads and mobile browser refreshes
+function rememberBookId(id) {
+    if (!id) return;
+    bookId = String(id);
+    localStorage.setItem("alysum-current-book-id", bookId);
+    sessionStorage.setItem("alysum-current-book-id", bookId);
+    const url = new URL(window.location.href);
+    url.searchParams.set("book", bookId);
+    window.history.replaceState({}, "", url.toString());
+}
 
-homeBtn.onclick = () => {
-    window.location.href = "/studio.html";
-};                                                                                                                      const addChapterBtn = document.getElementById("addChapterBtn");
-        const deleteChapterBtn = document.getElementById("deleteChapterBtn");
-        const renameBookBtn = document.getElementById("renameBookBtn");                                                 const quickAddBtn = document.getElementById("quickAddBtn");
-        const renameChapterBtn = document.getElementById("renameChapterBtn");
-        const deleteBookBtn = document.getElementById("deleteBookBtn");                                                 const deleteBookTopBtn = document.getElementById("deleteBookTopBtn");                                           const themeToggleBtn = document.getElementById("themeToggleBtn");                                               const themeTopBtn = document.getElementById("themeTopBtn");
-        const publishBtn = document.getElementById("publishBtn");
-        const publishTopBtn = document.getElementById("publishTopBtn");
-        const topBookTitle = document.getElementById("topBookTitle");
-        const sidebarBookTitle = document.getElementById("sidebarBookTitle");
-        const saveStatus = document.getElementById("saveStatus");                                                                                                               const chapterNumber = document.getElementById("chapterNumber");
-        const chapterTitle = document.getElementById("chapterTitle");
-        const editor = document.getElementById("editor");                                                       
-        const totalWordsEl = document.getElementById("totalWords");
-        const chapterCountEl = document.getElementById("chapterCount");
-        const footerWordsEl = document.getElementById("footerWords");
-        const chapterWordsEl = document.getElementById("chapterWords");
-        const bottomTotalWordsEl = document.getElementById("bottomTotalWords");
-                                                                const groupEls = {
-            front: document.getElementById("group-front"),
-            body: document.getElementById("group-body"),
-            back: document.getElementById("group-back")
+    const storyBibleLink = document.getElementById("storyBibleLink");
+    const storyBibleTopLink = document.getElementById("storyBibleTopLink");
+    const storyBibleTopLinkWrap = document.getElementById("storyBibleTopLinkWrap");
+    const sidebar = document.getElementById("sidebar");
+    const overlay = document.getElementById("overlay");
+    const toggleSidebarBtn = document.getElementById("toggleSidebarBtn");
+    const homeBtn = document.getElementById("homeBtn");
+    const addChapterBtn = document.getElementById("addChapterBtn");
+    const deleteChapterBtn = document.getElementById("deleteChapterBtn");
+    const renameBookBtn = document.getElementById("renameBookBtn");
+    const quickAddBtn = document.getElementById("quickAddBtn");
+    const renameChapterBtn = document.getElementById("renameChapterBtn");
+    const deleteBookBtn = document.getElementById("deleteBookBtn");
+    const deleteBookTopBtn = document.getElementById("deleteBookTopBtn");
+    const themeToggleBtn = document.getElementById("themeToggleBtn");
+    const themeTopBtn = document.getElementById("themeTopBtn");
+    const publishBtn = document.getElementById("publishBtn");
+    const publishTopBtn = document.getElementById("publishTopBtn");
+    const topBookTitle = document.getElementById("topBookTitle");
+    const sidebarBookTitle = document.getElementById("sidebarBookTitle");
+    const saveStatus = document.getElementById("saveStatus");
+    const chapterNumber = document.getElementById("chapterNumber");
+    const chapterTitle = document.getElementById("chapterTitle");
+    const editor = document.getElementById("editor");
+    const totalWordsEl = document.getElementById("totalWords");
+    const chapterCountEl = document.getElementById("chapterCount");
+    const footerWordsEl = document.getElementById("footerWords");
+    const chapterWordsEl = document.getElementById("chapterWords");
+    const bottomTotalWordsEl = document.getElementById("bottomTotalWords");
+    const groupEls = { front: document.getElementById("group-front"), body: document.getElementById("group-body"), back: document.getElementById("group-back") };
+    const formatSelect = document.getElementById("formatSelect");
+    const quoteBtn = document.getElementById("quoteBtn");
+    const fontSelect = document.getElementById("fontSelect");
+    const fontSizeSelect = document.getElementById("fontSizeSelect");
+    const publishModal = document.getElementById("publishModal");
+    const publishList = document.getElementById("publishList");
+    const closePublishBtn = document.getElementById("closePublishBtn");
+    const publishNextBtn = document.getElementById("publishNextBtn");
+    const publishBypassOverlay = document.getElementById("publishBypassOverlay");
+    const publishBypassChoiceRow = document.getElementById("publishBypassChoiceRow");
+    const publishBypassYes = document.getElementById("publishBypassYes");
+    const publishBypassNo = document.getElementById("publishBypassNo");
+    const publishQuickWrap = document.getElementById("publishQuickWrap");
+    const publishQuickPublishBtn = document.getElementById("publishQuickPublishBtn");
+    const publishQuickStatus = document.getElementById("publishQuickStatus");
+
+    let currentUser = null;
+    let currentBook = null;
+    let currentProfile = null;
+    let currentSection = "body";
+    let currentChapterIndex = 0;
+    let saveTimer = null;
+    let dragged = null;
+    let persistedBookWordCount = null;
+
+    const sprintToolbarBtn = document.getElementById("sprintToolbarBtn");
+    const sprintFloat = document.getElementById("sprintFloat");
+    const sprintFloatTime = document.getElementById("sprintFloatTime");
+    const sprintStopBtn = document.getElementById("sprintStopBtn");
+    const sprintConfirmModal = document.getElementById("sprintConfirmModal");
+    const sprintConfirmText = document.getElementById("sprintConfirmText");
+    const sprintConfirmYes = document.getElementById("sprintConfirmYes");
+    const sprintConfirmNo = document.getElementById("sprintConfirmNo");
+    const sprintOptionsModal = document.getElementById("sprintOptionsModal");
+    const sprintOptionsSub = document.getElementById("sprintOptionsSub");
+    const sprintOptionsClose = document.getElementById("sprintOptionsClose");
+    const sprintResultModal = document.getElementById("sprintResultModal");
+    const sprintResultTitle = document.getElementById("sprintResultTitle");
+    const sprintResultText = document.getElementById("sprintResultText");
+    const sprintResultOk = document.getElementById("sprintResultOk");
+    const SPRINT_KEY = "alysum-editor-sprint";
+    let sprintTick = null;
+    let pendingSprintMinutes = null;
+
+    function setSaveStatus(text) { saveStatus.textContent = text; }
+    function generateId() { return "ch_" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36); }
+    function safeString(value, fallback = "") { return typeof value === "string" ? value : fallback; }
+    function safeNumber(value, fallback = 0) { return typeof value === "number" && Number.isFinite(value) ? value : fallback; }
+    function safeArray(value, fallback = []) { return Array.isArray(value) ? value : fallback; }
+    function safeObject(value, fallback = {}) { return value && typeof value === "object" && !Array.isArray(value) ? value : fallback; }
+
+    const PUBLISH_WARNING_KEYS = ["violence", "abuse", "sexual_content", "mental_health", "self_harm", "substance_use", "eating_body", "moral_dark", "fear_disturbing", "body_medical", "identity_social", "sensitive_life_events"];
+
+    function normalizeChapter(raw, fallbackTitle = "Untitled") {
+        const chapter = safeObject(raw, {});
+        return { id: safeString(chapter.id, generateId()), title: safeString(chapter.title, fallbackTitle), content: safeString(chapter.content, "") };
+    }
+
+    function normalizeSections(rawSections) {
+        const sections = safeObject(rawSections, {});
+        const frontRaw = safeArray(sections.front, []);
+        const bodyRaw = safeArray(sections.body, []);
+        const backRaw = safeArray(sections.back, []);
+        return {
+            front: frontRaw.length ? frontRaw.map((ch, index) => normalizeChapter(ch, index === 0 ? "Copyright" : "Table of Contents")) : [{ id: generateId(), title: "Copyright", content: "" }, { id: generateId(), title: "Table of Contents", content: "" }],
+            body: bodyRaw.length ? bodyRaw.map((ch, index) => normalizeChapter(ch, `Chapter ${index + 1}`)) : [{ id: generateId(), title: "Chapter 1", content: "" }],
+            back: backRaw.map((ch, index) => normalizeChapter(ch, `Back Matter ${index + 1}`))
         };
-        const formatSelect = document.getElementById("formatSelect");
-        const quoteBtn = document.getElementById("quoteBtn");
-        const fontSelect = document.getElementById("fontSelect");                                                       const fontSizeSelect = document.getElementById("fontSizeSelect");                                       
-        const publishModal = document.getElementById("publishModal");
-        const publishList = document.getElementById("publishList");                                                     const closePublishBtn = document.getElementById("closePublishBtn");                                             const publishNextBtn = document.getElementById("publishNextBtn");
-        const publishBypassOverlay = document.getElementById("publishBypassOverlay");
-        const publishBypassChoiceRow = document.getElementById("publishBypassChoiceRow");
-        const publishBypassYes = document.getElementById("publishBypassYes");
-        const publishBypassNo = document.getElementById("publishBypassNo");
-        const publishQuickWrap = document.getElementById("publishQuickWrap");
-        const publishQuickPublishBtn = document.getElementById("publishQuickPublishBtn");
-        const publishQuickStatus = document.getElementById("publishQuickStatus");
+    }
 
-                                                                let currentUser = null;
-        let currentBook = null;
-        let currentSection = "body";
-        let currentChapterIndex = 0;
-        let saveTimer = null;
-        let dragged = null;
-        /** Last saved total manuscript word count (for daily-typed delta). */
-        let persistedBookWordCount = null;
+    function normalizeWarningDataForPublish(rawWarnings) {
+        const source = safeObject(rawWarnings, {});
+        const out = {};
+        PUBLISH_WARNING_KEYS.forEach(key => { out[key] = safeArray(source[key], []).filter(item => typeof item === "string"); });
+        return out;
+    }
 
-        // Sprint timer (editor)
-        const sprintToolbarBtn = document.getElementById("sprintToolbarBtn");
-        const sprintAnchor = document.getElementById("sprintAnchor");
-        const sprintFloat = document.getElementById("sprintFloat");
-        const sprintFloatTime = document.getElementById("sprintFloatTime");
-        const sprintStopBtn = document.getElementById("sprintStopBtn");
-        const sprintConfirmModal = document.getElementById("sprintConfirmModal");
-        const sprintConfirmText = document.getElementById("sprintConfirmText");
-        const sprintConfirmYes = document.getElementById("sprintConfirmYes");
-        const sprintConfirmNo = document.getElementById("sprintConfirmNo");
-        const sprintOptionsModal = document.getElementById("sprintOptionsModal");
-        const sprintOptionsSub = document.getElementById("sprintOptionsSub");
-        const sprintOptionsClose = document.getElementById("sprintOptionsClose");
-        const sprintResultModal = document.getElementById("sprintResultModal");
-        const sprintResultTitle = document.getElementById("sprintResultTitle");
-        const sprintResultText = document.getElementById("sprintResultText");
-        const sprintResultOk = document.getElementById("sprintResultOk");
+    function normalizePublishMetaForBook(rawPublishMeta) {
+        const meta = safeObject(rawPublishMeta, {});
+        return {
+            genres: safeArray(meta.genres, []).filter(item => typeof item === "string"),
+            rating: safeString(meta.rating, ""),
+            warnings: normalizeWarningDataForPublish(meta.warnings),
+            summary: safeString(meta.summary, ""),
+            extraTags: safeArray(meta.extraTags, []).filter(item => typeof item === "string")
+        };
+    }
 
-        const SPRINT_KEY = "alysum-editor-sprint";
-        let sprintTick = null;
-        let pendingSprintMinutes = null;
+    function normalizeBookData(rawData) {
+        const data = safeObject(rawData, {});
+        return {
+            id: safeString(data.id, bookId),
+            user_id: safeString(data.user_id, currentUser?.id || ""),
+            title: safeString(data.title, "Untitled Book"),
+            sections: normalizeSections(data.sections),
+            words: safeNumber(data.words, 0),
+            updated: safeNumber(data.updated, Date.now()),
+            isPublished: !!(data.isPublished ?? data.is_published),
+            libraryType: safeString(data.libraryType ?? data.library_type, ""),
+            publishedChapterIds: safeArray(data.publishedChapterIds ?? data.published_chapter_ids, []).filter(item => typeof item === "string"),
+            publishMeta: normalizePublishMetaForBook(data.publishMeta ?? data.publish_meta)
+        };
+    }
 
-        function loadEditorSprint() {
-            try {
-                return JSON.parse(localStorage.getItem(SPRINT_KEY) || "null");
-            } catch {
-                return null;
-            }
+    function toDbBookPatch(book) {
+        return {
+            title: book.title || "Untitled Book",
+            sections: book.sections,
+            words: totalWords(),
+            updated: Date.now(),
+            is_published: !!book.isPublished,
+            library_type: book.libraryType || null,
+            published_chapter_ids: book.publishedChapterIds || [],
+            publish_meta: book.publishMeta || {}
+        };
+    }
+
+    function toCamelProfile(row) {
+        if (!row) return {};
+        return {
+            ...row,
+            displayName: row.display_name ?? row.displayName,
+            accountType: row.account_type ?? row.accountType,
+            dailyWordGoal: row.daily_word_goal ?? row.dailyWordGoal,
+            writingDayTotals: row.writing_day_totals ?? row.writingDayTotals ?? {}
+        };
+    }
+
+    function applyEditorStoryBibleLinks() {
+        const prefOn = isStoryBibleUiEnabled();
+        const hasBook = !!bookId;
+        const show = prefOn && hasBook;
+        if (storyBibleLink) { storyBibleLink.style.display = show ? "" : "none"; if (hasBook) storyBibleLink.href = `/story-bible.html?book=${encodeURIComponent(bookId)}`; }
+        if (storyBibleTopLinkWrap) storyBibleTopLinkWrap.classList.toggle("hidden", !show);
+        if (storyBibleTopLink && hasBook) storyBibleTopLink.href = `/story-bible.html?book=${encodeURIComponent(bookId)}`;
+    }
+    applyEditorStoryBibleLinks();
+    window.addEventListener("storage", e => { if (e.key === STORY_BIBLE_PREF_KEY) applyEditorStoryBibleLinks(); });
+    window.addEventListener(STORY_BIBLE_PREF_EVENT, applyEditorStoryBibleLinks);
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) applyEditorStoryBibleLinks(); });
+
+    function applyTheme(theme) {
+        const dark = theme === "dark";
+        document.body.classList.toggle("dark", dark);
+        localStorage.setItem("alysum-theme", theme);
+        themeToggleBtn.textContent = dark ? "Light Mode" : "Dark Mode";
+    }
+    function toggleTheme() { applyTheme(document.body.classList.contains("dark") ? "light" : "dark"); }
+    themeToggleBtn.addEventListener("click", toggleTheme);
+    themeTopBtn.addEventListener("click", toggleTheme);
+    homeBtn.onclick = () => { window.location.href = "/studio.html"; };
+
+    function toggleSidebar() {
+        if (window.innerWidth <= 760) {
+            sidebar.classList.toggle("mobile-hidden");
+            overlay.classList.toggle("hidden");
+        } else {
+            sidebar.classList.toggle("collapsed-desktop");
         }
+    }
+    toggleSidebarBtn.addEventListener("click", toggleSidebar);
+    overlay.addEventListener("click", toggleSidebar);
+    function applyResponsiveSidebar() {
+        if (window.innerWidth <= 760) { sidebar.classList.add("mobile-hidden"); overlay.classList.add("hidden"); sidebar.classList.remove("collapsed-desktop"); }
+        else { sidebar.classList.remove("mobile-hidden"); overlay.classList.add("hidden"); }
+    }
+    window.addEventListener("resize", applyResponsiveSidebar);
 
-        function saveEditorSprint(state) {
-            localStorage.setItem(SPRINT_KEY, JSON.stringify(state));
+    function stripHtmlToText(html) {
+        return safeString(html, "").replace(/<br\s*\/?>/gi, " ").replace(/<\/(div|p|h1|h2|h3|li|blockquote|ul|ol)>/gi, " ").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+    }
+    function countWords(html) { const text = stripHtmlToText(html); return text ? text.split(" ").length : 0; }
+    function allChaptersFlat() { return [...currentBook.sections.front.map((ch, i) => ({ section: "front", index: i, ...ch })), ...currentBook.sections.body.map((ch, i) => ({ section: "body", index: i, ...ch })), ...currentBook.sections.back.map((ch, i) => ({ section: "back", index: i, ...ch }))]; }
+    function totalWords() { return allChaptersFlat().reduce((sum, ch) => sum + countWords(ch.content || ""), 0); }
+    function currentChapter() {
+        const list = currentBook.sections[currentSection];
+        if (!Array.isArray(list) || !list.length) { currentSection = "body"; currentChapterIndex = 0; return currentBook.sections.body[0]; }
+        if (currentChapterIndex < 0) currentChapterIndex = 0;
+        if (currentChapterIndex >= list.length) currentChapterIndex = list.length - 1;
+        return list[currentChapterIndex];
+    }
+    function syncStats() {
+        const ch = currentChapter();
+        const chWords = countWords(ch.content || "");
+        const total = totalWords();
+        chapterWordsEl.textContent = chWords;
+        totalWordsEl.textContent = total;
+        bottomTotalWordsEl.textContent = total;
+        footerWordsEl.textContent = total;
+        chapterCountEl.textContent = allChaptersFlat().length;
+    }
+    function renderTitles() { const title = currentBook.title || "Untitled Book"; topBookTitle.textContent = title; sidebarBookTitle.textContent = title; }
+    function escapeHtml(str) { return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+
+    function renderSection(section) {
+        const mount = groupEls[section];
+        mount.innerHTML = "";
+        const list = currentBook.sections[section];
+        if (!list.length) {
+            const empty = document.createElement("div");
+            empty.className = "empty-slot";
+            empty.textContent = "Drag chapters here";
+            mount.appendChild(empty);
+            return;
         }
-
-        function clearEditorSprint() {
-            localStorage.removeItem(SPRINT_KEY);
-        }
-
-        function formatMMSS(totalSeconds) {
-            const s = Math.max(0, Math.floor(totalSeconds));
-            const m = Math.floor(s / 60);
-            const r = s % 60;
-            return `${String(m).padStart(2, "0")}:${String(r).padStart(2, "0")}`;
-        }
-
-        function openModal(el) {
-            el.classList.add("open");
-        }
-
-        function closeModal(el) {
-            el.classList.remove("open");
-        }
-
-        function showResult(wordsWritten) {
-            const wrote = Number.isFinite(wordsWritten) ? wordsWritten : 0;
-            if (wrote > 0) {
-                sprintResultTitle.textContent = "Congragulations! 🎉";
-                sprintResultText.textContent = `You wrote ${wrote.toLocaleString()} words!`;
-            } else {
-                sprintResultTitle.textContent = "Oh no! 😞";
-                sprintResultText.textContent = "You wrote 0 words";
-            }
-            openModal(sprintResultModal);
-        }
-
-        function endSprintAndReport(reason = "done") {
-            const state = loadEditorSprint();
-            if (!state) return;
-
-            const startTotal = safeNumber(state.startTotal, 0);
-            const endTotal = totalWords();
-            const delta = Math.max(0, endTotal - startTotal);
-
-            clearInterval(sprintTick);
-            sprintTick = null;
-            clearEditorSprint();
-
-            sprintFloat.classList.remove("open");
-            sprintToolbarBtn.disabled = false;
-            sprintToolbarBtn.textContent = "⏱ Sprint";
-
-            if (reason === "done") {
-                showResult(delta);
-            }
-        }
-
-        function renderSprintUI() {
-            const state = loadEditorSprint();
-            if (!state || !state.end || state.bookId !== bookId) {
-                sprintFloat.classList.remove("open");
-                sprintToolbarBtn.disabled = false;
-                sprintToolbarBtn.textContent = "⏱ Sprint";
-                return;
-            }
-
-            const remainingSec = Math.max(0, Math.floor((state.end - Date.now()) / 1000));
-            sprintFloatTime.textContent = formatMMSS(remainingSec);
-            sprintFloat.classList.add("open");
-            sprintToolbarBtn.disabled = false;
-            sprintToolbarBtn.textContent = `⏱ ${formatMMSS(remainingSec)}`;
-
-            if (remainingSec <= 0) {
-                endSprintAndReport("done");
-            }
-        }
-
-        function startSprint(minutes) {
-            const mins = safeNumber(minutes, 25);
-            const durationMs = Math.max(1, Math.floor(mins * 60 * 1000));
-            saveEditorSprint({
-                bookId,
-                start: Date.now(),
-                end: Date.now() + durationMs,
-                startTotal: totalWords(),
-                minutes: mins
+        list.forEach((ch, index) => {
+            const item = document.createElement("div");
+            item.className = "chapter-item" + (section === currentSection && index === currentChapterIndex ? " active" : "");
+            item.draggable = true;
+            const visibleNumber = section === "body" ? index + 1 : "";
+            item.innerHTML = `<div class="chapter-num">${visibleNumber}</div><div class="chapter-name">${escapeHtml(ch.title || "Untitled")}</div><div class="chapter-drag">⋮⋮</div>`;
+            item.addEventListener("click", () => {
+                loadChapter(section, index);
+                if (window.innerWidth <= 760 && !sidebar.classList.contains("mobile-hidden")) toggleSidebar();
             });
-
-            closeModal(sprintConfirmModal);
-            closeModal(sprintOptionsModal);
-
-            if (sprintTick) clearInterval(sprintTick);
-            renderSprintUI();
-            sprintTick = setInterval(renderSprintUI, 500);
-        }
-
-        function requestStartSprint(minutes) {
-            pendingSprintMinutes = minutes;
-            sprintConfirmText.textContent = `Start a ${minutes === 60 ? "1 hour" : `${minutes} minute`} sprint?`;
-            openModal(sprintConfirmModal);
-        }
-
-        sprintToolbarBtn?.addEventListener("click", () => {
-            const state = loadEditorSprint();
-            if (state && state.end && state.bookId === bookId && state.end > Date.now()) {
-                sprintOptionsSub.textContent = "A sprint is already running. Use Stop to end early.";
-                sprintOptionsModal.querySelectorAll("[data-min]").forEach(b => (b.disabled = true));
-            } else {
-                sprintOptionsSub.textContent = "Tracks words written during the sprint.";
-                sprintOptionsModal.querySelectorAll("[data-min]").forEach(b => (b.disabled = false));
-            }
-            openModal(sprintOptionsModal);
-        });
-
-        sprintOptionsModal?.querySelectorAll("[data-min]")?.forEach(btn => {
-            btn.addEventListener("click", () => {
-                if (btn.disabled) return;
-                const mins = Number(btn.dataset.min);
-                if (!mins) return;
-                closeModal(sprintOptionsModal);
-                requestStartSprint(mins);
-            });
-        });
-
-        sprintOptionsClose?.addEventListener("click", () => closeModal(sprintOptionsModal));
-        sprintOptionsModal?.addEventListener("click", (e) => {
-            if (e.target === sprintOptionsModal) closeModal(sprintOptionsModal);
-        });
-
-        sprintConfirmNo?.addEventListener("click", () => closeModal(sprintConfirmModal));
-        sprintConfirmYes?.addEventListener("click", () => {
-            const mins = pendingSprintMinutes ?? 25;
-            pendingSprintMinutes = null;
-            startSprint(mins);
-        });
-
-        sprintConfirmModal?.addEventListener("click", (e) => {
-            if (e.target === sprintConfirmModal) closeModal(sprintConfirmModal);
-        });
-
-        sprintResultOk?.addEventListener("click", () => closeModal(sprintResultModal));
-        sprintResultModal?.addEventListener("click", (e) => {
-            if (e.target === sprintResultModal) closeModal(sprintResultModal);
-        });
-
-        sprintStopBtn?.addEventListener("click", () => endSprintAndReport("stopped"));
-
-        function setSaveStatus(text) {
-            saveStatus.textContent = text;
-        }
-
-        function generateId() {                                     return "ch_" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
-        }
-                                                                function setTransientSaveStatus(text, resetText = "Saved") {
-            setSaveStatus(text);
-            clearTimeout(window.__statusTimer);
-            window.__statusTimer = setTimeout(() => setSaveStatus(resetText), 900);                                     }
-
-        function safeString(value, fallback = "") {
-            return typeof value === "string" ? value : fallback;
-        }
-
-        function safeNumber(value, fallback = 0) {
-            return typeof value === "number" && Number.isFinite(value) ? value : fallback;
-        }
-
-        function safeArray(value, fallback = []) {                  return Array.isArray(value) ? value : fallback;
-        }
-
-        function safeObject(value, fallback = {}) {
-            return value && typeof value === "object" && !Array.isArray(value) ? value : fallback;                      }
-
-        function normalizeChapter(raw, fallbackTitle = "Untitled") {
-            const chapter = safeObject(raw, {});                    return {
-                id: safeString(chapter.id, generateId()),
-                title: safeString(chapter.title, fallbackTitle),
-                content: safeString(chapter.content, "")            };
-        }
-
-        function normalizeSections(rawSections) {
-            const sections = safeObject(rawSections, {});
-            const frontRaw = safeArray(sections.front, []);
-            const bodyRaw = safeArray(sections.body, []);
-            const backRaw = safeArray(sections.back, []);
-
-            const front = frontRaw.length
-                ? frontRaw.map((ch, index) => normalizeChapter(ch, index === 0 ? "Copyright" : "Table of Contents"))
-                : [
-                    { id: generateId(), title: "Copyright", content: "" },
-                    { id: generateId(), title: "Table of Contents", content: "" }                                               ];
-                                                                    const body = bodyRaw.length
-                ? bodyRaw.map((ch, index) => normalizeChapter(ch, `Chapter ${index + 1}`))
-                : [                                                         { id: generateId(), title: "Chapter 1", content: "" }                                                       ];
-                                                                    const back = backRaw.map((ch, index) => normalizeChapter(ch, `Back Matter ${index + 1}`));                                                                              return { front, body, back };                       }
-
-        /** Must match warning keys in publish.html for metadata validation. */
-        const PUBLISH_WARNING_KEYS = [
-            "violence",
-            "abuse",
-            "sexual_content",
-            "mental_health",
-            "self_harm",
-            "substance_use",
-            "eating_body",
-            "moral_dark",
-            "fear_disturbing",
-            "body_medical",
-            "identity_social",
-            "sensitive_life_events"
-        ];
-
-        function normalizeWarningDataForPublish(rawWarnings) {
-            const source = safeObject(rawWarnings, {});
-            const out = {};
-            PUBLISH_WARNING_KEYS.forEach(key => {
-                out[key] = safeArray(source[key], []).filter(item => typeof item === "string");
-            });
-            return out;
-        }
-
-        function normalizePublishMetaForBook(rawPublishMeta) {
-            const meta = safeObject(rawPublishMeta, {});
-            return {
-                genres: safeArray(meta.genres, []).filter(item => typeof item === "string"),
-                rating: safeString(meta.rating, ""),
-                warnings: normalizeWarningDataForPublish(meta.warnings),
-                summary: safeString(meta.summary, ""),
-                extraTags: safeArray(meta.extraTags, []).filter(item => typeof item === "string")
-            };
-        }
-
-        function normalizeBookData(rawData) {
-            const data = safeObject(rawData, {});
-            return {
-                title: safeString(data.title, "Untitled Book"),
-                sections: normalizeSections(data.sections),                                                                     words: safeNumber(data.words, 0),
-                updated: safeNumber(data.updated, Date.now()),
-                isPublished: !!data.isPublished,
-                libraryType: safeString(data.libraryType, ""),
-                publishedChapterIds: safeArray(data.publishedChapterIds, []).filter(item => typeof item === "string"),
-                publishMeta: normalizePublishMetaForBook(data.publishMeta)
-            };                                                  }
-
-        function ensureChapterIds(list) {
-            list.forEach(ch => {
-                if (!ch.id) ch.id = generateId();
-            });                                                 }
-                                                                function applyTheme(theme) {
-            const dark = theme === "dark";
-            document.body.classList.toggle("dark", dark);                                                                   localStorage.setItem("alysum-theme", theme);            themeToggleBtn.textContent = dark ? "Light Mode" : "Dark Mode";
-        }
-
-        function toggleTheme() {                                    const nowDark = document.body.classList.contains("dark");
-            applyTheme(nowDark ? "light" : "dark");
-        }                                               
-        themeToggleBtn.addEventListener("click", toggleTheme);
-        themeTopBtn.addEventListener("click", toggleTheme);
-
-        function toggleSidebar() {                                  if (window.innerWidth <= 760) {
-                sidebar.classList.toggle("mobile-hidden");
-                overlay.classList.toggle("hidden");
-            } else {
-                sidebar.classList.toggle("collapsed-desktop");
-            }
-        }
-        toggleSidebarBtn.addEventListener("click", toggleSidebar);                                                      overlay.addEventListener("click", toggleSidebar);                                                       
-        function applyResponsiveSidebar() {
-            if (window.innerWidth <= 760) {
-                sidebar.classList.add("mobile-hidden");
-                overlay.classList.add("hidden");
-                sidebar.classList.remove("collapsed-desktop");
-            } else {
-                sidebar.classList.remove("mobile-hidden");
-                overlay.classList.add("hidden");
-            }
-        }
-
-        window.addEventListener("resize", applyResponsiveSidebar);
-
-        function ensureStructure() {                                if (!currentBook.sections || typeof currentBook.sections !== "object") {
-                currentBook.sections = {};
-            }                                           
-            if (!Array.isArray(currentBook.sections.front)) {
-                currentBook.sections.front = [                              { id: generateId(), title: "Copyright", content: "" },
-                    { id: generateId(), title: "Table of Contents", content: "" }
-                ];
-            }
-
-            if (!Array.isArray(currentBook.sections.body) || currentBook.sections.body.length === 0) {                          currentBook.sections.body = [
-                    { id: generateId(), title: "Chapter 1", content: "" }
-                ];
-            }
-
-            if (!Array.isArray(currentBook.sections.back)) {
-                currentBook.sections.back = [];                     }
-
-            ensureChapterIds(currentBook.sections.front);
-            ensureChapterIds(currentBook.sections.body);
-            ensureChapterIds(currentBook.sections.back);
-        }
-
-        function stripHtmlToText(html) {
-            const text = safeString(html, "")
-                .replace(/<br\s*\/?>/gi, " ")
-                .replace(/<\/(div|p|h1|h2|h3|li|blockquote|ul|ol)>/gi, " ")
-                .replace(/<[^>]*>/g, " ")                               .replace(/\s+/g, " ")
-                .trim();
-
-            return text;                                        }
-                                                                function countWords(html) {
-            const text = stripHtmlToText(html);
-            if (!text) return 0;                                    return text.split(" ").length;
-        }
-
-        function allChaptersFlat() {
-            return [                                                    ...currentBook.sections.front.map((ch, i) => ({ section: "front", index: i, ...ch })),
-                ...currentBook.sections.body.map((ch, i) => ({ section: "body", index: i, ...ch })),
-                ...currentBook.sections.back.map((ch, i) => ({ section: "back", index: i, ...ch }))                         ];
-        }
-
-        function totalWords() {
-            return allChaptersFlat().reduce((sum, ch) => sum + countWords(ch.content || ""), 0);
-        }
-
-        function currentChapter() {                                 const list = currentBook.sections[currentSection];                                                  
-            if (!Array.isArray(list) || !list.length) {
-                currentSection = "body";                                currentChapterIndex = 0;
-                return currentBook.sections.body[0];
-            }
-                                                                    if (currentChapterIndex < 0) currentChapterIndex = 0;
-            if (currentChapterIndex >= list.length) currentChapterIndex = list.length - 1;
-
-            return list[currentChapterIndex];
-        }
-
-        function currentChapterDisplayName() {
-            const ch = currentChapter();                            return ch?.title || (currentSection === "body" ? `Chapter ${currentChapterIndex + 1}` : "Untitled");
-        }
-
-        function syncStats() {                                      const ch = currentChapter();
-            const chWords = countWords(ch.content || "");
-            const total = totalWords();
-
-            chapterWordsEl.textContent = chWords;
-            totalWordsEl.textContent = total;                       bottomTotalWordsEl.textContent = total;
-            footerWordsEl.textContent = total;
-            chapterCountEl.textContent = allChaptersFlat().length;
-        }
-                                                                function renderTitles() {
-            const title = currentBook.title || "Untitled Book";
-            topBookTitle.textContent = title;
-            sidebarBookTitle.textContent = title;
-        }
-
-        function renderSection(section) {
-            const mount = groupEls[section];
-            mount.innerHTML = "";
-
-            const list = currentBook.sections[section];
-            if (!list.length) {                                         const empty = document.createElement("div");                                                                    empty.className = "empty-slot";
-                empty.textContent = "Drag chapters here";
-                mount.appendChild(empty);
-                return;
-            }
-
-            list.forEach((ch, index) => {
-                const item = document.createElement("div");
-                item.className = "chapter-item" + (section === currentSection && index === currentChapterIndex ? " active" : "");                                                       item.draggable = true;
-                                                                        const visibleNumber = section === "body" ? index + 1 : "";
-
-                item.innerHTML = `
-                    <div class="chapter-num">${visibleNumber}</div>
-                    <div class="chapter-name">${ch.title || "Untitled"}</div>                                                       <div class="chapter-drag">⋮⋮</div>
-                `;
-
-                item.addEventListener("click", () => {
-                    loadChapter(section, index);
-                    if (window.innerWidth <= 760 && !sidebar.classList.contains("mobile-hidden")) {
-                        toggleSidebar();
-                    }
-                });
-
-                item.addEventListener("dragstart", () => {
-                    dragged = { section, index };
-                    item.classList.add("dragging");
-                });
-
-                item.addEventListener("dragend", () => {
-                    dragged = null;
-                    item.classList.remove("dragging");
-                });
-                                                                        item.addEventListener("dragover", (e) => e.preventDefault());
-
-                item.addEventListener("drop", async (e) => {
-                    e.preventDefault();
-                    if (!dragged) return;
-
-                    const draggedList = currentBook.sections[dragged.section];
-                    const targetList = currentBook.sections[section];
-                    const draggedItem = draggedList[dragged.index];
-
-                    draggedList.splice(dragged.index, 1);
-                    targetList.splice(index, 0, draggedItem);
-
-                    currentSection = section;
-                    currentChapterIndex = index;
-
-                    renderAllSections();
-                    loadChapter(currentSection, currentChapterIndex, false);
-
-                    try {
-                        await saveBook("Saved");
-                    } catch (err) {
-                        console.error(err);
-                        setSaveStatus("Save failed");
-                    }
-                });
-
-                mount.appendChild(item);
-            });
-        }
-        function renderAllSections() {
-            renderSection("front");
-            renderSection("body");
-            renderSection("back");
-            syncStats();
-        }
-
-        function loadChapter(section, index, rerender = true) {
-            currentSection = section;
-            currentChapterIndex = index;
-
-            const ch = currentChapter();
-
-            chapterNumber.textContent = section === "body" ? index + 1 : "";
-            chapterTitle.textContent = ch.title || "Untitled";
-            editor.innerHTML = ch.content || "";
-
-            applyEditorStyle();
-
-            if (rerender) {
+            item.addEventListener("dragstart", () => { dragged = { section, index }; item.classList.add("dragging"); });
+            item.addEventListener("dragend", () => { dragged = null; item.classList.remove("dragging"); });
+            item.addEventListener("dragover", e => e.preventDefault());
+            item.addEventListener("drop", async e => {
+                e.preventDefault();
+                if (!dragged) return;
+                const draggedList = currentBook.sections[dragged.section];
+                const targetList = currentBook.sections[section];
+                const draggedItem = draggedList[dragged.index];
+                draggedList.splice(dragged.index, 1);
+                targetList.splice(index, 0, draggedItem);
+                currentSection = section;
+                currentChapterIndex = index;
                 renderAllSections();
-            }
+                loadChapter(currentSection, currentChapterIndex, false);
+                try { await saveBook("Saved"); } catch (err) { console.error(err); setSaveStatus("Save failed"); }
+            });
+            mount.appendChild(item);
+        });
+    }
+    function renderAllSections() { renderSection("front"); renderSection("body"); renderSection("back"); syncStats(); }
+    function loadChapter(section, index, rerender = true) {
+        currentSection = section;
+        currentChapterIndex = index;
+        const ch = currentChapter();
+        chapterNumber.textContent = section === "body" ? index + 1 : "";
+        chapterTitle.textContent = ch.title || "Untitled";
+        editor.innerHTML = ch.content || "";
+        applyEditorStyle();
+        if (rerender) renderAllSections();
+        syncStats();
+    }
 
-            syncStats();
+    function buildPublishChapterList() {
+        publishList.innerHTML = "";
+        const bodyChapters = currentBook?.sections?.body || [];
+        if (!bodyChapters.length) {
+            const empty = document.createElement("div");
+            empty.className = "empty-slot";
+            empty.textContent = "No body chapters available.";
+            publishList.appendChild(empty);
+            return;
         }
-
-        function buildPublishChapterList() {
-            publishList.innerHTML = "";
-
-            const bodyChapters = currentBook?.sections?.body || [];
-
-            if (!bodyChapters.length) {                                 const empty = document.createElement("div");                                                                    empty.className = "empty-slot";
-                empty.textContent = "No body chapters available.";
-                publishList.appendChild(empty);
-                return;
-            }
-                                                                    bodyChapters.forEach((ch, index) => {
-                const row = document.createElement("div");
-                row.className = "publish-row";
-                                                                        row.innerHTML = `
-                    <input type="checkbox" id="publish-ch-${index}" data-id="${ch.id}" checked>
-                    <label for="publish-ch-${index}">${ch.title || "Untitled"}</label>                                          `;
-                                                                        publishList.appendChild(row);
-            });                                                 }
-
-        function resetPublishBypassUI() {
-            publishBypassOverlay?.classList.remove("open");
-            publishBypassOverlay?.setAttribute("aria-hidden", "true");
+        bodyChapters.forEach((ch, index) => {
+            const row = document.createElement("div");
+            row.className = "publish-row";
+            row.innerHTML = `<input type="checkbox" id="publish-ch-${index}" data-id="${ch.id}" checked><label for="publish-ch-${index}">${escapeHtml(ch.title || "Untitled")}</label>`;
+            publishList.appendChild(row);
+        });
+    }
+    function resetPublishBypassUI() { publishBypassOverlay?.classList.remove("open"); publishBypassOverlay?.setAttribute("aria-hidden", "true"); publishQuickWrap?.classList.remove("visible"); publishBypassChoiceRow?.classList.remove("hidden"); if (publishQuickStatus) publishQuickStatus.textContent = ""; }
+    function openPublishModal() { if (!currentBook) return; resetPublishBypassUI(); buildPublishChapterList(); publishModal.classList.add("open"); }
+    function closePublishModal() { resetPublishBypassUI(); publishModal.classList.remove("open"); }
+    function getSelectedPublishChapterIds() { return [...publishList.querySelectorAll("input[type='checkbox']:checked")].map(input => input.dataset.id).filter(Boolean); }
+    function goToPublishPage() {
+        const selectedIds = getSelectedPublishChapterIds();
+        if (!selectedIds.length) { alert("Choose at least one chapter."); return; }
+        const query = new URLSearchParams({ book: bookId, chapters: selectedIds.join(",") });
+        window.location.href = "/publish.html?" + query.toString();
+    }
+    function everyEditorWarningCategoryHasChoice(warnings) { const w = safeObject(warnings, {}); return PUBLISH_WARNING_KEYS.every(key => safeArray(w[key], []).length > 0); }
+    function countNonNoneWarningsEditor(warnings) { let total = 0; const w = safeObject(warnings, {}); PUBLISH_WARNING_KEYS.forEach(key => safeArray(w[key], []).forEach(value => { if (value !== "None") total += 1; })); return total; }
+    function canOfferPublishBypass() {
+        if (!currentBook?.isPublished) return false;
+        const shelf = currentBook.libraryType;
+        if (!shelf || !["fiction", "nonfiction", "fanfiction"].includes(shelf)) return false;
+        const meta = safeObject(currentBook.publishMeta, {});
+        if (!safeArray(meta.genres, []).length || !safeString(meta.rating, "")) return false;
+        if (!everyEditorWarningCategoryHasChoice(meta.warnings)) return false;
+        if (!safeString(meta.summary, "").trim()) return false;
+        const r = meta.rating;
+        if ((r === "Mature" || r === "Explicit") && countNonNoneWarningsEditor(meta.warnings) === 0) return false;
+        return true;
+    }
+    function onPublishNextClick() {
+        const selectedIds = getSelectedPublishChapterIds();
+        if (!selectedIds.length) { alert("Choose at least one chapter."); return; }
+        if (canOfferPublishBypass()) {
+            publishBypassOverlay?.classList.add("open");
+            publishBypassOverlay?.setAttribute("aria-hidden", "false");
             publishQuickWrap?.classList.remove("visible");
             publishBypassChoiceRow?.classList.remove("hidden");
             if (publishQuickStatus) publishQuickStatus.textContent = "";
-        }
-
-                                                                function openPublishModal() {
-            if (!currentBook) return;
-            resetPublishBypassUI();
-            buildPublishChapterList();
-            publishModal.classList.add("open");
-        }
-
-        function closePublishModal() {
-            resetPublishBypassUI();
-            publishModal.classList.remove("open");
-        }
-
-        function getSelectedPublishChapterIds() {
-            return [...publishList.querySelectorAll("input[type='checkbox']:checked")]
-                .map(input => input.dataset.id)
-                .filter(Boolean);
-        }
-
-        function everyEditorWarningCategoryHasChoice(warnings) {
-            const w = safeObject(warnings, {});
-            return PUBLISH_WARNING_KEYS.every(key => safeArray(w[key], []).length > 0);
-        }
-
-        function countNonNoneWarningsEditor(warnings) {
-            let total = 0;
-            const w = safeObject(warnings, {});
-            PUBLISH_WARNING_KEYS.forEach(key => {
-                safeArray(w[key], []).forEach(value => {
-                    if (value !== "None") total += 1;
-                });
-            });
-            return total;
-        }
-
-        function canOfferPublishBypass() {
-            if (!currentBook?.isPublished) return false;
-            const shelf = currentBook.libraryType;
-            if (!shelf || !["fiction", "nonfiction", "fanfiction"].includes(shelf)) return false;
-            const meta = safeObject(currentBook.publishMeta, {});
-            const genres = safeArray(meta.genres, []);
-            if (!genres.length || !safeString(meta.rating, "")) return false;
-            if (!everyEditorWarningCategoryHasChoice(meta.warnings)) return false;
-            if (!safeString(meta.summary, "").trim()) return false;
-            const r = meta.rating;
-            if ((r === "Mature" || r === "Explicit") && countNonNoneWarningsEditor(meta.warnings) === 0) return false;
-            return true;
-        }
-
-        function chapterWordTotalForPublish(chapters) {
-            return chapters.reduce((sum, ch) => sum + countWords(ch.content || ""), 0);
-        }
-
-        function goToPublishPage() {
-            const selectedIds = getSelectedPublishChapterIds();
-            if (!selectedIds.length) {                                  alert("Choose at least one chapter.");
-                return;                                             }
-                                                                    const query = new URLSearchParams({
-                book: bookId,                                           chapters: selectedIds.join(",")
-            });
-            window.location.href = "/publish.html?" + query.toString();                                                 }
-
-        function onPublishNextClick() {
-            const selectedIds = getSelectedPublishChapterIds();
-            if (!selectedIds.length) {
-                alert("Choose at least one chapter.");
-                return;
-            }
-            if (canOfferPublishBypass()) {
-                publishBypassOverlay?.classList.add("open");
-                publishBypassOverlay?.setAttribute("aria-hidden", "false");
-                publishQuickWrap?.classList.remove("visible");
-                publishBypassChoiceRow?.classList.remove("hidden");
-                if (publishQuickStatus) publishQuickStatus.textContent = "";
-            } else {
-                goToPublishPage();
-            }
-        }
-
-        async function quickRepublishFromEditor() {
-            if (!currentUser || !bookId || !currentBook) return;
-            const selectedIds = getSelectedPublishChapterIds();
-            if (!selectedIds.length) {
-                alert("Choose at least one chapter.");
-                return;
-            }
-            if (!canOfferPublishBypass()) {
-                if (publishQuickStatus) publishQuickStatus.textContent = "Saved publish details are incomplete. Opening full publish…";
-                setTimeout(() => goToPublishPage(), 600);
-                return;
-            }
-
-            const bodyList = safeArray(currentBook.sections?.body, []);
-            const wanted = new Set(selectedIds);
-            const selectedChapterObjects = bodyList.filter(ch => wanted.has(ch.id));
-            if (!selectedChapterObjects.length) {
-                if (publishQuickStatus) publishQuickStatus.textContent = "Could not match selected chapters.";
-                return;
-            }
-
-            const publishMeta = normalizePublishMetaForBook(currentBook.publishMeta);
-            const payloadTitle = safeString(currentBook.title, "Untitled Book").trim() || "Untitled Book";
-            const chapterIds = selectedChapterObjects.map(ch => ch.id);
-            const wordCount = chapterWordTotalForPublish(selectedChapterObjects);
-            const now = Date.now();
-            const libraryRef = doc(db, "library", bookId);
-
-            publishQuickPublishBtn.disabled = true;
-            if (publishQuickStatus) publishQuickStatus.textContent = "Publishing…";
-
-            try {
-                let authorName = "unknown";
-                const userSnap = await getDoc(doc(db, "users", currentUser.uid));
-                if (userSnap.exists()) {
-                    authorName = publicDisplayNameFromUserData(userSnap.data() || {});
-                }
-
-                const existingLibrarySnap = await getDoc(libraryRef);
-                const existingLibrary = existingLibrarySnap.exists() ? existingLibrarySnap.data() : {};
-                const firstPublishedAt = safeNumber(
-                    existingLibrary.publishedAt,
-                    safeNumber(existingLibrary.createdAt, now)
-                );
-
-                const userBookPayload = {
-                    title: payloadTitle,
-                    libraryType: currentBook.libraryType,
-                    publishMeta,
-                    publishedChapterIds: chapterIds,
-                    isPublished: true,
-                    updated: now
-                };
-
-                const libraryPayload = {
+        } else goToPublishPage();
+    }
+    async function quickRepublishFromEditor() {
+        if (!currentUser || !bookId || !currentBook) return;
+        const selectedIds = getSelectedPublishChapterIds();
+        if (!selectedIds.length) { alert("Choose at least one chapter."); return; }
+        if (!canOfferPublishBypass()) { if (publishQuickStatus) publishQuickStatus.textContent = "Saved publish details are incomplete. Opening full publish…"; setTimeout(() => goToPublishPage(), 600); return; }
+        const bodyList = safeArray(currentBook.sections?.body, []);
+        const wanted = new Set(selectedIds);
+        const selectedChapterObjects = bodyList.filter(ch => wanted.has(ch.id));
+        if (!selectedChapterObjects.length) { if (publishQuickStatus) publishQuickStatus.textContent = "Could not match selected chapters."; return; }
+        const publishMeta = normalizePublishMetaForBook(currentBook.publishMeta);
+        const payloadTitle = safeString(currentBook.title, "Untitled Book").trim() || "Untitled Book";
+        const chapterIds = selectedChapterObjects.map(ch => ch.id);
+        const wordCount = selectedChapterObjects.reduce((sum, ch) => sum + countWords(ch.content || ""), 0);
+        const now = Date.now();
+        publishQuickPublishBtn.disabled = true;
+        if (publishQuickStatus) publishQuickStatus.textContent = "Publishing…";
+        try {
+            let authorName = "unknown";
+            if (currentProfile) authorName = publicDisplayNameFromUserData(currentProfile);
+            const { data: existingLibrary } = await supabase.from("library").select("*").eq("id", bookId).maybeSingle();
+            const firstPublishedAt = safeNumber(existingLibrary?.data?.publishedAt ?? existingLibrary?.publishedAt, safeNumber(existingLibrary?.createdAt, now));
+            const libraryPayload = {
+                id: bookId,
+                data: {
                     bookId,
-                    ownerUid: currentUser.uid,
+                    ownerUid: currentUser.id,
                     title: payloadTitle,
                     author: authorName || "unknown",
                     type: currentBook.libraryType,
@@ -1835,349 +722,326 @@ homeBtn.onclick = () => {
                     warnings: publishMeta.warnings,
                     summary: publishMeta.summary,
                     extraTags: publishMeta.extraTags,
-                    chapters: selectedChapterObjects.map((ch, index) => ({
-                        id: ch.id,
-                        order: index + 1,
-                        title: ch.title || `Chapter ${index + 1}`,
-                        content: ch.content || "",
-                        words: countWords(ch.content || "")
-                    })),
+                    chapters: selectedChapterObjects.map((ch, index) => ({ id: ch.id, order: index + 1, title: ch.title || `Chapter ${index + 1}`, content: ch.content || "", words: countWords(ch.content || "") })),
                     publishedChapterIds: chapterIds,
                     chapterCount: selectedChapterObjects.length,
                     words: wordCount,
                     createdAt: firstPublishedAt,
                     publishedAt: firstPublishedAt,
                     updated: now,
-                    views: safeNumber(existingLibrary.views, 0),
-                    likes: safeNumber(existingLibrary.likes, 0),
+                    views: safeNumber(existingLibrary?.data?.views ?? existingLibrary?.views, 0),
+                    likes: safeNumber(existingLibrary?.data?.likes ?? existingLibrary?.likes, 0),
                     isPublished: true
-                };
-
-                await updateDoc(doc(db, "users", currentUser.uid, "books", bookId), userBookPayload);
-                await setDoc(libraryRef, libraryPayload, { merge: true });
-
-                currentBook.title = payloadTitle;
-                currentBook.publishMeta = publishMeta;
-                currentBook.publishedChapterIds = chapterIds;
-                currentBook.isPublished = true;
-
-                if (publishQuickStatus) publishQuickStatus.textContent = "Published successfully.";
-                renderTitles();
-            } catch (error) {
-                console.error(error);
-                if (publishQuickStatus) publishQuickStatus.textContent = "Publish failed. Try the full publish page.";
-            } finally {
-                publishQuickPublishBtn.disabled = false;
-            }
-        }
-                                                                async function recordTypedWordsToUserProfile(uid, delta) {
-            if (!uid || !delta || delta <= 0) return;
-            const dayKey = localDayKey();
-            try {
-                await updateDoc(doc(db, "users", uid), {
-                    [`writingDayTotals.${dayKey}`]: increment(delta)
-                });
-            } catch (e) {
-                console.error("Daily writing totals update failed:", e);
-            }
-        }
-
-        async function saveBook(doneText = "Saved") {
-            if (!currentUser || !bookId || !currentBook) return;
-            setSaveStatus("Saving...");
-
-            const nextWords = totalWords();
-            const prevPersisted = persistedBookWordCount;
-
-            await updateDoc(doc(db, "users", currentUser.uid, "books", bookId), {
-                title: currentBook.title || "Untitled Book",
-                sections: currentBook.sections,
-                words: nextWords,
-                updated: Date.now()
-            });
-
-            if (typeof prevPersisted === "number" && Number.isFinite(prevPersisted)) {
-                const delta = Math.max(0, nextWords - prevPersisted);
-                if (delta > 0) {
-                    await recordTypedWordsToUserProfile(currentUser.uid, delta);
                 }
-            }
-            persistedBookWordCount = nextWords;
-
-            setSaveStatus(doneText);
-        }
-
-        async function migrateBookIfNeeded() {
-            if (!currentUser || !bookId || !currentBook) return;
-            const normalized = normalizeBookData(currentBook);
-            const before = JSON.stringify(currentBook);             const after = JSON.stringify(normalized);
-                                                                    currentBook = normalized;
-            ensureStructure();
-            if (before !== after) {
-                try {
-                    await updateDoc(doc(db, "users", currentUser.uid, "books", bookId), {
-                        title: currentBook.title,
-                        sections: currentBook.sections,
-                        words: safeNumber(currentBook.words, 0),
-                        updated: Date.now()
-                    });                                                 } catch (e) {
-                    console.error("Migration save failed:", e);
-                }
-            }
-        }
-
-        function scheduleSave() {
-            clearTimeout(saveTimer);
-            saveTimer = setTimeout(async () => {
-                try {
-                    await saveBook("Saved");
-                } catch (e) {
-                    console.error(e);
-                    setSaveStatus("Save failed");
-                }
-            }, 700);
-        }
-        function addChapterTo(section) {                            const label = section === "body" ? "Chapter name?" : "Section name?";                                           const name = prompt(label);
-            if (!name) return;
-            currentBook.sections[section].push({
-                id: generateId(),
-                title: name,
-                content: ""
-            });
-
-            renderAllSections();
-            loadChapter(section, currentBook.sections[section].length - 1, false);
-            scheduleSave();                                     }
-
-        async function deleteBook() {                               const ok = confirm("Delete this entire book?");
-            if (!ok) return;
-
-            try {                                                       await deleteDoc(doc(db, "users", currentUser.uid, "books", bookId));
-                window.location.href = "/studio.html";              } catch (e) {
-                console.error(e);
-                setSaveStatus("Delete failed");
-            }
-        }
-
-        function applyEditorStyle() {
-            const font = localStorage.getItem("alysum-font") || "Georgia";                                                  const size = localStorage.getItem("alysum-fontSize") || "20";
-                                                                    editor.style.fontFamily = font + (font === "Arial" || font === "Inter" ? ", sans-serif" : ", serif");                                                                   editor.style.fontSize = size + "px";                    editor.style.lineHeight = "1.7";
-        }
-        addChapterBtn.addEventListener("click", () => addChapterTo("body"));                                            quickAddBtn.addEventListener("click", () => addChapterTo("body"));                                              deleteBookBtn.addEventListener("click", deleteBook);
-        deleteBookTopBtn.addEventListener("click", deleteBook);
-        publishBtn.addEventListener("click", openPublishModal);                                                         publishTopBtn.addEventListener("click", openPublishModal);
-        closePublishBtn.addEventListener("click", closePublishModal);
-        publishNextBtn.addEventListener("click", onPublishNextClick);
-        publishBypassNo?.addEventListener("click", () => {
-            resetPublishBypassUI();
-            goToPublishPage();
-        });
-        publishBypassYes?.addEventListener("click", () => {
-            publishBypassChoiceRow?.classList.add("hidden");
-            publishQuickWrap?.classList.add("visible");
-        });
-        publishQuickPublishBtn?.addEventListener("click", () => void quickRepublishFromEditor());
-                                                                publishModal.addEventListener("click", (e) => {
-            if (e.target === publishModal) {                            closePublishModal();
-            }
-        });
-
-        deleteChapterBtn.addEventListener("click", async () => {
-            if (currentBook.sections[currentSection].length <= 1 && currentSection === "body") {
-                alert("Your body needs at least one chapter.");
-                return;                                             }
-                                                                    const ok = confirm("Delete this chapter?");             if (!ok) return;
-
-            currentBook.sections[currentSection].splice(currentChapterIndex, 1);
-                                                                    if (currentBook.sections[currentSection].length === 0) {                                                            if (currentSection === "front" || currentSection === "back") {
-                    currentSection = "body";                                currentChapterIndex = 0;                            } else {
-                    currentBook.sections.body.push({ id: generateId(), title: "Chapter 1", content: "" });
-                    currentChapterIndex = 0;                            }                                                   } else if (currentChapterIndex >= currentBook.sections[currentSection].length) {
-                currentChapterIndex = currentBook.sections[currentSection].length - 1;
-            }
-            renderAllSections();
-            loadChapter(currentSection, currentChapterIndex, false);                                            
-            try {                                                       await saveBook("Saved");
-            } catch (e) {                                               console.error(e);
-                setSaveStatus("Save failed");
-            }
-        });
-                                                                renameBookBtn.addEventListener("click", async () => {                                                               const name = prompt("Book name?", currentBook.title || "");
-            if (!name) return;
-                                                                    currentBook.title = name;
+            };
+            currentBook.title = payloadTitle;
+            currentBook.publishMeta = publishMeta;
+            currentBook.publishedChapterIds = chapterIds;
+            currentBook.isPublished = true;
+            await supabase.from("books").update(toDbBookPatch(currentBook)).eq("id", bookId);
+            await supabase.from("library").upsert(libraryPayload);
+            if (publishQuickStatus) publishQuickStatus.textContent = "Published successfully.";
             renderTitles();
-            try {
-                await saveBook("Saved");                            } catch (e) {
-                console.error(e);                                       setSaveStatus("Save failed");
-            }
-        });
+        } catch (error) {
+            console.error(error);
+            if (publishQuickStatus) publishQuickStatus.textContent = "Publish failed. Try the full publish page.";
+        } finally { publishQuickPublishBtn.disabled = false; }
+    }
 
-        renameChapterBtn.addEventListener("click", async () => {
-            const ch = currentChapter();
-            const name = prompt("Rename chapter?", ch.title || "");
-            if (!name) return;
-                                                                    ch.title = name;
-            chapterTitle.textContent = name;
-            renderAllSections();
-            try {
-                await saveBook("Saved");
-            } catch (e) {                                               console.error(e);
-                setSaveStatus("Save failed");                       }
+    async function recordTypedWordsToUserProfile(delta) {
+        if (!currentUser || !delta || delta <= 0) return;
+        const dayKey = localDayKey();
+        try {
+            const currentTotals = safeObject(currentProfile?.writingDayTotals, {});
+            const nextTotals = { ...currentTotals, [dayKey]: safeNumber(currentTotals[dayKey], 0) + delta };
+            currentProfile = { ...currentProfile, writingDayTotals: nextTotals };
+            await supabase.from("users").update({ writing_day_totals: nextTotals }).eq("id", currentUser.id);
+        } catch (e) { console.error("Daily writing totals update failed:", e); }
+    }
+
+    async function saveBook(doneText = "Saved") {
+        if (!currentUser || !bookId || !currentBook) return;
+        setSaveStatus("Saving...");
+        const nextWords = totalWords();
+        const prevPersisted = persistedBookWordCount;
+        const patch = toDbBookPatch(currentBook);
+        const { error } = await supabase.from("books").update(patch)
+        .eq("id", bookId);
+        if (error) throw error;
+        if (typeof prevPersisted === "number" && Number.isFinite(prevPersisted)) {
+            const delta = Math.max(0, nextWords - prevPersisted);
+            if (delta > 0) await recordTypedWordsToUserProfile(delta);
+        }
+        persistedBookWordCount = nextWords;
+        setSaveStatus(doneText);
+    }
+
+    async function migrateBookIfNeeded() {
+        if (!currentUser || !bookId || !currentBook) return;
+        const before = JSON.stringify(currentBook);
+        currentBook = normalizeBookData(currentBook);
+        const after = JSON.stringify(currentBook);
+        if (before !== after) {
+            try { await saveBook("Saved"); } catch (e) { console.error("Migration save failed:", e); }
+        }
+    }
+
+    function scheduleSave() {
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(async () => {
+            try { await saveBook("Saved"); } catch (e) { console.error(e); setSaveStatus("Save failed"); }
+        }, 700);
+    }
+
+    function addChapterTo(section) {
+        const label = section === "body" ? "Chapter name?" : "Section name?";
+        const name = prompt(label);
+        if (!name) return;
+        currentBook.sections[section].push({ id: generateId(), title: name, content: "" });
+        renderAllSections();
+        loadChapter(section, currentBook.sections[section].length - 1, false);
+        scheduleSave();
+    }
+
+    async function deleteBook() {
+        const ok = confirm("Delete this entire book?");
+        if (!ok) return;
+        try {
+            const { error } = await supabase.from("books").delete()
+        .eq("id", bookId);
+            if (error) throw error;
+            window.location.href = "/studio.html";
+        } catch (e) { console.error(e); setSaveStatus("Delete failed"); }
+    }
+
+    function applyEditorStyle() {
+        const font = localStorage.getItem("alysum-font") || "Georgia";
+        const size = localStorage.getItem("alysum-fontSize") || "20";
+        editor.style.fontFamily = font + (font === "Arial" || font === "Inter" ? ", sans-serif" : ", serif");
+        editor.style.fontSize = size + "px";
+        editor.style.lineHeight = "1.7";
+    }
+
+    addChapterBtn.addEventListener("click", () => addChapterTo("body"));
+    quickAddBtn.addEventListener("click", () => addChapterTo("body"));
+    deleteBookBtn.addEventListener("click", deleteBook);
+    deleteBookTopBtn.addEventListener("click", deleteBook);
+    publishBtn.addEventListener("click", openPublishModal);
+    publishTopBtn.addEventListener("click", openPublishModal);
+    closePublishBtn.addEventListener("click", closePublishModal);
+    publishNextBtn.addEventListener("click", onPublishNextClick);
+    publishBypassNo?.addEventListener("click", () => { resetPublishBypassUI(); goToPublishPage(); });
+    publishBypassYes?.addEventListener("click", () => { publishBypassChoiceRow?.classList.add("hidden"); publishQuickWrap?.classList.add("visible"); });
+    publishQuickPublishBtn?.addEventListener("click", () => void quickRepublishFromEditor());
+    publishModal.addEventListener("click", e => { if (e.target === publishModal) closePublishModal(); });
+    document.getElementById("exportBtn")?.addEventListener("click", () => { if (!bookId) { alert("No book loaded."); return; } window.location.href = `/Novel_Exporter.html?book=${encodeURIComponent(bookId)}`; });
+    document.getElementById("nbBtn")?.addEventListener("click", () => {
+        const p = document.getElementById("nbPanel");
+        if (!p) return;
+        const wasHidden = p.classList.contains("hidden");
+        p.classList.toggle("hidden");
+        if (wasHidden && !p.classList.contains("hidden")) {
+            try { (window.__alysumNotesOpenPanel || function(){})(); } catch(e) { console.error(e); }
+        }
+    });
+
+    deleteChapterBtn.addEventListener("click", async () => {
+        if (currentBook.sections[currentSection].length <= 1 && currentSection === "body") { alert("Your body needs at least one chapter."); return; }
+        if (!confirm("Delete this chapter?")) return;
+        currentBook.sections[currentSection].splice(currentChapterIndex, 1);
+        if (currentBook.sections[currentSection].length === 0) {
+            if (currentSection === "front" || currentSection === "back") { currentSection = "body"; currentChapterIndex = 0; }
+            else { currentBook.sections.body.push({ id: generateId(), title: "Chapter 1", content: "" }); currentChapterIndex = 0; }
+        } else if (currentChapterIndex >= currentBook.sections[currentSection].length) currentChapterIndex = currentBook.sections[currentSection].length - 1;
+        renderAllSections();
+        loadChapter(currentSection, currentChapterIndex, false);
+        try { await saveBook("Saved"); } catch (e) { console.error(e); setSaveStatus("Save failed"); }
+    });
+
+    renameBookBtn.addEventListener("click", async () => {
+        const name = prompt("Book name?", currentBook.title || "");
+        if (!name) return;
+        currentBook.title = name;
+        renderTitles();
+        try { await saveBook("Saved"); } catch (e) { console.error(e); setSaveStatus("Save failed"); }
+    });
+
+    renameChapterBtn.addEventListener("click", async () => {
+        const ch = currentChapter();
+        const name = prompt("Rename chapter?", ch.title || "");
+        if (!name) return;
+        ch.title = name;
+        chapterTitle.textContent = name;
+        renderAllSections();
+        try { await saveBook("Saved"); } catch (e) { console.error(e); setSaveStatus("Save failed"); }
+    });
+
+    chapterTitle.addEventListener("input", () => {
+        currentChapter().title = chapterTitle.textContent.trim() || "Untitled";
+        renderAllSections();
+        scheduleSave();
+    });
+    editor.addEventListener("input", () => {
+        currentChapter().content = editor.innerHTML;
+        syncStats();
+        scheduleSave();
+    });
+    editor.addEventListener("keydown", e => {
+        if (e.key === "Enter") setTimeout(() => { currentChapter().content = editor.innerHTML; syncStats(); scheduleSave(); }, 0);
+    });
+
+    document.querySelectorAll("[data-group]").forEach(header => {
+        header.addEventListener("click", () => {
+            const group = header.dataset.group;
+            const body = document.getElementById("group-" + group);
+            const caret = document.getElementById("caret-" + group);
+            body.classList.toggle("hidden");
+            caret.textContent = body.classList.contains("hidden") ? "▶" : "▼";
         });
-                                                                chapterTitle.addEventListener("input", () => {
-            currentChapter().title = chapterTitle.textContent.trim() || "Untitled";                                         renderAllSections();                                    scheduleSave();
-        });                                                     editor.addEventListener("keydown", (e) => {
-            if (e.key === "Enter") {
-                setTimeout(() => {                                          currentChapter().content = editor.innerHTML;                                                                    syncStats();
-                    scheduleSave();
-                }, 0);
-            }
-        });
-                                                                editor.addEventListener("input", () => {
+    });
+    document.querySelectorAll("[data-cmd]").forEach(btn => {
+        btn.addEventListener("click", () => {
+            document.execCommand(btn.dataset.cmd, false, null);
+            editor.focus();
             currentChapter().content = editor.innerHTML;
-            syncStats();                                            scheduleSave();
-        });
-
-        document.querySelectorAll("[data-group]").forEach(header => {                                                       header.addEventListener("click", () => {
-                const group = header.dataset.group;                     const body = document.getElementById("group-" + group);
-                const caret = document.getElementById("caret-" + group);
-                body.classList.toggle("hidden");
-                caret.textContent = body.classList.contains("hidden") ? "▶" : "▼";
-            });
-        });                                             
-        document.querySelectorAll("[data-cmd]").forEach(btn => {                                                            btn.addEventListener("click", () => {
-                document.execCommand(btn.dataset.cmd, false, null);
-                editor.focus();
-                currentChapter().content = editor.innerHTML;
-                syncStats();                                            scheduleSave();                                     });
-        });
-                                                                formatSelect.addEventListener("change", () => {
-            const value = formatSelect.value;
-            document.execCommand("formatBlock", false, value === "h2" ? "h2" : "div");
-            editor.focus();                                         currentChapter().content = editor.innerHTML;            syncStats();
+            syncStats();
             scheduleSave();
         });
+    });
+    formatSelect.addEventListener("change", () => { document.execCommand("formatBlock", false, formatSelect.value === "h2" ? "h2" : "div"); editor.focus(); currentChapter().content = editor.innerHTML; syncStats(); scheduleSave(); });
+    quoteBtn.addEventListener("click", () => { document.execCommand("formatBlock", false, "blockquote"); editor.focus(); currentChapter().content = editor.innerHTML; syncStats(); scheduleSave(); });
+    fontSelect.addEventListener("change", () => { localStorage.setItem("alysum-font", fontSelect.value); applyEditorStyle(); });
+    fontSizeSelect.addEventListener("change", () => { localStorage.setItem("alysum-fontSize", fontSizeSelect.value); applyEditorStyle(); });
 
-        quoteBtn.addEventListener("click", () => {
-            document.execCommand("formatBlock", false, "blockquote");                                                       editor.focus();
-            currentChapter().content = editor.innerHTML;            syncStats();
-            scheduleSave();                                     });
+    function loadEditorSprint() { try { return JSON.parse(localStorage.getItem(SPRINT_KEY) || "null"); } catch { return null; } }
+    function saveEditorSprint(state) { localStorage.setItem(SPRINT_KEY, JSON.stringify(state)); }
+    function clearEditorSprint() { localStorage.removeItem(SPRINT_KEY); }
+    function formatMMSS(totalSeconds) { const s = Math.max(0, Math.floor(totalSeconds)); const m = Math.floor(s / 60); const r = s % 60; return `${String(m).padStart(2, "0")}:${String(r).padStart(2, "0")}`; }
+    function openModal(el) { el.classList.add("open"); }
+    function closeModal(el) { el.classList.remove("open"); }
+    function showResult(wordsWritten) { const wrote = Number.isFinite(wordsWritten) ? wordsWritten : 0; sprintResultTitle.textContent = wrote > 0 ? "Congratulations! 🎉" : "Oh no! 😞"; sprintResultText.textContent = wrote > 0 ? `You wrote ${wrote.toLocaleString()} words!` : "You wrote 0 words"; openModal(sprintResultModal); }
+    function endSprintAndReport(reason = "done") { const state = loadEditorSprint(); if (!state) return; const delta = Math.max(0, totalWords() - safeNumber(state.startTotal, 0)); clearInterval(sprintTick); sprintTick = null; clearEditorSprint(); sprintFloat.classList.remove("open"); sprintToolbarBtn.disabled = false; sprintToolbarBtn.textContent = "⏱ Sprint"; if (reason === "done") showResult(delta); }
+    function renderSprintUI() {
+        const state = loadEditorSprint();
+        if (!state || !state.end || state.bookId !== bookId) { sprintFloat.classList.remove("open"); sprintToolbarBtn.disabled = false; sprintToolbarBtn.textContent = "⏱ Sprint"; return; }
+        const remainingSec = Math.max(0, Math.floor((state.end - Date.now()) / 1000));
+        sprintFloatTime.textContent = formatMMSS(remainingSec);
+        sprintFloat.classList.add("open");
+        sprintToolbarBtn.disabled = false;
+        sprintToolbarBtn.textContent = `⏱ ${formatMMSS(remainingSec)}`;
+        if (remainingSec <= 0) endSprintAndReport("done");
+    }
+    function startSprint(minutes) { const mins = safeNumber(minutes, 25); const durationMs = Math.max(1, Math.floor(mins * 60 * 1000)); saveEditorSprint({ bookId, start: Date.now(), end: Date.now() + durationMs, startTotal: totalWords(), minutes: mins }); closeModal(sprintConfirmModal); closeModal(sprintOptionsModal); if (sprintTick) clearInterval(sprintTick); renderSprintUI(); sprintTick = setInterval(renderSprintUI, 500); }
+    function requestStartSprint(minutes) { pendingSprintMinutes = minutes; sprintConfirmText.textContent = `Start a ${minutes === 60 ? "1 hour" : `${minutes} minute`} sprint?`; openModal(sprintConfirmModal); }
+    sprintToolbarBtn?.addEventListener("click", () => { const state = loadEditorSprint(); if (state && state.end && state.bookId === bookId && state.end > Date.now()) { sprintOptionsSub.textContent = "A sprint is already running. Use Stop to end early."; sprintOptionsModal.querySelectorAll("[data-min]").forEach(b => (b.disabled = true)); } else { sprintOptionsSub.textContent = "Tracks words written during the sprint."; sprintOptionsModal.querySelectorAll("[data-min]").forEach(b => (b.disabled = false)); } openModal(sprintOptionsModal); });
+    sprintOptionsModal?.querySelectorAll("[data-min]")?.forEach(btn => btn.addEventListener("click", () => { if (btn.disabled) return; const mins = Number(btn.dataset.min); if (!mins) return; closeModal(sprintOptionsModal); requestStartSprint(mins); }));
+    sprintOptionsClose?.addEventListener("click", () => closeModal(sprintOptionsModal));
+    sprintOptionsModal?.addEventListener("click", e => { if (e.target === sprintOptionsModal) closeModal(sprintOptionsModal); });
+    sprintConfirmNo?.addEventListener("click", () => closeModal(sprintConfirmModal));
+    sprintConfirmYes?.addEventListener("click", () => { const mins = pendingSprintMinutes ?? 25; pendingSprintMinutes = null; startSprint(mins); });
+    sprintConfirmModal?.addEventListener("click", e => { if (e.target === sprintConfirmModal) closeModal(sprintConfirmModal); });
+    sprintResultOk?.addEventListener("click", () => closeModal(sprintResultModal));
+    sprintResultModal?.addEventListener("click", e => { if (e.target === sprintResultModal) closeModal(sprintResultModal); });
+    sprintStopBtn?.addEventListener("click", () => endSprintAndReport("stopped"));
 
-        fontSelect.addEventListener("change", () => {               localStorage.setItem("alysum-font", fontSelect.value);
-            applyEditorStyle();
-        });
+    async function loadProfile() {
+        const { data, error } = await supabase.from("users").select("*").eq("id", currentUser.id).maybeSingle();
+        if (error) throw error;
+        currentProfile = toCamelProfile(data || {});
+    }
 
-        fontSizeSelect.addEventListener("change", () => {
-            localStorage.setItem("alysum-fontSize", fontSizeSelect.value);
-            applyEditorStyle();
-        });
+    // Automatically load the newest book if URL parameters are missing
+async function resolveBookId() {
+    if (bookId) {
+        rememberBookId(bookId);
+        return true;
+    }
 
-        async function loadBook(uid) {
-            try {
-                const snap = await getDoc(doc(db, "users", uid, "books", bookId));
+    const { data, error } = await supabase
+        .from("books")
+        .select("id")
+        .eq("user_id", currentUser.id)
+        .order("updated", { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-                if (!snap.exists()) {
-                    setSaveStatus("Book not found");
-                    topBookTitle.textContent = "Book not found";
-                    sidebarBookTitle.textContent = "Book not found";
-                    return;
-                }
-                                                                        currentBook = normalizeBookData(snap.data());
-                ensureStructure();
-                await migrateBookIfNeeded();
-                                                                        renderTitles();
-                renderAllSections();
+    if (error) throw error;
+    if (!data?.id) return false;
 
-                if (currentBook.sections.body.length > 0) {
-                    loadChapter("body", 0, false);
-                } else {
-                    loadChapter("front", 0, false);
-                }
-                syncStats();
-                persistedBookWordCount = totalWords();
-                setSaveStatus("Ready");
-            } catch (e) {
-                console.error("LOAD ERROR:", e);
-                setSaveStatus("Error loading");                         topBookTitle.textContent = "Error loading";
-                sidebarBookTitle.textContent = "Error loading";                                                             }
+    rememberBookId(data.id);
+    return true;
+}
+
+async function loadBook() {
+    try {
+            const { data, error } = await supabase.from("books").select("*").eq("id", bookId)
+        .maybeSingle();
+            if (error) throw error;
+            if (!data) { setSaveStatus("Book not found"); topBookTitle.textContent = "Book not found"; sidebarBookTitle.textContent = "Book not found"; return; }
+            currentBook = normalizeBookData(data);
+            await migrateBookIfNeeded();
+            renderTitles();
+            renderAllSections();
+            if (currentBook.sections.body.length > 0) loadChapter("body", 0, false); else loadChapter("front", 0, false);
+            syncStats();
+            persistedBookWordCount = totalWords();
+            setSaveStatus("Ready");
+        } catch (e) {
+            console.error("LOAD ERROR:", e);
+            setSaveStatus("Error loading");
+            topBookTitle.textContent = "Error loading";
+            sidebarBookTitle.textContent = "Error loading";
         }
+    }
 
-        onAuthStateChanged(auth, async (user) => {
-            if (!user) {
-                window.location.href = "/login.html";
-                return;
-            }
+    async function init() {
+        const { data: authData } = await supabase.auth.getUser();
+        const user = authData?.user;
+        if (!user) { window.location.href = "/login.html"; return; }
+        currentUser = user;
+        applyResponsiveSidebar();
+        applyTheme(localStorage.getItem("alysum-theme") || "light");
+        fontSelect.value = localStorage.getItem("alysum-font") || "Georgia";
+        fontSizeSelect.value = localStorage.getItem("alysum-fontSize") || "20";
+        applyEditorStyle();
+        setSaveStatus("Connecting...");
+    await loadProfile().catch(console.error);
 
-            if (!bookId) {
-                setSaveStatus("No book selected");
-                topBookTitle.textContent = "No book selected";
-                sidebarBookTitle.textContent = "No book selected";
-                return;
-            }
+    const hasBook = await resolveBookId().catch((e) => {
+        console.error("Book resolve failed:", e);
+        return false;
+    });
 
-            currentUser = user;
-            applyResponsiveSidebar();
+    if (!hasBook) {
+        setSaveStatus("No book selected");
+        topBookTitle.textContent = "No book selected";
+        sidebarBookTitle.textContent = "No book selected";
+        return;
+    }
 
-            const savedTheme = localStorage.getItem("alysum-theme") || "light";
-            applyTheme(savedTheme);
-                                                                    fontSelect.value = localStorage.getItem("alysum-font") || "Georgia";
-            fontSizeSelect.value = localStorage.getItem("alysum-fontSize") || "20";
-            applyEditorStyle();
+    await loadBook();
 
-            void (async () => {
-                const href = new URL("./js/nb-app.js?v=28", import.meta.url).href;
-                const panelEl = () => document.getElementById("nbPanel");
-                const markNotesFailed = msg => {
-                    const st = document.getElementById("nbStatus");
-                    const b = document.getElementById("nbBtn");
-                    if (st) st.textContent = msg;
-                    if (b) b.setAttribute("title", msg);
-                };
-                const gapsMs = [0, 350, 1400, 4500];
-                let lastErr = null;
-                for (let i = 0; i < gapsMs.length; i++) {
-                    if (i > 0) await new Promise(r => setTimeout(r, gapsMs[i] - gapsMs[i - 1]));
-                    try {
-                        const nb = await import(href);
-                        nb.mountEditorNotes(bookId, { db, uid: user.uid });
-                        if (panelEl()?.dataset?.alysumNotesInit === "1") {
-                            document.getElementById("nbBtn")?.setAttribute("title", "Notes");
-                            return;
-                        }
-                        lastErr = new Error("Notes mount did not finish");
-                    } catch (e) {
-                        lastErr = e;
-                        console.error("Notes load attempt " + (i + 1) + ":", e);
-                    }
-                }
-                markNotesFailed(
-                    "Notes didn't load — hard refresh (Ctrl+Shift+R). If this stays, open the browser console (F12)."
-                );
-                console.error("Notes: all retries failed", lastErr);
-            })();
-
-            setSaveStatus("Connecting...");
-
+        void (async () => {
+            const href = new URL("./js/nb-app.js?v=28", import.meta.url).href;
+            const markNotesFailed = msg => { const st = document.getElementById("nbStatus"); const b = document.getElementById("nbBtn"); if (st) st.textContent = msg; if (b) b.setAttribute("title", msg); };
             try {
-                await loadBook(user.uid);                           } catch (e) {                                               console.error(e);
-                setSaveStatus("Error loading");
-            }
-            document.getElementById("exportBtn")?.addEventListener("click", () => {
-                if (!bookId) {
-                    alert("No book loaded.");
-                    return;
+                const nb = await import(href);
+                if (nb.mountEditorNotes) {
+                    nb.mountEditorNotes(bookId, { supabase, uid: user.id, userId: user.id });
                 }
-                window.location.href = `/Novel_Exporter.html?book=${encodeURIComponent(bookId)}`;
-            });
-
-            // Resume sprint if it exists for this book.
-            const s = loadEditorSprint();
-            if (s && s.bookId === bookId && s.end && s.end > Date.now()) {
-                renderSprintUI();
-                if (sprintTick) clearInterval(sprintTick);
-                sprintTick = setInterval(renderSprintUI, 500);
-            } else if (s && s.bookId === bookId) {
-                clearEditorSprint();
+            } catch (e) {
+                console.error("Notes load failed:", e);
+                markNotesFailed("Notes did not load.");
             }
-        });                                                 </script>
-                                                        </body>
+        })();
+
+        const s = loadEditorSprint();
+        if (s && s.bookId === bookId && s.end && s.end > Date.now()) { renderSprintUI(); if (sprintTick) clearInterval(sprintTick); sprintTick = setInterval(renderSprintUI, 500); }
+        else if (s && s.bookId === bookId) clearEditorSprint();
+    }
+
+    init();
+</script>
+
+</body>
+</html>

@@ -16,16 +16,19 @@
     <link rel="apple-touch-icon" href="/Alysum-3.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/Alysum-3.png">
     <script src="/js/pwa-register.js" defer></script>
-    <!-- ALYSUM:PWA:END -->
-    <title>Alysum Library</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script>
-        try {
-            var __g = localStorage.getItem("alysum-gradient-theme");
-            if (__g && __g !== "classic") document.documentElement.setAttribute("data-gradient-theme", __g);
-        } catch (e) {}
-    </script>
-    <link rel="stylesheet" href="/css/site-responsive.css?v=1" /><style>
+    <!-- ALYSUM:PWA:END --><title>Alysum Library</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/site-responsive.css?v=1" />
+<link rel="stylesheet" href="/css/gradient-themes.css?v=2" />
+
+<script>
+    try {
+        var __g = localStorage.getItem("alysum-gradient-theme");
+        if (__g && __g !== "classic") document.documentElement.setAttribute("data-gradient-theme", __g);
+    } catch (e) {}
+</script>
+
+<style>
     * { box-sizing: border-box; }
     :root {
         --alysum-purple: #6d28d9;
@@ -41,7 +44,7 @@
     }
     html, body { margin: 0; min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: var(--bg); color: var(--text); }
     body { display: flex; flex-direction: column; }
-    .topbar { position: sticky; top: 0; z-index: 50; border-bottom: 1px solid var(--border); background: rgba(11, 18, 32, 0.88); backdrop-filter: blur(12px); }
+    .topbar { position: sticky; top: 0; z-index: 50; border-bottom: 1px solid var(--border); background: rgba(11,18,32,0.88); backdrop-filter: blur(12px); }
     .topbar-inner { max-width: 1320px; margin: 0 auto; padding: 18px 20px 14px; }
     .brand-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
     .brand-block { min-width: 0; }
@@ -79,7 +82,7 @@
     .card-title-wrap { min-width: 0; }
     .card-title { font-size: 22px; font-weight: 900; line-height: 1.15; word-break: break-word; }
     .card-author { margin-top: 6px; font-size: 14px; color: var(--text-soft); font-weight: 700; }
-    .rating-badge { flex: 0 0 auto; border-radius: 999px; padding: 8px 12px; background: var(--theme-accent-soft-bg); color: #ddd6fe; font-size: 12px; font-weight: 900; letter-spacing: 0.04em; text-transform: uppercase; }
+    .rating-badge { flex: 0 0 auto; border-radius: 999px; padding: 8px 12px; background: rgba(109,40,217,0.18); color: #ddd6fe; font-size: 12px; font-weight: 900; letter-spacing: 0.04em; text-transform: uppercase; }
     .meta-row { display: flex; gap: 8px; flex-wrap: wrap; }
     .chip { background: var(--chip); border: 1px solid rgba(255,255,255,0.06); color: var(--text); border-radius: 999px; padding: 7px 11px; font-size: 12px; font-weight: 800; line-height: 1.2; }
     .chip.soft { color: var(--text-soft); }
@@ -95,39 +98,38 @@
     @media (max-width: 1100px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
     @media (max-width: 700px) { html, body { overflow-x: hidden; } .topbar-inner, .page { padding-left: 14px; padding-right: 14px; } .title { font-size: 28px; } .grid { grid-template-columns: 1fr; } .card-title { font-size: 20px; } .card-footer { align-items: stretch; } .read-btn { width: 100%; } }
 </style>
-<link rel="stylesheet" href="/css/gradient-themes.css?v=2" />
 
 </head>
 <body>
-    <div class="topbar">
-        <div class="topbar-inner">
-            <div class="brand-row">
-                <div class="brand-block">
-                    <div class="eyebrow">Alysum</div>
-                    <h1 class="title">Alysum Library</h1>
-                    <div class="subtitle">Discover published stories from Alysum writers.</div>
-                </div>
-                <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-                    <a class="home-link hidden" id="readerHomeLink" href="/reader-home.html">← Reading profile</a>
-                    <div id="userStatus" style="font-size:13px; font-weight:900; color:#c4b5fd;"></div>
-                    <div class="library-mode-switch hidden" id="libraryModeSwitch" role="group" aria-label="Reading or studio">
-                        <button type="button" class="library-mode-seg active" data-mode="library">Reading</button>
-                        <button type="button" class="library-mode-seg" data-mode="studio">Studio</button>
-                    </div>
-                    <a class="home-link" id="libraryBackStudio" href="/studio.html">Back to Studio</a>
-                </div>
+<div class="topbar">
+    <div class="topbar-inner">
+        <div class="brand-row">
+            <div class="brand-block">
+                <div class="eyebrow">Alysum</div>
+                <h1 class="title">Alysum Library</h1>
+                <div class="subtitle">Discover published stories from Alysum writers.</div>
             </div>
-            <div class="nav-row">
-                <button class="nav-btn active" data-filter="fiction" type="button">Fiction</button>
-                <button class="nav-btn" data-filter="nonfiction" type="button">Nonfiction</button>
-                <button class="nav-btn" data-filter="fanfiction" type="button">Fanfiction</button>
-                <button class="nav-btn" data-filter="all" type="button">All</button>
-            </div>
-            <div class="search-wrap">
-                <input class="search-input" id="searchInput" type="text" placeholder="Search by title, author, summary, genre, tag, or warning...">
+            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                <a class="home-link hidden" id="readerHomeLink" href="/reader-home.html">← Reading profile</a>
+                <div id="userStatus" style="font-size:13px; font-weight:900; color:#c4b5fd;"></div>
+                <div class="library-mode-switch hidden" id="libraryModeSwitch" role="group" aria-label="Reading or studio">
+                    <button type="button" class="library-mode-seg active" data-mode="library">Reading</button>
+                    <button type="button" class="library-mode-seg" data-mode="studio">Studio</button>
+                </div>
+                <a class="home-link" id="libraryBackStudio" href="/studio.html">Back to Studio</a>
             </div>
         </div>
-    </div><main class="page">
+        <div class="nav-row">
+            <button class="nav-btn active" data-filter="fiction" type="button">Fiction</button>
+            <button class="nav-btn" data-filter="nonfiction" type="button">Nonfiction</button>
+            <button class="nav-btn" data-filter="fanfiction" type="button">Fanfiction</button>
+            <button class="nav-btn" data-filter="all" type="button">All</button>
+        </div>
+        <div class="search-wrap">
+            <input class="search-input" id="searchInput" type="text" placeholder="Search by title, author, summary, genre, tag, or warning...">
+        </div>
+    </div>
+</div><main class="page">
     <div class="results-bar">
         <div class="results-text" id="resultsText">Loading stories...</div>
         <button class="refresh-btn" id="refreshBtn" type="button">Refresh</button>
@@ -136,12 +138,8 @@
     <div class="error hidden" id="errorState">Could not load the library.</div>
     <div class="empty hidden" id="emptyState">No stories found.</div>
     <div class="grid hidden" id="bookGrid"></div>
-</main>
-
-<script type="module">
-    import { db, auth } from "./firebase.js";
-    import { collection, onSnapshot, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+</main><script type="module">
+    import { supabase } from "./firebase.js";
     import { publicDisplayNameFromUserData } from "./js/profile-display.js?v=1";
     import { accountSupportsModeToggle, normalizeAccountType, ACCOUNT_AUTHOR, ACCOUNT_READER, READER_HOME_URL, setUiMode } from "./js/account-mode.js?v=1";
 
@@ -162,6 +160,11 @@
 
     const studioLinkDefaultLabel = "Back to Studio";
     const studioLinkAuthorLabel = "← Profile & studio";
+
+    let allBooks = [];
+    let currentFilter = "fiction";
+    let currentUser = null;
+    const readCounts = new Map();
 
     function applyLibraryTopNav(accountType) {
         const t = normalizeAccountType(accountType);
@@ -200,36 +203,39 @@
         });
     }
 
-    let allBooks = [];
-    let currentFilter = "fiction";
-    let currentUser = null;
-    let libraryUnsubscribe = null;
-    const readCounts = new Map();
-    const readUnsubscribers = new Map();
-
-    onAuthStateChanged(auth, async (user) => {
-        if (user) {
-            currentUser = user;
-            try {
-                const snap = await getDoc(doc(db, "users", user.uid));
-                const data = snap.exists() ? snap.data() || {} : {};
-                const label = snap.exists() ? publicDisplayNameFromUserData(data) : "user";
-                userStatus.textContent = label;
-                applyLibraryTopNav(data.accountType);
-            } catch (e) {
-                console.error(e);
-                userStatus.textContent = "Logged in";
-                applyLibraryTopNav(undefined);
-            }
-        } else {
+    async function loadCurrentUser() {
+        const { data: authData, error: authError } = await supabase.auth.getUser();
+        if (authError) console.warn(authError);
+        const user = authData?.user;
+        if (!user) {
             currentUser = null;
             userStatus.innerHTML = `<a href="/login.html" style="color:#c4b5fd; font-weight:900; text-decoration:none;">Log in</a>`;
             libraryModeSwitch?.classList.add("hidden");
             libraryBackStudio?.classList.remove("hidden");
             if (libraryBackStudio) libraryBackStudio.textContent = studioLinkDefaultLabel;
             readerHomeLink?.classList.add("hidden");
+            return;
         }
-    });
+
+        currentUser = user;
+        try {
+            const { data, error } = await supabase
+                .from("users")
+                .select("*")
+                .eq("id", user.id)
+                .maybeSingle();
+
+            if (error) throw error;
+            const profile = data || {};
+            const label = data ? publicDisplayNameFromUserData(profile) : "user";
+            userStatus.textContent = label;
+            applyLibraryTopNav(profile.account_type ?? profile.accountType);
+        } catch (e) {
+            console.error(e);
+            userStatus.textContent = "Logged in";
+            applyLibraryTopNav(undefined);
+        }
+    }
 
     function safeString(value, fallback = "") { return typeof value === "string" ? value : fallback; }
     function safeNumber(value, fallback = 0) { return typeof value === "number" && Number.isFinite(value) ? value : fallback; }
@@ -247,8 +253,14 @@
         return [...new Set(warnings)];
     }
 
-    function normalizeBook(id, raw) {
-        const data = safeObject(raw, {});
+    function libraryRowData(row) {
+        const data = safeObject(row?.data, {});
+        return Object.keys(data).length ? data : safeObject(row, {});
+    }
+
+    function normalizeBook(row) {
+        const data = libraryRowData(row);
+        const id = safeString(row?.id || data.id || data.bookId, "");
         const publishGenres = safeArray(data.genres);
         const publishTags = safeArray(data.extraTags);
         const chapters = safeArray(data.chapters);
@@ -268,7 +280,7 @@
             words: safeNumber(data.words, 0),
             views: safeNumber(data.views, 0),
             updated: safeNumber(data.updated, 0),
-            isPublished: !!data.isPublished
+            isPublished: data.isPublished !== false
         };
     }
 
@@ -332,7 +344,6 @@
             const topWarnings = book.warnings.filter(w => w.toLowerCase() !== "none").slice(0, 4);
             const topTags = book.tags.slice(0, 4);
             const coverUrl = book.coverUrl || "/Alysum-3.png";
-
             card.innerHTML = `
                 <div class="card-watermark" aria-hidden="true"><span>@${escapeHtml(book.author)}</span></div>
                 <div class="cover-wrap">
@@ -360,7 +371,6 @@
                     <button class="read-btn" type="button">Read Story</button>
                 </div>
             `;
-
             const openBook = () => { window.location.href = "/read.html?book=" + encodeURIComponent(book.id); };
             card.addEventListener("click", openBook);
             card.querySelector(".read-btn").addEventListener("click", (e) => { e.stopPropagation(); openBook(); });
@@ -371,48 +381,42 @@
     function escapeHtml(str) {
         return safeString(str).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;");
     }
+    function escapeAttribute(str) { return escapeHtml(str).replaceAll("`", "&#096;"); }
 
-    function escapeAttribute(str) {
-        return escapeHtml(str).replaceAll("`", "&#096;");
-    }
-
-    function syncReadSubscriptions() {
-        const liveIds = new Set(allBooks.map(book => book.id));
-        readUnsubscribers.forEach((unsubscribe, bookId) => {
-            if (!liveIds.has(bookId)) {
-                unsubscribe();
-                readUnsubscribers.delete(bookId);
-                readCounts.delete(bookId);
+    async function loadReadCounts() {
+        readCounts.clear();
+        if (!allBooks.length) return;
+        await Promise.all(allBooks.map(async (book) => {
+            if (!book.id) return;
+            try {
+                const { count, error } = await supabase
+                    .from("reads")
+                    .select("id", { count: "exact", head: true })
+                    .eq("book_id", book.id);
+                if (!error) readCounts.set(book.id, count || 0);
+            } catch (e) {
+                console.warn("Could not load reads for", book.id, e);
             }
-        });
-        allBooks.forEach(book => {
-            if (readUnsubscribers.has(book.id)) return;
-            const unsubscribe = onSnapshot(
-                collection(db, "library", book.id, "reads"),
-                (snap) => { readCounts.set(book.id, snap.size); renderBooks(); },
-                (error) => { console.warn(`Could not load read records for ${book.id}.`, error); readCounts.set(book.id, 0); renderBooks(); }
-            );
-            readUnsubscribers.set(book.id, unsubscribe);
-        });
+        }));
     }
 
-    function loadBooks() {
+    async function loadBooks() {
         showState("loading");
         resultsText.textContent = "Loading stories...";
-        if (libraryUnsubscribe) { libraryUnsubscribe(); libraryUnsubscribe = null; }
-        libraryUnsubscribe = onSnapshot(
-            collection(db, "library"),
-            (snap) => {
-                allBooks = snap.docs.map(docSnap => normalizeBook(docSnap.id, docSnap.data()));
-                syncReadSubscriptions();
-                renderBooks();
-            },
-            (error) => {
-                console.error(error);
-                showState("error");
-                resultsText.textContent = "Library unavailable";
-            }
-        );
+        try {
+            const { data, error } = await supabase
+                .from("library")
+                .select("*");
+
+            if (error) throw error;
+            allBooks = (data || []).map(normalizeBook).filter(book => book.id);
+            await loadReadCounts();
+            renderBooks();
+        } catch (error) {
+            console.error(error);
+            showState("error");
+            resultsText.textContent = "Library unavailable";
+        }
     }
 
     navButtons.forEach(btn => {
@@ -426,8 +430,8 @@
 
     searchInput.addEventListener("input", renderBooks);
     refreshBtn.addEventListener("click", loadBooks);
-    loadBooks();
-</script>
 
-</body>
+    await loadCurrentUser();
+    await loadBooks();
+</script></body>
 </html>

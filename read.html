@@ -1,5 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
     <!-- ALYSUM:PWA:START -->
     <link rel="manifest" href="/manifest.webmanifest">
@@ -18,2002 +17,447 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/Alysum-3.png">
     <script src="/js/pwa-register.js" defer></script>
     <!-- ALYSUM:PWA:END -->
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <script>
-    try {
-      var __g = localStorage.getItem("alysum-gradient-theme");
-      if (__g && __g !== "classic") document.documentElement.setAttribute("data-gradient-theme", __g);
-    } catch (e) {}
-  </script>
-  <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
-  <title>Alysum Reader</title>
-  <style>
-    * { box-sizing: border-box; }
-
-    :root {
-      --purple: #6d28d9;
-      --purple-dark: #5b21b6;
-      --bg: #0b1220;
-      --bg-soft: #111827;
-      --panel: #111827;
-      --panel-2: #172132;
-      --text: #f9fafb;
-      --muted: #9ca3af;
-      --border: rgba(255,255,255,0.08);
-      --shadow: 0 14px 34px rgba(0,0,0,0.28);
-      --reader-max: 980px;
-      --page-max: 1480px;
-      --sidebar-w: 300px;
-      --font-size: 22px;
-      --line-height: 1.95;
-    }
-
-    body.light {
-      --bg: #f4f6fb;
-      --bg-soft: #eef2f8;
-      --panel: #ffffff;
-      --panel-2: #f7f9fc;
-      --text: #171717;
-      --muted: #5f6470;
-      --border: rgba(0,0,0,0.08);
-      --shadow: 0 14px 34px rgba(0,0,0,0.08);
-    }
-
-    html {
-      scroll-behavior: smooth;
-    }
-
-    body {
-      margin: 0;
-      min-height: 100vh;
-      background: var(--bg);
-      color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    }
-
-    .hidden {
-      display: none !important;
-    }
-
-    .topbar {
-      position: sticky;
-      top: 0;
-      z-index: 50;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      padding: 12px 14px;
-      background: color-mix(in srgb, var(--bg) 88%, transparent);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--border);
-    }
-
-    .topbar-left,
-    .topbar-right {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .topbar-center {
-      min-width: 0;
-      flex: 1;
-      text-align: center;
-    }
-
-    .topbar-title {
-      font-size: 15px;
-      font-weight: 900;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .topbar-subtitle {
-      margin-top: 2px;
-      font-size: 12px;
-      color: var(--muted);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .btn {
-      border: 1px solid var(--border);
-      background: var(--panel);
-      color: var(--text);
-      border-radius: 12px;
-      padding: 10px 14px;
-      font-weight: 800;
-      cursor: pointer;
-      box-shadow: var(--shadow);
-    }
-
-    .btn:disabled {
-      opacity: 0.45;
-      cursor: not-allowed;
-      box-shadow: none;
-    }
-
-    .btn.primary {
-      background: linear-gradient(135deg, var(--purple-dark), var(--purple));
-      color: white;
-      border-color: transparent;
-    }
-
-    a.btn {
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    a.btn.primary:hover {
-      filter: brightness(1.06);
-    }
-
-    a.btn.ghost {
-      background: transparent;
-      color: var(--muted);
-      box-shadow: none;
-    }
-
-    a.btn.ghost:hover {
-      color: var(--text);
-      border-color: color-mix(in srgb, var(--text) 14%, var(--border));
-    }
-
-    #betaReadTopBtn,
-    #readerProfileTopBtn,
-    #allNotesTopBtn {
-      font-size: 13px;
-      padding: 9px 12px;
-    }
-
-    @media (max-width: 520px) {
-      #betaReadTopBtn,
-      #readerProfileTopBtn,
-      #allNotesTopBtn {
-        padding: 8px 10px;
-        font-size: 12px;
-      }
-    }
-
-    @media (max-width: 420px) {
-      #readerProfileTopBtn .reader-profile-label-long {
-        display: none;
-      }
-      #readerProfileTopBtn .reader-profile-label-short {
-        display: inline;
-      }
-      #allNotesTopBtn .all-notes-label-long {
-        display: none;
-      }
-      #allNotesTopBtn .all-notes-label-short {
-        display: inline;
-      }
-    }
-
-    .all-notes-label-short {
-      display: none;
-    }
-
-    .reader-profile-label-short {
-      display: none;
-    }
-
-    .page {
-      width: 100%;
-      max-width: var(--page-max);
-      margin: 0 auto;
-      padding: 20px 16px 120px;
-    }
-
-    .reader-layout {
-      display: grid;
-      grid-template-columns: minmax(0, var(--sidebar-w)) minmax(0, 1fr);
-      gap: 20px;
-      align-items: start;
-    }
-
-    .sidebar {
-      position: sticky;
-      top: 78px;
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 24px;
-      box-shadow: var(--shadow);
-      padding: 18px;
-    }
-
-    .sidebar-title {
-      font-size: 24px;
-      line-height: 1.1;
-      font-weight: 900;
-      margin: 0;
-    }
-
-    .sidebar-author {
-      margin-top: 8px;
-      color: var(--muted);
-      font-size: 14px;
-      font-weight: 700;
-    }
-
-    .sidebar-summary {
-      margin-top: 14px;
-      color: var(--muted);
-      font-size: 14px;
-      line-height: 1.65;
-      white-space: pre-wrap;
-    }
-
-    .sidebar-block {
-      margin-top: 16px;
-    }
-
-    .mobile-drawer-backdrop {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.45);
-      z-index: 79;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.2s ease;
-    }
-
-    .mobile-drawer-backdrop.open {
-      opacity: 1;
-      pointer-events: auto;
-    }
-
-    .mobile-drawer {
-      position: fixed;
-      top: 0;
-      left: 0;
-      bottom: 0;
-      width: min(86vw, 360px);
-      background: var(--panel);
-      border-right: 1px solid var(--border);
-      box-shadow: var(--shadow);
-      z-index: 80;
-      transform: translateX(-100%);
-      transition: transform 0.22s ease;
-      overflow-y: auto;
-      padding: 18px;
-    }
-
-    .mobile-drawer.open {
-      transform: translateX(0);
-    }
-
-    .mobile-drawer-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 14px;
-    }
-
-    .drawer-close {
-      min-width: 44px;
-      min-height: 44px;
-      padding: 0;
-      border-radius: 12px;
-    }
-
-    .status,
-    .error-box {
-      max-width: var(--reader-max);
-      margin: 0 auto 16px;
-      padding: 14px 16px;
-      border-radius: 16px;
-      border: 1px solid var(--border);
-      background: var(--panel);
-      box-shadow: var(--shadow);
-      font-size: 14px;
-      line-height: 1.5;
-    }
-
-    .error-box {
-      color: #fecaca;
-      background: rgba(127,29,29,0.28);
-      border-color: rgba(239,68,68,0.35);
-    }
-
-    .hero {
-      max-width: var(--reader-max);
-      margin: 0 auto 18px;
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 24px;
-      box-shadow: var(--shadow);
-      padding: 22px;
-    }
-
-    .eyebrow {
-      font-size: 12px;
-      font-weight: 900;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: #c4b5fd;
-      margin-bottom: 8px;
-    }
-
-    .book-title {
-      margin: 0;
-      font-size: 34px;
-      line-height: 1.08;
-      font-weight: 900;
-    }
-
-    .book-author {
-      margin-top: 8px;
-      color: var(--muted);
-      font-size: 15px;
-      font-weight: 700;
-    }
-
-    .book-summary {
-      margin-top: 14px;
-      color: var(--muted);
-      font-size: 15px;
-      line-height: 1.65;
-      white-space: pre-wrap;
-    }
-
-    .hero-stats {
-      margin-top: 18px;
-      display: grid;
-      grid-template-columns: repeat(5, minmax(0, 1fr));
-      gap: 12px;
-    }
-
-    .stat {
-      background: var(--panel-2);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 14px;
-    }
-
-    .stat-label {
-      font-size: 11px;
-      font-weight: 900;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      color: var(--muted);
-    }
-
-    .stat-value {
-      margin-top: 8px;
-      font-size: 18px;
-      font-weight: 900;
-    }
-
-    .chip-block {
-      margin-top: 16px;
-    }
-
-    .chip-label {
-      font-size: 12px;
-      font-weight: 900;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin-bottom: 8px;
-    }
-
-    .chip-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-
-    .chip {
-      padding: 7px 11px;
-      border-radius: 999px;
-      background: var(--panel-2);
-      border: 1px solid var(--border);
-      font-size: 12px;
-      font-weight: 800;
-      color: var(--text);
-    }
-
-    .nav-row {
-      max-width: var(--reader-max);
-      margin: 0 auto 18px;
-      display: grid;
-      grid-template-columns: auto 1fr auto;
-      gap: 12px;
-      align-items: center;
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      padding: 12px;
-      box-shadow: var(--shadow);
-    }
-
-    .nav-center {
-      min-width: 0;
-      text-align: center;
-    }
-
-    .nav-label {
-      font-size: 12px;
-      color: var(--muted);
-      font-weight: 800;
-    }
-
-    .nav-current {
-      margin-top: 3px;
-      font-size: 18px;
-      font-weight: 900;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .reader-card {
-      max-width: var(--reader-max);
-      margin: 0 auto;
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 26px;
-      box-shadow: var(--shadow);
-      overflow: hidden;
-    }
-
-    .reader-head {
-      padding: 24px 24px 0;
-      text-align: center;
-    }
-
-    .chapter-title {
-      margin: 0;
-      font-size: 32px;
-      line-height: 1.1;
-      font-weight: 900;
-    }
-
-    .chapter-meta {
-      margin-top: 8px;
-      color: var(--muted);
-      font-size: 14px;
-    }
-
-    .reader-body {
-      padding: 24px;
-    }
-
-    .content {
-      font-family: Georgia, "Times New Roman", serif;
-      font-size: var(--font-size);
-      line-height: var(--line-height);
-      word-wrap: break-word;
-    }
-
-    .content p {
-      margin: 0 0 1.15em;
-    }
-
-    .content h1,
-    .content h2,
-    .content h3,
-    .content h4 {
-      line-height: 1.24;
-      margin: 1.35em 0 0.7em;
-    }
-
-    .content img {
-      max-width: 100%;
-      border-radius: 16px;
-    }
-
-    .reader-tools {
-      max-width: var(--reader-max);
-      margin: 18px auto 0;
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .likes-card,
-    .comments-card {
-      max-width: var(--reader-max);
-      margin: 18px auto 0;
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 24px;
-      box-shadow: var(--shadow);
-      padding: 18px;
-    }
-
-    .likes-title,
-    .comments-title {
-      font-size: 18px;
-      font-weight: 900;
-      margin-bottom: 12px;
-    }
-
-    .likes-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .kudos-note {
-      color: var(--muted);
-      font-size: 14px;
-      line-height: 1.5;
-    }
-
-    .kudos-count {
-      margin-top: 10px;
-      color: var(--muted);
-      font-size: 14px;
-      font-weight: 800;
-    }
-
-    .comment-list {
-      display: grid;
-      gap: 10px;
-      margin-bottom: 12px;
-    }
-
-    .comment-item {
-      border: 1px solid var(--border);
-      background: var(--panel-2);
-      border-radius: 16px;
-      padding: 12px;
-    }
-
-    .comment-user {
-      font-size: 13px;
-      font-weight: 900;
-      margin-bottom: 6px;
-    }
-
-    .comment-text {
-      font-size: 14px;
-      line-height: 1.6;
-      color: var(--text);
-      white-space: pre-wrap;
-    }
-
-    .comment-item-head {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 10px;
-      margin-bottom: 6px;
-    }
-
-    .comment-item-head .comment-user {
-      margin-bottom: 0;
-    }
-
-    .comment-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      flex-shrink: 0;
-    }
-
-    .comment-action-btn {
-      font: inherit;
-      font-size: 12px;
-      font-weight: 800;
-      padding: 5px 10px;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      background: var(--panel);
-      color: var(--muted);
-      cursor: pointer;
-    }
-
-    .comment-action-btn:hover {
-      color: var(--text);
-      border-color: color-mix(in srgb, var(--text) 18%, var(--border));
-    }
-
-    .comment-action-btn.danger:hover {
-      color: #fecaca;
-      border-color: rgba(248, 113, 113, 0.45);
-    }
-
-    .comment-edit-area {
-      width: 100%;
-      min-height: 88px;
-      margin-top: 8px;
-      resize: vertical;
-      border-radius: 12px;
-      border: 1px solid var(--border);
-      background: var(--panel);
-      color: var(--text);
-      padding: 10px;
-      font: inherit;
-      font-size: 14px;
-      line-height: 1.55;
-    }
-
-    .comment-edit-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 8px;
-    }
-
-    .comment-form {
-      display: grid;
-      gap: 10px;
-    }
-
-    .comment-input {
-      width: 100%;
-      min-height: 110px;
-      resize: vertical;
-      border-radius: 16px;
-      border: 1px solid var(--border);
-      background: var(--panel-2);
-      color: var(--text);
-      padding: 12px;
-      outline: none;
-      font-family: inherit;
-      font-size: 15px;
-      line-height: 1.6;
-    }
-
-    .footer-space {
-      height: 40px;
-    }
-
-    @media (min-width: 1080px) {
-      .hero {
-        display: none;
-      }
-
-      .page-main {
-        min-width: 0;
-      }
-
-      .reader-card,
-      .nav-row,
-      .reader-tools,
-      .likes-card,
-      .comments-card,
-      .status,
-      .error-box {
-        max-width: none;
-      }
-    }
-
-    @media (max-width: 1079px) {
-      .reader-layout {
-        grid-template-columns: 1fr;
-      }
-
-      .sidebar {
-        display: none;
-      }
-    }
-
-    @media (min-width: 1080px) {
-      .topbar-left .menu-toggle {
-        display: none;
-      }
-    }
-
-    @media (max-width: 760px) {
-      .hero-stats {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-
-      .book-title {
-        font-size: 28px;
-      }
-
-      .chapter-title {
-        font-size: 26px;
-      }
-
-      .content {
-        font-size: calc(var(--font-size) - 2px);
-      }
-
-      .likes-row {
-        align-items: stretch;
-      }
-    }
-  </style>
-  <link rel="stylesheet" href="/css/gradient-themes.css?v=2" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Alysum Reader</title>
+    <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
+    <link rel="stylesheet" href="/css/gradient-themes.css?v=2" />
+
+    <script>
+        try {
+            var __g = localStorage.getItem("alysum-gradient-theme");
+            if (__g && __g !== "classic") document.documentElement.setAttribute("data-gradient-theme", __g);
+        } catch (e) {}
+    </script>
+
+    <style>
+        * { box-sizing: border-box; }
+        :root {
+            --purple: #6d28d9;
+            --purple-dark: #5b21b6;
+            --bg: #0b1220;
+            --bg-soft: #111827;
+            --panel: #111827;
+            --panel-2: #172132;
+            --text: #f9fafb;
+            --muted: #9ca3af;
+            --border: rgba(255,255,255,0.08);
+            --shadow: 0 14px 34px rgba(0,0,0,0.28);
+            --reader-max: 980px;
+            --page-max: 1480px;
+            --sidebar-w: 300px;
+            --font-size: 22px;
+            --line-height: 1.95;
+        }
+        body.light {
+            --bg: #f4f6fb;
+            --bg-soft: #eef2f8;
+            --panel: #ffffff;
+            --panel-2: #f7f9fc;
+            --text: #171717;
+            --muted: #5f6470;
+            --border: rgba(0,0,0,0.08);
+            --shadow: 0 14px 34px rgba(0,0,0,0.08);
+        }
+        html { scroll-behavior: smooth; }
+        body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+        .hidden { display: none !important; }
+        .topbar { position: sticky; top: 0; z-index: 50; display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 14px; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
+        .topbar-left, .topbar-right { display: flex; align-items: center; gap: 8px; }
+        .topbar-center { min-width: 0; flex: 1; text-align: center; }
+        .topbar-title { font-size: 15px; font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .topbar-subtitle { margin-top: 2px; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .btn { border: 1px solid var(--border); background: var(--panel); color: var(--text); border-radius: 12px; padding: 10px 14px; font-weight: 800; cursor: pointer; box-shadow: var(--shadow); }
+        .btn:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
+        .btn.primary { background: linear-gradient(135deg, var(--purple-dark), var(--purple)); color: white; border-color: transparent; }
+        a.btn { text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
+        a.btn.ghost { background: transparent; color: var(--muted); box-shadow: none; }
+        #betaReadTopBtn, #readerProfileTopBtn, #allNotesTopBtn { font-size: 13px; padding: 9px 12px; }
+        .all-notes-label-short, .reader-profile-label-short { display: none; }
+        .page { width: 100%; max-width: var(--page-max); margin: 0 auto; padding: 20px 16px 120px; }
+        .reader-layout { display: grid; grid-template-columns: minmax(0, var(--sidebar-w)) minmax(0, 1fr); gap: 20px; align-items: start; }
+        .sidebar { position: sticky; top: 78px; background: var(--panel); border: 1px solid var(--border); border-radius: 24px; box-shadow: var(--shadow); padding: 18px; }
+        .sidebar-title { font-size: 24px; line-height: 1.1; font-weight: 900; margin: 0; }
+        .sidebar-author { margin-top: 8px; color: var(--muted); font-size: 14px; font-weight: 700; }
+        .sidebar-summary { margin-top: 14px; color: var(--muted); font-size: 14px; line-height: 1.65; white-space: pre-wrap; }
+        .sidebar-block { margin-top: 16px; }
+        .mobile-drawer-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 79; opacity: 0; pointer-events: none; transition: opacity 0.2s ease; }
+        .mobile-drawer-backdrop.open { opacity: 1; pointer-events: auto; }
+        .mobile-drawer { position: fixed; top: 0; left: 0; bottom: 0; width: min(86vw, 360px); background: var(--panel); border-right: 1px solid var(--border); box-shadow: var(--shadow); z-index: 80; transform: translateX(-100%); transition: transform 0.22s ease; overflow-y: auto; padding: 18px; }
+        .mobile-drawer.open { transform: translateX(0); }
+        .mobile-drawer-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; }
+        .drawer-close { min-width: 44px; min-height: 44px; padding: 0; border-radius: 12px; }
+        .status, .error-box { max-width: var(--reader-max); margin: 0 auto 16px; padding: 14px 16px; border-radius: 16px; border: 1px solid var(--border); background: var(--panel); box-shadow: var(--shadow); font-size: 14px; line-height: 1.5; }
+        .error-box { color: #fecaca; background: rgba(127,29,29,0.28); border-color: rgba(239,68,68,0.35); }
+        .hero { max-width: var(--reader-max); margin: 0 auto 18px; background: var(--panel); border: 1px solid var(--border); border-radius: 24px; box-shadow: var(--shadow); padding: 22px; }
+        .eyebrow { font-size: 12px; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase; color: #c4b5fd; margin-bottom: 8px; }
+        .book-title { margin: 0; font-size: 34px; line-height: 1.08; font-weight: 900; }
+        .book-author { margin-top: 8px; color: var(--muted); font-size: 15px; font-weight: 700; }
+        .book-summary { margin-top: 14px; color: var(--muted); font-size: 15px; line-height: 1.65; white-space: pre-wrap; }
+        .hero-stats { margin-top: 18px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+        .stat { background: var(--panel-2); border: 1px solid var(--border); border-radius: 16px; padding: 14px; }
+        .stat-label { font-size: 11px; font-weight: 900; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+        .stat-value { margin-top: 8px; font-size: 18px; font-weight: 900; }
+        .chip-block { margin-top: 16px; }
+        .chip-label { font-size: 12px; font-weight: 900; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+        .chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
+        .chip { padding: 7px 11px; border-radius: 999px; background: var(--panel-2); border: 1px solid var(--border); font-size: 12px; font-weight: 800; color: var(--text); }
+        .nav-row { max-width: var(--reader-max); margin: 0 auto 18px; display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; background: var(--panel); border: 1px solid var(--border); border-radius: 18px; padding: 12px; box-shadow: var(--shadow); }
+        .nav-center { min-width: 0; text-align: center; }
+        .nav-label { font-size: 12px; color: var(--muted); font-weight: 800; }
+        .nav-current { margin-top: 3px; font-size: 18px; font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .reader-card { max-width: var(--reader-max); margin: 0 auto; background: var(--panel); border: 1px solid var(--border); border-radius: 26px; box-shadow: var(--shadow); overflow: hidden; }
+        .reader-head { padding: 24px 24px 0; text-align: center; }
+        .chapter-title { margin: 0; font-size: 32px; line-height: 1.1; font-weight: 900; }
+        .chapter-meta { margin-top: 8px; color: var(--muted); font-size: 14px; }
+        .reader-body { padding: 24px; }
+        .content { font-family: Georgia, "Times New Roman", serif; font-size: var(--font-size); line-height: var(--line-height); word-wrap: break-word; }
+        .content p { margin: 0 0 1.15em; }
+        .content h1, .content h2, .content h3, .content h4 { line-height: 1.24; margin: 1.35em 0 0.7em; }
+        .content img { max-width: 100%; border-radius: 16px; }
+        .reader-tools { max-width: var(--reader-max); margin: 18px auto 0; display: flex; gap: 10px; flex-wrap: wrap; }
+        .likes-card, .comments-card { max-width: var(--reader-max); margin: 18px auto 0; background: var(--panel); border: 1px solid var(--border); border-radius: 24px; box-shadow: var(--shadow); padding: 18px; }
+        .likes-title, .comments-title { font-size: 18px; font-weight: 900; margin-bottom: 12px; }
+        .likes-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+        .kudos-note, .kudos-count { color: var(--muted); font-size: 14px; line-height: 1.5; }
+        .kudos-count { margin-top: 10px; font-weight: 800; }
+        .comment-list { display: grid; gap: 10px; margin-bottom: 12px; }
+        .comment-item { border: 1px solid var(--border); background: var(--panel-2); border-radius: 16px; padding: 12px; }
+        .comment-user { font-size: 13px; font-weight: 900; margin-bottom: 6px; }
+        .comment-text { font-size: 14px; line-height: 1.6; color: var(--text); white-space: pre-wrap; }
+        .comment-item-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
+        .comment-item-head .comment-user { margin-bottom: 0; }
+        .comment-actions { display: flex; flex-wrap: wrap; gap: 6px; flex-shrink: 0; }
+        .comment-action-btn { font: inherit; font-size: 12px; font-weight: 800; padding: 5px 10px; border-radius: 10px; border: 1px solid var(--border); background: var(--panel); color: var(--muted); cursor: pointer; }
+        .comment-edit-area { width: 100%; min-height: 88px; margin-top: 8px; resize: vertical; border-radius: 12px; border: 1px solid var(--border); background: var(--panel); color: var(--text); padding: 10px; font: inherit; font-size: 14px; line-height: 1.55; }
+        .comment-edit-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+        .comment-form { display: grid; gap: 10px; }
+        .comment-input { width: 100%; min-height: 110px; resize: vertical; border-radius: 16px; border: 1px solid var(--border); background: var(--panel-2); color: var(--text); padding: 12px; outline: none; font-family: inherit; font-size: 15px; line-height: 1.6; }
+        .footer-space { height: 40px; }
+        @media (min-width: 1080px) { .hero { display: none; } .page-main { min-width: 0; } .reader-card, .nav-row, .reader-tools, .likes-card, .comments-card, .status, .error-box { max-width: none; } .topbar-left .menu-toggle { display: none; } }
+        @media (max-width: 1079px) { .reader-layout { grid-template-columns: 1fr; } .sidebar { display: none; } }
+        @media (max-width: 760px) { .hero-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } .book-title { font-size: 28px; } .chapter-title { font-size: 26px; } .content { font-size: calc(var(--font-size) - 2px); } .likes-row { align-items: stretch; } }
+        @media (max-width: 520px) { #betaReadTopBtn, #readerProfileTopBtn, #allNotesTopBtn { padding: 8px 10px; font-size: 12px; } }
+        @media (max-width: 420px) { #readerProfileTopBtn .reader-profile-label-long, #allNotesTopBtn .all-notes-label-long { display: none; } #readerProfileTopBtn .reader-profile-label-short, #allNotesTopBtn .all-notes-label-short { display: inline; } }
+    </style>
 </head>
 <body>
-  <div class="mobile-drawer-backdrop hidden" id="drawerBackdrop"></div>
-
-  <aside class="mobile-drawer" id="mobileDrawer">
-    <div class="mobile-drawer-top">
-      <strong>Story Details</strong>
-      <button class="btn drawer-close" id="closeDrawerBtn">✕</button>
-    </div>
-
+<div class="mobile-drawer-backdrop hidden" id="drawerBackdrop"></div>
+<aside class="mobile-drawer" id="mobileDrawer">
+    <div class="mobile-drawer-top"><strong>Story Details</strong><button class="btn drawer-close" id="closeDrawerBtn">✕</button></div>
     <h3 class="sidebar-title" id="drawerBookTitle">Loading…</h3>
     <div class="sidebar-author" id="drawerBookAuthor"></div>
     <div class="sidebar-summary" id="drawerBookSummary"></div>
+    <div class="sidebar-block"><div class="chip-label">Tags</div><div class="chip-row" id="drawerTagList"></div></div>
+    <div class="sidebar-block"><div class="chip-label">Warnings</div><div class="chip-row" id="drawerWarningList"></div></div>
+</aside>
 
-    <div class="sidebar-block">
-      <div class="chip-label">Tags</div>
-      <div class="chip-row" id="drawerTagList"></div>
-    </div>
-
-    <div class="sidebar-block">
-      <div class="chip-label">Warnings</div>
-      <div class="chip-row" id="drawerWarningList"></div>
-    </div>
-  </aside>
-
-  <div class="topbar">
-    <div class="topbar-left">
-      <button class="btn menu-toggle" id="menuBtn">☰</button>
-      <button class="btn" id="backBtn">←</button>
-    </div>
-
-    <div class="topbar-center">
-      <div class="topbar-title" id="topbarTitle">Loading…</div>
-      <div class="topbar-subtitle" id="topbarSubtitle"></div>
-    </div>
-
+<div class="topbar">
+    <div class="topbar-left"><button class="btn menu-toggle" id="menuBtn">☰</button><button class="btn" id="backBtn">←</button></div>
+    <div class="topbar-center"><div class="topbar-title" id="topbarTitle">Loading…</div><div class="topbar-subtitle" id="topbarSubtitle"></div></div>
     <div class="topbar-right">
-      <a class="btn primary hidden" id="betaReadTopBtn" href="/beta-read.html">Beta reads</a>
-      <a class="btn ghost hidden" id="allNotesTopBtn" href="/beta-notes-library.html" title="Every highlight you saved, across all books">
-        <span class="all-notes-label-long">All notes</span><span class="all-notes-label-short">Notes</span>
-      </a>
-      <button type="button" class="btn hidden" id="readerProfileTopBtn" aria-label="Reading profile">
-        <span class="reader-profile-label-long">Reading profile</span><span class="reader-profile-label-short">Profile</span>
-      </button>
-      <button class="btn" id="themeBtn">Theme</button>
-      <button class="btn" id="fontMinusBtn">A-</button>
-      <button class="btn" id="fontPlusBtn">A+</button>
+        <a class="btn primary hidden" id="betaReadTopBtn" href="/beta-read.html">Beta reads</a>
+        <a class="btn ghost hidden" id="allNotesTopBtn" href="/beta-notes-library.html" title="Every highlight you saved, across all books"><span class="all-notes-label-long">All notes</span><span class="all-notes-label-short">Notes</span></a>
+        <button type="button" class="btn hidden" id="readerProfileTopBtn" aria-label="Reading profile"><span class="reader-profile-label-long">Reading profile</span><span class="reader-profile-label-short">Profile</span></button>
+        <button class="btn" id="themeBtn">Theme</button><button class="btn" id="fontMinusBtn">A-</button><button class="btn" id="fontPlusBtn">A+</button>
     </div>
-  </div>
+</div>
 
-  <div class="page">
+<div class="page">
     <div class="reader-layout">
-      <aside class="sidebar">
-        <h2 class="sidebar-title" id="sideBookTitle">Loading…</h2>
-        <div class="sidebar-author" id="sideBookAuthor"></div>
-        <div class="sidebar-summary" id="sideBookSummary"></div>
-
-        <div class="sidebar-block">
-          <div class="chip-label">Tags</div>
-          <div class="chip-row" id="sideTagList"></div>
-        </div>
-
-        <div class="sidebar-block">
-          <div class="chip-label">Warnings</div>
-          <div class="chip-row" id="sideWarningList"></div>
-        </div>
-      </aside>
-
-      <main class="page-main">
-        <div class="status hidden" id="statusBox"></div>
-        <div class="error-box hidden" id="errorBox"></div>
-
-        <div class="hero">
-          <div class="eyebrow">Alysum Reader</div>
-          <h1 class="book-title" id="bookTitle">Loading…</h1>
-          <div class="book-author" id="bookAuthor"></div>
-          <div class="book-summary hidden" id="bookSummary"></div>
-
-          <div class="hero-stats">
-            <div class="stat">
-              <div class="stat-label">Chapters</div>
-              <div class="stat-value" id="statChapters">0</div>
+        <aside class="sidebar">
+            <h2 class="sidebar-title" id="sideBookTitle">Loading…</h2>
+            <div class="sidebar-author" id="sideBookAuthor"></div>
+            <div class="sidebar-summary" id="sideBookSummary"></div>
+            <div class="sidebar-block"><div class="chip-label">Tags</div><div class="chip-row" id="sideTagList"></div></div>
+            <div class="sidebar-block"><div class="chip-label">Warnings</div><div class="chip-row" id="sideWarningList"></div></div>
+        </aside>
+        <main class="page-main">
+            <div class="status hidden" id="statusBox"></div><div class="error-box hidden" id="errorBox"></div>
+            <div class="hero">
+                <div class="eyebrow">Alysum Reader</div><h1 class="book-title" id="bookTitle">Loading…</h1><div class="book-author" id="bookAuthor"></div><div class="book-summary hidden" id="bookSummary"></div>
+                <div class="hero-stats"><div class="stat"><div class="stat-label">Chapters</div><div class="stat-value" id="statChapters">0</div></div><div class="stat"><div class="stat-label">Words</div><div class="stat-value" id="statWords">0</div></div><div class="stat"><div class="stat-label">Reads</div><div class="stat-value" id="statReads">0</div></div><div class="stat"><div class="stat-label">Type</div><div class="stat-value" id="statType">—</div></div><div class="stat"><div class="stat-label">Rating</div><div class="stat-value" id="statRating">—</div></div></div>
+                <div class="chip-block hidden"><div class="chip-label">Tags</div><div class="chip-row" id="tagList"></div></div><div class="chip-block hidden"><div class="chip-label">Warnings</div><div class="chip-row" id="warningList"></div></div>
             </div>
-            <div class="stat">
-              <div class="stat-label">Words</div>
-              <div class="stat-value" id="statWords">0</div>
-            </div>
-            <div class="stat">
-              <div class="stat-label">Reads</div>
-              <div class="stat-value" id="statReads">0</div>
-            </div>
-            <div class="stat">
-              <div class="stat-label">Type</div>
-              <div class="stat-value" id="statType">—</div>
-            </div>
-            <div class="stat">
-              <div class="stat-label">Rating</div>
-              <div class="stat-value" id="statRating">—</div>
-            </div>
-          </div>
-
-          <div class="chip-block hidden">
-            <div class="chip-label">Tags</div>
-            <div class="chip-row" id="tagList"></div>
-          </div>
-
-          <div class="chip-block hidden">
-            <div class="chip-label">Warnings</div>
-            <div class="chip-row" id="warningList"></div>
-          </div>
-        </div>
-
-        <div class="nav-row">
-          <button class="btn" id="prevBtn">← Prev</button>
-
-          <div class="nav-center">
-            <div class="nav-label">Current Chapter</div>
-            <div class="nav-current" id="chapterIndicator">Loading…</div>
-          </div>
-
-          <button class="btn" id="nextBtn">Next →</button>
-        </div>
-
-        <div class="reader-card">
-          <div class="reader-head">
-            <h2 class="chapter-title" id="chapterTitle">Loading…</h2>
-            <div class="chapter-meta" id="chapterMeta"></div>
-          </div>
-
-          <div class="reader-chapter-wrap alysum-rw-wrap">
-            <div class="alysum-rw-sheet" id="readerWatermarkSheet" aria-hidden="true"></div>
-            <div class="reader-body alysum-rw-body">
-              <div class="content" id="content"></div>
-            </div>
-            <div class="alysum-rw-footer" id="readerWatermarkFooter"></div>
-          </div>
-        </div>
-
-        <div class="reader-tools">
-          <button class="btn primary" id="bookmarkBtn">Bookmark This Chapter</button>
-          <button class="btn" id="resumeBtn">Resume Where I Left Off</button>
-        </div>
-
-        <div class="likes-card">
-          <div class="likes-title">Kudos</div>
-          <div class="likes-row">
-            <button class="btn primary" id="likeBtn">❤️ Leave Kudos</button>
-            <div class="kudos-note">One Per User.</div>
-          </div>
-          <div class="kudos-count" id="likeCount">0 kudos</div>
-        </div>
-
-        <div class="comments-card">
-          <div class="comments-title">Comments</div>
-          <div class="comment-list" id="commentList"></div>
-
-          <div class="comment-form">
-            <textarea
-              class="comment-input"
-              id="commentInput"
-              placeholder="Write a comment…"
-            ></textarea>
-            <button class="btn primary" id="postCommentBtn">Post Comment</button>
-          </div>
-        </div>
-
-        <div class="footer-space"></div>
-      </main>
+            <div class="nav-row"><button class="btn" id="prevBtn">← Prev</button><div class="nav-center"><div class="nav-label">Current Chapter</div><div class="nav-current" id="chapterIndicator">Loading…</div></div><button class="btn" id="nextBtn">Next →</button></div>
+            <div class="reader-card"><div class="reader-head"><h2 class="chapter-title" id="chapterTitle">Loading…</h2><div class="chapter-meta" id="chapterMeta"></div></div><div class="reader-chapter-wrap alysum-rw-wrap"><div class="alysum-rw-sheet" id="readerWatermarkSheet" aria-hidden="true"></div><div class="reader-body alysum-rw-body"><div class="content" id="content"></div></div><div class="alysum-rw-footer" id="readerWatermarkFooter"></div></div></div>
+            <div class="reader-tools"><button class="btn primary" id="bookmarkBtn">Bookmark This Chapter</button><button class="btn" id="resumeBtn">Resume Where I Left Off</button></div>
+            <div class="likes-card"><div class="likes-title">Kudos</div><div class="likes-row"><button class="btn primary" id="likeBtn">❤️ Leave Kudos</button><div class="kudos-note">One Per User.</div></div><div class="kudos-count" id="likeCount">0 kudos</div></div>
+            <div class="comments-card"><div class="comments-title">Comments</div><div class="comment-list" id="commentList"></div><div class="comment-form"><textarea class="comment-input" id="commentInput" placeholder="Write a comment…"></textarea><button class="btn primary" id="postCommentBtn">Post Comment</button></div></div>
+            <div class="footer-space"></div>
+        </main>
     </div>
-  </div>
+</div>
 
-  <script type="module">
-    import { db, auth } from "./firebase.js";
-    import {
-      doc,
-      getDoc,
-      setDoc,
-      updateDoc,
-      deleteDoc,
-      increment,
-      collection,
-      addDoc,
-      getDocs,
-      getCountFromServer,
-      query,
-      orderBy,
-      serverTimestamp
-    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-    import {
-      onAuthStateChanged
-    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+<script type="module">
+    import { supabase } from "./firebase.js";
     import { writeBetaShelfEntryLocal } from "./js/beta-shelf-local.js?v=1";
     import { READER_HOME_URL } from "./js/account-mode.js";
     import { installReaderCopyGuards } from "./js/reader-copy-guards.js?v=1";
     import { applyReaderWatermark } from "./js/reader-watermark.js?v=3";
 
     const params = new URLSearchParams(window.location.search);
-    const bookId = params.get("book");
+    let bookId =
+        params.get("book") ||
+        params.get("id") ||
+        params.get("bookId") ||
+        params.get("library") ||
+        sessionStorage.getItem("alysum-open-book") ||
+        localStorage.getItem("alysum-last-read-book") ||
+        localStorage.getItem("alysum-last-book") ||
+        "";
 
-    const backBtn = document.getElementById("backBtn");
-    const themeBtn = document.getElementById("themeBtn");
-    const fontMinusBtn = document.getElementById("fontMinusBtn");
-    const fontPlusBtn = document.getElementById("fontPlusBtn");
+    const backBtn = document.getElementById("backBtn"), themeBtn = document.getElementById("themeBtn"), fontMinusBtn = document.getElementById("fontMinusBtn"), fontPlusBtn = document.getElementById("fontPlusBtn"), menuBtn = document.getElementById("menuBtn"), mobileDrawer = document.getElementById("mobileDrawer"), drawerBackdrop = document.getElementById("drawerBackdrop"), closeDrawerBtn = document.getElementById("closeDrawerBtn"), topbarTitle = document.getElementById("topbarTitle"), topbarSubtitle = document.getElementById("topbarSubtitle"), betaReadTopBtn = document.getElementById("betaReadTopBtn"), readerProfileTopBtn = document.getElementById("readerProfileTopBtn"), allNotesTopBtn = document.getElementById("allNotesTopBtn"), statusBox = document.getElementById("statusBox"), errorBox = document.getElementById("errorBox"), bookTitle = document.getElementById("bookTitle"), bookAuthor = document.getElementById("bookAuthor"), bookSummary = document.getElementById("bookSummary"), statChapters = document.getElementById("statChapters"), statWords = document.getElementById("statWords"), statReads = document.getElementById("statReads"), statType = document.getElementById("statType"), statRating = document.getElementById("statRating"), tagList = document.getElementById("tagList"), warningList = document.getElementById("warningList"), sideBookTitle = document.getElementById("sideBookTitle"), sideBookAuthor = document.getElementById("sideBookAuthor"), sideBookSummary = document.getElementById("sideBookSummary"), sideTagList = document.getElementById("sideTagList"), sideWarningList = document.getElementById("sideWarningList"), drawerBookTitle = document.getElementById("drawerBookTitle"), drawerBookAuthor = document.getElementById("drawerBookAuthor"), drawerBookSummary = document.getElementById("drawerBookSummary"), drawerTagList = document.getElementById("drawerTagList"), drawerWarningList = document.getElementById("drawerWarningList"), prevBtn = document.getElementById("prevBtn"), nextBtn = document.getElementById("nextBtn"), chapterIndicator = document.getElementById("chapterIndicator"), chapterTitle = document.getElementById("chapterTitle"), chapterMeta = document.getElementById("chapterMeta"), content = document.getElementById("content"), bookmarkBtn = document.getElementById("bookmarkBtn"), resumeBtn = document.getElementById("resumeBtn"), likeBtn = document.getElementById("likeBtn"), likeCount = document.getElementById("likeCount"), commentList = document.getElementById("commentList"), commentInput = document.getElementById("commentInput"), postCommentBtn = document.getElementById("postCommentBtn");
 
-    const menuBtn = document.getElementById("menuBtn");
-    const mobileDrawer = document.getElementById("mobileDrawer");
-    const drawerBackdrop = document.getElementById("drawerBackdrop");
-    const closeDrawerBtn = document.getElementById("closeDrawerBtn");
+    let currentUser = null, currentBook = null, currentChapterIndex = 0, isLoaded = false, currentFontSize = 22, hasLikedThisBook = false, readerWatermarkProfileUser = null, bookOwnerHandle = null;
 
-    const topbarTitle = document.getElementById("topbarTitle");
-    const topbarSubtitle = document.getElementById("topbarSubtitle");
-    const betaReadTopBtn = document.getElementById("betaReadTopBtn");
+    installReaderCopyGuards(content, { isActive: () => isLoaded && !!currentBook });
 
-    const readerProfileTopBtn = document.getElementById("readerProfileTopBtn");
+    function safeString(value, fallback = "") { return typeof value === "string" ? value : fallback; }
+    function safeNumber(value, fallback = 0) { return typeof value === "number" && Number.isFinite(value) ? value : fallback; }
+    function safeArray(value, fallback = []) { return Array.isArray(value) ? value : fallback; }
+    function safeObject(value, fallback = {}) { return value && typeof value === "object" && !Array.isArray(value) ? value : fallback; }
+    function stripHtml(html = "") { return safeString(html).replace(/<br\s*\/?>/gi, " ").replace(/<\/(div|p|h1|h2|h3|h4|li|blockquote)>/gi, " ").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim(); }
+    function countWordsFromHtml(html = "") { const text = stripHtml(html); return text ? text.split(" ").length : 0; }
+    function flattenWarnings(warningsObj) { if (Array.isArray(warningsObj)) return warningsObj.filter(v => typeof v === "string" && v.trim()); const source = safeObject(warningsObj, {}); const warnings = []; Object.values(source).forEach(group => { safeArray(group).forEach(item => { if (typeof item === "string" && item.trim() && item.trim().toLowerCase() !== "none") warnings.push(item.trim()); }); }); return [...new Set(warnings)]; }
+    function formatNumber(num) { return new Intl.NumberFormat().format(num || 0); }
+    function showStatus(text) { statusBox.textContent = text; statusBox.classList.remove("hidden"); }
+    function hideStatus() { statusBox.textContent = ""; statusBox.classList.add("hidden"); }
+    function showError(text) { errorBox.textContent = text; errorBox.classList.remove("hidden"); }
+    function hideError() { errorBox.textContent = ""; errorBox.classList.add("hidden"); }
+    function openDrawer() { mobileDrawer.classList.add("open"); drawerBackdrop.classList.remove("hidden"); drawerBackdrop.classList.add("open"); }
+    function closeDrawer() { mobileDrawer.classList.remove("open"); drawerBackdrop.classList.remove("open"); drawerBackdrop.classList.add("hidden"); }
+    function libraryRowData(row) { const data = safeObject(row?.data, {}); return Object.keys(data).length ? data : safeObject(row, {}); }
 
-    if (betaReadTopBtn && bookId) {
-      betaReadTopBtn.href = `/beta-read.html?book=${encodeURIComponent(bookId)}`;
-      betaReadTopBtn.classList.remove("hidden");
-    }
-    if (readerProfileTopBtn && bookId) {
-      readerProfileTopBtn.classList.remove("hidden");
-    }
+    async function findFallbackBookId() {
+        const stored =
+            sessionStorage.getItem("alysum-open-book") ||
+            localStorage.getItem("alysum-last-read-book") ||
+            localStorage.getItem("alysum-last-book") ||
+            "";
+        if (stored) return stored;
 
-    const allNotesTopBtn = document.getElementById("allNotesTopBtn");
-    if (allNotesTopBtn && bookId) {
-      allNotesTopBtn.classList.remove("hidden");
-    }
+        try {
+            const pathParts = window.location.pathname.split("/").filter(Boolean);
+            const lastPart = decodeURIComponent(pathParts[pathParts.length - 1] || "");
+            if (lastPart && lastPart !== "read.html" && lastPart !== "read") return lastPart;
+        } catch (e) {}
 
-    const statusBox = document.getElementById("statusBox");
-    const errorBox = document.getElementById("errorBox");
+        try {
+            const { data, error } = await supabase.from("library").select("id, data").limit(100);
+            if (error) throw error;
 
-    const bookTitle = document.getElementById("bookTitle");
-    const bookAuthor = document.getElementById("bookAuthor");
-    const bookSummary = document.getElementById("bookSummary");
-    const statChapters = document.getElementById("statChapters");
-    const statWords = document.getElementById("statWords");
-    const statReads = document.getElementById("statReads");
-    const statType = document.getElementById("statType");
-    const statRating = document.getElementById("statRating");
-    const tagList = document.getElementById("tagList");
-    const warningList = document.getElementById("warningList");
+            const rows = (data || [])
+                .filter(row => row?.id)
+                .map(row => {
+                    const payload = safeObject(row.data, {});
+                    return {
+                        id: row.id,
+                        updated: safeNumber(payload.updated ?? row.updated, 0),
+                        published: payload.isPublished !== false
+                    };
+                })
+                .filter(row => row.published)
+                .sort((a, b) => b.updated - a.updated);
 
-    const sideBookTitle = document.getElementById("sideBookTitle");
-    const sideBookAuthor = document.getElementById("sideBookAuthor");
-    const sideBookSummary = document.getElementById("sideBookSummary");
-    const sideTagList = document.getElementById("sideTagList");
-    const sideWarningList = document.getElementById("sideWarningList");
+            if (rows[0]?.id) return rows[0].id;
+        } catch (e) {
+            console.warn("Could not find fallback library book.", e);
+        }
 
-    const drawerBookTitle = document.getElementById("drawerBookTitle");
-    const drawerBookAuthor = document.getElementById("drawerBookAuthor");
-    const drawerBookSummary = document.getElementById("drawerBookSummary");
-    const drawerTagList = document.getElementById("drawerTagList");
-    const drawerWarningList = document.getElementById("drawerWarningList");
-
-    const prevBtn = document.getElementById("prevBtn");
-    const nextBtn = document.getElementById("nextBtn");
-    const chapterIndicator = document.getElementById("chapterIndicator");
-    const chapterTitle = document.getElementById("chapterTitle");
-    const chapterMeta = document.getElementById("chapterMeta");
-    const content = document.getElementById("content");
-
-    const bookmarkBtn = document.getElementById("bookmarkBtn");
-    const resumeBtn = document.getElementById("resumeBtn");
-
-    const likeBtn = document.getElementById("likeBtn");
-    const likeCount = document.getElementById("likeCount");
-
-    const commentList = document.getElementById("commentList");
-    const commentInput = document.getElementById("commentInput");
-    const postCommentBtn = document.getElementById("postCommentBtn");
-
-    let currentUser = null;
-    let currentBook = null;
-    let currentChapterIndex = 0;
-    let isLoaded = false;
-    let currentFontSize = 22;
-    let hasLikedThisBook = false;
-    let readerWatermarkProfileUser = null;
-    let bookOwnerHandle = null;
-
-    installReaderCopyGuards(content, {
-      isActive: () => isLoaded && !!currentBook
-    });
-
-    function safeString(value, fallback = "") {
-      return typeof value === "string" ? value : fallback;
+        return "";
     }
 
-    function safeNumber(value, fallback = 0) {
-      return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+    function refreshBookLinks() {
+        if (!bookId) return;
+        if (betaReadTopBtn) {
+            betaReadTopBtn.href = `/beta-read.html?book=${encodeURIComponent(bookId)}`;
+            betaReadTopBtn.classList.remove("hidden");
+        }
+        if (readerProfileTopBtn) readerProfileTopBtn.classList.remove("hidden");
+        if (allNotesTopBtn) allNotesTopBtn.classList.remove("hidden");
+    }
+    refreshBookLinks();
+
+    function normalizeBook(row) {
+        const data = libraryRowData(row);
+        const rawChapters = safeArray(data.chapters, []);
+        const publishedIds = safeArray(data.publishedChapterIds, []);
+        const rawTags = safeArray(data.tags).length ? safeArray(data.tags) : safeArray(data.extraTags);
+        let chapters = rawChapters.map((chapter, index) => { const item = safeObject(chapter, {}); return { id: safeString(item.id, `chapter-${index + 1}`), title: safeString(item.title, `Chapter ${index + 1}`), content: safeString(item.content, ""), order: typeof item.order === "number" ? item.order : index + 1, words: safeNumber(item.words, countWordsFromHtml(item.content || "")) }; });
+        if (publishedIds.length) chapters = chapters.filter(ch => publishedIds.includes(ch.id));
+        chapters.sort((a, b) => a.order - b.order);
+        const totalWords = safeNumber(data.words, chapters.reduce((sum, ch) => sum + safeNumber(ch.words, 0), 0));
+        return { id: safeString(data.bookId || row?.id, bookId), ownerUid: safeString(data.ownerUid || data.user_id || row?.user_id, ""), title: safeString(data.title, "Untitled"), author: safeString(data.author, "unknown"), summary: safeString(data.summary, ""), rating: safeString(data.rating, ""), type: safeString(data.type, "fiction"), tags: rawTags.filter(v => typeof v === "string" && v.trim()), warnings: flattenWarnings(data.warnings), chapterCount: safeNumber(data.chapterCount, chapters.length), words: totalWords, views: safeNumber(data.views, 0), likes: safeNumber(data.likes, 0), chapters };
     }
 
-    function safeArray(value, fallback = []) {
-      return Array.isArray(value) ? value : fallback;
-    }
-
-    function safeObject(value, fallback = {}) {
-      return value && typeof value === "object" && !Array.isArray(value) ? value : fallback;
-    }
-
-    function stripHtml(html = "") {
-      return safeString(html)
-        .replace(/<br\s*\/?>/gi, " ")
-        .replace(/<\/(div|p|h1|h2|h3|h4|li|blockquote)>/gi, " ")
-        .replace(/<[^>]*>/g, " ")
-        .replace(/\s+/g, " ")
-        .trim();
-    }
-
-    function countWordsFromHtml(html = "") {
-      const text = stripHtml(html);
-      if (!text) return 0;
-      return text.split(" ").length;
-    }
-
-    function flattenWarnings(warningsObj) {
-      if (Array.isArray(warningsObj)) {
-        return warningsObj.filter(v => typeof v === "string" && v.trim());
-      }
-
-      const source = safeObject(warningsObj, {});
-      const warnings = [];
-
-      Object.values(source).forEach(group => {
-        safeArray(group).forEach(item => {
-          if (typeof item === "string" && item.trim() && item.trim().toLowerCase() !== "none") {
-            warnings.push(item.trim());
-          }
-        });
-      });
-
-      return [...new Set(warnings)];
-    }
-
-    function formatNumber(num) {
-      return new Intl.NumberFormat().format(num || 0);
-    }
-
-    function showStatus(text) {
-      statusBox.textContent = text;
-      statusBox.classList.remove("hidden");
-    }
-
-    function hideStatus() {
-      statusBox.textContent = "";
-      statusBox.classList.add("hidden");
-    }
-
-    function showError(text) {
-      errorBox.textContent = text;
-      errorBox.classList.remove("hidden");
-    }
-
-    function hideError() {
-      errorBox.textContent = "";
-      errorBox.classList.add("hidden");
-    }
-
-    function openDrawer() {
-      mobileDrawer.classList.add("open");
-      drawerBackdrop.classList.remove("hidden");
-      drawerBackdrop.classList.add("open");
-    }
-
-    function closeDrawer() {
-      mobileDrawer.classList.remove("open");
-      drawerBackdrop.classList.remove("open");
-      drawerBackdrop.classList.add("hidden");
-    }
-
-    function normalizeBook(raw) {
-      const data = safeObject(raw, {});
-
-      const rawChapters = safeArray(data.chapters, []);
-      const publishedIds = safeArray(data.publishedChapterIds, []);
-      const rawTags = safeArray(data.tags).length ? safeArray(data.tags) : safeArray(data.extraTags);
-
-      let chapters = rawChapters.map((chapter, index) => {
-        const item = safeObject(chapter, {});
-        return {
-          id: safeString(item.id, `chapter-${index + 1}`),
-          title: safeString(item.title, `Chapter ${index + 1}`),
-          content: safeString(item.content, ""),
-          order: typeof item.order === "number" ? item.order : index + 1,
-          words: safeNumber(item.words, countWordsFromHtml(item.content || ""))
-        };
-      });
-
-      if (publishedIds.length) {
-        chapters = chapters.filter(ch => publishedIds.includes(ch.id));
-      }
-
-      chapters.sort((a, b) => a.order - b.order);
-
-      const totalWords = safeNumber(
-        data.words,
-        chapters.reduce((sum, ch) => sum + safeNumber(ch.words, 0), 0)
-      );
-
-      return {
-        id: safeString(data.bookId, bookId),
-        ownerUid: safeString(data.ownerUid, ""),
-        title: safeString(data.title, "Untitled"),
-        author: safeString(data.author, "unknown"),
-        summary: safeString(data.summary, ""),
-        rating: safeString(data.rating, ""),
-        type: safeString(data.type, "fiction"),
-        tags: rawTags.filter(v => typeof v === "string" && v.trim()),
-        warnings: flattenWarnings(data.warnings),
-        chapterCount: safeNumber(data.chapterCount, chapters.length),
-        words: totalWords,
-        views: safeNumber(data.views, 0),
-        likes: safeNumber(data.likes, 0),
-        chapters
-      };
-    }
-
-    function currentChapter() {
-      if (!currentBook || !currentBook.chapters.length) {
-        return {
-          id: "none",
-          title: "No Chapter",
-          content: "<p>No content available.</p>",
-          words: 0
-        };
-      }
-      return currentBook.chapters[currentChapterIndex] || currentBook.chapters[0];
-    }
-
+    function currentChapter() { if (!currentBook || !currentBook.chapters.length) return { id: "none", title: "No Chapter", content: "<p>No content available.</p>", words: 0 }; return currentBook.chapters[currentChapterIndex] || currentBook.chapters[0]; }
+    async function syncProfileCurrentReadNow() { if (!currentUser || !bookId || !currentBook || !currentBook.chapters?.length) return; try { const chapter = currentChapter(); await supabase.from("users").update({ current_read_book_id: bookId, current_read_chapter_index: currentChapterIndex, current_read_chapter_title: safeString(chapter.title, ""), current_read_story_title: safeString(currentBook.title, ""), current_read_author: safeString(currentBook.author, ""), current_read_updated_at: new Date().toISOString() }).eq("id", currentUser.id); } catch (err) { console.warn("Could not save current read to your profile.", err); } }
     let currentReadProfileTimer = null;
-
-    async function syncProfileCurrentReadNow() {
-      const user = currentUser || auth.currentUser;
-      if (!user || !bookId || !currentBook || !currentBook.chapters?.length) return;
-      try {
-        const chapter = currentChapter();
-        await updateDoc(doc(db, "users", user.uid), {
-          currentReadBookId: bookId,
-          currentReadChapterIndex: currentChapterIndex,
-          currentReadChapterTitle: safeString(chapter.title, ""),
-          currentReadStoryTitle: safeString(currentBook.title, ""),
-          currentReadAuthor: safeString(currentBook.author, ""),
-          currentReadUpdatedAt: serverTimestamp()
-        });
-      } catch (err) {
-        console.warn("Could not save current read to your profile.", err);
-      }
-    }
-
-    function scheduleProfileCurrentRead() {
-      if (!(currentUser || auth.currentUser) || !bookId || !currentBook) return;
-      clearTimeout(currentReadProfileTimer);
-      currentReadProfileTimer = setTimeout(() => {
-        syncProfileCurrentReadNow();
-      }, 700);
-    }
-
-    function saveResumePosition() {
-      if (!bookId) return;
-      localStorage.setItem(`alysum-reader-resume-${bookId}`, String(currentChapterIndex));
-      scheduleProfileCurrentRead();
-    }
-
-    function saveBookmark() {
-      if (!bookId) return;
-      const chapter = currentChapter();
-      localStorage.setItem(
-        `alysum-reader-bookmark-${bookId}`,
-        JSON.stringify({
-          chapterIndex: currentChapterIndex,
-          chapterTitle: chapter.title,
-          savedAt: Date.now()
-        })
-      );
-      scheduleProfileCurrentRead();
-    }
-
-    function loadResumePosition() {
-      if (!bookId) return null;
-      const raw = localStorage.getItem(`alysum-reader-resume-${bookId}`);
-      if (raw === null) return null;
-      const index = parseInt(raw, 10);
-      return Number.isFinite(index) ? index : null;
-    }
-
-    function loadBookmark() {
-      if (!bookId) return null;
-      try {
-        return JSON.parse(localStorage.getItem(`alysum-reader-bookmark-${bookId}`) || "null");
-      } catch {
-        return null;
-      }
-    }
-
-    function readerTrackingId() {
-      if (currentUser) return `user-${currentUser.uid}`;
-
-      const key = "alysum-reader-anon-id";
-      let id = localStorage.getItem(key);
-      if (!id) {
-        id = `anon-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
-        localStorage.setItem(key, id);
-      }
-      return id;
-    }
+    function scheduleProfileCurrentRead() { if (!currentUser || !bookId || !currentBook) return; clearTimeout(currentReadProfileTimer); currentReadProfileTimer = setTimeout(() => { syncProfileCurrentReadNow(); }, 700); }
+    function saveResumePosition() { if (!bookId) return; localStorage.setItem(`alysum-reader-resume-${bookId}`, String(currentChapterIndex)); scheduleProfileCurrentRead(); }
+    function saveBookmark() { if (!bookId) return; const chapter = currentChapter(); localStorage.setItem(`alysum-reader-bookmark-${bookId}`, JSON.stringify({ chapterIndex: currentChapterIndex, chapterTitle: chapter.title, savedAt: Date.now() })); scheduleProfileCurrentRead(); }
+    function loadResumePosition() { if (!bookId) return null; const raw = localStorage.getItem(`alysum-reader-resume-${bookId}`); if (raw === null) return null; const index = parseInt(raw, 10); return Number.isFinite(index) ? index : null; }
+    function loadBookmark() { if (!bookId) return null; try { return JSON.parse(localStorage.getItem(`alysum-reader-bookmark-${bookId}`) || "null"); } catch { return null; } }
+    function readerTrackingId() { if (currentUser) return `user-${currentUser.id}`; const key = "alysum-reader-anon-id"; let id = localStorage.getItem(key); if (!id) { id = `anon-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`; localStorage.setItem(key, id); } return id; }
 
     async function recordStoryView() {
-      if (!bookId) return;
+        if (!bookId || !currentBook) return;
+        const key = `alysum-reader-viewed-${bookId}`;
+        const lastViewed = Number(localStorage.getItem(key) || 0);
+        const sixHours = 6 * 60 * 60 * 1000;
+        if (Number.isFinite(lastViewed) && Date.now() - lastViewed < sixHours) return;
 
-      const key = `alysum-reader-viewed-${bookId}`;
-      const lastViewed = Number(localStorage.getItem(key) || 0);
-      const sixHours = 6 * 60 * 60 * 1000;
-
-      if (Number.isFinite(lastViewed) && Date.now() - lastViewed < sixHours) {
-        return;
-      }
-
-      const now = Date.now();
-      const readerId = readerTrackingId();
-      const readBucket = Math.floor(now / sixHours);
-      const readRef = doc(db, "library", bookId, "reads", `${readerId}-${readBucket}`);
-
-      try {
-        const existingRead = await getDoc(readRef);
-        if (existingRead.exists()) {
-          localStorage.setItem(key, String(now));
-          return;
-        }
-      } catch (error) {
-        console.warn("Could not check existing story read.", error);
-      }
-
-      let recorded = false;
-
-      try {
-        await setDoc(readRef, {
-          uid: currentUser ? currentUser.uid : null,
-          readerId,
-          createdAt: serverTimestamp()
-        });
-        recorded = true;
-      } catch (error) {
-        console.warn("Could not create story read record.", error);
-      }
-
-      try {
-        await updateDoc(doc(db, "library", bookId), {
-          views: increment(1)
-        });
-        recorded = true;
-      } catch (error) {
-        console.warn("Could not update story view count.", error);
-      }
-
-      if (recorded) {
-        localStorage.setItem(key, String(now));
-        if (currentBook) {
-          currentBook.views = safeNumber(currentBook.views, 0) + 1;
-        }
-      }
-    }
-
-    function applyTheme(theme) {
-      if (theme === "light") {
-        document.body.classList.add("light");
-      } else {
-        document.body.classList.remove("light");
-      }
-      localStorage.setItem("alysum-reader-theme", theme);
-      themeBtn.textContent = theme === "light" ? "Dark" : "Light";
-    }
-
-    function applyFontSize(size) {
-      const next = Math.max(16, Math.min(32, size));
-      document.documentElement.style.setProperty("--font-size", `${next}px`);
-      localStorage.setItem("alysum-reader-font-size", String(next));
-    }
-
-    function renderChipList(target, values, emptyText) {
-      target.innerHTML = "";
-
-      if (values.length) {
-        values.forEach(value => {
-          const chip = document.createElement("div");
-          chip.className = "chip";
-          chip.textContent = value;
-          target.appendChild(chip);
-        });
-      } else {
-        target.innerHTML = `<div class="chip">${emptyText}</div>`;
-      }
-    }
-
-    function renderMeta() {
-      if (!currentBook) return;
-
-      bookTitle.textContent = currentBook.title;
-      bookAuthor.textContent = "@" + currentBook.author;
-      bookSummary.textContent = currentBook.summary || "No summary yet.";
-
-      sideBookTitle.textContent = currentBook.title;
-      sideBookAuthor.textContent = "@" + currentBook.author;
-      sideBookSummary.textContent = currentBook.summary || "No summary yet.";
-
-      drawerBookTitle.textContent = currentBook.title;
-      drawerBookAuthor.textContent = "@" + currentBook.author;
-      drawerBookSummary.textContent = currentBook.summary || "No summary yet.";
-
-      topbarTitle.textContent = currentBook.title;
-      statChapters.textContent = formatNumber(currentBook.chapterCount || currentBook.chapters.length);
-      statWords.textContent = formatNumber(currentBook.words);
-      statReads.textContent = formatNumber(currentBook.views);
-      statType.textContent = currentBook.type || "—";
-      statRating.textContent = currentBook.rating || "—";
-
-      renderChipList(tagList, currentBook.tags, "No tags listed");
-      renderChipList(warningList, currentBook.warnings, "No warnings listed");
-      renderChipList(sideTagList, currentBook.tags, "No tags listed");
-      renderChipList(sideWarningList, currentBook.warnings, "No warnings listed");
-      renderChipList(drawerTagList, currentBook.tags, "No tags listed");
-      renderChipList(drawerWarningList, currentBook.warnings, "No warnings listed");
-    }
-
-    function renderChapter() {
-      if (!currentBook) return;
-
-      const chapter = currentChapter();
-
-      chapterTitle.textContent = chapter.title;
-      chapterMeta.textContent = `Chapter ${currentChapterIndex + 1} of ${currentBook.chapters.length} • ${formatNumber(chapter.words)} words`;
-      chapterIndicator.textContent = chapter.title;
-      topbarSubtitle.textContent = `Chapter ${currentChapterIndex + 1} of ${currentBook.chapters.length}`;
-      content.innerHTML = chapter.content || "<p>No chapter text yet.</p>";
-
-      prevBtn.disabled = currentChapterIndex === 0;
-      nextBtn.disabled = currentChapterIndex === currentBook.chapters.length - 1;
-
-      saveResumePosition();
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      loadComments();
-    }
-
-  async function loadLikeState() {
-      if (!bookId) return;
-    
-      try {
-        const likesRef = collection(db, "library", bookId, "likes");
-        const countSnap = await getCountFromServer(likesRef);
-        const likes = countSnap.data().count || 0;
-    
-        likeCount.textContent = `${formatNumber(likes)} kudos`;
+        const now = Date.now();
+        const readerId = readerTrackingId();
+        const readBucket = Math.floor(now / sixHours);
+        const readId = `${bookId}-${readerId}-${readBucket}`;
 
         try {
-          await updateDoc(doc(db, "library", bookId), { likes });
+            const { error: readError } = await supabase.from("reads").upsert({ id: readId, book_id: bookId, user_id: currentUser?.id || null, reader_id: readerId, created_at: new Date().toISOString() }, { onConflict: "id" });
+            if (readError) console.warn("Could not create story read record.", readError);
+
+            const nextViews = safeNumber(currentBook.views, 0) + 1;
+            const nextData = { ...libraryRowData({ data: currentBook }), views: nextViews, updated: now };
+            await supabase.from("library").update({ data: nextData }).eq("id", bookId);
+
+            localStorage.setItem(key, String(now));
+            currentBook.views = nextViews;
         } catch (error) {
-          console.warn("Could not sync story kudos count.", error);
+            console.warn("Could not record story view.", error);
         }
-    
-        hasLikedThisBook = false;
-    
-        if (currentUser) {
-          const likeSnap = await getDoc(
-            doc(db, "library", bookId, "likes", currentUser.uid)
-          );
-          hasLikedThisBook = likeSnap.exists();
-        }
-    
-        likeBtn.disabled = !currentUser || hasLikedThisBook;
-        likeBtn.textContent = hasLikedThisBook ? "❤️ Kudos Left" : "❤️ Leave Kudos";
-      } catch (error) {
-        console.error(error);
-        likeCount.textContent = "Couldn’t load kudos";
-      }
-   }
+    }
+
+    function applyTheme(theme) { document.body.classList.toggle("light", theme === "light"); localStorage.setItem("alysum-reader-theme", theme); themeBtn.textContent = theme === "light" ? "Dark" : "Light"; }
+    function applyFontSize(size) { const next = Math.max(16, Math.min(32, size)); document.documentElement.style.setProperty("--font-size", `${next}px`); localStorage.setItem("alysum-reader-font-size", String(next)); }
+    function renderChipList(target, values, emptyText) { target.innerHTML = ""; if (values.length) values.forEach(value => { const chip = document.createElement("div"); chip.className = "chip"; chip.textContent = value; target.appendChild(chip); }); else target.innerHTML = `<div class="chip">${emptyText}</div>`; }
+    function renderMeta() { if (!currentBook) return; bookTitle.textContent = currentBook.title; bookAuthor.textContent = "@" + currentBook.author; bookSummary.textContent = currentBook.summary || "No summary yet."; sideBookTitle.textContent = currentBook.title; sideBookAuthor.textContent = "@" + currentBook.author; sideBookSummary.textContent = currentBook.summary || "No summary yet."; drawerBookTitle.textContent = currentBook.title; drawerBookAuthor.textContent = "@" + currentBook.author; drawerBookSummary.textContent = currentBook.summary || "No summary yet."; topbarTitle.textContent = currentBook.title; statChapters.textContent = formatNumber(currentBook.chapterCount || currentBook.chapters.length); statWords.textContent = formatNumber(currentBook.words); statReads.textContent = formatNumber(currentBook.views); statType.textContent = currentBook.type || "—"; statRating.textContent = currentBook.rating || "—"; renderChipList(tagList, currentBook.tags, "No tags listed"); renderChipList(warningList, currentBook.warnings, "No warnings listed"); renderChipList(sideTagList, currentBook.tags, "No tags listed"); renderChipList(sideWarningList, currentBook.warnings, "No warnings listed"); renderChipList(drawerTagList, currentBook.tags, "No tags listed"); renderChipList(drawerWarningList, currentBook.warnings, "No warnings listed"); }
+    function renderChapter() { if (!currentBook) return; const chapter = currentChapter(); chapterTitle.textContent = chapter.title; chapterMeta.textContent = `Chapter ${currentChapterIndex + 1} of ${currentBook.chapters.length} • ${formatNumber(chapter.words)} words`; chapterIndicator.textContent = chapter.title; topbarSubtitle.textContent = `Chapter ${currentChapterIndex + 1} of ${currentBook.chapters.length}`; content.innerHTML = chapter.content || "<p>No chapter text yet.</p>"; prevBtn.disabled = currentChapterIndex === 0; nextBtn.disabled = currentChapterIndex === currentBook.chapters.length - 1; saveResumePosition(); window.scrollTo({ top: 0, behavior: "smooth" }); loadComments(); }
+
+    async function loadLikeState() {
+        if (!bookId) return;
+        try {
+            const { count, error: countError } = await supabase.from("likes").select("id", { count: "exact", head: true }).eq("book_id", bookId);
+            if (countError) throw countError;
+            const likes = count || 0;
+            likeCount.textContent = `${formatNumber(likes)} kudos`;
+            hasLikedThisBook = false;
+            if (currentUser) {
+                const { data } = await supabase.from("likes").select("id").eq("book_id", bookId).eq("user_id", currentUser.id).maybeSingle();
+                hasLikedThisBook = !!data;
+            }
+            likeBtn.disabled = !currentUser || hasLikedThisBook;
+            likeBtn.textContent = hasLikedThisBook ? "❤️ Kudos Left" : "❤️ Leave Kudos";
+        } catch (error) { console.error(error); likeCount.textContent = "Couldn’t load kudos"; }
+    }
 
     async function leaveKudos() {
-  if (!currentUser) {
-    showStatus("Log in to leave kudos.");
-    setTimeout(hideStatus, 1600);
-    return;
-  }
-
-  if (hasLikedThisBook) {
-    showStatus("You already left kudos for this story.");
-    setTimeout(hideStatus, 1600);
-    return;
-  }
-
-  try {
-    const likeRef = doc(db, "library", bookId, "likes", currentUser.uid);
-    const existing = await getDoc(likeRef);
-
-    if (existing.exists()) {
-      hasLikedThisBook = true;
-      await loadLikeState();
-      showStatus("You already left kudos for this story.");
-      setTimeout(hideStatus, 1600);
-      return;
+        if (!currentUser) { showStatus("Log in to leave kudos."); setTimeout(hideStatus, 1600); return; }
+        if (hasLikedThisBook) { showStatus("You already left kudos for this story."); setTimeout(hideStatus, 1600); return; }
+        try {
+            const likeId = `${bookId}-${currentUser.id}`;
+            const { error } = await supabase.from("likes").upsert({ id: likeId, book_id: bookId, user_id: currentUser.id, created_at: new Date().toISOString() }, { onConflict: "id" });
+            if (error) throw error;
+            hasLikedThisBook = true;
+            await loadLikeState();
+            showStatus("Kudos left ❤️"); setTimeout(hideStatus, 1400);
+        } catch (error) { console.error(error); showError("Failed to leave kudos."); }
     }
 
-    await setDoc(likeRef, {
-      uid: currentUser.uid,
-      createdAt: serverTimestamp()
-    });
-
-    try {
-      await updateDoc(doc(db, "library", bookId), {
-        likes: increment(1)
-      });
-    } catch (error) {
-      console.warn("Could not update story kudos count.", error);
-    }
-
-    hasLikedThisBook = true;
-    await loadLikeState();
-    showStatus("Kudos left ❤️");
-    setTimeout(hideStatus, 1400);
-  } catch (error) {
-    console.error(error);
-    showError("Failed to leave kudos.");
-  }
-
-    }
-
-    function updateReaderWatermark() {
-      const sheet = document.getElementById("readerWatermarkSheet");
-      const footer = document.getElementById("readerWatermarkFooter");
-      if (!sheet || !footer) return;
-      if (!bookId || !currentBook) {
-        sheet.innerHTML = "";
-        footer.textContent = "";
-        return;
-      }
-      const ownerName = bookOwnerHandle || currentBook.author || null;
-      applyReaderWatermark(sheet, footer, {
-        bookId,
-        currentUser: currentUser || auth.currentUser,
-        profileUsername: readerWatermarkProfileUser,
-        bookOwnerUsername: ownerName
-      });
-    }
-
-    async function syncReaderWatermarkProfile() {
-      const u = currentUser || auth.currentUser;
-      if (!u?.uid) {
-        readerWatermarkProfileUser = null;
-        updateReaderWatermark();
-        return;
-      }
-      try {
-        const snap = await getDoc(doc(db, "users", u.uid));
-        if (snap.exists()) {
-          const p = snap.data() || {};
-          readerWatermarkProfileUser = String(p.username || "").trim() || null;
-        } else {
-          readerWatermarkProfileUser = null;
-        }
-      } catch {
-        readerWatermarkProfileUser = null;
-      }
-      updateReaderWatermark();
-    }
-
-    async function syncBookOwnerHandle() {
-      const ownerUid = currentBook?.ownerUid;
-      if (!ownerUid) {
-        bookOwnerHandle = null;
-        updateReaderWatermark();
-        return;
-      }
-      try {
-        const snap = await getDoc(doc(db, "users", ownerUid));
-        if (snap.exists()) {
-          const p = snap.data() || {};
-          const handle = String(p.username || "").trim();
-          bookOwnerHandle = handle || null;
-        } else {
-          bookOwnerHandle = null;
-        }
-      } catch {
-        bookOwnerHandle = null;
-      }
-      updateReaderWatermark();
-    }
+    function updateReaderWatermark() { const sheet = document.getElementById("readerWatermarkSheet"); const footer = document.getElementById("readerWatermarkFooter"); if (!sheet || !footer) return; if (!bookId || !currentBook) { sheet.innerHTML = ""; footer.textContent = ""; return; } const ownerName = bookOwnerHandle || currentBook.author || null; applyReaderWatermark(sheet, footer, { bookId, currentUser, profileUsername: readerWatermarkProfileUser, bookOwnerUsername: ownerName }); }
+    async function syncReaderWatermarkProfile() { const u = currentUser; if (!u?.id) { readerWatermarkProfileUser = null; updateReaderWatermark(); return; } try { const { data } = await supabase.from("users").select("username").eq("id", u.id).maybeSingle(); readerWatermarkProfileUser = String(data?.username || "").trim() || null; } catch { readerWatermarkProfileUser = null; } updateReaderWatermark(); }
+    async function syncBookOwnerHandle() { const ownerUid = currentBook?.ownerUid; if (!ownerUid) { bookOwnerHandle = null; updateReaderWatermark(); return; } try { const { data } = await supabase.from("users").select("username").eq("id", ownerUid).maybeSingle(); bookOwnerHandle = String(data?.username || "").trim() || null; } catch { bookOwnerHandle = null; } updateReaderWatermark(); }
 
     async function loadBook() {
-      if (!bookId) {
-        showError("Missing book ID in URL.");
-        topbarTitle.textContent = "Missing book";
-        updateReaderWatermark();
-        return;
-      }
+        if (!bookId) bookId = await findFallbackBookId();
+        refreshBookLinks();
 
-      try {
-        hideError();
-        showStatus("Loading story…");
-
-        const snap = await getDoc(doc(db, "library", bookId));
-
-        if (!snap.exists()) {
-          showError(`Story not found: ${bookId}`);
-          topbarTitle.textContent = "Story not found";
-          hideStatus();
-          updateReaderWatermark();
-          return;
+        if (!bookId) {
+            showError("Missing book ID in URL. Open this story from the Library first.");
+            topbarTitle.textContent = "Missing book";
+            updateReaderWatermark();
+            return;
         }
 
-        currentBook = normalizeBook(snap.data());
-        await recordStoryView();
-
-        if (!currentBook.chapters.length) {
-          showError("This story has no readable chapters.");
-          topbarTitle.textContent = currentBook.title || "Untitled";
-          renderMeta();
-          await loadLikeState();
-          hideStatus();
-          updateReaderWatermark();
-          void syncReaderWatermarkProfile();
-          void syncBookOwnerHandle();
-          return;
-        }
-
-        const resumeIndex = loadResumePosition();
-        if (resumeIndex !== null && resumeIndex >= 0 && resumeIndex < currentBook.chapters.length) {
-          currentChapterIndex = resumeIndex;
-        }
-
-        renderMeta();
-        renderChapter();
-        await loadLikeState();
-        hideStatus();
-        isLoaded = true;
         try {
-          if (typeof auth.authStateReady === "function") {
-            await auth.authStateReady();
-          }
-        } catch (e) {
-          /* ignore */
+            hideError(); showStatus("Loading story…");
+            const { data, error } = await supabase.from("library").select("*").eq("id", bookId).maybeSingle();
+            if (error) throw error;
+            if (!data) { showError(`Story not found: ${bookId}`); topbarTitle.textContent = "Story not found"; hideStatus(); updateReaderWatermark(); return; }
+
+            localStorage.setItem("alysum-last-read-book", bookId);
+            localStorage.setItem("alysum-last-book", bookId);
+            sessionStorage.setItem("alysum-open-book", bookId);
+
+            currentBook = normalizeBook(data);
+            await recordStoryView();
+
+            if (!currentBook.chapters.length) {
+                showError("This story has no readable chapters.");
+                topbarTitle.textContent = currentBook.title || "Untitled";
+                renderMeta();
+                await loadLikeState();
+                hideStatus();
+                updateReaderWatermark();
+                void syncReaderWatermarkProfile();
+                void syncBookOwnerHandle();
+                return;
+            }
+
+            const resumeIndex = loadResumePosition();
+            if (resumeIndex !== null && resumeIndex >= 0 && resumeIndex < currentBook.chapters.length) currentChapterIndex = resumeIndex;
+
+            renderMeta();
+            renderChapter();
+            await loadLikeState();
+            hideStatus();
+            isLoaded = true;
+            void ensureBetaReadShelved();
+            updateReaderWatermark();
+            void syncReaderWatermarkProfile();
+            void syncBookOwnerHandle();
+        } catch (error) {
+            console.error(error);
+            showError("Failed to load story.");
+            topbarTitle.textContent = "Load error";
+            hideStatus();
+            updateReaderWatermark();
         }
-        void ensureBetaReadShelved();
-        updateReaderWatermark();
-        void syncReaderWatermarkProfile();
-        void syncBookOwnerHandle();
-      } catch (error) {
-        console.error(error);
-        showError("Failed to load story.");
-        topbarTitle.textContent = "Load error";
-        hideStatus();
-        updateReaderWatermark();
-      }
     }
 
-    async function ensureBetaReadShelved() {
-      const user = currentUser || auth.currentUser;
-      if (!user || !bookId || !currentBook) return;
+    async function ensureBetaReadShelved() { const user = currentUser; if (!user || !bookId || !currentBook) return; const title = safeString(currentBook.title, "Untitled"); const author = safeString(currentBook.author, ""); writeBetaShelfEntryLocal(user.id, bookId, { title, author }); try { await supabase.from("users").update({ current_read_book_id: bookId, current_read_story_title: title, current_read_author: author, current_read_updated_at: new Date().toISOString() }).eq("id", user.id); } catch (err) { console.warn("Could not sync beta shelf/current read to Supabase.", err); } }
+    function getBestUsername(user, fallback = "reader") { if (!user) return fallback; const rawUsername = user.display_name || user.displayName || user.username || user.handle || user.penName || user.name || user.email || fallback; const value = safeString(rawUsername, fallback).trim(); if (!value) return fallback; if (value.includes("@")) return value.split("@")[0]; return value; }
+    function isBookOwnerModerator() { return !!(currentUser && currentBook && currentBook.ownerUid && currentUser.id === currentBook.ownerUid); }
 
-      const title = safeString(currentBook.title, "Untitled");
-      const author = safeString(currentBook.author, "");
-      writeBetaShelfEntryLocal(user.uid, bookId, { title, author });
-
-      try {
-        const userRef = doc(db, "users", user.uid);
-        const uSnap = await getDoc(userRef);
-
-        const buildEntry = (keepShelvedAt) => ({
-          libraryBookId: bookId,
-          title,
-          author,
-          lastOpenedAt: serverTimestamp(),
-          shelvedAt: keepShelvedAt || serverTimestamp()
-        });
-
-        if (!uSnap.exists()) {
-          await setDoc(
-            userRef,
-            { betaReadShelf: { [bookId]: buildEntry(null) } },
-            { merge: true }
-          );
-          return;
-        }
-
-        const prevShelf = safeObject(uSnap.data().betaReadShelf, {});
-        const prevEntry = safeObject(prevShelf[bookId], {});
-        await updateDoc(userRef, {
-          [`betaReadShelf.${bookId}`]: buildEntry(prevEntry.shelvedAt)
-        });
-      } catch (err) {
-        console.warn("Could not sync beta shelf to Firestore (local shelf still updated).", err);
-      }
+    function buildCommentRow(comment) {
+        const item = document.createElement("div"); item.className = "comment-item"; item.dataset.commentId = comment.id;
+        const head = document.createElement("div"); head.className = "comment-item-head";
+        const userEl = document.createElement("div"); userEl.className = "comment-user"; userEl.textContent = getBestUsername(comment); head.appendChild(userEl);
+        const authorUid = safeString(comment.user_id, ""); const canEdit = !!(currentUser && authorUid && currentUser.id === authorUid); const canModRemove = !!(currentUser && authorUid && currentUser.id !== authorUid && isBookOwnerModerator());
+        if (canEdit || canModRemove) { const actions = document.createElement("div"); actions.className = "comment-actions"; if (canEdit) { const editBtn = document.createElement("button"); editBtn.type = "button"; editBtn.className = "comment-action-btn"; editBtn.textContent = "Edit"; editBtn.addEventListener("click", () => startCommentEdit(item, comment.id, safeString(comment.text, ""))); actions.appendChild(editBtn); const delBtn = document.createElement("button"); delBtn.type = "button"; delBtn.className = "comment-action-btn danger"; delBtn.textContent = "Delete"; delBtn.addEventListener("click", () => removeComment(comment.id, "Delete your comment?")); actions.appendChild(delBtn); } if (canModRemove) { const modBtn = document.createElement("button"); modBtn.type = "button"; modBtn.className = "comment-action-btn danger"; modBtn.textContent = "Remove"; modBtn.title = "Remove as the author of this book"; modBtn.addEventListener("click", () => removeComment(comment.id, "Remove this comment from your story?")); actions.appendChild(modBtn); } head.appendChild(actions); }
+        item.appendChild(head); const body = document.createElement("div"); body.className = "comment-body"; const textEl = document.createElement("div"); textEl.className = "comment-text"; textEl.textContent = safeString(comment.text, ""); body.appendChild(textEl); item.appendChild(body); return item;
     }
 
-    function getBestUsername(user, fallback = "reader") {
-      if (!user) return fallback;
-
-      const rawUsername =
-        user.displayName ||
-        user.username ||
-        user.handle ||
-        user.penName ||
-        user.name ||
-        user.email ||
-        fallback;
-
-      const value = safeString(rawUsername, fallback).trim();
-
-      if (!value) return fallback;
-      if (value.includes("@")) return value.split("@")[0];
-      return value;
-    }
-
-    function isBookOwnerModerator() {
-      return !!(currentUser && currentBook && currentBook.ownerUid && currentUser.uid === currentBook.ownerUid);
-    }
-
-    function buildCommentRow(docSnap, comment) {
-      const item = document.createElement("div");
-      item.className = "comment-item";
-      item.dataset.commentId = docSnap.id;
-
-      const head = document.createElement("div");
-      head.className = "comment-item-head";
-
-      const userEl = document.createElement("div");
-      userEl.className = "comment-user";
-      userEl.textContent = getBestUsername(comment);
-
-      head.appendChild(userEl);
-
-      const authorUid = safeString(comment.uid, "");
-      const canEdit = !!(currentUser && authorUid && currentUser.uid === authorUid);
-      const canModRemove = !!(currentUser && authorUid && currentUser.uid !== authorUid && isBookOwnerModerator());
-
-      if (canEdit || canModRemove) {
-        const actions = document.createElement("div");
-        actions.className = "comment-actions";
-
-        if (canEdit) {
-          const editBtn = document.createElement("button");
-          editBtn.type = "button";
-          editBtn.className = "comment-action-btn";
-          editBtn.textContent = "Edit";
-          editBtn.addEventListener("click", () => startCommentEdit(item, docSnap.id, safeString(comment.text, "")));
-          actions.appendChild(editBtn);
-
-          const delBtn = document.createElement("button");
-          delBtn.type = "button";
-          delBtn.className = "comment-action-btn danger";
-          delBtn.textContent = "Delete";
-          delBtn.addEventListener("click", () => removeComment(docSnap.id, "Delete your comment?"));
-          actions.appendChild(delBtn);
-        }
-
-        if (canModRemove) {
-          const modBtn = document.createElement("button");
-          modBtn.type = "button";
-          modBtn.className = "comment-action-btn danger";
-          modBtn.textContent = "Remove";
-          modBtn.title = "Remove as the author of this book";
-          modBtn.addEventListener("click", () =>
-            removeComment(docSnap.id, "Remove this comment from your story?")
-          );
-          actions.appendChild(modBtn);
-        }
-
-        head.appendChild(actions);
-      }
-
-      item.appendChild(head);
-
-      const body = document.createElement("div");
-      body.className = "comment-body";
-
-      const textEl = document.createElement("div");
-      textEl.className = "comment-text";
-      textEl.textContent = safeString(comment.text, "");
-
-      body.appendChild(textEl);
-      item.appendChild(body);
-
-      return item;
-    }
-
-    function startCommentEdit(item, commentDocId, initialText) {
-      const body = item.querySelector(".comment-body");
-      if (!body) return;
-
-      const head = item.querySelector(".comment-item-head");
-      const actionBar = head?.querySelector(".comment-actions");
-      if (actionBar) {
-        actionBar.querySelectorAll("button").forEach((b) => {
-          b.disabled = true;
-        });
-      }
-
-      body.innerHTML = "";
-      const ta = document.createElement("textarea");
-      ta.className = "comment-edit-area";
-      ta.value = initialText;
-      body.appendChild(ta);
-
-      const row = document.createElement("div");
-      row.className = "comment-edit-row";
-
-      const saveBtn = document.createElement("button");
-      saveBtn.type = "button";
-      saveBtn.className = "btn primary";
-      saveBtn.textContent = "Save";
-      saveBtn.addEventListener("click", async () => {
-        const next = ta.value.trim();
-        if (!next) {
-          showStatus("Comment cannot be empty.");
-          setTimeout(hideStatus, 1400);
-          return;
-        }
-        saveBtn.disabled = true;
-        cancelBtn.disabled = true;
-        try {
-          await updateDoc(doc(db, "library", bookId, "comments", commentDocId), {
-            text: next,
-            updatedAt: Date.now()
-          });
-          showStatus("Comment updated.");
-          setTimeout(hideStatus, 1200);
-          await loadComments();
-        } catch (err) {
-          console.error(err);
-          showError("Could not update comment.");
-          saveBtn.disabled = false;
-          cancelBtn.disabled = false;
-        }
-      });
-
-      const cancelBtn = document.createElement("button");
-      cancelBtn.type = "button";
-      cancelBtn.className = "btn";
-      cancelBtn.textContent = "Cancel";
-      cancelBtn.addEventListener("click", () => {
-        void loadComments();
-      });
-
-      row.appendChild(saveBtn);
-      row.appendChild(cancelBtn);
-      body.appendChild(row);
-      ta.focus();
-    }
-
-    async function removeComment(commentDocId, confirmMessage) {
-      if (!currentUser || !bookId) return;
-      if (!window.confirm(confirmMessage)) return;
-      try {
-        await deleteDoc(doc(db, "library", bookId, "comments", commentDocId));
-        showStatus("Comment removed.");
-        setTimeout(hideStatus, 1200);
-        await loadComments();
-      } catch (err) {
-        console.error(err);
-        showError("Could not remove comment.");
-      }
-    }
-
-    async function loadComments() {
-      commentList.innerHTML = "";
-
-      if (!currentBook) return;
-
-      try {
-        const q = query(
-          collection(db, "library", bookId, "comments"),
-          orderBy("createdAt", "desc")
-        );
-
-        const snap = await getDocs(q);
-
-        if (snap.empty) {
-          commentList.innerHTML = `<div class="comment-item"><div class="comment-text">No comments yet.</div></div>`;
-          return;
-        }
-
-        snap.forEach((docSnap) => {
-          const comment = safeObject(docSnap.data(), {});
-          commentList.appendChild(buildCommentRow(docSnap, comment));
-        });
-      } catch (error) {
-        console.error(error);
-        commentList.innerHTML = `<div class="comment-item"><div class="comment-text">Could not load comments.</div></div>`;
-      }
-    }
-
-async function postComment() {
-  const text = commentInput.value.trim();
-
-  if (!text) {
-    showStatus("Write a comment first.");
-    setTimeout(hideStatus, 1400);
-    return;
-  }
-
-  if (!currentUser) {
-    showStatus("Log in to post comments.");
-    setTimeout(hideStatus, 1800);
-    return;
-  }
-
-  try {
-    const userRef = doc(db, "users", currentUser.uid);
-    const userSnap = await getDoc(userRef);
-
-    if (!userSnap.exists()) {
-      throw new Error("User profile not found.");
-    }
-
-    const profile = userSnap.data() || {};
-    const handle = String(profile.username || "").trim();
-    const displayName =
-      String(profile.displayName || "").trim() || handle;
-
-    if (!handle) {
-      throw new Error("Username not found.");
-    }
-
-    await addDoc(collection(db, "library", bookId, "comments"), {
-      uid: currentUser.uid,
-      username: handle,
-      displayName,
-      text,
-      createdAt: Date.now()
-    });
-
-    commentInput.value = "";
-    showStatus("Comment posted.");
-    setTimeout(hideStatus, 1200);
-    await loadComments();
-
-  } catch (error) {
-    console.error(error);
-    showError("Failed to post comment.");
-  }
-}
-
-    backBtn.addEventListener("click", () => {
-      window.location.href = "/library.html";
-    });
-
-    readerProfileTopBtn?.addEventListener("click", async () => {
-      if (!bookId) return;
-      if (!currentBook) {
-        showStatus("Wait until this story finishes loading.");
-        setTimeout(hideStatus, 2200);
-        return;
-      }
-      try {
-        if (typeof auth.authStateReady === "function") {
-          await auth.authStateReady();
-        }
-      } catch {
-        /* ignore */
-      }
-      const user = currentUser || auth.currentUser;
-      if (!user) {
-        window.location.href =
-          "/login.html?next=" + encodeURIComponent(READER_HOME_URL);
-        return;
-      }
-      readerProfileTopBtn.disabled = true;
-      try {
-        await ensureBetaReadShelved();
-      } finally {
-        readerProfileTopBtn.disabled = false;
-      }
-      window.location.href = READER_HOME_URL;
-    });
-
-    prevBtn.addEventListener("click", () => {
-      if (!currentBook) return;
-      if (currentChapterIndex > 0) {
-        currentChapterIndex--;
-        renderChapter();
-      }
-    });
-
-    nextBtn.addEventListener("click", () => {
-      if (!currentBook) return;
-      if (currentChapterIndex < currentBook.chapters.length - 1) {
-        currentChapterIndex++;
-        renderChapter();
-      }
-    });
-
-    bookmarkBtn.addEventListener("click", () => {
-      if (!currentBook) return;
-      saveBookmark();
-      showStatus(`Bookmarked: ${currentChapter().title}`);
-      setTimeout(hideStatus, 1400);
-    });
-
-    resumeBtn.addEventListener("click", () => {
-      if (!currentBook) return;
-
-      const bookmark = loadBookmark();
-      const resumeIndex = loadResumePosition();
-
-      if (bookmark && Number.isFinite(bookmark.chapterIndex) && bookmark.chapterIndex < currentBook.chapters.length) {
-        currentChapterIndex = bookmark.chapterIndex;
-        renderChapter();
-        showStatus(`Jumped to bookmark: ${bookmark.chapterTitle || "Saved chapter"}`);
-        setTimeout(hideStatus, 1600);
-        return;
-      }
-
-      if (resumeIndex !== null && resumeIndex >= 0 && resumeIndex < currentBook.chapters.length) {
-        currentChapterIndex = resumeIndex;
-        renderChapter();
-        showStatus("Resumed where you left off.");
-        setTimeout(hideStatus, 1400);
-        return;
-      }
-
-      showStatus("No bookmark or resume point yet.");
-      setTimeout(hideStatus, 1400);
-    });
-
-    themeBtn.addEventListener("click", () => {
-      const nextTheme = document.body.classList.contains("light") ? "dark" : "light";
-      applyTheme(nextTheme);
-    });
-
-    fontMinusBtn.addEventListener("click", () => {
-      currentFontSize = Math.max(16, currentFontSize - 2);
-      applyFontSize(currentFontSize);
-    });
-
-    fontPlusBtn.addEventListener("click", () => {
-      currentFontSize = Math.min(32, currentFontSize + 2);
-      applyFontSize(currentFontSize);
-    });
-
-    postCommentBtn.addEventListener("click", postComment);
-    likeBtn.addEventListener("click", leaveKudos);
-
-    menuBtn.addEventListener("click", openDrawer);
-    closeDrawerBtn.addEventListener("click", closeDrawer);
-    drawerBackdrop.addEventListener("click", closeDrawer);
-
-    onAuthStateChanged(auth, (user) => {
-      currentUser = user || null;
-
-      if (currentUser) {
-        hideStatus();
-        void syncReaderWatermarkProfile();
-      } else {
-        readerWatermarkProfileUser = null;
-        showStatus("Read-only mode. Log in to leave comments or kudos.");
-        updateReaderWatermark();
-      }
-
-      if (!isLoaded) {
-        loadBook();
-      } else {
-        loadLikeState();
-        const u = currentUser || auth.currentUser;
-        if (u && bookId && currentBook) {
-          syncProfileCurrentReadNow();
-          void ensureBetaReadShelved();
-        }
-        if (isLoaded && currentBook) {
-          void loadComments();
-        }
-      }
-    });
-
-    const savedTheme = localStorage.getItem("alysum-reader-theme") || "dark";
-    const savedFont = parseInt(localStorage.getItem("alysum-reader-font-size") || "22", 10);
-
-    applyTheme(savedTheme);
-    if (Number.isFinite(savedFont)) {
-      currentFontSize = savedFont;
-      applyFontSize(savedFont);
-    }
-
-    setTimeout(() => {
-      if (!isLoaded) {
-        loadBook();
-      }
-    }, 900);
-  </script>
+    function startCommentEdit(item, commentId, initialText) { const body = item.querySelector(".comment-body"); if (!body) return; const head = item.querySelector(".comment-item-head"); const actionBar = head?.querySelector(".comment-actions"); if (actionBar) actionBar.querySelectorAll("button").forEach(b => { b.disabled = true; }); body.innerHTML = ""; const ta = document.createElement("textarea"); ta.className = "comment-edit-area"; ta.value = initialText; body.appendChild(ta); const row = document.createElement("div"); row.className = "comment-edit-row"; const saveBtn = document.createElement("button"); saveBtn.type = "button"; saveBtn.className = "btn primary"; saveBtn.textContent = "Save"; const cancelBtn = document.createElement("button"); cancelBtn.type = "button"; cancelBtn.className = "btn"; cancelBtn.textContent = "Cancel"; saveBtn.addEventListener("click", async () => { const next = ta.value.trim(); if (!next) { showStatus("Comment cannot be empty."); setTimeout(hideStatus, 1400); return; } saveBtn.disabled = true; cancelBtn.disabled = true; try { const { error } = await supabase.from("comments").update({ text: next, updated_at: new Date().toISOString() }).eq("id", commentId).eq("user_id", currentUser.id); if (error) throw error; showStatus("Comment updated."); setTimeout(hideStatus, 1200); await loadComments(); } catch (err) { console.error(err); showError("Could not update comment."); saveBtn.disabled = false; cancelBtn.disabled = false; } }); cancelBtn.addEventListener("click", () => void loadComments()); row.appendChild(saveBtn); row.appendChild(cancelBtn); body.appendChild(row); ta.focus(); }
+    async function removeComment(commentId, confirmMessage) { if (!currentUser || !bookId) return; if (!window.confirm(confirmMessage)) return; try { let q = supabase.from("comments").delete().eq("id", commentId); if (!isBookOwnerModerator()) q = q.eq("user_id", currentUser.id); const { error } = await q; if (error) throw error; showStatus("Comment removed."); setTimeout(hideStatus, 1200); await loadComments(); } catch (err) { console.error(err); showError("Could not remove comment."); } }
+    async function loadComments() { commentList.innerHTML = ""; if (!currentBook) return; try { const { data, error } = await supabase.from("comments").select("*").eq("book_id", bookId).order("created_at", { ascending: false }); if (error) throw error; if (!data?.length) { commentList.innerHTML = `<div class="comment-item"><div class="comment-text">No comments yet.</div></div>`; return; } data.forEach(comment => commentList.appendChild(buildCommentRow(comment))); } catch (error) { console.error(error); commentList.innerHTML = `<div class="comment-item"><div class="comment-text">Could not load comments.</div></div>`; } }
+    async function postComment() { const text = commentInput.value.trim(); if (!text) { showStatus("Write a comment first."); setTimeout(hideStatus, 1400); return; } if (!currentUser) { showStatus("Log in to post comments."); setTimeout(hideStatus, 1800); return; } try { const { data: profile } = await supabase.from("users").select("username, display_name, email").eq("id", currentUser.id).maybeSingle(); const handle = String(profile?.username || "").trim() || currentUser.email?.split("@")[0] || "reader"; const displayName = String(profile?.display_name || "").trim() || handle; const { error } = await supabase.from("comments").insert({ book_id: bookId, user_id: currentUser.id, username: handle, display_name: displayName, text, created_at: new Date().toISOString() }); if (error) throw error; commentInput.value = ""; showStatus("Comment posted."); setTimeout(hideStatus, 1200); await loadComments(); } catch (error) { console.error(error); showError("Failed to post comment."); } }
+
+    backBtn.addEventListener("click", () => { window.location.href = "/library.html"; });
+    readerProfileTopBtn?.addEventListener("click", async () => { if (!bookId) return; if (!currentBook) { showStatus("Wait until this story finishes loading."); setTimeout(hideStatus, 2200); return; } if (!currentUser) { window.location.href = "/login.html?next=" + encodeURIComponent(READER_HOME_URL); return; } readerProfileTopBtn.disabled = true; try { await ensureBetaReadShelved(); } finally { readerProfileTopBtn.disabled = false; } window.location.href = READER_HOME_URL; });
+    prevBtn.addEventListener("click", () => { if (!currentBook) return; if (currentChapterIndex > 0) { currentChapterIndex--; renderChapter(); } });
+    nextBtn.addEventListener("click", () => { if (!currentBook) return; if (currentChapterIndex < currentBook.chapters.length - 1) { currentChapterIndex++; renderChapter(); } });
+    bookmarkBtn.addEventListener("click", () => { if (!currentBook) return; saveBookmark(); showStatus(`Bookmarked: ${currentChapter().title}`); setTimeout(hideStatus, 1400); });
+    resumeBtn.addEventListener("click", () => { if (!currentBook) return; const bookmark = loadBookmark(); const resumeIndex = loadResumePosition(); if (bookmark && Number.isFinite(bookmark.chapterIndex) && bookmark.chapterIndex < currentBook.chapters.length) { currentChapterIndex = bookmark.chapterIndex; renderChapter(); showStatus(`Jumped to bookmark: ${bookmark.chapterTitle || "Saved chapter"}`); setTimeout(hideStatus, 1600); return; } if (resumeIndex !== null && resumeIndex >= 0 && resumeIndex < currentBook.chapters.length) { currentChapterIndex = resumeIndex; renderChapter(); showStatus("Resumed where you left off."); setTimeout(hideStatus, 1400); return; } showStatus("No bookmark or resume point yet."); setTimeout(hideStatus, 1400); });
+    themeBtn.addEventListener("click", () => applyTheme(document.body.classList.contains("light") ? "dark" : "light"));
+    fontMinusBtn.addEventListener("click", () => { currentFontSize = Math.max(16, currentFontSize - 2); applyFontSize(currentFontSize); });
+    fontPlusBtn.addEventListener("click", () => { currentFontSize = Math.min(32, currentFontSize + 2); applyFontSize(currentFontSize); });
+    postCommentBtn.addEventListener("click", postComment); likeBtn.addEventListener("click", leaveKudos); menuBtn.addEventListener("click", openDrawer); closeDrawerBtn.addEventListener("click", closeDrawer); drawerBackdrop.addEventListener("click", closeDrawer);
+
+    async function initAuth() { const { data } = await supabase.auth.getUser(); currentUser = data?.user || null; if (currentUser) { hideStatus(); void syncReaderWatermarkProfile(); } else { readerWatermarkProfileUser = null; showStatus("Read-only mode. Log in to leave comments or kudos."); updateReaderWatermark(); } }
+    const savedTheme = localStorage.getItem("alysum-reader-theme") || "dark"; const savedFont = parseInt(localStorage.getItem("alysum-reader-font-size") || "22", 10); applyTheme(savedTheme); if (Number.isFinite(savedFont)) { currentFontSize = savedFont; applyFontSize(savedFont); }
+    await initAuth();
+    await loadBook();
+</script>
 </body>
 </html>

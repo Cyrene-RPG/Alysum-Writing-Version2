@@ -18,20 +18,23 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/Alysum-3.png">
     <script src="/js/pwa-register.js" defer></script>
     <!-- ALYSUM:PWA:END -->
+
     <title>Sign Up - Alysum</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <script>
         try {
             var __g = localStorage.getItem("alysum-gradient-theme");
-            if (__g && __g !== "classic") document.documentElement.setAttribute("data-gradient-theme", __g);
+            if (__g && __g !== "classic") {
+                document.documentElement.setAttribute("data-gradient-theme", __g);
+            }
         } catch (e) {}
     </script>
+
     <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
 
     <style>
-        * {
-            box-sizing: border-box;
-        }
+        * { box-sizing: border-box; }
 
         body {
             margin: 0;
@@ -172,6 +175,7 @@
             }
         }
     </style>
+
     <link rel="stylesheet" href="/css/gradient-themes.css?v=2" />
 </head>
 
@@ -185,6 +189,7 @@
     <input id="password" type="password" placeholder="Password" autocomplete="new-password">
 
     <span class="account-type-label" id="accountTypeLabel">How will you use Alysum?</span>
+
     <div class="account-options" role="radiogroup" aria-labelledby="accountTypeLabel">
         <label class="account-option">
             <input type="radio" name="accountType" value="author" checked />
@@ -193,6 +198,7 @@
                 <span>Write in Studio, publish, and track your projects.</span>
             </span>
         </label>
+
         <label class="account-option">
             <input type="radio" name="accountType" value="reader" />
             <span class="account-option-text">
@@ -200,6 +206,7 @@
                 <span>Start on your Reading home, then browse the Library and leave feedback.</span>
             </span>
         </label>
+
         <label class="account-option">
             <input type="radio" name="accountType" value="both" />
             <span class="account-option-text">
@@ -218,9 +225,8 @@
 </div>
 
 <script type="module">
-import { auth, db } from "./firebase.js";
-import { createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { supabase } from "./firebase.js";
+
 import {
     ACCOUNT_AUTHOR,
     ACCOUNT_BOTH,
@@ -242,21 +248,28 @@ function clearError() {
     errorEl.classList.remove("visible");
 }
 
-function signupAuthMessage(code) {
-    switch (code) {
-        case "auth/too-many-requests":
-            return "Too many attempts from this network. Wait several minutes and try again.";
-        case "auth/email-already-in-use":
-            return "That email is already registered. Try logging in instead.";
-        case "auth/invalid-email":
-            return "That email address does not look valid.";
-        case "auth/weak-password":
-            return "Password is too weak. Use at least 6 characters.";
-        case "auth/network-request-failed":
-            return "Network error. Check your connection and try again.";
-        default:
-            return null;
+function signupAuthMessage(message) {
+    if (!message) return "Could not create account.";
+
+    const lower = message.toLowerCase();
+
+    if (lower.includes("already registered") || lower.includes("already exists")) {
+        return "That email is already registered. Try logging in instead.";
     }
+
+    if (lower.includes("invalid email")) {
+        return "That email address does not look valid.";
+    }
+
+    if (lower.includes("password")) {
+        return "Password is too weak. Use at least 6 characters.";
+    }
+
+    if (lower.includes("network")) {
+        return "Network error. Check your connection and try again.";
+    }
+
+    return message;
 }
 
 let signupInFlight = false;
@@ -274,7 +287,12 @@ window.signup = async function () {
         showError("Fill all fields.");
         return;
     }
-    if (accountType !== ACCOUNT_AUTHOR && accountType !== ACCOUNT_READER && accountType !== ACCOUNT_BOTH) {
+
+    if (
+        accountType !== ACCOUNT_AUTHOR &&
+        accountType !== ACCOUNT_READER &&
+        accountType !== ACCOUNT_BOTH
+    ) {
         showError("Pick how you will use Alysum.");
         return;
     }
@@ -284,18 +302,48 @@ window.signup = async function () {
     signupBtn.disabled = true;
 
     try {
-        const cred = await createUserWithEmailAndPassword(auth, email, password);
-
-        await setDoc(doc(db, "users", cred.user.uid), {
-            username: username,
-            displayName: username,
-            accountType: accountType,
-            words: 0,
-            books: 0,
-            streak: 0,
-            dailyWordGoal: 2000,
-            writingDayTotals: {}
+        const { data, error } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+                data: {
+                    username,
+                    displayName: username,
+                    accountType
+                }
+            }
         });
+
+        if (error) {
+            showError(signupAuthMessage(error.message));
+            return;
+        }
+
+        const user = data.user;
+
+        if (!user) {
+            showError("Account created, but login session was not started. Try logging in.");
+            return;
+        }
+
+        const { error: profileError } = await supabase
+            .from("users")
+            .insert({
+                id: user.id,
+                username: username,
+                display_name: username,
+                account_type: accountType,
+                words: 0,
+                books: 0,
+                streak: 0,
+                daily_word_goal: 2000,
+                writing_day_totals: {}
+            });
+
+        if (profileError) {
+            showError(profileError.message);
+            return;
+        }
 
         if (accountType === ACCOUNT_READER) {
             setUiMode("library");
@@ -304,10 +352,9 @@ window.signup = async function () {
             setUiMode("studio");
             window.location.href = "/studio.html";
         }
+
     } catch (e) {
-        const code = e && e.code;
-        const friendly = signupAuthMessage(code) || (e && e.message) || "Could not create account.";
-        showError(friendly);
+        showError((e && e.message) || "Could not create account.");
     } finally {
         signupInFlight = false;
         signupBtn.disabled = false;
@@ -323,4 +370,5 @@ document.getElementById("password").addEventListener("keydown", (ev) => {
 </script>
 
 </body>
-</html>
+</html>	o
+

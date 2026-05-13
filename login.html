@@ -18,20 +18,23 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/Alysum-3.png">
     <script src="/js/pwa-register.js" defer></script>
     <!-- ALYSUM:PWA:END -->
+
     <title>Login - Alysum</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <script>
         try {
             var __g = localStorage.getItem("alysum-gradient-theme");
-            if (__g && __g !== "classic") document.documentElement.setAttribute("data-gradient-theme", __g);
+            if (__g && __g !== "classic") {
+                document.documentElement.setAttribute("data-gradient-theme", __g);
+            }
         } catch (e) {}
     </script>
+
     <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
 
     <style>
-        * {
-            box-sizing: border-box;
-        }
+        * { box-sizing: border-box; }
 
         body {
             margin: 0;
@@ -79,9 +82,7 @@
             margin-top: 10px;
         }
 
-        button:active {
-            transform: scale(0.97);
-        }
+        button:active { transform: scale(0.97); }
 
         .signup-link {
             text-align: center;
@@ -112,9 +113,7 @@
             border: 1px solid #bbf7d0;
         }
 
-        #success-msg.visible {
-            display: block;
-        }
+        #success-msg.visible { display: block; }
 
         #error-msg {
             display: none;
@@ -128,9 +127,7 @@
             border: 1px solid #fecaca;
         }
 
-        #error-msg.visible {
-            display: block;
-        }
+        #error-msg.visible { display: block; }
 
         button:disabled {
             opacity: 0.65;
@@ -168,18 +165,6 @@
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
         }
 
-        .btn-oauth:first-of-type {
-            margin-top: 0;
-        }
-
-        .btn-oauth svg {
-            flex-shrink: 0;
-        }
-
-        .btn-oauth:disabled {
-            opacity: 0.65;
-        }
-
         .support-footnote {
             margin: 18px 0 0;
             text-align: center;
@@ -194,10 +179,6 @@
             text-decoration: none;
         }
 
-        .support-footnote a:hover {
-            text-decoration: underline;
-        }
-
         @media (max-width: 480px) {
             body {
                 padding: 12px;
@@ -207,6 +188,7 @@
             }
         }
     </style>
+
     <link rel="stylesheet" href="/css/gradient-themes.css?v=2" />
 </head>
 
@@ -216,12 +198,6 @@
     <h2>Welcome Back</h2>
 
     <button type="button" id="google-btn" class="btn-oauth" aria-label="Sign in with Google">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="22" height="22" aria-hidden="true">
-            <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/>
-            <path fill="#FF3D00" d="m6.306 14.691 6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z"/>
-            <path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.94 11.94 0 0 1 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"/>
-            <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.087 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"/>
-        </svg>
         Continue with Google
     </button>
 
@@ -231,41 +207,33 @@
     <input id="password" type="password" placeholder="Password" autocomplete="current-password">
 
     <button type="button" id="login-btn" onclick="login()">Enter Studio</button>
+
     <p id="success-msg" role="status"></p>
     <p id="error-msg" role="alert"></p>
 
     <div class="signup-link">
         <a href="#" id="forgot-link">Forgot password?</a>
     </div>
+
     <div class="signup-link">
         New here? <a href="/signup.html">Create account</a>
     </div>
+
     <p class="support-footnote" id="support-footnote">
-        Questions or no email after a reset? <a href="mailto:alysum.support@gmail.com">alysum.support@gmail.com</a>
+        Questions or no email after a reset?
+        <a href="mailto:alysum.support@gmail.com">alysum.support@gmail.com</a>
     </p>
 </div>
 
 <script type="module">
-import { auth, db } from "./firebase.js";
-import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { supabase } from "./firebase.js";
 import { homeUrlForUserData } from "./js/account-mode.js?v=1";
-import {
-    signInWithEmailAndPassword,
-    sendPasswordResetEmail,
-    GoogleAuthProvider,
-    signInWithPopup,
-    signInWithRedirect,
-    getRedirectResult,
-} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 const errorEl = document.getElementById("error-msg");
 const successEl = document.getElementById("success-msg");
 const loginBtn = document.getElementById("login-btn");
 const googleBtn = document.getElementById("google-btn");
 const forgotLink = document.getElementById("forgot-link");
-
-const googleProvider = new GoogleAuthProvider();
-googleProvider.setCustomParameters({ prompt: "select_account" });
 
 function showError(text) {
     successEl.textContent = "";
@@ -290,71 +258,110 @@ function clearSuccess() {
     successEl.classList.remove("visible");
 }
 
-function authMessage(code) {
-    switch (code) {
-        case "auth/too-many-requests":
-            return "Too many sign-in attempts. Wait 15–30 minutes before trying again, or try from another network if you were testing with the wrong password.";
-        case "auth/wrong-password":
-        case "auth/invalid-credential":
-        case "auth/invalid-login-credentials":
-            return "Email or password is incorrect.";
-        case "auth/user-not-found":
-            return "No account found for this email.";
-        case "auth/user-disabled":
-            return "This account has been disabled.";
-        case "auth/invalid-email":
-            return "That email address does not look valid.";
-        case "auth/network-request-failed":
-            return "Network error. Check your connection and try again.";
-        case "auth/missing-email":
-            return "Enter your email address first.";
-        case "auth/operation-not-allowed":
-            return "This sign-in method is turned off in Firebase. Enable it under Authentication → Sign-in method.";
-        case "auth/popup-closed-by-user":
-        case "auth/cancelled-popup-request":
-            return "Sign-in was cancelled. Try again when you are ready.";
-        case "auth/popup-blocked":
-            return "Your browser blocked the sign-in popup. Allow popups for this site or try again.";
-        case "auth/account-exists-with-different-credential":
-            return "This email is already registered with a different sign-in method. Try email and password, or the provider you used before.";
-        case "auth/web-storage-unsupported":
-            return "This browser blocks storage needed for sign-in. Try a normal (non-private) window or another browser.";
-        case "auth/internal-error":
-            return "Sign-in had an internal error. For Google, check OAuth consent in Google Cloud for this Firebase project.";
-        case "auth/unauthorized-domain":
-            return "This website’s domain is not allowed for sign-in yet. In Firebase Console go to Authentication → Settings → Authorized domains, and add the exact host from your address bar (for example www.yoursite.com or your-preview-url.web.app).";
-        case "auth/unauthorized-continue-uri":
-        case "auth/invalid-continue-uri":
-            return "This site’s address is not allowed for that link. In Firebase Console → Authentication → Settings, add this exact domain under Authorized domains (include localhost if you test locally).";
-        case "auth/missing-continue-uri":
-            return "Password reset could not build a valid return link. Open the login page over http(s), not as a saved file.";
-        default:
-            return null;
+function authMessage(message) {
+    if (!message) return "Sign-in failed.";
+
+    const lower = message.toLowerCase();
+
+    if (lower.includes("invalid login") || lower.includes("invalid credentials")) {
+        return "Email or password is incorrect.";
+    }
+
+    if (lower.includes("email not confirmed")) {
+        return "Check your email and confirm your account before logging in.";
+    }
+
+    if (lower.includes("network")) {
+        return "Network error. Check your connection and try again.";
+    }
+
+    return message;
+}
+
+async function redirectAfterLogin() {
+    const params = new URLSearchParams(window.location.search);
+    const next = params.get("next");
+    const safe = next && next.startsWith("/") && !next.startsWith("//") ? next : null;
+
+    if (safe) {
+        window.location.href = safe;
+        return;
+    }
+
+    const { data: userData } = await supabase.auth.getUser();
+    const user = userData && userData.user;
+
+    if (!user) {
+        window.location.href = "/studio.html";
+        return;
+    }
+
+    try {
+        const { data, error } = await supabase
+            .from("users")
+            .select("*")
+            .eq("id", user.id)
+            .single();
+
+        if (error || !data) {
+            window.location.href = "/studio.html";
+            return;
+        }
+
+        const firebaseStyleData = {
+            username: data.username,
+            displayName: data.display_name,
+            accountType: data.account_type,
+            words: data.words,
+            books: data.books,
+            streak: data.streak,
+            dailyWordGoal: data.daily_word_goal,
+            writingDayTotals: data.writing_day_totals || {}
+        };
+
+        window.location.href = homeUrlForUserData(firebaseStyleData);
+    } catch (e) {
+        console.error(e);
+        window.location.href = "/studio.html";
     }
 }
 
-/** Continue URL in the reset email; domain must be listed under Authentication → Settings → Authorized domains. */
-function passwordResetActionCodeSettings() {
-    if (typeof window === "undefined" || window.location.protocol === "file:") {
-        return undefined;
+googleBtn.addEventListener("click", async () => {
+    clearSuccess();
+    clearError();
+
+    googleBtn.disabled = true;
+    loginBtn.disabled = true;
+
+    const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+            redirectTo: `${window.location.origin}/login.html`
+        }
+    });
+
+    if (error) {
+        showError(error.message);
+        googleBtn.disabled = false;
+        loginBtn.disabled = false;
     }
-    const origin = window.location.origin;
-    if (!origin || origin === "null") {
-        return undefined;
-    }
-    return {
-        url: `${origin}/login.html`,
-        handleCodeInApp: false,
-    };
+});
+
+const { data: sessionData } = await supabase.auth.getSession();
+
+if (sessionData && sessionData.session && window.location.hash) {
+    await redirectAfterLogin();
 }
 
 let resetInFlight = false;
 
 forgotLink.addEventListener("click", async (e) => {
     e.preventDefault();
+
     if (resetInFlight) return;
 
     const email = document.getElementById("email").value.trim();
+
     if (!email) {
         showError("Enter your email address, then tap Forgot password.");
         return;
@@ -362,128 +369,33 @@ forgotLink.addEventListener("click", async (e) => {
 
     clearError();
     clearSuccess();
+
     resetInFlight = true;
     forgotLink.classList.add("is-busy");
 
     try {
-        const actionCodeSettings = passwordResetActionCodeSettings();
-        try {
-            if (actionCodeSettings) {
-                await sendPasswordResetEmail(auth, email, actionCodeSettings);
-            } else {
-                await sendPasswordResetEmail(auth, email);
-            }
-        } catch (firstErr) {
-            const c = firstErr && firstErr.code;
-            const retryWithoutContinue =
-                actionCodeSettings &&
-                (c === "auth/unauthorized-continue-uri" ||
-                    c === "auth/invalid-continue-uri" ||
-                    c === "auth/missing-continue-uri");
-            if (retryWithoutContinue) {
-                await sendPasswordResetEmail(auth, email);
-            } else {
-                throw firstErr;
-            }
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: `${window.location.origin}/login.html`
+        });
+
+        if (error) {
+            showError(error.message);
+            return;
         }
-        showSuccess(
-            "If that address has an email-and-password account, Firebase sends the reset (sender looks like noreply@… from Google). It can take a few minutes—check spam and Promotions. If you only ever signed in with Google, use “Continue with Google” instead; password reset does not apply. Still stuck? alysum.support@gmail.com"
-        );
+
+        showSuccess("If that address has an account, a reset email was sent. Check spam and Promotions too.");
     } catch (err) {
-        const code = err && err.code;
-        const friendly = authMessage(code) || (err && err.message) || "Could not send reset email.";
-        showError(friendly);
+        showError((err && err.message) || "Could not send reset email.");
     } finally {
         resetInFlight = false;
         forgotLink.classList.remove("is-busy");
     }
 });
 
-async function redirectAfterLogin() {
-    const params = new URLSearchParams(window.location.search);
-    const next = params.get("next");
-    const safe =
-        next && next.startsWith("/") && !next.startsWith("//") ? next : null;
-    if (safe) {
-        window.location.href = safe;
-        return;
-    }
-    const user = auth.currentUser;
-    if (!user) {
-        window.location.href = "/studio.html";
-        return;
-    }
-    try {
-        const snap = await getDoc(doc(db, "users", user.uid));
-        const data = snap.exists() ? snap.data() || {} : {};
-        window.location.href = homeUrlForUserData(data);
-    } catch (e) {
-        console.error(e);
-        window.location.href = "/studio.html";
-    }
-}
-
-/** After signInWithRedirect, Firebase sends the user back here; finish sign-in. */
-getRedirectResult(auth)
-    .then(async (result) => {
-        if (result && result.user) {
-            await redirectAfterLogin();
-        }
-    })
-    .catch((err) => {
-        const code = err && err.code;
-        if (!code) return;
-        const friendly = authMessage(code) || (err && err.message);
-        if (friendly) showError(friendly);
-    });
-
-let googleLoginInFlight = false;
-
-googleBtn.addEventListener("click", async () => {
-    if (googleLoginInFlight || loginInFlight) return;
-
-    clearSuccess();
-    clearError();
-    googleLoginInFlight = true;
-    googleBtn.disabled = true;
-    loginBtn.disabled = true;
-
-    try {
-        await signInWithPopup(auth, googleProvider);
-        await redirectAfterLogin();
-    } catch (err) {
-        const code = err && err.code;
-        if (code === "auth/popup-closed-by-user" || code === "auth/cancelled-popup-request") {
-            clearError();
-        } else if (code === "auth/popup-blocked") {
-            clearError();
-            try {
-                await signInWithRedirect(auth, googleProvider);
-            } catch (e2) {
-                const c2 = e2 && e2.code;
-                showError(authMessage(c2) || (e2 && e2.message) || "Could not start Google sign-in.");
-            }
-        } else {
-            const friendly = authMessage(code) || (err && err.message) || "Google sign-in failed.";
-            showError(friendly);
-        }
-    } finally {
-        googleLoginInFlight = false;
-        googleBtn.disabled = false;
-        loginBtn.disabled = false;
-    }
-});
-
 let loginInFlight = false;
-let cooldownUntil = 0;
 
 window.login = async function () {
-    if (loginInFlight || googleLoginInFlight) return;
-    if (Date.now() < cooldownUntil) {
-        const s = Math.ceil((cooldownUntil - Date.now()) / 1000);
-        showError(`Please wait ${s}s before trying again.`);
-        return;
-    }
+    if (loginInFlight) return;
 
     const email = document.getElementById("email").value.trim();
     const password = document.getElementById("password").value;
@@ -495,20 +407,25 @@ window.login = async function () {
 
     clearSuccess();
     clearError();
+
     loginInFlight = true;
     loginBtn.disabled = true;
     googleBtn.disabled = true;
 
     try {
-        await signInWithEmailAndPassword(auth, email, password);
+        const { error } = await supabase.auth.signInWithPassword({
+            email,
+            password
+        });
+
+        if (error) {
+            showError(authMessage(error.message));
+            return;
+        }
+
         await redirectAfterLogin();
     } catch (e) {
-        const code = e && e.code;
-        const friendly = authMessage(code) || (e && e.message) || "Sign-in failed.";
-        showError(friendly);
-        if (code === "auth/too-many-requests") {
-            cooldownUntil = Date.now() + 90_000;
-        }
+        showError((e && e.message) || "Sign-in failed.");
     } finally {
         loginInFlight = false;
         loginBtn.disabled = false;
