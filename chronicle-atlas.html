@@ -673,6 +673,7 @@
                     </div>
                     <button type="button" class="atlas-btn atlas-btn-primary atlas-btn-block" id="atlasGenerateMapBtn">Generate fantasy map</button>
                     <p class="atlas-file-hint">High-res PNG, saved only on this PC. Same seed = same geography.</p>
+                    <p class="atlas-file-hint" id="atlasStorageModeLine" aria-live="polite"></p>
                 </div>
 
                 <div class="atlas-rail-section">
@@ -788,6 +789,8 @@
 
     const SHEETS_COLLECTION = "worldbuilding";
     const ACTIVE_ATLAS_WORLD_KEY = "alysum-active-atlas-world-v1";
+    /** Bump when map storage / save behavior changes (helps confirm deploy vs cache). */
+    const ATLAS_BUILD = "2026-05-12-localmaps";
 
     const atlasLoading = document.getElementById("atlasLoading");
     const atlasMain = document.getElementById("atlasMain");
@@ -913,19 +916,21 @@
 
     function atlasForFirestore(atlas) {
         const a = normalizeAtlas(atlas);
-        const stripData = !!(a.imageUrl && String(a.imageUrl).startsWith("data:"));
-        const local = a.imageStorage === "local" || stripData;
+        const rawUrl = String(a.imageUrl || "").trim();
+        const isData = rawUrl.startsWith("data:");
+        const local = a.imageStorage === "local" || isData;
+        const imageUrl = local ? "" : rawUrl;
         return {
-            ...a,
+            imageUrl,
+            imageStorage: local ? "local" : "remote",
+            imageFit: a.imageFit === "cover" ? "cover" : "contain",
+            activeEraId: a.activeEraId || a.eras[0]?.id || "era_current",
             eras: [...a.eras],
             layers: { ...a.layers },
             pins: [...a.pins],
             regions: [...a.regions],
             routes: [...a.routes],
-            zones: [...a.zones],
-            imageStorage: local ? "local" : "remote",
-            imageUrl: local ? "" : (a.imageUrl || ""),
-            imageFit: a.imageFit
+            zones: [...a.zones]
         };
     }
 
@@ -937,10 +942,29 @@
         }
         const url = a.imageUrl && String(a.imageUrl);
         if (!url || !url.startsWith("data:")) return;
-        const blob = await fetch(url).then((r) => r.blob());
-        await saveLocalMapBlob(world.id, blob);
-        a.imageStorage = "local";
-        a.imageUrl = "";
+        try {
+            const blob = await fetch(url).then((r) => r.blob());
+            if (!blob || blob.size < 64) throw new Error("empty or truncated image blob");
+            try {
+                await createImageBitmap(blob);
+            } catch (_) {
+                throw new Error("image could not be decoded (often a truncated cloud copy)");
+            }
+            await saveLocalMapBlob(world.id, blob);
+            a.imageStorage = "local";
+            a.imageUrl = "";
+        } catch (err) {
+            console.error(err);
+            try {
+                await deleteLocalMapBlob(world.id);
+            } catch (_) {}
+            a.imageStorage = "local";
+            a.imageUrl = "";
+            setStatus(
+                "Old embedded map could not be recovered (common if it was too large for the cloud). Generate or upload a map on this device.",
+                "warn"
+            );
+        }
     }
 
     function escapeHtml(s) {
@@ -1360,6 +1384,14 @@
         const atlas = getAtlas();
         const eraId = activeEraId();
 
+        const modeLine = document.getElementById("atlasStorageModeLine");
+        if (modeLine) {
+            modeLine.textContent =
+                atlas.imageStorage === "local"
+                    ? `Storage: map file on this device only · ${ATLAS_BUILD}`
+                    : `Storage: image URL in your sheet (cloud) · ${ATLAS_BUILD}`;
+        }
+
         const remoteUrl = atlas.imageStorage === "local" ? "" : String(atlas.imageUrl || "").trim();
         if (atlas.imageStorage === "local") {
             atlasImageUrl.placeholder = "Map stored on this device — paste URL to use a hosted image instead";
@@ -1613,7 +1645,7 @@
             await migrateAtlasImageToLocalIfNeeded(world);
         } catch (err) {
             console.error(err);
-            setStatus("Could not move embedded map to this device — try again or use a hosted URL.", "warn");
+            setStatus("Could not prepare map on this device — try Generate, Upload, or a hosted image URL.", "warn");
         }
         selected = null;
         draftPoints = [];
