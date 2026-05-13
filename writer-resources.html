@@ -18,27 +18,36 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/Alysum-3.png">
     <script src="/js/pwa-register.js" defer></script>
     <!-- ALYSUM:PWA:END -->
+
     <meta charset="UTF-8" />
     <title>Writer Resources — Alysum</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
     <script>
         try {
             var __g = localStorage.getItem("alysum-gradient-theme");
-            if (__g && __g !== "classic") document.documentElement.setAttribute("data-gradient-theme", __g);
+            if (__g && __g !== "classic") {
+                document.documentElement.setAttribute("data-gradient-theme", __g);
+            }
         } catch (e) {}
     </script>
+
     <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
+    <link rel="stylesheet" href="/css/gradient-themes.css?v=2" />
+
     <style>
-        * { box-sizing: border-box; }
+        * {
+            box-sizing: border-box;
+        }
 
         :root {
             --wr-bg: #0b1220;
-            --wr-border: rgba(255, 255, 255, 0.08);
-            --wr-shadow: 0 20px 50px rgba(0, 0, 0, 0.42);
-            --wr-soft: rgba(255, 255, 255, 0.05);
+            --wr-border: rgba(255,255,255,.08);
+            --wr-shadow: 0 20px 50px rgba(0,0,0,.42);
         }
 
-        html, body {
+        html,
+        body {
             margin: 0;
             min-height: 100%;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -58,9 +67,14 @@
             justify-content: space-between;
             gap: 12px;
             padding: 12px 18px;
-            background: linear-gradient(135deg, var(--purple-dark), var(--theme-header-mid), var(--theme-header-end));
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.28);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            background: linear-gradient(
+                135deg,
+                var(--purple-dark),
+                var(--theme-header-mid),
+                var(--theme-header-end)
+            );
+            box-shadow: 0 4px 20px rgba(0,0,0,.28);
+            border-bottom: 1px solid rgba(255,255,255,.08);
         }
 
         .wr-header-left,
@@ -68,50 +82,44 @@
             display: flex;
             align-items: center;
             gap: 10px;
-            min-width: 0;
         }
 
         .wr-brand {
             width: 38px;
             height: 38px;
             border-radius: 11px;
-            background: linear-gradient(135deg, var(--purple-bright), var(--pink));
+            background: linear-gradient(
+                135deg,
+                var(--purple-bright),
+                var(--pink)
+            );
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: 900;
             color: white;
-            font-size: 16px;
-            flex-shrink: 0;
         }
 
         .wr-kicker {
             font-size: 10px;
             font-weight: 900;
-            letter-spacing: 0.1em;
+            letter-spacing: .1em;
             text-transform: uppercase;
-            color: var(--theme-brand-kicker, #c4b5fd);
+            color: #c4b5fd;
         }
 
         .wr-page-title {
             font-size: 18px;
             font-weight: 900;
-            letter-spacing: -0.02em;
+            letter-spacing: -.02em;
             color: #fff7ed;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
         }
 
-        a.btn {
-            text-decoration: none;
-        }
-
-        .btn,
-        .link-btn {
+        .link-btn,
+        .btn {
             border: 1px solid var(--wr-border);
             border-radius: 12px;
-            background: rgba(0, 0, 0, 0.22);
+            background: rgba(0,0,0,.22);
             color: #fff;
             padding: 9px 14px;
             font-weight: 800;
@@ -121,40 +129,45 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 4px;
-            white-space: nowrap;
-            transition: background 0.16s ease, border-color 0.16s ease;
+            transition: .16s ease;
         }
 
-        .btn:hover,
-        .link-btn:hover {
-            background: rgba(0, 0, 0, 0.32);
-            border-color: rgba(255, 255, 255, 0.14);
+        .link-btn:hover,
+        .btn:hover {
+            background: rgba(0,0,0,.35);
         }
 
         .btn.primary,
         .link-btn.primary {
-            background: linear-gradient(135deg, var(--purple-dark), var(--purple));
+            background: linear-gradient(
+                135deg,
+                var(--purple-dark),
+                var(--purple)
+            );
             border-color: transparent;
         }
 
         .layout {
             max-width: 1120px;
             margin: 0 auto;
-            padding: 18px 18px 40px;
+            padding: 20px 18px 40px;
         }
 
         .layout-intro {
-            margin: 0 0 16px;
+            margin: 0 0 18px;
             font-size: 15px;
-            line-height: 1.55;
+            line-height: 1.6;
             color: #cbd5e1;
             font-weight: 600;
-            max-width: 62ch;
+            max-width: 64ch;
         }
 
         .wr-board {
-            background: linear-gradient(165deg, rgba(22, 30, 48, 0.98), rgba(15, 23, 42, 0.99));
+            background: linear-gradient(
+                165deg,
+                rgba(22,30,48,.98),
+                rgba(15,23,42,.99)
+            );
             border: 1px solid var(--wr-border);
             border-radius: 22px;
             box-shadow: var(--wr-shadow);
@@ -162,19 +175,15 @@
         }
 
         .wr-topband {
-            padding: 16px 20px 18px;
+            padding: 18px 22px;
             border-bottom: 1px solid var(--wr-border);
             background:
-                linear-gradient(135deg, color-mix(in srgb, var(--theme-card-a) 35%, transparent), color-mix(in srgb, var(--theme-card-b) 22%, transparent)),
-                rgba(0, 0, 0, 0.15);
-        }
-
-        .wr-topband-inner {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
+                linear-gradient(
+                    135deg,
+                    color-mix(in srgb, var(--theme-card-a) 35%, transparent),
+                    color-mix(in srgb, var(--theme-card-b) 22%, transparent)
+                ),
+                rgba(0,0,0,.15);
         }
 
         .wr-pill {
@@ -185,53 +194,17 @@
             font-size: 12px;
             font-weight: 900;
             color: #fff7ed;
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            background: rgba(0, 0, 0, 0.25);
-            white-space: nowrap;
-        }
-
-        .wr-pill.muted {
-            color: #c4b5fd;
-            font-weight: 800;
-        }
-
-        .wr-jump {
-            margin-top: 0;
-            padding-top: 0;
-            border-top: none;
-            font-size: 13px;
-            font-weight: 700;
-            color: #94a3b8;
-        }
-
-        .wr-jump a {
-            color: #f1f5f9;
-            text-decoration: none;
-            font-weight: 800;
-        }
-
-        .wr-jump a:hover {
-            color: #fff;
-            text-decoration: underline;
+            border: 1px solid rgba(255,255,255,.12);
+            background: rgba(0,0,0,.25);
         }
 
         .wr-main-grid {
             display: grid;
-            grid-template-columns: 1.05fr 0.95fr;
-            align-items: stretch;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
         }
 
         .wr-col {
-            padding: 20px 22px 22px;
-            min-width: 0;
-        }
-
-        .wr-col--names {
-            background: linear-gradient(180deg, rgba(109, 40, 217, 0.06), transparent 55%);
-        }
-
-        .wr-col--tools {
-            background: linear-gradient(180deg, rgba(236, 72, 153, 0.05), transparent 50%);
+            padding: 22px;
         }
 
         .wr-col + .wr-col {
@@ -239,129 +212,24 @@
         }
 
         .wr-h {
-            margin: 0 0 6px;
-            font-size: 19px;
+            margin: 0 0 8px;
+            font-size: 22px;
             font-weight: 900;
-            letter-spacing: -0.02em;
             color: var(--gold);
-            scroll-margin-top: 80px;
         }
 
         .wr-section-lead {
-            margin: 0 0 14px;
+            margin: 0 0 16px;
             font-size: 13px;
-            line-height: 1.5;
-            color: #94a3b8;
-            font-weight: 600;
-            max-width: 42ch;
-        }
-
-        .name-toolbar {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-        .name-toolbar input[type="search"] {
-            flex: 1 1 200px;
-            min-width: 0;
-            border: 1px solid var(--wr-border);
-            border-radius: 14px;
-            padding: 11px 14px;
-            background: rgba(15, 23, 42, 0.72);
-            color: #fff;
-            outline: none;
-            font: inherit;
-            font-size: 15px;
-            font-weight: 600;
-        }
-
-        .name-toolbar input:focus {
-            border-color: color-mix(in srgb, var(--purple-bright) 50%, transparent);
-            box-shadow: 0 0 0 3px color-mix(in srgb, var(--purple-bright) 18%, transparent);
-        }
-
-        .name-meta {
-            font-size: 13px;
-            font-weight: 650;
-            color: #a8b3cf;
-            margin-bottom: 10px;
-            min-height: 1.3em;
-        }
-
-        .name-results-wrap {
-            border: 1px solid var(--wr-border);
-            border-radius: 14px;
-            background: rgba(0, 0, 0, 0.2);
-            max-height: min(42vh, 340px);
-            overflow: auto;
-        }
-
-        .name-results-wrap::-webkit-scrollbar {
-            width: 9px;
-        }
-
-        .name-results-wrap::-webkit-scrollbar-thumb {
-            background: color-mix(in srgb, var(--purple-bright) 45%, transparent);
-            border-radius: 999px;
-        }
-
-        .name-empty {
-            padding: 22px 18px;
-            text-align: center;
-            color: #94a3b8;
-            font-size: 14px;
-            font-weight: 650;
             line-height: 1.55;
-        }
-
-        .name-empty .hint-strong {
-            display: block;
-            margin-bottom: 6px;
-            color: #e2e8f0;
-            font-weight: 800;
-            font-size: 15px;
-        }
-
-        .result-list {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .result-item {
-            border-bottom: 1px solid var(--wr-border);
-            padding: 10px 14px;
-            transition: background 0.12s ease;
-        }
-
-        .result-item:last-child {
-            border-bottom: none;
-        }
-
-        .result-item:hover {
-            background: rgba(255, 255, 255, 0.05);
-        }
-
-        .result-name {
-            font-weight: 800;
-            font-size: 15px;
-            color: #fff7ed;
-        }
-
-        .result-meta {
-            margin-top: 4px;
             color: #94a3b8;
-            font-size: 12px;
             font-weight: 600;
-            line-height: 1.4;
         }
 
         .tool-list {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 14px;
         }
 
         .tool-card {
@@ -369,30 +237,26 @@
             grid-template-columns: auto 1fr auto;
             gap: 14px;
             align-items: center;
-            padding: 14px 16px;
-            border-radius: 16px;
+            padding: 16px;
+            border-radius: 18px;
             border: 1px solid var(--wr-border);
-            background: rgba(0, 0, 0, 0.18);
-        }
-
-        .tool-card-body {
-            min-width: 0;
+            background: rgba(0,0,0,.18);
         }
 
         .tool-card-icon {
-            width: 44px;
-            height: 44px;
+            width: 48px;
+            height: 48px;
             border-radius: 14px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 22px;
-            background: var(--theme-accent-soft-bg, rgba(109, 40, 217, 0.22));
+            font-size: 24px;
+            background: rgba(109,40,217,.22);
         }
 
         .tool-card h3 {
             margin: 0 0 4px;
-            font-size: 15px;
+            font-size: 16px;
             font-weight: 900;
             color: #fff7ed;
         }
@@ -400,26 +264,22 @@
         .tool-card p {
             margin: 0;
             font-size: 13px;
-            line-height: 1.45;
+            line-height: 1.5;
             color: #94a3b8;
             font-weight: 600;
         }
 
         .wr-roadmap {
             border-top: 1px solid var(--wr-border);
-            padding: 16px 20px 18px;
-            background: rgba(0, 0, 0, 0.2);
-        }
-
-        .wr-roadmap-head {
-            margin-bottom: 10px;
+            padding: 18px 22px;
+            background: rgba(0,0,0,.2);
         }
 
         .wr-roadmap-label {
             display: block;
             font-size: 12px;
             font-weight: 900;
-            letter-spacing: 0.06em;
+            letter-spacing: .06em;
             text-transform: uppercase;
             color: var(--gold);
             margin-bottom: 4px;
@@ -430,14 +290,13 @@
             font-size: 13px;
             color: #94a3b8;
             font-weight: 600;
-            line-height: 1.45;
         }
 
         .wr-chip-row {
             display: flex;
             flex-wrap: wrap;
             gap: 8px;
-            margin-top: 12px;
+            margin-top: 14px;
         }
 
         .chip {
@@ -447,11 +306,11 @@
             font-size: 12px;
             font-weight: 800;
             color: #e2e8f0;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255,255,255,.1);
+            background: rgba(255,255,255,.06);
         }
 
-        @media (max-width: 800px) {
+        @media (max-width: 860px) {
             .wr-main-grid {
                 grid-template-columns: 1fr;
             }
@@ -461,6 +320,15 @@
                 border-top: 1px solid var(--wr-border);
             }
 
+            .tool-card {
+                grid-template-columns: auto 1fr;
+            }
+
+            .tool-card .btn {
+                grid-column: 1 / -1;
+                width: 100%;
+            }
+
             .wr-header {
                 flex-direction: column;
                 align-items: stretch;
@@ -468,248 +336,211 @@
 
             .wr-header-actions {
                 overflow-x: auto;
-                flex-wrap: nowrap;
-            }
-
-            .tool-card {
-                grid-template-columns: auto 1fr;
-                grid-template-rows: auto auto;
-            }
-
-            .tool-card-icon {
-                grid-column: 1;
-                grid-row: 1;
-            }
-
-            .tool-card-body {
-                grid-column: 2;
-                grid-row: 1;
-            }
-
-            .tool-card .btn,
-            .tool-card a.btn {
-                grid-column: 1 / -1;
-                grid-row: 2;
-                width: 100%;
-                justify-content: center;
-            }
-
-            .name-results-wrap {
-                max-height: min(48vh, 300px);
             }
         }
     </style>
-    <link rel="stylesheet" href="/css/gradient-themes.css?v=2" />
 </head>
+
 <body>
-    <header class="wr-header">
-        <div class="wr-header-left">
-            <div class="wr-brand" aria-hidden="true">A</div>
-            <div>
-                <div class="wr-kicker">Alysum</div>
-                <div class="wr-page-title">Writer resources</div>
-            </div>
+
+<header class="wr-header">
+    <div class="wr-header-left">
+        <div class="wr-brand">A</div>
+
+        <div>
+            <div class="wr-kicker">Alysum</div>
+            <div class="wr-page-title">Writer resources</div>
         </div>
-        <div class="wr-header-actions">
-            <a class="link-btn" href="/studio.html">← Studio</a>
-            <a class="link-btn" href="/library.html">Library</a>
-            <a class="link-btn" href="/editor.html">Editor</a>
-            <a class="link-btn" href="/settings.html">⚙️ Theme</a>
+    </div>
+
+    <div class="wr-header-actions">
+        <a class="link-btn" href="/studio.html">← Studio</a>
+        <a class="link-btn" href="/library.html">Library</a>
+        <a class="link-btn" href="/editor.html">Editor</a>
+        <a class="link-btn" href="/settings.html">⚙️ Theme</a>
+    </div>
+</header>
+
+<main class="layout">
+
+    <p class="layout-intro">
+        Focused tools for characters, names, cities,
+        kingdoms, and large-scale worldbuilding.
+    </p>
+
+    <div class="wr-board">
+
+        <div class="wr-topband">
+            <span class="wr-pill">Writer Toolkit</span>
         </div>
-    </header>
 
-    <main class="layout">
-        <p class="layout-intro">Name search and additional resources.</p>
+        <div class="wr-main-grid">
 
-        <div class="wr-board">
-            <div class="wr-topband">
-                <div class="wr-topband-inner">
-                    <nav class="wr-jump" aria-label="On this page">
-                        <a href="#name-finder">Names</a>
-                        ·
-                        <a href="#additional-resources">Additional resources</a>
-                        ·
-                        <a href="#coming-soon">Roadmap</a>
-                    </nav>
-                    <span class="wr-pill muted" id="nameLibraryBadge" hidden>—</span>
+            <!-- LEFT -->
+            <section class="wr-col">
+
+                <h2 class="wr-h">Core tools</h2>
+
+                <p class="wr-section-lead">
+                    Quick resources for names, characters,
+                    and manuscript planning.
+                </p>
+
+                <div class="tool-list">
+
+                    <article class="tool-card">
+                        <div class="tool-card-icon">🔤</div>
+
+                        <div class="tool-card-body">
+                            <h3>Names</h3>
+
+                            <p>
+                                Search the full Alysum name library
+                                by origin, meaning, gender label,
+                                or spelling.
+                            </p>
+                        </div>
+
+                        <a class="btn primary" href="/names.html">
+                            Open
+                        </a>
+                    </article>
+
+                    <article class="tool-card">
+                        <div class="tool-card-icon">🧍</div>
+
+                        <div class="tool-card-body">
+                            <h3>Character profile</h3>
+
+                            <p>
+                                Story Bible–style worksheet
+                                with wounds, arcs, relationships,
+                                goals, and internal conflict.
+                            </p>
+                        </div>
+
+                        <a class="btn primary" href="/character-profile.html">
+                            Open
+                        </a>
+                    </article>
+
                 </div>
-            </div>
+            </section>
 
-            <div class="wr-main-grid">
-                <section class="wr-col wr-col--names" id="name-finder">
-                    <h2 class="wr-h">Names</h2>
-                    <p class="wr-section-lead">
-                        Match any part of a name, origin, meaning, or gender label. If a search returns a lot of rows, only the first 120 are shown — type a bit more to narrow it.
-                    </p>
-                    <div class="name-toolbar">
-                        <input
-                            id="nameSearch"
-                            type="search"
-                            placeholder="Search name, origin, meaning…"
-                            autocomplete="off"
-                            aria-describedby="nameLibraryStatus"
-                        />
-                        <button class="btn primary" id="randomNameBtn" type="button">Random 6</button>
-                    </div>
-                    <div class="name-meta" id="nameLibraryStatus">Loading…</div>
-                    <div class="name-results-wrap">
-                        <div class="result-list" id="nameResults"></div>
-                    </div>
-                </section>
+            <!-- RIGHT -->
+            <section class="wr-col">
 
-                <section class="wr-col wr-col--tools" id="additional-resources">
-                    <h2 class="wr-h">Additional resources</h2>
-                    <p class="wr-section-lead">
-                        Character profile opens a Story Bible–style worksheet (with more prompts). Worksheets save to your Alysum account from the sheet page; you can also push them into a book’s bible. Worldbuilding is on its own page.
-                    </p>
-                    <div class="tool-list">
-                        <article class="tool-card">
-                            <div class="tool-card-icon" aria-hidden="true">🧍</div>
-                            <div class="tool-card-body">
-                                <h3>Character profile</h3>
-                                <p>Worksheet like the bible, with role, arc, wounds, and appearance — cloud saves on the sheet, or push to a book.</p>
-                            </div>
-                            <a class="btn primary" href="/character-profile.html">Open</a>
-                        </article>
-                        <article class="tool-card">
-                            <div class="tool-card-icon" aria-hidden="true">🗺</div>
-                            <div class="tool-card-body">
-                                <h3>Worldbuilding</h3>
-                                <p>Prompts and questions for your setting.</p>
-                            </div>
-                            <a class="btn primary" href="/worldbuilding.html">Open</a>
-                        </article>
-                    </div>
-                </section>
-            </div>
+                <h2 class="wr-h">World tools</h2>
 
-            <div class="wr-roadmap" id="coming-soon">
-                <div class="wr-roadmap-head">
-                    <span class="wr-roadmap-label">Roadmap</span>
-                    <p class="wr-roadmap-note">Not in the app yet.</p>
-                </div>
-                <div class="wr-chip-row">
-                    <span class="chip">Surname encyclopedia</span>
-                    <span class="chip">Fantasy name builder</span>
-                    <span class="chip">Place name generator</span>
-                    <span class="chip">Arc templates</span>
-                    <span class="chip">Trope library</span>
-                    <span class="chip">Publishing checklist</span>
-                </div>
-            </div>
+                <p class="wr-section-lead">
+                    Setting builders for worlds, cities,
+                    kingdoms, empires, confederacies,
+                    and civilizations.
+                </p>
+
+                <div class="tool-list">
+
+                    <article class="tool-card">
+                        <div class="tool-card-icon">🗺️</div>
+
+                        <div class="tool-card-body">
+                            <h3>Worldbuilding</h3>
+
+                            <p>
+                                Broad setting worksheet
+                                for geography, cultures,
+                                economy, religion, and conflict.
+                            </p>
+                        </div>
+
+                        <a class="btn primary" href="/worldbuilding.html">
+                            Open
+                        </a>
+                    </article>
+
+                    <article class="tool-card">
+                        <div class="tool-card-icon">🏙️</div>
+
+                        <div class="tool-card-body">
+                            <h3>City Builder</h3>
+
+                            <p>
+                                Build detailed cities with
+                                districts, politics, economy,
+                                infrastructure, crime, and secrets.
+                            </p>
+                        </div>
+
+                        <a class="btn primary" href="/city-builder.html">
+                            Open
+                        </a>
+                    </article>
+
+                    <article class="tool-card">
+                        <div class="tool-card-icon">👑</div>
+
+                        <div class="tool-card-body">
+                            <h3>Realm Builder</h3>
+
+                            <p>
+                                Create kingdoms, empires,
+                                republics, confederacies,
+                                federations, and collapsing states.
+                            </p>
+                        </div>
+
+                        <a class="btn primary" href="/realm-builder.html">
+                            Open
+                        </a>
+                    </article>
+                   <article class="tool-card">
+    <div class="tool-card-icon">🗺️</div>
+
+    <div class="tool-card-body">
+        <h3>Chronicle Atlas</h3>
+
+        <p>
+            Create historical maps, trade routes,
+            kingdoms, war zones, magical regions,
+            and timeline-based worlds.
+            ⚠️ UNDER CONSTRUCTION
         </div>
-    </main>
+    </div>
 
-    <script>
-        let NAME_LIBRARY = [];
-        const MAX_MATCH_DISPLAY = 120;
+    <a class="btn primary" href="/chronicle-atlas.html">
+        Open
+    </a>
+</article>
 
-        const nameSearch = document.getElementById("nameSearch");
-        const nameResults = document.getElementById("nameResults");
-        const randomNameBtn = document.getElementById("randomNameBtn");
-        const nameLibraryStatus = document.getElementById("nameLibraryStatus");
-        const nameLibraryBadge = document.getElementById("nameLibraryBadge");
-
-        function setBadge(text) {
-            if (!nameLibraryBadge) return;
-            nameLibraryBadge.textContent = text;
-            nameLibraryBadge.hidden = false;
-            nameLibraryBadge.classList.remove("muted");
-        }
-
-        function renderEmptyPrompt() {
-            nameResults.innerHTML = `<div class="name-empty">Search above, or tap <strong>Random 6</strong>.</div>`;
-        }
-
-        function renderNames(items) {
-            if (!items.length) {
-                nameResults.innerHTML = `<div class="name-empty"><span class="hint-strong">No matches</span>Try a different spelling or a shorter piece of text.</div>`;
-                nameLibraryStatus.textContent = "0 matches";
-                return;
-            }
-
-            const total = items.length;
-            const shown = items.slice(0, MAX_MATCH_DISPLAY);
-            const truncated = total > MAX_MATCH_DISPLAY;
-
-            nameLibraryStatus.textContent = truncated
-                ? `First ${shown.length} of ${total.toLocaleString()} — keep typing to narrow the list.`
-                : `${total.toLocaleString()} shown`;
-
-            nameResults.innerHTML = shown
-                .map(
-                    (item) => `
-                <div class="result-item">
-                    <div class="result-name">${escapeHtml(item.name)}</div>
-                    <div class="result-meta">${escapeHtml(item.type)} · ${escapeHtml(item.origin)} · ${escapeHtml(item.meaning)}</div>
                 </div>
-            `
-                )
-                .join("");
-        }
+            </section>
 
-        function escapeHtml(s) {
-            return String(s)
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
-                .replace(/"/g, "&quot;");
-        }
+        </div>
 
-        async function loadNameLibrary() {
-            try {
-                const response = await fetch("/resources/names.json", { cache: "no-store" });
-                if (!response.ok) throw new Error("names.json not found");
-                const data = await response.json();
-                if (!Array.isArray(data)) throw new Error("names.json must be an array");
+        <div class="wr-roadmap">
 
-                NAME_LIBRARY = data.filter((item) => item && item.name && item.origin && item.meaning && item.type);
-                const n = NAME_LIBRARY.length;
-                nameLibraryStatus.textContent = `${n.toLocaleString()} names`;
-                setBadge(`${n.toLocaleString()} names`);
-            } catch (error) {
-                console.warn(error);
-                NAME_LIBRARY = [];
-                nameLibraryStatus.textContent = "Name list could not be loaded.";
-                if (nameLibraryBadge) nameLibraryBadge.hidden = true;
-            }
+            <span class="wr-roadmap-label">
+                Roadmap
+            </span>
 
-            searchNames();
-        }
+            <p class="wr-roadmap-note">
+                Not in the app yet.
+            </p>
 
-        function searchNames() {
-            if (!NAME_LIBRARY.length) {
-                nameResults.innerHTML = `<div class="name-empty">Name list is not available here.</div>`;
-                return;
-            }
+            <div class="wr-chip-row">
+                <span class="chip">Surname encyclopedia</span>
+                <span class="chip">Fantasy name builder</span>
+                <span class="chip">Place name generator</span>
+                <span class="chip">Arc templates</span>
+                <span class="chip">Trope library</span>
+                <span class="chip">Publishing checklist</span>
+            </div>
 
-            const q = nameSearch.value.trim().toLowerCase();
-            if (!q) {
-                renderEmptyPrompt();
-                nameLibraryStatus.textContent = `${NAME_LIBRARY.length.toLocaleString()} names`;
-                return;
-            }
+        </div>
 
-            const filtered = NAME_LIBRARY.filter(
-                (item) =>
-                    item.name.toLowerCase().includes(q) ||
-                    item.origin.toLowerCase().includes(q) ||
-                    item.meaning.toLowerCase().includes(q) ||
-                    item.type.toLowerCase().includes(q)
-            );
-            renderNames(filtered);
-        }
+    </div>
 
-        nameSearch.addEventListener("input", searchNames);
-        randomNameBtn.addEventListener("click", () => {
-            if (!NAME_LIBRARY.length) return;
-            const shuffled = [...NAME_LIBRARY].sort(() => Math.random() - 0.5);
-            nameSearch.value = "";
-            renderNames(shuffled.slice(0, 6));
-            nameLibraryStatus.textContent = "6 random";
-        });
+</main>
 
-        loadNameLibrary();
-    </script>
 </body>
-</html>
+</html>	
