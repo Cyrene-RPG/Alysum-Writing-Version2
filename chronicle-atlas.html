@@ -202,6 +202,10 @@
         margin-top: 6px;
     }
 
+    .atlas-btn-block {
+        width: 100%;
+    }
+
     .atlas-panel-title {
         margin: 0 0 10px;
         font-size: 11px;
@@ -663,6 +667,12 @@
                     </div>
                     <input type="file" id="atlasImageFile" class="hidden" accept="image/png,image/jpeg,image/webp,image/gif" />
                     <p class="atlas-file-hint">Upload ≤ ~400&nbsp;KB to embed; larger maps: host the file, then paste the URL.</p>
+                    <div class="atlas-field">
+                        <label for="atlasMapSeed">Generator seed</label>
+                        <input id="atlasMapSeed" class="atlas-input" placeholder="Leave blank for random; same text = same map" autocomplete="off" />
+                    </div>
+                    <button type="button" class="atlas-btn atlas-btn-primary atlas-btn-block" id="atlasGenerateMapBtn">Generate fantasy map</button>
+                    <p class="atlas-file-hint">Builds a new continent-style map in your browser (JPEG, sized for sync). Replaces the current map image.</p>
                 </div>
 
                 <div class="atlas-rail-section">
@@ -752,7 +762,7 @@
                         <div class="map-empty" id="mapEmpty">
                             <div class="map-empty-card">
                                 <h2>Map workspace</h2>
-                                <p>Add your map from the left rail. This area uses the full window — draw regions and cities on top of your image.</p>
+                                <p>Add a map from the left rail, use <strong>Generate fantasy map</strong> for a quick continent, or paste a URL. Then draw regions and cities on top.</p>
                             </div>
                         </div>
                     </div>
@@ -798,6 +808,8 @@
     const mapGridToggleBtn = document.getElementById("mapGridToggleBtn");
     const atlasImageFile = document.getElementById("atlasImageFile");
     const atlasPickImageBtn = document.getElementById("atlasPickImageBtn");
+    const atlasMapSeedInput = document.getElementById("atlasMapSeed");
+    const atlasGenerateMapBtn = document.getElementById("atlasGenerateMapBtn");
     const finishShapeBtn = document.getElementById("finishShapeBtn");
     const cancelShapeBtn = document.getElementById("cancelShapeBtn");
 
@@ -906,6 +918,176 @@
             updated,
             raw: data || {}
         };
+    }
+
+    function hashStringToUint32(str) {
+        let h = 2166136261 >>> 0;
+        const s = String(str || "alysum");
+        for (let i = 0; i < s.length; i++) {
+            h ^= s.charCodeAt(i);
+            h = Math.imul(h, 16777619) >>> 0;
+        }
+        return h >>> 0;
+    }
+
+    function mulberry32(seed) {
+        let a = seed >>> 0;
+        return function rand() {
+            a |= 0;
+            a = (a + 0x6d2b79f5) | 0;
+            let t = Math.imul(a ^ (a >>> 15), 1 | a);
+            t ^= t + Math.imul(t ^ (t >>> 7), 61 | t);
+            return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
+    }
+
+    /**
+     * Renders a seeded fantasy-style heightmap (ocean, beach, hills, mountains) to a JPEG data URL
+     * sized to stay under Firestore-friendly embed limits.
+     */
+    function generateFantasyMapDataUrl(seedText) {
+        const seed = hashStringToUint32(seedText);
+        const rng = mulberry32(seed);
+        const GW = 100;
+        const GH = 62;
+        const grid = new Float32Array(GW * GH);
+        for (let i = 0; i < grid.length; i++) grid[i] = rng();
+
+        const tmp = new Float32Array(grid.length);
+        for (let pass = 0; pass < 4; pass++) {
+            for (let y = 0; y < GH; y++) {
+                for (let x = 0; x < GW; x++) {
+                    let s = 0;
+                    let c = 0;
+                    for (let dy = -2; dy <= 2; dy++) {
+                        for (let dx = -2; dx <= 2; dx++) {
+                            const nx = Math.max(0, Math.min(GW - 1, x + dx));
+                            const ny = Math.max(0, Math.min(GH - 1, y + dy));
+                            s += grid[ny * GW + nx];
+                            c++;
+                        }
+                    }
+                    tmp[y * GW + x] = s / c;
+                }
+            }
+            grid.set(tmp);
+        }
+
+        let gmin = 1;
+        let gmax = 0;
+        for (let i = 0; i < grid.length; i++) {
+            gmin = Math.min(gmin, grid[i]);
+            gmax = Math.max(gmax, grid[i]);
+        }
+        const gspan = gmax > gmin ? gmax - gmin : 1;
+        function sampleNorm(nx, ny) {
+            const x = nx * (GW - 1);
+            const y = ny * (GH - 1);
+            const x0 = Math.floor(x);
+            const y0 = Math.floor(y);
+            const tx = x - x0;
+            const ty = y - y0;
+            const x1 = Math.min(x0 + 1, GW - 1);
+            const y1 = Math.min(y0 + 1, GH - 1);
+            const v00 = (grid[y0 * GW + x0] - gmin) / gspan;
+            const v10 = (grid[y0 * GW + x1] - gmin) / gspan;
+            const v01 = (grid[y1 * GW + x0] - gmin) / gspan;
+            const v11 = (grid[y1 * GW + x1] - gmin) / gspan;
+            const a = v00 * (1 - tx) + v10 * tx;
+            const b = v01 * (1 - tx) + v11 * tx;
+            return a * (1 - ty) + b * ty;
+        }
+
+        const islandCx = 0.4 + rng() * 0.2;
+        const islandCy = 0.42 + rng() * 0.16;
+        const islandR = 0.36 + rng() * 0.14;
+        const sea = 0.43;
+
+        function renderSize(W, H) {
+            const canvas = document.createElement("canvas");
+            canvas.width = W;
+            canvas.height = H;
+            const ctx = canvas.getContext("2d", { willReadFrequently: true });
+            const img = ctx.createImageData(W, H);
+            const u8 = img.data;
+
+            for (let py = 0; py < H; py++) {
+                for (let px = 0; px < W; px++) {
+                    const nx = px / W;
+                    const ny = py / H;
+                    let e = sampleNorm(nx, ny);
+                    const dx = nx - islandCx;
+                    const dy = (ny - islandCy) * (W / H);
+                    const dist = Math.hypot(dx, dy);
+                    e = e * 0.7 + Math.max(0, 1 - dist / islandR) * 0.38;
+                    const margin = 0.055 * Math.min(W, H);
+                    const ed = Math.min(px, py, W - 1 - px, H - 1 - py);
+                    e *= Math.min(1, ed / margin);
+                    e = Math.max(0, Math.min(1, e));
+
+                    const j = (py * W + px) * 4;
+                    let r;
+                    let g;
+                    let b;
+                    if (e < sea) {
+                        const depth = (sea - e) / sea;
+                        r = Math.floor(10 + depth * 38);
+                        g = Math.floor(24 + depth * 55);
+                        b = Math.floor(48 + depth * 88);
+                    } else {
+                        const t = (e - sea) / (1 - sea + 1e-6);
+                        if (t < 0.07) {
+                            r = 198;
+                            g = 182;
+                            b = 132;
+                        } else if (t < 0.34) {
+                            r = 52;
+                            g = 108;
+                            b = 60;
+                        } else if (t < 0.64) {
+                            r = 72;
+                            g = 128;
+                            b = 74;
+                        } else if (t < 0.87) {
+                            r = 105;
+                            g = 114;
+                            b = 104;
+                        } else {
+                            r = 230;
+                            g = 236;
+                            b = 242;
+                        }
+                        const shade = sampleNorm(nx * 3.7, ny * 3.7) * 0.14;
+                        r = Math.floor(Math.max(0, Math.min(255, r - shade * 60)));
+                        g = Math.floor(Math.max(0, Math.min(255, g - shade * 45)));
+                        b = Math.floor(Math.max(0, Math.min(255, b - shade * 38)));
+                    }
+                    u8[j] = r;
+                    u8[j + 1] = g;
+                    u8[j + 2] = b;
+                    u8[j + 3] = 255;
+                }
+            }
+            ctx.putImageData(img, 0, 0);
+            return canvas;
+        }
+
+        const sizes = [
+            [680, 424],
+            [560, 350],
+            [480, 300]
+        ];
+        for (const [W, H] of sizes) {
+            let q = 0.84;
+            const canvas = renderSize(W, H);
+            for (let attempt = 0; attempt < 5; attempt++) {
+                const url = canvas.toDataURL("image/jpeg", q);
+                if (url.length <= MAX_EMBED_DATA_URL_CHARS) return url;
+                q -= 0.08;
+                if (q < 0.45) break;
+            }
+        }
+        return null;
     }
 
     function getActiveWorld() {
@@ -1398,6 +1580,35 @@
         resetMapView();
         renderMap();
         scheduleSave();
+    });
+
+    atlasGenerateMapBtn.addEventListener("click", () => {
+        const atlas = getAtlas();
+        if (atlas.imageUrl && !confirm("Replace the current map image with a new generated map? Pins and drawn regions stay on the canvas.")) return;
+        const typed = atlasMapSeedInput ? atlasMapSeedInput.value.trim() : "";
+        const seedUsed = typed || `gen_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+        if (!typed && atlasMapSeedInput) atlasMapSeedInput.value = seedUsed;
+        setStatus("Generating map…");
+        atlasGenerateMapBtn.disabled = true;
+        window.setTimeout(() => {
+            try {
+                const url = generateFantasyMapDataUrl(seedUsed);
+                if (!url) {
+                    setStatus("Generated map was still too large for sync. Use URL upload for a bigger map.", "warn");
+                    return;
+                }
+                atlas.imageUrl = url;
+                resetMapView();
+                renderMap();
+                scheduleSave();
+                setStatus("Procedural map applied — save when ready", "ok");
+            } catch (err) {
+                console.error(err);
+                setStatus("Map generator failed — try another seed or refresh.", "warn");
+            } finally {
+                atlasGenerateMapBtn.disabled = false;
+            }
+        }, 30);
     });
 
     document.getElementById("atlasNewEraBtn").addEventListener("click", () => {
