@@ -778,27 +778,12 @@
   </div>
 
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyCVEnkx--46VyGPw00kJZpICpJ7b5qyXOI",
-      authDomain: "alysum-web.firebaseapp.com",
-      projectId: "alysum-web",
-      storageBucket: "alysum-web.firebasestorage.app",
-      messagingSenderId: "318598785612",
-      appId: "1:318598785612:web:737b20ab19a0eee9a9e2e9"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+    import { supabase } from "./firebase.js";
 
     let currentSort = "popular";
     let books = [];
     const kudosCounts = new Map();
-    const kudosUnsubscribers = new Map();
     const readCounts = new Map();
-    const readUnsubscribers = new Map();
 
     function setActiveSortButton() {
       document.querySelectorAll(".sort-btn").forEach(btn => {
@@ -822,8 +807,49 @@
       return typeof value === "number" && Number.isFinite(value) ? value : fallback;
     }
 
+    function safeArray(value, fallback = []) {
+      return Array.isArray(value) ? value : fallback;
+    }
+
+    function safeObject(value, fallback = {}) {
+      return value && typeof value === "object" && !Array.isArray(value) ? value : fallback;
+    }
+
+    function libraryRowData(row) {
+      const data = safeObject(row?.data, {});
+      return Object.keys(data).length ? data : safeObject(row, {});
+    }
+
+    function normalizeBook(row) {
+      const data = libraryRowData(row);
+      const id = safeString(row?.id || data.id || data.bookId, "");
+      const publishGenres = safeArray(data.genres);
+      const publishTags = safeArray(data.extraTags);
+      const chapters = safeArray(data.chapters);
+      return {
+        id,
+        title: safeString(data.title, "Untitled"),
+        author: safeString(data.author, "unknown"),
+        type: safeString(data.type, "fiction"),
+        rating: safeString(data.rating, ""),
+        summary: safeString(data.summary, ""),
+        coverUrl: safeString(data.coverUrl, ""),
+        genres: publishGenres.filter(v => typeof v === "string" && v.trim()),
+        tags: publishTags.filter(v => typeof v === "string" && v.trim()),
+        chapterCount: safeNumber(data.chapterCount, chapters.length),
+        words: safeNumber(data.words, 0),
+        views: safeNumber(data.views, 0),
+        updated: safeNumber(data.updated, 0),
+        isPublished: data.isPublished !== false
+      };
+    }
+
     function toMillis(value) {
       if (typeof value === "number" && Number.isFinite(value)) return value;
+      if (typeof value === "string" && value) {
+        const t = Date.parse(value);
+        if (Number.isFinite(t)) return t;
+      }
       if (value && typeof value.seconds === "number") return value.seconds * 1000;
       return 0;
     }
@@ -918,69 +944,28 @@
       });
     }
 
-    function syncKudosSubscriptions() {
-      const liveIds = new Set(books.map(book => book.id));
-
-      kudosUnsubscribers.forEach((unsubscribe, bookId) => {
-        if (!liveIds.has(bookId)) {
-          unsubscribe();
-          kudosUnsubscribers.delete(bookId);
-          kudosCounts.delete(bookId);
-        }
-      });
-
-      books.forEach(book => {
-        if (kudosUnsubscribers.has(book.id)) return;
-
-        const unsubscribe = onSnapshot(
-          collection(db, "library", book.id, "likes"),
-          (snap) => {
-            kudosCounts.set(book.id, snap.size);
-            renderBooks();
-          },
-          (err) => {
-            console.warn(`Could not load kudos for ${book.id}.`, err);
-            kudosCounts.set(book.id, 0);
-            renderBooks();
+    async function loadReadAndKudosCounts() {
+      readCounts.clear();
+      kudosCounts.clear();
+      if (!books.length) return;
+      await Promise.all(
+        books.map(async book => {
+          if (!book.id) return;
+          try {
+            const [{ count: reads }, { count: likes }] = await Promise.all([
+              supabase.from("reads").select("id", { count: "exact", head: true }).eq("book_id", book.id),
+              supabase.from("likes").select("id", { count: "exact", head: true }).eq("book_id", book.id)
+            ]);
+            readCounts.set(book.id, reads || 0);
+            kudosCounts.set(book.id, likes || 0);
+          } catch (e) {
+            console.warn(book.id, e);
           }
-        );
-
-        kudosUnsubscribers.set(book.id, unsubscribe);
-      });
+        })
+      );
     }
 
-    function syncReadSubscriptions() {
-      const liveIds = new Set(books.map(book => book.id));
-
-      readUnsubscribers.forEach((unsubscribe, bookId) => {
-        if (!liveIds.has(bookId)) {
-          unsubscribe();
-          readUnsubscribers.delete(bookId);
-          readCounts.delete(bookId);
-        }
-      });
-
-      books.forEach(book => {
-        if (readUnsubscribers.has(book.id)) return;
-
-        const unsubscribe = onSnapshot(
-          collection(db, "library", book.id, "reads"),
-          (snap) => {
-            readCounts.set(book.id, snap.size);
-            renderBooks();
-          },
-          (err) => {
-            console.warn(`Could not load reads for ${book.id}.`, err);
-            readCounts.set(book.id, 0);
-            renderBooks();
-          }
-        );
-
-        readUnsubscribers.set(book.id, unsubscribe);
-      });
-    }
-
-    function subscribeBooks() {
+    async function loadLibrary() {
       const container = document.getElementById("books");
       container.innerHTML = `
         <div class="book-card">
@@ -988,38 +973,35 @@
           <div class="book-info">
             <h3>Loading library…</h3>
             <p>Fetching popular stories.</p>
-            <div class="book-meta">live updates</div>
+            <div class="book-meta">Alysum Library</div>
           </div>
         </div>
       `;
 
-      onSnapshot(
-        collection(db, "library"),
-        (snap) => {
-          books = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-          syncKudosSubscriptions();
-          syncReadSubscriptions();
-          renderBooks();
-        },
-        (err) => {
-          console.error(err);
-          books = [];
-          container.innerHTML = `
+      try {
+        const { data, error } = await supabase.from("library").select("*");
+        if (error) throw error;
+        books = (data || []).map(normalizeBook).filter(book => book.id);
+        await loadReadAndKudosCounts();
+        renderBooks();
+      } catch (err) {
+        console.error(err);
+        books = [];
+        container.innerHTML = `
             <div class="book-card">
               <div class="book-cover">!</div>
               <div class="book-info">
                 <h3>Couldn’t load books</h3>
-                <p>Check your Firebase rules or your library collection data.</p>
-                <div class="book-meta">library collection</div>
+                <p>Check your Supabase connection, RLS policies, and library table.</p>
+                <div class="book-meta">library</div>
               </div>
             </div>
           `;
-        }
-      );
+      }
     }
 
     setActiveSortButton();
-    subscribeBooks();
+    loadLibrary();
   </script>
 </body>
 </html>

@@ -232,9 +232,7 @@ body {
 </div>
 
 <script type="module">
-import { auth, db } from "./firebase.js";
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { doc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { supabase } from "./firebase.js";
 import {
     clampDailyWordGoal,
     computeGoalStreakFromTotals,
@@ -248,8 +246,8 @@ const streakEl = document.getElementById("streak");
 const booksEl = document.getElementById("books");
 const dailyGoalStreakEl = document.getElementById("dailyGoalStreak");
 
-let unsubUser = null;
-let unsubBooks = null;
+let profileChannel = null;
+let booksChannel = null;
 let userData = {};
 let booksSnap = null;
 
@@ -289,17 +287,17 @@ function renderAchievementsFromCache() {
     if (!booksSnap) return;
 
     let totalWords = 0;
-    booksSnap.forEach((docSnap) => {
-        totalWords += countBookWords(docSnap.data());
+    booksSnap.forEach((row) => {
+        totalWords += countBookWords(row);
     });
 
-    const dailyGoal = clampDailyWordGoal(userData.dailyWordGoal ?? DEFAULT_DAILY_WORD_GOAL);
-    const dailyGoalStreak = computeGoalStreakFromTotals(userData.writingDayTotals || {}, dailyGoal);
+    const dailyGoal = clampDailyWordGoal(userData.daily_word_goal ?? userData.dailyWordGoal ?? DEFAULT_DAILY_WORD_GOAL);
+    const dailyGoalStreak = computeGoalStreakFromTotals(userData.writing_day_totals ?? userData.writingDayTotals || {}, dailyGoal);
 
     const data = {
         words: totalWords,
         streak: userData.streak || 0,
-        books: booksSnap.size,
+        books: booksSnap.length,
         dailyGoalStreak
     };
 
@@ -341,51 +339,60 @@ grid.appendChild(el);
 });
 }
 
-/* AUTH — live Firestore so word badges match the editor without reloading. */
-onAuthStateChanged(auth, (user) => {
+async function loadUserAndBooks(uid) {
+    const [{ data: profile, error: pErr }, { data: books, error: bErr }] = await Promise.all([
+        supabase.from("users").select("*").eq("id", uid).maybeSingle(),
+        supabase.from("books").select("sections, words").eq("user_id", uid)
+    ]);
+    if (pErr) console.warn("Achievements profile:", pErr);
+    if (bErr) console.warn("Achievements books:", bErr);
+    userData = profile || {};
+    booksSnap = books || [];
+    renderAchievementsFromCache();
+}
+
+function startAchievementsRealtime(uid) {
+    if (profileChannel) supabase.removeChannel(profileChannel);
+    if (booksChannel) supabase.removeChannel(booksChannel);
+
+    profileChannel = supabase
+        .channel("badges_profile_" + uid)
+        .on(
+            "postgres_changes",
+            { event: "*", schema: "public", table: "users", filter: `id=eq.${uid}` },
+            () => loadUserAndBooks(uid).catch(console.error)
+        )
+        .subscribe();
+
+    booksChannel = supabase
+        .channel("badges_books_" + uid)
+        .on(
+            "postgres_changes",
+            { event: "*", schema: "public", table: "books", filter: `user_id=eq.${uid}` },
+            () => loadUserAndBooks(uid).catch(console.error)
+        )
+        .subscribe();
+}
+
+supabase.auth.onAuthStateChange((event, session) => {
+    const user = session?.user;
     if (!user) {
-        if (unsubUser) {
-            unsubUser();
-            unsubUser = null;
-        }
-        if (unsubBooks) {
-            unsubBooks();
-            unsubBooks = null;
-        }
+        if (profileChannel) supabase.removeChannel(profileChannel);
+        if (booksChannel) supabase.removeChannel(booksChannel);
+        profileChannel = null;
+        booksChannel = null;
         location.href = "/login.html";
         return;
     }
 
-    if (unsubUser) {
-        unsubUser();
-        unsubUser = null;
-    }
-    if (unsubBooks) {
-        unsubBooks();
-        unsubBooks = null;
-    }
+    if (profileChannel) supabase.removeChannel(profileChannel);
+    if (booksChannel) supabase.removeChannel(booksChannel);
+    profileChannel = null;
+    booksChannel = null;
 
-    const uid = user.uid;
     userData = {};
-    booksSnap = null;
-
-    unsubUser = onSnapshot(
-        doc(db, "users", uid),
-        (snap) => {
-            userData = snap.exists() ? snap.data() || {} : {};
-            renderAchievementsFromCache();
-        },
-        (err) => console.warn("Achievements profile listener:", err)
-    );
-
-    unsubBooks = onSnapshot(
-        collection(db, "users", uid, "books"),
-        (snap) => {
-            booksSnap = snap;
-            renderAchievementsFromCache();
-        },
-        (err) => console.warn("Achievements books listener:", err)
-    );
+    booksSnap = [];
+    void loadUserAndBooks(user.id).then(() => startAchievementsRealtime(user.id));
 
     document.getElementById("backBtn").onclick = () => {
         window.location.href = "/studio.html";

@@ -179,7 +179,7 @@
         ]
       },
       {
-        "source": "/js/alysum-vault-firebase.js",
+        "source": "/js/alysum-vault-supabase.js",
         "headers": [
           {
             "key": "Cache-Control",

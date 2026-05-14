@@ -355,16 +355,7 @@
     </div>
 
     <script type="module">
-        import { auth, db } from "./firebase.js";
-        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-        import {
-            collection,
-            doc,
-            getDoc,
-            onSnapshot,
-            writeBatch,
-            serverTimestamp
-        } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { supabase } from "./firebase.js";
         import { readBetaShelfFromLocalStorage } from "./js/beta-shelf-local.js?v=1";
         import { publicDisplayNameFromUserData } from "./js/profile-display.js?v=1";
 
@@ -383,8 +374,8 @@
         let sharedKeys = new Set();
         let currentUid = null;
         let readerDisplayName = "Reader";
-        let unsubUser = null;
-        let unsubShares = null;
+        let userChannel = null;
+        let sharesChannel = null;
         let lastNotesMap = {};
         let lastCloudShelf = {};
 
@@ -449,12 +440,16 @@
             await Promise.all(
                 pending.map(async (bookId) => {
                     try {
-                        const libSnap = await getDoc(doc(db, "library", bookId));
-                        if (!libSnap.exists()) {
+                        const { data: libRow, error } = await supabase
+                            .from("library")
+                            .select("user_id")
+                            .eq("id", bookId)
+                            .maybeSingle();
+                        if (error || !libRow?.user_id) {
                             bookOwners.set(bookId, null);
                             return;
                         }
-                        const owner = safeString(libSnap.data()?.ownerUid, "").trim() || null;
+                        const owner = String(libRow.user_id).trim() || null;
                         bookOwners.set(bookId, owner);
                     } catch {
                         bookOwners.set(bookId, null);
@@ -588,8 +583,8 @@
 
         async function ingestUserData(data, uid) {
             localShelf = readBetaShelfFromLocalStorage(uid);
-            const map = safeObject(data.betaReadNotesByBook, {});
-            const cloudShelf = safeObject(data.betaReadShelf, {});
+            const map = safeObject(data.beta_read_notes_by_book ?? data.betaReadNotesByBook, {});
+            const cloudShelf = safeObject(data.beta_read_shelf ?? data.betaReadShelf, {});
             lastNotesMap = map;
             lastCloudShelf = cloudShelf;
             const bookIds = Object.keys(map);
@@ -641,27 +636,16 @@
 
             try {
                 const rows = [...rowsByShare.values()].filter(
-                    (row) => row.ownerUid && row.ownerUid !== user.uid
+                    (row) => row.ownerUid && row.ownerUid !== user.id
                 );
                 for (let i = 0; i < rows.length; i += 200) {
                     const chunk = rows.slice(i, i + 200);
-                    const batch = writeBatch(db);
                     for (const row of chunk) {
                         const authorUid = row.ownerUid;
-                        const shareRef = doc(db, "users", user.uid, "betaSharesIndex", row.shareKey);
-                        const notifRef = doc(db, "users", authorUid, "notifications", notifDocId(user.uid, row.shareKey));
-
-                        batch.set(shareRef, {
-                            bookId: row.bookId,
-                            noteId: row.noteId,
-                            authorUid,
-                            sharedAt: serverTimestamp()
-                        });
-
-                        batch.set(notifRef, {
+                        const nid = notifDocId(user.id, row.shareKey);
+                        const notifData = {
                             type: "beta_note_shared",
-                            read: false,
-                            readerUid: user.uid,
+                            readerUid: user.id,
                             readerName: readerDisplayName,
                             authorUid,
                             bookId: row.bookId,
@@ -671,15 +655,41 @@
                             quote: row.quote,
                             comment: row.comment,
                             chapterTitle: row.chapterTitle,
-                            createdAt: serverTimestamp()
-                        });
+                            createdAt: Date.now()
+                        };
+                        const { error: shareErr } = await supabase.from("beta_shares_index").upsert(
+                            {
+                                reader_id: user.id,
+                                share_key: row.shareKey,
+                                book_id: row.bookId,
+                                note_id: row.noteId,
+                                author_id: authorUid,
+                                shared_at: new Date().toISOString()
+                            },
+                            { onConflict: "reader_id,share_key" }
+                        );
+                        if (shareErr) throw shareErr;
+                        const { error: notifErr } = await supabase.from("notifications").upsert(
+                            {
+                                id: nid,
+                                user_id: authorUid,
+                                read: false,
+                                data: notifData
+                            },
+                            { onConflict: "id" }
+                        );
+                        if (notifErr) throw notifErr;
                     }
-                    await batch.commit();
+                }
+                await loadShareKeys(user.id);
+                if (currentUid && Object.keys(lastNotesMap).length) {
+                    allRows = flattenNotes(lastNotesMap, lastCloudShelf, currentUid);
+                    applyFilter();
                 }
             } catch (err) {
                 console.error(err);
                 const code = err && err.code;
-                if (code === "permission-denied") {
+                if (code === "permission-denied" || code === "42501") {
                     errorBox.textContent =
                         "Could not share those notes (permission denied). If this keeps happening after a refresh, the story listing may be missing or the author may no longer own it.";
                 } else {
@@ -692,56 +702,88 @@
             }
         }
 
-        shareSelectedBtn.addEventListener("click", () => {
-            const u = auth.currentUser;
+        shareSelectedBtn.addEventListener("click", async () => {
+            const { data: sessionData } = await supabase.auth.getSession();
+            const u = sessionData?.session?.user;
             if (u) runShareWithAuthor(u);
         });
 
-        onAuthStateChanged(auth, async (user) => {
+        async function loadShareKeys(readerId) {
+            const { data, error } = await supabase
+                .from("beta_shares_index")
+                .select("share_key")
+                .eq("reader_id", readerId);
+            if (error) {
+                console.error(error);
+                return;
+            }
+            sharedKeys = new Set((data || []).map((r) => r.share_key));
+        }
+
+        async function refreshNotesForUser(user) {
+            currentUid = user.id;
+            await loadShareKeys(user.id);
+            const { data: urow, error } = await supabase
+                .from("users")
+                .select("beta_read_notes_by_book, beta_read_shelf, display_name, displayName")
+                .eq("id", user.id)
+                .maybeSingle();
+            if (error) {
+                console.error(error);
+                loadingState.classList.add("hidden");
+                errorBox.textContent = "Could not load your notes. Check your connection and try again.";
+                errorBox.classList.remove("hidden");
+                return;
+            }
+            readerDisplayName =
+                publicDisplayNameFromUserData(urow || {}) ||
+                user.user_metadata?.full_name ||
+                user.email?.split("@")[0] ||
+                "Reader";
+            await ingestUserData(urow || {}, user.id);
+        }
+
+        supabase.auth.onAuthStateChange(async (_event, session) => {
+            const user = session?.user;
             if (!user) {
                 window.location.href = "/login.html?next=" + encodeURIComponent("/beta-notes-library.html");
                 return;
             }
 
-            currentUid = user.uid;
-            if (unsubUser) unsubUser();
-            if (unsubShares) unsubShares();
-
-            try {
-                const profSnap = await getDoc(doc(db, "users", user.uid));
-                const pdata = profSnap.exists() ? profSnap.data() || {} : {};
-                readerDisplayName = publicDisplayNameFromUserData(pdata) || user.displayName || "Reader";
-            } catch {
-                readerDisplayName = user.displayName || "Reader";
+            if (userChannel) {
+                supabase.removeChannel(userChannel);
+                userChannel = null;
+            }
+            if (sharesChannel) {
+                supabase.removeChannel(sharesChannel);
+                sharesChannel = null;
             }
 
-            const userRef = doc(db, "users", user.uid);
-            unsubUser = onSnapshot(
-                userRef,
-                async (snap) => {
-                    const data = snap.exists() ? snap.data() || {} : {};
-                    await ingestUserData(data, user.uid);
-                },
-                (err) => {
-                    console.error(err);
-                    loadingState.classList.add("hidden");
-                    errorBox.textContent = "Could not load your notes. Check your connection and try again.";
-                    errorBox.classList.remove("hidden");
-                }
-            );
+            await refreshNotesForUser(user);
 
-            const sharesCol = collection(db, "users", user.uid, "betaSharesIndex");
-            unsubShares = onSnapshot(
-                sharesCol,
-                (snap) => {
-                    sharedKeys = new Set(snap.docs.map((d) => d.id));
-                    if (currentUid && Object.keys(lastNotesMap).length) {
-                        allRows = flattenNotes(lastNotesMap, lastCloudShelf, currentUid);
-                        applyFilter();
+            userChannel = supabase
+                .channel("beta_notes_user_" + user.id)
+                .on(
+                    "postgres_changes",
+                    { event: "*", schema: "public", table: "users", filter: `id=eq.${user.id}` },
+                    () => refreshNotesForUser(user).catch(console.error)
+                )
+                .subscribe();
+
+            sharesChannel = supabase
+                .channel("beta_notes_shares_" + user.id)
+                .on(
+                    "postgres_changes",
+                    { event: "*", schema: "public", table: "beta_shares_index", filter: `reader_id=eq.${user.id}` },
+                    async () => {
+                        await loadShareKeys(user.id);
+                        if (currentUid && Object.keys(lastNotesMap).length) {
+                            allRows = flattenNotes(lastNotesMap, lastCloudShelf, currentUid);
+                            applyFilter();
+                        }
                     }
-                },
-                (err) => console.error(err)
-            );
+                )
+                .subscribe();
         });
 
         try {

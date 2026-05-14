@@ -1,4 +1,4 @@
-<!DOCTYPE html><html>
+﻿<!DOCTYPE html><html>
 <head>
     <!-- ALYSUM:PWA:START -->
     <link rel="manifest" href="/manifest.webmanifest">
@@ -1022,7 +1022,7 @@ async function loadBook() {
     await loadBook();
 
         void (async () => {
-            const href = new URL("./js/nb-app.js?v=28", import.meta.url).href;
+            const href = new URL("./js/nb-app.js?v=29", import.meta.url).href;
             const markNotesFailed = msg => { const st = document.getElementById("nbStatus"); const b = document.getElementById("nbBtn"); if (st) st.textContent = msg; if (b) b.setAttribute("title", msg); };
             try {
                 const nb = await import(href);

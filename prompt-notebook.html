@@ -316,17 +316,7 @@
     </div>
 
     <script type="module">
-        import { auth, db } from "./firebase.js";
-        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-        import {
-            collection,
-            doc,
-            getDoc,
-            getDocs,
-            orderBy,
-            query,
-            setDoc
-        } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { supabase } from "./firebase.js";
         import { DEFAULT_VAULT_KEY, loadVault, saveVault, addNote, renameItem, setNoteContent } from "./js/alysum-vault.js";
         import { WEEKLY_PROMPTS_52, DAILY_CHARACTER_Q, DAILY_WORLDBUILD_Q } from "./js/prompts-data.js?v=1";
 
@@ -416,14 +406,6 @@
             draft[activeTab] = responseBox.value;
         });
 
-        function entryDocRef(uid, id) {
-            return doc(db, "users", uid, "promptEntries", id);
-        }
-
-        function entryCollection(uid) {
-            return collection(db, "users", uid, "promptEntries");
-        }
-
         function labelForDoc(data) {
             const wk = data?.weekKey || "";
             const dy = data?.dayKey || "";
@@ -460,25 +442,37 @@
 
         async function loadHistory() {
             if (!currentUser) return;
-            const q = query(entryCollection(currentUser.uid), orderBy("updatedAt", "desc"));
-            const snap = await getDocs(q);
-            const out = [];
-            snap.forEach(s => out.push({ id: s.id, data: s.data() }));
+            const { data, error } = await supabase
+                .from("prompt_entries")
+                .select("id, body, updated_ms")
+                .eq("user_id", currentUser.id)
+                .order("updated_ms", { ascending: false });
+            if (error) {
+                console.error(error);
+                setStatus("Could not load history.");
+                return;
+            }
+            const out = (data || []).map((r) => ({ id: r.id, data: r.body || {} }));
             renderHistory(out, activeDocId);
         }
 
         async function loadEntry(id) {
             if (!currentUser) return;
-            const snap = await getDoc(entryDocRef(currentUser.uid, id));
-            if (!snap.exists()) return;
-            const data = snap.data();
+            const { data, error } = await supabase
+                .from("prompt_entries")
+                .select("body")
+                .eq("user_id", currentUser.id)
+                .eq("id", id)
+                .maybeSingle();
+            if (error || !data?.body) return;
+            const body = data.body;
             activeDocId = id;
             pageTitle.textContent = "Prompts Notebook";
-            noteTitle.value = safeString(data.title, "");
+            noteTitle.value = safeString(body.title, "");
             draft = {
-                weekly: safeString(data.responses?.weekly, ""),
-                character: safeString(data.responses?.character, ""),
-                world: safeString(data.responses?.world, "")
+                weekly: safeString(body.responses?.weekly, ""),
+                character: safeString(body.responses?.character, ""),
+                world: safeString(body.responses?.world, "")
             };
             setActiveTab(activeTab);
             await loadHistory();
@@ -491,6 +485,7 @@
             activeDocId = id;
 
             const prompts = computePrompts(weekKey, dayKey);
+            const now = Date.now();
             const payload = {
                 weekKey: prompts.weekKey,
                 dayKey: prompts.dayKey,
@@ -505,14 +500,35 @@
                     character: draft.character || "",
                     world: draft.world || ""
                 },
-                updatedAt: Date.now(),
-                createdAt: Date.now()
+                updatedAt: now,
+                createdAt: now
             };
 
-            const existing = await getDoc(entryDocRef(currentUser.uid, id));
-            if (existing.exists()) payload.createdAt = existing.data().createdAt || payload.createdAt;
+            const { data: existing } = await supabase
+                .from("prompt_entries")
+                .select("body")
+                .eq("user_id", currentUser.id)
+                .eq("id", id)
+                .maybeSingle();
+            if (existing?.body?.createdAt != null) {
+                payload.createdAt = existing.body.createdAt;
+            }
 
-            await setDoc(entryDocRef(currentUser.uid, id), payload, { merge: true });
+            const { error } = await supabase.from("prompt_entries").upsert(
+                {
+                    user_id: currentUser.id,
+                    id,
+                    body: payload,
+                    updated_ms: now,
+                    created_ms: typeof payload.createdAt === "number" ? payload.createdAt : now
+                },
+                { onConflict: "user_id,id" }
+            );
+            if (error) {
+                console.error(error);
+                setStatus("Save failed.");
+                return;
+            }
             setStatus("Saved");
             await loadHistory();
         }
@@ -550,15 +566,23 @@
             setNoteContent(state, id, header + body);
             saveVault(state, DEFAULT_VAULT_KEY);
 
-            // Push to Firestore vault doc so Vault page sees it immediately.
-            await setDoc(doc(db, "users", currentUser.uid, "notebookVault", "data"), packVaultState(state), { merge: true });
+            const { error } = await supabase.from("notebook_vault").upsert(
+                { user_id: currentUser.id, data: packVaultState(state), updated_at: new Date().toISOString() },
+                { onConflict: "user_id" }
+            );
+            if (error) {
+                console.error(error);
+                setStatus("Vault sync failed (saved locally).");
+                return;
+            }
             setStatus("Sent to Vault");
         }
 
         saveBtn.addEventListener("click", saveCurrent);
         sendToVaultBtn.addEventListener("click", sendActiveToVault);
 
-        onAuthStateChanged(auth, async user => {
+        supabase.auth.onAuthStateChange(async (_event, session) => {
+            const user = session?.user;
             if (!user) {
                 window.location.href = "/login.html?next=" + encodeURIComponent(window.location.pathname + window.location.search);
                 return;

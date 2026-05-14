@@ -1,13 +1,13 @@
-import { bindVaultUI, DEFAULT_VAULT_KEY } from "./alysum-vault-ui.js?v=15";
+import { bindVaultUI, DEFAULT_VAULT_KEY } from "./alysum-vault-ui.js?v=16";
 import { serializeWikiBody } from "./alysum-wikilinks.js?v=8";
 
 /**
  * @param {string | null} bookId
- * @param {object} [firebase]
- * @param {object} [firebase.db]
- * @param {string} [firebase.uid]
+ * @param {object} [backend]
+ * @param {import("@supabase/supabase-js").SupabaseClient} [backend.supabase]
+ * @param {string} [backend.uid]
  */
-export function mountEditorNotes(bookId, firebase = null) {
+export function mountEditorNotes(bookId, backend = null) {
     void bookId;
     const panel = document.getElementById("nbPanel");
     const btn = document.getElementById("nbBtn");
@@ -40,8 +40,8 @@ export function mountEditorNotes(bookId, firebase = null) {
                 storageKey: DEFAULT_VAULT_KEY,
                 compact: true,
                 setStatus,
-                firebaseDb: firebase?.db,
-                firebaseUid: firebase?.uid
+                supabase: backend?.supabase,
+                supabaseUserId: backend?.uid ?? backend?.userId
             }
         );
     } catch (err) {

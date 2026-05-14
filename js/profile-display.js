@@ -10,7 +10,7 @@ export function permanentHandleFromUserData(data) {
 
 /** Name shown in UI: cosmetic display if set, otherwise the permanent handle. */
 export function publicDisplayNameFromUserData(data) {
-    const cosmetic = String(data?.displayName ?? "").trim();
+    const cosmetic = String(data?.displayName ?? data?.display_name ?? "").trim();
     if (cosmetic) return cosmetic;
     return permanentHandleFromUserData(data);
 }

@@ -1,11 +1,6 @@
-import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { saveVault, normalizeVaultFromObject, DEFAULT_VAULT_KEY } from "./alysum-vault.js";
 
-/** Firestore: users/{uid}/notebookVault/data — one document per user (same shape as localStorage JSON). */
-
-export function vaultFirestoreRef(db, uid) {
-    return doc(db, "users", uid, "notebookVault", "data");
-}
+/** Supabase: notebook_vault — one row per user (same shape as localStorage JSON). */
 
 function packState(state) {
     return {
@@ -19,27 +14,37 @@ function packState(state) {
 
 /**
  * @param {object} opts
- * @param {object} opts.db — Firestore instance from getFirestore(app)
- * @param {string} opts.uid
+ * @param {import("@supabase/supabase-js").SupabaseClient} opts.supabase
+ * @param {string} opts.userId
  * @param {string} [opts.storageKey]
- * @param {() => object} opts.getState — mutable vault state reference
- * @param {(next: object) => void} opts.setState — replace entire state object
+ * @param {() => object} opts.getState
+ * @param {(next: object) => void} opts.setState
  * @param {() => void} opts.refresh
  * @param {(msg: string) => void} [opts.setStatus]
  */
-export function createVaultFirebaseDriver(opts) {
-    const { db, uid, storageKey = DEFAULT_VAULT_KEY, getState, setState, refresh, setStatus } = opts;
-    const ref = vaultFirestoreRef(db, uid);
+export function createVaultSupabaseDriver(opts) {
+    const { supabase, userId, storageKey = DEFAULT_VAULT_KEY, getState, setState, refresh, setStatus } = opts;
     let pushTimer = null;
 
     async function pullOnce() {
-        const snap = await getDoc(ref);
-        if (!snap.exists()) {
-            await setDoc(ref, packState(getState()), { merge: true });
+        const { data, error } = await supabase
+            .from("notebook_vault")
+            .select("data")
+            .eq("user_id", userId)
+            .maybeSingle();
+
+        if (error) throw error;
+
+        if (!data?.data) {
+            await supabase.from("notebook_vault").upsert(
+                { user_id: userId, data: packState(getState()), updated_at: new Date().toISOString() },
+                { onConflict: "user_id" }
+            );
             setStatus?.("Vault saved to cloud");
             return;
         }
-        const raw = snap.data() || {};
+
+        const raw = data.data || {};
         const cloudItems = raw.items;
         const cloudCount = Array.isArray(cloudItems) ? cloudItems.length : 0;
 
@@ -47,20 +52,29 @@ export function createVaultFirebaseDriver(opts) {
         const localCount = Array.isArray(local.items) ? local.items.length : 0;
 
         if (cloudCount === 0) {
-            await setDoc(ref, packState(local), { merge: true });
+            await supabase.from("notebook_vault").upsert(
+                { user_id: userId, data: packState(local), updated_at: new Date().toISOString() },
+                { onConflict: "user_id" }
+            );
             setStatus?.("Cloud had no note list — kept this device and updated the cloud");
             return;
         }
 
         const next = normalizeVaultFromObject(raw);
         if (next == null || !next.items?.length) {
-            await setDoc(ref, packState(local), { merge: true });
+            await supabase.from("notebook_vault").upsert(
+                { user_id: userId, data: packState(local), updated_at: new Date().toISOString() },
+                { onConflict: "user_id" }
+            );
             setStatus?.("Cloud data was incomplete — kept this device and re-synced");
             return;
         }
 
         if (localCount > next.items.length) {
-            await setDoc(ref, packState(local), { merge: true });
+            await supabase.from("notebook_vault").upsert(
+                { user_id: userId, data: packState(local), updated_at: new Date().toISOString() },
+                { onConflict: "user_id" }
+            );
             setStatus?.("This device had more notes than the cloud — kept this copy and updated the cloud");
             refresh();
             return;
@@ -77,7 +91,10 @@ export function createVaultFirebaseDriver(opts) {
         pushTimer = setTimeout(async () => {
             pushTimer = null;
             try {
-                await setDoc(ref, packState(getState()), { merge: true });
+                await supabase.from("notebook_vault").upsert(
+                    { user_id: userId, data: packState(getState()), updated_at: new Date().toISOString() },
+                    { onConflict: "user_id" }
+                );
             } catch (e) {
                 console.error("Vault cloud save:", e);
                 setStatus?.("Cloud save failed (still on this device)");

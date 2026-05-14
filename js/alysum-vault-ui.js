@@ -15,7 +15,7 @@ import {
     DEFAULT_VAULT_KEY
 } from "./alysum-vault.js";
 import { normalizeVaultPlain, plainToWikiHtml, serializeWikiBody } from "./alysum-wikilinks.js?v=8";
-import { createVaultFirebaseDriver } from "./alysum-vault-firebase.js?v=10";
+import { createVaultSupabaseDriver } from "./alysum-vault-supabase.js?v=1";
 
 function escapeHtml(s) {
     return String(s)
@@ -340,8 +340,8 @@ function renderTree(treeEl, state, opts) {
  * @param {string} [config.storageKey]
  * @param {boolean} [config.compact]
  * @param {(msg: string) => void} [config.setStatus]
- * @param {object} [config.firebaseDb] — Firestore instance
- * @param {string} [config.firebaseUid] — when both set, vault loads/saves to Firestore under this user
+ * @param {import("@supabase/supabase-js").SupabaseClient} [config.supabase]
+ * @param {string} [config.supabaseUserId] — when both set, vault syncs to Supabase notebook_vault
  */
 export function bindVaultUI(elements, config = {}) {
     const storageKey = config.storageKey || DEFAULT_VAULT_KEY;
@@ -666,10 +666,10 @@ export function bindVaultUI(elements, config = {}) {
         refresh();
     });
 
-    if (config.firebaseDb && config.firebaseUid) {
-        remoteDriver = createVaultFirebaseDriver({
-            db: config.firebaseDb,
-            uid: config.firebaseUid,
+    if (config.supabase && config.supabaseUserId) {
+        remoteDriver = createVaultSupabaseDriver({
+            supabase: config.supabase,
+            userId: config.supabaseUserId,
             storageKey,
             getState: () => state,
             setState: next => {

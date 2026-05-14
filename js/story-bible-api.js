@@ -1,32 +1,12 @@
 /**
- * Story Bible — Firestore helpers for per-book character sheets.
- * Path: users/{uid}/books/{bookId}/bibleCharacters/{characterId}
+ * Story Bible — Supabase helpers for per-book character and place sheets.
+ * Tables: story_bible_characters, story_bible_places (see supabase-sibling-tables.sql).
  */
-
-import {
-    collection,
-    doc,
-    getDoc,
-    getDocs,
-    setDoc,
-    deleteDoc,
-    getCountFromServer
-} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 import { stripHtmlForBibleScan } from "./story-bible-scan.js?v=4";
 
 export const BIBLE_CHARACTERS = "bibleCharacters";
 export const BIBLE_PLACES = "biblePlaces";
-
-/** @param {import("firebase/firestore").Firestore} db */
-export function bibleCharactersCollectionRef(db, uid, bookId) {
-    return collection(db, "users", uid, "books", bookId, BIBLE_CHARACTERS);
-}
-
-/** @param {import("firebase/firestore").Firestore} db */
-export function biblePlacesCollectionRef(db, uid, bookId) {
-    return collection(db, "users", uid, "books", bookId, BIBLE_PLACES);
-}
 
 export function generateBibleCharacterId() {
     return "bc_" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
@@ -118,41 +98,53 @@ export function bibleCharacterToFirestore(c) {
 }
 
 /**
- * @param {import("firebase/firestore").Firestore} db
+ * @param {import("@supabase/supabase-js").SupabaseClient} supabase
  * @param {string} uid
  * @param {string} bookId
  */
-export async function listBibleCharacters(db, uid, bookId) {
-    const col = bibleCharactersCollectionRef(db, uid, bookId);
-    const snap = await getDocs(col);
-    const list = snap.docs.map(d => normalizeBibleCharacter(d.data(), d.id));
+export async function listBibleCharacters(supabase, uid, bookId) {
+    const { data, error } = await supabase
+        .from("story_bible_characters")
+        .select("id, body")
+        .eq("user_id", uid)
+        .eq("book_id", bookId);
+    if (error) throw error;
+    const list = (data || []).map(row => normalizeBibleCharacter(row.body || {}, row.id));
     list.sort((a, b) => (a.sortKey || "").localeCompare(b.sortKey || "", undefined, { sensitivity: "base" }));
     return list;
 }
 
 /**
- * @param {import("firebase/firestore").Firestore} db
+ * @param {import("@supabase/supabase-js").SupabaseClient} supabase
  * @param {string} uid
  * @param {string} bookId
  * @param {ReturnType<typeof normalizeBibleCharacter>} character
  */
-export async function saveBibleCharacter(db, uid, bookId, character) {
+export async function saveBibleCharacter(supabase, uid, bookId, character) {
     const id = character.id || generateBibleCharacterId();
-    const ref = doc(db, "users", uid, "books", bookId, BIBLE_CHARACTERS, id);
     const payload = bibleCharacterToFirestore({ ...character, id });
-    await setDoc(ref, payload, { merge: true });
+    const { error } = await supabase.from("story_bible_characters").upsert(
+        { user_id: uid, book_id: bookId, id, body: payload, updated: Date.now() },
+        { onConflict: "user_id,book_id,id" }
+    );
+    if (error) throw error;
     return id;
 }
 
 /**
- * @param {import("firebase/firestore").Firestore} db
+ * @param {import("@supabase/supabase-js").SupabaseClient} supabase
  * @param {string} uid
  * @param {string} bookId
  * @param {string} characterId
  */
-export async function deleteBibleCharacter(db, uid, bookId, characterId) {
-    const ref = doc(db, "users", uid, "books", bookId, BIBLE_CHARACTERS, characterId);
-    await deleteDoc(ref);
+export async function deleteBibleCharacter(supabase, uid, bookId, characterId) {
+    const { error } = await supabase
+        .from("story_bible_characters")
+        .delete()
+        .eq("user_id", uid)
+        .eq("book_id", bookId)
+        .eq("id", characterId);
+    if (error) throw error;
 }
 
 const BIBLE_PLACE_KINDS = new Set([
@@ -226,107 +218,143 @@ export function biblePlaceToFirestore(p) {
 }
 
 /**
- * @param {import("firebase/firestore").Firestore} db
+ * @param {import("@supabase/supabase-js").SupabaseClient} supabase
  * @param {string} uid
  * @param {string} bookId
  */
-export async function listBiblePlaces(db, uid, bookId) {
-    const col = biblePlacesCollectionRef(db, uid, bookId);
-    const snap = await getDocs(col);
-    const list = snap.docs.map(d => normalizeBiblePlace(d.data(), d.id));
+export async function listBiblePlaces(supabase, uid, bookId) {
+    const { data, error } = await supabase
+        .from("story_bible_places")
+        .select("id, body")
+        .eq("user_id", uid)
+        .eq("book_id", bookId);
+    if (error) throw error;
+    const list = (data || []).map(row => normalizeBiblePlace(row.body || {}, row.id));
     list.sort((a, b) => (a.sortKey || "").localeCompare(b.sortKey || "", undefined, { sensitivity: "base" }));
     return list;
 }
 
 /**
- * @param {import("firebase/firestore").Firestore} db
+ * @param {import("@supabase/supabase-js").SupabaseClient} supabase
  * @param {string} uid
  * @param {string} bookId
  * @param {ReturnType<typeof normalizeBiblePlace>} place
  */
-export async function saveBiblePlace(db, uid, bookId, place) {
+export async function saveBiblePlace(supabase, uid, bookId, place) {
     const id = place.id || generateBiblePlaceId();
-    const ref = doc(db, "users", uid, "books", bookId, BIBLE_PLACES, id);
-    await setDoc(ref, biblePlaceToFirestore({ ...place, id }), { merge: true });
+    const payload = biblePlaceToFirestore({ ...place, id });
+    const { error } = await supabase.from("story_bible_places").upsert(
+        { user_id: uid, book_id: bookId, id, body: payload, updated: Date.now() },
+        { onConflict: "user_id,book_id,id" }
+    );
+    if (error) throw error;
     return id;
 }
 
 /**
- * @param {import("firebase/firestore").Firestore} db
+ * @param {import("@supabase/supabase-js").SupabaseClient} supabase
  * @param {string} uid
  * @param {string} bookId
  * @param {string} placeId
  */
-export async function deleteBiblePlace(db, uid, bookId, placeId) {
-    await deleteDoc(doc(db, "users", uid, "books", bookId, BIBLE_PLACES, placeId));
+export async function deleteBiblePlace(supabase, uid, bookId, placeId) {
+    const { error } = await supabase
+        .from("story_bible_places")
+        .delete()
+        .eq("user_id", uid)
+        .eq("book_id", bookId)
+        .eq("id", placeId);
+    if (error) throw error;
 }
 
 /**
- * @param {import("firebase/firestore").Firestore} db
+ * @param {import("@supabase/supabase-js").SupabaseClient} supabase
  * @param {string} uid
  * @param {string} bookId
  */
-export async function countBiblePlaces(db, uid, bookId) {
-    const col = biblePlacesCollectionRef(db, uid, bookId);
-    const agg = await getCountFromServer(col);
-    return agg.data().count;
+export async function countBiblePlaces(supabase, uid, bookId) {
+    const { count, error } = await supabase
+        .from("story_bible_places")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", uid)
+        .eq("book_id", bookId);
+    if (error) throw error;
+    return count || 0;
 }
 
 /**
- * @param {import("firebase/firestore").Firestore} db
+ * @param {import("@supabase/supabase-js").SupabaseClient} supabase
  * @param {string} uid
  * @param {string} bookId
  */
-export async function countBibleCharacters(db, uid, bookId) {
-    const col = bibleCharactersCollectionRef(db, uid, bookId);
-    const agg = await getCountFromServer(col);
-    return agg.data().count;
+export async function countBibleCharacters(supabase, uid, bookId) {
+    const { count, error } = await supabase
+        .from("story_bible_characters")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", uid)
+        .eq("book_id", bookId);
+    if (error) throw error;
+    return count || 0;
 }
 
 /**
- * @param {import("firebase/firestore").Firestore} db
+ * @param {import("@supabase/supabase-js").SupabaseClient} supabase
  * @param {string} uid
  * @returns {Promise<{ bookId: string, title: string, updated: number, characterCount: number, placeCount: number }[]>}
  */
-export async function listUserBooksWithBibleCounts(db, uid) {
-    const booksCol = collection(db, "users", uid, "books");
-    const snap = await getDocs(booksCol);
-    const rows = [];
+export async function listUserBooksWithBibleCounts(supabase, uid) {
+    const { data: bookRows, error } = await supabase
+        .from("books")
+        .select("id, title, updated")
+        .eq("user_id", uid);
+    if (error) throw error;
 
-    for (const d of snap.docs) {
-        const data = d.data() || {};
-        const title = typeof data.title === "string" && data.title.trim() ? data.title.trim() : "Untitled Book";
-        const updated = typeof data.updated === "number" && Number.isFinite(data.updated) ? data.updated : 0;
-        let characterCount = 0;
-        let placeCount = 0;
-        try {
-            [characterCount, placeCount] = await Promise.all([
-                countBibleCharacters(db, uid, d.id),
-                countBiblePlaces(db, uid, d.id)
-            ]);
-        } catch (_) {
-            characterCount = 0;
-            placeCount = 0;
-        }
-        rows.push({ bookId: d.id, title, updated, characterCount, placeCount });
-    }
+    const { data: charRows } = await supabase.from("story_bible_characters").select("book_id").eq("user_id", uid);
+    const { data: placeRows } = await supabase.from("story_bible_places").select("book_id").eq("user_id", uid);
+
+    const charCount = new Map();
+    const placeCount = new Map();
+    (charRows || []).forEach(r => {
+        charCount.set(r.book_id, (charCount.get(r.book_id) || 0) + 1);
+    });
+    (placeRows || []).forEach(r => {
+        placeCount.set(r.book_id, (placeCount.get(r.book_id) || 0) + 1);
+    });
+
+    const rows = (bookRows || []).map(d => {
+        const title =
+            typeof d.title === "string" && d.title.trim() ? d.title.trim() : "Untitled Book";
+        const updated = typeof d.updated === "number" && Number.isFinite(d.updated) ? d.updated : 0;
+        return {
+            bookId: d.id,
+            title,
+            updated,
+            characterCount: charCount.get(d.id) || 0,
+            placeCount: placeCount.get(d.id) || 0
+        };
+    });
 
     rows.sort((a, b) => b.updated - a.updated);
     return rows;
 }
 
 /**
- * Load manuscript chapter ids/titles for "introduced in" dropdown.
- * @param {import("firebase/firestore").Firestore} db
+ * @param {import("@supabase/supabase-js").SupabaseClient} supabase
  * @param {string} uid
  * @param {string} bookId
  * @returns {Promise<{ section: string, id: string, title: string, label: string }[]>}
  */
-export async function loadBookChapterOptions(db, uid, bookId) {
-    const snap = await getDoc(doc(db, "users", uid, "books", bookId));
-    if (!snap.exists()) return [];
+export async function loadBookChapterOptions(supabase, uid, bookId) {
+    const { data, error } = await supabase
+        .from("books")
+        .select("sections")
+        .eq("id", bookId)
+        .eq("user_id", uid)
+        .maybeSingle();
+    if (error) throw error;
+    if (!data?.sections) return [];
 
-    const sections = snap.data()?.sections || {};
+    const sections = data.sections || {};
     const out = [];
     const sectionLabel = { front: "Front matter", body: "Body", back: "Back matter" };
 
@@ -348,27 +376,37 @@ export async function loadBookChapterOptions(db, uid, bookId) {
 }
 
 /**
- * @param {import("firebase/firestore").Firestore} db
+ * @param {import("@supabase/supabase-js").SupabaseClient} supabase
  * @param {string} uid
  * @param {string} bookId
  */
-export async function getBookTitle(db, uid, bookId) {
-    const snap = await getDoc(doc(db, "users", uid, "books", bookId));
-    if (!snap.exists()) return null;
-    const t = snap.data()?.title;
+export async function getBookTitle(supabase, uid, bookId) {
+    const { data, error } = await supabase
+        .from("books")
+        .select("title")
+        .eq("id", bookId)
+        .eq("user_id", uid)
+        .maybeSingle();
+    if (error) throw error;
+    const t = data?.title;
     return typeof t === "string" && t.trim() ? t.trim() : "Untitled Book";
 }
 
 /**
- * All chapter bodies as one plain string (for name scan). Omits titles; content only.
- * @param {import("firebase/firestore").Firestore} db
+ * @param {import("@supabase/supabase-js").SupabaseClient} supabase
  * @param {string} uid
  * @param {string} bookId
  */
-export async function loadBookPlainTextForScan(db, uid, bookId) {
-    const snap = await getDoc(doc(db, "users", uid, "books", bookId));
-    if (!snap.exists()) return "";
-    const sections = snap.data()?.sections || {};
+export async function loadBookPlainTextForScan(supabase, uid, bookId) {
+    const { data, error } = await supabase
+        .from("books")
+        .select("sections")
+        .eq("id", bookId)
+        .eq("user_id", uid)
+        .maybeSingle();
+    if (error) throw error;
+    if (!data?.sections) return "";
+    const sections = data.sections || {};
     const parts = [];
     for (const sec of ["front", "body", "back"]) {
         const arr = Array.isArray(sections[sec]) ? sections[sec] : [];

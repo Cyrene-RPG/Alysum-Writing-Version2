@@ -17,7 +17,7 @@ import {
     loadBookChapterOptions,
     getBookTitle,
     loadBookPlainTextForScan
-} from "./story-bible-api.js?v=5";
+} from "./story-bible-api.js?v=6";
 import {
     extractNameCandidatesFromPlainText,
     subtractBibleNames,
@@ -61,7 +61,7 @@ function emptyPlace() {
 
 /**
  * @param {object} opts
- * @param {import("firebase/firestore").Firestore} opts.db
+ * @param {import("@supabase/supabase-js").SupabaseClient} opts.supabase
  * @param {string} opts.uid
  * @param {HTMLElement} opts.statusEl
  * @param {HTMLElement} opts.hubView
@@ -92,7 +92,7 @@ function emptyPlace() {
  */
 export async function mountStoryBiblePage(opts) {
     const {
-        db,
+        supabase,
         uid,
         statusEl,
         hubView,
@@ -161,7 +161,7 @@ export async function mountStoryBiblePage(opts) {
         bookView.classList.add("hidden");
         setStatus("Loading your books…");
         try {
-            const rows = await listUserBooksWithBibleCounts(db, uid);
+            const rows = await listUserBooksWithBibleCounts(supabase, uid);
             booksTbody.innerHTML = "";
             if (!rows.length) {
                 const tr = document.createElement("tr");
@@ -328,7 +328,7 @@ export async function mountStoryBiblePage(opts) {
             }
             if (!silent) setStatus("Saving…");
             try {
-                await saveBibleCharacter(db, uid, bookId, next);
+                await saveBibleCharacter(supabase, uid, bookId, next);
                 const idx = characters.findIndex(x => x.id === next.id);
                 if (idx >= 0) characters[idx] = next;
                 characters.sort((a, b) =>
@@ -364,7 +364,7 @@ export async function mountStoryBiblePage(opts) {
         }
         if (!silent) setStatus("Saving…");
         try {
-            await saveBiblePlace(db, uid, bookId, next);
+            await saveBiblePlace(supabase, uid, bookId, next);
             const idx = places.findIndex(x => x.id === next.id);
             if (idx >= 0) places[idx] = next;
             places.sort((a, b) =>
@@ -506,10 +506,10 @@ export async function mountStoryBiblePage(opts) {
         setStatus("Loading…");
         try {
             const [title, charListResult, placeListResult, chapters] = await Promise.all([
-                getBookTitle(db, uid, bookId),
-                listBibleCharacters(db, uid, bookId),
-                listBiblePlaces(db, uid, bookId),
-                loadBookChapterOptions(db, uid, bookId)
+                getBookTitle(supabase, uid, bookId),
+                listBibleCharacters(supabase, uid, bookId),
+                listBiblePlaces(supabase, uid, bookId),
+                loadBookChapterOptions(supabase, uid, bookId)
             ]);
 
             if (title == null) {
@@ -649,7 +649,7 @@ export async function mountStoryBiblePage(opts) {
             setStatus("Deleting…");
             deleteCharBtn.disabled = true;
             try {
-                await deleteBibleCharacter(db, uid, bookId, selectedCharId);
+                await deleteBibleCharacter(supabase, uid, bookId, selectedCharId);
                 characters = characters.filter(x => x.id !== selectedCharId);
                 selectedCharId = null;
                 if (characters.length) await selectCharacter(characters[0].id);
@@ -677,7 +677,7 @@ export async function mountStoryBiblePage(opts) {
         setStatus("Deleting…");
         deleteCharBtn.disabled = true;
         try {
-            await deleteBiblePlace(db, uid, bookId, selectedPlaceId);
+            await deleteBiblePlace(supabase, uid, bookId, selectedPlaceId);
             places = places.filter(x => x.id !== selectedPlaceId);
             selectedPlaceId = null;
             if (places.length) await selectPlace(places[0].id);
@@ -831,7 +831,7 @@ export async function mountStoryBiblePage(opts) {
             setStatus("Scanning manuscript…");
             scanBtn.disabled = true;
             try {
-                cachedPlainForScan = await loadBookPlainTextForScan(db, uid, bookId);
+                cachedPlainForScan = await loadBookPlainTextForScan(supabase, uid, bookId);
                 if (!cachedPlainForScan.trim()) {
                     lastScanKind = "none";
                     renderScanSuggestions([]);

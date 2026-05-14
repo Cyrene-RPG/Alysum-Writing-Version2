@@ -383,9 +383,7 @@
     </div>
 
     <script type="module">
-        import { auth, db } from "./firebase.js";
-        import { onAuthStateChanged, EmailAuthProvider, reauthenticateWithCredential, updatePassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-        import { doc, getDoc, updateDoc, deleteField } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { supabase } from "./firebase.js";
         import { permanentHandleFromUserData } from "./js/profile-display.js?v=1";
         import { GRADIENT_THEMES, applyGradientTheme, getStoredGradientThemeId } from "./js/gradient-theme.js?v=2";
         import { normalizeAccountType, ACCOUNT_AUTHOR, ACCOUNT_READER, ACCOUNT_BOTH, homeUrlForUserData } from "./js/account-mode.js?v=1";
@@ -412,6 +410,16 @@
         const accountTypeMsg = document.getElementById("accountTypeMsg");
 
         let settingsHomeUrl = "/studio.html";
+
+        function mergeUserRow(row) {
+            if (!row || typeof row !== "object") return {};
+            return {
+                ...row,
+                displayName: row.display_name ?? row.displayName,
+                accountType: row.account_type ?? row.accountType,
+                writingDayTotals: row.writing_day_totals ?? row.writingDayTotals
+            };
+        }
 
         function initThemePicker() {
             if (!themeChipRow || themeChipRow.dataset.ready === "1") return;
@@ -455,16 +463,17 @@
             return s;
         }
 
-        onAuthStateChanged(auth, async user => {
+        supabase.auth.onAuthStateChange(async (_event, session) => {
+            const user = session?.user;
             if (!user) {
                 window.location.href = "/login.html";
                 return;
             }
 
             try {
-                const userRef = doc(db, "users", user.uid);
-                const snap = await getDoc(userRef);
-                const data = snap.exists() ? snap.data() || {} : {};
+                const { data: row, error } = await supabase.from("users").select("*").eq("id", user.id).maybeSingle();
+                if (error) throw error;
+                const data = mergeUserRow(row || {});
 
                 emailField.value = user.email || "";
                 const handle = permanentHandleFromUserData(data);
@@ -493,7 +502,8 @@
                     });
                 }
 
-                const hasPassword = user.providerData?.some(p => p.providerId === "password");
+                const identities = user.identities || [];
+                const hasPassword = identities.some(i => i.provider === "email");
                 const ssoNote = document.getElementById("ssoPasswordNote");
                 const formHint = document.getElementById("passwordFormHint");
                 if (!hasPassword) {
@@ -516,7 +526,8 @@
 
         saveAccountTypeBtn.addEventListener("click", async () => {
             hideMsg(accountTypeMsg);
-            const user = auth.currentUser;
+            const { data: udata } = await supabase.auth.getUser();
+            const user = udata?.user;
             if (!user) return;
 
             const picked = document.querySelector('input[name="settingsAccountType"]:checked');
@@ -528,8 +539,8 @@
 
             saveAccountTypeBtn.disabled = true;
             try {
-                const userRef = doc(db, "users", user.uid);
-                await updateDoc(userRef, { accountType: v });
+                const { error } = await supabase.from("users").update({ account_type: v }).eq("id", user.id);
+                if (error) throw error;
                 settingsHomeUrl = homeUrlForUserData({ accountType: v });
                 showMsg(accountTypeMsg, "Saved. Sign-in home and header switch update on your next login (or open Studio / Library now).", true);
             } catch (e) {
@@ -542,17 +553,20 @@
 
         saveDisplayBtn.addEventListener("click", async () => {
             hideMsg(profileMsg);
-            const user = auth.currentUser;
+            const { data: udata } = await supabase.auth.getUser();
+            const user = udata?.user;
             if (!user) return;
 
             const name = normalizeDisplayName(displayNameInput.value);
 
             saveDisplayBtn.disabled = true;
             try {
-                const userRef = doc(db, "users", user.uid);
+                const patch = name ? { display_name: name } : { display_name: null };
+                const { error } = await supabase.from("users").update(patch).eq("id", user.id);
+                if (error) throw error;
+                const { error: metaErr } = await supabase.auth.updateUser({ data: { display_name: name || null } });
+                if (metaErr) console.warn(metaErr);
                 if (!name) {
-                    await updateDoc(userRef, { displayName: deleteField() });
-                    await updateProfile(user, { displayName: "" });
                     displayNameInput.value = "";
                     showMsg(
                         profileMsg,
@@ -560,8 +574,6 @@
                         true
                     );
                 } else {
-                    await updateDoc(userRef, { displayName: name });
-                    await updateProfile(user, { displayName: name });
                     showMsg(profileMsg, "Display name saved. It will show on comments, publish, and your studio page.", true);
                 }
             } catch (e) {
@@ -574,7 +586,8 @@
 
         savePasswordBtn.addEventListener("click", async () => {
             hideMsg(passwordMsg);
-            const user = auth.currentUser;
+            const { data: udata } = await supabase.auth.getUser();
+            const user = udata?.user;
             if (!user || !user.email) {
                 showMsg(passwordMsg, "Email sign-in is required to change password.", false);
                 return;
@@ -599,23 +612,23 @@
 
             savePasswordBtn.disabled = true;
             try {
-                const cred = EmailAuthProvider.credential(user.email, cur);
-                await reauthenticateWithCredential(user, cred);
-                await updatePassword(user, next);
+                const { error: signErr } = await supabase.auth.signInWithPassword({
+                    email: user.email,
+                    password: cur
+                });
+                if (signErr) {
+                    showMsg(passwordMsg, "Current password is incorrect.", false);
+                    return;
+                }
+                const { error } = await supabase.auth.updateUser({ password: next });
+                if (error) throw error;
                 currentPw.value = "";
                 newPw.value = "";
                 confirmPw.value = "";
                 showMsg(passwordMsg, "Password updated successfully.", true);
             } catch (e) {
                 console.error(e);
-                const code = e?.code || "";
-                let msg = e?.message || "Could not update password.";
-                if (code === "auth/wrong-password" || code === "auth/invalid-credential") {
-                    msg = "Current password is incorrect.";
-                } else if (code === "auth/weak-password") {
-                    msg = "New password is too weak.";
-                }
-                showMsg(passwordMsg, msg, false);
+                showMsg(passwordMsg, e?.message || "Could not update password.", false);
             } finally {
                 savePasswordBtn.disabled = false;
             }

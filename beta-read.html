@@ -822,17 +822,7 @@
     </div>
 
     <script type="module">
-        import { auth, db } from "./firebase.js";
-        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-        import {
-            doc,
-            getDoc,
-            setDoc,
-            updateDoc,
-            onSnapshot,
-            serverTimestamp,
-            arrayUnion
-        } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { supabase } from "./firebase.js";
         import { writeBetaShelfEntryLocal } from "./js/beta-shelf-local.js?v=1";
         import { installReaderCopyGuards } from "./js/reader-copy-guards.js?v=1";
         import { applyReaderWatermark } from "./js/reader-watermark.js?v=3";
@@ -871,7 +861,6 @@
             isActive: () => !!currentBook,
             allowTextSelection: true
         });
-        let notesUnsub = null;
         let selectionDebounceTimer = null;
         let shelfTouchTimer = null;
         const SAVE_NOTE_LABEL = "Save note";
@@ -883,7 +872,7 @@
         }
 
         function scheduleShelfTouch() {
-            const uid = currentUser && currentUser.uid;
+            const uid = currentUser && currentUser.id;
             if (!uid || !currentBook) return;
             clearTimeout(shelfTouchTimer);
             shelfTouchTimer = setTimeout(() => {
@@ -986,7 +975,7 @@
             return {
                 title: safeString(data.title, "Untitled"),
                 author: safeString(data.author, "unknown"),
-                ownerUid: safeString(data.ownerUid, ""),
+                ownerUid: safeString(data.ownerUid || data.user_id, ""),
                 chapters,
                 chapterCount: safeNumber(data.chapterCount, chapters.length),
                 words: totalWords
@@ -1026,10 +1015,10 @@
                 return;
             }
             try {
-                const snap = await getDoc(doc(db, "users", ownerUid));
-                if (snap.exists()) {
-                    const p = snap.data() || {};
-                    const handle = String(p.username || "").trim();
+                const { data, error } = await supabase.from("users").select("username").eq("id", ownerUid).maybeSingle();
+                if (error) throw error;
+                if (data) {
+                    const handle = String(data.username || "").trim();
                     bookOwnerHandle = handle || null;
                 } else {
                     bookOwnerHandle = null;
@@ -1142,54 +1131,64 @@
             return "";
         }
 
-        function subscribeNotes(uid) {
-            if (notesUnsub) {
-                notesUnsub();
-                notesUnsub = null;
+        let notesChannel = null;
+
+        function renderNotesList(mapByBook) {
+            notesList.innerHTML = "";
+            const map = safeObject(mapByBook, {});
+            const list = Array.isArray(map[bookId]) ? map[bookId] : [];
+            const sorted = list.slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+            if (!sorted.length) {
+                const p = document.createElement("p");
+                p.className = "notes-empty";
+                p.textContent = "No notes yet. Highlight a passage to add one.";
+                notesList.appendChild(p);
+                return;
             }
-            const userRef = doc(db, "users", uid);
-            notesUnsub = onSnapshot(
-                userRef,
-                (snap) => {
-                    notesList.innerHTML = "";
-                    if (!snap.exists()) {
-                        const p = document.createElement("p");
-                        p.className = "notes-empty";
-                        p.textContent = "No notes yet. Highlight a passage to add one.";
-                        notesList.appendChild(p);
-                        return;
-                    }
-                    const map = safeObject(snap.data().betaReadNotesByBook, {});
-                    const list = Array.isArray(map[bookId]) ? map[bookId] : [];
-                    const sorted = list.slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-                    if (!sorted.length) {
-                        const p = document.createElement("p");
-                        p.className = "notes-empty";
-                        p.textContent = "No notes yet. Highlight a passage to add one.";
-                        notesList.appendChild(p);
-                        return;
-                    }
-                    sorted.forEach((n) => {
-                        const card = document.createElement("div");
-                        card.className = "note-card";
-                        const quote = escapeHtml(safeString(n.quote, ""));
-                        const body = escapeHtml(safeString(n.comment, ""));
-                        const ch = escapeHtml(safeString(n.chapterTitle, `Chapter ${(n.chapterIndex ?? 0) + 1}`));
-                        const when = escapeHtml(formatNoteTime(n.createdAt));
-                        card.innerHTML = `
-                            <div class="note-meta"><span class="chip">${ch}</span></div>
-                            <div class="q">${quote}</div>
-                            <div class="c">${body}</div>
-                            <div class="note-time">${when}</div>
-                        `;
-                        notesList.appendChild(card);
-                    });
-                },
-                (err) => {
-                    console.error(err);
-                    notesList.innerHTML = `<p class="notes-error">Could not load notes.</p>`;
-                }
-            );
+            sorted.forEach((n) => {
+                const card = document.createElement("div");
+                card.className = "note-card";
+                const quote = escapeHtml(safeString(n.quote, ""));
+                const body = escapeHtml(safeString(n.comment, ""));
+                const ch = escapeHtml(safeString(n.chapterTitle, `Chapter ${(n.chapterIndex ?? 0) + 1}`));
+                const when = escapeHtml(formatNoteTime(n.createdAt));
+                card.innerHTML = `
+                    <div class="note-meta"><span class="chip">${ch}</span></div>
+                    <div class="q">${quote}</div>
+                    <div class="c">${body}</div>
+                    <div class="note-time">${when}</div>
+                `;
+                notesList.appendChild(card);
+            });
+        }
+
+        async function pullNotes(uid) {
+            const { data, error } = await supabase
+                .from("users")
+                .select("beta_read_notes_by_book")
+                .eq("id", uid)
+                .maybeSingle();
+            if (error) {
+                console.error(error);
+                notesList.innerHTML = `<p class="notes-error">Could not load notes.</p>`;
+                return;
+            }
+            const rawMap = data?.beta_read_notes_by_book ?? data?.betaReadNotesByBook;
+            renderNotesList(rawMap);
+        }
+
+        function subscribeNotes(uid) {
+            if (notesChannel) supabase.removeChannel(notesChannel);
+            notesChannel = null;
+            void pullNotes(uid);
+            notesChannel = supabase
+                .channel("beta_read_notes_" + uid)
+                .on(
+                    "postgres_changes",
+                    { event: "*", schema: "public", table: "users", filter: `id=eq.${uid}` },
+                    () => pullNotes(uid).catch(console.error)
+                )
+                .subscribe();
         }
 
         async function touchShelf(uid) {
@@ -1197,38 +1196,25 @@
             const author = safeString(currentBook.author, "");
             writeBetaShelfEntryLocal(uid, bookId, { title, author });
 
-            const userRef = doc(db, "users", uid);
-            const uSnap = await getDoc(userRef);
-            if (!uSnap.exists()) {
-                await setDoc(
-                    userRef,
-                    {
-                        betaReadShelf: {
-                            [bookId]: {
-                                libraryBookId: bookId,
-                                title,
-                                author,
-                                shelvedAt: serverTimestamp(),
-                                lastOpenedAt: serverTimestamp()
-                            }
-                        }
-                    },
-                    { merge: true }
-                );
+            const { data: urow, error } = await supabase.from("users").select("beta_read_shelf").eq("id", uid).maybeSingle();
+            if (error) {
+                console.error(error);
                 return;
             }
-
-            const prevShelf = safeObject(uSnap.data().betaReadShelf, {});
+            const prevShelf = safeObject(urow?.beta_read_shelf ?? urow?.betaReadShelf, {});
             const prevEntry = safeObject(prevShelf[bookId], {});
-            await updateDoc(userRef, {
-                [`betaReadShelf.${bookId}`]: {
+            const now = Date.now();
+            const nextShelf = {
+                ...prevShelf,
+                [bookId]: {
                     libraryBookId: bookId,
                     title,
                     author,
-                    lastOpenedAt: serverTimestamp(),
-                    shelvedAt: prevEntry.shelvedAt || serverTimestamp()
+                    shelvedAt: typeof prevEntry.shelvedAt === "number" ? prevEntry.shelvedAt : now,
+                    lastOpenedAt: now
                 }
-            });
+            };
+            await supabase.from("users").update({ beta_read_shelf: nextShelf }).eq("id", uid);
         }
 
         async function initForUser(user) {
@@ -1243,15 +1229,17 @@
             publicReadLink.href = "/read.html?book=" + encodeURIComponent(bookId);
 
             try {
-                const libSnap = await getDoc(doc(db, "library", bookId));
-                if (!libSnap.exists()) {
+                const { data: libRow, error: libErr } = await supabase.from("library").select("*").eq("id", bookId).maybeSingle();
+                if (libErr) throw libErr;
+                if (!libRow) {
                     hideLoadingPanel();
                     fatalError.textContent = "That story is not in the Library.";
                     fatalError.classList.remove("hidden");
                     return;
                 }
 
-                currentBook = normalizeBook(libSnap.data());
+                const inner = libRow.data && typeof libRow.data === "object" ? libRow.data : libRow;
+                currentBook = normalizeBook(inner);
                 if (!currentBook.chapters.length) {
                     hideLoadingPanel();
                     fatalError.textContent = "This story has no published chapters to beta read.";
@@ -1259,8 +1247,8 @@
                     return;
                 }
 
-                await touchShelf(user.uid);
-                subscribeNotes(user.uid);
+                await touchShelf(user.id);
+                subscribeNotes(user.id);
 
                 topTitle.textContent = currentBook.title;
                 topSub.textContent = "@" + currentBook.author + " · Beta workspace";
@@ -1322,9 +1310,20 @@
                     chapterTitle: safeString(ch.title, ""),
                     createdAt: Date.now()
                 };
-                await updateDoc(doc(db, "users", currentUser.uid), {
-                    [`betaReadNotesByBook.${bookId}`]: arrayUnion(note)
-                });
+                const { data: urow, error: nErr } = await supabase
+                    .from("users")
+                    .select("beta_read_notes_by_book")
+                    .eq("id", currentUser.id)
+                    .maybeSingle();
+                if (nErr) throw nErr;
+                const map = safeObject(urow?.beta_read_notes_by_book ?? urow?.betaReadNotesByBook, {});
+                const arr = Array.isArray(map[bookId]) ? map[bookId].slice() : [];
+                arr.push(note);
+                const { error: upErr } = await supabase
+                    .from("users")
+                    .update({ beta_read_notes_by_book: { ...map, [bookId]: arr } })
+                    .eq("id", currentUser.id);
+                if (upErr) throw upErr;
                 draftComment.value = "";
                 draftQuote.value = "";
                 window.getSelection()?.removeAllRanges();
@@ -1369,13 +1368,13 @@
             applyFontSize(currentFontSize);
         });
 
-        const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+        supabase.auth.onAuthStateChange((event, session) => {
+            const user = session?.user;
             if (!user) {
                 const next = "/beta-read.html?book=" + encodeURIComponent(bookId || "");
                 window.location.href = "/login.html?next=" + encodeURIComponent(next);
                 return;
             }
-            unsubscribeAuth();
             void initForUser(user);
         });
     </script>

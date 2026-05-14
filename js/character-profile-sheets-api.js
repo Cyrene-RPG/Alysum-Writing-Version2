@@ -1,17 +1,7 @@
 /**
  * Cloud-saved character profile worksheets (writer resources).
- * Path: users/{uid}/characterProfileSheets/{sheetId}
+ * Table: character_profile_sheets (see supabase-sibling-tables.sql).
  */
-
-import {
-    collection,
-    deleteDoc,
-    doc,
-    onSnapshot,
-    orderBy,
-    query,
-    setDoc
-} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 export const CHARACTER_PROFILE_SHEETS = "characterProfileSheets";
 
@@ -88,8 +78,6 @@ export function normalizeCharacterProfileSheet(raw, id) {
 }
 
 /**
- * @param {import("firebase/firestore").Firestore} db
- * @param {string} uid
  * @param {ReturnType<typeof normalizeCharacterProfileSheet>} sheet
  */
 export function characterProfileSheetToFirestore(sheet) {
@@ -105,47 +93,96 @@ export function characterProfileSheetToFirestore(sheet) {
     };
 }
 
+function rowToSheet(row) {
+    if (!row) return null;
+    return normalizeCharacterProfileSheet(
+        {
+            schemaVersion: row.schema_version,
+            displayName: row.display_name,
+            fields: row.fields,
+            createdAt: row.created_at_ms,
+            updatedAt: row.updated_at_ms
+        },
+        row.id
+    );
+}
+
 /**
- * @param {import("firebase/firestore").Firestore} db
+ * @param {import("@supabase/supabase-js").SupabaseClient} supabase
  * @param {string} uid
  * @param {(sheets: ReturnType<typeof normalizeCharacterProfileSheet>[]) => void} onUpdate
  * @param {(err: unknown) => void} [onError]
  * @returns {() => void} unsubscribe
  */
-export function subscribeCharacterProfileSheets(db, uid, onUpdate, onError) {
-    const col = collection(db, "users", uid, CHARACTER_PROFILE_SHEETS);
-    const q = query(col, orderBy("updatedAt", "desc"));
-    return onSnapshot(
-        q,
-        snap => {
-            const list = snap.docs.map(d => normalizeCharacterProfileSheet(d.data(), d.id));
-            onUpdate(list);
-        },
-        err => {
-            console.error(err);
-            if (typeof onError === "function") onError(err);
+export function subscribeCharacterProfileSheets(supabase, uid, onUpdate, onError) {
+    let cancelled = false;
+
+    async function pull() {
+        if (cancelled) return;
+        const { data, error } = await supabase
+            .from("character_profile_sheets")
+            .select("*")
+            .eq("user_id", uid)
+            .order("updated_at_ms", { ascending: false });
+        if (error) {
+            console.error(error);
+            if (typeof onError === "function") onError(error);
+            return;
         }
-    );
+        const list = (data || []).map(r => rowToSheet(r)).filter(Boolean);
+        onUpdate(list);
+    }
+
+    const channel = supabase
+        .channel("cp_sheets_" + uid)
+        .on(
+            "postgres_changes",
+            { event: "*", schema: "public", table: "character_profile_sheets", filter: `user_id=eq.${uid}` },
+            () => pull().catch(console.error)
+        )
+        .subscribe();
+
+    pull().catch(err => {
+        console.error(err);
+        if (typeof onError === "function") onError(err);
+    });
+
+    return () => {
+        cancelled = true;
+        supabase.removeChannel(channel);
+    };
 }
 
 /**
- * @param {import("firebase/firestore").Firestore} db
+ * @param {import("@supabase/supabase-js").SupabaseClient} supabase
  * @param {string} uid
  * @param {ReturnType<typeof normalizeCharacterProfileSheet>} sheet
  */
-export async function saveCharacterProfileSheet(db, uid, sheet) {
+export async function saveCharacterProfileSheet(supabase, uid, sheet) {
     const id = sheet.id || generateCharacterProfileSheetId();
-    const ref = doc(db, "users", uid, CHARACTER_PROFILE_SHEETS, id);
     const payload = characterProfileSheetToFirestore({ ...sheet, id });
-    await setDoc(ref, payload, { merge: true });
+    const { error } = await supabase.from("character_profile_sheets").upsert(
+        {
+            user_id: uid,
+            id,
+            display_name: payload.displayName,
+            fields: payload.fields,
+            schema_version: payload.schemaVersion,
+            created_at_ms: payload.createdAt,
+            updated_at_ms: payload.updatedAt
+        },
+        { onConflict: "user_id,id" }
+    );
+    if (error) throw error;
     return id;
 }
 
 /**
- * @param {import("firebase/firestore").Firestore} db
+ * @param {import("@supabase/supabase-js").SupabaseClient} supabase
  * @param {string} uid
  * @param {string} sheetId
  */
-export async function deleteCharacterProfileSheet(db, uid, sheetId) {
-    await deleteDoc(doc(db, "users", uid, CHARACTER_PROFILE_SHEETS, sheetId));
+export async function deleteCharacterProfileSheet(supabase, uid, sheetId) {
+    const { error } = await supabase.from("character_profile_sheets").delete().eq("user_id", uid).eq("id", sheetId);
+    if (error) throw error;
 }

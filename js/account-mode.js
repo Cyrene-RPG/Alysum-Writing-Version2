@@ -42,7 +42,7 @@ export function setUiMode(mode) {
 
 /** Default home after login when ?next= is not set. */
 export function homeUrlForUserData(data) {
-    const t = normalizeAccountType(data && data.accountType);
+    const t = normalizeAccountType(data && (data.accountType ?? data.account_type));
     if (t === ACCOUNT_READER) return READER_HOME_URL;
     if (t === ACCOUNT_AUTHOR) return "/studio.html";
     /* "library" in session = reading side → profile hub, not the catalog page. */

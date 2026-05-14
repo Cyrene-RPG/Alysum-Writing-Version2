@@ -1,10 +1,8 @@
 /**
- * Novel exporter — loads the same Firestore document as editor.html (`users/{uid}/books/{bookId}`).
+ * Novel exporter — loads the same book row as editor.html from Supabase `books`.
  */
-import { auth, db } from "../firebase.js";
+import { supabase } from "../firebase.js";
 import { publicDisplayNameFromUserData } from "./profile-display.js?v=1";
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const params = new URLSearchParams(window.location.search);
 const bookId = params.get("book");
@@ -1086,16 +1084,17 @@ function updateExporterUsername(authorDisplay) {
 
 async function fetchAuthorDisplay(uid) {
     try {
-        const userSnap = await getDoc(doc(db, "users", uid));
-        if (userSnap.exists()) {
-            const u = userSnap.data();
+        const { data: u, error } = await supabase.from("users").select("*").eq("id", uid).maybeSingle();
+        if (!error && u) {
             return publicDisplayNameFromUserData(u);
         }
     } catch (_) {
         /* ignore */
     }
-    if (auth.currentUser?.displayName) {
-        return String(auth.currentUser.displayName).trim();
+    const { data: sessionData } = await supabase.auth.getUser();
+    const u = sessionData?.user;
+    if (u?.user_metadata?.display_name) {
+        return String(u.user_metadata.display_name).trim();
     }
     return "";
 }
@@ -1114,9 +1113,16 @@ async function loadBookForPreview(uid) {
     renderCurrentPreviewPage();
 
     try {
-        const snap = await getDoc(doc(db, "users", uid, "books", bookId));
+        const { data: bookRow, error: bErr } = await supabase
+            .from("books")
+            .select("*")
+            .eq("id", bookId)
+            .eq("user_id", uid)
+            .maybeSingle();
 
-        if (!snap.exists()) {
+        if (bErr) throw bErr;
+
+        if (!bookRow) {
             setPreviewPlaceholder(true, "This book was not found, or you do not have access.");
             const titleIn = document.getElementById("neBookTitleInput");
             if (titleIn) titleIn.value = "";
@@ -1125,7 +1131,7 @@ async function loadBookForPreview(uid) {
             return;
         }
 
-        const book = normalizeBookData(snap.data());
+        const book = normalizeBookData(bookRow);
         ensureStructure(book);
         fillTitleAndPenFromBook(book, authorDisplay);
         loadedBook = book;
@@ -1716,9 +1722,10 @@ function init() {
 
     if (!bookId) {
         setPreviewPlaceholder(true, "Add ?book=… or open Export from the editor to preview a manuscript here.");
-        onAuthStateChanged(auth, async user => {
+        supabase.auth.onAuthStateChange(async (_event, session) => {
+            const user = session?.user;
             if (user) {
-                const ad = await fetchAuthorDisplay(user.uid);
+                const ad = await fetchAuthorDisplay(user.id);
                 updateExporterUsername(ad);
             } else {
                 updateExporterUsername("");
@@ -1734,12 +1741,13 @@ function init() {
         return;
     }
 
-    onAuthStateChanged(auth, user => {
+    supabase.auth.onAuthStateChange((_event, session) => {
+        const user = session?.user;
         if (!user) {
             window.location.href = "/login.html";
             return;
         }
-        loadBookForPreview(user.uid);
+        loadBookForPreview(user.id);
     });
 }
 

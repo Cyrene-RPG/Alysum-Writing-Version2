@@ -638,9 +638,7 @@
     </div>
 
     <script type="module">
-        import { auth, db } from "./firebase.js";
-        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-        import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { supabase } from "./firebase.js";
         import { permanentHandleFromUserData, publicDisplayNameFromUserData } from "./js/profile-display.js?v=1";
         import {
             normalizeAccountType,
@@ -659,6 +657,22 @@
 
         function safeObject(value, fallback = {}) {
             return value && typeof value === "object" && !Array.isArray(value) ? value : fallback;
+        }
+
+        function mergeUserRow(row) {
+            if (!row || typeof row !== "object") return {};
+            return {
+                ...row,
+                displayName: row.display_name ?? row.displayName,
+                accountType: row.account_type ?? row.accountType,
+                writingDayTotals: row.writing_day_totals ?? row.writingDayTotals,
+                currentReadBookId: row.current_read_book_id ?? row.currentReadBookId,
+                currentReadChapterIndex: row.current_read_chapter_index ?? row.currentReadChapterIndex,
+                currentReadChapterTitle: row.current_read_chapter_title ?? row.currentReadChapterTitle,
+                currentReadStoryTitle: row.current_read_story_title ?? row.currentReadStoryTitle,
+                currentReadAuthor: row.current_read_author ?? row.currentReadAuthor,
+                betaReadShelf: row.beta_read_shelf ?? row.betaReadShelf
+            };
         }
 
         function millisFromFirestore(ts) {
@@ -687,8 +701,10 @@
             const localShelf = readBetaShelfFromLocalStorage(uid);
             let cloudShelf = {};
             try {
-                const uSnap = await getDoc(doc(db, "users", uid));
-                cloudShelf = uSnap.exists() ? safeObject(uSnap.data().betaReadShelf, {}) : {};
+                const { data: urow, error } = await supabase.from("users").select("beta_read_shelf").eq("id", uid).maybeSingle();
+                if (error) throw error;
+                const mergedRow = mergeUserRow(urow || {});
+                cloudShelf = safeObject(mergedRow.betaReadShelf, {});
             } catch (e) {
                 console.error(e);
             }
@@ -777,12 +793,15 @@
             }
 
             try {
-                const libSnap = await getDoc(doc(db, "library", bookId));
-                if (libSnap.exists()) {
-                    const lib = libSnap.data() || {};
-                    storyTitle = safeString(lib.title, storyTitle || "Untitled");
-                    author = safeString(lib.author, author || "");
-                }
+                const { data: libRow, error: libErr } = await supabase
+                    .from("library")
+                    .select("data")
+                    .eq("id", bookId)
+                    .maybeSingle();
+                if (libErr) throw libErr;
+                const lib = libRow?.data && typeof libRow.data === "object" ? libRow.data : {};
+                storyTitle = safeString(lib.title, storyTitle || "Untitled");
+                author = safeString(lib.author, author || "");
             } catch (e) {
                 console.warn(e);
             }
@@ -842,35 +861,36 @@
             });
         }
 
-        onAuthStateChanged(auth, async (user) => {
+        supabase.auth.onAuthStateChange(async (_event, session) => {
+            const user = session?.user;
             if (!user) {
                 window.location.href = "/login.html";
                 return;
             }
 
             try {
-                const userRef = doc(db, "users", user.uid);
-                let snap = await getDoc(userRef);
+                let { data: row, error } = await supabase.from("users").select("*").eq("id", user.id).maybeSingle();
+                if (error) throw error;
 
-                if (!snap.exists()) {
-                    await setDoc(
-                        userRef,
-                        {
-                            username: "newuser",
-                            displayName: "newuser",
-                            accountType: ACCOUNT_BOTH,
-                            words: 0,
-                            books: 0,
-                            streak: 0,
-                            dailyWordGoal: 2000,
-                            writingDayTotals: {}
-                        },
-                        { merge: true }
-                    );
-                    snap = await getDoc(userRef);
+                if (!row) {
+                    await supabase.from("users").insert({
+                        id: user.id,
+                        username: "newuser",
+                        display_name: "newuser",
+                        account_type: ACCOUNT_BOTH,
+                        words: 0,
+                        books: 0,
+                        streak: 0,
+                        daily_word_goal: 2000,
+                        writing_day_totals: {}
+                    });
+                    const again = await supabase.from("users").select("*").eq("id", user.id).maybeSingle();
+                    row = again.data;
+                    error = again.error;
+                    if (error) throw error;
                 }
 
-                const data = snap.exists() ? snap.data() || {} : {};
+                const data = mergeUserRow(row || {});
                 const t = normalizeAccountType(data.accountType);
 
                 if (t === ACCOUNT_AUTHOR) {
@@ -897,7 +917,7 @@
                 profileHandleLine.textContent =
                     "Permanent handle @" + permanentHandleFromUserData(data);
 
-                const read = await resolveCurrentRead(user.uid, data);
+                const read = await resolveCurrentRead(user.id, data);
                 if (read.bookId) {
                     currentReadTitle.textContent = read.storyTitle;
                     currentReadMeta.textContent = [read.authorLine, read.chapterLine].filter(Boolean).join(" · ");
@@ -913,7 +933,7 @@
 
                 loadingMsg.hidden = true;
                 heroPanel.hidden = false;
-                await loadBetaReads(user.uid);
+                await loadBetaReads(user.id);
             } catch (e) {
                 console.error(e);
                 loadingMsg.textContent = "Could not load your profile. Try refreshing.";
@@ -922,8 +942,10 @@
 
         document.addEventListener("visibilitychange", () => {
             if (document.visibilityState !== "visible") return;
-            const u = auth.currentUser;
-            if (u) void loadBetaReads(u.uid);
+            void supabase.auth.getUser().then(({ data }) => {
+                const u = data?.user;
+                if (u) void loadBetaReads(u.id);
+            });
         });
     </script>
 </body>

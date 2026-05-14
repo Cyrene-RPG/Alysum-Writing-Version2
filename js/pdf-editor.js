@@ -1,11 +1,8 @@
 /**
- * PDF formatter for Alysum — loads the same Firestore document as editor.html
- * (`users/{uid}/books/{bookId}`) using the `book` query parameter.
+ * PDF formatter for Alysum — loads the same book row as editor.html from Supabase `books`.
  */
 
-import { auth, db } from "../firebase.js";
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { supabase } from "../firebase.js";
 import { publicDisplayNameFromUserData } from "./profile-display.js?v=1";
 
 const params = new URLSearchParams(window.location.search);
@@ -1596,9 +1593,16 @@ async function loadBook(uid) {
 
   setStatus("Loading…");
   try {
-    const snap = await getDoc(doc(db, "users", uid, "books", bookId));
+    const { data: bookRow, error: bErr } = await supabase
+      .from("books")
+      .select("*")
+      .eq("id", bookId)
+      .eq("user_id", uid)
+      .maybeSingle();
 
-    if (!snap.exists()) {
+    if (bErr) throw bErr;
+
+    if (!bookRow) {
       setStatus("Book not found", true);
       const nf = $("topBookTitle");
       nf.textContent = "Not found";
@@ -1609,22 +1613,23 @@ async function loadBook(uid) {
       return;
     }
 
-    const book = normalizeBookData(snap.data());
+    const book = normalizeBookData(bookRow);
     ensureStructure(book);
     state.book = book;
 
     state.authorDisplay = "";
     try {
-      const userSnap = await getDoc(doc(db, "users", uid));
-      if (userSnap.exists()) {
-        const u = userSnap.data();
+      const { data: u, error: uErr } = await supabase.from("users").select("*").eq("id", uid).maybeSingle();
+      if (!uErr && u) {
         state.authorDisplay = publicDisplayNameFromUserData(u);
       }
     } catch (_) {
       state.authorDisplay = "";
     }
-    if (!state.authorDisplay && auth.currentUser?.displayName) {
-      state.authorDisplay = String(auth.currentUser.displayName).trim();
+    const { data: sessionData } = await supabase.auth.getUser();
+    const authUser = sessionData?.user;
+    if (!state.authorDisplay && authUser?.user_metadata?.display_name) {
+      state.authorDisplay = String(authUser.user_metadata.display_name).trim();
     }
 
     loadPrintOverridesFromStorage();
@@ -1652,7 +1657,7 @@ async function loadBook(uid) {
     const code = err && typeof err === "object" && "code" in err ? err.code : "";
     let msg = "Could not load book.";
     if (code === "permission-denied") {
-      msg = "No permission to read this book (check Firestore rules).";
+      msg = "No permission to read this book (check Supabase RLS).";
     } else if (err && typeof err === "object" && "message" in err && typeof err.message === "string") {
       msg = err.message;
     }
@@ -1747,12 +1752,13 @@ function init() {
     return;
   }
 
-  onAuthStateChanged(auth, user => {
+  supabase.auth.onAuthStateChange((_event, session) => {
+    const user = session?.user;
     if (!user) {
       window.location.href = "/login.html";
       return;
     }
-    loadBook(user.uid);
+    loadBook(user.id);
   });
 }
 

@@ -844,9 +844,8 @@
     </div>
 
     <script type="module">
-        import { auth, db } from "./firebase.js";
-        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-        import { mountStoryBiblePage } from "./js/story-bible-page.js?v=12";
+        import { supabase } from "./firebase.js";
+        import { mountStoryBiblePage } from "./js/story-bible-page.js?v=13";
         import {
             isStoryBibleUiEnabled,
             STORY_BIBLE_PREF_KEY,
@@ -868,7 +867,8 @@
         });
         window.addEventListener(STORY_BIBLE_PREF_EVENT, () => location.reload());
 
-        onAuthStateChanged(auth, user => {
+        supabase.auth.onAuthStateChange((_event, session) => {
+            const user = session?.user;
             if (!user) {
                 window.location.href = "/login.html?next=" + encodeURIComponent("/story-bible.html" + window.location.search);
                 return;
@@ -879,8 +879,8 @@
             }
 
             mountStoryBiblePage({
-                db,
-                uid: user.uid,
+                supabase,
+                uid: user.id,
                 statusEl: document.getElementById("sbStatus"),
                 hubView: document.getElementById("sbHubView"),
                 bookView: document.getElementById("sbBookView"),

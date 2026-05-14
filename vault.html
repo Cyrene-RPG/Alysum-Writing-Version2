@@ -67,11 +67,11 @@
         </div>
     </div>
     <script type="module">
-        import { auth, db } from "./firebase.js";
-        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-        import { bindVaultUI, DEFAULT_VAULT_KEY } from "./js/alysum-vault-ui.js?v=15";
+        import { supabase } from "./firebase.js";
+        import { bindVaultUI, DEFAULT_VAULT_KEY } from "./js/alysum-vault-ui.js?v=16";
 
-        onAuthStateChanged(auth, user => {
+        supabase.auth.onAuthStateChange((_event, session) => {
+            const user = session?.user;
             if (!user) {
                 window.location.href = "/login.html?next=" + encodeURIComponent("/vault.html");
                 return;
@@ -90,8 +90,8 @@
                 {
                     storageKey: DEFAULT_VAULT_KEY,
                     compact: false,
-                    firebaseDb: db,
-                    firebaseUid: user.uid,
+                    supabase,
+                    supabaseUserId: user.id,
                     setStatus: msg => {
                         const el = document.getElementById("vaultStatus");
                         if (el) el.textContent = msg;

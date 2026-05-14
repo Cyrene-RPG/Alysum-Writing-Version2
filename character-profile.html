@@ -638,22 +638,21 @@
     </div>
 
     <script type="module">
-        import { auth, db } from "./firebase.js";
-        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import { supabase } from "./firebase.js";
         import {
             normalizeBibleCharacter,
             generateBibleCharacterId,
             saveBibleCharacter,
             listUserBooksWithBibleCounts,
             loadBookChapterOptions
-        } from "./js/story-bible-api.js?v=5";
+        } from "./js/story-bible-api.js?v=6";
         import {
             CHARACTER_PROFILE_FIELD_KEYS,
             subscribeCharacterProfileSheets,
             saveCharacterProfileSheet,
             deleteCharacterProfileSheet,
             generateCharacterProfileSheetId
-        } from "./js/character-profile-sheets-api.js?v=1";
+        } from "./js/character-profile-sheets-api.js?v=2";
 
         const statusEl = document.getElementById("cpStatus");
         const cpForm = document.getElementById("cpForm");
@@ -779,7 +778,7 @@
             const uid = window.__cpUid;
             if (!uid) return;
             try {
-                await deleteCharacterProfileSheet(db, uid, id);
+                await deleteCharacterProfileSheet(supabase, uid, id);
                 if (activeSheetId === id) {
                     activeSheetId = null;
                     activeSheetCreatedAt = null;
@@ -810,7 +809,7 @@
             const createdAt = isNew ? Date.now() : activeSheetCreatedAt;
             try {
                 setStatus("Saving…");
-                await saveCharacterProfileSheet(db, uid, { id, displayName, fields, createdAt });
+                await saveCharacterProfileSheet(supabase, uid, { id, displayName, fields, createdAt });
                 activeSheetId = id;
                 activeSheetCreatedAt = createdAt;
                 setStatus("Saved to your account.", "ok");
@@ -958,7 +957,7 @@
             cpIntroduced.innerHTML = '<option value="|">Not specified</option>';
             if (!bookId || !window.__cpUid) return;
             try {
-                const chapters = await loadBookChapterOptions(db, window.__cpUid, bookId);
+                const chapters = await loadBookChapterOptions(supabase, window.__cpUid, bookId);
                 for (const ch of chapters) {
                     if (!ch.id) continue;
                     const opt = document.createElement("option");
@@ -1018,7 +1017,7 @@
             cpSaveBibleBtn.disabled = true;
             setStatus("Saving…");
             try {
-                await saveBibleCharacter(db, window.__cpUid, bookId, character);
+                await saveBibleCharacter(supabase, window.__cpUid, bookId, character);
                 setStatus("Saved as a new character. Open the bible to edit or merge details.", "ok");
                 cpOpenBibleLink.href = `/story-bible.html?book=${encodeURIComponent(bookId)}`;
                 cpOpenBibleLink.classList.remove("hidden");
@@ -1030,9 +1029,10 @@
             }
         });
 
-        onAuthStateChanged(auth, async user => {
+        supabase.auth.onAuthStateChange(async (_event, session) => {
+            const user = session?.user;
             stopSheetsListener();
-            window.__cpUid = user ? user.uid : "";
+            window.__cpUid = user ? user.id : "";
             cpGuestHint.classList.toggle("hidden", !!user);
             cpNoBooksHint.classList.add("hidden");
             cpSaveSection.classList.toggle("hidden", !user);
@@ -1053,15 +1053,15 @@
             }
 
             unsubscribeSheets = subscribeCharacterProfileSheets(
-                db,
-                user.uid,
+                supabase,
+                user.id,
                 sheets => renderSheetMenu(sheets),
                 () => setStatus("Could not sync worksheets. Check connection or try reloading.", "err")
             );
 
             cpBook.innerHTML = '<option value="">Choose a book…</option>';
             try {
-                const rows = await listUserBooksWithBibleCounts(db, user.uid);
+                const rows = await listUserBooksWithBibleCounts(supabase, user.id);
                 if (!rows.length) {
                     cpNoBooksHint.classList.remove("hidden");
                     cpSaveBibleBtn.disabled = true;

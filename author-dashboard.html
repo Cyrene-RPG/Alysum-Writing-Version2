@@ -565,30 +565,14 @@
             </div>
 
             <div class="loading-state" id="loadingState">Loading your author dashboard...</div>
-            <div class="error-state hidden" id="errorState">Could not load dashboard data. Check your connection or Firestore rules.</div>
+            <div class="error-state hidden" id="errorState">Could not load dashboard data. Check your connection or Supabase policies.</div>
             <div class="empty-state hidden" id="emptyState">No published books yet. Publish a story to start seeing dashboard analytics.</div>
             <div class="book-grid hidden" id="bookGrid"></div>
         </section>
     </main>
 
     <script type="module">
-        import { auth, db } from "./firebase.js";
-        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-        import {
-            collection,
-            deleteDoc,
-            doc,
-            getCountFromServer,
-            getDoc,
-            getDocs,
-            limit,
-            onSnapshot,
-            orderBy,
-            query,
-            updateDoc,
-            where,
-            writeBatch
-        } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { supabase } from "./firebase.js";
         import { publicDisplayNameFromUserData } from "./js/profile-display.js?v=1";
 
         const authorStatus = document.getElementById("authorStatus");
@@ -607,7 +591,11 @@
         const markAllNotifsRead = document.getElementById("markAllNotifsRead");
 
         let currentUser = null;
-        let notifUnsub = null;
+        let notifChannel = null;
+
+        function safeObject(value, fallback = {}) {
+            return value && typeof value === "object" && !Array.isArray(value) ? value : fallback;
+        }
 
         function safeString(value, fallback = "") {
             return typeof value === "string" ? value : fallback;
@@ -623,6 +611,10 @@
 
         function toMillis(value) {
             if (typeof value === "number" && Number.isFinite(value)) return value;
+            if (typeof value === "string" && value) {
+                const t = Date.parse(value);
+                if (Number.isFinite(t)) return t;
+            }
             if (value && typeof value.seconds === "number") return value.seconds * 1000;
             return 0;
         }
@@ -661,37 +653,55 @@
             };
         }
 
+        function libraryRowData(row) {
+            const data = safeObject(row?.data, {});
+            return Object.keys(data).length ? data : safeObject(row, {});
+        }
+
         async function getSubcollectionCount(bookId, subcollection) {
-            const ref = collection(db, "library", bookId, subcollection);
-            const snap = await getCountFromServer(ref);
-            return snap.data().count || 0;
+            let table = null;
+            if (subcollection === "likes") table = "likes";
+            else if (subcollection === "comments") table = "comments";
+            else if (subcollection === "reads") table = "reads";
+            if (!table) return 0;
+            const { count, error } = await supabase
+                .from(table)
+                .select("id", { count: "exact", head: true })
+                .eq("book_id", bookId);
+            if (error) {
+                console.warn(error);
+                return 0;
+            }
+            return count || 0;
         }
 
         async function getRecentComments(bookId) {
-            const ref = query(
-                collection(db, "library", bookId, "comments"),
-                orderBy("createdAt", "desc"),
-                limit(3)
-            );
-            const snap = await getDocs(ref);
-            return snap.docs.map(docSnap => {
-                const data = docSnap.data() || {};
-                return {
-                    id: docSnap.id,
-                    displayLabel: safeString(
-                        data.displayName || data.username || data.name,
-                        "reader"
-                    ),
-                    text: safeString(data.text, ""),
-                    createdAt: data.createdAt || 0
-                };
-            });
+            const { data, error } = await supabase
+                .from("comments")
+                .select("id, text, display_name, username, created_at")
+                .eq("book_id", bookId)
+                .order("created_at", { ascending: false })
+                .limit(3);
+            if (error) {
+                console.warn(error);
+                return [];
+            }
+            return (data || []).map(row => ({
+                id: row.id,
+                displayLabel: safeString(row.display_name || row.username || "", "reader"),
+                text: safeString(row.text, ""),
+                createdAt: row.created_at || 0
+            }));
         }
 
         async function loadPublishedBooks(uid) {
-            const ownedQuery = query(collection(db, "library"), where("ownerUid", "==", uid));
-            const snap = await getDocs(ownedQuery);
-            return snap.docs.map(docSnap => normalizeBook(docSnap.id, docSnap.data()))
+            const { data: rows, error } = await supabase.from("library").select("*").eq("user_id", uid);
+            if (error) throw error;
+            return (rows || [])
+                .map(row => {
+                    const merged = libraryRowData(row);
+                    return normalizeBook(row.id, merged);
+                })
                 .filter(book => book.isPublished);
         }
 
@@ -775,34 +785,39 @@
             return `${s.slice(0, maxLen - 1)}…`;
         }
 
-        function startNotificationInbox(uid) {
-            if (notifUnsub) {
-                notifUnsub();
-                notifUnsub = null;
-            }
-
-            const notifQuery = query(
-                collection(db, "users", uid, "notifications"),
-                orderBy("createdAt", "desc"),
-                limit(60)
-            );
-
-            notifUnsub = onSnapshot(
-                notifQuery,
-                (snap) => {
-                    renderNotifications(snap.docs);
-                },
-                (err) => {
-                    console.error(err);
-                    notifLoading.textContent = "Could not load notifications.";
-                }
-            );
+        function notifPayload(row) {
+            const nested = row?.data && typeof row.data === "object" ? row.data : {};
+            return { ...nested, id: row.id, read: row.read === true, createdAt: row.created_at || nested.createdAt };
         }
 
-        function renderNotifications(docs) {
+        async function loadNotifications(uid) {
+            const { data, error } = await supabase.from("notifications").select("*").eq("user_id", uid).limit(60);
+            if (error) {
+                console.error(error);
+                notifLoading.textContent = "Could not load notifications.";
+                return;
+            }
+            const rows = (data || []).map(notifPayload);
+            renderNotifications(rows);
+        }
+
+        function startNotificationInbox(uid) {
+            if (notifChannel) supabase.removeChannel(notifChannel);
+            notifChannel = supabase
+                .channel("author_dash_notifs_" + uid)
+                .on(
+                    "postgres_changes",
+                    { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${uid}` },
+                    () => loadNotifications(uid).catch(console.error)
+                )
+                .subscribe();
+            loadNotifications(uid).catch(console.error);
+        }
+
+        function renderNotifications(rows) {
             notifLoading.classList.add("hidden");
 
-            if (!docs.length) {
+            if (!rows.length) {
                 notifEmpty.classList.remove("hidden");
                 notifList.classList.add("hidden");
                 notifList.innerHTML = "";
@@ -813,12 +828,11 @@
             notifEmpty.classList.add("hidden");
             notifList.classList.remove("hidden");
 
-            const unreadDocs = docs.filter((d) => d.data()?.read !== true);
-            markAllNotifsRead.disabled = unreadDocs.length === 0;
+            const unreadRows = rows.filter((d) => d.read !== true);
+            markAllNotifsRead.disabled = unreadRows.length === 0;
 
-            notifList.innerHTML = docs
-                .map((docSnap) => {
-                    const data = docSnap.data() || {};
+            notifList.innerHTML = rows
+                .map((data) => {
                     const unread = data.read !== true;
                     const reader = escapeHtml(safeString(data.readerName, "Reader"));
                     const book = escapeHtml(safeString(data.bookTitle, "Story"));
@@ -830,7 +844,7 @@
                         ? `/beta-read.html?book=${encodeURIComponent(bookId)}`
                         : "#";
                     return `
-                        <article class="notif-card${unread ? " unread" : ""}" role="listitem" data-notif-id="${escapeHtml(docSnap.id)}">
+                        <article class="notif-card${unread ? " unread" : ""}" role="listitem" data-notif-id="${escapeHtml(data.id)}">
                             <div class="notif-top">
                                 <div>
                                     <div class="notif-kicker">Beta note shared</div>
@@ -844,7 +858,7 @@
                                 <a class="mini-btn" href="${betaUrl}">Open beta workspace</a>
                                 ${
                                     unread
-                                        ? `<button type="button" class="mini-btn" data-mark-read="${escapeHtml(docSnap.id)}">Mark read</button>`
+                                        ? `<button type="button" class="mini-btn" data-mark-read="${escapeHtml(data.id)}">Mark read</button>`
                                         : `<span class="mini-btn" style="opacity:0.55;cursor:default;">Read</span>`
                                 }
                             </div>
@@ -860,7 +874,7 @@
             const id = btn.getAttribute("data-mark-read");
             if (!id) return;
             try {
-                await updateDoc(doc(db, "users", currentUser.uid, "notifications", id), { read: true });
+                await supabase.from("notifications").update({ read: true }).eq("id", id).eq("user_id", currentUser.id);
             } catch (e) {
                 console.error(e);
             }
@@ -869,26 +883,11 @@
         markAllNotifsRead.addEventListener("click", async () => {
             if (!currentUser) return;
             try {
-                const unreadSnap = await getDocs(
-                    query(
-                        collection(db, "users", currentUser.uid, "notifications"),
-                        where("read", "==", false),
-                        limit(400)
-                    )
-                );
-                if (!unreadSnap.docs.length) return;
-                let batch = writeBatch(db);
-                let n = 0;
-                for (const d of unreadSnap.docs) {
-                    batch.update(d.ref, { read: true });
-                    n += 1;
-                    if (n >= 450) {
-                        await batch.commit();
-                        batch = writeBatch(db);
-                        n = 0;
-                    }
-                }
-                if (n) await batch.commit();
+                await supabase
+                    .from("notifications")
+                    .update({ read: true })
+                    .eq("user_id", currentUser.id)
+                    .eq("read", false);
             } catch (e) {
                 console.error(e);
             }
@@ -899,13 +898,16 @@
             showState("loading");
 
             try {
-                const userSnap = await getDoc(doc(db, "users", currentUser.uid));
-                const label = userSnap.exists()
-                    ? publicDisplayNameFromUserData(userSnap.data() || {})
-                    : "author";
+                const { data: profile, error: pErr } = await supabase
+                    .from("users")
+                    .select("*")
+                    .eq("id", currentUser.id)
+                    .maybeSingle();
+                if (pErr) throw pErr;
+                const label = profile ? publicDisplayNameFromUserData(profile) : "author";
                 authorStatus.textContent = label;
 
-                const ownedBooks = await loadPublishedBooks(currentUser.uid);
+                const ownedBooks = await loadPublishedBooks(currentUser.id);
                 const enriched = await Promise.all(ownedBooks.map(async book => {
                     const [kudos, comments, recentComments] = await Promise.all([
                         getSubcollectionCount(book.id, "likes"),
@@ -933,7 +935,7 @@
             if (!window.confirm("Remove this comment from your story?")) return;
             try {
                 btn.disabled = true;
-                await deleteDoc(doc(db, "library", rmBookId, "comments", rmCommentId));
+                await supabase.from("comments").delete().eq("id", rmCommentId).eq("book_id", rmBookId);
                 await loadDashboard();
             } catch (e) {
                 console.error(e);
@@ -942,13 +944,14 @@
             }
         });
 
-        onAuthStateChanged(auth, user => {
+        supabase.auth.onAuthStateChange((event, session) => {
+            const user = session?.user;
             if (!user) {
                 window.location.href = "/login.html?next=" + encodeURIComponent("/author-dashboard.html");
                 return;
             }
             currentUser = user;
-            startNotificationInbox(user.uid);
+            startNotificationInbox(user.id);
             loadDashboard();
         });
     </script>
