@@ -3,6 +3,7 @@
  */
 
 import { supabase } from "../firebase.js";
+import { wireSupabaseSession } from "./supabase-session.js?v=1";
 import { publicDisplayNameFromUserData } from "./profile-display.js?v=1";
 
 const params = new URLSearchParams(window.location.search);
@@ -1752,7 +1753,7 @@ function init() {
     return;
   }
 
-  supabase.auth.onAuthStateChange((_event, session) => {
+  wireSupabaseSession((session) => {
     const user = session?.user;
     if (!user) {
       window.location.href = "/login.html";

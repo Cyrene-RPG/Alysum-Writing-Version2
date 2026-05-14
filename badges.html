@@ -233,6 +233,7 @@ body {
 
 <script type="module">
 import { supabase } from "./firebase.js";
+import { wireSupabaseSession } from "./js/supabase-session.js?v=1";
 import {
     clampDailyWordGoal,
     computeGoalStreakFromTotals,
@@ -374,7 +375,7 @@ function startAchievementsRealtime(uid) {
         .subscribe();
 }
 
-supabase.auth.onAuthStateChange((event, session) => {
+wireSupabaseSession((session) => {
     const user = session?.user;
     if (!user) {
         if (profileChannel) supabase.removeChannel(profileChannel);

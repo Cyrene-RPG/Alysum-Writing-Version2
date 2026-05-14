@@ -384,6 +384,7 @@
 
     <script type="module">
         import { supabase } from "./firebase.js";
+        import { wireSupabaseSession } from "./js/supabase-session.js?v=1";
         import { permanentHandleFromUserData } from "./js/profile-display.js?v=1";
         import { GRADIENT_THEMES, applyGradientTheme, getStoredGradientThemeId } from "./js/gradient-theme.js?v=2";
         import { normalizeAccountType, ACCOUNT_AUTHOR, ACCOUNT_READER, ACCOUNT_BOTH, homeUrlForUserData } from "./js/account-mode.js?v=1";
@@ -463,7 +464,7 @@
             return s;
         }
 
-        supabase.auth.onAuthStateChange(async (_event, session) => {
+        wireSupabaseSession(async (session) => {
             const user = session?.user;
             if (!user) {
                 window.location.href = "/login.html";
