@@ -67,3 +67,6 @@ node_modules/
 
 # dataconnect generated files
 .dataconnect
+
+# Extensionless `index` is treated as binary at `/` on static hosts (download instead of the site). Use index.html only.
+/index
