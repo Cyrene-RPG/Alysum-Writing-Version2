@@ -1,5 +1,4 @@
-<!DOCTYPE html><html>
-<head>
+<!DOCTYPE html><html><head>
     <!-- ALYSUM:PWA:START -->
     <link rel="manifest" href="manifest.webmanifest">
     <meta name="theme-color" content="#7c3aed" media="(prefers-color-scheme: light)">
@@ -14,19 +13,13 @@
     <script src="js/pwa-register.js" defer></script>
     <!-- ALYSUM:PWA:END -->
 <title>Studio - Alysum</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><script>
     try {
         var __g = localStorage.getItem("alysum-gradient-theme");
         if (__g && __g !== "classic") document.documentElement.setAttribute("data-gradient-theme", __g);
     } catch (e) {}
-</script>
-
-<link rel="stylesheet" href="css/site-responsive.css?v=1" />
-<link rel="stylesheet" href="css/gradient-themes.css?v=2" />
-
-<style>
+</script><link rel="stylesheet" href="css/site-responsive.css?v=1" />
+<link rel="stylesheet" href="css/gradient-themes.css?v=2" /><style>
     * { box-sizing: border-box; }
 
     :root {
@@ -728,9 +721,7 @@
             text-overflow: ellipsis;
         }
     }
-</style>
-
-</head><body>
+</style></head><body>
     <div class="header">
         <button class="menu-btn" id="menuBtn" type="button">☰</button>
         <div class="header-center">Alysum Studio</div>
@@ -738,9 +729,7 @@
             <button type="button" class="mode-seg active" data-mode="studio">Studio</button>
             <button type="button" class="mode-seg" data-mode="library">Reading</button>
         </div>
-    </div><div class="menu-overlay hidden" id="menuOverlay"></div>
-
-<div class="side-menu" id="sideMenu">
+    </div><div class="menu-overlay hidden" id="menuOverlay"></div><div class="side-menu" id="sideMenu">
     <div class="menu-title">Alysum</div>
     <a href="studio.html" class="menu-link">✍️ Studio</a>
     <a href="library.html" class="menu-link">📚 Library</a>
@@ -754,136 +743,131 @@
     <a href="index.html" class="menu-link">🏠 Home</a>
     <a href="badges.html" class="menu-link">🎖️ Badges</a>
     <a href="settings.html" class="menu-link">⚙️ Settings</a>
-</div>
-
-<div class="container">
+</div><div class="container">
     <div class="app-shell">
         <aside class="desktop-sidebar">
             <div class="sidebar-brand">
                 <div class="brand-badge">A</div>
                 <div class="brand-name">Alysum Studio</div>
+            </div><div class="sidebar-group-label">Workspace</div>
+        <a href="studio.html" class="sidebar-item active">✍️ Studio</a>
+        <a href="library.html" class="sidebar-item">📚 Library</a>
+        <a href="writer-resources.html" class="sidebar-item">✏️ Writer resources</a>
+        <a href="author-dashboard.html" class="sidebar-item sidebar-item-with-badge">
+            📊 Author Dashboard
+            <span class="dash-unread-badge hidden" data-dash-unread-badge aria-hidden="true">0</span>
+        </a>
+        <a href="vault.html" class="sidebar-item">📝 Your notes</a>
+        <a href="story-bible.html" class="sidebar-item" id="storyBibleSidebarLink">📖 Story Bible</a>
+        <a href="badges.html" class="sidebar-item">🏆 Achievements</a>
+        <a href="settings.html" class="sidebar-item">⚙️ Settings</a>
+        <a href="Novel_Exporter.html" class="sidebar-item" id="sidebarFormatLink">📃 Novel exporter</a>
+        <a href="index.html" class="sidebar-item">🏠 Home</a>
+
+        <div class="sidebar-group-label">Quick Access</div>
+        <div class="sidebar-item" id="sidebarContinueBtn">📖 Continue Writing</div>
+        <div class="sidebar-item" id="sidebarNewBookBtn">➕ New Book</div>
+    </aside>
+
+    <main class="main-col">
+        <section class="panel hero-panel">
+            <div class="hero-top">
+                <div class="welcome-copy">
+                    <h2 id="status">Loading...</h2>
+                    <div class="username" id="profileDisplayName"></div>
+                    <div class="user-handle-meta" id="profileHandleLine"></div>
+                    <div class="welcome-sub">
+                        Keep going. You’re building something real, and your progress is waiting for you.
+                    </div>
+                </div>
+
+                <div class="hero-right-stack">
+                    <div class="current-project-card">
+                        <div class="project-label">Current Project</div>
+                        <div class="project-title" id="currentProjectTitle">No book yet</div>
+                        <div class="project-meta" id="currentProjectMeta">Create your first book to begin.</div>
+                    </div>
+                </div>
             </div>
 
-            <div class="sidebar-group-label">Workspace</div>
-            <a href="studio.html" class="sidebar-item active">✍️ Studio</a>
-            <a href="library.html" class="sidebar-item">📚 Library</a>
-            <a href="writer-resources.html" class="sidebar-item">✏️ Writer resources</a>
-            <a href="author-dashboard.html" class="sidebar-item sidebar-item-with-badge">
-                📊 Author Dashboard
-                <span class="dash-unread-badge hidden" data-dash-unread-badge aria-hidden="true">0</span>
-            </a>
-            <a href="vault.html" class="sidebar-item">📝 Your notes</a>
-            <a href="story-bible.html" class="sidebar-item" id="storyBibleSidebarLink">📖 Story Bible</a>
-            <a href="badges.html" class="sidebar-item">🏆 Achievements</a>
-            <a href="settings.html" class="sidebar-item">⚙️ Settings</a>
-            <a href="Novel_Exporter.html" class="sidebar-item" id="sidebarFormatLink">📃 Novel exporter</a>
-            <a href="index.html" class="sidebar-item">🏠 Home</a>
+            <div class="stats">
+                <div class="stat"><h3 id="words">0</h3><p>Total Words</p></div>
+                <div class="stat"><h3 id="books">0</h3><p>Books</p></div>
+                <div class="stat"><h3 id="streak">0</h3><p>Streak 🔥</p></div>
+                <div class="stat"><h3 id="today">0</h3><p>Today</p></div>
+            </div>
 
-            <div class="sidebar-group-label">Quick Access</div>
-            <div class="sidebar-item" id="sidebarContinueBtn">📖 Continue Writing</div>
-            <div class="sidebar-item" id="sidebarNewBookBtn">➕ New Book</div>
-        </aside>
+            <div class="action-row">
+                <div class="action-tile" id="continueBtn">Continue Writing</div>
+                <div class="action-tile" id="newBookTile">New Book</div>
+                <div class="action-tile" id="openLibraryTile">Open Library</div>
+                <div class="action-tile action-tile-with-badge" id="openDashboardTile">
+                    Author Dashboard
+                    <span class="dash-unread-badge hidden" data-dash-unread-badge aria-hidden="true">0</span>
+                </div>
+                <div class="action-tile" id="openBadgesTile">View Badges</div>
+            </div>
+        </section>
 
-        <main class="main-col">
-            <section class="panel hero-panel">
-                <div class="hero-top">
-                    <div class="welcome-copy">
-                        <h2 id="status">Loading...</h2>
-                        <div class="username" id="profileDisplayName"></div>
-                        <div class="user-handle-meta" id="profileHandleLine"></div>
-                        <div class="welcome-sub">
-                            Keep going. You’re building something real, and your progress is waiting for you.
-                        </div>
+        <section class="panel books-panel">
+            <div class="section-head">
+                <div class="section-head-left">
+                    <h2>Your Books</h2>
+                    <p>Write, revise, and keep building.</p>
+                </div>
+                <div class="books-count-pill"><span id="booksCountPill">0 books</span></div>
+            </div>
+
+            <div class="books" id="bookList"></div>
+            <button class="add-btn" id="createBook" type="button">+ Create Book</button>
+        </section>
+    </main>
+
+    <aside class="right-rail">
+        <section class="panel rail-card" id="promptsCard">
+            <h3>Weekly prompts</h3>
+            <div class="rail-sub">Weekly writing prompt + daily character & worldbuilding questions.</div>
+            <div class="prompt-slide" id="promptSlide" role="button" tabindex="0" aria-label="Open prompt notebook">
+                <div class="prompt-kicker" id="promptKicker">Loading…</div>
+                <div class="prompt-text" id="promptText">Loading…</div>
+            </div>
+            <div class="prompt-dots" aria-label="Prompt slideshow">
+                <div class="prompt-dot" id="promptDot0" aria-hidden="true"></div>
+                <div class="prompt-dot" id="promptDot1" aria-hidden="true"></div>
+                <div class="prompt-dot" id="promptDot2" aria-hidden="true"></div>
+            </div>
+        </section>
+
+        <section class="panel rail-card goal-panel-click" id="dailyGoalPanel" role="button" tabindex="0" aria-label="Open daily word goal settings">
+            <h3>Daily Goal</h3>
+            <div class="rail-sub">Tap to set your target. Words you add in the editor count toward today.</div>
+            <div class="goal-top">
+                <span id="goalCurrentText">0 written</span>
+                <span id="goalTargetText">2000 goal</span>
+            </div>
+            <div class="progress"><div class="progress-bar" id="goalBar"></div></div>
+            <div class="goal-note" id="goalNote">You’re just getting started.</div>
+            <div class="goal-streak-row" id="goalStreakRow"></div>
+        </section>
+
+        <section class="panel rail-card">
+            <h3>Next Badge</h3>
+            <div class="rail-sub">Your next writing milestone</div>
+            <div class="badge-box">
+                <div class="badge-row">
+                    <div class="badge-icon">🏆</div>
+                    <div>
+                        <div class="badge-name" id="badgeName">10K Words</div>
+                        <div class="badge-sub" id="badgeProgressText">0 / 10,000</div>
                     </div>
-
-                    <div class="hero-right-stack">
-                        <div class="current-project-card">
-                            <div class="project-label">Current Project</div>
-                            <div class="project-title" id="currentProjectTitle">No book yet</div>
-                            <div class="project-meta" id="currentProjectMeta">Create your first book to begin.</div>
-                        </div>
-                    </div>
                 </div>
-
-                <div class="stats">
-                    <div class="stat"><h3 id="words">0</h3><p>Total Words</p></div>
-                    <div class="stat"><h3 id="books">0</h3><p>Books</p></div>
-                    <div class="stat"><h3 id="streak">0</h3><p>Streak 🔥</p></div>
-                    <div class="stat"><h3 id="today">0</h3><p>Today</p></div>
-                </div>
-
-                <div class="action-row">
-                    <div class="action-tile" id="continueBtn">Continue Writing</div>
-                    <div class="action-tile" id="newBookTile">New Book</div>
-                    <div class="action-tile" id="openLibraryTile">Open Library</div>
-                    <div class="action-tile action-tile-with-badge" id="openDashboardTile">
-                        Author Dashboard
-                        <span class="dash-unread-badge hidden" data-dash-unread-badge aria-hidden="true">0</span>
-                    </div>
-                    <div class="action-tile" id="openBadgesTile">View Badges</div>
-                </div>
-            </section>
-
-            <section class="panel books-panel">
-                <div class="section-head">
-                    <div class="section-head-left">
-                        <h2>Your Books</h2>
-                        <p>Write, revise, and keep building.</p>
-                    </div>
-                    <div class="books-count-pill"><span id="booksCountPill">0 books</span></div>
-                </div>
-
-                <div class="books" id="bookList"></div>
-                <button class="add-btn" id="createBook" type="button">+ Create Book</button>
-            </section>
-        </main>
-
-        <aside class="right-rail">
-            <section class="panel rail-card" id="promptsCard">
-                <h3>Weekly prompts</h3>
-                <div class="rail-sub">Weekly writing prompt + daily character & worldbuilding questions.</div>
-                <div class="prompt-slide" id="promptSlide" role="button" tabindex="0" aria-label="Open prompt notebook">
-                    <div class="prompt-kicker" id="promptKicker">Loading…</div>
-                    <div class="prompt-text" id="promptText">Loading…</div>
-                </div>
-                <div class="prompt-dots" aria-label="Prompt slideshow">
-                    <div class="prompt-dot" id="promptDot0" aria-hidden="true"></div>
-                    <div class="prompt-dot" id="promptDot1" aria-hidden="true"></div>
-                    <div class="prompt-dot" id="promptDot2" aria-hidden="true"></div>
-                </div>
-            </section>
-
-            <section class="panel rail-card goal-panel-click" id="dailyGoalPanel" role="button" tabindex="0" aria-label="Open daily word goal settings">
-                <h3>Daily Goal</h3>
-                <div class="rail-sub">Tap to set your target. Words you add in the editor count toward today.</div>
-                <div class="goal-top">
-                    <span id="goalCurrentText">0 written</span>
-                    <span id="goalTargetText">2000 goal</span>
-                </div>
-                <div class="progress"><div class="progress-bar" id="goalBar"></div></div>
-                <div class="goal-note" id="goalNote">You’re just getting started.</div>
-                <div class="goal-streak-row" id="goalStreakRow"></div>
-            </section>
-
-            <section class="panel rail-card">
-                <h3>Next Badge</h3>
-                <div class="rail-sub">Your next writing milestone</div>
-                <div class="badge-box">
-                    <div class="badge-row">
-                        <div class="badge-icon">🏆</div>
-                        <div>
-                            <div class="badge-name" id="badgeName">10K Words</div>
-                            <div class="badge-sub" id="badgeProgressText">0 / 10,000</div>
-                        </div>
-                    </div>
-                    <div class="progress" style="margin-top: 12px;"><div class="progress-bar" id="badgeBar"></div></div>
-                </div>
-            </section>
-        </aside>
-    </div>
+                <div class="progress" style="margin-top: 12px;"><div class="progress-bar" id="badgeBar"></div></div>
+            </div>
+        </section>
+    </aside>
 </div>
 
-<div class="goal-modal-overlay hidden" id="goalModalOverlay" aria-hidden="true">
+</div><div class="goal-modal-overlay hidden" id="goalModalOverlay" aria-hidden="true">
     <div class="goal-modal" id="goalModalCard" role="dialog" aria-modal="true" aria-labelledby="goalModalTitle">
         <div class="goal-modal-head">
             <h2 class="goal-modal-title" id="goalModalTitle">Set daily word count goal</h2>
@@ -900,9 +884,7 @@
             <button type="button" class="goal-save-btn" id="goalCustomSave">Save custom</button>
         </div>
     </div>
-</div>
-
-<script type="module">
+</div><script type="module">
     import { supabase } from "./firebase.js";
     import { WEEKLY_PROMPTS_52, DAILY_CHARACTER_Q, DAILY_WORLDBUILD_Q } from "./js/prompts-data.js?v=1";
     import {
@@ -989,7 +971,9 @@
             displayName: row.display_name ?? row.displayName,
             accountType: row.account_type ?? row.accountType,
             dailyWordGoal: row.daily_word_goal ?? row.dailyWordGoal,
-            writingDayTotals: row.writing_day_totals ?? row.writingDayTotals ?? {}
+            writingDayTotals: row.writing_day_totals ?? row.writingDayTotals ?? {},
+            lastLogin: row.last_login ?? row.lastLogin ?? "",
+            streak: Number(row.streak || 0)
         };
     }
 
@@ -1000,6 +984,7 @@
             else if (key === "accountType") out.account_type = value;
             else if (key === "dailyWordGoal") out.daily_word_goal = value;
             else if (key === "writingDayTotals") out.writing_day_totals = value;
+            else if (key === "lastLogin") out.last_login = value;
             else out[key] = value;
         }
         return out;
@@ -1076,13 +1061,13 @@
     }
 
     function todayKey() {
-        return new Date().toISOString().split("T")[0];
+        return localDayKey();
     }
 
     function daysBetween(dateA, dateB) {
         const a = new Date(dateA + "T00:00:00");
         const b = new Date(dateB + "T00:00:00");
-        return Math.floor((b - a) / (1000 * 60 * 60 * 24));
+        return Math.round((b - a) / (1000 * 60 * 60 * 24));
     }
 
     async function updateUserProfile(patch) {
@@ -1098,19 +1083,23 @@
 
     async function ensureUserStreak(data) {
         const today = todayKey();
-        const lastLogin = typeof data.lastLogin === "string" ? data.lastLogin : (typeof data.last_login === "string" ? data.last_login : "");
-        const currentStreak = Number.isFinite(data.streak) ? data.streak : 0;
+        const lastLogin = typeof data.lastLogin === "string" ? data.lastLogin : "";
+        const currentStreak = Number.isFinite(Number(data.streak)) ? Number(data.streak) : 0;
 
         if (!lastLogin) {
-            await updateUserProfile({ lastLogin: today, streak: 1 });
-            return 1;
+            const restoredStreak = Math.max(currentStreak, 1);
+            await updateUserProfile({ lastLogin: today, streak: restoredStreak });
+            return restoredStreak;
         }
 
         const diff = daysBetween(lastLogin, today);
-        if (diff <= 0) return currentStreak || 1;
+
+        if (diff <= 0) {
+            return Math.max(currentStreak, 1);
+        }
 
         if (diff === 1) {
-            const nextStreak = currentStreak + 1;
+            const nextStreak = Math.max(currentStreak, 0) + 1;
             await updateUserProfile({ lastLogin: today, streak: nextStreak });
             return nextStreak;
         }
@@ -1646,7 +1635,5 @@
     });
 
     loadProfileAndStudio();
-</script>
-
-</body>
+</script></body>
 </html>
