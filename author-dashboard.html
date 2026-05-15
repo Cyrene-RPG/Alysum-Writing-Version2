@@ -12,26 +12,26 @@
     <link rel="apple-touch-icon" href="Alysum-3.png">
     <link rel="apple-touch-icon" sizes="180x180" href="Alysum-3.png">
     <script src="js/pwa-register.js" defer></script>
-<<<<<<< HEAD
-    <!-- ALYSUM:PWA:END -->
-    <!-- ALYSUM:ANALYTICS:START -->
-    <script type="module" src="js/vercel-analytics.js"></script>
-    <!-- ALYSUM:ANALYTICS:END -->
+    <!-- ALYSUM:PWA:END --><!-- ALYSUM:ANALYTICS:START -->
+<script type="module" src="js/vercel-analytics.js"></script>
+<!-- ALYSUM:ANALYTICS:END -->
 
-=======
-    <!-- ALYSUM:PWA:END --><meta charset="UTF-8" />
+<meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Author Dashboard - Alysum</title>
+
 <script>
     try {
         var __g = localStorage.getItem("alysum-gradient-theme");
         if (__g && __g !== "classic") document.documentElement.setAttribute("data-gradient-theme", __g);
     } catch (e) {}
 </script>
+
 <link rel="stylesheet" href="css/site-responsive.css?v=1" />
+<link rel="stylesheet" href="css/gradient-themes.css?v=2" />
+
 <style>
     * { box-sizing: border-box; }
->>>>>>> b076adf (Dashboard fixes)
 
     :root {
         --bg: #0b1220;
@@ -48,6 +48,9 @@
         --green: #22c55e;
         --border: rgba(255,255,255,0.09);
         --shadow: 0 18px 44px rgba(0,0,0,0.35);
+        --theme-body-spot: rgba(124,58,237,0.28);
+        --theme-brand-kicker: #a7f3d0;
+        --theme-hero-bg: linear-gradient(135deg, rgba(91,33,182,0.35), rgba(14,165,233,0.20));
     }
 
     html, body {
@@ -55,13 +58,12 @@
         min-height: 100%;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         background:
-            radial-gradient(circle at top center, var(--theme-body-spot) 0%, transparent 28%),
+            radial-gradient(circle at top center, var(--theme-body-spot, rgba(124,58,237,0.28)) 0%, transparent 28%),
             linear-gradient(180deg, #0d1426 0%, #0b1220 100%);
         color: var(--text);
     }
 
     body { overflow-x: hidden; }
-
     a { color: inherit; }
 
     .topbar {
@@ -87,7 +89,7 @@
     .brand-kicker {
         font-size: 12px;
         font-weight: 900;
-        color: var(--theme-brand-kicker);
+        color: var(--theme-brand-kicker, #a7f3d0);
         text-transform: uppercase;
         letter-spacing: 0.08em;
     }
@@ -140,8 +142,8 @@
         align-items: end;
         padding: 22px;
         border-radius: 26px;
-        border: 1px solid color-mix(in srgb, var(--pink) 18%, transparent);
-        background: var(--theme-hero-bg);
+        border: 1px solid rgba(236,72,153,0.18);
+        background: var(--theme-hero-bg, linear-gradient(135deg, rgba(91,33,182,0.35), rgba(14,165,233,0.20)));
         box-shadow: var(--shadow);
     }
 
@@ -186,9 +188,7 @@
         box-shadow: var(--shadow);
     }
 
-    .summary-card {
-        padding: 18px;
-    }
+    .summary-card { padding: 18px; }
 
     .summary-value {
         font-size: 30px;
@@ -232,10 +232,7 @@
         line-height: 1.5;
     }
 
-    .book-grid {
-        display: grid;
-        gap: 14px;
-    }
+    .book-grid { display: grid; gap: 14px; }
 
     .book-card {
         border: 1px solid var(--border);
@@ -285,6 +282,7 @@
         font-weight: 800;
         font-size: 13px;
         text-decoration: none;
+        cursor: pointer;
     }
 
     .book-stats {
@@ -331,7 +329,7 @@
     }
 
     .comment-meta {
-        color: var(--theme-brand-kicker);
+        color: var(--theme-brand-kicker, #a7f3d0);
         font-size: 12px;
         font-weight: 900;
         margin-bottom: 4px;
@@ -371,10 +369,7 @@
         background: rgba(255,255,255,0.035);
     }
 
-    .notif-list {
-        display: grid;
-        gap: 12px;
-    }
+    .notif-list { display: grid; gap: 12px; }
 
     .notif-card {
         border-radius: 18px;
@@ -386,7 +381,7 @@
 
     .notif-card.unread {
         border-left: 4px solid var(--pink);
-        box-shadow: 0 0 0 1px color-mix(in srgb, var(--pink) 22%, transparent);
+        box-shadow: 0 0 0 1px rgba(236,72,153,0.22);
     }
 
     .notif-top {
@@ -403,7 +398,7 @@
         font-weight: 900;
         text-transform: uppercase;
         letter-spacing: 0.08em;
-        color: var(--theme-brand-kicker);
+        color: var(--theme-brand-kicker, #a7f3d0);
     }
 
     .notif-title {
@@ -450,22 +445,13 @@
 
     @media (max-width: 860px) {
         .hero,
-        .book-top {
-            grid-template-columns: 1fr;
-        }
+        .book-top { grid-template-columns: 1fr; }
 
         .summary-grid,
-        .book-stats {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
+        .book-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
-        .book-actions {
-            justify-content: stretch;
-        }
-
-        .book-actions > * {
-            flex: 1 1 auto;
-        }
+        .book-actions { justify-content: stretch; }
+        .book-actions > * { flex: 1 1 auto; }
     }
 
     @media (max-width: 520px) {
@@ -478,18 +464,12 @@
         .top-actions,
         .top-actions > *,
         .summary-grid,
-        .book-stats {
-            width: 100%;
-        }
+        .book-stats { width: 100%; }
 
         .summary-grid,
-        .book-stats {
-            grid-template-columns: 1fr;
-        }
+        .book-stats { grid-template-columns: 1fr; }
 
-        .shell {
-            padding: 14px 12px 42px;
-        }
+        .shell { padding: 14px 12px 42px; }
 
         .hero,
         .panel,
@@ -499,7 +479,6 @@
         }
     }
 </style>
-<link rel="stylesheet" href="css/gradient-themes.css?v=2" />
 
 </head>
 <body>
@@ -544,10 +523,7 @@
         <div class="panel-head">
             <div>
                 <h2>Notifications</h2>
-                <p>
-                    When beta readers share a saved note from their library, it appears here. Mark items read when
-                    you have seen them.
-                </p>
+                <p>When beta readers share a saved note from their library, it appears here. Mark items read when you have seen them.</p>
             </div>
             <button class="btn" type="button" id="markAllNotifsRead" disabled>Mark all read</button>
         </div>
@@ -593,6 +569,11 @@
 
     let currentUser = null;
     let notifChannel = null;
+    let libraryChannel = null;
+    let readsChannel = null;
+    let likesChannel = null;
+    let commentsChannel = null;
+    let refreshTimer = null;
 
     function safeObject(value, fallback = {}) {
         return value && typeof value === "object" && !Array.isArray(value) ? value : fallback;
@@ -638,6 +619,26 @@
         bookGrid.classList.toggle("hidden", state !== "grid");
     }
 
+    function escapeHtml(str) {
+        return safeString(str)
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;")
+            .replaceAll("'", "&#039;");
+    }
+
+    function truncateText(text, maxLen) {
+        const s = safeString(text, "");
+        if (s.length <= maxLen) return s;
+        return `${s.slice(0, maxLen - 1)}…`;
+    }
+
+    function libraryRowData(row) {
+        const data = safeObject(row?.data, {});
+        return Object.keys(data).length ? data : safeObject(row, {});
+    }
+
     function normalizeBook(id, raw) {
         const data = raw && typeof raw === "object" ? raw : {};
         const chapters = safeArray(data.chapters);
@@ -655,9 +656,9 @@
         };
     }
 
-    function libraryRowData(row) {
-        const data = safeObject(row?.data, {});
-        return Object.keys(data).length ? data : safeObject(row, {});
+    function pickOwnerId(row, merged) {
+        return row.user_id || row.userId || row.author_id || row.authorId || row.owner_id || row.ownerId ||
+            merged.user_id || merged.userId || merged.author_id || merged.authorId || merged.owner_id || merged.ownerId || "";
     }
 
     function engagementBookIds(row, merged) {
@@ -675,42 +676,7 @@
         return [...ids];
     }
 
-    async function getSubcollectionCount(bookIds, subcollection) {
-        let table = null;
-        if (subcollection === "likes") table = "likes";
-        else if (subcollection === "comments") table = "comments";
-        else if (subcollection === "reads") table = "reads";
-        if (!table) return 0;
-
-        const ids = [...new Set((Array.isArray(bookIds) ? bookIds : [bookIds])
-            .filter(Boolean)
-            .map((x) => String(x).trim()))]
-            .filter(Boolean);
-
-        if (!ids.length) return 0;
-
-        const seen = new Set();
-
-        for (const bid of ids) {
-            const { data, error } = await supabase
-                .from(table)
-                .select("id")
-                .eq("book_id", bid);
-
-            if (error) {
-                console.warn(`${table} count failed for ${bid}`, error);
-                continue;
-            }
-
-            for (const row of data || []) {
-                if (row?.id) seen.add(String(row.id));
-            }
-        }
-
-        return seen.size;
-    }
-
-    async function getRecentComments(bookIds) {
+    async function queryRowsByBookIds(table, bookIds, columns = "id") {
         const ids = [...new Set((Array.isArray(bookIds) ? bookIds : [bookIds])
             .filter(Boolean)
             .map((x) => String(x).trim()))]
@@ -718,46 +684,49 @@
 
         if (!ids.length) return [];
 
-        const byCommentId = new Map();
+        const byId = new Map();
 
         for (const bid of ids) {
-            let { data, error } = await supabase
-                .from("comments")
-                .select("id, text, display_name, username, created_at")
-                .eq("book_id", bid)
-                .order("created_at", { ascending: false });
+            const { data, error } = await supabase
+                .from(table)
+                .select(columns)
+                .eq("book_id", bid);
 
             if (error) {
-                const retry = await supabase
-                    .from("comments")
-                    .select("id, text, display_name, username, created_at")
-                    .eq("book_id", bid);
-                data = retry.data;
-                error = retry.error;
-            }
-
-            if (error) {
-                console.warn("comments failed for", bid, error);
+                console.warn(`${table} query failed for ${bid}`, error);
                 continue;
             }
 
             for (const row of data || []) {
-                if (row?.id) byCommentId.set(String(row.id), row);
+                const key = row?.id ? String(row.id) : `${table}:${bid}:${JSON.stringify(row)}`;
+                byId.set(key, row);
             }
         }
 
-        const rows = [...byCommentId.values()].sort((a, b) => {
-            const ta = typeof a.created_at === "number" ? a.created_at : Date.parse(String(a.created_at || "")) || 0;
-            const tb = typeof b.created_at === "number" ? b.created_at : Date.parse(String(b.created_at || "")) || 0;
-            return tb - ta;
-        });
+        return [...byId.values()];
+    }
 
-        return rows.slice(0, 3).map(row => ({
-            id: row.id,
-            displayLabel: safeString(row.display_name || row.username || "", "reader"),
-            text: safeString(row.text, ""),
-            createdAt: row.created_at || 0
-        }));
+    async function getSubcollectionCount(bookIds, table) {
+        if (!["reads", "likes", "comments"].includes(table)) return 0;
+        const rows = await queryRowsByBookIds(table, bookIds, "id");
+        return rows.length;
+    }
+
+    async function getRecentComments(bookIds) {
+        const rows = await queryRowsByBookIds("comments", bookIds, "id, text, display_name, username, created_at");
+        return rows
+            .sort((a, b) => {
+                const ta = typeof a.created_at === "number" ? a.created_at : Date.parse(String(a.created_at || "")) || 0;
+                const tb = typeof b.created_at === "number" ? b.created_at : Date.parse(String(b.created_at || "")) || 0;
+                return tb - ta;
+            })
+            .slice(0, 3)
+            .map(row => ({
+                id: row.id,
+                displayLabel: safeString(row.display_name || row.username || "", "reader"),
+                text: safeString(row.text, ""),
+                createdAt: row.created_at || 0
+            }));
     }
 
     async function loadPublishedBooks(uid) {
@@ -770,26 +739,10 @@
         return (rows || [])
             .map(row => {
                 const merged = libraryRowData(row);
-
-                const ownerId =
-                    row.user_id ||
-                    row.userId ||
-                    row.author_id ||
-                    row.authorId ||
-                    row.owner_id ||
-                    row.ownerId ||
-                    merged.user_id ||
-                    merged.userId ||
-                    merged.author_id ||
-                    merged.authorId ||
-                    merged.owner_id ||
-                    merged.ownerId;
-
                 const book = normalizeBook(row.id, merged);
-
                 return {
                     ...book,
-                    ownerId,
+                    ownerId: pickOwnerId(row, merged),
                     engagementBookIds: engagementBookIds(row, merged)
                 };
             })
@@ -817,7 +770,10 @@
             return;
         }
 
-        books.sort((a, b) => (safeNumber(b.views) + safeNumber(b.kudos) * 3 + safeNumber(b.comments) * 2) - (safeNumber(a.views) + safeNumber(a.kudos) * 3 + safeNumber(a.comments) * 2));
+        books.sort((a, b) =>
+            (safeNumber(b.views) + safeNumber(b.kudos) * 3 + safeNumber(b.comments) * 2) -
+            (safeNumber(a.views) + safeNumber(a.kudos) * 3 + safeNumber(a.comments) * 2)
+        );
 
         books.forEach(book => {
             const card = document.createElement("article");
@@ -829,7 +785,7 @@
                         <div class="comment-meta">${escapeHtml(comment.displayLabel)} — ${escapeHtml(formatDate(comment.createdAt))}</div>
                         <div class="comment-text">${escapeHtml(comment.text || "(empty comment)")}</div>
                         <div class="comment-row-actions">
-                            <button type="button" class="mini-btn danger-outline" data-remove-comment-book="${escapeHtml(book.id)}" data-remove-comment-id="${escapeHtml(comment.id)}">Remove comment</button>
+                            <button type="button" class="mini-btn danger-outline" data-remove-comment-id="${escapeHtml(comment.id)}">Remove comment</button>
                         </div>
                     </div>
                 `).join("")
@@ -862,21 +818,6 @@
         showState("grid");
     }
 
-    function escapeHtml(str) {
-        return safeString(str)
-            .replaceAll("&", "&amp;")
-            .replaceAll("<", "&lt;")
-            .replaceAll(">", "&gt;")
-            .replaceAll('"', "&quot;")
-            .replaceAll("'", "&#039;");
-    }
-
-    function truncateText(text, maxLen) {
-        const s = safeString(text, "");
-        if (s.length <= maxLen) return s;
-        return `${s.slice(0, maxLen - 1)}…`;
-    }
-
     function notifPayload(row) {
         const nested = row?.data && typeof row.data === "object" ? row.data : {};
         return { ...nested, id: row.id, read: row.read === true, createdAt: row.created_at || nested.createdAt };
@@ -895,21 +836,7 @@
             return;
         }
 
-        const rows = (data || []).map(notifPayload);
-        renderNotifications(rows);
-    }
-
-    function startNotificationInbox(uid) {
-        if (notifChannel) supabase.removeChannel(notifChannel);
-        notifChannel = supabase
-            .channel("author_dash_notifs_" + uid)
-            .on(
-                "postgres_changes",
-                { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${uid}` },
-                () => loadNotifications(uid).catch(console.error)
-            )
-            .subscribe();
-        loadNotifications(uid).catch(console.error);
+        renderNotifications((data || []).map(notifPayload));
     }
 
     function renderNotifications(rows) {
@@ -938,9 +865,7 @@
                 const quote = escapeHtml(truncateText(data.quote, 320));
                 const comment = escapeHtml(truncateText(data.comment, 900));
                 const bookId = safeString(data.bookId, "");
-                const betaUrl = bookId
-                    ? `beta-read.html?book=${encodeURIComponent(bookId)}`
-                    : "#";
+                const betaUrl = bookId ? `beta-read.html?book=${encodeURIComponent(bookId)}` : "#";
                 return `
                     <article class="notif-card${unread ? " unread" : ""}" role="listitem" data-notif-id="${escapeHtml(data.id)}">
                         <div class="notif-top">
@@ -954,10 +879,9 @@
                         ${comment ? `<div class="notif-comment">${comment}</div>` : ""}
                         <div class="notif-actions">
                             <a class="mini-btn" href="${betaUrl}">Open beta workspace</a>
-                            ${
-                                unread
-                                    ? `<button type="button" class="mini-btn" data-mark-read="${escapeHtml(data.id)}">Mark read</button>`
-                                    : `<span class="mini-btn" style="opacity:0.55;cursor:default;">Read</span>`
+                            ${unread
+                                ? `<button type="button" class="mini-btn" data-mark-read="${escapeHtml(data.id)}">Mark read</button>`
+                                : `<span class="mini-btn" style="opacity:0.55;cursor:default;">Read</span>`
                             }
                         </div>
                     </article>
@@ -966,36 +890,46 @@
             .join("");
     }
 
-    notifList.addEventListener("click", async (ev) => {
-        const btn = ev.target.closest("[data-mark-read]");
-        if (!btn || !currentUser) return;
-        const id = btn.getAttribute("data-mark-read");
-        if (!id) return;
-        try {
-            await supabase
-                .from("notifications")
-                .update({ read: true })
-                .eq("id", id)
-                .eq("user_id", currentUser.id);
-            await loadNotifications(currentUser.id);
-        } catch (e) {
-            console.error(e);
-        }
-    });
-
-    markAllNotifsRead.addEventListener("click", async () => {
+    function scheduleDashboardRefresh() {
         if (!currentUser) return;
-        try {
-            await supabase
-                .from("notifications")
-                .update({ read: true })
-                .eq("user_id", currentUser.id)
-                .eq("read", false);
-            await loadNotifications(currentUser.id);
-        } catch (e) {
-            console.error(e);
-        }
-    });
+        clearTimeout(refreshTimer);
+        refreshTimer = setTimeout(() => loadDashboard().catch(console.error), 350);
+    }
+
+    function startRealtime(uid) {
+        if (notifChannel) supabase.removeChannel(notifChannel);
+        if (libraryChannel) supabase.removeChannel(libraryChannel);
+        if (readsChannel) supabase.removeChannel(readsChannel);
+        if (likesChannel) supabase.removeChannel(likesChannel);
+        if (commentsChannel) supabase.removeChannel(commentsChannel);
+
+        notifChannel = supabase
+            .channel("author_dash_notifs_" + uid)
+            .on("postgres_changes", { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${uid}` }, () => loadNotifications(uid).catch(console.error))
+            .subscribe();
+
+        libraryChannel = supabase
+            .channel("author_dash_library_" + uid)
+            .on("postgres_changes", { event: "*", schema: "public", table: "library" }, scheduleDashboardRefresh)
+            .subscribe();
+
+        readsChannel = supabase
+            .channel("author_dash_reads_" + uid)
+            .on("postgres_changes", { event: "*", schema: "public", table: "reads" }, scheduleDashboardRefresh)
+            .subscribe();
+
+        likesChannel = supabase
+            .channel("author_dash_likes_" + uid)
+            .on("postgres_changes", { event: "*", schema: "public", table: "likes" }, scheduleDashboardRefresh)
+            .subscribe();
+
+        commentsChannel = supabase
+            .channel("author_dash_comments_" + uid)
+            .on("postgres_changes", { event: "*", schema: "public", table: "comments" }, scheduleDashboardRefresh)
+            .subscribe();
+
+        loadNotifications(uid).catch(console.error);
+    }
 
     async function loadDashboard() {
         if (!currentUser) return;
@@ -1010,13 +944,11 @@
 
             if (pErr) throw pErr;
 
-            const label = profile ? publicDisplayNameFromUserData(profile) : "author";
-            authorStatus.textContent = label;
+            authorStatus.textContent = profile ? publicDisplayNameFromUserData(profile) : "author";
 
             const ownedBooks = await loadPublishedBooks(currentUser.id);
             const enriched = await Promise.all(ownedBooks.map(async book => {
                 const ids = book.engagementBookIds || [book.id];
-
                 const [reads, kudos, comments, recentComments] = await Promise.all([
                     getSubcollectionCount(ids, "reads"),
                     getSubcollectionCount(ids, "likes"),
@@ -1040,14 +972,36 @@
         }
     }
 
-    refreshBtn.addEventListener("click", loadDashboard);
+    refreshBtn.addEventListener("click", () => loadDashboard().catch(console.error));
+
+    notifList.addEventListener("click", async (ev) => {
+        const btn = ev.target.closest("[data-mark-read]");
+        if (!btn || !currentUser) return;
+        const id = btn.getAttribute("data-mark-read");
+        if (!id) return;
+        try {
+            await supabase.from("notifications").update({ read: true }).eq("id", id).eq("user_id", currentUser.id);
+            await loadNotifications(currentUser.id);
+        } catch (e) {
+            console.error(e);
+        }
+    });
+
+    markAllNotifsRead.addEventListener("click", async () => {
+        if (!currentUser) return;
+        try {
+            await supabase.from("notifications").update({ read: true }).eq("user_id", currentUser.id).eq("read", false);
+            await loadNotifications(currentUser.id);
+        } catch (e) {
+            console.error(e);
+        }
+    });
 
     bookGrid.addEventListener("click", async (ev) => {
-        const btn = ev.target.closest("[data-remove-comment-book]");
+        const btn = ev.target.closest("[data-remove-comment-id]");
         if (!btn || !currentUser) return;
-        const rmBookId = btn.getAttribute("data-remove-comment-book");
         const rmCommentId = btn.getAttribute("data-remove-comment-id");
-        if (!rmBookId || !rmCommentId) return;
+        if (!rmCommentId) return;
         if (!window.confirm("Remove this comment from your story?")) return;
         try {
             btn.disabled = true;
@@ -1062,7 +1016,6 @@
 
     async function bootAuthorDashboard() {
         const { data, error } = await supabase.auth.getUser();
-
         if (error) console.warn(error);
 
         const user = data?.user;
@@ -1072,7 +1025,7 @@
         }
 
         currentUser = user;
-        startNotificationInbox(user.id);
+        startRealtime(user.id);
         await loadDashboard();
     }
 
@@ -1083,8 +1036,20 @@
         }
     });
 
+    document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible" && currentUser) {
+            loadDashboard().catch(console.error);
+            loadNotifications(currentUser.id).catch(console.error);
+        }
+    });
+
     window.addEventListener("beforeunload", () => {
+        clearTimeout(refreshTimer);
         if (notifChannel) supabase.removeChannel(notifChannel);
+        if (libraryChannel) supabase.removeChannel(libraryChannel);
+        if (readsChannel) supabase.removeChannel(readsChannel);
+        if (likesChannel) supabase.removeChannel(likesChannel);
+        if (commentsChannel) supabase.removeChannel(commentsChannel);
     });
 
     bootAuthorDashboard();
