@@ -2,6 +2,24 @@ import { saveVault, normalizeVaultFromObject, DEFAULT_VAULT_KEY } from "./alysum
 
 /** Supabase: notebook_vault — one row per user (same shape as localStorage JSON). */
 
+function describeVaultLoadError(error) {
+    const code = String(error?.code || "");
+    const msg = String(error?.message || error?.details || "").toLowerCase();
+    if (code === "PGRST205" || code === "42P01" || (msg.includes("schema cache") && msg.includes("notebook_vault"))) {
+        return "Cloud vault unavailable: notebook_vault is missing. Run supabase-sibling-tables.sql in Supabase, then refresh.";
+    }
+    if (
+        code === "42501" ||
+        msg.includes("permission denied") ||
+        msg.includes("row-level security") ||
+        msg.includes("jwt expired") ||
+        msg.includes("invalid jwt")
+    ) {
+        return "Cloud vault unavailable: permission or session issue. Try signing out and back in.";
+    }
+    return `Cloud vault unavailable (${code || "error"}). Using this device only.`;
+}
+
 function packState(state) {
     return {
         v: state.v ?? 2,
@@ -27,13 +45,23 @@ export function createVaultSupabaseDriver(opts) {
     let pushTimer = null;
 
     async function pullOnce() {
+        try {
+            await supabase.auth.getSession();
+        } catch {
+            /* ignore */
+        }
+
         const { data, error } = await supabase
             .from("notebook_vault")
             .select("data")
             .eq("user_id", userId)
             .maybeSingle();
 
-        if (error) throw error;
+        if (error) {
+            console.error("notebook_vault pull:", error);
+            setStatus?.(describeVaultLoadError(error));
+            return;
+        }
 
         if (!data?.data) {
             await supabase.from("notebook_vault").upsert(

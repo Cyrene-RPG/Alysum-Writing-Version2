@@ -816,24 +816,93 @@ function wireBackLink() {
     const a = document.getElementById("neBackLink");
     if (!a) return;
     if (bookId) {
-        a.href = "/editor.html?book=" + encodeURIComponent(bookId);
+        a.href = "editor.html?book=" + encodeURIComponent(bookId);
     } else {
-        a.href = "/studio.html";
+        a.href = "studio.html";
     }
 }
 
-function setPreviewPlaceholder(visible, text) {
+function setPreviewPlaceholder(visible, text, options = {}) {
+    const { hidePicker = true } = options;
     const ph = document.getElementById("nePreviewPlaceholder");
     const sc = document.getElementById("nePreviewScroll");
+    const msg = document.getElementById("nePreviewPlaceholderMsg");
+    const picker = document.getElementById("neBookPickerControls");
     if (!ph || !sc) return;
+    if (picker && hidePicker) picker.hidden = true;
+    if (msg) msg.textContent = text;
+    else ph.textContent = text;
     if (visible) {
         ph.hidden = false;
-        ph.textContent = text;
         sc.hidden = true;
     } else {
         ph.hidden = true;
         sc.hidden = false;
+        if (picker) picker.hidden = true;
     }
+}
+
+let exporterBookPickerBound = false;
+
+function wireExporterBookPickerOnce() {
+    if (exporterBookPickerBound) return;
+    exporterBookPickerBound = true;
+    const go = document.getElementById("neBookPickerGo");
+    if (!go) return;
+    go.addEventListener("click", () => {
+        const sel = document.getElementById("neBookPickerSelect");
+        const id = sel && sel.value;
+        if (!id) return;
+        const u = new URL(window.location.href);
+        u.searchParams.set("book", id);
+        window.location.assign(u.pathname + u.search + u.hash);
+    });
+}
+
+async function mountExporterBookPickerIfNeeded(uid) {
+    if (bookId) return;
+    wireExporterBookPickerOnce();
+    const controls = document.getElementById("neBookPickerControls");
+    const sel = document.getElementById("neBookPickerSelect");
+    const goBtn = document.getElementById("neBookPickerGo");
+    if (!controls || !sel || !goBtn) return;
+
+    controls.hidden = true;
+    goBtn.disabled = true;
+    setPreviewPlaceholder(true, "Loading your books…");
+
+    const { data: rows, error } = await supabase
+        .from("books")
+        .select("id, title, updated")
+        .eq("user_id", uid)
+        .order("updated", { ascending: false });
+
+    if (error) {
+        console.error(error);
+        setPreviewPlaceholder(true, "Could not load your books. If this persists, check Supabase permissions on the “books” table.");
+        return;
+    }
+
+    const list = rows || [];
+    if (!list.length) {
+        setPreviewPlaceholder(
+            true,
+            "You have no manuscripts yet. Create a book in Studio, then open Export from the editor or return here to pick one."
+        );
+        return;
+    }
+
+    sel.innerHTML = "";
+    for (const r of list) {
+        const opt = document.createElement("option");
+        opt.value = r.id;
+        opt.textContent = (r.title && String(r.title).trim()) || "Untitled";
+        sel.appendChild(opt);
+    }
+
+    setPreviewPlaceholder(true, "Choose a book to preview, or use Export in the editor.", { hidePicker: false });
+    controls.hidden = false;
+    goBtn.disabled = false;
 }
 
 let loadedBook = null;
@@ -1039,6 +1108,18 @@ function renderCurrentPreviewPage() {
     if (!sc) return;
 
     if (!loadedBook) {
+        if (!bookId) {
+            const picker = document.getElementById("neBookPickerControls");
+            if (picker && !picker.hidden) {
+                previewPages = [];
+                previewIndex = 0;
+                previewPagesDirty = true;
+                if (nePreviewRebuildTimer) clearTimeout(nePreviewRebuildTimer);
+                nePreviewRebuildTimer = null;
+                updatePagerUi();
+                return;
+            }
+        }
         setPreviewPlaceholder(true, bookId ? "Loading manuscript…" : "Add ?book=… or open Export from the editor to preview a manuscript here.");
         previewPages = [];
         previewIndex = 0;
@@ -1728,8 +1809,10 @@ function init() {
             if (user) {
                 const ad = await fetchAuthorDisplay(user.id);
                 updateExporterUsername(ad);
+                await mountExporterBookPickerIfNeeded(user.id);
             } else {
                 updateExporterUsername("");
+                setPreviewPlaceholder(true, "Sign in to choose a manuscript, or add ?book=… to the URL.");
             }
         });
         loadedBook = null;
@@ -1742,13 +1825,18 @@ function init() {
         return;
     }
 
-    wireSupabaseSession((session) => {
-        const user = session?.user;
+    wireSupabaseSession(async (session) => {
+        let user = session?.user ?? null;
         if (!user) {
-            window.location.href = "/login.html";
+            const { data: gu } = await supabase.auth.getUser();
+            user = gu?.user ?? null;
+        }
+        if (!user) {
+            const next = encodeURIComponent(window.location.pathname + window.location.search);
+            window.location.href = "login.html?next=" + next;
             return;
         }
-        loadBookForPreview(user.id);
+        await loadBookForPreview(user.id);
     });
 }
 

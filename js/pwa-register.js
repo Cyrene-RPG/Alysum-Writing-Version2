@@ -72,7 +72,9 @@
   });
 
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js', { scope: '/' })
+    const swScript = new URL('sw.js', window.location.href);
+    const swScope = new URL('./', swScript).pathname;
+    navigator.serviceWorker.register(swScript.href, { scope: swScope })
       .then((reg) => {
         if (reg.waiting) showUpdateToast(reg);
 

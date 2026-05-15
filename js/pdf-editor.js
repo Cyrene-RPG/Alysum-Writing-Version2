@@ -310,12 +310,12 @@ function escapeCssContent(str) {
 function printFontStylesheetHref() {
   try {
     if (typeof location !== "undefined" && location.origin && location.protocol !== "file:") {
-      return `${location.origin}/css/pdf-print-fontfaces.css`;
+      return new URL("css/pdf-print-fontfaces.css", location.href).href;
     }
   } catch (_) {
     /* ignore */
   }
-  return "/css/pdf-print-fontfaces.css";
+  return new URL("css/pdf-print-fontfaces.css", typeof location !== "undefined" ? location.href : "http://localhost/").href;
 }
 
 /** Fetched once; inlined into the blob/print HTML so Paged.js never XHRs fonts.googleapis.com (CORS). */
@@ -1717,7 +1717,7 @@ function init() {
 
   $("btnBack").addEventListener("click", () => {
     const q = bookId ? `?book=${encodeURIComponent(bookId)}` : "";
-    window.location.href = "/editor.html" + q;
+    window.location.href = "editor.html" + q;
   });
 
   $("btnPrint").addEventListener("click", () => {
@@ -1756,7 +1756,7 @@ function init() {
   wireSupabaseSession((session) => {
     const user = session?.user;
     if (!user) {
-      window.location.href = "/login.html";
+      window.location.href = "login.html";
       return;
     }
     loadBook(user.id);

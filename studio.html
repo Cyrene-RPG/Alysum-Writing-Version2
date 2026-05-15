@@ -1,7 +1,7 @@
 <!DOCTYPE html><html>
 <head>
     <!-- ALYSUM:PWA:START -->
-    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="manifest" href="manifest.webmanifest">
     <meta name="theme-color" content="#7c3aed" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#020b18" media="(prefers-color-scheme: dark)">
     <meta name="color-scheme" content="dark light">
@@ -11,11 +11,11 @@
     <meta name="apple-mobile-web-app-title" content="Alysum">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="msapplication-TileColor" content="#7c3aed">
-    <meta name="msapplication-TileImage" content="/Alysum-3.png">
-    <link rel="icon" type="image/png" sizes="any" href="/Alysum-3.png">
-    <link rel="apple-touch-icon" href="/Alysum-3.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="/Alysum-3.png">
-    <script src="/js/pwa-register.js" defer></script>
+    <meta name="msapplication-TileImage" content="Alysum-3.png">
+    <link rel="icon" type="image/png" sizes="any" href="Alysum-3.png">
+    <link rel="apple-touch-icon" href="Alysum-3.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="Alysum-3.png">
+    <script src="js/pwa-register.js" defer></script>
     <!-- ALYSUM:PWA:END --><title>Studio - Alysum</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -26,8 +26,8 @@
     } catch (e) {}
 </script>
 
-<link rel="stylesheet" href="/css/site-responsive.css?v=1" />
-<link rel="stylesheet" href="/css/gradient-themes.css?v=2" />
+<link rel="stylesheet" href="css/site-responsive.css?v=1" />
+<link rel="stylesheet" href="css/gradient-themes.css?v=2" />
 
 <style>
     * { box-sizing: border-box; }
@@ -745,18 +745,18 @@
 
 <div class="side-menu" id="sideMenu">
     <div class="menu-title">Alysum</div>
-    <a href="/studio.html" class="menu-link">✍️ Studio</a>
-    <a href="/library.html" class="menu-link">📚 Library</a>
-    <a href="/writer-resources.html" class="menu-link">✏️ Writer resources</a>
-    <a href="/author-dashboard.html" class="menu-link menu-link-with-badge">
+    <a href="studio.html" class="menu-link">✍️ Studio</a>
+    <a href="library.html" class="menu-link">📚 Library</a>
+    <a href="writer-resources.html" class="menu-link">✏️ Writer resources</a>
+    <a href="author-dashboard.html" class="menu-link menu-link-with-badge">
         📊 Author Dashboard
         <span class="dash-unread-badge hidden" data-dash-unread-badge aria-hidden="true">0</span>
     </a>
-    <a href="/vault.html" class="menu-link">📝 Your notes</a>
-    <a href="/story-bible.html" class="menu-link" id="storyBibleMenuLink">📖 Story Bible</a>
-    <a href="/index.html" class="menu-link">🏠 Home</a>
-    <a href="/badges.html" class="menu-link">🎖️ Badges</a>
-    <a href="/settings.html" class="menu-link">⚙️ Settings</a>
+    <a href="vault.html" class="menu-link">📝 Your notes</a>
+    <a href="story-bible.html" class="menu-link" id="storyBibleMenuLink">📖 Story Bible</a>
+    <a href="index.html" class="menu-link">🏠 Home</a>
+    <a href="badges.html" class="menu-link">🎖️ Badges</a>
+    <a href="settings.html" class="menu-link">⚙️ Settings</a>
 </div>
 
 <div class="container">
@@ -768,19 +768,19 @@
             </div>
 
             <div class="sidebar-group-label">Workspace</div>
-            <a href="/studio.html" class="sidebar-item active">✍️ Studio</a>
-            <a href="/library.html" class="sidebar-item">📚 Library</a>
-            <a href="/writer-resources.html" class="sidebar-item">✏️ Writer resources</a>
-            <a href="/author-dashboard.html" class="sidebar-item sidebar-item-with-badge">
+            <a href="studio.html" class="sidebar-item active">✍️ Studio</a>
+            <a href="library.html" class="sidebar-item">📚 Library</a>
+            <a href="writer-resources.html" class="sidebar-item">✏️ Writer resources</a>
+            <a href="author-dashboard.html" class="sidebar-item sidebar-item-with-badge">
                 📊 Author Dashboard
                 <span class="dash-unread-badge hidden" data-dash-unread-badge aria-hidden="true">0</span>
             </a>
-            <a href="/vault.html" class="sidebar-item">📝 Your notes</a>
-            <a href="/story-bible.html" class="sidebar-item" id="storyBibleSidebarLink">📖 Story Bible</a>
-            <a href="/badges.html" class="sidebar-item">🏆 Achievements</a>
-            <a href="/settings.html" class="sidebar-item">⚙️ Settings</a>
-            <a href="/Novel_Exporter.html" class="sidebar-item" id="sidebarFormatLink">📃 Novel exporter</a>
-            <a href="/index.html" class="sidebar-item">🏠 Home</a>
+            <a href="vault.html" class="sidebar-item">📝 Your notes</a>
+            <a href="story-bible.html" class="sidebar-item" id="storyBibleSidebarLink">📖 Story Bible</a>
+            <a href="badges.html" class="sidebar-item">🏆 Achievements</a>
+            <a href="settings.html" class="sidebar-item">⚙️ Settings</a>
+            <a href="Novel_Exporter.html" class="sidebar-item" id="sidebarFormatLink">📃 Novel exporter</a>
+            <a href="index.html" class="sidebar-item">🏠 Home</a>
 
             <div class="sidebar-group-label">Quick Access</div>
             <div class="sidebar-item" id="sidebarContinueBtn">📖 Continue Writing</div>
@@ -1369,7 +1369,7 @@
         const weekKey = promptSlide?.dataset?.weekKey || nyWeekKey();
         const dayKey = promptSlide?.dataset?.dayKey || nyDayKey();
         const q = new URLSearchParams({ week: weekKey, day: dayKey, focus: type });
-        window.location.href = "/prompt-notebook.html?" + q.toString();
+        window.location.href = "prompt-notebook.html?" + q.toString();
     }
 
     promptSlide?.addEventListener("click", openPromptNotebook);
@@ -1407,7 +1407,7 @@
             const div = document.createElement("div");
             div.className = "book";
             div.onclick = () => {
-                window.location.href = "/editor.html?book=" + encodeURIComponent(data.id);
+                window.location.href = "editor.html?book=" + encodeURIComponent(data.id);
             };
             div.innerHTML = `<div class="book-title">${escapeHtml(data.title || "Untitled Book")}</div>`;
             bookList.appendChild(div);
@@ -1423,9 +1423,9 @@
 
         const formatLink = document.getElementById("sidebarFormatLink");
         if (formatLink) {
-            formatLink.href = firstBookId
-                ? "/Novel_Exporter.html?book=" + encodeURIComponent(firstBookId)
-                : "/Novel_Exporter.html";
+            const ne = new URL("Novel_Exporter.html", window.location.href);
+            if (firstBookId) ne.searchParams.set("book", firstBookId);
+            formatLink.href = ne.pathname + ne.search;
         }
     }
 
@@ -1523,7 +1523,7 @@
 
     function continueWriting() {
         if (firstBookId) {
-            window.location.href = "/editor.html?book=" + encodeURIComponent(firstBookId);
+            window.location.href = "editor.html?book=" + encodeURIComponent(firstBookId);
         } else {
             createBookNow();
         }
@@ -1532,9 +1532,9 @@
     createBtn.addEventListener("click", createBookNow);
     newBookTile.addEventListener("click", createBookNow);
     continueBtn.addEventListener("click", continueWriting);
-    openLibraryTile.addEventListener("click", () => window.location.href = "/library.html");
-    openDashboardTile.addEventListener("click", () => window.location.href = "/author-dashboard.html");
-    openBadgesTile.addEventListener("click", () => window.location.href = "/badges.html");
+    openLibraryTile.addEventListener("click", () => window.location.href = "library.html");
+    openDashboardTile.addEventListener("click", () => window.location.href = "author-dashboard.html");
+    openBadgesTile.addEventListener("click", () => window.location.href = "badges.html");
     sidebarContinueBtn.addEventListener("click", continueWriting);
     sidebarNewBookBtn.addEventListener("click", createBookNow);
 
@@ -1579,7 +1579,7 @@
         const user = userResult?.user;
         if (!user) {
             status.textContent = "Not logged in";
-            window.location.href = "/login.html";
+            window.location.href = "login.html";
             return;
         }
 
@@ -1610,10 +1610,23 @@
 
             refreshDailyGoalUIFromProfile();
             startPromptSlideshow();
-            await loadBooks();
-            await loadNotifications();
-            startBooksRealtime();
-            startNotificationsRealtime();
+
+            try {
+                await loadBooks();
+                await loadNotifications();
+                startBooksRealtime();
+                startNotificationsRealtime();
+            } catch (sideErr) {
+                console.error(sideErr);
+                status.textContent =
+                    "Profile loaded, but books or notifications could not load. Try refreshing.";
+                bookList.innerHTML = "";
+                booksEl.textContent = "—";
+                booksCountPill.textContent = "—";
+                wordsEl.textContent = "—";
+                currentProjectTitle.textContent = "Could not load books";
+                currentProjectMeta.textContent = sideErr?.message || "Check the browser console for details.";
+            }
         } catch (e) {
             console.error(e);
             status.textContent = "Error loading profile";

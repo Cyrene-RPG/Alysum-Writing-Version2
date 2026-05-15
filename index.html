@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <!-- ALYSUM:PWA:START -->
-    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="manifest" href="manifest.webmanifest">
     <meta name="theme-color" content="#7c3aed" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#020b18" media="(prefers-color-scheme: dark)">
     <meta name="color-scheme" content="dark light">
@@ -12,15 +12,15 @@
     <meta name="apple-mobile-web-app-title" content="Alysum">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="msapplication-TileColor" content="#7c3aed">
-    <meta name="msapplication-TileImage" content="/Alysum-3.png">
-    <link rel="icon" type="image/png" sizes="any" href="/Alysum-3.png">
-    <link rel="apple-touch-icon" href="/Alysum-3.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="/Alysum-3.png">
-    <script src="/js/pwa-register.js" defer></script>
+    <meta name="msapplication-TileImage" content="Alysum-3.png">
+    <link rel="icon" type="image/png" sizes="any" href="Alysum-3.png">
+    <link rel="apple-touch-icon" href="Alysum-3.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="Alysum-3.png">
+    <script src="js/pwa-register.js" defer></script>
     <!-- ALYSUM:PWA:END -->
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
+  <link rel="stylesheet" href="css/site-responsive.css?v=1" />
   <title>Alysum Studio</title>
 
   <style>
@@ -661,7 +661,7 @@
     <section class="hero">
       <div class="hero-inner">
         <div class="hero-topbar">
-          <a href="/login.html" class="login-btn">Log In</a>
+          <a href="login.html" class="login-btn">Log In</a>
         </div>
 
         <div class="logo-card">
@@ -677,8 +677,8 @@
         </div>
 
         <div class="hero-buttons">
-          <a href="/signup.html" class="btn primary">Create Account</a>
-          <a href="/library.html" class="btn secondary">Browse Library</a>
+          <a href="signup.html" class="btn primary">Create Account</a>
+          <a href="library.html" class="btn secondary">Browse Library</a>
         </div>
       </div>
     </section>
@@ -929,7 +929,7 @@
           `${chapterCount} chapters • ${likes} kudos • ${views} reads`;
 
         const openBook = () => {
-          window.location.href = "/read.html?book=" + encodeURIComponent(data.id);
+          window.location.href = "read.html?book=" + encodeURIComponent(data.id);
         };
 
         el.addEventListener("click", openBook);

@@ -1,7 +1,7 @@
 ﻿<!DOCTYPE html><html>
 <head>
     <!-- ALYSUM:PWA:START -->
-    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="manifest" href="manifest.webmanifest">
     <meta name="theme-color" content="#7c3aed" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#020b18" media="(prefers-color-scheme: dark)">
     <meta name="color-scheme" content="dark light">
@@ -11,14 +11,14 @@
     <meta name="apple-mobile-web-app-title" content="Alysum">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="msapplication-TileColor" content="#7c3aed">
-    <meta name="msapplication-TileImage" content="/Alysum-3.png">
-    <link rel="icon" type="image/png" sizes="any" href="/Alysum-3.png">
-    <link rel="apple-touch-icon" href="/Alysum-3.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="/Alysum-3.png">
-    <script src="/js/pwa-register.js" defer></script>
-    <!-- ALYSUM:PWA:END --><link rel="stylesheet" href="/css/notebook.css?v=9" />
-<link rel="stylesheet" href="/css/site-responsive.css?v=1" />
-<link rel="stylesheet" href="/css/gradient-themes.css?v=2" />
+    <meta name="msapplication-TileImage" content="Alysum-3.png">
+    <link rel="icon" type="image/png" sizes="any" href="Alysum-3.png">
+    <link rel="apple-touch-icon" href="Alysum-3.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="Alysum-3.png">
+    <script src="js/pwa-register.js" defer></script>
+    <!-- ALYSUM:PWA:END --><link rel="stylesheet" href="css/notebook.css?v=9" />
+<link rel="stylesheet" href="css/site-responsive.css?v=1" />
+<link rel="stylesheet" href="css/gradient-themes.css?v=2" />
 <title>Alysum Editor</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -241,7 +241,7 @@
             <button class="pill-btn secondary" id="deleteChapterBtn" type="button">Delete Chapter</button>
             <button class="pill-btn secondary" id="themeToggleBtn" type="button">Dark Mode</button>
             <button class="pill-btn secondary" id="publishBtn" type="button">Publish</button>
-            <a class="pill-btn secondary" id="storyBibleLink" href="/story-bible.html">Story Bible</a>
+            <a class="pill-btn secondary" id="storyBibleLink" href="story-bible.html">Story Bible</a>
             <button class="pill-btn danger" id="deleteBookBtn" type="button">Delete Book</button>
         </div>
     </div>
@@ -266,7 +266,7 @@
             <span class="topbar-tip" data-tip="New chapter"><button class="icon-btn purple" id="quickAddBtn" type="button" aria-label="Add chapter">＋</button></span>
             <span class="topbar-tip" data-tip="Publish to web"><button class="icon-btn purple" id="publishTopBtn" type="button" aria-label="Publish">🚀</button></span>
             <span class="topbar-tip" data-tip="Export / print"><button class="icon-btn purple" id="exportBtn" type="button" aria-label="Export">📄</button></span>
-            <span class="topbar-tip" data-tip="Story Bible" id="storyBibleTopLinkWrap"><a class="icon-btn" id="storyBibleTopLink" href="/story-bible.html" aria-label="Story Bible">📖</a></span>
+            <span class="topbar-tip" data-tip="Story Bible" id="storyBibleTopLinkWrap"><a class="icon-btn" id="storyBibleTopLink" href="story-bible.html" aria-label="Story Bible">📖</a></span>
             <span class="topbar-tip" data-tip="Notes"><button class="icon-btn" id="nbBtn" type="button" aria-label="Notes">⌘</button></span>
             <span class="topbar-tip" data-tip="Rename chapter"><button class="icon-btn" id="renameChapterBtn" type="button" aria-label="Rename chapter">⋯</button></span>
             <span class="topbar-tip" data-tip="Light / dark"><button class="icon-btn" id="themeTopBtn" type="button" aria-label="Toggle theme">◐</button></span>
@@ -520,9 +520,9 @@ function rememberBookId(id) {
         const prefOn = isStoryBibleUiEnabled();
         const hasBook = !!bookId;
         const show = prefOn && hasBook;
-        if (storyBibleLink) { storyBibleLink.style.display = show ? "" : "none"; if (hasBook) storyBibleLink.href = `/story-bible.html?book=${encodeURIComponent(bookId)}`; }
+        if (storyBibleLink) { storyBibleLink.style.display = show ? "" : "none"; if (hasBook) storyBibleLink.href = `story-bible.html?book=${encodeURIComponent(bookId)}`; }
         if (storyBibleTopLinkWrap) storyBibleTopLinkWrap.classList.toggle("hidden", !show);
-        if (storyBibleTopLink && hasBook) storyBibleTopLink.href = `/story-bible.html?book=${encodeURIComponent(bookId)}`;
+        if (storyBibleTopLink && hasBook) storyBibleTopLink.href = `story-bible.html?book=${encodeURIComponent(bookId)}`;
     }
     applyEditorStoryBibleLinks();
     window.addEventListener("storage", e => { if (e.key === STORY_BIBLE_PREF_KEY) applyEditorStoryBibleLinks(); });
@@ -538,7 +538,7 @@ function rememberBookId(id) {
     function toggleTheme() { applyTheme(document.body.classList.contains("dark") ? "light" : "dark"); }
     themeToggleBtn.addEventListener("click", toggleTheme);
     themeTopBtn.addEventListener("click", toggleTheme);
-    homeBtn.onclick = () => { window.location.href = "/studio.html"; };
+    homeBtn.onclick = () => { window.location.href = "studio.html"; };
 
     function toggleSidebar() {
         if (window.innerWidth <= 760) {
@@ -661,7 +661,7 @@ function rememberBookId(id) {
         const selectedIds = getSelectedPublishChapterIds();
         if (!selectedIds.length) { alert("Choose at least one chapter."); return; }
         const query = new URLSearchParams({ book: bookId, chapters: selectedIds.join(",") });
-        window.location.href = "/publish.html?" + query.toString();
+        window.location.href = "publish.html?" + query.toString();
     }
     function everyEditorWarningCategoryHasChoice(warnings) { const w = safeObject(warnings, {}); return PUBLISH_WARNING_KEYS.every(key => safeArray(w[key], []).length > 0); }
     function countNonNoneWarningsEditor(warnings) { let total = 0; const w = safeObject(warnings, {}); PUBLISH_WARNING_KEYS.forEach(key => safeArray(w[key], []).forEach(value => { if (value !== "None") total += 1; })); return total; }
@@ -810,7 +810,7 @@ function rememberBookId(id) {
             const { error } = await supabase.from("books").delete()
         .eq("id", bookId);
             if (error) throw error;
-            window.location.href = "/studio.html";
+            window.location.href = "studio.html";
         } catch (e) { console.error(e); setSaveStatus("Delete failed"); }
     }
 
@@ -834,7 +834,15 @@ function rememberBookId(id) {
     publishBypassYes?.addEventListener("click", () => { publishBypassChoiceRow?.classList.add("hidden"); publishQuickWrap?.classList.add("visible"); });
     publishQuickPublishBtn?.addEventListener("click", () => void quickRepublishFromEditor());
     publishModal.addEventListener("click", e => { if (e.target === publishModal) closePublishModal(); });
-    document.getElementById("exportBtn")?.addEventListener("click", () => { if (!bookId) { alert("No book loaded."); return; } window.location.href = `/Novel_Exporter.html?book=${encodeURIComponent(bookId)}`; });
+    document.getElementById("exportBtn")?.addEventListener("click", () => {
+        if (!bookId) {
+            alert("No book loaded.");
+            return;
+        }
+        const u = new URL("Novel_Exporter.html", window.location.href);
+        u.searchParams.set("book", bookId);
+        window.location.assign(u.pathname + u.search);
+    });
     document.getElementById("nbBtn")?.addEventListener("click", () => {
         const p = document.getElementById("nbPanel");
         if (!p) return;
@@ -997,7 +1005,7 @@ async function loadBook() {
     async function init() {
         const { data: authData } = await supabase.auth.getUser();
         const user = authData?.user;
-        if (!user) { window.location.href = "/login.html"; return; }
+        if (!user) { window.location.href = "login.html"; return; }
         currentUser = user;
         applyResponsiveSidebar();
         applyTheme(localStorage.getItem("alysum-theme") || "light");

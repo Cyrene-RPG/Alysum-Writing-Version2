@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <!-- ALYSUM:PWA:START -->
-    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="manifest" href="manifest.webmanifest">
     <meta name="theme-color" content="#7c3aed" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#020b18" media="(prefers-color-scheme: dark)">
     <meta name="color-scheme" content="dark light">
@@ -12,11 +12,11 @@
     <meta name="apple-mobile-web-app-title" content="Alysum">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="msapplication-TileColor" content="#7c3aed">
-    <meta name="msapplication-TileImage" content="/Alysum-3.png">
-    <link rel="icon" type="image/png" sizes="any" href="/Alysum-3.png">
-    <link rel="apple-touch-icon" href="/Alysum-3.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="/Alysum-3.png">
-    <script src="/js/pwa-register.js" defer></script>
+    <meta name="msapplication-TileImage" content="Alysum-3.png">
+    <link rel="icon" type="image/png" sizes="any" href="Alysum-3.png">
+    <link rel="apple-touch-icon" href="Alysum-3.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="Alysum-3.png">
+    <script src="js/pwa-register.js" defer></script>
     <!-- ALYSUM:PWA:END -->
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -27,7 +27,7 @@
             if (__g && __g !== "classic") document.documentElement.setAttribute("data-gradient-theme", __g);
         } catch (e) {}
     </script>
-    <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
+    <link rel="stylesheet" href="css/site-responsive.css?v=1" />
     <style>
         * { box-sizing: border-box; }
         :root {
@@ -245,7 +245,7 @@
             background: rgba(255,255,255,0.07);
         }
     </style>
-    <link rel="stylesheet" href="/css/gradient-themes.css?v=2" />
+    <link rel="stylesheet" href="css/gradient-themes.css?v=2" />
 </head>
 <body>
     <header class="header">
@@ -327,7 +327,7 @@
                 <p class="hint" style="margin-bottom: 12px">
                     Character notes per book. Alysum does <strong>not</strong> read your existing chapters to fill this in — you add entries yourself (optional pattern scan suggests repeating capitalized phrases). It applies to all books, including ones you already wrote.
                 </p>
-                <a href="/story-bible.html" class="btn btn-primary" style="text-decoration: none; margin-top: 0">Open Story Bible</a>
+                <a href="story-bible.html" class="btn btn-primary" style="text-decoration: none; margin-top: 0">Open Story Bible</a>
                 <label
                     style="
                         display: flex;
@@ -410,7 +410,7 @@
         const saveAccountTypeBtn = document.getElementById("saveAccountTypeBtn");
         const accountTypeMsg = document.getElementById("accountTypeMsg");
 
-        let settingsHomeUrl = "/studio.html";
+        let settingsHomeUrl = "studio.html";
 
         function mergeUserRow(row) {
             if (!row || typeof row !== "object") return {};
@@ -467,7 +467,7 @@
         wireSupabaseSession(async (session) => {
             const user = session?.user;
             if (!user) {
-                window.location.href = "/login.html";
+                window.location.href = "login.html";
                 return;
             }
 

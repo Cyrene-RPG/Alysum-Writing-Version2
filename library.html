@@ -1,7 +1,7 @@
 <!DOCTYPE html><html>
 <head>
     <!-- ALYSUM:PWA:START -->
-    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="manifest" href="manifest.webmanifest">
     <meta name="theme-color" content="#7c3aed" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#020b18" media="(prefers-color-scheme: dark)">
     <meta name="color-scheme" content="dark light">
@@ -11,15 +11,15 @@
     <meta name="apple-mobile-web-app-title" content="Alysum">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="msapplication-TileColor" content="#7c3aed">
-    <meta name="msapplication-TileImage" content="/Alysum-3.png">
-    <link rel="icon" type="image/png" sizes="any" href="/Alysum-3.png">
-    <link rel="apple-touch-icon" href="/Alysum-3.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="/Alysum-3.png">
-    <script src="/js/pwa-register.js" defer></script>
+    <meta name="msapplication-TileImage" content="Alysum-3.png">
+    <link rel="icon" type="image/png" sizes="any" href="Alysum-3.png">
+    <link rel="apple-touch-icon" href="Alysum-3.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="Alysum-3.png">
+    <script src="js/pwa-register.js" defer></script>
     <!-- ALYSUM:PWA:END --><title>Alysum Library</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="stylesheet" href="/css/site-responsive.css?v=1" />
-<link rel="stylesheet" href="/css/gradient-themes.css?v=2" />
+<link rel="stylesheet" href="css/site-responsive.css?v=1" />
+<link rel="stylesheet" href="css/gradient-themes.css?v=2" />
 
 <script>
     try {
@@ -110,13 +110,13 @@
                 <div class="subtitle">Discover published stories from Alysum writers.</div>
             </div>
             <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-                <a class="home-link hidden" id="readerHomeLink" href="/reader-home.html">← Reading profile</a>
+                <a class="home-link hidden" id="readerHomeLink" href="reader-home.html">← Reading profile</a>
                 <div id="userStatus" style="font-size:13px; font-weight:900; color:#c4b5fd;"></div>
                 <div class="library-mode-switch hidden" id="libraryModeSwitch" role="group" aria-label="Reading or studio">
                     <button type="button" class="library-mode-seg active" data-mode="library">Reading</button>
                     <button type="button" class="library-mode-seg" data-mode="studio">Studio</button>
                 </div>
-                <a class="home-link" id="libraryBackStudio" href="/studio.html">Back to Studio</a>
+                <a class="home-link" id="libraryBackStudio" href="studio.html">Back to Studio</a>
             </div>
         </div>
         <div class="nav-row">
@@ -198,7 +198,7 @@
             const mode = btn.getAttribute("data-mode");
             if (mode === "studio") {
                 setUiMode("studio");
-                window.location.href = "/studio.html";
+                window.location.href = "studio.html";
             }
         });
     }
@@ -209,7 +209,7 @@
         const user = authData?.user;
         if (!user) {
             currentUser = null;
-            userStatus.innerHTML = `<a href="/login.html" style="color:#c4b5fd; font-weight:900; text-decoration:none;">Log in</a>`;
+            userStatus.innerHTML = `<a href="login.html" style="color:#c4b5fd; font-weight:900; text-decoration:none;">Log in</a>`;
             libraryModeSwitch?.classList.add("hidden");
             libraryBackStudio?.classList.remove("hidden");
             if (libraryBackStudio) libraryBackStudio.textContent = studioLinkDefaultLabel;
@@ -343,11 +343,11 @@
             const topGenres = book.genres.slice(0, 4);
             const topWarnings = book.warnings.filter(w => w.toLowerCase() !== "none").slice(0, 4);
             const topTags = book.tags.slice(0, 4);
-            const coverUrl = book.coverUrl || "/Alysum-3.png";
+            const coverUrl = book.coverUrl || "Alysum-3.png";
             card.innerHTML = `
                 <div class="card-watermark" aria-hidden="true"><span>@${escapeHtml(book.author)}</span></div>
                 <div class="cover-wrap">
-                    <img class="cover-img" src="${escapeAttribute(coverUrl)}" alt="${escapeAttribute(book.title)} cover" loading="lazy" onerror="this.src='/Alysum-3.png';">
+                    <img class="cover-img" src="${escapeAttribute(coverUrl)}" alt="${escapeAttribute(book.title)} cover" loading="lazy" onerror="this.src='Alysum-3.png';">
                 </div>
                 <div class="card-top">
                     <div class="card-title-wrap">
@@ -371,7 +371,7 @@
                     <button class="read-btn" type="button">Read Story</button>
                 </div>
             `;
-            const openBook = () => { window.location.href = "/read.html?book=" + encodeURIComponent(book.id); };
+            const openBook = () => { window.location.href = "read.html?book=" + encodeURIComponent(book.id); };
             card.addEventListener("click", openBook);
             card.querySelector(".read-btn").addEventListener("click", (e) => { e.stopPropagation(); openBook(); });
             bookGrid.appendChild(card);

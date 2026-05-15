@@ -2,7 +2,7 @@
 <html>
 <head>
     <!-- ALYSUM:PWA:START -->
-    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="manifest" href="manifest.webmanifest">
     <meta name="theme-color" content="#7c3aed" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#020b18" media="(prefers-color-scheme: dark)">
     <meta name="color-scheme" content="dark light">
@@ -12,11 +12,11 @@
     <meta name="apple-mobile-web-app-title" content="Alysum">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="msapplication-TileColor" content="#7c3aed">
-    <meta name="msapplication-TileImage" content="/Alysum-3.png">
-    <link rel="icon" type="image/png" sizes="any" href="/Alysum-3.png">
-    <link rel="apple-touch-icon" href="/Alysum-3.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="/Alysum-3.png">
-    <script src="/js/pwa-register.js" defer></script>
+    <meta name="msapplication-TileImage" content="Alysum-3.png">
+    <link rel="icon" type="image/png" sizes="any" href="Alysum-3.png">
+    <link rel="apple-touch-icon" href="Alysum-3.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="Alysum-3.png">
+    <script src="js/pwa-register.js" defer></script>
     <!-- ALYSUM:PWA:END -->
 
     <title>Login - Alysum</title>
@@ -31,7 +31,7 @@
         } catch (e) {}
     </script>
 
-    <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
+    <link rel="stylesheet" href="css/site-responsive.css?v=1" />
 
     <style>
         * { box-sizing: border-box; }
@@ -189,7 +189,7 @@
         }
     </style>
 
-    <link rel="stylesheet" href="/css/gradient-themes.css?v=2" />
+    <link rel="stylesheet" href="css/gradient-themes.css?v=2" />
 </head>
 
 <body>
@@ -216,7 +216,7 @@
     </div>
 
     <div class="signup-link">
-        New here? <a href="/signup.html">Create account</a>
+        New here? <a href="signup.html">Create account</a>
     </div>
 
     <p class="support-footnote" id="support-footnote">
@@ -278,10 +278,34 @@ function authMessage(message) {
     return message;
 }
 
+/** Same-origin navigation only; supports root-relative and same-folder relative ?next= values. */
+function resolveInternalRedirect(next) {
+    if (!next || typeof next !== "string") return null;
+    if (next.startsWith("//")) return null;
+    try {
+        const resolved = new URL(next, window.location.href);
+        if (resolved.origin !== window.location.origin) return null;
+        return resolved.href;
+    } catch {
+        return null;
+    }
+}
+
 async function redirectAfterLogin() {
     const params = new URLSearchParams(window.location.search);
-    const next = params.get("next");
-    const safe = next && next.startsWith("/") && !next.startsWith("//") ? next : null;
+    let next = params.get("next");
+    const oauthReturn =
+        (window.location.hash && window.location.hash.length > 2) ||
+        !!params.get("code");
+    if (!next && oauthReturn) {
+        try {
+            next = sessionStorage.getItem("alysum-login-next");
+            if (next) sessionStorage.removeItem("alysum-login-next");
+        } catch {
+            /* ignore */
+        }
+    }
+    const safe = resolveInternalRedirect(next);
 
     if (safe) {
         window.location.href = safe;
@@ -292,7 +316,7 @@ async function redirectAfterLogin() {
     const user = userData && userData.user;
 
     if (!user) {
-        window.location.href = "/studio.html";
+        window.location.href = "studio.html";
         return;
     }
 
@@ -304,7 +328,7 @@ async function redirectAfterLogin() {
             .single();
 
         if (error || !data) {
-            window.location.href = "/studio.html";
+            window.location.href = "studio.html";
             return;
         }
 
@@ -322,7 +346,7 @@ async function redirectAfterLogin() {
         window.location.href = homeUrlForUserData(firebaseStyleData);
     } catch (e) {
         console.error(e);
-        window.location.href = "/studio.html";
+        window.location.href = "studio.html";
     }
 }
 
@@ -333,10 +357,22 @@ googleBtn.addEventListener("click", async () => {
     googleBtn.disabled = true;
     loginBtn.disabled = true;
 
+    try {
+        const p = new URLSearchParams(window.location.search);
+        const next = p.get("next");
+        if (resolveInternalRedirect(next)) {
+            sessionStorage.setItem("alysum-login-next", next);
+        } else {
+            sessionStorage.removeItem("alysum-login-next");
+        }
+    } catch {
+        /* ignore */
+    }
+
     const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-            redirectTo: `${window.location.origin}/login.html`
+            redirectTo: new URL("login.html", window.location.href).href
         }
     });
 
@@ -375,7 +411,7 @@ forgotLink.addEventListener("click", async (e) => {
 
     try {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: `${window.location.origin}/login.html`
+            redirectTo: new URL("login.html", window.location.href).href
         });
 
         if (error) {

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <!-- ALYSUM:PWA:START -->
-    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="manifest" href="manifest.webmanifest">
     <meta name="theme-color" content="#7c3aed" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#020b18" media="(prefers-color-scheme: dark)">
     <meta name="color-scheme" content="dark light">
@@ -12,11 +12,11 @@
     <meta name="apple-mobile-web-app-title" content="Alysum">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="msapplication-TileColor" content="#7c3aed">
-    <meta name="msapplication-TileImage" content="/Alysum-3.png">
-    <link rel="icon" type="image/png" sizes="any" href="/Alysum-3.png">
-    <link rel="apple-touch-icon" href="/Alysum-3.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="/Alysum-3.png">
-    <script src="/js/pwa-register.js" defer></script>
+    <meta name="msapplication-TileImage" content="Alysum-3.png">
+    <link rel="icon" type="image/png" sizes="any" href="Alysum-3.png">
+    <link rel="apple-touch-icon" href="Alysum-3.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="Alysum-3.png">
+    <script src="js/pwa-register.js" defer></script>
     <!-- ALYSUM:PWA:END -->
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -27,7 +27,7 @@
             if (__g && __g !== "classic") document.documentElement.setAttribute("data-gradient-theme", __g);
         } catch (e) {}
     </script>
-    <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
+    <link rel="stylesheet" href="css/site-responsive.css?v=1" />
     <style>
         * { box-sizing: border-box; }
         :root {
@@ -426,7 +426,7 @@
             }
         }
     </style>
-    <link rel="stylesheet" href="/css/gradient-themes.css?v=2" />
+    <link rel="stylesheet" href="css/gradient-themes.css?v=2" />
 </head>
 <body>
     <div class="cp-wrap">
@@ -440,9 +440,9 @@
                     </p>
                 </div>
                 <nav class="cp-nav" aria-label="Navigate">
-                    <a href="/writer-resources.html">← Resources</a>
-                    <a href="/story-bible.html">Story Bible</a>
-                    <a href="/studio.html">Studio</a>
+                    <a href="writer-resources.html">← Resources</a>
+                    <a href="story-bible.html">Story Bible</a>
+                    <a href="studio.html">Studio</a>
                 </nav>
             </div>
         </header>
@@ -455,7 +455,7 @@
                     <p class="cp-aside-title">Your worksheets</p>
                     <p class="cp-shelf-hint">Menu on the side — tap a name to open it. Syncs while you’re signed in.</p>
                     <div id="cpCloudSignedOut" class="cp-cloud-guest">
-                        <a href="/login.html?next=%2Fcharacter-profile.html">Sign in</a> to save worksheets here and open them on any device.
+                        <a href="login.html?next=%2Fcharacter-profile.html">Sign in</a> to save worksheets here and open them on any device.
                     </div>
                     <div id="cpCloudShell" class="hidden">
                         <div class="cp-shelf-actions">
@@ -629,9 +629,9 @@
                         </div>
                     </div>
                     <p class="cp-hint hidden" id="cpGuestHint">
-                        <a href="/login.html?next=%2Fcharacter-profile.html">Sign in</a> to save this sheet as a new character in one of your books.
+                        <a href="login.html?next=%2Fcharacter-profile.html">Sign in</a> to save this sheet as a new character in one of your books.
                     </p>
-                    <p class="cp-hint hidden" id="cpNoBooksHint">You do not have any books yet. Create one in <a href="/studio.html">Studio</a>, then return here to save.</p>
+                    <p class="cp-hint hidden" id="cpNoBooksHint">You do not have any books yet. Create one in <a href="studio.html">Studio</a>, then return here to save.</p>
                 </form>
             </div>
         </div>
@@ -973,7 +973,7 @@
         cpBook.addEventListener("change", () => {
             fillChapterOptions(cpBook.value);
             cpOpenBibleLink.href = cpBook.value
-                ? `/story-bible.html?book=${encodeURIComponent(cpBook.value)}`
+                ? `story-bible.html?book=${encodeURIComponent(cpBook.value)}`
                 : "#";
             cpOpenBibleLink.classList.toggle("hidden", !cpBook.value);
             updateSaveEnabled();
@@ -1019,7 +1019,7 @@
             try {
                 await saveBibleCharacter(supabase, window.__cpUid, bookId, character);
                 setStatus("Saved as a new character. Open the bible to edit or merge details.", "ok");
-                cpOpenBibleLink.href = `/story-bible.html?book=${encodeURIComponent(bookId)}`;
+                cpOpenBibleLink.href = `story-bible.html?book=${encodeURIComponent(bookId)}`;
                 cpOpenBibleLink.classList.remove("hidden");
             } catch (e) {
                 const msg = e && typeof e.message === "string" ? e.message : String(e);

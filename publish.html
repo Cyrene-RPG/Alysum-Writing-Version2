@@ -1,7 +1,7 @@
 <!DOCTYPE html><html>
 <head>
     <!-- ALYSUM:PWA:START -->
-    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="manifest" href="manifest.webmanifest">
     <meta name="theme-color" content="#7c3aed" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#020b18" media="(prefers-color-scheme: dark)">
     <meta name="color-scheme" content="dark light">
@@ -11,15 +11,15 @@
     <meta name="apple-mobile-web-app-title" content="Alysum">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="msapplication-TileColor" content="#7c3aed">
-    <meta name="msapplication-TileImage" content="/Alysum-3.png">
-    <link rel="icon" type="image/png" sizes="any" href="/Alysum-3.png">
-    <link rel="apple-touch-icon" href="/Alysum-3.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="/Alysum-3.png">
-    <script src="/js/pwa-register.js" defer></script>
+    <meta name="msapplication-TileImage" content="Alysum-3.png">
+    <link rel="icon" type="image/png" sizes="any" href="Alysum-3.png">
+    <link rel="apple-touch-icon" href="Alysum-3.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="Alysum-3.png">
+    <script src="js/pwa-register.js" defer></script>
     <!-- ALYSUM:PWA:END --><title>Publish Story • Alysum</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="stylesheet" href="/css/site-responsive.css?v=1" />
-<link rel="stylesheet" href="/css/gradient-themes.css?v=2" />
+<link rel="stylesheet" href="css/site-responsive.css?v=1" />
+<link rel="stylesheet" href="css/gradient-themes.css?v=2" />
 
 <script>
     try {
@@ -246,7 +246,7 @@
     function applyTheme(theme) { document.body.classList.toggle("dark", theme === "dark"); localStorage.setItem("alysum-theme", theme); }
     function toggleTheme() { applyTheme(document.body.classList.contains("dark") ? "light" : "dark"); }
     themeBtn.addEventListener("click", toggleTheme);
-    backBtn.addEventListener("click", () => { if (bookId) window.location.href = "/editor.html?book=" + encodeURIComponent(bookId); else window.history.back(); });
+    backBtn.addEventListener("click", () => { if (bookId) window.location.href = "editor.html?book=" + encodeURIComponent(bookId); else window.history.back(); });
     function setStatus(message = "", type = "") { statusBox.className = "status-box"; statusBox.textContent = message; if (message && type) statusBox.classList.add(type); }
     function parseChapterIds() { if (!chapterIdsParam.trim()) return []; return chapterIdsParam.split(",").map(item => item.trim()).filter(Boolean); }
     function buildSelectedChapters() { const bodyList = safeArray(currentBook?.sections?.body, []); if (!selectedChapterIds.length) { selectedChapterObjects = []; return; } const wanted = new Set(selectedChapterIds); selectedChapterObjects = bodyList.filter(ch => wanted.has(ch.id)); }
@@ -380,7 +380,7 @@
         const { data: authData, error: authError } = await supabase.auth.getUser();
         if (authError) console.warn(authError);
         const user = authData?.user;
-        if (!user) { window.location.href = "/login.html"; return; }
+        if (!user) { window.location.href = "login.html"; return; }
         currentUser = user;
         const hasBook = await resolveBookId().catch((error) => { console.error(error); setStatus(error?.message || "Could not find a book.", "error"); return false; });
         if (!hasBook) { setStatus("Missing book id in URL and no recent book was found.", "error"); heroTitle.textContent = "Missing book id"; sidebarBookTitle.textContent = "Missing book id"; return; }

@@ -5,7 +5,7 @@
  * For every *.html in the project root, ensures the following exists inside <head>:
  *   - <link rel="manifest">
  *   - PWA meta tags (theme-color, color-scheme, mobile-web-app-capable, apple-touch-icon, etc.)
- *   - <script src="/js/pwa-register.js" defer>
+ *   - <script src="js/pwa-register.js" defer>
  *
  * Wrapped in marker comments so re-running just replaces the block in place.
  * Safe to run any number of times.
@@ -21,7 +21,7 @@ const END = '<!-- ALYSUM:PWA:END -->';
 
 const BLOCK = [
     START,
-    '<link rel="manifest" href="/manifest.webmanifest">',
+    '<link rel="manifest" href="manifest.webmanifest">',
     '<meta name="theme-color" content="#7c3aed" media="(prefers-color-scheme: light)">',
     '<meta name="theme-color" content="#020b18" media="(prefers-color-scheme: dark)">',
     '<meta name="color-scheme" content="dark light">',
@@ -31,11 +31,11 @@ const BLOCK = [
     '<meta name="apple-mobile-web-app-title" content="Alysum">',
     '<meta name="mobile-web-app-capable" content="yes">',
     '<meta name="msapplication-TileColor" content="#7c3aed">',
-    '<meta name="msapplication-TileImage" content="/Alysum-3.png">',
-    '<link rel="icon" type="image/png" sizes="any" href="/Alysum-3.png">',
-    '<link rel="apple-touch-icon" href="/Alysum-3.png">',
-    '<link rel="apple-touch-icon" sizes="180x180" href="/Alysum-3.png">',
-    '<script src="/js/pwa-register.js" defer></script>',
+    '<meta name="msapplication-TileImage" content="Alysum-3.png">',
+    '<link rel="icon" type="image/png" sizes="any" href="Alysum-3.png">',
+    '<link rel="apple-touch-icon" href="Alysum-3.png">',
+    '<link rel="apple-touch-icon" sizes="180x180" href="Alysum-3.png">',
+    '<script src="js/pwa-register.js" defer></script>',
     END,
 ].map((line) => '    ' + line).join('\n');
 

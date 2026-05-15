@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <!-- ALYSUM:PWA:START -->
-    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="manifest" href="manifest.webmanifest">
     <meta name="theme-color" content="#7c3aed" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#020b18" media="(prefers-color-scheme: dark)">
     <meta name="color-scheme" content="dark light">
@@ -12,11 +12,11 @@
     <meta name="apple-mobile-web-app-title" content="Alysum">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="msapplication-TileColor" content="#7c3aed">
-    <meta name="msapplication-TileImage" content="/Alysum-3.png">
-    <link rel="icon" type="image/png" sizes="any" href="/Alysum-3.png">
-    <link rel="apple-touch-icon" href="/Alysum-3.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="/Alysum-3.png">
-    <script src="/js/pwa-register.js" defer></script>
+    <meta name="msapplication-TileImage" content="Alysum-3.png">
+    <link rel="icon" type="image/png" sizes="any" href="Alysum-3.png">
+    <link rel="apple-touch-icon" href="Alysum-3.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="Alysum-3.png">
+    <script src="js/pwa-register.js" defer></script>
     <!-- ALYSUM:PWA:END -->
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -27,9 +27,9 @@
             if (__g && __g !== "classic") document.documentElement.setAttribute("data-gradient-theme", __g);
         } catch (e) {}
     </script>
-    <link rel="stylesheet" href="/css/gradient-themes.css?v=2" />
-    <link rel="stylesheet" href="/css/notebook.css?v=9" />
-    <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
+    <link rel="stylesheet" href="css/gradient-themes.css?v=2" />
+    <link rel="stylesheet" href="css/notebook.css?v=9" />
+    <link rel="stylesheet" href="css/site-responsive.css?v=1" />
 </head>
 <body class="scratch-page">
     <div class="scratch-shell">
@@ -41,8 +41,8 @@
                 </p>
             </div>
             <div class="scratch-hero-actions">
-                <a class="scratch-btn scratch-btn-primary" href="/vault.html" target="_blank" rel="noopener noreferrer">Open library in new tab</a>
-                <a class="scratch-btn scratch-btn-ghost" href="/studio.html">Studio</a>
+                <a class="scratch-btn scratch-btn-primary" href="vault.html" target="_blank" rel="noopener noreferrer">Open library in new tab</a>
+                <a class="scratch-btn scratch-btn-ghost" href="studio.html">Studio</a>
             </div>
         </header>
 
@@ -68,12 +68,12 @@
     </div>
     <script type="module">
         import { supabase } from "./firebase.js";
-        import { bindVaultUI, DEFAULT_VAULT_KEY } from "./js/alysum-vault-ui.js?v=16";
+        import { bindVaultUI, DEFAULT_VAULT_KEY } from "./js/alysum-vault-ui.js?v=17";
 
         supabase.auth.onAuthStateChange((_event, session) => {
             const user = session?.user;
             if (!user) {
-                window.location.href = "/login.html?next=" + encodeURIComponent("/scratch.html");
+                window.location.href = "login.html?next=" + encodeURIComponent("scratch.html");
                 return;
             }
 

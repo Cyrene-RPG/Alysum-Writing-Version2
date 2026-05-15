@@ -2,7 +2,7 @@
 <html>
 <head>
     <!-- ALYSUM:PWA:START -->
-    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="manifest" href="manifest.webmanifest">
     <meta name="theme-color" content="#7c3aed" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#020b18" media="(prefers-color-scheme: dark)">
     <meta name="color-scheme" content="dark light">
@@ -12,11 +12,11 @@
     <meta name="apple-mobile-web-app-title" content="Alysum">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="msapplication-TileColor" content="#7c3aed">
-    <meta name="msapplication-TileImage" content="/Alysum-3.png">
-    <link rel="icon" type="image/png" sizes="any" href="/Alysum-3.png">
-    <link rel="apple-touch-icon" href="/Alysum-3.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="/Alysum-3.png">
-    <script src="/js/pwa-register.js" defer></script>
+    <meta name="msapplication-TileImage" content="Alysum-3.png">
+    <link rel="icon" type="image/png" sizes="any" href="Alysum-3.png">
+    <link rel="apple-touch-icon" href="Alysum-3.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="Alysum-3.png">
+    <script src="js/pwa-register.js" defer></script>
     <!-- ALYSUM:PWA:END -->
 
     <title>Sign Up - Alysum</title>
@@ -31,7 +31,7 @@
         } catch (e) {}
     </script>
 
-    <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
+    <link rel="stylesheet" href="css/site-responsive.css?v=1" />
 
     <style>
         * { box-sizing: border-box; }
@@ -176,7 +176,7 @@
         }
     </style>
 
-    <link rel="stylesheet" href="/css/gradient-themes.css?v=2" />
+    <link rel="stylesheet" href="css/gradient-themes.css?v=2" />
 </head>
 
 <body>
@@ -220,7 +220,7 @@
     <p id="error-msg" role="alert"></p>
 
     <div class="link">
-        Already have an account? <a href="/login.html">Login</a>
+        Already have an account? <a href="login.html">Login</a>
     </div>
 </div>
 
@@ -350,7 +350,7 @@ window.signup = async function () {
             window.location.href = READER_HOME_URL;
         } else {
             setUiMode("studio");
-            window.location.href = "/studio.html";
+            window.location.href = "studio.html";
         }
 
     } catch (e) {

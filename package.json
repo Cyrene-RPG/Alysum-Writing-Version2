@@ -2,7 +2,9 @@
   "name": "alysum-web",
   "private": true,
   "scripts": {
-    "dev": "serve . -l 3000"
+    "dev": "serve . -l 3000",
+    "migrate:beta-notes": "node migrate-firestore-beta-notes.mjs",
+    "migrate:beta-notes:dry": "node migrate-firestore-beta-notes.mjs --dry-run"
   },
   "devDependencies": {
     "serve": "^14.2.4"

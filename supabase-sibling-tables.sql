@@ -4,6 +4,14 @@
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS beta_read_shelf jsonb NOT NULL DEFAULT '{}'::jsonb;
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS beta_read_notes_by_book jsonb NOT NULL DEFAULT '{}'::jsonb;
 
+-- Reader profile: last-open story + chapter (read.html → users; reader-home.html displays)
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS current_read_book_id text;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS current_read_chapter_index integer;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS current_read_chapter_title text;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS current_read_story_title text;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS current_read_author text;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS current_read_updated_at timestamptz;
+
 -- Story Bible per-book rows (replaces users/{uid}/books/{bookId}/bibleCharacters|biblePlaces)
 CREATE TABLE IF NOT EXISTS public.story_bible_characters (
   user_id uuid NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE,
@@ -59,7 +67,8 @@ CREATE TABLE IF NOT EXISTS public.character_profile_sheets (
   PRIMARY KEY (user_id, id)
 );
 
--- Prompt notebook vault (was users/{uid}/notebookVault/data)
+-- Prompt notebook vault (was users/{uid}/notebookVault/data).
+-- If this table is missing, you can run `notebook-vault-only.sql` alone, then refresh PostgREST schema cache if needed.
 CREATE TABLE IF NOT EXISTS public.notebook_vault (
   user_id uuid NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE,
   data jsonb NOT NULL DEFAULT '{}'::jsonb,
@@ -96,7 +105,9 @@ CREATE POLICY "character_profile_sheets_own" ON public.character_profile_sheets
 
 DROP POLICY IF EXISTS "notebook_vault_own" ON public.notebook_vault;
 CREATE POLICY "notebook_vault_own" ON public.notebook_vault
-  FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+    FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.notebook_vault TO anon, authenticated;
 
 -- Prompt notebook entries (was users/{uid}/promptEntries/{id})
 CREATE TABLE IF NOT EXISTS public.prompt_entries (
@@ -139,3 +150,284 @@ CREATE POLICY "notifications_insert_beta_share_reader" ON public.notifications
     (data IS NOT NULL)
     AND coalesce(data->>'readerUid', '') = (auth.uid())::text
   );
+
+-- ---------------------------------------------------------------------------
+-- Reader engagement (read.html, author-dashboard.html, library.html, index)
+-- Was Firestore: library/{bookId}/comments, library/{bookId}/likes, reads.
+-- If comments/kudos never load, apply this block in the Supabase SQL editor.
+-- ---------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS public.comments (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  book_id text NOT NULL,
+  user_id uuid NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE,
+  username text NOT NULL DEFAULT '',
+  display_name text NOT NULL DEFAULT '',
+  text text NOT NULL DEFAULT '',
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz
+);
+
+CREATE INDEX IF NOT EXISTS comments_book_id_idx ON public.comments (book_id);
+CREATE INDEX IF NOT EXISTS comments_book_created_idx ON public.comments (book_id, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS public.likes (
+  id text PRIMARY KEY,
+  book_id text NOT NULL,
+  user_id uuid NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS likes_book_id_idx ON public.likes (book_id);
+
+CREATE TABLE IF NOT EXISTS public.reads (
+  id text PRIMARY KEY,
+  book_id text NOT NULL,
+  user_id uuid REFERENCES auth.users (id) ON DELETE SET NULL,
+  reader_id text NOT NULL DEFAULT '',
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS reads_book_id_idx ON public.reads (book_id);
+
+ALTER TABLE public.comments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.likes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.reads ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "comments_select_public" ON public.comments;
+CREATE POLICY "comments_select_public" ON public.comments
+  FOR SELECT TO anon, authenticated
+  USING (true);
+
+DROP POLICY IF EXISTS "comments_insert_own" ON public.comments;
+CREATE POLICY "comments_insert_own" ON public.comments
+  FOR INSERT TO authenticated
+  WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "comments_update_own" ON public.comments;
+CREATE POLICY "comments_update_own" ON public.comments
+  FOR UPDATE TO authenticated
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "comments_delete_own" ON public.comments;
+CREATE POLICY "comments_delete_own" ON public.comments
+  FOR DELETE TO authenticated
+  USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "comments_delete_as_library_owner" ON public.comments;
+CREATE POLICY "comments_delete_as_library_owner" ON public.comments
+  FOR DELETE TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.library lib
+      WHERE lib.id::text = comments.book_id
+        AND lib.user_id::text = (auth.uid())::text
+    )
+  );
+
+DROP POLICY IF EXISTS "likes_select_public" ON public.likes;
+CREATE POLICY "likes_select_public" ON public.likes
+  FOR SELECT TO anon, authenticated
+  USING (true);
+
+DROP POLICY IF EXISTS "likes_insert_own" ON public.likes;
+CREATE POLICY "likes_insert_own" ON public.likes
+  FOR INSERT TO authenticated
+  WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "likes_update_own" ON public.likes;
+CREATE POLICY "likes_update_own" ON public.likes
+  FOR UPDATE TO authenticated
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "reads_select_public" ON public.reads;
+CREATE POLICY "reads_select_public" ON public.reads
+  FOR SELECT TO anon, authenticated
+  USING (true);
+
+DROP POLICY IF EXISTS "reads_insert_public" ON public.reads;
+CREATE POLICY "reads_insert_public" ON public.reads
+  FOR INSERT TO anon, authenticated
+  WITH CHECK (true);
+
+DROP POLICY IF EXISTS "reads_update_public" ON public.reads;
+CREATE POLICY "reads_update_public" ON public.reads
+  FOR UPDATE TO anon, authenticated
+  USING (true)
+  WITH CHECK (true);
+
+GRANT SELECT ON public.comments TO anon, authenticated;
+GRANT INSERT, UPDATE, DELETE ON public.comments TO authenticated;
+
+GRANT SELECT ON public.likes TO anon, authenticated;
+GRANT INSERT, UPDATE, DELETE ON public.likes TO authenticated;
+
+GRANT SELECT, INSERT, UPDATE ON public.reads TO anon, authenticated;
+
+-- Idempotent Firestore → Supabase import for library comments (see migrate-library-engagement.js).
+-- PostgreSQL treats NULL as distinct in UNIQUE, so many rows may have (book_id, NULL) for app-created comments.
+ALTER TABLE public.comments ADD COLUMN IF NOT EXISTS legacy_firestore_id text;
+CREATE UNIQUE INDEX IF NOT EXISTS comments_book_legacy_uidx ON public.comments (book_id, legacy_firestore_id);
+
+-- Beta reader highlights (beta-read.html, beta-notes-library.html).
+-- Separate from public.users so RLS on users cannot block note sync.
+CREATE TABLE IF NOT EXISTS public.reader_beta_notes (
+    user_id uuid NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE,
+    book_id text NOT NULL,
+    notes jsonb NOT NULL DEFAULT '[]'::jsonb,
+    updated_at timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (user_id, book_id)
+);
+
+CREATE INDEX IF NOT EXISTS reader_beta_notes_user_id_idx ON public.reader_beta_notes (user_id);
+
+ALTER TABLE public.reader_beta_notes ENABLE ROW LEVEL SECURITY;
+
+-- PostgREST uses the anon role for browser requests; auth.uid() still comes from the user JWT when logged in.
+DROP POLICY IF EXISTS "reader_beta_notes_select_own" ON public.reader_beta_notes;
+CREATE POLICY "reader_beta_notes_select_own" ON public.reader_beta_notes
+    FOR SELECT TO anon, authenticated
+    USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "reader_beta_notes_insert_own" ON public.reader_beta_notes;
+CREATE POLICY "reader_beta_notes_insert_own" ON public.reader_beta_notes
+    FOR INSERT TO anon, authenticated
+    WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "reader_beta_notes_update_own" ON public.reader_beta_notes;
+CREATE POLICY "reader_beta_notes_update_own" ON public.reader_beta_notes
+    FOR UPDATE TO anon, authenticated
+    USING (auth.uid() = user_id)
+    WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "reader_beta_notes_delete_own" ON public.reader_beta_notes;
+CREATE POLICY "reader_beta_notes_delete_own" ON public.reader_beta_notes
+    FOR DELETE TO anon, authenticated
+    USING (auth.uid() = user_id);
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.reader_beta_notes TO anon, authenticated;
+
+-- Optional: live updates in the beta reader sidebar (safe to ignore if it errors on re-run).
+DO $reader_beta_notes_realtime$
+BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.reader_beta_notes;
+EXCEPTION
+    WHEN duplicate_object THEN NULL;
+END
+$reader_beta_notes_realtime$;
+
+-- Needed if you re-enable Realtime postgres_changes with filters on this table.
+ALTER TABLE public.reader_beta_notes REPLICA IDENTITY FULL;
+
+-- ---------------------------------------------------------------------------
+-- RPC API (SECURITY DEFINER): use these if direct REST on reader_beta_notes still fails.
+-- PostgREST: supabase.rpc('reader_beta_notes_get', { p_book_id: '...' }), etc.
+-- ---------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION public.reader_beta_notes_get(p_book_id text)
+RETURNS jsonb
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+STABLE
+AS $$
+    SELECT COALESCE(
+        (
+            SELECT r.notes
+            FROM public.reader_beta_notes r
+            WHERE r.user_id = auth.uid()
+              AND r.book_id = p_book_id
+            LIMIT 1
+        ),
+        '[]'::jsonb
+    );
+$$;
+
+-- jsonb via PostgREST RPC can 400 from some clients; accept JSON as text and cast.
+DROP FUNCTION IF EXISTS public.reader_beta_notes_upsert(text, jsonb);
+DROP FUNCTION IF EXISTS public.reader_beta_notes_upsert(text, text);
+
+CREATE OR REPLACE FUNCTION public.reader_beta_notes_upsert(p_book_id text, p_notes_json text)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_uid uuid := auth.uid();
+    v_notes jsonb;
+BEGIN
+    IF v_uid IS NULL THEN
+        RAISE EXCEPTION 'not authenticated' USING ERRCODE = '28000';
+    END IF;
+    IF p_book_id IS NULL OR btrim(p_book_id) = '' THEN
+        RAISE EXCEPTION 'invalid book_id' USING ERRCODE = '22023';
+    END IF;
+    BEGIN
+        v_notes := COALESCE(NULLIF(btrim(COALESCE(p_notes_json, '')), ''), '[]')::jsonb;
+    EXCEPTION
+        WHEN invalid_text_representation THEN
+            v_notes := '[]'::jsonb;
+    END;
+    IF jsonb_typeof(v_notes) <> 'array' THEN
+        v_notes := '[]'::jsonb;
+    END IF;
+    INSERT INTO public.reader_beta_notes (user_id, book_id, notes, updated_at)
+    VALUES (v_uid, p_book_id, v_notes, now())
+    ON CONFLICT (user_id, book_id)
+    DO UPDATE SET
+        notes = EXCLUDED.notes,
+        updated_at = now();
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.reader_beta_notes_list_maps()
+RETURNS jsonb
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+STABLE
+AS $$
+    SELECT COALESCE(
+        (
+            SELECT jsonb_object_agg(r.book_id, r.notes)
+            FROM public.reader_beta_notes r
+            WHERE r.user_id = auth.uid()
+        ),
+        '{}'::jsonb
+    );
+$$;
+
+REVOKE ALL ON FUNCTION public.reader_beta_notes_get(text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.reader_beta_notes_get(text) TO anon, authenticated;
+
+REVOKE ALL ON FUNCTION public.reader_beta_notes_upsert(text, text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.reader_beta_notes_upsert(text, text) TO anon, authenticated;
+
+REVOKE ALL ON FUNCTION public.reader_beta_notes_list_maps() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.reader_beta_notes_list_maps() TO anon, authenticated;
+
+-- Legacy highlights still stored on public.users (Firestore-era). Direct REST can be blocked by RLS
+-- on users; this RPC reads only beta_read_notes_by_book for the signed-in user.
+CREATE OR REPLACE FUNCTION public.reader_beta_notes_legacy_map()
+RETURNS jsonb
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+STABLE
+AS $$
+    SELECT COALESCE(
+        (
+            SELECT u.beta_read_notes_by_book
+            FROM public.users u
+            WHERE u.id = auth.uid()
+            LIMIT 1
+        ),
+        '{}'::jsonb
+    );
+$$;
+
+REVOKE ALL ON FUNCTION public.reader_beta_notes_legacy_map() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.reader_beta_notes_legacy_map() TO anon, authenticated;

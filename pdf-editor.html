@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <!-- ALYSUM:PWA:START -->
-    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="manifest" href="manifest.webmanifest">
     <meta name="theme-color" content="#7c3aed" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#020b18" media="(prefers-color-scheme: dark)">
     <meta name="color-scheme" content="dark light">
@@ -12,11 +12,11 @@
     <meta name="apple-mobile-web-app-title" content="Alysum">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="msapplication-TileColor" content="#7c3aed">
-    <meta name="msapplication-TileImage" content="/Alysum-3.png">
-    <link rel="icon" type="image/png" sizes="any" href="/Alysum-3.png">
-    <link rel="apple-touch-icon" href="/Alysum-3.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="/Alysum-3.png">
-    <script src="/js/pwa-register.js" defer></script>
+    <meta name="msapplication-TileImage" content="Alysum-3.png">
+    <link rel="icon" type="image/png" sizes="any" href="Alysum-3.png">
+    <link rel="apple-touch-icon" href="Alysum-3.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="Alysum-3.png">
+    <script src="js/pwa-register.js" defer></script>
     <!-- ALYSUM:PWA:END -->
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -28,9 +28,9 @@
       if (__g && __g !== "classic") document.documentElement.setAttribute("data-gradient-theme", __g);
     } catch (e) {}
   </script>
-  <link rel="stylesheet" href="/css/pdf-editor.css?v=20260504b" />
-  <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
-  <link rel="stylesheet" href="/css/gradient-themes.css?v=2" />
+  <link rel="stylesheet" href="css/pdf-editor.css?v=20260504b" />
+  <link rel="stylesheet" href="css/site-responsive.css?v=1" />
+  <link rel="stylesheet" href="css/gradient-themes.css?v=2" />
 </head>
 <body>
   <div class="app">
@@ -213,13 +213,13 @@
     </aside>
   </div>
 
-  <script type="module" src="/js/pdf-editor.js?v=20260504c"></script>
+  <script type="module" src="js/pdf-editor.js?v=20260504c"></script>
   <script>
     (function () {
       var params = new URLSearchParams(window.location.search);
       var book = params.get("book");
       var a = document.getElementById("linkEditor");
-      if (a) a.href = book ? "/editor.html?book=" + encodeURIComponent(book) : "/editor.html";
+      if (a) a.href = book ? "editor.html?book=" + encodeURIComponent(book) : "editor.html";
     })();
   </script>
 </body>

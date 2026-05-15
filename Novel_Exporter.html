@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <!-- ALYSUM:PWA:START -->
-    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="manifest" href="manifest.webmanifest">
     <meta name="theme-color" content="#7c3aed" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#020b18" media="(prefers-color-scheme: dark)">
     <meta name="color-scheme" content="dark light">
@@ -12,11 +12,11 @@
     <meta name="apple-mobile-web-app-title" content="Alysum">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="msapplication-TileColor" content="#7c3aed">
-    <meta name="msapplication-TileImage" content="/Alysum-3.png">
-    <link rel="icon" type="image/png" sizes="any" href="/Alysum-3.png">
-    <link rel="apple-touch-icon" href="/Alysum-3.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="/Alysum-3.png">
-    <script src="/js/pwa-register.js" defer></script>
+    <meta name="msapplication-TileImage" content="Alysum-3.png">
+    <link rel="icon" type="image/png" sizes="any" href="Alysum-3.png">
+    <link rel="apple-touch-icon" href="Alysum-3.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="Alysum-3.png">
+    <script src="js/pwa-register.js" defer></script>
     <!-- ALYSUM:PWA:END -->
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -34,8 +34,8 @@
         rel="stylesheet"
     />
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
-    <link rel="stylesheet" href="css/Novel_Exporter.css?v=4" />
-    <link rel="stylesheet" href="/css/gradient-themes.css?v=2" />
+    <link rel="stylesheet" href="css/Novel_Exporter.css?v=5" />
+    <link rel="stylesheet" href="css/gradient-themes.css?v=2" />
 </head>
 <body class="ne-body">
     <header class="ne-header">
@@ -390,7 +390,18 @@
                             <span class="ne-guide-live" title="Type / live area (inside margins)"></span>
                         </div>
                         <div class="ne-preview-scroll" id="nePreviewScroll" hidden></div>
-                        <p class="ne-preview-placeholder" id="nePreviewPlaceholder">PDF preview will appear here.</p>
+                        <div class="ne-preview-placeholder" id="nePreviewPlaceholder" aria-live="polite">
+                            <div class="ne-preview-idle-stack">
+                                <p id="nePreviewPlaceholderMsg" class="ne-preview-placeholder-msg">
+                                    PDF preview will appear here.
+                                </p>
+                                <div id="neBookPickerControls" class="ne-book-picker-controls" hidden>
+                                    <label class="ne-book-picker-label" for="neBookPickerSelect">Your manuscripts</label>
+                                    <select id="neBookPickerSelect" class="ne-field-select ne-book-picker-select" aria-label="Choose book to preview"></select>
+                                    <button type="button" class="ne-book-picker-btn" id="neBookPickerGo">Load preview</button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div class="ne-preview-pager" aria-label="Preview page navigation">
                         <button type="button" class="ne-preview-pager-btn" id="nePrevPageBtn">Prev</button>
@@ -580,6 +591,6 @@
     <div id="nePdfExportHost" class="ne-pdf-export-host" aria-hidden="true"></div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" crossorigin="anonymous"></script>
-    <script type="module" src="js/Novel_Exporter.js"></script>
+    <script type="module" src="js/Novel_Exporter.js?v=3"></script>
 </body>
 </html>

@@ -15,7 +15,7 @@ import {
     DEFAULT_VAULT_KEY
 } from "./alysum-vault.js";
 import { normalizeVaultPlain, plainToWikiHtml, serializeWikiBody } from "./alysum-wikilinks.js?v=8";
-import { createVaultSupabaseDriver } from "./alysum-vault-supabase.js?v=1";
+        import { createVaultSupabaseDriver } from "./alysum-vault-supabase.js?v=2";
 
 function escapeHtml(s) {
     return String(s)
@@ -679,10 +679,7 @@ export function bindVaultUI(elements, config = {}) {
             setStatus
         });
         queueMicrotask(() => {
-            remoteDriver.pullOnce().catch(err => {
-                console.error(err);
-                setStatus("Could not load cloud vault (this device only)");
-            });
+            void remoteDriver.pullOnce();
         });
     }
 

@@ -799,7 +799,68 @@
     line-height: 1.45;
     max-width: none;
     color: #64748b;
-    pointer-events: none;
+    pointer-events: auto;
+}
+
+.ne-preview-idle-stack {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    max-width: 320px;
+}
+
+.ne-preview-placeholder-msg {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.45;
+    color: #64748b;
+}
+
+.ne-book-picker-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    width: 100%;
+    pointer-events: auto;
+}
+
+.ne-book-picker-controls[hidden] {
+    display: none !important;
+}
+
+.ne-book-picker-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #475569;
+    text-align: left;
+}
+
+.ne-book-picker-select {
+    width: 100%;
+}
+
+.ne-book-picker-btn {
+    margin-top: 4px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(15, 23, 42, 0.12);
+    background: linear-gradient(180deg, #6366f1 0%, #4f46e5 100%);
+    color: #f8fafc;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.ne-book-picker-btn:hover {
+    filter: brightness(1.05);
+}
+
+.ne-book-picker-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
 }
 
 .ne-preview-placeholder[hidden] {

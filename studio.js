@@ -7,7 +7,7 @@ const loadingEl = document.getElementById("loading");
 supabase.auth.onAuthStateChange(async (_event, session) => {
     const user = session?.user;
     if (!user) {
-        window.location.href = "/login";
+        window.location.href = "login.html";
         return;
     }
 

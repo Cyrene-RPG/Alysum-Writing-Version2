@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <!-- ALYSUM:PWA:START -->
-    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="manifest" href="manifest.webmanifest">
     <meta name="theme-color" content="#7c3aed" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#020b18" media="(prefers-color-scheme: dark)">
     <meta name="color-scheme" content="dark light">
@@ -12,11 +12,11 @@
     <meta name="apple-mobile-web-app-title" content="Alysum">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="msapplication-TileColor" content="#7c3aed">
-    <meta name="msapplication-TileImage" content="/Alysum-3.png">
-    <link rel="icon" type="image/png" sizes="any" href="/Alysum-3.png">
-    <link rel="apple-touch-icon" href="/Alysum-3.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="/Alysum-3.png">
-    <script src="/js/pwa-register.js" defer></script>
+    <meta name="msapplication-TileImage" content="Alysum-3.png">
+    <link rel="icon" type="image/png" sizes="any" href="Alysum-3.png">
+    <link rel="apple-touch-icon" href="Alysum-3.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="Alysum-3.png">
+    <script src="js/pwa-register.js" defer></script>
     <!-- ALYSUM:PWA:END -->
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -27,7 +27,7 @@
             if (__g && __g !== "classic") document.documentElement.setAttribute("data-gradient-theme", __g);
         } catch (e) {}
     </script>
-    <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
+    <link rel="stylesheet" href="css/site-responsive.css?v=1" />
     <style>
         * { box-sizing: border-box; }
 
@@ -497,7 +497,7 @@
             }
         }
     </style>
-    <link rel="stylesheet" href="/css/gradient-themes.css?v=2" />
+    <link rel="stylesheet" href="css/gradient-themes.css?v=2" />
 </head>
 <body>
     <header class="topbar">
@@ -506,8 +506,8 @@
             <div class="brand-title">Author Dashboard</div>
         </div>
         <div class="top-actions">
-            <a class="btn" href="/studio.html">Back to Studio</a>
-            <a class="btn primary" href="/library.html">View Library</a>
+            <a class="btn" href="studio.html">Back to Studio</a>
+            <a class="btn primary" href="library.html">View Library</a>
         </div>
     </header>
 
@@ -658,35 +658,71 @@
             return Object.keys(data).length ? data : safeObject(row, {});
         }
 
-        async function getSubcollectionCount(bookId, subcollection) {
+        /** Supabase `library.id` vs legacy `data.bookId` — imported comments may use either. */
+        function engagementBookIds(row, merged) {
+            const ids = new Set();
+            const push = (v) => {
+                const s = v == null ? "" : String(v).trim();
+                if (s) ids.add(s);
+            };
+            push(row?.id);
+            push(merged?.bookId);
+            push(merged?.book_id);
+            push(merged?.id);
+            return [...ids];
+        }
+
+        async function getSubcollectionCount(bookIds, subcollection) {
             let table = null;
             if (subcollection === "likes") table = "likes";
             else if (subcollection === "comments") table = "comments";
             else if (subcollection === "reads") table = "reads";
             if (!table) return 0;
-            const { count, error } = await supabase
-                .from(table)
-                .select("id", { count: "exact", head: true })
-                .eq("book_id", bookId);
-            if (error) {
-                console.warn(error);
-                return 0;
+            const ids = [...new Set((Array.isArray(bookIds) ? bookIds : [bookIds]).filter(Boolean).map((x) => String(x).trim()))].filter(Boolean);
+            if (!ids.length) return 0;
+            const seen = new Set();
+            for (const bid of ids) {
+                const { data, error } = await supabase.from(table).select("id").eq("book_id", bid);
+                if (error) {
+                    console.warn(error);
+                    continue;
+                }
+                for (const row of data || []) {
+                    if (row?.id) seen.add(String(row.id));
+                }
             }
-            return count || 0;
+            return seen.size;
         }
 
-        async function getRecentComments(bookId) {
-            const { data, error } = await supabase
-                .from("comments")
-                .select("id, text, display_name, username, created_at")
-                .eq("book_id", bookId)
-                .order("created_at", { ascending: false })
-                .limit(3);
-            if (error) {
-                console.warn(error);
-                return [];
+        async function getRecentComments(bookIds) {
+            const ids = [...new Set((Array.isArray(bookIds) ? bookIds : [bookIds]).filter(Boolean).map((x) => String(x).trim()))].filter(Boolean);
+            if (!ids.length) return [];
+            const byCommentId = new Map();
+            for (const bid of ids) {
+                let { data, error } = await supabase
+                    .from("comments")
+                    .select("id, text, display_name, username, created_at")
+                    .eq("book_id", bid)
+                    .order("created_at", { ascending: false });
+                if (error) {
+                    const r2 = await supabase.from("comments").select("id, text, display_name, username, created_at").eq("book_id", bid);
+                    data = r2.data;
+                    error = r2.error;
+                }
+                if (error) {
+                    console.warn(error);
+                    continue;
+                }
+                for (const row of data || []) {
+                    if (row?.id) byCommentId.set(String(row.id), row);
+                }
             }
-            return (data || []).map(row => ({
+            const rows = [...byCommentId.values()].sort((a, b) => {
+                const ta = typeof a.created_at === "number" ? a.created_at : Date.parse(String(a.created_at || "")) || 0;
+                const tb = typeof b.created_at === "number" ? b.created_at : Date.parse(String(b.created_at || "")) || 0;
+                return tb - ta;
+            });
+            return rows.slice(0, 3).map(row => ({
                 id: row.id,
                 displayLabel: safeString(row.display_name || row.username || "", "reader"),
                 text: safeString(row.text, ""),
@@ -700,7 +736,8 @@
             return (rows || [])
                 .map(row => {
                     const merged = libraryRowData(row);
-                    return normalizeBook(row.id, merged);
+                    const book = normalizeBook(row.id, merged);
+                    return { ...book, engagementBookIds: engagementBookIds(row, merged) };
                 })
                 .filter(book => book.isPublished);
         }
@@ -750,9 +787,9 @@
                             <div class="book-meta">${escapeHtml(book.type)} - ${escapeHtml(book.rating)} - ${formatNumber(book.chapterCount)} chapters - updated ${escapeHtml(formatDate(book.updated))}</div>
                         </div>
                         <div class="book-actions">
-                            <a class="mini-btn" href="/read.html?book=${encodeURIComponent(book.id)}">Read</a>
-                            <a class="mini-btn" href="/editor.html?book=${encodeURIComponent(book.id)}">Edit</a>
-                            <a class="mini-btn" href="/publish.html?book=${encodeURIComponent(book.id)}">Publish</a>
+                            <a class="mini-btn" href="read.html?book=${encodeURIComponent(book.id)}">Read</a>
+                            <a class="mini-btn" href="editor.html?book=${encodeURIComponent(book.id)}">Edit</a>
+                            <a class="mini-btn" href="publish.html?book=${encodeURIComponent(book.id)}">Publish</a>
                         </div>
                     </div>
                     <div class="book-stats">
@@ -841,7 +878,7 @@
                     const comment = escapeHtml(truncateText(data.comment, 900));
                     const bookId = safeString(data.bookId, "");
                     const betaUrl = bookId
-                        ? `/beta-read.html?book=${encodeURIComponent(bookId)}`
+                        ? `beta-read.html?book=${encodeURIComponent(bookId)}`
                         : "#";
                     return `
                         <article class="notif-card${unread ? " unread" : ""}" role="listitem" data-notif-id="${escapeHtml(data.id)}">
@@ -909,10 +946,11 @@
 
                 const ownedBooks = await loadPublishedBooks(currentUser.id);
                 const enriched = await Promise.all(ownedBooks.map(async book => {
+                    const ids = book.engagementBookIds || [book.id];
                     const [kudos, comments, recentComments] = await Promise.all([
-                        getSubcollectionCount(book.id, "likes"),
-                        getSubcollectionCount(book.id, "comments"),
-                        getRecentComments(book.id)
+                        getSubcollectionCount(ids, "likes"),
+                        getSubcollectionCount(ids, "comments"),
+                        getRecentComments(ids)
                     ]);
                     return { ...book, kudos, comments, recentComments };
                 }));
@@ -935,7 +973,7 @@
             if (!window.confirm("Remove this comment from your story?")) return;
             try {
                 btn.disabled = true;
-                await supabase.from("comments").delete().eq("id", rmCommentId).eq("book_id", rmBookId);
+                await supabase.from("comments").delete().eq("id", rmCommentId);
                 await loadDashboard();
             } catch (e) {
                 console.error(e);
@@ -947,7 +985,7 @@
         supabase.auth.onAuthStateChange((event, session) => {
             const user = session?.user;
             if (!user) {
-                window.location.href = "/login.html?next=" + encodeURIComponent("/author-dashboard.html");
+                window.location.href = "login.html?next=" + encodeURIComponent("author-dashboard.html");
                 return;
             }
             currentUser = user;

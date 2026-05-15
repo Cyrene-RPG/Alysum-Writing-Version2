@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <!-- ALYSUM:PWA:START -->
-    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="manifest" href="manifest.webmanifest">
     <meta name="theme-color" content="#7c3aed" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#020b18" media="(prefers-color-scheme: dark)">
     <meta name="color-scheme" content="dark light">
@@ -12,11 +12,11 @@
     <meta name="apple-mobile-web-app-title" content="Alysum">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="msapplication-TileColor" content="#7c3aed">
-    <meta name="msapplication-TileImage" content="/Alysum-3.png">
-    <link rel="icon" type="image/png" sizes="any" href="/Alysum-3.png">
-    <link rel="apple-touch-icon" href="/Alysum-3.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="/Alysum-3.png">
-    <script src="/js/pwa-register.js" defer></script>
+    <meta name="msapplication-TileImage" content="Alysum-3.png">
+    <link rel="icon" type="image/png" sizes="any" href="Alysum-3.png">
+    <link rel="apple-touch-icon" href="Alysum-3.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="Alysum-3.png">
+    <script src="js/pwa-register.js" defer></script>
     <!-- ALYSUM:PWA:END -->
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -26,7 +26,7 @@
             if (__g && __g !== "classic") document.documentElement.setAttribute("data-gradient-theme", __g);
         } catch (e) {}
     </script>
-    <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
+    <link rel="stylesheet" href="css/site-responsive.css?v=1" />
     <title>Beta read — Alysum</title>
     <style>
         * { box-sizing: border-box; }
@@ -710,6 +710,11 @@
             line-height: 1.45;
             margin-bottom: 16px;
         }
+        .err-banner a {
+            color: #fde68a;
+            text-decoration: underline;
+            font-weight: 900;
+        }
         @media (max-width: 960px) {
             .beta-layout {
                 grid-template-columns: 1fr;
@@ -738,13 +743,13 @@
                 linear-gradient(180deg, var(--panel) 0%, var(--panel-2) 100%);
         }
     </style>
-    <link rel="stylesheet" href="/css/gradient-themes.css?v=2" />
+    <link rel="stylesheet" href="css/gradient-themes.css?v=2" />
 </head>
 <body>
     <div class="topbar">
         <div class="topbar-left">
-            <a class="btn" href="/reader-home.html">← Profile</a>
-            <a class="btn ghost" href="/beta-notes-library.html" title="All highlights across your shelf">All notes</a>
+            <a class="btn" href="reader-home.html">← Profile</a>
+            <a class="btn ghost" href="beta-notes-library.html" title="All highlights across your shelf">All notes</a>
         </div>
         <div class="topbar-fill">
             <div class="topbar-title" id="topTitle">Beta read</div>
@@ -823,12 +828,42 @@
 
     <script type="module">
         import { supabase } from "./firebase.js";
+        import { wireSupabaseSession } from "./js/supabase-session.js?v=1";
+        import {
+            readBetaNotesByBookFromLocalStorage,
+            persistBetaNotesByBookMap,
+        } from "./js/beta-read-notes-local.js?v=1";
+        import {
+            fetchBookNotesMerged,
+            appendNoteViaReaderTable,
+            isMissingUsersBetaReadJsonbColumns,
+            mergeBetaNoteArraysById,
+            noteCreatedMs,
+        } from "./js/reader-beta-notes-supabase.js?v=7";
         import { writeBetaShelfEntryLocal } from "./js/beta-shelf-local.js?v=1";
         import { installReaderCopyGuards } from "./js/reader-copy-guards.js?v=1";
         import { applyReaderWatermark } from "./js/reader-watermark.js?v=3";
 
-        const params = new URLSearchParams(window.location.search);
-        const bookId = params.get("book");
+        function resolveBetaReadBookIdFromLocation() {
+            const params = new URLSearchParams(window.location.search);
+            const fromQs =
+                String(params.get("book") || "").trim() ||
+                String(params.get("id") || "").trim() ||
+                String(params.get("bookId") || "").trim() ||
+                String(params.get("library") || "").trim();
+            if (fromQs) return fromQs;
+            try {
+                return (
+                    String(sessionStorage.getItem("alysum-open-book") || "").trim() ||
+                    String(localStorage.getItem("alysum-last-read-book") || "").trim() ||
+                    String(localStorage.getItem("alysum-last-book") || "").trim()
+                );
+            } catch {
+                return "";
+            }
+        }
+
+        let bookId = resolveBetaReadBookIdFromLocation();
 
         const fatalError = document.getElementById("fatalError");
         const loadingPanel = document.getElementById("loadingPanel");
@@ -919,6 +954,28 @@
         function safeObject(value, fallback = {}) {
             return value && typeof value === "object" && !Array.isArray(value) ? value : fallback;
         }
+        function bestBetaShelfBookId(shelfRaw) {
+            const shelf = safeObject(shelfRaw, {});
+            const entries = Object.entries(shelf);
+            if (!entries.length) return "";
+            let bestId = "";
+            let bestMs = -1;
+            for (const [id, raw] of entries) {
+                if (!id) continue;
+                const d = safeObject(raw, {});
+                const ms =
+                    typeof d.lastOpenedAt === "number" && Number.isFinite(d.lastOpenedAt)
+                        ? d.lastOpenedAt
+                        : typeof d.shelvedAt === "number" && Number.isFinite(d.shelvedAt)
+                          ? d.shelvedAt
+                          : 0;
+                if (ms >= bestMs) {
+                    bestMs = ms;
+                    bestId = id;
+                }
+            }
+            return bestId || entries[0][0] || "";
+        }
         function countWordsFromHtml(html = "") {
             const text = safeString(html)
                 .replace(/<br\s*\/?>/gi, " ")
@@ -978,8 +1035,15 @@
                 ownerUid: safeString(data.ownerUid || data.user_id, ""),
                 chapters,
                 chapterCount: safeNumber(data.chapterCount, chapters.length),
-                words: totalWords
+                words: totalWords,
+                updated: safeNumber(data.updated, 0)
             };
+        }
+
+        function bookContentSignature(b) {
+            if (!b || !Array.isArray(b.chapters)) return "";
+            const parts = b.chapters.map((c) => `${safeString(c.id)}:${(c.content || "").length}:${safeString(c.title)}`);
+            return `${safeString(b.title)}|${b.chapters.length}|${safeNumber(b.words, 0)}|${parts.join(";")}`;
         }
 
         function currentChapter() {
@@ -1131,13 +1195,11 @@
             return "";
         }
 
-        let notesChannel = null;
-
         function renderNotesList(mapByBook) {
             notesList.innerHTML = "";
             const map = safeObject(mapByBook, {});
             const list = Array.isArray(map[bookId]) ? map[bookId] : [];
-            const sorted = list.slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+            const sorted = list.slice().sort((a, b) => noteCreatedMs(b) - noteCreatedMs(a));
             if (!sorted.length) {
                 const p = document.createElement("p");
                 p.className = "notes-empty";
@@ -1162,33 +1224,48 @@
             });
         }
 
+        function mergeBetaNoteArrays(remote, local) {
+            return mergeBetaNoteArraysById(
+                Array.isArray(remote) ? remote : [],
+                Array.isArray(local) ? local : []
+            );
+        }
+
+        function persistBookNotesInCache(uid, bid, notesArr) {
+            const cur = readBetaNotesByBookFromLocalStorage(uid);
+            cur[bid] = Array.isArray(notesArr) ? notesArr : [];
+            persistBetaNotesByBookMap(uid, cur);
+        }
+
+        function notesMapFromUserRow(row) {
+            if (!row || typeof row !== "object") return {};
+            return safeObject(row.beta_read_notes_by_book ?? row.betaReadNotesByBook, {});
+        }
+
         async function pullNotes(uid) {
-            const { data, error } = await supabase
-                .from("users")
-                .select("beta_read_notes_by_book")
-                .eq("id", uid)
-                .maybeSingle();
-            if (error) {
+            const localMap = readBetaNotesByBookFromLocalStorage(uid);
+            const localBook = Array.isArray(localMap[bookId]) ? localMap[bookId] : [];
+            if (localBook.length) {
+                renderNotesList({ [bookId]: localBook });
+            }
+            try {
+                await supabase.auth.getSession();
+            } catch {
+                /* ignore */
+            }
+            const { notes: remoteNotes, error } = await fetchBookNotesMerged(supabase, uid, bookId);
+            const merged = mergeBetaNoteArrays(Array.isArray(remoteNotes) ? remoteNotes : [], localBook);
+            if (error && !merged.length) {
                 console.error(error);
                 notesList.innerHTML = `<p class="notes-error">Could not load notes.</p>`;
                 return;
             }
-            const rawMap = data?.beta_read_notes_by_book ?? data?.betaReadNotesByBook;
-            renderNotesList(rawMap);
+            persistBookNotesInCache(uid, bookId, merged);
+            renderNotesList({ [bookId]: merged });
         }
 
         function subscribeNotes(uid) {
-            if (notesChannel) supabase.removeChannel(notesChannel);
-            notesChannel = null;
             void pullNotes(uid);
-            notesChannel = supabase
-                .channel("beta_read_notes_" + uid)
-                .on(
-                    "postgres_changes",
-                    { event: "*", schema: "public", table: "users", filter: `id=eq.${uid}` },
-                    () => pullNotes(uid).catch(console.error)
-                )
-                .subscribe();
         }
 
         async function touchShelf(uid) {
@@ -1198,6 +1275,7 @@
 
             const { data: urow, error } = await supabase.from("users").select("beta_read_shelf").eq("id", uid).maybeSingle();
             if (error) {
+                if (isMissingUsersBetaReadJsonbColumns(error)) return;
                 console.error(error);
                 return;
             }
@@ -1214,19 +1292,98 @@
                     lastOpenedAt: now
                 }
             };
-            await supabase.from("users").update({ beta_read_shelf: nextShelf }).eq("id", uid);
+            const { error: shelfUpErr } = await supabase.from("users").update({ beta_read_shelf: nextShelf }).eq("id", uid);
+            if (shelfUpErr && !isMissingUsersBetaReadJsonbColumns(shelfUpErr)) console.warn(shelfUpErr);
+        }
+
+        async function refreshStoryFromServer() {
+            if (!bookId || !currentBook) return;
+            try {
+                const { data: libRow, error: libErr } = await supabase.from("library").select("*").eq("id", bookId).maybeSingle();
+                if (libErr || !libRow) return;
+                const inner = libRow.data && typeof libRow.data === "object" ? libRow.data : libRow;
+                const nextBook = normalizeBook(inner);
+                if (!nextBook.chapters.length) return;
+                const prevSig = bookContentSignature(currentBook);
+                const nextSig = bookContentSignature(nextBook);
+                const prevUp = safeNumber(currentBook.updated, 0);
+                const nextUp = safeNumber(nextBook.updated, 0);
+                if (prevSig === nextSig && nextUp <= prevUp) return;
+                const prevIndex = currentChapterIndex;
+                currentBook = nextBook;
+                currentChapterIndex = Math.min(Math.max(0, prevIndex), currentBook.chapters.length - 1);
+                topTitle.textContent = currentBook.title;
+                topSub.textContent = "@" + currentBook.author + " · Beta workspace";
+                renderChapter();
+                void syncBetaBookOwnerHandle();
+            } catch (e) {
+                console.warn(e);
+            }
+        }
+
+        function scheduleBetaWorkspaceRefresh() {
+            if (!currentUser?.id) return;
+            void pullNotes(currentUser.id).catch(console.error);
+            void refreshStoryFromServer();
+        }
+
+        function syncBookIdIntoUrlBar() {
+            if (!bookId) return;
+            try {
+                const url = new URL(window.location.href);
+                const qBook = String(url.searchParams.get("book") || "").trim();
+                if (qBook === bookId) return;
+                url.searchParams.set("book", bookId);
+                url.searchParams.delete("id");
+                url.searchParams.delete("bookId");
+                url.searchParams.delete("library");
+                history.replaceState({}, "", url.pathname + url.search + url.hash);
+            } catch {
+                /* ignore */
+            }
         }
 
         async function initForUser(user) {
+            currentUser = user;
+
+            if (!bookId) {
+                try {
+                    let row = await supabase
+                        .from("users")
+                        .select("current_read_book_id, beta_read_shelf")
+                        .eq("id", user.id)
+                        .maybeSingle();
+                    if (row.error && isMissingUsersBetaReadJsonbColumns(row.error)) {
+                        row = await supabase
+                            .from("users")
+                            .select("current_read_book_id")
+                            .eq("id", user.id)
+                            .maybeSingle();
+                    }
+                    const { data, error } = row;
+                    if (!error && data) {
+                        const cid = String(data.current_read_book_id ?? data.currentReadBookId ?? "").trim();
+                        if (cid) bookId = cid;
+                        if (!bookId) {
+                            bookId = bestBetaShelfBookId(data.beta_read_shelf ?? data.betaReadShelf);
+                        }
+                    }
+                } catch {
+                    /* ignore */
+                }
+            }
+
             if (!bookId) {
                 hideLoadingPanel();
-                fatalError.textContent = "Missing book in the URL.";
+                fatalError.innerHTML =
+                    "No story was specified in this link. Open a book from the <a href=\"library.html\">Library</a>, use <strong>Beta reads</strong> in the reader, or choose a story on your <a href=\"reader-home.html\">reading profile</a>.";
                 fatalError.classList.remove("hidden");
                 return;
             }
 
-            currentUser = user;
-            publicReadLink.href = "/read.html?book=" + encodeURIComponent(bookId);
+            syncBookIdIntoUrlBar();
+
+            publicReadLink.href = "read.html?book=" + encodeURIComponent(bookId);
 
             try {
                 const { data: libRow, error: libErr } = await supabase.from("library").select("*").eq("id", bookId).maybeSingle();
@@ -1295,6 +1452,7 @@
             }
             saveNoteBtn.disabled = true;
             saveNoteBtn.textContent = "Saving…";
+            let legacyUsersCloudColumnsMissing = false;
             try {
                 const ch = currentChapter();
                 const noteId =
@@ -1310,27 +1468,70 @@
                     chapterTitle: safeString(ch.title, ""),
                     createdAt: Date.now()
                 };
-                const { data: urow, error: nErr } = await supabase
-                    .from("users")
-                    .select("beta_read_notes_by_book")
-                    .eq("id", currentUser.id)
-                    .maybeSingle();
-                if (nErr) throw nErr;
-                const map = safeObject(urow?.beta_read_notes_by_book ?? urow?.betaReadNotesByBook, {});
-                const arr = Array.isArray(map[bookId]) ? map[bookId].slice() : [];
-                arr.push(note);
-                const { error: upErr } = await supabase
-                    .from("users")
-                    .update({ beta_read_notes_by_book: { ...map, [bookId]: arr } })
-                    .eq("id", currentUser.id);
-                if (upErr) throw upErr;
+                const r = await appendNoteViaReaderTable(supabase, currentUser.id, bookId, note);
+                if (r.useLegacyUsers) {
+                    const { data: urow, error: nErr } = await supabase
+                        .from("users")
+                        .select("*")
+                        .eq("id", currentUser.id)
+                        .maybeSingle();
+                    if (nErr) throw nErr;
+                    const map = notesMapFromUserRow(urow);
+                    const arr = Array.isArray(map[bookId]) ? map[bookId].slice() : [];
+                    arr.push(note);
+                    const newMap = { ...map, [bookId]: arr };
+                    const { error: upErr } = await supabase
+                        .from("users")
+                        .update({ beta_read_notes_by_book: newMap })
+                        .eq("id", currentUser.id);
+                    if (upErr) {
+                        if (isMissingUsersBetaReadJsonbColumns(upErr)) legacyUsersCloudColumnsMissing = true;
+                        else throw upErr;
+                    }
+                    persistBetaNotesByBookMap(currentUser.id, newMap);
+                    renderNotesList(newMap);
+                } else {
+                    persistBookNotesInCache(currentUser.id, bookId, r.notes);
+                    renderNotesList({ [bookId]: r.notes });
+                }
                 draftComment.value = "";
                 draftQuote.value = "";
                 window.getSelection()?.removeAllRanges();
-                showRail("Note saved.", true);
+                await pullNotes(currentUser.id);
+                showRail(
+                    legacyUsersCloudColumnsMissing
+                        ? "Note saved on this device. Run the first two ALTER TABLE lines in supabase-sibling-tables.sql in the Supabase SQL editor to sync highlights to the cloud."
+                        : "Note saved.",
+                    !legacyUsersCloudColumnsMissing
+                );
             } catch (e) {
                 console.error(e);
-                showRail(e?.message || "Could not save note.", false);
+                try {
+                    const cur = readBetaNotesByBookFromLocalStorage(currentUser.id);
+                    const arr = Array.isArray(cur[bookId]) ? cur[bookId].slice() : [];
+                    arr.push({
+                        id:
+                            typeof crypto !== "undefined" && crypto.randomUUID
+                                ? crypto.randomUUID()
+                                : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
+                        quote: quote.slice(0, 2000),
+                        comment: comment.slice(0, 8000),
+                        chapterIndex: currentChapterIndex,
+                        chapterId: safeString(currentChapter().id, ""),
+                        chapterTitle: safeString(currentChapter().title, ""),
+                        createdAt: Date.now()
+                    });
+                    cur[bookId] = arr;
+                    persistBetaNotesByBookMap(currentUser.id, cur);
+                    renderNotesList({ [bookId]: arr });
+                    showRail(
+                        "Saved on this device only (cloud sync failed). Re-run the reader_beta_notes policies in Supabase or check the console.",
+                        false
+                    );
+                } catch (e2) {
+                    console.error(e2);
+                    showRail(e?.message || "Could not save note.", false);
+                }
             } finally {
                 saveNoteBtn.disabled = false;
                 saveNoteBtn.textContent = SAVE_NOTE_LABEL;
@@ -1368,14 +1569,30 @@
             applyFontSize(currentFontSize);
         });
 
-        supabase.auth.onAuthStateChange((event, session) => {
+        wireSupabaseSession(async (session, event) => {
             const user = session?.user;
             if (!user) {
-                const next = "/beta-read.html?book=" + encodeURIComponent(bookId || "");
-                window.location.href = "/login.html?next=" + encodeURIComponent(next);
+                const next = "beta-read.html?book=" + encodeURIComponent(bookId || "");
+                window.location.href = "login.html?next=" + encodeURIComponent(next);
+                return;
+            }
+            if (event === "TOKEN_REFRESHED" && currentUser?.id === user.id && currentBook) {
+                currentUser = user;
                 return;
             }
             void initForUser(user);
+        });
+
+        document.addEventListener("visibilitychange", () => {
+            if (document.visibilityState !== "visible") return;
+            if (!mainLayout || mainLayout.classList.contains("hidden")) return;
+            scheduleBetaWorkspaceRefresh();
+        });
+
+        window.addEventListener("pageshow", (ev) => {
+            if (!ev.persisted) return;
+            if (!mainLayout || mainLayout.classList.contains("hidden")) return;
+            scheduleBetaWorkspaceRefresh();
         });
     </script>
 </body>

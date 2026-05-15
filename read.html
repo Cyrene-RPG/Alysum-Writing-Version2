@@ -1,7 +1,7 @@
 <!DOCTYPE html><html lang="en">
 <head>
     <!-- ALYSUM:PWA:START -->
-    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="manifest" href="manifest.webmanifest">
     <meta name="theme-color" content="#7c3aed" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#020b18" media="(prefers-color-scheme: dark)">
     <meta name="color-scheme" content="dark light">
@@ -11,17 +11,17 @@
     <meta name="apple-mobile-web-app-title" content="Alysum">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="msapplication-TileColor" content="#7c3aed">
-    <meta name="msapplication-TileImage" content="/Alysum-3.png">
-    <link rel="icon" type="image/png" sizes="any" href="/Alysum-3.png">
-    <link rel="apple-touch-icon" href="/Alysum-3.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="/Alysum-3.png">
-    <script src="/js/pwa-register.js" defer></script>
+    <meta name="msapplication-TileImage" content="Alysum-3.png">
+    <link rel="icon" type="image/png" sizes="any" href="Alysum-3.png">
+    <link rel="apple-touch-icon" href="Alysum-3.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="Alysum-3.png">
+    <script src="js/pwa-register.js" defer></script>
     <!-- ALYSUM:PWA:END -->
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Alysum Reader</title>
-    <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
-    <link rel="stylesheet" href="/css/gradient-themes.css?v=2" />
+    <link rel="stylesheet" href="css/site-responsive.css?v=1" />
+    <link rel="stylesheet" href="css/gradient-themes.css?v=2" />
 
     <script>
         try {
@@ -156,8 +156,8 @@
     <div class="topbar-left"><button class="btn menu-toggle" id="menuBtn">☰</button><button class="btn" id="backBtn">←</button></div>
     <div class="topbar-center"><div class="topbar-title" id="topbarTitle">Loading…</div><div class="topbar-subtitle" id="topbarSubtitle"></div></div>
     <div class="topbar-right">
-        <a class="btn primary hidden" id="betaReadTopBtn" href="/beta-read.html">Beta reads</a>
-        <a class="btn ghost hidden" id="allNotesTopBtn" href="/beta-notes-library.html" title="Every highlight you saved, across all books"><span class="all-notes-label-long">All notes</span><span class="all-notes-label-short">Notes</span></a>
+        <a class="btn primary hidden" id="betaReadTopBtn" href="beta-read.html">Beta reads</a>
+        <a class="btn ghost hidden" id="allNotesTopBtn" href="beta-notes-library.html" title="Every highlight you saved, across all books"><span class="all-notes-label-long">All notes</span><span class="all-notes-label-short">Notes</span></a>
         <button type="button" class="btn hidden" id="readerProfileTopBtn" aria-label="Reading profile"><span class="reader-profile-label-long">Reading profile</span><span class="reader-profile-label-short">Profile</span></button>
         <button class="btn" id="themeBtn">Theme</button><button class="btn" id="fontMinusBtn">A-</button><button class="btn" id="fontPlusBtn">A+</button>
     </div>
@@ -209,7 +209,7 @@
 
     const backBtn = document.getElementById("backBtn"), themeBtn = document.getElementById("themeBtn"), fontMinusBtn = document.getElementById("fontMinusBtn"), fontPlusBtn = document.getElementById("fontPlusBtn"), menuBtn = document.getElementById("menuBtn"), mobileDrawer = document.getElementById("mobileDrawer"), drawerBackdrop = document.getElementById("drawerBackdrop"), closeDrawerBtn = document.getElementById("closeDrawerBtn"), topbarTitle = document.getElementById("topbarTitle"), topbarSubtitle = document.getElementById("topbarSubtitle"), betaReadTopBtn = document.getElementById("betaReadTopBtn"), readerProfileTopBtn = document.getElementById("readerProfileTopBtn"), allNotesTopBtn = document.getElementById("allNotesTopBtn"), statusBox = document.getElementById("statusBox"), errorBox = document.getElementById("errorBox"), bookTitle = document.getElementById("bookTitle"), bookAuthor = document.getElementById("bookAuthor"), bookSummary = document.getElementById("bookSummary"), statChapters = document.getElementById("statChapters"), statWords = document.getElementById("statWords"), statReads = document.getElementById("statReads"), statType = document.getElementById("statType"), statRating = document.getElementById("statRating"), tagList = document.getElementById("tagList"), warningList = document.getElementById("warningList"), sideBookTitle = document.getElementById("sideBookTitle"), sideBookAuthor = document.getElementById("sideBookAuthor"), sideBookSummary = document.getElementById("sideBookSummary"), sideTagList = document.getElementById("sideTagList"), sideWarningList = document.getElementById("sideWarningList"), drawerBookTitle = document.getElementById("drawerBookTitle"), drawerBookAuthor = document.getElementById("drawerBookAuthor"), drawerBookSummary = document.getElementById("drawerBookSummary"), drawerTagList = document.getElementById("drawerTagList"), drawerWarningList = document.getElementById("drawerWarningList"), prevBtn = document.getElementById("prevBtn"), nextBtn = document.getElementById("nextBtn"), chapterIndicator = document.getElementById("chapterIndicator"), chapterTitle = document.getElementById("chapterTitle"), chapterMeta = document.getElementById("chapterMeta"), content = document.getElementById("content"), bookmarkBtn = document.getElementById("bookmarkBtn"), resumeBtn = document.getElementById("resumeBtn"), likeBtn = document.getElementById("likeBtn"), likeCount = document.getElementById("likeCount"), commentList = document.getElementById("commentList"), commentInput = document.getElementById("commentInput"), postCommentBtn = document.getElementById("postCommentBtn");
 
-    let currentUser = null, currentBook = null, currentChapterIndex = 0, isLoaded = false, currentFontSize = 22, hasLikedThisBook = false, readerWatermarkProfileUser = null, bookOwnerHandle = null;
+    let currentUser = null, currentBook = null, librarySourceRow = null, currentChapterIndex = 0, isLoaded = false, currentFontSize = 22, hasLikedThisBook = false, readerWatermarkProfileUser = null, bookOwnerHandle = null;
 
     installReaderCopyGuards(content, { isActive: () => isLoaded && !!currentBook });
 
@@ -271,7 +271,7 @@
     function refreshBookLinks() {
         if (!bookId) return;
         if (betaReadTopBtn) {
-            betaReadTopBtn.href = `/beta-read.html?book=${encodeURIComponent(bookId)}`;
+            betaReadTopBtn.href = `beta-read.html?book=${encodeURIComponent(bookId)}`;
             betaReadTopBtn.classList.remove("hidden");
         }
         if (readerProfileTopBtn) readerProfileTopBtn.classList.remove("hidden");
@@ -289,6 +289,29 @@
         chapters.sort((a, b) => a.order - b.order);
         const totalWords = safeNumber(data.words, chapters.reduce((sum, ch) => sum + safeNumber(ch.words, 0), 0));
         return { id: safeString(data.bookId || row?.id, bookId), ownerUid: safeString(data.ownerUid || data.user_id || row?.user_id, ""), title: safeString(data.title, "Untitled"), author: safeString(data.author, "unknown"), summary: safeString(data.summary, ""), rating: safeString(data.rating, ""), type: safeString(data.type, "fiction"), tags: rawTags.filter(v => typeof v === "string" && v.trim()), warnings: flattenWarnings(data.warnings), chapterCount: safeNumber(data.chapterCount, chapters.length), words: totalWords, views: safeNumber(data.views, 0), likes: safeNumber(data.likes, 0), chapters };
+    }
+
+    /** All plausible `comments.book_id` / `likes.book_id` keys (URL id, JSON aliases, Firestore-era ids). */
+    function engagementBookIdsForReader() {
+        const ids = new Set();
+        const push = (v) => {
+            const s = v == null ? "" : String(v).trim();
+            if (s) ids.add(s);
+        };
+        push(bookId);
+        push(currentBook?.id);
+        if (librarySourceRow?.id != null) push(librarySourceRow.id);
+        const merged = libraryRowData(librarySourceRow || {});
+        push(merged.bookId);
+        push(merged.book_id);
+        push(merged.id);
+        return [...ids];
+    }
+    function commentSortKey(row) {
+        const v = row?.created_at;
+        if (typeof v === "number" && Number.isFinite(v)) return v;
+        const t = Date.parse(String(v || ""));
+        return Number.isFinite(t) ? t : 0;
     }
 
     function currentChapter() { if (!currentBook || !currentBook.chapters.length) return { id: "none", title: "No Chapter", content: "<p>No content available.</p>", words: 0 }; return currentBook.chapters[currentChapterIndex] || currentBook.chapters[0]; }
@@ -337,15 +360,26 @@
     async function loadLikeState() {
         if (!bookId) return;
         try {
-            const { count, error: countError } = await supabase.from("likes").select("id", { count: "exact", head: true }).eq("book_id", bookId);
-            if (countError) throw countError;
-            const likes = count || 0;
-            likeCount.textContent = `${formatNumber(likes)} kudos`;
+            const eids = [...new Set(engagementBookIdsForReader())];
+            const likesById = new Map();
             hasLikedThisBook = false;
-            if (currentUser) {
-                const { data } = await supabase.from("likes").select("id").eq("book_id", bookId).eq("user_id", currentUser.id).maybeSingle();
-                hasLikedThisBook = !!data;
+            for (const bid of eids) {
+                const { data, error } = await supabase.from("likes").select("id, user_id").eq("book_id", bid);
+                if (error) continue;
+                for (const row of data || []) {
+                    if (row?.id && !likesById.has(row.id)) likesById.set(row.id, row);
+                }
             }
+            const likes = likesById.size;
+            if (currentUser) {
+                for (const row of likesById.values()) {
+                    if (row.user_id === currentUser.id) {
+                        hasLikedThisBook = true;
+                        break;
+                    }
+                }
+            }
+            likeCount.textContent = `${formatNumber(likes)} kudos`;
             likeBtn.disabled = !currentUser || hasLikedThisBook;
             likeBtn.textContent = hasLikedThisBook ? "❤️ Kudos Left" : "❤️ Leave Kudos";
         } catch (error) { console.error(error); likeCount.textContent = "Couldn’t load kudos"; }
@@ -381,6 +415,7 @@
 
         try {
             hideError(); showStatus("Loading story…");
+            librarySourceRow = null;
             const { data, error } = await supabase.from("library").select("*").eq("id", bookId).maybeSingle();
             if (error) throw error;
             if (!data) { showError(`Story not found: ${bookId}`); topbarTitle.textContent = "Story not found"; hideStatus(); updateReaderWatermark(); return; }
@@ -389,6 +424,7 @@
             localStorage.setItem("alysum-last-book", bookId);
             sessionStorage.setItem("alysum-open-book", bookId);
 
+            librarySourceRow = data;
             currentBook = normalizeBook(data);
             await recordStoryView();
 
@@ -418,6 +454,7 @@
             void syncBookOwnerHandle();
         } catch (error) {
             console.error(error);
+            librarySourceRow = null;
             showError("Failed to load story.");
             topbarTitle.textContent = "Load error";
             hideStatus();
@@ -440,11 +477,43 @@
 
     function startCommentEdit(item, commentId, initialText) { const body = item.querySelector(".comment-body"); if (!body) return; const head = item.querySelector(".comment-item-head"); const actionBar = head?.querySelector(".comment-actions"); if (actionBar) actionBar.querySelectorAll("button").forEach(b => { b.disabled = true; }); body.innerHTML = ""; const ta = document.createElement("textarea"); ta.className = "comment-edit-area"; ta.value = initialText; body.appendChild(ta); const row = document.createElement("div"); row.className = "comment-edit-row"; const saveBtn = document.createElement("button"); saveBtn.type = "button"; saveBtn.className = "btn primary"; saveBtn.textContent = "Save"; const cancelBtn = document.createElement("button"); cancelBtn.type = "button"; cancelBtn.className = "btn"; cancelBtn.textContent = "Cancel"; saveBtn.addEventListener("click", async () => { const next = ta.value.trim(); if (!next) { showStatus("Comment cannot be empty."); setTimeout(hideStatus, 1400); return; } saveBtn.disabled = true; cancelBtn.disabled = true; try { const { error } = await supabase.from("comments").update({ text: next, updated_at: new Date().toISOString() }).eq("id", commentId).eq("user_id", currentUser.id); if (error) throw error; showStatus("Comment updated."); setTimeout(hideStatus, 1200); await loadComments(); } catch (err) { console.error(err); showError("Could not update comment."); saveBtn.disabled = false; cancelBtn.disabled = false; } }); cancelBtn.addEventListener("click", () => void loadComments()); row.appendChild(saveBtn); row.appendChild(cancelBtn); body.appendChild(row); ta.focus(); }
     async function removeComment(commentId, confirmMessage) { if (!currentUser || !bookId) return; if (!window.confirm(confirmMessage)) return; try { let q = supabase.from("comments").delete().eq("id", commentId); if (!isBookOwnerModerator()) q = q.eq("user_id", currentUser.id); const { error } = await q; if (error) throw error; showStatus("Comment removed."); setTimeout(hideStatus, 1200); await loadComments(); } catch (err) { console.error(err); showError("Could not remove comment."); } }
-    async function loadComments() { commentList.innerHTML = ""; if (!currentBook) return; try { const { data, error } = await supabase.from("comments").select("*").eq("book_id", bookId).order("created_at", { ascending: false }); if (error) throw error; if (!data?.length) { commentList.innerHTML = `<div class="comment-item"><div class="comment-text">No comments yet.</div></div>`; return; } data.forEach(comment => commentList.appendChild(buildCommentRow(comment))); } catch (error) { console.error(error); commentList.innerHTML = `<div class="comment-item"><div class="comment-text">Could not load comments.</div></div>`; } }
+    async function loadComments() {
+        commentList.innerHTML = "";
+        if (!currentBook) return;
+        try {
+            const eids = [...new Set(engagementBookIdsForReader())];
+            const byId = new Map();
+            let queryError = null;
+            for (const bid of eids) {
+                let { data, error } = await supabase.from("comments").select("*").eq("book_id", bid).order("created_at", { ascending: false });
+                if (error) {
+                    const r2 = await supabase.from("comments").select("*").eq("book_id", bid);
+                    data = r2.data;
+                    error = r2.error;
+                }
+                if (error) {
+                    queryError = error;
+                    continue;
+                }
+                for (const row of data || []) byId.set(row.id, row);
+            }
+            if (queryError && byId.size === 0) throw queryError;
+            const data = [...byId.values()].sort((a, b) => commentSortKey(b) - commentSortKey(a));
+            if (!data.length) {
+                console.info("[Alysum] comments: 0 rows for book_id candidates:", eids.join(" | "), "(Supabase must contain rows, or run migrate-library-engagement.js from Firestore.)");
+                commentList.innerHTML = `<div class="comment-item"><div class="comment-text">No comments yet.</div></div>`;
+                return;
+            }
+            data.forEach(comment => commentList.appendChild(buildCommentRow(comment)));
+        } catch (error) {
+            console.error(error);
+            commentList.innerHTML = `<div class="comment-item"><div class="comment-text">Could not load comments.</div></div>`;
+        }
+    }
     async function postComment() { const text = commentInput.value.trim(); if (!text) { showStatus("Write a comment first."); setTimeout(hideStatus, 1400); return; } if (!currentUser) { showStatus("Log in to post comments."); setTimeout(hideStatus, 1800); return; } try { const { data: profile } = await supabase.from("users").select("username, display_name, email").eq("id", currentUser.id).maybeSingle(); const handle = String(profile?.username || "").trim() || currentUser.email?.split("@")[0] || "reader"; const displayName = String(profile?.display_name || "").trim() || handle; const { error } = await supabase.from("comments").insert({ book_id: bookId, user_id: currentUser.id, username: handle, display_name: displayName, text, created_at: new Date().toISOString() }); if (error) throw error; commentInput.value = ""; showStatus("Comment posted."); setTimeout(hideStatus, 1200); await loadComments(); } catch (error) { console.error(error); showError("Failed to post comment."); } }
 
-    backBtn.addEventListener("click", () => { window.location.href = "/library.html"; });
-    readerProfileTopBtn?.addEventListener("click", async () => { if (!bookId) return; if (!currentBook) { showStatus("Wait until this story finishes loading."); setTimeout(hideStatus, 2200); return; } if (!currentUser) { window.location.href = "/login.html?next=" + encodeURIComponent(READER_HOME_URL); return; } readerProfileTopBtn.disabled = true; try { await ensureBetaReadShelved(); } finally { readerProfileTopBtn.disabled = false; } window.location.href = READER_HOME_URL; });
+    backBtn.addEventListener("click", () => { window.location.href = "library.html"; });
+    readerProfileTopBtn?.addEventListener("click", async () => { if (!bookId) return; if (!currentBook) { showStatus("Wait until this story finishes loading."); setTimeout(hideStatus, 2200); return; } if (!currentUser) { window.location.href = "login.html?next=" + encodeURIComponent(READER_HOME_URL); return; } readerProfileTopBtn.disabled = true; try { await ensureBetaReadShelved(); } finally { readerProfileTopBtn.disabled = false; } window.location.href = READER_HOME_URL; });
     prevBtn.addEventListener("click", () => { if (!currentBook) return; if (currentChapterIndex > 0) { currentChapterIndex--; renderChapter(); } });
     nextBtn.addEventListener("click", () => { if (!currentBook) return; if (currentChapterIndex < currentBook.chapters.length - 1) { currentChapterIndex++; renderChapter(); } });
     bookmarkBtn.addEventListener("click", () => { if (!currentBook) return; saveBookmark(); showStatus(`Bookmarked: ${currentChapter().title}`); setTimeout(hideStatus, 1400); });

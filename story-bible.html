@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <!-- ALYSUM:PWA:START -->
-    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="manifest" href="manifest.webmanifest">
     <meta name="theme-color" content="#7c3aed" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#020b18" media="(prefers-color-scheme: dark)">
     <meta name="color-scheme" content="dark light">
@@ -12,11 +12,11 @@
     <meta name="apple-mobile-web-app-title" content="Alysum">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="msapplication-TileColor" content="#7c3aed">
-    <meta name="msapplication-TileImage" content="/Alysum-3.png">
-    <link rel="icon" type="image/png" sizes="any" href="/Alysum-3.png">
-    <link rel="apple-touch-icon" href="/Alysum-3.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="/Alysum-3.png">
-    <script src="/js/pwa-register.js" defer></script>
+    <meta name="msapplication-TileImage" content="Alysum-3.png">
+    <link rel="icon" type="image/png" sizes="any" href="Alysum-3.png">
+    <link rel="apple-touch-icon" href="Alysum-3.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="Alysum-3.png">
+    <script src="js/pwa-register.js" defer></script>
     <!-- ALYSUM:PWA:END -->
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -27,7 +27,7 @@
             if (__g && __g !== "classic") document.documentElement.setAttribute("data-gradient-theme", __g);
         } catch (e) {}
     </script>
-    <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
+    <link rel="stylesheet" href="css/site-responsive.css?v=1" />
     <style>
         * { box-sizing: border-box; }
         :root {
@@ -675,9 +675,9 @@
                     </p>
                 </div>
                 <nav class="sb-nav" aria-label="Site">
-                    <a href="/studio.html">Studio</a>
-                    <a href="/library.html">Library</a>
-                    <a href="/vault.html">Notes</a>
+                    <a href="studio.html">Studio</a>
+                    <a href="library.html">Library</a>
+                    <a href="vault.html">Notes</a>
                 </nav>
             </div>
         </header>
@@ -688,7 +688,7 @@
             </p>
             <p class="sb-muted" style="margin: 14px 0 0; line-height: 1.5">
                 Your saved character and place sheets are still in your account. Turn links and this page back on under
-                <strong>Profile</strong> in <a class="sb-link" href="/settings.html">Account settings</a>.
+                <strong>Profile</strong> in <a class="sb-link" href="settings.html">Account settings</a>.
             </p>
         </div>
 
@@ -715,7 +715,7 @@
 
         <section id="sbBookView" class="hidden">
             <div class="sb-book-head">
-                <a class="sb-btn sb-btn-ghost" href="/story-bible.html">← All bibles</a>
+                <a class="sb-btn sb-btn-ghost" href="story-bible.html">← All bibles</a>
                 <h2 id="sbBookTitle">…</h2>
                 <a class="sb-btn sb-btn-primary" id="sbOpenEditor" href="#">Open editor</a>
             </div>
@@ -870,7 +870,7 @@
         supabase.auth.onAuthStateChange((_event, session) => {
             const user = session?.user;
             if (!user) {
-                window.location.href = "/login.html?next=" + encodeURIComponent("/story-bible.html" + window.location.search);
+                window.location.href = "login.html?next=" + encodeURIComponent("story-bible.html" + window.location.search);
                 return;
             }
 

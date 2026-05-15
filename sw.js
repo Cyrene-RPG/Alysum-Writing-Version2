@@ -8,39 +8,38 @@
  * Bump SW_VERSION when shipping breaking shell changes to force a refresh.
  */
 
-const SW_VERSION = 'v1.0.29';
+const SW_VERSION = 'v1.0.30';
 const SHELL_CACHE = `alysum-shell-${SW_VERSION}`;
 const ASSET_CACHE = `alysum-assets-${SW_VERSION}`;
 
 const APP_SHELL = [
-  '/',
-  '/index.html',
-  '/login.html',
-  '/signup.html',
-  '/library.html',
-  '/editor.html',
-  '/studio.html',
-  '/read.html',
-  '/beta-read.html',
-  '/beta-notes-library.html',
-  '/reader-home.html',
-  '/vault.html',
-  '/writer-resources.html',
-  '/character-profile.html',
-  '/worldbuilding.html',
-  '/settings.html',
-  '/badges.html',
-  '/author-dashboard.html',
-  '/scratch.html',
-  '/prompt-notebook.html',
-  '/publish.html',
-  '/pdf-editor.html',
-  '/Novel_Exporter.html',
-  '/manifest.webmanifest',
-  '/Alysum-3.png',
-  '/css/site-responsive.css',
-  '/css/notebook.css',
-  '/css/gradient-themes.css'
+  'index.html',
+  'login.html',
+  'signup.html',
+  'library.html',
+  'editor.html',
+  'studio.html',
+  'read.html',
+  'beta-read.html',
+  'beta-notes-library.html',
+  'reader-home.html',
+  'vault.html',
+  'writer-resources.html',
+  'character-profile.html',
+  'worldbuilding.html',
+  'settings.html',
+  'badges.html',
+  'author-dashboard.html',
+  'scratch.html',
+  'prompt-notebook.html',
+  'publish.html',
+  'pdf-editor.html',
+  'Novel_Exporter.html',
+  'manifest.webmanifest',
+  'Alysum-3.png',
+  'css/site-responsive.css',
+  'css/notebook.css',
+  'css/gradient-themes.css'
 ];
 
 self.addEventListener('install', (event) => {
@@ -123,7 +122,7 @@ async function networkFirstHtml(event) {
   } catch (_) {
     const cached = await cache.match(event.request);
     if (cached) return cached;
-    const fallback = await cache.match('/index.html');
+    const fallback = await cache.match('index.html');
     if (fallback) return fallback;
     return new Response(
       '<!doctype html><meta charset="utf-8"><title>Offline</title>' +

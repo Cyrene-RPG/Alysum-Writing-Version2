@@ -171,8 +171,8 @@ export async function mountStoryBiblePage(opts) {
             } else {
                 for (const r of rows) {
                     const tr = document.createElement("tr");
-                    const open = `/story-bible.html?book=${encodeURIComponent(r.bookId)}`;
-                    const ed = `/editor.html?book=${encodeURIComponent(r.bookId)}`;
+                    const open = `story-bible.html?book=${encodeURIComponent(r.bookId)}`;
+                    const ed = `editor.html?book=${encodeURIComponent(r.bookId)}`;
                     tr.innerHTML = `
                         <td class="sb-nowrap"><a class="sb-link" href="${open}">${escapeHtml(r.title)}</a></td>
                         <td class="sb-num">${r.characterCount}</td>
@@ -193,7 +193,7 @@ export async function mountStoryBiblePage(opts) {
 
     hubView.classList.add("hidden");
     bookView.classList.remove("hidden");
-    openEditorLink.href = `/editor.html?book=${encodeURIComponent(bookId)}`;
+    openEditorLink.href = `editor.html?book=${encodeURIComponent(bookId)}`;
 
     /** @type {ReturnType<typeof normalizeBibleCharacter>[]} */
     let characters = [];

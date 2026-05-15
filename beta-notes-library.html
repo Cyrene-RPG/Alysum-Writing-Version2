@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <!-- ALYSUM:PWA:START -->
-    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="manifest" href="manifest.webmanifest">
     <meta name="theme-color" content="#7c3aed" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#020b18" media="(prefers-color-scheme: dark)">
     <meta name="color-scheme" content="dark light">
@@ -12,11 +12,11 @@
     <meta name="apple-mobile-web-app-title" content="Alysum">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="msapplication-TileColor" content="#7c3aed">
-    <meta name="msapplication-TileImage" content="/Alysum-3.png">
-    <link rel="icon" type="image/png" sizes="any" href="/Alysum-3.png">
-    <link rel="apple-touch-icon" href="/Alysum-3.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="/Alysum-3.png">
-    <script src="/js/pwa-register.js" defer></script>
+    <meta name="msapplication-TileImage" content="Alysum-3.png">
+    <link rel="icon" type="image/png" sizes="any" href="Alysum-3.png">
+    <link rel="apple-touch-icon" href="Alysum-3.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="Alysum-3.png">
+    <script src="js/pwa-register.js" defer></script>
     <!-- ALYSUM:PWA:END -->
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -27,7 +27,7 @@
             if (__g && __g !== "classic") document.documentElement.setAttribute("data-gradient-theme", __g);
         } catch (e) {}
     </script>
-    <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
+    <link rel="stylesheet" href="css/site-responsive.css?v=1" />
     <style>
         * { box-sizing: border-box; }
         :root {
@@ -315,16 +315,16 @@
             font-weight: 800;
         }
     </style>
-    <link rel="stylesheet" href="/css/gradient-themes.css?v=2" />
+    <link rel="stylesheet" href="css/gradient-themes.css?v=2" />
 </head>
 <body>
     <div class="topbar">
-        <a class="btn" href="/reader-home.html">← Reading profile</a>
+        <a class="btn" href="reader-home.html">← Reading profile</a>
         <div class="topbar-fill">
             <div class="topbar-title">Beta notes library</div>
             <div class="topbar-sub">Every highlight you saved, across every story</div>
         </div>
-        <a class="btn ghost" href="/library.html">Library</a>
+        <a class="btn ghost" href="library.html">Library</a>
     </div>
 
     <div class="wrap">
@@ -356,8 +356,14 @@
 
     <script type="module">
         import { supabase } from "./firebase.js";
+        import { wireSupabaseSession } from "./js/supabase-session.js?v=1";
         import { readBetaShelfFromLocalStorage } from "./js/beta-shelf-local.js?v=1";
         import { publicDisplayNameFromUserData } from "./js/profile-display.js?v=1";
+        import {
+            fetchAllNotesMapMerged,
+            isMissingUsersBetaReadJsonbColumns,
+            normalizeBookNotesList,
+        } from "./js/reader-beta-notes-supabase.js?v=7";
 
         const loadingState = document.getElementById("loadingState");
         const mainBlock = document.getElementById("mainBlock");
@@ -461,8 +467,8 @@
         function flattenNotes(mapByBook, cloudShelf, uid) {
             const out = [];
             Object.keys(mapByBook).forEach((bookId) => {
-                const arr = mapByBook[bookId];
-                if (!Array.isArray(arr)) return;
+                const arr = normalizeBookNotesList(mapByBook[bookId]);
+                if (!arr.length) return;
                 const storyTitle = storyTitleFor(bookId, cloudShelf);
                 arr.forEach((n, idx) => {
                     const note = safeObject(n, {});
@@ -524,7 +530,7 @@
         }
 
         function rowHtml(row) {
-            const betaUrl = `/beta-read.html?book=${encodeURIComponent(row.bookId)}`;
+            const betaUrl = `beta-read.html?book=${encodeURIComponent(row.bookId)}`;
             const au = escapeHtml(row.author);
             const authorBit = row.author ? ` · @${au}` : "";
             const q = escapeHtml(row.quote);
@@ -722,31 +728,58 @@
 
         async function refreshNotesForUser(user) {
             currentUid = user.id;
-            await loadShareKeys(user.id);
-            const { data: urow, error } = await supabase
-                .from("users")
-                .select("beta_read_notes_by_book, beta_read_shelf, display_name, displayName")
-                .eq("id", user.id)
-                .maybeSingle();
-            if (error) {
-                console.error(error);
+            try {
+                await loadShareKeys(user.id);
+                const [{ map: notesMap, error: notesErr }, shelfRes0] = await Promise.all([
+                    fetchAllNotesMapMerged(supabase, user.id),
+                    supabase
+                        .from("users")
+                        .select("beta_read_shelf, display_name, displayName")
+                        .eq("id", user.id)
+                        .maybeSingle()
+                ]);
+                let shelfRes = shelfRes0;
+                if (shelfRes.error && isMissingUsersBetaReadJsonbColumns(shelfRes.error)) {
+                    shelfRes = await supabase
+                        .from("users")
+                        .select("display_name, displayName")
+                        .eq("id", user.id)
+                        .maybeSingle();
+                }
+                if (notesErr || shelfRes.error) {
+                    console.error(notesErr || shelfRes.error);
+                    loadingState.classList.add("hidden");
+                    errorBox.textContent = "Could not load your notes. Check your connection and try again.";
+                    errorBox.classList.remove("hidden");
+                    return;
+                }
+                const urow = shelfRes.data || {};
+                readerDisplayName =
+                    publicDisplayNameFromUserData(urow) ||
+                    user.user_metadata?.full_name ||
+                    user.email?.split("@")[0] ||
+                    "Reader";
+                await ingestUserData(
+                    {
+                        ...urow,
+                        beta_read_notes_by_book: notesMap,
+                        betaReadNotesByBook: notesMap
+                    },
+                    user.id
+                );
+            } catch (e) {
+                console.error(e);
                 loadingState.classList.add("hidden");
-                errorBox.textContent = "Could not load your notes. Check your connection and try again.";
+                errorBox.textContent =
+                    "Could not load your notes. Try refreshing the page. If it keeps happening, open the browser console for details.";
                 errorBox.classList.remove("hidden");
-                return;
             }
-            readerDisplayName =
-                publicDisplayNameFromUserData(urow || {}) ||
-                user.user_metadata?.full_name ||
-                user.email?.split("@")[0] ||
-                "Reader";
-            await ingestUserData(urow || {}, user.id);
         }
 
-        supabase.auth.onAuthStateChange(async (_event, session) => {
+        wireSupabaseSession(async (session) => {
             const user = session?.user;
             if (!user) {
-                window.location.href = "/login.html?next=" + encodeURIComponent("/beta-notes-library.html");
+                window.location.href = "login.html?next=" + encodeURIComponent("beta-notes-library.html");
                 return;
             }
 

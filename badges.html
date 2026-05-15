@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <!-- ALYSUM:PWA:START -->
-    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="manifest" href="manifest.webmanifest">
     <meta name="theme-color" content="#7c3aed" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#020b18" media="(prefers-color-scheme: dark)">
     <meta name="color-scheme" content="dark light">
@@ -12,11 +12,11 @@
     <meta name="apple-mobile-web-app-title" content="Alysum">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="msapplication-TileColor" content="#7c3aed">
-    <meta name="msapplication-TileImage" content="/Alysum-3.png">
-    <link rel="icon" type="image/png" sizes="any" href="/Alysum-3.png">
-    <link rel="apple-touch-icon" href="/Alysum-3.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="/Alysum-3.png">
-    <script src="/js/pwa-register.js" defer></script>
+    <meta name="msapplication-TileImage" content="Alysum-3.png">
+    <link rel="icon" type="image/png" sizes="any" href="Alysum-3.png">
+    <link rel="apple-touch-icon" href="Alysum-3.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="Alysum-3.png">
+    <script src="js/pwa-register.js" defer></script>
     <!-- ALYSUM:PWA:END -->
 <meta charset="UTF-8" />
 <title>Alysum Achievements</title>
@@ -27,7 +27,7 @@ try {
   if (__g && __g !== "classic") document.documentElement.setAttribute("data-gradient-theme", __g);
 } catch (e) {}
 </script>
-<link rel="stylesheet" href="/css/site-responsive.css?v=1" />
+<link rel="stylesheet" href="css/site-responsive.css?v=1" />
 <style>
 * { box-sizing: border-box; }
 
@@ -174,6 +174,21 @@ body {
     font-weight: 700;
 }
 
+.achievements-hint {
+    margin: 0 0 18px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: rgba(251, 191, 36, 0.1);
+    border: 1px solid rgba(251, 191, 36, 0.35);
+    color: #fcd34d;
+    font-size: 13px;
+    line-height: 1.45;
+}
+
+.achievements-hint.hidden {
+    display: none;
+}
+
 @media (max-width: 540px) {
     .stats {
         flex-direction: column;
@@ -196,7 +211,7 @@ body {
     }
 }
 </style>
-<link rel="stylesheet" href="/css/gradient-themes.css?v=2" />
+<link rel="stylesheet" href="css/gradient-themes.css?v=2" />
 </head>
 
 <body>
@@ -227,19 +242,21 @@ body {
 </div>
 </div>
 
+<p id="achievementsHint" class="achievements-hint hidden" role="status"></p>
+
 <div class="badges" id="badgeGrid"></div>
 
 </div>
 
 <script type="module">
 import { supabase } from "./firebase.js";
-import { wireSupabaseSession } from "./js/supabase-session.js?v=1";
+import { wireSupabaseSession } from "./js/supabase-session.js?v=2";
 import {
     clampDailyWordGoal,
     computeGoalStreakFromTotals,
     DEFAULT_DAILY_WORD_GOAL
-} from "./js/writing-day-stats.js?v=1";
-import { countBookWords } from "./js/book-word-count.js?v=1";
+} from "./js/writing-day-stats.js?v=2";
+import { countBookWords } from "./js/book-word-count.js?v=2";
 
 const grid = document.getElementById("badgeGrid");
 const wordsEl = document.getElementById("totalWords");
@@ -250,55 +267,73 @@ const dailyGoalStreakEl = document.getElementById("dailyGoalStreak");
 let profileChannel = null;
 let booksChannel = null;
 let userData = {};
-let booksSnap = null;
+let booksSnap = [];
 
 /* FULL BADGES */
 const BADGES = [
+    { icon: "🧩", title: "500 Words", goal: 500, getValue: (d) => d.words, desc: "First step" },
+    { icon: "✍️", title: "1K Words", goal: 1000, getValue: (d) => d.words, desc: "Start writing" },
+    { icon: "🔥", title: "10K Words", goal: 10000, getValue: (d) => d.words, desc: "Momentum" },
+    { icon: "🏆", title: "50K Words", goal: 50000, getValue: (d) => d.words, desc: "Big milestone" },
+    { icon: "💎", title: "100K Words", goal: 100000, getValue: (d) => d.words, desc: "Serious writer" },
+    { icon: "🚀", title: "200K Words", goal: 200000, getValue: (d) => d.words, desc: "Elite output" },
+    { icon: "🧠", title: "500K Words", goal: 500000, getValue: (d) => d.words, desc: "Half million" },
+    { icon: "👑", title: "1M Words", goal: 1000000, getValue: (d) => d.words, desc: "Master writer" },
 
-{ icon:"🧩", title:"500 Words", goal:500, getValue:d=>d.words, desc:"First step" },
-{ icon:"✍️", title:"1K Words", goal:1000, getValue:d=>d.words, desc:"Start writing" },
-{ icon:"🔥", title:"10K Words", goal:10000, getValue:d=>d.words, desc:"Momentum" },
-{ icon:"🏆", title:"50K Words", goal:50000, getValue:d=>d.words, desc:"Big milestone" },
-{ icon:"💎", title:"100K Words", goal:100000, getValue:d=>d.words, desc:"Serious writer" },
-{ icon:"🚀", title:"200K Words", goal:200000, getValue:d=>d.words, desc:"Elite output" },
-{ icon:"🧠", title:"500K Words", goal:500000, getValue:d=>d.words, desc:"Half million" },
-{ icon:"👑", title:"1M Words", goal:1000000, getValue:d=>d.words, desc:"Master writer" },
+    { icon: "🌱", title: "Day 1", goal: 1, getValue: (d) => d.streak, desc: "You showed up" },
+    { icon: "⚡", title: "3 Day Streak", goal: 3, getValue: (d) => d.streak, desc: "Consistency" },
+    { icon: "🔥", title: "7 Day Streak", goal: 7, getValue: (d) => d.streak, desc: "Strong habit" },
+    { icon: "💪", title: "14 Day Streak", goal: 14, getValue: (d) => d.streak, desc: "Locked in" },
+    { icon: "📅", title: "30 Day Streak", goal: 30, getValue: (d) => d.streak, desc: "Monthly discipline" },
+    { icon: "🧱", title: "60 Day Streak", goal: 60, getValue: (d) => d.streak, desc: "Unbreakable" },
+    { icon: "📈", title: "90 Day Streak", goal: 90, getValue: (d) => d.streak, desc: "3 month grind" },
+    { icon: "🌀", title: "100 Day Streak", goal: 100, getValue: (d) => d.streak, desc: "Rare discipline" },
+    { icon: "🏔️", title: "180 Day Streak", goal: 180, getValue: (d) => d.streak, desc: "Half year" },
+    { icon: "🎖️", title: "365 Day Streak", goal: 365, getValue: (d) => d.streak, desc: "1 year legend" },
 
-{ icon:"🌱", title:"Day 1", goal:1, getValue:d=>d.streak, desc:"You showed up" },
-{ icon:"⚡", title:"3 Day Streak", goal:3, getValue:d=>d.streak, desc:"Consistency" },
-{ icon:"🔥", title:"7 Day Streak", goal:7, getValue:d=>d.streak, desc:"Strong habit" },
-{ icon:"💪", title:"14 Day Streak", goal:14, getValue:d=>d.streak, desc:"Locked in" },
-{ icon:"📅", title:"30 Day Streak", goal:30, getValue:d=>d.streak, desc:"Monthly discipline" },
-{ icon:"🧱", title:"60 Day Streak", goal:60, getValue:d=>d.streak, desc:"Unbreakable" },
-{ icon:"📈", title:"90 Day Streak", goal:90, getValue:d=>d.streak, desc:"3 month grind" },
-{ icon:"🌀", title:"100 Day Streak", goal:100, getValue:d=>d.streak, desc:"Rare discipline" },
-{ icon:"🏔️", title:"180 Day Streak", goal:180, getValue:d=>d.streak, desc:"Half year" },
-{ icon:"🎖️", title:"365 Day Streak", goal:365, getValue:d=>d.streak, desc:"1 year legend" },
+    { icon: "📚", title: "First Book", goal: 1, getValue: (d) => d.books, desc: "You started" },
+    { icon: "📦", title: "5 Books", goal: 5, getValue: (d) => d.books, desc: "Library growing" },
+    { icon: "🏗️", title: "10 Books", goal: 10, getValue: (d) => d.books, desc: "Builder" },
+    { icon: "🏛️", title: "25 Books", goal: 25, getValue: (d) => d.books, desc: "Empire" },
 
-{ icon:"📚", title:"First Book", goal:1, getValue:d=>d.books, desc:"You started" },
-{ icon:"📦", title:"5 Books", goal:5, getValue:d=>d.books, desc:"Library growing" },
-{ icon:"🏗️", title:"10 Books", goal:10, getValue:d=>d.books, desc:"Builder" },
-{ icon:"🏛️", title:"25 Books", goal:25, getValue:d=>d.books, desc:"Empire" },
-
-{ icon:"🎯", title:"3-Day Goal Streak", goal:3, getValue:d=>d.dailyGoalStreak, desc:"Hit your daily word goal three days in a row" }
-
+    {
+        icon: "🎯",
+        title: "3-Day Goal Streak",
+        goal: 3,
+        getValue: (d) => d.dailyGoalStreak,
+        desc: "Hit your daily word goal three days in a row"
+    }
 ];
 
 function renderAchievementsFromCache() {
-    if (!booksSnap) return;
+    const snap = Array.isArray(booksSnap) ? booksSnap : [];
 
     let totalWords = 0;
-    booksSnap.forEach((row) => {
-        totalWords += countBookWords(row);
-    });
+    try {
+        snap.forEach((row) => {
+            totalWords += countBookWords(row);
+        });
+    } catch (e) {
+        console.warn("Achievements word count:", e);
+    }
 
-    const dailyGoal = clampDailyWordGoal(userData.daily_word_goal ?? userData.dailyWordGoal ?? DEFAULT_DAILY_WORD_GOAL);
-    const dailyGoalStreak = computeGoalStreakFromTotals(userData.writing_day_totals ?? userData.writingDayTotals || {}, dailyGoal);
+    let dailyGoalStreak = 0;
+    try {
+        const dailyGoal = clampDailyWordGoal(
+            userData.daily_word_goal ?? userData.dailyWordGoal ?? DEFAULT_DAILY_WORD_GOAL
+        );
+        dailyGoalStreak = computeGoalStreakFromTotals(
+            userData.writing_day_totals ?? userData.writingDayTotals ?? {},
+            dailyGoal
+        );
+    } catch (e) {
+        console.warn("Achievements goal streak:", e);
+    }
 
     const data = {
         words: totalWords,
         streak: userData.streak || 0,
-        books: booksSnap.length,
+        books: snap.length,
         dailyGoalStreak
     };
 
@@ -307,22 +342,28 @@ function renderAchievementsFromCache() {
     booksEl.textContent = data.books;
     dailyGoalStreakEl.textContent = data.dailyGoalStreak.toLocaleString();
 
-    renderBadges(data);
+    try {
+        renderBadges(data);
+    } catch (e) {
+        console.error("Achievements badges render:", e);
+    }
 }
 
 /* RENDER */
-function renderBadges(data){
-grid.innerHTML = "";
+function renderBadges(data) {
+    if (!grid) return;
+    grid.innerHTML = "";
 
-BADGES.forEach(b=>{
-const value = b.getValue(data);
-const percent = Math.min(value / b.goal, 1) * 100;
-const unlocked = value >= b.goal;
+BADGES.forEach((b) => {
+        const raw = b.getValue(data);
+        const value = typeof raw === "number" && Number.isFinite(raw) ? raw : 0;
+        const percent = Math.min(value / b.goal, 1) * 100;
+        const unlocked = value >= b.goal;
 
-const el = document.createElement("div");
-el.className = "badge " + (unlocked ? "unlocked" : "locked");
+        const el = document.createElement("div");
+        el.className = "badge " + (unlocked ? "unlocked" : "locked");
 
-el.innerHTML = `
+        el.innerHTML = `
 <div class="badge-icon">${b.icon}</div>
 <div class="badge-title">${b.title}</div>
 <div class="badge-desc">${b.desc}</div>
@@ -332,15 +373,21 @@ el.innerHTML = `
 </div>
 
 <div class="progress-text">
-${Math.min(value,b.goal)} / ${b.goal}
+${Math.min(value, b.goal)} / ${b.goal}
 </div>
 `;
 
-grid.appendChild(el);
-});
+        grid.appendChild(el);
+    });
 }
 
 async function loadUserAndBooks(uid) {
+    const hintEl = document.getElementById("achievementsHint");
+    if (hintEl) {
+        hintEl.classList.add("hidden");
+        hintEl.textContent = "";
+    }
+
     const [{ data: profile, error: pErr }, { data: books, error: bErr }] = await Promise.all([
         supabase.from("users").select("*").eq("id", uid).maybeSingle(),
         supabase.from("books").select("sections, words").eq("user_id", uid)
@@ -349,6 +396,26 @@ async function loadUserAndBooks(uid) {
     if (bErr) console.warn("Achievements books:", bErr);
     userData = profile || {};
     booksSnap = books || [];
+
+    if (hintEl) {
+        if (pErr || bErr) {
+            hintEl.textContent =
+                "Could not load your stats: " + (pErr?.message || bErr?.message || "Unknown error.");
+            hintEl.classList.remove("hidden");
+        } else if (!booksSnap.length) {
+            let msg =
+                "No books are linked to this login. If you already had a library, those rows may still exist under a different user id.";
+            if (profile?.firebase_uid || profile?.firebaseUid) {
+                msg +=
+                    " After a Firebase → Supabase migration, run node repair-books-ownership.js from the project folder (then refresh), or set books.user_id to your user id in Supabase.";
+            } else {
+                msg += " Create a book from Studio, or sign in with the account that owns the books.";
+            }
+            hintEl.textContent = msg;
+            hintEl.classList.remove("hidden");
+        }
+    }
+
     renderAchievementsFromCache();
 }
 
@@ -382,7 +449,7 @@ wireSupabaseSession((session) => {
         if (booksChannel) supabase.removeChannel(booksChannel);
         profileChannel = null;
         booksChannel = null;
-        location.href = "/login.html";
+        location.href = "login.html";
         return;
     }
 
@@ -393,10 +460,23 @@ wireSupabaseSession((session) => {
 
     userData = {};
     booksSnap = [];
-    void loadUserAndBooks(user.id).then(() => startAchievementsRealtime(user.id));
+    void loadUserAndBooks(user.id)
+        .then(() => startAchievementsRealtime(user.id))
+        .catch((err) => {
+            console.error("Achievements load failed:", err);
+            const hintEl = document.getElementById("achievementsHint");
+            if (hintEl) {
+                hintEl.textContent =
+                    "Could not load achievements (" +
+                    (err?.message || String(err)) +
+                    "). Check your connection, refresh, or open the browser console for details.";
+                hintEl.classList.remove("hidden");
+            }
+            renderAchievementsFromCache();
+        });
 
     document.getElementById("backBtn").onclick = () => {
-        window.location.href = "/studio.html";
+        window.location.href = "studio.html";
     };
 });
 </script>
