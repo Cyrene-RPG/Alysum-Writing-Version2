@@ -6,17 +6,14 @@
     <meta name="theme-color" content="#020b18" media="(prefers-color-scheme: dark)">
     <meta name="color-scheme" content="dark light">
     <meta name="application-name" content="Alysum">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Alysum">
-    <meta name="mobile-web-app-capable" content="yes">
     <meta name="msapplication-TileColor" content="#7c3aed">
     <meta name="msapplication-TileImage" content="Alysum-3.png">
     <link rel="icon" type="image/png" sizes="any" href="Alysum-3.png">
     <link rel="apple-touch-icon" href="Alysum-3.png">
     <link rel="apple-touch-icon" sizes="180x180" href="Alysum-3.png">
     <script src="js/pwa-register.js" defer></script>
-    <!-- ALYSUM:PWA:END --><meta charset="UTF-8" />
+    <!-- ALYSUM:PWA:END -->
+<meta charset="UTF-8" />
 <title>World building — Alysum</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
@@ -27,7 +24,7 @@
     } catch (e) {}
 </script>
 
-<link rel="stylesheet" href="css/site-responsive.css?v=1" />
+<link rel="stylesheet" href="/css/site-responsive.css?v=1" />
 <style>
     * { box-sizing: border-box; }
     html, body {
@@ -549,15 +546,15 @@
         .wb-header-actions { justify-content: flex-start; }
     }
 </style>
-<link rel="stylesheet" href="css/gradient-themes.css?v=2" />
+<link rel="stylesheet" href="/css/gradient-themes.css?v=2" />
 
 </head>
 <body>
     <header class="wb-header">
         <div class="wb-header-title">World building</div>
         <div class="wb-header-actions">
-            <a class="wb-btn" href="writer-resources.html">← Resources</a>
-            <a class="wb-btn" href="studio.html">Studio</a>
+            <a class="wb-btn" href="/writer-resources.html">← Resources</a>
+            <a class="wb-btn" href="/studio.html">Studio</a>
         </div>
     </header><p class="wb-loading" id="wbLoading">Checking sign-in…</p>
 
@@ -569,10 +566,10 @@
             <div class="wb-aside-actions">
                 <button type="button" class="wb-btn wb-btn-primary" id="wbSaveNowBtn">Save now</button>
                 <button type="button" class="wb-btn" id="wbNewSheetBtn">New sheet</button>
-               <a href="realm-builder.html" class="world-btn">
+               <a href="/realm-builder.html" class="world-btn">
     👑 Realm Builder
 </a>
-                 <a class="wb-btn wb-btn-primary" href="city-builder.html">City Builder</a>
+                 <a class="wb-btn wb-btn-primary" href="/city-builder.html">City Builder</a>
             </div>
             <ul id="wbSheetMenu" class="wb-sheet-list" aria-label="Worldbuilding worksheets"></ul>
         </aside>
@@ -630,7 +627,20 @@
 </div>
 
 <script type="module">
-    import { supabase } from "./firebase.js";
+    import { auth, db } from "./firebase.js";
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import {
+        collection,
+        deleteDoc,
+        doc,
+        getDoc,
+        getDocs,
+        onSnapshot,
+        orderBy,
+        query,
+        serverTimestamp,
+        setDoc
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const LEGACY_LOCAL_KEY = "alysum-worldbuilding-sheet-v1";
     const ACTIVE_SHEET_KEY = "alysum-active-worldbuilding-sheet-v1";
@@ -843,6 +853,7 @@
     const wbSaveNowBtn = document.getElementById("wbSaveNowBtn");
 
     let wbUid = null;
+    let sheetsColRef = null;
     let unsubscribeSheets = null;
     let lastSheets = [];
     let activeSheetId = null;
@@ -1006,7 +1017,8 @@
     }
 
     function getActiveSheetRef() {
-        return wbUid && activeSheetId ? { ok: true } : null;
+        if (!wbUid || !activeSheetId) return null;
+        return doc(db, "users", wbUid, SHEETS_COLLECTION, activeSheetId);
     }
 
     function getActiveSheet() {
@@ -1229,22 +1241,23 @@
         requestAnimationFrame(() => wbModalGuide.querySelector("textarea")?.focus());
     }
 
-    function closeModal() {
-        if (activeModalKey) {
-            syncFormFromDom(activeModalKey);
-            refreshEncyclopediaPreview();
-            scheduleCloudSave();
+        function closeModal() {
+            if (activeModalKey) {
+                syncFormFromDom(activeModalKey);
+                refreshEncyclopediaPreview();
+                scheduleCloudSave();
+            }
+            wbModalBackdrop.classList.remove("is-open");
+            wbModalBackdrop.setAttribute("aria-hidden", "true");
+            document.body.style.overflow = "";
+            activeModalKey = null;
+            if (lastFocusEl && typeof lastFocusEl.focus === "function") {
+                try {
+                    lastFocusEl.focus();
+                } catch (e) {}
+            }
+            lastFocusEl = null;
         }
-        wbModalBackdrop.classList.remove("is-open");
-        wbModalBackdrop.setAttribute("aria-hidden", "true");
-        document.body.style.overflow = "";
-        activeModalKey = null;
-
-        if (lastFocusEl && typeof lastFocusEl.focus === "function") {
-            try { lastFocusEl.focus(); } catch (e) {}
-        }
-        lastFocusEl = null;
-    }
 
     function renderSections() {
         wbSections.innerHTML = SECTION_META.map((s) => `
@@ -1272,34 +1285,21 @@
             title,
             answers: cloneAnswers(answersCache),
             schemaVersion: 2,
-            updated: Date.now()
+            updated: Date.now(),
+            updatedAt: serverTimestamp()
         };
     }
 
     async function saveNow(options = {}) {
         const quiet = Boolean(options.quiet);
-        if (!getActiveSheetRef() || isApplyingRemote) return;
+        const ref = getActiveSheetRef();
+        if (!ref || isApplyingRemote) return;
 
         clearTimeout(saveTimer);
         if (!quiet) setStatus("Saving…");
 
         try {
-            const payload = collectFirestorePayload();
-            const active = getActiveSheet();
-            const createdMs = typeof active?.created === "number" && Number.isFinite(active.created) ? active.created : Date.now();
-            const { error } = await supabase.from("worldbuilding_encyclopedia").upsert(
-                {
-                    user_id: wbUid,
-                    id: activeSheetId,
-                    title: payload.title,
-                    answers: payload.answers,
-                    schema_version: payload.schemaVersion,
-                    created_ms: createdMs,
-                    updated_ms: Date.now()
-                },
-                { onConflict: "user_id,id" }
-            );
-            if (error) throw error;
+            await setDoc(ref, collectFirestorePayload(), { merge: true });
             if (!quiet) setStatus("Saved to your account", "ok");
         } catch (e) {
             console.error(e);
@@ -1315,38 +1315,25 @@
     }
 
     async function createSheet({ title = "Untitled world", answers = emptyAnswers(), select = true } = {}) {
-        if (!wbUid) return null;
+        if (!sheetsColRef || !wbUid) return null;
 
         const id = makeSheetId();
+        const ref = doc(db, "users", wbUid, SHEETS_COLLECTION, id);
         const now = Date.now();
 
-        const { error } = await supabase.from("worldbuilding_encyclopedia").upsert(
-            {
-                user_id: wbUid,
-                id,
-                title,
-                answers: cloneAnswers(answers),
-                schema_version: 2,
-                created_ms: now,
-                updated_ms: now
-            },
-            { onConflict: "user_id,id" }
-        );
-        if (error) {
-            console.error(error);
-            return null;
-        }
+        const payload = {
+            title,
+            answers: cloneAnswers(answers),
+            schemaVersion: 2,
+            created: now,
+            updated: now,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+        };
 
-        const sheet = normalizeSheet(
-            {
-                title,
-                answers: cloneAnswers(answers),
-                schemaVersion: 2,
-                created: now,
-                updated: now
-            },
-            id
-        );
+        await setDoc(ref, payload, { merge: true });
+
+        const sheet = normalizeSheet(payload, id);
         if (select) {
             activeSheetId = id;
             applySheetToUi(sheet);
@@ -1359,8 +1346,7 @@
         if (!wbUid || !id) return;
 
         try {
-            const { error } = await supabase.from("worldbuilding_encyclopedia").delete().eq("user_id", wbUid).eq("id", id);
-            if (error) throw error;
+            await deleteDoc(doc(db, "users", wbUid, SHEETS_COLLECTION, id));
 
             if (activeSheetId === id) {
                 const remaining = lastSheets.filter((sheet) => sheet.id !== id);
@@ -1390,122 +1376,51 @@
         }
     }
 
-    async function migrateLegacySingleDocIfNeeded() {
-        if (!wbUid || hasMigratedThisSession) return;
-        hasMigratedThisSession = true;
+        function copyText(text) {
+            navigator.clipboard.writeText(text).then(
+                () => alert("Copied."),
+                () => alert("Could not copy — try selecting text manually.")
+            );
+        }
 
-        // Keep everything inside /users/{uid}/worldbuilding/{sheetId}
-        // because this is the path your existing Firebase rules already allow.
-        // The old single-sheet document at /worldbuilding/data now simply appears
-        // as one of the selectable worldsheets.
-        const local = loadLegacyLocal();
-        if (!hasAnyContentDocLike(local)) return;
+        function scheduleCloudSave() {
+            if (!sheetRef) return;
+            saveStatus.textContent = "Saving…";
+            saveStatus.classList.remove("ok", "warn");
+            clearTimeout(saveTimer);
+            saveTimer = setTimeout(async () => {
+                try {
+                    const payload = { ...collectFirestorePayload(), updated: Date.now() };
+                    await setDoc(sheetRef, payload, { merge: true });
+                    saveStatus.textContent = "Saved to your account";
+                    saveStatus.classList.add("ok");
+                } catch (e) {
+                    console.error(e);
+                    saveStatus.textContent = "Could not save — check connection and try again.";
+                    saveStatus.classList.add("warn");
+                }
+            }, 550);
+        }
 
-        try {
-            const { count, error: cntErr } = await supabase
-                .from("worldbuilding_encyclopedia")
-                .select("id", { count: "exact", head: true })
-                .eq("user_id", wbUid);
-            if (cntErr) throw cntErr;
-            const alreadyHasCloudSheets = (count || 0) > 0;
-
-            if (!alreadyHasCloudSheets) {
-                await createSheet({
-                    title: typeof local.title === "string" && local.title.trim() ? local.title.trim() : "Imported worldbuilding",
-                    answers: stateFromDocData(local),
-                    select: true
-                });
-                try { localStorage.removeItem(LEGACY_LOCAL_KEY); } catch (e) {}
+        async function tryMigrateLocalToCloud() {
+            if (migratedLocal || !sheetRef) return;
+            const local = loadLegacyLocal();
+            if (!hasAnyContentDocLike(local)) return;
+            migratedLocal = true;
+            try {
+                const merged = stateFromDocData(local);
+                await setDoc(
+                    sheetRef,
+                    { answers: cloneAnswers(merged), schemaVersion: 2, updated: Date.now() },
+                    { merge: true }
+                );
+                applyState(merged);
+                localStorage.removeItem(LEGACY_LOCAL_KEY);
+            } catch (e) {
+                console.warn("Local worldbuilding migrate failed:", e);
+                migratedLocal = false;
             }
-        } catch (e) {
-            console.warn("Local worldbuilding migration skipped:", e);
         }
-    }
-
-    function supaRowToSheet(row) {
-        return normalizeSheet(
-            {
-                title: row.title,
-                answers: row.answers,
-                schemaVersion: row.schema_version,
-                created: row.created_ms,
-                updated: row.updated_ms
-            },
-            row.id
-        );
-    }
-
-    async function refreshSheetsFromCloud() {
-        const { data, error } = await supabase
-            .from("worldbuilding_encyclopedia")
-            .select("*")
-            .eq("user_id", wbUid)
-            .order("updated_ms", { ascending: false });
-        if (error) {
-            console.error(error);
-            setStatus("Could not load worldsheets — refresh or try again.", "warn");
-            return;
-        }
-        lastSheets = (data || []).map(supaRowToSheet);
-        renderSheetMenu();
-
-        if (!lastSheets.length) {
-            await createSheet({ title: "Untitled world", answers: emptyAnswers(), select: true });
-            return;
-        }
-
-        const savedActive = localStorage.getItem(ACTIVE_SHEET_KEY);
-        const currentStillExists = lastSheets.find((s) => s.id === activeSheetId);
-        const savedExists = lastSheets.find((s) => s.id === savedActive);
-
-        if (!activeSheetId) {
-            applySheetToUi(savedExists || lastSheets[0]);
-            setStatus("Saved to your account", "ok");
-            return;
-        }
-
-        if (!currentStillExists) {
-            applySheetToUi(savedExists || lastSheets[0]);
-            return;
-        }
-
-        const remoteActive = lastSheets.find((s) => s.id === activeSheetId);
-        if (remoteActive && !saveTimer && document.activeElement !== wbWorldTitle) {
-            const modalOpen = wbModalBackdrop.classList.contains("is-open");
-            if (!modalOpen) applySheetToUi(remoteActive);
-        }
-    }
-
-    function subscribeSheets() {
-        if (!wbUid) return;
-        if (unsubscribeSheets) {
-            supabase.removeChannel(unsubscribeSheets);
-            unsubscribeSheets = null;
-        }
-
-        void refreshSheetsFromCloud().catch((err) => {
-            console.error(err);
-            setStatus("Could not load worldsheets — refresh or try again.", "warn");
-        });
-
-        unsubscribeSheets = supabase
-            .channel("worldbuilding_enc_" + wbUid)
-            .on(
-                "postgres_changes",
-                { event: "*", schema: "public", table: "worldbuilding_encyclopedia", filter: `user_id=eq.${wbUid}` },
-                () => refreshSheetsFromCloud().catch(console.error)
-            )
-            .subscribe();
-    }
-
-    async function copyText(text) {
-        try {
-            await navigator.clipboard.writeText(text);
-            alert("Copied.");
-        } catch {
-            alert("Could not copy — try selecting text manually.");
-        }
-    }
 
     renderSections();
 
@@ -1564,43 +1479,58 @@
         copyText(t || "Nothing filled in yet — open a topic and add answers first.");
     });
 
-    document.getElementById("clearBtn")?.addEventListener("click", async () => {
-        if (!activeSheetId) return;
-        if (!confirm("Erase this worldsheet's answers? This cannot be undone.")) return;
+        document.getElementById("clearBtn")?.addEventListener("click", async () => {
+            if (!sheetRef) return;
+            if (!confirm("Erase your entire world encyclopedia from your account? This cannot be undone.")) return;
+            const clears = {};
+            for (const k of SECTION_KEYS) clears[k] = deleteField();
+            try {
+                await setDoc(
+                    sheetRef,
+                    { answers: emptyAnswers(), schemaVersion: 2, updated: Date.now(), ...clears },
+                    { merge: true }
+                );
+                closeModal();
+                applyState(emptyAnswers());
+                saveStatus.textContent = "Cleared";
+                saveStatus.classList.remove("ok");
+                saveStatus.classList.add("warn");
+            } catch (e) {
+                console.error(e);
+                alert("Could not clear — try again.");
+            }
+        });
 
-        answersCache = emptyAnswers();
-        refreshEncyclopediaPreview();
-        if (activeModalKey) wbModalGuide.innerHTML = renderSectionForm(activeModalKey);
-        await saveNow();
-        setStatus("Sheet cleared", "warn");
-    });
-
-    supabase.auth.onAuthStateChange(async (_event, session) => {
-        const user = session?.user;
+    onAuthStateChanged(auth, async (user) => {
         if (!user) {
-            window.location.href = "login.html?next=" + encodeURIComponent("worldbuilding.html");
+            window.location.href = "/login.html?next=" + encodeURIComponent("/worldbuilding.html");
             return;
         }
 
-        wbUid = user.id;
-        wbLoading.classList.add("hidden");
-        wbMain.classList.remove("hidden");
-        setStatus("Loading…");
+            sheetRef = doc(db, "users", user.uid, "worldbuilding", "data");
+            wbLoading.classList.add("hidden");
+            wbMain.classList.remove("hidden");
+            saveStatus.textContent = "Loading…";
+            saveStatus.classList.remove("ok", "warn");
 
-        try {
-            await migrateLegacySingleDocIfNeeded();
-            subscribeSheets();
-            setStatus("Saved to your account", "ok");
-        } catch (err) {
-            console.error(err);
-            setStatus("Could not load worldsheets — refresh or try again.", "warn");
-        }
-    });
+            try {
+                const snap = await getDoc(sheetRef);
+                const data = snap.exists() ? snap.data() || {} : {};
+                let state = stateFromDocData(data);
+                applyState(state);
 
-    window.addEventListener("beforeunload", () => {
-        if (unsubscribeSheets) supabase.removeChannel(unsubscribeSheets);
-    });
-</script>
+                if (!answersTreeHasContent(state)) {
+                    await tryMigrateLocalToCloud();
+                }
 
+                saveStatus.textContent = "Saved to your account";
+                saveStatus.classList.add("ok");
+            } catch (err) {
+                console.error(err);
+                saveStatus.textContent = "Could not load sheet — refresh or try again.";
+                saveStatus.classList.add("warn");
+            }
+        });
+    </script>
 </body>
 </html>

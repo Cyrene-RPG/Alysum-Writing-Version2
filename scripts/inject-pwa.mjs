@@ -4,7 +4,7 @@
  *
  * For every *.html in the project root, ensures the following exists inside <head>:
  *   - <link rel="manifest">
- *   - PWA meta tags (theme-color, color-scheme, mobile-web-app-capable, apple-touch-icon, etc.)
+ *   - PWA meta tags (theme-color, color-scheme, apple-touch-icon, etc.)
  *   - <script src="js/pwa-register.js" defer>
  *
  * Wrapped in marker comments so re-running just replaces the block in place.
@@ -26,10 +26,6 @@ const BLOCK = [
     '<meta name="theme-color" content="#020b18" media="(prefers-color-scheme: dark)">',
     '<meta name="color-scheme" content="dark light">',
     '<meta name="application-name" content="Alysum">',
-    '<meta name="apple-mobile-web-app-capable" content="yes">',
-    '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">',
-    '<meta name="apple-mobile-web-app-title" content="Alysum">',
-    '<meta name="mobile-web-app-capable" content="yes">',
     '<meta name="msapplication-TileColor" content="#7c3aed">',
     '<meta name="msapplication-TileImage" content="Alysum-3.png">',
     '<link rel="icon" type="image/png" sizes="any" href="Alysum-3.png">',
