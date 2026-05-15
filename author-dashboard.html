@@ -1,5 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
     <!-- ALYSUM:PWA:START -->
     <link rel="manifest" href="manifest.webmanifest">
@@ -13,492 +12,495 @@
     <link rel="apple-touch-icon" href="Alysum-3.png">
     <link rel="apple-touch-icon" sizes="180x180" href="Alysum-3.png">
     <script src="js/pwa-register.js" defer></script>
+<<<<<<< HEAD
     <!-- ALYSUM:PWA:END -->
     <!-- ALYSUM:ANALYTICS:START -->
     <script type="module" src="js/vercel-analytics.js"></script>
     <!-- ALYSUM:ANALYTICS:END -->
 
+=======
+    <!-- ALYSUM:PWA:END --><meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Author Dashboard - Alysum</title>
+<script>
+    try {
+        var __g = localStorage.getItem("alysum-gradient-theme");
+        if (__g && __g !== "classic") document.documentElement.setAttribute("data-gradient-theme", __g);
+    } catch (e) {}
+</script>
+<link rel="stylesheet" href="css/site-responsive.css?v=1" />
+<style>
+    * { box-sizing: border-box; }
+>>>>>>> b076adf (Dashboard fixes)
 
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Author Dashboard - Alysum</title>
-    <script>
-        try {
-            var __g = localStorage.getItem("alysum-gradient-theme");
-            if (__g && __g !== "classic") document.documentElement.setAttribute("data-gradient-theme", __g);
-        } catch (e) {}
-    </script>
-    <link rel="stylesheet" href="css/site-responsive.css?v=1" />
-    <style>
-        * { box-sizing: border-box; }
+    :root {
+        --bg: #0b1220;
+        --panel: #111827;
+        --panel-2: #172132;
+        --panel-3: #1f2937;
+        --text: #f9fafb;
+        --muted: #9ca3af;
+        --muted-2: #cbd5e1;
+        --purple: #6d28d9;
+        --purple-dark: #5b21b6;
+        --pink: #ec4899;
+        --gold: #f5d489;
+        --green: #22c55e;
+        --border: rgba(255,255,255,0.09);
+        --shadow: 0 18px 44px rgba(0,0,0,0.35);
+    }
 
-        :root {
-            --bg: #0b1220;
-            --panel: #111827;
-            --panel-2: #172132;
-            --panel-3: #1f2937;
-            --text: #f9fafb;
-            --muted: #9ca3af;
-            --muted-2: #cbd5e1;
-            --purple: #6d28d9;
-            --purple-dark: #5b21b6;
-            --pink: #ec4899;
-            --gold: #f5d489;
-            --green: #22c55e;
-            --border: rgba(255,255,255,0.09);
-            --shadow: 0 18px 44px rgba(0,0,0,0.35);
-        }
+    html, body {
+        margin: 0;
+        min-height: 100%;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background:
+            radial-gradient(circle at top center, var(--theme-body-spot) 0%, transparent 28%),
+            linear-gradient(180deg, #0d1426 0%, #0b1220 100%);
+        color: var(--text);
+    }
 
-        html, body {
-            margin: 0;
-            min-height: 100%;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            background:
-                radial-gradient(circle at top center, var(--theme-body-spot) 0%, transparent 28%),
-                linear-gradient(180deg, #0d1426 0%, #0b1220 100%);
-            color: var(--text);
-        }
+    body { overflow-x: hidden; }
 
-        body { overflow-x: hidden; }
+    a { color: inherit; }
 
-        a { color: inherit; }
+    .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 14px 18px;
+        background: rgba(11,18,32,0.88);
+        border-bottom: 1px solid var(--border);
+        backdrop-filter: blur(12px);
+    }
 
-        .topbar {
-            position: sticky;
-            top: 0;
-            z-index: 50;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            padding: 14px 18px;
-            background: rgba(11,18,32,0.88);
-            border-bottom: 1px solid var(--border);
-            backdrop-filter: blur(12px);
-        }
+    .brand {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+    }
 
-        .brand {
-            display: flex;
-            flex-direction: column;
-            min-width: 0;
-        }
+    .brand-kicker {
+        font-size: 12px;
+        font-weight: 900;
+        color: var(--theme-brand-kicker);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+    }
 
-        .brand-kicker {
-            font-size: 12px;
-            font-weight: 900;
-            color: var(--theme-brand-kicker);
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-        }
+    .brand-title {
+        font-size: 22px;
+        font-weight: 900;
+        color: var(--gold);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
 
-        .brand-title {
-            font-size: 22px;
-            font-weight: 900;
-            color: var(--gold);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
+    .top-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
 
-        .top-actions {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            justify-content: flex-end;
-        }
+    .btn {
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        background: var(--panel);
+        color: var(--text);
+        padding: 11px 15px;
+        font-weight: 900;
+        text-decoration: none;
+        cursor: pointer;
+        font: inherit;
+    }
 
-        .btn {
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            background: var(--panel);
-            color: var(--text);
-            padding: 11px 15px;
-            font-weight: 900;
-            text-decoration: none;
-            cursor: pointer;
-            font: inherit;
-        }
+    .btn.primary {
+        background: linear-gradient(135deg, var(--purple-dark), var(--purple));
+        border-color: transparent;
+        color: white;
+    }
 
-        .btn.primary {
-            background: linear-gradient(135deg, var(--purple-dark), var(--purple));
-            border-color: transparent;
-            color: white;
-        }
+    .shell {
+        width: 100%;
+        max-width: 1320px;
+        margin: 0 auto;
+        padding: 22px 18px 54px;
+    }
 
-        .shell {
-            width: 100%;
-            max-width: 1320px;
-            margin: 0 auto;
-            padding: 22px 18px 54px;
-        }
+    .hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 18px;
+        align-items: end;
+        padding: 22px;
+        border-radius: 26px;
+        border: 1px solid color-mix(in srgb, var(--pink) 18%, transparent);
+        background: var(--theme-hero-bg);
+        box-shadow: var(--shadow);
+    }
 
-        .hero {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) auto;
-            gap: 18px;
-            align-items: end;
-            padding: 22px;
-            border-radius: 26px;
-            border: 1px solid color-mix(in srgb, var(--pink) 18%, transparent);
-            background: var(--theme-hero-bg);
-            box-shadow: var(--shadow);
-        }
+    .hero h1 {
+        margin: 0;
+        font-size: clamp(30px, 6vw, 52px);
+        line-height: 1.02;
+        letter-spacing: -0.04em;
+        color: #fff7ed;
+    }
 
-        .hero h1 {
-            margin: 0;
-            font-size: clamp(30px, 6vw, 52px);
-            line-height: 1.02;
-            letter-spacing: -0.04em;
-            color: #fff7ed;
-        }
+    .hero p {
+        margin: 12px 0 0;
+        max-width: 720px;
+        color: var(--muted-2);
+        font-size: 16px;
+        line-height: 1.6;
+    }
 
-        .hero p {
-            margin: 12px 0 0;
-            max-width: 720px;
-            color: var(--muted-2);
-            font-size: 16px;
-            line-height: 1.6;
-        }
+    .status-pill {
+        border: 1px solid rgba(245,212,137,0.25);
+        border-radius: 999px;
+        padding: 10px 14px;
+        background: rgba(245,212,137,0.08);
+        color: var(--gold);
+        font-weight: 900;
+        white-space: nowrap;
+    }
 
-        .status-pill {
-            border: 1px solid rgba(245,212,137,0.25);
-            border-radius: 999px;
-            padding: 10px 14px;
-            background: rgba(245,212,137,0.08);
-            color: var(--gold);
-            font-weight: 900;
-            white-space: nowrap;
-        }
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+        margin-top: 18px;
+    }
 
-        .summary-grid {
-            display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: 14px;
-            margin-top: 18px;
-        }
+    .summary-card,
+    .panel {
+        border: 1px solid var(--border);
+        border-radius: 22px;
+        background: linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.01)), var(--panel);
+        box-shadow: var(--shadow);
+    }
 
-        .summary-card,
-        .panel {
-            border: 1px solid var(--border);
-            border-radius: 22px;
-            background: linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.01)), var(--panel);
-            box-shadow: var(--shadow);
-        }
+    .summary-card {
+        padding: 18px;
+    }
 
-        .summary-card {
-            padding: 18px;
-        }
+    .summary-value {
+        font-size: 30px;
+        font-weight: 900;
+        color: var(--gold);
+        line-height: 1;
+    }
 
-        .summary-value {
-            font-size: 30px;
-            font-weight: 900;
-            color: var(--gold);
-            line-height: 1;
-        }
+    .summary-label {
+        margin-top: 8px;
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
 
-        .summary-label {
-            margin-top: 8px;
-            color: var(--muted);
-            font-size: 13px;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-        }
+    .panel {
+        margin-top: 18px;
+        padding: 18px;
+    }
 
-        .panel {
-            margin-top: 18px;
-            padding: 18px;
-        }
+    .panel-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 14px;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+    }
 
-        .panel-head {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 14px;
-            flex-wrap: wrap;
-            margin-bottom: 16px;
-        }
+    .panel-head h2 {
+        margin: 0;
+        font-size: 24px;
+        font-weight: 900;
+    }
 
-        .panel-head h2 {
-            margin: 0;
-            font-size: 24px;
-            font-weight: 900;
-        }
+    .panel-head p {
+        margin: 6px 0 0;
+        color: var(--muted);
+        line-height: 1.5;
+    }
 
-        .panel-head p {
-            margin: 6px 0 0;
-            color: var(--muted);
-            line-height: 1.5;
-        }
+    .book-grid {
+        display: grid;
+        gap: 14px;
+    }
 
-        .book-grid {
-            display: grid;
-            gap: 14px;
-        }
+    .book-card {
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        background: var(--panel-2);
+        padding: 16px;
+    }
 
-        .book-card {
-            border: 1px solid var(--border);
-            border-radius: 20px;
-            background: var(--panel-2);
-            padding: 16px;
-        }
+    .book-top {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 14px;
+        align-items: start;
+    }
 
+    .book-title {
+        margin: 0;
+        font-size: 22px;
+        font-weight: 900;
+        line-height: 1.15;
+    }
+
+    .book-meta {
+        margin-top: 7px;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.5;
+    }
+
+    .book-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .mini-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 38px;
+        border-radius: 12px;
+        padding: 8px 12px;
+        background: rgba(255,255,255,0.055);
+        border: 1px solid var(--border);
+        color: var(--text);
+        font-weight: 800;
+        font-size: 13px;
+        text-decoration: none;
+    }
+
+    .book-stats {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 14px;
+    }
+
+    .book-stat {
+        padding: 12px;
+        border-radius: 15px;
+        background: rgba(255,255,255,0.045);
+        border: 1px solid rgba(255,255,255,0.07);
+    }
+
+    .book-stat strong {
+        display: block;
+        font-size: 20px;
+        color: var(--gold);
+    }
+
+    .book-stat span {
+        display: block;
+        margin-top: 4px;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .comments {
+        margin-top: 14px;
+        display: grid;
+        gap: 8px;
+    }
+
+    .comment-item {
+        border-left: 3px solid rgba(167,139,250,0.55);
+        background: rgba(0,0,0,0.16);
+        border-radius: 12px;
+        padding: 10px 12px;
+    }
+
+    .comment-meta {
+        color: var(--theme-brand-kicker);
+        font-size: 12px;
+        font-weight: 900;
+        margin-bottom: 4px;
+    }
+
+    .comment-text {
+        color: var(--muted-2);
+        font-size: 14px;
+        line-height: 1.5;
+        overflow-wrap: anywhere;
+    }
+
+    .comment-item .comment-row-actions {
+        margin-top: 8px;
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    .mini-btn.danger-outline {
+        border-color: rgba(248, 113, 113, 0.45);
+        color: #fecaca;
+    }
+
+    .mini-btn.danger-outline:hover {
+        border-color: rgba(248, 113, 113, 0.75);
+        color: #fff;
+    }
+
+    .empty-state,
+    .loading-state,
+    .error-state {
+        padding: 28px;
+        text-align: center;
+        color: var(--muted-2);
+        border: 1px dashed rgba(255,255,255,0.16);
+        border-radius: 20px;
+        background: rgba(255,255,255,0.035);
+    }
+
+    .notif-list {
+        display: grid;
+        gap: 12px;
+    }
+
+    .notif-card {
+        border-radius: 18px;
+        border: 1px solid var(--border);
+        background: var(--panel-2);
+        padding: 14px 16px;
+        text-align: left;
+    }
+
+    .notif-card.unread {
+        border-left: 4px solid var(--pink);
+        box-shadow: 0 0 0 1px color-mix(in srgb, var(--pink) 22%, transparent);
+    }
+
+    .notif-top {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 8px;
+    }
+
+    .notif-kicker {
+        font-size: 11px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--theme-brand-kicker);
+    }
+
+    .notif-title {
+        margin: 4px 0 0;
+        font-size: 17px;
+        font-weight: 900;
+        line-height: 1.25;
+    }
+
+    .notif-meta {
+        margin-top: 6px;
+        font-size: 13px;
+        color: var(--muted);
+        font-weight: 700;
+    }
+
+    .notif-quote {
+        margin-top: 10px;
+        font-size: 13px;
+        font-style: italic;
+        color: var(--muted-2);
+        line-height: 1.5;
+        border-left: 3px solid rgba(167,139,250,0.45);
+        padding-left: 12px;
+    }
+
+    .notif-comment {
+        margin-top: 10px;
+        font-size: 14px;
+        line-height: 1.55;
+        color: var(--text);
+        white-space: pre-wrap;
+    }
+
+    .notif-actions {
+        margin-top: 12px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .hidden { display: none !important; }
+
+    @media (max-width: 860px) {
+        .hero,
         .book-top {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) auto;
-            gap: 14px;
-            align-items: start;
+            grid-template-columns: 1fr;
         }
 
-        .book-title {
-            margin: 0;
-            font-size: 22px;
-            font-weight: 900;
-            line-height: 1.15;
-        }
-
-        .book-meta {
-            margin-top: 7px;
-            color: var(--muted);
-            font-size: 14px;
-            line-height: 1.5;
+        .summary-grid,
+        .book-stats {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
         }
 
         .book-actions {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            justify-content: flex-end;
+            justify-content: stretch;
         }
 
-        .mini-btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 38px;
-            border-radius: 12px;
-            padding: 8px 12px;
-            background: rgba(255,255,255,0.055);
-            border: 1px solid var(--border);
-            color: var(--text);
-            font-weight: 800;
-            font-size: 13px;
-            text-decoration: none;
+        .book-actions > * {
+            flex: 1 1 auto;
         }
+    }
 
-        .book-stats {
-            display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: 10px;
-            margin-top: 14px;
-        }
-
-        .book-stat {
-            padding: 12px;
-            border-radius: 15px;
-            background: rgba(255,255,255,0.045);
-            border: 1px solid rgba(255,255,255,0.07);
-        }
-
-        .book-stat strong {
-            display: block;
-            font-size: 20px;
-            color: var(--gold);
-        }
-
-        .book-stat span {
-            display: block;
-            margin-top: 4px;
-            color: var(--muted);
-            font-size: 12px;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-        }
-
-        .comments {
-            margin-top: 14px;
-            display: grid;
-            gap: 8px;
-        }
-
-        .comment-item {
-            border-left: 3px solid rgba(167,139,250,0.55);
-            background: rgba(0,0,0,0.16);
-            border-radius: 12px;
-            padding: 10px 12px;
-        }
-
-        .comment-meta {
-            color: var(--theme-brand-kicker);
-            font-size: 12px;
-            font-weight: 900;
-            margin-bottom: 4px;
-        }
-
-        .comment-text {
-            color: var(--muted-2);
-            font-size: 14px;
-            line-height: 1.5;
-            overflow-wrap: anywhere;
-        }
-
-        .comment-item .comment-row-actions {
-            margin-top: 8px;
-            display: flex;
-            justify-content: flex-end;
-        }
-
-        .mini-btn.danger-outline {
-            border-color: rgba(248, 113, 113, 0.45);
-            color: #fecaca;
-        }
-
-        .mini-btn.danger-outline:hover {
-            border-color: rgba(248, 113, 113, 0.75);
-            color: #fff;
-        }
-
-        .empty-state,
-        .loading-state,
-        .error-state {
-            padding: 28px;
-            text-align: center;
-            color: var(--muted-2);
-            border: 1px dashed rgba(255,255,255,0.16);
-            border-radius: 20px;
-            background: rgba(255,255,255,0.035);
-        }
-
-        .notif-list {
-            display: grid;
-            gap: 12px;
-        }
-
-        .notif-card {
-            border-radius: 18px;
-            border: 1px solid var(--border);
-            background: var(--panel-2);
-            padding: 14px 16px;
-            text-align: left;
-        }
-
-        .notif-card.unread {
-            border-left: 4px solid var(--pink);
-            box-shadow: 0 0 0 1px color-mix(in srgb, var(--pink) 22%, transparent);
-        }
-
-        .notif-top {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            justify-content: space-between;
+    @media (max-width: 520px) {
+        .topbar {
             align-items: flex-start;
-            margin-bottom: 8px;
+            flex-direction: column;
+            padding: 12px;
         }
 
-        .notif-kicker {
-            font-size: 11px;
-            font-weight: 900;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: var(--theme-brand-kicker);
+        .top-actions,
+        .top-actions > *,
+        .summary-grid,
+        .book-stats {
+            width: 100%;
         }
 
-        .notif-title {
-            margin: 4px 0 0;
-            font-size: 17px;
-            font-weight: 900;
-            line-height: 1.25;
+        .summary-grid,
+        .book-stats {
+            grid-template-columns: 1fr;
         }
 
-        .notif-meta {
-            margin-top: 6px;
-            font-size: 13px;
-            color: var(--muted);
-            font-weight: 700;
+        .shell {
+            padding: 14px 12px 42px;
         }
 
-        .notif-quote {
-            margin-top: 10px;
-            font-size: 13px;
-            font-style: italic;
-            color: var(--muted-2);
-            line-height: 1.5;
-            border-left: 3px solid rgba(167,139,250,0.45);
-            padding-left: 12px;
+        .hero,
+        .panel,
+        .book-card {
+            padding: 16px;
+            border-radius: 20px;
         }
+    }
+</style>
+<link rel="stylesheet" href="css/gradient-themes.css?v=2" />
 
-        .notif-comment {
-            margin-top: 10px;
-            font-size: 14px;
-            line-height: 1.55;
-            color: var(--text);
-            white-space: pre-wrap;
-        }
-
-        .notif-actions {
-            margin-top: 12px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            align-items: center;
-        }
-
-        .hidden { display: none !important; }
-
-        @media (max-width: 860px) {
-            .hero,
-            .book-top {
-                grid-template-columns: 1fr;
-            }
-
-            .summary-grid,
-            .book-stats {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
-
-            .book-actions {
-                justify-content: stretch;
-            }
-
-            .book-actions > * {
-                flex: 1 1 auto;
-            }
-        }
-
-        @media (max-width: 520px) {
-            .topbar {
-                align-items: flex-start;
-                flex-direction: column;
-                padding: 12px;
-            }
-
-            .top-actions,
-            .top-actions > *,
-            .summary-grid,
-            .book-stats {
-                width: 100%;
-            }
-
-            .summary-grid,
-            .book-stats {
-                grid-template-columns: 1fr;
-            }
-
-            .shell {
-                padding: 14px 12px 42px;
-            }
-
-            .hero,
-            .panel,
-            .book-card {
-                padding: 16px;
-                border-radius: 20px;
-            }
-        }
-    </style>
-    <link rel="stylesheet" href="css/gradient-themes.css?v=2" />
 </head>
 <body>
     <header class="topbar">
@@ -510,489 +512,583 @@
             <a class="btn" href="studio.html">Back to Studio</a>
             <a class="btn primary" href="library.html">View Library</a>
         </div>
-    </header>
+    </header><main class="shell">
+    <section class="hero">
+        <div>
+            <h1>Know how your stories are doing.</h1>
+            <p>Track reads, real kudos, comments, and published-book activity from one author dashboard.</p>
+        </div>
+        <div class="status-pill" id="authorStatus">Checking sign-in...</div>
+    </section>
 
-    <main class="shell">
-        <section class="hero">
+    <section class="summary-grid" aria-label="Author totals">
+        <div class="summary-card">
+            <div class="summary-value" id="totalBooks">0</div>
+            <div class="summary-label">Published books</div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-value" id="totalReads">0</div>
+            <div class="summary-label">Reads</div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-value" id="totalKudos">0</div>
+            <div class="summary-label">Kudos</div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-value" id="totalComments">0</div>
+            <div class="summary-label">Comments</div>
+        </div>
+    </section>
+
+    <section class="panel" id="notifPanel">
+        <div class="panel-head">
             <div>
-                <h1>Know how your stories are doing.</h1>
-                <p>Track reads, real kudos, comments, and published-book activity from one author dashboard.</p>
+                <h2>Notifications</h2>
+                <p>
+                    When beta readers share a saved note from their library, it appears here. Mark items read when
+                    you have seen them.
+                </p>
             </div>
-            <div class="status-pill" id="authorStatus">Checking sign-in...</div>
-        </section>
+            <button class="btn" type="button" id="markAllNotifsRead" disabled>Mark all read</button>
+        </div>
+        <div class="loading-state" id="notifLoading">Loading notifications…</div>
+        <div class="empty-state hidden" id="notifEmpty">No reader-shared notes yet.</div>
+        <div class="notif-list hidden" id="notifList" role="list"></div>
+    </section>
 
-        <section class="summary-grid" aria-label="Author totals">
-            <div class="summary-card">
-                <div class="summary-value" id="totalBooks">0</div>
-                <div class="summary-label">Published books</div>
+    <section class="panel">
+        <div class="panel-head">
+            <div>
+                <h2>Your published books</h2>
+                <p>Stats use library reads and real kudos/comment counts from Supabase.</p>
             </div>
-            <div class="summary-card">
-                <div class="summary-value" id="totalReads">0</div>
-                <div class="summary-label">Reads</div>
-            </div>
-            <div class="summary-card">
-                <div class="summary-value" id="totalKudos">0</div>
-                <div class="summary-label">Kudos</div>
-            </div>
-            <div class="summary-card">
-                <div class="summary-value" id="totalComments">0</div>
-                <div class="summary-label">Comments</div>
-            </div>
-        </section>
+            <button class="btn" id="refreshBtn" type="button">Refresh</button>
+        </div>
 
-        <section class="panel" id="notifPanel">
-            <div class="panel-head">
-                <div>
-                    <h2>Notifications</h2>
-                    <p>
-                        When beta readers share a saved note from their library, it appears here. Mark items read when
-                        you have seen them.
-                    </p>
-                </div>
-                <button class="btn" type="button" id="markAllNotifsRead" disabled>Mark all read</button>
-            </div>
-            <div class="loading-state" id="notifLoading">Loading notifications…</div>
-            <div class="empty-state hidden" id="notifEmpty">No reader-shared notes yet.</div>
-            <div class="notif-list hidden" id="notifList" role="list"></div>
-        </section>
+        <div class="loading-state" id="loadingState">Loading your author dashboard...</div>
+        <div class="error-state hidden" id="errorState">Could not load dashboard data. Check your connection or Supabase policies.</div>
+        <div class="empty-state hidden" id="emptyState">No published books yet. Publish a story to start seeing dashboard analytics.</div>
+        <div class="book-grid hidden" id="bookGrid"></div>
+    </section>
+</main>
 
-        <section class="panel">
-            <div class="panel-head">
-                <div>
-                    <h2>Your published books</h2>
-                    <p>Stats use library reads and real kudos/comment subcollection counts.</p>
-                </div>
-                <button class="btn" id="refreshBtn" type="button">Refresh</button>
-            </div>
+<script type="module">
+    import { supabase } from "./firebase.js";
+    import { publicDisplayNameFromUserData } from "./js/profile-display.js?v=1";
 
-            <div class="loading-state" id="loadingState">Loading your author dashboard...</div>
-            <div class="error-state hidden" id="errorState">Could not load dashboard data. Check your connection or Supabase policies.</div>
-            <div class="empty-state hidden" id="emptyState">No published books yet. Publish a story to start seeing dashboard analytics.</div>
-            <div class="book-grid hidden" id="bookGrid"></div>
-        </section>
-    </main>
+    const authorStatus = document.getElementById("authorStatus");
+    const totalBooks = document.getElementById("totalBooks");
+    const totalReads = document.getElementById("totalReads");
+    const totalKudos = document.getElementById("totalKudos");
+    const totalComments = document.getElementById("totalComments");
+    const loadingState = document.getElementById("loadingState");
+    const errorState = document.getElementById("errorState");
+    const emptyState = document.getElementById("emptyState");
+    const bookGrid = document.getElementById("bookGrid");
+    const refreshBtn = document.getElementById("refreshBtn");
+    const notifLoading = document.getElementById("notifLoading");
+    const notifEmpty = document.getElementById("notifEmpty");
+    const notifList = document.getElementById("notifList");
+    const markAllNotifsRead = document.getElementById("markAllNotifsRead");
 
-    <script type="module">
-        import { supabase } from "./firebase.js";
-        import { publicDisplayNameFromUserData } from "./js/profile-display.js?v=1";
+    let currentUser = null;
+    let notifChannel = null;
 
-        const authorStatus = document.getElementById("authorStatus");
-        const totalBooks = document.getElementById("totalBooks");
-        const totalReads = document.getElementById("totalReads");
-        const totalKudos = document.getElementById("totalKudos");
-        const totalComments = document.getElementById("totalComments");
-        const loadingState = document.getElementById("loadingState");
-        const errorState = document.getElementById("errorState");
-        const emptyState = document.getElementById("emptyState");
-        const bookGrid = document.getElementById("bookGrid");
-        const refreshBtn = document.getElementById("refreshBtn");
-        const notifLoading = document.getElementById("notifLoading");
-        const notifEmpty = document.getElementById("notifEmpty");
-        const notifList = document.getElementById("notifList");
-        const markAllNotifsRead = document.getElementById("markAllNotifsRead");
+    function safeObject(value, fallback = {}) {
+        return value && typeof value === "object" && !Array.isArray(value) ? value : fallback;
+    }
 
-        let currentUser = null;
-        let notifChannel = null;
+    function safeString(value, fallback = "") {
+        return typeof value === "string" ? value : fallback;
+    }
 
-        function safeObject(value, fallback = {}) {
-            return value && typeof value === "object" && !Array.isArray(value) ? value : fallback;
+    function safeNumber(value, fallback = 0) {
+        const n = Number(value);
+        return Number.isFinite(n) ? n : fallback;
+    }
+
+    function safeArray(value, fallback = []) {
+        return Array.isArray(value) ? value : fallback;
+    }
+
+    function toMillis(value) {
+        if (typeof value === "number" && Number.isFinite(value)) return value;
+        if (typeof value === "string" && value) {
+            const t = Date.parse(value);
+            if (Number.isFinite(t)) return t;
         }
+        if (value && typeof value.seconds === "number") return value.seconds * 1000;
+        return 0;
+    }
 
-        function safeString(value, fallback = "") {
-            return typeof value === "string" ? value : fallback;
-        }
+    function formatNumber(value) {
+        return new Intl.NumberFormat().format(safeNumber(value));
+    }
 
-        function safeNumber(value, fallback = 0) {
-            return typeof value === "number" && Number.isFinite(value) ? value : fallback;
-        }
+    function formatDate(value) {
+        const millis = toMillis(value);
+        if (!millis) return "recently";
+        return new Date(millis).toLocaleDateString();
+    }
 
-        function safeArray(value, fallback = []) {
-            return Array.isArray(value) ? value : fallback;
-        }
+    function showState(state) {
+        loadingState.classList.toggle("hidden", state !== "loading");
+        errorState.classList.toggle("hidden", state !== "error");
+        emptyState.classList.toggle("hidden", state !== "empty");
+        bookGrid.classList.toggle("hidden", state !== "grid");
+    }
 
-        function toMillis(value) {
-            if (typeof value === "number" && Number.isFinite(value)) return value;
-            if (typeof value === "string" && value) {
-                const t = Date.parse(value);
-                if (Number.isFinite(t)) return t;
+    function normalizeBook(id, raw) {
+        const data = raw && typeof raw === "object" ? raw : {};
+        const chapters = safeArray(data.chapters);
+        return {
+            id,
+            title: safeString(data.title, "Untitled"),
+            type: safeString(data.type, "fiction"),
+            rating: safeString(data.rating, "Not rated"),
+            summary: safeString(data.summary, ""),
+            views: safeNumber(data.views, 0),
+            words: safeNumber(data.words, 0),
+            chapterCount: safeNumber(data.chapterCount, chapters.length),
+            updated: data.updated || data.publishedAt || data.createdAt || 0,
+            isPublished: data.isPublished !== false
+        };
+    }
+
+    function libraryRowData(row) {
+        const data = safeObject(row?.data, {});
+        return Object.keys(data).length ? data : safeObject(row, {});
+    }
+
+    function engagementBookIds(row, merged) {
+        const ids = new Set();
+        const push = (v) => {
+            const s = v == null ? "" : String(v).trim();
+            if (s) ids.add(s);
+        };
+        push(row?.id);
+        push(row?.book_id);
+        push(row?.bookId);
+        push(merged?.bookId);
+        push(merged?.book_id);
+        push(merged?.id);
+        return [...ids];
+    }
+
+    async function getSubcollectionCount(bookIds, subcollection) {
+        let table = null;
+        if (subcollection === "likes") table = "likes";
+        else if (subcollection === "comments") table = "comments";
+        else if (subcollection === "reads") table = "reads";
+        if (!table) return 0;
+
+        const ids = [...new Set((Array.isArray(bookIds) ? bookIds : [bookIds])
+            .filter(Boolean)
+            .map((x) => String(x).trim()))]
+            .filter(Boolean);
+
+        if (!ids.length) return 0;
+
+        const seen = new Set();
+
+        for (const bid of ids) {
+            const { data, error } = await supabase
+                .from(table)
+                .select("id")
+                .eq("book_id", bid);
+
+            if (error) {
+                console.warn(`${table} count failed for ${bid}`, error);
+                continue;
             }
-            if (value && typeof value.seconds === "number") return value.seconds * 1000;
-            return 0;
-        }
 
-        function formatNumber(value) {
-            return new Intl.NumberFormat().format(safeNumber(value));
-        }
-
-        function formatDate(value) {
-            const millis = toMillis(value);
-            if (!millis) return "recently";
-            return new Date(millis).toLocaleDateString();
-        }
-
-        function showState(state) {
-            loadingState.classList.toggle("hidden", state !== "loading");
-            errorState.classList.toggle("hidden", state !== "error");
-            emptyState.classList.toggle("hidden", state !== "empty");
-            bookGrid.classList.toggle("hidden", state !== "grid");
-        }
-
-        function normalizeBook(id, raw) {
-            const data = raw && typeof raw === "object" ? raw : {};
-            const chapters = safeArray(data.chapters);
-            return {
-                id,
-                title: safeString(data.title, "Untitled"),
-                type: safeString(data.type, "fiction"),
-                rating: safeString(data.rating, "Not rated"),
-                summary: safeString(data.summary, ""),
-                views: safeNumber(data.views, 0),
-                words: safeNumber(data.words, 0),
-                chapterCount: safeNumber(data.chapterCount, chapters.length),
-                updated: data.updated || data.publishedAt || data.createdAt || 0,
-                isPublished: data.isPublished !== false
-            };
-        }
-
-        function libraryRowData(row) {
-            const data = safeObject(row?.data, {});
-            return Object.keys(data).length ? data : safeObject(row, {});
-        }
-
-        /** Supabase `library.id` vs legacy `data.bookId` — imported comments may use either. */
-        function engagementBookIds(row, merged) {
-            const ids = new Set();
-            const push = (v) => {
-                const s = v == null ? "" : String(v).trim();
-                if (s) ids.add(s);
-            };
-            push(row?.id);
-            push(merged?.bookId);
-            push(merged?.book_id);
-            push(merged?.id);
-            return [...ids];
-        }
-
-        async function getSubcollectionCount(bookIds, subcollection) {
-            let table = null;
-            if (subcollection === "likes") table = "likes";
-            else if (subcollection === "comments") table = "comments";
-            else if (subcollection === "reads") table = "reads";
-            if (!table) return 0;
-            const ids = [...new Set((Array.isArray(bookIds) ? bookIds : [bookIds]).filter(Boolean).map((x) => String(x).trim()))].filter(Boolean);
-            if (!ids.length) return 0;
-            const seen = new Set();
-            for (const bid of ids) {
-                const { data, error } = await supabase.from(table).select("id").eq("book_id", bid);
-                if (error) {
-                    console.warn(error);
-                    continue;
-                }
-                for (const row of data || []) {
-                    if (row?.id) seen.add(String(row.id));
-                }
+            for (const row of data || []) {
+                if (row?.id) seen.add(String(row.id));
             }
-            return seen.size;
         }
 
-        async function getRecentComments(bookIds) {
-            const ids = [...new Set((Array.isArray(bookIds) ? bookIds : [bookIds]).filter(Boolean).map((x) => String(x).trim()))].filter(Boolean);
-            if (!ids.length) return [];
-            const byCommentId = new Map();
-            for (const bid of ids) {
-                let { data, error } = await supabase
+        return seen.size;
+    }
+
+    async function getRecentComments(bookIds) {
+        const ids = [...new Set((Array.isArray(bookIds) ? bookIds : [bookIds])
+            .filter(Boolean)
+            .map((x) => String(x).trim()))]
+            .filter(Boolean);
+
+        if (!ids.length) return [];
+
+        const byCommentId = new Map();
+
+        for (const bid of ids) {
+            let { data, error } = await supabase
+                .from("comments")
+                .select("id, text, display_name, username, created_at")
+                .eq("book_id", bid)
+                .order("created_at", { ascending: false });
+
+            if (error) {
+                const retry = await supabase
                     .from("comments")
                     .select("id, text, display_name, username, created_at")
-                    .eq("book_id", bid)
-                    .order("created_at", { ascending: false });
-                if (error) {
-                    const r2 = await supabase.from("comments").select("id, text, display_name, username, created_at").eq("book_id", bid);
-                    data = r2.data;
-                    error = r2.error;
-                }
-                if (error) {
-                    console.warn(error);
-                    continue;
-                }
-                for (const row of data || []) {
-                    if (row?.id) byCommentId.set(String(row.id), row);
-                }
-            }
-            const rows = [...byCommentId.values()].sort((a, b) => {
-                const ta = typeof a.created_at === "number" ? a.created_at : Date.parse(String(a.created_at || "")) || 0;
-                const tb = typeof b.created_at === "number" ? b.created_at : Date.parse(String(b.created_at || "")) || 0;
-                return tb - ta;
-            });
-            return rows.slice(0, 3).map(row => ({
-                id: row.id,
-                displayLabel: safeString(row.display_name || row.username || "", "reader"),
-                text: safeString(row.text, ""),
-                createdAt: row.created_at || 0
-            }));
-        }
-
-        async function loadPublishedBooks(uid) {
-            const { data: rows, error } = await supabase.from("library").select("*").eq("user_id", uid);
-            if (error) throw error;
-            return (rows || [])
-                .map(row => {
-                    const merged = libraryRowData(row);
-                    const book = normalizeBook(row.id, merged);
-                    return { ...book, engagementBookIds: engagementBookIds(row, merged) };
-                })
-                .filter(book => book.isPublished);
-        }
-
-        function renderDashboard(books) {
-            const totals = books.reduce((acc, book) => {
-                acc.reads += book.views;
-                acc.kudos += book.kudos;
-                acc.comments += book.comments;
-                return acc;
-            }, { reads: 0, kudos: 0, comments: 0 });
-
-            totalBooks.textContent = formatNumber(books.length);
-            totalReads.textContent = formatNumber(totals.reads);
-            totalKudos.textContent = formatNumber(totals.kudos);
-            totalComments.textContent = formatNumber(totals.comments);
-
-            bookGrid.innerHTML = "";
-
-            if (!books.length) {
-                showState("empty");
-                return;
+                    .eq("book_id", bid);
+                data = retry.data;
+                error = retry.error;
             }
 
-            books.sort((a, b) => (b.views + b.kudos * 3 + b.comments * 2) - (a.views + a.kudos * 3 + a.comments * 2));
-
-            books.forEach(book => {
-                const card = document.createElement("article");
-                card.className = "book-card";
-
-                const commentsHtml = book.recentComments.length
-                    ? book.recentComments.map(comment => `
-                        <div class="comment-item">
-                            <div class="comment-meta">${escapeHtml(comment.displayLabel)} — ${escapeHtml(formatDate(comment.createdAt))}</div>
-                            <div class="comment-text">${escapeHtml(comment.text || "(empty comment)")}</div>
-                            <div class="comment-row-actions">
-                                <button type="button" class="mini-btn danger-outline" data-remove-comment-book="${escapeHtml(book.id)}" data-remove-comment-id="${escapeHtml(comment.id)}">Remove comment</button>
-                            </div>
-                        </div>
-                    `).join("")
-                    : `<div class="comment-item"><div class="comment-text">No comments yet.</div></div>`;
-
-                card.innerHTML = `
-                    <div class="book-top">
-                        <div>
-                            <h3 class="book-title">${escapeHtml(book.title)}</h3>
-                            <div class="book-meta">${escapeHtml(book.type)} - ${escapeHtml(book.rating)} - ${formatNumber(book.chapterCount)} chapters - updated ${escapeHtml(formatDate(book.updated))}</div>
-                        </div>
-                        <div class="book-actions">
-                            <a class="mini-btn" href="read.html?book=${encodeURIComponent(book.id)}">Read</a>
-                            <a class="mini-btn" href="editor.html?book=${encodeURIComponent(book.id)}">Edit</a>
-                            <a class="mini-btn" href="publish.html?book=${encodeURIComponent(book.id)}">Publish</a>
-                        </div>
-                    </div>
-                    <div class="book-stats">
-                        <div class="book-stat"><strong>${formatNumber(book.views)}</strong><span>Reads</span></div>
-                        <div class="book-stat"><strong>${formatNumber(book.kudos)}</strong><span>Kudos</span></div>
-                        <div class="book-stat"><strong>${formatNumber(book.comments)}</strong><span>Comments</span></div>
-                        <div class="book-stat"><strong>${formatNumber(book.words)}</strong><span>Words</span></div>
-                    </div>
-                    <div class="comments">${commentsHtml}</div>
-                `;
-
-                bookGrid.appendChild(card);
-            });
-
-            showState("grid");
-        }
-
-        function escapeHtml(str) {
-            return safeString(str)
-                .replaceAll("&", "&amp;")
-                .replaceAll("<", "&lt;")
-                .replaceAll(">", "&gt;")
-                .replaceAll('"', "&quot;")
-                .replaceAll("'", "&#039;");
-        }
-
-        function truncateText(text, maxLen) {
-            const s = safeString(text, "");
-            if (s.length <= maxLen) return s;
-            return `${s.slice(0, maxLen - 1)}…`;
-        }
-
-        function notifPayload(row) {
-            const nested = row?.data && typeof row.data === "object" ? row.data : {};
-            return { ...nested, id: row.id, read: row.read === true, createdAt: row.created_at || nested.createdAt };
-        }
-
-        async function loadNotifications(uid) {
-            const { data, error } = await supabase.from("notifications").select("*").eq("user_id", uid).limit(60);
             if (error) {
-                console.error(error);
-                notifLoading.textContent = "Could not load notifications.";
-                return;
-            }
-            const rows = (data || []).map(notifPayload);
-            renderNotifications(rows);
-        }
-
-        function startNotificationInbox(uid) {
-            if (notifChannel) supabase.removeChannel(notifChannel);
-            notifChannel = supabase
-                .channel("author_dash_notifs_" + uid)
-                .on(
-                    "postgres_changes",
-                    { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${uid}` },
-                    () => loadNotifications(uid).catch(console.error)
-                )
-                .subscribe();
-            loadNotifications(uid).catch(console.error);
-        }
-
-        function renderNotifications(rows) {
-            notifLoading.classList.add("hidden");
-
-            if (!rows.length) {
-                notifEmpty.classList.remove("hidden");
-                notifList.classList.add("hidden");
-                notifList.innerHTML = "";
-                markAllNotifsRead.disabled = true;
-                return;
+                console.warn("comments failed for", bid, error);
+                continue;
             }
 
-            notifEmpty.classList.add("hidden");
-            notifList.classList.remove("hidden");
+            for (const row of data || []) {
+                if (row?.id) byCommentId.set(String(row.id), row);
+            }
+        }
 
-            const unreadRows = rows.filter((d) => d.read !== true);
-            markAllNotifsRead.disabled = unreadRows.length === 0;
+        const rows = [...byCommentId.values()].sort((a, b) => {
+            const ta = typeof a.created_at === "number" ? a.created_at : Date.parse(String(a.created_at || "")) || 0;
+            const tb = typeof b.created_at === "number" ? b.created_at : Date.parse(String(b.created_at || "")) || 0;
+            return tb - ta;
+        });
 
-            notifList.innerHTML = rows
-                .map((data) => {
-                    const unread = data.read !== true;
-                    const reader = escapeHtml(safeString(data.readerName, "Reader"));
-                    const book = escapeHtml(safeString(data.bookTitle, "Story"));
-                    const chapter = escapeHtml(safeString(data.chapterTitle, ""));
-                    const quote = escapeHtml(truncateText(data.quote, 320));
-                    const comment = escapeHtml(truncateText(data.comment, 900));
-                    const bookId = safeString(data.bookId, "");
-                    const betaUrl = bookId
-                        ? `beta-read.html?book=${encodeURIComponent(bookId)}`
-                        : "#";
-                    return `
-                        <article class="notif-card${unread ? " unread" : ""}" role="listitem" data-notif-id="${escapeHtml(data.id)}">
-                            <div class="notif-top">
-                                <div>
-                                    <div class="notif-kicker">Beta note shared</div>
-                                    <h3 class="notif-title">${reader} · ${book}</h3>
-                                    <div class="notif-meta">${chapter ? `${chapter} · ` : ""}${escapeHtml(formatDate(data.createdAt))}</div>
-                                </div>
+        return rows.slice(0, 3).map(row => ({
+            id: row.id,
+            displayLabel: safeString(row.display_name || row.username || "", "reader"),
+            text: safeString(row.text, ""),
+            createdAt: row.created_at || 0
+        }));
+    }
+
+    async function loadPublishedBooks(uid) {
+        const { data: rows, error } = await supabase
+            .from("library")
+            .select("*");
+
+        if (error) throw error;
+
+        return (rows || [])
+            .map(row => {
+                const merged = libraryRowData(row);
+
+                const ownerId =
+                    row.user_id ||
+                    row.userId ||
+                    row.author_id ||
+                    row.authorId ||
+                    row.owner_id ||
+                    row.ownerId ||
+                    merged.user_id ||
+                    merged.userId ||
+                    merged.author_id ||
+                    merged.authorId ||
+                    merged.owner_id ||
+                    merged.ownerId;
+
+                const book = normalizeBook(row.id, merged);
+
+                return {
+                    ...book,
+                    ownerId,
+                    engagementBookIds: engagementBookIds(row, merged)
+                };
+            })
+            .filter(book => String(book.ownerId || "") === String(uid))
+            .filter(book => book.isPublished);
+    }
+
+    function renderDashboard(books) {
+        const totals = books.reduce((acc, book) => {
+            acc.reads += safeNumber(book.views);
+            acc.kudos += safeNumber(book.kudos);
+            acc.comments += safeNumber(book.comments);
+            return acc;
+        }, { reads: 0, kudos: 0, comments: 0 });
+
+        totalBooks.textContent = formatNumber(books.length);
+        totalReads.textContent = formatNumber(totals.reads);
+        totalKudos.textContent = formatNumber(totals.kudos);
+        totalComments.textContent = formatNumber(totals.comments);
+
+        bookGrid.innerHTML = "";
+
+        if (!books.length) {
+            showState("empty");
+            return;
+        }
+
+        books.sort((a, b) => (safeNumber(b.views) + safeNumber(b.kudos) * 3 + safeNumber(b.comments) * 2) - (safeNumber(a.views) + safeNumber(a.kudos) * 3 + safeNumber(a.comments) * 2));
+
+        books.forEach(book => {
+            const card = document.createElement("article");
+            card.className = "book-card";
+
+            const commentsHtml = book.recentComments.length
+                ? book.recentComments.map(comment => `
+                    <div class="comment-item">
+                        <div class="comment-meta">${escapeHtml(comment.displayLabel)} — ${escapeHtml(formatDate(comment.createdAt))}</div>
+                        <div class="comment-text">${escapeHtml(comment.text || "(empty comment)")}</div>
+                        <div class="comment-row-actions">
+                            <button type="button" class="mini-btn danger-outline" data-remove-comment-book="${escapeHtml(book.id)}" data-remove-comment-id="${escapeHtml(comment.id)}">Remove comment</button>
+                        </div>
+                    </div>
+                `).join("")
+                : `<div class="comment-item"><div class="comment-text">No comments yet.</div></div>`;
+
+            card.innerHTML = `
+                <div class="book-top">
+                    <div>
+                        <h3 class="book-title">${escapeHtml(book.title)}</h3>
+                        <div class="book-meta">${escapeHtml(book.type)} - ${escapeHtml(book.rating)} - ${formatNumber(book.chapterCount)} chapters - updated ${escapeHtml(formatDate(book.updated))}</div>
+                    </div>
+                    <div class="book-actions">
+                        <a class="mini-btn" href="read.html?book=${encodeURIComponent(book.id)}">Read</a>
+                        <a class="mini-btn" href="editor.html?book=${encodeURIComponent(book.id)}">Edit</a>
+                        <a class="mini-btn" href="publish.html?book=${encodeURIComponent(book.id)}">Publish</a>
+                    </div>
+                </div>
+                <div class="book-stats">
+                    <div class="book-stat"><strong>${formatNumber(book.views)}</strong><span>Reads</span></div>
+                    <div class="book-stat"><strong>${formatNumber(book.kudos)}</strong><span>Kudos</span></div>
+                    <div class="book-stat"><strong>${formatNumber(book.comments)}</strong><span>Comments</span></div>
+                    <div class="book-stat"><strong>${formatNumber(book.words)}</strong><span>Words</span></div>
+                </div>
+                <div class="comments">${commentsHtml}</div>
+            `;
+
+            bookGrid.appendChild(card);
+        });
+
+        showState("grid");
+    }
+
+    function escapeHtml(str) {
+        return safeString(str)
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;")
+            .replaceAll("'", "&#039;");
+    }
+
+    function truncateText(text, maxLen) {
+        const s = safeString(text, "");
+        if (s.length <= maxLen) return s;
+        return `${s.slice(0, maxLen - 1)}…`;
+    }
+
+    function notifPayload(row) {
+        const nested = row?.data && typeof row.data === "object" ? row.data : {};
+        return { ...nested, id: row.id, read: row.read === true, createdAt: row.created_at || nested.createdAt };
+    }
+
+    async function loadNotifications(uid) {
+        const { data, error } = await supabase
+            .from("notifications")
+            .select("*")
+            .eq("user_id", uid)
+            .limit(60);
+
+        if (error) {
+            console.error(error);
+            notifLoading.textContent = "Could not load notifications.";
+            return;
+        }
+
+        const rows = (data || []).map(notifPayload);
+        renderNotifications(rows);
+    }
+
+    function startNotificationInbox(uid) {
+        if (notifChannel) supabase.removeChannel(notifChannel);
+        notifChannel = supabase
+            .channel("author_dash_notifs_" + uid)
+            .on(
+                "postgres_changes",
+                { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${uid}` },
+                () => loadNotifications(uid).catch(console.error)
+            )
+            .subscribe();
+        loadNotifications(uid).catch(console.error);
+    }
+
+    function renderNotifications(rows) {
+        notifLoading.classList.add("hidden");
+
+        if (!rows.length) {
+            notifEmpty.classList.remove("hidden");
+            notifList.classList.add("hidden");
+            notifList.innerHTML = "";
+            markAllNotifsRead.disabled = true;
+            return;
+        }
+
+        notifEmpty.classList.add("hidden");
+        notifList.classList.remove("hidden");
+
+        const unreadRows = rows.filter((d) => d.read !== true);
+        markAllNotifsRead.disabled = unreadRows.length === 0;
+
+        notifList.innerHTML = rows
+            .map((data) => {
+                const unread = data.read !== true;
+                const reader = escapeHtml(safeString(data.readerName, "Reader"));
+                const book = escapeHtml(safeString(data.bookTitle, "Story"));
+                const chapter = escapeHtml(safeString(data.chapterTitle, ""));
+                const quote = escapeHtml(truncateText(data.quote, 320));
+                const comment = escapeHtml(truncateText(data.comment, 900));
+                const bookId = safeString(data.bookId, "");
+                const betaUrl = bookId
+                    ? `beta-read.html?book=${encodeURIComponent(bookId)}`
+                    : "#";
+                return `
+                    <article class="notif-card${unread ? " unread" : ""}" role="listitem" data-notif-id="${escapeHtml(data.id)}">
+                        <div class="notif-top">
+                            <div>
+                                <div class="notif-kicker">Beta note shared</div>
+                                <h3 class="notif-title">${reader} · ${book}</h3>
+                                <div class="notif-meta">${chapter ? `${chapter} · ` : ""}${escapeHtml(formatDate(data.createdAt))}</div>
                             </div>
-                            ${quote ? `<div class="notif-quote">${quote}</div>` : ""}
-                            ${comment ? `<div class="notif-comment">${comment}</div>` : ""}
-                            <div class="notif-actions">
-                                <a class="mini-btn" href="${betaUrl}">Open beta workspace</a>
-                                ${
-                                    unread
-                                        ? `<button type="button" class="mini-btn" data-mark-read="${escapeHtml(data.id)}">Mark read</button>`
-                                        : `<span class="mini-btn" style="opacity:0.55;cursor:default;">Read</span>`
-                                }
-                            </div>
-                        </article>
-                    `;
-                })
-                .join("");
+                        </div>
+                        ${quote ? `<div class="notif-quote">${quote}</div>` : ""}
+                        ${comment ? `<div class="notif-comment">${comment}</div>` : ""}
+                        <div class="notif-actions">
+                            <a class="mini-btn" href="${betaUrl}">Open beta workspace</a>
+                            ${
+                                unread
+                                    ? `<button type="button" class="mini-btn" data-mark-read="${escapeHtml(data.id)}">Mark read</button>`
+                                    : `<span class="mini-btn" style="opacity:0.55;cursor:default;">Read</span>`
+                            }
+                        </div>
+                    </article>
+                `;
+            })
+            .join("");
+    }
+
+    notifList.addEventListener("click", async (ev) => {
+        const btn = ev.target.closest("[data-mark-read]");
+        if (!btn || !currentUser) return;
+        const id = btn.getAttribute("data-mark-read");
+        if (!id) return;
+        try {
+            await supabase
+                .from("notifications")
+                .update({ read: true })
+                .eq("id", id)
+                .eq("user_id", currentUser.id);
+            await loadNotifications(currentUser.id);
+        } catch (e) {
+            console.error(e);
+        }
+    });
+
+    markAllNotifsRead.addEventListener("click", async () => {
+        if (!currentUser) return;
+        try {
+            await supabase
+                .from("notifications")
+                .update({ read: true })
+                .eq("user_id", currentUser.id)
+                .eq("read", false);
+            await loadNotifications(currentUser.id);
+        } catch (e) {
+            console.error(e);
+        }
+    });
+
+    async function loadDashboard() {
+        if (!currentUser) return;
+        showState("loading");
+
+        try {
+            const { data: profile, error: pErr } = await supabase
+                .from("users")
+                .select("*")
+                .eq("id", currentUser.id)
+                .maybeSingle();
+
+            if (pErr) throw pErr;
+
+            const label = profile ? publicDisplayNameFromUserData(profile) : "author";
+            authorStatus.textContent = label;
+
+            const ownedBooks = await loadPublishedBooks(currentUser.id);
+            const enriched = await Promise.all(ownedBooks.map(async book => {
+                const ids = book.engagementBookIds || [book.id];
+
+                const [reads, kudos, comments, recentComments] = await Promise.all([
+                    getSubcollectionCount(ids, "reads"),
+                    getSubcollectionCount(ids, "likes"),
+                    getSubcollectionCount(ids, "comments"),
+                    getRecentComments(ids)
+                ]);
+
+                return {
+                    ...book,
+                    views: Math.max(safeNumber(book.views), reads),
+                    kudos,
+                    comments,
+                    recentComments
+                };
+            }));
+
+            renderDashboard(enriched);
+        } catch (error) {
+            console.error(error);
+            showState("error");
+        }
+    }
+
+    refreshBtn.addEventListener("click", loadDashboard);
+
+    bookGrid.addEventListener("click", async (ev) => {
+        const btn = ev.target.closest("[data-remove-comment-book]");
+        if (!btn || !currentUser) return;
+        const rmBookId = btn.getAttribute("data-remove-comment-book");
+        const rmCommentId = btn.getAttribute("data-remove-comment-id");
+        if (!rmBookId || !rmCommentId) return;
+        if (!window.confirm("Remove this comment from your story?")) return;
+        try {
+            btn.disabled = true;
+            await supabase.from("comments").delete().eq("id", rmCommentId);
+            await loadDashboard();
+        } catch (e) {
+            console.error(e);
+            btn.disabled = false;
+            window.alert("Could not remove comment. Check your connection or try again.");
+        }
+    });
+
+    async function bootAuthorDashboard() {
+        const { data, error } = await supabase.auth.getUser();
+
+        if (error) console.warn(error);
+
+        const user = data?.user;
+        if (!user) {
+            window.location.href = "login.html?next=" + encodeURIComponent("author-dashboard.html");
+            return;
         }
 
-        notifList.addEventListener("click", async (ev) => {
-            const btn = ev.target.closest("[data-mark-read]");
-            if (!btn || !currentUser) return;
-            const id = btn.getAttribute("data-mark-read");
-            if (!id) return;
-            try {
-                await supabase.from("notifications").update({ read: true }).eq("id", id).eq("user_id", currentUser.id);
-            } catch (e) {
-                console.error(e);
-            }
-        });
+        currentUser = user;
+        startNotificationInbox(user.id);
+        await loadDashboard();
+    }
 
-        markAllNotifsRead.addEventListener("click", async () => {
-            if (!currentUser) return;
-            try {
-                await supabase
-                    .from("notifications")
-                    .update({ read: true })
-                    .eq("user_id", currentUser.id)
-                    .eq("read", false);
-            } catch (e) {
-                console.error(e);
-            }
-        });
-
-        async function loadDashboard() {
-            if (!currentUser) return;
-            showState("loading");
-
-            try {
-                const { data: profile, error: pErr } = await supabase
-                    .from("users")
-                    .select("*")
-                    .eq("id", currentUser.id)
-                    .maybeSingle();
-                if (pErr) throw pErr;
-                const label = profile ? publicDisplayNameFromUserData(profile) : "author";
-                authorStatus.textContent = label;
-
-                const ownedBooks = await loadPublishedBooks(currentUser.id);
-                const enriched = await Promise.all(ownedBooks.map(async book => {
-                    const ids = book.engagementBookIds || [book.id];
-                    const [kudos, comments, recentComments] = await Promise.all([
-                        getSubcollectionCount(ids, "likes"),
-                        getSubcollectionCount(ids, "comments"),
-                        getRecentComments(ids)
-                    ]);
-                    return { ...book, kudos, comments, recentComments };
-                }));
-
-                renderDashboard(enriched);
-            } catch (error) {
-                console.error(error);
-                showState("error");
-            }
+    supabase.auth.onAuthStateChange((event, session) => {
+        const user = session?.user;
+        if (!user && event !== "INITIAL_SESSION") {
+            window.location.href = "login.html?next=" + encodeURIComponent("author-dashboard.html");
         }
+    });
 
-        refreshBtn.addEventListener("click", loadDashboard);
+    window.addEventListener("beforeunload", () => {
+        if (notifChannel) supabase.removeChannel(notifChannel);
+    });
 
-        bookGrid.addEventListener("click", async (ev) => {
-            const btn = ev.target.closest("[data-remove-comment-book]");
-            if (!btn || !currentUser) return;
-            const rmBookId = btn.getAttribute("data-remove-comment-book");
-            const rmCommentId = btn.getAttribute("data-remove-comment-id");
-            if (!rmBookId || !rmCommentId) return;
-            if (!window.confirm("Remove this comment from your story?")) return;
-            try {
-                btn.disabled = true;
-                await supabase.from("comments").delete().eq("id", rmCommentId);
-                await loadDashboard();
-            } catch (e) {
-                console.error(e);
-                btn.disabled = false;
-                window.alert("Could not remove comment. Check your connection or try again.");
-            }
-        });
+    bootAuthorDashboard();
+</script>
 
-        supabase.auth.onAuthStateChange((event, session) => {
-            const user = session?.user;
-            if (!user) {
-                window.location.href = "login.html?next=" + encodeURIComponent("author-dashboard.html");
-                return;
-            }
-            currentUser = user;
-            startNotificationInbox(user.id);
-            loadDashboard();
-        });
-    </script>
 </body>
 </html>
