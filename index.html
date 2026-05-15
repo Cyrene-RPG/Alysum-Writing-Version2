@@ -1,5 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
     <!-- ALYSUM:PWA:START -->
     <link rel="manifest" href="manifest.webmanifest">
@@ -13,14 +12,10 @@
     <link rel="apple-touch-icon" href="Alysum-3.png">
     <link rel="apple-touch-icon" sizes="180x180" href="Alysum-3.png">
     <script src="js/pwa-register.js" defer></script>
-    <!-- ALYSUM:PWA:END -->
-
-  <meta charset="UTF-8" />
+    <!-- ALYSUM:PWA:END -->  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="css/site-responsive.css?v=1" />
-  <title>Alysum Studio</title>
-
-  <style>
+  <title>Alysum Studio</title>  <style>
     * {
       box-sizing: border-box;
       margin: 0;
@@ -76,6 +71,100 @@
       margin: 0 auto;
       padding-left: 16px;
       padding-right: 16px;
+    }
+
+    /* =========================
+       ALERT BANNER
+    ========================= */
+
+    .alert-banner {
+      position: relative;
+      z-index: 5;
+      padding: 14px 16px;
+      background:
+        radial-gradient(circle at top left, rgba(167,139,250,0.20), transparent 30%),
+        linear-gradient(135deg, rgba(91,33,182,0.96), rgba(15,23,42,0.96));
+      border-bottom: 1px solid rgba(255,255,255,0.16);
+      color: white;
+      box-shadow: 0 14px 34px rgba(0,0,0,0.18);
+    }
+
+    .alert-banner.hidden {
+      display: none;
+    }
+
+    .alert-content {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      line-height: 1.5;
+      font-size: 15px;
+    }
+
+    .alert-message {
+      flex: 1 1 auto;
+      color: #f8fafc;
+    }
+
+    .alert-message strong {
+      color: #f3e8ff;
+      font-weight: 900;
+    }
+
+    .alert-message a:not(.alert-discord) {
+      color: white;
+      font-weight: 900;
+      text-decoration: underline;
+      text-decoration-color: rgba(255,255,255,0.45);
+      text-underline-offset: 3px;
+    }
+
+    .alert-discord {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 34px;
+      height: 34px;
+      margin-left: 6px;
+      border-radius: 999px;
+      background: #5865f2;
+      color: white;
+      vertical-align: middle;
+      box-shadow: 0 10px 24px rgba(88,101,242,0.35);
+      transition: transform 0.16s ease, filter 0.16s ease;
+    }
+
+    .alert-discord:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.08);
+    }
+
+    .alert-discord svg {
+      width: 21px;
+      height: 21px;
+      display: block;
+      fill: currentColor;
+    }
+
+    .alert-close {
+      flex: 0 0 auto;
+      width: 36px;
+      height: 36px;
+      border: 1px solid rgba(255,255,255,0.22);
+      border-radius: 999px;
+      background: rgba(255,255,255,0.12);
+      color: white;
+      font-size: 24px;
+      line-height: 1;
+      cursor: pointer;
+      transition: transform 0.16s ease, background 0.16s ease;
+    }
+
+    .alert-close:hover {
+      transform: scale(1.04);
+      background: rgba(255,255,255,0.18);
     }
 
     /* =========================
@@ -598,6 +687,23 @@
     }
 
     @media (max-width: 599px) {
+      .alert-content {
+        align-items: flex-start;
+        gap: 10px;
+        font-size: 14px;
+      }
+
+      .alert-discord {
+        width: 32px;
+        height: 32px;
+        margin-left: 3px;
+      }
+
+      .alert-close {
+        width: 34px;
+        height: 34px;
+      }
+
       .login-btn {
         min-width: 128px;
       }
@@ -649,133 +755,166 @@
         font-size: 28px;
       }
     }
-  </style>
-</head>
+  </style></head>
 <body>
-  <div class="page">
+  <div class="page"><!-- ALERT BANNER -->
+<div id="backendAlert" class="alert-banner" role="status" aria-live="polite">
+  <div class="alert-content">
+    <div class="alert-message">
+      <strong>Alysum update:</strong>
+      Alysum's backend has been switched from Firebase to Supabase. If you run into any issues or bugs, please email
+      <a href="mailto:alysum.support@gmail.com">alysum.support@gmail.com</a>
+      or join our Discord server and make a bug report.
+      <a
+        class="alert-discord"
+        href="https://discord.gg/z8GH9GgZh"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Join Alysum Discord server"
+        title="Join Discord"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M20.317 4.369A19.791 19.791 0 0 0 16.558 3a13.74 13.74 0 0 0-.481.974 18.27 18.27 0 0 0-4.154 0A12.64 12.64 0 0 0 11.442 3a19.736 19.736 0 0 0-3.76 1.37C5.303 7.91 4.657 11.36 4.98 14.76a19.9 19.9 0 0 0 4.607 2.339c.37-.504.701-1.04.984-1.602a12.83 12.83 0 0 1-1.55-.744c.13-.095.258-.193.382-.294 2.987 1.38 6.226 1.38 9.177 0 .125.101.253.199.383.294-.494.29-1.013.54-1.553.745.283.56.612 1.097.984 1.601A19.86 19.86 0 0 0 23 14.76c.378-3.953-.646-7.371-2.683-10.391ZM10.19 12.67c-.897 0-1.635-.826-1.635-1.842 0-1.016.723-1.843 1.635-1.843.92 0 1.65.834 1.635 1.843 0 1.016-.723 1.842-1.635 1.842Zm6.19 0c-.897 0-1.635-.826-1.635-1.842 0-1.016.723-1.843 1.635-1.843.92 0 1.65.834 1.635 1.843 0 1.016-.715 1.842-1.635 1.842Z" />
+        </svg>
+      </a>
+    </div>
 
-    <!-- HERO -->
-    <section class="hero">
-      <div class="hero-inner">
-        <div class="hero-topbar">
-          <a href="login.html" class="login-btn">Log In</a>
-        </div>
+    <button class="alert-close" type="button" aria-label="Dismiss alert">×</button>
+  </div>
+</div>
 
-        <div class="logo-card">
-          <img src="Alysum-3.png" alt="Alysum Logo">
-        </div>
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-inner">
+    <div class="hero-topbar">
+      <a href="login.html" class="login-btn">Log In</a>
+    </div>
 
-        <div class="eyebrow">WRITE BOOKS. BUILD MOMENTUM.</div>
+    <div class="logo-card">
+      <img src="Alysum-3.png" alt="Alysum Logo">
+    </div>
 
-        <div class="headline">Finish your story.</div>
+    <div class="eyebrow">WRITE BOOKS. BUILD MOMENTUM.</div>
 
-        <div class="subline">
-          Alysum blends structured writing tools with streaks, focus sessions, and a public library—so you can keep going, stay organized, and share your work when you’re ready.
-        </div>
+    <div class="headline">Finish your story.</div>
 
-        <div class="hero-buttons">
-          <a href="signup.html" class="btn primary">Create Account</a>
-          <a href="library.html" class="btn secondary">Browse Library</a>
-        </div>
-      </div>
-    </section>
+    <div class="subline">
+      Alysum blends structured writing tools with streaks, focus sessions, and a public library—so you can keep going, stay organized, and share your work when you’re ready.
+    </div>
 
-    <!-- EDITOR DEMO -->
-    <section class="editor-demo section-wrap">
-      <div class="demo-badge">Demo Preview • This shows how Alysum feels after you join</div>
+    <div class="hero-buttons">
+      <a href="signup.html" class="btn primary">Create Account</a>
+      <a href="library.html" class="btn secondary">Browse Library</a>
+    </div>
+  </div>
+</section>
 
-      <div class="editor-shell">
-        <div class="editor-topbar">
-          <div class="editor-left">
-            <div class="hamburger">☰</div>
-            <div class="doc-title">new ...</div>
-          </div>
+<!-- EDITOR DEMO -->
+<section class="editor-demo section-wrap">
+  <div class="demo-badge">Demo Preview • This shows how Alysum feels after you join</div>
 
-          <div class="editor-actions">
-            <div class="circle-btn purple">＋</div>
-            <div class="circle-btn purple">🚀</div>
-            <div class="circle-btn">⌘</div>
-            <div class="circle-btn">•••</div>
-            <div class="circle-btn">◐</div>
-            <div class="circle-btn red">🗑</div>
-          </div>
-        </div>
-
-        <div class="editor-toolbar">
-          <div class="toolbar-row">
-            <div class="pill-btn small">B</div>
-            <div class="pill-btn small"><em>I</em></div>
-            <div class="pill-btn small"><u>U</u></div>
-            <div class="pill-btn">• List</div>
-            <div class="pill-btn">1. List</div>
-            <div class="pill-btn small">❝</div>
-          </div>
-
-          <div class="toolbar-row">
-            <div class="select-pill">Body <span class="caret">▾</span></div>
-            <div class="select-pill wide">Times New Roman <span class="caret">▾</span></div>
-          </div>
-
-          <div class="toolbar-row">
-            <div class="select-pill">Compact <span class="caret">▾</span></div>
-          </div>
-        </div>
-
-        <div class="editor-page-wrap">
-          <div class="editor-page">
-            <div class="manuscript">
-              <h1>Chapter 1</h1>
-              <p class="placeholder">Begin writing here...</p>
-            </div>
-          </div>
-        </div>
+  <div class="editor-shell">
+    <div class="editor-topbar">
+      <div class="editor-left">
+        <div class="hamburger">☰</div>
+        <div class="doc-title">new ...</div>
       </div>
 
-      <div class="demo-note">Preview only — the full writing studio opens after you create an account.</div>
-    </section>
+      <div class="editor-actions">
+        <div class="circle-btn purple">＋</div>
+        <div class="circle-btn purple">🚀</div>
+        <div class="circle-btn">⌘</div>
+        <div class="circle-btn">•••</div>
+        <div class="circle-btn">◐</div>
+        <div class="circle-btn red">🗑</div>
+      </div>
+    </div>
 
-    <!-- LIBRARY -->
-    <section class="library">
-      <div class="library-header">
-        <h2>Popular Books</h2>
+    <div class="editor-toolbar">
+      <div class="toolbar-row">
+        <div class="pill-btn small">B</div>
+        <div class="pill-btn small"><em>I</em></div>
+        <div class="pill-btn small"><u>U</u></div>
+        <div class="pill-btn">• List</div>
+        <div class="pill-btn">1. List</div>
+        <div class="pill-btn small">❝</div>
+      </div>
 
-        <div class="sort-btns">
-          <div class="sort-btn active" data-sort="popular">Popular</div>
-          <div class="sort-btn" data-sort="new">Newest</div>
+      <div class="toolbar-row">
+        <div class="select-pill">Body <span class="caret">▾</span></div>
+        <div class="select-pill wide">Times New Roman <span class="caret">▾</span></div>
+      </div>
+
+      <div class="toolbar-row">
+        <div class="select-pill">Compact <span class="caret">▾</span></div>
+      </div>
+    </div>
+
+    <div class="editor-page-wrap">
+      <div class="editor-page">
+        <div class="manuscript">
+          <h1>Chapter 1</h1>
+          <p class="placeholder">Begin writing here...</p>
         </div>
       </div>
-
-      <div id="books" class="books-grid"></div>
-    </section>
-
-    <!-- WHY -->
-    <section class="why">
-      <h2>Why Alysum?</h2>
-
-      <div class="why-card">
-        <h3>✍️ Focused Writing</h3>
-        <p>No distractions. Just you and your words.</p>
-      </div>
-
-      <div class="why-card">
-        <h3>📚 Your Stories</h3>
-        <p>Organize everything in one place.</p>
-      </div>
-
-      <div class="why-card">
-        <h3>🚀 Built for Writers</h3>
-        <p>Simple, fast, and made for creativity.</p>
-      </div>
-    </section>
-
-    <footer>
-      © 2026 Alysum Studio
-    </footer>
-
+    </div>
   </div>
 
-  <script type="module">
+  <div class="demo-note">Preview only — the full writing studio opens after you create an account.</div>
+</section>
+
+<!-- LIBRARY -->
+<section class="library">
+  <div class="library-header">
+    <h2>Popular Books</h2>
+
+    <div class="sort-btns">
+      <div class="sort-btn active" data-sort="popular">Popular</div>
+      <div class="sort-btn" data-sort="new">Newest</div>
+    </div>
+  </div>
+
+  <div id="books" class="books-grid"></div>
+</section>
+
+<!-- WHY -->
+<section class="why">
+  <h2>Why Alysum?</h2>
+
+  <div class="why-card">
+    <h3>✍️ Focused Writing</h3>
+    <p>No distractions. Just you and your words.</p>
+  </div>
+
+  <div class="why-card">
+    <h3>📚 Your Stories</h3>
+    <p>Organize everything in one place.</p>
+  </div>
+
+  <div class="why-card">
+    <h3>🚀 Built for Writers</h3>
+    <p>Simple, fast, and made for creativity.</p>
+  </div>
+</section>
+
+<footer>
+  © 2026 Alysum Studio
+</footer>
+
+  </div>  <script type="module">
     import { supabase } from "./firebase.js";
+
+    const backendAlert = document.getElementById("backendAlert");
+    const backendAlertClose = backendAlert?.querySelector(".alert-close");
+
+    if (localStorage.getItem("alysumBackendAlertDismissed") === "true") {
+      backendAlert?.classList.add("hidden");
+    }
+
+    backendAlertClose?.addEventListener("click", () => {
+      backendAlert?.classList.add("hidden");
+      localStorage.setItem("alysumBackendAlertDismissed", "true");
+    });
 
     let currentSort = "popular";
     let books = [];
@@ -837,6 +976,8 @@
         words: safeNumber(data.words, 0),
         views: safeNumber(data.views, 0),
         updated: safeNumber(data.updated, 0),
+        publishedAt: data.publishedAt,
+        createdAt: data.createdAt,
         isPublished: data.isPublished !== false
       };
     }
@@ -999,6 +1140,5 @@
 
     setActiveSortButton();
     loadLibrary();
-  </script>
-</body>
+  </script></body>
 </html>
