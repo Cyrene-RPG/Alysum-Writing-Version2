@@ -75,16 +75,97 @@
             color: #fff7ed;
         }
         .wrap {
-            max-width: 560px;
+            max-width: 1080px;
             margin: 0 auto;
             padding: 22px 16px 48px;
         }
+
+        .settings-shell {
+            display: grid;
+            gap: 20px;
+            align-items: start;
+        }
+
+        .settings-nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 4px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            background: rgba(17, 24, 39, 0.65);
+        }
+
+        .settings-nav a {
+            flex: 1 1 auto;
+            min-width: 0;
+            padding: 10px 14px;
+            border-radius: 12px;
+            border: 1px solid transparent;
+            color: var(--muted);
+            font-size: 13px;
+            font-weight: 800;
+            text-decoration: none;
+            text-align: center;
+            transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+        }
+
+        .settings-nav a:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .settings-nav a.active {
+            color: #fff;
+            border-color: color-mix(in srgb, var(--pink) 40%, transparent);
+            background: linear-gradient(135deg, var(--theme-card-a), var(--theme-card-b));
+        }
+
+        .settings-grid {
+            display: grid;
+            gap: 18px;
+            grid-template-columns: 1fr;
+        }
+
+        .settings-grid .panel {
+            margin-bottom: 0;
+            scroll-margin-top: 88px;
+        }
+
+        .panel-span-2 {
+            grid-column: 1 / -1;
+        }
+
+        @media (min-width: 720px) {
+            .settings-shell {
+                grid-template-columns: 200px minmax(0, 1fr);
+                gap: 24px;
+            }
+
+            .settings-nav {
+                flex-direction: column;
+                flex-wrap: nowrap;
+                position: sticky;
+                top: 78px;
+                padding: 10px;
+            }
+
+            .settings-nav a {
+                text-align: left;
+                flex: 0 0 auto;
+            }
+
+            .settings-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
         .panel {
             background: linear-gradient(180deg, rgba(17,24,39,0.98), rgba(15,23,42,0.98));
             border: 1px solid var(--border);
             border-radius: 20px;
             padding: 20px 18px;
-            margin-bottom: 18px;
+            margin-bottom: 0;
             box-shadow: 0 16px 40px rgba(0,0,0,0.35);
         }
         .panel h2 {
@@ -245,6 +326,83 @@
             border-color: color-mix(in srgb, var(--pink) 45%, transparent);
             background: rgba(255,255,255,0.07);
         }
+
+        @media (min-width: 900px) {
+            #accountTypeGroup {
+                display: grid;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 10px;
+            }
+
+            .account-type-row {
+                margin-bottom: 0;
+                flex-direction: column;
+                align-items: stretch;
+                height: 100%;
+            }
+
+            .account-type-row input {
+                margin-top: 0;
+            }
+        }
+
+        .story-bible-block {
+            margin-top: 22px;
+            padding-top: 18px;
+            border-top: 1px solid var(--border);
+        }
+
+        .story-bible-toggle {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            cursor: pointer;
+            margin: 16px 0 0;
+            padding: 12px 14px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.04);
+            font-size: 12px;
+            font-weight: 800;
+            color: var(--muted);
+            text-transform: none;
+            letter-spacing: 0;
+        }
+
+        .story-bible-toggle input {
+            margin-top: 3px;
+            accent-color: var(--purple-bright, #a78bfa);
+        }
+
+        .story-bible-toggle strong {
+            display: block;
+            font-size: 14px;
+            margin-bottom: 4px;
+            color: #fff;
+            font-weight: 800;
+        }
+
+        .profile-fields {
+            display: grid;
+            gap: 14px;
+            grid-template-columns: 1fr;
+        }
+
+        @media (min-width: 720px) {
+            .profile-fields {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .profile-field-wide {
+                grid-column: 1 / -1;
+            }
+        }
+
+        @media (max-width: 719px) {
+            .settings-nav a {
+                flex: 1 1 calc(50% - 4px);
+            }
+        }
     </style>
     <link rel="stylesheet" href="css/gradient-themes.css?v=2" />
 </head>
@@ -259,6 +417,15 @@
             <p class="hint" style="margin:0">Loading your account…</p>
         </div>
 
+        <div class="settings-shell hidden" id="settingsShell">
+            <nav class="settings-nav" id="settingsNav" aria-label="Settings sections">
+                <a href="#appearancePanel" data-section="appearancePanel">Appearance</a>
+                <a href="#accountModePanel" data-section="accountModePanel">Account focus</a>
+                <a href="#profilePanel" data-section="profilePanel">Profile</a>
+                <a href="#securityPanel" data-section="securityPanel">Password</a>
+            </nav>
+
+            <div class="settings-grid">
         <div class="panel hidden" id="appearancePanel">
             <h2>Appearance</h2>
             <p class="hint">
@@ -299,10 +466,11 @@
             <div class="msg" id="accountTypeMsg" role="status"></div>
         </div>
 
-        <div class="panel hidden" id="profilePanel">
+        <div class="panel hidden panel-span-2" id="profilePanel">
             <h2>Profile</h2>
             <p class="hint">Your permanent handle is like a Discord tag: it never changes and identifies you. Your display name is what others see next to comments and on your studio home.</p>
 
+            <div class="profile-fields">
             <div class="field">
                 <label>Email</label>
                 <input type="email" id="emailField" disabled />
@@ -314,43 +482,26 @@
                 <p class="hint" style="margin-top:8px;margin-bottom:0">This cannot be changed.</p>
             </div>
 
-            <div class="field">
+            <div class="field profile-field-wide">
                 <label for="displayNameInput">Display name</label>
                 <input type="text" id="displayNameInput" maxlength="40" autocomplete="nickname" placeholder="How your name appears" />
                 <p class="hint" style="margin-top:8px;margin-bottom:0">Leave blank and save to show only your permanent handle everywhere.</p>
+            </div>
             </div>
 
             <button type="button" class="btn btn-primary" id="saveDisplayBtn">Save display name</button>
             <div class="msg" id="profileMsg" role="status"></div>
 
-            <div class="field" style="margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--border)">
+            <div class="story-bible-block">
                 <label>Story Bible</label>
                 <p class="hint" style="margin-bottom: 12px">
                     Character notes per book. Alysum does <strong>not</strong> read your existing chapters to fill this in — you add entries yourself (optional pattern scan suggests repeating capitalized phrases). It applies to all books, including ones you already wrote.
                 </p>
                 <a href="story-bible.html" class="btn btn-primary" style="text-decoration: none; margin-top: 0">Open Story Bible</a>
-                <label
-                    style="
-                        display: flex;
-                        align-items: flex-start;
-                        gap: 10px;
-                        cursor: pointer;
-                        margin: 16px 0 0;
-                        padding: 12px 14px;
-                        border-radius: 12px;
-                        border: 1px solid var(--border);
-                        background: rgba(255, 255, 255, 0.04);
-                    "
-                >
-                    <input
-                        type="checkbox"
-                        id="storyBibleUiToggle"
-                        style="margin-top: 3px; accent-color: var(--purple-bright, #a78bfa)"
-                    />
+                <label class="story-bible-toggle" for="storyBibleUiToggle">
+                    <input type="checkbox" id="storyBibleUiToggle" />
                     <span>
-                        <strong style="display: block; font-size: 14px; margin-bottom: 4px; color: #fff"
-                            >Show Story Bible in the app</strong
-                        >
+                        <strong>Show Story Bible in the app</strong>
                         <span class="hint" style="margin: 0; display: block"
                             >When off, editor and Studio hide Story Bible links. This device only; your saved bible data
                             stays in your account.</span
@@ -381,6 +532,8 @@
             <button type="button" class="btn btn-primary" id="savePasswordBtn">Update password</button>
             <div class="msg" id="passwordMsg" role="status"></div>
         </div>
+            </div>
+        </div>
     </div>
 
     <script type="module">
@@ -410,8 +563,49 @@
         const accountModePanel = document.getElementById("accountModePanel");
         const saveAccountTypeBtn = document.getElementById("saveAccountTypeBtn");
         const accountTypeMsg = document.getElementById("accountTypeMsg");
+        const settingsShell = document.getElementById("settingsShell");
+        const settingsNav = document.getElementById("settingsNav");
 
         let settingsHomeUrl = "studio.html";
+
+        function initSettingsNav() {
+            if (!settingsNav || settingsNav.dataset.ready === "1") return;
+            settingsNav.dataset.ready = "1";
+            const links = [...settingsNav.querySelectorAll("a[data-section]")];
+            const panels = links
+                .map((a) => document.getElementById(a.dataset.section))
+                .filter(Boolean);
+
+            function setActive(id) {
+                links.forEach((a) => a.classList.toggle("active", a.dataset.section === id));
+            }
+
+            links.forEach((a) => {
+                a.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    const el = document.getElementById(a.dataset.section);
+                    if (el) {
+                        el.scrollIntoView({ behavior: "smooth", block: "start" });
+                        setActive(a.dataset.section);
+                    }
+                });
+            });
+
+            if (panels.length && "IntersectionObserver" in window) {
+                const io = new IntersectionObserver(
+                    (entries) => {
+                        const visible = entries
+                            .filter((en) => en.isIntersecting)
+                            .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+                        if (visible[0]?.target?.id) setActive(visible[0].target.id);
+                    },
+                    { rootMargin: "-20% 0px -55% 0px", threshold: [0.15, 0.4, 0.65] }
+                );
+                panels.forEach((p) => io.observe(p));
+            } else if (links[0]) {
+                setActive(links[0].dataset.section);
+            }
+        }
 
         function mergeUserRow(row) {
             if (!row || typeof row !== "object") return {};
@@ -489,11 +683,13 @@
                 });
 
                 loadingPanel.classList.add("hidden");
+                if (settingsShell) settingsShell.classList.remove("hidden");
                 appearancePanel.classList.remove("hidden");
                 accountModePanel.classList.remove("hidden");
                 profilePanel.classList.remove("hidden");
                 securityPanel.classList.remove("hidden");
                 initThemePicker();
+                initSettingsNav();
 
                 const storyBibleUiToggle = document.getElementById("storyBibleUiToggle");
                 if (storyBibleUiToggle && storyBibleUiToggle.dataset.bound !== "1") {
