@@ -395,25 +395,14 @@ function signupAuthMessage(message) {
     return message;
 }
 
-async function finishOAuthSignup(session) {
-    if (oauthSignupHandled || !session) return;
-
-    let pending = false;
-    try {
-        pending = sessionStorage.getItem(OAUTH_PENDING_KEY) === "1";
-    } catch {
-        /* ignore */
-    }
-
-    if (!isOAuthReturn() && !pending) return;
-
+async function goAfterOAuthSignup() {
+    if (oauthSignupHandled) return;
     oauthSignupHandled = true;
     try {
         sessionStorage.removeItem(OAUTH_PENDING_KEY);
     } catch {
         /* ignore */
     }
-
     await completeOAuthSignup();
 }
 
@@ -531,17 +520,26 @@ async function completeOAuthSignup() {
     redirectAfterSignup(accountType);
 }
 
-let pendingOAuth = isOAuthReturn();
-try {
-    if (!pendingOAuth && sessionStorage.getItem(OAUTH_PENDING_KEY) === "1") {
-        pendingOAuth = true;
-    }
-} catch {
-    /* ignore */
-}
+wireSupabaseSession(async (session, event) => {
+    if (!session || event === "SIGNED_OUT") return;
+    await goAfterOAuthSignup();
+});
 
-if (pendingOAuth) {
-    wireSupabaseSession((session) => finishOAuthSignup(session));
+if (isOAuthReturn()) {
+    void (async () => {
+        for (let i = 0; i < 50; i++) {
+            if (oauthSignupHandled) return;
+            const { data } = await supabase.auth.getSession();
+            if (data.session) {
+                await goAfterOAuthSignup();
+                return;
+            }
+            await new Promise((resolve) => setTimeout(resolve, 200));
+        }
+        if (!oauthSignupHandled) {
+            showError("Discord sign-up did not finish. Try again.");
+        }
+    })();
 }
 
 let signupInFlight = false;

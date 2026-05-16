@@ -449,25 +449,14 @@ async function redirectAfterLogin() {
     }
 }
 
-async function finishOAuthLogin(session) {
-    if (oauthRedirectHandled || !session || isRecoveryLanding) return;
-
-    let pending = false;
-    try {
-        pending = sessionStorage.getItem(OAUTH_PENDING_KEY) === "1";
-    } catch {
-        /* ignore */
-    }
-
-    if (!isOAuthReturn() && !pending) return;
-
+async function goToStudioAfterAuth() {
+    if (oauthRedirectHandled || isRecoveryLanding) return;
     oauthRedirectHandled = true;
     try {
         sessionStorage.removeItem(OAUTH_PENDING_KEY);
     } catch {
         /* ignore */
     }
-
     await redirectAfterLogin();
 }
 
@@ -533,17 +522,28 @@ if (resetParams.get("reset") === "success") {
 }
 
 if (!isRecoveryLanding) {
-    let pendingOAuth = isOAuthReturn();
-    try {
-        if (!pendingOAuth && sessionStorage.getItem(OAUTH_PENDING_KEY) === "1") {
-            pendingOAuth = true;
-        }
-    } catch {
-        /* ignore */
-    }
+    wireSupabaseSession(async (session, event) => {
+        if (!session || event === "SIGNED_OUT") return;
+        await goToStudioAfterAuth();
+    });
 
-    if (pendingOAuth) {
-        wireSupabaseSession((session) => finishOAuthLogin(session));
+    if (isOAuthReturn()) {
+        void (async () => {
+            for (let i = 0; i < 50; i++) {
+                if (oauthRedirectHandled) return;
+                const { data } = await supabase.auth.getSession();
+                if (data.session) {
+                    await goToStudioAfterAuth();
+                    return;
+                }
+                await new Promise((resolve) => setTimeout(resolve, 200));
+            }
+            if (!oauthRedirectHandled) {
+                showError(
+                    "Discord sign-in did not finish. Try again, or use email login."
+                );
+            }
+        })();
     }
 }
 
