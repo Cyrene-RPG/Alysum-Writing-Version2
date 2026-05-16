@@ -42,6 +42,8 @@ const APP_SHELL = [
   'css/notebook.css',
   'css/gradient-themes.css',
   'js/gradient-theme-sync.js',
+  'js/alysum-appearance-boot.js',
+  'js/display-text-style.js',
   'story-bible.html'
 ];
 

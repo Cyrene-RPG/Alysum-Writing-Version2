@@ -22,12 +22,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Account settings - Alysum</title>
-    <script>
-        try {
-            var __g = localStorage.getItem("alysum-gradient-theme");
-            if (__g && __g !== "classic") document.documentElement.setAttribute("data-gradient-theme", __g);
-        } catch (e) {}
-    </script>
+    <script src="js/alysum-appearance-boot.js"></script>
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
     <style>
         * { box-sizing: border-box; }
@@ -352,6 +347,23 @@
             margin-left: auto;
             margin-right: auto;
             flex-shrink: 0;
+        }
+
+        .appearance-subhead {
+            margin: 28px 0 8px;
+            font-size: 15px;
+            font-weight: 900;
+            color: var(--gold);
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .appearance-subhead:first-of-type {
+            margin-top: 0;
+        }
+
+        .appearance-subhint {
+            margin: 0 0 12px;
         }
 
         #appearancePanel .theme-grid {
@@ -798,8 +810,12 @@
             <div class="settings-content">
         <div class="panel hidden settings-tab-panel" id="appearancePanel" role="tabpanel" aria-labelledby="tab-appearance">
             <h2>Appearance</h2>
-            <p class="hint">Custom Color Choices for Your Profiles.</p>
+            <p class="hint">Customize accent colors and how display titles look across the site.</p>
+            <h3 class="appearance-subhead">Accent colors</h3>
             <div class="theme-grid" id="themeChipRow" aria-label="Accent themes"></div>
+            <h3 class="appearance-subhead">Title style</h3>
+            <p class="hint appearance-subhint">Applies to welcome lines, headers, and section titles — not the writing editor.</p>
+            <div class="theme-grid" id="textStyleChipRow" aria-label="Title text styles"></div>
         </div>
 
         <div class="panel hidden settings-tab-panel" id="accountModePanel" role="tabpanel" aria-labelledby="tab-account" hidden>
@@ -953,6 +969,12 @@
             getStoredGradientThemeId,
             getThemePreview
         } from "./js/gradient-theme.js?v=5";
+        import {
+            DISPLAY_TEXT_STYLES,
+            applyDisplayTextStyle,
+            getStoredDisplayTextStyleId,
+            initDisplayTextStyleOnPage
+        } from "./js/display-text-style.js?v=1";
         import { normalizeAccountType, ACCOUNT_AUTHOR, ACCOUNT_READER, ACCOUNT_BOTH, homeUrlForUserData } from "./js/account-mode.js?v=1";
         import { isStoryBibleUiEnabled, setStoryBibleUiEnabled } from "./js/story-bible-prefs.js?v=1";
 
@@ -972,6 +994,7 @@
         const passwordMsg = document.getElementById("passwordMsg");
         const appearancePanel = document.getElementById("appearancePanel");
         const themeChipRow = document.getElementById("themeChipRow");
+        const textStyleChipRow = document.getElementById("textStyleChipRow");
         const accountModePanel = document.getElementById("accountModePanel");
         const saveAccountTypeBtn = document.getElementById("saveAccountTypeBtn");
         const accountTypeMsg = document.getElementById("accountTypeMsg");
@@ -1070,6 +1093,33 @@
             });
         }
 
+        function initTextStylePicker() {
+            if (!textStyleChipRow || textStyleChipRow.dataset.ready === "1") return;
+            textStyleChipRow.dataset.ready = "1";
+            textStyleChipRow.innerHTML = "";
+            const cur = getStoredDisplayTextStyleId();
+            DISPLAY_TEXT_STYLES.forEach((s) => {
+                const b = document.createElement("button");
+                b.type = "button";
+                b.className = "theme-chip text-style-chip" + (s.id === cur ? " active" : "");
+                b.dataset.style = s.id;
+                b.title = s.hint || "";
+                b.innerHTML =
+                    '<span class="text-style-chip-preview" aria-hidden="true">Aa</span>' +
+                    '<span class="text-style-chip-label">' + s.label + "</span>";
+                b.addEventListener("click", () => {
+                    applyDisplayTextStyle(s.id);
+                    textStyleChipRow.querySelectorAll(".theme-chip").forEach((x) => {
+                        x.classList.remove("active");
+                    });
+                    b.classList.add("active");
+                });
+                textStyleChipRow.appendChild(b);
+            });
+        }
+
+        initDisplayTextStyleOnPage();
+
         backBtn.addEventListener("click", () => {
             window.location.href = settingsHomeUrl;
         });
@@ -1123,6 +1173,7 @@
                 });
                 applyChromeGradient(getThemePreview(getStoredGradientThemeId()));
                 initThemePicker();
+                initTextStylePicker();
                 initSettingsNav();
 
                 const storyBibleUiToggle = document.getElementById("storyBibleUiToggle");
