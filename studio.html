@@ -995,7 +995,10 @@
         DAILY_GOAL_PRESETS,
         DEFAULT_DAILY_WORD_GOAL
     } from "./js/writing-day-stats.js?v=1";
-    import { permanentHandleFromUserData, publicDisplayNameFromUserData } from "./js/profile-display.js?v=1";
+    import {
+        permanentHandleFromUserData,
+        cosmeticDisplayNameFromUserData
+    } from "./js/profile-display.js?v=2";
     import { countBookWords, countWordsFromHTML } from "./js/book-word-count.js?v=1";
     import {
         accountSupportsModeToggle,
@@ -1762,9 +1765,18 @@
             const streak = await ensureUserStreak(currentProfile);
             currentProfile.streak = streak;
 
-            status.textContent = "Welcome back, writer.";
-            profileDisplayName.textContent = publicDisplayNameFromUserData(currentProfile);
-            profileHandleLine.textContent = "Permanent handle @" + permanentHandleFromUserData(currentProfile);
+            const displayName = cosmeticDisplayNameFromUserData(currentProfile);
+            const handle = permanentHandleFromUserData(currentProfile);
+            status.textContent = "Welcome back, " + (displayName || handle) + ".";
+            profileDisplayName.textContent = "";
+            profileDisplayName.hidden = true;
+            if (displayName) {
+                profileHandleLine.textContent = "";
+                profileHandleLine.hidden = true;
+            } else {
+                profileHandleLine.textContent = "Permanent handle @" + handle;
+                profileHandleLine.hidden = false;
+            }
             streakEl.textContent = streak.toLocaleString();
 
             refreshDailyGoalUIFromProfile();
@@ -1789,8 +1801,10 @@
         } catch (e) {
             console.error(e);
             status.textContent = "Error loading profile";
-            profileDisplayName.textContent = "Error";
+            profileDisplayName.textContent = "";
+            profileDisplayName.hidden = true;
             profileHandleLine.textContent = "";
+            profileHandleLine.hidden = true;
             currentProjectTitle.textContent = "Could not load";
             currentProjectMeta.textContent = e.message || "Try refreshing the page.";
         }

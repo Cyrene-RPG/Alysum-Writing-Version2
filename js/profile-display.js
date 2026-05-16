@@ -8,9 +8,14 @@ export function permanentHandleFromUserData(data) {
     return h || "user";
 }
 
+/** Cosmetic display name only (empty if unset). */
+export function cosmeticDisplayNameFromUserData(data) {
+    return String(data?.displayName ?? data?.display_name ?? "").trim();
+}
+
 /** Name shown in UI: cosmetic display if set, otherwise the permanent handle. */
 export function publicDisplayNameFromUserData(data) {
-    const cosmetic = String(data?.displayName ?? data?.display_name ?? "").trim();
+    const cosmetic = cosmeticDisplayNameFromUserData(data);
     if (cosmetic) return cosmetic;
     return permanentHandleFromUserData(data);
 }
