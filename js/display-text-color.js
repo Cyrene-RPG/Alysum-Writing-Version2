@@ -125,6 +125,14 @@ export function resolveDisplayColorPair(colorId) {
     return readThemeColorsFromDom();
 }
 
+export function syncDisplayTextColorAttribute(colorId) {
+    if (typeof document === "undefined") return;
+    const root = document.documentElement;
+    const id = !colorId || colorId === "theme" ? "theme" : colorId;
+    if (id === "theme") root.removeAttribute("data-display-text-color");
+    else root.setAttribute("data-display-text-color", id);
+}
+
 export function applyDisplayTextColorVars(main, accent) {
     if (typeof document === "undefined") return;
     const root = document.documentElement;
@@ -167,6 +175,7 @@ export function applyDisplayTextColor(colorId, customMain, customAccent) {
 
     const pair = resolveDisplayColorPair(id);
     applyDisplayTextColorVars(pair.main, pair.accent);
+    syncDisplayTextColorAttribute(id);
 
     try {
         document.documentElement.dispatchEvent(

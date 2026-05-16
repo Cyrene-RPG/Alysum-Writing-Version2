@@ -177,6 +177,8 @@
         if (parseHex(pair.main) && parseHex(pair.accent)) {
             applyColorVars(root, pair.main, pair.accent);
         }
+        if (colorId && colorId !== "theme") root.setAttribute("data-display-text-color", colorId);
+        else root.removeAttribute("data-display-text-color");
 
         var p = localStorage.getItem("alysum-gradient-theme-preview");
         if (p) root.style.setProperty("--alysum-chrome-gradient", p);

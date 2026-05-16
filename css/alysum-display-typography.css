@@ -16,6 +16,22 @@
 }
 
 /* stylelint-disable selector-max-type */
+html[data-display-text-color] :is(
+    .header-center,
+    .header-title,
+    .brand-name,
+    .welcome-copy h2,
+    #status,
+    .section-head-left h2,
+    .books-panel > .section-head h2,
+    .panel-head h2,
+    .ne-page-title,
+    .wr-page-title
+) {
+    color: var(--alysum-display-mid);
+    text-shadow: 0 1px 3px var(--alysum-display-shadow);
+}
+
 html[data-display-text-style] :is(
     .header-center,
     .header-title,
@@ -29,11 +45,9 @@ html[data-display-text-style] :is(
     .wr-page-title
 ) {
     line-height: 1.12;
-    color: var(--alysum-display-mid);
     background: none;
     -webkit-text-stroke: 0;
     filter: none;
-    text-shadow: 0 1px 3px var(--alysum-display-shadow);
 }
 
 html[data-display-text-style][data-display-text-caps="1"] :is(

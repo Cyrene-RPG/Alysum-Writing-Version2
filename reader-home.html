@@ -188,38 +188,44 @@
         }
 
         .desktop-sidebar {
+            display: flex;
+            flex-direction: column;
             background: linear-gradient(180deg, rgba(17,24,39,0.96), rgba(15,23,42,0.98));
             border: 1px solid var(--border);
             border-radius: 24px;
-            padding: 16px;
+            padding: 12px;
             box-shadow: var(--shadow-lg);
             position: sticky;
-            top: 92px;
-            max-height: calc(100vh - 104px);
-            overflow-y: auto;
-            overflow-x: hidden;
+            top: 80px;
+            height: calc(100dvh - 88px);
+            max-height: calc(100dvh - 88px);
+            overflow: hidden;
         }
 
-        .desktop-sidebar::-webkit-scrollbar {
-            width: 8px;
+        .sidebar-nav {
+            flex: 1 1 auto;
+            min-height: 0;
         }
 
-        .desktop-sidebar::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.12);
-            border-radius: 999px;
+        .sidebar-footer {
+            flex-shrink: 0;
+            margin-top: auto;
+            padding-top: 8px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
         }
 
         .sidebar-brand {
             display: flex;
             align-items: center;
-            gap: 10px;
-            margin-bottom: 18px;
+            gap: 8px;
+            margin-bottom: 10px;
+            flex-shrink: 0;
         }
 
         .brand-badge {
-            width: 38px;
-            height: 38px;
-            border-radius: 12px;
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
             background: linear-gradient(135deg, var(--purple-bright), var(--pink));
             display: flex;
             align-items: center;
@@ -231,14 +237,15 @@
         }
 
         .brand-name {
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 900;
             color: var(--gold);
+            line-height: 1.2;
         }
 
         .sidebar-group-label {
-            margin: 14px 0 8px;
-            font-size: 11px;
+            margin: 8px 0 4px;
+            font-size: 10px;
             font-weight: 900;
             color: var(--muted);
             text-transform: uppercase;
@@ -248,16 +255,21 @@
         .sidebar-item {
             display: block;
             width: 100%;
-            padding: 13px 14px;
-            border-radius: 14px;
-            margin-bottom: 8px;
+            padding: 8px 10px;
+            border-radius: 10px;
+            margin-bottom: 3px;
             background: transparent;
             border: 1px solid transparent;
             color: white;
             text-decoration: none;
-            font-size: 14px;
+            font-size: 13px;
+            line-height: 1.25;
             font-weight: 800;
             cursor: pointer;
+        }
+
+        .sidebar-nav .sidebar-item:last-child {
+            margin-bottom: 0;
         }
 
         button.sidebar-item {
@@ -274,8 +286,8 @@
             background: rgba(255,255,255,0.06);
         }
 
-        .sidebar-group-label--spaced {
-            margin-top: 14px;
+        .sidebar-footer .sidebar-item-logout {
+            margin-bottom: 0;
         }
 
         .sidebar-item-logout,
@@ -582,6 +594,35 @@
             }
         }
 
+        @media (max-height: 720px) {
+            .desktop-sidebar {
+                padding: 10px;
+            }
+
+            .sidebar-brand {
+                margin-bottom: 8px;
+            }
+
+            .brand-badge {
+                width: 30px;
+                height: 30px;
+            }
+
+            .brand-name {
+                font-size: 14px;
+            }
+
+            .sidebar-item {
+                padding: 6px 9px;
+                margin-bottom: 2px;
+                font-size: 12px;
+            }
+
+            .sidebar-group-label {
+                margin: 6px 0 3px;
+            }
+        }
+
         @media (max-width: 680px) {
             .container {
                 padding: 14px 12px 42px;
@@ -629,6 +670,7 @@
                     <div class="brand-badge">A</div>
                     <div class="brand-name">Alysum Reading</div>
                 </div>
+            <nav class="sidebar-nav" aria-label="Your space">
                 <div class="sidebar-group-label">Your space</div>
                 <a class="sidebar-item active" href="reader-home.html">📖 Reading profile</a>
                 <a class="sidebar-item" href="beta-notes-library.html">📝 All beta notes</a>
@@ -636,10 +678,11 @@
                 <a class="sidebar-item" href="writer-resources.html">✏️ Writer resources</a>
                 <a class="sidebar-item hidden" id="sidebarStudioLink" href="studio.html">✍️ Studio</a>
                 <a class="sidebar-item" href="settings.html">⚙️ Settings</a>
-                <div class="sidebar-group-label">More</div>
                 <a class="sidebar-item" href="index.html">🏠 Home</a>
-                <div class="sidebar-group-label sidebar-group-label--spaced">Account</div>
+            </nav>
+            <div class="sidebar-footer">
                 <button type="button" class="sidebar-item sidebar-item-logout" data-logout-btn>Log out</button>
+            </div>
             </aside>
 
             <main class="main-col">
