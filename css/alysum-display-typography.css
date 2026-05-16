@@ -1,123 +1,83 @@
 /**
- * Alysum display typography — metallic 3D titles (inspired by cover art lettering).
- * Loaded via gradient-themes.css on app pages; linked on index.html separately.
+ * Chrome display titles — metallic bevel + cyan edge (cover-style).
+ * Applied only to key brand/hero/section headings, not body UI or stats.
  */
 
-@import url("https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Exo+2:wght@600;700;800&display=swap");
 
 :root {
-    --alysum-display-font: "Bebas Neue", "Arial Narrow", Impact, sans-serif;
-    --alysum-display-fill: #f8fdff;
-    --alysum-display-highlight: var(--gold, #fde68a);
-    --alysum-display-mid: var(--theme-brand-kicker, #a5f3fc);
-    --alysum-display-deep: #0e7490;
-    --alysum-display-shadow: rgba(8, 47, 73, 0.88);
-    --alysum-display-glow: rgba(34, 211, 238, 0.42);
+    --alysum-chrome-font: "Exo 2", "Segoe UI", system-ui, sans-serif;
+    --alysum-chrome-face-top: #ffffff;
+    --alysum-chrome-face-mid: #b8c6d4;
+    --alysum-chrome-face-bottom: #5a6d82;
+    --alysum-chrome-edge: rgba(56, 189, 248, 0.92);
+    --alysum-chrome-edge-soft: rgba(125, 211, 252, 0.45);
 }
 
-/* Core 3D stack — reuse on any element via .alysum-display */
-.alysum-display,
+/* Shared chrome stack */
 :is(
-    h1,
-    h2,
-    h3,
     .header-center,
     .header-title,
     .brand-name,
-    .sidebar-brand .brand-name,
-    .section-head-left h2,
-    .books-panel > .section-head h2,
     .welcome-copy h2,
     #status,
-    .project-title,
-    .stat h3,
-    .cover-placeholder-title,
-    .goal-modal-title,
-    .badge-name,
+    .section-head-left h2,
+    .books-panel > .section-head h2,
+    .panel-head h2,
     .ne-page-title,
-    .wr-page-title,
-    .dashboard-hero h1,
-    .dashboard-hero h2,
-    .hero-title,
-    .page-title,
-    .card-title,
-    .panel-title,
-    .rb-hero h1,
-    .cb-hero h1,
-    .wb-hero h1
-):not(:where(.editor, .editor *, .content, .content *, .chapter-title, .chapter-number, .read-body, .read-body *)) {
-    font-family: var(--alysum-display-font);
-    font-weight: 400;
-    letter-spacing: 0.05em;
-    line-height: 1.02;
-    color: var(--alysum-display-fill);
-    text-shadow:
-        0 0 1px rgba(255, 255, 255, 0.95),
-        0 1px 0 rgba(255, 255, 255, 0.88),
-        0 2px 0 color-mix(in srgb, var(--alysum-display-highlight) 75%, white),
-        0 3px 0 var(--alysum-display-mid),
-        0 4px 0 color-mix(in srgb, var(--alysum-display-mid) 65%, var(--alysum-display-deep)),
-        0 5px 0 var(--alysum-display-deep),
-        0 6px 0 var(--alysum-display-shadow),
-        0 8px 18px var(--alysum-display-glow),
-        0 0 36px color-mix(in srgb, var(--alysum-display-mid) 35%, transparent);
+    .wr-page-title
+) {
+    font-family: var(--alysum-chrome-font);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    line-height: 1.08;
+    color: transparent;
+    background: linear-gradient(
+        180deg,
+        var(--alysum-chrome-face-top) 0%,
+        #eef2f6 14%,
+        var(--alysum-chrome-face-mid) 42%,
+        #7d8fa3 72%,
+        var(--alysum-chrome-face-bottom) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-stroke: 0.55px var(--alysum-chrome-edge);
+    paint-order: stroke fill;
+    filter:
+        drop-shadow(0 1px 0 rgba(255, 255, 255, 0.42))
+        drop-shadow(0 2px 0 rgba(15, 23, 42, 0.75))
+        drop-shadow(0 4px 5px rgba(0, 0, 0, 0.42))
+        drop-shadow(0 0 10px var(--alysum-chrome-edge-soft));
 }
 
-/* Poster-style caps for brand + section titles */
+/* Brand + section titles — all caps like cover lettering */
 :is(
-    h1,
-    h2,
     .header-center,
     .header-title,
     .brand-name,
     .section-head-left h2,
     .books-panel > .section-head h2,
-    .project-label,
+    .panel-head h2,
     .ne-page-title,
-    .wr-page-title,
-    .page-title,
-    .card-title,
-    .panel-title,
-    .rb-hero h1,
-    .cb-hero h1,
-    .wb-hero h1
-):not(:where(.editor, .editor *, .content, .content *, .welcome-copy h2, #status, .project-title, .stat h3, .cover-placeholder-title)) {
+    .wr-page-title
+) {
     text-transform: uppercase;
+    font-weight: 800;
 }
 
-/* Sentence-case greetings & names */
+/* Greeting line — sentence case, slightly softer */
 .welcome-copy h2,
-#status,
-.project-title,
-.cover-placeholder-title {
+#status {
     text-transform: none;
     letter-spacing: 0.02em;
+    font-weight: 700;
+    -webkit-text-stroke: 0.45px var(--alysum-chrome-edge);
 }
 
-/* Stat numbers: 3D but not uppercase */
-.stat h3 {
-    text-transform: none;
-    letter-spacing: 0.03em;
-}
-
-/* Keep UI controls readable */
-:where(button, input, textarea, select, label, .menu-link, .sidebar-item, .settings-nav button) {
-    font-family: inherit;
-    text-transform: none;
-    text-shadow: none;
-}
-
-/* Slightly tighter on small screens */
 @media (max-width: 640px) {
     .welcome-copy h2,
     #status {
         letter-spacing: 0.01em;
-    }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-    .alysum-display,
-    :is(h1, h2, .header-center, .brand-name, .welcome-copy h2, #status) {
-        transition: text-shadow 0.2s ease, color 0.2s ease;
     }
 }
