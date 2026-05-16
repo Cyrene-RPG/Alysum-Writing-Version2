@@ -1,0 +1,123 @@
+/**
+ * Alysum display typography — metallic 3D titles (inspired by cover art lettering).
+ * Loaded via gradient-themes.css on app pages; linked on index.html separately.
+ */
+
+@import url("https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap");
+
+:root {
+    --alysum-display-font: "Bebas Neue", "Arial Narrow", Impact, sans-serif;
+    --alysum-display-fill: #f8fdff;
+    --alysum-display-highlight: var(--gold, #fde68a);
+    --alysum-display-mid: var(--theme-brand-kicker, #a5f3fc);
+    --alysum-display-deep: #0e7490;
+    --alysum-display-shadow: rgba(8, 47, 73, 0.88);
+    --alysum-display-glow: rgba(34, 211, 238, 0.42);
+}
+
+/* Core 3D stack — reuse on any element via .alysum-display */
+.alysum-display,
+:is(
+    h1,
+    h2,
+    h3,
+    .header-center,
+    .header-title,
+    .brand-name,
+    .sidebar-brand .brand-name,
+    .section-head-left h2,
+    .books-panel > .section-head h2,
+    .welcome-copy h2,
+    #status,
+    .project-title,
+    .stat h3,
+    .cover-placeholder-title,
+    .goal-modal-title,
+    .badge-name,
+    .ne-page-title,
+    .wr-page-title,
+    .dashboard-hero h1,
+    .dashboard-hero h2,
+    .hero-title,
+    .page-title,
+    .card-title,
+    .panel-title,
+    .rb-hero h1,
+    .cb-hero h1,
+    .wb-hero h1
+):not(:where(.editor, .editor *, .content, .content *, .chapter-title, .chapter-number, .read-body, .read-body *)) {
+    font-family: var(--alysum-display-font);
+    font-weight: 400;
+    letter-spacing: 0.05em;
+    line-height: 1.02;
+    color: var(--alysum-display-fill);
+    text-shadow:
+        0 0 1px rgba(255, 255, 255, 0.95),
+        0 1px 0 rgba(255, 255, 255, 0.88),
+        0 2px 0 color-mix(in srgb, var(--alysum-display-highlight) 75%, white),
+        0 3px 0 var(--alysum-display-mid),
+        0 4px 0 color-mix(in srgb, var(--alysum-display-mid) 65%, var(--alysum-display-deep)),
+        0 5px 0 var(--alysum-display-deep),
+        0 6px 0 var(--alysum-display-shadow),
+        0 8px 18px var(--alysum-display-glow),
+        0 0 36px color-mix(in srgb, var(--alysum-display-mid) 35%, transparent);
+}
+
+/* Poster-style caps for brand + section titles */
+:is(
+    h1,
+    h2,
+    .header-center,
+    .header-title,
+    .brand-name,
+    .section-head-left h2,
+    .books-panel > .section-head h2,
+    .project-label,
+    .ne-page-title,
+    .wr-page-title,
+    .page-title,
+    .card-title,
+    .panel-title,
+    .rb-hero h1,
+    .cb-hero h1,
+    .wb-hero h1
+):not(:where(.editor, .editor *, .content, .content *, .welcome-copy h2, #status, .project-title, .stat h3, .cover-placeholder-title)) {
+    text-transform: uppercase;
+}
+
+/* Sentence-case greetings & names */
+.welcome-copy h2,
+#status,
+.project-title,
+.cover-placeholder-title {
+    text-transform: none;
+    letter-spacing: 0.02em;
+}
+
+/* Stat numbers: 3D but not uppercase */
+.stat h3 {
+    text-transform: none;
+    letter-spacing: 0.03em;
+}
+
+/* Keep UI controls readable */
+:where(button, input, textarea, select, label, .menu-link, .sidebar-item, .settings-nav button) {
+    font-family: inherit;
+    text-transform: none;
+    text-shadow: none;
+}
+
+/* Slightly tighter on small screens */
+@media (max-width: 640px) {
+    .welcome-copy h2,
+    #status {
+        letter-spacing: 0.01em;
+    }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .alysum-display,
+    :is(h1, h2, .header-center, .brand-name, .welcome-copy h2, #status) {
+        transition: text-shadow 0.2s ease, color 0.2s ease;
+    }
+}
