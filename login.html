@@ -384,9 +384,28 @@ googleBtn.addEventListener("click", async () => {
     }
 });
 
+const isRecoveryLanding = (window.location.hash || "").includes("type=recovery");
+if (isRecoveryLanding) {
+    window.location.replace(
+        new URL("reset-password.html" + window.location.hash, window.location.href).href
+    );
+}
+
+function isOAuthReturn() {
+    const hash = window.location.hash || "";
+    if (hash.includes("type=recovery")) return false;
+    const params = new URLSearchParams(window.location.search);
+    return hash.length > 2 || !!params.get("code");
+}
+
+const resetParams = new URLSearchParams(window.location.search);
+if (resetParams.get("reset") === "success") {
+    showSuccess("Password updated. Sign in with your new password.");
+}
+
 const { data: sessionData } = await supabase.auth.getSession();
 
-if (sessionData && sessionData.session && window.location.hash) {
+if (!isRecoveryLanding && sessionData && sessionData.session && isOAuthReturn()) {
     await redirectAfterLogin();
 }
 
@@ -412,7 +431,7 @@ forgotLink.addEventListener("click", async (e) => {
 
     try {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: new URL("login.html", window.location.href).href
+            redirectTo: new URL("reset-password.html", window.location.href).href
         });
 
         if (error) {

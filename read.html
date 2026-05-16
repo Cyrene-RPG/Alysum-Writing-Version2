@@ -341,12 +341,11 @@
             const { error: readError } = await supabase.from("reads").upsert({ id: readId, book_id: bookId, user_id: currentUser?.id || null, reader_id: readerId, created_at: new Date().toISOString() }, { onConflict: "id" });
             if (readError) console.warn("Could not create story read record.", readError);
 
-            const nextViews = safeNumber(currentBook.views, 0) + 1;
-            const nextData = { ...libraryRowData({ data: currentBook }), views: nextViews, updated: now };
-            await supabase.from("library").update({ data: nextData }).eq("id", bookId);
+            const { error: viewError } = await supabase.rpc("increment_library_views", { p_book_id: bookId });
+            if (viewError) console.warn("Could not increment library view count.", viewError);
 
             localStorage.setItem(key, String(now));
-            currentBook.views = nextViews;
+            currentBook.views = safeNumber(currentBook.views, 0) + 1;
         } catch (error) {
             console.warn("Could not record story view.", error);
         }

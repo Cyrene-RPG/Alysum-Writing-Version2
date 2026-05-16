@@ -468,12 +468,16 @@ function rememberBookId(id) {
 
     function normalizePublishMetaForBook(rawPublishMeta) {
         const meta = safeObject(rawPublishMeta, {});
+        const rawCover = safeString(meta.coverUrl || meta.cover_url, "").trim();
+        let coverUrl = rawCover;
+        if (coverUrl && !/^https?:\/\//i.test(coverUrl)) coverUrl = coverUrl.startsWith("//") ? "https:" + coverUrl : "https://" + coverUrl.replace(/^\/+/, "");
         return {
             genres: safeArray(meta.genres, []).filter(item => typeof item === "string"),
             rating: safeString(meta.rating, ""),
             warnings: normalizeWarningDataForPublish(meta.warnings),
             summary: safeString(meta.summary, ""),
-            extraTags: safeArray(meta.extraTags, []).filter(item => typeof item === "string")
+            extraTags: safeArray(meta.extraTags || meta.extra_tags, []).filter(item => typeof item === "string"),
+            coverUrl
         };
     }
 
@@ -723,6 +727,7 @@ function rememberBookId(id) {
                     warnings: publishMeta.warnings,
                     summary: publishMeta.summary,
                     extraTags: publishMeta.extraTags,
+                    coverUrl: publishMeta.coverUrl || safeString(existingLibrary?.data?.coverUrl || existingLibrary?.data?.cover_url || existingLibrary?.coverUrl, ""),
                     chapters: selectedChapterObjects.map((ch, index) => ({ id: ch.id, order: index + 1, title: ch.title || `Chapter ${index + 1}`, content: ch.content || "", words: countWords(ch.content || "") })),
                     publishedChapterIds: chapterIds,
                     chapterCount: selectedChapterObjects.length,
@@ -740,7 +745,14 @@ function rememberBookId(id) {
             currentBook.publishedChapterIds = chapterIds;
             currentBook.isPublished = true;
             await supabase.from("books").update(toDbBookPatch(currentBook)).eq("id", bookId);
-            await supabase.from("library").upsert(libraryPayload);
+            const libRow = { id: bookId, user_id: currentUser.id, data: libraryPayload.data };
+            if (existingLibrary?.id) {
+                const { error: libErr } = await supabase.from("library").update(libRow).eq("id", bookId);
+                if (libErr) throw libErr;
+            } else {
+                const { error: libErr } = await supabase.from("library").insert(libRow);
+                if (libErr) throw libErr;
+            }
             if (publishQuickStatus) publishQuickStatus.textContent = "Published successfully.";
             renderTitles();
         } catch (error) {

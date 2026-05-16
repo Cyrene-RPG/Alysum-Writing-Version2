@@ -284,7 +284,7 @@
             type: safeString(data.type, "fiction"),
             rating: safeString(data.rating, ""),
             summary: safeString(data.summary, ""),
-            coverUrl: safeString(data.coverUrl, ""),
+            coverUrl: safeString(data.coverUrl || data.cover_url, ""),
             genres: publishGenres.filter(v => typeof v === "string" && v.trim()),
             tags: publishTags.filter(v => typeof v === "string" && v.trim()),
             warnings,
