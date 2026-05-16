@@ -1,0 +1,215 @@
+/**
+ * Display title colors (independent of title style / effect).
+ */
+export const DISPLAY_TEXT_COLOR_KEY = "alysum-display-text-color";
+export const DISPLAY_TEXT_COLOR_MAIN_KEY = "alysum-display-text-color-main";
+export const DISPLAY_TEXT_COLOR_ACCENT_KEY = "alysum-display-text-color-accent";
+
+export const DISPLAY_TEXT_COLORS = [
+    { id: "theme", label: "Match accent", hint: "Uses your current accent theme colors" },
+    { id: "gold", label: "Gold", main: "#f59e0b", accent: "#fde68a" },
+    { id: "silver", label: "Silver", main: "#94a3b8", accent: "#38bdf8" },
+    { id: "ocean", label: "Ocean", main: "#0ea5e9", accent: "#67e8f9" },
+    { id: "violet", label: "Violet", main: "#a855f7", accent: "#e9d5ff" },
+    { id: "rose", label: "Rose", main: "#f472b6", accent: "#fecdd3" },
+    { id: "ember", label: "Ember", main: "#f97316", accent: "#fed7aa" },
+    { id: "forest", label: "Forest", main: "#22c55e", accent: "#bbf7d0" },
+    { id: "crimson", label: "Crimson", main: "#dc2626", accent: "#fecaca" },
+    { id: "white", label: "White", main: "#f8fafc", accent: "#e2e8f0" },
+    { id: "custom", label: "Custom", hint: "Choose your own main and accent colors" }
+];
+
+const COLOR_IDS = new Set(DISPLAY_TEXT_COLORS.map((c) => c.id));
+
+const PRESET_BY_ID = new Map(
+    DISPLAY_TEXT_COLORS.filter((c) => c.main).map((c) => [c.id, c])
+);
+
+function parseHex(raw) {
+    const s = String(raw || "").trim();
+    const m = s.match(/^#?([0-9a-f]{6})$/i);
+    if (!m) return null;
+    const n = parseInt(m[1], 16);
+    return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+}
+
+function clamp(n, min, max) {
+    return Math.min(max, Math.max(min, n));
+}
+
+function rgbToHex(r, g, b) {
+    const h = (n) => clamp(Math.round(n), 0, 255).toString(16).padStart(2, "0");
+    return `#${h(r)}${h(g)}${h(b)}`;
+}
+
+function mixRgb(a, b, t) {
+    return {
+        r: a.r + (b.r - a.r) * t,
+        g: a.g + (b.g - a.g) * t,
+        b: a.b + (b.b - a.b) * t
+    };
+}
+
+function lighten(hex, amount) {
+    const c = parseHex(hex);
+    if (!c) return hex;
+    return rgbToHex(
+        c.r + (255 - c.r) * amount,
+        c.g + (255 - c.g) * amount,
+        c.b + (255 - c.b) * amount
+    );
+}
+
+function darken(hex, amount) {
+    const c = parseHex(hex);
+    if (!c) return hex;
+    return rgbToHex(c.r * (1 - amount), c.g * (1 - amount), c.b * (1 - amount));
+}
+
+function withAlpha(hex, alpha) {
+    const c = parseHex(hex);
+    if (!c) return hex;
+    return `rgba(${c.r}, ${c.g}, ${c.b}, ${clamp(alpha, 0, 1)})`;
+}
+
+export function isDisplayTextColorId(id) {
+    return COLOR_IDS.has(id);
+}
+
+export function getStoredDisplayTextColorId() {
+    try {
+        const v = localStorage.getItem(DISPLAY_TEXT_COLOR_KEY);
+        if (!v || !isDisplayTextColorId(v)) return "theme";
+        return v;
+    } catch {
+        return "theme";
+    }
+}
+
+export function getStoredCustomDisplayColors() {
+    try {
+        const main = localStorage.getItem(DISPLAY_TEXT_COLOR_MAIN_KEY);
+        const accent = localStorage.getItem(DISPLAY_TEXT_COLOR_ACCENT_KEY);
+        return {
+            main: parseHex(main) ? main : "#f59e0b",
+            accent: parseHex(accent) ? accent : "#fde68a"
+        };
+    } catch {
+        return { main: "#f59e0b", accent: "#fde68a" };
+    }
+}
+
+function readThemeColorsFromDom() {
+    if (typeof document === "undefined") {
+        return { main: "#f59e0b", accent: "#fde68a" };
+    }
+    const s = getComputedStyle(document.documentElement);
+    const gold = s.getPropertyValue("--gold").trim();
+    const kicker = s.getPropertyValue("--theme-brand-kicker").trim();
+    const accent = s.getPropertyValue("--accent-soft").trim() || s.getPropertyValue("--accent").trim();
+    return {
+        main: parseHex(gold) ? gold : "#f59e0b",
+        accent: parseHex(kicker) ? kicker : parseHex(accent) ? accent : "#fde68a"
+    };
+}
+
+export function resolveDisplayColorPair(colorId) {
+    if (colorId === "custom") {
+        return getStoredCustomDisplayColors();
+    }
+    if (colorId === "theme") {
+        return readThemeColorsFromDom();
+    }
+    const preset = PRESET_BY_ID.get(colorId);
+    if (preset) return { main: preset.main, accent: preset.accent };
+    return readThemeColorsFromDom();
+}
+
+export function applyDisplayTextColorVars(main, accent) {
+    if (typeof document === "undefined") return;
+    const root = document.documentElement;
+    const top = lighten(accent, 0.72);
+    const mid = main;
+    const deep = darken(main, 0.38);
+    const highlight = lighten(accent, 0.35);
+    const edge = withAlpha(accent, 0.92);
+    const glow = withAlpha(accent, 0.42);
+    const shadow = withAlpha(darken(main, 0.55), 0.88);
+    const solid = lighten(main, 0.55);
+
+    root.style.setProperty("--alysum-display-top", top);
+    root.style.setProperty("--alysum-display-mid", mid);
+    root.style.setProperty("--alysum-display-deep", deep);
+    root.style.setProperty("--alysum-display-highlight", highlight);
+    root.style.setProperty("--alysum-display-edge", edge);
+    root.style.setProperty("--alysum-display-glow", glow);
+    root.style.setProperty("--alysum-display-shadow", shadow);
+    root.style.setProperty("--alysum-display-solid", solid);
+}
+
+export function applyDisplayTextColor(colorId, customMain, customAccent) {
+    const id = !colorId || !isDisplayTextColorId(colorId) ? "theme" : colorId;
+
+    if (id === "custom" && customMain && customAccent) {
+        try {
+            if (parseHex(customMain)) localStorage.setItem(DISPLAY_TEXT_COLOR_MAIN_KEY, customMain);
+            if (parseHex(customAccent)) localStorage.setItem(DISPLAY_TEXT_COLOR_ACCENT_KEY, customAccent);
+        } catch {
+            /* ignore */
+        }
+    }
+
+    try {
+        localStorage.setItem(DISPLAY_TEXT_COLOR_KEY, id);
+    } catch {
+        /* ignore */
+    }
+
+    const pair = resolveDisplayColorPair(id);
+    applyDisplayTextColorVars(pair.main, pair.accent);
+
+    try {
+        document.documentElement.dispatchEvent(
+            new CustomEvent("alysum-display-text-color", { detail: { id } })
+        );
+    } catch {
+        /* ignore */
+    }
+}
+
+export function initDisplayTextColorOnPage() {
+    if (typeof window === "undefined") return;
+    window.__alysumApplyDisplayTextColor = () => {
+        applyDisplayTextColor(getStoredDisplayTextColorId());
+    };
+    applyDisplayTextColor(getStoredDisplayTextColorId());
+    window.addEventListener("storage", (e) => {
+        if (
+            e.key === DISPLAY_TEXT_COLOR_KEY ||
+            e.key === DISPLAY_TEXT_COLOR_MAIN_KEY ||
+            e.key === DISPLAY_TEXT_COLOR_ACCENT_KEY
+        ) {
+            applyDisplayTextColor(getStoredDisplayTextColorId());
+        }
+    });
+    window.addEventListener("alysum-gradient-theme", () => {
+        if (getStoredDisplayTextColorId() === "theme") {
+            applyDisplayTextColor("theme");
+        }
+    });
+    window.addEventListener("alysum-display-text-color", () => {
+        /* vars already applied */
+    });
+}
+
+export function getColorPreview(id) {
+    const preset = PRESET_BY_ID.get(id);
+    if (preset) {
+        return `linear-gradient(135deg, ${lighten(preset.accent, 0.2)}, ${preset.main})`;
+    }
+    if (id === "custom") {
+        const { main, accent } = getStoredCustomDisplayColors();
+        return `linear-gradient(135deg, ${accent}, ${main})`;
+    }
+    return "linear-gradient(135deg, var(--theme-brand-kicker, #c4b5fd), var(--gold, #fbbf24))";
+}

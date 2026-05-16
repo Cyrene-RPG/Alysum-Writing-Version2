@@ -3,12 +3,121 @@
  */
 (function () {
     "use strict";
+
+    var EFFECT = {
+        chrome: "gradient",
+        gold: "gradient",
+        neon: "glow",
+        ember: "gradient",
+        elegant: "solid",
+        minimal: "solid",
+        royal: "gradient",
+        frost: "gradient",
+        shadow: "stack",
+        vintage: "solid",
+        cyber: "glow",
+        rose: "gradient",
+        outline: "outline",
+        arcade: "arcade",
+        bloodmoon: "gradient"
+    };
+
+    var PRESETS = {
+        gold: { main: "#f59e0b", accent: "#fde68a" },
+        silver: { main: "#94a3b8", accent: "#38bdf8" },
+        ocean: { main: "#0ea5e9", accent: "#67e8f9" },
+        violet: { main: "#a855f7", accent: "#e9d5ff" },
+        rose: { main: "#f472b6", accent: "#fecdd3" },
+        ember: { main: "#f97316", accent: "#fed7aa" },
+        forest: { main: "#22c55e", accent: "#bbf7d0" },
+        crimson: { main: "#dc2626", accent: "#fecaca" },
+        white: { main: "#f8fafc", accent: "#e2e8f0" }
+    };
+
+    function parseHex(raw) {
+        var s = String(raw || "").trim();
+        var m = s.match(/^#?([0-9a-f]{6})$/i);
+        if (!m) return null;
+        var n = parseInt(m[1], 16);
+        return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+    }
+
+    function rgbToHex(r, g, b) {
+        function h(n) {
+            var v = Math.max(0, Math.min(255, Math.round(n)));
+            var s = v.toString(16);
+            return s.length < 2 ? "0" + s : s;
+        }
+        return "#" + h(r) + h(g) + h(b);
+    }
+
+    function lighten(hex, amount) {
+        var c = parseHex(hex);
+        if (!c) return hex;
+        return rgbToHex(
+            c.r + (255 - c.r) * amount,
+            c.g + (255 - c.g) * amount,
+            c.b + (255 - c.b) * amount
+        );
+    }
+
+    function darken(hex, amount) {
+        var c = parseHex(hex);
+        if (!c) return hex;
+        return rgbToHex(c.r * (1 - amount), c.g * (1 - amount), c.b * (1 - amount));
+    }
+
+    function withAlpha(hex, alpha) {
+        var c = parseHex(hex);
+        if (!c) return hex;
+        return "rgba(" + c.r + "," + c.g + "," + c.b + "," + Math.max(0, Math.min(1, alpha)) + ")";
+    }
+
+    function applyColorVars(root, main, accent) {
+        root.style.setProperty("--alysum-display-top", lighten(accent, 0.72));
+        root.style.setProperty("--alysum-display-mid", main);
+        root.style.setProperty("--alysum-display-deep", darken(main, 0.38));
+        root.style.setProperty("--alysum-display-highlight", lighten(accent, 0.35));
+        root.style.setProperty("--alysum-display-edge", withAlpha(accent, 0.92));
+        root.style.setProperty("--alysum-display-glow", withAlpha(accent, 0.42));
+        root.style.setProperty("--alysum-display-shadow", withAlpha(darken(main, 0.55), 0.88));
+        root.style.setProperty("--alysum-display-solid", lighten(main, 0.55));
+    }
+
+    function resolveColors(root, colorId) {
+        if (colorId === "custom") {
+            try {
+                return {
+                    main: localStorage.getItem("alysum-display-text-color-main") || "#f59e0b",
+                    accent: localStorage.getItem("alysum-display-text-color-accent") || "#fde68a"
+                };
+            } catch (e) {
+                return { main: "#f59e0b", accent: "#fde68a" };
+            }
+        }
+        if (PRESETS[colorId]) return PRESETS[colorId];
+        var gold = getComputedStyle(root).getPropertyValue("--gold").trim() || "#f59e0b";
+        var kicker = getComputedStyle(root).getPropertyValue("--theme-brand-kicker").trim() || "#fde68a";
+        return { main: gold, accent: kicker };
+    }
+
     try {
         var root = document.documentElement;
         var g = localStorage.getItem("alysum-gradient-theme");
         if (g && g !== "classic") root.setAttribute("data-gradient-theme", g);
+
         var t = localStorage.getItem("alysum-display-text-style");
-        if (t && t !== "classic") root.setAttribute("data-display-text-style", t);
+        if (t && t !== "classic") {
+            root.setAttribute("data-display-text-style", t);
+            if (EFFECT[t]) root.setAttribute("data-display-text-effect", EFFECT[t]);
+        }
+
+        var colorId = localStorage.getItem("alysum-display-text-color") || "theme";
+        var pair = resolveColors(root, colorId);
+        if (parseHex(pair.main) && parseHex(pair.accent)) {
+            applyColorVars(root, pair.main, pair.accent);
+        }
+
         var p = localStorage.getItem("alysum-gradient-theme-preview");
         if (p) root.style.setProperty("--alysum-chrome-gradient", p);
     } catch (e) {

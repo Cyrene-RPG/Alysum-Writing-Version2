@@ -44,6 +44,7 @@ const APP_SHELL = [
   'js/gradient-theme-sync.js',
   'js/alysum-appearance-boot.js',
   'js/display-text-style.js',
+  'js/display-text-color.js',
   'story-bible.html'
 ];
 

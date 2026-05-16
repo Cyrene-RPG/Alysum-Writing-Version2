@@ -349,30 +349,104 @@
             flex-shrink: 0;
         }
 
+        .appearance-columns {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            width: 100%;
+            max-width: min(1280px, 100%);
+            margin: 8px auto 0;
+            flex: 1;
+            min-height: 0;
+            align-self: stretch;
+        }
+
+        @media (min-width: 900px) {
+            .appearance-columns {
+                grid-template-columns: 1.15fr 0.85fr;
+                gap: 24px;
+                align-items: start;
+            }
+        }
+
+        .appearance-column {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            min-height: 0;
+            padding: 14px 12px 16px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(0, 0, 0, 0.18);
+        }
+
+        @media (min-width: 900px) {
+            .appearance-column {
+                max-height: calc(100vh - 200px);
+                overflow-y: auto;
+                overscroll-behavior: contain;
+            }
+        }
+
         .appearance-subhead {
-            margin: 28px 0 8px;
+            margin: 0 0 8px;
             font-size: 15px;
             font-weight: 900;
             color: var(--gold);
             letter-spacing: 0.04em;
             text-transform: uppercase;
-        }
-
-        .appearance-subhead:first-of-type {
-            margin-top: 0;
+            flex-shrink: 0;
         }
 
         .appearance-subhint {
-            margin: 0 0 12px;
+            margin: 0 0 10px;
+            flex-shrink: 0;
         }
 
-        #appearancePanel .theme-grid {
+        .appearance-subhead--minor {
+            margin-top: 18px;
+            font-size: 13px;
+        }
+
+        .appearance-column .theme-grid {
             width: 100%;
-            max-width: min(1100px, 100%);
-            margin-left: auto;
-            margin-right: auto;
-            align-self: center;
-            padding: 0 clamp(12px, 2vw, 20px);
+            margin: 0;
+            padding: 0;
+            flex: 1;
+        }
+
+        #appearancePanel #themeChipRow {
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        }
+
+        #appearancePanel #textStyleChipRow,
+        #appearancePanel #textColorChipRow {
+            grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+        }
+
+        @media (min-width: 900px) {
+            #appearancePanel #themeChipRow {
+                grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
+            }
+
+            #appearancePanel #textStyleChipRow,
+            #appearancePanel #textColorChipRow {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (min-width: 1200px) {
+            #appearancePanel #themeChipRow {
+                grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+            }
+
+            #appearancePanel #textStyleChipRow {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+
+            #appearancePanel #textColorChipRow {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
         }
 
         .theme-chip {
@@ -811,11 +885,30 @@
         <div class="panel hidden settings-tab-panel" id="appearancePanel" role="tabpanel" aria-labelledby="tab-appearance">
             <h2>Appearance</h2>
             <p class="hint">Customize accent colors and how display titles look across the site.</p>
-            <h3 class="appearance-subhead">Accent colors</h3>
-            <div class="theme-grid" id="themeChipRow" aria-label="Accent themes"></div>
-            <h3 class="appearance-subhead">Title style</h3>
-            <p class="hint appearance-subhint">Applies to welcome lines, headers, and section titles — not the writing editor.</p>
-            <div class="theme-grid" id="textStyleChipRow" aria-label="Title text styles"></div>
+            <div class="appearance-columns">
+                <section class="appearance-column" aria-labelledby="appearance-colors-heading">
+                    <h3 class="appearance-subhead" id="appearance-colors-heading">Accent colors</h3>
+                    <div class="theme-grid" id="themeChipRow" aria-label="Accent themes"></div>
+                </section>
+                <section class="appearance-column" aria-labelledby="appearance-text-heading">
+                    <h3 class="appearance-subhead" id="appearance-text-heading">Title style</h3>
+                    <p class="hint appearance-subhint">Welcome lines, headers, and section titles — not the writing editor.</p>
+                    <div class="theme-grid" id="textStyleChipRow" aria-label="Title text styles"></div>
+                    <h3 class="appearance-subhead appearance-subhead--minor">Title colors</h3>
+                    <p class="hint appearance-subhint">Main fill and edge glow — separate from the style above.</p>
+                    <div class="theme-grid" id="textColorChipRow" aria-label="Title colors"></div>
+                    <div class="display-color-custom" id="displayColorCustom" hidden>
+                        <div class="display-color-field">
+                            <label for="displayColorMain">Main color</label>
+                            <input type="color" id="displayColorMain" value="#f59e0b" />
+                        </div>
+                        <div class="display-color-field">
+                            <label for="displayColorAccent">Accent / edge</label>
+                            <input type="color" id="displayColorAccent" value="#fde68a" />
+                        </div>
+                    </div>
+                </section>
+            </div>
         </div>
 
         <div class="panel hidden settings-tab-panel" id="accountModePanel" role="tabpanel" aria-labelledby="tab-account" hidden>
@@ -974,7 +1067,15 @@
             applyDisplayTextStyle,
             getStoredDisplayTextStyleId,
             initDisplayTextStyleOnPage
-        } from "./js/display-text-style.js?v=1";
+        } from "./js/display-text-style.js?v=2";
+        import {
+            DISPLAY_TEXT_COLORS,
+            applyDisplayTextColor,
+            getStoredDisplayTextColorId,
+            getStoredCustomDisplayColors,
+            initDisplayTextColorOnPage,
+            getColorPreview
+        } from "./js/display-text-color.js?v=1";
         import { normalizeAccountType, ACCOUNT_AUTHOR, ACCOUNT_READER, ACCOUNT_BOTH, homeUrlForUserData } from "./js/account-mode.js?v=1";
         import { isStoryBibleUiEnabled, setStoryBibleUiEnabled } from "./js/story-bible-prefs.js?v=1";
 
@@ -995,6 +1096,10 @@
         const appearancePanel = document.getElementById("appearancePanel");
         const themeChipRow = document.getElementById("themeChipRow");
         const textStyleChipRow = document.getElementById("textStyleChipRow");
+        const textColorChipRow = document.getElementById("textColorChipRow");
+        const displayColorCustom = document.getElementById("displayColorCustom");
+        const displayColorMain = document.getElementById("displayColorMain");
+        const displayColorAccent = document.getElementById("displayColorAccent");
         const accountModePanel = document.getElementById("accountModePanel");
         const saveAccountTypeBtn = document.getElementById("saveAccountTypeBtn");
         const accountTypeMsg = document.getElementById("accountTypeMsg");
@@ -1084,6 +1189,9 @@
                 b.addEventListener("click", () => {
                     applyGradientTheme(t.id);
                     applyChromeGradient(t.preview || getThemePreview(t.id));
+                    if (getStoredDisplayTextColorId() === "theme") {
+                        applyDisplayTextColor("theme");
+                    }
                     themeChipRow.querySelectorAll(".theme-chip").forEach((x) => {
                         x.classList.remove("active");
                     });
@@ -1118,7 +1226,69 @@
             });
         }
 
+        function syncCustomColorPanelVisibility(colorId) {
+            if (!displayColorCustom) return;
+            const show = colorId === "custom";
+            displayColorCustom.hidden = !show;
+            displayColorCustom.classList.toggle("is-visible", show);
+        }
+
+        function bindCustomColorInputs() {
+            if (!displayColorMain || !displayColorAccent || displayColorMain.dataset.bound === "1") return;
+            displayColorMain.dataset.bound = "1";
+            const custom = getStoredCustomDisplayColors();
+            displayColorMain.value = custom.main;
+            displayColorAccent.value = custom.accent;
+            const onCustomChange = () => {
+                if (getStoredDisplayTextColorId() !== "custom") return;
+                applyDisplayTextColor("custom", displayColorMain.value, displayColorAccent.value);
+            };
+            displayColorMain.addEventListener("input", onCustomChange);
+            displayColorAccent.addEventListener("input", onCustomChange);
+        }
+
+        function initTextColorPicker() {
+            if (!textColorChipRow || textColorChipRow.dataset.ready === "1") return;
+            textColorChipRow.dataset.ready = "1";
+            textColorChipRow.innerHTML = "";
+            const cur = getStoredDisplayTextColorId();
+            DISPLAY_TEXT_COLORS.forEach((c) => {
+                const b = document.createElement("button");
+                b.type = "button";
+                let cls = "theme-chip title-color-chip" + (c.id === cur ? " active" : "");
+                const preview = getColorPreview(c.id);
+                if (preview) {
+                    cls += " has-preview";
+                    b.style.background = preview;
+                }
+                b.className = cls;
+                b.dataset.style = c.id;
+                b.title = c.hint || "";
+                b.innerHTML =
+                    '<span class="text-style-chip-preview" aria-hidden="true">Aa</span>' +
+                    '<span class="text-style-chip-label">' + c.label + "</span>";
+                b.addEventListener("click", () => {
+                    if (c.id === "custom") {
+                        const main = displayColorMain?.value || getStoredCustomDisplayColors().main;
+                        const accent = displayColorAccent?.value || getStoredCustomDisplayColors().accent;
+                        applyDisplayTextColor("custom", main, accent);
+                    } else {
+                        applyDisplayTextColor(c.id);
+                    }
+                    textColorChipRow.querySelectorAll(".theme-chip").forEach((x) => {
+                        x.classList.remove("active");
+                    });
+                    b.classList.add("active");
+                    syncCustomColorPanelVisibility(c.id);
+                });
+                textColorChipRow.appendChild(b);
+            });
+            syncCustomColorPanelVisibility(cur);
+            bindCustomColorInputs();
+        }
+
         initDisplayTextStyleOnPage();
+        initDisplayTextColorOnPage();
 
         backBtn.addEventListener("click", () => {
             window.location.href = settingsHomeUrl;
@@ -1174,6 +1344,7 @@
                 applyChromeGradient(getThemePreview(getStoredGradientThemeId()));
                 initThemePicker();
                 initTextStylePicker();
+                initTextColorPicker();
                 initSettingsNav();
 
                 const storyBibleUiToggle = document.getElementById("storyBibleUiToggle");

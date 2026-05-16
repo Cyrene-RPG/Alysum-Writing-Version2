@@ -1,11 +1,22 @@
 /**
- * Display title styles — opt-in via html[data-display-text-style="…"].
- * classic = no attribute (page default colors & system font).
+ * Display title styles (effect + font) and user-picked colors via CSS variables.
+ * Set by js/display-text-color.js and js/display-text-style.js
  */
 
 @import url("https://fonts.googleapis.com/css2?family=Audiowide&family=Exo+2:wght@600;700;800&family=Libre+Baskerville:wght@700&family=Orbitron:wght@600;700;800&family=Playfair+Display:wght@700;800&display=swap");
 
-/* ——— Shared targets (only when a style is active) ——— */
+:root {
+    --alysum-display-top: #ffffff;
+    --alysum-display-mid: #fbbf24;
+    --alysum-display-deep: #b45309;
+    --alysum-display-highlight: #fde68a;
+    --alysum-display-edge: rgba(253, 224, 71, 0.92);
+    --alysum-display-glow: rgba(251, 191, 36, 0.42);
+    --alysum-display-shadow: rgba(69, 26, 3, 0.88);
+    --alysum-display-solid: #f8fafc;
+}
+
+/* ——— Targets ——— */
 html[data-display-text-style] :is(
     .header-center,
     .header-title,
@@ -39,8 +50,8 @@ html[data-display-text-style] :is(.welcome-copy h2, #status) {
     letter-spacing: 0.02em;
 }
 
-/* ——— Chrome (cover metallic) ——— */
-html[data-display-text-style="chrome"] :is(
+/* ——— Color effects (user vars) ——— */
+html[data-display-text-effect="gradient"] :is(
     .header-center,
     .header-title,
     .brand-name,
@@ -52,37 +63,233 @@ html[data-display-text-style="chrome"] :is(
     .ne-page-title,
     .wr-page-title
 ) {
-    font-family: "Exo 2", "Segoe UI", system-ui, sans-serif;
-    font-weight: 700;
-    letter-spacing: 0.06em;
     color: transparent;
-    background: linear-gradient(180deg, #ffffff 0%, #eef2f6 14%, #b8c6d4 42%, #7d8fa3 72%, #5a6d82 100%);
+    background: linear-gradient(
+        180deg,
+        var(--alysum-display-top) 0%,
+        var(--alysum-display-mid) 42%,
+        var(--alysum-display-deep) 100%
+    );
     -webkit-background-clip: text;
     background-clip: text;
-    -webkit-text-stroke: 0.55px rgba(56, 189, 248, 0.92);
+    -webkit-text-stroke: 0.5px var(--alysum-display-edge);
     paint-order: stroke fill;
     filter:
-        drop-shadow(0 1px 0 rgba(255, 255, 255, 0.42))
-        drop-shadow(0 2px 0 rgba(15, 23, 42, 0.75))
-        drop-shadow(0 4px 5px rgba(0, 0, 0, 0.42))
-        drop-shadow(0 0 10px rgba(125, 211, 252, 0.45));
+        drop-shadow(0 1px 0 color-mix(in srgb, var(--alysum-display-highlight) 55%, transparent))
+        drop-shadow(0 2px 0 var(--alysum-display-shadow))
+        drop-shadow(0 0 12px var(--alysum-display-glow));
 }
 
-html[data-display-text-style="chrome"] :is(
+html[data-display-text-effect="glow"] :is(
     .header-center,
     .header-title,
     .brand-name,
+    .welcome-copy h2,
+    #status,
     .section-head-left h2,
     .books-panel > .section-head h2,
     .panel-head h2,
     .ne-page-title,
     .wr-page-title
 ) {
-    font-weight: 800;
+    color: var(--alysum-display-solid);
+    background: none;
+    -webkit-text-stroke: 0;
+    filter: none;
+    text-shadow:
+        0 0 2px var(--alysum-display-highlight),
+        0 0 10px var(--alysum-display-mid),
+        0 0 22px var(--alysum-display-glow),
+        0 0 32px color-mix(in srgb, var(--alysum-display-edge) 50%, transparent),
+        0 2px 0 var(--alysum-display-shadow);
 }
 
-/* ——— Gold ——— */
+html[data-display-text-effect="solid"] :is(
+    .header-center,
+    .header-title,
+    .brand-name,
+    .welcome-copy h2,
+    #status,
+    .section-head-left h2,
+    .books-panel > .section-head h2,
+    .panel-head h2,
+    .ne-page-title,
+    .wr-page-title
+) {
+    color: var(--alysum-display-solid);
+    background: none;
+    -webkit-text-stroke: 0;
+    filter: none;
+    text-shadow:
+        0 1px 0 color-mix(in srgb, var(--alysum-display-highlight) 65%, transparent),
+        0 2px 6px var(--alysum-display-shadow),
+        0 0 18px var(--alysum-display-glow);
+}
+
+html[data-display-text-effect="stack"] :is(
+    .header-center,
+    .header-title,
+    .brand-name,
+    .welcome-copy h2,
+    #status,
+    .section-head-left h2,
+    .books-panel > .section-head h2,
+    .panel-head h2,
+    .ne-page-title,
+    .wr-page-title
+) {
+    color: var(--alysum-display-solid);
+    background: none;
+    -webkit-text-stroke: 0;
+    filter: none;
+    text-shadow:
+        0 1px 0 color-mix(in srgb, var(--alysum-display-mid) 80%, white),
+        0 2px 0 color-mix(in srgb, var(--alysum-display-mid) 55%, black),
+        0 3px 0 color-mix(in srgb, var(--alysum-display-deep) 70%, black),
+        0 5px 10px var(--alysum-display-shadow);
+}
+
+html[data-display-text-effect="outline"] :is(
+    .header-center,
+    .header-title,
+    .brand-name,
+    .welcome-copy h2,
+    #status,
+    .section-head-left h2,
+    .books-panel > .section-head h2,
+    .panel-head h2,
+    .ne-page-title,
+    .wr-page-title
+) {
+    color: color-mix(in srgb, var(--alysum-display-shadow) 25%, transparent);
+    background: none;
+    -webkit-text-stroke: 1.5px var(--alysum-display-edge);
+    paint-order: stroke fill;
+    filter: none;
+    text-shadow: 0 0 14px var(--alysum-display-glow), 0 2px 8px var(--alysum-display-shadow);
+}
+
+html[data-display-text-effect="arcade"] :is(
+    .header-center,
+    .header-title,
+    .brand-name,
+    .welcome-copy h2,
+    #status,
+    .section-head-left h2,
+    .books-panel > .section-head h2,
+    .panel-head h2,
+    .ne-page-title,
+    .wr-page-title
+) {
+    color: var(--alysum-display-solid);
+    background: none;
+    -webkit-text-stroke: 0;
+    filter: none;
+    text-shadow:
+        0 2px 0 var(--alysum-display-mid),
+        0 4px 0 var(--alysum-display-deep),
+        0 0 14px var(--alysum-display-glow),
+        3px 3px 0 color-mix(in srgb, var(--alysum-display-edge) 85%, transparent);
+}
+
+/* ——— Per-style typography (font / weight / spacing only) ——— */
+html[data-display-text-style="chrome"] :is(
+    .header-center,
+    .header-title,
+    .brand-name,
+    .welcome-copy h2,
+    #status,
+    .section-head-left h2,
+    .books-panel > .section-head h2,
+    .panel-head h2,
+    .ne-page-title,
+    .wr-page-title
+),
 html[data-display-text-style="gold"] :is(
+    .header-center,
+    .header-title,
+    .brand-name,
+    .welcome-copy h2,
+    #status,
+    .section-head-left h2,
+    .books-panel > .section-head h2,
+    .panel-head h2,
+    .ne-page-title,
+    .wr-page-title
+),
+html[data-display-text-style="royal"] :is(
+    .header-center,
+    .header-title,
+    .brand-name,
+    .welcome-copy h2,
+    #status,
+    .section-head-left h2,
+    .books-panel > .section-head h2,
+    .panel-head h2,
+    .ne-page-title,
+    .wr-page-title
+),
+html[data-display-text-style="frost"] :is(
+    .header-center,
+    .header-title,
+    .brand-name,
+    .welcome-copy h2,
+    #status,
+    .section-head-left h2,
+    .books-panel > .section-head h2,
+    .panel-head h2,
+    .ne-page-title,
+    .wr-page-title
+),
+html[data-display-text-style="ember"] :is(
+    .header-center,
+    .header-title,
+    .brand-name,
+    .welcome-copy h2,
+    #status,
+    .section-head-left h2,
+    .books-panel > .section-head h2,
+    .panel-head h2,
+    .ne-page-title,
+    .wr-page-title
+),
+html[data-display-text-style="rose"] :is(
+    .header-center,
+    .header-title,
+    .brand-name,
+    .welcome-copy h2,
+    #status,
+    .section-head-left h2,
+    .books-panel > .section-head h2,
+    .panel-head h2,
+    .ne-page-title,
+    .wr-page-title
+),
+html[data-display-text-style="bloodmoon"] :is(
+    .header-center,
+    .header-title,
+    .brand-name,
+    .welcome-copy h2,
+    #status,
+    .section-head-left h2,
+    .books-panel > .section-head h2,
+    .panel-head h2,
+    .ne-page-title,
+    .wr-page-title
+),
+html[data-display-text-style="shadow"] :is(
+    .header-center,
+    .header-title,
+    .brand-name,
+    .welcome-copy h2,
+    #status,
+    .section-head-left h2,
+    .books-panel > .section-head h2,
+    .panel-head h2,
+    .ne-page-title,
+    .wr-page-title
+),
+html[data-display-text-style="outline"] :is(
     .header-center,
     .header-title,
     .brand-name,
@@ -97,19 +304,55 @@ html[data-display-text-style="gold"] :is(
     font-family: "Exo 2", "Segoe UI", system-ui, sans-serif;
     font-weight: 800;
     letter-spacing: 0.05em;
-    color: transparent;
-    background: linear-gradient(180deg, #fffbeb 0%, #fde68a 28%, #f59e0b 62%, #b45309 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-stroke: 0.45px rgba(253, 224, 71, 0.85);
-    paint-order: stroke fill;
-    filter:
-        drop-shadow(0 1px 0 rgba(255, 255, 255, 0.35))
-        drop-shadow(0 3px 0 rgba(120, 53, 15, 0.65))
-        drop-shadow(0 0 14px rgba(245, 158, 11, 0.22));
 }
 
-/* ——— Neon ——— */
+html[data-display-text-style="frost"] :is(
+    .header-center,
+    .header-title,
+    .brand-name,
+    .welcome-copy h2,
+    #status,
+    .section-head-left h2,
+    .books-panel > .section-head h2,
+    .panel-head h2,
+    .ne-page-title,
+    .wr-page-title
+) {
+    font-weight: 700;
+    letter-spacing: 0.06em;
+}
+
+html[data-display-text-style="rose"] :is(
+    .header-center,
+    .header-title,
+    .brand-name,
+    .welcome-copy h2,
+    #status,
+    .section-head-left h2,
+    .books-panel > .section-head h2,
+    .panel-head h2,
+    .ne-page-title,
+    .wr-page-title
+) {
+    font-weight: 700;
+}
+
+html[data-display-text-style="chrome"] :is(
+    .header-center,
+    .header-title,
+    .brand-name,
+    .welcome-copy h2,
+    #status,
+    .section-head-left h2,
+    .books-panel > .section-head h2,
+    .panel-head h2,
+    .ne-page-title,
+    .wr-page-title
+) {
+    font-weight: 700;
+    letter-spacing: 0.06em;
+}
+
 html[data-display-text-style="neon"] :is(
     .header-center,
     .header-title,
@@ -125,236 +368,8 @@ html[data-display-text-style="neon"] :is(
     font-family: "Exo 2", "Segoe UI", system-ui, sans-serif;
     font-weight: 700;
     letter-spacing: 0.07em;
-    color: #ecfeff;
-    text-shadow:
-        0 0 2px #fff,
-        0 0 8px #22d3ee,
-        0 0 18px rgba(34, 211, 238, 0.55),
-        0 0 28px rgba(217, 70, 239, 0.35),
-        0 2px 0 rgba(15, 23, 42, 0.85);
 }
 
-/* ——— Ember ——— */
-html[data-display-text-style="ember"] :is(
-    .header-center,
-    .header-title,
-    .brand-name,
-    .welcome-copy h2,
-    #status,
-    .section-head-left h2,
-    .books-panel > .section-head h2,
-    .panel-head h2,
-    .ne-page-title,
-    .wr-page-title
-) {
-    font-family: "Exo 2", "Segoe UI", system-ui, sans-serif;
-    font-weight: 800;
-    letter-spacing: 0.05em;
-    color: transparent;
-    background: linear-gradient(180deg, #fff7ed 0%, #fdba74 30%, #f97316 58%, #dc2626 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-stroke: 0.45px rgba(254, 215, 170, 0.9);
-    paint-order: stroke fill;
-    filter:
-        drop-shadow(0 1px 0 rgba(255, 237, 213, 0.4))
-        drop-shadow(0 3px 0 rgba(127, 29, 29, 0.7))
-        drop-shadow(0 0 16px rgba(249, 115, 22, 0.28));
-}
-
-/* ——— Elegant (serif) ——— */
-html[data-display-text-style="elegant"] :is(
-    .header-center,
-    .header-title,
-    .brand-name,
-    .welcome-copy h2,
-    #status,
-    .section-head-left h2,
-    .books-panel > .section-head h2,
-    .panel-head h2,
-    .ne-page-title,
-    .wr-page-title
-) {
-    font-family: "Playfair Display", Georgia, "Times New Roman", serif;
-    font-weight: 700;
-    letter-spacing: 0.03em;
-    color: #faf5ff;
-    text-shadow:
-        0 1px 0 rgba(255, 255, 255, 0.55),
-        0 2px 4px rgba(0, 0, 0, 0.45),
-        0 0 20px rgba(196, 181, 253, 0.2);
-}
-
-html[data-display-text-style="elegant"] :is(
-    .header-center,
-    .header-title,
-    .brand-name,
-    .section-head-left h2,
-    .books-panel > .section-head h2,
-    .panel-head h2,
-    .ne-page-title,
-    .wr-page-title
-) {
-    text-transform: none;
-    font-weight: 800;
-}
-
-/* ——— Minimal ——— */
-html[data-display-text-style="minimal"] :is(
-    .header-center,
-    .header-title,
-    .brand-name,
-    .welcome-copy h2,
-    #status,
-    .section-head-left h2,
-    .books-panel > .section-head h2,
-    .panel-head h2,
-    .ne-page-title,
-    .wr-page-title
-) {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-    font-weight: 800;
-    letter-spacing: 0.02em;
-    color: #f8fafc;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
-    filter: none;
-    background: none;
-    -webkit-text-stroke: 0;
-}
-
-html[data-display-text-style="minimal"] :is(
-    .header-center,
-    .header-title,
-    .brand-name,
-    .section-head-left h2,
-    .books-panel > .section-head h2,
-    .panel-head h2,
-    .ne-page-title,
-    .wr-page-title
-) {
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-}
-
-/* ——— Royal ——— */
-html[data-display-text-style="royal"] :is(
-    .header-center,
-    .header-title,
-    .brand-name,
-    .welcome-copy h2,
-    #status,
-    .section-head-left h2,
-    .books-panel > .section-head h2,
-    .panel-head h2,
-    .ne-page-title,
-    .wr-page-title
-) {
-    font-family: "Exo 2", "Segoe UI", system-ui, sans-serif;
-    font-weight: 800;
-    letter-spacing: 0.05em;
-    color: transparent;
-    background: linear-gradient(180deg, #faf5ff 0%, #e9d5ff 30%, #a855f7 65%, #6b21a8 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-stroke: 0.4px rgba(233, 213, 255, 0.85);
-    paint-order: stroke fill;
-    filter:
-        drop-shadow(0 2px 0 rgba(76, 29, 149, 0.75))
-        drop-shadow(0 0 16px rgba(168, 85, 247, 0.28));
-}
-
-/* ——— Frost ——— */
-html[data-display-text-style="frost"] :is(
-    .header-center,
-    .header-title,
-    .brand-name,
-    .welcome-copy h2,
-    #status,
-    .section-head-left h2,
-    .books-panel > .section-head h2,
-    .panel-head h2,
-    .ne-page-title,
-    .wr-page-title
-) {
-    font-family: "Exo 2", "Segoe UI", system-ui, sans-serif;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    color: transparent;
-    background: linear-gradient(180deg, #ffffff 0%, #e0f2fe 35%, #7dd3fc 70%, #38bdf8 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-stroke: 0.45px rgba(224, 242, 254, 0.95);
-    paint-order: stroke fill;
-    filter:
-        drop-shadow(0 1px 0 rgba(255, 255, 255, 0.5))
-        drop-shadow(0 0 14px rgba(125, 211, 252, 0.35));
-}
-
-/* ——— Shadow ——— */
-html[data-display-text-style="shadow"] :is(
-    .header-center,
-    .header-title,
-    .brand-name,
-    .welcome-copy h2,
-    #status,
-    .section-head-left h2,
-    .books-panel > .section-head h2,
-    .panel-head h2,
-    .ne-page-title,
-    .wr-page-title
-) {
-    font-family: "Exo 2", "Segoe UI", system-ui, sans-serif;
-    font-weight: 800;
-    letter-spacing: 0.04em;
-    color: #f1f5f9;
-    text-shadow:
-        0 1px 0 #cbd5e1,
-        0 2px 0 #94a3b8,
-        0 3px 0 #64748b,
-        0 4px 0 #475569,
-        0 6px 12px rgba(0, 0, 0, 0.55);
-    filter: none;
-    background: none;
-    -webkit-text-stroke: 0;
-}
-
-/* ——— Vintage ——— */
-html[data-display-text-style="vintage"] :is(
-    .header-center,
-    .header-title,
-    .brand-name,
-    .welcome-copy h2,
-    #status,
-    .section-head-left h2,
-    .books-panel > .section-head h2,
-    .panel-head h2,
-    .ne-page-title,
-    .wr-page-title
-) {
-    font-family: "Libre Baskerville", Georgia, "Times New Roman", serif;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    color: #fef3c7;
-    text-shadow:
-        0 1px 0 rgba(255, 255, 255, 0.25),
-        0 2px 4px rgba(68, 36, 12, 0.65),
-        0 0 1px rgba(180, 83, 9, 0.4);
-}
-
-html[data-display-text-style="vintage"] :is(
-    .header-center,
-    .header-title,
-    .brand-name,
-    .section-head-left h2,
-    .books-panel > .section-head h2,
-    .panel-head h2,
-    .ne-page-title,
-    .wr-page-title
-) {
-    text-transform: none;
-}
-
-/* ——— Cyber ——— */
 html[data-display-text-style="cyber"] :is(
     .header-center,
     .header-title,
@@ -370,16 +385,9 @@ html[data-display-text-style="cyber"] :is(
     font-family: "Orbitron", "Exo 2", sans-serif;
     font-weight: 700;
     letter-spacing: 0.1em;
-    color: #d9f99d;
-    text-shadow:
-        0 0 2px #ecfccb,
-        0 0 10px #84cc16,
-        0 0 20px rgba(34, 197, 94, 0.45),
-        0 2px 0 rgba(0, 0, 0, 0.85);
 }
 
-/* ——— Rose ——— */
-html[data-display-text-style="rose"] :is(
+html[data-display-text-style="elegant"] :is(
     .header-center,
     .header-title,
     .brand-name,
@@ -391,45 +399,75 @@ html[data-display-text-style="rose"] :is(
     .ne-page-title,
     .wr-page-title
 ) {
-    font-family: "Exo 2", "Segoe UI", system-ui, sans-serif;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    color: transparent;
-    background: linear-gradient(180deg, #fff1f2 0%, #fda4af 40%, #f472b6 75%, #db2777 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-stroke: 0.4px rgba(254, 205, 211, 0.9);
-    paint-order: stroke fill;
-    filter: drop-shadow(0 2px 4px rgba(157, 23, 77, 0.45));
-}
-
-/* ——— Outline ——— */
-html[data-display-text-style="outline"] :is(
-    .header-center,
-    .header-title,
-    .brand-name,
-    .welcome-copy h2,
-    #status,
-    .section-head-left h2,
-    .books-panel > .section-head h2,
-    .panel-head h2,
-    .ne-page-title,
-    .wr-page-title
-) {
-    font-family: "Exo 2", "Segoe UI", system-ui, sans-serif;
+    font-family: "Playfair Display", Georgia, "Times New Roman", serif;
     font-weight: 800;
-    letter-spacing: 0.07em;
-    color: rgba(15, 23, 42, 0.15);
-    -webkit-text-stroke: 1.5px rgba(103, 232, 249, 0.95);
-    paint-order: stroke fill;
-    text-shadow:
-        0 0 12px rgba(34, 211, 238, 0.35),
-        0 2px 8px rgba(0, 0, 0, 0.5);
-    filter: none;
-    background: none;
+    letter-spacing: 0.03em;
 }
 
-/* ——— Arcade ——— */
+html[data-display-text-style="elegant"] :is(
+    .header-center,
+    .header-title,
+    .brand-name,
+    .section-head-left h2,
+    .books-panel > .section-head h2,
+    .panel-head h2,
+    .ne-page-title,
+    .wr-page-title
+) {
+    text-transform: none;
+}
+
+html[data-display-text-style="vintage"] :is(
+    .header-center,
+    .header-title,
+    .brand-name,
+    .welcome-copy h2,
+    #status,
+    .section-head-left h2,
+    .books-panel > .section-head h2,
+    .panel-head h2,
+    .ne-page-title,
+    .wr-page-title
+) {
+    font-family: "Libre Baskerville", Georgia, "Times New Roman", serif;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+}
+
+html[data-display-text-style="vintage"] :is(
+    .header-center,
+    .header-title,
+    .brand-name,
+    .section-head-left h2,
+    .books-panel > .section-head h2,
+    .panel-head h2,
+    .ne-page-title,
+    .wr-page-title
+) {
+    text-transform: none;
+}
+
+html[data-display-text-style="minimal"] :is(
+    .header-center,
+    .header-title,
+    .brand-name,
+    .welcome-copy h2,
+    #status,
+    .section-head-left h2,
+    .books-panel > .section-head h2,
+    .panel-head h2,
+    .ne-page-title,
+    .wr-page-title
+) {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+}
+
+html[data-display-text-style="minimal"] :is(.welcome-copy h2, #status) {
+    letter-spacing: 0.02em;
+}
+
 html[data-display-text-style="arcade"] :is(
     .header-center,
     .header-title,
@@ -445,39 +483,6 @@ html[data-display-text-style="arcade"] :is(
     font-family: "Audiowide", "Exo 2", sans-serif;
     font-weight: 400;
     letter-spacing: 0.04em;
-    color: #fef08a;
-    text-shadow:
-        0 2px 0 #ca8a04,
-        0 4px 0 #a16207,
-        0 0 16px rgba(250, 204, 21, 0.35),
-        3px 3px 0 #7c3aed;
-}
-
-/* ——— Blood moon ——— */
-html[data-display-text-style="bloodmoon"] :is(
-    .header-center,
-    .header-title,
-    .brand-name,
-    .welcome-copy h2,
-    #status,
-    .section-head-left h2,
-    .books-panel > .section-head h2,
-    .panel-head h2,
-    .ne-page-title,
-    .wr-page-title
-) {
-    font-family: "Exo 2", "Segoe UI", system-ui, sans-serif;
-    font-weight: 800;
-    letter-spacing: 0.06em;
-    color: transparent;
-    background: linear-gradient(180deg, #fecaca 0%, #f87171 35%, #dc2626 70%, #7f1d1d 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-stroke: 0.45px rgba(254, 202, 202, 0.85);
-    paint-order: stroke fill;
-    filter:
-        drop-shadow(0 2px 0 rgba(69, 10, 10, 0.9))
-        drop-shadow(0 0 18px rgba(220, 38, 38, 0.35));
 }
 
 @media (max-width: 640px) {
@@ -486,13 +491,25 @@ html[data-display-text-style="bloodmoon"] :is(
     }
 }
 
-/* Settings picker previews */
+/* ——— Settings: style chip previews use live color vars ——— */
 .text-style-chip-preview {
     display: block;
     font-size: 22px;
     line-height: 1;
     margin-bottom: 4px;
     pointer-events: none;
+    font-family: "Exo 2", sans-serif;
+    font-weight: 800;
+    color: transparent;
+    background: linear-gradient(
+        180deg,
+        var(--alysum-display-top),
+        var(--alysum-display-mid),
+        var(--alysum-display-deep)
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-stroke: 0.4px var(--alysum-display-edge);
 }
 
 .text-style-chip-label {
@@ -517,125 +534,73 @@ html[data-display-text-style="bloodmoon"] :is(
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     font-weight: 900;
     color: var(--gold, #fbbf24);
-    text-shadow: none;
-}
-
-#textStyleChipRow .theme-chip[data-style="chrome"] .text-style-chip-preview {
-    font-family: "Exo 2", sans-serif;
-    font-weight: 800;
-    color: transparent;
-    background: linear-gradient(180deg, #fff 0%, #b8c6d4 50%, #5a6d82 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-stroke: 0.4px rgba(56, 189, 248, 0.9);
-}
-
-#textStyleChipRow .theme-chip[data-style="gold"] .text-style-chip-preview {
-    font-family: "Exo 2", sans-serif;
-    font-weight: 800;
-    color: transparent;
-    background: linear-gradient(180deg, #fffbeb, #f59e0b);
-    -webkit-background-clip: text;
-    background-clip: text;
-}
-
-#textStyleChipRow .theme-chip[data-style="neon"] .text-style-chip-preview {
-    font-family: "Exo 2", sans-serif;
-    font-weight: 700;
-    color: #ecfeff;
-    text-shadow: 0 0 8px #22d3ee, 0 0 14px rgba(217, 70, 239, 0.4);
-}
-
-#textStyleChipRow .theme-chip[data-style="ember"] .text-style-chip-preview {
-    font-family: "Exo 2", sans-serif;
-    font-weight: 800;
-    color: transparent;
-    background: linear-gradient(180deg, #fff7ed, #f97316, #dc2626);
-    -webkit-background-clip: text;
-    background-clip: text;
+    background: none;
+    -webkit-text-stroke: 0;
 }
 
 #textStyleChipRow .theme-chip[data-style="elegant"] .text-style-chip-preview {
     font-family: "Playfair Display", Georgia, serif;
-    font-weight: 700;
-    color: #faf5ff;
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
-}
-
-#textStyleChipRow .theme-chip[data-style="minimal"] .text-style-chip-preview {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    font-weight: 900;
-    color: #f8fafc;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-}
-
-#textStyleChipRow .theme-chip[data-style="royal"] .text-style-chip-preview {
-    font-family: "Exo 2", sans-serif;
-    font-weight: 800;
-    color: transparent;
-    background: linear-gradient(180deg, #faf5ff, #a855f7);
-    -webkit-background-clip: text;
-    background-clip: text;
-}
-
-#textStyleChipRow .theme-chip[data-style="frost"] .text-style-chip-preview {
-    font-family: "Exo 2", sans-serif;
-    font-weight: 700;
-    color: transparent;
-    background: linear-gradient(180deg, #fff, #38bdf8);
-    -webkit-background-clip: text;
-    background-clip: text;
-}
-
-#textStyleChipRow .theme-chip[data-style="shadow"] .text-style-chip-preview {
-    font-family: "Exo 2", sans-serif;
-    font-weight: 800;
-    color: #f1f5f9;
-    text-shadow: 0 2px 0 #94a3b8, 0 4px 6px rgba(0, 0, 0, 0.5);
 }
 
 #textStyleChipRow .theme-chip[data-style="vintage"] .text-style-chip-preview {
     font-family: "Libre Baskerville", Georgia, serif;
     font-weight: 700;
-    color: #fef3c7;
-    text-shadow: 0 1px 3px rgba(68, 36, 12, 0.6);
 }
 
 #textStyleChipRow .theme-chip[data-style="cyber"] .text-style-chip-preview {
     font-family: "Orbitron", sans-serif;
     font-weight: 700;
-    color: #d9f99d;
-    text-shadow: 0 0 8px #84cc16;
-}
-
-#textStyleChipRow .theme-chip[data-style="rose"] .text-style-chip-preview {
-    font-family: "Exo 2", sans-serif;
-    font-weight: 700;
-    color: transparent;
-    background: linear-gradient(180deg, #fff1f2, #f472b6);
-    -webkit-background-clip: text;
-    background-clip: text;
-}
-
-#textStyleChipRow .theme-chip[data-style="outline"] .text-style-chip-preview {
-    font-family: "Exo 2", sans-serif;
-    font-weight: 800;
-    color: transparent;
-    -webkit-text-stroke: 1px rgba(103, 232, 249, 0.95);
 }
 
 #textStyleChipRow .theme-chip[data-style="arcade"] .text-style-chip-preview {
     font-family: "Audiowide", sans-serif;
     font-weight: 400;
-    color: #fef08a;
-    text-shadow: 0 2px 0 #ca8a04, 2px 2px 0 #7c3aed;
 }
 
-#textStyleChipRow .theme-chip[data-style="bloodmoon"] .text-style-chip-preview {
-    font-family: "Exo 2", sans-serif;
+#textStyleChipRow .theme-chip[data-style="neon"] .text-style-chip-preview,
+#textStyleChipRow .theme-chip[data-style="outline"] .text-style-chip-preview {
+    font-weight: 700;
+}
+
+/* ——— Settings: title color chips ——— */
+.title-color-chip .text-style-chip-preview {
+    font-size: 18px;
+    margin-bottom: 2px;
+}
+
+#textColorChipRow .theme-chip[data-style="custom"] .text-style-chip-preview {
+    background: linear-gradient(135deg, var(--alysum-display-top), var(--alysum-display-deep));
+}
+
+.display-color-custom {
+    display: none;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.display-color-custom.is-visible {
+    display: grid;
+}
+
+.display-color-field label {
+    display: block;
+    font-size: 11px;
     font-weight: 800;
-    color: transparent;
-    background: linear-gradient(180deg, #fecaca, #dc2626);
-    -webkit-background-clip: text;
-    background-clip: text;
+    color: var(--muted);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.display-color-field input[type="color"] {
+    width: 100%;
+    height: 42px;
+    padding: 4px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(0, 0, 0, 0.25);
+    cursor: pointer;
 }
