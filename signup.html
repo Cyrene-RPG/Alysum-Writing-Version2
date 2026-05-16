@@ -275,7 +275,16 @@
 
 <script type="module">
 import { supabase } from "./firebase.js";
-import { authRedirectUrl } from "./js/auth-redirect.js?v=1";
+import {
+    authRedirectUrl,
+    clearAuthCallbackFromUrl,
+    clearLegacyOAuthPending,
+    clearOAuthPending,
+    isOAuthCallbackLanding,
+    OAUTH_PENDING_SIGNUP_KEY,
+    setOAuthPending,
+    shouldAutoContinueOAuth,
+} from "./js/auth-redirect.js?v=2";
 import { wireSupabaseSession } from "./js/supabase-session.js?v=1";
 import {
     ACCOUNT_AUTHOR,
@@ -286,7 +295,6 @@ import {
     setUiMode,
 } from "./js/account-mode.js?v=1";
 
-const OAUTH_PENDING_KEY = "alysum-oauth-pending";
 let oauthSignupHandled = false;
 
 const SIGNUP_ACCOUNT_TYPE_KEY = "alysum-signup-account-type";
@@ -392,11 +400,8 @@ function signupAuthMessage(message) {
 async function goAfterOAuthSignup() {
     if (oauthSignupHandled) return;
     oauthSignupHandled = true;
-    try {
-        sessionStorage.removeItem(OAUTH_PENDING_KEY);
-    } catch {
-        /* ignore */
-    }
+    clearOAuthPending(OAUTH_PENDING_SIGNUP_KEY);
+    clearAuthCallbackFromUrl();
     await completeOAuthSignup();
 }
 
@@ -413,7 +418,7 @@ async function startOAuth(provider) {
     signupBtn.disabled = true;
 
     try {
-        sessionStorage.setItem(OAUTH_PENDING_KEY, "1");
+        setOAuthPending(OAUTH_PENDING_SIGNUP_KEY);
         sessionStorage.setItem(SIGNUP_ACCOUNT_TYPE_KEY, accountType);
     } catch {
         /* ignore */
@@ -430,11 +435,7 @@ async function startOAuth(provider) {
     });
 
     if (error) {
-        try {
-            sessionStorage.removeItem(OAUTH_PENDING_KEY);
-        } catch {
-            /* ignore */
-        }
+        clearOAuthPending(OAUTH_PENDING_SIGNUP_KEY);
         showError(error.message);
         setOAuthButtonsDisabled(false);
         signupBtn.disabled = false;
@@ -444,25 +445,6 @@ async function startOAuth(provider) {
 googleBtn.addEventListener("click", () => startOAuth("google"));
 discordBtn.addEventListener("click", () => startOAuth("discord"));
 
-function isOAuthReturn() {
-    const hash = window.location.hash || "";
-    const params = new URLSearchParams(window.location.search);
-    return hash.length > 2 || !!params.get("code");
-}
-
-function hasOAuthPending() {
-    try {
-        return sessionStorage.getItem(OAUTH_PENDING_KEY) === "1";
-    } catch {
-        return false;
-    }
-}
-
-function shouldCompleteOAuthSignup(session, event) {
-    if (!session || event === "SIGNED_OUT") return false;
-    if (event === "SIGNED_IN") return true;
-    return hasOAuthPending() || isOAuthReturn();
-}
 
 async function completeOAuthSignup() {
     const { data: userData } = await supabase.auth.getUser();
@@ -528,20 +510,18 @@ async function completeOAuthSignup() {
     redirectAfterSignup(accountType);
 }
 
-if (!isOAuthReturn()) {
-    try {
-        sessionStorage.removeItem(OAUTH_PENDING_KEY);
-    } catch {
-        /* ignore */
-    }
+clearLegacyOAuthPending();
+
+if (!isOAuthCallbackLanding()) {
+    clearOAuthPending(OAUTH_PENDING_SIGNUP_KEY);
 }
 
 wireSupabaseSession(async (session, event) => {
-    if (!shouldCompleteOAuthSignup(session, event)) return;
+    if (!shouldAutoContinueOAuth(session, event, OAUTH_PENDING_SIGNUP_KEY)) return;
     await goAfterOAuthSignup();
 });
 
-if (isOAuthReturn()) {
+if (isOAuthCallbackLanding()) {
     void (async () => {
         for (let i = 0; i < 50; i++) {
             if (oauthSignupHandled) return;

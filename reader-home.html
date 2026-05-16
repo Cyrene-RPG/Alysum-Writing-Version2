@@ -260,6 +260,11 @@
             cursor: pointer;
         }
 
+        button.sidebar-item {
+            font-family: inherit;
+            text-align: left;
+        }
+
         .sidebar-item.active {
             background: linear-gradient(135deg, var(--theme-card-a), var(--theme-card-b));
             border-color: color-mix(in srgb, var(--pink) 24%, transparent);
@@ -267,6 +272,56 @@
 
         .sidebar-item:not(.active):hover {
             background: rgba(255,255,255,0.06);
+        }
+
+        .sidebar-group-label--spaced {
+            margin-top: 14px;
+        }
+
+        .sidebar-item-logout,
+        .menu-link-logout {
+            border-color: rgba(248, 113, 113, 0.32);
+            background: rgba(127, 29, 29, 0.32);
+            color: #fecaca;
+        }
+
+        .sidebar-item-logout:hover,
+        .menu-link-logout:hover {
+            background: rgba(153, 27, 27, 0.48);
+            color: #fff;
+        }
+
+        button.menu-link {
+            width: 100%;
+            border: 1px solid transparent;
+            background: transparent;
+            font-family: inherit;
+            font-size: 14px;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .profile-logout-btn {
+            margin-top: 12px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            border: 1px solid rgba(248, 113, 113, 0.35);
+            background: rgba(127, 29, 29, 0.28);
+            color: #fecaca;
+            font-size: 13px;
+            font-weight: 800;
+            font-family: inherit;
+            cursor: pointer;
+        }
+
+        .profile-logout-btn:hover:not(:disabled) {
+            color: #fff;
+            background: rgba(153, 27, 27, 0.45);
+        }
+
+        .profile-logout-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
         }
 
         .main-col {
@@ -564,6 +619,7 @@
         <a class="menu-link hidden" id="menuStudioLink" href="studio.html">✍️ Studio</a>
         <a class="menu-link" href="settings.html">⚙️ Account settings</a>
         <a class="menu-link" href="index.html">🏠 Alysum home</a>
+        <button type="button" class="menu-link menu-link-logout" data-logout-btn>Log out</button>
     </nav>
 
     <div class="container">
@@ -582,6 +638,8 @@
                 <a class="sidebar-item" href="settings.html">⚙️ Settings</a>
                 <div class="sidebar-group-label">More</div>
                 <a class="sidebar-item" href="index.html">🏠 Home</a>
+                <div class="sidebar-group-label sidebar-group-label--spaced">Account</div>
+                <button type="button" class="sidebar-item sidebar-item-logout" data-logout-btn>Log out</button>
             </aside>
 
             <main class="main-col">
@@ -591,6 +649,7 @@
                             <h2 id="statusLine">Every chapter is a door.</h2>
                             <div class="username" id="profileDisplayName"></div>
                             <div class="user-handle-meta" id="profileHandleLine"></div>
+                            <button type="button" class="profile-logout-btn" data-logout-btn>Log out</button>
                             <div class="welcome-sub" id="readerWelcomeSub">
                                 You are part of the shelf life of these stories: turning pages, noticing details, and cheering writers on with honest feedback. Wander the Library, fall into a voice that sticks with you, and say what landed — that is how worlds stay alive here.
                             </div>
@@ -637,6 +696,7 @@
     <script type="module">
         import { supabase } from "./firebase.js";
         import { wireSupabaseSession } from "./js/supabase-session.js?v=1";
+        import { wireLogoutButtons } from "./js/auth-logout.js?v=1";
         import { permanentHandleFromUserData, publicDisplayNameFromUserData } from "./js/profile-display.js?v=1";
         import {
             normalizeAccountType,
@@ -922,6 +982,8 @@
                 }
             });
         }
+
+        wireLogoutButtons();
 
         wireSupabaseSession(async (session) => {
             const user = session?.user;

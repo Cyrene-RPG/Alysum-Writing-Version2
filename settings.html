@@ -150,6 +150,33 @@
             box-shadow: 0 2px 14px rgba(0, 0, 0, 0.35);
         }
 
+        .settings-nav-logout {
+            flex: 1 1 100%;
+            margin-top: 4px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(248, 113, 113, 0.35);
+            background: rgba(127, 29, 29, 0.35);
+            color: #fecaca;
+            font-size: 13px;
+            font-weight: 800;
+            font-family: inherit;
+            text-align: center;
+            cursor: pointer;
+            transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+        }
+
+        .settings-nav-logout:hover:not(:disabled) {
+            color: #fff;
+            border-color: rgba(248, 113, 113, 0.55);
+            background: rgba(153, 27, 27, 0.5);
+        }
+
+        .settings-nav-logout:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+        }
+
         .settings-nav {
             position: sticky;
             top: 72px;
@@ -903,6 +930,7 @@
                 <button type="button" role="tab" id="tab-account" data-section="accountModePanel" aria-controls="accountModePanel" aria-selected="false">Account focus</button>
                 <button type="button" role="tab" id="tab-profile" data-section="profilePanel" aria-controls="profilePanel" aria-selected="false">Profile</button>
                 <button type="button" role="tab" id="tab-password" data-section="securityPanel" aria-controls="securityPanel" aria-selected="false">Password</button>
+                <button type="button" class="settings-nav-logout" id="logoutBtn">Log out</button>
             </nav>
 
             <div class="settings-content">
@@ -1082,6 +1110,7 @@
 
     <script type="module">
         import { supabase } from "./firebase.js";
+        import { signOutAndGoToLogin } from "./js/auth-logout.js?v=1";
         import { wireSupabaseSession } from "./js/supabase-session.js?v=1";
         import { permanentHandleFromUserData } from "./js/profile-display.js?v=1";
         import {
@@ -1138,6 +1167,7 @@
         const accountTypeMsg = document.getElementById("accountTypeMsg");
         const settingsShell = document.getElementById("settingsShell");
         const settingsNav = document.getElementById("settingsNav");
+        const logoutBtn = document.getElementById("logoutBtn");
 
         let settingsHomeUrl = "studio.html";
 
@@ -1412,6 +1442,18 @@
             el.classList.remove("visible", "err", "ok");
             el.textContent = "";
         }
+
+        logoutBtn?.addEventListener("click", async () => {
+            if (logoutBtn.disabled) return;
+            logoutBtn.disabled = true;
+            const result = await signOutAndGoToLogin();
+            if (!result.ok) {
+                logoutBtn.disabled = false;
+                showMsg(profileMsg, result.error?.message || "Could not log out.", false);
+                const onProfile = profilePanel && !profilePanel.hidden;
+                if (!onProfile) showSettingsTab("profilePanel");
+            }
+        });
 
         function normalizeDisplayName(raw) {
             const s = String(raw ?? "").trim().replace(/\s+/g, " ");

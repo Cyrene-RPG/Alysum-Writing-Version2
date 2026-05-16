@@ -153,12 +153,23 @@
 
     .menu-link {
         display: block;
+        width: 100%;
+        box-sizing: border-box;
         text-decoration: none;
         color: white;
         padding: 14px;
         border-radius: 14px;
         margin-bottom: 8px;
         font-weight: 800;
+        font-family: inherit;
+        font-size: inherit;
+        text-align: left;
+        cursor: pointer;
+    }
+
+    button.menu-link {
+        border: 1px solid transparent;
+        background: transparent;
     }
 
     .menu-link:hover { background: #1f2937; }
@@ -264,9 +275,54 @@
         cursor: pointer;
     }
 
+    button.sidebar-item {
+        font-family: inherit;
+        text-align: left;
+    }
+
     .sidebar-item.active {
         background: linear-gradient(135deg, var(--theme-card-a, rgba(124,58,237,0.35)), var(--theme-card-b, rgba(219,39,119,0.22)));
         border-color: rgba(236,72,153,0.24);
+    }
+
+    .sidebar-group-label--spaced {
+        margin-top: 14px;
+    }
+
+    .sidebar-item-logout,
+    .menu-link-logout {
+        border-color: rgba(248, 113, 113, 0.32);
+        background: rgba(127, 29, 29, 0.32);
+        color: #fecaca;
+    }
+
+    .sidebar-item-logout:hover,
+    .menu-link-logout:hover {
+        background: rgba(153, 27, 27, 0.48);
+        color: #fff;
+    }
+
+    .profile-logout-btn {
+        margin-top: 12px;
+        padding: 8px 14px;
+        border-radius: 10px;
+        border: 1px solid rgba(248, 113, 113, 0.35);
+        background: rgba(127, 29, 29, 0.28);
+        color: #fecaca;
+        font-size: 13px;
+        font-weight: 800;
+        font-family: inherit;
+        cursor: pointer;
+    }
+
+    .profile-logout-btn:hover:not(:disabled) {
+        color: #fff;
+        background: rgba(153, 27, 27, 0.45);
+    }
+
+    .profile-logout-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
     }
 
     .main-col { display: grid; gap: 18px; }
@@ -836,6 +892,7 @@
     <a href="index.html" class="menu-link">🏠 Home</a>
     <a href="badges.html" class="menu-link">🎖️ Badges</a>
     <a href="settings.html" class="menu-link">⚙️ Settings</a>
+    <button type="button" class="menu-link menu-link-logout" data-logout-btn>Log out</button>
 </div><div class="container">
     <div class="app-shell">
         <aside class="desktop-sidebar">
@@ -860,6 +917,8 @@
         <div class="sidebar-group-label">Quick Access</div>
         <div class="sidebar-item" id="sidebarContinueBtn">📖 Continue Writing</div>
         <div class="sidebar-item" id="sidebarNewBookBtn">➕ New Book</div>
+        <div class="sidebar-group-label sidebar-group-label--spaced">Account</div>
+        <button type="button" class="sidebar-item sidebar-item-logout" data-logout-btn>Log out</button>
     </aside>
 
     <main class="main-col">
@@ -869,6 +928,7 @@
                     <h2 id="status">Loading...</h2>
                     <div class="username" id="profileDisplayName"></div>
                     <div class="user-handle-meta" id="profileHandleLine"></div>
+                    <button type="button" class="profile-logout-btn" data-logout-btn>Log out</button>
                     <div class="welcome-sub">
                         Keep going. You’re building something real, and your progress is waiting for you.
                     </div>
@@ -1006,6 +1066,9 @@
         STORY_BIBLE_PREF_KEY,
         STORY_BIBLE_PREF_EVENT
     } from "./js/story-bible-prefs.js?v=1";
+    import { wireLogoutButtons } from "./js/auth-logout.js?v=1";
+
+    wireLogoutButtons();
 
     const status = document.getElementById("status");
     const profileDisplayName = document.getElementById("profileDisplayName");

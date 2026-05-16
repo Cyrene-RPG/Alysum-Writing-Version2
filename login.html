@@ -123,6 +123,35 @@
 
         #error-msg.visible { display: block; }
 
+        .session-banner {
+            display: none;
+            margin-bottom: 14px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            font-size: 13px;
+            line-height: 1.45;
+            color: #334155;
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+        }
+
+        .session-banner.visible {
+            display: block;
+        }
+
+        .session-banner strong {
+            color: #0f172a;
+        }
+
+        .session-banner button {
+            margin-top: 10px;
+            padding: 10px 14px;
+            font-size: 14px;
+            background: #fff;
+            color: #334155;
+            border: 1px solid #cbd5e1;
+        }
+
         button:disabled {
             opacity: 0.65;
             cursor: not-allowed;
@@ -202,6 +231,12 @@
 <div class="card">
     <h2>Welcome Back</h2>
 
+    <div class="session-banner" id="session-banner" aria-live="polite">
+        You are still signed in as <strong id="session-label"></strong>.
+        Sign out to use a different account or email instead of Discord or Google.
+        <button type="button" id="sign-out-btn">Sign out</button>
+    </div>
+
     <button type="button" id="google-btn" class="btn-oauth" aria-label="Sign in with Google">
         Continue with Google
     </button>
@@ -240,10 +275,19 @@
 <script type="module">
 import { supabase } from "./firebase.js";
 import { homeUrlForUserData } from "./js/account-mode.js?v=1";
-import { authRedirectUrl } from "./js/auth-redirect.js?v=1";
+import {
+    authRedirectUrl,
+    clearAuthCallbackFromUrl,
+    clearLegacyOAuthPending,
+    clearOAuthPending,
+    hasOAuthPending,
+    isOAuthCallbackLanding,
+    OAUTH_PENDING_LOGIN_KEY,
+    setOAuthPending,
+    shouldAutoContinueOAuth,
+} from "./js/auth-redirect.js?v=2";
 import { wireSupabaseSession } from "./js/supabase-session.js?v=1";
 
-const OAUTH_PENDING_KEY = "alysum-oauth-pending";
 let oauthRedirectHandled = false;
 
 const errorEl = document.getElementById("error-msg");
@@ -252,6 +296,9 @@ const loginBtn = document.getElementById("login-btn");
 const googleBtn = document.getElementById("google-btn");
 const discordBtn = document.getElementById("discord-btn");
 const forgotLink = document.getElementById("forgot-link");
+const sessionBanner = document.getElementById("session-banner");
+const sessionLabel = document.getElementById("session-label");
+const signOutBtn = document.getElementById("sign-out-btn");
 
 const oauthButtons = [googleBtn, discordBtn];
 
@@ -387,9 +434,7 @@ function resolveInternalRedirect(next) {
 async function redirectAfterLogin() {
     const params = new URLSearchParams(window.location.search);
     let next = params.get("next");
-    const oauthReturn =
-        (window.location.hash && window.location.hash.length > 2) ||
-        !!params.get("code");
+    const oauthReturn = isOAuthCallbackLanding();
     if (!next && oauthReturn) {
         try {
             next = sessionStorage.getItem("alysum-login-next");
@@ -443,14 +488,34 @@ async function redirectAfterLogin() {
     }
 }
 
+function sessionLabelForUser(user) {
+    if (!user) return "your account";
+    const providers = (user.identities || [])
+        .map((i) => String(i?.provider || "").toLowerCase())
+        .filter(Boolean);
+    if (user.email) return user.email;
+    if (providers.includes("discord")) return "Discord";
+    if (providers.includes("google")) return "Google";
+    return providers[0] || "your account";
+}
+
+function updateSessionBanner(session) {
+    if (!sessionBanner || !sessionLabel) return;
+    const user = session?.user;
+    if (!user) {
+        sessionBanner.classList.remove("visible");
+        sessionLabel.textContent = "";
+        return;
+    }
+    sessionLabel.textContent = sessionLabelForUser(user);
+    sessionBanner.classList.add("visible");
+}
+
 async function goToStudioAfterAuth() {
     if (oauthRedirectHandled || isRecoveryLanding) return;
     oauthRedirectHandled = true;
-    try {
-        sessionStorage.removeItem(OAUTH_PENDING_KEY);
-    } catch {
-        /* ignore */
-    }
+    clearOAuthPending(OAUTH_PENDING_LOGIN_KEY);
+    clearAuthCallbackFromUrl();
     await redirectAfterLogin();
 }
 
@@ -462,7 +527,7 @@ async function startOAuth(provider) {
     loginBtn.disabled = true;
 
     try {
-        sessionStorage.setItem(OAUTH_PENDING_KEY, "1");
+        setOAuthPending(OAUTH_PENDING_LOGIN_KEY);
         const p = new URLSearchParams(window.location.search);
         const next = p.get("next");
         if (resolveInternalRedirect(next)) {
@@ -482,11 +547,7 @@ async function startOAuth(provider) {
     });
 
     if (error) {
-        try {
-            sessionStorage.removeItem(OAUTH_PENDING_KEY);
-        } catch {
-            /* ignore */
-        }
+        clearOAuthPending(OAUTH_PENDING_LOGIN_KEY);
         showError(error.message);
         setOAuthButtonsDisabled(false);
         loginBtn.disabled = false;
@@ -503,48 +564,43 @@ if (isRecoveryLanding) {
     );
 }
 
-function isOAuthReturn() {
-    const hash = window.location.hash || "";
-    if (hash.includes("type=recovery")) return false;
-    const params = new URLSearchParams(window.location.search);
-    return hash.length > 2 || !!params.get("code");
-}
-
-function hasOAuthPending() {
+signOutBtn?.addEventListener("click", async () => {
+    clearError();
+    clearSuccess();
+    signOutBtn.disabled = true;
     try {
-        return sessionStorage.getItem(OAUTH_PENDING_KEY) === "1";
-    } catch {
-        return false;
+        await supabase.auth.signOut();
+        clearOAuthPending(OAUTH_PENDING_LOGIN_KEY);
+        clearAuthCallbackFromUrl();
+        oauthRedirectHandled = false;
+        updateSessionBanner(null);
+        showSuccess("Signed out. You can sign in with email or another provider.");
+    } catch (err) {
+        showError((err && err.message) || "Could not sign out.");
+    } finally {
+        signOutBtn.disabled = false;
     }
-}
-
-/** Only leave login automatically after OAuth return or a fresh sign-in — not an old saved session. */
-function shouldAutoLeaveLogin(session, event) {
-    if (!session || event === "SIGNED_OUT") return false;
-    if (event === "SIGNED_IN") return true;
-    return hasOAuthPending() || isOAuthReturn();
-}
+});
 
 const resetParams = new URLSearchParams(window.location.search);
 if (resetParams.get("reset") === "success") {
     showSuccess("Password updated. Sign in with your new password.");
 }
 
+clearLegacyOAuthPending();
+
 if (!isRecoveryLanding) {
-    if (!isOAuthReturn()) {
-        try {
-            sessionStorage.removeItem(OAUTH_PENDING_KEY);
-        } catch {
-            /* ignore */
-        }
+    if (!isOAuthCallbackLanding()) {
+        clearOAuthPending(OAUTH_PENDING_LOGIN_KEY);
     }
 
     wireSupabaseSession(async (session, event) => {
-        if (!shouldAutoLeaveLogin(session, event)) return;
+        updateSessionBanner(session);
+        if (!shouldAutoContinueOAuth(session, event, OAUTH_PENDING_LOGIN_KEY)) return;
         await goToStudioAfterAuth();
     });
 
-    if (isOAuthReturn()) {
+    if (isOAuthCallbackLanding()) {
         void (async () => {
             for (let i = 0; i < 50; i++) {
                 if (oauthRedirectHandled) return;
