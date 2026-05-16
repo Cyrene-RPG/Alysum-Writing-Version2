@@ -16,30 +16,57 @@
         neon: "orbitron",
         ember: "oswald",
         elegant: "playfair",
-        minimal: "oswald",
-        royal: "cinzel",
-        frost: "rajdhani",
+        minimal: "archivo",
+        royal: "cinzeldec",
+        frost: "raleway",
         shadow: "anton",
         vintage: "lora",
         cyber: "orbitron",
         rose: "cormorant",
         outline: "rajdhani",
         arcade: "audiowide",
-        bloodmoon: "anton"
+        bloodmoon: "crimson"
     };
 
     var FONT_IDS = {
-        playfair: 1,
         cinzel: 1,
-        bebas: 1,
-        oswald: 1,
-        orbitron: 1,
+        cinzeldec: 1,
+        medieval: 1,
+        almendra: 1,
+        unifraktur: 1,
+        imfell: 1,
+        metalmania: 1,
+        eagle: 1,
+        grenze: 1,
+        playfair: 1,
         lora: 1,
         merriweather: 1,
         cormorant: 1,
-        anton: 1,
+        crimson: 1,
+        spectral: 1,
+        libre: 1,
+        abril: 1,
+        oswald: 1,
         rajdhani: 1,
-        audiowide: 1
+        archivo: 1,
+        raleway: 1,
+        montserrat: 1,
+        orbitron: 1,
+        bebas: 1,
+        anton: 1,
+        audiowide: 1,
+        lobster: 1
+    };
+
+    var CAPS_FONTS = {
+        cinzel: 1,
+        cinzeldec: 1,
+        bebas: 1,
+        anton: 1,
+        audiowide: 1,
+        orbitron: 1,
+        oswald: 1,
+        rajdhani: 1
     };
 
     function normalizeFontId(id) {
@@ -61,8 +88,11 @@
         root.removeAttribute("data-display-text-effect");
         if (fontId === "classic") {
             root.removeAttribute("data-display-text-style");
+            delete root.dataset.displayTextCaps;
         } else {
             root.setAttribute("data-display-text-style", fontId);
+            if (CAPS_FONTS[fontId]) root.dataset.displayTextCaps = "1";
+            else delete root.dataset.displayTextCaps;
         }
     }
 

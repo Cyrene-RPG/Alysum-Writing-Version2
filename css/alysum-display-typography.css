@@ -1,8 +1,8 @@
 /**
- * Display title fonts + user-picked colors (CSS variables from display-text-color.js).
+ * Display title fonts + user colors (display-text-color.js).
  */
 
-@import url("https://fonts.googleapis.com/css2?family=Anton&family=Audiowide&family=Bebas+Neue&family=Cinzel:wght@600;700&family=Cormorant+Garamond:wght@600;700&family=Lora:wght@600;700&family=Merriweather:wght@700;900&family=Orbitron:wght@600;700&family=Oswald:wght@600;700&family=Playfair+Display:wght@700;800&family=Rajdhani:wght@600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Abril+Fatface&family=Almendra:wght@700&family=Anton&family=Archivo:wght@600;700;800&family=Audiowide&family=Bebas+Neue&family=Cinzel+Decorative:wght@700&family=Cinzel:wght@600;700&family=Cormorant+Garamond:wght@600;700&family=Crimson+Pro:wght@600;700&family=Eagle+Lake&family=Grenze+Gotisch:wght@600&family=IM+Fell+English+SC&family=Libre+Baskerville:wght@700&family=Lobster&family=Lora:wght@600;700&family=MedievalSharp&family=Merriweather:wght@700;900&family=Metal+Mania&family=Montserrat:wght@700;800&family=Orbitron:wght@600;700&family=Oswald:wght@600;700&family=Playfair+Display:wght@700;800&family=Rajdhani:wght@600;700&family=Raleway:wght@700;800&family=Spectral:wght@600;700&family=UnifrakturMaguntia&display=swap");
 
 :root {
     --alysum-display-top: #ffffff;
@@ -15,7 +15,7 @@
     --alysum-display-solid: #f8fafc;
 }
 
-/* Shared targets */
+/* stylelint-disable selector-max-type */
 html[data-display-text-style] :is(
     .header-center,
     .header-title,
@@ -28,18 +28,15 @@ html[data-display-text-style] :is(
     .ne-page-title,
     .wr-page-title
 ) {
-    line-height: 1.1;
+    line-height: 1.12;
     color: var(--alysum-display-mid);
     background: none;
-    -webkit-background-clip: border-box;
-    background-clip: border-box;
     -webkit-text-stroke: 0;
-    paint-order: normal;
     filter: none;
-    text-shadow: 0 1px 2px var(--alysum-display-shadow);
+    text-shadow: 0 1px 3px var(--alysum-display-shadow);
 }
 
-html[data-display-text-style] :is(
+html[data-display-text-style][data-display-text-caps="1"] :is(
     .header-center,
     .header-title,
     .brand-name,
@@ -50,290 +47,71 @@ html[data-display-text-style] :is(
     .wr-page-title
 ) {
     text-transform: uppercase;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.05em;
 }
 
 html[data-display-text-style] :is(.welcome-copy h2, #status) {
     text-transform: none;
-    letter-spacing: 0.01em;
+    letter-spacing: 0.02em;
 }
 
 /* ——— Font families ——— */
-html[data-display-text-style="playfair"] :is(
-    .header-center,
-    .header-title,
-    .brand-name,
-    .welcome-copy h2,
-    #status,
-    .section-head-left h2,
-    .books-panel > .section-head h2,
-    .panel-head h2,
-    .ne-page-title,
-    .wr-page-title
-) {
-    font-family: "Playfair Display", Georgia, "Times New Roman", serif;
-    font-weight: 700;
-}
+html[data-display-text-style="cinzel"] :is(.header-center, .header-title, .brand-name, .welcome-copy h2, #status, .section-head-left h2, .books-panel > .section-head h2, .panel-head h2, .ne-page-title, .wr-page-title) { font-family: Cinzel, Georgia, serif; font-weight: 700; }
+html[data-display-text-style="cinzeldec"] :is(.header-center, .header-title, .brand-name, .welcome-copy h2, #status, .section-head-left h2, .books-panel > .section-head h2, .panel-head h2, .ne-page-title, .wr-page-title) { font-family: "Cinzel Decorative", Cinzel, serif; font-weight: 700; }
+html[data-display-text-style="medieval"] :is(.header-center, .header-title, .brand-name, .welcome-copy h2, #status, .section-head-left h2, .books-panel > .section-head h2, .panel-head h2, .ne-page-title, .wr-page-title) { font-family: "MedievalSharp", cursive; font-weight: 400; }
+html[data-display-text-style="almendra"] :is(.header-center, .header-title, .brand-name, .welcome-copy h2, #status, .section-head-left h2, .books-panel > .section-head h2, .panel-head h2, .ne-page-title, .wr-page-title) { font-family: Almendra, Georgia, serif; font-weight: 700; }
+html[data-display-text-style="unifraktur"] :is(.header-center, .header-title, .brand-name, .welcome-copy h2, #status, .section-head-left h2, .books-panel > .section-head h2, .panel-head h2, .ne-page-title, .wr-page-title) { font-family: "UnifrakturMaguntia", serif; font-weight: 400; }
+html[data-display-text-style="imfell"] :is(.header-center, .header-title, .brand-name, .welcome-copy h2, #status, .section-head-left h2, .books-panel > .section-head h2, .panel-head h2, .ne-page-title, .wr-page-title) { font-family: "IM Fell English SC", Georgia, serif; font-weight: 400; }
+html[data-display-text-style="metalmania"] :is(.header-center, .header-title, .brand-name, .welcome-copy h2, #status, .section-head-left h2, .books-panel > .section-head h2, .panel-head h2, .ne-page-title, .wr-page-title) { font-family: "Metal Mania", cursive; font-weight: 400; }
+html[data-display-text-style="eagle"] :is(.header-center, .header-title, .brand-name, .welcome-copy h2, #status, .section-head-left h2, .books-panel > .section-head h2, .panel-head h2, .ne-page-title, .wr-page-title) { font-family: "Eagle Lake", cursive; font-weight: 400; }
+html[data-display-text-style="grenze"] :is(.header-center, .header-title, .brand-name, .welcome-copy h2, #status, .section-head-left h2, .books-panel > .section-head h2, .panel-head h2, .ne-page-title, .wr-page-title) { font-family: "Grenze Gotisch", serif; font-weight: 600; }
+html[data-display-text-style="playfair"] :is(.header-center, .header-title, .brand-name, .welcome-copy h2, #status, .section-head-left h2, .books-panel > .section-head h2, .panel-head h2, .ne-page-title, .wr-page-title) { font-family: "Playfair Display", Georgia, serif; font-weight: 700; }
+html[data-display-text-style="lora"] :is(.header-center, .header-title, .brand-name, .welcome-copy h2, #status, .section-head-left h2, .books-panel > .section-head h2, .panel-head h2, .ne-page-title, .wr-page-title) { font-family: Lora, Georgia, serif; font-weight: 700; }
+html[data-display-text-style="merriweather"] :is(.header-center, .header-title, .brand-name, .welcome-copy h2, #status, .section-head-left h2, .books-panel > .section-head h2, .panel-head h2, .ne-page-title, .wr-page-title) { font-family: Merriweather, Georgia, serif; font-weight: 900; }
+html[data-display-text-style="cormorant"] :is(.header-center, .header-title, .brand-name, .welcome-copy h2, #status, .section-head-left h2, .books-panel > .section-head h2, .panel-head h2, .ne-page-title, .wr-page-title) { font-family: "Cormorant Garamond", Georgia, serif; font-weight: 700; }
+html[data-display-text-style="crimson"] :is(.header-center, .header-title, .brand-name, .welcome-copy h2, #status, .section-head-left h2, .books-panel > .section-head h2, .panel-head h2, .ne-page-title, .wr-page-title) { font-family: "Crimson Pro", Georgia, serif; font-weight: 700; }
+html[data-display-text-style="spectral"] :is(.header-center, .header-title, .brand-name, .welcome-copy h2, #status, .section-head-left h2, .books-panel > .section-head h2, .panel-head h2, .ne-page-title, .wr-page-title) { font-family: Spectral, Georgia, serif; font-weight: 700; }
+html[data-display-text-style="libre"] :is(.header-center, .header-title, .brand-name, .welcome-copy h2, #status, .section-head-left h2, .books-panel > .section-head h2, .panel-head h2, .ne-page-title, .wr-page-title) { font-family: "Libre Baskerville", Georgia, serif; font-weight: 700; }
+html[data-display-text-style="abril"] :is(.header-center, .header-title, .brand-name, .welcome-copy h2, #status, .section-head-left h2, .books-panel > .section-head h2, .panel-head h2, .ne-page-title, .wr-page-title) { font-family: "Abril Fatface", Georgia, serif; font-weight: 400; }
+html[data-display-text-style="oswald"] :is(.header-center, .header-title, .brand-name, .welcome-copy h2, #status, .section-head-left h2, .books-panel > .section-head h2, .panel-head h2, .ne-page-title, .wr-page-title) { font-family: Oswald, sans-serif; font-weight: 700; }
+html[data-display-text-style="rajdhani"] :is(.header-center, .header-title, .brand-name, .welcome-copy h2, #status, .section-head-left h2, .books-panel > .section-head h2, .panel-head h2, .ne-page-title, .wr-page-title) { font-family: Rajdhani, sans-serif; font-weight: 700; }
+html[data-display-text-style="archivo"] :is(.header-center, .header-title, .brand-name, .welcome-copy h2, #status, .section-head-left h2, .books-panel > .section-head h2, .panel-head h2, .ne-page-title, .wr-page-title) { font-family: Archivo, sans-serif; font-weight: 700; }
+html[data-display-text-style="raleway"] :is(.header-center, .header-title, .brand-name, .welcome-copy h2, #status, .section-head-left h2, .books-panel > .section-head h2, .panel-head h2, .ne-page-title, .wr-page-title) { font-family: Raleway, sans-serif; font-weight: 800; }
+html[data-display-text-style="montserrat"] :is(.header-center, .header-title, .brand-name, .welcome-copy h2, #status, .section-head-left h2, .books-panel > .section-head h2, .panel-head h2, .ne-page-title, .wr-page-title) { font-family: Montserrat, sans-serif; font-weight: 800; }
+html[data-display-text-style="orbitron"] :is(.header-center, .header-title, .brand-name, .welcome-copy h2, #status, .section-head-left h2, .books-panel > .section-head h2, .panel-head h2, .ne-page-title, .wr-page-title) { font-family: Orbitron, sans-serif; font-weight: 700; }
+html[data-display-text-style="bebas"] :is(.header-center, .header-title, .brand-name, .welcome-copy h2, #status, .section-head-left h2, .books-panel > .section-head h2, .panel-head h2, .ne-page-title, .wr-page-title) { font-family: "Bebas Neue", sans-serif; font-weight: 400; }
+html[data-display-text-style="anton"] :is(.header-center, .header-title, .brand-name, .welcome-copy h2, #status, .section-head-left h2, .books-panel > .section-head h2, .panel-head h2, .ne-page-title, .wr-page-title) { font-family: Anton, sans-serif; font-weight: 400; }
+html[data-display-text-style="audiowide"] :is(.header-center, .header-title, .brand-name, .welcome-copy h2, #status, .section-head-left h2, .books-panel > .section-head h2, .panel-head h2, .ne-page-title, .wr-page-title) { font-family: Audiowide, sans-serif; font-weight: 400; }
+html[data-display-text-style="lobster"] :is(.header-center, .header-title, .brand-name, .welcome-copy h2, #status, .section-head-left h2, .books-panel > .section-head h2, .panel-head h2, .ne-page-title, .wr-page-title) { font-family: Lobster, cursive; font-weight: 400; }
 
-html[data-display-text-style="playfair"] :is(
-    .header-center,
-    .header-title,
-    .brand-name,
-    .section-head-left h2,
-    .books-panel > .section-head h2,
-    .panel-head h2,
-    .ne-page-title,
-    .wr-page-title
-) {
-    text-transform: none;
-    letter-spacing: 0.02em;
-}
-
-html[data-display-text-style="cinzel"] :is(
-    .header-center,
-    .header-title,
-    .brand-name,
-    .welcome-copy h2,
-    #status,
-    .section-head-left h2,
-    .books-panel > .section-head h2,
-    .panel-head h2,
-    .ne-page-title,
-    .wr-page-title
-) {
-    font-family: Cinzel, Georgia, serif;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-}
-
-html[data-display-text-style="bebas"] :is(
-    .header-center,
-    .header-title,
-    .brand-name,
-    .welcome-copy h2,
-    #status,
-    .section-head-left h2,
-    .books-panel > .section-head h2,
-    .panel-head h2,
-    .ne-page-title,
-    .wr-page-title
-) {
-    font-family: "Bebas Neue", "Arial Narrow", sans-serif;
-    font-weight: 400;
-    letter-spacing: 0.06em;
-}
-
-html[data-display-text-style="oswald"] :is(
-    .header-center,
-    .header-title,
-    .brand-name,
-    .welcome-copy h2,
-    #status,
-    .section-head-left h2,
-    .books-panel > .section-head h2,
-    .panel-head h2,
-    .ne-page-title,
-    .wr-page-title
-) {
-    font-family: Oswald, sans-serif;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-}
-
-html[data-display-text-style="orbitron"] :is(
-    .header-center,
-    .header-title,
-    .brand-name,
-    .welcome-copy h2,
-    #status,
-    .section-head-left h2,
-    .books-panel > .section-head h2,
-    .panel-head h2,
-    .ne-page-title,
-    .wr-page-title
-) {
-    font-family: Orbitron, sans-serif;
-    font-weight: 700;
-    letter-spacing: 0.09em;
-}
-
-html[data-display-text-style="lora"] :is(
-    .header-center,
-    .header-title,
-    .brand-name,
-    .welcome-copy h2,
-    #status,
-    .section-head-left h2,
-    .books-panel > .section-head h2,
-    .panel-head h2,
-    .ne-page-title,
-    .wr-page-title
-) {
-    font-family: Lora, Georgia, serif;
-    font-weight: 700;
-    letter-spacing: 0.02em;
-}
-
-html[data-display-text-style="lora"] :is(
-    .header-center,
-    .header-title,
-    .brand-name,
-    .section-head-left h2,
-    .books-panel > .section-head h2,
-    .panel-head h2,
-    .ne-page-title,
-    .wr-page-title
-) {
-    text-transform: none;
-}
-
-html[data-display-text-style="merriweather"] :is(
-    .header-center,
-    .header-title,
-    .brand-name,
-    .welcome-copy h2,
-    #status,
-    .section-head-left h2,
-    .books-panel > .section-head h2,
-    .panel-head h2,
-    .ne-page-title,
-    .wr-page-title
-) {
-    font-family: Merriweather, Georgia, serif;
-    font-weight: 900;
-    letter-spacing: 0.02em;
-}
-
-html[data-display-text-style="merriweather"] :is(
-    .header-center,
-    .header-title,
-    .brand-name,
-    .section-head-left h2,
-    .books-panel > .section-head h2,
-    .panel-head h2,
-    .ne-page-title,
-    .wr-page-title
-) {
-    text-transform: none;
-}
-
-html[data-display-text-style="cormorant"] :is(
-    .header-center,
-    .header-title,
-    .brand-name,
-    .welcome-copy h2,
-    #status,
-    .section-head-left h2,
-    .books-panel > .section-head h2,
-    .panel-head h2,
-    .ne-page-title,
-    .wr-page-title
-) {
-    font-family: "Cormorant Garamond", Georgia, serif;
-    font-weight: 700;
-    letter-spacing: 0.03em;
-}
-
-html[data-display-text-style="cormorant"] :is(
-    .header-center,
-    .header-title,
-    .brand-name,
-    .section-head-left h2,
-    .books-panel > .section-head h2,
-    .panel-head h2,
-    .ne-page-title,
-    .wr-page-title
-) {
-    text-transform: none;
-}
-
-html[data-display-text-style="anton"] :is(
-    .header-center,
-    .header-title,
-    .brand-name,
-    .welcome-copy h2,
-    #status,
-    .section-head-left h2,
-    .books-panel > .section-head h2,
-    .panel-head h2,
-    .ne-page-title,
-    .wr-page-title
-) {
-    font-family: Anton, sans-serif;
-    font-weight: 400;
-    letter-spacing: 0.04em;
-}
-
-html[data-display-text-style="rajdhani"] :is(
-    .header-center,
-    .header-title,
-    .brand-name,
-    .welcome-copy h2,
-    #status,
-    .section-head-left h2,
-    .books-panel > .section-head h2,
-    .panel-head h2,
-    .ne-page-title,
-    .wr-page-title
-) {
-    font-family: Rajdhani, sans-serif;
-    font-weight: 700;
-    letter-spacing: 0.07em;
-}
-
-html[data-display-text-style="audiowide"] :is(
-    .header-center,
-    .header-title,
-    .brand-name,
-    .welcome-copy h2,
-    #status,
-    .section-head-left h2,
-    .books-panel > .section-head h2,
-    .panel-head h2,
-    .ne-page-title,
-    .wr-page-title
-) {
-    font-family: Audiowide, sans-serif;
-    font-weight: 400;
-    letter-spacing: 0.03em;
-}
-
-@media (max-width: 640px) {
-    html[data-display-text-style] :is(.welcome-copy h2, #status) {
-        letter-spacing: 0;
-    }
-}
-
-/* ——— Settings chips ——— */
+/* ——— Settings ——— */
 .text-style-chip-preview {
     display: block;
-    font-size: 20px;
+    font-size: 28px;
     line-height: 1;
-    margin-bottom: 4px;
+    margin-bottom: 6px;
     pointer-events: none;
     color: var(--alysum-display-mid);
-    background: none;
-    -webkit-text-stroke: 0;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 
 .text-style-chip-label {
     display: block;
-    font-size: 9px;
+    font-size: 11px;
     font-weight: 800;
-    letter-spacing: 0.02em;
-    text-transform: none;
+    line-height: 1.25;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.75);
 }
 
-.theme-chip.text-style-chip {
+.theme-chip.text-style-chip,
+.theme-chip.title-color-chip {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    min-height: 56px;
-    padding: 8px 4px;
+    min-height: 76px;
+    padding: 10px 8px;
 }
 
 #textStyleChipRow .theme-chip[data-style="classic"] .text-style-chip-preview {
@@ -342,78 +120,28 @@ html[data-display-text-style="audiowide"] :is(
     color: var(--gold, #fbbf24);
 }
 
-#textStyleChipRow .theme-chip[data-style="playfair"] .text-style-chip-preview {
-    font-family: "Playfair Display", Georgia, serif;
-    font-weight: 700;
-}
-
-#textStyleChipRow .theme-chip[data-style="cinzel"] .text-style-chip-preview {
-    font-family: Cinzel, Georgia, serif;
-    font-weight: 700;
-}
-
-#textStyleChipRow .theme-chip[data-style="bebas"] .text-style-chip-preview {
-    font-family: "Bebas Neue", sans-serif;
-    font-weight: 400;
-}
-
-#textStyleChipRow .theme-chip[data-style="oswald"] .text-style-chip-preview {
-    font-family: Oswald, sans-serif;
-    font-weight: 700;
-}
-
-#textStyleChipRow .theme-chip[data-style="orbitron"] .text-style-chip-preview {
-    font-family: Orbitron, sans-serif;
-    font-weight: 700;
-}
-
-#textStyleChipRow .theme-chip[data-style="lora"] .text-style-chip-preview {
-    font-family: Lora, Georgia, serif;
-    font-weight: 700;
-}
-
-#textStyleChipRow .theme-chip[data-style="merriweather"] .text-style-chip-preview {
-    font-family: Merriweather, Georgia, serif;
+.font-group-label {
+    grid-column: 1 / -1;
+    margin: 14px 0 4px;
+    font-size: 12px;
     font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--gold);
+    opacity: 0.85;
 }
 
-#textStyleChipRow .theme-chip[data-style="cormorant"] .text-style-chip-preview {
-    font-family: "Cormorant Garamond", Georgia, serif;
-    font-weight: 700;
-}
-
-#textStyleChipRow .theme-chip[data-style="anton"] .text-style-chip-preview {
-    font-family: Anton, sans-serif;
-    font-weight: 400;
-}
-
-#textStyleChipRow .theme-chip[data-style="rajdhani"] .text-style-chip-preview {
-    font-family: Rajdhani, sans-serif;
-    font-weight: 700;
-}
-
-#textStyleChipRow .theme-chip[data-style="audiowide"] .text-style-chip-preview {
-    font-family: Audiowide, sans-serif;
-    font-weight: 400;
-}
-
-.title-color-chip .text-style-chip-preview {
-    font-size: 18px;
-    margin-bottom: 2px;
-}
-
-#textColorChipRow .theme-chip[data-style="custom"] .text-style-chip-preview {
-    color: var(--alysum-display-mid);
-    background: none;
+.font-group-label:first-child {
+    margin-top: 0;
 }
 
 .display-color-custom {
     display: none;
     grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    margin-top: 10px;
-    padding-top: 10px;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    gap: 14px;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .display-color-custom.is-visible {
@@ -422,20 +150,28 @@ html[data-display-text-style="audiowide"] :is(
 
 .display-color-field label {
     display: block;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 800;
-    color: var(--muted);
-    margin-bottom: 6px;
+    color: var(--muted-2);
+    margin-bottom: 8px;
     text-transform: uppercase;
     letter-spacing: 0.05em;
 }
 
 .display-color-field input[type="color"] {
     width: 100%;
-    height: 42px;
-    padding: 4px;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    background: rgba(0, 0, 0, 0.25);
+    height: 52px;
+    padding: 6px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: rgba(0, 0, 0, 0.3);
     cursor: pointer;
+}
+
+.title-color-chip .text-style-chip-preview {
+    font-size: 24px;
+}
+
+.title-color-chip.has-preview .text-style-chip-label {
+    color: #fff;
 }

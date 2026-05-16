@@ -352,38 +352,24 @@
         .appearance-layout {
             display: flex;
             flex-direction: column;
-            gap: 14px;
+            gap: 18px;
             width: 100%;
-            max-width: min(1400px, 100%);
-            margin: 10px auto 0;
+            max-width: min(1180px, 100%);
+            margin: 12px auto 0;
             flex: 1;
-            min-height: 0;
             align-self: stretch;
         }
 
         .appearance-text-pair {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 14px;
+            grid-template-columns: 1fr;
+            gap: 18px;
             min-width: 0;
         }
 
-        @media (min-width: 1100px) {
-            .appearance-layout {
-                display: grid;
-                grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr) minmax(0, 1fr);
-                gap: 14px;
-                align-items: start;
-            }
-
+        @media (min-width: 820px) {
             .appearance-text-pair {
-                display: contents;
-            }
-        }
-
-        @media (max-width: 699px) {
-            .appearance-text-pair {
-                grid-template-columns: 1fr;
+                grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.85fr);
             }
         }
 
@@ -391,21 +377,27 @@
             display: flex;
             flex-direction: column;
             min-width: 0;
-            padding: 14px;
-            border-radius: 14px;
+            padding: 18px 16px;
+            border-radius: 16px;
             border: 1px solid rgba(255, 255, 255, 0.1);
             background: rgba(0, 0, 0, 0.22);
         }
 
+        .appearance-block--fonts {
+            max-height: min(68vh, 680px);
+            overflow-y: auto;
+            overscroll-behavior: contain;
+        }
+
         .appearance-block .hint {
-            margin: 0 0 10px;
-            font-size: 12px;
-            line-height: 1.4;
+            margin: 0 0 12px;
+            font-size: 13px;
+            line-height: 1.45;
         }
 
         .appearance-subhead {
-            margin: 0 0 4px;
-            font-size: 13px;
+            margin: 0 0 6px;
+            font-size: 14px;
             font-weight: 900;
             color: var(--gold);
             letter-spacing: 0.05em;
@@ -414,54 +406,50 @@
 
         #appearancePanel .appearance-grid {
             display: grid;
-            gap: 8px;
+            gap: 10px;
             width: 100%;
             margin: 0;
         }
 
         #appearancePanel .appearance-grid--accent {
-            grid-template-columns: repeat(auto-fill, minmax(86px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
         }
 
-        #appearancePanel .appearance-grid--compact {
-            grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+        #appearancePanel .appearance-grid--fonts {
+            grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
         }
 
-        @media (min-width: 1100px) {
-            #appearancePanel .appearance-grid--accent {
-                grid-template-columns: repeat(5, minmax(0, 1fr));
-            }
+        #appearancePanel .appearance-grid--colors {
+            grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+        }
 
-            #appearancePanel .appearance-grid--compact {
+        @media (min-width: 820px) {
+            #appearancePanel .appearance-grid--colors {
                 grid-template-columns: repeat(2, minmax(0, 1fr));
             }
         }
 
         #appearancePanel .theme-chip {
-            min-height: 42px;
-            padding: 7px 5px;
-            font-size: 10px;
-            line-height: 1.25;
-            border-radius: 10px;
+            min-height: 48px;
+            padding: 10px 8px;
+            font-size: 11px;
+            line-height: 1.3;
+            border-radius: 12px;
         }
 
-        #appearancePanel .theme-chip.text-style-chip {
-            min-height: 56px;
-            padding: 8px 4px;
+        #appearancePanel .theme-chip.text-style-chip,
+        #appearancePanel .theme-chip.title-color-chip {
+            min-height: 80px;
+            padding: 12px 8px;
         }
 
         #appearancePanel .text-style-chip-preview {
-            font-size: 17px;
-            margin-bottom: 3px;
+            font-size: 28px;
+            margin-bottom: 6px;
         }
 
         #appearancePanel .text-style-chip-label {
-            font-size: 9px;
-        }
-
-        #appearancePanel .display-color-custom {
-            margin-top: 10px;
-            padding-top: 10px;
+            font-size: 11px;
         }
 
         .theme-chip {
@@ -910,15 +898,15 @@
                     <div class="theme-grid appearance-grid appearance-grid--accent" id="themeChipRow" aria-label="Accent themes"></div>
                 </section>
                 <div class="appearance-text-pair">
-                <section class="appearance-block appearance-block--style" aria-labelledby="appearance-text-heading">
+                <section class="appearance-block appearance-block--fonts appearance-block--style" aria-labelledby="appearance-text-heading">
                     <h3 class="appearance-subhead" id="appearance-text-heading">Title font</h3>
-                    <p class="hint">Real typefaces for welcome lines and headings.</p>
-                    <div class="theme-grid appearance-grid appearance-grid--compact" id="textStyleChipRow" aria-label="Title fonts"></div>
+                    <p class="hint">Real typefaces — fantasy, serif, sans, and display.</p>
+                    <div class="theme-grid appearance-grid appearance-grid--fonts" id="textStyleChipRow" aria-label="Title fonts"></div>
                 </section>
                 <section class="appearance-block appearance-block--colors" aria-labelledby="appearance-colors-text-heading">
                     <h3 class="appearance-subhead" id="appearance-colors-text-heading">Title color</h3>
                     <p class="hint">Heading color — separate from font.</p>
-                    <div class="theme-grid appearance-grid appearance-grid--compact" id="textColorChipRow" aria-label="Title colors"></div>
+                    <div class="theme-grid appearance-grid appearance-grid--colors" id="textColorChipRow" aria-label="Title colors"></div>
                     <div class="display-color-custom" id="displayColorCustom" hidden>
                         <div class="display-color-field">
                             <label for="displayColorMain">Main color</label>
@@ -1087,18 +1075,22 @@
         } from "./js/gradient-theme.js?v=5";
         import {
             DISPLAY_TEXT_STYLES,
+            DISPLAY_TEXT_STYLE_META,
+            DISPLAY_TEXT_FONT_GROUPS,
             applyDisplayTextStyle,
             getStoredDisplayTextStyleId,
             initDisplayTextStyleOnPage
-        } from "./js/display-text-style.js?v=3";
+        } from "./js/display-text-style.js?v=4";
         import {
             DISPLAY_TEXT_COLORS,
             applyDisplayTextColor,
             getStoredDisplayTextColorId,
             getStoredCustomDisplayColors,
             initDisplayTextColorOnPage,
-            getColorPreview
-        } from "./js/display-text-color.js?v=1";
+            getColorPreview,
+            getColorPreviewTextColor,
+            resolveDisplayColorPair
+        } from "./js/display-text-color.js?v=2";
         import { normalizeAccountType, ACCOUNT_AUTHOR, ACCOUNT_READER, ACCOUNT_BOTH, homeUrlForUserData } from "./js/account-mode.js?v=1";
         import { isStoryBibleUiEnabled, setStoryBibleUiEnabled } from "./js/story-bible-prefs.js?v=1";
 
@@ -1224,29 +1216,67 @@
             });
         }
 
+        function createFontStyleChip(style, activeId) {
+            const meta = DISPLAY_TEXT_STYLE_META[style.id] || {};
+            const b = document.createElement("button");
+            b.type = "button";
+            b.className = "theme-chip text-style-chip" + (style.id === activeId ? " active" : "");
+            b.dataset.style = style.id;
+            b.title = style.hint || meta.hint || "";
+
+            const preview = document.createElement("span");
+            preview.className = "text-style-chip-preview";
+            preview.setAttribute("aria-hidden", "true");
+            preview.textContent = "Aa";
+            if (meta.fontFamily) {
+                preview.style.fontFamily = meta.fontFamily;
+                preview.style.fontWeight = String(meta.weight || 700);
+                if (meta.caps) preview.style.textTransform = "uppercase";
+            }
+
+            const label = document.createElement("span");
+            label.className = "text-style-chip-label";
+            label.textContent = style.label;
+
+            b.append(preview, label);
+            b.addEventListener("click", () => {
+                applyDisplayTextStyle(style.id);
+                textStyleChipRow.querySelectorAll(".theme-chip").forEach((x) => {
+                    x.classList.remove("active");
+                });
+                b.classList.add("active");
+            });
+            return b;
+        }
+
         function initTextStylePicker() {
             if (!textStyleChipRow || textStyleChipRow.dataset.ready === "1") return;
             textStyleChipRow.dataset.ready = "1";
             textStyleChipRow.innerHTML = "";
             const cur = getStoredDisplayTextStyleId();
-            DISPLAY_TEXT_STYLES.forEach((s) => {
-                const b = document.createElement("button");
-                b.type = "button";
-                b.className = "theme-chip text-style-chip" + (s.id === cur ? " active" : "");
-                b.dataset.style = s.id;
-                b.title = s.hint || "";
-                b.innerHTML =
-                    '<span class="text-style-chip-preview" aria-hidden="true">Aa</span>' +
-                    '<span class="text-style-chip-label">' + s.label + "</span>";
-                b.addEventListener("click", () => {
-                    applyDisplayTextStyle(s.id);
-                    textStyleChipRow.querySelectorAll(".theme-chip").forEach((x) => {
-                        x.classList.remove("active");
-                    });
-                    b.classList.add("active");
+
+            DISPLAY_TEXT_FONT_GROUPS.forEach((group) => {
+                const styles = DISPLAY_TEXT_STYLES.filter(
+                    (s) => (DISPLAY_TEXT_STYLE_META[s.id] || {}).category === group.id
+                );
+                if (!styles.length) return;
+
+                const heading = document.createElement("div");
+                heading.className = "font-group-label";
+                heading.textContent = group.label;
+                textStyleChipRow.appendChild(heading);
+
+                styles.forEach((s) => {
+                    textStyleChipRow.appendChild(createFontStyleChip(s, cur));
                 });
-                textStyleChipRow.appendChild(b);
             });
+        }
+
+        function titleColorPreviewMain(color) {
+            if (color.main) return color.main;
+            if (color.id === "custom") return getStoredCustomDisplayColors().main;
+            if (color.id === "theme") return resolveDisplayColorPair("theme").main;
+            return "#f59e0b";
         }
 
         function syncCustomColorPanelVisibility(colorId) {
@@ -1262,9 +1292,19 @@
             const custom = getStoredCustomDisplayColors();
             displayColorMain.value = custom.main;
             displayColorAccent.value = custom.accent;
+            const refreshCustomColorChip = () => {
+                const customBtn = textColorChipRow?.querySelector('[data-style="custom"]');
+                if (!customBtn) return;
+                const main = displayColorMain.value;
+                const accent = displayColorAccent.value;
+                customBtn.style.background = `linear-gradient(145deg, ${accent}, ${main})`;
+                const aa = customBtn.querySelector(".text-style-chip-preview");
+                if (aa) aa.style.color = getColorPreviewTextColor(main);
+            };
             const onCustomChange = () => {
                 if (getStoredDisplayTextColorId() !== "custom") return;
                 applyDisplayTextColor("custom", displayColorMain.value, displayColorAccent.value);
+                refreshCustomColorChip();
             };
             displayColorMain.addEventListener("input", onCustomChange);
             displayColorAccent.addEventListener("input", onCustomChange);
@@ -1287,9 +1327,17 @@
                 b.className = cls;
                 b.dataset.style = c.id;
                 b.title = c.hint || "";
-                b.innerHTML =
-                    '<span class="text-style-chip-preview" aria-hidden="true">Aa</span>' +
-                    '<span class="text-style-chip-label">' + c.label + "</span>";
+                const previewEl = document.createElement("span");
+                previewEl.className = "text-style-chip-preview";
+                previewEl.setAttribute("aria-hidden", "true");
+                previewEl.textContent = "Aa";
+                previewEl.style.color = getColorPreviewTextColor(titleColorPreviewMain(c));
+
+                const labelEl = document.createElement("span");
+                labelEl.className = "text-style-chip-label";
+                labelEl.textContent = c.label;
+
+                b.append(previewEl, labelEl);
                 b.addEventListener("click", () => {
                     if (c.id === "custom") {
                         const main = displayColorMain?.value || getStoredCustomDisplayColors().main;

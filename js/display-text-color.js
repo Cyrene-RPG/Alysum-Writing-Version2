@@ -6,17 +6,25 @@ export const DISPLAY_TEXT_COLOR_MAIN_KEY = "alysum-display-text-color-main";
 export const DISPLAY_TEXT_COLOR_ACCENT_KEY = "alysum-display-text-color-accent";
 
 export const DISPLAY_TEXT_COLORS = [
-    { id: "theme", label: "Match accent", hint: "Uses your current accent theme colors" },
+    { id: "theme", label: "Match accent", hint: "Follows your site accent theme" },
     { id: "gold", label: "Gold", main: "#f59e0b", accent: "#fde68a" },
-    { id: "silver", label: "Silver", main: "#94a3b8", accent: "#38bdf8" },
-    { id: "ocean", label: "Ocean", main: "#0ea5e9", accent: "#67e8f9" },
+    { id: "silver", label: "Silver", main: "#94a3b8", accent: "#e0f2fe" },
+    { id: "ocean", label: "Ocean", main: "#0284c7", accent: "#67e8f9" },
+    { id: "arctic", label: "Arctic", main: "#22d3ee", accent: "#e0f2fe" },
     { id: "violet", label: "Violet", main: "#a855f7", accent: "#e9d5ff" },
     { id: "rose", label: "Rose", main: "#f472b6", accent: "#fecdd3" },
     { id: "ember", label: "Ember", main: "#f97316", accent: "#fed7aa" },
-    { id: "forest", label: "Forest", main: "#22c55e", accent: "#bbf7d0" },
     { id: "crimson", label: "Crimson", main: "#dc2626", accent: "#fecaca" },
-    { id: "white", label: "White", main: "#f8fafc", accent: "#e2e8f0" },
-    { id: "custom", label: "Custom", hint: "Choose your own main and accent colors" }
+    { id: "forest", label: "Forest", main: "#16a34a", accent: "#bbf7d0" },
+    { id: "mint", label: "Mint", main: "#10b981", accent: "#a7f3d0" },
+    { id: "sunset", label: "Sunset", main: "#ea580c", accent: "#fbbf24" },
+    { id: "wine", label: "Wine", main: "#9f1239", accent: "#fda4af" },
+    { id: "midnight", label: "Midnight", main: "#60a5fa", accent: "#c7d2fe" },
+    { id: "copper", label: "Copper", main: "#b45309", accent: "#fde68a" },
+    { id: "pearl", label: "Pearl", main: "#f8fafc", accent: "#e2e8f0" },
+    { id: "neon", label: "Neon", main: "#22d3ee", accent: "#e879f9" },
+    { id: "lavender", label: "Lavender", main: "#c084fc", accent: "#f5d0fe" },
+    { id: "custom", label: "Custom", hint: "Pick your own main and accent colors" }
 ];
 
 const COLOR_IDS = new Set(DISPLAY_TEXT_COLORS.map((c) => c.id));
@@ -40,14 +48,6 @@ function clamp(n, min, max) {
 function rgbToHex(r, g, b) {
     const h = (n) => clamp(Math.round(n), 0, 255).toString(16).padStart(2, "0");
     return `#${h(r)}${h(g)}${h(b)}`;
-}
-
-function mixRgb(a, b, t) {
-    return {
-        r: a.r + (b.r - a.r) * t,
-        g: a.g + (b.g - a.g) * t,
-        b: a.b + (b.b - a.b) * t
-    };
 }
 
 function lighten(hex, amount) {
@@ -197,19 +197,24 @@ export function initDisplayTextColorOnPage() {
             applyDisplayTextColor("theme");
         }
     });
-    window.addEventListener("alysum-display-text-color", () => {
-        /* vars already applied */
-    });
 }
 
 export function getColorPreview(id) {
     const preset = PRESET_BY_ID.get(id);
     if (preset) {
-        return `linear-gradient(135deg, ${lighten(preset.accent, 0.2)}, ${preset.main})`;
+        return `linear-gradient(145deg, ${lighten(preset.accent, 0.15)}, ${preset.main} 55%, ${darken(preset.main, 0.25)})`;
     }
     if (id === "custom") {
         const { main, accent } = getStoredCustomDisplayColors();
-        return `linear-gradient(135deg, ${accent}, ${main})`;
+        return `linear-gradient(145deg, ${accent}, ${main})`;
     }
-    return "linear-gradient(135deg, var(--theme-brand-kicker, #c4b5fd), var(--gold, #fbbf24))";
+    return "linear-gradient(145deg, var(--theme-brand-kicker, #c4b5fd), var(--gold, #fbbf24))";
+}
+
+/** Preview text color that reads on a gradient swatch */
+export function getColorPreviewTextColor(main) {
+    const c = parseHex(main);
+    if (!c) return "#ffffff";
+    const lum = (0.299 * c.r + 0.587 * c.g + 0.114 * c.b) / 255;
+    return lum > 0.55 ? "#0f172a" : "#ffffff";
 }

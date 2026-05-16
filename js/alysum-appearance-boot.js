@@ -10,30 +10,57 @@
         neon: "orbitron",
         ember: "oswald",
         elegant: "playfair",
-        minimal: "oswald",
-        royal: "cinzel",
-        frost: "rajdhani",
+        minimal: "archivo",
+        royal: "cinzeldec",
+        frost: "raleway",
         shadow: "anton",
         vintage: "lora",
         cyber: "orbitron",
         rose: "cormorant",
         outline: "rajdhani",
         arcade: "audiowide",
-        bloodmoon: "anton"
+        bloodmoon: "crimson"
     };
 
     var FONT_IDS = {
-        playfair: 1,
         cinzel: 1,
-        bebas: 1,
-        oswald: 1,
-        orbitron: 1,
+        cinzeldec: 1,
+        medieval: 1,
+        almendra: 1,
+        unifraktur: 1,
+        imfell: 1,
+        metalmania: 1,
+        eagle: 1,
+        grenze: 1,
+        playfair: 1,
         lora: 1,
         merriweather: 1,
         cormorant: 1,
-        anton: 1,
+        crimson: 1,
+        spectral: 1,
+        libre: 1,
+        abril: 1,
+        oswald: 1,
         rajdhani: 1,
-        audiowide: 1
+        archivo: 1,
+        raleway: 1,
+        montserrat: 1,
+        orbitron: 1,
+        bebas: 1,
+        anton: 1,
+        audiowide: 1,
+        lobster: 1
+    };
+
+    var CAPS_FONTS = {
+        cinzel: 1,
+        cinzeldec: 1,
+        bebas: 1,
+        anton: 1,
+        audiowide: 1,
+        orbitron: 1,
+        oswald: 1,
+        rajdhani: 1
     };
 
     function normalizeFontId(id) {
@@ -45,14 +72,22 @@
 
     var PRESETS = {
         gold: { main: "#f59e0b", accent: "#fde68a" },
-        silver: { main: "#94a3b8", accent: "#38bdf8" },
-        ocean: { main: "#0ea5e9", accent: "#67e8f9" },
+        silver: { main: "#94a3b8", accent: "#e0f2fe" },
+        ocean: { main: "#0284c7", accent: "#67e8f9" },
+        arctic: { main: "#22d3ee", accent: "#e0f2fe" },
         violet: { main: "#a855f7", accent: "#e9d5ff" },
         rose: { main: "#f472b6", accent: "#fecdd3" },
         ember: { main: "#f97316", accent: "#fed7aa" },
-        forest: { main: "#22c55e", accent: "#bbf7d0" },
         crimson: { main: "#dc2626", accent: "#fecaca" },
-        white: { main: "#f8fafc", accent: "#e2e8f0" }
+        forest: { main: "#16a34a", accent: "#bbf7d0" },
+        mint: { main: "#10b981", accent: "#a7f3d0" },
+        sunset: { main: "#ea580c", accent: "#fbbf24" },
+        wine: { main: "#9f1239", accent: "#fda4af" },
+        midnight: { main: "#60a5fa", accent: "#c7d2fe" },
+        copper: { main: "#b45309", accent: "#fde68a" },
+        pearl: { main: "#f8fafc", accent: "#e2e8f0" },
+        neon: { main: "#22d3ee", accent: "#e879f9" },
+        lavender: { main: "#c084fc", accent: "#f5d0fe" }
     };
 
     function parseHex(raw) {
@@ -130,6 +165,10 @@
         var t = normalizeFontId(localStorage.getItem("alysum-display-text-style"));
         if (t !== "classic") {
             root.setAttribute("data-display-text-style", t);
+            if (CAPS_FONTS[t]) root.dataset.displayTextCaps = "1";
+            else delete root.dataset.displayTextCaps;
+        } else {
+            delete root.dataset.displayTextCaps;
         }
         root.removeAttribute("data-display-text-effect");
 
