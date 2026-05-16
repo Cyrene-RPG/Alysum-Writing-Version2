@@ -344,8 +344,23 @@
             }
         }
 
-        #appearancePanel .hint {
+        #appearancePanel > h2,
+        #appearancePanel > .hint {
+            text-align: center;
+            width: 100%;
+            max-width: 52rem;
+            margin-left: auto;
+            margin-right: auto;
             flex-shrink: 0;
+        }
+
+        #appearancePanel .theme-grid {
+            width: 100%;
+            max-width: min(1100px, 100%);
+            margin-left: auto;
+            margin-right: auto;
+            align-self: center;
+            padding: 0 clamp(12px, 2vw, 20px);
         }
 
         .theme-chip {
@@ -412,10 +427,6 @@
                 min-height: 64px;
                 padding: 15px 12px;
             }
-        }
-
-        #accountModePanel.is-active {
-            align-items: center;
         }
 
         #accountModePanel > h2,
@@ -597,18 +608,31 @@
             width: auto;
         }
 
+        #appearancePanel.is-active,
+        #profilePanel.is-active,
+        #securityPanel.is-active,
+        #accountModePanel.is-active {
+            align-items: center;
+        }
+
         #profilePanel > h2,
         #securityPanel > h2 {
             margin-bottom: 4px;
         }
 
+        #profilePanel > h2,
         #profilePanel > .hint.profile-intro-hint,
-        #securityPanel > .hint.password-intro-hint {
-            max-width: 40rem;
+        #securityPanel > h2,
+        #securityPanel > .hint.password-intro-hint,
+        #securityPanel > .hint#ssoPasswordNote {
+            text-align: center;
+            width: 100%;
+            max-width: 52rem;
+            margin-left: auto;
+            margin-right: auto;
         }
 
         #securityPanel > .hint#ssoPasswordNote {
-            max-width: 40rem;
             margin-bottom: 12px;
             padding: 12px 14px;
             border-radius: 12px;
@@ -622,6 +646,8 @@
             width: 100%;
             max-width: min(1100px, 100%);
             margin: 0 auto;
+            align-self: center;
+            padding: 0 clamp(12px, 2vw, 20px);
         }
 
         @media (min-width: 768px) {
@@ -955,6 +981,17 @@
         let settingsHomeUrl = "studio.html";
 
         const TAB_PANEL_IDS = ["appearancePanel", "accountModePanel", "profilePanel", "securityPanel"];
+        const PASSWORD_BLOCKED_OAUTH = new Set(["google", "discord"]);
+
+        /** Only Google- or Discord-only sign-in cannot change password here (uses linked identities). */
+        function isPasswordChangeBlocked(user) {
+            const providers = (user?.identities || [])
+                .map((i) => String(i?.provider || "").toLowerCase())
+                .filter(Boolean);
+            if (providers.length === 0) return false;
+            if (providers.includes("email")) return false;
+            return providers.every((p) => PASSWORD_BLOCKED_OAUTH.has(p));
+        }
 
         function showSettingsTab(panelId) {
             const id = TAB_PANEL_IDS.includes(panelId) ? panelId : "appearancePanel";
@@ -1097,12 +1134,11 @@
                     });
                 }
 
-                const identities = user.identities || [];
-                const hasPassword = identities.some(i => i.provider === "email");
+                const passwordBlocked = isPasswordChangeBlocked(user);
                 const ssoNote = document.getElementById("ssoPasswordNote");
                 const formHint = document.getElementById("passwordFormHint");
                 const passwordPanelBody = document.querySelector(".password-panel-body");
-                if (!hasPassword) {
+                if (passwordBlocked) {
                     savePasswordBtn.disabled = true;
                     currentPw.disabled = true;
                     newPw.disabled = true;
@@ -1110,12 +1146,18 @@
                     passwordPanelBody?.classList.add("hidden");
                     if (ssoNote) {
                         ssoNote.textContent =
-                            "Password updates are only available for accounts that use email and password sign-in.";
+                            "Password changes aren’t available for accounts that only sign in with Google or Discord. Use that provider to access your account, or contact support if you need help.";
                         ssoNote.classList.remove("hidden");
                     }
                     if (formHint) formHint.classList.add("hidden");
                 } else {
+                    savePasswordBtn.disabled = false;
+                    currentPw.disabled = false;
+                    newPw.disabled = false;
+                    confirmPw.disabled = false;
                     passwordPanelBody?.classList.remove("hidden");
+                    ssoNote?.classList.add("hidden");
+                    formHint?.classList.remove("hidden");
                 }
             } catch (e) {
                 console.error(e);
@@ -1187,8 +1229,17 @@
             hideMsg(passwordMsg);
             const { data: udata } = await supabase.auth.getUser();
             const user = udata?.user;
-            if (!user || !user.email) {
-                showMsg(passwordMsg, "Email sign-in is required to change password.", false);
+            if (!user) return;
+            if (isPasswordChangeBlocked(user)) {
+                showMsg(
+                    passwordMsg,
+                    "Password changes aren’t available for Google- or Discord-only accounts.",
+                    false
+                );
+                return;
+            }
+            if (!user.email) {
+                showMsg(passwordMsg, "Your account needs an email address to change your password.", false);
                 return;
             }
 
