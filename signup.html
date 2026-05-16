@@ -167,6 +167,47 @@
             line-height: 1.35;
         }
 
+        .auth-divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 18px 0 14px;
+            color: #64748b;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .auth-divider::before,
+        .auth-divider::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: #e2e8f0;
+        }
+
+        .btn-oauth {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+            background: #fff;
+            color: #1e293b;
+            border: 1px solid #e2e8f0;
+            font-weight: 600;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .btn-oauth svg {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+        }
+
+        .btn-oauth-discord svg {
+            fill: #5865f2;
+        }
+
         @media (max-width: 480px) {
             body {
                 padding: 12px;
@@ -184,10 +225,6 @@
 
 <div class="card">
     <h2>Create Account</h2>
-
-    <input id="username" placeholder="Username" autocomplete="username">
-    <input id="email" type="email" placeholder="Email" autocomplete="email">
-    <input id="password" type="password" placeholder="Password" autocomplete="new-password">
 
     <span class="account-type-label" id="accountTypeLabel">How will you use Alysum?</span>
 
@@ -217,6 +254,23 @@
         </label>
     </div>
 
+    <button type="button" id="google-btn" class="btn-oauth" aria-label="Sign up with Google">
+        Continue with Google
+    </button>
+
+    <button type="button" id="discord-btn" class="btn-oauth btn-oauth-discord" aria-label="Sign up with Discord">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M20.317 4.369A19.791 19.791 0 0 0 16.558 3a13.74 13.74 0 0 0-.481.974 18.27 18.27 0 0 0-4.154 0A12.64 12.64 0 0 0 11.442 3a19.736 19.736 0 0 0-3.76 1.37C5.303 7.91 4.657 11.36 4.98 14.76a19.9 19.9 0 0 0 4.607 2.339c.37-.504.701-1.04.984-1.602a12.83 12.83 0 0 1-1.55-.744c.13-.095.258-.193.382-.294 2.987 1.38 6.226 1.38 9.177 0 .125.101.253.199.383.294-.494.29-1.013.54-1.553.745.283.56.612 1.097.984 1.601A19.86 19.86 0 0 0 23 14.76c.378-3.953-.646-7.371-2.683-10.391ZM10.19 12.67c-.897 0-1.635-.826-1.635-1.842 0-1.016.723-1.843 1.635-1.843.92 0 1.65.834 1.635 1.843 0 1.016-.723 1.842-1.635 1.842Zm6.19 0c-.897 0-1.635-.826-1.635-1.842 0-1.016.723-1.843 1.635-1.843.92 0 1.65.834 1.635 1.843 0 1.016-.715 1.842-1.635 1.842Z" />
+        </svg>
+        Continue with Discord
+    </button>
+
+    <div class="auth-divider" role="presentation"><span>or with email</span></div>
+
+    <input id="username" placeholder="Username" autocomplete="username">
+    <input id="email" type="email" placeholder="Email" autocomplete="email">
+    <input id="password" type="password" placeholder="Password" autocomplete="new-password">
+
     <button type="button" id="signup-btn" onclick="signup()">Create Account</button>
     <p id="error-msg" role="alert"></p>
 
@@ -233,11 +287,66 @@ import {
     ACCOUNT_BOTH,
     ACCOUNT_READER,
     READER_HOME_URL,
+    homeUrlForUserData,
     setUiMode,
 } from "./js/account-mode.js?v=1";
 
+const SIGNUP_ACCOUNT_TYPE_KEY = "alysum-signup-account-type";
+
 const errorEl = document.getElementById("error-msg");
 const signupBtn = document.getElementById("signup-btn");
+const googleBtn = document.getElementById("google-btn");
+const discordBtn = document.getElementById("discord-btn");
+
+const oauthButtons = [googleBtn, discordBtn];
+
+function setOAuthButtonsDisabled(disabled) {
+    for (const btn of oauthButtons) {
+        btn.disabled = disabled;
+    }
+}
+
+function pickedAccountType() {
+    const typeInput = document.querySelector('input[name="accountType"]:checked');
+    return typeInput ? typeInput.value : ACCOUNT_BOTH;
+}
+
+function isValidAccountType(accountType) {
+    return (
+        accountType === ACCOUNT_AUTHOR ||
+        accountType === ACCOUNT_READER ||
+        accountType === ACCOUNT_BOTH
+    );
+}
+
+function oauthUsernameFromUser(user) {
+    const meta = user.user_metadata || {};
+    const raw =
+        meta.username ||
+        meta.preferred_username ||
+        meta.global_name ||
+        meta.full_name ||
+        meta.name ||
+        (user.email ? user.email.split("@")[0] : "");
+    const cleaned = String(raw || "")
+        .trim()
+        .replace(/^@/, "")
+        .replace(/\s+/g, "")
+        .slice(0, 32);
+    return cleaned || `user${user.id.slice(0, 8)}`;
+}
+
+function redirectAfterSignup(accountType, userData) {
+    if (accountType === ACCOUNT_READER) {
+        setUiMode("library");
+        window.location.href = READER_HOME_URL;
+        return;
+    }
+    setUiMode("studio");
+    window.location.href = userData
+        ? homeUrlForUserData(userData)
+        : "studio.html";
+}
 
 function showError(text) {
     errorEl.textContent = text;
@@ -282,6 +391,120 @@ function signupAuthMessage(message) {
     return message;
 }
 
+async function startOAuth(provider) {
+    const accountType = pickedAccountType();
+
+    if (!isValidAccountType(accountType)) {
+        showError("Pick how you will use Alysum.");
+        return;
+    }
+
+    clearError();
+    setOAuthButtonsDisabled(true);
+    signupBtn.disabled = true;
+
+    try {
+        sessionStorage.setItem(SIGNUP_ACCOUNT_TYPE_KEY, accountType);
+    } catch {
+        /* ignore */
+    }
+
+    const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+            redirectTo: new URL("signup.html", window.location.href).href,
+            data: {
+                accountType
+            }
+        }
+    });
+
+    if (error) {
+        showError(error.message);
+        setOAuthButtonsDisabled(false);
+        signupBtn.disabled = false;
+    }
+}
+
+googleBtn.addEventListener("click", () => startOAuth("google"));
+discordBtn.addEventListener("click", () => startOAuth("discord"));
+
+function isOAuthReturn() {
+    const hash = window.location.hash || "";
+    const params = new URLSearchParams(window.location.search);
+    return hash.length > 2 || !!params.get("code");
+}
+
+async function completeOAuthSignup() {
+    const { data: userData } = await supabase.auth.getUser();
+    const user = userData && userData.user;
+
+    if (!user) return;
+
+    let accountType = ACCOUNT_BOTH;
+    try {
+        const stored = sessionStorage.getItem(SIGNUP_ACCOUNT_TYPE_KEY);
+        sessionStorage.removeItem(SIGNUP_ACCOUNT_TYPE_KEY);
+        if (stored && isValidAccountType(stored)) accountType = stored;
+    } catch {
+        /* ignore */
+    }
+
+    const metaType = user.user_metadata && user.user_metadata.accountType;
+    if (isValidAccountType(metaType)) accountType = metaType;
+
+    const { data: row, error: rowError } = await supabase
+        .from("users")
+        .select("*")
+        .eq("id", user.id)
+        .maybeSingle();
+
+    if (rowError) {
+        showError(rowError.message);
+        return;
+    }
+
+    if (row) {
+        redirectAfterSignup(row.account_type, {
+            accountType: row.account_type,
+            account_type: row.account_type
+        });
+        return;
+    }
+
+    const username =
+        (user.user_metadata && user.user_metadata.username) ||
+        oauthUsernameFromUser(user);
+    const displayName =
+        (user.user_metadata && user.user_metadata.displayName) ||
+        (user.user_metadata && user.user_metadata.full_name) ||
+        username;
+
+    const { error: profileError } = await supabase.from("users").insert({
+        id: user.id,
+        username,
+        display_name: displayName,
+        account_type: accountType,
+        words: 0,
+        streak: 0,
+        daily_word_goal: 2000,
+        writing_day_totals: {}
+    });
+
+    if (profileError) {
+        showError(profileError.message);
+        return;
+    }
+
+    redirectAfterSignup(accountType);
+}
+
+const { data: sessionData } = await supabase.auth.getSession();
+
+if (sessionData && sessionData.session && isOAuthReturn()) {
+    await completeOAuthSignup();
+}
+
 let signupInFlight = false;
 
 window.signup = async function () {
@@ -290,19 +513,14 @@ window.signup = async function () {
     const username = document.getElementById("username").value.trim();
     const email = document.getElementById("email").value.trim();
     const password = document.getElementById("password").value;
-    const typeInput = document.querySelector('input[name="accountType"]:checked');
-    const accountType = typeInput ? typeInput.value : ACCOUNT_BOTH;
+    const accountType = pickedAccountType();
 
     if (!username || !email || !password) {
         showError("Fill all fields.");
         return;
     }
 
-    if (
-        accountType !== ACCOUNT_AUTHOR &&
-        accountType !== ACCOUNT_READER &&
-        accountType !== ACCOUNT_BOTH
-    ) {
+    if (!isValidAccountType(accountType)) {
         showError("Pick how you will use Alysum.");
         return;
     }
@@ -310,6 +528,7 @@ window.signup = async function () {
     clearError();
     signupInFlight = true;
     signupBtn.disabled = true;
+    setOAuthButtonsDisabled(true);
 
     try {
         const { data, error } = await supabase.auth.signUp({
@@ -358,19 +577,14 @@ window.signup = async function () {
             return;
         }
 
-        if (accountType === ACCOUNT_READER) {
-            setUiMode("library");
-            window.location.href = READER_HOME_URL;
-        } else {
-            setUiMode("studio");
-            window.location.href = "studio.html";
-        }
+        redirectAfterSignup(accountType);
 
     } catch (e) {
         showError((e && e.message) || "Could not create account.");
     } finally {
         signupInFlight = false;
         signupBtn.disabled = false;
+        setOAuthButtonsDisabled(false);
     }
 };
 
@@ -383,4 +597,4 @@ document.getElementById("password").addEventListener("keydown", (ev) => {
 </script>
 
 </body>
-</html>	o
+</html>

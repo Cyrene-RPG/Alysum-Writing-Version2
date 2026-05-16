@@ -166,6 +166,16 @@
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
         }
 
+        .btn-oauth svg {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+        }
+
+        .btn-oauth-discord svg {
+            fill: #5865f2;
+        }
+
         .support-footnote {
             margin: 18px 0 0;
             text-align: center;
@@ -202,6 +212,13 @@
         Continue with Google
     </button>
 
+    <button type="button" id="discord-btn" class="btn-oauth btn-oauth-discord" aria-label="Sign in with Discord">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M20.317 4.369A19.791 19.791 0 0 0 16.558 3a13.74 13.74 0 0 0-.481.974 18.27 18.27 0 0 0-4.154 0A12.64 12.64 0 0 0 11.442 3a19.736 19.736 0 0 0-3.76 1.37C5.303 7.91 4.657 11.36 4.98 14.76a19.9 19.9 0 0 0 4.607 2.339c.37-.504.701-1.04.984-1.602a12.83 12.83 0 0 1-1.55-.744c.13-.095.258-.193.382-.294 2.987 1.38 6.226 1.38 9.177 0 .125.101.253.199.383.294-.494.29-1.013.54-1.553.745.283.56.612 1.097.984 1.601A19.86 19.86 0 0 0 23 14.76c.378-3.953-.646-7.371-2.683-10.391ZM10.19 12.67c-.897 0-1.635-.826-1.635-1.842 0-1.016.723-1.843 1.635-1.843.92 0 1.65.834 1.635 1.843 0 1.016-.723 1.842-1.635 1.842Zm6.19 0c-.897 0-1.635-.826-1.635-1.842 0-1.016.723-1.843 1.635-1.843.92 0 1.65.834 1.635 1.843 0 1.016-.715 1.842-1.635 1.842Z" />
+        </svg>
+        Continue with Discord
+    </button>
+
     <div class="auth-divider" role="presentation"><span>or with email</span></div>
 
     <input id="email" type="email" placeholder="Email" autocomplete="username">
@@ -234,7 +251,16 @@ const errorEl = document.getElementById("error-msg");
 const successEl = document.getElementById("success-msg");
 const loginBtn = document.getElementById("login-btn");
 const googleBtn = document.getElementById("google-btn");
+const discordBtn = document.getElementById("discord-btn");
 const forgotLink = document.getElementById("forgot-link");
+
+const oauthButtons = [googleBtn, discordBtn];
+
+function setOAuthButtonsDisabled(disabled) {
+    for (const btn of oauthButtons) {
+        btn.disabled = disabled;
+    }
+}
 
 function showError(text) {
     successEl.textContent = "";
@@ -418,11 +444,11 @@ async function redirectAfterLogin() {
     }
 }
 
-googleBtn.addEventListener("click", async () => {
+async function startOAuth(provider) {
     clearSuccess();
     clearError();
 
-    googleBtn.disabled = true;
+    setOAuthButtonsDisabled(true);
     loginBtn.disabled = true;
 
     try {
@@ -438,7 +464,7 @@ googleBtn.addEventListener("click", async () => {
     }
 
     const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
+        provider,
         options: {
             redirectTo: new URL("login.html", window.location.href).href
         }
@@ -446,10 +472,13 @@ googleBtn.addEventListener("click", async () => {
 
     if (error) {
         showError(error.message);
-        googleBtn.disabled = false;
+        setOAuthButtonsDisabled(false);
         loginBtn.disabled = false;
     }
-});
+}
+
+googleBtn.addEventListener("click", () => startOAuth("google"));
+discordBtn.addEventListener("click", () => startOAuth("discord"));
 
 const isRecoveryLanding = (window.location.hash || "").includes("type=recovery");
 if (isRecoveryLanding) {
@@ -540,7 +569,7 @@ window.login = async function () {
 
     loginInFlight = true;
     loginBtn.disabled = true;
-    googleBtn.disabled = true;
+    setOAuthButtonsDisabled(true);
 
     try {
         const { error } = await supabase.auth.signInWithPassword({
@@ -559,7 +588,7 @@ window.login = async function () {
     } finally {
         loginInFlight = false;
         loginBtn.disabled = false;
-        googleBtn.disabled = false;
+        setOAuthButtonsDisabled(false);
     }
 };
 
