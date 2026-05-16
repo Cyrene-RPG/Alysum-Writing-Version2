@@ -42,6 +42,43 @@ export const GRADIENT_THEMES = [
 
 const THEME_IDS = new Set(GRADIENT_THEMES.map((t) => t.id));
 
+export const CLASSIC_THEME_PREVIEW =
+    "linear-gradient(135deg, #4c1d95 0%, #7c3aed 50%, #ec4899 100%)";
+
+const PREVIEW_BY_ID = new Map(GRADIENT_THEMES.map((t) => [t.id, t.preview || CLASSIC_THEME_PREVIEW]));
+
+export function getThemePreview(id) {
+    if (!id || id === "classic") return CLASSIC_THEME_PREVIEW;
+    return PREVIEW_BY_ID.get(id) || CLASSIC_THEME_PREVIEW;
+}
+
+const CHROME_GRADIENT_KEY = "alysum-gradient-theme-preview";
+
+export function applyChromeGradient(preview) {
+    if (typeof document === "undefined") return;
+    const grad = preview || CLASSIC_THEME_PREVIEW;
+    document.documentElement.style.setProperty("--alysum-chrome-gradient", grad);
+    try {
+        localStorage.setItem(CHROME_GRADIENT_KEY, grad);
+    } catch {
+        /* ignore */
+    }
+}
+
+export function restoreChromeGradientFromStorage() {
+    if (typeof document === "undefined") return;
+    try {
+        const saved = localStorage.getItem(CHROME_GRADIENT_KEY);
+        if (saved) {
+            document.documentElement.style.setProperty("--alysum-chrome-gradient", saved);
+            return;
+        }
+    } catch {
+        /* ignore */
+    }
+    applyChromeGradient(CLASSIC_THEME_PREVIEW);
+}
+
 export function isGradientThemeId(id) {
     return THEME_IDS.has(id);
 }
@@ -74,8 +111,14 @@ export function applyGradientTheme(id) {
             /* ignore */
         }
     }
+    applyChromeGradient(getThemePreview(themeId));
+
     try {
-        root.dispatchEvent(new CustomEvent("alysum-gradient-theme", { detail: { id: themeId } }));
+        root.dispatchEvent(
+            new CustomEvent("alysum-gradient-theme", {
+                detail: { id: themeId, preview: getThemePreview(themeId) }
+            })
+        );
     } catch {
         /* ignore */
     }
@@ -84,9 +127,13 @@ export function applyGradientTheme(id) {
 /** Keep theme in sync across tabs and on module load. */
 export function initGradientThemeOnPage() {
     if (typeof window === "undefined") return;
+    restoreChromeGradientFromStorage();
     applyGradientTheme(getStoredGradientThemeId());
     window.addEventListener("storage", (e) => {
         if (e.key !== GRADIENT_THEME_KEY) return;
         applyGradientTheme(e.newValue || "classic");
+    });
+    window.addEventListener("alysum-gradient-theme", (e) => {
+        if (e.detail?.preview) applyChromeGradient(e.detail.preview);
     });
 }

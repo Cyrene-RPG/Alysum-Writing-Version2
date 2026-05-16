@@ -44,20 +44,29 @@
         body {
             margin: 0;
             min-height: 100vh;
+            display: flex;
+            flex-direction: column;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            background: radial-gradient(circle at top, var(--theme-body-spot-strong) 0%, transparent 40%), var(--bg);
+            background: radial-gradient(circle at top, var(--theme-body-spot-strong) 0%, transparent 42%), var(--bg);
             color: var(--text);
         }
         .header {
             position: sticky;
             top: 0;
             z-index: 20;
+            flex-shrink: 0;
             display: flex;
             align-items: center;
             gap: 14px;
-            padding: 14px 18px;
-            background: linear-gradient(135deg, var(--purple-dark), var(--theme-header-mid));
-            border-bottom: 1px solid var(--border);
+            padding: 14px clamp(16px, 2.5vw, 28px);
+            background: var(
+                --alysum-chrome-gradient,
+                linear-gradient(135deg, var(--purple-dark, #5b21b6), var(--theme-header-mid, #7c3aed), var(--theme-header-end, #ec4899))
+            );
+            background-size: cover;
+            background-position: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 6px 28px rgba(0, 0, 0, 0.35);
         }
         .back-btn {
             width: 44px;
@@ -72,30 +81,42 @@
         .header-title {
             font-size: 20px;
             font-weight: 900;
-            color: #fff7ed;
+            color: #fff;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
         }
         .wrap {
+            flex: 1;
             width: 100%;
-            max-width: min(1480px, 100%);
-            margin: 0 auto;
-            padding: 14px clamp(14px, 2.5vw, 36px) 36px;
+            max-width: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
         }
 
         .settings-shell {
+            flex: 1;
             display: flex;
             flex-direction: column;
             gap: 0;
+            width: 100%;
+            min-height: 0;
         }
 
         .settings-nav {
             display: flex;
             flex-wrap: wrap;
             gap: 8px;
-            padding: 6px;
-            border-radius: 14px 14px 0 0;
-            border: 1px solid var(--border);
-            border-bottom: none;
-            background: rgba(17, 24, 39, 0.65);
+            padding: 8px clamp(12px, 2vw, 20px);
+            border-radius: 0;
+            border: none;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            background:
+                linear-gradient(180deg, rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.55)),
+                var(--alysum-chrome-gradient, linear-gradient(135deg, #1e1b4b, #312e81));
+            background-size: cover;
+            background-position: center;
         }
 
         .settings-nav button {
@@ -123,8 +144,15 @@
         .settings-nav button.active,
         .settings-nav button[aria-selected="true"] {
             color: #fff;
-            border-color: color-mix(in srgb, var(--pink) 40%, transparent);
-            background: linear-gradient(135deg, var(--theme-card-a), var(--theme-card-b));
+            border-color: rgba(255, 255, 255, 0.38);
+            background: var(
+                --alysum-chrome-gradient,
+                linear-gradient(135deg, var(--purple-dark), var(--theme-header-mid), var(--theme-header-end))
+            );
+            background-size: cover;
+            background-position: center;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.85), 0 0 10px rgba(0, 0, 0, 0.35);
+            box-shadow: 0 2px 14px rgba(0, 0, 0, 0.35);
         }
 
         .settings-nav {
@@ -134,9 +162,13 @@
         }
 
         .settings-content {
+            flex: 1;
             width: 100%;
             max-width: none;
             margin: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
         }
 
         .settings-tab-panel {
@@ -144,12 +176,24 @@
         }
 
         .settings-tab-panel.is-active {
-            display: block;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
         }
 
         .settings-tab-panel.panel {
-            border-radius: 0 0 18px 18px;
+            border-radius: 0;
+            border: none;
             border-top: none;
+            flex: 1;
+            min-height: calc(100vh - 72px - 52px);
+            padding: clamp(16px, 2vw, 24px) clamp(14px, 2.5vw, 28px) clamp(24px, 4vw, 40px);
+        }
+
+        #loadingPanel.panel {
+            margin: 16px clamp(14px, 2.5vw, 28px);
+            border-radius: 16px;
+            border: 1px solid var(--border);
         }
 
         .panel {
@@ -224,8 +268,20 @@
             margin-top: 6px;
         }
         .btn-primary {
-            background: linear-gradient(135deg, var(--purple), var(--pink));
+            background: var(
+                --alysum-chrome-gradient,
+                linear-gradient(135deg, var(--purple), var(--pink))
+            );
+            background-size: cover;
+            background-position: center;
             color: white;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.28);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            filter: brightness(1.08);
         }
         .btn:disabled {
             opacity: 0.55;
@@ -256,9 +312,15 @@
 
         .theme-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
             gap: 8px;
             margin-top: 4px;
+            flex: 1;
+            align-content: start;
+        }
+
+        #appearancePanel .hint {
+            flex-shrink: 0;
         }
 
         .theme-chip {
@@ -343,8 +405,12 @@
         }
 
         .account-type-row:has(input:checked) {
-            border-color: color-mix(in srgb, var(--pink) 45%, transparent);
-            background: rgba(255,255,255,0.07);
+            border-color: rgba(255, 255, 255, 0.32);
+            background:
+                linear-gradient(135deg, rgba(0, 0, 0, 0.25), rgba(0, 0, 0, 0.45)),
+                var(--alysum-chrome-gradient, linear-gradient(135deg, var(--theme-card-a), var(--theme-card-b)));
+            background-size: cover;
+            background-position: center;
         }
 
         @media (min-width: 900px) {
@@ -593,7 +659,13 @@
         import { supabase } from "./firebase.js";
         import { wireSupabaseSession } from "./js/supabase-session.js?v=1";
         import { permanentHandleFromUserData } from "./js/profile-display.js?v=1";
-        import { GRADIENT_THEMES, applyGradientTheme, getStoredGradientThemeId } from "./js/gradient-theme.js?v=4";
+        import {
+            GRADIENT_THEMES,
+            applyGradientTheme,
+            applyChromeGradient,
+            getStoredGradientThemeId,
+            getThemePreview
+        } from "./js/gradient-theme.js?v=5";
         import { normalizeAccountType, ACCOUNT_AUTHOR, ACCOUNT_READER, ACCOUNT_BOTH, homeUrlForUserData } from "./js/account-mode.js?v=1";
         import { isStoryBibleUiEnabled, setStoryBibleUiEnabled } from "./js/story-bible-prefs.js?v=1";
 
@@ -690,6 +762,7 @@
                 b.title = t.hint || "";
                 b.addEventListener("click", () => {
                     applyGradientTheme(t.id);
+                    applyChromeGradient(t.preview || getThemePreview(t.id));
                     themeChipRow.querySelectorAll(".theme-chip").forEach((x) => {
                         x.classList.remove("active");
                     });
@@ -750,6 +823,7 @@
                     const panel = document.getElementById(pid);
                     if (panel) panel.classList.remove("hidden");
                 });
+                applyChromeGradient(getThemePreview(getStoredGradientThemeId()));
                 initThemePicker();
                 initSettingsNav();
 
