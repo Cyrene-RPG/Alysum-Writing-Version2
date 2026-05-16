@@ -321,8 +321,11 @@
             grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
             gap: 10px;
             margin-top: 4px;
-            flex: 1;
             align-content: start;
+        }
+
+        #appearancePanel .theme-grid {
+            flex: none;
         }
 
         @media (min-width: 640px) {
@@ -352,10 +355,10 @@
         .appearance-layout {
             display: flex;
             flex-direction: column;
-            gap: 18px;
+            gap: 16px;
             width: 100%;
-            max-width: min(1180px, 100%);
-            margin: 12px auto 0;
+            max-width: none;
+            margin: 16px 0 0;
             flex: 1;
             align-self: stretch;
         }
@@ -363,13 +366,20 @@
         .appearance-text-pair {
             display: grid;
             grid-template-columns: 1fr;
-            gap: 18px;
+            gap: 16px;
             min-width: 0;
         }
 
-        @media (min-width: 820px) {
+        @media (min-width: 900px) {
+            .appearance-layout {
+                display: grid;
+                grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr) minmax(0, 0.95fr);
+                gap: 16px;
+                align-items: start;
+            }
+
             .appearance-text-pair {
-                grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.85fr);
+                display: contents;
             }
         }
 
@@ -377,16 +387,10 @@
             display: flex;
             flex-direction: column;
             min-width: 0;
-            padding: 18px 16px;
+            padding: 16px 14px;
             border-radius: 16px;
             border: 1px solid rgba(255, 255, 255, 0.1);
             background: rgba(0, 0, 0, 0.22);
-        }
-
-        .appearance-block--fonts {
-            max-height: min(68vh, 680px);
-            overflow-y: auto;
-            overscroll-behavior: contain;
         }
 
         .appearance-block .hint {
@@ -412,26 +416,40 @@
         }
 
         #appearancePanel .appearance-grid--accent {
-            grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
         }
 
         #appearancePanel .appearance-grid--fonts {
-            grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+            grid-template-columns: repeat(2, minmax(0, 1fr));
         }
 
         #appearancePanel .appearance-grid--colors {
-            grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+            grid-template-columns: repeat(2, minmax(0, 1fr));
         }
 
-        @media (min-width: 820px) {
-            #appearancePanel .appearance-grid--colors {
+        @media (min-width: 900px) {
+            #appearancePanel .appearance-grid--accent {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            #appearancePanel .appearance-grid--fonts {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (min-width: 1200px) {
+            #appearancePanel .appearance-grid--accent {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+
+            #appearancePanel .appearance-grid--fonts {
                 grid-template-columns: repeat(2, minmax(0, 1fr));
             }
         }
 
         #appearancePanel .theme-chip {
-            min-height: 48px;
-            padding: 10px 8px;
+            min-height: 44px;
+            padding: 9px 7px;
             font-size: 11px;
             line-height: 1.3;
             border-radius: 12px;
@@ -439,17 +457,17 @@
 
         #appearancePanel .theme-chip.text-style-chip,
         #appearancePanel .theme-chip.title-color-chip {
-            min-height: 80px;
-            padding: 12px 8px;
+            min-height: 72px;
+            padding: 10px 6px;
         }
 
         #appearancePanel .text-style-chip-preview {
-            font-size: 28px;
-            margin-bottom: 6px;
+            font-size: 24px;
+            margin-bottom: 4px;
         }
 
         #appearancePanel .text-style-chip-label {
-            font-size: 11px;
+            font-size: 10px;
         }
 
         .theme-chip {
@@ -865,7 +883,7 @@
         }
 
     </style>
-    <link rel="stylesheet" href="css/gradient-themes.css?v=4" />
+    <link rel="stylesheet" href="css/gradient-themes.css?v=5" />
     <script src="js/gradient-theme-sync.js" defer></script>
 </head>
 <body>
@@ -1080,7 +1098,7 @@
             applyDisplayTextStyle,
             getStoredDisplayTextStyleId,
             initDisplayTextStyleOnPage
-        } from "./js/display-text-style.js?v=4";
+        } from "./js/display-text-style.js?v=5";
         import {
             DISPLAY_TEXT_COLORS,
             applyDisplayTextColor,
@@ -1090,7 +1108,7 @@
             getColorPreview,
             getColorPreviewTextColor,
             resolveDisplayColorPair
-        } from "./js/display-text-color.js?v=2";
+        } from "./js/display-text-color.js?v=3";
         import { normalizeAccountType, ACCOUNT_AUTHOR, ACCOUNT_READER, ACCOUNT_BOTH, homeUrlForUserData } from "./js/account-mode.js?v=1";
         import { isStoryBibleUiEnabled, setStoryBibleUiEnabled } from "./js/story-bible-prefs.js?v=1";
 
@@ -1255,21 +1273,39 @@
             textStyleChipRow.innerHTML = "";
             const cur = getStoredDisplayTextStyleId();
 
-            DISPLAY_TEXT_FONT_GROUPS.forEach((group) => {
-                const styles = DISPLAY_TEXT_STYLES.filter(
-                    (s) => (DISPLAY_TEXT_STYLE_META[s.id] || {}).category === group.id
-                );
+            const groups = Array.isArray(DISPLAY_TEXT_FONT_GROUPS) && DISPLAY_TEXT_FONT_GROUPS.length
+                ? DISPLAY_TEXT_FONT_GROUPS
+                : [{ id: "all", label: "Title fonts" }];
+
+            groups.forEach((group) => {
+                const styles = group.id === "all"
+                    ? DISPLAY_TEXT_STYLES
+                    : DISPLAY_TEXT_STYLES.filter(
+                          (s) => (DISPLAY_TEXT_STYLE_META[s.id] || {}).category === group.id
+                      );
                 if (!styles.length) return;
 
-                const heading = document.createElement("div");
-                heading.className = "font-group-label";
-                heading.textContent = group.label;
-                textStyleChipRow.appendChild(heading);
+                if (group.id !== "all") {
+                    const heading = document.createElement("div");
+                    heading.className = "font-group-label";
+                    heading.textContent = group.label;
+                    textStyleChipRow.appendChild(heading);
+                }
 
                 styles.forEach((s) => {
                     textStyleChipRow.appendChild(createFontStyleChip(s, cur));
                 });
             });
+        }
+
+        function initAppearancePickers() {
+            try {
+                initThemePicker();
+                initTextStylePicker();
+                initTextColorPicker();
+            } catch (err) {
+                console.error("Appearance pickers failed:", err);
+            }
         }
 
         function titleColorPreviewMain(color) {
@@ -1360,6 +1396,7 @@
 
         initDisplayTextStyleOnPage();
         initDisplayTextColorOnPage();
+        initAppearancePickers();
 
         backBtn.addEventListener("click", () => {
             window.location.href = settingsHomeUrl;
@@ -1413,9 +1450,7 @@
                     if (panel) panel.classList.remove("hidden");
                 });
                 applyChromeGradient(getThemePreview(getStoredGradientThemeId()));
-                initThemePicker();
-                initTextStylePicker();
-                initTextColorPicker();
+                initAppearancePickers();
                 initSettingsNav();
 
                 const storyBibleUiToggle = document.getElementById("storyBibleUiToggle");
