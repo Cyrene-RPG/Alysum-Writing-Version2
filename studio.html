@@ -437,23 +437,117 @@
     }
 
     .book {
-        background: linear-gradient(180deg, #ffffff, #e5e7eb);
-        color: #111827;
+        position: relative;
+        overflow: hidden;
         aspect-ratio: 3 / 4;
         border-radius: 18px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-        padding: 14px;
+        padding: 0;
         box-shadow: 0 18px 36px rgba(0,0,0,0.45), inset 8px 0 0 rgba(0,0,0,0.18);
         transform: perspective(900px) rotateY(-5deg);
         transition: all 0.25s ease;
         cursor: pointer;
+        isolation: isolate;
+    }
+
+    .book-cover-img {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        pointer-events: none;
+    }
+
+    .book .cover-placeholder {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        display: flex;
+        flex-direction: column;
+        padding: 14px 12px 12px;
+        text-align: center;
+        color: #f4f4f5;
+        background:
+            radial-gradient(ellipse 120% 80% at 100% 0%, hsla(var(--cover-ph-hue, 265), 72%, 58%, 0.22), transparent 55%),
+            radial-gradient(ellipse 90% 70% at 0% 100%, hsla(calc(var(--cover-ph-hue, 265) + 48), 55%, 45%, 0.18), transparent 50%),
+            linear-gradient(165deg, hsl(222, 44%, 11%) 0%, hsl(250, 28%, 8%) 48%, hsl(260, 32%, 6%) 100%);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.07);
+    }
+
+    .book .cover-placeholder::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, rgba(255,255,255,0.04) 0%, transparent 28%);
+        pointer-events: none;
+    }
+
+    .book .cover-placeholder::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 3px;
+        border-radius: 0 2px 2px 0;
+        background: linear-gradient(180deg, hsl(var(--cover-ph-hue, 265), 78%, 62%), hsl(calc(var(--cover-ph-hue, 265) + 22), 65%, 48%));
+        opacity: 0.92;
+        pointer-events: none;
+    }
+
+    .book .cover-placeholder-inner {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
+        width: 100%;
+        gap: 8px;
+    }
+
+    .book .cover-placeholder-title-wrap {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .book .cover-placeholder-title {
+        width: 100%;
+        max-height: 100%;
+        text-align: center;
+        font-size: clamp(11px, 3.2vw, 16px);
+        font-weight: 900;
+        line-height: 1.18;
+        letter-spacing: -0.02em;
+        text-shadow: 0 1px 18px rgba(0,0,0,0.45);
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 7;
+        overflow: hidden;
+        word-break: break-word;
+        hyphens: auto;
+    }
+
+    .book .cover-placeholder-author {
+        flex-shrink: 0;
+        width: 100%;
+        text-align: center;
+        font-size: clamp(9px, 2.4vw, 12px);
+        font-weight: 700;
+        color: rgba(226, 232, 240, 0.78);
+        letter-spacing: 0.01em;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        padding-top: 2px;
+        border-top: 1px solid rgba(255,255,255,0.1);
     }
 
     .book:hover { transform: perspective(900px) rotateY(-3deg) translateY(-6px); }
-    .book-title { font-weight: 900; font-size: 16px; line-height: 1.25; word-break: break-word; }
 
     .empty-books {
         grid-column: 1 / -1;
@@ -1056,6 +1150,46 @@
             .replace(/>/g, "&gt;");
     }
 
+    function escapeAttribute(str) {
+        return escapeHtml(str).replaceAll("`", "&#096;");
+    }
+
+    function normalizeCoverUrl(raw) {
+        const s = String(raw || "").trim();
+        if (!s) return "";
+        if (/^https?:\/\//i.test(s)) return s;
+        if (s.startsWith("//")) return "https:" + s;
+        return "https://" + s.replace(/^\/+/, "");
+    }
+
+    function bookCoverUrl(data) {
+        const meta = data?.publish_meta ?? data?.publishMeta ?? {};
+        return normalizeCoverUrl(meta.coverUrl || meta.cover_url);
+    }
+
+    function placeholderHue(seed) {
+        const s = String(seed || "0");
+        let h = 2166136261 >>> 0;
+        for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619);
+        return Math.abs(h) % 360;
+    }
+
+    function studioAuthorHandle() {
+        const handle = permanentHandleFromUserData(currentProfile);
+        return handle || "writer";
+    }
+
+    function bookCoverPlaceholderMarkup(book, hue) {
+        return `<div class="cover-placeholder" style="--cover-ph-hue:${hue}" aria-hidden="true">
+            <div class="cover-placeholder-inner">
+                <div class="cover-placeholder-title-wrap">
+                    <div class="cover-placeholder-title">${escapeHtml(book.title)}</div>
+                </div>
+                <div class="cover-placeholder-author">@${escapeHtml(book.author)}</div>
+            </div>
+        </div>`;
+    }
+
     function updateDashUnreadBadges(count) {
         const label = count > 0 ? `Unread author notifications: ${count}` : "";
         document.querySelectorAll("[data-dash-unread-badge]").forEach((el) => {
@@ -1397,11 +1531,21 @@
             }
 
             const div = document.createElement("div");
+            const coverUrl = bookCoverUrl(data);
+            const title = data.title || "Untitled Book";
+            const author = studioAuthorHandle();
+            const phHue = placeholderHue(data.id + "\0" + title);
+            const placeholder = bookCoverPlaceholderMarkup({ title, author }, phHue);
+
             div.className = "book";
             div.onclick = () => {
                 window.location.href = "editor.html?book=" + encodeURIComponent(data.id);
             };
-            div.innerHTML = `<div class="book-title">${escapeHtml(data.title || "Untitled Book")}</div>`;
+            if (coverUrl) {
+                div.innerHTML = `${placeholder}<img class="book-cover-img" src="${escapeAttribute(coverUrl)}" alt="${escapeAttribute(title)} cover" loading="lazy" onerror="this.style.display='none'">`;
+            } else {
+                div.innerHTML = placeholder;
+            }
             bookList.appendChild(div);
         });
 
@@ -1421,6 +1565,30 @@
         }
     }
 
+    async function enrichBooksWithLibraryCovers(rows) {
+        const missing = (rows || []).filter(row => row?.id && !bookCoverUrl(row));
+        if (!missing.length) return rows;
+
+        const ids = missing.map(row => row.id);
+        const { data, error } = await supabase.from("library").select("id, data").in("id", ids);
+        if (error || !data?.length) return rows;
+
+        const coverById = new Map();
+        for (const row of data) {
+            const libData = row?.data && typeof row.data === "object" ? row.data : {};
+            const url = normalizeCoverUrl(libData.coverUrl || libData.cover_url);
+            if (url) coverById.set(row.id, url);
+        }
+        if (!coverById.size) return rows;
+
+        return rows.map(row => {
+            const fromLibrary = coverById.get(row.id);
+            if (!fromLibrary || bookCoverUrl(row)) return row;
+            const meta = { ...(row.publish_meta || row.publishMeta || {}), coverUrl: fromLibrary };
+            return { ...row, publish_meta: meta };
+        });
+    }
+
     async function loadBooks() {
         if (!currentUser) return;
         const { data, error } = await supabase
@@ -1430,7 +1598,7 @@
             .order("updated", { ascending: false });
 
         if (error) throw error;
-        booksRows = data || [];
+        booksRows = await enrichBooksWithLibraryCovers(data || []);
         applyBooksSnapshot(booksRows);
     }
 
