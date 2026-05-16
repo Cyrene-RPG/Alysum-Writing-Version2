@@ -349,104 +349,119 @@
             flex-shrink: 0;
         }
 
-        .appearance-columns {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 20px;
+        .appearance-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
             width: 100%;
-            max-width: min(1280px, 100%);
-            margin: 8px auto 0;
+            max-width: min(1400px, 100%);
+            margin: 10px auto 0;
             flex: 1;
             min-height: 0;
             align-self: stretch;
         }
 
-        @media (min-width: 900px) {
-            .appearance-columns {
-                grid-template-columns: 1.15fr 0.85fr;
-                gap: 24px;
+        .appearance-text-pair {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            min-width: 0;
+        }
+
+        @media (min-width: 1100px) {
+            .appearance-layout {
+                display: grid;
+                grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr) minmax(0, 1fr);
+                gap: 14px;
                 align-items: start;
+            }
+
+            .appearance-text-pair {
+                display: contents;
             }
         }
 
-        .appearance-column {
+        @media (max-width: 699px) {
+            .appearance-text-pair {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .appearance-block {
             display: flex;
             flex-direction: column;
             min-width: 0;
-            min-height: 0;
-            padding: 14px 12px 16px;
-            border-radius: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            background: rgba(0, 0, 0, 0.18);
+            padding: 14px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.22);
         }
 
-        @media (min-width: 900px) {
-            .appearance-column {
-                max-height: calc(100vh - 200px);
-                overflow-y: auto;
-                overscroll-behavior: contain;
-            }
+        .appearance-block .hint {
+            margin: 0 0 10px;
+            font-size: 12px;
+            line-height: 1.4;
         }
 
         .appearance-subhead {
-            margin: 0 0 8px;
-            font-size: 15px;
+            margin: 0 0 4px;
+            font-size: 13px;
             font-weight: 900;
             color: var(--gold);
-            letter-spacing: 0.04em;
+            letter-spacing: 0.05em;
             text-transform: uppercase;
-            flex-shrink: 0;
         }
 
-        .appearance-subhint {
-            margin: 0 0 10px;
-            flex-shrink: 0;
-        }
-
-        .appearance-subhead--minor {
-            margin-top: 18px;
-            font-size: 13px;
-        }
-
-        .appearance-column .theme-grid {
+        #appearancePanel .appearance-grid {
+            display: grid;
+            gap: 8px;
             width: 100%;
             margin: 0;
-            padding: 0;
-            flex: 1;
         }
 
-        #appearancePanel #themeChipRow {
-            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        #appearancePanel .appearance-grid--accent {
+            grid-template-columns: repeat(auto-fill, minmax(86px, 1fr));
         }
 
-        #appearancePanel #textStyleChipRow,
-        #appearancePanel #textColorChipRow {
-            grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+        #appearancePanel .appearance-grid--compact {
+            grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
         }
 
-        @media (min-width: 900px) {
-            #appearancePanel #themeChipRow {
-                grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
+        @media (min-width: 1100px) {
+            #appearancePanel .appearance-grid--accent {
+                grid-template-columns: repeat(5, minmax(0, 1fr));
             }
 
-            #appearancePanel #textStyleChipRow,
-            #appearancePanel #textColorChipRow {
+            #appearancePanel .appearance-grid--compact {
                 grid-template-columns: repeat(2, minmax(0, 1fr));
             }
         }
 
-        @media (min-width: 1200px) {
-            #appearancePanel #themeChipRow {
-                grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
-            }
+        #appearancePanel .theme-chip {
+            min-height: 42px;
+            padding: 7px 5px;
+            font-size: 10px;
+            line-height: 1.25;
+            border-radius: 10px;
+        }
 
-            #appearancePanel #textStyleChipRow {
-                grid-template-columns: repeat(3, minmax(0, 1fr));
-            }
+        #appearancePanel .theme-chip.text-style-chip {
+            min-height: 56px;
+            padding: 8px 4px;
+        }
 
-            #appearancePanel #textColorChipRow {
-                grid-template-columns: repeat(3, minmax(0, 1fr));
-            }
+        #appearancePanel .text-style-chip-preview {
+            font-size: 17px;
+            margin-bottom: 3px;
+        }
+
+        #appearancePanel .text-style-chip-label {
+            font-size: 9px;
+        }
+
+        #appearancePanel .display-color-custom {
+            margin-top: 10px;
+            padding-top: 10px;
         }
 
         .theme-chip {
@@ -694,7 +709,10 @@
             width: auto;
         }
 
-        #appearancePanel.is-active,
+        #appearancePanel.is-active {
+            align-items: stretch;
+        }
+
         #profilePanel.is-active,
         #securityPanel.is-active,
         #accountModePanel.is-active {
@@ -884,19 +902,23 @@
             <div class="settings-content">
         <div class="panel hidden settings-tab-panel" id="appearancePanel" role="tabpanel" aria-labelledby="tab-appearance">
             <h2>Appearance</h2>
-            <p class="hint">Customize accent colors and how display titles look across the site.</p>
-            <div class="appearance-columns">
-                <section class="appearance-column" aria-labelledby="appearance-colors-heading">
-                    <h3 class="appearance-subhead" id="appearance-colors-heading">Accent colors</h3>
-                    <div class="theme-grid" id="themeChipRow" aria-label="Accent themes"></div>
+            <p class="hint">Accent colors for the UI, plus a title font and color for headings.</p>
+            <div class="appearance-layout">
+                <section class="appearance-block appearance-block--accent" aria-labelledby="appearance-colors-heading">
+                    <h3 class="appearance-subhead" id="appearance-colors-heading">Site accent</h3>
+                    <p class="hint">Buttons, chrome, and highlights.</p>
+                    <div class="theme-grid appearance-grid appearance-grid--accent" id="themeChipRow" aria-label="Accent themes"></div>
                 </section>
-                <section class="appearance-column" aria-labelledby="appearance-text-heading">
-                    <h3 class="appearance-subhead" id="appearance-text-heading">Title style</h3>
-                    <p class="hint appearance-subhint">Welcome lines, headers, and section titles — not the writing editor.</p>
-                    <div class="theme-grid" id="textStyleChipRow" aria-label="Title text styles"></div>
-                    <h3 class="appearance-subhead appearance-subhead--minor">Title colors</h3>
-                    <p class="hint appearance-subhint">Main fill and edge glow — separate from the style above.</p>
-                    <div class="theme-grid" id="textColorChipRow" aria-label="Title colors"></div>
+                <div class="appearance-text-pair">
+                <section class="appearance-block appearance-block--style" aria-labelledby="appearance-text-heading">
+                    <h3 class="appearance-subhead" id="appearance-text-heading">Title font</h3>
+                    <p class="hint">Real typefaces for welcome lines and headings.</p>
+                    <div class="theme-grid appearance-grid appearance-grid--compact" id="textStyleChipRow" aria-label="Title fonts"></div>
+                </section>
+                <section class="appearance-block appearance-block--colors" aria-labelledby="appearance-colors-text-heading">
+                    <h3 class="appearance-subhead" id="appearance-colors-text-heading">Title color</h3>
+                    <p class="hint">Heading color — separate from font.</p>
+                    <div class="theme-grid appearance-grid appearance-grid--compact" id="textColorChipRow" aria-label="Title colors"></div>
                     <div class="display-color-custom" id="displayColorCustom" hidden>
                         <div class="display-color-field">
                             <label for="displayColorMain">Main color</label>
@@ -908,6 +930,7 @@
                         </div>
                     </div>
                 </section>
+                </div>
             </div>
         </div>
 
@@ -1067,7 +1090,7 @@
             applyDisplayTextStyle,
             getStoredDisplayTextStyleId,
             initDisplayTextStyleOnPage
-        } from "./js/display-text-style.js?v=2";
+        } from "./js/display-text-style.js?v=3";
         import {
             DISPLAY_TEXT_COLORS,
             applyDisplayTextColor,

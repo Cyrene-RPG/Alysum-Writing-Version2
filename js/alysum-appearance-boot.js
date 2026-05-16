@@ -4,23 +4,44 @@
 (function () {
     "use strict";
 
-    var EFFECT = {
-        chrome: "gradient",
-        gold: "gradient",
-        neon: "glow",
-        ember: "gradient",
-        elegant: "solid",
-        minimal: "solid",
-        royal: "gradient",
-        frost: "gradient",
-        shadow: "stack",
-        vintage: "solid",
-        cyber: "glow",
-        rose: "gradient",
-        outline: "outline",
-        arcade: "arcade",
-        bloodmoon: "gradient"
+    var LEGACY_FONT = {
+        chrome: "rajdhani",
+        gold: "cinzel",
+        neon: "orbitron",
+        ember: "oswald",
+        elegant: "playfair",
+        minimal: "oswald",
+        royal: "cinzel",
+        frost: "rajdhani",
+        shadow: "anton",
+        vintage: "lora",
+        cyber: "orbitron",
+        rose: "cormorant",
+        outline: "rajdhani",
+        arcade: "audiowide",
+        bloodmoon: "anton"
     };
+
+    var FONT_IDS = {
+        playfair: 1,
+        cinzel: 1,
+        bebas: 1,
+        oswald: 1,
+        orbitron: 1,
+        lora: 1,
+        merriweather: 1,
+        cormorant: 1,
+        anton: 1,
+        rajdhani: 1,
+        audiowide: 1
+    };
+
+    function normalizeFontId(id) {
+        if (!id || id === "classic") return "classic";
+        if (FONT_IDS[id]) return id;
+        if (LEGACY_FONT[id]) return LEGACY_FONT[id];
+        return "classic";
+    }
 
     var PRESETS = {
         gold: { main: "#f59e0b", accent: "#fde68a" },
@@ -106,11 +127,11 @@
         var g = localStorage.getItem("alysum-gradient-theme");
         if (g && g !== "classic") root.setAttribute("data-gradient-theme", g);
 
-        var t = localStorage.getItem("alysum-display-text-style");
-        if (t && t !== "classic") {
+        var t = normalizeFontId(localStorage.getItem("alysum-display-text-style"));
+        if (t !== "classic") {
             root.setAttribute("data-display-text-style", t);
-            if (EFFECT[t]) root.setAttribute("data-display-text-effect", EFFECT[t]);
         }
+        root.removeAttribute("data-display-text-effect");
 
         var colorId = localStorage.getItem("alysum-display-text-color") || "theme";
         var pair = resolveColors(root, colorId);

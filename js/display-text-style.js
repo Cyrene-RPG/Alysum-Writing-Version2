@@ -1,80 +1,151 @@
 /**
- * Site-wide display title styles / effects (localStorage). Colors are separate (display-text-color.js).
+ * Site-wide display title fonts (localStorage). Colors are separate (display-text-color.js).
  */
 export const DISPLAY_TEXT_STYLE_KEY = "alysum-display-text-style";
 
-/** effect drives CSS; font/spacing are per-style */
+/** @type {Record<string, { label: string, hint: string, fontFamily: string, weight?: number, caps?: boolean }>} */
 export const DISPLAY_TEXT_STYLE_META = {
-    classic: { effect: null, font: "system", caps: false },
-    chrome: { effect: "gradient", font: "exo", caps: true, weight: 800 },
-    gold: { effect: "gradient", font: "exo", caps: true, weight: 800 },
-    neon: { effect: "glow", font: "exo", caps: true, weight: 700 },
-    ember: { effect: "gradient", font: "exo", caps: true, weight: 800 },
-    elegant: { effect: "solid", font: "playfair", caps: false, weight: 800 },
-    minimal: { effect: "solid", font: "system", caps: true, weight: 800 },
-    royal: { effect: "gradient", font: "exo", caps: true, weight: 800 },
-    frost: { effect: "gradient", font: "exo", caps: true, weight: 700 },
-    shadow: { effect: "stack", font: "exo", caps: true, weight: 800 },
-    vintage: { effect: "solid", font: "baskerville", caps: false, weight: 700 },
-    cyber: { effect: "glow", font: "orbitron", caps: true, weight: 700 },
-    rose: { effect: "gradient", font: "exo", caps: true, weight: 700 },
-    outline: { effect: "outline", font: "exo", caps: true, weight: 800 },
-    arcade: { effect: "arcade", font: "audiowide", caps: true, weight: 400 },
-    bloodmoon: { effect: "gradient", font: "exo", caps: true, weight: 800 }
+    classic: {
+        label: "Classic",
+        hint: "Default system headings",
+        fontFamily: ""
+    },
+    playfair: {
+        label: "Playfair",
+        hint: "Elegant literary serif",
+        fontFamily: '"Playfair Display", Georgia, "Times New Roman", serif',
+        weight: 700,
+        caps: false
+    },
+    cinzel: {
+        label: "Cinzel",
+        hint: "Epic fantasy inscription",
+        fontFamily: "Cinzel, Georgia, serif",
+        weight: 700,
+        caps: true
+    },
+    bebas: {
+        label: "Bebas Neue",
+        hint: "Tall poster capitals",
+        fontFamily: '"Bebas Neue", "Arial Narrow", sans-serif',
+        weight: 400,
+        caps: true
+    },
+    oswald: {
+        label: "Oswald",
+        hint: "Bold condensed sans",
+        fontFamily: "Oswald, sans-serif",
+        weight: 700,
+        caps: true
+    },
+    orbitron: {
+        label: "Orbitron",
+        hint: "Sci-fi geometric",
+        fontFamily: "Orbitron, sans-serif",
+        weight: 700,
+        caps: true
+    },
+    lora: {
+        label: "Lora",
+        hint: "Warm storybook serif",
+        fontFamily: "Lora, Georgia, serif",
+        weight: 700,
+        caps: false
+    },
+    merriweather: {
+        label: "Merriweather",
+        hint: "Sturdy readable serif",
+        fontFamily: "Merriweather, Georgia, serif",
+        weight: 900,
+        caps: false
+    },
+    cormorant: {
+        label: "Cormorant",
+        hint: "Refined display serif",
+        fontFamily: '"Cormorant Garamond", Georgia, serif',
+        weight: 700,
+        caps: false
+    },
+    anton: {
+        label: "Anton",
+        hint: "Heavy impact sans",
+        fontFamily: "Anton, sans-serif",
+        weight: 400,
+        caps: true
+    },
+    rajdhani: {
+        label: "Rajdhani",
+        hint: "Angular tech sans",
+        fontFamily: "Rajdhani, sans-serif",
+        weight: 700,
+        caps: true
+    },
+    audiowide: {
+        label: "Audiowide",
+        hint: "Retro sci-fi display",
+        fontFamily: "Audiowide, sans-serif",
+        weight: 400,
+        caps: true
+    }
 };
 
-export const DISPLAY_TEXT_STYLES = [
-    { id: "classic", label: "Classic", hint: "Original flat gold & white headings" },
-    { id: "chrome", label: "Chrome", hint: "Metallic gradient with beveled depth" },
-    { id: "gold", label: "Gold", hint: "Warm embossed gradient lettering" },
-    { id: "neon", label: "Neon", hint: "Bright outer glow" },
-    { id: "ember", label: "Ember", hint: "Bold gradient with heat depth" },
-    { id: "elegant", label: "Elegant", hint: "Soft serif literary titles" },
-    { id: "minimal", label: "Minimal", hint: "Clean flat type, light shadow" },
-    { id: "royal", label: "Royal", hint: "Regal gradient fill" },
-    { id: "frost", label: "Frost", hint: "Cool crystalline gradient" },
-    { id: "shadow", label: "Shadow", hint: "Heavy stacked depth" },
-    { id: "vintage", label: "Vintage", hint: "Warm bookplate serif" },
-    { id: "cyber", label: "Cyber", hint: "Sci-fi terminal glow" },
-    { id: "rose", label: "Rose", hint: "Smooth gradient fill" },
-    { id: "outline", label: "Outline", hint: "Hollow letterforms with edge light" },
-    { id: "arcade", label: "Arcade", hint: "Retro poster lettering" },
-    { id: "bloodmoon", label: "Blood moon", hint: "Dark gradient with glow" }
-];
+export const DISPLAY_TEXT_STYLES = Object.entries(DISPLAY_TEXT_STYLE_META).map(([id, meta]) => ({
+    id,
+    label: meta.label,
+    hint: meta.hint
+}));
 
 const STYLE_IDS = new Set(DISPLAY_TEXT_STYLES.map((s) => s.id));
+
+/** Map old effect-based style ids to fonts */
+const LEGACY_STYLE_MAP = {
+    chrome: "rajdhani",
+    gold: "cinzel",
+    neon: "orbitron",
+    ember: "oswald",
+    elegant: "playfair",
+    minimal: "oswald",
+    royal: "cinzel",
+    frost: "rajdhani",
+    shadow: "anton",
+    vintage: "lora",
+    cyber: "orbitron",
+    rose: "cormorant",
+    outline: "rajdhani",
+    arcade: "audiowide",
+    bloodmoon: "anton"
+};
 
 export function isDisplayTextStyleId(id) {
     return STYLE_IDS.has(id);
 }
 
+export function normalizeDisplayTextStyleId(id) {
+    if (!id || id === "classic") return "classic";
+    if (isDisplayTextStyleId(id)) return id;
+    if (LEGACY_STYLE_MAP[id] && isDisplayTextStyleId(LEGACY_STYLE_MAP[id])) {
+        return LEGACY_STYLE_MAP[id];
+    }
+    return "classic";
+}
+
 export function getStoredDisplayTextStyleId() {
     try {
         const v = localStorage.getItem(DISPLAY_TEXT_STYLE_KEY);
-        if (!v || v === "classic") return "classic";
-        return isDisplayTextStyleId(v) ? v : "classic";
+        return normalizeDisplayTextStyleId(v);
     } catch {
         return "classic";
     }
 }
 
-function applyStyleMeta(styleId) {
-    const root = document.documentElement;
-    const meta = DISPLAY_TEXT_STYLE_META[styleId] || DISPLAY_TEXT_STYLE_META.classic;
-    if (!meta?.effect) {
-        root.removeAttribute("data-display-text-effect");
-    } else {
-        root.setAttribute("data-display-text-effect", meta.effect);
-    }
-}
-
 export function applyDisplayTextStyle(id) {
     const root = document.documentElement;
-    const styleId = !id || id === "classic" || !isDisplayTextStyleId(id) ? "classic" : id;
+    const styleId = normalizeDisplayTextStyleId(id);
+
+    root.removeAttribute("data-display-text-effect");
 
     if (styleId === "classic") {
         root.removeAttribute("data-display-text-style");
-        root.removeAttribute("data-display-text-effect");
         try {
             localStorage.removeItem(DISPLAY_TEXT_STYLE_KEY);
         } catch {
@@ -82,7 +153,6 @@ export function applyDisplayTextStyle(id) {
         }
     } else {
         root.setAttribute("data-display-text-style", styleId);
-        applyStyleMeta(styleId);
         try {
             localStorage.setItem(DISPLAY_TEXT_STYLE_KEY, styleId);
         } catch {
@@ -101,7 +171,8 @@ export function applyDisplayTextStyle(id) {
 
 export function initDisplayTextStyleOnPage() {
     if (typeof window === "undefined") return;
-    applyDisplayTextStyle(getStoredDisplayTextStyleId());
+    const stored = getStoredDisplayTextStyleId();
+    applyDisplayTextStyle(stored);
     window.addEventListener("storage", (e) => {
         if (e.key !== DISPLAY_TEXT_STYLE_KEY) return;
         applyDisplayTextStyle(e.newValue || "classic");

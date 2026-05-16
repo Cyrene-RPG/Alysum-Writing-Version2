@@ -10,23 +10,44 @@
     var TEXT_COLOR_MAIN_KEY = "alysum-display-text-color-main";
     var TEXT_COLOR_ACCENT_KEY = "alysum-display-text-color-accent";
     var CLASSIC_PREVIEW = "linear-gradient(135deg, #4c1d95 0%, #7c3aed 50%, #ec4899 100%)";
-    var TEXT_EFFECT = {
-        chrome: "gradient",
-        gold: "gradient",
-        neon: "glow",
-        ember: "gradient",
-        elegant: "solid",
-        minimal: "solid",
-        royal: "gradient",
-        frost: "gradient",
-        shadow: "stack",
-        vintage: "solid",
-        cyber: "glow",
-        rose: "gradient",
-        outline: "outline",
-        arcade: "arcade",
-        bloodmoon: "gradient"
+    var LEGACY_FONT = {
+        chrome: "rajdhani",
+        gold: "cinzel",
+        neon: "orbitron",
+        ember: "oswald",
+        elegant: "playfair",
+        minimal: "oswald",
+        royal: "cinzel",
+        frost: "rajdhani",
+        shadow: "anton",
+        vintage: "lora",
+        cyber: "orbitron",
+        rose: "cormorant",
+        outline: "rajdhani",
+        arcade: "audiowide",
+        bloodmoon: "anton"
     };
+
+    var FONT_IDS = {
+        playfair: 1,
+        cinzel: 1,
+        bebas: 1,
+        oswald: 1,
+        orbitron: 1,
+        lora: 1,
+        merriweather: 1,
+        cormorant: 1,
+        anton: 1,
+        rajdhani: 1,
+        audiowide: 1
+    };
+
+    function normalizeFontId(id) {
+        if (!id || id === "classic") return "classic";
+        if (FONT_IDS[id]) return id;
+        if (LEGACY_FONT[id]) return LEGACY_FONT[id];
+        return "classic";
+    }
 
     function applyTheme(id) {
         var root = document.documentElement;
@@ -36,13 +57,12 @@
 
     function applyTextStyle(id) {
         var root = document.documentElement;
-        if (!id || id === "classic") {
+        var fontId = normalizeFontId(id);
+        root.removeAttribute("data-display-text-effect");
+        if (fontId === "classic") {
             root.removeAttribute("data-display-text-style");
-            root.removeAttribute("data-display-text-effect");
         } else {
-            root.setAttribute("data-display-text-style", id);
-            if (TEXT_EFFECT[id]) root.setAttribute("data-display-text-effect", TEXT_EFFECT[id]);
-            else root.removeAttribute("data-display-text-effect");
+            root.setAttribute("data-display-text-style", fontId);
         }
     }
 

@@ -4,7 +4,7 @@
  * "classic" = no attribute (removeItem) — these :root values match the original site.
  */
 
-@import url("alysum-display-typography.css?v=5");
+@import url("alysum-display-typography.css?v=6");
 
 :root {
     --purple: #6d28d9;
