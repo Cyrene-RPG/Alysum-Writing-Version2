@@ -281,7 +281,8 @@
 
 <script type="module">
 import { supabase } from "./firebase.js";
-
+import { authRedirectUrl } from "./js/auth-redirect.js?v=1";
+import { wireSupabaseSession } from "./js/supabase-session.js?v=1";
 import {
     ACCOUNT_AUTHOR,
     ACCOUNT_BOTH,
@@ -290,6 +291,9 @@ import {
     homeUrlForUserData,
     setUiMode,
 } from "./js/account-mode.js?v=1";
+
+const OAUTH_PENDING_KEY = "alysum-oauth-pending";
+let oauthSignupHandled = false;
 
 const SIGNUP_ACCOUNT_TYPE_KEY = "alysum-signup-account-type";
 
@@ -391,6 +395,28 @@ function signupAuthMessage(message) {
     return message;
 }
 
+async function finishOAuthSignup(session) {
+    if (oauthSignupHandled || !session) return;
+
+    let pending = false;
+    try {
+        pending = sessionStorage.getItem(OAUTH_PENDING_KEY) === "1";
+    } catch {
+        /* ignore */
+    }
+
+    if (!isOAuthReturn() && !pending) return;
+
+    oauthSignupHandled = true;
+    try {
+        sessionStorage.removeItem(OAUTH_PENDING_KEY);
+    } catch {
+        /* ignore */
+    }
+
+    await completeOAuthSignup();
+}
+
 async function startOAuth(provider) {
     const accountType = pickedAccountType();
 
@@ -404,6 +430,7 @@ async function startOAuth(provider) {
     signupBtn.disabled = true;
 
     try {
+        sessionStorage.setItem(OAUTH_PENDING_KEY, "1");
         sessionStorage.setItem(SIGNUP_ACCOUNT_TYPE_KEY, accountType);
     } catch {
         /* ignore */
@@ -412,7 +439,7 @@ async function startOAuth(provider) {
     const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-            redirectTo: new URL("signup.html", window.location.href).href,
+            redirectTo: authRedirectUrl("signup.html"),
             data: {
                 accountType
             }
@@ -420,6 +447,11 @@ async function startOAuth(provider) {
     });
 
     if (error) {
+        try {
+            sessionStorage.removeItem(OAUTH_PENDING_KEY);
+        } catch {
+            /* ignore */
+        }
         showError(error.message);
         setOAuthButtonsDisabled(false);
         signupBtn.disabled = false;
@@ -499,10 +531,17 @@ async function completeOAuthSignup() {
     redirectAfterSignup(accountType);
 }
 
-const { data: sessionData } = await supabase.auth.getSession();
+let pendingOAuth = isOAuthReturn();
+try {
+    if (!pendingOAuth && sessionStorage.getItem(OAUTH_PENDING_KEY) === "1") {
+        pendingOAuth = true;
+    }
+} catch {
+    /* ignore */
+}
 
-if (sessionData && sessionData.session && isOAuthReturn()) {
-    await completeOAuthSignup();
+if (pendingOAuth) {
+    wireSupabaseSession((session) => finishOAuthSignup(session));
 }
 
 let signupInFlight = false;

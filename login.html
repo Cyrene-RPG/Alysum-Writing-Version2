@@ -246,6 +246,11 @@
 <script type="module">
 import { supabase } from "./firebase.js";
 import { homeUrlForUserData } from "./js/account-mode.js?v=1";
+import { authRedirectUrl } from "./js/auth-redirect.js?v=1";
+import { wireSupabaseSession } from "./js/supabase-session.js?v=1";
+
+const OAUTH_PENDING_KEY = "alysum-oauth-pending";
+let oauthRedirectHandled = false;
 
 const errorEl = document.getElementById("error-msg");
 const successEl = document.getElementById("success-msg");
@@ -444,6 +449,28 @@ async function redirectAfterLogin() {
     }
 }
 
+async function finishOAuthLogin(session) {
+    if (oauthRedirectHandled || !session || isRecoveryLanding) return;
+
+    let pending = false;
+    try {
+        pending = sessionStorage.getItem(OAUTH_PENDING_KEY) === "1";
+    } catch {
+        /* ignore */
+    }
+
+    if (!isOAuthReturn() && !pending) return;
+
+    oauthRedirectHandled = true;
+    try {
+        sessionStorage.removeItem(OAUTH_PENDING_KEY);
+    } catch {
+        /* ignore */
+    }
+
+    await redirectAfterLogin();
+}
+
 async function startOAuth(provider) {
     clearSuccess();
     clearError();
@@ -452,6 +479,7 @@ async function startOAuth(provider) {
     loginBtn.disabled = true;
 
     try {
+        sessionStorage.setItem(OAUTH_PENDING_KEY, "1");
         const p = new URLSearchParams(window.location.search);
         const next = p.get("next");
         if (resolveInternalRedirect(next)) {
@@ -466,11 +494,16 @@ async function startOAuth(provider) {
     const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-            redirectTo: new URL("login.html", window.location.href).href
+            redirectTo: authRedirectUrl("login.html")
         }
     });
 
     if (error) {
+        try {
+            sessionStorage.removeItem(OAUTH_PENDING_KEY);
+        } catch {
+            /* ignore */
+        }
         showError(error.message);
         setOAuthButtonsDisabled(false);
         loginBtn.disabled = false;
@@ -483,7 +516,7 @@ discordBtn.addEventListener("click", () => startOAuth("discord"));
 const isRecoveryLanding = (window.location.hash || "").includes("type=recovery");
 if (isRecoveryLanding) {
     window.location.replace(
-        new URL("reset-password.html" + window.location.hash, window.location.href).href
+        authRedirectUrl("reset-password.html") + (window.location.hash || "")
     );
 }
 
@@ -499,10 +532,19 @@ if (resetParams.get("reset") === "success") {
     showSuccess("Password updated. Sign in with your new password.");
 }
 
-const { data: sessionData } = await supabase.auth.getSession();
+if (!isRecoveryLanding) {
+    let pendingOAuth = isOAuthReturn();
+    try {
+        if (!pendingOAuth && sessionStorage.getItem(OAUTH_PENDING_KEY) === "1") {
+            pendingOAuth = true;
+        }
+    } catch {
+        /* ignore */
+    }
 
-if (!isRecoveryLanding && sessionData && sessionData.session && isOAuthReturn()) {
-    await redirectAfterLogin();
+    if (pendingOAuth) {
+        wireSupabaseSession((session) => finishOAuthLogin(session));
+    }
 }
 
 let resetInFlight = false;
@@ -533,7 +575,7 @@ forgotLink.addEventListener("click", async (e) => {
 
     try {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: new URL("reset-password.html", window.location.href).href
+            redirectTo: authRedirectUrl("reset-password.html")
         });
 
         if (error) {
