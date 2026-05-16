@@ -270,6 +270,15 @@ function signupAuthMessage(message) {
         return "Network error. Check your connection and try again.";
     }
 
+    if (
+        lower.includes("rate limit") ||
+        lower.includes("too many requests") ||
+        lower.includes("email rate") ||
+        lower.includes("rate exceeded")
+    ) {
+        return "Too many sign-up emails were sent this hour (Supabase project limit). Wait about an hour or email alysum.support@gmail.com.";
+    }
+
     return message;
 }
 
@@ -316,7 +325,11 @@ window.signup = async function () {
         });
 
         if (error) {
-            showError(signupAuthMessage(error.message));
+            const signupMsg =
+                error.code === "over_email_send_rate_limit"
+                    ? signupAuthMessage("email rate limit exceeded")
+                    : signupAuthMessage(error.message);
+            showError(signupMsg);
             return;
         }
 

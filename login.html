@@ -279,6 +279,73 @@ function authMessage(message) {
     return message;
 }
 
+const RESET_EMAIL_COOLDOWN_MS = 60 * 60 * 1000;
+const RESET_EMAIL_COOLDOWN_PREFIX = "alysum-reset-email-until:";
+
+function isAuthEmailRateLimitError(errorOrMessage) {
+    const err =
+        errorOrMessage && typeof errorOrMessage === "object"
+            ? errorOrMessage
+            : { message: errorOrMessage };
+    if (err.code === "over_email_send_rate_limit") return true;
+    const lower = String(err.message || "").toLowerCase();
+    return (
+        lower.includes("rate limit") ||
+        lower.includes("too many requests") ||
+        lower.includes("email rate") ||
+        lower.includes("rate exceeded")
+    );
+}
+
+function resetCooldownKey(email) {
+    return RESET_EMAIL_COOLDOWN_PREFIX + email.trim().toLowerCase();
+}
+
+function resetEmailCooldownRemainingMs(email) {
+    try {
+        const until = Number(localStorage.getItem(resetCooldownKey(email)) || 0);
+        return Math.max(0, until - Date.now());
+    } catch {
+        return 0;
+    }
+}
+
+function markResetEmailSent(email) {
+    try {
+        localStorage.setItem(
+            resetCooldownKey(email),
+            String(Date.now() + RESET_EMAIL_COOLDOWN_MS)
+        );
+    } catch {
+        /* ignore */
+    }
+}
+
+function resetEmailCooldownMessage(remainingMs) {
+    const minutes = Math.max(1, Math.ceil(remainingMs / 60000));
+    return `A reset email was sent recently. Wait about ${minutes} minute${minutes === 1 ? "" : "s"}, then try once. For help: alysum.support@gmail.com`;
+}
+
+function resetEmailMessage(errorOrMessage) {
+    if (isAuthEmailRateLimitError(errorOrMessage)) {
+        return "Too many auth emails were sent from Alysum this hour (Supabase project limit). Wait about an hour, then try once — or email alysum.support@gmail.com for help.";
+    }
+
+    const message =
+        errorOrMessage && typeof errorOrMessage === "object"
+            ? errorOrMessage.message
+            : errorOrMessage;
+    if (!message) return "Could not send reset email.";
+
+    const lower = message.toLowerCase();
+
+    if (lower.includes("redirect") || lower.includes("invalid")) {
+        return "Reset is not configured yet. Email alysum.support@gmail.com and we will reset your password.";
+    }
+
+    return message;
+}
+
 /** Same-origin navigation only; supports root-relative and same-folder relative ?next= values. */
 function resolveInternalRedirect(next) {
     if (!next || typeof next !== "string") return null;
@@ -426,6 +493,12 @@ forgotLink.addEventListener("click", async (e) => {
     clearError();
     clearSuccess();
 
+    const cooldownMs = resetEmailCooldownRemainingMs(email);
+    if (cooldownMs > 0) {
+        showError(resetEmailCooldownMessage(cooldownMs));
+        return;
+    }
+
     resetInFlight = true;
     forgotLink.classList.add("is-busy");
 
@@ -435,13 +508,14 @@ forgotLink.addEventListener("click", async (e) => {
         });
 
         if (error) {
-            showError(error.message);
+            showError(resetEmailMessage(error));
             return;
         }
 
+        markResetEmailSent(email);
         showSuccess("If that address has an account, a reset email was sent. Check spam and Promotions too.");
     } catch (err) {
-        showError((err && err.message) || "Could not send reset email.");
+        showError(resetEmailMessage(err));
     } finally {
         resetInFlight = false;
         forgotLink.classList.remove("is-busy");
