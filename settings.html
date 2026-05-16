@@ -84,7 +84,7 @@
         .settings-shell {
             display: flex;
             flex-direction: column;
-            gap: 14px;
+            gap: 0;
         }
 
         .settings-nav {
@@ -92,8 +92,9 @@
             flex-wrap: wrap;
             gap: 8px;
             padding: 6px;
-            border-radius: 14px;
+            border-radius: 14px 14px 0 0;
             border: 1px solid var(--border);
+            border-bottom: none;
             background: rgba(17, 24, 39, 0.65);
         }
 
@@ -134,8 +135,8 @@
 
         .settings-content {
             width: 100%;
-            max-width: 820px;
-            margin: 0 auto;
+            max-width: none;
+            margin: 0;
         }
 
         .settings-tab-panel {
@@ -144,6 +145,11 @@
 
         .settings-tab-panel.is-active {
             display: block;
+        }
+
+        .settings-tab-panel.panel {
+            border-radius: 0 0 18px 18px;
+            border-top: none;
         }
 
         .panel {
@@ -250,33 +256,60 @@
 
         .theme-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
             gap: 8px;
             margin-top: 4px;
         }
 
         .theme-chip {
-            padding: 9px 10px;
+            position: relative;
+            min-height: 44px;
+            padding: 10px 8px;
             border-radius: 12px;
             text-align: center;
-            border: 1px solid var(--border);
+            border: 1px solid rgba(255, 255, 255, 0.12);
             background: rgba(255, 255, 255, 0.06);
-            color: white;
+            color: #fff;
             font-weight: 800;
-            font-size: 13px;
+            font-size: 11px;
+            line-height: 1.25;
             cursor: pointer;
-            transition: background 0.15s ease, border-color 0.15s ease;
+            transition: transform 0.12s ease, border-color 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.85), 0 0 10px rgba(0, 0, 0, 0.45);
+        }
+
+        .theme-chip.has-preview {
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
         }
 
         .theme-chip:hover {
+            filter: brightness(1.12);
+            border-color: rgba(255, 255, 255, 0.28);
+            transform: translateY(-1px);
+        }
+
+        .theme-chip:not(.has-preview):hover {
             background: color-mix(in srgb, var(--purple-bright) 28%, transparent);
             border-color: color-mix(in srgb, var(--pink) 35%, transparent);
+            filter: none;
         }
 
         .theme-chip.active {
-            border-color: color-mix(in srgb, var(--pink) 55%, transparent);
+            border-color: rgba(255, 255, 255, 0.55);
+            box-shadow:
+                0 0 0 2px color-mix(in srgb, var(--pink) 70%, transparent),
+                0 4px 16px rgba(0, 0, 0, 0.35);
+            transform: translateY(-1px);
+        }
+
+        .theme-chip.has-preview.active {
+            filter: brightness(1.08) saturate(1.1);
+        }
+
+        .theme-chip:not(.has-preview).active {
             background: linear-gradient(135deg, var(--theme-card-a), var(--theme-card-b));
-            box-shadow: 0 0 0 1px color-mix(in srgb, var(--purple) 22%, transparent);
         }
 
         .account-type-row {
@@ -417,7 +450,7 @@
         }
 
     </style>
-    <link rel="stylesheet" href="css/gradient-themes.css?v=3" />
+    <link rel="stylesheet" href="css/gradient-themes.css?v=4" />
     <script src="js/gradient-theme-sync.js" defer></script>
 </head>
 <body>
@@ -442,9 +475,7 @@
             <div class="settings-content">
         <div class="panel hidden settings-tab-panel" id="appearancePanel" role="tabpanel" aria-labelledby="tab-appearance">
             <h2>Appearance</h2>
-            <p class="hint">
-                Accent color for Studio, editor, library, Story Bible, login, and the rest of the app (the marketing home page stays as-is). Your choice is saved on this device and syncs across open tabs.
-            </p>
+            <p class="hint">Custom Color Choices for Your Profiles.</p>
             <div class="theme-grid" id="themeChipRow" aria-label="Accent themes"></div>
         </div>
 
@@ -562,7 +593,7 @@
         import { supabase } from "./firebase.js";
         import { wireSupabaseSession } from "./js/supabase-session.js?v=1";
         import { permanentHandleFromUserData } from "./js/profile-display.js?v=1";
-        import { GRADIENT_THEMES, applyGradientTheme, getStoredGradientThemeId } from "./js/gradient-theme.js?v=3";
+        import { GRADIENT_THEMES, applyGradientTheme, getStoredGradientThemeId } from "./js/gradient-theme.js?v=4";
         import { normalizeAccountType, ACCOUNT_AUTHOR, ACCOUNT_READER, ACCOUNT_BOTH, homeUrlForUserData } from "./js/account-mode.js?v=1";
         import { isStoryBibleUiEnabled, setStoryBibleUiEnabled } from "./js/story-bible-prefs.js?v=1";
 
@@ -649,12 +680,19 @@
             GRADIENT_THEMES.forEach(t => {
                 const b = document.createElement("button");
                 b.type = "button";
-                b.className = "theme-chip" + (t.id === cur ? " active" : "");
+                let cls = "theme-chip" + (t.id === cur ? " active" : "");
+                if (t.preview) {
+                    cls += " has-preview";
+                    b.style.background = t.preview;
+                }
+                b.className = cls;
                 b.textContent = t.label;
                 b.title = t.hint || "";
                 b.addEventListener("click", () => {
                     applyGradientTheme(t.id);
-                    themeChipRow.querySelectorAll(".theme-chip").forEach(x => x.classList.remove("active"));
+                    themeChipRow.querySelectorAll(".theme-chip").forEach((x) => {
+                        x.classList.remove("active");
+                    });
                     b.classList.add("active");
                 });
                 themeChipRow.appendChild(b);

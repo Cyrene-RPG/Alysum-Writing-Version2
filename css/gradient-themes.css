@@ -1060,6 +1060,436 @@ html[data-gradient-theme="mocha"] {
     --theme-prompt-entry-ring: rgba(161, 98, 7, 0.3);
 }
 
+/* ——— Prism (rainbow sweep) ——— */
+html[data-gradient-theme="prism"] {
+    --purple: #8b5cf6;
+    --purple-dark: #4c1d95;
+    --purple-bright: #22d3ee;
+    --pink: #f472b6;
+    --gold: #fde68a;
+    --theme-body-spot: rgba(139, 92, 246, 0.2);
+    --theme-body-spot-strong: rgba(34, 211, 238, 0.18);
+    --theme-header-mid: #ec4899;
+    --theme-header-end: #22d3ee;
+    --theme-card-a: rgba(236, 72, 153, 0.28);
+    --theme-card-b: rgba(34, 211, 238, 0.16);
+    --theme-hero-bg: linear-gradient(135deg, rgba(76, 29, 149, 0.35), rgba(236, 72, 153, 0.18), rgba(34, 211, 238, 0.12)), var(--panel, #111827);
+    --theme-accent-soft-bg: rgba(139, 92, 246, 0.16);
+    --theme-brand-kicker: #e9d5ff;
+    --alysum-purple: #8b5cf6;
+    --alysum-purple-dark: #4c1d95;
+    --accent: #7c3aed;
+    --accent-hover: #6d28d9;
+    --accent-soft: #22d3ee;
+    --accent-muted: rgba(139, 92, 246, 0.22);
+    --btn-primary-bg: #7c3aed;
+    --btn-primary-bg-hover: #6d28d9;
+    --link: #22d3ee;
+    --nb-top-gradient: linear-gradient(90deg, #ef4444, #f97316, #eab308, #22c55e, #06b6d4, #3b82f6, #a855f7, #ec4899);
+    --nb-float-bg: linear-gradient(145deg, #1e1b4b 0%, #0f172a 50%, #0b1220 100%);
+    --nb-tree-active-bg: linear-gradient(90deg, rgba(236, 72, 153, 0.4), rgba(34, 211, 238, 0.2));
+    --vp-r1: rgba(139, 92, 246, 0.22);
+    --vp-r2: rgba(34, 211, 238, 0.14);
+    --vp-hero-bg: linear-gradient(135deg, rgba(76, 29, 149, 0.65), rgba(124, 58, 237, 0.35), rgba(6, 182, 212, 0.25), rgba(15, 23, 42, 0.7));
+    --vp-primary-fg: #4c1d95;
+    --login-page-bg: linear-gradient(135deg, #4c1d95, #ec4899, #06b6d4, #22c55e);
+    --ne-header-1: #4c1d95;
+    --ne-header-2: #ec4899;
+    --ne-header-3: #06b6d4;
+    --ne-header-4: #eab308;
+    --ne-body-spot: rgba(139, 92, 246, 0.22);
+    --theme-prompt-topbar: linear-gradient(90deg, rgba(239, 68, 68, 0.35), rgba(234, 179, 8, 0.3), rgba(34, 211, 238, 0.28), rgba(168, 85, 247, 0.32));
+    --theme-prompt-entry-border: rgba(34, 211, 238, 0.38);
+    --theme-prompt-entry-ring: rgba(236, 72, 153, 0.3);
+}
+
+/* ——— Twilight ——— */
+html[data-gradient-theme="twilight"] {
+    --purple: #7c3aed;
+    --purple-dark: #1e1b4b;
+    --purple-bright: #ec4899;
+    --pink: #fda4af;
+    --gold: #fce7f3;
+    --theme-body-spot: rgba(124, 58, 237, 0.22);
+    --theme-body-spot-strong: rgba(236, 72, 153, 0.24);
+    --theme-header-mid: #a21caf;
+    --theme-header-end: #fda4af;
+    --theme-card-a: rgba(124, 58, 237, 0.32);
+    --theme-card-b: rgba(236, 72, 153, 0.2);
+    --theme-hero-bg: linear-gradient(135deg, rgba(30, 27, 75, 0.55), rgba(124, 58, 237, 0.22), rgba(236, 72, 153, 0.14)), var(--panel, #111827);
+    --theme-accent-soft-bg: rgba(236, 72, 153, 0.16);
+    --theme-brand-kicker: #fbcfe8;
+    --alysum-purple: #7c3aed;
+    --alysum-purple-dark: #1e1b4b;
+    --accent: #a21caf;
+    --accent-hover: #86198f;
+    --accent-soft: #ec4899;
+    --accent-muted: rgba(124, 58, 237, 0.22);
+    --btn-primary-bg: #7c3aed;
+    --btn-primary-bg-hover: #6d28d9;
+    --link: #f472b6;
+    --nb-top-gradient: linear-gradient(135deg, #1e1b4b, #7c3aed 40%, #ec4899 75%, #fda4af);
+    --nb-float-bg: linear-gradient(145deg, #1e1b4b 0%, #3b0764 45%, #0b1220 100%);
+    --nb-tree-active-bg: linear-gradient(90deg, rgba(124, 58, 237, 0.45), rgba(236, 72, 153, 0.2));
+    --vp-r1: rgba(236, 72, 153, 0.22);
+    --vp-r2: rgba(253, 164, 175, 0.14);
+    --vp-hero-bg: linear-gradient(135deg, rgba(30, 27, 75, 0.75), rgba(124, 58, 237, 0.45), rgba(219, 39, 119, 0.35), rgba(15, 23, 42, 0.7));
+    --vp-primary-fg: #1e1b4b;
+    --login-page-bg: linear-gradient(135deg, #1e1b4b, #7c3aed, #ec4899, #fda4af);
+    --ne-header-1: #1e1b4b;
+    --ne-header-2: #7c3aed;
+    --ne-header-3: #db2777;
+    --ne-header-4: #fda4af;
+    --ne-body-spot: rgba(236, 72, 153, 0.24);
+    --theme-prompt-topbar: linear-gradient(135deg, rgba(30, 27, 75, 0.6), rgba(124, 58, 237, 0.35), rgba(236, 72, 153, 0.25));
+    --theme-prompt-entry-border: rgba(253, 164, 175, 0.4);
+    --theme-prompt-entry-ring: rgba(124, 58, 237, 0.32);
+}
+
+/* ——— Lagoon ——— */
+html[data-gradient-theme="lagoon"] {
+    --purple: #0d9488;
+    --purple-dark: #042f2e;
+    --purple-bright: #5eead4;
+    --pink: #67e8f9;
+    --gold: #ccfbf1;
+    --theme-body-spot: rgba(13, 148, 136, 0.22);
+    --theme-body-spot-strong: rgba(94, 234, 212, 0.26);
+    --theme-header-mid: #0f766e;
+    --theme-header-end: #5eead4;
+    --theme-card-a: rgba(13, 148, 136, 0.32);
+    --theme-card-b: rgba(103, 232, 249, 0.18);
+    --theme-hero-bg: linear-gradient(135deg, rgba(4, 47, 46, 0.55), rgba(13, 148, 136, 0.22)), var(--panel, #111827);
+    --theme-accent-soft-bg: rgba(94, 234, 212, 0.14);
+    --theme-brand-kicker: #99f6e4;
+    --alysum-purple: #0d9488;
+    --alysum-purple-dark: #042f2e;
+    --accent: #0f766e;
+    --accent-hover: #115e59;
+    --accent-soft: #5eead4;
+    --accent-muted: rgba(13, 148, 136, 0.22);
+    --btn-primary-bg: #0d9488;
+    --btn-primary-bg-hover: #0f766e;
+    --link: #5eead4;
+    --nb-top-gradient: linear-gradient(135deg, #042f2e, #0d9488 50%, #5eead4);
+    --nb-float-bg: linear-gradient(145deg, #042f2e 0%, #0c1324 45%, #0b1220 100%);
+    --nb-tree-active-bg: linear-gradient(90deg, rgba(13, 148, 136, 0.45), rgba(94, 234, 212, 0.18));
+    --vp-r1: rgba(94, 234, 212, 0.22);
+    --vp-r2: rgba(103, 232, 249, 0.14);
+    --vp-hero-bg: linear-gradient(135deg, rgba(4, 47, 46, 0.75), rgba(15, 118, 110, 0.45), rgba(15, 23, 42, 0.65));
+    --vp-primary-fg: #042f2e;
+    --login-page-bg: linear-gradient(135deg, #042f2e, #0d9488, #5eead4);
+    --ne-header-1: #042f2e;
+    --ne-header-2: #0f766e;
+    --ne-header-3: #14b8a6;
+    --ne-header-4: #5eead4;
+    --ne-body-spot: rgba(94, 234, 212, 0.24);
+    --theme-prompt-topbar: linear-gradient(135deg, rgba(4, 47, 46, 0.55), rgba(13, 148, 136, 0.35), rgba(94, 234, 212, 0.2));
+    --theme-prompt-entry-border: rgba(94, 234, 212, 0.38);
+    --theme-prompt-entry-ring: rgba(13, 148, 136, 0.3);
+}
+
+/* ——— Galaxy ——— */
+html[data-gradient-theme="galaxy"] {
+    --purple: #6366f1;
+    --purple-dark: #0f172a;
+    --purple-bright: #a78bfa;
+    --pink: #c084fc;
+    --gold: #e0e7ff;
+    --theme-body-spot: rgba(99, 102, 241, 0.24);
+    --theme-body-spot-strong: rgba(167, 139, 250, 0.22);
+    --theme-header-mid: #4f46e5;
+    --theme-header-end: #c084fc;
+    --theme-card-a: rgba(99, 102, 241, 0.35);
+    --theme-card-b: rgba(192, 132, 252, 0.18);
+    --theme-hero-bg: radial-gradient(ellipse at 70% 20%, rgba(129, 140, 248, 0.25), transparent 55%), linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(76, 29, 149, 0.35)), var(--panel, #111827);
+    --theme-accent-soft-bg: rgba(99, 102, 241, 0.18);
+    --theme-brand-kicker: #c7d2fe;
+    --alysum-purple: #6366f1;
+    --alysum-purple-dark: #0f172a;
+    --accent: #4f46e5;
+    --accent-hover: #4338ca;
+    --accent-soft: #a78bfa;
+    --accent-muted: rgba(99, 102, 241, 0.22);
+    --btn-primary-bg: #4f46e5;
+    --btn-primary-bg-hover: #4338ca;
+    --link: #a78bfa;
+    --nb-top-gradient: linear-gradient(135deg, #0f172a, #4c1d95 40%, #6366f1 70%, #c084fc);
+    --nb-float-bg: radial-gradient(ellipse at 80% 0%, rgba(129, 140, 248, 0.2), transparent 50%), linear-gradient(145deg, #0f172a 0%, #1e1b4b 50%, #020617 100%);
+    --nb-tree-active-bg: linear-gradient(90deg, rgba(99, 102, 241, 0.45), rgba(192, 132, 252, 0.18));
+    --vp-r1: rgba(129, 140, 248, 0.24);
+    --vp-r2: rgba(192, 132, 252, 0.14);
+    --vp-hero-bg: radial-gradient(ellipse at 60% 30%, rgba(129, 140, 248, 0.35), transparent 50%), linear-gradient(135deg, rgba(15, 23, 42, 0.85), rgba(76, 29, 149, 0.5), rgba(15, 23, 42, 0.75));
+    --vp-primary-fg: #0f172a;
+    --login-page-bg: linear-gradient(135deg, #020617, #4c1d95, #6366f1, #c084fc);
+    --ne-header-1: #0f172a;
+    --ne-header-2: #4c1d95;
+    --ne-header-3: #6366f1;
+    --ne-header-4: #c084fc;
+    --ne-body-spot: rgba(129, 140, 248, 0.26);
+    --theme-prompt-topbar: linear-gradient(135deg, rgba(15, 23, 42, 0.7), rgba(76, 29, 149, 0.4), rgba(129, 140, 248, 0.25));
+    --theme-prompt-entry-border: rgba(192, 132, 252, 0.38);
+    --theme-prompt-entry-ring: rgba(99, 102, 241, 0.32);
+}
+
+/* ——— Cotton candy ——— */
+html[data-gradient-theme="cotton"] {
+    --purple: #f472b6;
+    --purple-dark: #831843;
+    --purple-bright: #93c5fd;
+    --pink: #e879f9;
+    --gold: #fce7f3;
+    --theme-body-spot: rgba(244, 114, 182, 0.2);
+    --theme-body-spot-strong: rgba(147, 197, 253, 0.22);
+    --theme-header-mid: #ec4899;
+    --theme-header-end: #93c5fd;
+    --theme-card-a: rgba(244, 114, 182, 0.28);
+    --theme-card-b: rgba(147, 197, 253, 0.2);
+    --theme-hero-bg: linear-gradient(135deg, rgba(249, 168, 212, 0.2), rgba(147, 197, 253, 0.16)), var(--panel, #111827);
+    --theme-accent-soft-bg: rgba(244, 114, 182, 0.14);
+    --theme-brand-kicker: #fbcfe8;
+    --alysum-purple: #f472b6;
+    --alysum-purple-dark: #831843;
+    --accent: #ec4899;
+    --accent-hover: #db2777;
+    --accent-soft: #93c5fd;
+    --accent-muted: rgba(244, 114, 182, 0.22);
+    --btn-primary-bg: #ec4899;
+    --btn-primary-bg-hover: #db2777;
+    --link: #93c5fd;
+    --nb-top-gradient: linear-gradient(135deg, #f9a8d4, #e879f9 45%, #93c5fd 100%);
+    --nb-float-bg: linear-gradient(145deg, #500724 0%, #1e3a5f 55%, #0b1220 100%);
+    --nb-tree-active-bg: linear-gradient(90deg, rgba(244, 114, 182, 0.42), rgba(147, 197, 253, 0.22));
+    --vp-r1: rgba(244, 114, 182, 0.22);
+    --vp-r2: rgba(147, 197, 253, 0.16);
+    --vp-hero-bg: linear-gradient(135deg, rgba(131, 24, 67, 0.55), rgba(236, 72, 153, 0.35), rgba(59, 130, 246, 0.3), rgba(15, 23, 42, 0.65));
+    --vp-primary-fg: #831843;
+    --login-page-bg: linear-gradient(135deg, #f9a8d4, #e879f9, #93c5fd);
+    --ne-header-1: #831843;
+    --ne-header-2: #ec4899;
+    --ne-header-3: #e879f9;
+    --ne-header-4: #93c5fd;
+    --ne-body-spot: rgba(244, 114, 182, 0.22);
+    --theme-prompt-topbar: linear-gradient(135deg, rgba(249, 168, 212, 0.45), rgba(232, 121, 249, 0.3), rgba(147, 197, 253, 0.28));
+    --theme-prompt-entry-border: rgba(147, 197, 253, 0.4);
+    --theme-prompt-entry-ring: rgba(244, 114, 182, 0.3);
+}
+
+/* ——— Honey ——— */
+html[data-gradient-theme="honey"] {
+    --purple: #d97706;
+    --purple-dark: #713f12;
+    --purple-bright: #fbbf24;
+    --pink: #fde68a;
+    --gold: #fffbeb;
+    --theme-body-spot: rgba(217, 119, 6, 0.22);
+    --theme-body-spot-strong: rgba(251, 191, 36, 0.26);
+    --theme-header-mid: #b45309;
+    --theme-header-end: #fde68a;
+    --theme-card-a: rgba(217, 119, 6, 0.3);
+    --theme-card-b: rgba(253, 230, 138, 0.2);
+    --theme-hero-bg: linear-gradient(135deg, rgba(113, 63, 18, 0.45), rgba(251, 191, 36, 0.18)), var(--panel, #111827);
+    --theme-accent-soft-bg: rgba(251, 191, 36, 0.14);
+    --theme-brand-kicker: #fef3c7;
+    --alysum-purple: #d97706;
+    --alysum-purple-dark: #713f12;
+    --accent: #b45309;
+    --accent-hover: #92400e;
+    --accent-soft: #fbbf24;
+    --accent-muted: rgba(217, 119, 6, 0.22);
+    --btn-primary-bg: #d97706;
+    --btn-primary-bg-hover: #b45309;
+    --link: #fbbf24;
+    --nb-top-gradient: linear-gradient(135deg, #713f12, #d97706 50%, #fde68a);
+    --nb-float-bg: linear-gradient(145deg, #451a03 0%, #292524 50%, #0b1220 100%);
+    --nb-tree-active-bg: linear-gradient(90deg, rgba(217, 119, 6, 0.45), rgba(253, 230, 138, 0.2));
+    --vp-r1: rgba(251, 191, 36, 0.22);
+    --vp-r2: rgba(253, 230, 138, 0.14);
+    --vp-hero-bg: linear-gradient(135deg, rgba(113, 63, 18, 0.72), rgba(217, 119, 6, 0.42), rgba(15, 23, 42, 0.65));
+    --vp-primary-fg: #713f12;
+    --login-page-bg: linear-gradient(135deg, #713f12, #fbbf24, #fffbeb);
+    --ne-header-1: #713f12;
+    --ne-header-2: #b45309;
+    --ne-header-3: #f59e0b;
+    --ne-header-4: #fde68a;
+    --ne-body-spot: rgba(251, 191, 36, 0.24);
+    --theme-prompt-topbar: linear-gradient(135deg, rgba(113, 63, 18, 0.55), rgba(217, 119, 6, 0.35), rgba(253, 230, 138, 0.22));
+    --theme-prompt-entry-border: rgba(253, 230, 138, 0.42);
+    --theme-prompt-entry-ring: rgba(217, 119, 6, 0.3);
+}
+
+/* ——— Tide pool ——— */
+html[data-gradient-theme="tide"] {
+    --purple: #0891b2;
+    --purple-dark: #164e63;
+    --purple-bright: #67e8f9;
+    --pink: #5eead4;
+    --gold: #cffafe;
+    --theme-body-spot: rgba(8, 145, 178, 0.22);
+    --theme-body-spot-strong: rgba(103, 232, 249, 0.24);
+    --theme-header-mid: #0e7490;
+    --theme-header-end: #67e8f9;
+    --theme-card-a: rgba(8, 145, 178, 0.32);
+    --theme-card-b: rgba(94, 234, 212, 0.18);
+    --theme-hero-bg: linear-gradient(160deg, rgba(22, 78, 99, 0.5), rgba(20, 184, 166, 0.2)), var(--panel, #111827);
+    --theme-accent-soft-bg: rgba(103, 232, 249, 0.14);
+    --theme-brand-kicker: #a5f3fc;
+    --alysum-purple: #0891b2;
+    --alysum-purple-dark: #164e63;
+    --accent: #0e7490;
+    --accent-hover: #155e75;
+    --accent-soft: #67e8f9;
+    --accent-muted: rgba(8, 145, 178, 0.22);
+    --btn-primary-bg: #0891b2;
+    --btn-primary-bg-hover: #0e7490;
+    --link: #67e8f9;
+    --nb-top-gradient: linear-gradient(160deg, #164e63, #0891b2 45%, #67e8f9);
+    --nb-float-bg: linear-gradient(145deg, #164e63 0%, #134e4a 45%, #0b1220 100%);
+    --nb-tree-active-bg: linear-gradient(90deg, rgba(8, 145, 178, 0.45), rgba(94, 234, 212, 0.18));
+    --vp-r1: rgba(103, 232, 249, 0.22);
+    --vp-r2: rgba(94, 234, 212, 0.14);
+    --vp-hero-bg: linear-gradient(160deg, rgba(22, 78, 99, 0.75), rgba(8, 145, 178, 0.42), rgba(15, 23, 42, 0.65));
+    --vp-primary-fg: #164e63;
+    --login-page-bg: linear-gradient(160deg, #164e63, #0891b2, #67e8f9);
+    --ne-header-1: #164e63;
+    --ne-header-2: #0e7490;
+    --ne-header-3: #14b8a6;
+    --ne-header-4: #67e8f9;
+    --ne-body-spot: rgba(103, 232, 249, 0.24);
+    --theme-prompt-topbar: linear-gradient(160deg, rgba(22, 78, 99, 0.55), rgba(8, 145, 178, 0.35), rgba(103, 232, 249, 0.22));
+    --theme-prompt-entry-border: rgba(103, 232, 249, 0.38);
+    --theme-prompt-entry-ring: rgba(8, 145, 178, 0.3);
+}
+
+/* ——— Volcano ——— */
+html[data-gradient-theme="volcano"] {
+    --purple: #ea580c;
+    --purple-dark: #1c1917;
+    --purple-bright: #fbbf24;
+    --pink: #ef4444;
+    --gold: #fef3c7;
+    --theme-body-spot: rgba(234, 88, 12, 0.22);
+    --theme-body-spot-strong: rgba(239, 68, 68, 0.26);
+    --theme-header-mid: #dc2626;
+    --theme-header-end: #fbbf24;
+    --theme-card-a: rgba(239, 68, 68, 0.32);
+    --theme-card-b: rgba(251, 191, 36, 0.2);
+    --theme-hero-bg: radial-gradient(ellipse at 50% 100%, rgba(251, 191, 36, 0.2), transparent 45%), linear-gradient(135deg, rgba(28, 25, 23, 0.8), rgba(185, 28, 28, 0.25)), var(--panel, #111827);
+    --theme-accent-soft-bg: rgba(234, 88, 12, 0.16);
+    --theme-brand-kicker: #fde68a;
+    --alysum-purple: #ea580c;
+    --alysum-purple-dark: #1c1917;
+    --accent: #dc2626;
+    --accent-hover: #b91c1c;
+    --accent-soft: #fbbf24;
+    --accent-muted: rgba(239, 68, 68, 0.22);
+    --btn-primary-bg: #ea580c;
+    --btn-primary-bg-hover: #c2410c;
+    --link: #fbbf24;
+    --nb-top-gradient: linear-gradient(180deg, #1c1917 0%, #b91c1c 35%, #ea580c 60%, #fbbf24 100%);
+    --nb-float-bg: linear-gradient(145deg, #1c1917 0%, #450a0a 50%, #0b1220 100%);
+    --nb-tree-active-bg: linear-gradient(90deg, rgba(239, 68, 68, 0.48), rgba(251, 191, 36, 0.22));
+    --vp-r1: rgba(239, 68, 68, 0.24);
+    --vp-r2: rgba(251, 191, 36, 0.16);
+    --vp-hero-bg: radial-gradient(ellipse at 50% 80%, rgba(251, 191, 36, 0.35), transparent 40%), linear-gradient(135deg, rgba(28, 25, 23, 0.85), rgba(185, 28, 28, 0.5), rgba(15, 23, 42, 0.7));
+    --vp-primary-fg: #1c1917;
+    --login-page-bg: linear-gradient(180deg, #1c1917, #b91c1c, #ea580c, #fbbf24);
+    --ne-header-1: #1c1917;
+    --ne-header-2: #991b1b;
+    --ne-header-3: #ea580c;
+    --ne-header-4: #fbbf24;
+    --ne-body-spot: rgba(239, 68, 68, 0.26);
+    --theme-prompt-topbar: linear-gradient(180deg, rgba(28, 25, 23, 0.65), rgba(185, 28, 28, 0.4), rgba(251, 191, 36, 0.22));
+    --theme-prompt-entry-border: rgba(251, 191, 36, 0.4);
+    --theme-prompt-entry-ring: rgba(239, 68, 68, 0.32);
+}
+
+/* ——— Opal ——— */
+html[data-gradient-theme="opal"] {
+    --purple: #a78bfa;
+    --purple-dark: #475569;
+    --purple-bright: #99f6e4;
+    --pink: #fbcfe8;
+    --gold: #fef08a;
+    --theme-body-spot: rgba(167, 139, 250, 0.2);
+    --theme-body-spot-strong: rgba(153, 246, 228, 0.18);
+    --theme-header-mid: #c084fc;
+    --theme-header-end: #99f6e4;
+    --theme-card-a: rgba(167, 139, 250, 0.28);
+    --theme-card-b: rgba(251, 207, 232, 0.18);
+    --theme-hero-bg: linear-gradient(135deg, rgba(165, 243, 252, 0.15), rgba(196, 181, 253, 0.2), rgba(254, 240, 138, 0.1)), var(--panel, #111827);
+    --theme-accent-soft-bg: rgba(167, 139, 250, 0.14);
+    --theme-brand-kicker: #e9d5ff;
+    --alysum-purple: #a78bfa;
+    --alysum-purple-dark: #475569;
+    --accent: #8b5cf6;
+    --accent-hover: #7c3aed;
+    --accent-soft: #99f6e4;
+    --accent-muted: rgba(167, 139, 250, 0.2);
+    --btn-primary-bg: #8b5cf6;
+    --btn-primary-bg-hover: #7c3aed;
+    --link: #99f6e4;
+    --nb-top-gradient: linear-gradient(135deg, #a5f3fc, #c4b5fd, #fbcfe8, #fef08a, #99f6e4);
+    --nb-float-bg: linear-gradient(145deg, #334155 0%, #1e1b4b 45%, #0b1220 100%);
+    --nb-tree-active-bg: linear-gradient(90deg, rgba(167, 139, 250, 0.4), rgba(153, 246, 228, 0.2));
+    --vp-r1: rgba(196, 181, 253, 0.22);
+    --vp-r2: rgba(153, 246, 228, 0.14);
+    --vp-hero-bg: linear-gradient(135deg, rgba(71, 85, 105, 0.55), rgba(139, 92, 246, 0.35), rgba(153, 246, 228, 0.25), rgba(15, 23, 42, 0.65));
+    --vp-primary-fg: #475569;
+    --login-page-bg: linear-gradient(135deg, #a5f3fc, #c4b5fd, #fbcfe8, #99f6e4);
+    --ne-header-1: #475569;
+    --ne-header-2: #8b5cf6;
+    --ne-header-3: #f0abfc;
+    --ne-header-4: #99f6e4;
+    --ne-body-spot: rgba(167, 139, 250, 0.22);
+    --theme-prompt-topbar: linear-gradient(135deg, rgba(165, 243, 252, 0.35), rgba(196, 181, 253, 0.3), rgba(251, 207, 232, 0.25), rgba(254, 240, 138, 0.2));
+    --theme-prompt-entry-border: rgba(153, 246, 228, 0.38);
+    --theme-prompt-entry-ring: rgba(167, 139, 250, 0.28);
+}
+
+/* ——— Noir (monochrome) ——— */
+html[data-gradient-theme="noir"] {
+    --purple: #52525b;
+    --purple-dark: #09090b;
+    --purple-bright: #a1a1aa;
+    --pink: #d4d4d8;
+    --gold: #f4f4f5;
+    --theme-body-spot: rgba(82, 82, 91, 0.22);
+    --theme-body-spot-strong: rgba(161, 161, 170, 0.2);
+    --theme-header-mid: #3f3f46;
+    --theme-header-end: #d4d4d8;
+    --theme-card-a: rgba(82, 82, 91, 0.35);
+    --theme-card-b: rgba(212, 212, 216, 0.12);
+    --theme-hero-bg: linear-gradient(135deg, rgba(9, 9, 11, 0.6), rgba(63, 63, 70, 0.25)), var(--panel, #111827);
+    --theme-accent-soft-bg: rgba(82, 82, 91, 0.18);
+    --theme-brand-kicker: #e4e4e7;
+    --alysum-purple: #52525b;
+    --alysum-purple-dark: #09090b;
+    --accent: #3f3f46;
+    --accent-hover: #27272a;
+    --accent-soft: #a1a1aa;
+    --accent-muted: rgba(82, 82, 91, 0.22);
+    --btn-primary-bg: #52525b;
+    --btn-primary-bg-hover: #3f3f46;
+    --link: #d4d4d8;
+    --nb-top-gradient: linear-gradient(135deg, #09090b, #3f3f46 50%, #d4d4d8);
+    --nb-float-bg: linear-gradient(145deg, #09090b 0%, #18181b 50%, #0b1220 100%);
+    --nb-tree-active-bg: linear-gradient(90deg, rgba(82, 82, 91, 0.45), rgba(212, 212, 216, 0.14));
+    --vp-r1: rgba(161, 161, 170, 0.2);
+    --vp-r2: rgba(212, 212, 216, 0.12);
+    --vp-hero-bg: linear-gradient(135deg, rgba(9, 9, 11, 0.85), rgba(63, 63, 70, 0.5), rgba(15, 23, 42, 0.7));
+    --vp-primary-fg: #09090b;
+    --login-page-bg: linear-gradient(135deg, #09090b, #52525b, #e4e4e7);
+    --ne-header-1: #09090b;
+    --ne-header-2: #27272a;
+    --ne-header-3: #52525b;
+    --ne-header-4: #d4d4d8;
+    --ne-body-spot: rgba(161, 161, 170, 0.2);
+    --theme-prompt-topbar: linear-gradient(135deg, rgba(9, 9, 11, 0.65), rgba(63, 63, 70, 0.4), rgba(212, 212, 216, 0.18));
+    --theme-prompt-entry-border: rgba(212, 212, 216, 0.32);
+    --theme-prompt-entry-ring: rgba(82, 82, 91, 0.3);
+}
+
 /* PDF dark mode: keep readable accents on top of themed light vars */
 html[data-gradient-theme] body.dark {
     --accent: color-mix(in srgb, var(--accent-soft) 85%, white);
