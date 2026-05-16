@@ -238,14 +238,25 @@
             background: rgba(0,0,0,0.25);
             color: var(--text);
             font-size: 15px;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
         }
+
+        input[type="text"]:focus,
+        input[type="email"]:focus,
+        input[type="password"]:focus {
+            outline: none;
+            border-color: color-mix(in srgb, var(--purple-bright) 70%, transparent);
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--purple-bright) 22%, transparent);
+        }
+
         input:disabled {
-            opacity: 0.65;
+            opacity: 0.85;
         }
+
         .readonly {
             padding: 12px 14px;
             border-radius: 12px;
-            background: rgba(255,255,255,0.04);
+            background: rgba(0, 0, 0, 0.2);
             border: 1px solid var(--border);
             font-size: 15px;
             font-weight: 700;
@@ -581,47 +592,128 @@
             text-align: center;
         }
 
-        .profile-main > .btn-primary,
-        .password-actions .btn-primary {
+        .profile-main > .btn-primary {
             align-self: flex-start;
             width: auto;
+        }
+
+        #profilePanel > h2,
+        #securityPanel > h2 {
+            margin-bottom: 4px;
+        }
+
+        #profilePanel > .hint.profile-intro-hint,
+        #securityPanel > .hint.password-intro-hint {
+            max-width: 40rem;
+        }
+
+        #securityPanel > .hint#ssoPasswordNote {
+            max-width: 40rem;
+            margin-bottom: 12px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            border: 1px solid color-mix(in srgb, var(--purple-bright) 35%, var(--border));
+            background: color-mix(in srgb, var(--theme-accent-soft-bg) 40%, rgba(0, 0, 0, 0.25));
         }
 
         .profile-panel-body {
             display: grid;
             gap: 18px;
+            width: 100%;
+            max-width: min(1100px, 100%);
+            margin: 0 auto;
         }
 
-        @media (min-width: 640px) {
+        @media (min-width: 768px) {
             .profile-panel-body {
                 grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-                align-items: start;
+                align-items: stretch;
+                gap: 20px;
             }
         }
 
-        .story-bible-block {
+        .profile-box {
+            padding: 20px 18px 22px;
+            border-radius: 18px;
+            border: 1px solid color-mix(in srgb, var(--purple-bright) 38%, rgba(255, 255, 255, 0.1));
+            background: linear-gradient(
+                165deg,
+                color-mix(in srgb, var(--theme-accent-soft-bg) 55%, transparent),
+                rgba(255, 255, 255, 0.02)
+            );
+            box-shadow: 0 0 0 1px color-mix(in srgb, var(--purple) 12%, transparent);
+        }
+
+        .profile-box-title {
+            margin: 0 0 10px;
+            font-size: 14px;
+            font-weight: 900;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: var(--gold);
+        }
+
+        .profile-box .field {
+            margin-bottom: 16px;
+        }
+
+        .profile-box .field:last-of-type {
+            margin-bottom: 0;
+        }
+
+        #profilePanel input[type="text"],
+        #profilePanel input[type="email"],
+        #profilePanel .readonly,
+        #securityPanel input[type="password"] {
+            border-width: 1.5px;
+            border-color: color-mix(in srgb, var(--purple-bright) 52%, rgba(255, 255, 255, 0.14));
+            box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--purple) 18%, transparent);
+        }
+
+        #profilePanel input[type="text"]:focus,
+        #profilePanel input[type="email"]:focus,
+        #securityPanel input[type="password"]:focus {
+            border-color: color-mix(in srgb, var(--purple-bright) 78%, transparent);
+            box-shadow:
+                inset 0 0 0 1px color-mix(in srgb, var(--purple-bright) 35%, transparent),
+                0 0 0 3px color-mix(in srgb, var(--purple-bright) 24%, transparent);
+        }
+
+        #profilePanel input[type="email"]:disabled,
+        #securityPanel input[type="password"]:disabled {
+            background: color-mix(in srgb, var(--theme-accent-soft-bg) 35%, rgba(0, 0, 0, 0.35));
+            border-color: color-mix(in srgb, var(--purple-bright) 36%, rgba(255, 255, 255, 0.1));
+        }
+
+        #profilePanel .readonly {
+            background: color-mix(in srgb, var(--theme-accent-soft-bg) 25%, rgba(0, 0, 0, 0.3));
+        }
+
+        .profile-box-actions {
+            margin-top: 18px;
+            padding-top: 16px;
+            border-top: 1px solid color-mix(in srgb, var(--purple-bright) 22%, var(--border));
+        }
+
+        .profile-box-actions .btn {
             margin-top: 0;
-            padding-top: 0;
-            border-top: none;
         }
 
-        @media (max-width: 959px) {
-            .story-bible-block {
-                margin-top: 6px;
-                padding-top: 18px;
-                border-top: 1px solid var(--border);
-            }
+        .profile-box-actions .msg {
+            margin-top: 12px;
         }
 
-        .password-fields {
-            display: grid;
-            gap: 14px;
+        .story-bible-box .profile-box-title {
+            margin-bottom: 8px;
         }
 
-        @media (min-width: 640px) {
-            .password-fields {
-                grid-template-columns: repeat(3, minmax(0, 1fr));
-            }
+        .story-bible-box .btn {
+            margin-top: 4px;
+            text-decoration: none;
+        }
+
+        .password-panel-body .profile-box-actions {
+            grid-column: 1 / -1;
         }
 
         .story-bible-toggle {
@@ -632,8 +724,8 @@
             margin: 16px 0 0;
             padding: 12px 14px;
             border-radius: 12px;
-            border: 1px solid var(--border);
-            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid color-mix(in srgb, var(--purple-bright) 35%, var(--border));
+            background: rgba(0, 0, 0, 0.2);
             font-size: 12px;
             font-weight: 800;
             color: var(--muted);
@@ -652,22 +744,6 @@
             margin-bottom: 4px;
             color: #fff;
             font-weight: 800;
-        }
-
-        .profile-fields {
-            display: grid;
-            gap: 14px;
-            grid-template-columns: 1fr;
-        }
-
-        @media (min-width: 720px) {
-            .profile-fields {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
-
-            .profile-field-wide {
-                grid-column: 1 / -1;
-            }
         }
 
     </style>
@@ -756,39 +832,38 @@
 
         <div class="panel hidden settings-tab-panel" id="profilePanel" role="tabpanel" aria-labelledby="tab-profile" hidden>
             <h2>Profile</h2>
-            <p class="hint">Your permanent handle is like a Discord tag: it never changes and identifies you. Your display name is what others see next to comments and on your studio home.</p>
+            <p class="hint profile-intro-hint">Your permanent handle is like a Discord tag: it never changes and identifies you. Your display name is what others see next to comments and on your studio home.</p>
 
             <div class="profile-panel-body">
-            <div class="profile-main">
-            <div class="profile-fields">
-            <div class="field">
-                <label>Email</label>
-                <input type="email" id="emailField" disabled />
-            </div>
+            <section class="profile-box profile-identity-box" aria-labelledby="profileIdentityTitle">
+                <h3 class="profile-box-title" id="profileIdentityTitle">Your identity</h3>
+                <div class="field">
+                    <label for="emailField">Email</label>
+                    <input type="email" id="emailField" disabled />
+                </div>
+                <div class="field">
+                    <label>Permanent handle</label>
+                    <div class="readonly mono" id="handleField">@…</div>
+                    <p class="hint" style="margin-top:8px;margin-bottom:0">This cannot be changed.</p>
+                </div>
 
-            <div class="field">
-                <label>Permanent handle</label>
-                <div class="readonly mono" id="handleField">@…</div>
-                <p class="hint" style="margin-top:8px;margin-bottom:0">This cannot be changed.</p>
-            </div>
+                <div class="field">
+                    <label for="displayNameInput">Display name</label>
+                    <input type="text" id="displayNameInput" maxlength="40" autocomplete="nickname" placeholder="How your name appears" />
+                    <p class="hint" style="margin-top:8px;margin-bottom:0">Leave blank and save to show only your permanent handle everywhere.</p>
+                </div>
+                <div class="profile-box-actions">
+                    <button type="button" class="btn btn-primary" id="saveDisplayBtn">Save display name</button>
+                    <div class="msg" id="profileMsg" role="status"></div>
+                </div>
+            </section>
 
-            <div class="field profile-field-wide">
-                <label for="displayNameInput">Display name</label>
-                <input type="text" id="displayNameInput" maxlength="40" autocomplete="nickname" placeholder="How your name appears" />
-                <p class="hint" style="margin-top:8px;margin-bottom:0">Leave blank and save to show only your permanent handle everywhere.</p>
-            </div>
-            </div>
-
-            <button type="button" class="btn btn-primary" id="saveDisplayBtn">Save display name</button>
-            <div class="msg" id="profileMsg" role="status"></div>
-            </div>
-
-            <div class="story-bible-block">
-                <label>Story Bible</label>
+            <section class="profile-box story-bible-box" aria-labelledby="storyBibleBoxTitle">
+                <h3 class="profile-box-title" id="storyBibleBoxTitle">Story Bible</h3>
                 <p class="hint" style="margin-bottom: 12px">
                     Character notes per book. Alysum does <strong>not</strong> read your existing chapters to fill this in — you add entries yourself (optional pattern scan suggests repeating capitalized phrases). It applies to all books, including ones you already wrote.
                 </p>
-                <a href="story-bible.html" class="btn btn-primary" style="text-decoration: none; margin-top: 0">Open Story Bible</a>
+                <a href="story-bible.html" class="btn btn-primary">Open Story Bible</a>
                 <label class="story-bible-toggle" for="storyBibleUiToggle">
                     <input type="checkbox" id="storyBibleUiToggle" />
                     <span>
@@ -799,33 +874,42 @@
                         >
                     </span>
                 </label>
-            </div>
+            </section>
             </div>
         </div>
 
         <div class="panel hidden settings-tab-panel" id="securityPanel" role="tabpanel" aria-labelledby="tab-password" hidden>
             <h2>Password</h2>
-            <p class="hint hidden" id="ssoPasswordNote"></p>
-            <p class="hint" id="passwordFormHint">Enter your current password, then choose a new one.</p>
+            <p class="hint hidden password-intro-hint" id="ssoPasswordNote"></p>
+            <p class="hint password-intro-hint" id="passwordFormHint">Enter your current password, then choose a new one.</p>
 
-            <div class="password-fields">
-            <div class="field">
-                <label for="currentPw">Current password</label>
-                <input type="password" id="currentPw" autocomplete="current-password" />
-            </div>
-            <div class="field">
-                <label for="newPw">New password</label>
-                <input type="password" id="newPw" autocomplete="new-password" />
-            </div>
-            <div class="field">
-                <label for="confirmPw">Confirm new password</label>
-                <input type="password" id="confirmPw" autocomplete="new-password" />
-            </div>
-            </div>
+            <div class="profile-panel-body password-panel-body">
+                <section class="profile-box password-current-box" aria-labelledby="passwordCurrentTitle">
+                    <h3 class="profile-box-title" id="passwordCurrentTitle">Current password</h3>
+                    <p class="hint" style="margin: 0 0 14px">Confirm it's you before changing anything.</p>
+                    <div class="field">
+                        <label for="currentPw">Current password</label>
+                        <input type="password" id="currentPw" autocomplete="current-password" />
+                    </div>
+                </section>
 
-            <div class="password-actions">
-            <button type="button" class="btn btn-primary" id="savePasswordBtn">Update password</button>
-            <div class="msg" id="passwordMsg" role="status"></div>
+                <section class="profile-box password-new-box" aria-labelledby="passwordNewTitle">
+                    <h3 class="profile-box-title" id="passwordNewTitle">New password</h3>
+                    <p class="hint" style="margin: 0 0 14px">At least 6 characters. You'll use this next time you sign in.</p>
+                    <div class="field">
+                        <label for="newPw">New password</label>
+                        <input type="password" id="newPw" autocomplete="new-password" />
+                    </div>
+                    <div class="field">
+                        <label for="confirmPw">Confirm new password</label>
+                        <input type="password" id="confirmPw" autocomplete="new-password" />
+                    </div>
+                </section>
+
+                <div class="profile-box-actions">
+                    <button type="button" class="btn btn-primary" id="savePasswordBtn">Update password</button>
+                    <div class="msg" id="passwordMsg" role="status"></div>
+                </div>
             </div>
         </div>
             </div>
@@ -1017,17 +1101,21 @@
                 const hasPassword = identities.some(i => i.provider === "email");
                 const ssoNote = document.getElementById("ssoPasswordNote");
                 const formHint = document.getElementById("passwordFormHint");
+                const passwordPanelBody = document.querySelector(".password-panel-body");
                 if (!hasPassword) {
                     savePasswordBtn.disabled = true;
                     currentPw.disabled = true;
                     newPw.disabled = true;
                     confirmPw.disabled = true;
+                    passwordPanelBody?.classList.add("hidden");
                     if (ssoNote) {
                         ssoNote.textContent =
                             "Password updates are only available for accounts that use email and password sign-in.";
                         ssoNote.classList.remove("hidden");
                     }
                     if (formHint) formHint.classList.add("hidden");
+                } else {
+                    passwordPanelBody?.classList.remove("hidden");
                 }
             } catch (e) {
                 console.error(e);
