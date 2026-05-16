@@ -4,14 +4,8 @@
  */
 
 :root {
-  --alysum-purple: #6d28d9;
-  --alysum-purple-dark: #5b21b6;
-  --accent: #6d28d9;
-  --accent-hover: #5b21b6;
-  --accent-soft: #7c3aed;
-  --accent-muted: rgba(109, 40, 217, 0.18);
-  --btn-primary-bg: #6d28d9;
-  --btn-primary-bg-hover: #5b21b6;
+  --alysum-purple: var(--purple, #6d28d9);
+  --alysum-purple-dark: var(--purple-dark, #5b21b6);
   --btn-primary-fg: #ffffff;
   --rail-bg: #263646;
   --rail-bg-deep: #1e2b3a;
@@ -43,7 +37,6 @@
   --stage-toolbar-bg: rgba(255, 255, 255, 0.82);
   --stage-toolbar-border: rgba(15, 23, 42, 0.08);
   --iframe-bg: #ffffff;
-  --link: #6d28d9;
   --radius: 10px;
   --radius-pill: 999px;
   --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;

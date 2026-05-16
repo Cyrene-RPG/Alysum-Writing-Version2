@@ -250,7 +250,7 @@
 
         .theme-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
             gap: 8px;
             margin-top: 4px;
         }
@@ -417,7 +417,8 @@
         }
 
     </style>
-    <link rel="stylesheet" href="css/gradient-themes.css?v=2" />
+    <link rel="stylesheet" href="css/gradient-themes.css?v=3" />
+    <script src="js/gradient-theme-sync.js" defer></script>
 </head>
 <body>
     <header class="header">
@@ -442,7 +443,7 @@
         <div class="panel hidden settings-tab-panel" id="appearancePanel" role="tabpanel" aria-labelledby="tab-appearance">
             <h2>Appearance</h2>
             <p class="hint">
-                Gradient accent for Studio, editor, library, and the rest of the app (the marketing home page stays as-is). Your choice is saved on this device.
+                Accent color for Studio, editor, library, Story Bible, login, and the rest of the app (the marketing home page stays as-is). Your choice is saved on this device and syncs across open tabs.
             </p>
             <div class="theme-grid" id="themeChipRow" aria-label="Accent themes"></div>
         </div>
@@ -561,7 +562,7 @@
         import { supabase } from "./firebase.js";
         import { wireSupabaseSession } from "./js/supabase-session.js?v=1";
         import { permanentHandleFromUserData } from "./js/profile-display.js?v=1";
-        import { GRADIENT_THEMES, applyGradientTheme, getStoredGradientThemeId } from "./js/gradient-theme.js?v=2";
+        import { GRADIENT_THEMES, applyGradientTheme, getStoredGradientThemeId } from "./js/gradient-theme.js?v=3";
         import { normalizeAccountType, ACCOUNT_AUTHOR, ACCOUNT_READER, ACCOUNT_BOTH, homeUrlForUserData } from "./js/account-mode.js?v=1";
         import { isStoryBibleUiEnabled, setStoryBibleUiEnabled } from "./js/story-bible-prefs.js?v=1";
 

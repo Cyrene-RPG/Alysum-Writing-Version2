@@ -6,8 +6,8 @@
     --nb-line: rgba(255, 255, 255, 0.1);
     --nb-panel: rgba(15, 23, 42, 0.92);
     --nb-panel-2: rgba(30, 41, 59, 0.95);
-    --nb-accent: #a78bfa;
-    --nb-accent-2: #7c3aed;
+    --nb-accent: var(--pink, #a78bfa);
+    --nb-accent-2: var(--purple-bright, #7c3aed);
     --nb-danger: #f87171;
     --nb-radius: 16px;
     --nb-font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;

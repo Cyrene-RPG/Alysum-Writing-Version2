@@ -29,13 +29,15 @@
         } catch (e) {}
     </script>
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
+    <link rel="stylesheet" href="css/gradient-themes.css?v=3" />
+    <script src="js/gradient-theme-sync.js" defer></script>
     <style>
         * { box-sizing: border-box; }
         :root {
-            --alysum-purple: #6d28d9;
-            --alysum-purple-bright: #7c3aed;
-            --alysum-violet: #8b5cf6;
-            --alysum-glow: rgba(124, 58, 237, 0.45);
+            --alysum-purple: var(--purple, #6d28d9);
+            --alysum-purple-bright: var(--purple-bright, #9333ea);
+            --alysum-violet: var(--pink, #8b5cf6);
+            --alysum-glow: var(--theme-body-spot-strong, rgba(124, 58, 237, 0.45));
             --bg: #070b14;
             --bg-elevated: #0c1222;
             --panel: #121a2b;
@@ -56,8 +58,8 @@
             font-family: "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
             background: var(--bg);
             background-image:
-                radial-gradient(ellipse 120% 80% at 100% -10%, rgba(109, 40, 217, 0.18), transparent 50%),
-                radial-gradient(ellipse 80% 60% at 0% 100%, rgba(30, 58, 138, 0.12), transparent 45%);
+                radial-gradient(ellipse 120% 80% at 100% -10%, var(--theme-body-spot-strong, rgba(109, 40, 217, 0.18)), transparent 50%),
+                radial-gradient(ellipse 80% 60% at 0% 100%, var(--theme-body-spot, rgba(30, 58, 138, 0.12)), transparent 45%);
             background-attachment: fixed;
             color: var(--text);
             -webkit-font-smoothing: antialiased;
@@ -108,11 +110,11 @@
             background: linear-gradient(
                 90deg,
                 transparent 0%,
-                #5b21b6 15%,
-                #7c3aed 40%,
-                #c4b5fd 50%,
-                #7c3aed 60%,
-                #5b21b6 85%,
+                var(--purple-dark, #5b21b6) 15%,
+                var(--purple-bright, #7c3aed) 40%,
+                var(--gold, #c4b5fd) 50%,
+                var(--purple-bright, #7c3aed) 60%,
+                var(--purple-dark, #5b21b6) 85%,
                 transparent 100%
             );
             opacity: 0.95;
@@ -124,7 +126,7 @@
             right: -15%;
             width: min(420px, 55vw);
             height: min(320px, 50vw);
-            background: radial-gradient(circle, rgba(124, 58, 237, 0.22) 0%, transparent 68%);
+            background: radial-gradient(circle, var(--theme-body-spot-strong, rgba(124, 58, 237, 0.22)) 0%, transparent 68%);
             pointer-events: none;
         }
         .sb-top-copy {

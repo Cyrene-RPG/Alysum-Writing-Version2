@@ -8,7 +8,7 @@
  * Bump SW_VERSION when shipping breaking shell changes to force a refresh.
  */
 
-const SW_VERSION = 'v1.0.32';
+const SW_VERSION = 'v1.0.33';
 const SHELL_CACHE = `alysum-shell-${SW_VERSION}`;
 const ASSET_CACHE = `alysum-assets-${SW_VERSION}`;
 
@@ -40,7 +40,9 @@ const APP_SHELL = [
   'Alysum-3.png',
   'css/site-responsive.css',
   'css/notebook.css',
-  'css/gradient-themes.css'
+  'css/gradient-themes.css',
+  'js/gradient-theme-sync.js',
+  'story-bible.html'
 ];
 
 self.addEventListener('install', (event) => {
