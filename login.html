@@ -516,14 +516,37 @@ function isOAuthReturn() {
     return hash.length > 2 || !!params.get("code");
 }
 
+function hasOAuthPending() {
+    try {
+        return sessionStorage.getItem(OAUTH_PENDING_KEY) === "1";
+    } catch {
+        return false;
+    }
+}
+
+/** Only leave login automatically after OAuth return or a fresh sign-in — not an old saved session. */
+function shouldAutoLeaveLogin(session, event) {
+    if (!session || event === "SIGNED_OUT") return false;
+    if (event === "SIGNED_IN") return true;
+    return hasOAuthPending() || isOAuthReturn();
+}
+
 const resetParams = new URLSearchParams(window.location.search);
 if (resetParams.get("reset") === "success") {
     showSuccess("Password updated. Sign in with your new password.");
 }
 
 if (!isRecoveryLanding) {
+    if (!isOAuthReturn()) {
+        try {
+            sessionStorage.removeItem(OAUTH_PENDING_KEY);
+        } catch {
+            /* ignore */
+        }
+    }
+
     wireSupabaseSession(async (session, event) => {
-        if (!session || event === "SIGNED_OUT") return;
+        if (!shouldAutoLeaveLogin(session, event)) return;
         await goToStudioAfterAuth();
     });
 
@@ -540,7 +563,7 @@ if (!isRecoveryLanding) {
             }
             if (!oauthRedirectHandled) {
                 showError(
-                    "Discord sign-in did not finish. Try again, or use email login."
+                    "Sign-in did not finish. Try again, or use email login."
                 );
             }
         })();
