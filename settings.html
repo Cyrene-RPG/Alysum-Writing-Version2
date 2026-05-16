@@ -403,62 +403,127 @@
             }
         }
 
+        .account-focus-body {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            flex: 1;
+            width: 100%;
+            max-width: 1100px;
+        }
+
+        #accountTypeGroup {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+            width: 100%;
+        }
+
+        @media (min-width: 640px) {
+            #accountTypeGroup {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 14px;
+            }
+        }
+
         .account-type-row {
             display: flex;
+            flex-direction: column;
             align-items: flex-start;
             gap: 10px;
-            padding: 12px 14px;
-            border-radius: 12px;
-            border: 1px solid var(--border);
-            background: rgba(255,255,255,0.04);
+            margin: 0;
+            padding: 18px 16px;
+            min-height: 118px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.04);
             cursor: pointer;
-            margin-bottom: 10px;
+            transition: border-color 0.15s ease, transform 0.12s ease, box-shadow 0.15s ease, background 0.15s ease;
+        }
+
+        .account-type-row:hover {
+            border-color: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.07);
         }
 
         .account-type-row input {
-            margin-top: 3px;
+            width: 18px;
+            height: 18px;
+            margin: 0;
+            flex-shrink: 0;
             accent-color: var(--purple-bright, #a78bfa);
         }
 
         .account-type-row strong {
             display: block;
-            font-size: 14px;
-            margin-bottom: 2px;
+            font-size: 15px;
+            font-weight: 900;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            color: #f8fafc;
+            margin-bottom: 4px;
         }
 
         .account-type-row span.desc {
-            font-size: 12px;
+            font-size: 13px;
             color: var(--muted);
             font-weight: 600;
-            line-height: 1.4;
+            line-height: 1.45;
         }
 
         .account-type-row:has(input:checked) {
-            border-color: rgba(255, 255, 255, 0.32);
+            border-color: rgba(255, 255, 255, 0.38);
             background:
-                linear-gradient(135deg, rgba(0, 0, 0, 0.25), rgba(0, 0, 0, 0.45)),
+                linear-gradient(160deg, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.55) 100%),
                 var(--alysum-chrome-gradient, linear-gradient(135deg, var(--theme-card-a), var(--theme-card-b)));
             background-size: cover;
             background-position: center;
+            box-shadow:
+                0 0 0 2px color-mix(in srgb, var(--pink) 45%, transparent),
+                0 8px 24px rgba(0, 0, 0, 0.35);
+            transform: translateY(-2px);
         }
 
-        @media (min-width: 900px) {
-            #accountTypeGroup {
-                display: grid;
-                grid-template-columns: repeat(3, minmax(0, 1fr));
-                gap: 10px;
-            }
+        .account-type-row:has(input:checked) span.desc {
+            color: color-mix(in srgb, #fff 75%, var(--muted));
+        }
 
-            .account-type-row {
-                margin-bottom: 0;
-                flex-direction: column;
-                align-items: stretch;
-                height: 100%;
-            }
+        .account-focus-actions {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 12px 16px;
+            align-self: flex-start;
+            width: 100%;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
 
-            .account-type-row input {
-                margin-top: 0;
+        .account-focus-actions .btn {
+            margin-top: 0;
+            align-self: flex-start;
+            width: auto;
+            min-width: 10rem;
+            padding: 11px 22px;
+        }
+
+        .account-focus-actions .msg {
+            margin-top: 0;
+            flex: 1 1 100%;
+        }
+
+        @media (min-width: 640px) {
+            .account-focus-actions .msg {
+                flex: 1 1 auto;
+                min-width: 12rem;
             }
+        }
+
+        .settings-tab-panel .btn-primary,
+        .profile-main > .btn-primary,
+        .password-actions .btn-primary {
+            align-self: flex-start;
+            width: auto;
         }
 
         .profile-panel-body {
@@ -579,6 +644,7 @@
             <p class="hint">
                 Controls your default home after login and the Studio / Reading switch in the header. Existing accounts without a choice here behave like “Both”.
             </p>
+            <div class="account-focus-body">
             <div id="accountTypeGroup" role="radiogroup" aria-label="Account focus">
                 <label class="account-type-row">
                     <input type="radio" name="settingsAccountType" value="author" />
@@ -602,8 +668,11 @@
                     </span>
                 </label>
             </div>
-            <button type="button" class="btn btn-primary" id="saveAccountTypeBtn">Save account focus</button>
-            <div class="msg" id="accountTypeMsg" role="status"></div>
+            <div class="account-focus-actions">
+                <button type="button" class="btn btn-primary" id="saveAccountTypeBtn">Save account focus</button>
+                <div class="msg" id="accountTypeMsg" role="status"></div>
+            </div>
+            </div>
         </div>
 
         <div class="panel hidden settings-tab-panel" id="profilePanel" role="tabpanel" aria-labelledby="tab-profile" hidden>
