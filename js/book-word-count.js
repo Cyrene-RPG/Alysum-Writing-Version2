@@ -4,7 +4,7 @@
 export function countWordsFromHTML(html = "") {
     const text = String(html)
         .replace(/<br\s*\/?>/gi, " ")
-        .replace(/<\/(div|p|h1|h2|h3|li|blockquote)>/gi, " ")
+        .replace(/<\/(div|p|h1|h2|h3|li|blockquote|ul|ol)>/gi, " ")
         .replace(/<[^>]*>/g, " ")
         .replace(/\s+/g, " ")
         .trim();
@@ -12,20 +12,44 @@ export function countWordsFromHTML(html = "") {
     return text.split(" ").length;
 }
 
+function parseBookSections(raw) {
+    if (!raw) return {};
+    if (typeof raw === "string") {
+        try {
+            const parsed = JSON.parse(raw);
+            return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+        } catch {
+            return {};
+        }
+    }
+    return typeof raw === "object" && !Array.isArray(raw) ? raw : {};
+}
+
+function persistedBookWords(bookData) {
+    const n = Number(bookData?.words ?? bookData?.word_count);
+    return Number.isFinite(n) && n >= 0 ? n : 0;
+}
+
+function chapterHtml(chapter) {
+    if (!chapter || typeof chapter !== "object") return "";
+    return chapter.content ?? chapter.body ?? chapter.text ?? "";
+}
+
 export function countBookWords(bookData) {
-    let total = 0;
-    const sections = bookData?.sections || {};
+    let fromSections = 0;
+    const sections = parseBookSections(bookData?.sections);
 
     for (const sectionName of ["front", "body", "back"]) {
         const list = Array.isArray(sections[sectionName]) ? sections[sectionName] : [];
         for (const chapter of list) {
-            total += countWordsFromHTML(chapter?.content || "");
+            fromSections += countWordsFromHTML(chapterHtml(chapter));
         }
     }
 
-    if (total === 0 && typeof bookData?.content === "string") {
-        total += countWordsFromHTML(bookData.content);
+    if (fromSections === 0 && typeof bookData?.content === "string") {
+        fromSections += countWordsFromHTML(bookData.content);
     }
 
-    return total;
+    const persisted = persistedBookWords(bookData);
+    return fromSections > 0 ? fromSections : persisted;
 }

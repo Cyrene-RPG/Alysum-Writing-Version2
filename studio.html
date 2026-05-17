@@ -1104,7 +1104,7 @@
         permanentHandleFromUserData,
         cosmeticDisplayNameFromUserData
     } from "./js/profile-display.js?v=2";
-    import { countBookWords, countWordsFromHTML } from "./js/book-word-count.js?v=1";
+    import { countBookWords, countWordsFromHTML } from "./js/book-word-count.js?v=3";
     import {
         accountSupportsModeToggle,
         setUiMode,
@@ -1918,10 +1918,19 @@
         }
     }
 
+    function refreshStudioWhenActive() {
+        if (!currentUser) return;
+        loadBooks().catch(console.error);
+    }
+
     document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "visible" && currentUser) {
             loadProfileAndStudio().catch(console.error);
         }
+    });
+
+    window.addEventListener("pageshow", (e) => {
+        if (e.persisted && currentUser) refreshStudioWhenActive();
     });
 
     window.addEventListener("beforeunload", () => {

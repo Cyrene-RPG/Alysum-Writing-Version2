@@ -96,7 +96,114 @@
         }
     }
 
+    var COLOR_PRESETS = {
+        gold: { main: "#f59e0b", accent: "#fde68a" },
+        silver: { main: "#94a3b8", accent: "#e0f2fe" },
+        ocean: { main: "#0284c7", accent: "#67e8f9" },
+        arctic: { main: "#22d3ee", accent: "#e0f2fe" },
+        violet: { main: "#a855f7", accent: "#e9d5ff" },
+        rose: { main: "#f472b6", accent: "#fecdd3" },
+        ember: { main: "#f97316", accent: "#fed7aa" },
+        crimson: { main: "#dc2626", accent: "#fecaca" },
+        forest: { main: "#16a34a", accent: "#bbf7d0" },
+        mint: { main: "#10b981", accent: "#a7f3d0" },
+        sunset: { main: "#ea580c", accent: "#fbbf24" },
+        wine: { main: "#9f1239", accent: "#fda4af" },
+        midnight: { main: "#60a5fa", accent: "#c7d2fe" },
+        copper: { main: "#b45309", accent: "#fde68a" },
+        pearl: { main: "#f8fafc", accent: "#e2e8f0" },
+        neon: { main: "#22d3ee", accent: "#e879f9" },
+        lavender: { main: "#c084fc", accent: "#f5d0fe" }
+    };
+
+    function parseHex(raw) {
+        var s = String(raw || "").trim();
+        var m = s.match(/^#?([0-9a-f]{6})$/i);
+        if (!m) return null;
+        var n = parseInt(m[1], 16);
+        return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+    }
+
+    function rgbToHex(r, g, b) {
+        function h(n) {
+            var v = Math.max(0, Math.min(255, Math.round(n)));
+            var s = v.toString(16);
+            return s.length < 2 ? "0" + s : s;
+        }
+        return "#" + h(r) + h(g) + h(b);
+    }
+
+    function lighten(hex, amount) {
+        var c = parseHex(hex);
+        if (!c) return hex;
+        return rgbToHex(
+            c.r + (255 - c.r) * amount,
+            c.g + (255 - c.g) * amount,
+            c.b + (255 - c.b) * amount
+        );
+    }
+
+    function darken(hex, amount) {
+        var c = parseHex(hex);
+        if (!c) return hex;
+        return rgbToHex(c.r * (1 - amount), c.g * (1 - amount), c.b * (1 - amount));
+    }
+
+    function withAlpha(hex, alpha) {
+        var c = parseHex(hex);
+        if (!c) return hex;
+        return "rgba(" + c.r + "," + c.g + "," + c.b + "," + Math.max(0, Math.min(1, alpha)) + ")";
+    }
+
+    function applyDisplayColorVars(root, main, accent) {
+        root.style.setProperty("--alysum-display-top", lighten(accent, 0.72));
+        root.style.setProperty("--alysum-display-mid", main);
+        root.style.setProperty("--alysum-display-deep", darken(main, 0.38));
+        root.style.setProperty("--alysum-display-highlight", lighten(accent, 0.35));
+        root.style.setProperty("--alysum-display-edge", withAlpha(accent, 0.92));
+        root.style.setProperty("--alysum-display-glow", withAlpha(accent, 0.42));
+        root.style.setProperty("--alysum-display-shadow", withAlpha(darken(main, 0.55), 0.88));
+        root.style.setProperty("--alysum-display-solid", lighten(main, 0.55));
+    }
+
+    function resolveDisplayColors(root, colorId) {
+        if (colorId === "custom") {
+            try {
+                return {
+                    main: localStorage.getItem(TEXT_COLOR_MAIN_KEY) || "#f59e0b",
+                    accent: localStorage.getItem(TEXT_COLOR_ACCENT_KEY) || "#fde68a"
+                };
+            } catch (e) {
+                return { main: "#f59e0b", accent: "#fde68a" };
+            }
+        }
+        if (COLOR_PRESETS[colorId]) return COLOR_PRESETS[colorId];
+        var s = getComputedStyle(root);
+        return {
+            main: s.getPropertyValue("--gold").trim() || "#f59e0b",
+            accent: s.getPropertyValue("--theme-brand-kicker").trim() || "#fde68a"
+        };
+    }
+
+    function syncDisplayTextColorAttribute(colorId) {
+        var root = document.documentElement;
+        if (!colorId || colorId === "theme") root.removeAttribute("data-display-text-color");
+        else root.setAttribute("data-display-text-color", colorId);
+    }
+
     function applyTextColorFromStorage() {
+        var root = document.documentElement;
+        var colorId = "theme";
+        try {
+            colorId = localStorage.getItem(TEXT_COLOR_KEY) || "theme";
+        } catch (e) {
+            colorId = "theme";
+        }
+        var pair = resolveDisplayColors(root, colorId);
+        if (parseHex(pair.main) && parseHex(pair.accent)) {
+            applyDisplayColorVars(root, pair.main, pair.accent);
+        }
+        syncDisplayTextColorAttribute(colorId);
         if (typeof window.__alysumApplyDisplayTextColor === "function") {
             window.__alysumApplyDisplayTextColor();
         }
