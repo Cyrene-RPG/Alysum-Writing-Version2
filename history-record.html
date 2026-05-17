@@ -33,7 +33,7 @@
     <div class="mc-body" id="codexRoot"></div>
     <script type="module">
         import { HISTORY_SECTIONS, HISTORY_INTRO } from "./js/history-sections.js?v=2";
-        import { mountMagicCodex } from "./js/magic-codex-ui.js?v=3";
+        import { mountMagicCodex } from "./js/magic-codex-ui.js?v=4";
         import {
             recordStorageKey,
             getHistoryRecordMeta,
@@ -76,6 +76,12 @@
                         renameHistoryRecord(encId, recordId, value.trim());
                         document.getElementById("pageTitle").textContent = value.trim();
                     }
+                },
+                linkContext: {
+                    page: "history-record.html",
+                    queryParams: { encyclopedia: encId, record: recordId },
+                    storageKey: recordStorageKey(encId, recordId),
+                    sheetLabel: meta.name
                 }
             });
         }

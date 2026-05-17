@@ -2,6 +2,18 @@
  * Arcane Codex UI for magic system worksheets.
  */
 
+import { upsertEncyclopediaLink, buildCodexFieldHref } from "./encyclopedia-links-store.js";
+import {
+    normalizeEncyclopediaPlain,
+    serializeEncBody,
+    plainToEncLinkHtml,
+    plainToDisplayText
+} from "./encyclopedia-wikilinks.js";
+import {
+    showEncyclopediaLinkPrompt,
+    hideEncyclopediaLinkPrompt
+} from "./encyclopedia-link-ui.js";
+
 export function magicStorageKey(type, encyclopediaId) {
     const base = "alysum-magic-codex-" + type + "-v1";
     return encyclopediaId ? base + "-" + encyclopediaId : base;
@@ -29,7 +41,8 @@ export function mountMagicCodex(root, config) {
         namePlaceholder = "Unnamed power",
         taglinePlaceholder = "Optional",
         manuscriptTitle = "Your magic manuscript",
-        onFieldChange = null
+        onFieldChange = null,
+        linkContext = null
     } = config;
 
     root.replaceChildren();
@@ -193,13 +206,18 @@ export function mountMagicCodex(root, config) {
     function compileText() {
         const name = valueFor("systemName").trim() || "Unnamed magic";
         const lines = ["# " + name];
-        if (valueFor("systemTagline").trim()) lines.push("_" + valueFor("systemTagline").trim() + "_");
+        if (valueFor("systemTagline").trim()) {
+            lines.push("_" + plainToDisplayText(valueFor("systemTagline").trim()) + "_");
+        }
         lines.push("", "## " + compileHeading, "");
 
         for (const section of sections) {
             const blocks = section.questions
                 .filter(([key]) => valueFor(key).trim())
-                .map(([key, question]) => question + "\n\n" + valueFor(key).trim());
+                .map(
+                    ([key, question]) =>
+                        question + "\n\n" + plainToDisplayText(valueFor(key).trim())
+                );
             if (!blocks.length) continue;
             lines.push("## " + section.title);
             lines.push(blocks.join("\n\n"));
@@ -207,6 +225,142 @@ export function mountMagicCodex(root, config) {
         }
 
         return lines.join("\n").trim();
+    }
+
+    function fieldKeyToSectionId(fieldKey) {
+        const section = sections.find((s) => s.questions.some(([k]) => k === fieldKey));
+        return section?.id || "";
+    }
+
+    function escapeEditorHtml(plain) {
+        return String(plain || "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/\n/g, "<br>") || "<br>";
+    }
+
+    function saveEditor(editor, key, reRenderLinks) {
+        const raw = linkContext ? serializeEncBody(editor) : editor.innerText;
+        const normalized = linkContext ? normalizeEncyclopediaPlain(raw) : raw;
+        state.answers[key] = normalized;
+        if (reRenderLinks && linkContext) {
+            editor.innerHTML = plainToEncLinkHtml(normalized);
+        }
+        if (typeof onFieldChange === "function") onFieldChange(key, normalized);
+        statusEl.textContent = "Writing…";
+        statusEl.className = "mc-dock-status";
+        clearTimeout(saveEditor.timer);
+        saveEditor.timer = setTimeout(saveState, 280);
+        const entry = editor.closest(".mc-entry");
+        if (entry) entry.classList.toggle("is-answered", !!normalized.trim());
+        return normalized;
+    }
+
+    function createLinkForSelection(editor, key, question, phrase) {
+        if (!linkContext) return;
+        const trimmed = phrase.trim();
+        if (trimmed.length < 2) return;
+
+        const href = buildCodexFieldHref(
+            linkContext.page,
+            linkContext.queryParams,
+            key
+        );
+        upsertEncyclopediaLink({
+            phrase: trimmed,
+            target: {
+                href,
+                page: linkContext.page,
+                queryParams: { ...linkContext.queryParams },
+                storageKey: linkContext.storageKey || storageKey,
+                fieldKey: key,
+                sectionId: fieldKeyToSectionId(key),
+                sheetLabel: linkContext.sheetLabel || "",
+                fieldLabel: question
+            }
+        });
+
+        const sel = window.getSelection();
+        if (sel?.rangeCount && editor.contains(sel.anchorNode)) {
+            const range = sel.getRangeAt(0);
+            range.deleteContents();
+            const tn = document.createTextNode(`[[${trimmed}]]`);
+            range.insertNode(tn);
+            range.setStartAfter(tn);
+            range.collapse(true);
+            sel.removeAllRanges();
+            sel.addRange(range);
+        }
+
+        saveEditor(editor, key, true);
+        saveState();
+    }
+
+    function bindEditorLinks(editor) {
+        if (!linkContext) return;
+        const key = () => keyFromEditor(editor);
+        let linkRenderTimer = null;
+
+        editor.addEventListener("mouseup", () => {
+            const sel = window.getSelection();
+            if (!sel || sel.isCollapsed || !editor.contains(sel.anchorNode)) return;
+            const phrase = sel.toString().trim();
+            if (phrase.length < 2 || phrase.includes("\n")) return;
+            if (/^\[\[/.test(phrase)) return;
+
+            const range = sel.rangeCount ? sel.getRangeAt(0) : null;
+            const rect = range?.getBoundingClientRect();
+            if (!rect?.width) return;
+
+            const key = editor.dataset.codexField;
+            const question = editor.dataset.codexQuestion || "";
+
+            showEncyclopediaLinkPrompt({
+                rect,
+                phrase,
+                onYes: () => createLinkForSelection(editor, key, question, phrase)
+            });
+        });
+
+        editor.addEventListener("input", () => {
+            saveEditor(editor, key(), false);
+            clearTimeout(linkRenderTimer);
+            linkRenderTimer = setTimeout(() => saveEditor(editor, key(), true), 550);
+        });
+        editor.addEventListener("blur", () => {
+            clearTimeout(linkRenderTimer);
+            saveEditor(editor, key(), true);
+            saveState();
+        });
+
+        editor.addEventListener("click", (e) => {
+            const a = e.target.closest("a.mc-enc-link");
+            if (!a || !editor.contains(a)) return;
+            e.preventDefault();
+            const href = a.getAttribute("href");
+            if (href) location.href = href;
+        });
+    }
+
+    function keyFromEditor(editor) {
+        return editor.dataset.codexField || "";
+    }
+
+    function applyFieldHash() {
+        const m = location.hash.match(/^#mc-field=(.+)$/);
+        if (!m) return;
+        const fieldKey = decodeURIComponent(m[1]);
+        const section = sections.find((s) => s.questions.some(([k]) => k === fieldKey));
+        if (!section) return;
+        activeSectionId = section.id;
+        state.activeSectionId = activeSectionId;
+        renderAll();
+        requestAnimationFrame(() => {
+            const el = scroll.querySelector(`[data-codex-field="${CSS.escape(fieldKey)}"]`);
+            el?.scrollIntoView({ behavior: "smooth", block: "center" });
+            el?.focus();
+        });
     }
 
     function refreshManuscript() {
@@ -257,14 +411,26 @@ export function mountMagicCodex(root, config) {
             entry.className = "mc-entry" + (valueFor(key).trim() ? " is-answered" : "");
             const label = document.createElement("label");
             label.textContent = question;
-            const ta = document.createElement("textarea");
-            ta.rows = 3;
-            ta.value = valueFor(key);
-            ta.addEventListener("input", () => {
-                setValue(key, ta.value);
-                entry.classList.toggle("is-answered", !!ta.value.trim());
-            });
-            entry.append(label, ta);
+            const editor = document.createElement("div");
+            editor.className = "mc-entry-editor";
+            editor.contentEditable = "true";
+            editor.dataset.codexField = key;
+            editor.dataset.codexQuestion = question;
+            editor.setAttribute("role", "textbox");
+            editor.setAttribute("aria-multiline", "true");
+            const initial = valueFor(key);
+            editor.innerHTML = linkContext
+                ? plainToEncLinkHtml(initial)
+                : escapeEditorHtml(initial);
+            if (linkContext) {
+                bindEditorLinks(editor);
+            } else {
+                editor.addEventListener("input", () => {
+                    setValue(key, editor.innerText);
+                    entry.classList.toggle("is-answered", !!editor.innerText.trim());
+                });
+            }
+            entry.append(label, editor);
             entries.appendChild(entry);
         }
 
@@ -357,8 +523,12 @@ export function mountMagicCodex(root, config) {
     bindTopFields();
     renderAll();
     refreshManuscript();
+    applyFieldHash();
+    window.addEventListener("hashchange", applyFieldHash);
 
     function destroy() {
+        hideEncyclopediaLinkPrompt();
+        window.removeEventListener("hashchange", applyFieldHash);
         dock.remove();
         manuscript.remove();
     }

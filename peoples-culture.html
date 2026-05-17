@@ -33,7 +33,7 @@
     <div class="mc-body" id="codexRoot"></div>
     <script type="module">
         import { PEOPLES_CULTURE_SECTIONS, PEOPLES_CULTURE_INTRO } from "./js/peoples-culture-sections.js?v=1";
-        import { mountMagicCodex } from "./js/magic-codex-ui.js?v=3";
+        import { mountMagicCodex } from "./js/magic-codex-ui.js?v=4";
         import {
             cultureStorageKey,
             getPeoplesCultureMeta,
@@ -77,6 +77,12 @@
                         renamePeoplesCulture(encId, cultureId, value.trim());
                         document.getElementById("pageTitle").textContent = value.trim();
                     }
+                },
+                linkContext: {
+                    page: "peoples-culture.html",
+                    queryParams: { encyclopedia: encId, culture: cultureId },
+                    storageKey: cultureStorageKey(encId, cultureId),
+                    sheetLabel: meta.name
                 }
             });
         }

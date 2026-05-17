@@ -33,7 +33,7 @@
     <div class="mc-body" id="codexRoot"></div>
     <script type="module">
         import { SOFT_SECTIONS, SOFT_MAGIC_INTRO } from "./js/magic-system-sections.js?v=2";
-        import { mountMagicCodex, magicStorageKey } from "./js/magic-codex-ui.js?v=2";
+        import { mountMagicCodex, magicStorageKey } from "./js/magic-codex-ui.js?v=4";
 
         const encId = new URLSearchParams(location.search).get("encyclopedia");
 
@@ -42,7 +42,15 @@
             sections: SOFT_SECTIONS,
             intro: SOFT_MAGIC_INTRO,
             storageKey: magicStorageKey("soft", encId),
-            compileHeading: "Soft Magic System"
+            compileHeading: "Soft Magic System",
+            linkContext: encId
+                ? {
+                      page: "magic-system-soft.html",
+                      queryParams: { encyclopedia: encId },
+                      storageKey: magicStorageKey("soft", encId),
+                      sheetLabel: "Soft Magic System"
+                  }
+                : null
         });
 
         const back = document.querySelector("[data-enc-back]");

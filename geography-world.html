@@ -33,7 +33,7 @@
     <div class="mc-body" id="codexRoot"></div>
     <script type="module">
         import { GEOGRAPHY_SECTIONS, GEOGRAPHY_INTRO } from "./js/geography-sections.js?v=2";
-        import { mountMagicCodex } from "./js/magic-codex-ui.js?v=3";
+        import { mountMagicCodex } from "./js/magic-codex-ui.js?v=4";
         import {
             worldStorageKey,
             getGeographyWorldMeta,
@@ -77,6 +77,12 @@
                         renameGeographyWorld(encId, worldId, value.trim());
                         document.getElementById("pageTitle").textContent = value.trim();
                     }
+                },
+                linkContext: {
+                    page: "geography-world.html",
+                    queryParams: { encyclopedia: encId, world: worldId },
+                    storageKey: worldStorageKey(encId, worldId),
+                    sheetLabel: meta.name
                 }
             });
         }
