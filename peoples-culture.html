@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="icon" type="image/png" href="Alysum-3.png">
+    <script src="js/pwa-register.js" defer></script>
+    <script type="module" src="js/vercel-analytics.js"></script>
+    <meta charset="UTF-8" />
+    <title>Peoples & Culture — Culture Codex — Alysum</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="js/alysum-appearance-boot.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Cormorant+Garamond:ital@0;1&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="css/site-responsive.css?v=1" />
+    <link rel="stylesheet" href="css/gradient-themes.css?v=4" />
+    <link rel="stylesheet" href="css/magic-codex.css?v=5" />
+    <script src="js/gradient-theme-sync.js" defer></script>
+</head>
+<body class="mc-page mc-peoples">
+    <div class="mc-veil" aria-hidden="true"></div>
+    <header class="mc-top">
+        <div>
+            <p class="mc-top-brand">Culture Codex</p>
+            <p class="mc-top-title" id="pageTitle">Peoples & Culture</p>
+        </div>
+        <div class="mc-top-actions">
+            <span class="mc-chip">Peoples & culture</span>
+            <a class="mc-link" href="#" id="hubBack">← All cultures</a>
+            <a class="mc-link" href="#" id="encBack">Encyclopedia</a>
+        </div>
+    </header>
+    <div class="mc-body" id="codexRoot"></div>
+    <script type="module">
+        import { PEOPLES_CULTURE_SECTIONS, PEOPLES_CULTURE_INTRO } from "./js/peoples-culture-sections.js?v=1";
+        import { mountMagicCodex } from "./js/magic-codex-ui.js?v=3";
+        import {
+            cultureStorageKey,
+            getPeoplesCultureMeta,
+            touchPeoplesCulture,
+            renamePeoplesCulture
+        } from "./js/peoples-culture-store.js?v=1";
+        import { getEncyclopedia } from "./js/world-encyclopedia-store.js?v=2";
+
+        const params = new URLSearchParams(location.search);
+        const encId = params.get("encyclopedia");
+        const cultureId = params.get("culture");
+        const meta = encId && cultureId ? getPeoplesCultureMeta(encId, cultureId) : null;
+        const enc = encId ? getEncyclopedia(encId) : null;
+
+        if (!encId || !cultureId || !meta) {
+            window.location.href = encId
+                ? "peoples-cultures.html?encyclopedia=" + encodeURIComponent(encId)
+                : "world-encyclopedia.html";
+        } else {
+            touchPeoplesCulture(encId, cultureId);
+            document.getElementById("pageTitle").textContent = meta.name;
+            document.title = meta.name + " — Culture Codex — Alysum";
+            document.getElementById("hubBack").href =
+                "peoples-cultures.html?encyclopedia=" + encodeURIComponent(encId);
+            document.getElementById("encBack").href =
+                "encyclopedia.html?id=" + encodeURIComponent(encId);
+
+            mountMagicCodex(document.getElementById("codexRoot"), {
+                theme: "peoples",
+                sections: PEOPLES_CULTURE_SECTIONS,
+                intro: PEOPLES_CULTURE_INTRO,
+                storageKey: cultureStorageKey(encId, cultureId),
+                compileHeading: "Peoples & Culture",
+                nameLabel: "Name of this people or culture",
+                taglineLabel: "Epithet, self-name, or outsider label",
+                namePlaceholder: "Unnamed people",
+                taglinePlaceholder: "Optional",
+                manuscriptTitle: "Your culture manuscript",
+                onFieldChange: (key, value) => {
+                    if (key === "systemName" && value.trim()) {
+                        renamePeoplesCulture(encId, cultureId, value.trim());
+                        document.getElementById("pageTitle").textContent = value.trim();
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

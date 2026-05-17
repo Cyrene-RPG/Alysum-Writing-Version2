@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="icon" type="image/png" href="Alysum-3.png">
+    <script src="js/pwa-register.js" defer></script>
+    <script type="module" src="js/vercel-analytics.js"></script>
+    <meta charset="UTF-8" />
+    <title>Peoples & Culture — Alysum</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="js/alysum-appearance-boot.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Cormorant+Garamond:ital@0;1&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="css/site-responsive.css?v=1" />
+    <link rel="stylesheet" href="css/gradient-themes.css?v=4" />
+    <link rel="stylesheet" href="css/magic-codex.css?v=5" />
+    <script src="js/gradient-theme-sync.js" defer></script>
+    <style>
+        .pc-hub { max-width: 960px; margin: 0 auto; padding: 28px 18px 56px; position: relative; z-index: 1; }
+        .pc-hub-hero { text-align: center; margin-bottom: 28px; }
+        .pc-hub-hero h1 {
+            margin: 0 0 8px;
+            font-family: "Cinzel", Georgia, serif;
+            font-size: clamp(1.6rem, 4vw, 2.1rem);
+            color: #fff7ed;
+            letter-spacing: 0.05em;
+        }
+        .pc-hub-hero p {
+            margin: 0 auto;
+            max-width: 48ch;
+            font-family: "Cormorant Garamond", Georgia, serif;
+            font-size: 1.2rem;
+            line-height: 1.6;
+            color: #94a3b8;
+            font-style: italic;
+        }
+        .pc-shelf {
+            border-radius: 22px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: linear-gradient(165deg, rgba(22, 30, 48, 0.95), rgba(15, 23, 42, 0.98));
+            overflow: hidden;
+        }
+        .pc-shelf-head {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            padding: 20px 22px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .pc-shelf-head h2 {
+            margin: 0;
+            font-size: 12px;
+            font-weight: 900;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: #99f6e4;
+        }
+        .pc-shelf-note { margin: 4px 0 0; font-size: 12px; color: #94a3b8; font-weight: 600; }
+        .pc-btn-create {
+            border: none;
+            border-radius: 14px;
+            padding: 12px 20px;
+            font-weight: 900;
+            font-size: 14px;
+            color: #042f2e;
+            cursor: pointer;
+            background: linear-gradient(135deg, #2dd4bf, #14b8a6);
+        }
+        .pc-shelf-body { padding: 22px; }
+        .pc-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 14px;
+        }
+        .pc-card {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 18px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.22);
+            text-decoration: none;
+            color: inherit;
+            transition: border-color 0.16s ease, transform 0.14s ease;
+        }
+        .pc-card:hover {
+            border-color: color-mix(in srgb, #2dd4bf 45%, transparent);
+            transform: translateY(-2px);
+        }
+        .pc-card-icon { font-size: 26px; }
+        .pc-card h3 { margin: 0; font-size: 16px; font-weight: 900; color: #fff7ed; }
+        .pc-card p { margin: 0; font-size: 12px; color: #94a3b8; font-weight: 600; }
+        .pc-card-actions { display: flex; gap: 8px; margin-top: auto; padding-top: 6px; }
+        .pc-card-actions button {
+            flex: 1;
+            border-radius: 10px;
+            padding: 8px;
+            font-size: 12px;
+            font-weight: 800;
+            cursor: pointer;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(0, 0, 0, 0.28);
+            color: #e2e8f0;
+        }
+        .pc-card-actions button.danger { color: #fecaca; border-color: rgba(248, 113, 113, 0.35); }
+        .pc-empty {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 36px 20px;
+            border: 1px dashed rgba(255, 255, 255, 0.14);
+            border-radius: 16px;
+        }
+        .pc-dialog-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 18px;
+            background: rgba(2, 6, 23, 0.78);
+            backdrop-filter: blur(8px);
+        }
+        .pc-dialog-backdrop.hidden { display: none; }
+        .pc-dialog {
+            width: min(420px, 100%);
+            padding: 24px;
+            border-radius: 20px;
+            border: 1px solid rgba(153, 246, 228, 0.2);
+            background: linear-gradient(165deg, #1e293b, #0f172a);
+        }
+        .pc-dialog h3 { margin: 0 0 8px; font-family: "Cinzel", serif; color: #fff7ed; }
+        .pc-dialog p { margin: 0 0 16px; font-size: 13px; color: #94a3b8; }
+        .pc-dialog input {
+            width: 100%;
+            margin-bottom: 16px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(0, 0, 0, 0.35);
+            color: #fff;
+            font-size: 15px;
+        }
+        .pc-dialog-actions { display: flex; gap: 10px; justify-content: flex-end; }
+        .pc-dialog-actions button {
+            border-radius: 12px;
+            padding: 10px 16px;
+            font-weight: 800;
+            cursor: pointer;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(0, 0, 0, 0.25);
+            color: #e2e8f0;
+        }
+        .pc-dialog-actions button.primary {
+            border: none;
+            background: linear-gradient(135deg, #2dd4bf, #14b8a6);
+            color: #042f2e;
+        }
+        .pc-missing { text-align: center; padding: 48px 20px; color: #94a3b8; }
+    </style>
+</head>
+<body class="mc-page mc-peoples">
+    <div class="mc-veil" aria-hidden="true"></div>
+    <header class="mc-top">
+        <div>
+            <p class="mc-top-brand">Culture Codex</p>
+            <p class="mc-top-title" id="hubTitle">Peoples & Culture</p>
+        </div>
+        <div class="mc-top-actions">
+            <a class="mc-link" href="world-encyclopedia.html">World Encyclopedia</a>
+            <a class="mc-link" href="#" id="encBack">← Encyclopedia</a>
+        </div>
+    </header>
+
+    <main class="pc-hub" id="hubMain" hidden>
+        <section class="pc-hub-hero">
+            <h1>Peoples & Culture</h1>
+            <p>Create as many cultures, species, tribes, and nations as your story needs. Each group has its own deep questionnaire — saved on this device.</p>
+        </section>
+        <section class="pc-shelf">
+            <div class="pc-shelf-head">
+                <div>
+                    <h2>Your peoples & cultures</h2>
+                    <p class="pc-shelf-note">Separate from World sheets — build groups here in full depth</p>
+                </div>
+                <button type="button" class="pc-btn-create" id="createCultureBtn">+ New people or culture</button>
+            </div>
+            <div class="pc-shelf-body">
+                <div class="pc-grid" id="cultureGrid"></div>
+            </div>
+        </section>
+    </main>
+
+    <p class="pc-missing" id="hubMissing" hidden>This encyclopedia was not found.</p>
+
+    <div class="pc-dialog-backdrop hidden" id="createDialog">
+        <div class="pc-dialog">
+            <h3>New people or culture</h3>
+            <p>Name this group — species, tribe, nation, civilization, or culture. You can refine everything inside the codex.</p>
+            <input type="text" id="createNameInput" maxlength="120" placeholder="e.g. The Ash Elves, Iron Coast clans" autocomplete="off" />
+            <div class="pc-dialog-actions">
+                <button type="button" id="createCancelBtn">Cancel</button>
+                <button type="button" class="primary" id="createConfirmBtn">Open codex</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { getEncyclopedia } from "./js/world-encyclopedia-store.js?v=2";
+        import {
+            listPeoplesCultures,
+            createPeoplesCulture,
+            deletePeoplesCulture,
+            formatCultureDate
+        } from "./js/peoples-culture-store.js?v=1";
+
+        const encId = new URLSearchParams(location.search).get("encyclopedia");
+        const enc = encId ? getEncyclopedia(encId) : null;
+
+        const hubMain = document.getElementById("hubMain");
+        const hubMissing = document.getElementById("hubMissing");
+        const hubTitle = document.getElementById("hubTitle");
+        const encBack = document.getElementById("encBack");
+        const grid = document.getElementById("cultureGrid");
+        const dialog = document.getElementById("createDialog");
+        const nameInput = document.getElementById("createNameInput");
+
+        if (!enc) {
+            hubMissing.hidden = false;
+        } else {
+            hubMain.hidden = false;
+            document.title = "Peoples & Culture — " + enc.title + " — Alysum";
+            hubTitle.textContent = enc.title;
+            encBack.href = "encyclopedia.html?id=" + encodeURIComponent(enc.id);
+            renderGrid();
+        }
+
+        function openCulture(cultureId) {
+            const q = "?encyclopedia=" + encodeURIComponent(encId) + "&culture=" + encodeURIComponent(cultureId);
+            window.location.href = "peoples-culture.html" + q;
+        }
+
+        function renderGrid() {
+            const items = listPeoplesCultures(encId);
+            grid.innerHTML = "";
+            if (!items.length) {
+                const empty = document.createElement("div");
+                empty.className = "pc-empty";
+                empty.innerHTML = "<p><strong>No cultures yet</strong></p><p>Start with a species, tribe, nation, or civilization.</p>";
+                const btn = document.createElement("button");
+                btn.type = "button";
+                btn.className = "pc-btn-create";
+                btn.textContent = "+ New people or culture";
+                btn.style.marginTop = "16px";
+                btn.addEventListener("click", openDialog);
+                empty.appendChild(btn);
+                grid.appendChild(empty);
+                return;
+            }
+            for (const c of items) {
+                const card = document.createElement("article");
+                card.className = "pc-card";
+                const link = document.createElement("a");
+                link.href = "peoples-culture.html?encyclopedia=" + encodeURIComponent(encId) + "&culture=" + encodeURIComponent(c.id);
+                link.style.cssText = "text-decoration:none;color:inherit;display:flex;flex-direction:column;gap:10px;flex:1";
+                link.innerHTML = '<span class="pc-card-icon">👥</span><h3></h3><p></p>';
+                link.querySelector("h3").textContent = c.name;
+                const updated = formatCultureDate(c.updatedAt);
+                link.querySelector("p").textContent = updated ? "Updated " + updated : "New entry";
+                const actions = document.createElement("div");
+                actions.className = "pc-card-actions";
+                const openBtn = document.createElement("button");
+                openBtn.type = "button";
+                openBtn.textContent = "Open";
+                openBtn.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); openCulture(c.id); });
+                const delBtn = document.createElement("button");
+                delBtn.type = "button";
+                delBtn.className = "danger";
+                delBtn.textContent = "Delete";
+                delBtn.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (!confirm('Delete "' + c.name + '"? This removes all answers for this group on this device.')) return;
+                    deletePeoplesCulture(encId, c.id);
+                    renderGrid();
+                });
+                actions.append(openBtn, delBtn);
+                card.append(link, actions);
+                grid.appendChild(card);
+            }
+        }
+
+        function openDialog() {
+            dialog.classList.remove("hidden");
+            nameInput.value = "";
+            nameInput.focus();
+        }
+        function closeDialog() { dialog.classList.add("hidden"); }
+
+        document.getElementById("createCultureBtn").addEventListener("click", openDialog);
+        document.getElementById("createCancelBtn").addEventListener("click", closeDialog);
+        document.getElementById("createConfirmBtn").addEventListener("click", () => {
+            const name = nameInput.value.trim();
+            if (!name) { nameInput.focus(); return; }
+            const c = createPeoplesCulture(encId, name);
+            closeDialog();
+            openCulture(c.id);
+        });
+        nameInput.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") document.getElementById("createConfirmBtn").click();
+            if (e.key === "Escape") closeDialog();
+        });
+        dialog.addEventListener("click", (e) => { if (e.target === dialog) closeDialog(); });
+    </script>
+</body>
+</html>

@@ -19,7 +19,18 @@ export function magicStorageKey(type, encyclopediaId) {
  * @returns {{ destroy: () => void }}
  */
 export function mountMagicCodex(root, config) {
-    const { sections, intro, storageKey, compileHeading } = config;
+    const {
+        sections,
+        intro,
+        storageKey,
+        compileHeading,
+        nameLabel = "Name of this magic",
+        taglineLabel = "Epithet or tagline",
+        namePlaceholder = "Unnamed power",
+        taglinePlaceholder = "Optional",
+        manuscriptTitle = "Your magic manuscript",
+        onFieldChange = null
+    } = config;
 
     root.replaceChildren();
 
@@ -45,8 +56,8 @@ export function mountMagicCodex(root, config) {
         naming.appendChild(wrap);
     }
 
-    addNameField("Name of this magic", "systemName", "Unnamed power");
-    addNameField("Epithet or tagline", "systemTagline", "Optional");
+    addNameField(nameLabel, "systemName", namePlaceholder);
+    addNameField(taglineLabel, "systemTagline", taglinePlaceholder);
     root.appendChild(naming);
 
     const layout = document.createElement("div");
@@ -102,7 +113,7 @@ export function mountMagicCodex(root, config) {
     const msHead = document.createElement("div");
     msHead.className = "mc-manuscript-head";
     const msTitle = document.createElement("h3");
-    msTitle.textContent = "Your magic manuscript";
+    msTitle.textContent = manuscriptTitle;
     const msClose = document.createElement("button");
     msClose.type = "button";
     msClose.className = "mc-link";
@@ -172,6 +183,7 @@ export function mountMagicCodex(root, config) {
 
     function setValue(key, value) {
         state.answers[key] = value;
+        if (typeof onFieldChange === "function") onFieldChange(key, value);
         statusEl.textContent = "Writing…";
         statusEl.className = "mc-dock-status";
         clearTimeout(setValue.timer);

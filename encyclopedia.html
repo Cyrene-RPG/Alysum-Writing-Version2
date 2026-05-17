@@ -372,6 +372,16 @@
             openMagicTypeOverlay(q, enc.id, enc.magicType);
         }
 
+        const peoplesBtn = document.createElement("a");
+        peoplesBtn.className = "enc-tool is-featured";
+        peoplesBtn.href = "peoples-cultures.html" + q;
+        peoplesBtn.innerHTML =
+            '<span class="enc-tool-icon">👥</span><h2></h2><p></p>';
+        peoplesBtn.querySelector("h2").textContent = "Peoples & Culture";
+        peoplesBtn.querySelector("p").textContent =
+            "Species, tribes, nations, and civilizations — create as many groups as your world needs, each with a full culture codex.";
+        toolsEl.appendChild(peoplesBtn);
+
         const tools = [
             {
                 href: "worldbuilding.html" + q,

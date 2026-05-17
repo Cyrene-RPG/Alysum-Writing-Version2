@@ -8,7 +8,7 @@
  * Bump SW_VERSION when shipping breaking shell changes to force a refresh.
  */
 
-const SW_VERSION = 'v1.0.41';
+const SW_VERSION = 'v1.0.42';
 const SHELL_CACHE = `alysum-shell-${SW_VERSION}`;
 const ASSET_CACHE = `alysum-assets-${SW_VERSION}`;
 
@@ -31,6 +31,8 @@ const APP_SHELL = [
   'magic-system-soft.html',
   'magic-system-hard.html',
   'magic-system-undecided.html',
+  'peoples-cultures.html',
+  'peoples-culture.html',
   'css/magic-codex.css',
   'character-profile.html',
   'worldbuilding.html',
