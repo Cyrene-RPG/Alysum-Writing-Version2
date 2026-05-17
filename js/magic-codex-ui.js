@@ -245,7 +245,11 @@ export function mountMagicCodex(root, config) {
         const normalized = linkContext ? normalizeEncyclopediaPlain(raw) : raw;
         state.answers[key] = normalized;
         if (reRenderLinks && linkContext) {
+            const caret = editor.contains(document.activeElement)
+                ? getPlainCaretOffset(editor)
+                : null;
             editor.innerHTML = plainToEncLinkHtml(normalized);
+            if (caret != null) setPlainCaretOffset(editor, caret);
         }
         if (typeof onFieldChange === "function") onFieldChange(key, normalized);
         statusEl.textContent = "Writing…";
@@ -255,6 +259,103 @@ export function mountMagicCodex(root, config) {
         const entry = editor.closest(".mc-entry");
         if (entry) entry.classList.toggle("is-answered", !!normalized.trim());
         return normalized;
+    }
+
+    /** Character offset in serialized plain text ([[links]] count as full markers). */
+    function getPlainCaretOffset(root) {
+        const sel = window.getSelection();
+        if (!sel?.rangeCount || !root.contains(sel.anchorNode)) return null;
+        const range = sel.getRangeAt(0);
+        const probe = range.cloneRange();
+        probe.selectNodeContents(root);
+        probe.setEnd(range.endContainer, range.endOffset);
+        const frag = probe.cloneContents();
+        return measurePlainFragment(frag);
+    }
+
+    function measurePlainFragment(frag) {
+        let n = 0;
+        const walk = (node) => {
+            if (node.nodeType === Node.TEXT_NODE) {
+                n += node.textContent.length;
+                return;
+            }
+            if (node.nodeType !== Node.ELEMENT_NODE) return;
+            const el = node;
+            if (el.classList?.contains("mc-enc-link")) {
+                const phrase = (el.getAttribute("data-enc-phrase") || el.textContent || "").trim();
+                n += `[[${phrase.replace(/\]\]/g, "")}]]`.length;
+                return;
+            }
+            for (const c of el.childNodes) walk(c);
+        };
+        for (const c of frag.childNodes) walk(c);
+        return n;
+    }
+
+    function setPlainCaretOffset(root, target) {
+        const sel = window.getSelection();
+        if (!sel) return;
+        let remaining = Math.max(0, target);
+        let placed = false;
+
+        function walk(node) {
+            if (placed) return;
+            if (node.nodeType === Node.TEXT_NODE) {
+                const len = node.textContent.length;
+                if (remaining <= len) {
+                    const r = document.createRange();
+                    r.setStart(node, remaining);
+                    r.collapse(true);
+                    sel.removeAllRanges();
+                    sel.addRange(r);
+                    placed = true;
+                    return;
+                }
+                remaining -= len;
+                return;
+            }
+            if (node.nodeType !== Node.ELEMENT_NODE) return;
+            const el = node;
+            if (el.classList?.contains("mc-enc-link")) {
+                const phrase = (el.getAttribute("data-enc-phrase") || el.textContent || "").trim();
+                const markerLen = `[[${phrase.replace(/\]\]/g, "")}]]`.length;
+                if (remaining <= markerLen) {
+                    const r = document.createRange();
+                    r.setStartAfter(el);
+                    r.collapse(true);
+                    sel.removeAllRanges();
+                    sel.addRange(r);
+                    placed = true;
+                    return;
+                }
+                remaining -= markerLen;
+                return;
+            }
+            if (el.tagName === "BR") {
+                if (remaining <= 1) {
+                    const r = document.createRange();
+                    r.setStartBefore(el);
+                    r.collapse(true);
+                    sel.removeAllRanges();
+                    sel.addRange(r);
+                    placed = true;
+                    return;
+                }
+                remaining -= 1;
+                return;
+            }
+            for (const c of el.childNodes) walk(c);
+        }
+
+        for (const c of root.childNodes) walk(c);
+        if (!placed) {
+            const r = document.createRange();
+            r.selectNodeContents(root);
+            r.collapse(false);
+            sel.removeAllRanges();
+            sel.addRange(r);
+        }
     }
 
     function createLinkForSelection(editor, key, question, phrase) {
@@ -300,7 +401,6 @@ export function mountMagicCodex(root, config) {
     function bindEditorLinks(editor) {
         if (!linkContext) return;
         const key = () => keyFromEditor(editor);
-        let linkRenderTimer = null;
 
         editor.addEventListener("mouseup", () => {
             const sel = window.getSelection();
@@ -325,11 +425,8 @@ export function mountMagicCodex(root, config) {
 
         editor.addEventListener("input", () => {
             saveEditor(editor, key(), false);
-            clearTimeout(linkRenderTimer);
-            linkRenderTimer = setTimeout(() => saveEditor(editor, key(), true), 550);
         });
         editor.addEventListener("blur", () => {
-            clearTimeout(linkRenderTimer);
             saveEditor(editor, key(), true);
             saveState();
         });
