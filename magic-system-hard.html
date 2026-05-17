@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- ALYSUM:PWA:START -->
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta name="theme-color" content="#7c3aed">
+    <link rel="icon" type="image/png" href="Alysum-3.png">
+    <script src="js/pwa-register.js" defer></script>
+    <!-- ALYSUM:PWA:END -->
+    <script type="module" src="js/vercel-analytics.js"></script>
+    <meta charset="UTF-8" />
+    <title>Hard Magic System — Alysum</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="js/alysum-appearance-boot.js"></script>
+    <link rel="stylesheet" href="css/site-responsive.css?v=1" />
+    <link rel="stylesheet" href="css/gradient-themes.css?v=4" />
+    <link rel="stylesheet" href="css/magic-system-builder.css?v=1" />
+    <script src="js/gradient-theme-sync.js" defer></script>
+    <style>
+        html, body {
+            margin: 0;
+            min-height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background:
+                radial-gradient(circle at top center, var(--theme-body-spot) 0%, transparent 26%),
+                linear-gradient(180deg, #0d1426 0%, #0b1220 100%);
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+<header class="ms-header">
+    <div class="ms-header-title">Hard Magic System</div>
+    <div class="ms-header-actions">
+        <a class="ms-btn" href="world-encyclopedia.html" data-enc-back>← World Encyclopedia</a>
+        <a class="ms-btn" href="studio.html">Studio</a>
+    </div>
+</header>
+<main class="ms-wrap">
+    <section class="ms-hero">
+        <h1>Rules, costs, and consistency</h1>
+        <p>Hard magic relies on clear rules, logic, costs, and consistency. Answer these prompts to build structure your readers can follow and your characters can exploit.</p>
+    </section>
+    <div id="msRoot"></div>
+</main>
+<script type="module">
+    import { HARD_SECTIONS, HARD_MAGIC_INTRO } from "./js/magic-system-sections.js?v=1";
+    import { mountMagicSystemBuilder, magicStorageKey } from "./js/magic-system-builder.js?v=1";
+
+    const enc = new URLSearchParams(location.search).get("encyclopedia");
+    mountMagicSystemBuilder(document.getElementById("msRoot"), {
+        sections: HARD_SECTIONS,
+        intro: HARD_MAGIC_INTRO,
+        storageKey: magicStorageKey("hard", enc),
+        compileHeading: "Hard Magic System",
+        clearLabel: "Clear this hard magic worksheet? Only clears answers saved on this device."
+    });
+
+    if (enc) {
+        document.querySelectorAll("[data-enc-back]").forEach((el) => {
+            el.href = "encyclopedia.html?id=" + encodeURIComponent(enc);
+            el.textContent = "← Encyclopedia";
+        });
+    }
+</script>
+</body>
+</html>

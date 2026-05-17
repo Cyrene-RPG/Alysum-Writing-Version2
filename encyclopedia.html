@@ -136,6 +136,125 @@
             font-weight: 700;
         }
         .enc-missing a { color: #c4b5fd; }
+        .enc-tool.is-button {
+            cursor: pointer;
+            border: none;
+            font: inherit;
+            text-align: left;
+            width: 100%;
+        }
+        .enc-tool.is-button:focus-visible {
+            outline: 2px solid color-mix(in srgb, var(--purple-bright) 55%, transparent);
+            outline-offset: 2px;
+        }
+        .enc-tool.is-featured {
+            border-color: color-mix(in srgb, var(--gold) 35%, rgba(255, 255, 255, 0.1));
+            background: linear-gradient(
+                145deg,
+                rgba(109, 40, 217, 0.18),
+                rgba(0, 0, 0, 0.22)
+            );
+        }
+        .enc-magic-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 18px;
+            background: rgba(2, 6, 23, 0.78);
+            backdrop-filter: blur(8px);
+        }
+        .enc-magic-overlay.hidden { display: none; }
+        .enc-magic-dialog {
+            width: min(480px, 100%);
+            padding: 26px 24px;
+            border-radius: 22px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: linear-gradient(165deg, #1e293b, #0f172a);
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+        }
+        .enc-magic-dialog h2 {
+            margin: 0 0 6px;
+            font-family: "Cinzel", Georgia, serif;
+            font-size: 22px;
+            font-weight: 700;
+            color: #fff7ed;
+            letter-spacing: 0.03em;
+        }
+        .enc-magic-dialog .enc-magic-lead {
+            margin: 0 0 20px;
+            font-size: 14px;
+            line-height: 1.55;
+            color: #94a3b8;
+            font-weight: 600;
+        }
+        .enc-magic-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .enc-magic-option {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 14px 16px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.22);
+            cursor: pointer;
+            transition: border-color 0.14s ease, background 0.14s ease;
+        }
+        .enc-magic-option:hover {
+            border-color: color-mix(in srgb, var(--purple-bright) 40%, transparent);
+            background: rgba(109, 40, 217, 0.12);
+        }
+        .enc-magic-option.is-selected {
+            border-color: color-mix(in srgb, var(--purple-bright) 55%, transparent);
+            background: rgba(109, 40, 217, 0.22);
+        }
+        .enc-magic-option input {
+            margin-top: 3px;
+            accent-color: var(--purple-bright);
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
+        }
+        .enc-magic-option strong {
+            display: block;
+            font-size: 15px;
+            font-weight: 900;
+            color: #fff7ed;
+            margin-bottom: 4px;
+        }
+        .enc-magic-option span {
+            font-size: 12px;
+            line-height: 1.45;
+            color: #94a3b8;
+            font-weight: 600;
+        }
+        .enc-magic-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        .enc-magic-actions button {
+            border-radius: 12px;
+            padding: 10px 18px;
+            font-size: 13px;
+            font-weight: 800;
+            cursor: pointer;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(0, 0, 0, 0.25);
+            color: #e2e8f0;
+        }
+        .enc-magic-actions button.primary {
+            border: none;
+            background: linear-gradient(135deg, var(--purple-dark), var(--purple));
+            color: #fff;
+        }
     </style>
 </head>
 <body>
@@ -151,10 +270,44 @@
     <h1 class="enc-title" id="encTitle"></h1>
     <p class="enc-meta" id="encMeta"></p>
     <p class="enc-lead">
-        Build this universe piece by piece. Each tool adds another layer — broad world lore, detailed cities, and political realms.
+        Build this universe piece by piece. Start with your magic system, then layer in world lore, cities, and realms.
     </p>
     <div class="enc-tools" id="encTools"></div>
 </main>
+
+<div class="enc-magic-overlay hidden" id="magicTypeOverlay" role="dialog" aria-modal="true" aria-labelledby="magicTypeTitle">
+    <div class="enc-magic-dialog">
+        <h2 id="magicTypeTitle">What kind of magic system?</h2>
+        <p class="enc-magic-lead">Choose one to open the right worksheet. You can always explore the other style later.</p>
+        <div class="enc-magic-options" role="radiogroup" aria-labelledby="magicTypeTitle">
+            <label class="enc-magic-option is-selected" data-value="soft">
+                <input type="radio" name="magicType" value="soft" checked />
+                <div>
+                    <strong>Soft Magic System</strong>
+                    <span>Mysterious, emotional, unpredictable — wonder and mythology over strict rules.</span>
+                </div>
+            </label>
+            <label class="enc-magic-option" data-value="hard">
+                <input type="radio" name="magicType" value="hard" />
+                <div>
+                    <strong>Hard Magic System</strong>
+                    <span>Clear rules, costs, and limits — logic and strategy readers can follow.</span>
+                </div>
+            </label>
+            <label class="enc-magic-option" data-value="undecided">
+                <input type="radio" name="magicType" value="undecided" />
+                <div>
+                    <strong>I don't know</strong>
+                    <span>Work through both questionnaires and swap between them anytime.</span>
+                </div>
+            </label>
+        </div>
+        <div class="enc-magic-actions">
+            <button type="button" id="magicTypeCancel">Cancel</button>
+            <button type="button" class="primary" id="magicTypeContinue">Continue</button>
+        </div>
+    </div>
+</div>
 
 <div class="enc-missing" id="encMissing" hidden>
     <p>This encyclopedia could not be found on this device.</p>
@@ -189,12 +342,24 @@
         main.hidden = false;
 
         const q = "?encyclopedia=" + encodeURIComponent(enc.id);
+
+        const magicBtn = document.createElement("button");
+        magicBtn.type = "button";
+        magicBtn.className = "enc-tool is-button is-featured";
+        magicBtn.innerHTML =
+            '<span class="enc-tool-icon">✨</span><h2></h2><p></p>';
+        magicBtn.querySelector("h2").textContent = "Magic System";
+        magicBtn.querySelector("p").textContent =
+            "The foundation of your world — soft wonder, hard rules, or explore both until you decide.";
+        magicBtn.addEventListener("click", () => openMagicTypeOverlay(q));
+        toolsEl.appendChild(magicBtn);
+
         const tools = [
             {
                 href: "worldbuilding.html" + q,
                 icon: "🗺️",
                 title: "World sheets",
-                desc: "Geography, cultures, economy, religion, magic, and conflict — topic cards that compile into your encyclopedia."
+                desc: "Geography, cultures, economy, religion, and conflict — topic cards that compile into your encyclopedia."
             },
             {
                 href: "city-builder.html" + q,
@@ -224,6 +389,65 @@
             toolsEl.appendChild(a);
         }
     }
+
+    const magicOverlay = document.getElementById("magicTypeOverlay");
+    const magicCancel = document.getElementById("magicTypeCancel");
+    const magicContinue = document.getElementById("magicTypeContinue");
+    let magicQuery = "";
+
+    function openMagicTypeOverlay(query) {
+        magicQuery = query;
+        magicOverlay.classList.remove("hidden");
+        const checked = magicOverlay.querySelector('input[name="magicType"]:checked');
+        syncMagicOptionStyles(checked?.value || "soft");
+    }
+
+    function closeMagicTypeOverlay() {
+        magicOverlay.classList.add("hidden");
+    }
+
+    function syncMagicOptionStyles(selected) {
+        magicOverlay.querySelectorAll(".enc-magic-option").forEach((label) => {
+            label.classList.toggle("is-selected", label.dataset.value === selected);
+        });
+    }
+
+    function navigateMagicType() {
+        const selected = magicOverlay.querySelector('input[name="magicType"]:checked')?.value;
+        const routes = {
+            soft: "magic-system-soft.html",
+            hard: "magic-system-hard.html",
+            undecided: "magic-system-undecided.html"
+        };
+        const path = routes[selected];
+        if (!path) return;
+        window.location.href = path + magicQuery;
+    }
+
+    magicOverlay.querySelectorAll(".enc-magic-option").forEach((label) => {
+        label.addEventListener("click", () => {
+            const input = label.querySelector('input[type="radio"]');
+            if (input) {
+                input.checked = true;
+                syncMagicOptionStyles(input.value);
+            }
+        });
+    });
+
+    magicOverlay.querySelectorAll('input[name="magicType"]').forEach((input) => {
+        input.addEventListener("change", () => syncMagicOptionStyles(input.value));
+    });
+
+    magicCancel.addEventListener("click", closeMagicTypeOverlay);
+    magicContinue.addEventListener("click", navigateMagicType);
+    magicOverlay.addEventListener("click", (e) => {
+        if (e.target === magicOverlay) closeMagicTypeOverlay();
+    });
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && !magicOverlay.classList.contains("hidden")) {
+            closeMagicTypeOverlay();
+        }
+    });
 </script>
 
 </body>

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- ALYSUM:PWA:START -->
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta name="theme-color" content="#7c3aed">
+    <link rel="icon" type="image/png" href="Alysum-3.png">
+    <script src="js/pwa-register.js" defer></script>
+    <!-- ALYSUM:PWA:END -->
+    <script type="module" src="js/vercel-analytics.js"></script>
+    <meta charset="UTF-8" />
+    <title>Magic System — Alysum</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="js/alysum-appearance-boot.js"></script>
+    <link rel="stylesheet" href="css/site-responsive.css?v=1" />
+    <link rel="stylesheet" href="css/gradient-themes.css?v=4" />
+    <link rel="stylesheet" href="css/magic-system-builder.css?v=1" />
+    <script src="js/gradient-theme-sync.js" defer></script>
+    <style>
+        html, body {
+            margin: 0;
+            min-height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background:
+                radial-gradient(circle at top center, var(--theme-body-spot) 0%, transparent 26%),
+                linear-gradient(180deg, #0d1426 0%, #0b1220 100%);
+            color: #fff;
+        }
+        .ms-undecided-head {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+        .ms-undecided-head p {
+            margin: 0;
+            max-width: 52ch;
+            font-size: 13px;
+            line-height: 1.55;
+            color: #94a3b8;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+<header class="ms-header">
+    <div class="ms-header-title">Magic System</div>
+    <div class="ms-header-actions">
+        <div class="ms-mode-switch" role="group" aria-label="Soft or hard magic">
+            <button type="button" class="ms-mode-seg active" data-mode="soft">Soft magic</button>
+            <button type="button" class="ms-mode-seg" data-mode="hard">Hard magic</button>
+        </div>
+        <a class="ms-btn" href="world-encyclopedia.html" data-enc-back>← World Encyclopedia</a>
+        <a class="ms-btn" href="studio.html">Studio</a>
+    </div>
+</header>
+<main class="ms-wrap">
+    <section class="ms-hero">
+        <h1>Explore both approaches</h1>
+        <p>Not sure yet? Work through soft and hard magic questionnaires and switch anytime. Each side saves separately on this device.</p>
+    </section>
+    <div class="ms-undecided-head">
+        <p>Use the toggle above to swap between soft magic (mystery and atmosphere) and hard magic (rules and strategy).</p>
+    </div>
+    <div id="softRoot" class="ms-mode-panel is-active"></div>
+    <div id="hardRoot" class="ms-mode-panel"></div>
+</main>
+<script type="module">
+    import {
+        SOFT_SECTIONS,
+        HARD_SECTIONS,
+        SOFT_MAGIC_INTRO,
+        HARD_MAGIC_INTRO
+    } from "./js/magic-system-sections.js?v=1";
+    import { mountMagicSystemBuilder, magicStorageKey } from "./js/magic-system-builder.js?v=1";
+
+    const enc = new URLSearchParams(location.search).get("encyclopedia");
+
+    mountMagicSystemBuilder(document.getElementById("softRoot"), {
+        sections: SOFT_SECTIONS,
+        intro: SOFT_MAGIC_INTRO,
+        storageKey: magicStorageKey("soft", enc),
+        compileHeading: "Soft Magic System",
+        clearLabel: "Clear soft magic answers on this device?"
+    });
+
+    mountMagicSystemBuilder(document.getElementById("hardRoot"), {
+        sections: HARD_SECTIONS,
+        intro: HARD_MAGIC_INTRO,
+        storageKey: magicStorageKey("hard", enc),
+        compileHeading: "Hard Magic System",
+        clearLabel: "Clear hard magic answers on this device?"
+    });
+
+    const softPanel = document.getElementById("softRoot");
+    const hardPanel = document.getElementById("hardRoot");
+    const switcher = document.querySelector(".ms-mode-switch");
+
+    function showMode(mode) {
+        const soft = mode === "soft";
+        softPanel.classList.toggle("is-active", soft);
+        hardPanel.classList.toggle("is-active", !soft);
+        switcher.querySelectorAll(".ms-mode-seg").forEach((btn) => {
+            btn.classList.toggle("active", btn.dataset.mode === mode);
+        });
+        try {
+            history.replaceState(null, "", "#" + mode);
+        } catch (_) {}
+    }
+
+    switcher.querySelectorAll(".ms-mode-seg").forEach((btn) => {
+        btn.addEventListener("click", () => {
+            if (!btn.classList.contains("active")) showMode(btn.dataset.mode);
+        });
+    });
+
+    const hash = (location.hash || "").replace(/^#/, "");
+    showMode(hash === "hard" ? "hard" : "soft");
+
+    window.addEventListener("hashchange", () => {
+        const h = (location.hash || "").replace(/^#/, "");
+        if (h === "soft" || h === "hard") showMode(h);
+    });
+
+    if (enc) {
+        document.querySelectorAll("[data-enc-back]").forEach((el) => {
+            el.href = "encyclopedia.html?id=" + encodeURIComponent(enc);
+            el.textContent = "← Encyclopedia";
+        });
+    }
+</script>
+</body>
+</html>
