@@ -168,27 +168,31 @@
         }
         .enc-magic-overlay.hidden { display: none; }
         .enc-magic-dialog {
-            width: min(480px, 100%);
-            padding: 26px 24px;
-            border-radius: 22px;
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            background: linear-gradient(165deg, #1e293b, #0f172a);
-            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+            width: min(520px, 100%);
+            padding: 32px 28px;
+            border-radius: 24px;
+            border: 1px solid color-mix(in srgb, var(--gold) 22%, rgba(255, 255, 255, 0.1));
+            background:
+                radial-gradient(ellipse 80% 50% at 50% 0%, rgba(109, 40, 217, 0.2) 0%, transparent 55%),
+                linear-gradient(165deg, #141c2e 0%, #080d18 100%);
+            box-shadow: 0 32px 80px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
         }
         .enc-magic-dialog h2 {
-            margin: 0 0 6px;
+            margin: 0 0 8px;
             font-family: "Cinzel", Georgia, serif;
-            font-size: 22px;
+            font-size: clamp(1.35rem, 3vw, 1.65rem);
             font-weight: 700;
             color: #fff7ed;
-            letter-spacing: 0.03em;
+            letter-spacing: 0.06em;
+            text-align: center;
         }
         .enc-magic-dialog .enc-magic-lead {
-            margin: 0 0 20px;
+            margin: 0 0 24px;
             font-size: 14px;
-            line-height: 1.55;
+            line-height: 1.6;
             color: #94a3b8;
             font-weight: 600;
+            text-align: center;
         }
         .enc-magic-options {
             display: flex;
@@ -318,8 +322,11 @@
     import {
         getEncyclopedia,
         touchEncyclopedia,
-        formatEncyclopediaDate
-    } from "./js/world-encyclopedia-store.js?v=1";
+        formatEncyclopediaDate,
+        setEncyclopediaMagicType,
+        magicTypeRoute,
+        isMagicType
+    } from "./js/world-encyclopedia-store.js?v=2";
 
     const params = new URLSearchParams(window.location.search);
     const id = params.get("id");
@@ -351,8 +358,19 @@
         magicBtn.querySelector("h2").textContent = "Magic System";
         magicBtn.querySelector("p").textContent =
             "The foundation of your world — soft wonder, hard rules, or explore both until you decide.";
-        magicBtn.addEventListener("click", () => openMagicTypeOverlay(q));
+        const forcePickMagic = params.get("pickMagic") === "1";
+        magicBtn.addEventListener("click", () => {
+            if (enc.magicType && !forcePickMagic) {
+                goToMagic(enc.magicType, q, enc.id);
+            } else {
+                openMagicTypeOverlay(q, enc.id, enc.magicType);
+            }
+        });
         toolsEl.appendChild(magicBtn);
+
+        if (forcePickMagic) {
+            openMagicTypeOverlay(q, enc.id, enc.magicType);
+        }
 
         const tools = [
             {
@@ -394,10 +412,23 @@
     const magicCancel = document.getElementById("magicTypeCancel");
     const magicContinue = document.getElementById("magicTypeContinue");
     let magicQuery = "";
+    let magicEncId = null;
 
-    function openMagicTypeOverlay(query) {
+    function goToMagic(magicType, query, encId) {
+        if (!isMagicType(magicType)) return;
+        if (encId) setEncyclopediaMagicType(encId, magicType);
+        const route = magicTypeRoute(magicType);
+        if (route) window.location.href = route + query;
+    }
+
+    function openMagicTypeOverlay(query, encId, preferredType) {
         magicQuery = query;
+        magicEncId = encId || null;
         magicOverlay.classList.remove("hidden");
+        if (preferredType && isMagicType(preferredType)) {
+            const input = magicOverlay.querySelector('input[name="magicType"][value="' + preferredType + '"]');
+            if (input) input.checked = true;
+        }
         const checked = magicOverlay.querySelector('input[name="magicType"]:checked');
         syncMagicOptionStyles(checked?.value || "soft");
     }
@@ -414,14 +445,8 @@
 
     function navigateMagicType() {
         const selected = magicOverlay.querySelector('input[name="magicType"]:checked')?.value;
-        const routes = {
-            soft: "magic-system-soft.html",
-            hard: "magic-system-hard.html",
-            undecided: "magic-system-undecided.html"
-        };
-        const path = routes[selected];
-        if (!path) return;
-        window.location.href = path + magicQuery;
+        if (!isMagicType(selected)) return;
+        goToMagic(selected, magicQuery, magicEncId);
     }
 
     magicOverlay.querySelectorAll(".enc-magic-option").forEach((label) => {

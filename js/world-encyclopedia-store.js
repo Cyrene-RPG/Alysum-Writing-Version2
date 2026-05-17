@@ -78,6 +78,44 @@ export function deleteEncyclopedia(id) {
     writeAll(list);
 }
 
+/** @type {readonly ["soft", "hard", "undecided"]} */
+export const MAGIC_TYPES = ["soft", "hard", "undecided"];
+
+export function isMagicType(value) {
+    return MAGIC_TYPES.includes(value);
+}
+
+export function magicTypeRoute(magicType) {
+    const routes = {
+        soft: "magic-system-soft.html",
+        hard: "magic-system-hard.html",
+        undecided: "magic-system-undecided.html"
+    };
+    return isMagicType(magicType) ? routes[magicType] : null;
+}
+
+export function setEncyclopediaMagicType(id, magicType) {
+    if (!isMagicType(magicType)) return null;
+    const list = readAll();
+    const ix = list.findIndex((e) => e.id === id);
+    if (ix < 0) return null;
+    list[ix] = { ...list[ix], magicType, updatedAt: Date.now() };
+    writeAll(list);
+    return list[ix];
+}
+
+export function clearEncyclopediaMagicType(id) {
+    const list = readAll();
+    const ix = list.findIndex((e) => e.id === id);
+    if (ix < 0) return null;
+    const next = { ...list[ix] };
+    delete next.magicType;
+    next.updatedAt = Date.now();
+    list[ix] = next;
+    writeAll(list);
+    return list[ix];
+}
+
 export function formatEncyclopediaDate(ms) {
     if (!ms || !Number.isFinite(ms)) return "";
     try {

@@ -1,67 +1,64 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- ALYSUM:PWA:START -->
     <link rel="manifest" href="manifest.webmanifest">
-    <meta name="theme-color" content="#7c3aed">
     <link rel="icon" type="image/png" href="Alysum-3.png">
     <script src="js/pwa-register.js" defer></script>
-    <!-- ALYSUM:PWA:END -->
     <script type="module" src="js/vercel-analytics.js"></script>
     <meta charset="UTF-8" />
-    <title>Soft Magic System — Alysum</title>
+    <title>Soft Magic — Arcane Codex — Alysum</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script src="js/alysum-appearance-boot.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Cormorant+Garamond:ital@0;1&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
     <link rel="stylesheet" href="css/gradient-themes.css?v=4" />
-    <link rel="stylesheet" href="css/magic-system-builder.css?v=1" />
+    <link rel="stylesheet" href="css/magic-codex.css?v=2" />
     <script src="js/gradient-theme-sync.js" defer></script>
-    <style>
-        html, body {
-            margin: 0;
-            min-height: 100%;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            background:
-                radial-gradient(circle at top center, var(--theme-body-spot) 0%, transparent 26%),
-                linear-gradient(180deg, #0d1426 0%, #0b1220 100%);
-            color: #fff;
-        }
-    </style>
 </head>
-<body>
-<header class="ms-header">
-    <div class="ms-header-title">Soft Magic System</div>
-    <div class="ms-header-actions">
-        <a class="ms-btn" href="world-encyclopedia.html" data-enc-back>← World Encyclopedia</a>
-        <a class="ms-btn" href="studio.html">Studio</a>
-    </div>
-</header>
-<main class="ms-wrap">
-    <section class="ms-hero">
-        <h1>Mystery, wonder, and atmosphere</h1>
-        <p>Soft magic is mysterious, emotional, unpredictable, and often unknowable. Answer these prompts to build mythology and feeling rather than strict rules.</p>
-    </section>
-    <div id="msRoot"></div>
-</main>
-<script type="module">
-    import { SOFT_SECTIONS, SOFT_MAGIC_INTRO } from "./js/magic-system-sections.js?v=1";
-    import { mountMagicSystemBuilder, magicStorageKey } from "./js/magic-system-builder.js?v=1";
+<body class="mc-page mc-soft">
+    <div class="mc-veil" aria-hidden="true"></div>
+    <header class="mc-top">
+        <div>
+            <p class="mc-top-brand">Arcane Codex</p>
+            <p class="mc-top-title">Soft Magic</p>
+        </div>
+        <div class="mc-top-actions">
+            <span class="mc-chip">Mystery & wonder</span>
+            <a class="mc-link" href="world-encyclopedia.html" data-enc-back>← Encyclopedia</a>
+            <button type="button" class="mc-link" id="changeMagicType" hidden>Change approach</button>
+        </div>
+    </header>
+    <div class="mc-body" id="codexRoot"></div>
+    <script type="module">
+        import { SOFT_SECTIONS, SOFT_MAGIC_INTRO } from "./js/magic-system-sections.js?v=2";
+        import { mountMagicCodex, magicStorageKey } from "./js/magic-codex-ui.js?v=2";
 
-    const enc = new URLSearchParams(location.search).get("encyclopedia");
-    mountMagicSystemBuilder(document.getElementById("msRoot"), {
-        sections: SOFT_SECTIONS,
-        intro: SOFT_MAGIC_INTRO,
-        storageKey: magicStorageKey("soft", enc),
-        compileHeading: "Soft Magic System",
-        clearLabel: "Clear this soft magic worksheet? Only clears answers saved on this device."
-    });
+        const encId = new URLSearchParams(location.search).get("encyclopedia");
 
-    if (enc) {
-        document.querySelectorAll("[data-enc-back]").forEach((el) => {
-            el.href = "encyclopedia.html?id=" + encodeURIComponent(enc);
-            el.textContent = "← Encyclopedia";
+        mountMagicCodex(document.getElementById("codexRoot"), {
+            theme: "soft",
+            sections: SOFT_SECTIONS,
+            intro: SOFT_MAGIC_INTRO,
+            storageKey: magicStorageKey("soft", encId),
+            compileHeading: "Soft Magic System"
         });
-    }
-</script>
+
+        const back = document.querySelector("[data-enc-back]");
+        if (encId && back) {
+            back.href = "encyclopedia.html?id=" + encodeURIComponent(encId);
+        }
+
+        const changeBtn = document.getElementById("changeMagicType");
+        if (encId && changeBtn) {
+            changeBtn.hidden = false;
+            changeBtn.addEventListener("click", () => {
+                if (confirm("Pick a different magic approach? Your answers stay saved.")) {
+                    location.href = "encyclopedia.html?id=" + encodeURIComponent(encId) + "&pickMagic=1";
+                }
+            });
+        }
+    </script>
 </body>
 </html>
