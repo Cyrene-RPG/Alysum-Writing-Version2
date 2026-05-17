@@ -570,7 +570,7 @@
                 <div class="wb-aside-actions">
                     <button type="button" class="wb-btn wb-btn-primary" id="wbSaveNowBtn">Save now</button>
                     <button type="button" class="wb-btn" id="wbNewSheetBtn">New sheet</button
-                    <a class="wb-btn wb-btn-primary" href="city-builder.html">City Builder</a>>
+                    <a class="wb-btn wb-btn-primary" href="city-builder.html">City Builder</a>
                 </div>
                 <ul id="wbSheetMenu" class="wb-sheet-list" aria-label="Worldbuilding worksheets"></ul>
             </aside>
@@ -630,6 +630,14 @@
     <script type="module">
         import { supabase } from "./firebase.js";
         import { wireSupabaseSession } from "./js/supabase-session.js?v=1";
+        import {
+            listWorldbuildingSheets,
+            upsertWorldbuildingSheet,
+            deleteWorldbuildingSheet,
+            countWorldbuildingSheets,
+            syncLocalSheetsToCloud,
+            subscribeWorldbuildingSheets
+        } from "./js/worldbuilding-encyclopedia-store.js?v=1";
 
         const LEGACY_LOCAL_KEY = "alysum-worldbuilding-sheet-v1";
         const ACTIVE_SHEET_KEY = "alysum-active-worldbuilding-sheet-v1";
@@ -851,6 +859,8 @@
         let answersCache = emptyAnswers();
         let isApplyingRemote = false;
         let hasMigratedThisSession = false;
+        let storageMode = "cloud";
+        let cloudTableMissing = false;
 
         function escapeHtml(s) {
             return String(s)
@@ -1285,21 +1295,19 @@
             try {
                 const payload = collectFirestorePayload();
                 const active = getActiveSheet();
-                const createdMs = typeof active?.created === "number" && Number.isFinite(active.created) ? active.created : Date.now();
-                const { error } = await supabase.from("worldbuilding_encyclopedia").upsert(
+                await upsertWorldbuildingSheet(
+                    supabase,
+                    wbUid,
                     {
-                        user_id: wbUid,
                         id: activeSheetId,
                         title: payload.title,
                         answers: payload.answers,
-                        schema_version: payload.schemaVersion,
-                        created_ms: createdMs,
-                        updated_ms: Date.now()
+                        schemaVersion: payload.schemaVersion,
+                        created: active?.created
                     },
-                    { onConflict: "user_id,id" }
+                    storageMode
                 );
-                if (error) throw error;
-                if (!quiet) setStatus("Saved to your account", "ok");
+                if (!quiet) setStatus(cloudTableMissing ? "Saved on this device" : "Saved to your account", cloudTableMissing ? "warn" : "ok");
             } catch (e) {
                 console.error(e);
                 if (!quiet) setStatus("Could not save — check connection and try again.", "warn");
@@ -1319,19 +1327,14 @@
             const id = makeSheetId();
             const now = Date.now();
 
-            const { error } = await supabase.from("worldbuilding_encyclopedia").upsert(
-                {
-                    user_id: wbUid,
-                    id,
-                    title,
-                    answers: cloneAnswers(answers),
-                    schema_version: 2,
-                    created_ms: now,
-                    updated_ms: now
-                },
-                { onConflict: "user_id,id" }
-            );
-            if (error) {
+            try {
+                await upsertWorldbuildingSheet(
+                    supabase,
+                    wbUid,
+                    { id, title, answers: cloneAnswers(answers), schemaVersion: 2, created: now, updated: now },
+                    storageMode
+                );
+            } catch (error) {
                 console.error(error);
                 return null;
             }
@@ -1358,8 +1361,7 @@
             if (!wbUid || !id) return;
 
             try {
-                const { error } = await supabase.from("worldbuilding_encyclopedia").delete().eq("user_id", wbUid).eq("id", id);
-                if (error) throw error;
+                await deleteWorldbuildingSheet(supabase, wbUid, id, storageMode);
 
                 if (activeSheetId === id) {
                     const remaining = lastSheets.filter((sheet) => sheet.id !== id);
@@ -1401,12 +1403,8 @@
             if (!hasAnyContentDocLike(local)) return;
 
             try {
-                const { count, error: cntErr } = await supabase
-                    .from("worldbuilding_encyclopedia")
-                    .select("id", { count: "exact", head: true })
-                    .eq("user_id", wbUid);
-                if (cntErr) throw cntErr;
-                const alreadyHasCloudSheets = (count || 0) > 0;
+                const sheetCount = await countWorldbuildingSheets(supabase, wbUid);
+                const alreadyHasCloudSheets = sheetCount > 0;
 
                 if (!alreadyHasCloudSheets) {
                     await createSheet({
@@ -1421,36 +1419,11 @@
             }
         }
 
-        function supaRowToSheet(row) {
-            return normalizeSheet(
-                {
-                    title: row.title,
-                    answers: row.answers,
-                    schemaVersion: row.schema_version,
-                    created: row.created_ms,
-                    updated: row.updated_ms
-                },
-                row.id
-            );
-        }
-
-        async function refreshSheetsFromCloud() {
-            const { data, error } = await supabase
-                .from("worldbuilding_encyclopedia")
-                .select("*")
-                .eq("user_id", wbUid)
-                .order("updated_ms", { ascending: false });
-            if (error) {
-                console.error(error);
-                setStatus("Could not load worldsheets — refresh or try again.", "warn");
-                return;
-            }
-            lastSheets = (data || []).map(supaRowToSheet);
+        function applyLoadedSheetsList() {
             renderSheetMenu();
 
             if (!lastSheets.length) {
-                await createSheet({ title: "Untitled world", answers: emptyAnswers(), select: true });
-                return;
+                return createSheet({ title: "Untitled world", answers: emptyAnswers(), select: true });
             }
 
             const savedActive = localStorage.getItem(ACTIVE_SHEET_KEY);
@@ -1459,7 +1432,7 @@
 
             if (!activeSheetId) {
                 applySheetToUi(savedExists || lastSheets[0]);
-                setStatus("Saved to your account", "ok");
+                setStatus(cloudTableMissing ? "Saved on this device" : "Saved to your account", cloudTableMissing ? "warn" : "ok");
                 return;
             }
 
@@ -1475,10 +1448,26 @@
             }
         }
 
+        async function refreshSheetsFromCloud() {
+            try {
+                const { sheets, mode, tableMissing } = await listWorldbuildingSheets(supabase, wbUid);
+                storageMode = mode;
+                cloudTableMissing = tableMissing;
+                lastSheets = sheets.map((s) => normalizeSheet(s, s.id));
+                await applyLoadedSheetsList();
+                if (tableMissing) {
+                    setStatus("Saved on this device (run worldbuilding-tables-only.sql in Supabase for cloud sync)", "warn");
+                }
+            } catch (error) {
+                console.error(error);
+                setStatus("Could not load worldsheets — refresh or try again.", "warn");
+            }
+        }
+
         function subscribeSheets() {
             if (!wbUid) return;
             if (unsubscribeSheets) {
-                supabase.removeChannel(unsubscribeSheets);
+                unsubscribeSheets();
                 unsubscribeSheets = null;
             }
 
@@ -1487,14 +1476,15 @@
                 setStatus("Could not load worldsheets — refresh or try again.", "warn");
             });
 
-            unsubscribeSheets = supabase
-                .channel("worldbuilding_enc_wb_" + wbUid)
-                .on(
-                    "postgres_changes",
-                    { event: "*", schema: "public", table: "worldbuilding_encyclopedia", filter: `user_id=eq.${wbUid}` },
-                    () => refreshSheetsFromCloud().catch(console.error)
-                )
-                .subscribe();
+            unsubscribeSheets = subscribeWorldbuildingSheets(
+                supabase,
+                wbUid,
+                (sheets) => {
+                    lastSheets = sheets.map((s) => normalizeSheet(s, s.id));
+                    void applyLoadedSheetsList().catch(console.error);
+                },
+                storageMode
+            );
         }
 
         async function copyText(text) {
@@ -1588,8 +1578,13 @@
 
             try {
                 await migrateLegacySingleDocIfNeeded();
+                const probe = await listWorldbuildingSheets(supabase, wbUid);
+                storageMode = probe.mode;
+                cloudTableMissing = probe.tableMissing;
+                if (storageMode === "cloud") {
+                    await syncLocalSheetsToCloud(supabase, wbUid);
+                }
                 subscribeSheets();
-                setStatus("Saved to your account", "ok");
             } catch (err) {
                 console.error(err);
                 setStatus("Could not load worldsheets — refresh or try again.", "warn");
@@ -1597,7 +1592,7 @@
         });
 
         window.addEventListener("beforeunload", () => {
-            if (unsubscribeSheets) supabase.removeChannel(unsubscribeSheets);
+            if (unsubscribeSheets) unsubscribeSheets();
         });
     </script>
 </body>
