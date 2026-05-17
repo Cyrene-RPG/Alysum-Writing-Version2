@@ -382,6 +382,16 @@
             "Species, tribes, nations, and civilizations — create as many groups as your world needs, each with a full culture codex.";
         toolsEl.appendChild(peoplesBtn);
 
+        const geoBtn = document.createElement("a");
+        geoBtn.className = "enc-tool is-featured";
+        geoBtn.href = "geography-worlds.html" + q;
+        geoBtn.innerHTML =
+            '<span class="enc-tool-icon">🌍</span><h2></h2><p></p>';
+        geoBtn.querySelector("h2").textContent = "Geography & World Terrain";
+        geoBtn.querySelector("p").textContent =
+            "Planets, continents, seas, climate, and sacred ground — create as many geography sheets as you need, each with a full Terrain Codex.";
+        toolsEl.appendChild(geoBtn);
+
         const tools = [
             {
                 href: "worldbuilding.html" + q,
