@@ -310,7 +310,7 @@
         <div class="rb-header-actions">
             <a class="rb-btn" href="worldbuilding.html">← World building</a>
             <a class="rb-btn" href="city-builder.html">City Builder</a>
-            <a class="rb-btn" href="writer-resources.html">Resources</a>
+            <a class="rb-btn" href="world-encyclopedia.html" data-enc-back>World Encyclopedia</a>
             <a class="rb-btn" href="studio.html">Studio</a>
         </div>
     </header><main class="rb-wrap">
@@ -773,6 +773,16 @@
 
     renderTopFields();
     renderAll();
+</script>
+<script>
+    (function () {
+        const enc = new URLSearchParams(location.search).get("encyclopedia");
+        if (!enc) return;
+        document.querySelectorAll("[data-enc-back]").forEach((el) => {
+            el.href = "encyclopedia.html?id=" + encodeURIComponent(enc);
+            el.textContent = "← Encyclopedia";
+        });
+    })();
 </script>
 
 </body>

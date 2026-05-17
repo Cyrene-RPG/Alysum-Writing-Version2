@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- ALYSUM:PWA:START -->
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta name="theme-color" content="#7c3aed" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#020b18" media="(prefers-color-scheme: dark)">
+    <meta name="color-scheme" content="dark light">
+    <meta name="application-name" content="Alysum">
+    <link rel="icon" type="image/png" sizes="any" href="Alysum-3.png">
+    <script src="js/pwa-register.js" defer></script>
+    <!-- ALYSUM:PWA:END -->
+    <!-- ALYSUM:ANALYTICS:START -->
+    <script type="module" src="js/vercel-analytics.js"></script>
+    <!-- ALYSUM:ANALYTICS:END -->
+
+    <meta charset="UTF-8" />
+    <title>Encyclopedia — Alysum</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <script src="js/alysum-appearance-boot.js"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&display=swap" rel="stylesheet" />
+
+    <link rel="stylesheet" href="css/site-responsive.css?v=1" />
+    <link rel="stylesheet" href="css/gradient-themes.css?v=4" />
+    <script src="js/gradient-theme-sync.js" defer></script>
+
+    <style>
+        * { box-sizing: border-box; }
+        html, body {
+            margin: 0;
+            min-height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background:
+                radial-gradient(circle at top center, var(--theme-body-spot) 0%, transparent 26%),
+                linear-gradient(180deg, #0d1426 0%, #0b1220 100%);
+            color: #fff;
+        }
+        .enc-header {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 12px 18px;
+            background: linear-gradient(135deg, var(--purple-dark), var(--theme-header-mid), var(--theme-header-end));
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.28);
+        }
+        .enc-header-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+        .enc-btn {
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.22);
+            color: #fff;
+            padding: 8px 12px;
+            font-weight: 800;
+            font-size: 12px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+        }
+        .enc-btn:hover { background: rgba(0, 0, 0, 0.35); }
+        .enc-wrap {
+            max-width: 920px;
+            margin: 0 auto;
+            padding: 28px 18px 48px;
+        }
+        .enc-title {
+            margin: 0 0 8px;
+            font-family: "Cinzel", Georgia, serif;
+            font-size: clamp(1.6rem, 4vw, 2.2rem);
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            color: #fff7ed;
+        }
+        .enc-meta {
+            margin: 0 0 24px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #94a3b8;
+        }
+        .enc-lead {
+            margin: 0 0 22px;
+            font-size: 15px;
+            line-height: 1.6;
+            color: #cbd5e1;
+            font-weight: 500;
+            max-width: 58ch;
+        }
+        .enc-tools {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 14px;
+        }
+        .enc-tool {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 20px;
+            border-radius: 18px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.2);
+            text-decoration: none;
+            color: inherit;
+            transition: border-color 0.16s ease, transform 0.14s ease;
+        }
+        .enc-tool:hover {
+            border-color: color-mix(in srgb, var(--purple-bright) 45%, transparent);
+            transform: translateY(-2px);
+        }
+        .enc-tool-icon { font-size: 28px; }
+        .enc-tool h2 {
+            margin: 0;
+            font-size: 17px;
+            font-weight: 900;
+            color: #fff7ed;
+        }
+        .enc-tool p {
+            margin: 0;
+            font-size: 13px;
+            line-height: 1.5;
+            color: #94a3b8;
+            font-weight: 600;
+        }
+        .enc-missing {
+            text-align: center;
+            padding: 48px 20px;
+            color: #94a3b8;
+            font-weight: 700;
+        }
+        .enc-missing a { color: #c4b5fd; }
+    </style>
+</head>
+<body>
+
+<header class="enc-header">
+    <a class="enc-btn" href="world-encyclopedia.html">← World Encyclopedia</a>
+    <div class="enc-header-actions">
+        <a class="enc-btn" href="studio.html">Studio</a>
+    </div>
+</header>
+
+<main class="enc-wrap" id="encMain" hidden>
+    <h1 class="enc-title" id="encTitle"></h1>
+    <p class="enc-meta" id="encMeta"></p>
+    <p class="enc-lead">
+        Build this universe piece by piece. Each tool adds another layer — broad world lore, detailed cities, and political realms.
+    </p>
+    <div class="enc-tools" id="encTools"></div>
+</main>
+
+<div class="enc-missing" id="encMissing" hidden>
+    <p>This encyclopedia could not be found on this device.</p>
+    <p><a href="world-encyclopedia.html">Return to World Encyclopedia</a></p>
+</div>
+
+<script type="module">
+    import {
+        getEncyclopedia,
+        touchEncyclopedia,
+        formatEncyclopediaDate
+    } from "./js/world-encyclopedia-store.js?v=1";
+
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get("id");
+    const enc = getEncyclopedia(id);
+
+    const main = document.getElementById("encMain");
+    const missing = document.getElementById("encMissing");
+    const titleEl = document.getElementById("encTitle");
+    const metaEl = document.getElementById("encMeta");
+    const toolsEl = document.getElementById("encTools");
+
+    if (!enc) {
+        missing.hidden = false;
+    } else {
+        touchEncyclopedia(enc.id);
+        document.title = enc.title + " — World Encyclopedia — Alysum";
+        titleEl.textContent = enc.title;
+        const updated = formatEncyclopediaDate(enc.updatedAt);
+        metaEl.textContent = updated ? "Last opened " + updated : "Your local encyclopedia";
+        main.hidden = false;
+
+        const q = "?encyclopedia=" + encodeURIComponent(enc.id);
+        const tools = [
+            {
+                href: "worldbuilding.html" + q,
+                icon: "🗺️",
+                title: "World sheets",
+                desc: "Geography, cultures, economy, religion, magic, and conflict — topic cards that compile into your encyclopedia."
+            },
+            {
+                href: "city-builder.html" + q,
+                icon: "🏙️",
+                title: "City Builder",
+                desc: "Districts, politics, economy, infrastructure, crime, and secrets for cities in this world."
+            },
+            {
+                href: "realm-builder.html" + q,
+                icon: "👑",
+                title: "Realm Builder",
+                desc: "Kingdoms, empires, republics, federations, and states — government, military, and legacy."
+            }
+        ];
+
+        for (const t of tools) {
+            const a = document.createElement("a");
+            a.className = "enc-tool";
+            a.href = t.href;
+            a.innerHTML =
+                '<span class="enc-tool-icon">' +
+                t.icon +
+                "</span>" +
+                "<h2></h2><p></p>";
+            a.querySelector("h2").textContent = t.title;
+            a.querySelector("p").textContent = t.desc;
+            toolsEl.appendChild(a);
+        }
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- ALYSUM:PWA:START -->
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta name="theme-color" content="#7c3aed" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#020b18" media="(prefers-color-scheme: dark)">
+    <meta name="color-scheme" content="dark light">
+    <meta name="application-name" content="Alysum">
+    <meta name="msapplication-TileColor" content="#7c3aed">
+    <meta name="msapplication-TileImage" content="Alysum-3.png">
+    <link rel="icon" type="image/png" sizes="any" href="Alysum-3.png">
+    <link rel="apple-touch-icon" href="Alysum-3.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="Alysum-3.png">
+    <script src="js/pwa-register.js" defer></script>
+    <!-- ALYSUM:PWA:END -->
+    <!-- ALYSUM:ANALYTICS:START -->
+    <script type="module" src="js/vercel-analytics.js"></script>
+    <!-- ALYSUM:ANALYTICS:END -->
+
+    <meta charset="UTF-8" />
+    <title>World Encyclopedia — Alysum</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <script src="js/alysum-appearance-boot.js"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet" />
+
+    <link rel="stylesheet" href="css/site-responsive.css?v=1" />
+    <link rel="stylesheet" href="css/gradient-themes.css?v=4" />
+    <script src="js/gradient-theme-sync.js" defer></script>
+
+    <style>
+        * { box-sizing: border-box; }
+
+        :root {
+            --we-bg: #0b1220;
+            --we-border: rgba(255, 255, 255, 0.1);
+            --we-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+        }
+
+        html,
+        body {
+            margin: 0;
+            min-height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background:
+                radial-gradient(ellipse 90% 50% at 50% -8%, var(--theme-body-spot) 0%, transparent 55%),
+                radial-gradient(circle at 80% 20%, color-mix(in srgb, var(--gold) 8%, transparent) 0%, transparent 35%),
+                linear-gradient(180deg, #0d1426 0%, var(--we-bg) 100%);
+            color: #fff;
+        }
+
+        .we-header {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            min-height: 58px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 12px 18px;
+            background: linear-gradient(
+                135deg,
+                var(--purple-dark),
+                var(--theme-header-mid),
+                var(--theme-header-end)
+            );
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.28);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .we-header-left,
+        .we-header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .we-brand {
+            width: 38px;
+            height: 38px;
+            border-radius: 11px;
+            background: linear-gradient(135deg, var(--purple-bright), var(--pink));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            color: white;
+        }
+
+        .we-kicker {
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: #c4b5fd;
+        }
+
+        .we-header-title {
+            font-size: 15px;
+            font-weight: 800;
+            color: #fff7ed;
+        }
+
+        .link-btn {
+            border: 1px solid var(--we-border);
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.22);
+            color: #fff;
+            padding: 9px 14px;
+            font-weight: 800;
+            font-size: 13px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.16s ease;
+        }
+
+        .link-btn:hover {
+            background: rgba(0, 0, 0, 0.35);
+        }
+
+        .layout {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 28px 18px 56px;
+        }
+
+        .we-hero {
+            text-align: center;
+            padding: 12px 8px 36px;
+        }
+
+        .we-hero-ornament {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            margin-bottom: 10px;
+            color: color-mix(in srgb, var(--gold) 75%, #e9d5ff);
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+        }
+
+        .we-hero-ornament::before,
+        .we-hero-ornament::after {
+            content: "";
+            height: 1px;
+            width: min(72px, 18vw);
+            background: linear-gradient(
+                90deg,
+                transparent,
+                color-mix(in srgb, var(--gold) 55%, transparent)
+            );
+        }
+
+        .we-hero-ornament::after {
+            background: linear-gradient(
+                90deg,
+                color-mix(in srgb, var(--gold) 55%, transparent),
+                transparent
+            );
+        }
+
+        .we-display-title {
+            margin: 0 0 6px;
+            font-family: "Cinzel", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+            font-size: clamp(2.35rem, 6.5vw, 3.65rem);
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            line-height: 1.12;
+            background: linear-gradient(
+                165deg,
+                #fff7ed 0%,
+                color-mix(in srgb, var(--gold) 88%, #fff7ed) 42%,
+                #fde68a 100%
+            );
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 0 40px color-mix(in srgb, var(--gold) 25%, transparent);
+        }
+
+        .we-display-sub {
+            margin: 0;
+            font-family: "Cormorant Garamond", Georgia, serif;
+            font-size: clamp(1.15rem, 2.8vw, 1.45rem);
+            font-style: italic;
+            font-weight: 500;
+            color: #c4b5fd;
+            letter-spacing: 0.04em;
+        }
+
+        .we-about {
+            margin: 0 auto 32px;
+            max-width: 58ch;
+            padding: 22px 24px;
+            border-radius: 20px;
+            border: 1px solid var(--we-border);
+            background: linear-gradient(
+                165deg,
+                rgba(22, 30, 48, 0.92),
+                rgba(15, 23, 42, 0.96)
+            );
+            box-shadow: var(--we-shadow);
+        }
+
+        .we-about p {
+            margin: 0;
+            font-size: 15px;
+            line-height: 1.72;
+            color: #cbd5e1;
+            font-weight: 500;
+        }
+
+        .we-shelf {
+            border-radius: 22px;
+            border: 1px solid var(--we-border);
+            background: linear-gradient(
+                165deg,
+                rgba(22, 30, 48, 0.98),
+                rgba(15, 23, 42, 0.99)
+            );
+            box-shadow: var(--we-shadow);
+            overflow: hidden;
+        }
+
+        .we-shelf-head {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            padding: 20px 22px;
+            border-bottom: 1px solid var(--we-border);
+            background:
+                linear-gradient(
+                    135deg,
+                    color-mix(in srgb, var(--theme-card-a) 32%, transparent),
+                    color-mix(in srgb, var(--theme-card-b) 18%, transparent)
+                ),
+                rgba(0, 0, 0, 0.12);
+        }
+
+        .we-shelf-head h2 {
+            margin: 0;
+            font-size: 13px;
+            font-weight: 900;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--gold);
+        }
+
+        .we-shelf-note {
+            margin: 4px 0 0;
+            font-size: 12px;
+            color: #94a3b8;
+            font-weight: 600;
+        }
+
+        .we-btn-create {
+            border: none;
+            border-radius: 14px;
+            padding: 12px 20px;
+            font-size: 14px;
+            font-weight: 900;
+            color: #fff;
+            cursor: pointer;
+            background: linear-gradient(135deg, var(--purple-dark), var(--purple));
+            box-shadow: 0 8px 24px color-mix(in srgb, var(--purple) 35%, transparent);
+            transition: transform 0.14s ease, box-shadow 0.14s ease;
+        }
+
+        .we-btn-create:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 12px 28px color-mix(in srgb, var(--purple) 45%, transparent);
+        }
+
+        .we-shelf-body {
+            padding: 22px;
+        }
+
+        .we-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 14px;
+        }
+
+        .we-empty {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 36px 20px;
+            border-radius: 16px;
+            border: 1px dashed rgba(255, 255, 255, 0.14);
+            background: rgba(0, 0, 0, 0.15);
+        }
+
+        .we-empty-icon {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+            opacity: 0.85;
+        }
+
+        .we-empty h3 {
+            margin: 0 0 8px;
+            font-size: 17px;
+            font-weight: 900;
+            color: #fff7ed;
+        }
+
+        .we-empty p {
+            margin: 0 auto 18px;
+            max-width: 36ch;
+            font-size: 13px;
+            line-height: 1.55;
+            color: #94a3b8;
+            font-weight: 600;
+        }
+
+        .we-card {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 18px;
+            border-radius: 16px;
+            border: 1px solid var(--we-border);
+            background: rgba(0, 0, 0, 0.2);
+            text-decoration: none;
+            color: inherit;
+            transition: border-color 0.16s ease, background 0.16s ease, transform 0.14s ease;
+        }
+
+        .we-card:hover {
+            border-color: color-mix(in srgb, var(--purple-bright) 45%, var(--we-border));
+            background: rgba(109, 40, 217, 0.14);
+            transform: translateY(-2px);
+        }
+
+        .we-card-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            background: rgba(109, 40, 217, 0.25);
+        }
+
+        .we-card-title {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 900;
+            color: #fff7ed;
+            line-height: 1.3;
+            word-break: break-word;
+        }
+
+        .we-card-meta {
+            margin: 0;
+            font-size: 11px;
+            font-weight: 700;
+            color: #94a3b8;
+        }
+
+        .we-card-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: auto;
+            padding-top: 4px;
+        }
+
+        .we-card-btn {
+            flex: 1;
+            border: 1px solid var(--we-border);
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.25);
+            color: #e2e8f0;
+            padding: 8px 10px;
+            font-size: 12px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .we-card-btn:hover {
+            background: rgba(0, 0, 0, 0.4);
+        }
+
+        .we-card-btn.danger {
+            color: #fecaca;
+            border-color: rgba(248, 113, 113, 0.35);
+            background: rgba(127, 29, 29, 0.22);
+        }
+
+        .we-more {
+            margin-top: 28px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .we-more summary {
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 900;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: #94a3b8;
+            list-style: none;
+        }
+
+        .we-more summary::-webkit-details-marker { display: none; }
+
+        .we-more-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 14px;
+        }
+
+        .we-more-links a {
+            font-size: 13px;
+            font-weight: 800;
+            color: #c4b5fd;
+            text-decoration: none;
+            padding: 8px 14px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .we-more-links a:hover {
+            background: rgba(0, 0, 0, 0.35);
+            color: #fff;
+        }
+
+        .we-dialog-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 18px;
+            background: rgba(2, 6, 23, 0.72);
+            backdrop-filter: blur(6px);
+        }
+
+        .we-dialog-backdrop.hidden { display: none; }
+
+        .we-dialog {
+            width: min(420px, 100%);
+            padding: 24px;
+            border-radius: 20px;
+            border: 1px solid var(--we-border);
+            background: linear-gradient(165deg, #1e293b, #0f172a);
+            box-shadow: var(--we-shadow);
+        }
+
+        .we-dialog h3 {
+            margin: 0 0 8px;
+            font-size: 18px;
+            font-weight: 900;
+            color: #fff7ed;
+        }
+
+        .we-dialog p {
+            margin: 0 0 16px;
+            font-size: 13px;
+            line-height: 1.5;
+            color: #94a3b8;
+            font-weight: 600;
+        }
+
+        .we-dialog input {
+            width: 100%;
+            margin-bottom: 16px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            border: 1px solid var(--we-border);
+            background: rgba(0, 0, 0, 0.35);
+            color: #fff;
+            font-size: 15px;
+            font-weight: 600;
+            outline: none;
+        }
+
+        .we-dialog input:focus {
+            border-color: color-mix(in srgb, var(--purple-bright) 50%, var(--we-border));
+        }
+
+        .we-dialog-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .we-dialog-actions button {
+            border-radius: 12px;
+            padding: 10px 16px;
+            font-size: 13px;
+            font-weight: 800;
+            cursor: pointer;
+            border: 1px solid var(--we-border);
+            background: rgba(0, 0, 0, 0.25);
+            color: #e2e8f0;
+        }
+
+        .we-dialog-actions button.primary {
+            border: none;
+            background: linear-gradient(135deg, var(--purple-dark), var(--purple));
+            color: #fff;
+        }
+
+        @media (max-width: 640px) {
+            .we-shelf-head {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .we-btn-create {
+                width: 100%;
+            }
+
+            .we-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .we-header-actions {
+                overflow-x: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<header class="we-header">
+    <div class="we-header-left">
+        <div class="we-brand">A</div>
+        <div>
+            <div class="we-kicker">Alysum</div>
+            <div class="we-header-title">World Encyclopedia</div>
+        </div>
+    </div>
+    <div class="we-header-actions">
+        <a class="link-btn" href="studio.html">← Studio</a>
+        <a class="link-btn" href="library.html">Library</a>
+        <a class="link-btn" href="settings.html">⚙️ Theme</a>
+    </div>
+</header>
+
+<main class="layout">
+    <section class="we-hero" aria-labelledby="weDisplayTitle">
+        <p class="we-hero-ornament">Build your universe</p>
+        <h1 id="weDisplayTitle" class="we-display-title">World Encyclopedia</h1>
+        <p class="we-display-sub">Where every realm, city, and legend finds its place</p>
+    </section>
+
+    <div class="we-about">
+        <p>
+            The World Encyclopedia is the ultimate place to build, organize, and expand your worlds in incredible detail. Create deep, immersive entries for kingdoms, empires, cities, characters, religions, histories, wars, magic systems, and so much more. Whether you're crafting a sprawling fantasy realm or a futuristic civilization, every part of your universe has a place here.
+        </p>
+    </div>
+
+    <section class="we-shelf" aria-labelledby="weShelfTitle">
+        <div class="we-shelf-head">
+            <div>
+                <h2 id="weShelfTitle">Your encyclopedias</h2>
+                <p class="we-shelf-note">Saved on this device — private to your browser</p>
+            </div>
+            <button type="button" class="we-btn-create" id="createEncyclopediaBtn">+ Create Encyclopedia</button>
+        </div>
+        <div class="we-shelf-body">
+            <div class="we-grid" id="encyclopediaGrid" aria-live="polite"></div>
+        </div>
+    </section>
+
+    <details class="we-more">
+        <summary>More writer tools</summary>
+        <div class="we-more-links">
+            <a href="names.html">Names</a>
+            <a href="character-profile.html">Character profile</a>
+        </div>
+    </details>
+</main>
+
+<div class="we-dialog-backdrop hidden" id="createDialog" role="dialog" aria-modal="true" aria-labelledby="createDialogTitle">
+    <div class="we-dialog">
+        <h3 id="createDialogTitle">Create encyclopedia</h3>
+        <p>Give your world a name. You can rename it later. Everything saves locally on this computer.</p>
+        <input type="text" id="createTitleInput" maxlength="120" placeholder="e.g. The Shattered Crown, Neo-Tokyo 2147" autocomplete="off" />
+        <div class="we-dialog-actions">
+            <button type="button" id="createCancelBtn">Cancel</button>
+            <button type="button" class="primary" id="createConfirmBtn">Create</button>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import {
+        listEncyclopedias,
+        createEncyclopedia,
+        deleteEncyclopedia,
+        formatEncyclopediaDate
+    } from "./js/world-encyclopedia-store.js?v=1";
+
+    const grid = document.getElementById("encyclopediaGrid");
+    const createBtn = document.getElementById("createEncyclopediaBtn");
+    const dialog = document.getElementById("createDialog");
+    const titleInput = document.getElementById("createTitleInput");
+    const cancelBtn = document.getElementById("createCancelBtn");
+    const confirmBtn = document.getElementById("createConfirmBtn");
+
+    function openDialog() {
+        dialog.classList.remove("hidden");
+        titleInput.value = "";
+        titleInput.focus();
+    }
+
+    function closeDialog() {
+        dialog.classList.add("hidden");
+    }
+
+    function openEncyclopedia(id) {
+        window.location.href = "encyclopedia.html?id=" + encodeURIComponent(id);
+    }
+
+    function renderGrid() {
+        const items = listEncyclopedias();
+        grid.innerHTML = "";
+
+        if (!items.length) {
+            const empty = document.createElement("div");
+            empty.className = "we-empty";
+            empty.innerHTML =
+                '<div class="we-empty-icon">📚</div>' +
+                "<h3>No encyclopedias yet</h3>" +
+                "<p>Create your first encyclopedia to start building kingdoms, cities, lore, and everything in between.</p>" +
+                '<button type="button" class="we-btn-create" id="emptyCreateBtn">+ Create Encyclopedia</button>';
+            grid.appendChild(empty);
+            empty.querySelector("#emptyCreateBtn")?.addEventListener("click", openDialog);
+            return;
+        }
+
+        for (const enc of items) {
+            const card = document.createElement("article");
+            card.className = "we-card";
+
+            const openLink = document.createElement("a");
+            openLink.href = "encyclopedia.html?id=" + encodeURIComponent(enc.id);
+            openLink.style.textDecoration = "none";
+            openLink.style.color = "inherit";
+            openLink.style.display = "flex";
+            openLink.style.flexDirection = "column";
+            openLink.style.gap = "10px";
+            openLink.style.flex = "1";
+            openLink.innerHTML =
+                '<div class="we-card-icon">🌍</div>' +
+                "<h3 class=\"we-card-title\"></h3>" +
+                '<p class="we-card-meta"></p>';
+            openLink.querySelector(".we-card-title").textContent = enc.title;
+            const updated = formatEncyclopediaDate(enc.updatedAt);
+            const created = formatEncyclopediaDate(enc.createdAt);
+            openLink.querySelector(".we-card-meta").textContent = updated
+                ? "Updated " + updated
+                : created
+                  ? "Created " + created
+                  : "";
+
+            const actions = document.createElement("div");
+            actions.className = "we-card-actions";
+
+            const openBtn = document.createElement("button");
+            openBtn.type = "button";
+            openBtn.className = "we-card-btn";
+            openBtn.textContent = "Open";
+            openBtn.addEventListener("click", (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                openEncyclopedia(enc.id);
+            });
+
+            const delBtn = document.createElement("button");
+            delBtn.type = "button";
+            delBtn.className = "we-card-btn danger";
+            delBtn.textContent = "Delete";
+            delBtn.addEventListener("click", (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (
+                    !confirm(
+                        "Delete \"" +
+                            enc.title +
+                            "\"? This removes the encyclopedia from this device. Builder data tied to it may remain until cleared separately."
+                    )
+                ) {
+                    return;
+                }
+                deleteEncyclopedia(enc.id);
+                renderGrid();
+            });
+
+            actions.append(openBtn, delBtn);
+            card.append(openLink, actions);
+            grid.appendChild(card);
+        }
+    }
+
+    function submitCreate() {
+        const title = titleInput.value.trim();
+        if (!title) {
+            titleInput.focus();
+            return;
+        }
+        const enc = createEncyclopedia(title);
+        closeDialog();
+        openEncyclopedia(enc.id);
+    }
+
+    createBtn.addEventListener("click", openDialog);
+    cancelBtn.addEventListener("click", closeDialog);
+    confirmBtn.addEventListener("click", submitCreate);
+    titleInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") submitCreate();
+        if (e.key === "Escape") closeDialog();
+    });
+    dialog.addEventListener("click", (e) => {
+        if (e.target === dialog) closeDialog();
+    });
+
+    renderGrid();
+</script>
+
+</body>
+</html>

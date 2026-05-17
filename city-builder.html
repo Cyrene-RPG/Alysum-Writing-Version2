@@ -309,7 +309,7 @@
         <div class="cb-header-title">City Builder</div>
         <div class="cb-header-actions">
             <a class="cb-btn" href="worldbuilding.html">← World building</a>
-            <a class="cb-btn" href="writer-resources.html">Resources</a>
+            <a class="cb-btn" href="world-encyclopedia.html" data-enc-back>World Encyclopedia</a>
             <a class="cb-btn" href="studio.html">Studio</a>
         </div>
     </header><main class="cb-wrap">
@@ -764,6 +764,16 @@
 
     renderTopFields();
     renderAll();
+</script>
+<script>
+    (function () {
+        const enc = new URLSearchParams(location.search).get("encyclopedia");
+        if (!enc) return;
+        document.querySelectorAll("[data-enc-back]").forEach((el) => {
+            el.href = "encyclopedia.html?id=" + encodeURIComponent(enc);
+            el.textContent = "← Encyclopedia";
+        });
+    })();
 </script>
 
 </body>
