@@ -392,6 +392,16 @@
             "Planets, continents, seas, climate, and sacred ground — create as many geography sheets as you need, each with a full Terrain Codex.";
         toolsEl.appendChild(geoBtn);
 
+        const histBtn = document.createElement("a");
+        histBtn.className = "enc-tool is-featured";
+        histBtn.href = "histories.html" + q;
+        histBtn.innerHTML =
+            '<span class="enc-tool-icon">📜</span><h2></h2><p></p>';
+        histBtn.querySelector("h2").textContent = "History";
+        histBtn.querySelector("p").textContent =
+            "Origins, empires, wars, revolutions, and legacy — create as many chronicles as you need, each with a full Chronicle Codex.";
+        toolsEl.appendChild(histBtn);
+
         const tools = [
             {
                 href: "worldbuilding.html" + q,

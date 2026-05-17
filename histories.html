@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="icon" type="image/png" href="Alysum-3.png">
+    <script src="js/pwa-register.js" defer></script>
+    <script type="module" src="js/vercel-analytics.js"></script>
+    <meta charset="UTF-8" />
+    <title>History — Alysum</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="js/alysum-appearance-boot.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Cormorant+Garamond:ital@0;1&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="css/site-responsive.css?v=1" />
+    <link rel="stylesheet" href="css/gradient-themes.css?v=4" />
+    <link rel="stylesheet" href="css/magic-codex.css?v=7" />
+    <script src="js/gradient-theme-sync.js" defer></script>
+    <style>
+        .hist-hub { max-width: 960px; margin: 0 auto; padding: 28px 18px 56px; position: relative; z-index: 1; }
+        .hist-hub-hero { text-align: center; margin-bottom: 28px; }
+        .hist-hub-hero h1 {
+            margin: 0 0 8px;
+            font-family: "Cinzel", Georgia, serif;
+            font-size: clamp(1.6rem, 4vw, 2.1rem);
+            color: #fff7ed;
+            letter-spacing: 0.05em;
+        }
+        .hist-hub-hero p {
+            margin: 0 auto;
+            max-width: 48ch;
+            font-family: "Cormorant Garamond", Georgia, serif;
+            font-size: 1.2rem;
+            line-height: 1.6;
+            color: #94a3b8;
+            font-style: italic;
+        }
+        .hist-shelf {
+            border-radius: 22px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: linear-gradient(165deg, rgba(22, 30, 48, 0.95), rgba(15, 23, 42, 0.98));
+            overflow: hidden;
+        }
+        .hist-shelf-head {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            padding: 20px 22px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .hist-shelf-head h2 {
+            margin: 0;
+            font-size: 12px;
+            font-weight: 900;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: #fcd34d;
+        }
+        .hist-shelf-note { margin: 4px 0 0; font-size: 12px; color: #94a3b8; font-weight: 600; }
+        .hist-btn-create {
+            border: none;
+            border-radius: 14px;
+            padding: 12px 20px;
+            font-weight: 900;
+            font-size: 14px;
+            color: #422006;
+            cursor: pointer;
+            background: linear-gradient(135deg, #fbbf24, #d97706);
+        }
+        .hist-shelf-body { padding: 22px; }
+        .hist-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 14px;
+        }
+        .hist-card {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 18px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.22);
+            text-decoration: none;
+            color: inherit;
+            transition: border-color 0.16s ease, transform 0.14s ease;
+        }
+        .hist-card:hover {
+            border-color: color-mix(in srgb, #fbbf24 45%, transparent);
+            transform: translateY(-2px);
+        }
+        .hist-card-icon { font-size: 26px; }
+        .hist-card h3 { margin: 0; font-size: 16px; font-weight: 900; color: #fff7ed; }
+        .hist-card p { margin: 0; font-size: 12px; color: #94a3b8; font-weight: 600; }
+        .hist-card-actions { display: flex; gap: 8px; margin-top: auto; padding-top: 6px; }
+        .hist-card-actions button {
+            flex: 1;
+            border-radius: 10px;
+            padding: 8px;
+            font-size: 12px;
+            font-weight: 800;
+            cursor: pointer;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(0, 0, 0, 0.28);
+            color: #e2e8f0;
+        }
+        .hist-card-actions button.danger { color: #fecaca; border-color: rgba(248, 113, 113, 0.35); }
+        .hist-empty {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 36px 20px;
+            border: 1px dashed rgba(255, 255, 255, 0.14);
+            border-radius: 16px;
+        }
+        .hist-dialog-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 18px;
+            background: rgba(2, 6, 23, 0.78);
+            backdrop-filter: blur(8px);
+        }
+        .hist-dialog-backdrop.hidden { display: none; }
+        .hist-dialog {
+            width: min(420px, 100%);
+            padding: 24px;
+            border-radius: 20px;
+            border: 1px solid rgba(252, 211, 77, 0.2);
+            background: linear-gradient(165deg, #1e293b, #0f172a);
+        }
+        .hist-dialog h3 { margin: 0 0 8px; font-family: "Cinzel", serif; color: #fff7ed; }
+        .hist-dialog p { margin: 0 0 16px; font-size: 13px; color: #94a3b8; }
+        .hist-dialog input {
+            width: 100%;
+            margin-bottom: 16px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(0, 0, 0, 0.35);
+            color: #fff;
+            font-size: 15px;
+        }
+        .hist-dialog-actions { display: flex; gap: 10px; justify-content: flex-end; }
+        .hist-dialog-actions button {
+            border-radius: 12px;
+            padding: 10px 16px;
+            font-weight: 800;
+            cursor: pointer;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(0, 0, 0, 0.25);
+            color: #e2e8f0;
+        }
+        .hist-dialog-actions button.primary {
+            border: none;
+            background: linear-gradient(135deg, #fbbf24, #d97706);
+            color: #422006;
+        }
+        .hist-missing { text-align: center; padding: 48px 20px; color: #94a3b8; }
+    </style>
+</head>
+<body class="mc-page mc-history">
+    <div class="mc-veil" aria-hidden="true"></div>
+    <header class="mc-top">
+        <div>
+            <p class="mc-top-brand">Chronicle Codex</p>
+            <p class="mc-top-title" id="hubTitle">History</p>
+        </div>
+        <div class="mc-top-actions">
+            <a class="mc-link" href="world-encyclopedia.html">World Encyclopedia</a>
+            <a class="mc-link" href="#" id="encBack">← Encyclopedia</a>
+        </div>
+    </header>
+
+    <main class="hist-hub" id="hubMain" hidden>
+        <section class="hist-hub-hero">
+            <h1>History</h1>
+            <p>From first fires and founding myths through empires, revolutions, and the scars that still shape the present. Create as many chronicles as your setting needs.</p>
+        </section>
+        <section class="hist-shelf">
+            <div class="hist-shelf-head">
+                <div>
+                    <h2>Your chronicles</h2>
+                    <p class="hist-shelf-note">Separate from World sheets — full historical depth here</p>
+                </div>
+                <button type="button" class="hist-btn-create" id="createRecordBtn">+ New chronicle</button>
+            </div>
+            <div class="hist-shelf-body">
+                <div class="hist-grid" id="recordGrid"></div>
+            </div>
+        </section>
+    </main>
+
+    <p class="hist-missing" id="hubMissing" hidden>This encyclopedia was not found.</p>
+
+    <div class="hist-dialog-backdrop hidden" id="createDialog">
+        <div class="hist-dialog">
+            <h3>New chronicle</h3>
+            <p>Name this timeline, realm, or era. You can trace origins, empires, wars, and legacy inside the codex.</p>
+            <input type="text" id="createNameInput" maxlength="120" placeholder="e.g. The Age of Ash, Old Kethmar" autocomplete="off" />
+            <div class="hist-dialog-actions">
+                <button type="button" id="createCancelBtn">Cancel</button>
+                <button type="button" class="primary" id="createConfirmBtn">Open codex</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { getEncyclopedia } from "./js/world-encyclopedia-store.js?v=2";
+        import {
+            listHistoryRecords,
+            createHistoryRecord,
+            deleteHistoryRecord,
+            formatHistoryDate
+        } from "./js/history-store.js?v=1";
+
+        const encId = new URLSearchParams(location.search).get("encyclopedia");
+        const enc = encId ? getEncyclopedia(encId) : null;
+
+        const hubMain = document.getElementById("hubMain");
+        const hubMissing = document.getElementById("hubMissing");
+        const hubTitle = document.getElementById("hubTitle");
+        const encBack = document.getElementById("encBack");
+        const grid = document.getElementById("recordGrid");
+        const dialog = document.getElementById("createDialog");
+        const nameInput = document.getElementById("createNameInput");
+
+        if (!enc) {
+            hubMissing.hidden = false;
+        } else {
+            hubMain.hidden = false;
+            document.title = "History — " + enc.title + " — Alysum";
+            hubTitle.textContent = enc.title;
+            encBack.href = "encyclopedia.html?id=" + encodeURIComponent(enc.id);
+            renderGrid();
+        }
+
+        function openRecord(recordId) {
+            const q = "?encyclopedia=" + encodeURIComponent(encId) + "&record=" + encodeURIComponent(recordId);
+            window.location.href = "history-record.html" + q;
+        }
+
+        function renderGrid() {
+            const items = listHistoryRecords(encId);
+            grid.innerHTML = "";
+            if (!items.length) {
+                const empty = document.createElement("div");
+                empty.className = "hist-empty";
+                empty.innerHTML = "<p><strong>No chronicles yet</strong></p><p>Start with a realm, era, or timeline.</p>";
+                const btn = document.createElement("button");
+                btn.type = "button";
+                btn.className = "hist-btn-create";
+                btn.textContent = "+ New chronicle";
+                btn.style.marginTop = "16px";
+                btn.addEventListener("click", openDialog);
+                empty.appendChild(btn);
+                grid.appendChild(empty);
+                return;
+            }
+            for (const r of items) {
+                const card = document.createElement("article");
+                card.className = "hist-card";
+                const link = document.createElement("a");
+                link.href = "history-record.html?encyclopedia=" + encodeURIComponent(encId) + "&record=" + encodeURIComponent(r.id);
+                link.style.cssText = "text-decoration:none;color:inherit;display:flex;flex-direction:column;gap:10px;flex:1";
+                link.innerHTML = '<span class="hist-card-icon">📜</span><h3></h3><p></p>';
+                link.querySelector("h3").textContent = r.name;
+                const updated = formatHistoryDate(r.updatedAt);
+                link.querySelector("p").textContent = updated ? "Updated " + updated : "New entry";
+                const actions = document.createElement("div");
+                actions.className = "hist-card-actions";
+                const openBtn = document.createElement("button");
+                openBtn.type = "button";
+                openBtn.textContent = "Open";
+                openBtn.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); openRecord(r.id); });
+                const delBtn = document.createElement("button");
+                delBtn.type = "button";
+                delBtn.className = "danger";
+                delBtn.textContent = "Delete";
+                delBtn.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (!confirm('Delete "' + r.name + '"? This removes all answers for this chronicle on this device.')) return;
+                    deleteHistoryRecord(encId, r.id);
+                    renderGrid();
+                });
+                actions.append(openBtn, delBtn);
+                card.append(link, actions);
+                grid.appendChild(card);
+            }
+        }
+
+        function openDialog() {
+            dialog.classList.remove("hidden");
+            nameInput.value = "";
+            nameInput.focus();
+        }
+        function closeDialog() { dialog.classList.add("hidden"); }
+
+        document.getElementById("createRecordBtn").addEventListener("click", openDialog);
+        document.getElementById("createCancelBtn").addEventListener("click", closeDialog);
+        document.getElementById("createConfirmBtn").addEventListener("click", () => {
+            const name = nameInput.value.trim();
+            if (!name) { nameInput.focus(); return; }
+            const r = createHistoryRecord(encId, name);
+            closeDialog();
+            openRecord(r.id);
+        });
+        nameInput.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") document.getElementById("createConfirmBtn").click();
+            if (e.key === "Escape") closeDialog();
+        });
+        dialog.addEventListener("click", (e) => { if (e.target === dialog) closeDialog(); });
+    </script>
+</body>
+</html>

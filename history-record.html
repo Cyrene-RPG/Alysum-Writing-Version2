@@ -6,7 +6,7 @@
     <script src="js/pwa-register.js" defer></script>
     <script type="module" src="js/vercel-analytics.js"></script>
     <meta charset="UTF-8" />
-    <title>Geography & World Terrain — Terrain Codex — Alysum</title>
+    <title>History — Chronicle Codex — Alysum</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script src="js/alysum-appearance-boot.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -14,67 +14,66 @@
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Cormorant+Garamond:ital@0;1&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
     <link rel="stylesheet" href="css/gradient-themes.css?v=4" />
-    <link rel="stylesheet" href="css/magic-codex.css?v=6" />
+    <link rel="stylesheet" href="css/magic-codex.css?v=7" />
     <script src="js/gradient-theme-sync.js" defer></script>
 </head>
-<body class="mc-page mc-geography">
+<body class="mc-page mc-history">
     <div class="mc-veil" aria-hidden="true"></div>
     <header class="mc-top">
         <div>
-            <p class="mc-top-brand">Terrain Codex</p>
-            <p class="mc-top-title" id="pageTitle">Geography & World Terrain</p>
+            <p class="mc-top-brand">Chronicle Codex</p>
+            <p class="mc-top-title" id="pageTitle">History</p>
         </div>
         <div class="mc-top-actions">
-            <span class="mc-chip">Geography & terrain</span>
-            <a class="mc-link" href="#" id="hubBack">← All geographies</a>
+            <span class="mc-chip">History</span>
+            <a class="mc-link" href="#" id="hubBack">← All chronicles</a>
             <a class="mc-link" href="#" id="encBack">Encyclopedia</a>
         </div>
     </header>
     <div class="mc-body" id="codexRoot"></div>
     <script type="module">
-        import { GEOGRAPHY_SECTIONS, GEOGRAPHY_INTRO } from "./js/geography-sections.js?v=2";
+        import { HISTORY_SECTIONS, HISTORY_INTRO } from "./js/history-sections.js?v=2";
         import { mountMagicCodex } from "./js/magic-codex-ui.js?v=3";
         import {
-            worldStorageKey,
-            getGeographyWorldMeta,
-            touchGeographyWorld,
-            renameGeographyWorld
-        } from "./js/geography-store.js?v=1";
+            recordStorageKey,
+            getHistoryRecordMeta,
+            touchHistoryRecord,
+            renameHistoryRecord
+        } from "./js/history-store.js?v=1";
         import { getEncyclopedia } from "./js/world-encyclopedia-store.js?v=2";
 
         const params = new URLSearchParams(location.search);
         const encId = params.get("encyclopedia");
-        const worldId = params.get("world");
-        const meta = encId && worldId ? getGeographyWorldMeta(encId, worldId) : null;
-        const enc = encId ? getEncyclopedia(encId) : null;
+        const recordId = params.get("record");
+        const meta = encId && recordId ? getHistoryRecordMeta(encId, recordId) : null;
 
-        if (!encId || !worldId || !meta) {
+        if (!encId || !recordId || !meta) {
             window.location.href = encId
-                ? "geography-worlds.html?encyclopedia=" + encodeURIComponent(encId)
+                ? "histories.html?encyclopedia=" + encodeURIComponent(encId)
                 : "world-encyclopedia.html";
         } else {
-            touchGeographyWorld(encId, worldId);
+            touchHistoryRecord(encId, recordId);
             document.getElementById("pageTitle").textContent = meta.name;
-            document.title = meta.name + " — Terrain Codex — Alysum";
+            document.title = meta.name + " — Chronicle Codex — Alysum";
             document.getElementById("hubBack").href =
-                "geography-worlds.html?encyclopedia=" + encodeURIComponent(encId);
+                "histories.html?encyclopedia=" + encodeURIComponent(encId);
             document.getElementById("encBack").href =
                 "encyclopedia.html?id=" + encodeURIComponent(encId);
 
             mountMagicCodex(document.getElementById("codexRoot"), {
-                theme: "geography",
-                sections: GEOGRAPHY_SECTIONS,
-                intro: GEOGRAPHY_INTRO,
-                storageKey: worldStorageKey(encId, worldId),
-                compileHeading: "Geography & World Terrain",
-                nameLabel: "Name of this world or region",
-                taglineLabel: "Epithet, map label, or scholar's name",
-                namePlaceholder: "Unnamed world",
+                theme: "history",
+                sections: HISTORY_SECTIONS,
+                intro: HISTORY_INTRO,
+                storageKey: recordStorageKey(encId, recordId),
+                compileHeading: "History",
+                nameLabel: "Name of this chronicle or timeline",
+                taglineLabel: "Era, realm, or scholar's label",
+                namePlaceholder: "Unnamed chronicle",
                 taglinePlaceholder: "Optional",
-                manuscriptTitle: "Your terrain manuscript",
+                manuscriptTitle: "Your chronicle manuscript",
                 onFieldChange: (key, value) => {
                     if (key === "systemName" && value.trim()) {
-                        renameGeographyWorld(encId, worldId, value.trim());
+                        renameHistoryRecord(encId, recordId, value.trim());
                         document.getElementById("pageTitle").textContent = value.trim();
                     }
                 }
