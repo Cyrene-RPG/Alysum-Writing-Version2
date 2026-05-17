@@ -5,8 +5,11 @@
     --mc-accent: #c4b5fd;
     --mc-gold: var(--gold, #fbbf24);
     --mc-sky-top: #0c1224;
-    --mc-sky-mid: #080d1a;
-    --mc-sky-deep: #04060e;
+    --mc-sky-mid: #0a1020;
+    --mc-sky-deep: #060a14;
+    --mc-input-bg: rgba(22, 32, 56, 0.75);
+    --mc-input-border: rgba(255, 255, 255, 0.14);
+    --mc-vignette: rgba(2, 4, 12, 0.45);
     min-height: 100vh;
     color: #f1f5f9;
     font-family: "Cormorant Garamond", Georgia, "Times New Roman", serif;
@@ -35,7 +38,7 @@
     pointer-events: none;
     z-index: 0;
     background:
-        radial-gradient(ellipse 120% 80% at 50% 50%, transparent 35%, rgba(2, 4, 12, 0.55) 100%),
+        radial-gradient(ellipse 120% 80% at 50% 50%, transparent 35%, var(--mc-vignette) 100%),
         radial-gradient(1px 1px at 12% 18%, rgba(255, 255, 255, 0.2) 0%, transparent 100%),
         radial-gradient(1px 1px at 28% 62%, rgba(255, 255, 255, 0.12) 0%, transparent 100%),
         radial-gradient(1px 1px at 44% 34%, rgba(255, 255, 255, 0.14) 0%, transparent 100%),
@@ -49,30 +52,38 @@
 }
 
 .mc-page.mc-hard {
-    --mc-glow: color-mix(in srgb, var(--gold) 42%, transparent);
+    --mc-glow: color-mix(in srgb, var(--gold) 52%, transparent);
     --mc-accent: #fde68a;
-    --mc-sky-top: #12101a;
-    --mc-sky-mid: #0a0c14;
-    --mc-sky-deep: #050508;
+    /* Same sky depth as soft — gold is accent only, not darker base */
+    --mc-sky-top: #0c1224;
+    --mc-sky-mid: #0a1020;
+    --mc-sky-deep: #060a14;
+    --mc-input-bg: rgba(28, 32, 48, 0.78);
+    --mc-input-border: rgba(253, 230, 138, 0.18);
+    --mc-vignette: rgba(2, 4, 12, 0.45);
 }
 
 .mc-page.mc-hard::before {
     background:
-        radial-gradient(ellipse 85% 50% at 50% -8%, var(--mc-glow) 0%, transparent 55%),
-        radial-gradient(ellipse 42% 40% at 88% 75%, rgba(180, 130, 50, 0.1) 0%, transparent 55%),
-        radial-gradient(ellipse 38% 34% at 10% 35%, rgba(120, 90, 40, 0.08) 0%, transparent 50%),
-        radial-gradient(ellipse 65% 40% at 50% 105%, rgba(10, 8, 4, 0.9) 0%, transparent 52%);
+        radial-gradient(ellipse 90% 55% at 50% -12%, var(--mc-glow) 0%, transparent 58%),
+        radial-gradient(ellipse 45% 38% at 8% 72%, rgba(180, 130, 50, 0.12) 0%, transparent 55%),
+        radial-gradient(ellipse 40% 36% at 92% 28%, rgba(251, 191, 36, 0.09) 0%, transparent 52%),
+        radial-gradient(ellipse 70% 45% at 50% 108%, rgba(15, 23, 42, 0.85) 0%, transparent 55%);
 }
 
 .mc-page.mc-hard::after {
     background:
-        radial-gradient(ellipse 120% 80% at 50% 50%, transparent 32%, rgba(4, 3, 8, 0.6) 100%),
-        radial-gradient(1px 1px at 18% 24%, rgba(255, 247, 237, 0.18) 0%, transparent 100%),
-        radial-gradient(1px 1px at 52% 16%, rgba(255, 247, 237, 0.14) 0%, transparent 100%),
-        radial-gradient(1px 1px at 78% 38%, rgba(255, 247, 237, 0.12) 0%, transparent 100%),
-        radial-gradient(1px 1px at 36% 72%, rgba(255, 247, 237, 0.1) 0%, transparent 100%),
-        radial-gradient(1.5px 1.5px at 64% 84%, rgba(253, 230, 138, 0.22) 0%, transparent 100%),
-        radial-gradient(1.5px 1.5px at 90% 58%, rgba(253, 230, 138, 0.16) 0%, transparent 100%);
+        radial-gradient(ellipse 120% 80% at 50% 50%, transparent 35%, var(--mc-vignette) 100%),
+        radial-gradient(1px 1px at 12% 18%, rgba(255, 255, 255, 0.2) 0%, transparent 100%),
+        radial-gradient(1px 1px at 28% 62%, rgba(255, 255, 255, 0.12) 0%, transparent 100%),
+        radial-gradient(1px 1px at 44% 34%, rgba(255, 255, 255, 0.14) 0%, transparent 100%),
+        radial-gradient(1px 1px at 67% 22%, rgba(255, 255, 255, 0.16) 0%, transparent 100%),
+        radial-gradient(1px 1px at 81% 48%, rgba(255, 255, 255, 0.1) 0%, transparent 100%),
+        radial-gradient(1px 1px at 56% 78%, rgba(255, 255, 255, 0.11) 0%, transparent 100%),
+        radial-gradient(1px 1px at 91% 82%, rgba(255, 255, 255, 0.08) 0%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 22% 88%, rgba(253, 230, 138, 0.28) 0%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 74% 68%, rgba(253, 230, 138, 0.2) 0%, transparent 100%);
+    opacity: 0.85;
 }
 
 /* Floating color depth between base layers and content */
@@ -91,9 +102,9 @@
 
 .mc-page.mc-hard .mc-veil {
     background:
-        radial-gradient(ellipse 52% 44% at 78% 38%, rgba(251, 191, 36, 0.06) 0%, transparent 55%),
-        radial-gradient(ellipse 48% 40% at 22% 62%, rgba(180, 83, 9, 0.05) 0%, transparent 52%),
-        radial-gradient(ellipse 75% 28% at 50% 50%, rgba(60, 40, 10, 0.04) 0%, transparent 68%);
+        radial-gradient(ellipse 55% 45% at 18% 42%, rgba(251, 191, 36, 0.07) 0%, transparent 55%),
+        radial-gradient(ellipse 50% 42% at 82% 58%, rgba(217, 119, 6, 0.06) 0%, transparent 52%),
+        radial-gradient(ellipse 80% 30% at 50% 50%, rgba(30, 27, 75, 0.04) 0%, transparent 70%);
 }
 
 @keyframes mcVeilDrift {
@@ -258,8 +269,8 @@
 .mc-naming input {
     width: 100%;
     border: none;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.18);
-    background: transparent;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.22);
+    background: rgba(15, 23, 42, 0.35);
     color: #fff7ed;
     font-family: "Cinzel", Georgia, serif;
     font-size: 1.25rem;
@@ -348,12 +359,12 @@
     .mc-chapter-btn.is-active {
         border-left-color: transparent;
         border-bottom-color: var(--mc-accent);
-        background: rgba(109, 40, 217, 0.2);
+        background: color-mix(in srgb, var(--mc-accent) 18%, rgba(0, 0, 0, 0.25));
     }
 }
 
 .mc-page.mc-hard .mc-chapter-btn.is-active {
-    border-left-color: var(--mc-gold);
+    border-left-color: var(--mc-accent);
 }
 
 .mc-chapter-glyph {
@@ -453,10 +464,10 @@
 .mc-entry textarea {
     width: 100%;
     min-height: 88px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 4px;
-    background: rgba(0, 0, 0, 0.35);
-    color: #e2e8f0;
+    border: 1px solid var(--mc-input-border);
+    border-radius: 6px;
+    background: var(--mc-input-bg);
+    color: #f1f5f9;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     font-size: 15px;
     line-height: 1.55;
@@ -473,7 +484,7 @@
 }
 
 .mc-entry textarea::placeholder {
-    color: rgba(148, 163, 184, 0.35);
+    color: rgba(148, 163, 184, 0.5);
 }
 
 .mc-entry.is-answered textarea {
