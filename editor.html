@@ -1,5 +1,4 @@
-<!DOCTYPE html><html>
-<head>
+<!DOCTYPE html><html><head>
     <!-- ALYSUM:PWA:START -->
     <link rel="manifest" href="manifest.webmanifest">
     <meta name="theme-color" content="#7c3aed" media="(prefers-color-scheme: light)">
@@ -15,18 +14,12 @@
     <!-- ALYSUM:PWA:END -->
     <!-- ALYSUM:ANALYTICS:START -->
     <script type="module" src="js/vercel-analytics.js"></script>
-    <!-- ALYSUM:ANALYTICS:END -->
-
-<link rel="stylesheet" href="css/notebook.css?v=9" />
+    <!-- ALYSUM:ANALYTICS:END --><link rel="stylesheet" href="css/notebook.css?v=9" />
 <link rel="stylesheet" href="css/site-responsive.css?v=1" />
 <link rel="stylesheet" href="css/gradient-themes.css?v=4" />
     <script src="js/gradient-theme-sync.js" defer></script>
 <title>Alysum Editor</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<script src="js/alysum-appearance-boot.js"></script>
-
-<style>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><script src="js/alysum-appearance-boot.js"></script><style>
     * { box-sizing: border-box; }
     html, body {
         margin: 0;
@@ -140,8 +133,9 @@
     .chapter-number { display: none; text-align: center; font-family: Georgia, serif; color: var(--page-subtle); font-size: 18px; margin-bottom: 22px; }
     .chapter-title { text-align: center; font-family: Georgia, "Times New Roman", serif; color: var(--page-text); font-size: 28px; font-weight: 700; margin-bottom: 40px; outline: none; }
     .editor { min-height: 440px; outline: none; font-family: Georgia, "Times New Roman", serif; font-size: 20px; line-height: 1.7; letter-spacing: 0.2px; color: var(--page-text); white-space: normal; word-break: break-word; }
-    .editor div, .editor p { margin: 0 0 1.2em; }
-    .editor h2, .editor blockquote, .editor ul, .editor ol { text-indent: 0; }
+    .editor div, .editor p { margin: 0 0 1.2em; text-indent: 2em; }
+    .editor h2, .editor blockquote, .editor ul, .editor ol, .editor li { text-indent: 0; }
+    .editor h2 + div, .editor h2 + p, .editor blockquote + div, .editor blockquote + p { text-indent: 0; }
     .editor ul, .editor ol { margin: 0 0 1.15em 1.5em; }
     .editor blockquote { border-left: 4px solid var(--alysum-purple); margin: 0 0 1.15em; padding-left: 16px; color: #575f69; }
     body.dark .editor blockquote { color: #cbd5e1; }
@@ -179,9 +173,7 @@
     @media (max-width: 900px) { .page { padding: 52px 56px 70px; } .chapter-title { font-size: 24px; } .editor { font-size: 18px; } .top-title { max-width: 28vw; } }
     @media (max-width: 760px) { .sidebar { position: fixed; left: 0; top: 0; width: 300px; } .overlay { display: block; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 20; } .overlay.hidden { display: none; } .top-title { max-width: 40vw; } .page { padding: 42px 24px 60px; } .chapter-title { font-size: 22px; margin-bottom: 32px; } .editor { font-size: 17px; line-height: 1.7; } .topbar { height: auto; min-height: 56px; flex-wrap: wrap; row-gap: 8px; } .topbar-left, .topbar-right { flex-wrap: wrap; } .topbar-right { justify-content: flex-end; } }
     @media (max-width: 480px) { .workspace { padding: 16px 10px 40px; } .page { padding: 32px 16px 48px; } .sidebar { width: min(300px, 100vw); } }
-</style>
-
-</head><body>
+</style></head><body>
     <div id="nbPanel" class="nb-app nb-float nb-theme-mirror hidden" role="dialog" aria-label="Notes">
         <header class="nb-top-hat">
             <span class="nb-workspace-title" id="nbLabel">Notes</span>
@@ -248,11 +240,7 @@
         <div class="group"><div class="group-header" data-group="back"><div class="left"><span class="caret" id="caret-back">▼</span>Back matter</div><div>edit</div></div><div class="group-body" id="group-back"></div></div>
     </div>
     <div class="side-footer"><span id="footerWords">0</span> words</div>
-</div>
-
-<div class="overlay hidden" id="overlay"></div>
-
-<div class="main">
+</div><div class="overlay hidden" id="overlay"></div><div class="main">
     <div class="topbar">
         <div class="topbar-left">
             <span class="topbar-tip" data-tip="Sidebar on / off"><button class="icon-btn" id="toggleSidebarBtn" type="button" aria-label="Toggle sidebar">☰</button></span>
@@ -270,37 +258,34 @@
             <span class="topbar-tip" data-tip="Delete entire book"><button class="icon-btn danger" id="deleteBookTopBtn" type="button" aria-label="Delete book">🗑</button></span>
             <div class="save-status" id="saveStatus" data-tip="Save status" aria-live="polite">Loading...</div>
         </div>
-    </div>
+    </div><div class="toolbar">
+    <button class="tool-btn" type="button" data-cmd="bold">B</button>
+    <button class="tool-btn" type="button" data-cmd="italic"><em>I</em></button>
+    <button class="tool-btn" type="button" data-cmd="underline"><u>U</u></button>
+    <button class="tool-btn" type="button" data-cmd="insertUnorderedList">• List</button>
+    <button class="tool-btn" type="button" data-cmd="insertOrderedList">1. List</button>
+    <button class="tool-btn" type="button" id="quoteBtn">❝</button>
+    <select class="tool-select" id="formatSelect"><option value="p">Body</option><option value="h2">Heading</option></select>
+    <select class="tool-select" id="fontSelect"><option value="Georgia">Georgia</option><option value="Times New Roman">Times New Roman</option><option value="Arial">Arial</option><option value="Inter">Inter</option><option value="Courier New">Courier New</option></select>
+    <select class="tool-select" id="fontSizeSelect"><option value="18">Compact</option><option value="20">Book</option><option value="22">Comfort</option><option value="26">Large</option></select>
+    <div class="toolbar-spacer"></div>
+    <span class="sprint-anchor" id="sprintAnchor"><button class="sprint-btn" id="sprintToolbarBtn" type="button" aria-label="Sprint timer">⏱ Sprint</button></span>
+</div>
 
-    <div class="toolbar">
-        <button class="tool-btn" type="button" data-cmd="bold">B</button>
-        <button class="tool-btn" type="button" data-cmd="italic"><em>I</em></button>
-        <button class="tool-btn" type="button" data-cmd="underline"><u>U</u></button>
-        <button class="tool-btn" type="button" data-cmd="insertUnorderedList">• List</button>
-        <button class="tool-btn" type="button" data-cmd="insertOrderedList">1. List</button>
-        <button class="tool-btn" type="button" id="quoteBtn">❝</button>
-        <select class="tool-select" id="formatSelect"><option value="div">Body</option><option value="h2">Heading</option></select>
-        <select class="tool-select" id="fontSelect"><option value="Georgia">Georgia</option><option value="Times New Roman">Times New Roman</option><option value="Arial">Arial</option><option value="Inter">Inter</option><option value="Courier New">Courier New</option></select>
-        <select class="tool-select" id="fontSizeSelect"><option value="18">Compact</option><option value="20">Book</option><option value="22">Comfort</option><option value="26">Large</option></select>
-        <div class="toolbar-spacer"></div>
-        <span class="sprint-anchor" id="sprintAnchor"><button class="sprint-btn" id="sprintToolbarBtn" type="button" aria-label="Sprint timer">⏱ Sprint</button></span>
-    </div>
+<div class="sprint-float" id="sprintFloat" aria-live="polite"><div class="sprint-float-box"><div class="sprint-float-top"><div class="sprint-float-label">Sprint</div><button class="sprint-mini-btn danger" id="sprintStopBtn" type="button">Stop</button></div><div class="sprint-float-time" id="sprintFloatTime">00:00</div></div></div>
 
-    <div class="sprint-float" id="sprintFloat" aria-live="polite"><div class="sprint-float-box"><div class="sprint-float-top"><div class="sprint-float-label">Sprint</div><button class="sprint-mini-btn danger" id="sprintStopBtn" type="button">Stop</button></div><div class="sprint-float-time" id="sprintFloatTime">00:00</div></div></div>
-
-    <div class="workspace">
-        <div class="page-wrap">
-            <div class="page">
-                <div class="chapter-number" id="chapterNumber">1</div>
-                <div class="chapter-title" id="chapterTitle" contenteditable="true">Chapter 1</div>
-                <div class="editor" id="editor" contenteditable="true" data-placeholder="Begin writing here..."></div>
-                <div class="bottom-meta"><span id="chapterWords">0</span> chapter words • <span id="bottomTotalWords">0</span> total words</div>
-            </div>
+<div class="workspace">
+    <div class="page-wrap">
+        <div class="page">
+            <div class="chapter-number" id="chapterNumber">1</div>
+            <div class="chapter-title" id="chapterTitle" contenteditable="true">Chapter 1</div>
+            <div class="editor" id="editor" contenteditable="true" data-placeholder="Begin writing here..."></div>
+            <div class="bottom-meta"><span id="chapterWords">0</span> chapter words • <span id="bottomTotalWords">0</span> total words</div>
         </div>
     </div>
 </div>
 
-<div class="publish-modal" id="publishModal">
+</div><div class="publish-modal" id="publishModal">
     <div class="publish-modal-box">
         <h2 class="publish-modal-title">Choose Chapters to Publish</h2>
         <p class="publish-modal-text">Select the chapters you want to publish now.</p>
@@ -321,13 +306,9 @@
             </div>
         </div>
     </div>
-</div>
-
-<div class="sprint-modal" id="sprintConfirmModal"><div class="sprint-modal-box"><h2 class="sprint-modal-title">Ready to start?</h2><p class="sprint-modal-text" id="sprintConfirmText">Start a sprint?</p><div class="sprint-modal-actions"><button class="secondary" id="sprintConfirmNo" type="button">Not yet</button><button class="primary" id="sprintConfirmYes" type="button">Yes, start</button></div></div></div>
+</div><div class="sprint-modal" id="sprintConfirmModal"><div class="sprint-modal-box"><h2 class="sprint-modal-title">Ready to start?</h2><p class="sprint-modal-text" id="sprintConfirmText">Start a sprint?</p><div class="sprint-modal-actions"><button class="secondary" id="sprintConfirmNo" type="button">Not yet</button><button class="primary" id="sprintConfirmYes" type="button">Yes, start</button></div></div></div>
 <div class="sprint-modal" id="sprintOptionsModal"><div class="sprint-modal-box"><h2 class="sprint-modal-title">Choose a timer</h2><p class="sprint-modal-text" id="sprintOptionsSub">Tracks words written during the sprint.</p><div class="sprint-opt-grid" id="sprintOptionsGrid"><button class="sprint-opt" type="button" data-min="10">10 min</button><button class="sprint-opt" type="button" data-min="15">15 min</button><button class="sprint-opt" type="button" data-min="25">25 min</button><button class="sprint-opt" type="button" data-min="60">1 hour</button></div><div class="sprint-modal-actions" style="margin-top:14px;"><button class="secondary" id="sprintOptionsClose" type="button">Close</button></div></div></div>
-<div class="sprint-modal" id="sprintResultModal"><div class="sprint-modal-box"><h2 class="sprint-modal-title" id="sprintResultTitle">Sprint complete</h2><p class="sprint-modal-text" id="sprintResultText">...</p><div class="sprint-modal-actions"><button class="primary" id="sprintResultOk" type="button">OK</button></div></div></div>
-
-<script type="module">
+<div class="sprint-modal" id="sprintResultModal"><div class="sprint-modal-box"><h2 class="sprint-modal-title" id="sprintResultTitle">Sprint complete</h2><p class="sprint-modal-text" id="sprintResultText">...</p><div class="sprint-modal-actions"><button class="primary" id="sprintResultOk" type="button">OK</button></div></div></div><script type="module">
     import { supabase } from "./firebase.js";
     import { publicDisplayNameFromUserData } from "./js/profile-display.js?v=1";
     import { localDayKey } from "./js/writing-day-stats.js?v=1";
@@ -583,6 +564,69 @@ function rememberBookId(id) {
     function renderTitles() { const title = currentBook.title || "Untitled Book"; topBookTitle.textContent = title; sidebarBookTitle.textContent = title; }
     function escapeHtml(str) { return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
 
+    function cleanEditorHtml(html) {
+        const holder = document.createElement("div");
+        holder.innerHTML = safeString(html, "");
+
+        holder.querySelectorAll("script, style, meta, link, iframe, object, embed").forEach(el => el.remove());
+        holder.querySelectorAll("*").forEach(el => {
+            [...el.attributes].forEach(attr => {
+                if (/^on/i.test(attr.name) || attr.name === "style" || attr.name === "class") el.removeAttribute(attr.name);
+            });
+        });
+
+        holder.querySelectorAll("div").forEach(div => {
+            const p = document.createElement("p");
+            while (div.firstChild) p.appendChild(div.firstChild);
+            div.replaceWith(p);
+        });
+
+        holder.querySelectorAll("p").forEach(p => {
+            if (!p.textContent.trim() && !p.querySelector("img, br")) p.remove();
+        });
+
+        return holder.innerHTML
+            .replace(/<p>(\s|&nbsp;|<br\s*\/?>)*<\/p>/gi, "")
+            .replace(/<div>(\s|&nbsp;|<br\s*\/?>)*<\/div>/gi, "")
+            .trim();
+    }
+
+    function syncCurrentChapterFromEditor() {
+        const cleaned = cleanEditorHtml(editor.innerHTML);
+        currentChapter().content = cleaned;
+        if (editor.innerHTML !== cleaned) editor.innerHTML = cleaned;
+    }
+
+    function insertCleanHtml(html) {
+        editor.focus();
+        if (document.queryCommandSupported && document.queryCommandSupported("insertHTML")) {
+            document.execCommand("insertHTML", false, html);
+            return;
+        }
+        const selection = window.getSelection();
+        if (!selection || !selection.rangeCount) {
+            editor.insertAdjacentHTML("beforeend", html);
+            return;
+        }
+        const range = selection.getRangeAt(0);
+        range.deleteContents();
+        const temp = document.createElement("div");
+        temp.innerHTML = html;
+        const fragment = document.createDocumentFragment();
+        let node;
+        let lastNode = null;
+        while ((node = temp.firstChild)) {
+            lastNode = fragment.appendChild(node);
+        }
+        range.insertNode(fragment);
+        if (lastNode) {
+            range.setStartAfter(lastNode);
+            range.collapse(true);
+            selection.removeAllRanges();
+            selection.addRange(range);
+        }
+    }
+
     function renderSection(section) {
         const mount = groupEls[section];
         mount.innerHTML = "";
@@ -631,7 +675,7 @@ function rememberBookId(id) {
         const ch = currentChapter();
         chapterNumber.textContent = section === "body" ? index + 1 : "";
         chapterTitle.textContent = ch.title || "Untitled";
-        editor.innerHTML = ch.content || "";
+        editor.innerHTML = cleanEditorHtml(ch.content || "");
         applyEditorStyle();
         if (rerender) renderAllSections();
         syncStats();
@@ -899,12 +943,46 @@ function rememberBookId(id) {
         scheduleSave();
     });
     editor.addEventListener("input", () => {
-        currentChapter().content = editor.innerHTML;
+        syncCurrentChapterFromEditor();
         syncStats();
         scheduleSave();
     });
     editor.addEventListener("keydown", e => {
-        if (e.key === "Enter") setTimeout(() => { currentChapter().content = editor.innerHTML; syncStats(); scheduleSave(); }, 0);
+        if (e.key === "Enter") setTimeout(() => { syncCurrentChapterFromEditor(); syncStats(); scheduleSave(); }, 0);
+    });
+    editor.addEventListener("paste", e => {
+        e.preventDefault();
+        const clipboard = e.clipboardData || window.clipboardData;
+        const plainText = clipboard?.getData("text/plain") || "";
+        const htmlText = clipboard?.getData("text/html") || "";
+        let html = "";
+
+        if (plainText.trim()) {
+            const normalized = plainText.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+            const paragraphs = normalized.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
+            html = paragraphs.map(p => `<p>${escapeHtml(p).replace(/\n/g, "<br>")}</p>`).join("");
+        } else if (htmlText.trim()) {
+            html = cleanEditorHtml(htmlText);
+        }
+
+        if (!html) return;
+        insertCleanHtml(html);
+        syncCurrentChapterFromEditor();
+        syncStats();
+        scheduleSave();
+    });
+    editor.addEventListener("copy", e => {
+        const selection = window.getSelection();
+        if (!selection || selection.isCollapsed || !editor.contains(selection.anchorNode)) return;
+        const container = document.createElement("div");
+        for (let i = 0; i < selection.rangeCount; i++) {
+            container.appendChild(selection.getRangeAt(i).cloneContents());
+        }
+        const html = cleanEditorHtml(container.innerHTML);
+        const text = stripHtmlToText(html);
+        e.clipboardData.setData("text/html", html);
+        e.clipboardData.setData("text/plain", text);
+        e.preventDefault();
     });
 
     document.querySelectorAll("[data-group]").forEach(header => {
@@ -920,13 +998,13 @@ function rememberBookId(id) {
         btn.addEventListener("click", () => {
             document.execCommand(btn.dataset.cmd, false, null);
             editor.focus();
-            currentChapter().content = editor.innerHTML;
+            syncCurrentChapterFromEditor();
             syncStats();
             scheduleSave();
         });
     });
-    formatSelect.addEventListener("change", () => { document.execCommand("formatBlock", false, formatSelect.value === "h2" ? "h2" : "div"); editor.focus(); currentChapter().content = editor.innerHTML; syncStats(); scheduleSave(); });
-    quoteBtn.addEventListener("click", () => { document.execCommand("formatBlock", false, "blockquote"); editor.focus(); currentChapter().content = editor.innerHTML; syncStats(); scheduleSave(); });
+    formatSelect.addEventListener("change", () => { document.execCommand("formatBlock", false, formatSelect.value === "h2" ? "h2" : "p"); editor.focus(); syncCurrentChapterFromEditor(); syncStats(); scheduleSave(); });
+    quoteBtn.addEventListener("click", () => { document.execCommand("formatBlock", false, "blockquote"); editor.focus(); syncCurrentChapterFromEditor(); syncStats(); scheduleSave(); });
     fontSelect.addEventListener("change", () => { localStorage.setItem("alysum-font", fontSelect.value); applyEditorStyle(); });
     fontSizeSelect.addEventListener("change", () => { localStorage.setItem("alysum-fontSize", fontSizeSelect.value); applyEditorStyle(); });
 
@@ -1021,6 +1099,7 @@ async function loadBook() {
         fontSelect.value = localStorage.getItem("alysum-font") || "Georgia";
         fontSizeSelect.value = localStorage.getItem("alysum-fontSize") || "20";
         applyEditorStyle();
+        document.execCommand("defaultParagraphSeparator", false, "p");
         setSaveStatus("Connecting...");
     await loadProfile().catch(console.error);
 
@@ -1058,7 +1137,5 @@ async function loadBook() {
     }
 
     init();
-</script>
-
-</body>
+</script></body>
 </html>
