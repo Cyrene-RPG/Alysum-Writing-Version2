@@ -133,7 +133,8 @@
     .chapter-number { display: none; text-align: center; font-family: Georgia, serif; color: var(--page-subtle); font-size: 18px; margin-bottom: 22px; }
     .chapter-title { text-align: center; font-family: Georgia, "Times New Roman", serif; color: var(--page-text); font-size: 28px; font-weight: 700; margin-bottom: 40px; outline: none; }
     .editor { min-height: 440px; outline: none; font-family: Georgia, "Times New Roman", serif; font-size: 20px; line-height: 1.7; letter-spacing: 0.2px; color: var(--page-text); white-space: normal; word-break: break-word; }
-    .editor div, .editor p { margin: 0 0 1.2em; text-indent: 2em; }
+    .editor div, .editor p { margin: 0; text-indent: 2em; }
+    .editor div:first-child, .editor p:first-child { text-indent: 0; }
     .editor h2, .editor blockquote, .editor ul, .editor ol, .editor li { text-indent: 0; }
     .editor h2 + div, .editor h2 + p, .editor blockquote + div, .editor blockquote + p { text-indent: 0; }
     .editor ul, .editor ol { margin: 0 0 1.15em 1.5em; }
@@ -314,8 +315,6 @@
     import { localDayKey } from "./js/writing-day-stats.js?v=1";
     import { isStoryBibleUiEnabled, STORY_BIBLE_PREF_KEY, STORY_BIBLE_PREF_EVENT } from "./js/story-bible-prefs.js?v=1";
 
-    // ===== MOBILE / NO-BOOK FIX =====
-// Supports ?book=, ?id=, ?bookId= and remembers last opened book
 const params = new URLSearchParams(window.location.search);
 let bookId =
     params.get("book") ||
@@ -325,7 +324,6 @@ let bookId =
     sessionStorage.getItem("alysum-current-book-id") ||
     "";
 
-// Persist active book across reloads and mobile browser refreshes
 function rememberBookId(id) {
     if (!id) return;
     bookId = String(id);
@@ -592,9 +590,13 @@ function rememberBookId(id) {
     }
 
     function syncCurrentChapterFromEditor() {
+        currentChapter().content = editor.innerHTML;
+    }
+
+    function cleanAndStoreCurrentChapterFromEditor() {
         const cleaned = cleanEditorHtml(editor.innerHTML);
         currentChapter().content = cleaned;
-        if (editor.innerHTML !== cleaned) editor.innerHTML = cleaned;
+        return cleaned;
     }
 
     function insertCleanHtml(html) {
@@ -815,6 +817,7 @@ function rememberBookId(id) {
     async function saveBook(doneText = "Saved") {
         if (!currentUser || !bookId || !currentBook) return;
         setSaveStatus("Saving...");
+        if (document.activeElement === editor) cleanAndStoreCurrentChapterFromEditor();
         const nextWords = totalWords();
         const prevPersisted = persistedBookWordCount;
         const patch = toDbBookPatch(currentBook);
@@ -1045,7 +1048,6 @@ function rememberBookId(id) {
         currentProfile = toCamelProfile(data || {});
     }
 
-    // Automatically load the newest book if URL parameters are missing
 async function resolveBookId() {
     if (bookId) {
         rememberBookId(bookId);
