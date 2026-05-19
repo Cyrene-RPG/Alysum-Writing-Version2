@@ -179,6 +179,10 @@
 
     .nav-login:hover { color: #fff; }
 
+    body.home-logged-in [data-home-guest] {
+      display: none !important;
+    }
+
     .nav-cta {
       padding: 11px 18px;
       border-radius: 999px;
@@ -782,11 +786,11 @@
           <a href="#about">About</a>
           <a href="#library">Library</a>
           <a href="#features">Features</a>
-          <a href="login.html">Log in</a>
+          <a href="login.html" data-home-guest data-home-login data-home-login-label>Log in</a>
         </nav>
         <div class="nav-actions">
-          <a href="login.html" class="nav-login">Log in</a>
-          <a href="signup.html" class="nav-cta">Start writing now</a>
+          <a href="login.html" class="nav-login" data-home-guest data-home-login data-home-login-label>Log in</a>
+          <a href="signup.html" class="nav-cta" data-home-primary>Start writing now</a>
         </div>
       </div>
     </header>
@@ -804,7 +808,7 @@
             </div>
             <div class="hero-head-actions">
               <div class="hero-buttons">
-                <a href="signup.html" class="btn btn-primary">Start writing now</a>
+                <a href="signup.html" class="btn btn-primary" data-home-primary>Start writing now</a>
                 <a href="library.html" class="btn btn-outline">Browse the library</a>
               </div>
             </div>
@@ -915,8 +919,8 @@
 
     <section class="cta-band">
       <h2>Ready to write your next chapter?</h2>
-      <p>Join Alysum free — your studio is waiting.</p>
-      <a href="signup.html" class="btn btn-primary">Create your account</a>
+      <p data-home-cta-copy>Join Alysum free — your studio is waiting.</p>
+      <a href="signup.html" class="btn btn-primary" data-home-cta-band>Create your account</a>
     </section>
 
     <footer class="site-footer">
@@ -925,9 +929,9 @@
         <div class="footer-cols">
           <div class="footer-col">
             <h4>Product</h4>
-            <a href="signup.html">Start writing now</a>
+            <a href="signup.html" data-home-primary>Start writing now</a>
             <a href="library.html">Library</a>
-            <a href="login.html">Log in</a>
+            <a href="login.html" data-home-guest data-home-login data-home-login-label>Log in</a>
           </div>
           <div class="footer-col">
             <h4>Explore</h4>
@@ -951,11 +955,13 @@
 
   <script type="module">
     import { supabase } from "./firebase.js";
+    import { wireHomepageAuth } from "./js/homepage-auth-nav.js?v=1";
 
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.user) {
-      window.location.replace("studio.html");
-    }
+    await wireHomepageAuth(supabase);
+
+    supabase.auth.onAuthStateChange(() => {
+      void wireHomepageAuth(supabase);
+    });
 
     const backendAlert = document.getElementById("backendAlert");
     const backendAlertClose = backendAlert?.querySelector(".alert-close");
@@ -1079,6 +1085,22 @@
           badge: "📚",
           empty: true
         });
+        const emptyCard = container.querySelector(".arrival-card");
+        if (emptyCard) {
+          const target =
+            document.querySelector("[data-home-primary]")?.href || "signup.html";
+          emptyCard.style.cursor = "pointer";
+          const go = () => { window.location.href = target; };
+          emptyCard.addEventListener("click", go);
+          emptyCard.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              go();
+            }
+          });
+          emptyCard.setAttribute("tabindex", "0");
+          emptyCard.setAttribute("role", "link");
+        }
         return;
       }
 
