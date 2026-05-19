@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 620" role="img" aria-label="Alysum writing editor preview">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0d1426"/>
+      <stop offset="100%" stop-color="#071427"/>
+    </linearGradient>
+    <linearGradient id="top" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#4c1d95"/>
+      <stop offset="50%" stop-color="#6d28d9"/>
+      <stop offset="100%" stop-color="#7c3aed"/>
+    </linearGradient>
+  </defs>
+  <rect width="1100" height="620" rx="24" fill="url(#bg)"/>
+  <rect x="1" y="1" width="1098" height="618" rx="23" fill="none" stroke="rgba(255,255,255,0.08)"/>
+  <rect width="1100" height="56" rx="24" fill="url(#top)"/>
+  <rect y="28" width="1100" height="28" fill="url(#top)"/>
+  <text x="24" y="36" fill="#fff" font-family="Segoe UI, system-ui, sans-serif" font-size="15" font-weight="700">Alysum Editor</text>
+  <text x="980" y="36" fill="#ede9fe" font-family="Segoe UI, system-ui, sans-serif" font-size="13" font-weight="600">My Novel</text>
+  <rect x="0" y="56" width="248" height="564" fill="#263646"/>
+  <text x="20" y="92" fill="#f3f4f6" font-family="Segoe UI, system-ui, sans-serif" font-size="12" font-weight="800" letter-spacing="0.08em">MANUSCRIPT</text>
+  <rect x="16" y="108" width="216" height="36" rx="8" fill="#1762a6"/>
+  <text x="32" y="131" fill="#fff" font-family="Segoe UI, system-ui, sans-serif" font-size="14" font-weight="700">Chapter 1</text>
+  <rect x="16" y="152" width="216" height="32" rx="8" fill="rgba(255,255,255,0.04)"/>
+  <text x="32" y="173" fill="#cbd5e1" font-family="Segoe UI, system-ui, sans-serif" font-size="13">Chapter 2</text>
+  <rect x="16" y="192" width="216" height="32" rx="8" fill="rgba(255,255,255,0.04)"/>
+  <text x="32" y="213" fill="#cbd5e1" font-family="Segoe UI, system-ui, sans-serif" font-size="13">Chapter 3</text>
+  <rect x="248" y="56" width="852" height="48" fill="#f3f4f6"/>
+  <rect x="268" y="72" width="28" height="18" rx="4" fill="#e5e7eb"/>
+  <rect x="304" y="72" width="28" height="18" rx="4" fill="#e5e7eb"/>
+  <rect x="340" y="72" width="48" height="18" rx="4" fill="#e5e7eb"/>
+  <rect x="268" y="104" width="764" height="516" fill="#ffffff"/>
+  <text x="550" y="200" text-anchor="middle" fill="#111827" font-family="Georgia, Times New Roman, serif" font-size="42" font-weight="700">Chapter 1</text>
+  <text x="550" y="270" text-anchor="middle" fill="#6b7280" font-family="Georgia, Times New Roman, serif" font-size="22">Begin writing here…</text>
+  <rect x="268" y="560" width="120" height="8" rx="4" fill="#e5e7eb" opacity="0.8"/>
+</svg>
