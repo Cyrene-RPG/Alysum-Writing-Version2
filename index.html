@@ -142,14 +142,40 @@
       letter-spacing: -0.02em;
     }
 
-    .nav-brand img {
+    .nav-brand-mark {
+      position: relative;
+      display: block;
       width: 64px;
       height: 64px;
+      flex-shrink: 0;
       border-radius: 16px;
-      object-fit: cover;
+      overflow: hidden;
       box-shadow:
         0 8px 24px rgba(0, 0, 0, 0.3),
         0 0 0 1px rgba(255, 255, 255, 0.14);
+    }
+
+    .nav-brand-mark img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .nav-brand-swirls {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      mix-blend-mode: soft-light;
+      opacity: 0.92;
+    }
+
+    .nav-brand-swirls path {
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
 
     .nav-links {
@@ -754,7 +780,7 @@
       .hero-panel { padding: 0 16px 28px; }
       .hero-panel-inner { gap: 18px; }
       .nav-login { display: none; }
-      .nav-brand img { width: 56px; height: 56px; }
+      .nav-brand-mark { width: 56px; height: 56px; border-radius: 14px; }
       .nav-brand { font-size: 21px; }
       .hero-eyebrow { margin-bottom: 8px; }
     }
@@ -779,7 +805,32 @@
     <header class="site-nav">
       <div class="site-nav-inner">
         <a href="index.html" class="nav-brand">
-          <img src="Alysum-3.png" alt="" width="64" height="64" />
+          <span class="nav-brand-mark">
+            <img src="Alysum-3.png" alt="" width="64" height="64" />
+            <svg class="nav-brand-swirls" viewBox="0 0 64 64" aria-hidden="true">
+              <defs>
+                <linearGradient id="brand-swirl-a" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#faf5ff" stop-opacity="0.98" />
+                  <stop offset="45%" stop-color="#ddd6fe" stop-opacity="0.82" />
+                  <stop offset="100%" stop-color="#7c3aed" stop-opacity="0.45" />
+                </linearGradient>
+                <linearGradient id="brand-swirl-b" x1="5%" y1="5%" x2="95%" y2="95%">
+                  <stop offset="0%" stop-color="#ede9fe" stop-opacity="0.75" />
+                  <stop offset="100%" stop-color="#a78bfa" stop-opacity="0.25" />
+                </linearGradient>
+              </defs>
+              <!-- Flowing strokes: top-left → bottom-right -->
+              <path stroke="url(#brand-swirl-a)" stroke-width="2.3" d="M4 5 C11 3 15 13 21 17 C27 21 29 29 35 33 C41 37 45 47 51 53 C55 57 58 60 61 62" />
+              <path stroke="url(#brand-swirl-b)" stroke-width="1.5" d="M8 2 C13 8 17 10 23 16 C29 22 31 30 37 36 C43 42 47 48 53 54 C56 57 59 59 62 61" />
+              <!-- Spiral curls spaced along the diagonal -->
+              <path stroke="url(#brand-swirl-a)" stroke-width="1.8" d="M10 8 C5 12 7 20 15 20 C21 20 21 12 16 9 C12 6 10 8 10 8" />
+              <path stroke="url(#brand-swirl-b)" stroke-width="1.5" d="M22 20 C17 24 19 32 27 32 C33 32 33 24 28 21 C23 18 22 20 22 20" />
+              <path stroke="url(#brand-swirl-a)" stroke-width="1.7" d="M34 32 C29 36 31 44 39 44 C45 44 45 36 40 33 C35 30 34 32 34 32" />
+              <path stroke="url(#brand-swirl-b)" stroke-width="1.6" d="M46 44 C41 48 43 56 51 56 C57 56 57 48 52 45 C47 42 46 44 46 44" />
+              <path stroke="#faf5ff" stroke-width="1.1" opacity="0.65" d="M6 14 C10 11 14 15 13 19 C12 23 7 24 5 20 C3 16 6 14 6 14" />
+              <path stroke="#faf5ff" stroke-width="0.95" opacity="0.5" d="M52 50 C48 53 44 50 45 46 C46 42 51 41 53 45 C55 49 52 50 52 50" />
+            </svg>
+          </span>
           Alysum
         </a>
         <nav class="nav-links" aria-label="Main">
