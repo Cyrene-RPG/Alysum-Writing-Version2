@@ -818,7 +818,7 @@ function wireBackLink() {
     if (bookId) {
         a.href = "editor.html?book=" + encodeURIComponent(bookId);
     } else {
-        a.href = "studio.html";
+        a.href = "writer-dashboard.html";
     }
 }
 

@@ -657,7 +657,7 @@
         <a class="menu-link" href="beta-notes-library.html">📝 All beta notes</a>
         <a class="menu-link" href="library.html">📚 Library</a>
         <a class="menu-link" href="world-encyclopedia.html">🌍 World Encyclopedia</a>
-        <a class="menu-link hidden" id="menuStudioLink" href="studio.html">✍️ Studio</a>
+        <a class="menu-link hidden" id="menuStudioLink" href="writer-dashboard.html">✍️ Studio</a>
         <a class="menu-link" href="settings.html">⚙️ Account settings</a>
         <a class="menu-link" href="index.html">🏠 Alysum home</a>
         <button type="button" class="menu-link menu-link-logout" data-logout-btn>Log out</button>
@@ -676,7 +676,7 @@
                 <a class="sidebar-item" href="beta-notes-library.html">📝 All beta notes</a>
                 <a class="sidebar-item" href="library.html">📚 Library</a>
                 <a class="sidebar-item" href="world-encyclopedia.html">🌍 World Encyclopedia</a>
-                <a class="sidebar-item hidden" id="sidebarStudioLink" href="studio.html">✍️ Studio</a>
+                <a class="sidebar-item hidden" id="sidebarStudioLink" href="writer-dashboard.html">✍️ Studio</a>
                 <a class="sidebar-item" href="settings.html">⚙️ Settings</a>
                 <a class="sidebar-item" href="index.html">🏠 Home</a>
             </nav>
@@ -992,7 +992,7 @@
                 if (!row) return;
                 const merged = mergeUserRow(row);
                 if (normalizeAccountType(merged.accountType) === ACCOUNT_AUTHOR) {
-                    window.location.replace("studio.html");
+                    window.location.replace("writer-dashboard.html");
                     return;
                 }
                 applyStudioNavVisibility(merged);
@@ -1021,7 +1021,7 @@
                 if (!btn || btn.classList.contains("active")) return;
                 if (btn.getAttribute("data-mode") === "studio") {
                     setUiMode("studio");
-                    window.location.href = "studio.html";
+                    window.location.href = "writer-dashboard.html";
                 }
             });
         }
@@ -1060,7 +1060,7 @@
                 const t = normalizeAccountType(data.accountType);
 
                 if (t === ACCOUNT_AUTHOR) {
-                    window.location.replace("studio.html");
+                    window.location.replace("writer-dashboard.html");
                     return;
                 }
 

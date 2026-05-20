@@ -52,7 +52,7 @@
       "name": "Studio",
       "short_name": "Studio",
       "description": "Open Alysum Studio",
-      "url": "studio.html",
+      "url": "writer-dashboard.html",
       "icons": [{ "src": "Alysum-3.png", "sizes": "192x192", "type": "image/png" }]
     }
   ]

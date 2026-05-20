@@ -274,7 +274,7 @@
 
 <script type="module">
 import { supabase } from "./firebase.js";
-import { homeUrlForUserData } from "./js/account-mode.js?v=1";
+import { homeUrlForUserData, WRITER_HOME_URL } from "./js/account-mode.js?v=1";
 import {
     authRedirectUrl,
     clearAuthCallbackFromUrl,
@@ -454,7 +454,7 @@ async function redirectAfterLogin() {
     const user = userData && userData.user;
 
     if (!user) {
-        window.location.href = "studio.html";
+        window.location.href = WRITER_HOME_URL;
         return;
     }
 
@@ -466,7 +466,7 @@ async function redirectAfterLogin() {
             .single();
 
         if (error || !data) {
-            window.location.href = "studio.html";
+            window.location.href = WRITER_HOME_URL;
             return;
         }
 
@@ -484,7 +484,7 @@ async function redirectAfterLogin() {
         window.location.href = homeUrlForUserData(firebaseStyleData);
     } catch (e) {
         console.error(e);
-        window.location.href = "studio.html";
+        window.location.href = WRITER_HOME_URL;
     }
 }
 

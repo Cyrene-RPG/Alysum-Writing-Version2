@@ -1,444 +1,102 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Writer Leaderboard</title>
-  <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    }body {
-  min-height: 100vh;
-  background:
-    radial-gradient(circle at top left, rgba(129, 140, 248, 0.35), transparent 32%),
-    radial-gradient(circle at top right, rgba(236, 72, 153, 0.22), transparent 30%),
-    linear-gradient(135deg, #020617, #1e1b4b, #020617);
-  color: white;
-  padding: 18px;
-}
+    <!-- ALYSUM:PWA:START -->
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta name="theme-color" content="#7c3aed" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#020b18" media="(prefers-color-scheme: dark)">
+    <meta name="color-scheme" content="dark light">
+    <meta name="application-name" content="Alysum">
+    <link rel="icon" type="image/png" sizes="any" href="Alysum-3.png">
+    <script src="js/pwa-register.js" defer></script>
+    <!-- ALYSUM:PWA:END -->
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Leaderboards - Alysum</title>
+    <script src="js/alysum-appearance-boot.js"></script>
+    <link rel="stylesheet" href="css/gradient-themes.css?v=4" />
+    <script src="js/gradient-theme-sync.js" defer></script>
+    <style>
+        * { box-sizing: border-box; }
 
-.app {
-  max-width: 1100px;
-  margin: 0 auto;
-}
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background:
+                radial-gradient(ellipse 120% 60% at 50% -10%, var(--theme-body-spot, rgba(124, 58, 237, 0.28)) 0%, transparent 55%),
+                linear-gradient(180deg, #0d1426 0%, #0b1220 100%);
+            color: #fff;
+        }
 
-.hero, .panel, .podium-card, .stat-card, .row {
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.09);
-  backdrop-filter: blur(14px);
-  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.35);
-}
+        .lb-header {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px clamp(16px, 3vw, 28px);
+            background: linear-gradient(135deg, var(--purple-dark, #5b21b6), var(--theme-header-mid, #7c3aed), var(--theme-header-end, #ec4899));
+            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 6px 28px rgba(0, 0, 0, 0.35);
+        }
 
-.hero {
-  border-radius: 28px;
-  padding: 24px;
-  display: flex;
-  justify-content: space-between;
-  gap: 20px;
-  align-items: center;
-  margin-bottom: 22px;
-}
+        .lb-back {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            border: none;
+            background: rgba(0, 0, 0, 0.22);
+            color: #fff;
+            font-size: 20px;
+            cursor: pointer;
+        }
 
-.eyebrow {
-  color: #c7d2fe;
-  font-weight: 800;
-  font-size: 14px;
-  margin-bottom: 6px;
-}
+        .lb-title {
+            font-size: 20px;
+            font-weight: 900;
+            color: #fff7ed;
+        }
 
-h1 {
-  font-size: clamp(42px, 8vw, 74px);
-  line-height: 0.95;
-  letter-spacing: -2px;
-}
+        .lb-main {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 32px clamp(16px, 3vw, 28px) 48px;
+        }
 
-.subtitle {
-  margin-top: 12px;
-  color: rgba(224, 231, 255, 0.78);
-  max-width: 560px;
-  line-height: 1.5;
-}
-
-.rank-box {
-  min-width: 170px;
-  border-radius: 24px;
-  background: rgba(0, 0, 0, 0.24);
-  padding: 22px;
-  text-align: center;
-}
-
-.small-label {
-  color: #c7d2fe;
-  font-size: 11px;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  font-weight: 800;
-}
-
-.rank-number {
-  font-size: 48px;
-  font-weight: 950;
-  margin-top: 4px;
-}
-
-.tiny {
-  color: rgba(224, 231, 255, 0.75);
-  font-size: 12px;
-  margin-top: 4px;
-}
-
-.podium {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  margin-bottom: 18px;
-}
-
-.podium-card {
-  border-radius: 26px;
-  padding: 22px;
-  text-align: center;
-  position: relative;
-  overflow: hidden;
-}
-
-.podium-card.first {
-  transform: translateY(-8px);
-  background: linear-gradient(180deg, rgba(250, 204, 21, 0.18), rgba(255, 255, 255, 0.08));
-}
-
-.icon-circle {
-  width: 62px;
-  height: 62px;
-  margin: 0 auto 12px;
-  border-radius: 22px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.14);
-  font-size: 30px;
-}
-
-.name {
-  font-size: 22px;
-  font-weight: 950;
-}
-
-.badge {
-  display: inline-block;
-  margin-top: 7px;
-  padding: 5px 10px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.1);
-  color: #dbeafe;
-  font-size: 12px;
-}
-
-.big-stat {
-  font-size: 36px;
-  font-weight: 950;
-  margin-top: 16px;
-}
-
-.stats {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  margin-bottom: 18px;
-}
-
-.stat-card {
-  border-radius: 24px;
-  padding: 18px;
-  display: flex;
-  gap: 14px;
-  align-items: center;
-}
-
-.stat-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.13);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
-}
-
-.stat-value {
-  font-size: 24px;
-  font-weight: 950;
-}
-
-.panel {
-  border-radius: 28px;
-  padding: 16px;
-}
-
-.controls {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin-bottom: 14px;
-}
-
-.tabs {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-button {
-  border: none;
-  border-radius: 16px;
-  padding: 11px 17px;
-  font-weight: 850;
-  cursor: pointer;
-  background: rgba(255, 255, 255, 0.11);
-  color: white;
-}
-
-button.active {
-  background: white;
-  color: #020617;
-}
-
-.search {
-  min-width: 220px;
-  border-radius: 16px;
-  padding: 11px 14px;
-  border: none;
-  outline: none;
-  color: white;
-  background: rgba(0, 0, 0, 0.25);
-}
-
-.search::placeholder {
-  color: rgba(224, 231, 255, 0.55);
-}
-
-.list {
-  display: grid;
-  gap: 10px;
-}
-
-.row {
-  border-radius: 22px;
-  padding: 14px;
-  display: grid;
-  grid-template-columns: 54px 1fr auto;
-  gap: 12px;
-  align-items: center;
-}
-
-.row.me {
-  border-color: rgba(165, 180, 252, 0.75);
-  background: rgba(99, 102, 241, 0.24);
-}
-
-.rank-pill {
-  width: 48px;
-  height: 48px;
-  border-radius: 17px;
-  background: rgba(255, 255, 255, 0.13);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-weight: 950;
-  font-size: 18px;
-}
-
-.meta {
-  margin-top: 4px;
-  color: rgba(224, 231, 255, 0.74);
-  font-size: 12px;
-}
-
-.you {
-  background: white;
-  color: #020617;
-  border-radius: 999px;
-  padding: 3px 8px;
-  font-size: 10px;
-  font-weight: 950;
-  margin-left: 8px;
-}
-
-.league {
-  background: rgba(255, 255, 255, 0.11);
-  color: #dbeafe;
-  border-radius: 999px;
-  padding: 3px 8px;
-  font-size: 11px;
-  margin-left: 6px;
-}
-
-.right {
-  text-align: right;
-}
-
-.words {
-  font-weight: 950;
-  font-size: 18px;
-}
-
-.up { color: #86efac; font-size: 12px; font-weight: 900; }
-.down { color: #fda4af; font-size: 12px; font-weight: 900; }
-.same { color: rgba(224, 231, 255, 0.5); font-size: 12px; }
-
-@media (max-width: 760px) {
-  body { padding: 12px; }
-  .hero { flex-direction: column; align-items: stretch; }
-  .podium, .stats { grid-template-columns: 1fr; }
-  .podium-card.first { transform: none; }
-  .row { grid-template-columns: 46px 1fr; }
-  .right { grid-column: 2; text-align: left; }
-  .search { width: 100%; }
-  .controls { display: block; }
-  .tabs { margin-bottom: 10px; }
-}
-
-  </style>
+        .lb-empty {
+            padding: 48px 24px;
+            text-align: center;
+            border-radius: 20px;
+            border: 1px dashed rgba(255, 255, 255, 0.12);
+            background: rgba(17, 24, 39, 0.5);
+            color: #9ca3af;
+            font-size: 15px;
+            line-height: 1.5;
+        }
+    </style>
 </head>
 <body>
-  <main class="app">
-    <section class="hero">
-      <div>
-        <div class="eyebrow">✨ Writer League</div>
-        <h1>Leaderboard</h1>
-        <p class="subtitle">A fake local leaderboard for testing your writing app style before connecting real user data.</p>
-      </div>
-      <div class="rank-box">
-        <div class="small-label">Your Rank</div>
-        <div class="rank-number">#2</div>
-        <div class="tiny">1,160 words from #1</div>
-      </div>
-    </section><section class="podium" id="podium"></section>
+    <header class="lb-header">
+        <button type="button" class="lb-back" id="backBtn" aria-label="Back">←</button>
+        <div class="lb-title">Leaderboards</div>
+    </header>
 
-<section class="stats">
-  <div class="stat-card"><div class="stat-icon">🔥</div><div><div class="stat-value">28 days</div><div class="tiny">Current streak</div></div></div>
-  <div class="stat-card"><div class="stat-icon">⚡</div><div><div class="stat-value">17,100 XP</div><div class="tiny">This week</div></div></div>
-  <div class="stat-card"><div class="stat-icon">💎</div><div><div class="stat-value">Mythic</div><div class="tiny">Current league</div></div></div>
-</section>
+    <main class="lb-main">
+        <p class="lb-empty">Leaderboards are coming soon.</p>
+    </main>
 
-<section class="panel">
-  <div class="controls">
-    <div class="tabs">
-      <button class="tab active" data-tab="Daily">Daily</button>
-      <button class="tab" data-tab="Weekly">Weekly</button>
-      <button class="tab" data-tab="Friends">Friends</button>
-      <button class="tab" data-tab="Guild">Guild</button>
-    </div>
-    <input class="search" id="search" placeholder="Search writers" />
-  </div>
-  <div class="list" id="leaderboardList"></div>
-</section>
+    <script type="module">
+        import { supabase } from "./firebase.js";
 
-  </main>  <script>
-    const users = [
-      { rank: 1, name: "LunaInk", words: 12480, xp: 18420, streak: 43, league: "Mythic", badge: "Story Machine", change: 2 },
-      { rank: 2, name: "Anya", words: 11320, xp: 17100, streak: 28, league: "Mythic", badge: "Focused", change: 5, me: true },
-      { rank: 3, name: "VelvetQuill", words: 9875, xp: 14990, streak: 19, league: "Diamond", badge: "Night Owl", change: -1 },
-      { rank: 4, name: "EchoWriter", words: 8420, xp: 12880, streak: 14, league: "Diamond", badge: "World Builder", change: 1 },
-      { rank: 5, name: "NovaPages", words: 7330, xp: 11120, streak: 11, league: "Gold", badge: "Goal Hunter", change: 0 },
-      { rank: 6, name: "InkMage", words: 6940, xp: 10200, streak: 9, league: "Gold", badge: "Momentum", change: 3 },
-      { rank: 7, name: "DraftDragon", words: 6215, xp: 9880, streak: 7, league: "Gold", badge: "Sprint Writer", change: -2 },
-      { rank: 8, name: "MoonChapter", words: 5520, xp: 8500, streak: 6, league: "Silver", badge: "Back Again", change: 4 },
-      { rank: 9, name: "PlotGoblin", words: 4810, xp: 7340, streak: 5, league: "Silver", badge: "Clutch Finish", change: -3 },
-      { rank: 10, name: "PageWitch", words: 3920, xp: 6210, streak: 4, league: "Bronze", badge: "Getting Started", change: 1 }
-    ];
+        document.getElementById("backBtn").addEventListener("click", () => {
+            if (history.length > 1) history.back();
+            else window.location.href = "writer-dashboard.html";
+        });
 
-    let activeTab = "Daily";
-
-    const list = document.getElementById("leaderboardList");
-    const podium = document.getElementById("podium");
-    const search = document.getElementById("search");
-    const tabs = document.querySelectorAll(".tab");
-
-    function format(num) {
-      return num.toLocaleString();
-    }
-
-    function rankIcon(rank) {
-      if (rank === 1) return "👑";
-      if (rank === 2) return "🏆";
-      if (rank === 3) return "🥉";
-      return `#${rank}`;
-    }
-
-    function changeText(change) {
-      if (change > 0) return `<span class="up">▲ ${change}</span>`;
-      if (change < 0) return `<span class="down">▼ ${Math.abs(change)}</span>`;
-      return `<span class="same">—</span>`;
-    }
-
-    function getScore(user) {
-      if (activeTab === "Weekly") return user.xp;
-      if (activeTab === "Friends") return user.streak;
-      if (activeTab === "Guild") return user.words + user.xp;
-      return user.words;
-    }
-
-    function getScoreLabel() {
-      if (activeTab === "Weekly") return "XP";
-      if (activeTab === "Friends") return "day streak";
-      if (activeTab === "Guild") return "guild pts";
-      return "words";
-    }
-
-    function renderPodium() {
-      podium.innerHTML = users.slice(0, 3).map((user, index) => `
-        <div class="podium-card ${index === 0 ? "first" : ""}">
-          <div class="icon-circle">${rankIcon(user.rank)}</div>
-          <div class="name">${user.name}</div>
-          <div class="badge">${user.badge}</div>
-          <div class="big-stat">${format(user.words)}</div>
-          <div class="small-label">words today</div>
-        </div>
-      `).join("");
-    }
-
-    function renderList() {
-      const q = search.value.toLowerCase();
-      const filtered = users
-        .filter(user => user.name.toLowerCase().includes(q))
-        .map(user => ({ ...user, score: getScore(user) }))
-        .sort((a, b) => b.score - a.score);
-
-      list.innerHTML = filtered.map((user, index) => `
-        <div class="row ${user.me ? "me" : ""}">
-          <div class="rank-pill">${rankIcon(index + 1)}</div>
-          <div>
-            <strong>${user.name}</strong>
-            ${user.me ? `<span class="you">YOU</span>` : ""}
-            <span class="league">${user.league}</span>
-            <div class="meta">${user.badge} · ${user.streak} day streak · ${format(user.xp)} XP</div>
-          </div>
-          <div class="right">
-            <div class="words">${format(user.score)}</div>
-            <div class="tiny">${getScoreLabel()}</div>
-            ${changeText(user.change)}
-          </div>
-        </div>
-      `).join("");
-    }
-
-    tabs.forEach(button => {
-      button.addEventListener("click", () => {
-        tabs.forEach(tab => tab.classList.remove("active"));
-        button.classList.add("active");
-        activeTab = button.dataset.tab;
-        renderList();
-      });
-    });
-
-    search.addEventListener("input", renderList);
-
-    renderPodium();
-    renderList();
-  </script></body>
+        const { data } = await supabase.auth.getUser();
+        if (!data?.user) window.location.href = "login.html";
+    </script>
+</body>
 </html>
