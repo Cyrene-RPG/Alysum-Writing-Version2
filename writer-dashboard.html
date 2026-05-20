@@ -1,5 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
     <!-- ALYSUM:PWA:START -->
     <link rel="manifest" href="manifest.webmanifest">
@@ -18,771 +17,750 @@
     <link rel="stylesheet" href="css/gradient-themes.css?v=6" />
     <script src="js/gradient-theme-sync.js" defer></script>
     <style>
-        * { box-sizing: border-box; }
-
-        html, body {
-            margin: 0;
-            min-height: 100%;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            background:
-                radial-gradient(ellipse 120% 60% at 50% -10%, var(--theme-body-spot, rgba(124, 58, 237, 0.35)) 0%, transparent 55%),
-                linear-gradient(180deg, #0d1426 0%, #0b1220 42%);
-            color: #fff;
-        }
-
-        .wd-page {
-            min-height: 100dvh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .wd-welcome-bar {
-            position: relative;
-            padding: 0 clamp(16px, 3vw, 32px);
-            min-height: 88px;
-            display: flex;
-            align-items: center;
-            overflow: hidden;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            background: var(
-                --theme-welcome-bar,
-                linear-gradient(
-                    135deg,
-                    rgba(76, 29, 149, 0.95) 0%,
-                    var(--theme-header-mid, #6d28d9) 38%,
-                    var(--theme-header-end, #db2777) 100%
-                )
-            );
-            box-shadow:
-                0 4px 32px rgba(0, 0, 0, 0.35),
-                inset 0 1px 0 rgba(255, 255, 255, 0.12);
-        }
-
-        .wd-welcome-bar::before {
-            content: "";
-            position: absolute;
-            inset: 0;
-            background:
-                radial-gradient(circle at 12% 50%, rgba(255, 255, 255, 0.14) 0%, transparent 42%),
-                radial-gradient(circle at 88% 20%, rgba(251, 191, 36, 0.12) 0%, transparent 40%);
-            pointer-events: none;
-        }
-
-        .wd-welcome-bar::after {
-            content: "";
-            position: absolute;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
-            pointer-events: none;
-        }
-
-        .wd-welcome-inner {
-            position: relative;
-            z-index: 1;
-            width: 100%;
-            max-width: 1280px;
-            margin: 0 auto;
-            display: flex;
-            align-items: center;
-            gap: clamp(14px, 2.5vw, 20px);
-        }
-
-        .wd-pfp {
-            flex-shrink: 0;
-            width: 56px;
-            height: 56px;
-            border-radius: 50%;
-            overflow: hidden;
-            background: rgba(0, 0, 0, 0.28);
-            border: 2px solid rgba(255, 255, 255, 0.22);
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
-        }
-
-        .wd-pfp img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
-        }
-
-        .wd-pfp-initial {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 22px;
-            font-weight: 900;
-            color: #fff;
-        }
-
-        .wd-pfp-initial.is-hidden { display: none; }
-
-        .wd-welcome-title {
-            margin: 0;
-            font-size: clamp(22px, 4vw, 28px);
-            font-weight: 900;
-            line-height: 1.15;
-            color: #fff7ed;
-            text-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
-        }
-
-        .wd-welcome-title .wd-name {
-            background: linear-gradient(90deg, #fff 0%, #fde68a 55%, #fbcfe8 100%);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-        }
-
-        .wd-main {
-            flex: 1;
-            max-width: 1280px;
-            width: 100%;
-            margin: 0 auto;
-            padding: 20px clamp(16px, 3vw, 32px) 48px;
-        }
-
-        .wd-stats-block {
-            border-radius: 18px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01));
-            overflow: hidden;
-        }
-
-        .wd-stats {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 0;
-            margin: 0;
-            padding: 0;
-            list-style: none;
-        }
-
-        .wd-stat {
-            margin: 0;
-            padding: 20px 12px;
-            min-height: 92px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            border-right: 1px solid rgba(255, 255, 255, 0.06);
-        }
-
-        .wd-stat:last-child {
-            border-right: none;
-        }
-
-        .wd-stat strong {
-            display: block;
-            font-size: clamp(22px, 4vw, 26px);
-            font-weight: 900;
-            line-height: 1.1;
-            color: #fbbf24;
-        }
-
-        .wd-stat-label {
-            display: block;
-            margin-top: 8px;
-            font-size: 12px;
-            font-weight: 600;
-            color: #6b7280;
-            letter-spacing: 0.02em;
-        }
-
-        .wd-stats-foot {
-            display: grid;
-            grid-template-columns: auto 1fr;
-            align-items: center;
-            gap: 10px 14px;
-            padding: 12px 16px;
-            border-top: 1px solid rgba(255, 255, 255, 0.08);
-            font-size: 12px;
-            font-weight: 600;
-            color: #6b7280;
-        }
-
-        .wd-stats-foot-label {
-            white-space: nowrap;
-        }
-
-        .wd-stats-foot-count {
-            justify-self: end;
-            color: #d1d5db;
-            font-weight: 700;
-            white-space: nowrap;
-        }
-
-        .wd-goal-bar {
-            grid-column: 1 / -1;
-            height: 6px;
-            border-radius: 999px;
-            background: rgba(255, 255, 255, 0.08);
-            overflow: hidden;
-        }
-
-        .wd-goal-fill {
-            height: 100%;
-            width: 0%;
-            border-radius: 999px;
-            background: #a78bfa;
-            transition: width 0.3s ease;
-        }
-
-        .wd-goal-fill.is-met {
-            background: #4ade80;
-        }
-
-        .wd-nav-wrap {
-            position: sticky;
-            top: 0;
-            z-index: 40;
-            background: rgba(11, 18, 32, 0.92);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-            backdrop-filter: blur(10px);
-        }
-
-        .wd-nav {
-            max-width: 1280px;
-            margin: 0 auto;
-            padding: 10px clamp(16px, 3vw, 32px);
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            overflow-x: auto;
-            scrollbar-width: none;
-        }
-
-        .wd-nav::-webkit-scrollbar { display: none; }
-
-        .wd-nav a,
-        .wd-nav button {
-            flex-shrink: 0;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 8px 14px;
-            border-radius: 999px;
-            border: 1px solid transparent;
-            background: transparent;
-            color: #d1d5db;
-            font-family: inherit;
-            font-size: 13px;
-            font-weight: 700;
-            text-decoration: none;
-            cursor: pointer;
-            white-space: nowrap;
-            transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
-        }
-
-        .wd-nav a:hover,
-        .wd-nav button:hover {
-            color: #fff;
-            background: rgba(255, 255, 255, 0.06);
-        }
-
-        .wd-nav a.is-active,
-        .wd-nav button.is-active {
-            color: #fff;
-            background: rgba(124, 58, 237, 0.28);
-            border-color: rgba(167, 139, 250, 0.35);
-        }
-
-        .wd-nav a.is-hidden,
-        .wd-nav button.is-hidden {
-            display: none;
-        }
-
-        .wd-nav-logout {
-            color: #fca5a5;
-        }
-
-        .wd-nav-logout:hover {
-            color: #fecaca;
-            background: rgba(248, 113, 113, 0.12);
-        }
-
-        .wd-nav-divider {
-            flex-shrink: 0;
-            width: 1px;
-            height: 22px;
-            margin: 0 4px;
-            background: rgba(255, 255, 255, 0.12);
-        }
-
-        .wd-nav-badge {
-            min-width: 18px;
-            height: 18px;
-            padding: 0 5px;
-            border-radius: 999px;
-            background: #ef4444;
-            color: #fff;
-            font-size: 10px;
-            font-weight: 900;
-            line-height: 18px;
-            text-align: center;
-        }
-
-        .wd-nav-badge.is-hidden { display: none; }
-
-        .wd-books-section {
-            margin-top: 0;
-            display: flex;
-            flex-direction: column;
-            min-height: 100%;
-            min-width: 0;
-            overflow: visible;
-        }
-
-        .wd-body {
-            --wd-rail-w: 300px;
-            --wd-body-gap: 24px;
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) minmax(260px, var(--wd-rail-w));
-            gap: var(--wd-body-gap);
-            align-items: stretch;
-            margin-top: 24px;
-            overflow: visible;
-        }
-
-        .wd-rail {
-            display: flex;
-            flex-direction: column;
-            gap: 18px;
-            min-height: 100%;
-            position: relative;
-            z-index: 2;
-        }
-
-        .wd-rail-card {
-            border-radius: 18px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            background: linear-gradient(180deg, #121a2e 0%, #0f1728 100%);
-            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
-            padding: 18px;
-        }
-
-        .wd-rail-card h3 {
-            margin: 0;
-            font-size: 18px;
-            font-weight: 900;
-            color: var(--gold, #fbbf24);
-        }
-
-        .wd-rail-sub {
-            margin-top: 6px;
-            font-size: 13px;
-            line-height: 1.45;
-            color: #9ca3af;
-            font-weight: 600;
-        }
-
-        .wd-prompt-slide {
-            margin-top: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
-            padding: 14px;
-            background: rgba(255, 255, 255, 0.04);
-            cursor: pointer;
-            user-select: none;
-            transition: border-color 0.12s ease, background 0.12s ease;
-        }
-
-        .wd-prompt-slide:hover {
-            border-color: rgba(167, 139, 250, 0.35);
-            background: rgba(255, 255, 255, 0.06);
-        }
-
-        .wd-prompt-kicker {
-            font-size: 11px;
-            font-weight: 900;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            color: #f5d0fe;
-        }
-
-        .wd-prompt-text {
-            margin-top: 8px;
-            font-size: 14px;
-            line-height: 1.45;
-            font-weight: 700;
-            color: #fff7ed;
-        }
-
-        .wd-prompt-dots {
-            display: flex;
-            justify-content: center;
-            gap: 8px;
-            margin-top: 12px;
-        }
-
-        .wd-prompt-dot {
-            width: 9px;
-            height: 9px;
-            border-radius: 999px;
-            background: rgba(255, 255, 255, 0.25);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .wd-prompt-dot.is-active {
-            background: linear-gradient(135deg, var(--purple-bright, #8b5cf6), var(--pink, #ec4899));
-            border-color: rgba(255, 255, 255, 0.32);
-        }
-
-        .wd-badge-box {
-            margin-top: 14px;
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 16px;
-            padding: 14px;
-        }
-
-        .wd-badge-row {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .wd-badge-icon {
-            width: 42px;
-            height: 42px;
-            border-radius: 14px;
-            background: linear-gradient(135deg, var(--purple, #7c3aed), var(--pink, #ec4899));
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 19px;
-            flex-shrink: 0;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.28);
-        }
-
-        .wd-badge-name {
-            font-size: 15px;
-            font-weight: 900;
-            color: #fff7ed;
-        }
-
-        .wd-badge-sub {
-            margin-top: 2px;
-            font-size: 13px;
-            color: #9ca3af;
-            font-weight: 600;
-        }
-
-        .wd-badge-bar-wrap {
-            height: 8px;
-            margin-top: 12px;
-            border-radius: 999px;
-            background: rgba(255, 255, 255, 0.1);
-            overflow: hidden;
-        }
-
-        .wd-badge-bar {
-            height: 100%;
-            width: 0%;
-            border-radius: 999px;
-            background: linear-gradient(90deg, var(--purple, #7c3aed), var(--pink, #ec4899));
-            transition: width 0.3s ease;
-        }
-
-        .wd-rail-link {
-            display: inline-block;
-            margin-top: 12px;
-            font-size: 12px;
-            font-weight: 800;
-            color: var(--gold, #fbbf24);
-            text-decoration: none;
-        }
-
-        .wd-rail-link:hover {
-            text-decoration: underline;
-        }
-
-        .wd-books-head {
-            display: flex;
-            align-items: baseline;
-            justify-content: space-between;
-            gap: 12px;
-            margin-bottom: 16px;
-            flex-shrink: 0;
-        }
-
-        .wd-books-title {
-            margin: 0;
-            font-size: 20px;
-            font-weight: 900;
-            color: var(--gold, #fbbf24);
-        }
-
-        .wd-books-count {
-            flex-shrink: 0;
-            padding: 6px 12px;
-            border-radius: 999px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            background: rgba(255, 255, 255, 0.04);
-            font-size: 12px;
-            font-weight: 700;
-            color: #9ca3af;
-        }
-
-        .wd-books-stage {
-            flex: 1;
-            min-height: 0;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
+        * { box-sizing: border-box; }html, body {
+        margin: 0;
+        min-height: 100%;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background:
+            radial-gradient(ellipse 120% 60% at 50% -10%, var(--theme-body-spot, rgba(124, 58, 237, 0.35)) 0%, transparent 55%),
+            linear-gradient(180deg, #0d1426 0%, #0b1220 42%);
+        color: #fff;
+    }
+
+    .wd-page {
+        min-height: 100dvh;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .wd-welcome-bar {
+        position: relative;
+        padding: 0 clamp(16px, 3vw, 32px);
+        min-height: 88px;
+        display: flex;
+        align-items: center;
+        overflow: hidden;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        background: var(
+            --theme-welcome-bar,
+            linear-gradient(
+                135deg,
+                rgba(76, 29, 149, 0.95) 0%,
+                var(--theme-header-mid, #6d28d9) 38%,
+                var(--theme-header-end, #db2777) 100%
+            )
+        );
+        box-shadow:
+            0 4px 32px rgba(0, 0, 0, 0.35),
+            inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    }
+
+    .wd-welcome-bar::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+            radial-gradient(circle at 12% 50%, rgba(255, 255, 255, 0.14) 0%, transparent 42%),
+            radial-gradient(circle at 88% 20%, rgba(251, 191, 36, 0.12) 0%, transparent 40%);
+        pointer-events: none;
+    }
+
+    .wd-welcome-bar::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+        pointer-events: none;
+    }
+
+    .wd-welcome-inner {
+        position: relative;
+        z-index: 1;
+        width: 100%;
+        max-width: 1280px;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        gap: clamp(14px, 2.5vw, 20px);
+    }
+
+    .wd-pfp {
+        flex-shrink: 0;
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        overflow: hidden;
+        background: rgba(0, 0, 0, 0.28);
+        border: 2px solid rgba(255, 255, 255, 0.22);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    }
+
+    .wd-pfp img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    .wd-pfp-initial {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        font-weight: 900;
+        color: #fff;
+    }
+
+    .wd-pfp-initial.is-hidden { display: none; }
+
+    .wd-welcome-title {
+        margin: 0;
+        font-size: clamp(22px, 4vw, 28px);
+        font-weight: 900;
+        line-height: 1.15;
+        color: #fff7ed;
+        text-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+    }
+
+    .wd-welcome-title .wd-name {
+        background: linear-gradient(90deg, #fff 0%, #fde68a 55%, #fbcfe8 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+    }
+
+    .wd-main {
+        flex: 1;
+        max-width: 1280px;
+        width: 100%;
+        margin: 0 auto;
+        padding: 20px clamp(16px, 3vw, 32px) 48px;
+    }
+
+    .wd-stats-block {
+        border-radius: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01));
+        overflow: hidden;
+    }
+
+    .wd-stats {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .wd-stat {
+        margin: 0;
+        padding: 20px 12px;
+        min-height: 92px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        border-right: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .wd-stat:last-child { border-right: none; }
+
+    .wd-stat strong {
+        display: block;
+        font-size: clamp(22px, 4vw, 26px);
+        font-weight: 900;
+        line-height: 1.1;
+        color: #fbbf24;
+    }
+
+    .wd-stat-label {
+        display: block;
+        margin-top: 8px;
+        font-size: 12px;
+        font-weight: 600;
+        color: #6b7280;
+        letter-spacing: 0.02em;
+    }
+
+    .wd-stats-foot {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        align-items: center;
+        gap: 10px 14px;
+        padding: 12px 16px;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        font-size: 12px;
+        font-weight: 600;
+        color: #6b7280;
+    }
+
+    .wd-stats-foot-label { white-space: nowrap; }
+
+    .wd-stats-foot-count {
+        justify-self: end;
+        color: #d1d5db;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .wd-goal-bar {
+        grid-column: 1 / -1;
+        height: 6px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.08);
+        overflow: hidden;
+    }
+
+    .wd-goal-fill {
+        height: 100%;
+        width: 0%;
+        border-radius: 999px;
+        background: #a78bfa;
+        transition: width 0.3s ease;
+    }
+
+    .wd-goal-fill.is-met { background: #4ade80; }
+
+    .wd-nav-wrap {
+        position: sticky;
+        top: 0;
+        z-index: 40;
+        background: rgba(11, 18, 32, 0.92);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(10px);
+    }
+
+    .wd-nav {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 10px clamp(16px, 3vw, 32px);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+
+    .wd-nav::-webkit-scrollbar { display: none; }
+
+    .wd-nav a,
+    .wd-nav button {
+        flex-shrink: 0;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 14px;
+        border-radius: 999px;
+        border: 1px solid transparent;
+        background: transparent;
+        color: #d1d5db;
+        font-family: inherit;
+        font-size: 13px;
+        font-weight: 700;
+        text-decoration: none;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+    }
+
+    .wd-nav a:hover,
+    .wd-nav button:hover {
+        color: #fff;
+        background: rgba(255, 255, 255, 0.06);
+    }
+
+    .wd-nav a.is-active,
+    .wd-nav button.is-active {
+        color: #fff;
+        background: rgba(124, 58, 237, 0.28);
+        border-color: rgba(167, 139, 250, 0.35);
+    }
+
+    .wd-nav a.is-hidden,
+    .wd-nav button.is-hidden { display: none; }
+
+    .wd-nav-logout { color: #fca5a5; }
+
+    .wd-nav-logout:hover {
+        color: #fecaca;
+        background: rgba(248, 113, 113, 0.12);
+    }
+
+    .wd-nav-divider {
+        flex-shrink: 0;
+        width: 1px;
+        height: 22px;
+        margin: 0 4px;
+        background: rgba(255, 255, 255, 0.12);
+    }
+
+    .wd-nav-badge {
+        min-width: 18px;
+        height: 18px;
+        padding: 0 5px;
+        border-radius: 999px;
+        background: #ef4444;
+        color: #fff;
+        font-size: 10px;
+        font-weight: 900;
+        line-height: 18px;
+        text-align: center;
+    }
+
+    .wd-nav-badge.is-hidden { display: none; }
+
+    .wd-books-section {
+        margin-top: 0;
+        display: flex;
+        flex-direction: column;
+        min-height: 100%;
+        min-width: 0;
+        overflow: visible;
+    }
+
+    .wd-body {
+        --wd-rail-w: 300px;
+        --wd-body-gap: 24px;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(260px, var(--wd-rail-w));
+        gap: var(--wd-body-gap);
+        align-items: stretch;
+        margin-top: 24px;
+        overflow: visible;
+    }
+
+    .wd-rail {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+        min-height: 100%;
+        position: relative;
+        z-index: 2;
+    }
+
+    .wd-rail-card {
+        border-radius: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: linear-gradient(180deg, #121a2e 0%, #0f1728 100%);
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+        padding: 18px;
+    }
+
+    .wd-rail-card h3 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 900;
+        color: var(--gold, #fbbf24);
+    }
+
+    .wd-rail-sub {
+        margin-top: 6px;
+        font-size: 13px;
+        line-height: 1.45;
+        color: #9ca3af;
+        font-weight: 600;
+    }
+
+    .wd-prompt-slide {
+        margin-top: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        padding: 14px;
+        background: rgba(255, 255, 255, 0.04);
+        cursor: pointer;
+        user-select: none;
+        transition: border-color 0.12s ease, background 0.12s ease;
+    }
+
+    .wd-prompt-slide:hover {
+        border-color: rgba(167, 139, 250, 0.35);
+        background: rgba(255, 255, 255, 0.06);
+    }
+
+    .wd-prompt-kicker {
+        font-size: 11px;
+        font-weight: 900;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #f5d0fe;
+    }
+
+    .wd-prompt-text {
+        margin-top: 8px;
+        font-size: 14px;
+        line-height: 1.45;
+        font-weight: 700;
+        color: #fff7ed;
+    }
+
+    .wd-prompt-dots {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 12px;
+    }
+
+    .wd-prompt-dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.25);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .wd-prompt-dot.is-active {
+        background: linear-gradient(135deg, var(--purple-bright, #8b5cf6), var(--pink, #ec4899));
+        border-color: rgba(255, 255, 255, 0.32);
+    }
+
+    .wd-badge-box {
+        margin-top: 14px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 16px;
+        padding: 14px;
+    }
+
+    .wd-badge-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .wd-badge-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, var(--purple, #7c3aed), var(--pink, #ec4899));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 19px;
+        flex-shrink: 0;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.28);
+    }
+
+    .wd-badge-name {
+        font-size: 15px;
+        font-weight: 900;
+        color: #fff7ed;
+    }
+
+    .wd-badge-sub {
+        margin-top: 2px;
+        font-size: 13px;
+        color: #9ca3af;
+        font-weight: 600;
+    }
+
+    .wd-badge-bar-wrap {
+        height: 8px;
+        margin-top: 12px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.1);
+        overflow: hidden;
+    }
+
+    .wd-badge-bar {
+        height: 100%;
+        width: 0%;
+        border-radius: 999px;
+        background: linear-gradient(90deg, var(--purple, #7c3aed), var(--pink, #ec4899));
+        transition: width 0.3s ease;
+    }
+
+    .wd-rail-link {
+        display: inline-block;
+        margin-top: 12px;
+        font-size: 12px;
+        font-weight: 800;
+        color: var(--gold, #fbbf24);
+        text-decoration: none;
+    }
+
+    .wd-rail-link:hover { text-decoration: underline; }
+
+    .wd-books-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 16px;
+        flex-shrink: 0;
+    }
+
+    .wd-books-title {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 900;
+        color: var(--gold, #fbbf24);
+    }
+
+    .wd-books-count {
+        flex-shrink: 0;
+        padding: 6px 12px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.04);
+        font-size: 12px;
+        font-weight: 700;
+        color: #9ca3af;
+    }
+
+    .wd-books-stage {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .wd-books-viewport {
+        flex: 1;
+        min-height: 0;
+        min-width: 0;
+        position: relative;
+        z-index: 1;
+        overflow-x: auto;
+        overflow-y: hidden;
+        margin-right: calc(-1 * (var(--wd-rail-w) + var(--wd-body-gap)));
+        padding-right: calc(var(--wd-rail-w) + var(--wd-body-gap));
+        scroll-snap-type: x proximity;
+        scroll-padding-inline: 4px;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .wd-books-viewport::-webkit-scrollbar { display: none; }
+
+    .wd-books {
+        --wd-book-w: 200px;
+        display: flex;
+        flex-wrap: nowrap;
+        align-items: flex-end;
+        gap: 14px;
+        min-width: min-content;
+    }
+
+    .wd-books-scroll {
+        flex-shrink: 0;
+        position: relative;
+        z-index: 3;
+        overflow-x: scroll;
+        overflow-y: hidden;
+        height: 10px;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(124, 58, 237, 0.72) rgba(255, 255, 255, 0.14);
+    }
+
+    .wd-books-scroll::-webkit-scrollbar {
+        height: 4px;
+        -webkit-appearance: none;
+    }
+
+    .wd-books-scroll::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.14);
+        border-radius: 999px;
+    }
+
+    .wd-books-scroll::-webkit-scrollbar-thumb {
+        background: rgba(124, 58, 237, 0.72);
+        border-radius: 999px;
+        min-width: 40px;
+    }
+
+    .wd-books-scroll::-webkit-scrollbar-thumb:hover { background: rgba(124, 58, 237, 0.9); }
+
+    .wd-books-scroll-inner {
+        height: 1px;
+        pointer-events: none;
+    }
+
+    .wd-book {
+        position: relative;
+        overflow: hidden;
+        flex: 0 0 var(--wd-book-w);
+        width: var(--wd-book-w);
+        min-width: var(--wd-book-w);
+        max-width: var(--wd-book-w);
+        aspect-ratio: 3 / 4;
+        border-radius: 18px;
+        padding: 0;
+        box-shadow: 0 16px 32px rgba(0, 0, 0, 0.4), inset 6px 0 0 rgba(0, 0, 0, 0.16);
+        transform: perspective(900px) rotateY(-4deg);
+        transition: transform 0.22s ease, box-shadow 0.22s ease;
+        cursor: pointer;
+        isolation: isolate;
+        scroll-snap-align: start;
+    }
+
+    .wd-book:hover {
+        transform: perspective(900px) rotateY(-2deg) translateY(-4px);
+        box-shadow: 0 20px 36px rgba(0, 0, 0, 0.48), inset 6px 0 0 rgba(0, 0, 0, 0.16);
+    }
+
+    .wd-book-cover-img {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        pointer-events: none;
+    }
+
+    .wd-book .wd-cover-placeholder {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        display: flex;
+        flex-direction: column;
+        padding: 12px 10px 10px;
+        text-align: center;
+        color: #f4f4f5;
+        background:
+            radial-gradient(ellipse 120% 80% at 100% 0%, hsla(var(--cover-ph-hue, 265), 72%, 58%, 0.22), transparent 55%),
+            radial-gradient(ellipse 90% 70% at 0% 100%, hsla(calc(var(--cover-ph-hue, 265) + 48), 55%, 45%, 0.18), transparent 50%),
+            linear-gradient(165deg, hsl(222, 44%, 11%) 0%, hsl(250, 28%, 8%) 48%, hsl(260, 32%, 6%) 100%);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+    }
+
+    .wd-book .wd-cover-placeholder::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, transparent 28%);
+        pointer-events: none;
+    }
+
+    .wd-book .wd-cover-placeholder::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 3px;
+        border-radius: 0 2px 2px 0;
+        background: linear-gradient(180deg, hsl(var(--cover-ph-hue, 265), 78%, 62%), hsl(calc(var(--cover-ph-hue, 265) + 22), 65%, 48%));
+        opacity: 0.92;
+        pointer-events: none;
+    }
+
+    .wd-cover-placeholder-inner {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
+        width: 100%;
+        gap: 8px;
+    }
+
+    .wd-cover-placeholder-title-wrap {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .wd-cover-placeholder-title {
+        width: 100%;
+        max-height: 100%;
+        text-align: center;
+        font-size: clamp(13px, 2.5vw, 18px);
+        font-weight: 900;
+        line-height: 1.18;
+        letter-spacing: -0.02em;
+        text-shadow: 0 1px 16px rgba(0, 0, 0, 0.45);
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 7;
+        overflow: hidden;
+        word-break: break-word;
+    }
+
+    .wd-cover-placeholder-author {
+        flex-shrink: 0;
+        width: 100%;
+        text-align: center;
+        font-size: clamp(10px, 2vw, 13px);
+        font-weight: 700;
+        color: rgba(226, 232, 240, 0.78);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        padding-top: 2px;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .wd-books-empty {
+        flex: 1 0 100%;
+        min-width: 100%;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.03);
+        padding: 28px 20px;
+        text-align: center;
+        color: #9ca3af;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .wd-create-book {
+        margin-top: 16px;
+        flex-shrink: 0;
+        width: 100%;
+        padding: 16px;
+        border: none;
+        border-radius: 14px;
+        background: linear-gradient(135deg, var(--purple, #7c3aed), var(--pink, #ec4899));
+        color: #fff;
+        font-family: inherit;
+        font-size: 15px;
+        font-weight: 900;
+        cursor: pointer;
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
+        transition: transform 0.12s ease, filter 0.12s ease;
+    }
+
+    .wd-create-book:hover {
+        filter: brightness(1.06);
+        transform: translateY(-1px);
+    }
+
+    @media (max-width: 900px) {
+        .wd-body { grid-template-columns: 1fr; }
         .wd-books-viewport {
-            flex: 1;
-            min-height: 0;
-            min-width: 0;
-            position: relative;
-            z-index: 1;
-            overflow-x: auto;
-            overflow-y: hidden;
-            margin-right: calc(-1 * (var(--wd-rail-w) + var(--wd-body-gap)));
-            padding-right: calc(var(--wd-rail-w) + var(--wd-body-gap));
-            scroll-snap-type: x proximity;
-            scroll-padding-inline: 4px;
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: none;
-            -ms-overflow-style: none;
+            margin-right: 0;
+            padding-right: 0;
         }
+        .wd-rail { position: static; }
+    }
 
-        .wd-books-viewport::-webkit-scrollbar {
-            display: none;
+    @media (max-width: 560px) {
+        .wd-welcome-bar {
+            min-height: auto;
+            padding-top: 14px;
+            padding-bottom: 14px;
         }
+        .wd-pfp { width: 48px; height: 48px; }
+        .wd-pfp-initial { font-size: 18px; }
+        .wd-stats { grid-template-columns: repeat(2, 1fr); }
+        .wd-stat:nth-child(2n) { border-right: none; }
+        .wd-stat:nth-child(-n+2) { border-bottom: 1px solid rgba(255, 255, 255, 0.06); }
+    }
+</style>
 
-        .wd-books {
-            --wd-book-w: 200px;
-            display: flex;
-            flex-wrap: nowrap;
-            align-items: flex-end;
-            gap: 14px;
-            min-width: min-content;
-        }
-
-        .wd-books-scroll {
-            flex-shrink: 0;
-            position: relative;
-            z-index: 3;
-            overflow-x: scroll;
-            overflow-y: hidden;
-            height: 10px;
-            scrollbar-width: thin;
-            scrollbar-color: rgba(124, 58, 237, 0.72) rgba(255, 255, 255, 0.14);
-        }
-
-        .wd-books-scroll::-webkit-scrollbar {
-            height: 4px;
-            -webkit-appearance: none;
-        }
-
-        .wd-books-scroll::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.14);
-            border-radius: 999px;
-        }
-
-        .wd-books-scroll::-webkit-scrollbar-thumb {
-            background: rgba(124, 58, 237, 0.72);
-            border-radius: 999px;
-            min-width: 40px;
-        }
-
-        .wd-books-scroll::-webkit-scrollbar-thumb:hover {
-            background: rgba(124, 58, 237, 0.9);
-        }
-
-        .wd-books-scroll-inner {
-            height: 1px;
-            pointer-events: none;
-        }
-
-        .wd-book {
-            position: relative;
-            overflow: hidden;
-            flex: 0 0 var(--wd-book-w);
-            width: var(--wd-book-w);
-            min-width: var(--wd-book-w);
-            max-width: var(--wd-book-w);
-            aspect-ratio: 3 / 4;
-            border-radius: 18px;
-            padding: 0;
-            box-shadow: 0 16px 32px rgba(0, 0, 0, 0.4), inset 6px 0 0 rgba(0, 0, 0, 0.16);
-            transform: perspective(900px) rotateY(-4deg);
-            transition: transform 0.22s ease, box-shadow 0.22s ease;
-            cursor: pointer;
-            isolation: isolate;
-            scroll-snap-align: start;
-        }
-
-        .wd-book:hover {
-            transform: perspective(900px) rotateY(-2deg) translateY(-4px);
-            box-shadow: 0 20px 36px rgba(0, 0, 0, 0.48), inset 6px 0 0 rgba(0, 0, 0, 0.16);
-        }
-
-        .wd-book-cover-img {
-            position: absolute;
-            inset: 0;
-            z-index: 1;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            pointer-events: none;
-        }
-
-        .wd-book .wd-cover-placeholder {
-            position: absolute;
-            inset: 0;
-            z-index: 0;
-            display: flex;
-            flex-direction: column;
-            padding: 12px 10px 10px;
-            text-align: center;
-            color: #f4f4f5;
-            background:
-                radial-gradient(ellipse 120% 80% at 100% 0%, hsla(var(--cover-ph-hue, 265), 72%, 58%, 0.22), transparent 55%),
-                radial-gradient(ellipse 90% 70% at 0% 100%, hsla(calc(var(--cover-ph-hue, 265) + 48), 55%, 45%, 0.18), transparent 50%),
-                linear-gradient(165deg, hsl(222, 44%, 11%) 0%, hsl(250, 28%, 8%) 48%, hsl(260, 32%, 6%) 100%);
-            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
-        }
-
-        .wd-book .wd-cover-placeholder::before {
-            content: "";
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, transparent 28%);
-            pointer-events: none;
-        }
-
-        .wd-book .wd-cover-placeholder::after {
-            content: "";
-            position: absolute;
-            left: 0;
-            top: 0;
-            bottom: 0;
-            width: 3px;
-            border-radius: 0 2px 2px 0;
-            background: linear-gradient(180deg, hsl(var(--cover-ph-hue, 265), 78%, 62%), hsl(calc(var(--cover-ph-hue, 265) + 22), 65%, 48%));
-            opacity: 0.92;
-            pointer-events: none;
-        }
-
-        .wd-cover-placeholder-inner {
-            position: relative;
-            z-index: 1;
-            display: flex;
-            flex-direction: column;
-            flex: 1;
-            min-height: 0;
-            width: 100%;
-            gap: 8px;
-        }
-
-        .wd-cover-placeholder-title-wrap {
-            flex: 1;
-            min-height: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .wd-cover-placeholder-title {
-            width: 100%;
-            max-height: 100%;
-            text-align: center;
-            font-size: clamp(13px, 2.5vw, 18px);
-            font-weight: 900;
-            line-height: 1.18;
-            letter-spacing: -0.02em;
-            text-shadow: 0 1px 16px rgba(0, 0, 0, 0.45);
-            display: -webkit-box;
-            -webkit-box-orient: vertical;
-            -webkit-line-clamp: 7;
-            overflow: hidden;
-            word-break: break-word;
-        }
-
-        .wd-cover-placeholder-author {
-            flex-shrink: 0;
-            width: 100%;
-            text-align: center;
-            font-size: clamp(10px, 2vw, 13px);
-            font-weight: 700;
-            color: rgba(226, 232, 240, 0.78);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            padding-top: 2px;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .wd-books-empty {
-            flex: 1 0 100%;
-            min-width: 100%;
-            border-radius: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            background: rgba(255, 255, 255, 0.03);
-            padding: 28px 20px;
-            text-align: center;
-            color: #9ca3af;
-            font-size: 14px;
-            font-weight: 600;
-        }
-
-        .wd-create-book {
-            margin-top: 16px;
-            flex-shrink: 0;
-            width: 100%;
-            padding: 16px;
-            border: none;
-            border-radius: 14px;
-            background: linear-gradient(135deg, var(--purple, #7c3aed), var(--pink, #ec4899));
-            color: #fff;
-            font-family: inherit;
-            font-size: 15px;
-            font-weight: 900;
-            cursor: pointer;
-            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
-            transition: transform 0.12s ease, filter 0.12s ease;
-        }
-
-        .wd-create-book:hover {
-            filter: brightness(1.06);
-            transform: translateY(-1px);
-        }
-
-        @media (max-width: 900px) {
-            .wd-body {
-                grid-template-columns: 1fr;
-            }
-            .wd-books-viewport {
-                margin-right: 0;
-                padding-right: 0;
-            }
-            .wd-rail {
-                position: static;
-            }
-        }
-
-        @media (max-width: 560px) {
-            .wd-welcome-bar {
-                min-height: auto;
-                padding-top: 14px;
-                padding-bottom: 14px;
-            }
-            .wd-pfp { width: 48px; height: 48px; }
-            .wd-pfp-initial { font-size: 18px; }
-            .wd-stats { grid-template-columns: repeat(2, 1fr); }
-            .wd-stat:nth-child(2n) { border-right: none; }
-            .wd-stat:nth-child(-n+2) { border-bottom: 1px solid rgba(255, 255, 255, 0.06); }
-        }
-    </style>
 </head>
 <body>
     <div class="wd-page">
@@ -794,888 +772,913 @@
                 </div>
                 <h1 class="wd-welcome-title" id="welcomeTitle">Welcome back.</h1>
             </div>
-        </header>
+        </header><nav class="wd-nav-wrap" aria-label="Workspace">
+        <div class="wd-nav">
+            <button type="button" class="is-active" id="navContinue">Continue writing</button>
+            <span class="wd-nav-divider" aria-hidden="true"></span>
+            <a href="library.html">Library</a>
+            <a href="author-dashboard.html" id="navAuthorStats">
+                Author stats
+                <span class="wd-nav-badge is-hidden" id="navDashBadge" aria-hidden="true">0</span>
+            </a>
+            <a href="world-encyclopedia.html">Encyclopedia</a>
+            <span class="wd-nav-divider" aria-hidden="true"></span>
+            <a href="vault.html">Notes</a>
+            <a href="story-bible.html" id="navStoryBible">Story Bible</a>
+            <a href="Novel_Exporter.html">Exporter</a>
+            <a href="badges.html">Achievements</a>
+            <a href="leaderboard.html">Leaderboards</a>
+            <span class="wd-nav-divider" aria-hidden="true"></span>
+            <a href="settings.html">Settings</a>
+            <a href="reader-home.html" class="is-hidden" id="navReading">Reading</a>
+            <button type="button" class="wd-nav-logout" data-logout-btn>Log out</button>
+            <a href="index.html">Home</a>
+        </div>
+    </nav>
 
-        <nav class="wd-nav-wrap" aria-label="Workspace">
-            <div class="wd-nav">
-                <button type="button" class="is-active" id="navContinue">Continue writing</button>
-                <span class="wd-nav-divider" aria-hidden="true"></span>
-                <a href="library.html">Library</a>
-                <a href="author-dashboard.html" id="navAuthorStats">
-                    Author stats
-                    <span class="wd-nav-badge is-hidden" id="navDashBadge" aria-hidden="true">0</span>
-                </a>
-                <a href="world-encyclopedia.html">Encyclopedia</a>
-                <span class="wd-nav-divider" aria-hidden="true"></span>
-                <a href="vault.html">Notes</a>
-                <a href="story-bible.html" id="navStoryBible">Story Bible</a>
-                <a href="Novel_Exporter.html">Exporter</a>
-                <a href="badges.html">Achievements</a>
-                <a href="leaderboard.html">Leaderboards</a>
-                <span class="wd-nav-divider" aria-hidden="true"></span>
-                <a href="settings.html">Settings</a>
-                <a href="reader-home.html" class="is-hidden" id="navReading">Reading</a>
-                <button type="button" class="wd-nav-logout" data-logout-btn>Log out</button>
-                <a href="index.html">Home</a>
+    <main class="wd-main">
+        <section class="wd-stats-block" aria-label="Your stats">
+            <ul class="wd-stats">
+                <li class="wd-stat">
+                    <strong id="statWords">0</strong>
+                    <span class="wd-stat-label">Total words across all books</span>
+                </li>
+                <li class="wd-stat" title="Manuscripts on your account">
+                    <strong id="statBooks">0</strong>
+                    <span class="wd-stat-label">Books</span>
+                </li>
+                <li class="wd-stat" title="Consecutive days you've signed in">
+                    <strong id="statLoginStreak">0</strong>
+                    <span class="wd-stat-label">Daily login streak</span>
+                </li>
+                <li class="wd-stat" title="Consecutive days you met your word goal">
+                    <strong id="statGoalStreak">0</strong>
+                    <span class="wd-stat-label">Daily word goal streak</span>
+                </li>
+            </ul>
+            <div class="wd-stats-foot">
+                <span class="wd-stats-foot-label">Word goal today</span>
+                <span class="wd-stats-foot-count" id="goalTodayText">0 / 2,000</span>
+                <div class="wd-goal-bar" aria-hidden="true">
+                    <div class="wd-goal-fill" id="goalBar"></div>
+                </div>
             </div>
-        </nav>
+        </section>
 
-        <main class="wd-main">
-            <section class="wd-stats-block" aria-label="Your stats">
-                <ul class="wd-stats">
-                    <li class="wd-stat">
-                        <strong id="statWords">0</strong>
-                        <span class="wd-stat-label">Total words across all books</span>
-                    </li>
-                    <li class="wd-stat" title="Manuscripts on your account">
-                        <strong id="statBooks">0</strong>
-                        <span class="wd-stat-label">Books</span>
-                    </li>
-                    <li class="wd-stat" title="Consecutive days you've signed in">
-                        <strong id="statLoginStreak">0</strong>
-                        <span class="wd-stat-label">Daily login streak</span>
-                    </li>
-                    <li class="wd-stat" title="Consecutive days you met your word goal">
-                        <strong id="statGoalStreak">0</strong>
-                        <span class="wd-stat-label">Daily word goal streak</span>
-                    </li>
-                </ul>
-                <div class="wd-stats-foot">
-                    <span class="wd-stats-foot-label">Word goal today</span>
-                    <span class="wd-stats-foot-count" id="goalTodayText">0 / 2,000</span>
-                    <div class="wd-goal-bar" aria-hidden="true">
-                        <div class="wd-goal-fill" id="goalBar"></div>
+        <div class="wd-body">
+            <section class="wd-books-section" aria-label="Your books">
+                <div class="wd-books-head">
+                    <h2 class="wd-books-title">Your books</h2>
+                    <span class="wd-books-count" id="booksCountPill">0 books</span>
+                </div>
+                <div class="wd-books-stage">
+                    <div class="wd-books-viewport" id="bookListViewport" tabindex="0" aria-label="Your books. Scroll sideways to see more.">
+                        <div class="wd-books" id="bookList" role="list"></div>
+                    </div>
+                    <div class="wd-books-scroll" id="bookListScroll" tabindex="-1" aria-hidden="true">
+                        <div class="wd-books-scroll-inner" id="bookListScrollInner"></div>
                     </div>
                 </div>
+                <button class="wd-create-book" id="createBook" type="button">+ Create book</button>
             </section>
 
-            <div class="wd-body">
-                <section class="wd-books-section" aria-label="Your books">
-                    <div class="wd-books-head">
-                        <h2 class="wd-books-title">Your books</h2>
-                        <span class="wd-books-count" id="booksCountPill">0 books</span>
+            <aside class="wd-rail" aria-label="Writing tools">
+                <section class="wd-rail-card" id="promptsCard">
+                    <h3>Weekly prompts</h3>
+                    <p class="wd-rail-sub">Weekly prompt plus daily character and worldbuilding questions.</p>
+                    <div class="wd-prompt-slide" id="promptSlide" role="button" tabindex="0" aria-label="Open prompt notebook">
+                        <div class="wd-prompt-kicker" id="promptKicker">Loading…</div>
+                        <div class="wd-prompt-text" id="promptText">Loading…</div>
                     </div>
-                    <div class="wd-books-stage">
-                        <div
-                            class="wd-books-viewport"
-                            id="bookListViewport"
-                            tabindex="0"
-                            aria-label="Your books. Scroll sideways to see more."
-                        >
-                            <div class="wd-books" id="bookList" role="list"></div>
-                        </div>
-                        <div class="wd-books-scroll" id="bookListScroll" tabindex="-1" aria-hidden="true">
-                            <div class="wd-books-scroll-inner" id="bookListScrollInner"></div>
-                        </div>
+                    <div class="wd-prompt-dots" aria-label="Prompt slideshow">
+                        <div class="wd-prompt-dot" id="promptDot0" aria-hidden="true"></div>
+                        <div class="wd-prompt-dot" id="promptDot1" aria-hidden="true"></div>
+                        <div class="wd-prompt-dot" id="promptDot2" aria-hidden="true"></div>
                     </div>
-                    <button class="wd-create-book" id="createBook" type="button">+ Create book</button>
+                    <a class="wd-rail-link" href="prompt-notebook.html">Open prompt notebook →</a>
                 </section>
 
-                <aside class="wd-rail" aria-label="Writing tools">
-                    <section class="wd-rail-card" id="promptsCard">
-                                            <h3>Weekly prompts</h3>
-                                            <p class="wd-rail-sub">Weekly prompt plus daily character and worldbuilding questions.</p>
-                                            <div class="wd-prompt-slide" id="promptSlide" role="button" tabindex="0" aria-label="Open prompt notebook">
-                                                <div class="wd-prompt-kicker" id="promptKicker">Loading…</div>
-                                                <div class="wd-prompt-text" id="promptText">Loading…</div>
-                                            </div>
-                                            <div class="wd-prompt-dots" aria-label="Prompt slideshow">
-                                                <div class="wd-prompt-dot" id="promptDot0" aria-hidden="true"></div>
-                                                <div class="wd-prompt-dot" id="promptDot1" aria-hidden="true"></div>
-                                                <div class="wd-prompt-dot" id="promptDot2" aria-hidden="true"></div>
-                                            </div>
-                                            <a class="wd-rail-link" href="prompt-notebook.html">Open prompt notebook →</a>
-                                        </section>
-
-                                        <section class="wd-rail-card" aria-label="Next badge">
-                                            <h3>Next badge</h3>
-                                            <p class="wd-rail-sub">Your next writing milestone</p>
-                                            <div class="wd-badge-box">
-                                                <div class="wd-badge-row">
-                                                    <div class="wd-badge-icon" aria-hidden="true">🏆</div>
-                                                    <div>
-                                                        <div class="wd-badge-name" id="badgeName">10K Words</div>
-                                                        <div class="wd-badge-sub" id="badgeProgressText">0 / 10,000</div>
-                                                    </div>
-                                                </div>
-                                                <div class="wd-badge-bar-wrap" aria-hidden="true">
-                                                    <div class="wd-badge-bar" id="badgeBar"></div>
-                                                </div>
-                                            </div>
-                                            <a class="wd-rail-link" href="badges.html">View all achievements →</a>
-                                        </section>
-                </aside>
-            </div>
-        </main>
-    </div>
-
-    <script type="module">
-        import { supabase } from "./firebase.js";
-        import { WEEKLY_PROMPTS_52, DAILY_CHARACTER_Q, DAILY_WORLDBUILD_Q } from "./js/prompts-data.js?v=1";
-        import {
-            cosmeticDisplayNameFromUserData,
-            permanentHandleFromUserData,
-        } from "./js/profile-display.js?v=2";
-        import {
-            normalizeAccountType,
-            accountSupportsModeToggle,
-            ACCOUNT_READER,
-            READER_HOME_URL,
-            WRITER_HOME_URL,
-            ACCOUNT_BOTH,
-        } from "./js/account-mode.js?v=1";
-        import { wireLogoutButtons } from "./js/auth-logout.js?v=1";
-        import {
-            isStoryBibleUiEnabled,
-            STORY_BIBLE_PREF_KEY,
-            STORY_BIBLE_PREF_EVENT,
-        } from "./js/story-bible-prefs.js?v=1";
-        import { countBookWords } from "./js/book-word-count.js?v=3";
-        import {
-            localDayKey,
-            clampDailyWordGoal,
-            computeGoalStreakFromTotals,
-            wordsTypedOnDay,
-            DEFAULT_DAILY_WORD_GOAL,
-        } from "./js/writing-day-stats.js?v=1";
-
-        wireLogoutButtons();
-
-        const welcomeTitle = document.getElementById("welcomeTitle");
-        const welcomePfpImg = document.getElementById("welcomePfpImg");
-        const welcomePfpInitial = document.getElementById("welcomePfpInitial");
-        const navContinue = document.getElementById("navContinue");
-        const navStoryBible = document.getElementById("navStoryBible");
-        const navReading = document.getElementById("navReading");
-        const navDashBadge = document.getElementById("navDashBadge");
-        const statWords = document.getElementById("statWords");
-        const statBooks = document.getElementById("statBooks");
-        const statLoginStreak = document.getElementById("statLoginStreak");
-        const statGoalStreak = document.getElementById("statGoalStreak");
-        const goalBar = document.getElementById("goalBar");
-        const goalTodayText = document.getElementById("goalTodayText");
-        const bookList = document.getElementById("bookList");
-        const bookListViewport = document.getElementById("bookListViewport");
-        const bookListScroll = document.getElementById("bookListScroll");
-        const bookListScrollInner = document.getElementById("bookListScrollInner");
-        const createBookBtn = document.getElementById("createBook");
-        const booksCountPill = document.getElementById("booksCountPill");
-        const promptSlide = document.getElementById("promptSlide");
-        const promptKicker = document.getElementById("promptKicker");
-        const promptText = document.getElementById("promptText");
-        const promptDots = [0, 1, 2].map((i) => document.getElementById("promptDot" + i));
-        const badgeName = document.getElementById("badgeName");
-        const badgeProgressText = document.getElementById("badgeProgressText");
-        const badgeBar = document.getElementById("badgeBar");
-
-        let currentUser = null;
-        let currentProfile = {};
-        let booksRows = [];
-        let firstBookId = null;
-        let booksChannel = null;
-        let notificationsChannel = null;
-
-        const BOOK_ROW_GAP = 14;
-        const BOOK_CARD_MIN = 168;
-        const BOOK_CARD_MAX = 260;
-        let lockedBookWidth = null;
-        let bookWidthRaf = 0;
-        let booksScrollSyncing = false;
-
-        function syncBooksScrollbars() {
-            if (!bookListViewport || !bookListScroll || !bookListScrollInner) return;
-            bookListScrollInner.style.width = `${bookListViewport.scrollWidth}px`;
-            if (bookListScroll.scrollLeft !== bookListViewport.scrollLeft) {
-                bookListScroll.scrollLeft = bookListViewport.scrollLeft;
-            }
-        }
-
-        function linkBooksScroll(source, target) {
-            if (!source || !target) return;
-            source.addEventListener(
-                "scroll",
-                () => {
-                    if (booksScrollSyncing) return;
-                    booksScrollSyncing = true;
-                    target.scrollLeft = source.scrollLeft;
-                    booksScrollSyncing = false;
-                },
-                { passive: true }
-            );
-        }
-
-        linkBooksScroll(bookListViewport, bookListScroll);
-        linkBooksScroll(bookListScroll, bookListViewport);
-
-        function syncBookCardWidth() {
-            if (!bookList) return;
-
-            const books = bookList.querySelectorAll(".wd-book");
-            const n = books.length;
-            if (!n) {
-                lockedBookWidth = null;
-                bookList.style.removeProperty("--wd-book-w");
-                syncBooksScrollbars();
-                return;
-            }
-
-            const trackW = bookListViewport ? bookListViewport.clientWidth : bookList.clientWidth;
-            if (trackW <= 0) return;
-
-            const gaps = (n - 1) * BOOK_ROW_GAP;
-            const fillW = Math.min(
-                BOOK_CARD_MAX,
-                Math.max(BOOK_CARD_MIN, (trackW - gaps) / n)
-            );
-            const rowAtFill = n * fillW + gaps;
-
-            if (rowAtFill <= trackW + 0.5) {
-                lockedBookWidth = fillW;
-            } else if (lockedBookWidth == null) {
-                lockedBookWidth = fillW;
-            }
-
-            const cardW = lockedBookWidth ?? fillW;
-            bookList.style.setProperty("--wd-book-w", `${Math.round(cardW)}px`);
-            syncBooksScrollbars();
-        }
-
-        function scheduleBookWidthSync() {
-            if (bookWidthRaf) cancelAnimationFrame(bookWidthRaf);
-            bookWidthRaf = requestAnimationFrame(() => {
-                bookWidthRaf = 0;
-                syncBookCardWidth();
-            });
-        }
-
-        if (bookListViewport && typeof ResizeObserver !== "undefined") {
-            new ResizeObserver(() => scheduleBookWidthSync()).observe(bookListViewport);
-        }
-        window.addEventListener("resize", scheduleBookWidthSync);
-        let promptIx = 0;
-        let promptTimer = null;
-
-        function mergeUser(row) {
-            if (!row) return {};
-            return {
-                ...row,
-                displayName: row.display_name ?? row.displayName,
-                accountType: row.account_type ?? row.accountType,
-                writingDayTotals: row.writing_day_totals ?? row.writingDayTotals ?? {},
-                lastLogin: row.last_login ?? row.lastLogin ?? "",
-                streak: Number(row.streak || 0),
-                dailyWordGoal: row.daily_word_goal ?? row.dailyWordGoal,
-            };
-        }
-
-        function daysBetween(dateA, dateB) {
-            const a = new Date(dateA + "T00:00:00");
-            const b = new Date(dateB + "T00:00:00");
-            return Math.round((b - a) / (1000 * 60 * 60 * 24));
-        }
-
-        async function ensureUserStreak(data) {
-            const today = localDayKey();
-            const lastLogin = typeof data.lastLogin === "string" ? data.lastLogin : "";
-            const currentStreak = Number.isFinite(Number(data.streak)) ? Number(data.streak) : 0;
-
-            const patch = (fields) =>
-                supabase.from("users").update(fields).eq("id", currentUser.id);
-
-            if (!lastLogin) {
-                const restored = Math.max(currentStreak, 1);
-                await patch({ last_login: today, streak: restored });
-                return restored;
-            }
-
-            const diff = daysBetween(lastLogin, today);
-            if (diff <= 0) return Math.max(currentStreak, 1);
-            if (diff === 1) {
-                const next = Math.max(currentStreak, 0) + 1;
-                await patch({ last_login: today, streak: next });
-                return next;
-            }
-
-            await patch({ last_login: today, streak: 1 });
-            return 1;
-        }
-
-        function paintStats({ totalWords, bookCount, loginStreak, goalStreak, wordsToday, goalTarget }) {
-            statWords.textContent = totalWords.toLocaleString();
-            statBooks.textContent = bookCount.toLocaleString();
-            statLoginStreak.textContent = loginStreak.toLocaleString();
-            statGoalStreak.textContent = goalStreak.toLocaleString();
-
-            const goal = Math.max(1, goalTarget);
-            const met = wordsToday >= goal;
-            const pct = Math.min(100, Math.round((wordsToday / goal) * 100));
-
-            if (goalBar) {
-                goalBar.style.width = pct + "%";
-                goalBar.classList.toggle("is-met", met);
-            }
-            if (goalTodayText) {
-                goalTodayText.textContent = met
-                    ? `${wordsToday.toLocaleString()} / ${goal.toLocaleString()} · met`
-                    : `${wordsToday.toLocaleString()} / ${goal.toLocaleString()}`;
-            }
-        }
-
-        function escapeHtml(str) {
-            return String(str)
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;");
-        }
-
-        function escapeAttribute(str) {
-            return escapeHtml(str).replaceAll("`", "&#096;");
-        }
-
-        function normalizeCoverUrl(raw) {
-            const s = String(raw || "").trim();
-            if (!s) return "";
-            if (/^https?:\/\//i.test(s)) return s;
-            if (s.startsWith("//")) return "https:" + s;
-            return "https://" + s.replace(/^\/+/, "");
-        }
-
-        function bookCoverUrl(data) {
-            const meta = data?.publish_meta ?? data?.publishMeta ?? {};
-            return normalizeCoverUrl(meta.coverUrl || meta.cover_url);
-        }
-
-        function placeholderHue(seed) {
-            const s = String(seed || "0");
-            let h = 2166136261 >>> 0;
-            for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619);
-            return Math.abs(h) % 360;
-        }
-
-        function authorHandle() {
-            const handle = permanentHandleFromUserData(currentProfile);
-            return handle || "writer";
-        }
-
-        function bookCoverPlaceholderMarkup(book, hue) {
-            return `<div class="wd-cover-placeholder" style="--cover-ph-hue:${hue}" aria-hidden="true">
-                <div class="wd-cover-placeholder-inner">
-                    <div class="wd-cover-placeholder-title-wrap">
-                        <div class="wd-cover-placeholder-title">${escapeHtml(book.title)}</div>
+                <section class="wd-rail-card" aria-label="Next badge">
+                    <h3>Next badge</h3>
+                    <p class="wd-rail-sub">Your next writing milestone</p>
+                    <div class="wd-badge-box">
+                        <div class="wd-badge-row">
+                            <div class="wd-badge-icon" aria-hidden="true">🏆</div>
+                            <div>
+                                <div class="wd-badge-name" id="badgeName">10K Words</div>
+                                <div class="wd-badge-sub" id="badgeProgressText">0 / 10,000</div>
+                            </div>
+                        </div>
+                        <div class="wd-badge-bar-wrap" aria-hidden="true">
+                            <div class="wd-badge-bar" id="badgeBar"></div>
+                        </div>
                     </div>
-                    <div class="wd-cover-placeholder-author">@${escapeHtml(book.author)}</div>
-                </div>
-            </div>`;
+                    <a class="wd-rail-link" href="badges.html">View all achievements →</a>
+                </section>
+            </aside>
+        </div>
+    </main>
+</div>
+
+<script type="module">
+    import { supabase } from "./firebase.js";
+    import { WEEKLY_PROMPTS_52, DAILY_CHARACTER_Q, DAILY_WORLDBUILD_Q } from "./js/prompts-data.js?v=1";
+    import {
+        cosmeticDisplayNameFromUserData,
+        permanentHandleFromUserData,
+    } from "./js/profile-display.js?v=2";
+    import {
+        normalizeAccountType,
+        accountSupportsModeToggle,
+        ACCOUNT_READER,
+        READER_HOME_URL,
+        WRITER_HOME_URL,
+        ACCOUNT_BOTH,
+    } from "./js/account-mode.js?v=1";
+    import { wireLogoutButtons } from "./js/auth-logout.js?v=1";
+    import {
+        isStoryBibleUiEnabled,
+        STORY_BIBLE_PREF_KEY,
+        STORY_BIBLE_PREF_EVENT,
+    } from "./js/story-bible-prefs.js?v=1";
+    import { countBookWords } from "./js/book-word-count.js?v=3";
+    import {
+        localDayKey,
+        clampDailyWordGoal,
+        computeGoalStreakFromTotals,
+        wordsTypedOnDay,
+        DEFAULT_DAILY_WORD_GOAL,
+    } from "./js/writing-day-stats.js?v=1";
+
+    wireLogoutButtons();
+
+    const welcomeTitle = document.getElementById("welcomeTitle");
+    const welcomePfpImg = document.getElementById("welcomePfpImg");
+    const welcomePfpInitial = document.getElementById("welcomePfpInitial");
+    const navContinue = document.getElementById("navContinue");
+    const navStoryBible = document.getElementById("navStoryBible");
+    const navReading = document.getElementById("navReading");
+    const navDashBadge = document.getElementById("navDashBadge");
+    const statWords = document.getElementById("statWords");
+    const statBooks = document.getElementById("statBooks");
+    const statLoginStreak = document.getElementById("statLoginStreak");
+    const statGoalStreak = document.getElementById("statGoalStreak");
+    const goalBar = document.getElementById("goalBar");
+    const goalTodayText = document.getElementById("goalTodayText");
+    const bookList = document.getElementById("bookList");
+    const bookListViewport = document.getElementById("bookListViewport");
+    const bookListScroll = document.getElementById("bookListScroll");
+    const bookListScrollInner = document.getElementById("bookListScrollInner");
+    const createBookBtn = document.getElementById("createBook");
+    const booksCountPill = document.getElementById("booksCountPill");
+    const promptSlide = document.getElementById("promptSlide");
+    const promptKicker = document.getElementById("promptKicker");
+    const promptText = document.getElementById("promptText");
+    const promptDots = [0, 1, 2].map((i) => document.getElementById("promptDot" + i));
+    const badgeName = document.getElementById("badgeName");
+    const badgeProgressText = document.getElementById("badgeProgressText");
+    const badgeBar = document.getElementById("badgeBar");
+
+    let currentUser = null;
+    let currentProfile = {};
+    let booksRows = [];
+    let firstBookId = null;
+    let booksChannel = null;
+    let notificationsChannel = null;
+
+    const BOOK_ROW_GAP = 14;
+    const BOOK_CARD_MIN = 168;
+    const BOOK_CARD_MAX = 260;
+    let lockedBookWidth = null;
+    let bookWidthRaf = 0;
+    let booksScrollSyncing = false;
+
+    function syncBooksScrollbars() {
+        if (!bookListViewport || !bookListScroll || !bookListScrollInner) return;
+        bookListScrollInner.style.width = `${bookListViewport.scrollWidth}px`;
+        if (bookListScroll.scrollLeft !== bookListViewport.scrollLeft) {
+            bookListScroll.scrollLeft = bookListViewport.scrollLeft;
+        }
+    }
+
+    function linkBooksScroll(source, target) {
+        if (!source || !target) return;
+        source.addEventListener(
+            "scroll",
+            () => {
+                if (booksScrollSyncing) return;
+                booksScrollSyncing = true;
+                target.scrollLeft = source.scrollLeft;
+                booksScrollSyncing = false;
+            },
+            { passive: true }
+        );
+    }
+
+    linkBooksScroll(bookListViewport, bookListScroll);
+    linkBooksScroll(bookListScroll, bookListViewport);
+
+    function syncBookCardWidth() {
+        if (!bookList) return;
+
+        const books = bookList.querySelectorAll(".wd-book");
+        const n = books.length;
+        if (!n) {
+            lockedBookWidth = null;
+            bookList.style.removeProperty("--wd-book-w");
+            syncBooksScrollbars();
+            return;
         }
 
-        function bookLastTouchedMs(data) {
-            const updated = Number(data?.updated || 0);
-            const created = Number(data?.created || 0);
-            return updated > 0 ? updated : created;
+        const trackW = bookListViewport ? bookListViewport.clientWidth : bookList.clientWidth;
+        if (trackW <= 0) return;
+
+        const gaps = (n - 1) * BOOK_ROW_GAP;
+        const fillW = Math.min(
+            BOOK_CARD_MAX,
+            Math.max(BOOK_CARD_MIN, (trackW - gaps) / n)
+        );
+        const rowAtFill = n * fillW + gaps;
+
+        if (rowAtFill <= trackW + 0.5) {
+            lockedBookWidth = fillW;
+        } else if (lockedBookWidth == null) {
+            lockedBookWidth = fillW;
         }
 
-        function applyBooksSnapshot(rows) {
-            if (!bookList) return { totalWords: 0, bookCount: 0 };
+        const cardW = lockedBookWidth ?? fillW;
+        bookList.style.setProperty("--wd-book-w", `${Math.round(cardW)}px`);
+        syncBooksScrollbars();
+    }
 
-            bookList.innerHTML = "";
-            firstBookId = null;
-
-            const sorted = [...(rows || [])].sort((a, b) => bookLastTouchedMs(b) - bookLastTouchedMs(a));
-            let totalWords = 0;
-
-            if (!sorted.length) {
-                const empty = document.createElement("div");
-                empty.className = "wd-books-empty";
-                empty.textContent = "No books yet. Create your first one below.";
-                bookList.appendChild(empty);
-            }
-
-            sorted.forEach((data, index) => {
-                const bookWords = countBookWords(data);
-                totalWords += bookWords;
-
-                if (index === 0) firstBookId = data.id;
-
-                const coverUrl = bookCoverUrl(data);
-                const title = data.title || "Untitled Book";
-                const author = authorHandle();
-                const phHue = placeholderHue(data.id + "\0" + title);
-                const placeholder = bookCoverPlaceholderMarkup({ title, author }, phHue);
-
-                const div = document.createElement("div");
-                div.className = "wd-book";
-                div.setAttribute("role", "listitem");
-                div.onclick = () => {
-                    window.location.href = "editor.html?book=" + encodeURIComponent(data.id);
-                };
-                if (coverUrl) {
-                    div.innerHTML =
-                        placeholder +
-                        `<img class="wd-book-cover-img" src="${escapeAttribute(coverUrl)}" alt="${escapeAttribute(title)} cover" loading="lazy" onerror="this.style.display='none'">`;
-                } else {
-                    div.innerHTML = placeholder;
-                }
-                bookList.appendChild(div);
-            });
-
-            const n = sorted.length;
-            if (booksCountPill) {
-                booksCountPill.textContent = n === 1 ? "1 book" : `${n} books`;
-            }
-
-            booksRows = sorted;
-            updateBadgeUI(totalWords);
-            scheduleBookWidthSync();
-            return { totalWords, bookCount: n };
-        }
-
-        function updateBadgeUI(totalWords) {
-            if (!badgeName || !badgeProgressText || !badgeBar) return;
-
-            const wordMilestones = [
-                { name: "500 Words", target: 500 },
-                { name: "1K Words", target: 1000 },
-                { name: "10K Words", target: 10000 },
-                { name: "50K Words", target: 50000 },
-                { name: "100K Words", target: 100000 },
-                { name: "200K Words", target: 200000 },
-                { name: "500K Words", target: 500000 },
-                { name: "1M Words", target: 1000000 },
-            ];
-
-            const maxTarget = wordMilestones[wordMilestones.length - 1].target;
-            if (totalWords >= maxTarget) {
-                badgeName.textContent = "All word milestones";
-                badgeProgressText.textContent =
-                    totalWords.toLocaleString() + " words · every tier unlocked";
-                badgeBar.style.width = "100%";
-                return;
-            }
-
-            const nextBadge = wordMilestones.find((b) => totalWords < b.target);
-            const pct = Math.max(0, Math.min(100, Math.round((totalWords / nextBadge.target) * 100)));
-            badgeName.textContent = nextBadge.name;
-            badgeProgressText.textContent =
-                Math.min(totalWords, nextBadge.target).toLocaleString() +
-                " / " +
-                nextBadge.target.toLocaleString();
-            badgeBar.style.width = pct + "%";
-        }
-
-        function nyDateParts(now = new Date()) {
-            const fmt = new Intl.DateTimeFormat("en-US", {
-                timeZone: "America/New_York",
-                year: "numeric",
-                month: "2-digit",
-                day: "2-digit",
-                weekday: "short",
-            });
-            const parts = fmt.formatToParts(now);
-            const get = (t) => parts.find((p) => p.type === t)?.value;
-            return {
-                y: Number(get("year")),
-                m: Number(get("month")),
-                d: Number(get("day")),
-                wd: String(get("weekday") || ""),
-            };
-        }
-
-        function nyDayKey(now = new Date()) {
-            const p = nyDateParts(now);
-            return `${p.y}-${String(p.m).padStart(2, "0")}-${String(p.d).padStart(2, "0")}`;
-        }
-
-        function nyWeekKey(now = new Date()) {
-            const p = nyDateParts(now);
-            const wd = p.wd.toLowerCase();
-            const map = { sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6 };
-            const back = map[wd.slice(0, 3)] ?? 0;
-            const local = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
-            local.setHours(0, 0, 0, 0);
-            local.setDate(local.getDate() - back);
-            const wk = nyDateParts(local);
-            return `${wk.y}-${String(wk.m).padStart(2, "0")}-${String(wk.d).padStart(2, "0")}`;
-        }
-
-        function hashString(str) {
-            let h = 2166136261;
-            for (let i = 0; i < str.length; i++) {
-                h ^= str.charCodeAt(i);
-                h = Math.imul(h, 16777619);
-            }
-            return h >>> 0;
-        }
-
-        function getPromptsForNow() {
-            const weekKey = nyWeekKey();
-            const dayKey = nyDayKey();
-            const weeklyIx = hashString(weekKey) % WEEKLY_PROMPTS_52.length;
-            const dailyIx = hashString(dayKey) % DAILY_CHARACTER_Q.length;
-            const worldIx = hashString(dayKey + "|world") % DAILY_WORLDBUILD_Q.length;
-            return {
-                weekKey,
-                dayKey,
-                weekly: WEEKLY_PROMPTS_52[weeklyIx],
-                character: DAILY_CHARACTER_Q[dailyIx],
-                world: DAILY_WORLDBUILD_Q[worldIx],
-            };
-        }
-
-        function renderPromptSlide(ix) {
-            const p = getPromptsForNow();
-            const slides = [
-                { kicker: `Weekly writing prompt • Week of ${p.weekKey}`, text: p.weekly, type: "weekly" },
-                { kicker: `Daily character question • ${p.dayKey}`, text: p.character, type: "character" },
-                { kicker: `Daily worldbuilding question • ${p.dayKey}`, text: p.world, type: "world" },
-            ];
-            const s = slides[ix] || slides[0];
-            if (promptKicker) promptKicker.textContent = s.kicker;
-            if (promptText) promptText.innerHTML = s.text;
-            promptDots.forEach((d, i) => d?.classList.toggle("is-active", i === ix));
-            if (promptSlide) {
-                promptSlide.dataset.type = s.type;
-                promptSlide.dataset.weekKey = p.weekKey;
-                promptSlide.dataset.dayKey = p.dayKey;
-            }
-        }
-
-        function startPromptSlideshow() {
-            if (!promptSlide) return;
-            renderPromptSlide(promptIx);
-            if (promptTimer) clearInterval(promptTimer);
-            promptTimer = setInterval(() => {
-                promptIx = (promptIx + 1) % 3;
-                renderPromptSlide(promptIx);
-            }, 6500);
-        }
-
-        function openPromptNotebook() {
-            const type = promptSlide?.dataset?.type || "weekly";
-            const weekKey = promptSlide?.dataset?.weekKey || nyWeekKey();
-            const dayKey = promptSlide?.dataset?.dayKey || nyDayKey();
-            const q = new URLSearchParams({ week: weekKey, day: dayKey, focus: type });
-            window.location.href = "prompt-notebook.html?" + q.toString();
-        }
-
-        promptSlide?.addEventListener("click", openPromptNotebook);
-        promptSlide?.addEventListener("keydown", (e) => {
-            if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                openPromptNotebook();
-            }
+    function scheduleBookWidthSync() {
+        if (bookWidthRaf) cancelAnimationFrame(bookWidthRaf);
+        bookWidthRaf = requestAnimationFrame(() => {
+            bookWidthRaf = 0;
+            syncBookCardWidth();
         });
+    }
 
-        function statsSnapshotFromProfile() {
-            const day = localDayKey();
-            const goalTarget = clampDailyWordGoal(
-                currentProfile.dailyWordGoal ?? DEFAULT_DAILY_WORD_GOAL
-            );
-            return {
-                loginStreak: currentProfile.streak || 0,
-                goalStreak: computeGoalStreakFromTotals(
-                    currentProfile.writingDayTotals || {},
-                    goalTarget,
-                    day
-                ),
-                wordsToday: wordsTypedOnDay(currentProfile.writingDayTotals || {}, day),
-                goalTarget,
+    if (bookListViewport && typeof ResizeObserver !== "undefined") {
+        new ResizeObserver(() => scheduleBookWidthSync()).observe(bookListViewport);
+    }
+    window.addEventListener("resize", scheduleBookWidthSync);
+
+    let promptIx = 0;
+    let promptTimer = null;
+
+    function mergeUser(row) {
+        if (!row) return {};
+        return {
+            ...row,
+            displayName: row.display_name ?? row.displayName,
+            accountType: row.account_type ?? row.accountType,
+            writingDayTotals: row.writing_day_totals ?? row.writingDayTotals ?? {},
+            lastLogin: row.last_login ?? row.lastLogin ?? "",
+            streak: Number(row.streak || 0),
+            dailyWordGoal: row.daily_word_goal ?? row.dailyWordGoal,
+            profileImageUrl: row.profile_image_url ?? row.profileImageUrl ?? "",
+        };
+    }
+
+    function renderWelcomeProfile(profile, fallbackLabel) {
+        const label = String(fallbackLabel || "writer").trim() || "writer";
+        const initial = (label[0] || "A").toUpperCase();
+        const imageUrl = String(profile?.profileImageUrl || "").trim();
+
+        welcomePfpInitial.textContent = initial;
+
+        if (imageUrl) {
+            welcomePfpImg.src = imageUrl;
+            welcomePfpImg.hidden = false;
+            welcomePfpInitial.classList.add("is-hidden");
+            welcomePfpImg.onerror = () => {
+                welcomePfpImg.hidden = true;
+                welcomePfpImg.removeAttribute("src");
+                welcomePfpInitial.classList.remove("is-hidden");
             };
-        }
-
-        async function refreshProfileFromServer() {
-            if (!currentUser) return;
-            const { data: row, error } = await supabase
-                .from("users")
-                .select(
-                    "display_name, username, account_type, streak, last_login, writing_day_totals, daily_word_goal"
-                )
-                .eq("id", currentUser.id)
-                .maybeSingle();
-            if (error || !row) return;
-            currentProfile = mergeUser({ ...currentProfile, ...row });
-        }
-
-        async function refreshBooksAndStats() {
-            const statsBase = statsSnapshotFromProfile();
-            try {
-                const { totalWords, bookCount } = await loadBooks();
-                paintStats({ totalWords, bookCount, ...statsBase });
-            } catch (e) {
-                console.error(e);
-                applyBooksSnapshot([]);
-                paintStats({ totalWords: 0, bookCount: 0, ...statsBase });
-            }
-        }
-
-        function startBooksRealtime() {
-            if (!currentUser) return;
-            if (booksChannel) supabase.removeChannel(booksChannel);
-
-            booksChannel = supabase
-                .channel("wd_books_" + currentUser.id)
-                .on(
-                    "postgres_changes",
-                    {
-                        event: "*",
-                        schema: "public",
-                        table: "books",
-                        filter: "user_id=eq." + currentUser.id,
-                    },
-                    () => refreshBooksAndStats().catch(console.error)
-                )
-                .subscribe();
-        }
-
-        function startNotificationsRealtime() {
-            if (!currentUser) return;
-            if (notificationsChannel) supabase.removeChannel(notificationsChannel);
-
-            notificationsChannel = supabase
-                .channel("wd_notifications_" + currentUser.id)
-                .on(
-                    "postgres_changes",
-                    {
-                        event: "*",
-                        schema: "public",
-                        table: "notifications",
-                        filter: "user_id=eq." + currentUser.id,
-                    },
-                    () => loadDashboardBadge(currentUser.id)
-                )
-                .subscribe();
-        }
-
-        async function enrichBooksWithLibraryCovers(rows) {
-            const missing = (rows || []).filter((row) => row?.id && !bookCoverUrl(row));
-            if (!missing.length) return rows;
-
-            const ids = missing.map((row) => row.id);
-            const { data, error } = await supabase.from("library").select("id, data").in("id", ids);
-            if (error || !data?.length) return rows;
-
-            const coverById = new Map();
-            for (const row of data) {
-                const libData = row?.data && typeof row.data === "object" ? row.data : {};
-                const url = normalizeCoverUrl(libData.coverUrl || libData.cover_url);
-                if (url) coverById.set(row.id, url);
-            }
-            if (!coverById.size) return rows;
-
-            return rows.map((row) => {
-                const fromLibrary = coverById.get(row.id);
-                if (!fromLibrary || bookCoverUrl(row)) return row;
-                const meta = { ...(row.publish_meta || row.publishMeta || {}), coverUrl: fromLibrary };
-                return { ...row, publish_meta: meta };
-            });
-        }
-
-        async function loadBooks() {
-            const { data, error } = await supabase
-                .from("books")
-                .select("*")
-                .eq("user_id", currentUser.id)
-                .order("updated", { ascending: false });
-
-            if (error) throw error;
-            const enriched = await enrichBooksWithLibraryCovers(data || []);
-            return applyBooksSnapshot(enriched);
-        }
-
-        async function createBookNow() {
-            if (!currentUser) return;
-
-            const title = prompt("Book title?");
-            if (!title) return;
-
-            const now = Date.now();
-            const payload = {
-                user_id: currentUser.id,
-                title,
-                created: now,
-                updated: now,
-                words: 0,
-                sections: {
-                    front: [
-                        { title: "Copyright", content: "" },
-                        { title: "Table of Contents", content: "" },
-                    ],
-                    body: [{ title: "Chapter 1", content: "" }],
-                    back: [],
-                },
-            };
-
-            const { error } = await supabase.from("books").insert(payload);
-            if (error) throw error;
-            return refreshBooksAndStats();
-        }
-
-        function applyStoryBibleNav() {
-            if (!navStoryBible) return;
-            navStoryBible.classList.toggle("is-hidden", !isStoryBibleUiEnabled());
-        }
-
-        window.addEventListener("storage", (e) => {
-            if (e.key === STORY_BIBLE_PREF_KEY) applyStoryBibleNav();
-            if (e.key === "alysum-writer-dashboard-sync" && currentUser) {
-                refreshBooksAndStats().catch(console.error);
-            }
-        });
-
-        try {
-            const writerDashChannel = new BroadcastChannel("alysum-writer-dashboard");
-            writerDashChannel.addEventListener("message", () => {
-                if (currentUser) refreshBooksAndStats().catch(console.error);
-            });
-        } catch {
-            /* BroadcastChannel unavailable */
-        }
-        window.addEventListener(STORY_BIBLE_PREF_EVENT, applyStoryBibleNav);
-
-        async function loadDashboardBadge(uid) {
-            const { data, error } = await supabase
-                .from("notifications")
-                .select("id, read")
-                .eq("user_id", uid);
-            if (error || !navDashBadge) return;
-            const n = (data || []).filter((row) => row.read !== true).length;
-            navDashBadge.textContent = n > 99 ? "99+" : String(n);
-            navDashBadge.classList.toggle("is-hidden", n <= 0);
-        }
-
-        navContinue.addEventListener("click", () => {
-            if (firstBookId) {
-                window.location.href = "editor.html?book=" + encodeURIComponent(firstBookId);
-                return;
-            }
-            createBookNow().catch((e) => {
-                console.error(e);
-                alert(e.message || "Could not create book.");
-            });
-        });
-
-        createBookBtn?.addEventListener("click", () => {
-            createBookNow().catch((e) => {
-                console.error(e);
-                alert(e.message || "Could not create book.");
-            });
-        });
-
-        async function ensureProfileExists(user) {
-            const { data, error } = await supabase
-                .from("users")
-                .select("display_name, username, account_type, streak, last_login, writing_day_totals, daily_word_goal")
-                .eq("id", user.id)
-                .maybeSingle();
-
-            if (error) throw error;
-            if (data) return data;
-
-            const fallbackUsername = user.email ? user.email.split("@")[0] : "writer";
-            const { data: inserted, error: insertError } = await supabase
-                .from("users")
-                .insert({
-                    id: user.id,
-                    username: fallbackUsername,
-                    display_name: fallbackUsername,
-                    account_type: ACCOUNT_BOTH,
-                    words: 0,
-                    streak: 1,
-                    last_login: localDayKey(),
-                    daily_word_goal: DEFAULT_DAILY_WORD_GOAL,
-                    writing_day_totals: {},
-                })
-                .select("display_name, username, account_type, streak, last_login, writing_day_totals, daily_word_goal")
-                .single();
-
-            if (insertError) throw insertError;
-            return inserted;
-        }
-
-        async function load() {
-            const { data: auth, error: authErr } = await supabase.auth.getUser();
-            if (authErr) console.warn(authErr);
-
-            const user = auth?.user;
-            if (!user) {
-                window.location.href =
-                    "login.html?next=" + encodeURIComponent(WRITER_HOME_URL);
-                return;
-            }
-            currentUser = user;
-
-            let row;
-            try {
-                row = await ensureProfileExists(user);
-            } catch (error) {
-                console.error(error);
-                welcomeTitle.textContent = "Welcome back.";
-                return;
-            }
-
-            let profile = mergeUser(row || { username: "writer", account_type: ACCOUNT_BOTH });
-            currentProfile = profile;
-            if (normalizeAccountType(profile.accountType) === ACCOUNT_READER) {
-                window.location.replace(READER_HOME_URL);
-                return;
-            }
-
-            const displayName = cosmeticDisplayNameFromUserData(profile);
-            const handle = permanentHandleFromUserData(profile);
-            const label = displayName || handle || "writer";
-
-            welcomeTitle.innerHTML =
-                'Welcome back, <span class="wd-name">' + escapeHtml(label) + "</span>.";
-
-            welcomePfpInitial.textContent = (label.trim()[0] || "A").toUpperCase();
-            welcomePfpInitial.classList.remove("is-hidden");
+        } else {
             welcomePfpImg.hidden = true;
+            welcomePfpImg.removeAttribute("src");
+            welcomePfpInitial.classList.remove("is-hidden");
+        }
+    }
 
-            if (accountSupportsModeToggle(profile.accountType)) {
-                navReading?.classList.remove("is-hidden");
-            }
+    function daysBetween(dateA, dateB) {
+        const a = new Date(dateA + "T00:00:00");
+        const b = new Date(dateB + "T00:00:00");
+        return Math.round((b - a) / (1000 * 60 * 60 * 24));
+    }
 
-            applyStoryBibleNav();
+    async function ensureUserStreak(data) {
+        const today = localDayKey();
+        const lastLogin = typeof data.lastLogin === "string" ? data.lastLogin : "";
+        const currentStreak = Number.isFinite(Number(data.streak)) ? Number(data.streak) : 0;
 
-            try {
-                const streak = await ensureUserStreak(profile);
-                profile = { ...profile, streak };
-            } catch (e) {
-                console.warn(e);
-            }
+        const patch = (fields) => supabase.from("users").update(fields).eq("id", currentUser.id);
 
-            currentProfile = profile;
-            startPromptSlideshow();
-
-            try {
-                await refreshBooksAndStats();
-            } catch (e) {
-                console.error(e);
-            }
-
-            void loadDashboardBadge(user.id);
-            startBooksRealtime();
-            startNotificationsRealtime();
+        if (!lastLogin) {
+            const restored = Math.max(currentStreak, 1);
+            await patch({ last_login: today, streak: restored });
+            return restored;
         }
 
-        document.addEventListener("visibilitychange", () => {
-            if (document.visibilityState !== "visible" || !currentUser) return;
+        const diff = daysBetween(lastLogin, today);
+        if (diff <= 0) return Math.max(currentStreak, 1);
+        if (diff === 1) {
+            const next = Math.max(currentStreak, 0) + 1;
+            await patch({ last_login: today, streak: next });
+            return next;
+        }
+
+        await patch({ last_login: today, streak: 1 });
+        return 1;
+    }
+
+    function paintStats({ totalWords, bookCount, loginStreak, goalStreak, wordsToday, goalTarget }) {
+        statWords.textContent = totalWords.toLocaleString();
+        statBooks.textContent = bookCount.toLocaleString();
+        statLoginStreak.textContent = loginStreak.toLocaleString();
+        statGoalStreak.textContent = goalStreak.toLocaleString();
+
+        const goal = Math.max(1, goalTarget);
+        const met = wordsToday >= goal;
+        const pct = Math.min(100, Math.round((wordsToday / goal) * 100));
+
+        if (goalBar) {
+            goalBar.style.width = pct + "%";
+            goalBar.classList.toggle("is-met", met);
+        }
+        if (goalTodayText) {
+            goalTodayText.textContent = met
+                ? `${wordsToday.toLocaleString()} / ${goal.toLocaleString()} · met`
+                : `${wordsToday.toLocaleString()} / ${goal.toLocaleString()}`;
+        }
+    }
+
+    function escapeHtml(str) {
+        return String(str)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;");
+    }
+
+    function escapeAttribute(str) {
+        return escapeHtml(str).replaceAll("`", "&#096;");
+    }
+
+    function normalizeCoverUrl(raw) {
+        const s = String(raw || "").trim();
+        if (!s) return "";
+        if (/^https?:\/\//i.test(s)) return s;
+        if (s.startsWith("//")) return "https:" + s;
+        return "https://" + s.replace(/^\/+/, "");
+    }
+
+    function bookCoverUrl(data) {
+        const meta = data?.publish_meta ?? data?.publishMeta ?? {};
+        return normalizeCoverUrl(meta.coverUrl || meta.cover_url);
+    }
+
+    function placeholderHue(seed) {
+        const s = String(seed || "0");
+        let h = 2166136261 >>> 0;
+        for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619);
+        return Math.abs(h) % 360;
+    }
+
+    function authorHandle() {
+        const handle = permanentHandleFromUserData(currentProfile);
+        return handle || "writer";
+    }
+
+    function bookCoverPlaceholderMarkup(book, hue) {
+        return `<div class="wd-cover-placeholder" style="--cover-ph-hue:${hue}" aria-hidden="true">
+            <div class="wd-cover-placeholder-inner">
+                <div class="wd-cover-placeholder-title-wrap">
+                    <div class="wd-cover-placeholder-title">${escapeHtml(book.title)}</div>
+                </div>
+                <div class="wd-cover-placeholder-author">@${escapeHtml(book.author)}</div>
+            </div>
+        </div>`;
+    }
+
+    function bookLastTouchedMs(data) {
+        const updated = Number(data?.updated || 0);
+        const created = Number(data?.created || 0);
+        return updated > 0 ? updated : created;
+    }
+
+    function applyBooksSnapshot(rows) {
+        if (!bookList) return { totalWords: 0, bookCount: 0 };
+
+        bookList.innerHTML = "";
+        firstBookId = null;
+
+        const sorted = [...(rows || [])].sort((a, b) => bookLastTouchedMs(b) - bookLastTouchedMs(a));
+        let totalWords = 0;
+
+        if (!sorted.length) {
+            const empty = document.createElement("div");
+            empty.className = "wd-books-empty";
+            empty.textContent = "No books yet. Create your first one below.";
+            bookList.appendChild(empty);
+        }
+
+        sorted.forEach((data, index) => {
+            const bookWords = countBookWords(data);
+            totalWords += bookWords;
+
+            if (index === 0) firstBookId = data.id;
+
+            const coverUrl = bookCoverUrl(data);
+            const title = data.title || "Untitled Book";
+            const author = authorHandle();
+            const phHue = placeholderHue(data.id + "\0" + title);
+            const placeholder = bookCoverPlaceholderMarkup({ title, author }, phHue);
+
+            const div = document.createElement("div");
+            div.className = "wd-book";
+            div.setAttribute("role", "listitem");
+            div.onclick = () => {
+                window.location.href = "editor.html?book=" + encodeURIComponent(data.id);
+            };
+            if (coverUrl) {
+                div.innerHTML =
+                    placeholder +
+                    `<img class="wd-book-cover-img" src="${escapeAttribute(coverUrl)}" alt="${escapeAttribute(title)} cover" loading="lazy" onerror="this.style.display='none'">`;
+            } else {
+                div.innerHTML = placeholder;
+            }
+            bookList.appendChild(div);
+        });
+
+        const n = sorted.length;
+        if (booksCountPill) {
+            booksCountPill.textContent = n === 1 ? "1 book" : `${n} books`;
+        }
+
+        booksRows = sorted;
+        updateBadgeUI(totalWords);
+        scheduleBookWidthSync();
+        return { totalWords, bookCount: n };
+    }
+
+    function updateBadgeUI(totalWords) {
+        if (!badgeName || !badgeProgressText || !badgeBar) return;
+
+        const wordMilestones = [
+            { name: "500 Words", target: 500 },
+            { name: "1K Words", target: 1000 },
+            { name: "10K Words", target: 10000 },
+            { name: "50K Words", target: 50000 },
+            { name: "100K Words", target: 100000 },
+            { name: "200K Words", target: 200000 },
+            { name: "500K Words", target: 500000 },
+            { name: "1M Words", target: 1000000 },
+        ];
+
+        const maxTarget = wordMilestones[wordMilestones.length - 1].target;
+        if (totalWords >= maxTarget) {
+            badgeName.textContent = "All word milestones";
+            badgeProgressText.textContent = totalWords.toLocaleString() + " words · every tier unlocked";
+            badgeBar.style.width = "100%";
+            return;
+        }
+
+        const nextBadge = wordMilestones.find((b) => totalWords < b.target);
+        const pct = Math.max(0, Math.min(100, Math.round((totalWords / nextBadge.target) * 100)));
+        badgeName.textContent = nextBadge.name;
+        badgeProgressText.textContent =
+            Math.min(totalWords, nextBadge.target).toLocaleString() +
+            " / " +
+            nextBadge.target.toLocaleString();
+        badgeBar.style.width = pct + "%";
+    }
+
+    function nyDateParts(now = new Date()) {
+        const fmt = new Intl.DateTimeFormat("en-US", {
+            timeZone: "America/New_York",
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            weekday: "short",
+        });
+        const parts = fmt.formatToParts(now);
+        const get = (t) => parts.find((p) => p.type === t)?.value;
+        return {
+            y: Number(get("year")),
+            m: Number(get("month")),
+            d: Number(get("day")),
+            wd: String(get("weekday") || ""),
+        };
+    }
+
+    function nyDayKey(now = new Date()) {
+        const p = nyDateParts(now);
+        return `${p.y}-${String(p.m).padStart(2, "0")}-${String(p.d).padStart(2, "0")}`;
+    }
+
+    function nyWeekKey(now = new Date()) {
+        const p = nyDateParts(now);
+        const wd = p.wd.toLowerCase();
+        const map = { sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6 };
+        const back = map[wd.slice(0, 3)] ?? 0;
+        const local = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
+        local.setHours(0, 0, 0, 0);
+        local.setDate(local.getDate() - back);
+        const wk = nyDateParts(local);
+        return `${wk.y}-${String(wk.m).padStart(2, "0")}-${String(wk.d).padStart(2, "0")}`;
+    }
+
+    function hashString(str) {
+        let h = 2166136261;
+        for (let i = 0; i < str.length; i++) {
+            h ^= str.charCodeAt(i);
+            h = Math.imul(h, 16777619);
+        }
+        return h >>> 0;
+    }
+
+    function getPromptsForNow() {
+        const weekKey = nyWeekKey();
+        const dayKey = nyDayKey();
+        const weeklyIx = hashString(weekKey) % WEEKLY_PROMPTS_52.length;
+        const dailyIx = hashString(dayKey) % DAILY_CHARACTER_Q.length;
+        const worldIx = hashString(dayKey + "|world") % DAILY_WORLDBUILD_Q.length;
+        return {
+            weekKey,
+            dayKey,
+            weekly: WEEKLY_PROMPTS_52[weeklyIx],
+            character: DAILY_CHARACTER_Q[dailyIx],
+            world: DAILY_WORLDBUILD_Q[worldIx],
+        };
+    }
+
+    function renderPromptSlide(ix) {
+        const p = getPromptsForNow();
+        const slides = [
+            { kicker: `Weekly writing prompt • Week of ${p.weekKey}`, text: p.weekly, type: "weekly" },
+            { kicker: `Daily character question • ${p.dayKey}`, text: p.character, type: "character" },
+            { kicker: `Daily worldbuilding question • ${p.dayKey}`, text: p.world, type: "world" },
+        ];
+        const s = slides[ix] || slides[0];
+        if (promptKicker) promptKicker.textContent = s.kicker;
+        if (promptText) promptText.innerHTML = s.text;
+        promptDots.forEach((d, i) => d?.classList.toggle("is-active", i === ix));
+        if (promptSlide) {
+            promptSlide.dataset.type = s.type;
+            promptSlide.dataset.weekKey = p.weekKey;
+            promptSlide.dataset.dayKey = p.dayKey;
+        }
+    }
+
+    function startPromptSlideshow() {
+        if (!promptSlide) return;
+        renderPromptSlide(promptIx);
+        if (promptTimer) clearInterval(promptTimer);
+        promptTimer = setInterval(() => {
+            promptIx = (promptIx + 1) % 3;
+            renderPromptSlide(promptIx);
+        }, 6500);
+    }
+
+    function openPromptNotebook() {
+        const type = promptSlide?.dataset?.type || "weekly";
+        const weekKey = promptSlide?.dataset?.weekKey || nyWeekKey();
+        const dayKey = promptSlide?.dataset?.dayKey || nyDayKey();
+        const q = new URLSearchParams({ week: weekKey, day: dayKey, focus: type });
+        window.location.href = "prompt-notebook.html?" + q.toString();
+    }
+
+    promptSlide?.addEventListener("click", openPromptNotebook);
+    promptSlide?.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            openPromptNotebook();
+        }
+    });
+
+    function statsSnapshotFromProfile() {
+        const day = localDayKey();
+        const goalTarget = clampDailyWordGoal(
+            currentProfile.dailyWordGoal ?? DEFAULT_DAILY_WORD_GOAL
+        );
+        return {
+            loginStreak: currentProfile.streak || 0,
+            goalStreak: computeGoalStreakFromTotals(
+                currentProfile.writingDayTotals || {},
+                goalTarget,
+                day
+            ),
+            wordsToday: wordsTypedOnDay(currentProfile.writingDayTotals || {}, day),
+            goalTarget,
+        };
+    }
+
+    async function refreshProfileFromServer() {
+        if (!currentUser) return;
+        const { data: row, error } = await supabase
+            .from("users")
+            .select("display_name, username, account_type, streak, last_login, writing_day_totals, daily_word_goal, profile_image_url")
+            .eq("id", currentUser.id)
+            .maybeSingle();
+        if (error || !row) return;
+        currentProfile = mergeUser({ ...currentProfile, ...row });
+        const displayName = cosmeticDisplayNameFromUserData(currentProfile);
+        const handle = permanentHandleFromUserData(currentProfile);
+        const label = displayName || handle || "writer";
+        welcomeTitle.innerHTML = 'Welcome back, <span class="wd-name">' + escapeHtml(label) + "</span>.";
+        renderWelcomeProfile(currentProfile, label);
+    }
+
+    async function refreshBooksAndStats() {
+        const statsBase = statsSnapshotFromProfile();
+        try {
+            const { totalWords, bookCount } = await loadBooks();
+            paintStats({ totalWords, bookCount, ...statsBase });
+        } catch (e) {
+            console.error(e);
+            applyBooksSnapshot([]);
+            paintStats({ totalWords: 0, bookCount: 0, ...statsBase });
+        }
+    }
+
+    function startBooksRealtime() {
+        if (!currentUser) return;
+        if (booksChannel) supabase.removeChannel(booksChannel);
+
+        booksChannel = supabase
+            .channel("wd_books_" + currentUser.id)
+            .on(
+                "postgres_changes",
+                {
+                    event: "*",
+                    schema: "public",
+                    table: "books",
+                    filter: "user_id=eq." + currentUser.id,
+                },
+                () => refreshBooksAndStats().catch(console.error)
+            )
+            .subscribe();
+    }
+
+    function startNotificationsRealtime() {
+        if (!currentUser) return;
+        if (notificationsChannel) supabase.removeChannel(notificationsChannel);
+
+        notificationsChannel = supabase
+            .channel("wd_notifications_" + currentUser.id)
+            .on(
+                "postgres_changes",
+                {
+                    event: "*",
+                    schema: "public",
+                    table: "notifications",
+                    filter: "user_id=eq." + currentUser.id,
+                },
+                () => loadDashboardBadge(currentUser.id)
+            )
+            .subscribe();
+    }
+
+    async function enrichBooksWithLibraryCovers(rows) {
+        const missing = (rows || []).filter((row) => row?.id && !bookCoverUrl(row));
+        if (!missing.length) return rows;
+
+        const ids = missing.map((row) => row.id);
+        const { data, error } = await supabase.from("library").select("id, data").in("id", ids);
+        if (error || !data?.length) return rows;
+
+        const coverById = new Map();
+        for (const row of data) {
+            const libData = row?.data && typeof row.data === "object" ? row.data : {};
+            const url = normalizeCoverUrl(libData.coverUrl || libData.cover_url);
+            if (url) coverById.set(row.id, url);
+        }
+        if (!coverById.size) return rows;
+
+        return rows.map((row) => {
+            const fromLibrary = coverById.get(row.id);
+            if (!fromLibrary || bookCoverUrl(row)) return row;
+            const meta = { ...(row.publish_meta || row.publishMeta || {}), coverUrl: fromLibrary };
+            return { ...row, publish_meta: meta };
+        });
+    }
+
+    async function loadBooks() {
+        const { data, error } = await supabase
+            .from("books")
+            .select("*")
+            .eq("user_id", currentUser.id)
+            .order("updated", { ascending: false });
+        if (error) throw error;
+        const enriched = await enrichBooksWithLibraryCovers(data || []);
+        return applyBooksSnapshot(enriched);
+    }
+
+    async function createBookNow() {
+        if (!currentUser) return;
+
+        const title = prompt("Book title?");
+        if (!title) return;
+
+        const now = Date.now();
+        const payload = {
+            user_id: currentUser.id,
+            title,
+            created: now,
+            updated: now,
+            words: 0,
+            sections: {
+                front: [
+                    { title: "Copyright", content: "" },
+                    { title: "Table of Contents", content: "" },
+                ],
+                body: [{ title: "Chapter 1", content: "" }],
+                back: [],
+            },
+        };
+
+        const { error } = await supabase.from("books").insert(payload);
+        if (error) throw error;
+        return refreshBooksAndStats();
+    }
+
+    function applyStoryBibleNav() {
+        if (!navStoryBible) return;
+        navStoryBible.classList.toggle("is-hidden", !isStoryBibleUiEnabled());
+    }
+
+    window.addEventListener("storage", (e) => {
+        if (e.key === STORY_BIBLE_PREF_KEY) applyStoryBibleNav();
+        if (e.key === "alysum-writer-dashboard-sync" && currentUser) {
             refreshProfileFromServer()
                 .then(() => refreshBooksAndStats())
                 .catch(console.error);
-        });
+        }
+    });
 
-        window.addEventListener("pageshow", (e) => {
-            if (e.persisted && currentUser) {
-                refreshBooksAndStats().catch(console.error);
+    try {
+        const writerDashChannel = new BroadcastChannel("alysum-writer-dashboard");
+        writerDashChannel.addEventListener("message", () => {
+            if (currentUser) {
+                refreshProfileFromServer()
+                    .then(() => refreshBooksAndStats())
+                    .catch(console.error);
             }
         });
+    } catch {
+        /* BroadcastChannel unavailable */
+    }
+    window.addEventListener(STORY_BIBLE_PREF_EVENT, applyStoryBibleNav);
 
-        window.addEventListener("beforeunload", () => {
-            if (booksChannel) supabase.removeChannel(booksChannel);
-            if (notificationsChannel) supabase.removeChannel(notificationsChannel);
+    async function loadDashboardBadge(uid) {
+        const { data, error } = await supabase
+            .from("notifications")
+            .select("id, read")
+            .eq("user_id", uid);
+        if (error || !navDashBadge) return;
+        const n = (data || []).filter((row) => row.read !== true).length;
+        navDashBadge.textContent = n > 99 ? "99+" : String(n);
+        navDashBadge.classList.toggle("is-hidden", n <= 0);
+    }
+
+    navContinue.addEventListener("click", () => {
+        if (firstBookId) {
+            window.location.href = "editor.html?book=" + encodeURIComponent(firstBookId);
+            return;
+        }
+        createBookNow().catch((e) => {
+            console.error(e);
+            alert(e.message || "Could not create book.");
         });
+    });
 
-        load();
-    </script>
+    createBookBtn?.addEventListener("click", () => {
+        createBookNow().catch((e) => {
+            console.error(e);
+            alert(e.message || "Could not create book.");
+        });
+    });
+
+    async function ensureProfileExists(user) {
+        const { data, error } = await supabase
+            .from("users")
+            .select("display_name, username, account_type, streak, last_login, writing_day_totals, daily_word_goal, profile_image_url")
+            .eq("id", user.id)
+            .maybeSingle();
+
+        if (error) throw error;
+        if (data) return data;
+
+        const fallbackUsername = user.email ? user.email.split("@")[0] : "writer";
+        const { data: inserted, error: insertError } = await supabase
+            .from("users")
+            .insert({
+                id: user.id,
+                username: fallbackUsername,
+                display_name: fallbackUsername,
+                account_type: ACCOUNT_BOTH,
+                words: 0,
+                streak: 1,
+                last_login: localDayKey(),
+                daily_word_goal: DEFAULT_DAILY_WORD_GOAL,
+                writing_day_totals: {},
+                profile_image_url: null,
+            })
+            .select("display_name, username, account_type, streak, last_login, writing_day_totals, daily_word_goal, profile_image_url")
+            .single();
+
+        if (insertError) throw insertError;
+        return inserted;
+    }
+
+    async function load() {
+        const { data: auth, error: authErr } = await supabase.auth.getUser();
+        if (authErr) console.warn(authErr);
+
+        const user = auth?.user;
+        if (!user) {
+            window.location.href = "login.html?next=" + encodeURIComponent(WRITER_HOME_URL);
+            return;
+        }
+        currentUser = user;
+
+        let row;
+        try {
+            row = await ensureProfileExists(user);
+        } catch (error) {
+            console.error(error);
+            welcomeTitle.textContent = "Welcome back.";
+            return;
+        }
+
+        let profile = mergeUser(row || { username: "writer", account_type: ACCOUNT_BOTH });
+        currentProfile = profile;
+        if (normalizeAccountType(profile.accountType) === ACCOUNT_READER) {
+            window.location.replace(READER_HOME_URL);
+            return;
+        }
+
+        const displayName = cosmeticDisplayNameFromUserData(profile);
+        const handle = permanentHandleFromUserData(profile);
+        const label = displayName || handle || "writer";
+
+        welcomeTitle.innerHTML =
+            'Welcome back, <span class="wd-name">' + escapeHtml(label) + "</span>.";
+
+        renderWelcomeProfile(profile, label);
+
+        if (accountSupportsModeToggle(profile.accountType)) {
+            navReading?.classList.remove("is-hidden");
+        }
+
+        applyStoryBibleNav();
+
+        try {
+            const streak = await ensureUserStreak(profile);
+            profile = { ...profile, streak };
+        } catch (e) {
+            console.warn(e);
+        }
+
+        currentProfile = profile;
+        startPromptSlideshow();
+
+        try {
+            await refreshBooksAndStats();
+        } catch (e) {
+            console.error(e);
+        }
+
+        void loadDashboardBadge(user.id);
+        startBooksRealtime();
+        startNotificationsRealtime();
+    }
+
+    document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState !== "visible" || !currentUser) return;
+        refreshProfileFromServer()
+            .then(() => refreshBooksAndStats())
+            .catch(console.error);
+    });
+
+    window.addEventListener("pageshow", (e) => {
+        if (e.persisted && currentUser) {
+            refreshProfileFromServer()
+                .then(() => refreshBooksAndStats())
+                .catch(console.error);
+        }
+    });
+
+    window.addEventListener("beforeunload", () => {
+        if (booksChannel) supabase.removeChannel(booksChannel);
+        if (notificationsChannel) supabase.removeChannel(notificationsChannel);
+    });
+
+    load();
+</script>
+
 </body>
 </html>
