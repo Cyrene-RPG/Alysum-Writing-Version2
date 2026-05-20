@@ -824,6 +824,64 @@
             margin-bottom: 0;
         }
 
+        .profile-pic-row {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 18px;
+        }
+
+        .profile-pic-preview {
+            flex-shrink: 0;
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            overflow: hidden;
+            background: rgba(0, 0, 0, 0.35);
+            border: 2px solid color-mix(in srgb, var(--purple-bright) 45%, rgba(255, 255, 255, 0.15));
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+        }
+
+        .profile-pic-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .profile-pic-initial {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            font-weight: 900;
+            color: #fff;
+        }
+
+        .profile-pic-initial.is-hidden {
+            display: none;
+        }
+
+        .profile-pic-actions {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+            min-width: 0;
+        }
+
+        .profile-pic-actions .btn-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .profile-pic-actions .hint {
+            margin: 0;
+        }
+
         #profilePanel input[type="text"],
         #profilePanel input[type="email"],
         #profilePanel .readonly,
@@ -1029,6 +1087,22 @@
             <div class="profile-panel-body">
             <section class="profile-box profile-identity-box" aria-labelledby="profileIdentityTitle">
                 <h3 class="profile-box-title" id="profileIdentityTitle">Your identity</h3>
+                <div class="profile-pic-row" aria-labelledby="profilePicLabel">
+                    <div class="profile-pic-preview" id="profilePicPreviewWrap">
+                        <img id="profilePicPreviewImg" alt="" hidden />
+                        <span class="profile-pic-initial" id="profilePicPreviewInitial" aria-hidden="true">A</span>
+                    </div>
+                    <div class="profile-pic-actions">
+                        <span class="hint" id="profilePicLabel" style="font-weight:700;color:var(--text)">Profile photo</span>
+                        <div class="btn-row">
+                            <label for="profilePicInput" class="btn btn-primary" id="profilePicUploadLabel">Upload photo</label>
+                            <input type="file" id="profilePicInput" accept="image/jpeg,image/png,image/webp,image/gif" hidden />
+                            <button type="button" class="btn" id="removeProfilePicBtn" hidden>Remove</button>
+                        </div>
+                        <p class="hint">JPG, PNG, WebP, or GIF · max 2 MB</p>
+                        <div class="msg" id="profilePicMsg" role="status"></div>
+                    </div>
+                </div>
                 <div class="field">
                     <label for="emailField">Email</label>
                     <input type="email" id="emailField" disabled />
@@ -1112,7 +1186,14 @@
         import { supabase } from "./firebase.js";
         import { signOutAndGoToLogin } from "./js/auth-logout.js?v=1";
         import { wireSupabaseSession } from "./js/supabase-session.js?v=1";
-        import { permanentHandleFromUserData } from "./js/profile-display.js?v=1";
+        import { permanentHandleFromUserData, publicDisplayNameFromUserData } from "./js/profile-display.js?v=1";
+        import {
+            applyProfilePicDisplay,
+            profilePicUrlFromUserData,
+            uploadProfilePicture,
+            removeProfilePicture,
+            validateProfilePicFile,
+        } from "./js/profile-picture.js?v=1";
         import {
             GRADIENT_THEMES,
             applyGradientTheme,
@@ -1150,6 +1231,15 @@
         const displayNameInput = document.getElementById("displayNameInput");
         const saveDisplayBtn = document.getElementById("saveDisplayBtn");
         const profileMsg = document.getElementById("profileMsg");
+        const profilePicPreviewImg = document.getElementById("profilePicPreviewImg");
+        const profilePicPreviewInitial = document.getElementById("profilePicPreviewInitial");
+        const profilePicInput = document.getElementById("profilePicInput");
+        const profilePicUploadLabel = document.getElementById("profilePicUploadLabel");
+        const removeProfilePicBtn = document.getElementById("removeProfilePicBtn");
+        const profilePicMsg = document.getElementById("profilePicMsg");
+
+        let currentProfilePicUrl = "";
+        let profilePicBusy = false;
         const currentPw = document.getElementById("currentPw");
         const newPw = document.getElementById("newPw");
         const confirmPw = document.getElementById("confirmPw");
@@ -1229,8 +1319,33 @@
                 ...row,
                 displayName: row.display_name ?? row.displayName,
                 accountType: row.account_type ?? row.accountType,
-                writingDayTotals: row.writing_day_totals ?? row.writingDayTotals
+                writingDayTotals: row.writing_day_totals ?? row.writingDayTotals,
+                profilePicUrl: row.profile_pic_url ?? row.profilePicUrl,
             };
+        }
+
+        function profilePicLabelFromData(data) {
+            return publicDisplayNameFromUserData(data || {});
+        }
+
+        function paintProfilePicPreview(data, bust) {
+            const url = profilePicUrlFromUserData(data);
+            currentProfilePicUrl = url;
+            applyProfilePicDisplay({
+                imgEl: profilePicPreviewImg,
+                initialEl: profilePicPreviewInitial,
+                url,
+                label: profilePicLabelFromData(data),
+                bust,
+            });
+            if (removeProfilePicBtn) removeProfilePicBtn.hidden = !url;
+        }
+
+        function setProfilePicBusy(busy) {
+            profilePicBusy = busy;
+            if (profilePicInput) profilePicInput.disabled = busy;
+            if (profilePicUploadLabel) profilePicUploadLabel.classList.toggle("is-disabled", busy);
+            if (removeProfilePicBtn) removeProfilePicBtn.disabled = busy;
         }
 
         function initThemePicker() {
@@ -1478,6 +1593,7 @@
                 const handle = permanentHandleFromUserData(data);
                 handleField.textContent = "@" + handle;
                 displayNameInput.value = String(data.displayName ?? "").trim();
+                paintProfilePicPreview(data);
 
                 const acct = normalizeAccountType(data.accountType);
                 settingsHomeUrl = homeUrlForUserData({ ...data, accountType: acct });
@@ -1562,6 +1678,65 @@
             }
         });
 
+        profilePicInput?.addEventListener("change", async () => {
+            hideMsg(profilePicMsg);
+            const file = profilePicInput.files?.[0];
+            profilePicInput.value = "";
+            if (!file) return;
+
+            const check = validateProfilePicFile(file);
+            if (!check.ok) {
+                showMsg(profilePicMsg, check.error, false);
+                return;
+            }
+
+            const { data: udata } = await supabase.auth.getUser();
+            const user = udata?.user;
+            if (!user) return;
+
+            setProfilePicBusy(true);
+            try {
+                const result = await uploadProfilePicture(
+                    supabase,
+                    user.id,
+                    file,
+                    currentProfilePicUrl
+                );
+                if (!result.ok) throw new Error(result.error);
+                const bust = Date.now();
+                paintProfilePicPreview({ profilePicUrl: result.url }, bust);
+                showMsg(profilePicMsg, "Profile photo updated.", true);
+            } catch (e) {
+                console.error(e);
+                showMsg(profilePicMsg, e?.message || "Could not upload photo.", false);
+            } finally {
+                setProfilePicBusy(false);
+            }
+        });
+
+        removeProfilePicBtn?.addEventListener("click", async () => {
+            hideMsg(profilePicMsg);
+            if (!currentProfilePicUrl) return;
+
+            const { data: udata } = await supabase.auth.getUser();
+            const user = udata?.user;
+            if (!user) return;
+
+            setProfilePicBusy(true);
+            try {
+                const result = await removeProfilePicture(supabase, user.id, currentProfilePicUrl);
+                if (!result.ok) throw new Error(result.error);
+                const { data: row } = await supabase.from("users").select("*").eq("id", user.id).maybeSingle();
+                paintProfilePicPreview(mergeUserRow(row || {}));
+                showMsg(profilePicMsg, "Profile photo removed.", true);
+            } catch (e) {
+                console.error(e);
+                showMsg(profilePicMsg, e?.message || "Could not remove photo.", false);
+            } finally {
+                setProfilePicBusy(false);
+            }
+        });
+
         saveDisplayBtn.addEventListener("click", async () => {
             hideMsg(profileMsg);
             const { data: udata } = await supabase.auth.getUser();
@@ -1587,6 +1762,8 @@
                 } else {
                     showMsg(profileMsg, "Display name saved. It will show on comments, publish, and your studio page.", true);
                 }
+                const { data: refreshed } = await supabase.from("users").select("*").eq("id", user.id).maybeSingle();
+                paintProfilePicPreview(mergeUserRow(refreshed || { displayName: name || null }));
             } catch (e) {
                 console.error(e);
                 showMsg(profileMsg, e?.message || "Could not save display name.", false);
