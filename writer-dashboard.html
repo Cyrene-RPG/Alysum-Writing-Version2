@@ -15,7 +15,7 @@
     <title>Studio - Alysum</title>
     <script src="js/alysum-appearance-boot.js"></script>
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
-    <link rel="stylesheet" href="css/gradient-themes.css?v=5" />
+    <link rel="stylesheet" href="css/gradient-themes.css?v=6" />
     <script src="js/gradient-theme-sync.js" defer></script>
     <style>
         * { box-sizing: border-box; }
@@ -44,11 +44,14 @@
             align-items: center;
             overflow: hidden;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            background: linear-gradient(
-                135deg,
-                rgba(76, 29, 149, 0.95) 0%,
-                var(--theme-header-mid, #6d28d9) 38%,
-                var(--theme-header-end, #db2777) 100%
+            background: var(
+                --theme-welcome-bar,
+                linear-gradient(
+                    135deg,
+                    rgba(76, 29, 149, 0.95) 0%,
+                    var(--theme-header-mid, #6d28d9) 38%,
+                    var(--theme-header-end, #db2777) 100%
+                )
             );
             box-shadow:
                 0 4px 32px rgba(0, 0, 0, 0.35),

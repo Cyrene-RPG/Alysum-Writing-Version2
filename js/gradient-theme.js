@@ -6,6 +6,7 @@ export const GRADIENT_THEME_KEY = "alysum-gradient-theme";
 export const GRADIENT_THEMES = [
     { id: "classic", label: "Classic violet", hint: "Original Alysum accents", preview: "linear-gradient(135deg, #4c1d95 0%, #7c3aed 50%, #ec4899 100%)" },
     { id: "vivid", label: "Dashboard bar", hint: "Writer welcome bar violet → magenta", preview: "linear-gradient(135deg, rgba(76, 29, 149, 0.95) 0%, #6d28d9 38%, #db2777 100%)" },
+    { id: "profilewave", label: "Profile banner", hint: "Purple → royal blue → teal welcome bar", preview: "linear-gradient(90deg, #4b3298 0%, #2d5daa 25%, #0084b4 50%, #00a6b2 75%, #00c6c1 100%)" },
     { id: "midnight", label: "Midnight blue", hint: "Deep navy & cobalt glow", preview: "linear-gradient(135deg, #0f172a 0%, #1e3a8a 45%, #38bdf8 100%)" },
     { id: "ocean", label: "Ocean blue", hint: "Bright blues & cyan", preview: "linear-gradient(135deg, #0c4a6e 0%, #0284c7 50%, #22d3ee 100%)" },
     { id: "arctic", label: "Arctic ice", hint: "Frost, teal & pale ice", preview: "linear-gradient(135deg, #164e63 0%, #22d3ee 55%, #e0f2fe 100%)" },
