@@ -12,6 +12,9 @@ export const ACCOUNT_BOTH = "both";
 /** Logged-in reader hub (profile + shortcuts). */
 export const READER_HOME_URL = "reader-home.html";
 
+/** Logged-in writer hub (books, stats, prompts). */
+export const WRITER_HOME_URL = "writer-dashboard.html";
+
 export function normalizeAccountType(raw) {
     if (raw === ACCOUNT_AUTHOR || raw === ACCOUNT_READER || raw === ACCOUNT_BOTH) {
         return raw;
@@ -44,7 +47,7 @@ export function setUiMode(mode) {
 export function homeUrlForUserData(data) {
     const t = normalizeAccountType(data && (data.accountType ?? data.account_type));
     if (t === ACCOUNT_READER) return READER_HOME_URL;
-    if (t === ACCOUNT_AUTHOR) return "studio.html";
+    if (t === ACCOUNT_AUTHOR) return WRITER_HOME_URL;
     /* "library" in session = reading side → profile hub, not the catalog page. */
-    return getUiMode() === "library" ? READER_HOME_URL : "studio.html";
+    return getUiMode() === "library" ? READER_HOME_URL : WRITER_HOME_URL;
 }

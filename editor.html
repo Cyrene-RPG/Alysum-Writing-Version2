@@ -518,7 +518,7 @@ function rememberBookId(id) {
     function toggleTheme() { applyTheme(document.body.classList.contains("dark") ? "light" : "dark"); }
     themeToggleBtn.addEventListener("click", toggleTheme);
     themeTopBtn.addEventListener("click", toggleTheme);
-    homeBtn.onclick = () => { window.location.href = "studio.html"; };
+    homeBtn.onclick = () => { window.location.href = "writer-dashboard.html"; };
 
     function toggleSidebar() {
         if (window.innerWidth <= 760) {
@@ -830,6 +830,22 @@ function rememberBookId(id) {
         }
         persistedBookWordCount = nextWords;
         setSaveStatus(doneText);
+        notifyWriterDashboardSync();
+    }
+
+    function notifyWriterDashboardSync() {
+        try {
+            const ch = new BroadcastChannel("alysum-writer-dashboard");
+            ch.postMessage({ t: Date.now() });
+            ch.close();
+        } catch {
+            /* ignore */
+        }
+        try {
+            localStorage.setItem("alysum-writer-dashboard-sync", String(Date.now()));
+        } catch {
+            /* ignore */
+        }
     }
 
     async function migrateBookIfNeeded() {
@@ -866,7 +882,7 @@ function rememberBookId(id) {
             const { error } = await supabase.from("books").delete()
         .eq("id", bookId);
             if (error) throw error;
-            window.location.href = "studio.html";
+            window.location.href = "writer-dashboard.html";
         } catch (e) { console.error(e); setSaveStatus("Delete failed"); }
     }
 

@@ -20,6 +20,7 @@ const APP_SHELL = [
   'library.html',
   'editor.html',
   'studio.html',
+  'writer-dashboard.html',
   'read.html',
   'beta-read.html',
   'beta-notes-library.html',

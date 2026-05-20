@@ -4,7 +4,7 @@
  * "classic" = no attribute (removeItem) — these :root values match the original site.
  */
 
-@import url("alysum-display-typography.css?v=9");
+@import url("alysum-display-typography.css?v=10");
 
 :root {
     --purple: #6d28d9;
@@ -1447,6 +1447,49 @@ html[data-gradient-theme="opal"] {
     --theme-prompt-topbar: linear-gradient(135deg, rgba(165, 243, 252, 0.35), rgba(196, 181, 253, 0.3), rgba(251, 207, 232, 0.25), rgba(254, 240, 138, 0.2));
     --theme-prompt-entry-border: rgba(153, 246, 228, 0.38);
     --theme-prompt-entry-ring: rgba(167, 139, 250, 0.28);
+}
+
+/* ——— Vivid violet (writer dashboard bar) ——— */
+html[data-gradient-theme="vivid"] {
+    --purple: #6d28d9;
+    --purple-dark: #4c1d95;
+    --purple-bright: #7c3aed;
+    --pink: #db2777;
+    --gold: #fde68a;
+    --theme-body-spot: rgba(109, 40, 217, 0.22);
+    --theme-body-spot-strong: rgba(219, 39, 119, 0.24);
+    --theme-header-mid: #6d28d9;
+    --theme-header-end: #db2777;
+    --theme-card-a: rgba(109, 40, 217, 0.36);
+    --theme-card-b: rgba(219, 39, 119, 0.2);
+    --theme-hero-bg: linear-gradient(135deg, rgba(76, 29, 149, 0.32), rgba(219, 39, 119, 0.14)), var(--panel, #111827);
+    --theme-accent-soft-bg: rgba(109, 40, 217, 0.18);
+    --theme-brand-kicker: #fbcfe8;
+    --alysum-purple: #6d28d9;
+    --alysum-purple-dark: #4c1d95;
+    --accent: #6d28d9;
+    --accent-hover: #5b21b6;
+    --accent-soft: #7c3aed;
+    --accent-muted: rgba(109, 40, 217, 0.2);
+    --btn-primary-bg: #6d28d9;
+    --btn-primary-bg-hover: #5b21b6;
+    --link: #db2777;
+    --nb-top-gradient: linear-gradient(135deg, #4c1d95, #6d28d9 38%, #db2777);
+    --nb-float-bg: linear-gradient(145deg, #1e1b4b 0%, #0f172a 42%, #0b1220 100%);
+    --nb-tree-active-bg: linear-gradient(90deg, rgba(109, 40, 217, 0.45), rgba(219, 39, 119, 0.14));
+    --vp-r1: rgba(124, 58, 237, 0.22);
+    --vp-r2: rgba(219, 39, 119, 0.14);
+    --vp-hero-bg: linear-gradient(135deg, rgba(76, 29, 149, 0.55), rgba(109, 40, 217, 0.38), rgba(15, 23, 42, 0.65));
+    --vp-primary-fg: #4c1d95;
+    --login-page-bg: linear-gradient(135deg, #4c1d95, #6d28d9, #db2777);
+    --ne-header-1: #4c1d95;
+    --ne-header-2: #6d28d9;
+    --ne-header-3: #7c3aed;
+    --ne-header-4: #db2777;
+    --ne-body-spot: rgba(109, 40, 217, 0.24);
+    --theme-prompt-topbar: linear-gradient(135deg, rgba(76, 29, 149, 0.4), rgba(219, 39, 119, 0.2));
+    --theme-prompt-entry-border: rgba(219, 39, 119, 0.38);
+    --theme-prompt-entry-ring: rgba(109, 40, 217, 0.28);
 }
 
 /* ——— Noir (monochrome) ——— */

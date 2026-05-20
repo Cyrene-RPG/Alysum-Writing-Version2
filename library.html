@@ -124,7 +124,7 @@
                     <button type="button" class="library-mode-seg active" data-mode="library">Reading</button>
                     <button type="button" class="library-mode-seg" data-mode="studio">Studio</button>
                 </div>
-                <a class="home-link" id="libraryBackStudio" href="studio.html">Back to Studio</a>
+                <a class="home-link" id="libraryBackStudio" href="writer-dashboard.html">Back to Studio</a>
             </div>
         </div>
         <div class="nav-row">
@@ -206,7 +206,7 @@
             const mode = btn.getAttribute("data-mode");
             if (mode === "studio") {
                 setUiMode("studio");
-                window.location.href = "studio.html";
+                window.location.href = "writer-dashboard.html";
             }
         });
     }
