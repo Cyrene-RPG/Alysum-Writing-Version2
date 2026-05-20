@@ -96,14 +96,6 @@
             background: rgba(0, 0, 0, 0.28);
             border: 2px solid rgba(255, 255, 255, 0.22);
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
-            text-decoration: none;
-            color: inherit;
-            transition: border-color 0.15s ease, transform 0.15s ease;
-        }
-
-        .wd-pfp:hover {
-            border-color: rgba(255, 255, 255, 0.45);
-            transform: scale(1.03);
         }
 
         .wd-pfp img {
@@ -793,10 +785,10 @@
     <div class="wd-page">
         <header class="wd-welcome-bar" aria-label="Welcome">
             <div class="wd-welcome-inner">
-                <a class="wd-pfp" id="welcomePfp" href="settings.html#profilePanel" title="Change profile photo">
+                <div class="wd-pfp" id="welcomePfp">
                     <img id="welcomePfpImg" alt="" hidden />
                     <span class="wd-pfp-initial" id="welcomePfpInitial" aria-hidden="true"></span>
-                </a>
+                </div>
                 <h1 class="wd-welcome-title" id="welcomeTitle">Welcome back.</h1>
             </div>
         </header>
@@ -920,12 +912,7 @@
         import {
             cosmeticDisplayNameFromUserData,
             permanentHandleFromUserData,
-            publicDisplayNameFromUserData,
         } from "./js/profile-display.js?v=2";
-        import {
-            applyProfilePicDisplay,
-            profilePicUrlFromUserData,
-        } from "./js/profile-picture.js?v=1";
         import {
             normalizeAccountType,
             accountSupportsModeToggle,
@@ -1075,18 +1062,7 @@
                 lastLogin: row.last_login ?? row.lastLogin ?? "",
                 streak: Number(row.streak || 0),
                 dailyWordGoal: row.daily_word_goal ?? row.dailyWordGoal,
-                profilePicUrl: row.profile_pic_url ?? row.profilePicUrl,
             };
-        }
-
-        function paintWelcomeProfilePic(profile) {
-            const label = publicDisplayNameFromUserData(profile);
-            applyProfilePicDisplay({
-                imgEl: welcomePfpImg,
-                initialEl: welcomePfpInitial,
-                url: profilePicUrlFromUserData(profile),
-                label,
-            });
         }
 
         function daysBetween(dateA, dateB) {
@@ -1408,13 +1384,12 @@
             const { data: row, error } = await supabase
                 .from("users")
                 .select(
-                    "display_name, username, account_type, streak, last_login, writing_day_totals, daily_word_goal, profile_pic_url"
+                    "display_name, username, account_type, streak, last_login, writing_day_totals, daily_word_goal"
                 )
                 .eq("id", currentUser.id)
                 .maybeSingle();
             if (error || !row) return;
             currentProfile = mergeUser({ ...currentProfile, ...row });
-            paintWelcomeProfilePic(currentProfile);
         }
 
         async function refreshBooksAndStats() {
@@ -1585,7 +1560,7 @@
         async function ensureProfileExists(user) {
             const { data, error } = await supabase
                 .from("users")
-                .select("display_name, username, account_type, streak, last_login, writing_day_totals, daily_word_goal, profile_pic_url")
+                .select("display_name, username, account_type, streak, last_login, writing_day_totals, daily_word_goal")
                 .eq("id", user.id)
                 .maybeSingle();
 
@@ -1606,7 +1581,7 @@
                     daily_word_goal: DEFAULT_DAILY_WORD_GOAL,
                     writing_day_totals: {},
                 })
-                .select("display_name, username, account_type, streak, last_login, writing_day_totals, daily_word_goal, profile_pic_url")
+                .select("display_name, username, account_type, streak, last_login, writing_day_totals, daily_word_goal")
                 .single();
 
             if (insertError) throw insertError;
@@ -1648,7 +1623,9 @@
             welcomeTitle.innerHTML =
                 'Welcome back, <span class="wd-name">' + escapeHtml(label) + "</span>.";
 
-            paintWelcomeProfilePic(profile);
+            welcomePfpInitial.textContent = (label.trim()[0] || "A").toUpperCase();
+            welcomePfpInitial.classList.remove("is-hidden");
+            welcomePfpImg.hidden = true;
 
             if (accountSupportsModeToggle(profile.accountType)) {
                 navReading?.classList.remove("is-hidden");
