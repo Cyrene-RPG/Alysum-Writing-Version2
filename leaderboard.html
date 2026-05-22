@@ -1,849 +1,580 @@
 <!DOCTYPE html><html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Elite Writer League</title>
-  <style>
-    :root {
-      --bg: #090611;
-      --ink: #f8ead0;
-      --muted: rgba(248, 234, 208, 0.72);
-      --soft: rgba(248, 234, 208, 0.5);
-      --gold: #f7c65c;
-      --gold-dark: #9b6424;
-      --ruby: #ff5f7e;
-      --emerald: #7ef0a4;
-      --violet: #8b5cf6;
-      --panel: rgba(32, 20, 44, 0.82);
-      --panel-2: rgba(61, 37, 73, 0.72);
-      --border: rgba(247, 198, 92, 0.35);
-      --shadow: 0 26px 90px rgba(0, 0, 0, 0.58);
-    }* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Neo Leaderboard</title>
+<style>
+:root{
+  --bg:#171d2c;
+  --panel:#23293b;
+  --panel-dark:#1d2333;
+  --line:#36405b;
+  --text:#eef3ff;
+  --muted:#8d98b5;
+  --blue:#5aa2ff;
+  --purple:#af52ff;
+  --mint:#6ce2bf;
 }
-
-body {
-  min-height: 100vh;
-  color: var(--ink);
-  padding: clamp(12px, 3vw, 28px);
-  font-family: Georgia, "Times New Roman", serif;
-  background:
-    radial-gradient(circle at 18% 12%, rgba(139, 92, 246, 0.34), transparent 26%),
-    radial-gradient(circle at 82% 10%, rgba(247, 198, 92, 0.18), transparent 25%),
-    radial-gradient(circle at 50% 100%, rgba(126, 240, 164, 0.11), transparent 30%),
-    linear-gradient(135deg, #06030b, #180b28 45%, #090611);
-  overflow-x: hidden;
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:#d9d9d9;
+  font-family:Inter,system-ui,sans-serif;
+  padding:34px;
 }
-
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  background-image:
-    radial-gradient(circle, rgba(247, 198, 92, 0.28) 1px, transparent 1px),
-    linear-gradient(rgba(247,198,92,0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(247,198,92,0.035) 1px, transparent 1px);
-  background-size: 90px 90px, 54px 54px, 54px 54px;
-  mask-image: linear-gradient(to bottom, rgba(0,0,0,0.95), transparent 82%);
+.shell{
+  height:88vh;
+  min-height:760px;
+  max-width:1400px;
+  margin:auto;
+  background:var(--panel);
+  border-radius:2px;
+  overflow:hidden;
+  box-shadow:0 18px 60px rgba(0,0,0,.35);
+  display:grid;
+  grid-template-rows:56px 1fr;
 }
-
-.app {
-  width: min(1160px, 100%);
-  margin: 0 auto;
-  position: relative;
-  z-index: 1;
+.topbar{
+  background:#121827;
+  display:flex;
+  align-items:center;
+  gap:28px;
+  padding:0 24px;
+  border-bottom:1px solid rgba(255,255,255,.05);
 }
-
-.fantasy-card {
-  position: relative;
-  border: 1px solid var(--border);
-  background:
-    linear-gradient(135deg, rgba(255,255,255,0.05), transparent 35%),
-    linear-gradient(180deg, rgba(80, 48, 92, 0.88), rgba(24, 13, 34, 0.9));
-  box-shadow: var(--shadow), inset 0 0 0 1px rgba(255,255,255,0.04);
+.topBtn{
+  background:none;
+  border:0;
+  color:#7783a6;
+  font-size:11px;
+  font-weight:900;
+  text-transform:uppercase;
+  letter-spacing:.14em;
+  padding:18px 0 14px;
+  border-bottom:3px solid transparent;
+  cursor:pointer;
 }
-
-.fantasy-card::before,
-.fantasy-card::after {
-  content: "✦";
-  position: absolute;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  color: var(--gold);
-  background: rgba(9, 6, 17, 0.86);
-  border: 1px solid rgba(247, 198, 92, 0.5);
-  font-size: 13px;
-  z-index: 2;
+.topBtn.active{
+  color:white;
+  border-color:var(--blue);
 }
-
-.fantasy-card::before { left: 14px; top: 14px; }
-.fantasy-card::after { right: 14px; top: 14px; }
-
-.hero {
-  border-radius: 34px;
-  padding: clamp(24px, 4vw, 42px);
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 24px;
-  align-items: center;
-  margin-bottom: 24px;
-  overflow: hidden;
+.main{
+  display:grid;
+  grid-template-columns:40% 60%;
+  min-height:0;
 }
-
-.hero .rune-bg {
-  position: absolute;
-  right: -36px;
-  bottom: -48px;
-  font-size: 210px;
-  color: rgba(247, 198, 92, 0.07);
-  transform: rotate(-12deg);
-  user-select: none;
+.left{
+  background:linear-gradient(145deg,#2d3449,#22293b);
+  border-right:1px solid rgba(255,255,255,.06);
+  padding:28px;
+  overflow:auto;
 }
-
-.eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 7px 12px;
-  border-radius: 999px;
-  border: 1px solid rgba(247, 198, 92, 0.38);
-  background: rgba(247, 198, 92, 0.1);
-  color: #ffe2a3;
-  font-family: ui-sans-serif, system-ui, sans-serif;
-  font-weight: 900;
-  font-size: 12px;
-  letter-spacing: 1.4px;
-  text-transform: uppercase;
-  margin-bottom: 14px;
+.right{
+  background:linear-gradient(145deg,#303850,#262d40);
+  overflow:auto;
 }
-
-h1 {
-  font-size: clamp(42px, 8vw, 86px);
-  line-height: 0.9;
-  color: #fff4d4;
-  text-shadow: 0 0 22px rgba(247, 198, 92, 0.32), 0 5px 0 rgba(0,0,0,0.24);
-  letter-spacing: -0.055em;
-  font-weight: 900;
+.pageSwitch,
+.tierSwitch{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-bottom:18px;
 }
-
-.subtitle {
-  margin-top: 18px;
-  color: var(--muted);
-  max-width: 620px;
-  line-height: 1.65;
-  font-size: clamp(15px, 2vw, 17px);
+.switchBtn{
+  border:0;
+  background:rgba(255,255,255,.06);
+  color:#9ca7c3;
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:.14em;
+  font-weight:900;
+  padding:10px 12px;
+  cursor:pointer;
 }
-
-.hero-actions {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-top: 22px;
-  font-family: ui-sans-serif, system-ui, sans-serif;
+.switchBtn.active{
+  color:white;
+  background:linear-gradient(90deg,var(--blue),var(--purple));
 }
-
-.chip {
-  border-radius: 999px;
-  background: rgba(9, 6, 17, 0.42);
-  border: 1px solid rgba(247, 198, 92, 0.28);
-  padding: 9px 13px;
-  color: rgba(255,244,212,0.88);
-  font-size: 12px;
-  font-weight: 850;
+.kicker{
+  text-align:center;
+  color:#b6c0d8;
+  font-size:11px;
+  letter-spacing:.18em;
+  text-transform:uppercase;
+  font-weight:900;
 }
-
-.rank-box {
-  min-width: 210px;
-  border-radius: 28px;
-  background:
-    radial-gradient(circle at top, rgba(247, 198, 92, 0.16), transparent 45%),
-    rgba(9, 6, 17, 0.55);
-  padding: 24px;
-  text-align: center;
-  border: 1px solid rgba(247, 198, 92, 0.35);
-  position: relative;
-  z-index: 3;
-  font-family: ui-sans-serif, system-ui, sans-serif;
+h1{
+  margin:12px 0 20px;
+  text-align:center;
+  font-size:68px;
+  line-height:.9;
+  text-transform:uppercase;
+  letter-spacing:-.06em;
 }
-
-.small-label {
-  color: #ffe2a3;
-  font-size: 11px;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  font-weight: 950;
-  font-family: ui-sans-serif, system-ui, sans-serif;
+.ring{
+  width:360px;
+  height:360px;
+  margin:0 auto 28px;
+  border-radius:50%;
+  background:conic-gradient(from 180deg,var(--blue),#7a7cff,var(--purple),var(--blue));
+  padding:14px;
+  position:relative;
 }
-
-.rank-number {
-  font-size: 58px;
-  font-weight: 950;
-  margin-top: 4px;
-  color: white;
-  text-shadow: 0 0 18px rgba(247, 198, 92, 0.45);
+.ring::after{
+  content:"";
+  position:absolute;
+  inset:16px;
+  background:var(--panel-dark);
+  border-radius:50%;
+  box-shadow:inset 0 0 0 4px rgba(120,140,255,.18);
 }
-
-.progress-wrap {
-  margin-top: 14px;
-  height: 11px;
-  border-radius: 999px;
-  overflow: hidden;
-  background: rgba(255,255,255,0.11);
-  border: 1px solid rgba(247, 198, 92, 0.18);
+.inner{
+  position:absolute;
+  inset:0;
+  display:grid;
+  place-items:center;
+  z-index:1;
+  text-align:center;
 }
-
-.progress {
-  width: 78%;
-  height: 100%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, #8b5cf6, #f7c65c, #fff4d4);
-  box-shadow: 0 0 18px rgba(247, 198, 92, 0.45);
+.inner small{
+  color:#b4bdd3;
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:.18em;
+  font-weight:900;
 }
-
-.tiny {
-  color: var(--muted);
-  font-size: 12px;
-  margin-top: 7px;
-  font-family: ui-sans-serif, system-ui, sans-serif;
+.inner strong{
+  display:block;
+  margin-top:8px;
+  font-size:88px;
+  letter-spacing:-.08em;
+  color:#a78cff;
 }
-
-.podium {
-  display: grid;
-  grid-template-columns: 0.92fr 1.1fr 0.92fr;
-  gap: 16px;
-  align-items: end;
-  margin-bottom: 18px;
+.stats{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:10px;
 }
-
-.podium-card {
-  border-radius: 30px;
-  padding: 24px 20px;
-  text-align: center;
-  overflow: hidden;
-  min-height: 245px;
-  transition: transform 0.2s ease, border-color 0.2s ease, filter 0.2s ease;
+.stat{
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.05);
+  padding:14px;
+  text-align:center;
 }
-
-.podium-card:hover, .row:hover, .stat-card:hover {
-  transform: translateY(-3px);
-  border-color: rgba(247, 198, 92, 0.62);
-  filter: brightness(1.06);
+.stat strong{
+  display:block;
+  font-size:26px;
 }
-
-.podium-card.first {
-  min-height: 286px;
-  background:
-    radial-gradient(circle at top, rgba(247, 198, 92, 0.29), transparent 45%),
-    linear-gradient(180deg, rgba(86, 51, 80, 0.95), rgba(24, 13, 34, 0.94));
-  box-shadow: 0 28px 90px rgba(247, 198, 92, 0.17), var(--shadow);
+.stat span{
+  color:var(--muted);
+  text-transform:uppercase;
+  font-size:10px;
+  letter-spacing:.16em;
+  font-weight:900;
 }
-
-.podium-card.first .crest {
-  background: linear-gradient(135deg, #f7c65c, #fff4d4, #8b5cf6);
-  color: #14091e;
+.graph{
+  margin-top:22px;
+  border:1px solid rgba(255,255,255,.05);
+  padding:14px;
 }
-
-.crest {
-  width: 76px;
-  height: 76px;
-  margin: 0 auto 13px;
-  border-radius: 24px 24px 32px 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, rgba(247,198,92,0.22), rgba(139,92,246,0.2));
-  font-size: 34px;
-  border: 1px solid rgba(247,198,92,0.35);
-  box-shadow: inset 0 0 22px rgba(255,255,255,0.08), 0 0 22px rgba(139,92,246,0.15);
+.graph h3{
+  text-align:center;
+  margin:0 0 10px;
+  font-size:11px;
+  letter-spacing:.18em;
+  text-transform:uppercase;
 }
-
-.name {
-  font-size: 23px;
-  font-weight: 900;
-  color: #fff4d4;
-  text-shadow: 0 3px 0 rgba(0,0,0,0.24);
+svg{width:100%;height:200px;display:block}
+.header{
+  position:sticky;
+  top:0;
+  background:#2b3349;
+  border-bottom:1px solid rgba(255,255,255,.06);
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:20px 24px;
+  z-index:5;
 }
-
-.badge {
-  display: inline-block;
-  margin-top: 9px;
-  padding: 7px 12px;
-  border-radius: 999px;
-  background: rgba(9, 6, 17, 0.38);
-  border: 1px solid rgba(247,198,92,0.22);
-  color: #ffe2a3;
-  font-size: 12px;
-  font-weight: 850;
-  font-family: ui-sans-serif, system-ui, sans-serif;
+.header h2{
+  margin:0;
+  font-size:12px;
+  text-transform:uppercase;
+  letter-spacing:.16em;
+  color:#c8d2ea;
 }
-
-.big-stat {
-  font-size: clamp(34px, 4vw, 46px);
-  font-weight: 950;
-  margin-top: 18px;
-  color: white;
-  font-family: ui-sans-serif, system-ui, sans-serif;
-  letter-spacing: -0.05em;
+.refresh{
+  border:0;
+  background:rgba(255,255,255,.07);
+  color:white;
+  padding:10px 14px;
+  font-size:11px;
+  font-weight:900;
+  text-transform:uppercase;
+  letter-spacing:.14em;
+  cursor:pointer;
 }
-
-.stats {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 14px;
-  margin-bottom: 18px;
+.row{
+  display:grid;
+  grid-template-columns:70px 1fr 220px 110px;
+  align-items:center;
+  gap:20px;
+  min-height:112px;
+  padding:18px 26px;
+  border-bottom:1px solid var(--line);
+  background:rgba(255,255,255,.01);
+  transition:transform .9s cubic-bezier(.2,.8,.2,1), background .2s ease;
 }
-
-.stat-card {
-  border-radius: 26px;
-  padding: 17px;
-  display: flex;
-  gap: 13px;
-  align-items: center;
-  min-width: 0;
-  transition: transform 0.2s ease, border-color 0.2s ease, filter 0.2s ease;
+.row:hover{background:rgba(255,255,255,.03)}
+.rank{
+  font-size:34px;
+  font-weight:900;
+  color:#f0f5ff;
 }
-
-.stat-icon {
-  width: 50px;
-  height: 50px;
-  flex: 0 0 auto;
-  border-radius: 18px;
-  background: rgba(9, 6, 17, 0.38);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 25px;
-  border: 1px solid rgba(247,198,92,0.22);
+.person{
+  display:flex;
+  align-items:center;
+  gap:18px;
 }
-
-.stat-value {
-  font-size: clamp(20px, 2vw, 25px);
-  font-weight: 950;
-  color: #fff4d4;
-  font-family: ui-sans-serif, system-ui, sans-serif;
-  white-space: nowrap;
+.avatar{
+  width:64px;
+  height:64px;
+  border-radius:50%;
+  background:linear-gradient(135deg,#5d6d92,#30384f);
+  display:grid;
+  place-items:center;
+  font-size:22px;
+  font-weight:900;
 }
-
-.panel {
-  border-radius: 34px;
-  padding: clamp(14px, 2vw, 20px);
+.meta small{
+  display:block;
+  color:#7d88a7;
+  font-size:10px;
+  text-transform:uppercase;
+  letter-spacing:.18em;
+  margin-bottom:6px;
+  font-weight:900;
 }
-
-.panel-title {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 14px;
-  margin-bottom: 16px;
-  padding: 0 4px;
+.meta strong{
+  font-size:20px;
+  letter-spacing:.01em;
 }
-
-.panel-title h2 {
-  font-size: clamp(24px, 4vw, 34px);
-  color: #fff4d4;
-  text-shadow: 0 0 16px rgba(247,198,92,0.2);
+.track{
+  height:6px;
+  background:#7784ab;
+  position:relative;
 }
-
-.controls {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 12px;
-  align-items: center;
-  margin-bottom: 14px;
-  font-family: ui-sans-serif, system-ui, sans-serif;
+.fill{
+  position:absolute;
+  inset:0 auto 0 0;
+  width:70%;
+  background:linear-gradient(90deg,var(--blue),var(--purple));
 }
-
-.tabs {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+.fill.mint{
+  background:linear-gradient(90deg,var(--mint),#86a4ff);
 }
-
-button {
-  border: 1px solid rgba(247,198,92,0.25);
-  border-radius: 16px;
-  padding: 11px 17px;
-  font-weight: 950;
-  cursor: pointer;
-  background: rgba(9, 6, 17, 0.38);
-  color: #fff4d4;
-  transition: transform 0.16s ease, background 0.16s ease, box-shadow 0.16s ease;
+.score{
+  text-align:right;
 }
-
-button:active {
-  transform: scale(0.97);
+.score small{
+  display:block;
+  color:#8d98b5;
+  text-transform:uppercase;
+  font-size:10px;
+  letter-spacing:.16em;
+  margin-bottom:4px;
+  font-weight:900;
 }
-
-button.active {
-  background: linear-gradient(135deg, #f7c65c, #fff4d4);
-  color: #160d22;
-  box-shadow: 0 0 22px rgba(247, 198, 92, 0.22);
+.score strong{
+  font-size:42px;
+  letter-spacing:-.06em;
 }
-
-.search-wrap {
-  position: relative;
-  min-width: 270px;
+@media(max-width:950px){
+  body{padding:0;background:#121827}
+  .shell{height:auto;min-height:100vh;max-width:none}
+  .main{grid-template-columns:1fr}
+  .ring{width:280px;height:280px}
+  .inner strong{font-size:62px}
+  h1{font-size:46px}
+  .row{grid-template-columns:54px 1fr 90px;padding:16px;gap:12px}
+  .track{display:none}
+  .avatar{width:48px;height:48px;font-size:16px}
+  .score strong{font-size:24px}
 }
-
-.search-wrap span {
-  position: absolute;
-  left: 14px;
-  top: 50%;
-  transform: translateY(-50%);
-  opacity: 0.75;
-}
-
-.search {
-  width: 100%;
-  border-radius: 17px;
-  padding: 12px 14px 12px 42px;
-  border: 1px solid rgba(247,198,92,0.24);
-  outline: none;
-  color: #fff4d4;
-  background: rgba(9, 6, 17, 0.38);
-  font-weight: 800;
-  font-family: ui-sans-serif, system-ui, sans-serif;
-}
-
-.search:focus {
-  border-color: rgba(247,198,92,0.72);
-  box-shadow: 0 0 0 4px rgba(247,198,92,0.12);
-}
-
-.search::placeholder {
-  color: rgba(248, 234, 208, 0.48);
-}
-
-.table-head {
-  display: grid;
-  grid-template-columns: 60px 1.4fr 0.9fr 0.8fr 0.9fr;
-  gap: 12px;
-  padding: 10px 14px;
-  color: var(--soft);
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  font-weight: 950;
-  font-family: ui-sans-serif, system-ui, sans-serif;
-}
-
-.list {
-  display: grid;
-  gap: 10px;
-}
-
-.row {
-  border-radius: 24px;
-  padding: 14px;
-  display: grid;
-  grid-template-columns: 60px 1.4fr 0.9fr 0.8fr 0.9fr;
-  gap: 12px;
-  align-items: center;
-  transition: transform 0.2s ease, border-color 0.2s ease, filter 0.2s ease;
-  font-family: ui-sans-serif, system-ui, sans-serif;
-}
-
-.row.me {
-  border-color: rgba(247, 198, 92, 0.72);
-  background:
-    linear-gradient(90deg, rgba(247, 198, 92, 0.16), rgba(139, 92, 246, 0.16)),
-    rgba(32, 20, 44, 0.9);
-  box-shadow: 0 18px 60px rgba(247, 198, 92, 0.12);
-}
-
-.rank-pill {
-  width: 50px;
-  height: 50px;
-  border-radius: 18px;
-  background: rgba(9, 6, 17, 0.38);
-  border: 1px solid rgba(247,198,92,0.22);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-weight: 950;
-  font-size: 18px;
-}
-
-.writer-line {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.writer-name {
-  font-weight: 950;
-  font-size: 16px;
-  color: #fff4d4;
-}
-
-.meta {
-  margin-top: 5px;
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 1.4;
-}
-
-.you, .league {
-  border-radius: 999px;
-  padding: 4px 8px;
-  font-size: 10px;
-  font-weight: 950;
-  letter-spacing: 0.5px;
-  border: 1px solid rgba(247,198,92,0.22);
-}
-
-.you {
-  background: linear-gradient(135deg, #f7c65c, #fff4d4);
-  color: #160d22;
-}
-
-.league {
-  background: rgba(9, 6, 17, 0.38);
-  color: #ffe2a3;
-}
-
-.cell-label {
-  display: none;
-}
-
-.words, .xp, .streak {
-  font-weight: 950;
-  font-size: 16px;
-  white-space: nowrap;
-  color: white;
-}
-
-.change {
-  text-align: right;
-}
-
-.up { color: var(--emerald); font-size: 12px; font-weight: 950; }
-.down { color: var(--ruby); font-size: 12px; font-weight: 950; }
-.same { color: rgba(248, 234, 208, 0.5); font-size: 12px; }
-
-.empty {
-  padding: 28px;
-  text-align: center;
-  color: var(--muted);
-  border-radius: 22px;
-  background: rgba(9,6,17,0.38);
-  font-family: ui-sans-serif, system-ui, sans-serif;
-}
-
-@media (max-width: 930px) {
-  .stats {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .table-head {
-    display: none;
-  }
-
-  .row {
-    grid-template-columns: 56px 1fr auto;
-  }
-
-  .mobile-hide {
-    display: none;
-  }
-
-  .change {
-    text-align: right;
-  }
-}
-
-@media (max-width: 760px) {
-  body {
-    padding: 12px;
-  }
-
-  .hero {
-    grid-template-columns: 1fr;
-    border-radius: 28px;
-  }
-
-  .rank-box {
-    min-width: 0;
-    width: 100%;
-  }
-
-  .podium {
-    grid-template-columns: 1fr;
-  }
-
-  .podium-card, .podium-card.first {
-    min-height: auto;
-  }
-
-  .podium-card.first {
-    order: -1;
-  }
-
-  .stats {
-    grid-template-columns: 1fr;
-  }
-
-  .panel-title {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .controls {
-    grid-template-columns: 1fr;
-  }
-
-  .tabs {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  button {
-    width: 100%;
-  }
-
-  .search-wrap {
-    min-width: 0;
-  }
-
-  .row {
-    grid-template-columns: 50px 1fr;
-    padding: 13px;
-  }
-
-  .rank-pill {
-    width: 46px;
-    height: 46px;
-  }
-
-  .change {
-    grid-column: 2;
-    text-align: left;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-top: -2px;
-  }
-
-  .cell-label {
-    display: inline;
-    color: var(--soft);
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    font-weight: 950;
-  }
-}
-
-@media (max-width: 420px) {
-  h1 {
-    font-size: 42px;
-  }
-
-  .hero-actions {
-    display: grid;
-    grid-template-columns: 1fr;
-  }
-
-  .stat-card {
-    padding: 15px;
-  }
-
-  .podium-card {
-    padding: 20px 16px;
-  }
-}
-
-  </style>
+</style>
 </head>
 <body>
-  <main class="app">
-    <section class="hero fantasy-card">
-      <div class="rune-bg">☽</div>
+<div class="shell">
+  <nav class="topbar">
+    <button class="topBtn">Dashboard</button>
+    <button class="topBtn active">Leaderboard</button>
+  </nav>  <main class="main">
+    <section class="left">
+      <div class="pageSwitch">
+        <button class="switchBtn active" onclick="setPeriod('daily')">Daily</button>
+        <button class="switchBtn" onclick="setPeriod('weekly')">Weekly</button>
+        <button class="switchBtn" onclick="setPeriod('monthly')">Monthly</button>
+      </div><div class="tierSwitch" id="tierSwitch"></div>
+
+  <div class="kicker">Leaderboard</div>
+  <h1 id="title">Daily Gold</h1>
+
+  <div class="ring">
+    <div class="inner">
       <div>
-        <div class="eyebrow">⚡ WRITER LEAGUES</div>
-        <h1>Elite League</h1>
-        <p class="subtitle">Compete with other writers, climb the rankings, maintain your streak, and unlock elite status.</p>
-        <div class="hero-actions">
-          <span class="chip">⚔ Daily Ends in 6h 12m</span>
-          <span class="chip">💎 Mythic League</span>
-          <span class="chip">👑 Top 10% Ascend</span>
-        </div>
-      </div><div class="rank-box">
-    <div class="small-label">Your Rank</div>
-    <div class="rank-number">#2</div>
-    <div class="progress-wrap"><div class="progress"></div></div>
-    <div class="tiny">1,160 words from the crown</div>
-  </div>
-</section>
-
-<section class="podium" id="podium"></section>
-
-<section class="stats">
-  <div class="stat-card fantasy-card"><div class="stat-icon">🔥</div><div><div class="stat-value">28 days</div><div class="tiny">Current streak</div></div></div>
-  <div class="stat-card fantasy-card"><div class="stat-icon">⚡</div><div><div class="stat-value">17,100 XP</div><div class="tiny">Weekly XP</div></div></div>
-  <div class="stat-card fantasy-card"><div class="stat-icon">💎</div><div><div class="stat-value">Mythic</div><div class="tiny">Current league</div></div></div>
-  <div class="stat-card fantasy-card"><div class="stat-icon">📚</div><div><div class="stat-value">12 books</div><div class="tiny">Finished</div></div></div>
-</section>
-
-<section class="panel fantasy-card">
-  <div class="panel-title">
-    <h2>Global Rankings</h2>
-    <div class="chip">Season 3</div>
-  </div>
-
-  <div class="controls">
-    <div class="tabs">
-      <button class="tab active" data-tab="Daily">Daily Quest</button>
-      <button class="tab" data-tab="Weekly">Weekly</button>
-      <button class="tab" data-tab="Friends">Friends</button>
-      <button class="tab" data-tab="Guild">Guild</button>
-    </div>
-    <div class="search-wrap">
-      <span>🔎</span>
-      <input class="search" id="search" placeholder="Search writers" />
+        <small>Current Score</small>
+        <strong id="myWords">4000</strong>
+      </div>
     </div>
   </div>
 
-  <div class="table-head">
-    <div>Rank</div>
-    <div>Scribe</div>
-    <div>Score</div>
-    <div>Flame</div>
-    <div style="text-align:right;">Shift</div>
+  <div class="stats">
+    <div class="stat"><strong id="myRank">#4</strong><span>Rank</span></div>
+    <div class="stat"><strong id="myMove">↑2</strong><span>Movement</span></div>
+    <div class="stat"><strong id="myPct">72%</strong><span>Tier</span></div>
   </div>
 
-  <div class="list" id="leaderboardList"></div>
+  <div class="graph">
+    <h3>Leaderboard</h3>
+    <svg viewBox="0 0 500 200" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="grad" x1="0" x2="1">
+          <stop offset="0" stop-color="#63e2bf"/>
+          <stop offset=".5" stop-color="#75a7ff"/>
+          <stop offset="1" stop-color="#b145ff"/>
+        </linearGradient>
+      </defs>
+      <path d="M0 150 L110 40 L220 170 L320 70 L420 160 L500 110" fill="none" stroke="url(#grad)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </div>
 </section>
 
-  </main>  <script>
-    const users = [
-      { rank: 1, avatar: "🌙", name: "LunaInk", words: 12480, xp: 18420, streak: 43, league: "Mythic", badge: "Story Machine", change: 2 },
-      { rank: 2, avatar: "🦋", name: "Anya", words: 11320, xp: 17100, streak: 28, league: "Mythic", badge: "Focused", change: 5, me: true },
-      { rank: 3, avatar: "🖤", name: "VelvetQuill", words: 9875, xp: 14990, streak: 19, league: "Diamond", badge: "Night Owl", change: -1 },
-      { rank: 4, avatar: "🪞", name: "EchoWriter", words: 8420, xp: 12880, streak: 14, league: "Diamond", badge: "World Builder", change: 1 },
-      { rank: 5, avatar: "✨", name: "NovaPages", words: 7330, xp: 11120, streak: 11, league: "Gold", badge: "Goal Hunter", change: 0 },
-      { rank: 6, avatar: "🧙", name: "InkMage", words: 6940, xp: 10200, streak: 9, league: "Gold", badge: "Momentum", change: 3 },
-      { rank: 7, avatar: "🐉", name: "DraftDragon", words: 6215, xp: 9880, streak: 7, league: "Gold", badge: "Sprint Writer", change: -2 },
-      { rank: 8, avatar: "🌌", name: "MoonChapter", words: 5520, xp: 8500, streak: 6, league: "Silver", badge: "Back Again", change: 4 },
-      { rank: 9, avatar: "👹", name: "PlotGoblin", words: 4810, xp: 7340, streak: 5, league: "Silver", badge: "Clutch Finish", change: -3 },
-      { rank: 10, avatar: "🔮", name: "PageWitch", words: 3920, xp: 6210, streak: 4, league: "Bronze", badge: "Getting Started", change: 1 }
-    ];
+<section class="right">
+  <div class="header">
+    <h2 id="listTitle">Daily Gold Rankings</h2>
+    <button class="refresh" onclick="refreshStandings()">Refresh</button>
+  </div>
 
-    let activeTab = "Daily";
+  <div id="list"></div>
+</section>
 
-    const list = document.getElementById("leaderboardList");
-    const podium = document.getElementById("podium");
-    const search = document.getElementById("search");
-    const tabs = document.querySelectorAll(".tab");
+  </main>
+</div><script>
+const ranges={
+  daily:{Bronze:[100,500],Silver:[501,1000],Gold:[1001,3000],Diamond:[3001,6000],Platinum:[6001,10000]},
+  weekly:{Bronze:[1000,5000],Silver:[5001,10000],Gold:[10001,20000],Diamond:[20001,40000],Platinum:[40001,70000]},
+  monthly:{Bronze:[5000,15000],Silver:[15001,30000],Gold:[30001,50000],Diamond:[50001,80000],Platinum:[80001,120000]}
+};
 
-    function format(num) {
-      return num.toLocaleString();
+const names=['Sam Robinson','Jason Bass','Leah Vaughn','Hulda Atkins','Pearl Lee','Adele Lloyd','Glenn Goodman','Anya Romanova','Nova Quill','Rain Mercer'];
+const state={period:'daily',tier:{daily:'Gold',weekly:'Silver',monthly:'Silver'},prev:null,current:null};
+
+function fmt(n){return n.toLocaleString()}
+function cap(s){return s[0].toUpperCase()+s.slice(1)}
+
+function makeBoard(period,tier,shuffle=false){
+  const [min,max]=ranges[period][tier];
+  const rows=names.map((name,i)=>{
+    let score=Math.round(max-(i*((max-min)/(names.length+1)))-Math.random()*100);
+    if(name==='Anya Romanova') score=period==='daily'?2400:period==='weekly'?9200:31500;
+    if(shuffle) score+=Math.round(Math.random()*600-300);
+    score=Math.max(min,Math.min(max,score));
+    return {name,score};
+  }).sort((a,b)=>b.score-a.score);
+  return rows.map((r,i)=>({...r,rank:i+1}));
+}
+
+function generate(shuffle=false){
+  const all={};
+  Object.keys(ranges).forEach(period=>{
+    all[period]={};
+    Object.keys(ranges[period]).forEach(tier=>all[period][tier]=makeBoard(period,tier,shuffle));
+  });
+  return all;
+}
+
+state.prev=generate(false);
+state.current=generate(true);
+
+function rows(){return state.current[state.period][state.tier[state.period]]}
+function oldRows(){return state.prev[state.period][state.tier[state.period]]}
+
+function renderButtons(){
+  tierSwitch.innerHTML=Object.keys(ranges[state.period]).map(t=>`<button class="switchBtn ${t===state.tier[state.period]?'active':''}" onclick="setTier('${t}')">${t}</button>`).join('');
+}
+
+function renderLeft(){
+  const period=state.period;
+  const tier=state.tier[period];
+  const me=rows().find(r=>r.name==='Anya Romanova');
+  const old=oldRows().find(r=>r.name==='Anya Romanova');
+  const move=old.rank-me.rank;
+  const [min,max]=ranges[period][tier];
+  const pct=Math.round(((me.score-min)/(max-min))*100);
+  title.textContent=`${cap(period)} ${tier}`;
+  listTitle.textContent=`${cap(period)} ${tier} Rankings`;
+  myWords.textContent=fmt(me.score);
+  myRank.textContent='#'+me.rank;
+  myMove.textContent=move>0?'↑'+move:move<0?'↓'+Math.abs(move):'—';
+  myPct.textContent=pct+'%';
+  renderButtons();
+}
+
+function rowHTML(r){
+  const prev=oldRows().find(x=>x.name===r.name);
+  const pct=Math.min(100,Math.round((r.score/rows()[0].score)*100));
+  const initials=r.name.split(' ').map(x=>x[0]).join('').slice(0,2);
+  return `<div class="row" data-prev="${prev.rank}" data-new="${r.rank}">
+    <div class="rank">${r.rank}</div>
+    <div class="person">
+      <div class="avatar">${initials}</div>
+      <div class="meta">
+        <small>Player Name</small>
+        <strong>${r.name}</strong>
+      </div>
+    </div>
+    <div class="track"><div class="fill ${r.rank%2===0?'mint':''}" style="width:${pct}%"></div></div>
+    <div class="score"><small>Score</small><strong>${fmt(r.score)}</strong></div>
+  </div>`;
+}
+
+function renderRows(){
+  list.innerHTML=rows().map(rowHTML).join('');
+}
+
+function animate(){
+  const h=112;
+  document.querySelectorAll('.row').forEach(r=>{
+    const diff=Number(r.dataset.prev)-Number(r.dataset.new);
+    r.style.transform=`translateY(${diff*-h}px)`;
+  });
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    document.querySelectorAll('.row').forEach(r=>r.style.transform='translateY(0)');
+  }));
+}
+
+function render(anim=true){
+  document.querySelectorAll('.pageSwitch .switchBtn').forEach(btn=>btn.classList.toggle('active',btn.textContent.toLowerCase()===state.period));
+  renderLeft();
+  renderRows();
+  if(anim) setTimeout(animate,60);
+}
+
+function setPeriod(p){state.period=p;render()}
+function setTier(t){state.tier[state.period]=t;render()}
+function refreshStandings(){state.prev=state.current;state.current=generate(true);render()}
+
+// ===== REAL SUPABASE CONNECTION =====
+// 1. Replace with your own values
+const SUPABASE_URL = 'https://YOUR_PROJECT.supabase.co';
+const SUPABASE_ANON_KEY = 'YOUR_ANON_KEY';
+
+// 2. Load Supabase
+const script = document.createElement('script');
+script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+document.head.appendChild(script);
+
+script.onload = async () => {
+  const { createClient } = supabase;
+  window.sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // FIRST LOAD
+  await loadRealLeaderboard();
+};
+
+async function loadRealLeaderboard() {
+  state.prev = state.current;
+
+  const period = state.period;
+  const tier = state.tier[period];
+
+  const [min,max] = ranges[period][tier];
+
+  // CHANGE THIS TABLE NAME IF NEEDED
+  const { data, error } = await sb
+    .from('writing_sessions')
+    .select(`
+      word_count,
+      created_at,
+      profiles:user_id (
+        username
+      )
+    `);
+
+  if(error){
+    console.error(error);
+    return;
+  }
+
+  // FILTER BY TIME PERIOD
+  const now = new Date();
+
+  const filtered = data.filter(row => {
+    const date = new Date(row.created_at);
+
+    if(period === 'daily') {
+      return date.toDateString() === now.toDateString();
     }
 
-    function rankIcon(rank) {
-      if (rank === 1) return "👑";
-      if (rank === 2) return "⚜";
-      if (rank === 3) return "🛡";
-      return `#${rank}`;
+    if(period === 'weekly') {
+      const weekAgo = new Date();
+      weekAgo.setDate(now.getDate() - 7);
+      return date >= weekAgo;
     }
 
-    function changeText(change) {
-      if (change > 0) return `<span class="up">▲ +${change}</span>`;
-      if (change < 0) return `<span class="down">▼ ${Math.abs(change)}</span>`;
-      return `<span class="same">—</span>`;
+    if(period === 'monthly') {
+      return date.getMonth() === now.getMonth() &&
+             date.getFullYear() === now.getFullYear();
+    }
+  });
+
+  // GROUP USER SCORES
+  const totals = {};
+
+  filtered.forEach(row => {
+    const name = row.profiles?.username || 'Unknown';
+
+    if(!totals[name]) {
+      totals[name] = 0;
     }
 
-    function getScore(user) {
-      if (activeTab === "Weekly") return user.xp;
-      if (activeTab === "Friends") return user.streak;
-      if (activeTab === "Guild") return user.words + user.xp;
-      return user.words;
-    }
+    totals[name] += Number(row.word_count || 0);
+  });
 
-    function getScoreLabel() {
-      if (activeTab === "Weekly") return "arcane XP";
-      if (activeTab === "Friends") return "flame days";
-      if (activeTab === "Guild") return "guild power";
-      return "words";
-    }
+  // CONVERT TO LEADERBOARD
+  let leaderboard = Object.entries(totals)
+    .map(([name, score]) => ({
+      name,
+      score
+    }))
+    .filter(user => user.score >= min && user.score <= max)
+    .sort((a,b) => b.score - a.score)
+    .map((user,index) => ({
+      ...user,
+      rank:index + 1
+    }));
 
-    function renderPodium() {
-      const ordered = [users[1], users[0], users[2]];
-      podium.innerHTML = ordered.map((user) => `
-        <div class="podium-card fantasy-card ${user.rank === 1 ? "first" : ""}">
-          <div class="crest">${user.avatar}</div>
-          <div class="name">${rankIcon(user.rank)} ${user.name}</div>
-          <div class="badge">${user.badge}</div>
-          <div class="big-stat">${format(user.words)}</div>
-          <div class="small-label">words today</div>
-        </div>
-      `).join("");
-    }
+  // SAVE
+  state.current[state.period][state.tier[state.period]] = leaderboard;
 
-    function renderList() {
-      const q = search.value.toLowerCase();
-      const filtered = users
-        .filter(user => user.name.toLowerCase().includes(q))
-        .map(user => ({ ...user, score: getScore(user) }))
-        .sort((a, b) => b.score - a.score);
+  render();
+}
 
-      if (!filtered.length) {
-        list.innerHTML = `<div class="empty">No scribes found in this realm.</div>`;
-        return;
-      }
+// OVERRIDE BUTTONS
+async function setPeriod(p){
+  state.period=p;
+  await loadRealLeaderboard();
+}
 
-      list.innerHTML = filtered.map((user, index) => `
-        <div class="row fantasy-card ${user.me ? "me" : ""}">
-          <div class="rank-pill">${rankIcon(index + 1)}</div>
+async function setTier(t){
+  state.tier[state.period]=t;
+  await loadRealLeaderboard();
+}
 
-          <div>
-            <div class="writer-line">
-              <span>${user.avatar}</span>
-              <span class="writer-name">${user.name}</span>
-              ${user.me ? `<span class="you">YOU</span>` : ""}
-              <span class="league">${user.league}</span>
-            </div>
-            <div class="meta">${user.badge} · ${format(user.xp)} arcane XP</div>
-          </div>
+async function refreshStandings(){
+  await loadRealLeaderboard();
+}
 
-          <div class="mobile-hide">
-            <div class="words">${format(user.score)}</div>
-            <div class="tiny">${getScoreLabel()}</div>
-          </div>
-
-          <div class="mobile-hide">
-            <div class="streak">🔥 ${user.streak}</div>
-            <div class="tiny">days</div>
-          </div>
-
-          <div class="change">
-            <span class="cell-label">Score</span>
-            <span class="words">${format(user.score)}</span>
-            ${changeText(user.change)}
-          </div>
-        </div>
-      `).join("");
-    }
-
-    tabs.forEach(button => {
-      button.addEventListener("click", () => {
-        tabs.forEach(tab => tab.classList.remove("active"));
-        button.classList.add("active");
-        activeTab = button.dataset.tab;
-        renderList();
-      });
-    });
-
-    search.addEventListener("input", renderList);
-
-    renderPodium();
-    renderList();
-  </script></body>
+render(false);
+</script></body>
 </html>
