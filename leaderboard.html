@@ -466,8 +466,8 @@ function refreshStandings(){state.prev=state.current;state.current=generate(true
 
 // ===== REAL SUPABASE CONNECTION =====
 // 1. Replace with your own values
-const SUPABASE_URL = 'https://YOUR_PROJECT.supabase.co';
-const SUPABASE_ANON_KEY = 'YOUR_ANON_KEY';
+const SUPABASE_URL = 'https://tiqmhozzxhiydjnyuuaw.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_jZvjeBX2jKnVcQMBrZ6K8A_Rn7uVJAg';
 
 // 2. Load Supabase
 const script = document.createElement('script');
@@ -490,20 +490,31 @@ async function loadRealLeaderboard() {
 
   const [min,max] = ranges[period][tier];
 
-  // CHANGE THIS TABLE NAME IF NEEDED
+  // CONFIG: change these if your Supabase names are different
+  const SESSIONS_TABLE = 'writing_sessions';
+  const WORD_COLUMN = 'word_count';
+  const DATE_COLUMN = 'created_at';
+
+  // This assumes writing_sessions.user_id links to profiles.id.
+  // If your relationship is not set in Supabase, this join may fail.
   const { data, error } = await sb
-    .from('writing_sessions')
+    .from(SESSIONS_TABLE)
     .select(`
-      word_count,
-      created_at,
+      ${WORD_COLUMN},
+      ${DATE_COLUMN},
       profiles:user_id (
         username
       )
     `);
 
   if(error){
-    console.error(error);
+    console.error('Supabase leaderboard error:', error);
+    alert('Leaderboard could not load. Check table names, RLS policies, and the browser console. Error: ' + error.message);
     return;
+  }
+
+  if(!data || data.length === 0){
+    console.warn('Supabase returned no writing session rows.');
   }
 
   // FILTER BY TIME PERIOD
