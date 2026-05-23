@@ -193,10 +193,17 @@ export function mountMagicCodex(root, config) {
     function saveState() {
         state.activeSectionId = activeSectionId;
         state.updatedAt = Date.now();
-        void setJsonBlob(storageKey, state).catch(console.error);
-        const cloud = getEncyclopediaBlobStorageMode() === "cloud";
-        statusEl.textContent = cloud ? "Saved to your account" : "Saved on this device";
-        statusEl.className = "mc-dock-status saved";
+        void setJsonBlob(storageKey, state)
+            .then(() => {
+                const cloud = getEncyclopediaBlobStorageMode() === "cloud";
+                statusEl.textContent = cloud ? "Saved to your account" : "Saved on this device";
+                statusEl.className = "mc-dock-status saved";
+            })
+            .catch((err) => {
+                console.error(err);
+                statusEl.textContent = "Save failed — check console";
+                statusEl.className = "mc-dock-status";
+            });
         refreshProgress();
         refreshChapterDots();
         refreshManuscript();

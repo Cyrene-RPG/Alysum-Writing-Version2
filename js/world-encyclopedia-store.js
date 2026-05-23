@@ -22,6 +22,10 @@ let readyResolve = () => {};
 const readyPromise = new Promise((resolve) => {
     readyResolve = resolve;
 });
+/** @type {Promise<{ mode: string, tableMissing: boolean }> | null} */
+let initPromise = null;
+/** @type {string | null} */
+let initUid = null;
 
 export function isWorldEncyclopediaTableMissing(error) {
     const code = String(error?.code || "");
@@ -104,6 +108,18 @@ function setCache(encyclopedias) {
     cache = encyclopedias.map((e) => ({ ...e }));
 }
 
+function mergeEntriesIntoCache(incoming) {
+    const merged = new Map();
+    for (const enc of cache) merged.set(enc.id, enc);
+    for (const enc of incoming) {
+        const prev = merged.get(enc.id);
+        if (!prev || (enc.updatedAt || 0) >= (prev.updatedAt || 0)) {
+            merged.set(enc.id, enc);
+        }
+    }
+    setCache([...merged.values()]);
+}
+
 async function listFromCloud(supabase, uid) {
     const { data, error } = await supabase
         .from("world_encyclopedias")
@@ -131,6 +147,8 @@ async function listFromCloud(supabase, uid) {
 }
 
 async function persistEntry(entry) {
+    await whenWorldEncyclopediaReady();
+
     const list = cache.map((e) => (e.id === entry.id ? { ...entry } : { ...e }));
     const ix = list.findIndex((e) => e.id === entry.id);
     if (ix >= 0) list[ix] = { ...entry };
@@ -154,6 +172,8 @@ async function persistEntry(entry) {
 }
 
 async function removeEntry(id) {
+    await whenWorldEncyclopediaReady();
+
     setCache(cache.filter((e) => e.id !== id));
 
     if (!activeUid) {
@@ -171,16 +191,38 @@ async function removeEntry(id) {
     if (error) throw error;
 }
 
+async function runInit(supabase, uid) {
+    supabaseClient = supabase;
+    activeUid = uid;
+
+    const probe = await listFromCloud(supabase, uid);
+    storageMode = probe.mode;
+    tableMissing = probe.tableMissing;
+    mergeEntriesIntoCache(probe.encyclopedias);
+
+    if (storageMode === "cloud") {
+        await syncLocalEncyclopediasToCloud(supabase, uid);
+        const again = await listFromCloud(supabase, uid);
+        mergeEntriesIntoCache(again.encyclopedias);
+    } else {
+        mergeLocalShelfIntoCache(uid);
+    }
+
+    markReady();
+    return { mode: storageMode, tableMissing };
+}
+
 /**
  * Load encyclopedias for the signed-in user (cloud) or device-local shelf when logged out.
  * @param {import("@supabase/supabase-js").SupabaseClient | null} supabase
  * @param {string | null} uid
  */
 export async function initWorldEncyclopediaStore(supabase, uid) {
-    supabaseClient = supabase;
-    activeUid = uid || null;
-
     if (!uid || !supabase) {
+        initUid = null;
+        initPromise = null;
+        supabaseClient = null;
+        activeUid = null;
         setCache(readLegacyGlobal());
         storageMode = "local";
         tableMissing = false;
@@ -188,21 +230,16 @@ export async function initWorldEncyclopediaStore(supabase, uid) {
         return { mode: "local", tableMissing: false };
     }
 
-    const probe = await listFromCloud(supabase, uid);
-    storageMode = probe.mode;
-    tableMissing = probe.tableMissing;
-    setCache(probe.encyclopedias);
-
-    if (storageMode === "cloud") {
-        await syncLocalEncyclopediasToCloud(supabase, uid);
-        const again = await listFromCloud(supabase, uid);
-        setCache(again.encyclopedias);
-    } else {
-        mergeLocalShelfIntoCache(uid);
+    if (initUid === uid && initPromise) {
+        return initPromise;
     }
 
-    markReady();
-    return { mode: storageMode, tableMissing };
+    initUid = uid;
+    initPromise = runInit(supabase, uid).catch((err) => {
+        initPromise = null;
+        throw err;
+    });
+    return initPromise;
 }
 
 /**
@@ -224,6 +261,7 @@ export async function syncLocalEncyclopediasToCloud(supabase, uid) {
     const merged = new Map();
     for (const enc of readLegacyGlobal()) merged.set(enc.id, enc);
     for (const enc of readLocal(uid)) merged.set(enc.id, enc);
+    for (const enc of cache) merged.set(enc.id, enc);
 
     for (const enc of merged.values()) {
         if (cloudIds.has(enc.id)) continue;
@@ -265,6 +303,8 @@ export function getEncyclopedia(id) {
  * @param {string} id
  */
 export async function ensureEncyclopedia(id) {
+    await whenWorldEncyclopediaReady();
+
     const trimmed = String(id || "").trim();
     if (!trimmed) return null;
 
@@ -290,10 +330,8 @@ export async function ensureEncyclopedia(id) {
             .maybeSingle();
         if (!error && data) {
             const entry = rowToEntry(data);
-            const list = cache.filter((e) => e.id !== trimmed);
-            list.push(entry);
-            setCache(list);
-            return entry;
+            mergeEntriesIntoCache([entry]);
+            return getEncyclopedia(trimmed);
         }
         if (error && !isWorldEncyclopediaTableMissing(error)) throw error;
     }
@@ -302,6 +340,8 @@ export async function ensureEncyclopedia(id) {
 }
 
 export async function createEncyclopedia(title) {
+    await whenWorldEncyclopediaReady();
+
     const now = Date.now();
     const trimmed = String(title || "").trim() || "Untitled encyclopedia";
     const entry = {

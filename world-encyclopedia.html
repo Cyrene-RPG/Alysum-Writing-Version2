@@ -629,9 +629,9 @@
         formatEncyclopediaDate,
         getWorldEncyclopediaStorageMode,
         isWorldEncyclopediaCloudTableMissing
-    } from "./js/world-encyclopedia-store.js?v=3";
-    import { initEncyclopediaSession } from "./js/encyclopedia-session.js?v=1";
-    import { isEncyclopediaBlobCloudTableMissing } from "./js/encyclopedia-blob-store.js?v=1";
+    } from "./js/world-encyclopedia-store.js?v=5";
+    import { initEncyclopediaSession } from "./js/encyclopedia-session.js?v=2";
+    import { isEncyclopediaBlobCloudTableMissing } from "./js/encyclopedia-blob-store.js?v=2";
 
     const grid = document.getElementById("encyclopediaGrid");
     const shelfNote = document.getElementById("weShelfNote");
@@ -642,6 +642,14 @@
     const titleInput = document.getElementById("createTitleInput");
     const cancelBtn = document.getElementById("createCancelBtn");
     const confirmBtn = document.getElementById("createConfirmBtn");
+    let sessionReady = false;
+
+    function setCreateEnabled(enabled) {
+        createBtn.disabled = !enabled;
+        confirmBtn.disabled = !enabled;
+    }
+
+    setCreateEnabled(false);
 
     function openDialog() {
         dialog.classList.remove("hidden");
@@ -787,9 +795,10 @@
             openEncyclopedia(enc.id);
         } catch (err) {
             console.error(err);
-            alert("Could not create encyclopedia — try again.");
+            const msg = String(err?.message || err || "Unknown error");
+            alert("Could not create encyclopedia — " + msg);
         } finally {
-            confirmBtn.disabled = false;
+            confirmBtn.disabled = !sessionReady;
         }
     }
 
@@ -807,20 +816,33 @@
     wireSupabaseSession(async (session) => {
         const user = session?.user;
         if (!user) {
+            sessionReady = false;
+            setCreateEnabled(false);
             window.location.href =
                 "login.html?next=" + encodeURIComponent("world-encyclopedia.html");
             return;
         }
         try {
-            await initEncyclopediaSession(supabase, user.id);
+            if (!sessionReady) {
+                await initEncyclopediaSession(supabase, user.id);
+                sessionReady = true;
+            }
             updateSyncStatus();
             renderGrid();
+            setCreateEnabled(true);
         } catch (err) {
             console.error(err);
+            sessionReady = false;
+            setCreateEnabled(false);
             if (syncStatus) {
                 syncStatus.hidden = false;
                 syncStatus.classList.add("is-warn");
-                syncStatus.textContent = "Could not load encyclopedias — refresh or try again.";
+                syncStatus.textContent =
+                    "Could not load — " + String(err?.message || err) + ". Check Supabase tables and refresh.";
+            }
+            if (shelfNote) {
+                shelfNote.classList.add("is-warn");
+                shelfNote.textContent = "Could not connect to cloud storage. See console for details.";
             }
         }
     });

@@ -37,6 +37,10 @@ let readyResolve = () => {};
 const readyPromise = new Promise((resolve) => {
     readyResolve = resolve;
 });
+/** @type {Promise<{ mode: string, tableMissing: boolean }> | null} */
+let initPromise = null;
+/** @type {string | null} */
+let initUid = null;
 
 export function isEncyclopediaBlobTableMissing(error) {
     const code = String(error?.code || "");
@@ -72,31 +76,25 @@ function readLegacyLocal(storageKey) {
     }
 }
 
-/**
- * @param {import("@supabase/supabase-js").SupabaseClient} supabase
- * @param {string} uid
- */
-export async function initEncyclopediaBlobStore(supabase, uid) {
+function mergeRowsIntoCache(rows) {
+    for (const row of rows || []) {
+        if (row?.storage_key) cache.set(row.storage_key, row.data);
+    }
+}
+
+async function runInit(supabase, uid) {
     supabaseClient = supabase;
     activeUid = uid;
-    cache.clear();
 
     const { data, error } = await supabase.from(TABLE).select("storage_key, data").eq("user_id", uid);
 
     if (!error) {
         storageMode = "cloud";
         tableMissing = false;
-        for (const row of data || []) {
-            if (row?.storage_key) cache.set(row.storage_key, row.data);
-        }
+        mergeRowsIntoCache(data);
         await syncLocalBlobsToCloud(supabase, uid);
         const again = await supabase.from(TABLE).select("storage_key, data").eq("user_id", uid);
-        if (!again.error) {
-            cache.clear();
-            for (const row of again.data || []) {
-                if (row?.storage_key) cache.set(row.storage_key, row.data);
-            }
-        }
+        if (!again.error) mergeRowsIntoCache(again.data);
         markReady();
         return { mode: "cloud", tableMissing: false };
     }
@@ -104,6 +102,12 @@ export async function initEncyclopediaBlobStore(supabase, uid) {
     if (isEncyclopediaBlobTableMissing(error)) {
         storageMode = "local";
         tableMissing = true;
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (!key || !isEncyclopediaBlobKey(key)) continue;
+            const data = readLegacyLocal(key);
+            if (data !== null) cache.set(key, data);
+        }
         markReady();
         return { mode: "local", tableMissing: true };
     }
@@ -115,23 +119,64 @@ export async function initEncyclopediaBlobStore(supabase, uid) {
  * @param {import("@supabase/supabase-js").SupabaseClient} supabase
  * @param {string} uid
  */
-export async function syncLocalBlobsToCloud(supabase, uid) {
-    const { count, error: cntErr } = await supabase
-        .from(TABLE)
-        .select("storage_key", { count: "exact", head: true })
-        .eq("user_id", uid);
-    if (cntErr) {
-        if (isEncyclopediaBlobTableMissing(cntErr)) return;
-        throw cntErr;
+export async function initEncyclopediaBlobStore(supabase, uid) {
+    if (!uid || !supabase) {
+        initUid = null;
+        initPromise = null;
+        supabaseClient = null;
+        activeUid = null;
+        cache.clear();
+        storageMode = "local";
+        tableMissing = false;
+        markReady();
+        return { mode: "local", tableMissing: false };
     }
-    if ((count || 0) > 0) return;
 
+    if (initUid === uid && initPromise) {
+        return initPromise;
+    }
+
+    initUid = uid;
+    initPromise = runInit(supabase, uid).catch((err) => {
+        initPromise = null;
+        throw err;
+    });
+    return initPromise;
+}
+
+/**
+ * @param {import("@supabase/supabase-js").SupabaseClient} supabase
+ * @param {string} uid
+ */
+export async function syncLocalBlobsToCloud(supabase, uid) {
+    const { data: cloudRows, error: listErr } = await supabase
+        .from(TABLE)
+        .select("storage_key")
+        .eq("user_id", uid);
+    if (listErr) {
+        if (isEncyclopediaBlobTableMissing(listErr)) return;
+        throw listErr;
+    }
+
+    const cloudKeys = new Set((cloudRows || []).map((r) => r.storage_key));
     const rows = [];
+
     for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (!key || !isEncyclopediaBlobKey(key)) continue;
-        const data = readLegacyLocal(key);
+        if (cloudKeys.has(key)) continue;
+        const data = cache.has(key) ? cache.get(key) : readLegacyLocal(key);
         if (data === null) continue;
+        rows.push({
+            user_id: uid,
+            storage_key: key,
+            data,
+            updated_ms: Date.now()
+        });
+    }
+
+    for (const [key, data] of cache.entries()) {
+        if (!isEncyclopediaBlobKey(key) || cloudKeys.has(key)) continue;
         rows.push({
             user_id: uid,
             storage_key: key,
@@ -164,6 +209,8 @@ export function getJsonBlob(storageKey) {
 
 /** @param {string} storageKey @param {unknown} data */
 export async function setJsonBlob(storageKey, data) {
+    await whenEncyclopediaBlobsReady();
+
     cache.set(storageKey, data);
     const json = JSON.stringify(data);
 
@@ -186,6 +233,8 @@ export async function setJsonBlob(storageKey, data) {
 
 /** @param {string} storageKey */
 export async function removeJsonBlob(storageKey) {
+    await whenEncyclopediaBlobsReady();
+
     cache.delete(storageKey);
     localStorage.removeItem(storageKey);
     if (storageMode !== "cloud" || !supabaseClient || !activeUid) return;
