@@ -341,8 +341,13 @@
     const titleEl = document.getElementById("encTitle");
     const metaEl = document.getElementById("encMeta");
     const toolsEl = document.getElementById("encTools");
+    let bootedForId = null;
+    let bootRunning = false;
 
     async function bootPage() {
+        if (bootRunning || bootedForId === id) return;
+        bootRunning = true;
+        try {
         if (!id) {
             if (missingText) {
                 missingText.textContent =
@@ -355,12 +360,19 @@
         const enc = await ensureEncyclopedia(id);
 
     if (!enc) {
+        bootedForId = null;
+        main.hidden = true;
         if (missingText) {
             missingText.textContent =
                 "This encyclopedia could not be found. It may still be on this device only — open World Encyclopedia to sync it, or create a new one.";
         }
         missing.hidden = false;
     } else {
+        if (bootedForId === id) return;
+        bootedForId = id;
+        missing.hidden = true;
+        toolsEl.replaceChildren();
+
         void touchEncyclopedia(enc.id);
         document.title = enc.title + " — World Encyclopedia — Alysum";
         titleEl.textContent = enc.title;
@@ -462,6 +474,9 @@
             toolsEl.appendChild(a);
         }
     }
+        } finally {
+            bootRunning = false;
+        }
     }
 
     const magicOverlay = document.getElementById("magicTypeOverlay");
@@ -530,15 +545,22 @@
         }
     });
 
+    let sessionReady = false;
+
     wireSupabaseSession(async (session) => {
         const user = session?.user;
         if (!user) {
+            sessionReady = false;
+            bootedForId = null;
             const nextUrl = id ? "encyclopedia.html?id=" + encodeURIComponent(id) : "encyclopedia.html";
             window.location.href = "login.html?next=" + encodeURIComponent(nextUrl);
             return;
         }
         try {
-            await initEncyclopediaSession(supabase, user.id);
+            if (!sessionReady) {
+                await initEncyclopediaSession(supabase, user.id);
+                sessionReady = true;
+            }
             await bootPage();
         } catch (err) {
             console.error(err);
