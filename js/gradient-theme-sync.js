@@ -217,6 +217,12 @@
     }
 
     try {
+        applyTheme(localStorage.getItem(KEY) || "classic");
+    } catch (e) {
+        applyTheme("classic");
+    }
+
+    try {
         applyChrome(localStorage.getItem(PREVIEW_KEY));
     } catch (e) {
         applyChrome(CLASSIC_PREVIEW);
@@ -238,6 +244,11 @@
         if (e.key === KEY) {
             applyTheme(e.newValue || "classic");
             applyTextColorFromStorage();
+            try {
+                applyChrome(localStorage.getItem(PREVIEW_KEY));
+            } catch (err) {
+                applyChrome(CLASSIC_PREVIEW);
+            }
         }
         if (e.key === TEXT_STYLE_KEY) applyTextStyle(e.newValue || "classic");
         if (

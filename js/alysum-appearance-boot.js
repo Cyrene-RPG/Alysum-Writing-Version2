@@ -182,6 +182,7 @@
 
         var p = localStorage.getItem("alysum-gradient-theme-preview");
         if (p) root.style.setProperty("--alysum-chrome-gradient", p);
+        else root.style.removeProperty("--alysum-chrome-gradient");
     } catch (e) {
         /* ignore */
     }

@@ -43,13 +43,18 @@
         border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         background: var(
             --theme-welcome-bar,
-            linear-gradient(
-                135deg,
-                rgba(76, 29, 149, 0.95) 0%,
-                var(--theme-header-mid, #6d28d9) 38%,
-                var(--theme-header-end, #db2777) 100%
+            var(
+                --alysum-chrome-gradient,
+                linear-gradient(
+                    135deg,
+                    rgba(76, 29, 149, 0.95) 0%,
+                    var(--theme-header-mid, #6d28d9) 38%,
+                    var(--theme-header-end, #db2777) 100%
+                )
             )
         );
+        background-size: cover;
+        background-position: center;
         box-shadow:
             0 4px 32px rgba(0, 0, 0, 0.35),
             inset 0 1px 0 rgba(255, 255, 255, 0.12);
@@ -881,6 +886,9 @@
 </div>
 
 <script type="module">
+    import { initGradientThemeOnPage } from "./js/gradient-theme.js?v=6";
+    initGradientThemeOnPage();
+
     import { supabase } from "./firebase.js";
     import { WEEKLY_PROMPTS_52, DAILY_CHARACTER_Q, DAILY_WORLDBUILD_Q } from "./js/prompts-data.js?v=1";
     import {
