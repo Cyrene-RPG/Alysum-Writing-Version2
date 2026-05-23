@@ -259,6 +259,10 @@
             color: var(--gold);
         }
 
+        .we-shelf-note.is-warn {
+            color: #fcd34d;
+        }
+
         .we-shelf-note {
             margin: 4px 0 0;
             font-size: 12px;
@@ -584,7 +588,7 @@
         <div class="we-shelf-head">
             <div>
                 <h2 id="weShelfTitle">Your encyclopedias</h2>
-                <p class="we-shelf-note">Saved on this device — private to your browser</p>
+                <p class="we-shelf-note" id="weShelfNote">Loading sync status…</p>
             </div>
             <button type="button" class="we-btn-create" id="createEncyclopediaBtn">+ Create Encyclopedia</button>
         </div>
@@ -606,7 +610,7 @@
 <div class="we-dialog-backdrop hidden" id="createDialog" role="dialog" aria-modal="true" aria-labelledby="createDialogTitle">
     <div class="we-dialog">
         <h3 id="createDialogTitle">Create encyclopedia</h3>
-        <p>Give your world a name. You can rename it later. Everything saves locally on this computer.</p>
+        <p id="createDialogHint">Give your world a name. You can rename it later.</p>
         <input type="text" id="createTitleInput" maxlength="120" placeholder="e.g. The Shattered Crown, Neo-Tokyo 2147" autocomplete="off" />
         <div class="we-dialog-actions">
             <button type="button" id="createCancelBtn">Cancel</button>
@@ -630,6 +634,8 @@
     import { isEncyclopediaBlobCloudTableMissing } from "./js/encyclopedia-blob-store.js?v=1";
 
     const grid = document.getElementById("encyclopediaGrid");
+    const shelfNote = document.getElementById("weShelfNote");
+    const createDialogHint = document.getElementById("createDialogHint");
     const syncStatus = document.getElementById("weSyncStatus");
     const createBtn = document.getElementById("createEncyclopediaBtn");
     const dialog = document.getElementById("createDialog");
@@ -652,24 +658,34 @@
     }
 
     function updateSyncStatus() {
-        if (!syncStatus) return;
         const mode = getWorldEncyclopediaStorageMode();
         const shelfMissing = isWorldEncyclopediaCloudTableMissing();
         const blobsMissing = isEncyclopediaBlobCloudTableMissing();
-        if (mode === "cloud" && !blobsMissing) {
-            syncStatus.hidden = false;
-            syncStatus.classList.remove("is-warn");
-            syncStatus.textContent = "Synced to your Alysum account.";
-            return;
+        const fullySynced = mode === "cloud" && !shelfMissing && !blobsMissing;
+
+        if (shelfNote) {
+            shelfNote.classList.toggle("is-warn", !fullySynced);
+            if (fullySynced) {
+                shelfNote.textContent =
+                    "Synced to your Alysum account — available on any device when you're signed in.";
+            } else if (mode === "cloud" && !shelfMissing && blobsMissing) {
+                shelfNote.textContent =
+                    "Encyclopedias sync to your account. Run encyclopedia-blobs-only.sql in Supabase for builder data.";
+            } else if (shelfMissing) {
+                shelfNote.textContent =
+                    "Saved on this device only — run world-encyclopedias-only.sql in Supabase, then hard-refresh.";
+            } else {
+                shelfNote.textContent = "Saved on this device — private to your browser.";
+            }
         }
-        if (shelfMissing || blobsMissing) {
-            syncStatus.hidden = false;
-            syncStatus.classList.add("is-warn");
-            syncStatus.textContent =
-                "Saved on this device only — run world-encyclopedias-only.sql and encyclopedia-blobs-only.sql in Supabase.";
-            return;
+
+        if (createDialogHint) {
+            createDialogHint.textContent = fullySynced
+                ? "Give your world a name. It saves to your Alysum account."
+                : "Give your world a name. You can rename it later.";
         }
-        syncStatus.hidden = true;
+
+        if (syncStatus) syncStatus.hidden = true;
     }
 
     function renderGrid() {

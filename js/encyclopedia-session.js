@@ -10,9 +10,24 @@ import { initEncyclopediaBlobStore } from "./encyclopedia-blob-store.js";
  * @param {string} uid
  */
 export async function initEncyclopediaSession(supabase, uid) {
-    const [shelf, blobs] = await Promise.all([
+    const [shelfResult, blobsResult] = await Promise.allSettled([
         initWorldEncyclopediaStore(supabase, uid),
         initEncyclopediaBlobStore(supabase, uid)
     ]);
-    return { shelf, blobs };
+
+    if (shelfResult.status === "rejected") {
+        throw shelfResult.reason;
+    }
+
+    if (blobsResult.status === "rejected") {
+        console.warn("Encyclopedia blob store init failed:", blobsResult.reason);
+    }
+
+    return {
+        shelf: shelfResult.value,
+        blobs:
+            blobsResult.status === "fulfilled"
+                ? blobsResult.value
+                : { mode: "local", tableMissing: true }
+    };
 }

@@ -197,6 +197,8 @@ export async function initWorldEncyclopediaStore(supabase, uid) {
         await syncLocalEncyclopediasToCloud(supabase, uid);
         const again = await listFromCloud(supabase, uid);
         setCache(again.encyclopedias);
+    } else {
+        mergeLocalShelfIntoCache(uid);
     }
 
     markReady();
@@ -209,25 +211,36 @@ export async function initWorldEncyclopediaStore(supabase, uid) {
  * @param {string} uid
  */
 export async function syncLocalEncyclopediasToCloud(supabase, uid) {
-    const { count, error: cntErr } = await supabase
+    const { data: cloudRows, error: listErr } = await supabase
         .from("world_encyclopedias")
-        .select("id", { count: "exact", head: true })
+        .select("id")
         .eq("user_id", uid);
-    if (cntErr) {
-        if (isWorldEncyclopediaTableMissing(cntErr)) return;
-        throw cntErr;
+    if (listErr) {
+        if (isWorldEncyclopediaTableMissing(listErr)) return;
+        throw listErr;
     }
-    if ((count || 0) > 0) return;
 
+    const cloudIds = new Set((cloudRows || []).map((r) => r.id));
     const merged = new Map();
     for (const enc of readLegacyGlobal()) merged.set(enc.id, enc);
     for (const enc of readLocal(uid)) merged.set(enc.id, enc);
 
     for (const enc of merged.values()) {
+        if (cloudIds.has(enc.id)) continue;
         const row = entryToRow(uid, enc);
         const { error } = await supabase.from("world_encyclopedias").upsert(row, { onConflict: "user_id,id" });
         if (error) throw error;
     }
+}
+
+function mergeLocalShelfIntoCache(uid) {
+    const merged = new Map();
+    for (const enc of cache) merged.set(enc.id, enc);
+    for (const enc of readLegacyGlobal()) merged.set(enc.id, enc);
+    if (uid) {
+        for (const enc of readLocal(uid)) merged.set(enc.id, enc);
+    }
+    setCache([...merged.values()]);
 }
 
 export function getWorldEncyclopediaStorageMode() {
@@ -245,6 +258,47 @@ export function listEncyclopedias() {
 export function getEncyclopedia(id) {
     if (!id) return null;
     return cache.find((e) => e.id === id) || null;
+}
+
+/**
+ * Resolve an encyclopedia by id (cache, local legacy, or single-row cloud fetch).
+ * @param {string} id
+ */
+export async function ensureEncyclopedia(id) {
+    const trimmed = String(id || "").trim();
+    if (!trimmed) return null;
+
+    let enc = getEncyclopedia(trimmed);
+    if (enc) return enc;
+
+    for (const localEnc of [...readLegacyGlobal(), ...(activeUid ? readLocal(activeUid) : [])]) {
+        if (localEnc.id !== trimmed) continue;
+        if (storageMode === "cloud" && supabaseClient && activeUid) {
+            await persistEntry(localEnc);
+        } else {
+            mergeLocalShelfIntoCache(activeUid);
+        }
+        return getEncyclopedia(trimmed);
+    }
+
+    if (storageMode === "cloud" && supabaseClient && activeUid) {
+        const { data, error } = await supabaseClient
+            .from("world_encyclopedias")
+            .select("*")
+            .eq("user_id", activeUid)
+            .eq("id", trimmed)
+            .maybeSingle();
+        if (!error && data) {
+            const entry = rowToEntry(data);
+            const list = cache.filter((e) => e.id !== trimmed);
+            list.push(entry);
+            setCache(list);
+            return entry;
+        }
+        if (error && !isWorldEncyclopediaTableMissing(error)) throw error;
+    }
+
+    return null;
 }
 
 export async function createEncyclopedia(title) {

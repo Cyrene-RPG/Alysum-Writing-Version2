@@ -314,7 +314,7 @@
 </div>
 
 <div class="enc-missing" id="encMissing" hidden>
-    <p>This encyclopedia could not be found. Sign in with the account that owns it, or check the link.</p>
+    <p id="encMissingText">This encyclopedia could not be found.</p>
     <p><a href="world-encyclopedia.html">Return to World Encyclopedia</a></p>
 </div>
 
@@ -322,14 +322,14 @@
     import { supabase } from "./firebase.js";
     import { wireSupabaseSession } from "./js/supabase-session.js?v=1";
     import {
-        getEncyclopedia,
+        ensureEncyclopedia,
         touchEncyclopedia,
         formatEncyclopediaDate,
         setEncyclopediaMagicType,
         magicTypeRoute,
         isMagicType,
         getWorldEncyclopediaStorageMode
-    } from "./js/world-encyclopedia-store.js?v=3";
+    } from "./js/world-encyclopedia-store.js?v=4";
     import { initEncyclopediaSession } from "./js/encyclopedia-session.js?v=1";
 
     const params = new URLSearchParams(window.location.search);
@@ -337,14 +337,28 @@
 
     const main = document.getElementById("encMain");
     const missing = document.getElementById("encMissing");
+    const missingText = document.getElementById("encMissingText");
     const titleEl = document.getElementById("encTitle");
     const metaEl = document.getElementById("encMeta");
     const toolsEl = document.getElementById("encTools");
 
-    function bootPage() {
-        const enc = getEncyclopedia(id);
+    async function bootPage() {
+        if (!id) {
+            if (missingText) {
+                missingText.textContent =
+                    "No encyclopedia was selected. Open one from your shelf.";
+            }
+            missing.hidden = false;
+            return;
+        }
+
+        const enc = await ensureEncyclopedia(id);
 
     if (!enc) {
+        if (missingText) {
+            missingText.textContent =
+                "This encyclopedia could not be found. It may still be on this device only — open World Encyclopedia to sync it, or create a new one.";
+        }
         missing.hidden = false;
     } else {
         void touchEncyclopedia(enc.id);
@@ -525,9 +539,13 @@
         }
         try {
             await initEncyclopediaSession(supabase, user.id);
-            bootPage();
+            await bootPage();
         } catch (err) {
             console.error(err);
+            if (missingText) {
+                missingText.textContent =
+                    "Could not load your encyclopedia. Check the browser console, confirm Supabase tables exist, then refresh.";
+            }
             missing.hidden = false;
         }
     });
