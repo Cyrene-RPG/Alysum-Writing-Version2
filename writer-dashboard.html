@@ -909,6 +909,11 @@
         wordsTypedOnDay,
         DEFAULT_DAILY_WORD_GOAL,
     } from "./js/writing-day-stats.js?v=1";
+    import {
+        readLastWriterSession,
+        pickContinueWritingBookId,
+        buildEditorContinueUrl,
+    } from "./js/writer-resume.js?v=1";
 
     wireLogoutButtons();
 
@@ -1545,8 +1550,14 @@
     }
 
     navContinue.addEventListener("click", () => {
-        if (firstBookId) {
-            window.location.href = "editor.html?book=" + encodeURIComponent(firstBookId);
+        const lastSession = readLastWriterSession();
+        const continueBookId = pickContinueWritingBookId({
+            lastSessionBookId: lastSession?.bookId,
+            fallbackBookId: firstBookId,
+            knownBookIds: booksRows.map((b) => b.id),
+        });
+        if (continueBookId) {
+            window.location.href = buildEditorContinueUrl(continueBookId);
             return;
         }
         createBookNow().catch((e) => {

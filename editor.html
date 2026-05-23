@@ -275,7 +275,7 @@
 
 <div class="sprint-float" id="sprintFloat" aria-live="polite"><div class="sprint-float-box"><div class="sprint-float-top"><div class="sprint-float-label">Sprint</div><button class="sprint-mini-btn danger" id="sprintStopBtn" type="button">Stop</button></div><div class="sprint-float-time" id="sprintFloatTime">00:00</div></div></div>
 
-<div class="workspace">
+<div class="workspace" id="editorWorkspace">
     <div class="page-wrap">
         <div class="page">
             <div class="chapter-number" id="chapterNumber">1</div>
@@ -314,6 +314,14 @@
     import { publicDisplayNameFromUserData } from "./js/profile-display.js?v=1";
     import { localDayKey } from "./js/writing-day-stats.js?v=1";
     import { isStoryBibleUiEnabled, STORY_BIBLE_PREF_KEY, STORY_BIBLE_PREF_EVENT } from "./js/story-bible-prefs.js?v=1";
+    import {
+        readWriterResume,
+        writeWriterResume,
+        readLastWriterSession,
+        resolveResumeChapter,
+        restoreEditorViewport,
+        getCaretTextOffset,
+    } from "./js/writer-resume.js?v=1";
 
 const params = new URLSearchParams(window.location.search);
 let bookId =
@@ -358,6 +366,7 @@ function rememberBookId(id) {
     const chapterNumber = document.getElementById("chapterNumber");
     const chapterTitle = document.getElementById("chapterTitle");
     const editor = document.getElementById("editor");
+    const editorWorkspace = document.getElementById("editorWorkspace");
     const totalWordsEl = document.getElementById("totalWords");
     const chapterCountEl = document.getElementById("chapterCount");
     const footerWordsEl = document.getElementById("footerWords");
@@ -388,6 +397,9 @@ function rememberBookId(id) {
     let saveTimer = null;
     let dragged = null;
     let persistedBookWordCount = null;
+    let suppressResumeSave = false;
+    let resumeSaveTimer = null;
+    let pendingResumeRestore = null;
 
     const sprintToolbarBtn = document.getElementById("sprintToolbarBtn");
     const sprintFloat = document.getElementById("sprintFloat");
@@ -671,7 +683,43 @@ function rememberBookId(id) {
         });
     }
     function renderAllSections() { renderSection("front"); renderSection("body"); renderSection("back"); syncStats(); }
+
+    function saveWriterResumeNow() {
+        if (suppressResumeSave || !bookId || !currentBook) return;
+        const ch = currentChapter();
+        writeWriterResume(bookId, {
+            section: currentSection,
+            chapterId: ch?.id || "",
+            chapterIndex: currentChapterIndex,
+            caretOffset: getCaretTextOffset(editor),
+            scrollTop: editorWorkspace ? editorWorkspace.scrollTop : 0,
+        });
+    }
+
+    function scheduleWriterResumeSave() {
+        clearTimeout(resumeSaveTimer);
+        resumeSaveTimer = setTimeout(saveWriterResumeNow, 350);
+    }
+
+    function flushWriterResumeSave() {
+        clearTimeout(resumeSaveTimer);
+        saveWriterResumeNow();
+    }
+
+    function applyPendingResumeViewport() {
+        if (!pendingResumeRestore) return;
+        const resume = pendingResumeRestore;
+        pendingResumeRestore = null;
+        requestAnimationFrame(() => {
+            restoreEditorViewport({ editorEl: editor, scrollEl: editorWorkspace, resume });
+            requestAnimationFrame(() => {
+                restoreEditorViewport({ editorEl: editor, scrollEl: editorWorkspace, resume });
+            });
+        });
+    }
+
     function loadChapter(section, index, rerender = true) {
+        if (!suppressResumeSave) flushWriterResumeSave();
         currentSection = section;
         currentChapterIndex = index;
         const ch = currentChapter();
@@ -681,6 +729,19 @@ function rememberBookId(id) {
         applyEditorStyle();
         if (rerender) renderAllSections();
         syncStats();
+        applyPendingResumeViewport();
+    }
+
+    function openInitialChapterFromResume(resume) {
+        const resolved = resume ? resolveResumeChapter(currentBook?.sections, resume) : null;
+        if (resolved) {
+            pendingResumeRestore = resume;
+            loadChapter(resolved.section, resolved.index, false);
+            return;
+        }
+        pendingResumeRestore = null;
+        if (currentBook.sections.body.length > 0) loadChapter("body", 0, false);
+        else loadChapter("front", 0, false);
     }
 
     function buildPublishChapterList() {
@@ -965,6 +1026,17 @@ function rememberBookId(id) {
         syncCurrentChapterFromEditor();
         syncStats();
         scheduleSave();
+        scheduleWriterResumeSave();
+    });
+    editor.addEventListener("keyup", () => scheduleWriterResumeSave());
+    editor.addEventListener("click", () => scheduleWriterResumeSave());
+    document.addEventListener("selectionchange", () => {
+        if (document.activeElement === editor) scheduleWriterResumeSave();
+    });
+    editorWorkspace?.addEventListener("scroll", () => scheduleWriterResumeSave(), { passive: true });
+    window.addEventListener("beforeunload", flushWriterResumeSave);
+    document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "hidden") flushWriterResumeSave();
     });
     editor.addEventListener("keydown", e => {
         if (e.key === "Enter") setTimeout(() => { syncCurrentChapterFromEditor(); syncStats(); scheduleSave(); }, 0);
@@ -1070,6 +1142,12 @@ async function resolveBookId() {
         return true;
     }
 
+    const lastSession = readLastWriterSession();
+    if (lastSession?.bookId) {
+        rememberBookId(lastSession.bookId);
+        return true;
+    }
+
     const { data, error } = await supabase
         .from("books")
         .select("id")
@@ -1095,10 +1173,13 @@ async function loadBook() {
             await migrateBookIfNeeded();
             renderTitles();
             renderAllSections();
-            if (currentBook.sections.body.length > 0) loadChapter("body", 0, false); else loadChapter("front", 0, false);
+            suppressResumeSave = true;
+            openInitialChapterFromResume(readWriterResume(bookId));
+            suppressResumeSave = false;
             syncStats();
             persistedBookWordCount = totalWords();
             setSaveStatus("Ready");
+            scheduleWriterResumeSave();
         } catch (e) {
             console.error("LOAD ERROR:", e);
             setSaveStatus("Error loading");
