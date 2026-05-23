@@ -212,8 +212,8 @@
     <script type="module">
         import { supabase } from "./firebase.js";
         import { wireSupabaseSession } from "./js/supabase-session.js?v=1";
-        import { getEncyclopedia } from "./js/world-encyclopedia-store.js?v=3";
-        import { initEncyclopediaSession } from "./js/encyclopedia-session.js?v=1";
+        import { getEncyclopedia } from "./js/world-encyclopedia-store.js?v=6";
+        import { initEncyclopediaSession } from "./js/encyclopedia-session.js?v=3";
         import {
             listGeographyWorlds,
             createGeographyWorld,
@@ -230,10 +230,12 @@
         const grid = document.getElementById("worldGrid");
         const dialog = document.getElementById("createDialog");
         const nameInput = document.getElementById("createNameInput");
+        let cloudReady = false;
 
         function bootPage() {
             const enc = encId ? getEncyclopedia(encId) : null;
             if (!enc) {
+                if (!cloudReady) return;
                 hubMissing.hidden = false;
                 return;
             }
@@ -327,22 +329,20 @@
         });
         dialog.addEventListener("click", (e) => { if (e.target === dialog) closeDialog(); });
 
+        bootPage();
+
+        let storageLoaded = false;
+
         wireSupabaseSession(async (session) => {
-            const user = session?.user;
-            if (!user) {
-                const next = encId
-                    ? "geography-worlds.html?encyclopedia=" + encodeURIComponent(encId)
-                    : "geography-worlds.html";
-                window.location.href = "login.html?next=" + encodeURIComponent(next);
-                return;
-            }
+            if (storageLoaded) return;
+            storageLoaded = true;
             try {
-                await initEncyclopediaSession(supabase, user.id);
-                bootPage();
+                await initEncyclopediaSession(supabase, session?.user?.id ?? null);
             } catch (err) {
-                console.error(err);
-                hubMissing.hidden = false;
+                console.warn("Encyclopedia init:", err);
             }
+            cloudReady = true;
+            bootPage();
         });
     </script>
 </body>

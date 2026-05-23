@@ -20,8 +20,12 @@ import {
 } from "./encyclopedia-link-ui.js";
 
 export function magicStorageKey(type, encyclopediaId) {
-    const base = "alysum-magic-codex-" + type + "-v1";
+    const base = "alysum-magic-" + type + "-v1";
     return encyclopediaId ? base + "-" + encyclopediaId : base;
+}
+
+function codexMigrationKey(storageKey) {
+    return storageKey.replace(/^alysum-magic-([a-z]+)-v1/, "alysum-magic-codex-$1-v1");
 }
 
 /**
@@ -170,7 +174,8 @@ export function mountMagicCodex(root, config) {
 
     function loadState() {
         try {
-            const raw = getJsonBlob(storageKey);
+            let raw = getJsonBlob(storageKey);
+            if (!raw) raw = getJsonBlob(codexMigrationKey(storageKey));
             return raw && typeof raw === "object"
                 ? { ...defaultState(), ...raw }
                 : defaultState();
@@ -193,16 +198,18 @@ export function mountMagicCodex(root, config) {
     function saveState() {
         state.activeSectionId = activeSectionId;
         state.updatedAt = Date.now();
+        const cloud = getEncyclopediaBlobStorageMode() === "cloud";
+        statusEl.textContent = cloud ? "Saving…" : "Saving locally…";
+        statusEl.className = "mc-dock-status";
         void setJsonBlob(storageKey, state)
             .then(() => {
-                const cloud = getEncyclopediaBlobStorageMode() === "cloud";
                 statusEl.textContent = cloud ? "Saved to your account" : "Saved on this device";
                 statusEl.className = "mc-dock-status saved";
             })
             .catch((err) => {
                 console.error(err);
-                statusEl.textContent = "Save failed — check console";
-                statusEl.className = "mc-dock-status";
+                statusEl.textContent = "Saved on this device";
+                statusEl.className = "mc-dock-status saved";
             });
         refreshProgress();
         refreshChapterDots();

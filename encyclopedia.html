@@ -329,8 +329,8 @@
         magicTypeRoute,
         isMagicType,
         getWorldEncyclopediaStorageMode
-    } from "./js/world-encyclopedia-store.js?v=5";
-    import { initEncyclopediaSession } from "./js/encyclopedia-session.js?v=2";
+    } from "./js/world-encyclopedia-store.js?v=6";
+    import { initEncyclopediaSession } from "./js/encyclopedia-session.js?v=3";
 
     const params = new URLSearchParams(window.location.search);
     const id = params.get("id");
@@ -342,32 +342,33 @@
     const metaEl = document.getElementById("encMeta");
     const toolsEl = document.getElementById("encTools");
     let bootedForId = null;
-    let bootRunning = false;
+    let cloudReady = false;
 
     async function bootPage() {
-        if (bootRunning || bootedForId === id) return;
-        bootRunning = true;
-        try {
         if (!id) {
             if (missingText) {
                 missingText.textContent =
                     "No encyclopedia was selected. Open one from your shelf.";
             }
             missing.hidden = false;
+            main.hidden = true;
             return;
         }
 
         const enc = await ensureEncyclopedia(id);
 
-    if (!enc) {
-        bootedForId = null;
-        main.hidden = true;
-        if (missingText) {
-            missingText.textContent =
-                "This encyclopedia could not be found. It may still be on this device only — open World Encyclopedia to sync it, or create a new one.";
+        if (!enc) {
+            if (!cloudReady) return;
+            bootedForId = null;
+            main.hidden = true;
+            if (missingText) {
+                missingText.textContent =
+                    "This encyclopedia could not be found. It may still be on this device only — open World Encyclopedia to sync it, or create a new one.";
+            }
+            missing.hidden = false;
+            return;
         }
-        missing.hidden = false;
-    } else {
+
         if (bootedForId === id) return;
         bootedForId = id;
         missing.hidden = true;
@@ -474,10 +475,6 @@
             toolsEl.appendChild(a);
         }
     }
-        } finally {
-            bootRunning = false;
-        }
-    }
 
     const magicOverlay = document.getElementById("magicTypeOverlay");
     const magicCancel = document.getElementById("magicTypeCancel");
@@ -545,31 +542,20 @@
         }
     });
 
-    let sessionReady = false;
+    void bootPage();
 
+    let sessionSynced = false;
     wireSupabaseSession(async (session) => {
-        const user = session?.user;
-        if (!user) {
-            sessionReady = false;
-            bootedForId = null;
-            const nextUrl = id ? "encyclopedia.html?id=" + encodeURIComponent(id) : "encyclopedia.html";
-            window.location.href = "login.html?next=" + encodeURIComponent(nextUrl);
-            return;
-        }
+        if (sessionSynced) return;
+        sessionSynced = true;
         try {
-            if (!sessionReady) {
-                await initEncyclopediaSession(supabase, user.id);
-                sessionReady = true;
-            }
-            await bootPage();
+            await initEncyclopediaSession(supabase, session?.user?.id ?? null);
         } catch (err) {
-            console.error(err);
-            if (missingText) {
-                missingText.textContent =
-                    "Could not load your encyclopedia. Check the browser console, confirm Supabase tables exist, then refresh.";
-            }
-            missing.hidden = false;
+            console.warn("Encyclopedia init:", err);
         }
+        cloudReady = true;
+        bootedForId = null;
+        await bootPage();
     });
 </script>
 

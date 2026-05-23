@@ -33,7 +33,7 @@
     <div class="mc-body" id="codexRoot"></div>
     <script type="module">
         import { PEOPLES_CULTURE_SECTIONS, PEOPLES_CULTURE_INTRO } from "./js/peoples-culture-sections.js?v=1";
-        import { mountMagicCodex } from "./js/magic-codex-ui.js?v=5";
+        import { mountMagicCodex } from "./js/magic-codex-ui.js?v=6";
         import {
             cultureStorageKey,
             getPeoplesCultureMeta,
@@ -42,17 +42,20 @@
         } from "./js/peoples-culture-store.js?v=2";
         import { supabase } from "./firebase.js";
         import { wireSupabaseSession } from "./js/supabase-session.js?v=1";
-        import { getEncyclopedia } from "./js/world-encyclopedia-store.js?v=3";
-        import { initEncyclopediaSession } from "./js/encyclopedia-session.js?v=1";
+        import { getEncyclopedia } from "./js/world-encyclopedia-store.js?v=6";
+        import { initEncyclopediaSession } from "./js/encyclopedia-session.js?v=3";
 
         const params = new URLSearchParams(location.search);
         const encId = params.get("encyclopedia");
         const cultureId = params.get("culture");
+        let cloudReady = false;
+        let codexMounted = false;
 
         function bootPage() {
             const meta = encId && cultureId ? getPeoplesCultureMeta(encId, cultureId) : null;
             const enc = encId ? getEncyclopedia(encId) : null;
             if (!encId || !cultureId || !meta || !enc) {
+                if (!cloudReady) return;
                 window.location.href = encId
                     ? "peoples-cultures.html?encyclopedia=" + encodeURIComponent(encId)
                     : "world-encyclopedia.html";
@@ -65,6 +68,9 @@
                 "peoples-cultures.html?encyclopedia=" + encodeURIComponent(encId);
             document.getElementById("encBack").href =
                 "encyclopedia.html?id=" + encodeURIComponent(encId);
+
+            if (codexMounted) return;
+            codexMounted = true;
 
             mountMagicCodex(document.getElementById("codexRoot"), {
                 theme: "peoples",
@@ -92,24 +98,20 @@
             });
         }
 
+        let storageLoaded = false;
+
+        bootPage();
+
         wireSupabaseSession(async (session) => {
-            const user = session?.user;
-            if (!user) {
-                const next =
-                    "peoples-culture.html?encyclopedia=" +
-                    encodeURIComponent(encId || "") +
-                    "&culture=" +
-                    encodeURIComponent(cultureId || "");
-                window.location.href = "login.html?next=" + encodeURIComponent(next);
-                return;
-            }
+            if (storageLoaded) return;
+            storageLoaded = true;
             try {
-                await initEncyclopediaSession(supabase, user.id);
-                bootPage();
+                await initEncyclopediaSession(supabase, session?.user?.id ?? null);
             } catch (err) {
-                console.error(err);
-                window.location.href = "world-encyclopedia.html";
+                console.warn("Encyclopedia init:", err);
             }
+            cloudReady = true;
+            bootPage();
         });
     </script>
 </body>

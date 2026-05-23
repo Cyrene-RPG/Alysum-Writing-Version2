@@ -401,14 +401,14 @@
 <script type="module">
     import { supabase } from "./firebase.js";
     import { wireSupabaseSession } from "./js/supabase-session.js?v=1";
-    import { initEncyclopediaSession } from "./js/encyclopedia-session.js?v=1";
+    import { initEncyclopediaSession } from "./js/encyclopedia-session.js?v=3";
     import {
         getJsonBlob,
         setJsonBlob,
         removeJsonBlob,
         realmBuilderStorageKey,
         getEncyclopediaBlobStorageMode
-    } from "./js/encyclopedia-blob-store.js?v=1";
+    } from "./js/encyclopedia-blob-store.js?v=3";
 
     const encId = new URLSearchParams(location.search).get("encyclopedia");
     const STORAGE_KEY = realmBuilderStorageKey(encId);
@@ -784,22 +784,24 @@
         saveStatus.className = "rb-status warn";
     });
 
+    function startBuilder() {
+        state = loadState();
+        activeSectionId = state.activeSectionId || SECTIONS[0].id;
+        renderTopFields();
+        renderAll();
+    }
+
+    startBuilder();
+
+    let storageLoaded = false;
     wireSupabaseSession(async (session) => {
-        if (!session?.user) {
-            window.location.href =
-                "login.html?next=" + encodeURIComponent(location.pathname + location.search);
-            return;
-        }
+        if (storageLoaded) return;
+        storageLoaded = true;
         try {
-            await initEncyclopediaSession(supabase, session.user.id);
-            state = loadState();
-            activeSectionId = state.activeSectionId || SECTIONS[0].id;
-            renderTopFields();
-            renderAll();
+            await initEncyclopediaSession(supabase, session?.user?.id ?? null);
+            startBuilder();
         } catch (err) {
-            console.error(err);
-            saveStatus.textContent = "Could not load — refresh or sign in again";
-            saveStatus.className = "rb-status warn";
+            console.warn("Encyclopedia init:", err);
         }
     });
 

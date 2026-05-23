@@ -33,7 +33,7 @@
     <div class="mc-body" id="codexRoot"></div>
     <script type="module">
         import { HISTORY_SECTIONS, HISTORY_INTRO } from "./js/history-sections.js?v=2";
-        import { mountMagicCodex } from "./js/magic-codex-ui.js?v=5";
+        import { mountMagicCodex } from "./js/magic-codex-ui.js?v=6";
         import {
             recordStorageKey,
             getHistoryRecordMeta,
@@ -42,17 +42,20 @@
         } from "./js/history-store.js?v=2";
         import { supabase } from "./firebase.js";
         import { wireSupabaseSession } from "./js/supabase-session.js?v=1";
-        import { getEncyclopedia } from "./js/world-encyclopedia-store.js?v=3";
-        import { initEncyclopediaSession } from "./js/encyclopedia-session.js?v=1";
+        import { getEncyclopedia } from "./js/world-encyclopedia-store.js?v=6";
+        import { initEncyclopediaSession } from "./js/encyclopedia-session.js?v=3";
 
         const params = new URLSearchParams(location.search);
         const encId = params.get("encyclopedia");
         const recordId = params.get("record");
+        let cloudReady = false;
+        let codexMounted = false;
 
         function bootPage() {
             const meta = encId && recordId ? getHistoryRecordMeta(encId, recordId) : null;
             const enc = encId ? getEncyclopedia(encId) : null;
             if (!encId || !recordId || !meta || !enc) {
+                if (!cloudReady) return;
                 window.location.href = encId
                     ? "histories.html?encyclopedia=" + encodeURIComponent(encId)
                     : "world-encyclopedia.html";
@@ -65,6 +68,9 @@
                 "histories.html?encyclopedia=" + encodeURIComponent(encId);
             document.getElementById("encBack").href =
                 "encyclopedia.html?id=" + encodeURIComponent(encId);
+
+            if (codexMounted) return;
+            codexMounted = true;
 
             mountMagicCodex(document.getElementById("codexRoot"), {
                 theme: "history",
@@ -92,24 +98,20 @@
             });
         }
 
+        let storageLoaded = false;
+
+        bootPage();
+
         wireSupabaseSession(async (session) => {
-            const user = session?.user;
-            if (!user) {
-                const next =
-                    "history-record.html?encyclopedia=" +
-                    encodeURIComponent(encId || "") +
-                    "&record=" +
-                    encodeURIComponent(recordId || "");
-                window.location.href = "login.html?next=" + encodeURIComponent(next);
-                return;
-            }
+            if (storageLoaded) return;
+            storageLoaded = true;
             try {
-                await initEncyclopediaSession(supabase, user.id);
-                bootPage();
+                await initEncyclopediaSession(supabase, session?.user?.id ?? null);
             } catch (err) {
-                console.error(err);
-                window.location.href = "world-encyclopedia.html";
+                console.warn("Encyclopedia init:", err);
             }
+            cloudReady = true;
+            bootPage();
         });
     </script>
 </body>
