@@ -1,6 +1,8 @@
 /**
- * Device-local geography / terrain sheets per encyclopedia (many worlds per encyclopedia).
+ * Geography / terrain sheets per encyclopedia — Supabase encyclopedia_blobs with localStorage fallback.
  */
+
+import { getJsonBlob, setJsonBlob, removeJsonBlob } from "./encyclopedia-blob-store.js";
 
 const INDEX_PREFIX = "alysum-geography-worlds-index-v1";
 const SHEET_PREFIX = "alysum-geography-world-sheet-v1";
@@ -15,21 +17,12 @@ export function worldStorageKey(encyclopediaId, worldId) {
 }
 
 function readIndex(encyclopediaId) {
-    try {
-        const raw = localStorage.getItem(indexKey(encyclopediaId));
-        if (!raw) return [];
-        const o = JSON.parse(raw);
-        return Array.isArray(o?.worlds) ? o.worlds : [];
-    } catch {
-        return [];
-    }
+    const o = getJsonBlob(indexKey(encyclopediaId));
+    return Array.isArray(o?.worlds) ? o.worlds : [];
 }
 
-function writeIndex(encyclopediaId, worlds) {
-    localStorage.setItem(
-        indexKey(encyclopediaId),
-        JSON.stringify({ version: 1, worlds })
-    );
+async function writeIndex(encyclopediaId, worlds) {
+    await setJsonBlob(indexKey(encyclopediaId), { version: 1, worlds });
 }
 
 function newId() {
@@ -47,7 +40,7 @@ export function getGeographyWorldMeta(encyclopediaId, worldId) {
     return readIndex(encyclopediaId).find((w) => w.id === worldId) || null;
 }
 
-export function createGeographyWorld(encyclopediaId, name) {
+export async function createGeographyWorld(encyclopediaId, name) {
     const now = Date.now();
     const trimmed = String(name || "").trim() || "Untitled world";
     const entry = {
@@ -58,54 +51,49 @@ export function createGeographyWorld(encyclopediaId, name) {
     };
     const list = readIndex(encyclopediaId);
     list.push(entry);
-    writeIndex(encyclopediaId, list);
-    localStorage.setItem(
-        worldStorageKey(encyclopediaId, entry.id),
-        JSON.stringify({
-            answers: { systemName: trimmed },
-            activeSectionId: "cosmic",
-            updatedAt: now
-        })
-    );
+    await writeIndex(encyclopediaId, list);
+    await setJsonBlob(worldStorageKey(encyclopediaId, entry.id), {
+        answers: { systemName: trimmed },
+        activeSectionId: "cosmic",
+        updatedAt: now
+    });
     return entry;
 }
 
-export function renameGeographyWorld(encyclopediaId, worldId, name) {
+export async function renameGeographyWorld(encyclopediaId, worldId, name) {
     const trimmed = String(name || "").trim();
     if (!trimmed) return null;
     const list = readIndex(encyclopediaId);
     const ix = list.findIndex((w) => w.id === worldId);
     if (ix < 0) return null;
     list[ix] = { ...list[ix], name: trimmed, updatedAt: Date.now() };
-    writeIndex(encyclopediaId, list);
-    try {
-        const raw = localStorage.getItem(worldStorageKey(encyclopediaId, worldId));
-        if (raw) {
-            const state = JSON.parse(raw);
-            state.answers = state.answers || {};
-            state.answers.systemName = trimmed;
-            state.updatedAt = Date.now();
-            localStorage.setItem(worldStorageKey(encyclopediaId, worldId), JSON.stringify(state));
-        }
-    } catch (_) {}
+    await writeIndex(encyclopediaId, list);
+    const sheetKey = worldStorageKey(encyclopediaId, worldId);
+    const state = getJsonBlob(sheetKey);
+    if (state && typeof state === "object") {
+        state.answers = state.answers || {};
+        state.answers.systemName = trimmed;
+        state.updatedAt = Date.now();
+        await setJsonBlob(sheetKey, state);
+    }
     return list[ix];
 }
 
-export function touchGeographyWorld(encyclopediaId, worldId) {
+export async function touchGeographyWorld(encyclopediaId, worldId) {
     const list = readIndex(encyclopediaId);
     const ix = list.findIndex((w) => w.id === worldId);
     if (ix < 0) return null;
     list[ix] = { ...list[ix], updatedAt: Date.now() };
-    writeIndex(encyclopediaId, list);
+    await writeIndex(encyclopediaId, list);
     return list[ix];
 }
 
-export function deleteGeographyWorld(encyclopediaId, worldId) {
-    writeIndex(
+export async function deleteGeographyWorld(encyclopediaId, worldId) {
+    await writeIndex(
         encyclopediaId,
         readIndex(encyclopediaId).filter((w) => w.id !== worldId)
     );
-    localStorage.removeItem(worldStorageKey(encyclopediaId, worldId));
+    await removeJsonBlob(worldStorageKey(encyclopediaId, worldId));
 }
 
 export function formatGeographyDate(ms) {

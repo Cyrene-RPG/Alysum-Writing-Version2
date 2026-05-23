@@ -33,27 +33,32 @@
     <div class="mc-body" id="codexRoot"></div>
     <script type="module">
         import { PEOPLES_CULTURE_SECTIONS, PEOPLES_CULTURE_INTRO } from "./js/peoples-culture-sections.js?v=1";
-        import { mountMagicCodex } from "./js/magic-codex-ui.js?v=4";
+        import { mountMagicCodex } from "./js/magic-codex-ui.js?v=5";
         import {
             cultureStorageKey,
             getPeoplesCultureMeta,
             touchPeoplesCulture,
             renamePeoplesCulture
-        } from "./js/peoples-culture-store.js?v=1";
-        import { getEncyclopedia } from "./js/world-encyclopedia-store.js?v=2";
+        } from "./js/peoples-culture-store.js?v=2";
+        import { supabase } from "./firebase.js";
+        import { wireSupabaseSession } from "./js/supabase-session.js?v=1";
+        import { getEncyclopedia } from "./js/world-encyclopedia-store.js?v=3";
+        import { initEncyclopediaSession } from "./js/encyclopedia-session.js?v=1";
 
         const params = new URLSearchParams(location.search);
         const encId = params.get("encyclopedia");
         const cultureId = params.get("culture");
-        const meta = encId && cultureId ? getPeoplesCultureMeta(encId, cultureId) : null;
-        const enc = encId ? getEncyclopedia(encId) : null;
 
-        if (!encId || !cultureId || !meta) {
-            window.location.href = encId
-                ? "peoples-cultures.html?encyclopedia=" + encodeURIComponent(encId)
-                : "world-encyclopedia.html";
-        } else {
-            touchPeoplesCulture(encId, cultureId);
+        function bootPage() {
+            const meta = encId && cultureId ? getPeoplesCultureMeta(encId, cultureId) : null;
+            const enc = encId ? getEncyclopedia(encId) : null;
+            if (!encId || !cultureId || !meta || !enc) {
+                window.location.href = encId
+                    ? "peoples-cultures.html?encyclopedia=" + encodeURIComponent(encId)
+                    : "world-encyclopedia.html";
+                return;
+            }
+            void touchPeoplesCulture(encId, cultureId);
             document.getElementById("pageTitle").textContent = meta.name;
             document.title = meta.name + " — Culture Codex — Alysum";
             document.getElementById("hubBack").href =
@@ -74,7 +79,7 @@
                 manuscriptTitle: "Your culture manuscript",
                 onFieldChange: (key, value) => {
                     if (key === "systemName" && value.trim()) {
-                        renamePeoplesCulture(encId, cultureId, value.trim());
+                        void renamePeoplesCulture(encId, cultureId, value.trim());
                         document.getElementById("pageTitle").textContent = value.trim();
                     }
                 },
@@ -86,6 +91,26 @@
                 }
             });
         }
+
+        wireSupabaseSession(async (session) => {
+            const user = session?.user;
+            if (!user) {
+                const next =
+                    "peoples-culture.html?encyclopedia=" +
+                    encodeURIComponent(encId || "") +
+                    "&culture=" +
+                    encodeURIComponent(cultureId || "");
+                window.location.href = "login.html?next=" + encodeURIComponent(next);
+                return;
+            }
+            try {
+                await initEncyclopediaSession(supabase, user.id);
+                bootPage();
+            } catch (err) {
+                console.error(err);
+                window.location.href = "world-encyclopedia.html";
+            }
+        });
     </script>
 </body>
 </html>

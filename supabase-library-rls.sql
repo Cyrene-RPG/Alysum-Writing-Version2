@@ -125,7 +125,7 @@ GRANT SELECT ON public.library TO anon, authenticated;
 GRANT INSERT, UPDATE, DELETE ON public.library TO authenticated;
 
 -- ---------------------------------------------------------------------------
--- 4. View counter — readers bump views without full row UPDATE rights
+-- 4. View counter — readers bump views only (not data.updated; that is set on publish)
 -- ---------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.increment_library_views(p_book_id text)
 RETURNS void
@@ -133,8 +133,6 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
-DECLARE
-  v_now bigint := (extract(epoch FROM clock_timestamp()) * 1000)::bigint;
 BEGIN
   IF p_book_id IS NULL OR length(trim(p_book_id)) = 0 THEN
     RETURN;
@@ -142,14 +140,9 @@ BEGIN
 
   UPDATE public.library
   SET data = jsonb_set(
-    jsonb_set(
-      COALESCE(data, '{}'::jsonb),
-      '{views}',
-      to_jsonb(GREATEST(COALESCE((data->>'views')::bigint, 0) + 1, 0)),
-      true
-    ),
-    '{updated}',
-    to_jsonb(v_now),
+    COALESCE(data, '{}'::jsonb),
+    '{views}',
+    to_jsonb(GREATEST(COALESCE((data->>'views')::bigint, 0) + 1, 0)),
     true
   )
   WHERE id::text = p_book_id

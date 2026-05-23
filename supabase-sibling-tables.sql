@@ -55,6 +55,35 @@ CREATE TABLE IF NOT EXISTS public.worldbuilding_workbooks (
   PRIMARY KEY (user_id, id)
 );
 
+-- World Encyclopedia shelf (world-encyclopedia.html — was device localStorage)
+CREATE TABLE IF NOT EXISTS public.world_encyclopedias (
+  user_id uuid NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE,
+  id text NOT NULL,
+  title text NOT NULL DEFAULT 'Untitled encyclopedia',
+  magic_type text,
+  created_at_ms bigint NOT NULL,
+  updated_at_ms bigint NOT NULL,
+  PRIMARY KEY (user_id, id),
+  CONSTRAINT world_encyclopedias_magic_type_check CHECK (
+    magic_type IS NULL OR magic_type IN ('soft', 'hard', 'undecided')
+  )
+);
+
+CREATE INDEX IF NOT EXISTS world_encyclopedias_user_updated_idx
+  ON public.world_encyclopedias (user_id, updated_at_ms DESC);
+
+-- Encyclopedia builder blobs (history, geography, codexes, city/realm builders, links)
+CREATE TABLE IF NOT EXISTS public.encyclopedia_blobs (
+  user_id uuid NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE,
+  storage_key text NOT NULL,
+  data jsonb NOT NULL DEFAULT '{}'::jsonb,
+  updated_ms bigint NOT NULL,
+  PRIMARY KEY (user_id, storage_key)
+);
+
+CREATE INDEX IF NOT EXISTS encyclopedia_blobs_user_updated_idx
+  ON public.encyclopedia_blobs (user_id, updated_ms DESC);
+
 -- Character profile side worksheets (was users/{uid}/characterProfileSheets/{sheetId})
 CREATE TABLE IF NOT EXISTS public.character_profile_sheets (
   user_id uuid NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE,
@@ -78,6 +107,8 @@ CREATE TABLE IF NOT EXISTS public.notebook_vault (
 
 ALTER TABLE public.story_bible_characters ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.story_bible_places ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.world_encyclopedias ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.encyclopedia_blobs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.worldbuilding_encyclopedia ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.worldbuilding_workbooks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.character_profile_sheets ENABLE ROW LEVEL SECURITY;
@@ -89,6 +120,14 @@ CREATE POLICY "story_bible_characters_own" ON public.story_bible_characters
 
 DROP POLICY IF EXISTS "story_bible_places_own" ON public.story_bible_places;
 CREATE POLICY "story_bible_places_own" ON public.story_bible_places
+  FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "world_encyclopedias_own" ON public.world_encyclopedias;
+CREATE POLICY "world_encyclopedias_own" ON public.world_encyclopedias
+  FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "encyclopedia_blobs_own" ON public.encyclopedia_blobs;
+CREATE POLICY "encyclopedia_blobs_own" ON public.encyclopedia_blobs
   FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 
 DROP POLICY IF EXISTS "worldbuilding_encyclopedia_own" ON public.worldbuilding_encyclopedia;

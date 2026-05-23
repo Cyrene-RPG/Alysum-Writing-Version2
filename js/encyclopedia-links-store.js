@@ -1,22 +1,18 @@
 /**
- * Global encyclopedia cross-links (all codexes, all encyclopedias on this device).
+ * Encyclopedia cross-links — Supabase encyclopedia_blobs with localStorage fallback.
  */
+
+import { getJsonBlob, setJsonBlob, removeJsonBlob } from "./encyclopedia-blob-store.js";
 
 const STORAGE_KEY = "alysum-encyclopedia-links-v1";
 
 function readAll() {
-    try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return [];
-        const o = JSON.parse(raw);
-        return Array.isArray(o?.links) ? o.links : [];
-    } catch {
-        return [];
-    }
+    const o = getJsonBlob(STORAGE_KEY);
+    return Array.isArray(o?.links) ? o.links : [];
 }
 
-function writeAll(links) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 1, links }));
+async function writeAll(links) {
+    await setJsonBlob(STORAGE_KEY, { version: 1, links });
 }
 
 function newId() {
@@ -44,7 +40,7 @@ export function getEncyclopediaLink(id) {
 /**
  * @param {{ phrase: string, target: object }} entry
  */
-export function upsertEncyclopediaLink({ phrase, target }) {
+export async function upsertEncyclopediaLink({ phrase, target }) {
     const trimmed = String(phrase || "").trim();
     if (!trimmed || trimmed.length < 2) return null;
     const links = readAll();
@@ -58,12 +54,12 @@ export function upsertEncyclopediaLink({ phrase, target }) {
     };
     if (ix >= 0) links[ix] = row;
     else links.push(row);
-    writeAll(links);
+    await writeAll(links);
     return row;
 }
 
-export function deleteEncyclopediaLink(id) {
-    writeAll(readAll().filter((l) => l.id !== id));
+export async function deleteEncyclopediaLink(id) {
+    await writeAll(readAll().filter((l) => l.id !== id));
 }
 
 export function buildCodexFieldHref(page, queryParams, fieldKey) {

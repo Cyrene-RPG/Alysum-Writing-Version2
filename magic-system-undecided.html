@@ -41,49 +41,16 @@
             SOFT_MAGIC_INTRO,
             HARD_MAGIC_INTRO
         } from "./js/magic-system-sections.js?v=2";
-        import { mountMagicCodex, magicStorageKey } from "./js/magic-codex-ui.js?v=4";
+        import { mountMagicCodex, magicStorageKey } from "./js/magic-codex-ui.js?v=5";
+        import { bootMagicSystemPage } from "./js/magic-system-page-boot.js?v=1";
 
-        const encId = new URLSearchParams(location.search).get("encyclopedia");
         const body = document.getElementById("codexBody");
         const root = document.getElementById("codexRoot");
         const switcher = document.querySelector(".mc-mode-switch");
 
         let activeCodex = null;
 
-        const configs = {
-            soft: {
-                theme: "soft",
-                sections: SOFT_SECTIONS,
-                intro: SOFT_MAGIC_INTRO,
-                storageKey: magicStorageKey("soft", encId),
-                compileHeading: "Soft Magic System",
-                linkContext: encId
-                    ? {
-                          page: "magic-system-undecided.html",
-                          queryParams: { encyclopedia: encId },
-                          storageKey: magicStorageKey("soft", encId),
-                          sheetLabel: "Soft Magic System"
-                      }
-                    : null
-            },
-            hard: {
-                theme: "hard",
-                sections: HARD_SECTIONS,
-                intro: HARD_MAGIC_INTRO,
-                storageKey: magicStorageKey("hard", encId),
-                compileHeading: "Hard Magic System",
-                linkContext: encId
-                    ? {
-                          page: "magic-system-undecided.html",
-                          queryParams: { encyclopedia: encId },
-                          storageKey: magicStorageKey("hard", encId),
-                          sheetLabel: "Hard Magic System"
-                      }
-                    : null
-            }
-        };
-
-        function showMode(mode) {
+        function showMode(configs, mode) {
             activeCodex?.destroy();
             root.replaceChildren();
             activeCodex = mountMagicCodex(root, configs[mode]);
@@ -97,34 +64,69 @@
             } catch (_) {}
         }
 
-        switcher.querySelectorAll(".mc-mode-seg").forEach((btn) => {
-            btn.addEventListener("click", () => {
-                if (!btn.classList.contains("active")) showMode(btn.dataset.mode);
-            });
-        });
-
-        const hash = (location.hash || "").replace(/^#/, "");
-        showMode(hash === "hard" ? "hard" : "soft");
-
-        window.addEventListener("hashchange", () => {
-            const h = (location.hash || "").replace(/^#/, "");
-            if (h === "soft" || h === "hard") showMode(h);
-        });
-
-        const back = document.querySelector("[data-enc-back]");
-        if (encId && back) {
-            back.href = "encyclopedia.html?id=" + encodeURIComponent(encId);
-        }
-
-        const changeBtn = document.getElementById("changeMagicType");
-        if (encId && changeBtn) {
-            changeBtn.hidden = false;
-            changeBtn.addEventListener("click", () => {
-                if (confirm("Pick a different magic approach? Your answers stay saved.")) {
-                    location.href = "encyclopedia.html?id=" + encodeURIComponent(encId) + "&pickMagic=1";
+        bootMagicSystemPage((encId) => {
+            const configs = {
+                soft: {
+                    theme: "soft",
+                    sections: SOFT_SECTIONS,
+                    intro: SOFT_MAGIC_INTRO,
+                    storageKey: magicStorageKey("soft", encId),
+                    compileHeading: "Soft Magic System",
+                    linkContext: encId
+                        ? {
+                              page: "magic-system-undecided.html",
+                              queryParams: { encyclopedia: encId },
+                              storageKey: magicStorageKey("soft", encId),
+                              sheetLabel: "Soft Magic System"
+                          }
+                        : null
+                },
+                hard: {
+                    theme: "hard",
+                    sections: HARD_SECTIONS,
+                    intro: HARD_MAGIC_INTRO,
+                    storageKey: magicStorageKey("hard", encId),
+                    compileHeading: "Hard Magic System",
+                    linkContext: encId
+                        ? {
+                              page: "magic-system-undecided.html",
+                              queryParams: { encyclopedia: encId },
+                              storageKey: magicStorageKey("hard", encId),
+                              sheetLabel: "Hard Magic System"
+                          }
+                        : null
                 }
+            };
+
+            switcher.querySelectorAll(".mc-mode-seg").forEach((btn) => {
+                btn.addEventListener("click", () => {
+                    if (!btn.classList.contains("active")) showMode(configs, btn.dataset.mode);
+                });
             });
-        }
+
+            const hash = (location.hash || "").replace(/^#/, "");
+            showMode(configs, hash === "hard" ? "hard" : "soft");
+
+            window.addEventListener("hashchange", () => {
+                const h = (location.hash || "").replace(/^#/, "");
+                if (h === "soft" || h === "hard") showMode(configs, h);
+            });
+
+            const back = document.querySelector("[data-enc-back]");
+            if (encId && back) {
+                back.href = "encyclopedia.html?id=" + encodeURIComponent(encId);
+            }
+
+            const changeBtn = document.getElementById("changeMagicType");
+            if (encId && changeBtn) {
+                changeBtn.hidden = false;
+                changeBtn.addEventListener("click", () => {
+                    if (confirm("Pick a different magic approach? Your answers stay saved.")) {
+                        location.href = "encyclopedia.html?id=" + encodeURIComponent(encId) + "&pickMagic=1";
+                    }
+                });
+            }
+        });
     </script>
 </body>
 </html>

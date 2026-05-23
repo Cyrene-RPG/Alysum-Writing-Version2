@@ -33,26 +33,32 @@
     <div class="mc-body" id="codexRoot"></div>
     <script type="module">
         import { HISTORY_SECTIONS, HISTORY_INTRO } from "./js/history-sections.js?v=2";
-        import { mountMagicCodex } from "./js/magic-codex-ui.js?v=4";
+        import { mountMagicCodex } from "./js/magic-codex-ui.js?v=5";
         import {
             recordStorageKey,
             getHistoryRecordMeta,
             touchHistoryRecord,
             renameHistoryRecord
-        } from "./js/history-store.js?v=1";
-        import { getEncyclopedia } from "./js/world-encyclopedia-store.js?v=2";
+        } from "./js/history-store.js?v=2";
+        import { supabase } from "./firebase.js";
+        import { wireSupabaseSession } from "./js/supabase-session.js?v=1";
+        import { getEncyclopedia } from "./js/world-encyclopedia-store.js?v=3";
+        import { initEncyclopediaSession } from "./js/encyclopedia-session.js?v=1";
 
         const params = new URLSearchParams(location.search);
         const encId = params.get("encyclopedia");
         const recordId = params.get("record");
-        const meta = encId && recordId ? getHistoryRecordMeta(encId, recordId) : null;
 
-        if (!encId || !recordId || !meta) {
-            window.location.href = encId
-                ? "histories.html?encyclopedia=" + encodeURIComponent(encId)
-                : "world-encyclopedia.html";
-        } else {
-            touchHistoryRecord(encId, recordId);
+        function bootPage() {
+            const meta = encId && recordId ? getHistoryRecordMeta(encId, recordId) : null;
+            const enc = encId ? getEncyclopedia(encId) : null;
+            if (!encId || !recordId || !meta || !enc) {
+                window.location.href = encId
+                    ? "histories.html?encyclopedia=" + encodeURIComponent(encId)
+                    : "world-encyclopedia.html";
+                return;
+            }
+            void touchHistoryRecord(encId, recordId);
             document.getElementById("pageTitle").textContent = meta.name;
             document.title = meta.name + " — Chronicle Codex — Alysum";
             document.getElementById("hubBack").href =
@@ -73,7 +79,7 @@
                 manuscriptTitle: "Your chronicle manuscript",
                 onFieldChange: (key, value) => {
                     if (key === "systemName" && value.trim()) {
-                        renameHistoryRecord(encId, recordId, value.trim());
+                        void renameHistoryRecord(encId, recordId, value.trim());
                         document.getElementById("pageTitle").textContent = value.trim();
                     }
                 },
@@ -85,6 +91,26 @@
                 }
             });
         }
+
+        wireSupabaseSession(async (session) => {
+            const user = session?.user;
+            if (!user) {
+                const next =
+                    "history-record.html?encyclopedia=" +
+                    encodeURIComponent(encId || "") +
+                    "&record=" +
+                    encodeURIComponent(recordId || "");
+                window.location.href = "login.html?next=" + encodeURIComponent(next);
+                return;
+            }
+            try {
+                await initEncyclopediaSession(supabase, user.id);
+                bootPage();
+            } catch (err) {
+                console.error(err);
+                window.location.href = "world-encyclopedia.html";
+            }
+        });
     </script>
 </body>
 </html>

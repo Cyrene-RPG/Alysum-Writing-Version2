@@ -314,23 +314,26 @@
 </div>
 
 <div class="enc-missing" id="encMissing" hidden>
-    <p>This encyclopedia could not be found on this device.</p>
+    <p>This encyclopedia could not be found. Sign in with the account that owns it, or check the link.</p>
     <p><a href="world-encyclopedia.html">Return to World Encyclopedia</a></p>
 </div>
 
 <script type="module">
+    import { supabase } from "./firebase.js";
+    import { wireSupabaseSession } from "./js/supabase-session.js?v=1";
     import {
         getEncyclopedia,
         touchEncyclopedia,
         formatEncyclopediaDate,
         setEncyclopediaMagicType,
         magicTypeRoute,
-        isMagicType
-    } from "./js/world-encyclopedia-store.js?v=2";
+        isMagicType,
+        getWorldEncyclopediaStorageMode
+    } from "./js/world-encyclopedia-store.js?v=3";
+    import { initEncyclopediaSession } from "./js/encyclopedia-session.js?v=1";
 
     const params = new URLSearchParams(window.location.search);
     const id = params.get("id");
-    const enc = getEncyclopedia(id);
 
     const main = document.getElementById("encMain");
     const missing = document.getElementById("encMissing");
@@ -338,14 +341,22 @@
     const metaEl = document.getElementById("encMeta");
     const toolsEl = document.getElementById("encTools");
 
+    function bootPage() {
+        const enc = getEncyclopedia(id);
+
     if (!enc) {
         missing.hidden = false;
     } else {
-        touchEncyclopedia(enc.id);
+        void touchEncyclopedia(enc.id);
         document.title = enc.title + " — World Encyclopedia — Alysum";
         titleEl.textContent = enc.title;
         const updated = formatEncyclopediaDate(enc.updatedAt);
-        metaEl.textContent = updated ? "Last opened " + updated : "Your local encyclopedia";
+        const cloud = getWorldEncyclopediaStorageMode() === "cloud";
+        metaEl.textContent = updated
+            ? "Last opened " + updated
+            : cloud
+              ? "Synced to your account"
+              : "Saved on this device";
         main.hidden = false;
 
         const q = "?encyclopedia=" + encodeURIComponent(enc.id);
@@ -437,6 +448,7 @@
             toolsEl.appendChild(a);
         }
     }
+    }
 
     const magicOverlay = document.getElementById("magicTypeOverlay");
     const magicCancel = document.getElementById("magicTypeCancel");
@@ -446,7 +458,7 @@
 
     function goToMagic(magicType, query, encId) {
         if (!isMagicType(magicType)) return;
-        if (encId) setEncyclopediaMagicType(encId, magicType);
+        if (encId) void setEncyclopediaMagicType(encId, magicType);
         const route = magicTypeRoute(magicType);
         if (route) window.location.href = route + query;
     }
@@ -501,6 +513,22 @@
     document.addEventListener("keydown", (e) => {
         if (e.key === "Escape" && !magicOverlay.classList.contains("hidden")) {
             closeMagicTypeOverlay();
+        }
+    });
+
+    wireSupabaseSession(async (session) => {
+        const user = session?.user;
+        if (!user) {
+            const nextUrl = id ? "encyclopedia.html?id=" + encodeURIComponent(id) : "encyclopedia.html";
+            window.location.href = "login.html?next=" + encodeURIComponent(nextUrl);
+            return;
+        }
+        try {
+            await initEncyclopediaSession(supabase, user.id);
+            bootPage();
+        } catch (err) {
+            console.error(err);
+            missing.hidden = false;
         }
     });
 </script>

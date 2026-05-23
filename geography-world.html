@@ -33,27 +33,32 @@
     <div class="mc-body" id="codexRoot"></div>
     <script type="module">
         import { GEOGRAPHY_SECTIONS, GEOGRAPHY_INTRO } from "./js/geography-sections.js?v=2";
-        import { mountMagicCodex } from "./js/magic-codex-ui.js?v=4";
+        import { mountMagicCodex } from "./js/magic-codex-ui.js?v=5";
         import {
             worldStorageKey,
             getGeographyWorldMeta,
             touchGeographyWorld,
             renameGeographyWorld
-        } from "./js/geography-store.js?v=1";
-        import { getEncyclopedia } from "./js/world-encyclopedia-store.js?v=2";
+        } from "./js/geography-store.js?v=2";
+        import { supabase } from "./firebase.js";
+        import { wireSupabaseSession } from "./js/supabase-session.js?v=1";
+        import { getEncyclopedia } from "./js/world-encyclopedia-store.js?v=3";
+        import { initEncyclopediaSession } from "./js/encyclopedia-session.js?v=1";
 
         const params = new URLSearchParams(location.search);
         const encId = params.get("encyclopedia");
         const worldId = params.get("world");
-        const meta = encId && worldId ? getGeographyWorldMeta(encId, worldId) : null;
-        const enc = encId ? getEncyclopedia(encId) : null;
 
-        if (!encId || !worldId || !meta) {
-            window.location.href = encId
-                ? "geography-worlds.html?encyclopedia=" + encodeURIComponent(encId)
-                : "world-encyclopedia.html";
-        } else {
-            touchGeographyWorld(encId, worldId);
+        function bootPage() {
+            const meta = encId && worldId ? getGeographyWorldMeta(encId, worldId) : null;
+            const enc = encId ? getEncyclopedia(encId) : null;
+            if (!encId || !worldId || !meta || !enc) {
+                window.location.href = encId
+                    ? "geography-worlds.html?encyclopedia=" + encodeURIComponent(encId)
+                    : "world-encyclopedia.html";
+                return;
+            }
+            void touchGeographyWorld(encId, worldId);
             document.getElementById("pageTitle").textContent = meta.name;
             document.title = meta.name + " — Terrain Codex — Alysum";
             document.getElementById("hubBack").href =
@@ -74,7 +79,7 @@
                 manuscriptTitle: "Your terrain manuscript",
                 onFieldChange: (key, value) => {
                     if (key === "systemName" && value.trim()) {
-                        renameGeographyWorld(encId, worldId, value.trim());
+                        void renameGeographyWorld(encId, worldId, value.trim());
                         document.getElementById("pageTitle").textContent = value.trim();
                     }
                 },
@@ -86,6 +91,26 @@
                 }
             });
         }
+
+        wireSupabaseSession(async (session) => {
+            const user = session?.user;
+            if (!user) {
+                const next =
+                    "geography-world.html?encyclopedia=" +
+                    encodeURIComponent(encId || "") +
+                    "&world=" +
+                    encodeURIComponent(worldId || "");
+                window.location.href = "login.html?next=" + encodeURIComponent(next);
+                return;
+            }
+            try {
+                await initEncyclopediaSession(supabase, user.id);
+                bootPage();
+            } catch (err) {
+                console.error(err);
+                window.location.href = "world-encyclopedia.html";
+            }
+        });
     </script>
 </body>
 </html>

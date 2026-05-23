@@ -210,16 +210,18 @@
     </div>
 
     <script type="module">
-        import { getEncyclopedia } from "./js/world-encyclopedia-store.js?v=2";
+        import { supabase } from "./firebase.js";
+        import { wireSupabaseSession } from "./js/supabase-session.js?v=1";
+        import { getEncyclopedia } from "./js/world-encyclopedia-store.js?v=3";
+        import { initEncyclopediaSession } from "./js/encyclopedia-session.js?v=1";
         import {
             listGeographyWorlds,
             createGeographyWorld,
             deleteGeographyWorld,
             formatGeographyDate
-        } from "./js/geography-store.js?v=1";
+        } from "./js/geography-store.js?v=2";
 
         const encId = new URLSearchParams(location.search).get("encyclopedia");
-        const enc = encId ? getEncyclopedia(encId) : null;
 
         const hubMain = document.getElementById("hubMain");
         const hubMissing = document.getElementById("hubMissing");
@@ -229,9 +231,12 @@
         const dialog = document.getElementById("createDialog");
         const nameInput = document.getElementById("createNameInput");
 
-        if (!enc) {
-            hubMissing.hidden = false;
-        } else {
+        function bootPage() {
+            const enc = encId ? getEncyclopedia(encId) : null;
+            if (!enc) {
+                hubMissing.hidden = false;
+                return;
+            }
             hubMain.hidden = false;
             document.title = "Geography & World Terrain — " + enc.title + " — Alysum";
             hubTitle.textContent = enc.title;
@@ -285,8 +290,9 @@
                     e.preventDefault();
                     e.stopPropagation();
                     if (!confirm('Delete "' + w.name + '"? This removes all answers for this geography on this device.')) return;
-                    deleteGeographyWorld(encId, w.id);
-                    renderGrid();
+                    void deleteGeographyWorld(encId, w.id)
+                        .then(() => renderGrid())
+                        .catch(console.error);
                 });
                 actions.append(openBtn, delBtn);
                 card.append(link, actions);
@@ -303,18 +309,41 @@
 
         document.getElementById("createWorldBtn").addEventListener("click", openDialog);
         document.getElementById("createCancelBtn").addEventListener("click", closeDialog);
-        document.getElementById("createConfirmBtn").addEventListener("click", () => {
+        document.getElementById("createConfirmBtn").addEventListener("click", async () => {
             const name = nameInput.value.trim();
             if (!name) { nameInput.focus(); return; }
-            const w = createGeographyWorld(encId, name);
-            closeDialog();
-            openWorld(w.id);
+            try {
+                const w = await createGeographyWorld(encId, name);
+                closeDialog();
+                openWorld(w.id);
+            } catch (err) {
+                console.error(err);
+                alert("Could not create geography — try again.");
+            }
         });
         nameInput.addEventListener("keydown", (e) => {
             if (e.key === "Enter") document.getElementById("createConfirmBtn").click();
             if (e.key === "Escape") closeDialog();
         });
         dialog.addEventListener("click", (e) => { if (e.target === dialog) closeDialog(); });
+
+        wireSupabaseSession(async (session) => {
+            const user = session?.user;
+            if (!user) {
+                const next = encId
+                    ? "geography-worlds.html?encyclopedia=" + encodeURIComponent(encId)
+                    : "geography-worlds.html";
+                window.location.href = "login.html?next=" + encodeURIComponent(next);
+                return;
+            }
+            try {
+                await initEncyclopediaSession(supabase, user.id);
+                bootPage();
+            } catch (err) {
+                console.error(err);
+                hubMissing.hidden = false;
+            }
+        });
     </script>
 </body>
 </html>

@@ -2,6 +2,8 @@
  * Shared Magic System worksheet UI (soft / hard).
  */
 
+import { getJsonBlob, setJsonBlob, removeJsonBlob, getEncyclopediaBlobStorageMode } from "./encyclopedia-blob-store.js";
+
 export function magicStorageKey(type, encyclopediaId) {
     const base = "alysum-magic-" + type + "-v1";
     return encyclopediaId ? base + "-" + encyclopediaId : base;
@@ -77,8 +79,8 @@ export function mountMagicSystemBuilder(container, config) {
 
     function loadState() {
         try {
-            const raw = localStorage.getItem(storageKey);
-            return raw ? { ...defaultState(), ...JSON.parse(raw) } : defaultState();
+            const raw = getJsonBlob(storageKey);
+            return raw && typeof raw === "object" ? { ...defaultState(), ...raw } : defaultState();
         } catch {
             return defaultState();
         }
@@ -90,8 +92,9 @@ export function mountMagicSystemBuilder(container, config) {
     function saveState() {
         state.activeSectionId = activeSectionId;
         state.updatedAt = Date.now();
-        localStorage.setItem(storageKey, JSON.stringify(state));
-        saveStatus.textContent = "Autosaved locally";
+        void setJsonBlob(storageKey, state).catch(console.error);
+        const cloud = getEncyclopediaBlobStorageMode() === "cloud";
+        saveStatus.textContent = cloud ? "Saved to your account" : "Autosaved locally";
         saveStatus.className = "ms-status ok";
         refreshOutput();
     }
@@ -127,7 +130,7 @@ export function mountMagicSystemBuilder(container, config) {
             btn.addEventListener("click", () => {
                 activeSectionId = section.id;
                 state.activeSectionId = activeSectionId;
-                localStorage.setItem(storageKey, JSON.stringify(state));
+                void setJsonBlob(storageKey, state).catch(console.error);
                 renderAll();
             });
             sectionNav.appendChild(btn);
@@ -256,7 +259,7 @@ export function mountMagicSystemBuilder(container, config) {
     container.querySelector("[data-ms-download]").addEventListener("click", downloadMarkdown);
     container.querySelector("[data-ms-clear]").addEventListener("click", () => {
         if (!confirm(clearLabel)) return;
-        localStorage.removeItem(storageKey);
+        void removeJsonBlob(storageKey).catch(console.error);
         state = defaultState();
         activeSectionId = sections[0]?.id || "";
         renderTopFields();

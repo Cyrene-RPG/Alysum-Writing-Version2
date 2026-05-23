@@ -1,6 +1,8 @@
 /**
- * Device-local peoples / cultures per encyclopedia (many groups per world).
+ * Peoples / cultures per encyclopedia — Supabase encyclopedia_blobs with localStorage fallback.
  */
+
+import { getJsonBlob, setJsonBlob, removeJsonBlob } from "./encyclopedia-blob-store.js";
 
 const INDEX_PREFIX = "alysum-peoples-cultures-index-v1";
 const SHEET_PREFIX = "alysum-peoples-culture-sheet-v1";
@@ -15,21 +17,12 @@ export function cultureStorageKey(encyclopediaId, cultureId) {
 }
 
 function readIndex(encyclopediaId) {
-    try {
-        const raw = localStorage.getItem(indexKey(encyclopediaId));
-        if (!raw) return [];
-        const o = JSON.parse(raw);
-        return Array.isArray(o?.cultures) ? o.cultures : [];
-    } catch {
-        return [];
-    }
+    const o = getJsonBlob(indexKey(encyclopediaId));
+    return Array.isArray(o?.cultures) ? o.cultures : [];
 }
 
-function writeIndex(encyclopediaId, cultures) {
-    localStorage.setItem(
-        indexKey(encyclopediaId),
-        JSON.stringify({ version: 1, cultures })
-    );
+async function writeIndex(encyclopediaId, cultures) {
+    await setJsonBlob(indexKey(encyclopediaId), { version: 1, cultures });
 }
 
 function newId() {
@@ -47,7 +40,7 @@ export function getPeoplesCultureMeta(encyclopediaId, cultureId) {
     return readIndex(encyclopediaId).find((c) => c.id === cultureId) || null;
 }
 
-export function createPeoplesCulture(encyclopediaId, name) {
+export async function createPeoplesCulture(encyclopediaId, name) {
     const now = Date.now();
     const trimmed = String(name || "").trim() || "Untitled people";
     const entry = {
@@ -58,57 +51,52 @@ export function createPeoplesCulture(encyclopediaId, name) {
     };
     const list = readIndex(encyclopediaId);
     list.push(entry);
-    writeIndex(encyclopediaId, list);
-    localStorage.setItem(
-        cultureStorageKey(encyclopediaId, entry.id),
-        JSON.stringify({
-            answers: { systemName: trimmed },
-            activeSectionId: "core",
-            updatedAt: now
-        })
-    );
+    await writeIndex(encyclopediaId, list);
+    await setJsonBlob(cultureStorageKey(encyclopediaId, entry.id), {
+        answers: { systemName: trimmed },
+        activeSectionId: "identity",
+        updatedAt: now
+    });
     return entry;
 }
 
-export function renamePeoplesCulture(encyclopediaId, cultureId, name) {
+export async function renamePeoplesCulture(encyclopediaId, cultureId, name) {
     const trimmed = String(name || "").trim();
     if (!trimmed) return null;
     const list = readIndex(encyclopediaId);
     const ix = list.findIndex((c) => c.id === cultureId);
     if (ix < 0) return null;
     list[ix] = { ...list[ix], name: trimmed, updatedAt: Date.now() };
-    writeIndex(encyclopediaId, list);
-    try {
-        const raw = localStorage.getItem(cultureStorageKey(encyclopediaId, cultureId));
-        if (raw) {
-            const state = JSON.parse(raw);
-            state.answers = state.answers || {};
-            state.answers.systemName = trimmed;
-            state.updatedAt = Date.now();
-            localStorage.setItem(cultureStorageKey(encyclopediaId, cultureId), JSON.stringify(state));
-        }
-    } catch (_) {}
+    await writeIndex(encyclopediaId, list);
+    const sheetKey = cultureStorageKey(encyclopediaId, cultureId);
+    const state = getJsonBlob(sheetKey);
+    if (state && typeof state === "object") {
+        state.answers = state.answers || {};
+        state.answers.systemName = trimmed;
+        state.updatedAt = Date.now();
+        await setJsonBlob(sheetKey, state);
+    }
     return list[ix];
 }
 
-export function touchPeoplesCulture(encyclopediaId, cultureId) {
+export async function touchPeoplesCulture(encyclopediaId, cultureId) {
     const list = readIndex(encyclopediaId);
     const ix = list.findIndex((c) => c.id === cultureId);
     if (ix < 0) return null;
     list[ix] = { ...list[ix], updatedAt: Date.now() };
-    writeIndex(encyclopediaId, list);
+    await writeIndex(encyclopediaId, list);
     return list[ix];
 }
 
-export function deletePeoplesCulture(encyclopediaId, cultureId) {
-    writeIndex(
+export async function deletePeoplesCulture(encyclopediaId, cultureId) {
+    await writeIndex(
         encyclopediaId,
         readIndex(encyclopediaId).filter((c) => c.id !== cultureId)
     );
-    localStorage.removeItem(cultureStorageKey(encyclopediaId, cultureId));
+    await removeJsonBlob(cultureStorageKey(encyclopediaId, cultureId));
 }
 
-export function formatCultureDate(ms) {
+export function formatPeoplesCultureDate(ms) {
     if (!ms || !Number.isFinite(ms)) return "";
     try {
         return new Date(ms).toLocaleDateString(undefined, {

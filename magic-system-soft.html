@@ -33,10 +33,10 @@
     <div class="mc-body" id="codexRoot"></div>
     <script type="module">
         import { SOFT_SECTIONS, SOFT_MAGIC_INTRO } from "./js/magic-system-sections.js?v=2";
-        import { mountMagicCodex, magicStorageKey } from "./js/magic-codex-ui.js?v=4";
+        import { mountMagicCodex, magicStorageKey } from "./js/magic-codex-ui.js?v=5";
+        import { bootMagicSystemPage } from "./js/magic-system-page-boot.js?v=1";
 
-        const encId = new URLSearchParams(location.search).get("encyclopedia");
-
+        bootMagicSystemPage((encId) => {
         mountMagicCodex(document.getElementById("codexRoot"), {
             theme: "soft",
             sections: SOFT_SECTIONS,
@@ -67,6 +67,7 @@
                 }
             });
         }
+        });
     </script>
 </body>
 </html>

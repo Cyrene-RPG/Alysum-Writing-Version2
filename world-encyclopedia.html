@@ -519,6 +519,16 @@
             color: #fff;
         }
 
+        .we-sync-status {
+            margin: 0 0 14px;
+            font-size: 13px;
+            color: #c4b5fd;
+        }
+
+        .we-sync-status.is-warn {
+            color: #fcd34d;
+        }
+
         @media (max-width: 640px) {
             .we-shelf-head {
                 flex-direction: column;
@@ -579,6 +589,7 @@
             <button type="button" class="we-btn-create" id="createEncyclopediaBtn">+ Create Encyclopedia</button>
         </div>
         <div class="we-shelf-body">
+            <p class="we-sync-status" id="weSyncStatus" hidden></p>
             <div class="we-grid" id="encyclopediaGrid" aria-live="polite"></div>
         </div>
     </section>
@@ -605,14 +616,21 @@
 </div>
 
 <script type="module">
+    import { supabase } from "./firebase.js";
+    import { wireSupabaseSession } from "./js/supabase-session.js?v=1";
     import {
         listEncyclopedias,
         createEncyclopedia,
         deleteEncyclopedia,
-        formatEncyclopediaDate
-    } from "./js/world-encyclopedia-store.js?v=1";
+        formatEncyclopediaDate,
+        getWorldEncyclopediaStorageMode,
+        isWorldEncyclopediaCloudTableMissing
+    } from "./js/world-encyclopedia-store.js?v=3";
+    import { initEncyclopediaSession } from "./js/encyclopedia-session.js?v=1";
+    import { isEncyclopediaBlobCloudTableMissing } from "./js/encyclopedia-blob-store.js?v=1";
 
     const grid = document.getElementById("encyclopediaGrid");
+    const syncStatus = document.getElementById("weSyncStatus");
     const createBtn = document.getElementById("createEncyclopediaBtn");
     const dialog = document.getElementById("createDialog");
     const titleInput = document.getElementById("createTitleInput");
@@ -631,6 +649,27 @@
 
     function openEncyclopedia(id) {
         window.location.href = "encyclopedia.html?id=" + encodeURIComponent(id);
+    }
+
+    function updateSyncStatus() {
+        if (!syncStatus) return;
+        const mode = getWorldEncyclopediaStorageMode();
+        const shelfMissing = isWorldEncyclopediaCloudTableMissing();
+        const blobsMissing = isEncyclopediaBlobCloudTableMissing();
+        if (mode === "cloud" && !blobsMissing) {
+            syncStatus.hidden = false;
+            syncStatus.classList.remove("is-warn");
+            syncStatus.textContent = "Synced to your Alysum account.";
+            return;
+        }
+        if (shelfMissing || blobsMissing) {
+            syncStatus.hidden = false;
+            syncStatus.classList.add("is-warn");
+            syncStatus.textContent =
+                "Saved on this device only — run world-encyclopedias-only.sql and encyclopedia-blobs-only.sql in Supabase.";
+            return;
+        }
+        syncStatus.hidden = true;
     }
 
     function renderGrid() {
@@ -692,20 +731,25 @@
             delBtn.type = "button";
             delBtn.className = "we-card-btn danger";
             delBtn.textContent = "Delete";
-            delBtn.addEventListener("click", (e) => {
+            delBtn.addEventListener("click", async (e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 if (
                     !confirm(
                         "Delete \"" +
                             enc.title +
-                            "\"? This removes the encyclopedia from this device. Builder data tied to it may remain until cleared separately."
+                            "\"? Builder data tied to this encyclopedia may remain until cleared separately."
                     )
                 ) {
                     return;
                 }
-                deleteEncyclopedia(enc.id);
-                renderGrid();
+                try {
+                    await deleteEncyclopedia(enc.id);
+                    renderGrid();
+                } catch (err) {
+                    console.error(err);
+                    alert("Could not delete — try again.");
+                }
             });
 
             actions.append(openBtn, delBtn);
@@ -714,29 +758,56 @@
         }
     }
 
-    function submitCreate() {
+    async function submitCreate() {
         const title = titleInput.value.trim();
         if (!title) {
             titleInput.focus();
             return;
         }
-        const enc = createEncyclopedia(title);
-        closeDialog();
-        openEncyclopedia(enc.id);
+        confirmBtn.disabled = true;
+        try {
+            const enc = await createEncyclopedia(title);
+            closeDialog();
+            openEncyclopedia(enc.id);
+        } catch (err) {
+            console.error(err);
+            alert("Could not create encyclopedia — try again.");
+        } finally {
+            confirmBtn.disabled = false;
+        }
     }
 
     createBtn.addEventListener("click", openDialog);
     cancelBtn.addEventListener("click", closeDialog);
-    confirmBtn.addEventListener("click", submitCreate);
+    confirmBtn.addEventListener("click", () => void submitCreate());
     titleInput.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") submitCreate();
+        if (e.key === "Enter") void submitCreate();
         if (e.key === "Escape") closeDialog();
     });
     dialog.addEventListener("click", (e) => {
         if (e.target === dialog) closeDialog();
     });
 
-    renderGrid();
+    wireSupabaseSession(async (session) => {
+        const user = session?.user;
+        if (!user) {
+            window.location.href =
+                "login.html?next=" + encodeURIComponent("world-encyclopedia.html");
+            return;
+        }
+        try {
+            await initEncyclopediaSession(supabase, user.id);
+            updateSyncStatus();
+            renderGrid();
+        } catch (err) {
+            console.error(err);
+            if (syncStatus) {
+                syncStatus.hidden = false;
+                syncStatus.classList.add("is-warn");
+                syncStatus.textContent = "Could not load encyclopedias — refresh or try again.";
+            }
+        }
+    });
 </script>
 
 </body>

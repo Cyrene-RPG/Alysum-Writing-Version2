@@ -4,6 +4,11 @@
 
 import { upsertEncyclopediaLink, buildCodexFieldHref } from "./encyclopedia-links-store.js";
 import {
+    getJsonBlob,
+    setJsonBlob,
+    getEncyclopediaBlobStorageMode
+} from "./encyclopedia-blob-store.js";
+import {
     normalizeEncyclopediaPlain,
     serializeEncBody,
     plainToEncLinkHtml,
@@ -165,8 +170,10 @@ export function mountMagicCodex(root, config) {
 
     function loadState() {
         try {
-            const raw = localStorage.getItem(storageKey);
-            return raw ? { ...defaultState(), ...JSON.parse(raw) } : defaultState();
+            const raw = getJsonBlob(storageKey);
+            return raw && typeof raw === "object"
+                ? { ...defaultState(), ...raw }
+                : defaultState();
         } catch {
             return defaultState();
         }
@@ -186,8 +193,9 @@ export function mountMagicCodex(root, config) {
     function saveState() {
         state.activeSectionId = activeSectionId;
         state.updatedAt = Date.now();
-        localStorage.setItem(storageKey, JSON.stringify(state));
-        statusEl.textContent = "Saved on this device";
+        void setJsonBlob(storageKey, state).catch(console.error);
+        const cloud = getEncyclopediaBlobStorageMode() === "cloud";
+        statusEl.textContent = cloud ? "Saved to your account" : "Saved on this device";
         statusEl.className = "mc-dock-status saved";
         refreshProgress();
         refreshChapterDots();
@@ -368,7 +376,7 @@ export function mountMagicCodex(root, config) {
             linkContext.queryParams,
             key
         );
-        upsertEncyclopediaLink({
+        void upsertEncyclopediaLink({
             phrase: trimmed,
             target: {
                 href,
@@ -380,7 +388,7 @@ export function mountMagicCodex(root, config) {
                 sheetLabel: linkContext.sheetLabel || "",
                 fieldLabel: question
             }
-        });
+        }).catch(console.error);
 
         const sel = window.getSelection();
         if (sel?.rangeCount && editor.contains(sel.anchorNode)) {
@@ -556,7 +564,7 @@ export function mountMagicCodex(root, config) {
             btn.addEventListener("click", () => {
                 activeSectionId = section.id;
                 state.activeSectionId = activeSectionId;
-                localStorage.setItem(storageKey, JSON.stringify(state));
+                void setJsonBlob(storageKey, state).catch(console.error);
                 renderAll();
             });
             chaptersNav.appendChild(btn);

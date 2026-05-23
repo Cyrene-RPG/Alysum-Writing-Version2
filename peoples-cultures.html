@@ -210,16 +210,18 @@
     </div>
 
     <script type="module">
-        import { getEncyclopedia } from "./js/world-encyclopedia-store.js?v=2";
+        import { supabase } from "./firebase.js";
+        import { wireSupabaseSession } from "./js/supabase-session.js?v=1";
+        import { getEncyclopedia } from "./js/world-encyclopedia-store.js?v=3";
+        import { initEncyclopediaSession } from "./js/encyclopedia-session.js?v=1";
         import {
             listPeoplesCultures,
             createPeoplesCulture,
             deletePeoplesCulture,
-            formatCultureDate
-        } from "./js/peoples-culture-store.js?v=1";
+            formatPeoplesCultureDate
+        } from "./js/peoples-culture-store.js?v=2";
 
         const encId = new URLSearchParams(location.search).get("encyclopedia");
-        const enc = encId ? getEncyclopedia(encId) : null;
 
         const hubMain = document.getElementById("hubMain");
         const hubMissing = document.getElementById("hubMissing");
@@ -229,9 +231,12 @@
         const dialog = document.getElementById("createDialog");
         const nameInput = document.getElementById("createNameInput");
 
-        if (!enc) {
-            hubMissing.hidden = false;
-        } else {
+        function bootPage() {
+            const enc = encId ? getEncyclopedia(encId) : null;
+            if (!enc) {
+                hubMissing.hidden = false;
+                return;
+            }
             hubMain.hidden = false;
             document.title = "Peoples & Culture — " + enc.title + " — Alysum";
             hubTitle.textContent = enc.title;
@@ -269,7 +274,7 @@
                 link.style.cssText = "text-decoration:none;color:inherit;display:flex;flex-direction:column;gap:10px;flex:1";
                 link.innerHTML = '<span class="pc-card-icon">👥</span><h3></h3><p></p>';
                 link.querySelector("h3").textContent = c.name;
-                const updated = formatCultureDate(c.updatedAt);
+                const updated = formatPeoplesCultureDate(c.updatedAt);
                 link.querySelector("p").textContent = updated ? "Updated " + updated : "New entry";
                 const actions = document.createElement("div");
                 actions.className = "pc-card-actions";
@@ -285,8 +290,9 @@
                     e.preventDefault();
                     e.stopPropagation();
                     if (!confirm('Delete "' + c.name + '"? This removes all answers for this group on this device.')) return;
-                    deletePeoplesCulture(encId, c.id);
-                    renderGrid();
+                    void deletePeoplesCulture(encId, c.id)
+                        .then(() => renderGrid())
+                        .catch(console.error);
                 });
                 actions.append(openBtn, delBtn);
                 card.append(link, actions);
@@ -303,18 +309,41 @@
 
         document.getElementById("createCultureBtn").addEventListener("click", openDialog);
         document.getElementById("createCancelBtn").addEventListener("click", closeDialog);
-        document.getElementById("createConfirmBtn").addEventListener("click", () => {
+        document.getElementById("createConfirmBtn").addEventListener("click", async () => {
             const name = nameInput.value.trim();
             if (!name) { nameInput.focus(); return; }
-            const c = createPeoplesCulture(encId, name);
-            closeDialog();
-            openCulture(c.id);
+            try {
+                const c = await createPeoplesCulture(encId, name);
+                closeDialog();
+                openCulture(c.id);
+            } catch (err) {
+                console.error(err);
+                alert("Could not create culture — try again.");
+            }
         });
         nameInput.addEventListener("keydown", (e) => {
             if (e.key === "Enter") document.getElementById("createConfirmBtn").click();
             if (e.key === "Escape") closeDialog();
         });
         dialog.addEventListener("click", (e) => { if (e.target === dialog) closeDialog(); });
+
+        wireSupabaseSession(async (session) => {
+            const user = session?.user;
+            if (!user) {
+                const next = encId
+                    ? "peoples-cultures.html?encyclopedia=" + encodeURIComponent(encId)
+                    : "peoples-cultures.html";
+                window.location.href = "login.html?next=" + encodeURIComponent(next);
+                return;
+            }
+            try {
+                await initEncyclopediaSession(supabase, user.id);
+                bootPage();
+            } catch (err) {
+                console.error(err);
+                hubMissing.hidden = false;
+            }
+        });
     </script>
 </body>
 </html>

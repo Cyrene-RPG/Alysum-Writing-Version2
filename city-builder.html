@@ -376,8 +376,20 @@
     </div>
 </main>
 
-<script>
-    const STORAGE_KEY = "alysum-city-builder-v1";
+<script type="module">
+    import { supabase } from "./firebase.js";
+    import { wireSupabaseSession } from "./js/supabase-session.js?v=1";
+    import { initEncyclopediaSession } from "./js/encyclopedia-session.js?v=1";
+    import {
+        getJsonBlob,
+        setJsonBlob,
+        removeJsonBlob,
+        cityBuilderStorageKey,
+        getEncyclopediaBlobStorageMode
+    } from "./js/encyclopedia-blob-store.js?v=1";
+
+    const encId = new URLSearchParams(location.search).get("encyclopedia");
+    const STORAGE_KEY = cityBuilderStorageKey(encId);
 
     const SECTIONS = [
         {
@@ -578,8 +590,8 @@
         }
     ];
 
-    let state = loadState();
-    let activeSectionId = state.activeSectionId || SECTIONS[0].id;
+    let state = defaultState();
+    let activeSectionId = SECTIONS[0].id;
     const sectionNav = document.getElementById("sectionNav");
     const questionPanel = document.getElementById("questionPanel");
     const compiledOutput = document.getElementById("compiledOutput");
@@ -597,8 +609,8 @@
 
     function loadState() {
         try {
-            const raw = localStorage.getItem(STORAGE_KEY);
-            return raw ? { ...defaultState(), ...JSON.parse(raw) } : defaultState();
+            const raw = getJsonBlob(STORAGE_KEY);
+            return raw && typeof raw === "object" ? { ...defaultState(), ...raw } : defaultState();
         } catch {
             return defaultState();
         }
@@ -607,8 +619,9 @@
     function saveState() {
         state.activeSectionId = activeSectionId;
         state.updatedAt = Date.now();
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-        saveStatus.textContent = "Autosaved locally";
+        void setJsonBlob(STORAGE_KEY, state).catch(console.error);
+        const cloud = getEncyclopediaBlobStorageMode() === "cloud";
+        saveStatus.textContent = cloud ? "Saved to your account" : "Autosaved locally";
         saveStatus.className = "cb-status ok";
         refreshOutput();
     }
@@ -644,7 +657,7 @@
             button.addEventListener("click", () => {
                 activeSectionId = button.dataset.section;
                 state.activeSectionId = activeSectionId;
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+                void setJsonBlob(STORAGE_KEY, state).catch(console.error);
                 renderAll();
                 window.scrollTo({ top: 0, behavior: "smooth" });
             });
@@ -753,7 +766,7 @@
     document.getElementById("downloadBtn").addEventListener("click", downloadMarkdown);
     document.getElementById("clearBtn").addEventListener("click", () => {
         if (!confirm("Clear this city builder page? This only clears locally saved city-builder answers.")) return;
-        localStorage.removeItem(STORAGE_KEY);
+        void removeJsonBlob(STORAGE_KEY).catch(console.error);
         state = defaultState();
         activeSectionId = SECTIONS[0].id;
         renderTopFields();
@@ -762,18 +775,31 @@
         saveStatus.className = "cb-status warn";
     });
 
-    renderTopFields();
-    renderAll();
-</script>
-<script>
-    (function () {
-        const enc = new URLSearchParams(location.search).get("encyclopedia");
-        if (!enc) return;
+    wireSupabaseSession(async (session) => {
+        if (!session?.user) {
+            window.location.href =
+                "login.html?next=" + encodeURIComponent(location.pathname + location.search);
+            return;
+        }
+        try {
+            await initEncyclopediaSession(supabase, session.user.id);
+            state = loadState();
+            activeSectionId = state.activeSectionId || SECTIONS[0].id;
+            renderTopFields();
+            renderAll();
+        } catch (err) {
+            console.error(err);
+            saveStatus.textContent = "Could not load — refresh or sign in again";
+            saveStatus.className = "cb-status warn";
+        }
+    });
+
+    if (encId) {
         document.querySelectorAll("[data-enc-back]").forEach((el) => {
-            el.href = "encyclopedia.html?id=" + encodeURIComponent(enc);
+            el.href = "encyclopedia.html?id=" + encodeURIComponent(encId);
             el.textContent = "← Encyclopedia";
         });
-    })();
+    }
 </script>
 
 </body>
