@@ -1,14 +1,10 @@
 /**
- * Vercel Web Analytics Initialization
- * 
- * This file initializes Vercel Web Analytics using the @vercel/analytics package.
- * It should be included in all HTML pages that need analytics tracking.
- * 
- * Usage: Add this script to your HTML with type="module":
- * <script type="module" src="/js/vercel-analytics.js"></script>
+ * Vercel Web Analytics — optional; failures must not break app pages.
  */
 
-import { inject } from '../node_modules/@vercel/analytics/dist/index.mjs';
-
-// Initialize Vercel Analytics
-inject();
+try {
+    const { inject } = await import("https://esm.sh/@vercel/analytics@1.4.1");
+    inject();
+} catch (err) {
+    console.debug("Vercel Analytics skipped:", err);
+}
