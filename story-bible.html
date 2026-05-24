@@ -844,6 +844,7 @@
     <script type="module">
         import { supabase } from "./firebase.js";
         import { mountStoryBiblePage } from "./js/story-bible-page.js?v=13";
+        import { requireStudioSession } from "./js/studio-session.js?v=1";
         import {
             isStoryBibleUiEnabled,
             STORY_BIBLE_PREF_KEY,
@@ -865,12 +866,9 @@
         });
         window.addEventListener(STORY_BIBLE_PREF_EVENT, () => location.reload());
 
-        supabase.auth.onAuthStateChange((_event, session) => {
-            const user = session?.user;
-            if (!user) {
-                window.location.href = "login.html?next=" + encodeURIComponent("story-bible.html" + window.location.search);
-                return;
-            }
+        (async () => {
+            const session = await requireStudioSession(supabase, "story-bible.html" + window.location.search);
+            if (!session) return;
 
             if (applyStoryBiblePageGate()) {
                 return;
@@ -878,7 +876,7 @@
 
             mountStoryBiblePage({
                 supabase,
-                uid: user.id,
+                uid: session.user.id,
                 statusEl: document.getElementById("sbStatus"),
                 hubView: document.getElementById("sbHubView"),
                 bookView: document.getElementById("sbBookView"),
@@ -921,7 +919,7 @@
                 scanStrictCheck: document.getElementById("sbScanStrict"),
                 scanLooseCheck: document.getElementById("sbScanLoose")
             });
-        });
+        })();
     </script>
 </body>
 </html>

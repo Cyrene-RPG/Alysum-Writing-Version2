@@ -65,22 +65,14 @@
     </div>
     <script type="module">
         import { supabase } from "./firebase.js";
-        import { wireSupabaseSession } from "./js/supabase-session.js?v=1";
-        import { bindVaultUI, DEFAULT_VAULT_KEY } from "./js/alysum-vault-ui.js?v=17";
+        import { bootVaultScratchPage } from "./js/local-studio-pages.js?v=1";
 
         let vaultHandle = null;
 
-        wireSupabaseSession(async (session) => {
-            const user = session?.user;
-            if (!user) {
-                vaultHandle?.destroy();
-                vaultHandle = null;
-                window.location.href = "login.html?next=" + encodeURIComponent("vault.html");
-                return;
-            }
-
+        (async () => {
             vaultHandle?.destroy();
-            vaultHandle = bindVaultUI(
+            vaultHandle = await bootVaultScratchPage(
+                supabase,
                 {
                     tree: document.getElementById("vaultTree"),
                     find: document.getElementById("vaultFind"),
@@ -91,17 +83,15 @@
                     deleteItem: document.getElementById("vaultDel")
                 },
                 {
-                    storageKey: DEFAULT_VAULT_KEY,
                     compact: false,
-                    supabase,
-                    supabaseUserId: user.id,
+                    nextPath: "vault.html",
                     setStatus: msg => {
                         const el = document.getElementById("vaultStatus");
                         if (el) el.textContent = msg;
                     }
                 }
             );
-        });
+        })();
     </script>
 </body>
 </html>

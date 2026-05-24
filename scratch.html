@@ -65,16 +65,11 @@
     </div>
     <script type="module">
         import { supabase } from "./firebase.js";
-        import { bindVaultUI, DEFAULT_VAULT_KEY } from "./js/alysum-vault-ui.js?v=17";
+        import { bootVaultScratchPage } from "./js/local-studio-pages.js?v=1";
 
-        supabase.auth.onAuthStateChange((_event, session) => {
-            const user = session?.user;
-            if (!user) {
-                window.location.href = "login.html?next=" + encodeURIComponent("scratch.html");
-                return;
-            }
-
-            bindVaultUI(
+        (async () => {
+            await bootVaultScratchPage(
+                supabase,
                 {
                     tree: document.getElementById("scTree"),
                     find: document.getElementById("scFind"),
@@ -85,17 +80,15 @@
                     deleteItem: document.getElementById("scDel")
                 },
                 {
-                    storageKey: DEFAULT_VAULT_KEY,
                     compact: true,
-                    supabase,
-                    supabaseUserId: user.id,
+                    nextPath: "scratch.html",
                     setStatus: msg => {
                         const el = document.getElementById("scStatus");
                         if (el) el.textContent = msg;
                     }
                 }
             );
-        });
+        })();
     </script>
 </body>
 </html>

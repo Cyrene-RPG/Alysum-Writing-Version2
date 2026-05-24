@@ -629,7 +629,8 @@
 
     <script type="module">
         import { supabase } from "./firebase.js";
-        import { wireSupabaseSession } from "./js/supabase-session.js?v=1";
+        import { requireStudioSession } from "./js/studio-session.js?v=1";
+        import { alysumPrompt } from "./js/alysum-prompt.js?v=1";
         import {
             listWorldbuildingSheets,
             upsertWorldbuildingSheet,
@@ -1498,12 +1499,18 @@
 
         renderSections();
 
-        wbModalGuide?.addEventListener("input", (ev) => {
-            const ta = ev.target;
-            if (ta.tagName !== "TEXTAREA" || !ta.dataset.wbS) return;
+        function onWorldbuildingFieldInput(ta) {
+            if (!ta || ta.tagName !== "TEXTAREA" || !ta.dataset.wbS) return;
             setCell(ta.dataset.wbS, ta.dataset.wbB, ta.dataset.wbP, ta.value);
             refreshEncyclopediaPreview();
             scheduleCloudSave();
+        }
+
+        wbModalGuide?.addEventListener("input", (ev) => {
+            onWorldbuildingFieldInput(ev.target);
+        });
+        wbModalGuide?.addEventListener("keyup", (ev) => {
+            onWorldbuildingFieldInput(ev.target);
         });
 
         wbModalClose?.addEventListener("click", closeModal);
@@ -1539,7 +1546,7 @@
 
         wbNewSheetBtn?.addEventListener("click", async () => {
             await saveNow({ quiet: true });
-            const title = prompt("Name this new worldsheet:", "Untitled world") || "Untitled world";
+            const title = (await alysumPrompt("Name this new worldsheet:", "Untitled world")) || "Untitled world";
             await createSheet({ title: title.trim() || "Untitled world", answers: emptyAnswers(), select: true });
         });
 
@@ -1564,14 +1571,11 @@
             setStatus("Sheet cleared", "warn");
         });
 
-        wireSupabaseSession(async (session) => {
-            const user = session?.user;
-            if (!user) {
-                window.location.href = "login.html?next=" + encodeURIComponent("worldbuilding.html");
-                return;
-            }
+        (async () => {
+            const session = await requireStudioSession(supabase, "worldbuilding.html");
+            if (!session) return;
 
-            wbUid = user.id;
+            wbUid = session.user.id;
             wbLoading.classList.add("hidden");
             wbMain.classList.remove("hidden");
             setStatus("Loading…");
@@ -1581,7 +1585,7 @@
                 const probe = await listWorldbuildingSheets(supabase, wbUid);
                 storageMode = probe.mode;
                 cloudTableMissing = probe.tableMissing;
-                if (storageMode === "cloud") {
+                if (storageMode === "cloud" && session.mode === "cloud") {
                     await syncLocalSheetsToCloud(supabase, wbUid);
                 }
                 subscribeSheets();
@@ -1589,7 +1593,7 @@
                 console.error(err);
                 setStatus("Could not load worldsheets — refresh or try again.", "warn");
             }
-        });
+        })();
 
         window.addEventListener("beforeunload", () => {
             if (unsubscribeSheets) unsubscribeSheets();

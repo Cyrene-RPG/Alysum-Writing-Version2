@@ -533,6 +533,7 @@ export function mountMagicCodex(root, config) {
             const editor = document.createElement("div");
             editor.className = "mc-entry-editor";
             editor.contentEditable = "true";
+            editor.tabIndex = 0;
             editor.dataset.codexField = key;
             editor.dataset.codexQuestion = question;
             editor.setAttribute("role", "textbox");
@@ -541,13 +542,19 @@ export function mountMagicCodex(root, config) {
             editor.innerHTML = linkContext
                 ? plainToEncLinkHtml(initial)
                 : escapeEditorHtml(initial);
+            const syncPlainEditor = () => {
+                const text = editor.innerText || "";
+                setValue(key, text);
+                entry.classList.toggle("is-answered", !!text.trim());
+            };
             if (linkContext) {
                 bindEditorLinks(editor);
+                editor.addEventListener("beforeinput", () => saveEditor(editor, key, false));
+                editor.addEventListener("keyup", () => saveEditor(editor, key, false));
             } else {
-                editor.addEventListener("input", () => {
-                    setValue(key, editor.innerText);
-                    entry.classList.toggle("is-answered", !!editor.innerText.trim());
-                });
+                editor.addEventListener("input", syncPlainEditor);
+                editor.addEventListener("beforeinput", syncPlainEditor);
+                editor.addEventListener("keyup", syncPlainEditor);
             }
             entry.append(label, editor);
             entries.appendChild(entry);

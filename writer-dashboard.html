@@ -764,6 +764,27 @@
         .wd-stat:nth-child(2n) { border-right: none; }
         .wd-stat:nth-child(-n+2) { border-bottom: 1px solid rgba(255, 255, 255, 0.06); }
     }
+
+    .wd-local-banner {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        flex-wrap: wrap;
+        padding: 10px 16px;
+        font-size: 0.82rem;
+        color: #cbd5e1;
+        background: rgba(124, 58, 237, 0.15);
+        border-bottom: 1px solid rgba(167, 139, 250, 0.22);
+    }
+
+    .wd-local-banner a {
+        color: #e9d5ff;
+        font-weight: 700;
+        text-decoration: none;
+    }
+
+    .wd-local-banner a:hover { text-decoration: underline; }
 </style>
 
 </head>
@@ -904,6 +925,16 @@
         ACCOUNT_BOTH,
     } from "./js/account-mode.js?v=1";
     import { wireLogoutButtons } from "./js/auth-logout.js?v=1";
+    import { goToLogin, isDesktopLocalHost, DESKTOP_LOGIN_PATH } from "./js/desktop-auth.js?v=1";
+    import {
+        LOCAL_GUEST_USER,
+        getProfileRow,
+        updateProfileRow,
+        listBooks,
+        insertBook,
+        ensureUserStreakLocal,
+        notifyLocalStudioSync,
+    } from "./js/local-studio-store.js?v=1";
     import {
         isStoryBibleUiEnabled,
         STORY_BIBLE_PREF_KEY,
@@ -922,6 +953,7 @@
         pickContinueWritingBookId,
         buildEditorContinueUrl,
     } from "./js/writer-resume.js?v=1";
+    import { alysumPrompt } from "./js/alysum-prompt.js?v=1";
 
     wireLogoutButtons();
 
@@ -956,6 +988,7 @@
     let currentProfile = {};
     let booksRows = [];
     let firstBookId = null;
+    let isLocalStudio = isDesktopLocalHost();
     let booksChannel = null;
     let notificationsChannel = null;
 
@@ -1084,6 +1117,10 @@
     }
 
     async function ensureUserStreak(data) {
+        if (isLocalStudio) {
+            const updated = ensureUserStreakLocal(data);
+            return updated.streak || 0;
+        }
         const today = localDayKey();
         const lastLogin = typeof data.lastLogin === "string" ? data.lastLogin : "";
         const currentStreak = Number.isFinite(Number(data.streak)) ? Number(data.streak) : 0;
@@ -1391,6 +1428,9 @@
 
     async function refreshProfileFromServer() {
         if (!currentUser) return;
+        if (isLocalStudio) {
+            currentProfile = mergeUser(getProfileRow());
+        } else {
         const { data: row, error } = await supabase
             .from("users")
             .select("display_name, username, account_type, streak, last_login, writing_day_totals, daily_word_goal, profile_image_url")
@@ -1398,10 +1438,13 @@
             .maybeSingle();
         if (error || !row) return;
         currentProfile = mergeUser({ ...currentProfile, ...row });
+        }
         const displayName = cosmeticDisplayNameFromUserData(currentProfile);
         const handle = permanentHandleFromUserData(currentProfile);
-        const label = displayName || handle || "writer";
-        welcomeTitle.innerHTML = 'Welcome back, <span class="wd-name">' + escapeHtml(label) + "</span>.";
+        const label = displayName || handle || (isLocalStudio ? "Guest" : "writer");
+        welcomeTitle.innerHTML = isLocalStudio
+            ? 'Welcome, <span class="wd-name">' + escapeHtml(label) + "</span>."
+            : 'Welcome back, <span class="wd-name">' + escapeHtml(label) + "</span>.";
         renderWelcomeProfile(currentProfile, label);
     }
 
@@ -1418,6 +1461,7 @@
     }
 
     function startBooksRealtime() {
+        if (isLocalStudio) return;
         if (!currentUser) return;
         if (booksChannel) supabase.removeChannel(booksChannel);
 
@@ -1437,6 +1481,7 @@
     }
 
     function startNotificationsRealtime() {
+        if (isLocalStudio) return;
         if (!currentUser) return;
         if (notificationsChannel) supabase.removeChannel(notificationsChannel);
 
@@ -1456,6 +1501,7 @@
     }
 
     async function enrichBooksWithLibraryCovers(rows) {
+        if (isLocalStudio) return rows || [];
         const missing = (rows || []).filter((row) => row?.id && !bookCoverUrl(row));
         if (!missing.length) return rows;
 
@@ -1480,6 +1526,9 @@
     }
 
     async function loadBooks() {
+        if (isLocalStudio) {
+            return applyBooksSnapshot(listBooks());
+        }
         const { data, error } = await supabase
             .from("books")
             .select("*")
@@ -1493,7 +1542,7 @@
     async function createBookNow() {
         if (!currentUser) return;
 
-        const title = prompt("Book title?");
+        const title = await alysumPrompt("Book title?");
         if (!title) return;
 
         const now = Date.now();
@@ -1512,6 +1561,12 @@
                 back: [],
             },
         };
+
+        if (isLocalStudio) {
+            insertBook(payload);
+            notifyLocalStudioSync();
+            return refreshBooksAndStats();
+        }
 
         const { error } = await supabase.from("books").insert(payload);
         if (error) throw error;
@@ -1582,6 +1637,7 @@
     });
 
     async function ensureProfileExists(user) {
+        if (isLocalStudio) return getProfileRow();
         const { data, error } = await supabase
             .from("users")
             .select("display_name, username, account_type, streak, last_login, writing_day_totals, daily_word_goal, profile_image_url")
@@ -1613,43 +1669,36 @@
         return inserted;
     }
 
-    async function load() {
-        const { data: auth, error: authErr } = await supabase.auth.getUser();
-        if (authErr) console.warn(authErr);
+    function mountLocalStudioBanner() {
+        if (document.getElementById("wdLocalBanner")) return;
+        const bar = document.createElement("div");
+        bar.id = "wdLocalBanner";
+        bar.className = "wd-local-banner";
+        bar.innerHTML =
+            '<span>Local mode — same Studio, saved on this device only.</span>' +
+            `<a href="${DESKTOP_LOGIN_PATH}">Sign in or create account to sync</a>`;
+        document.querySelector(".wd-page")?.prepend(bar);
+    }
 
-        const user = auth?.user;
-        if (!user) {
-            window.location.href = "login.html?next=" + encodeURIComponent(WRITER_HOME_URL);
-            return;
-        }
-        currentUser = user;
-
-        let row;
-        try {
-            row = await ensureProfileExists(user);
-        } catch (error) {
-            console.error(error);
-            welcomeTitle.textContent = "Welcome back.";
-            return;
-        }
-
+    async function finishStudioLoad(user, row) {
         let profile = mergeUser(row || { username: "writer", account_type: ACCOUNT_BOTH });
         currentProfile = profile;
-        if (normalizeAccountType(profile.accountType) === ACCOUNT_READER) {
+        if (!isLocalStudio && normalizeAccountType(profile.accountType) === ACCOUNT_READER) {
             window.location.replace(READER_HOME_URL);
             return;
         }
 
         const displayName = cosmeticDisplayNameFromUserData(profile);
         const handle = permanentHandleFromUserData(profile);
-        const label = displayName || handle || "writer";
+        const label = displayName || handle || (isLocalStudio ? "Guest" : "writer");
 
-        welcomeTitle.innerHTML =
-            'Welcome back, <span class="wd-name">' + escapeHtml(label) + "</span>.";
+        welcomeTitle.innerHTML = isLocalStudio
+            ? 'Welcome, <span class="wd-name">' + escapeHtml(label) + "</span>."
+            : 'Welcome back, <span class="wd-name">' + escapeHtml(label) + "</span>.";
 
         renderWelcomeProfile(profile, label);
 
-        if (accountSupportsModeToggle(profile.accountType)) {
+        if (!isLocalStudio && accountSupportsModeToggle(profile.accountType)) {
             navReading?.classList.remove("is-hidden");
         }
 
@@ -1671,9 +1720,53 @@
             console.error(e);
         }
 
-        void loadDashboardBadge(user.id);
-        startBooksRealtime();
-        startNotificationsRealtime();
+        if (!isLocalStudio) {
+            void loadDashboardBadge(user.id);
+            startBooksRealtime();
+            startNotificationsRealtime();
+        } else if (navDashBadge) {
+            navDashBadge.classList.add("is-hidden");
+        }
+    }
+
+    async function load() {
+        if (isDesktopLocalHost()) {
+            isLocalStudio = true;
+            mountLocalStudioBanner();
+            wireLogoutButtons();
+            currentUser = LOCAL_GUEST_USER;
+            let row;
+            try {
+                row = await ensureProfileExists(currentUser);
+            } catch (error) {
+                console.error(error);
+                welcomeTitle.textContent = "Welcome.";
+                return;
+            }
+            await finishStudioLoad(currentUser, row);
+            return;
+        }
+
+        isLocalStudio = false;
+        const { data: auth, error: authErr } = await supabase.auth.getUser();
+        if (authErr) console.warn(authErr);
+        const user = auth?.user;
+        if (!user) {
+            goToLogin(WRITER_HOME_URL);
+            return;
+        }
+        currentUser = user;
+
+        let row;
+        try {
+            row = await ensureProfileExists(user);
+        } catch (error) {
+            console.error(error);
+            welcomeTitle.textContent = "Welcome back.";
+            return;
+        }
+
+        await finishStudioLoad(user, row);
     }
 
     document.addEventListener("visibilitychange", () => {
@@ -1696,7 +1789,8 @@
         if (notificationsChannel) supabase.removeChannel(notificationsChannel);
     });
 
-    load();
+    wireLogoutButtons();
+    load().catch(console.error);
 </script>
 
 </body>

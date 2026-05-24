@@ -6,6 +6,7 @@ import {
     OAUTH_PENDING_LOGIN_KEY,
     OAUTH_PENDING_SIGNUP_KEY,
 } from "./auth-redirect.js?v=2";
+import { clearDesktopLocalHost, goToLogin, isAlysumDesktop } from "./desktop-auth.js?v=1";
 
 let signOutInFlight = false;
 
@@ -16,13 +17,19 @@ export async function signOutAndGoToLogin() {
     }
     signOutInFlight = true;
     try {
+        if (isDesktopLocalHost()) {
+            clearDesktopLocalHost();
+            goToLogin();
+            return { ok: true };
+        }
         const { error } = await supabase.auth.signOut();
         if (error) throw error;
         clearOAuthPending(OAUTH_PENDING_LOGIN_KEY);
         clearOAuthPending(OAUTH_PENDING_SIGNUP_KEY);
         clearLegacyOAuthPending();
         clearAuthCallbackFromUrl();
-        window.location.href = "login.html";
+        if (isAlysumDesktop()) clearDesktopLocalHost();
+        goToLogin();
         return { ok: true };
     } catch (error) {
         signOutInFlight = false;

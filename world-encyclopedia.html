@@ -812,7 +812,7 @@
         if (shelfLoaded) return;
         shelfLoaded = true;
         try {
-            await initEncyclopediaSession(supabase, session?.user?.id ?? null);
+            await initEncyclopediaSession(supabase, session);
         } catch (err) {
             console.warn("Encyclopedia init:", err);
         }
