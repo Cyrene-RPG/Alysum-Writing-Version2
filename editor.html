@@ -17,6 +17,7 @@
     <!-- ALYSUM:ANALYTICS:END --><link rel="stylesheet" href="css/notebook.css?v=9" />
 <link rel="stylesheet" href="css/site-responsive.css?v=1" />
 <link rel="stylesheet" href="css/gradient-themes.css?v=4" />
+<link rel="stylesheet" href="css/plot-doctor.css?v=1" />
     <script src="js/gradient-theme-sync.js" defer></script>
 <title>Alysum Editor</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"><script src="js/alysum-appearance-boot.js"></script><style>
@@ -253,6 +254,7 @@
             <span class="topbar-tip" data-tip="Publish to web"><button class="icon-btn purple" id="publishTopBtn" type="button" aria-label="Publish">🚀</button></span>
             <span class="topbar-tip" data-tip="Export / print"><button class="icon-btn purple" id="exportBtn" type="button" aria-label="Export">📄</button></span>
             <span class="topbar-tip" data-tip="Story Bible" id="storyBibleTopLinkWrap"><a class="icon-btn" id="storyBibleTopLink" href="story-bible.html" aria-label="Story Bible">📖</a></span>
+            <span class="topbar-tip" data-tip="Plot Doctor (Alt+P)"><button class="pd-toggle" id="plotDoctorToggle" type="button" aria-label="Plot Doctor" data-count="0">Plot Doctor</button></span>
             <span class="topbar-tip" data-tip="Notes"><button class="icon-btn" id="nbBtn" type="button" aria-label="Notes">⌘</button></span>
             <span class="topbar-tip" data-tip="Rename chapter"><button class="icon-btn" id="renameChapterBtn" type="button" aria-label="Rename chapter">⋯</button></span>
             <span class="topbar-tip" data-tip="Light / dark"><button class="icon-btn" id="themeTopBtn" type="button" aria-label="Toggle theme">◐</button></span>
@@ -286,7 +288,7 @@
     </div>
 </div>
 
-</div><div class="publish-modal" id="publishModal">
+</div><div class="pd-sidebar-mount" id="plotDoctorMount"></div><div class="publish-modal" id="publishModal">
     <div class="publish-modal-box">
         <h2 class="publish-modal-title">Choose Chapters to Publish</h2>
         <p class="publish-modal-text">Select the chapters you want to publish now.</p>
@@ -322,6 +324,8 @@
         restoreEditorViewport,
         getCaretTextOffset,
     } from "./js/writer-resume.js?v=1";
+    import { createOrchestrator } from "./js/plot-doctor/orchestrator.js?v=1";
+    import { mountPlotDoctorSidebar } from "./js/plot-doctor/sidebar.js?v=1";
 
 const params = new URLSearchParams(window.location.search);
 let bookId =
@@ -892,6 +896,84 @@ function rememberBookId(id) {
         persistedBookWordCount = nextWords;
         setSaveStatus(doneText);
         notifyWriterDashboardSync();
+        plotDoctor?.scheduleScan();
+    }
+
+    let plotDoctor = null;
+    let plotDoctorSidebar = null;
+
+    function plotDoctorJumpTo(chapterId, section, rangeStart) {
+        if (!currentBook || !chapterId) return;
+        const list = currentBook.sections?.[section] || currentBook.sections?.body || [];
+        const idx = list.findIndex(ch => ch.id === chapterId);
+        if (idx < 0) return;
+        if (currentSection !== section || currentChapterIndex !== idx) {
+            currentSection = section || "body";
+            currentChapterIndex = idx;
+            loadChapter(currentSection, currentChapterIndex, true);
+        }
+        if (typeof rangeStart === "number" && rangeStart >= 0) {
+            window.requestAnimationFrame(() => {
+                try {
+                    const range = document.createRange();
+                    const walker = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT, null);
+                    let charsLeft = rangeStart;
+                    let node = walker.nextNode();
+                    while (node) {
+                        const len = node.nodeValue?.length || 0;
+                        if (charsLeft <= len) {
+                            range.setStart(node, charsLeft);
+                            range.setEnd(node, Math.min(len, charsLeft + 12));
+                            const rect = range.getBoundingClientRect();
+                            window.scrollTo({
+                                top: window.scrollY + rect.top - 200,
+                                behavior: "smooth"
+                            });
+                            const selection = window.getSelection();
+                            selection.removeAllRanges();
+                            selection.addRange(range);
+                            break;
+                        }
+                        charsLeft -= len;
+                        node = walker.nextNode();
+                    }
+                } catch (e) {
+                    console.warn("plot-doctor jump failed:", e);
+                }
+            });
+        }
+    }
+
+    function initPlotDoctor() {
+        if (plotDoctor || !currentUser || !bookId || !currentBook) return;
+        const mountEl = document.getElementById("plotDoctorMount");
+        const toggleBtn = document.getElementById("plotDoctorToggle");
+        if (!mountEl) return;
+        plotDoctor = createOrchestrator({
+            supabase,
+            getSession: () => ({ uid: currentUser?.id || null }),
+            getManuscript: () => ({
+                bookId,
+                chapters: allChaptersFlat().map(ch => ({
+                    id: ch.id,
+                    section: ch.section,
+                    title: ch.title,
+                    content: ch.content || ""
+                }))
+            }),
+            onChange: () => plotDoctorSidebar?.render()
+        });
+        plotDoctorSidebar = mountPlotDoctorSidebar({
+            mountEl,
+            toggleBtn,
+            orchestrator: plotDoctor,
+            onJump: plotDoctorJumpTo
+        });
+        void (async () => {
+            await plotDoctor.loadInitial();
+            await plotDoctor.runScanNow();
+            void plotDoctor.sweepHardDeleteStale();
+        })();
     }
 
     function notifyWriterDashboardSync() {
@@ -1215,6 +1297,7 @@ async function loadBook() {
     }
 
     await loadBook();
+    initPlotDoctor();
 
         void (async () => {
             const href = new URL("./js/nb-app.js?v=29", import.meta.url).href;

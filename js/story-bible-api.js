@@ -32,19 +32,33 @@ function safeObject(value, fallback = {}) {
  * @param {object} raw
  * @param {string} id
  */
+const BIBLE_CHARACTER_STATUS = new Set(["alive", "deceased", "unknown"]);
+
+function normalizeStatus(value) {
+    const s = typeof value === "string" ? value.trim().toLowerCase() : "";
+    return BIBLE_CHARACTER_STATUS.has(s) ? s : "alive";
+}
+
 export function normalizeBibleCharacter(raw, id) {
     const r = safeObject(raw);
     const app = safeObject(r.appearance);
     const rawName = r.name != null && typeof r.name !== "object" ? String(r.name) : "";
     const name = safeString(rawName, "").trim();
+    const status = normalizeStatus(r.status);
+    const deceasedChapterId = status === "deceased" ? safeString(r.deceasedChapterId, "").trim() : "";
+    const deceasedSection = status === "deceased" ? safeString(r.deceasedSection, "").trim() : "";
     return {
         id,
-        schemaVersion: typeof r.schemaVersion === "number" ? r.schemaVersion : 1,
+        schemaVersion: typeof r.schemaVersion === "number" ? r.schemaVersion : 2,
         name,
         aliases: safeArray(r.aliases)
             .filter(x => typeof x === "string")
             .map(s => s.trim())
             .filter(Boolean),
+        pronouns: safeString(r.pronouns, "").trim(),
+        status,
+        deceasedChapterId,
+        deceasedSection,
         appearance: {
             age: safeString(app.age, "").trim(),
             eyes: safeString(app.eyes, "").trim(),
@@ -74,10 +88,17 @@ export function bibleCharacterToFirestore(c) {
     const name = (c.name || "").trim();
     const now = Date.now();
     const app = safeObject(c.appearance);
+    const status = normalizeStatus(c.status);
+    const deceasedChapterId = status === "deceased" ? safeString(c.deceasedChapterId, "").trim() : "";
+    const deceasedSection = status === "deceased" ? safeString(c.deceasedSection, "").trim() : "";
     return {
-        schemaVersion: 1,
+        schemaVersion: 2,
         name,
         aliases: Array.isArray(c.aliases) ? c.aliases : [],
+        pronouns: safeString(c.pronouns, "").trim(),
+        status,
+        deceasedChapterId,
+        deceasedSection,
         appearance: {
             age: safeString(app.age, "").trim(),
             eyes: safeString(app.eyes, "").trim(),

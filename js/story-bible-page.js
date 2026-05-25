@@ -17,7 +17,7 @@ import {
     loadBookChapterOptions,
     getBookTitle,
     loadBookPlainTextForScan
-} from "./story-bible-api.js?v=6";
+} from "./story-bible-api.js?v=7";
 import {
     extractNameCandidatesFromPlainText,
     subtractBibleNames,
@@ -32,6 +32,10 @@ function emptyCharacter() {
         {
             name: "",
             aliases: [],
+            pronouns: "",
+            status: "alive",
+            deceasedChapterId: "",
+            deceasedSection: "",
             appearance: {},
             notes: "",
             tags: [],
@@ -109,6 +113,8 @@ export async function mountStoryBiblePage(opts) {
         charFieldsEl,
         placeFieldsEl,
         placeParentEl,
+        charIdentityEl,
+        deceasedFieldEl,
         labelNameEl,
         labelAliasesEl,
         saveCharBtn,
@@ -219,14 +225,23 @@ export async function mountStoryBiblePage(opts) {
         asideCharsEl?.classList.toggle("hidden", !isChar);
         asidePlacesEl?.classList.toggle("hidden", isChar);
         charFieldsEl?.classList.toggle("hidden", !isChar);
+        charIdentityEl?.classList.toggle("hidden", !isChar);
         placeFieldsEl?.classList.toggle("hidden", isChar);
         placeParentEl?.classList.toggle("hidden", isChar);
+        syncDeceasedFieldVisibility();
         if (labelNameEl) labelNameEl.textContent = isChar ? "Name" : "Place name";
         if (labelAliasesEl)
             labelAliasesEl.textContent = isChar ? "Also known as (comma-separated)" : "Alternate names (comma-separated)";
         fields.name.placeholder = isChar ? "Character name" : "e.g. Chicago, The Old Mill";
         fields.aliases.placeholder = isChar ? "Nicknames, titles…" : "NYC, Second City…";
         saveCharBtn.textContent = isChar ? "Save character" : "Save place";
+    }
+
+    function syncDeceasedFieldVisibility() {
+        if (!deceasedFieldEl) return;
+        const onCharTab = bibleTab === "characters";
+        const isDeceased = (fields.status?.value || "alive") === "deceased";
+        deceasedFieldEl.classList.toggle("hidden", !(onCharTab && isDeceased));
     }
 
     function persistBibleTab() {
@@ -246,15 +261,24 @@ export async function mountStoryBiblePage(opts) {
             .map(s => s.trim())
             .filter(Boolean);
         const introVal = fields.introduced?.value || "|";
-        const parts = introVal.split("|", 2);
-        const section = parts[0] || "";
-        const chapterId = parts[1] || "";
+        const introParts = introVal.split("|", 2);
+        const introSection = introParts[0] || "";
+        const introChapterId = introParts[1] || "";
+        const status = (fields.status?.value || "alive").trim().toLowerCase();
+        const deceasedVal = fields.deceased?.value || "|";
+        const deceasedParts = deceasedVal.split("|", 2);
+        const deceasedSection = deceasedParts[0] || "";
+        const deceasedChapterId = deceasedParts[1] || "";
 
         return normalizeBibleCharacter(
             {
                 ...base,
                 name,
                 aliases,
+                pronouns: fields.pronouns?.value || "",
+                status,
+                deceasedChapterId: status === "deceased" ? deceasedChapterId : "",
+                deceasedSection: status === "deceased" && deceasedChapterId ? deceasedSection : "",
                 tags,
                 notes: fields.notes?.value || "",
                 appearance: {
@@ -266,8 +290,8 @@ export async function mountStoryBiblePage(opts) {
                     build: fields.build?.value || "",
                     distinctive: fields.distinctive?.value || ""
                 },
-                introducedSection: chapterId ? section : "",
-                introducedChapterId: chapterId || ""
+                introducedSection: introChapterId ? introSection : "",
+                introducedChapterId: introChapterId || ""
             },
             base.id
         );
@@ -392,6 +416,10 @@ export async function mountStoryBiblePage(opts) {
         fields.skin.value = "";
         fields.build.value = "";
         fields.distinctive.value = "";
+        if (fields.pronouns) fields.pronouns.value = "";
+        if (fields.status) fields.status.value = "alive";
+        if (fields.deceased) fields.deceased.value = "|";
+        syncDeceasedFieldVisibility();
     }
 
     function clearSharedForm() {
@@ -420,6 +448,21 @@ export async function mountStoryBiblePage(opts) {
         fields.skin.value = c.appearance?.skin || "";
         fields.build.value = c.appearance?.build || "";
         fields.distinctive.value = c.appearance?.distinctive || "";
+
+        if (fields.pronouns) fields.pronouns.value = c.pronouns || "";
+        if (fields.status) {
+            const status = (c.status || "alive").trim().toLowerCase();
+            fields.status.value = ["alive", "deceased", "unknown"].includes(status) ? status : "alive";
+        }
+        if (fields.deceased) {
+            const deceasedKey = c.deceasedChapterId
+                ? `${c.deceasedSection || ""}|${c.deceasedChapterId}`
+                : "";
+            const sel = fields.deceased;
+            if (deceasedKey && [...sel.options].some(o => o.value === deceasedKey)) sel.value = deceasedKey;
+            else sel.value = "|";
+        }
+        syncDeceasedFieldVisibility();
 
         const sel = fields.introduced;
         const key = c.introducedChapterId ? `${c.introducedSection}|${c.introducedChapterId}` : "";
@@ -532,14 +575,23 @@ export async function mountStoryBiblePage(opts) {
                 if (t === "places") savedTab = "places";
             } catch (_) {}
 
-            const sel = fields.introduced;
-            sel.innerHTML = '<option value="|">Not set</option>';
+            const introducedSel = fields.introduced;
+            const deceasedSel = fields.deceased;
+            introducedSel.innerHTML = '<option value="|">Not set</option>';
+            if (deceasedSel) deceasedSel.innerHTML = '<option value="|">Not set</option>';
             chapters.forEach(ch => {
                 if (!ch.id) return;
-                const opt = document.createElement("option");
-                opt.value = `${ch.section}|${ch.id}`;
-                opt.textContent = ch.label;
-                sel.appendChild(opt);
+                const value = `${ch.section}|${ch.id}`;
+                const introOpt = document.createElement("option");
+                introOpt.value = value;
+                introOpt.textContent = ch.label;
+                introducedSel.appendChild(introOpt);
+                if (deceasedSel) {
+                    const deceasedOpt = document.createElement("option");
+                    deceasedOpt.value = value;
+                    deceasedOpt.textContent = ch.label;
+                    deceasedSel.appendChild(deceasedOpt);
+                }
             });
 
             bibleTab = savedTab === "places" ? "places" : "characters";
@@ -639,6 +691,13 @@ export async function mountStoryBiblePage(opts) {
             await persistCurrentEntryFromForm({ silent: false, requireName: true });
         } finally {
             saveCharBtn.disabled = false;
+        }
+    });
+
+    fields.status?.addEventListener("change", () => {
+        syncDeceasedFieldVisibility();
+        if ((fields.status?.value || "alive") !== "deceased" && fields.deceased) {
+            fields.deceased.value = "|";
         }
     });
 

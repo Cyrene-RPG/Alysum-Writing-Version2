@@ -768,6 +768,22 @@
                             <label for="sbAliases" id="sbLabelAliases">Also known as (comma-separated)</label>
                             <input id="sbAliases" type="text" autocomplete="off" placeholder="Nicknames, titles…" />
                         </div>
+                        <div id="sbFormCharIdentity" class="sb-field sb-field-full">
+                            <div class="sb-form-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                                <div class="sb-field">
+                                    <label for="sbPronouns">Pronouns</label>
+                                    <input id="sbPronouns" type="text" autocomplete="off" placeholder="she/her, they/them…" />
+                                </div>
+                                <div class="sb-field">
+                                    <label for="sbStatus">Status</label>
+                                    <select id="sbStatus">
+                                        <option value="alive">Alive</option>
+                                        <option value="deceased">Deceased</option>
+                                        <option value="unknown">Unknown</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
                         <div id="sbFormPlaceFields" class="sb-field sb-field-full hidden">
                             <label for="sbPlaceKind">Kind</label>
                             <select id="sbPlaceKind">
@@ -826,6 +842,10 @@
                             <label for="sbIntroduced">Introduced in</label>
                             <select id="sbIntroduced"></select>
                         </div>
+                        <div id="sbFormDeceasedField" class="sb-field sb-field-full hidden">
+                            <label for="sbDeceased">Died in</label>
+                            <select id="sbDeceased"></select>
+                        </div>
                         <div class="sb-field sb-field-full">
                             <label for="sbNotes">Notes</label>
                             <textarea id="sbNotes" placeholder="Anything else you want to remember…"></textarea>
@@ -843,7 +863,7 @@
 
     <script type="module">
         import { supabase } from "./firebase.js";
-        import { mountStoryBiblePage } from "./js/story-bible-page.js?v=13";
+        import { mountStoryBiblePage } from "./js/story-bible-page.js?v=14";
         import {
             isStoryBibleUiEnabled,
             STORY_BIBLE_PREF_KEY,
@@ -894,6 +914,8 @@
                 charFieldsEl: document.getElementById("sbFormCharFields"),
                 placeFieldsEl: document.getElementById("sbFormPlaceFields"),
                 placeParentEl: document.getElementById("sbFormPlaceParent"),
+                charIdentityEl: document.getElementById("sbFormCharIdentity"),
+                deceasedFieldEl: document.getElementById("sbFormDeceasedField"),
                 labelNameEl: document.getElementById("sbLabelName"),
                 labelAliasesEl: document.getElementById("sbLabelAliases"),
                 saveCharBtn: document.getElementById("sbSaveChar"),
@@ -903,6 +925,9 @@
                 fields: {
                     name: document.getElementById("sbName"),
                     aliases: document.getElementById("sbAliases"),
+                    pronouns: document.getElementById("sbPronouns"),
+                    status: document.getElementById("sbStatus"),
+                    deceased: document.getElementById("sbDeceased"),
                     placeKind: document.getElementById("sbPlaceKind"),
                     placeParent: document.getElementById("sbPlaceParent"),
                     age: document.getElementById("sbAge"),
