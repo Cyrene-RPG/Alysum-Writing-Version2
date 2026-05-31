@@ -16,8 +16,9 @@ import {
     listUserBooksWithBibleCounts,
     loadBookChapterOptions,
     getBookTitle,
-    loadBookPlainTextForScan
-} from "./story-bible-api.js?v=7";
+    loadBookPlainTextForScan,
+    isStoryBibleTableMissing
+} from "./story-bible-api.js?v=8";
 import {
     extractNameCandidatesFromPlainText,
     subtractBibleNames,
@@ -783,7 +784,14 @@ export async function mountStoryBiblePage(opts) {
             syncFormEmptyState();
         } catch (e) {
             console.error(e);
-            setStatus("Could not load Story Bible for this book.", true);
+            if (isStoryBibleTableMissing(e)) {
+                setStatus(
+                    "Story Bible tables are missing in Supabase. Run supabase-sibling-tables.sql in the SQL editor, then refresh.",
+                    true
+                );
+            } else {
+                setStatus("Could not load Story Bible for this book.", true);
+            }
             updateHealthPanel();
             syncFormEmptyState();
         }

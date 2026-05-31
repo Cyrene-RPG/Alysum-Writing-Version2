@@ -8,7 +8,7 @@
  * <script type="module" src="/js/vercel-analytics.js"></script>
  */
 
-import { inject } from '../node_modules/@vercel/analytics/dist/index.mjs';
+import { inject } from "https://esm.sh/@vercel/analytics@1";
 
 // Initialize Vercel Analytics
 inject();

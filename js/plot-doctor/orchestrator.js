@@ -6,7 +6,7 @@
  */
 
 import { htmlToPlainText } from "./util/text.js?v=1";
-import { listBibleCharacters, listBiblePlaces } from "../story-bible-api.js?v=7";
+import { listBibleCharacters, listBiblePlaces, isStoryBibleTableMissing } from "../story-bible-api.js?v=8";
 import {
     listIssuesForBook,
     insertIssues,
@@ -289,7 +289,13 @@ export function createOrchestrator(opts) {
             try {
                 bible = await loadBibleSnapshot(ms.bookId);
             } catch (e) {
-                console.warn("[plot-doctor] bible load failed, scanning manuscript only:", e);
+                if (isStoryBibleTableMissing(e)) {
+                    console.warn(
+                        "[plot-doctor] story_bible_* tables missing — run supabase-sibling-tables.sql; scanning manuscript only"
+                    );
+                } else {
+                    console.warn("[plot-doctor] bible load failed, scanning manuscript only:", e);
+                }
             }
             const fullInput = { ...scanInput, characters: bible.characters, places: bible.places };
             state.bookId = ms.bookId;
@@ -377,10 +383,19 @@ export function createOrchestrator(opts) {
         const sess = getSession();
         const ms = getManuscript();
         if (!sess?.uid || !ms?.bookId) return;
+        if (usesLocalStore(sess.uid)) {
+            const cutoff = new Date(Date.now() - STALE_HARD_DELETE_DAYS * 24 * 60 * 60 * 1000);
+            await deleteStaleBefore(supabase, sess.uid, ms.bookId, cutoff);
+            return;
+        }
         const cutoff = new Date(Date.now() - STALE_HARD_DELETE_DAYS * 24 * 60 * 60 * 1000);
         try {
             await deleteStaleBefore(supabase, sess.uid, ms.bookId, cutoff);
         } catch (e) {
+            if (isPlotIssuesTableMissing(e)) {
+                setTableMissingWarning();
+                return;
+            }
             console.warn("[plot-doctor] stale sweep failed:", e);
         }
     }

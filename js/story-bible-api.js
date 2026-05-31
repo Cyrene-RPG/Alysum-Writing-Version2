@@ -13,6 +13,18 @@ async function localBible() {
 export const BIBLE_CHARACTERS = "bibleCharacters";
 export const BIBLE_PLACES = "biblePlaces";
 
+/** True when PostgREST reports story_bible_* tables are not in the schema. */
+export function isStoryBibleTableMissing(error) {
+    const code = String(error?.code || "");
+    const msg = String(error?.message || error?.details || "").toLowerCase();
+    return (
+        code === "PGRST205" ||
+        code === "42P01" ||
+        msg.includes("story_bible_characters") ||
+        msg.includes("story_bible_places")
+    );
+}
+
 export function generateBibleCharacterId() {
     return "bc_" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
 }
