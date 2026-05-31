@@ -21,12 +21,17 @@ import {
 import {
     extractNameCandidatesFromPlainText,
     subtractBibleNames,
-    snippetContextsForPhrase
 } from "./story-bible-scan.js?v=6";
 import { scoreCharacter, scoreBibleHealth } from "./story-bible-health.js?v=1";
 import { canonicalOptionsForSlot } from "./plot-doctor/util/lexicon.js?v=1";
+import {
+    saveCharacterFromScan,
+    savePlaceFromScan,
+    bulkSaveCharactersFromScan
+} from "./story-bible-import.js?v=1";
 
 const SB_TAB_STORAGE_KEY = "alysum-story-bible-tab";
+const SB_SCAN_AUTO_ADD_KEY = "alysum-sb-scan-auto-add";
 
 function emptyCharacter() {
     const id = generateBibleCharacterId();
@@ -102,6 +107,7 @@ function emptyPlace() {
  * @param {HTMLElement} [opts.scanResultsEl]
  * @param {HTMLInputElement} [opts.scanStrictCheck]
  * @param {HTMLInputElement} [opts.scanLooseCheck]
+ * @param {HTMLInputElement} [opts.scanAutoAddCheck]
  */
 export async function mountStoryBiblePage(opts) {
     const {
@@ -141,7 +147,8 @@ export async function mountStoryBiblePage(opts) {
         scanBtn,
         scanResultsEl,
         scanStrictCheck,
-        scanLooseCheck
+        scanLooseCheck,
+        scanAutoAddCheck
     } = opts;
 
     const bookId = (new URLSearchParams(window.location.search).get("book") || "").trim();
@@ -879,14 +886,42 @@ export async function mountStoryBiblePage(opts) {
         return { firstPerson: strict, balanced: !loose };
     }
 
-    function draftNotesFromScan(row, plain) {
-        const snippets = snippetContextsForPhrase(plain, row.name, { max: 4, radius: 100 });
-        let notes =
-            `[Added from manuscript scan — about ${row.occurrences}× in this book.]\n` +
-            `Edit or replace this note; it is not updated automatically.\n`;
-        if (snippets.length) notes += "\nExcerpts:\n" + snippets.map(s => `• ${s}`).join("\n\n");
-        else notes += "\n(No excerpts captured for this phrase.)";
-        return notes;
+    function readScanAutoAddPref() {
+        try {
+            return localStorage.getItem(SB_SCAN_AUTO_ADD_KEY) === "1";
+        } catch {
+            return false;
+        }
+    }
+
+    function writeScanAutoAddPref(on) {
+        try {
+            localStorage.setItem(SB_SCAN_AUTO_ADD_KEY, on ? "1" : "0");
+        } catch {}
+    }
+
+    if (scanAutoAddCheck) {
+        scanAutoAddCheck.checked = readScanAutoAddPref();
+        scanAutoAddCheck.addEventListener("change", () => {
+            writeScanAutoAddPref(scanAutoAddCheck.checked === true);
+        });
+    }
+
+    async function bulkAddScanRowsAsCharacters(rows, plain) {
+        if (!rows.length) return 0;
+        saveCharBtn.disabled = true;
+        scanBtn.disabled = true;
+        try {
+            const added = await bulkSaveCharactersFromScan(supabase, uid, bookId, rows, plain);
+            characters = await listBibleCharacters(supabase, uid, bookId);
+            renderCharList();
+            updateHealthPanel();
+            refreshScanFromCache();
+            return added;
+        } finally {
+            saveCharBtn.disabled = false;
+            scanBtn.disabled = false;
+        }
     }
 
     function renderScanSuggestions(rows) {
@@ -901,6 +936,26 @@ export async function mountStoryBiblePage(opts) {
         head.className = "sb-scan-title";
         head.textContent = "Suggestions (pattern scan)";
         scanResultsEl.appendChild(head);
+
+        const bulkRow = document.createElement("div");
+        bulkRow.className = "sb-scan-bulk";
+        const bulkBtn = document.createElement("button");
+        bulkBtn.type = "button";
+        bulkBtn.className = "sb-scan-btn sb-scan-btn-secondary";
+        bulkBtn.textContent = `Add all ${rows.length} as characters`;
+        bulkBtn.addEventListener("click", async () => {
+            if (!confirm(`Add ${rows.length} name(s) to your Story Bible as characters?`)) return;
+            setStatus("Adding to bible…");
+            try {
+                const added = await bulkAddScanRowsAsCharacters(rows, plain);
+                setStatus(`Added ${added} character(s) to your bible.`);
+            } catch (e) {
+                console.error(e);
+                setStatus(formatFirestoreErr(e, "Bulk add"), true);
+            }
+        });
+        bulkRow.appendChild(bulkBtn);
+        scanResultsEl.appendChild(bulkRow);
 
         const plain = cachedPlainForScan || "";
 
@@ -920,31 +975,25 @@ export async function mountStoryBiblePage(opts) {
             addChar.className = "sb-scan-add";
             addChar.textContent = "Character";
             addChar.addEventListener("click", async () => {
-                const notes = draftNotesFromScan(row, plain);
-                const c = normalizeBibleCharacter(
-                    {
-                        name: row.name,
-                        aliases: [],
-                        appearance: {},
-                        notes,
-                        tags: [],
-                        introducedSection: "",
-                        introducedChapterId: ""
-                    },
-                    generateBibleCharacterId()
-                );
-                characters = [c, ...characters];
-                bibleTab = "characters";
-                updateBibleTabChrome();
-                persistBibleTab();
                 saveCharBtn.disabled = true;
                 try {
-                    await selectCharacter(c.id);
-                    const r = await persistCurrentEntryFromForm({ silent: true, requireName: true });
-                    if (r.ok) setStatus(`Character “${row.name}” saved to your bible.`);
+                    const saved = await saveCharacterFromScan(supabase, uid, bookId, row, plain);
+                    characters = [saved, ...characters.filter(c => c.id !== saved.id)];
+                    characters.sort((a, b) =>
+                        (a.sortKey || "").localeCompare(b.sortKey || "", undefined, { sensitivity: "base" })
+                    );
+                    bibleTab = "characters";
+                    updateBibleTabChrome();
+                    persistBibleTab();
+                    await selectCharacter(saved.id);
+                    setStatus(`Character “${row.name}” saved to your bible.`);
+                    refreshScanFromCache();
+                    updateHealthPanel();
+                } catch (e) {
+                    console.error(e);
+                    setStatus(formatFirestoreErr(e, "Save"), true);
                 } finally {
                     saveCharBtn.disabled = false;
-                    refreshScanFromCache();
                 }
             });
 
@@ -953,32 +1002,25 @@ export async function mountStoryBiblePage(opts) {
             addPlace.className = "sb-scan-add sb-scan-add-secondary";
             addPlace.textContent = "Place";
             addPlace.addEventListener("click", async () => {
-                const notes = draftNotesFromScan(row, plain);
-                const p = normalizeBiblePlace(
-                    {
-                        name: row.name,
-                        aliases: [],
-                        kind: "",
-                        parentPlace: "",
-                        notes,
-                        tags: [],
-                        introducedSection: "",
-                        introducedChapterId: ""
-                    },
-                    generateBiblePlaceId()
-                );
-                places = [p, ...places];
-                bibleTab = "places";
-                updateBibleTabChrome();
-                persistBibleTab();
                 saveCharBtn.disabled = true;
                 try {
-                    await selectPlace(p.id);
-                    const r = await persistCurrentEntryFromForm({ silent: true, requireName: true });
-                    if (r.ok) setStatus(`Place “${row.name}” saved to your bible.`);
+                    const saved = await savePlaceFromScan(supabase, uid, bookId, row, plain);
+                    places = [saved, ...places.filter(p => p.id !== saved.id)];
+                    places.sort((a, b) =>
+                        (a.sortKey || "").localeCompare(b.sortKey || "", undefined, { sensitivity: "base" })
+                    );
+                    bibleTab = "places";
+                    updateBibleTabChrome();
+                    persistBibleTab();
+                    await selectPlace(saved.id);
+                    setStatus(`Place “${row.name}” saved to your bible.`);
+                    refreshScanFromCache();
+                    updateHealthPanel();
+                } catch (e) {
+                    console.error(e);
+                    setStatus(formatFirestoreErr(e, "Save"), true);
                 } finally {
                     saveCharBtn.disabled = false;
-                    refreshScanFromCache();
                 }
             });
 
@@ -1012,9 +1054,21 @@ export async function mountStoryBiblePage(opts) {
                 const raw = extractNameCandidatesFromPlainText(cachedPlainForScan, buildScanExtractOpts());
                 const filtered = subtractBibleNames(raw, knownEntriesForScan());
                 renderScanSuggestions(filtered);
+                if (scanAutoAddCheck?.checked && filtered.length) {
+                    setStatus(`Auto-adding ${filtered.length} character(s)…`);
+                    try {
+                        const added = await bulkAddScanRowsAsCharacters(filtered, cachedPlainForScan);
+                        setStatus(`Auto-added ${added} character(s) to your bible.`);
+                        return;
+                    } catch (e) {
+                        console.error(e);
+                        setStatus(formatFirestoreErr(e, "Auto-add"), true);
+                        return;
+                    }
+                }
                 setStatus(
                     filtered.length
-                        ? `${filtered.length} match(es). Character / Place saves it to your bible immediately.`
+                        ? `${filtered.length} match(es). Add individually or use “Add all as characters”.`
                         : "No new pattern matches (or already in your bible). Try adding manually."
                 );
             } catch (e) {

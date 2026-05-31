@@ -240,6 +240,10 @@
                                 <button type="button" class="sb-scan-btn" id="sbScanBtn">Scan for names</button>
                                 <div class="sb-scan-opts">
                                     <label>
+                                        <input type="checkbox" id="sbScanAutoAdd" />
+                                        Auto-add new names as characters
+                                    </label>
+                                    <label>
                                         <input type="checkbox" id="sbScanStrict" />
                                         Stricter (first-person chatty prose)
                                     </label>
@@ -248,7 +252,7 @@
                                         Show more matches (noisier)
                                     </label>
                                 </div>
-                                <p class="sb-scan-hint">Adds suggestions to your bible with manuscript excerpts. Save from the form after adding.</p>
+                                <p class="sb-scan-hint">Scan finds capitalized names not yet in your bible. Use Add all or turn on auto-add to save them with manuscript excerpts.</p>
                                 <div id="sbScanResults" class="sb-scan-results hidden" aria-live="polite"></div>
                             </div>
                         </div>
@@ -260,7 +264,7 @@
 
     <script type="module">
         import { supabase } from "./firebase.js";
-        import { mountStoryBiblePage } from "./js/story-bible-page.js?v=15";
+        import { mountStoryBiblePage } from "./js/story-bible-page.js?v=16";
         import { requireStudioSession } from "./js/studio-session.js?v=1";
         import { isStoryBibleUiEnabled, STORY_BIBLE_PREF_KEY, STORY_BIBLE_PREF_EVENT } from "./js/story-bible-prefs.js?v=1";
 
@@ -340,7 +344,8 @@
                 scanBtn: document.getElementById("sbScanBtn"),
                 scanResultsEl: document.getElementById("sbScanResults"),
                 scanStrictCheck: document.getElementById("sbScanStrict"),
-                scanLooseCheck: document.getElementById("sbScanLoose")
+                scanLooseCheck: document.getElementById("sbScanLoose"),
+                scanAutoAddCheck: document.getElementById("sbScanAutoAdd")
             });
         })();
     </script>

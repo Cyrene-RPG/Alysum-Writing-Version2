@@ -140,6 +140,63 @@
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
+.pd-import {
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    background: rgba(99, 102, 241, 0.08);
+}
+
+.pd-import h4 {
+    margin: 0 0 4px;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #c4b5fd;
+}
+
+.pd-import-lead {
+    margin: 0 0 10px;
+    font-size: 12px;
+    color: #94a3b8;
+    line-height: 1.4;
+}
+
+.pd-import-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 6px 0;
+    font-size: 13px;
+    color: #e2e8f0;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.pd-import-row em {
+    font-style: normal;
+    color: #94a3b8;
+    font-size: 12px;
+}
+
+.pd-import-row button,
+.pd-import-all {
+    border: 1px solid rgba(167, 139, 250, 0.45);
+    background: rgba(124, 58, 237, 0.25);
+    color: #ede9fe;
+    border-radius: 8px;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 800;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.pd-import-all {
+    margin-top: 10px;
+    width: 100%;
+    padding: 8px 12px;
+}
+
 .pd-filters,
 .pd-status-tabs {
     display: flex;

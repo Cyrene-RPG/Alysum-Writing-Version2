@@ -537,6 +537,19 @@
     cursor: pointer;
 }
 .sb-scan-btn:disabled { opacity: 0.5; cursor: wait; }
+.sb-scan-btn-secondary {
+    background: rgba(99, 102, 241, 0.18);
+    color: #c7d2fe;
+    border: 1px solid rgba(99, 102, 241, 0.45);
+}
+.sb-scan-bulk {
+    margin: 10px 0 4px;
+}
+.sb-scan-bulk .sb-scan-btn {
+    width: auto;
+    padding: 8px 14px;
+    font-size: 12px;
+}
 .sb-scan-opts label {
     display: flex;
     align-items: flex-start;
