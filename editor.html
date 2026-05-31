@@ -139,6 +139,7 @@
     .toolbar { min-height: 54px; background: var(--toolbar-bg); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; padding: 8px 12px; overflow-x: auto; flex-wrap: wrap; }
     .tool-btn, .tool-select { height: 36px; border: 1px solid var(--border); background: var(--topbar-bg); border-radius: 10px; color: var(--page-text); font-size: 14px; font-weight: 700; padding: 0 12px; cursor: pointer; }
     #fontSelect { min-width: 9.5rem; max-width: 12rem; }
+    #findReplaceBtn { font-size: 17px; line-height: 1; padding: 0 11px; }
     .toolbar-spacer { flex: 1; min-width: 8px; }
     .sprint-btn { height: 36px; border: 1px solid var(--border); background: linear-gradient(135deg, var(--alysum-purple), #a855f7); color: white; border-radius: 999px; padding: 0 14px; font-size: 14px; font-weight: 900; cursor: pointer; white-space: nowrap; }
     .sprint-float { position: fixed; top: 122px; right: 14px; z-index: 2500; display: none; }
@@ -331,7 +332,7 @@
     <button class="tool-btn" type="button" data-cmd="insertUnorderedList">• List</button>
     <button class="tool-btn" type="button" data-cmd="insertOrderedList">1. List</button>
     <button class="tool-btn" type="button" id="quoteBtn">❝</button>
-    <button class="tool-btn" type="button" id="findReplaceBtn" title="Find and replace (Ctrl+F)">⌕</button>
+    <button class="tool-btn" type="button" id="findReplaceBtn" title="Find and replace (Ctrl+F)" aria-label="Find and replace">🔍</button>
     <select class="tool-select" id="formatSelect"><option value="p">Body</option><option value="h2">Heading</option></select>
     <select class="tool-select" id="fontSelect" aria-label="Font"></select>
     <select class="tool-select" id="fontSizeSelect"><option value="18">Compact</option><option value="20">Book</option><option value="22">Comfort</option><option value="26">Large</option></select>
