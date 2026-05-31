@@ -337,13 +337,10 @@
         restoreEditorViewport,
         getCaretTextOffset,
     } from "./js/writer-resume.js?v=1";
-    import { createOrchestrator } from "./js/plot-doctor/orchestrator.js?v=4";
-    import { mountPlotDoctorSidebar } from "./js/plot-doctor/sidebar.js?v=4";
-    import {
-        saveCharacterFromScan,
-        bulkSaveCharactersFromScan,
-        importNameDriftIssueToBible
-    } from "./js/story-bible-import.js?v=1";
+    import { createOrchestrator } from "./js/plot-doctor/orchestrator.js?v=5";
+    import { mountPlotDoctorSidebar } from "./js/plot-doctor/sidebar.js?v=5";
+    import { importNameDriftIssueToBible } from "./js/story-bible-import.js?v=2";
+    import { htmlToPlainText } from "./js/plot-doctor/util/text.js?v=1";
 
 const params = new URLSearchParams(window.location.search);
 let bookId =
@@ -997,27 +994,13 @@ function rememberBookId(id) {
             toggleBtn,
             orchestrator: plotDoctor,
             onJump: plotDoctorJumpTo,
-            onImportToBible: async (payload) => {
-                if (!currentUser?.id || !bookId) return;
-                if (payload.type === "name") {
-                    await saveCharacterFromScan(supabase, currentUser.id, bookId, payload.row, payload.plain || "");
-                } else if (payload.type === "bulk") {
-                    await bulkSaveCharactersFromScan(
-                        supabase,
-                        currentUser.id,
-                        bookId,
-                        payload.rows || [],
-                        payload.plain || ""
-                    );
-                } else if (payload.type === "drift") {
-                    await importNameDriftIssueToBible(
-                        supabase,
-                        currentUser.id,
-                        bookId,
-                        payload.issue,
-                        payload.plain || ""
-                    );
-                }
+            onMergeNameDrift: async (issue) => {
+                if (!currentUser?.id || !bookId || !currentBook) return;
+                const plain = allChaptersFlat()
+                    .map(ch => htmlToPlainText(ch.content || ""))
+                    .filter(Boolean)
+                    .join("\n\n");
+                await importNameDriftIssueToBible(supabase, currentUser.id, bookId, issue, plain);
             }
         });
         void (async () => {

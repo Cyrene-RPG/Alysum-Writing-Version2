@@ -49,7 +49,7 @@ export function characterFromScanSuggestion(row, plain, sourceLabel) {
             aliases: [],
             appearance: {},
             notes: draftNotesFromScanName(name, occurrences, plain, sourceLabel),
-            tags: ["scan-import"],
+            tags: [],
             introducedSection: "",
             introducedChapterId: ""
         },
@@ -72,7 +72,7 @@ export function placeFromScanSuggestion(row, plain, sourceLabel) {
             kind: "",
             parentPlace: "",
             notes: draftNotesFromScanName(name, occurrences, plain, sourceLabel),
-            tags: ["scan-import"],
+            tags: [],
             introducedSection: "",
             introducedChapterId: ""
         },
@@ -203,7 +203,7 @@ export async function importNameDriftIssueToBible(supabase, uid, bookId, issue, 
             aliases,
             appearance: {},
             notes,
-            tags: ["plot-doctor-import"],
+            tags: [],
             introducedSection: "",
             introducedChapterId: ""
         },

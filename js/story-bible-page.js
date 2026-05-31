@@ -28,10 +28,10 @@ import {
     saveCharacterFromScan,
     savePlaceFromScan,
     bulkSaveCharactersFromScan
-} from "./story-bible-import.js?v=1";
+} from "./story-bible-import.js?v=2";
+import { suggestAppearanceFills, applyAppearanceSuggestions } from "./story-bible-enrich.js?v=1";
 
 const SB_TAB_STORAGE_KEY = "alysum-story-bible-tab";
-const SB_SCAN_AUTO_ADD_KEY = "alysum-sb-scan-auto-add";
 
 function emptyCharacter() {
     const id = generateBibleCharacterId();
@@ -107,7 +107,8 @@ function emptyPlace() {
  * @param {HTMLElement} [opts.scanResultsEl]
  * @param {HTMLInputElement} [opts.scanStrictCheck]
  * @param {HTMLInputElement} [opts.scanLooseCheck]
- * @param {HTMLInputElement} [opts.scanAutoAddCheck]
+ * @param {HTMLButtonElement} [opts.enrichBtn]
+ * @param {HTMLElement} [opts.enrichResultsEl]
  */
 export async function mountStoryBiblePage(opts) {
     const {
@@ -148,7 +149,8 @@ export async function mountStoryBiblePage(opts) {
         scanResultsEl,
         scanStrictCheck,
         scanLooseCheck,
-        scanAutoAddCheck
+        enrichBtn,
+        enrichResultsEl
     } = opts;
 
     const bookId = (new URLSearchParams(window.location.search).get("book") || "").trim();
@@ -886,27 +888,6 @@ export async function mountStoryBiblePage(opts) {
         return { firstPerson: strict, balanced: !loose };
     }
 
-    function readScanAutoAddPref() {
-        try {
-            return localStorage.getItem(SB_SCAN_AUTO_ADD_KEY) === "1";
-        } catch {
-            return false;
-        }
-    }
-
-    function writeScanAutoAddPref(on) {
-        try {
-            localStorage.setItem(SB_SCAN_AUTO_ADD_KEY, on ? "1" : "0");
-        } catch {}
-    }
-
-    if (scanAutoAddCheck) {
-        scanAutoAddCheck.checked = readScanAutoAddPref();
-        scanAutoAddCheck.addEventListener("change", () => {
-            writeScanAutoAddPref(scanAutoAddCheck.checked === true);
-        });
-    }
-
     async function bulkAddScanRowsAsCharacters(rows, plain) {
         if (!rows.length) return 0;
         saveCharBtn.disabled = true;
@@ -932,49 +913,40 @@ export async function mountStoryBiblePage(opts) {
             return;
         }
         scanResultsEl.classList.remove("hidden");
-        const head = document.createElement("div");
-        head.className = "sb-scan-title";
-        head.textContent = "Suggestions (pattern scan)";
-        scanResultsEl.appendChild(head);
-
-        const bulkRow = document.createElement("div");
-        bulkRow.className = "sb-scan-bulk";
-        const bulkBtn = document.createElement("button");
-        bulkBtn.type = "button";
-        bulkBtn.className = "sb-scan-btn sb-scan-btn-secondary";
-        bulkBtn.textContent = `Add all ${rows.length} as characters`;
-        bulkBtn.addEventListener("click", async () => {
-            if (!confirm(`Add ${rows.length} name(s) to your Story Bible as characters?`)) return;
-            setStatus("Adding to bible…");
-            try {
-                const added = await bulkAddScanRowsAsCharacters(rows, plain);
-                setStatus(`Added ${added} character(s) to your bible.`);
-            } catch (e) {
-                console.error(e);
-                setStatus(formatFirestoreErr(e, "Bulk add"), true);
-            }
-        });
-        bulkRow.appendChild(bulkBtn);
-        scanResultsEl.appendChild(bulkRow);
-
         const plain = cachedPlainForScan || "";
 
+        const head = document.createElement("div");
+        head.className = "sb-scan-title";
+        head.textContent = `${rows.length} name${rows.length === 1 ? "" : "s"} not in bible yet`;
+        scanResultsEl.appendChild(head);
+
+        const hint = document.createElement("p");
+        hint.className = "sb-scan-results-hint";
+        hint.textContent = "Check the ones you want, then add. Skips names that appear fewer than 3 times.";
+        scanResultsEl.appendChild(hint);
+
+        const list = document.createElement("div");
+        list.className = "sb-scan-checklist";
+
         for (const row of rows) {
-            const line = document.createElement("div");
-            line.className = "sb-scan-row";
+            const line = document.createElement("label");
+            line.className = "sb-scan-row sb-scan-row-check";
+            const cb = document.createElement("input");
+            cb.type = "checkbox";
+            cb.checked = row.occurrences >= 5;
+            cb.dataset.name = row.name;
             const label = document.createElement("span");
             label.className = "sb-scan-name";
             label.textContent = `${row.name} (${row.occurrences}×)`;
             const btnRow = document.createElement("div");
-            btnRow.style.display = "flex";
-            btnRow.style.gap = "6px";
-            btnRow.style.flexShrink = "0";
+            btnRow.className = "sb-scan-row-actions";
 
             const addChar = document.createElement("button");
             addChar.type = "button";
             addChar.className = "sb-scan-add";
             addChar.textContent = "Character";
-            addChar.addEventListener("click", async () => {
+            addChar.addEventListener("click", async e => {
+                e.preventDefault();
                 saveCharBtn.disabled = true;
                 try {
                     const saved = await saveCharacterFromScan(supabase, uid, bookId, row, plain);
@@ -986,12 +958,12 @@ export async function mountStoryBiblePage(opts) {
                     updateBibleTabChrome();
                     persistBibleTab();
                     await selectCharacter(saved.id);
-                    setStatus(`Character “${row.name}” saved to your bible.`);
+                    setStatus(`Character “${row.name}” saved.`);
                     refreshScanFromCache();
                     updateHealthPanel();
-                } catch (e) {
-                    console.error(e);
-                    setStatus(formatFirestoreErr(e, "Save"), true);
+                } catch (err) {
+                    console.error(err);
+                    setStatus(formatFirestoreErr(err, "Save"), true);
                 } finally {
                     saveCharBtn.disabled = false;
                 }
@@ -1001,7 +973,8 @@ export async function mountStoryBiblePage(opts) {
             addPlace.type = "button";
             addPlace.className = "sb-scan-add sb-scan-add-secondary";
             addPlace.textContent = "Place";
-            addPlace.addEventListener("click", async () => {
+            addPlace.addEventListener("click", async e => {
+                e.preventDefault();
                 saveCharBtn.disabled = true;
                 try {
                     const saved = await savePlaceFromScan(supabase, uid, bookId, row, plain);
@@ -1013,12 +986,12 @@ export async function mountStoryBiblePage(opts) {
                     updateBibleTabChrome();
                     persistBibleTab();
                     await selectPlace(saved.id);
-                    setStatus(`Place “${row.name}” saved to your bible.`);
+                    setStatus(`Place “${row.name}” saved.`);
                     refreshScanFromCache();
                     updateHealthPanel();
-                } catch (e) {
-                    console.error(e);
-                    setStatus(formatFirestoreErr(e, "Save"), true);
+                } catch (err) {
+                    console.error(err);
+                    setStatus(formatFirestoreErr(err, "Save"), true);
                 } finally {
                     saveCharBtn.disabled = false;
                 }
@@ -1026,16 +999,139 @@ export async function mountStoryBiblePage(opts) {
 
             btnRow.appendChild(addChar);
             btnRow.appendChild(addPlace);
+            line.appendChild(cb);
             line.appendChild(label);
             line.appendChild(btnRow);
-            scanResultsEl.appendChild(line);
+            list.appendChild(line);
         }
+        scanResultsEl.appendChild(list);
+
+        const footer = document.createElement("div");
+        footer.className = "sb-scan-bulk";
+        const addSelected = document.createElement("button");
+        addSelected.type = "button";
+        addSelected.className = "sb-scan-btn sb-scan-btn-secondary";
+        addSelected.textContent = "Add checked as characters";
+        addSelected.addEventListener("click", async () => {
+            const picked = [...list.querySelectorAll('input[type="checkbox"]:checked')].map(cb => ({
+                name: cb.dataset.name || "",
+                occurrences: rows.find(r => r.name === cb.dataset.name)?.occurrences || 1
+            })).filter(r => r.name);
+            if (!picked.length) {
+                setStatus("Check at least one name first.", true);
+                return;
+            }
+            setStatus("Adding…");
+            try {
+                const added = await bulkAddScanRowsAsCharacters(picked, plain);
+                setStatus(`Added ${added} character(s). Review them in the roster.`);
+            } catch (e) {
+                console.error(e);
+                setStatus(formatFirestoreErr(e, "Bulk add"), true);
+            }
+        });
+        footer.appendChild(addSelected);
+        scanResultsEl.appendChild(footer);
+    }
+
+    function renderEnrichSuggestions(suggestions) {
+        if (!enrichResultsEl) return;
+        enrichResultsEl.innerHTML = "";
+        if (!suggestions?.length) {
+            enrichResultsEl.classList.add("hidden");
+            return;
+        }
+        enrichResultsEl.classList.remove("hidden");
+
+        const head = document.createElement("div");
+        head.className = "sb-scan-title";
+        head.textContent = `${suggestions.length} appearance field${suggestions.length === 1 ? "" : "s"} found in manuscript`;
+        enrichResultsEl.appendChild(head);
+
+        const hint = document.createElement("p");
+        hint.className = "sb-scan-results-hint";
+        hint.textContent = "Only empty bible fields. Uncheck anything that looks wrong before applying.";
+        enrichResultsEl.appendChild(hint);
+
+        const list = document.createElement("div");
+        list.className = "sb-scan-checklist";
+
+        for (const row of suggestions) {
+            const line = document.createElement("label");
+            line.className = "sb-scan-row sb-scan-row-check sb-enrich-row";
+            const cb = document.createElement("input");
+            cb.type = "checkbox";
+            cb.checked = true;
+            cb.dataset.id = row.id;
+            const meta = document.createElement("div");
+            meta.className = "sb-enrich-meta";
+            const title = document.createElement("div");
+            title.innerHTML = `<strong>${escapeHtml(row.characterName)}</strong> · ${escapeHtml(row.slotLabel)}: <em>${escapeHtml(row.value)}</em> <span class="sb-enrich-count">(${row.count}×)</span>`;
+            meta.appendChild(title);
+            if (row.snippet) {
+                const sn = document.createElement("div");
+                sn.className = "sb-enrich-snippet";
+                sn.textContent = `"${row.snippet}"`;
+                meta.appendChild(sn);
+            }
+            line.appendChild(cb);
+            line.appendChild(meta);
+            list.appendChild(line);
+        }
+        enrichResultsEl.appendChild(list);
+
+        const footer = document.createElement("div");
+        footer.className = "sb-scan-bulk";
+        const applyBtn = document.createElement("button");
+        applyBtn.type = "button";
+        applyBtn.className = "sb-scan-btn";
+        applyBtn.textContent = "Apply checked to bible";
+        applyBtn.addEventListener("click", async () => {
+            const ids = new Set(
+                [...list.querySelectorAll('input[type="checkbox"]:checked')].map(cb => cb.dataset.id)
+            );
+            const picks = suggestions.filter(s => ids.has(s.id));
+            if (!picks.length) {
+                setStatus("Check at least one field first.", true);
+                return;
+            }
+            enrichBtn.disabled = true;
+            setStatus("Updating bible…");
+            try {
+                const n = await applyAppearanceSuggestions(
+                    supabase,
+                    uid,
+                    bookId,
+                    characters,
+                    picks.map(p => ({ characterId: p.characterId, slot: p.slot, value: p.value }))
+                );
+                characters = await listBibleCharacters(supabase, uid, bookId);
+                if (selectedCharId) {
+                    const c = characters.find(x => x.id === selectedCharId);
+                    if (c) fillCharacterForm(c);
+                }
+                renderCharList();
+                updateHealthPanel();
+                renderEnrichSuggestions(
+                    suggestAppearanceFills(characters, cachedPlainForScan || "", { minMentions: 2 })
+                );
+                setStatus(`Updated ${n} character(s).`);
+            } catch (e) {
+                console.error(e);
+                setStatus(formatFirestoreErr(e, "Enrich"), true);
+            } finally {
+                enrichBtn.disabled = false;
+            }
+        });
+        footer.appendChild(applyBtn);
+        enrichResultsEl.appendChild(footer);
     }
 
     function refreshScanFromCache() {
         if (!scanResultsEl || lastScanKind !== "rules" || !cachedPlainForScan) return;
         const raw = extractNameCandidatesFromPlainText(cachedPlainForScan, buildScanExtractOpts());
-        renderScanSuggestions(subtractBibleNames(raw, knownEntriesForScan()));
+        const filtered = subtractBibleNames(raw, knownEntriesForScan()).filter(r => r.occurrences >= 3);
+        renderScanSuggestions(filtered);
     }
 
     if (scanBtn && scanResultsEl) {
@@ -1052,24 +1148,12 @@ export async function mountStoryBiblePage(opts) {
                     return;
                 }
                 const raw = extractNameCandidatesFromPlainText(cachedPlainForScan, buildScanExtractOpts());
-                const filtered = subtractBibleNames(raw, knownEntriesForScan());
+                const filtered = subtractBibleNames(raw, knownEntriesForScan()).filter(r => r.occurrences >= 3);
                 renderScanSuggestions(filtered);
-                if (scanAutoAddCheck?.checked && filtered.length) {
-                    setStatus(`Auto-adding ${filtered.length} character(s)…`);
-                    try {
-                        const added = await bulkAddScanRowsAsCharacters(filtered, cachedPlainForScan);
-                        setStatus(`Auto-added ${added} character(s) to your bible.`);
-                        return;
-                    } catch (e) {
-                        console.error(e);
-                        setStatus(formatFirestoreErr(e, "Auto-add"), true);
-                        return;
-                    }
-                }
                 setStatus(
                     filtered.length
-                        ? `${filtered.length} match(es). Add individually or use “Add all as characters”.`
-                        : "No new pattern matches (or already in your bible). Try adding manually."
+                        ? `${filtered.length} name(s) with 3+ mentions. Check the ones you want, then add.`
+                        : "No strong name matches left (need 3+ mentions and not already in bible)."
                 );
             } catch (e) {
                 console.error(e);
@@ -1081,6 +1165,42 @@ export async function mountStoryBiblePage(opts) {
         });
         scanStrictCheck?.addEventListener("change", refreshScanFromCache);
         scanLooseCheck?.addEventListener("change", refreshScanFromCache);
+    }
+
+    if (enrichBtn && enrichResultsEl) {
+        enrichBtn.addEventListener("click", async () => {
+            setStatus("Reading manuscript for appearance cues…");
+            enrichBtn.disabled = true;
+            scanBtn.disabled = true;
+            try {
+                if (!cachedPlainForScan) {
+                    cachedPlainForScan = await loadBookPlainTextForScan(supabase, uid, bookId);
+                }
+                if (!cachedPlainForScan.trim()) {
+                    renderEnrichSuggestions([]);
+                    setStatus("No chapter text to read yet.");
+                    return;
+                }
+                if (!characters.length) {
+                    renderEnrichSuggestions([]);
+                    setStatus("Add characters to your bible first, then fill their empty appearance fields.");
+                    return;
+                }
+                const suggestions = suggestAppearanceFills(characters, cachedPlainForScan, { minMentions: 2 });
+                renderEnrichSuggestions(suggestions);
+                setStatus(
+                    suggestions.length
+                        ? `${suggestions.length} empty field(s) have manuscript evidence. Review before applying.`
+                        : "No empty appearance fields matched the manuscript (need 2+ mentions near the character)."
+                );
+            } catch (e) {
+                console.error(e);
+                setStatus("Could not read manuscript.", true);
+            } finally {
+                enrichBtn.disabled = false;
+                scanBtn.disabled = false;
+            }
+        });
     }
 
     rosterSearch?.addEventListener("input", () => {

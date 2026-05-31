@@ -23,7 +23,6 @@ import { runNameDriftDetector } from "./detectors/name-drift.js?v=1";
 import { runDeadSpeaksDetector } from "./detectors/dead-speaks.js?v=1";
 import { PLOT_STATUS, PLOT_CATEGORIES } from "./types.js?v=1";
 import { scoreBibleHealth } from "../story-bible-health.js?v=1";
-import { extractNameCandidatesFromPlainText, subtractBibleNames } from "../story-bible-scan.js?v=6";
 
 const DEBOUNCE_MS = 2500;
 const STALE_HARD_DELETE_DAYS = 14;
@@ -48,9 +47,7 @@ export function createOrchestrator(opts) {
         storageWarning: "",
         tableMissing: false,
         bibleHealth: null,
-        bookId: "",
-        scanPlainText: "",
-        bibleImportSuggestions: []
+        bookId: ""
     };
 
     let debounceTimer = null;
@@ -113,12 +110,6 @@ export function createOrchestrator(opts) {
             state.lastError = "Could not load plot issues.";
             notify();
         }
-    }
-
-    function buildBibleImportSuggestions(plain, characters) {
-        if (!plain?.trim()) return [];
-        const raw = extractNameCandidatesFromPlainText(plain, { balanced: true });
-        return subtractBibleNames(raw, characters || []).slice(0, 25);
     }
 
     function buildScanInput() {
@@ -302,9 +293,6 @@ export function createOrchestrator(opts) {
             }
             const fullInput = { ...scanInput, characters: bible.characters, places: bible.places };
             state.bookId = ms.bookId;
-            const plain = scanInput.chapters.map(ch => ch.plainText).filter(Boolean).join("\n\n");
-            state.scanPlainText = plain;
-            state.bibleImportSuggestions = buildBibleImportSuggestions(plain, bible.characters);
             const newIssues = runAllDetectors(fullInput);
             const existing = await fetchExistingIssues(sess.uid, ms.bookId);
             state.issues = await persistDiff(newIssues, existing);

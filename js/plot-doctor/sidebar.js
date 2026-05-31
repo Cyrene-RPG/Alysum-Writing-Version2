@@ -82,10 +82,10 @@ function escapeHtml(s) {
  * @param {HTMLButtonElement} [opts.toggleBtn]  Optional button that toggles open state and shows a count.
  * @param {ReturnType<typeof import('./orchestrator.js').createOrchestrator>} opts.orchestrator
  * @param {(chapterId: string, section: string, rangeStart: number | null) => void} [opts.onJump]
- * @param {(payload: object) => Promise<void>} [opts.onImportToBible]
+ * @param {(issue: Record<string, any>, plain: string) => Promise<void>} [opts.onMergeNameDrift]
  */
 export function mountPlotDoctorSidebar(opts) {
-    const { mountEl, toggleBtn, orchestrator, onJump, onImportToBible } = opts;
+    const { mountEl, toggleBtn, orchestrator, onJump, onMergeNameDrift } = opts;
     if (!mountEl) return { destroy: () => {} };
 
     const filters = readFilters() || {
@@ -116,12 +116,6 @@ export function mountPlotDoctorSidebar(opts) {
             <p class="pd-storage-warn" data-role="storage-warn" hidden></p>
             <div class="pd-filters" data-role="filters"></div>
             <div class="pd-status-tabs" data-role="status-tabs"></div>
-            <div class="pd-import" data-role="bible-import" hidden>
-                <h4>Add to Story Bible</h4>
-                <p class="pd-import-lead">Names in your manuscript not yet in the bible.</p>
-                <div data-role="import-list"></div>
-                <button type="button" class="pd-import-all" data-action="import-all" hidden>Add all as characters</button>
-            </div>
             <div class="pd-body" data-role="body">
                 <p class="pd-empty">Loading…</p>
             </div>
@@ -142,9 +136,6 @@ export function mountPlotDoctorSidebar(opts) {
     const bibleLinkEl = mountEl.querySelector('[data-role="bible-link"]');
     const closeBtn = mountEl.querySelector('[data-action="close"]');
     const rescanBtn = mountEl.querySelector('[data-action="rescan"]');
-    const importPanelEl = mountEl.querySelector('[data-role="bible-import"]');
-    const importListEl = mountEl.querySelector('[data-role="import-list"]');
-    const importAllBtn = mountEl.querySelector('[data-action="import-all"]');
 
     function setOpen(next) {
         open = !!next;
@@ -222,11 +213,11 @@ export function mountPlotDoctorSidebar(opts) {
             .map(row => {
                 const sevClass = `pd-sev-${row.severity}`;
                 const showTriage = row.status === PLOT_STATUS.OPEN;
-                const showImportDrift =
-                    showTriage && row.category === PLOT_CATEGORIES.NAME_DRIFT && !!onImportToBible;
+                const showMergeDrift =
+                    showTriage && row.category === PLOT_CATEGORIES.NAME_DRIFT && !!onMergeNameDrift;
                 const showBibleLink =
                     showTriage &&
-                    !showImportDrift &&
+                    !showMergeDrift &&
                     (row.category === PLOT_CATEGORIES.ATTRIBUTE_CONTRADICTION ||
                         row.category === PLOT_CATEGORIES.DEAD_CHARACTER_SPEAKS);
                 return `
@@ -241,7 +232,7 @@ export function mountPlotDoctorSidebar(opts) {
                         ${row.user_note ? `<div class="pd-note">Note: ${escapeHtml(row.user_note)}</div>` : ""}
                         <div class="pd-actions">
                             <button type="button" data-act="jump">Jump</button>
-                            ${showImportDrift ? `<button type="button" data-act="import-drift">Add to Bible</button>` : ""}
+                            ${showMergeDrift ? `<button type="button" data-act="merge-drift">Merge into Bible</button>` : ""}
                             ${showBibleLink ? `<button type="button" data-act="bible">Fix in Bible</button>` : ""}
                             ${showTriage ? `<button type="button" data-act="ack">Acknowledge</button>` : ""}
                             ${showTriage ? `<button type="button" data-act="fix">Mark fixed</button>` : ""}
@@ -251,30 +242,6 @@ export function mountPlotDoctorSidebar(opts) {
                     </article>
                 `;
             })
-            .join("");
-    }
-
-    function renderBibleImport(suggestions) {
-        if (!importPanelEl || !importListEl) return;
-        const rows = suggestions || [];
-        importPanelEl.hidden = !onImportToBible || !rows.length;
-        if (importAllBtn) {
-            importAllBtn.hidden = rows.length < 2;
-            importAllBtn.textContent = `Add all ${rows.length} as characters`;
-        }
-        if (!rows.length) {
-            importListEl.innerHTML = "";
-            return;
-        }
-        importListEl.innerHTML = rows
-            .map(
-                (row, idx) => `
-                <div class="pd-import-row">
-                    <span>${escapeHtml(row.name)} <em>(${row.occurrences || 1}×)</em></span>
-                    <button type="button" data-import-idx="${idx}">Add</button>
-                </div>
-            `
-            )
             .join("");
     }
 
@@ -310,47 +277,11 @@ export function mountPlotDoctorSidebar(opts) {
 
         renderFilters(issues);
         renderStatusTabs(issues);
-        renderBibleImport(s.bibleImportSuggestions);
         renderBody(issues);
     }
 
     closeBtn.addEventListener("click", () => setOpen(false));
     rescanBtn.addEventListener("click", () => void orchestrator.runScanNow());
-
-    importListEl?.addEventListener("click", async e => {
-        const btn = e.target instanceof Element ? e.target.closest("[data-import-idx]") : null;
-        if (!btn || !onImportToBible) return;
-        const idx = parseInt(btn.getAttribute("data-import-idx") || "", 10);
-        const s = orchestrator.getState();
-        const row = s.bibleImportSuggestions?.[idx];
-        if (!row) return;
-        btn.disabled = true;
-        try {
-            await onImportToBible({ type: "name", row, plain: s.scanPlainText || "" });
-            await orchestrator.runScanNow();
-        } catch (err) {
-            console.error("[plot-doctor] bible import failed:", err);
-        } finally {
-            btn.disabled = false;
-        }
-    });
-
-    importAllBtn?.addEventListener("click", async () => {
-        if (!onImportToBible) return;
-        const s = orchestrator.getState();
-        const rows = s.bibleImportSuggestions || [];
-        if (!rows.length) return;
-        if (!confirm(`Add ${rows.length} name(s) to your Story Bible as characters?`)) return;
-        importAllBtn.disabled = true;
-        try {
-            await onImportToBible({ type: "bulk", rows, plain: s.scanPlainText || "" });
-            await orchestrator.runScanNow();
-        } catch (err) {
-            console.error("[plot-doctor] bulk bible import failed:", err);
-        } finally {
-            importAllBtn.disabled = false;
-        }
-    });
 
     filtersEl.addEventListener("click", (e) => {
         const btn = (e.target instanceof Element) ? e.target.closest("[data-category]") : null;
@@ -389,15 +320,16 @@ export function mountPlotDoctorSidebar(opts) {
             }
             return;
         }
-        if (action === "import-drift" && onImportToBible) {
+        if (action === "merge-drift" && onMergeNameDrift) {
+            const summary = issue.evidence_summary || "";
+            if (!confirm(`Merge these name variants into Story Bible?\n\n${summary}`)) return;
             actBtn.disabled = true;
             try {
-                const plain = orchestrator.getState().scanPlainText || "";
-                await onImportToBible({ type: "drift", issue, plain });
+                await onMergeNameDrift(issue, "");
                 await orchestrator.applyTriage(issueId, PLOT_STATUS.FIXED, "Merged into Story Bible.");
                 await orchestrator.runScanNow();
             } catch (err) {
-                console.error("[plot-doctor] drift import failed:", err);
+                console.error("[plot-doctor] drift merge failed:", err);
             } finally {
                 actBtn.disabled = false;
             }

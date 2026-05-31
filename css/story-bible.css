@@ -542,13 +542,54 @@
     color: #c7d2fe;
     border: 1px solid rgba(99, 102, 241, 0.45);
 }
-.sb-scan-bulk {
-    margin: 10px 0 4px;
+.sb-scan-block-secondary {
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+.sb-scan-results-hint {
+    margin: 8px 0 10px;
+    font-size: 12px;
+    color: #64748b;
+    line-height: 1.45;
+}
+.sb-scan-checklist {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.sb-scan-row-check {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: start;
+    gap: 8px;
+    cursor: pointer;
+}
+.sb-scan-row-actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+}
+.sb-enrich-meta {
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--sb-text, #e2e8f0);
+}
+.sb-enrich-meta em {
+    font-style: normal;
+    color: #c4b5fd;
+}
+.sb-enrich-count {
+    color: #64748b;
+    font-size: 12px;
 }
 .sb-scan-bulk .sb-scan-btn {
-    width: auto;
+    width: 100%;
     padding: 8px 14px;
     font-size: 12px;
+}
+.sb-scan-bulk {
+    margin: 12px 0 4px;
 }
 .sb-scan-opts label {
     display: flex;
