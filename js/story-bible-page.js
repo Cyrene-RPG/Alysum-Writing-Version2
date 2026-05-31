@@ -17,19 +17,24 @@ import {
     loadBookChapterOptions,
     getBookTitle,
     loadBookPlainTextForScan,
+    loadBookChaptersPlainForScan,
     isStoryBibleTableMissing
-} from "./story-bible-api.js?v=8";
+} from "./story-bible-api.js?v=9";
 import {
-    extractNameCandidatesFromPlainText,
+    extractCharacterNameCandidates,
     subtractBibleNames,
-} from "./story-bible-scan.js?v=6";
+} from "./story-bible-scan.js?v=7";
 import { scoreCharacter, scoreBibleHealth } from "./story-bible-health.js?v=1";
 import {
     saveCharacterFromScan,
     savePlaceFromScan,
     bulkSaveCharactersFromScan
-} from "./story-bible-import.js?v=2";
-import { suggestAppearanceFills, applyAppearanceSuggestions } from "./story-bible-enrich.js?v=1";
+} from "./story-bible-import.js?v=3";
+import {
+    buildCharacterDraftsFromScan,
+    formatProfileDraftSummary
+} from "./story-bible-extract.js?v=1";
+import { suggestAppearanceFills, applyAppearanceSuggestions } from "./story-bible-enrich.js?v=2";
 
 const SB_TAB_STORAGE_KEY = "alysum-story-bible-tab";
 
@@ -105,7 +110,6 @@ function emptyPlace() {
  * @param {Record<string, HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>} opts.fields
  * @param {HTMLButtonElement} [opts.scanBtn]
  * @param {HTMLElement} [opts.scanResultsEl]
- * @param {HTMLInputElement} [opts.scanStrictCheck]
  * @param {HTMLInputElement} [opts.scanLooseCheck]
  * @param {HTMLButtonElement} [opts.enrichBtn]
  * @param {HTMLElement} [opts.enrichResultsEl]
@@ -147,7 +151,6 @@ export async function mountStoryBiblePage(opts) {
         fields,
         scanBtn,
         scanResultsEl,
-        scanStrictCheck,
         scanLooseCheck,
         enrichBtn,
         enrichResultsEl
@@ -929,12 +932,20 @@ export async function mountStoryBiblePage(opts) {
     });
 
     let cachedPlainForScan = "";
+    /** @type {Array<{ section: string, id: string, title: string, label: string, plainText: string }>} */
+    let cachedChaptersForScan = [];
+    /** @type {Map<string, ReturnType<typeof buildCharacterDraftsFromScan>[number]>} */
+    let lastScanDraftByName = new Map();
     let lastScanKind = "none";
 
     function buildScanExtractOpts() {
-        const loose = scanLooseCheck?.checked === true;
-        const strict = scanStrictCheck?.checked === true;
-        return { firstPerson: strict, balanced: !loose };
+        return { loose: scanLooseCheck?.checked === true };
+    }
+
+    async function loadManuscriptForScan() {
+        cachedChaptersForScan = await loadBookChaptersPlainForScan(supabase, uid, bookId);
+        cachedPlainForScan = cachedChaptersForScan.map(ch => ch.plainText).filter(Boolean).join("\n\n");
+        return cachedPlainForScan;
     }
 
     async function bulkAddScanRowsAsCharacters(rows, plain) {
@@ -942,7 +953,15 @@ export async function mountStoryBiblePage(opts) {
         saveCharBtn.disabled = true;
         scanBtn.disabled = true;
         try {
-            const added = await bulkSaveCharactersFromScan(supabase, uid, bookId, rows, plain);
+            const added = await bulkSaveCharactersFromScan(
+                supabase,
+                uid,
+                bookId,
+                rows,
+                plain,
+                "manuscript scan",
+                lastScanDraftByName
+            );
             characters = await listBibleCharacters(supabase, uid, bookId);
             renderCharList();
             updateHealthPanel();
@@ -954,7 +973,7 @@ export async function mountStoryBiblePage(opts) {
         }
     }
 
-    function renderScanSuggestions(rows) {
+    function renderScanSuggestions(rows, drafts) {
         if (!scanResultsEl) return;
         scanResultsEl.innerHTML = "";
         if (!rows || !rows.length) {
@@ -963,42 +982,83 @@ export async function mountStoryBiblePage(opts) {
         }
         scanResultsEl.classList.remove("hidden");
         const plain = cachedPlainForScan || "";
+        const draftMap = new Map((drafts || []).map(d => [d.name.toLowerCase(), d]));
 
         const head = document.createElement("div");
         head.className = "sb-scan-title";
-        head.textContent = `${rows.length} name${rows.length === 1 ? "" : "s"} not in bible yet`;
+        head.textContent = `${rows.length} character name${rows.length === 1 ? "" : "s"} found in manuscript`;
         scanResultsEl.appendChild(head);
 
         const hint = document.createElement("p");
         hint.className = "sb-scan-results-hint";
-        hint.textContent = "Check the ones you want, then add. Skips names that appear fewer than 3 times.";
+        hint.textContent =
+            "Matched from dialogue tags, possessives, and speech — not random capitalized words. Check who to add; appearance and pronouns are prefilled when the text supports it.";
         scanResultsEl.appendChild(hint);
 
         const list = document.createElement("div");
         list.className = "sb-scan-checklist";
 
         for (const row of rows) {
+            const draft = draftMap.get(row.name.toLowerCase());
+            const summary = draft ? formatProfileDraftSummary(draft) : "";
+            const signalText = draft?.signals?.length ? draft.signals.join(", ") : "";
+
             const line = document.createElement("label");
-            line.className = "sb-scan-row sb-scan-row-check";
+            line.className = "sb-scan-row sb-scan-row-check sb-scan-row-rich";
             const cb = document.createElement("input");
             cb.type = "checkbox";
-            cb.checked = row.occurrences >= 5;
+            cb.checked = (row.score || 0) >= 12 || row.occurrences >= 4;
             cb.dataset.name = row.name;
+
+            const main = document.createElement("div");
+            main.className = "sb-scan-row-main";
             const label = document.createElement("span");
             label.className = "sb-scan-name";
             label.textContent = `${row.name} (${row.occurrences}×)`;
+            main.appendChild(label);
+
+            if (summary) {
+                const detail = document.createElement("span");
+                detail.className = "sb-scan-detail";
+                detail.textContent = summary;
+                main.appendChild(detail);
+            }
+            if (signalText) {
+                const sig = document.createElement("span");
+                sig.className = "sb-scan-signals";
+                sig.textContent = `Detected via: ${signalText}`;
+                main.appendChild(sig);
+            }
+            if (draft?.snippets?.[0]) {
+                const sn = document.createElement("span");
+                sn.className = "sb-enrich-snippet";
+                sn.textContent = draft.snippets[0];
+                main.appendChild(sn);
+            }
+
+            line.appendChild(cb);
+            line.appendChild(main);
+
             const btnRow = document.createElement("div");
             btnRow.className = "sb-scan-row-actions";
 
             const addChar = document.createElement("button");
             addChar.type = "button";
             addChar.className = "sb-scan-add";
-            addChar.textContent = "Character";
+            addChar.textContent = "Add with details";
             addChar.addEventListener("click", async e => {
                 e.preventDefault();
                 saveCharBtn.disabled = true;
                 try {
-                    const saved = await saveCharacterFromScan(supabase, uid, bookId, row, plain);
+                    const saved = await saveCharacterFromScan(
+                        supabase,
+                        uid,
+                        bookId,
+                        row,
+                        plain,
+                        "manuscript scan",
+                        draft
+                    );
                     characters = [saved, ...characters.filter(c => c.id !== saved.id)];
                     characters.sort((a, b) =>
                         (a.sortKey || "").localeCompare(b.sortKey || "", undefined, { sensitivity: "base" })
@@ -1007,7 +1067,7 @@ export async function mountStoryBiblePage(opts) {
                     updateBibleTabChrome();
                     persistBibleTab();
                     await selectCharacter(saved.id);
-                    setStatus(`Character “${row.name}” saved.`);
+                    setStatus(`Character “${row.name}” saved with manuscript details.`);
                     refreshScanFromCache();
                     updateHealthPanel();
                 } catch (err) {
@@ -1049,7 +1109,7 @@ export async function mountStoryBiblePage(opts) {
             btnRow.appendChild(addChar);
             btnRow.appendChild(addPlace);
             line.appendChild(cb);
-            line.appendChild(label);
+            line.appendChild(main);
             line.appendChild(btnRow);
             list.appendChild(line);
         }
@@ -1178,78 +1238,69 @@ export async function mountStoryBiblePage(opts) {
 
     function refreshScanFromCache() {
         if (!scanResultsEl || lastScanKind !== "rules" || !cachedPlainForScan) return;
-        const raw = extractNameCandidatesFromPlainText(cachedPlainForScan, buildScanExtractOpts());
-        const filtered = subtractBibleNames(raw, knownEntriesForScan()).filter(r => r.occurrences >= 3);
-        renderScanSuggestions(filtered);
+        const raw = extractCharacterNameCandidates(cachedPlainForScan, buildScanExtractOpts());
+        const filtered = subtractBibleNames(raw, knownEntriesForScan()).filter(r => r.occurrences >= 2);
+        const drafts = buildCharacterDraftsFromScan(filtered, cachedPlainForScan, cachedChaptersForScan);
+        lastScanDraftByName = new Map(drafts.map(d => [d.name.toLowerCase(), d]));
+        renderScanSuggestions(filtered, drafts);
+    }
+
+    async function runManuscriptScan() {
+        lastScanKind = "rules";
+        setStatus("Scanning manuscript for characters…");
+        scanBtn.disabled = true;
+        if (enrichBtn) enrichBtn.disabled = true;
+        try {
+            await loadManuscriptForScan();
+            if (!cachedPlainForScan.trim()) {
+                lastScanKind = "none";
+                renderScanSuggestions([], []);
+                renderEnrichSuggestions([]);
+                setStatus("No chapter text found to scan yet.");
+                return;
+            }
+            const raw = extractCharacterNameCandidates(cachedPlainForScan, buildScanExtractOpts());
+            const filtered = subtractBibleNames(raw, knownEntriesForScan()).filter(r => r.occurrences >= 2);
+            const drafts = buildCharacterDraftsFromScan(filtered, cachedPlainForScan, cachedChaptersForScan);
+            lastScanDraftByName = new Map(drafts.map(d => [d.name.toLowerCase(), d]));
+            renderScanSuggestions(filtered, drafts);
+
+            let enrichCount = 0;
+            if (characters.length) {
+                const suggestions = suggestAppearanceFills(characters, cachedPlainForScan, { minMentions: 2 });
+                enrichCount = suggestions.length;
+                renderEnrichSuggestions(suggestions);
+            } else {
+                renderEnrichSuggestions([]);
+            }
+
+            const parts = [];
+            if (filtered.length) {
+                parts.push(`${filtered.length} new character name${filtered.length === 1 ? "" : "s"}`);
+            } else {
+                parts.push("no new character names");
+            }
+            if (enrichCount) {
+                parts.push(`${enrichCount} empty field${enrichCount === 1 ? "" : "s"} ready to fill`);
+            }
+            setStatus(`Scan complete — ${parts.join("; ")}. Review before adding.`);
+        } catch (e) {
+            console.error(e);
+            lastScanKind = "none";
+            setStatus("Scan failed. Check connection and try again.", true);
+        } finally {
+            scanBtn.disabled = false;
+            if (enrichBtn) enrichBtn.disabled = false;
+        }
     }
 
     if (scanBtn && scanResultsEl) {
-        scanBtn.addEventListener("click", async () => {
-            lastScanKind = "rules";
-            setStatus("Scanning manuscript…");
-            scanBtn.disabled = true;
-            try {
-                cachedPlainForScan = await loadBookPlainTextForScan(supabase, uid, bookId);
-                if (!cachedPlainForScan.trim()) {
-                    lastScanKind = "none";
-                    renderScanSuggestions([]);
-                    setStatus("No chapter text found to scan yet.");
-                    return;
-                }
-                const raw = extractNameCandidatesFromPlainText(cachedPlainForScan, buildScanExtractOpts());
-                const filtered = subtractBibleNames(raw, knownEntriesForScan()).filter(r => r.occurrences >= 3);
-                renderScanSuggestions(filtered);
-                setStatus(
-                    filtered.length
-                        ? `${filtered.length} name(s) with 3+ mentions. Check the ones you want, then add.`
-                        : "No strong name matches left (need 3+ mentions and not already in bible)."
-                );
-            } catch (e) {
-                console.error(e);
-                lastScanKind = "none";
-                setStatus("Scan failed. Check connection and try again.", true);
-            } finally {
-                scanBtn.disabled = false;
-            }
-        });
-        scanStrictCheck?.addEventListener("change", refreshScanFromCache);
+        scanBtn.addEventListener("click", () => void runManuscriptScan());
         scanLooseCheck?.addEventListener("change", refreshScanFromCache);
     }
 
     if (enrichBtn && enrichResultsEl) {
-        enrichBtn.addEventListener("click", async () => {
-            setStatus("Reading manuscript for appearance cues…");
-            enrichBtn.disabled = true;
-            scanBtn.disabled = true;
-            try {
-                if (!cachedPlainForScan) {
-                    cachedPlainForScan = await loadBookPlainTextForScan(supabase, uid, bookId);
-                }
-                if (!cachedPlainForScan.trim()) {
-                    renderEnrichSuggestions([]);
-                    setStatus("No chapter text to read yet.");
-                    return;
-                }
-                if (!characters.length) {
-                    renderEnrichSuggestions([]);
-                    setStatus("Add characters to your bible first, then fill their empty appearance fields.");
-                    return;
-                }
-                const suggestions = suggestAppearanceFills(characters, cachedPlainForScan, { minMentions: 2 });
-                renderEnrichSuggestions(suggestions);
-                setStatus(
-                    suggestions.length
-                        ? `${suggestions.length} empty field(s) have manuscript evidence. Review before applying.`
-                        : "No empty appearance fields matched the manuscript (need 2+ mentions near the character)."
-                );
-            } catch (e) {
-                console.error(e);
-                setStatus("Could not read manuscript.", true);
-            } finally {
-                enrichBtn.disabled = false;
-                scanBtn.disabled = false;
-            }
-        });
+        enrichBtn.addEventListener("click", () => void runManuscriptScan());
     }
 
     rosterSearch?.addEventListener("input", () => {

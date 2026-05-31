@@ -123,15 +123,34 @@ export async function getBookTitle(_supabase, _uid, bookId) {
 }
 
 export async function loadBookPlainTextForScan(_supabase, _uid, bookId) {
+  const chapters = await loadBookChaptersPlainForScan(_supabase, _uid, bookId);
+  return chapters.map((ch) => ch.plainText).filter(Boolean).join("\n\n");
+}
+
+export async function loadBookChaptersPlainForScan(_supabase, _uid, bookId) {
   const data = getBook(bookId);
-  if (!data?.sections) return "";
+  if (!data?.sections) return [];
   const sections = data.sections || {};
-  const parts = [];
+  const out = [];
+  const sectionLabel = { front: "Front matter", body: "Body", back: "Back matter" };
   for (const sec of ["front", "body", "back"]) {
     const arr = Array.isArray(sections[sec]) ? sections[sec] : [];
-    for (const ch of arr) {
-      parts.push(stripHtmlForBibleScan(ch?.content || ""));
-    }
+    arr.forEach((ch, i) => {
+      const id = typeof ch?.id === "string" ? ch.id : "";
+      const rawTitle =
+        typeof ch?.title === "string" && ch.title.trim()
+          ? ch.title.trim()
+          : sec === "body"
+            ? `Chapter ${i + 1}`
+            : `Untitled ${i + 1}`;
+      out.push({
+        section: sec,
+        id,
+        title: rawTitle,
+        label: `${sectionLabel[sec] || sec}: ${rawTitle}`,
+        plainText: stripHtmlForBibleScan(ch?.content || ""),
+      });
+    });
   }
-  return parts.join("\n\n");
+  return out;
 }

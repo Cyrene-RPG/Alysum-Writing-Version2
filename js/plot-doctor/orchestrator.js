@@ -6,7 +6,7 @@
  */
 
 import { htmlToPlainText } from "./util/text.js?v=1";
-import { listBibleCharacters, listBiblePlaces, isStoryBibleTableMissing } from "../story-bible-api.js?v=8";
+import { listBibleCharacters, listBiblePlaces, isStoryBibleTableMissing } from "../story-bible-api.js?v=9";
 import {
     listIssuesForBook,
     insertIssues,

@@ -448,6 +448,18 @@ export async function getBookTitle(supabase, uid, bookId) {
  */
 export async function loadBookPlainTextForScan(supabase, uid, bookId) {
     if (isLocalStudioUid(uid)) return (await localBible()).loadBookPlainTextForScan(supabase, uid, bookId);
+    const chapters = await loadBookChaptersPlainForScan(supabase, uid, bookId);
+    return chapters.map(ch => ch.plainText).filter(Boolean).join("\n\n");
+}
+
+/**
+ * @param {import("@supabase/supabase-js").SupabaseClient} supabase
+ * @param {string} uid
+ * @param {string} bookId
+ * @returns {Promise<Array<{ section: string, id: string, title: string, label: string, plainText: string }>>}
+ */
+export async function loadBookChaptersPlainForScan(supabase, uid, bookId) {
+    if (isLocalStudioUid(uid)) return (await localBible()).loadBookChaptersPlainForScan(supabase, uid, bookId);
     const { data, error } = await supabase
         .from("books")
         .select("sections")
@@ -455,14 +467,31 @@ export async function loadBookPlainTextForScan(supabase, uid, bookId) {
         .eq("user_id", uid)
         .maybeSingle();
     if (error) throw error;
-    if (!data?.sections) return "";
+    if (!data?.sections) return [];
+
     const sections = data.sections || {};
-    const parts = [];
+    const out = [];
+    const sectionLabel = { front: "Front matter", body: "Body", back: "Back matter" };
+
     for (const sec of ["front", "body", "back"]) {
         const arr = Array.isArray(sections[sec]) ? sections[sec] : [];
-        for (const ch of arr) {
-            parts.push(stripHtmlForBibleScan(ch?.content || ""));
-        }
+        arr.forEach((ch, i) => {
+            const id = typeof ch?.id === "string" ? ch.id : "";
+            const rawTitle =
+                typeof ch?.title === "string" && ch.title.trim()
+                    ? ch.title.trim()
+                    : sec === "body"
+                      ? `Chapter ${i + 1}`
+                      : `Untitled ${i + 1}`;
+            const label = `${sectionLabel[sec] || sec}: ${rawTitle}`;
+            out.push({
+                section: sec,
+                id,
+                title: rawTitle,
+                label,
+                plainText: stripHtmlForBibleScan(ch?.content || "")
+            });
+        });
     }
-    return parts.join("\n\n");
+    return out;
 }

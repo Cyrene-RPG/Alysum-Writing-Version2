@@ -16,7 +16,7 @@ import {
     parsePronouns,
     HEDGE_TOKENS
 } from "./plot-doctor/util/lexicon.js?v=1";
-import { normalizeBibleCharacter, saveBibleCharacter } from "./story-bible-api.js?v=7";
+import { normalizeBibleCharacter, saveBibleCharacter } from "./story-bible-api.js?v=9";
 
 const SLOT_LABELS = {
     eyes: "Eyes",

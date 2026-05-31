@@ -1034,6 +1034,231 @@ const PHRASE_DENY = new Set(
     ]
 );
 
+/** Words that look capitalized in prose but are almost never character names. */
+const NON_NAME_DENY = new Set(
+    [
+        "normally", "usually", "suddenly", "finally", "actually", "apparently", "obviously",
+        "probably", "possibly", "eventually", "immediately", "recently", "currently", "previously",
+        "originally", "initially", "ultimately", "generally", "specifically", "especially",
+        "particularly", "simply", "merely", "mostly", "partly", "fully", "hardly", "barely",
+        "nearly", "almost", "exactly", "precisely", "roughly", "approximately", "supposedly",
+        "allegedly", "reportedly", "presumably", "hopefully", "thankfully", "unfortunately",
+        "interestingly", "surprisingly", "unsurprisingly", "ironically", "technically",
+        "honestly", "frankly", "seriously", "literally", "basically", "essentially",
+        "definitely", "certainly", "totally", "completely", "absolutely", "entirely",
+        "instead", "however", "therefore", "otherwise", "anyway", "anyways", "besides",
+        "meanwhile", "afterward", "afterwards", "regardless", "nevertheless", "nonetheless",
+        "furthermore", "moreover", "otherwise", "somehow", "somewhat", "somewhere",
+        "everywhere", "anywhere", "nowhere", "everyone", "someone", "anyone", "nobody",
+        "something", "anything", "everything", "nothing", "another", "others", "either",
+        "neither", "perhaps", "maybe", "please", "thanks", "sorry", "okay", "alright",
+        "yeah", "yep", "yup", "nah", "nope", "huh", "hey", "wow", "whoa", "gosh", "gee",
+        "fuck", "fucking", "fucked", "shit", "shitty", "damn", "damned", "hell", "ass",
+        "bitch", "bastard", "crap", "piss", "pissed", "bloody", "bloody", "christ", "god",
+        "jesus", "lord", "dear", "sweet", "poor", "dear", "old", "young", "little", "big",
+        "great", "good", "bad", "best", "worst", "long", "short", "high", "low", "deep",
+        "dark", "light", "bright", "cold", "hot", "warm", "cool", "dry", "wet", "empty",
+        "full", "open", "closed", "quiet", "loud", "slow", "fast", "quick", "early", "late",
+        "wrong", "right", "true", "false", "real", "fake", "whole", "half", "double",
+        "single", "triple", "first", "second", "third", "last", "next", "previous", "same",
+        "different", "other", "such", "very", "quite", "rather", "too", "so", "just", "only",
+        "even", "still", "yet", "already", "again", "once", "twice", "never", "always",
+        "often", "sometimes", "rarely", "seldom", "daily", "weekly", "monthly", "yearly",
+        "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday",
+        "january", "february", "march", "april", "may", "june", "july", "august",
+        "september", "october", "november", "december", "spring", "summer", "autumn",
+        "winter", "today", "tomorrow", "yesterday", "tonight", "morning", "afternoon",
+        "evening", "midnight", "noon", "north", "south", "east", "west", "left", "right",
+        "chapter", "part", "section", "page", "paragraph", "scene", "act", "book", "story",
+        "mother", "father", "brother", "sister", "daughter", "son", "wife", "husband",
+        "friend", "friends", "family", "people", "person", "man", "woman", "boy", "girl",
+        "kid", "kids", "guy", "guys", "lady", "ladies", "gentleman", "gentlemen", "officer",
+        "doctor", "captain", "sergeant", "professor", "president", "minister", "king",
+        "queen", "prince", "princess", "lord", "lady", "sir", "madam", "ma'am", "miss",
+        "mister", "ms", "mr", "mrs", "dr"
+    ].map(w => w.toLowerCase())
+);
+
+const STRONG_NAME_KINDS = new Set(["attribution", "possessive", "vocative", "title", "full_name"]);
+
+function isDeniedNamePhrase(phrase) {
+    const p = phrase.trim();
+    if (p.length < 2) return true;
+    const tokens = p.split(/\s+/);
+    const first = tokens[0].toLowerCase();
+    if (FIRST_TOKEN_DENY.has(first)) return true;
+    if (NON_NAME_DENY.has(first)) return true;
+    const key = p.toLowerCase();
+    if (PHRASE_DENY.has(key)) return true;
+    if (tokens.length === 1 && SCAN_SINGLEWORD_EXTRA_DENY.has(key)) return true;
+    if (tokens.length === 1 && p.length > 18) return true;
+    if (!/^[A-Z]/.test(tokens[0])) return true;
+    return false;
+}
+
+/**
+ * Score likely character names using dialogue tags, possessives, vocatives, and full names —
+ * not bare sentence-initial capitals.
+ * @param {string} text
+ * @returns {Map<string, { name: string, score: number, mentions: number, kinds: Set<string> }>}
+ */
+function scoreCharacterNamesInText(text) {
+    const source = safeString(text, "")
+        .replace(/[ \t\r\f\v]+/g, " ")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
+    /** @type {Map<string, { name: string, score: number, mentions: number, kinds: Set<string> }>} */
+    const map = new Map();
+
+    function add(rawName, points, kind, mentionInc = 1) {
+        const name = rawName.trim();
+        if (isDeniedNamePhrase(name)) return;
+        const key = name.toLowerCase();
+        let row = map.get(key);
+        if (!row) row = { name, score: 0, mentions: 0, kinds: new Set() };
+        row.score += points;
+        row.mentions += mentionInc;
+        row.kinds.add(kind);
+        if (name.length > row.name.length) row.name = name;
+        map.set(key, row);
+    }
+
+    const patterns = [
+        {
+            re: /\b([A-Z][a-z]{2,})\s+(?:said|says|say|replied|replies|answered|answers|asked|asks|whispered|whispers|muttered|mutters|shouted|shouts|yelled|yells|called|calls|texted|texts|emailed|emails|wrote|writes|met|introduced|introduces|mentions|mentioned|told|tells|murmured|murmurs|declared|declares|added|adds|continued|continues|insisted|insists|demanded|demands|pleaded|pleads|warned|warns|promised|promises|admitted|admits|confessed|confesses|explained|explains|remarked|remarks|observed|observes|noted|notes|sighed|sighs|laughed|laughs|chuckled|chuckles|snapped|snaps|growled|growls|hissed|hisses|breathed|breathes|mouthed|mouths)\b/g,
+            pick: m => m[1],
+            pts: 12,
+            kind: "attribution"
+        },
+        {
+            re: /\b(?:said|says|say|replied|replies|answered|answers|asked|asks|whispered|whispers|muttered|mutters|shouted|shouts|yelled|yells|called|calls|texted|texts|emailed|emails|wrote|writes|met|introduced|introduces|mentioned|mentions|told|tells)\s+([A-Z][a-z]{2,})\b/g,
+            pick: m => m[1],
+            pts: 12,
+            kind: "attribution"
+        },
+        {
+            re: /\b([A-Z][a-z]{2,})(?:'|\u2019)s\b/g,
+            pick: m => m[1],
+            pts: 10,
+            kind: "possessive"
+        },
+        {
+            re: /(?:^|[.!?\n]\s*|[\u201c""])\s*([A-Z][a-z]{2,})\s*[,!?]/gm,
+            pick: m => m[1],
+            pts: 9,
+            kind: "vocative"
+        },
+        {
+            re: /\b(?:Mr|Mrs|Ms|Dr)\.\s+([A-Z][a-z]{2,})\b/g,
+            pick: m => m[1],
+            pts: 11,
+            kind: "title"
+        },
+        {
+            re: /\b([A-Z][a-z]{2,})\s+([A-Z][a-z]{2,})\b/g,
+            pick: m => `${m[1]} ${m[2]}`,
+            pts: 14,
+            kind: "full_name"
+        },
+        {
+            re: /\b(?:with|and|meet|met|saw|see|sees|seen|called|named|introduced\s+to)\s+([A-Z][a-z]{2,})\b/g,
+            pick: m => m[1],
+            pts: 6,
+            kind: "context"
+        }
+    ];
+
+    for (const { re, pick, pts, kind } of patterns) {
+        re.lastIndex = 0;
+        let m;
+        while ((m = re.exec(source)) !== null) {
+            add(pick(m), pts, kind);
+        }
+    }
+
+    const capRe = /\b([A-Z][a-z]{2,})\b/g;
+    capRe.lastIndex = 0;
+    let cap;
+    while ((cap = capRe.exec(source)) !== null) {
+        const word = cap[1];
+        const idx = cap.index;
+        const firstTok = word.toLowerCase();
+        if (isDeniedNamePhrase(word)) continue;
+        const key = word.toLowerCase();
+        const row = map.get(key);
+        if (!row) continue;
+        const midClause = isLikelyMidClauseCapital(idx, source, firstTok);
+        if (midClause) {
+            row.score += 2;
+            row.mentions += 1;
+            row.kinds.add("mid_clause");
+        }
+    }
+
+    return map;
+}
+
+function passesNameScoreFilter(row, opts) {
+    const loose = opts.loose === true;
+    const strict = opts.firstPerson === true;
+    const minScore = loose ? 5 : strict ? 14 : 10;
+    const minMentions = loose ? 2 : strict ? 3 : 2;
+
+    if (row.mentions < minMentions && row.score < minScore + 4) return false;
+    if (row.score < minScore) return false;
+
+    const multi = row.name.includes(" ");
+    const hasStrong = [...row.kinds].some(k => STRONG_NAME_KINDS.has(k));
+
+    if (multi && hasStrong) return true;
+    if (multi && row.score >= 12) return true;
+    if (hasStrong) return true;
+    if (loose && row.score >= 8 && row.mentions >= 4) return true;
+    return false;
+}
+
+/**
+ * @param {string} text — plain text
+ * @param {{
+ *   minOccurrences?: number,
+ *   firstPerson?: boolean,
+ *   balanced?: boolean,
+ *   loose?: boolean,
+ *   maxResults?: number
+ * }} [opts]
+ * @returns {Array<{ name: string, occurrences: number, score: number, signals: string[] }>}
+ */
+export function extractCharacterNameCandidates(text, opts = {}) {
+    const maxResults =
+        typeof opts.maxResults === "number" && opts.maxResults > 0 ? opts.maxResults : 40;
+    const minOcc =
+        typeof opts.minOccurrences === "number" && opts.minOccurrences > 0 ? opts.minOccurrences : 2;
+
+    const source = safeString(text, "")
+        .replace(/[ \t\r\f\v]+/g, " ")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
+    if (!source) return [];
+
+    const scored = scoreCharacterNamesInText(source);
+    const scanOpts = {
+        loose: opts.loose === true || opts.balanced === false,
+        firstPerson: opts.firstPerson === true
+    };
+
+    return [...scored.values()]
+        .filter(row => passesNameScoreFilter(row, scanOpts))
+        .filter(row => row.mentions >= minOcc || row.score >= 12)
+        .sort((a, b) => b.score - a.score || b.mentions - a.mentions || a.name.localeCompare(b.name))
+        .slice(0, maxResults)
+        .map(row => ({
+            name: row.name,
+            occurrences: row.mentions,
+            score: row.score,
+            signals: [...row.kinds]
+        }));
+}
+
 /**
  * @param {string} text — plain text
  * @param {{
@@ -1041,119 +1266,16 @@ const PHRASE_DENY = new Set(
  *   minOccurrencesIfOnlyAfterBreak?: number,
  *   firstPerson?: boolean,
  *   balanced?: boolean,
+ *   loose?: boolean,
  *   maxResults?: number
  * }} [opts]
- * @returns {{ name: string, occurrences: number }[]}
+ * @returns {{ name: string, occurrences: number, score?: number, signals?: string[] }[]}
  */
 export function extractNameCandidatesFromPlainText(text, opts = {}) {
-    const minOcc = typeof opts.minOccurrences === "number" && opts.minOccurrences > 0 ? opts.minOccurrences : 3;
-    const minIfOnlyBreak =
-        typeof opts.minOccurrencesIfOnlyAfterBreak === "number" && opts.minOccurrencesIfOnlyAfterBreak > 0
-            ? opts.minOccurrencesIfOnlyAfterBreak
-            : 5;
-    const maxResults =
-        typeof opts.maxResults === "number" && opts.maxResults > 0 ? opts.maxResults : 50;
-    /** Opt-in: extra sentence-break filter for very chatty first-person introspection. */
-    const firstPerson = opts.firstPerson === true;
-    /** Default on: single-word junk (mostly sentence-initial objects) dropped unless it looks name-like. */
-    const balanced = opts.balanced !== false;
-
-    /** Collapse whitespace but keep newlines for sentence-break detection. */
-    const source = safeString(text, "")
-        .replace(/[ \t\r\f\v]+/g, " ")
-        .replace(/\n{3,}/g, "\n\n")
-        .trim();
-    if (!source) return [];
-
-    const capRe = /\b([A-Z][a-z]{2,}(?:\s+[A-Z][a-z]{2,})*)\b/g;
-
-    /** @type {Map<string, { name: string, n: number, mid: number, midClause: number }>} */
-    const map = new Map();
-
-    function bumpPhrase(phrase, { countAsMid, midClauseHit }) {
-        const p = phrase.trim();
-        if (p.length < 3) return;
-        const first = p.split(/\s+/)[0].toLowerCase();
-        if (FIRST_TOKEN_DENY.has(first)) return;
-        const key = p.toLowerCase();
-        if (PHRASE_DENY.has(key)) return;
-        if (!p.includes(" ") && SCAN_SINGLEWORD_EXTRA_DENY.has(key)) return;
-        if (!p.includes(" ") && p.length > 15) return;
-
-        let row = map.get(key);
-        if (!row) {
-            row = { name: p, n: 0, mid: 0, midClause: 0 };
-            map.set(key, row);
-        }
-        row.n += 1;
-        if (p.length > row.name.length) row.name = p;
-        if (countAsMid) row.mid += 1;
-        if (midClauseHit) row.midClause += 1;
-    }
-
-    /** Extra signal without double-counting occurrences already found by capRe on full text. */
-    function boostMidOnly(phrase) {
-        const p = phrase.trim();
-        if (p.length < 3) return;
-        const first = p.split(/\s+/)[0].toLowerCase();
-        if (FIRST_TOKEN_DENY.has(first)) return;
-        const key = p.toLowerCase();
-        if (PHRASE_DENY.has(key)) return;
-        if (!p.includes(" ") && SCAN_SINGLEWORD_EXTRA_DENY.has(key)) return;
-        if (!p.includes(" ") && p.length > 15) return;
-        const row = map.get(key);
-        if (row) row.mid += 1;
-    }
-
-    let possessiveSet = new Set();
-    const speechOrTitleSet = new Set();
-    if (balanced || firstPerson) {
-        possessiveSet = possessiveWordStems(source);
-        for (const n of extractAttributionNames(source)) {
-            speechOrTitleSet.add(n.toLowerCase());
-            if (firstPerson) boostMidOnly(n);
-        }
-        for (const n of extractTitleNames(source)) {
-            speechOrTitleSet.add(n.toLowerCase());
-            if (firstPerson) boostMidOnly(n);
-        }
-    }
-
-    capRe.lastIndex = 0;
-    let m;
-    while ((m = capRe.exec(source)) !== null) {
-        const phrase = m[1].trim();
-        const firstTok = phrase.split(/\s+/)[0].toLowerCase();
-        const atBreak = isCapitalAfterHardSentenceBreak(m.index, source);
-        const midClauseHit = isLikelyMidClauseCapital(m.index, source, firstTok);
-        if (firstPerson) bumpPhrase(phrase, { countAsMid: !atBreak, midClauseHit });
-        else bumpPhrase(phrase, { countAsMid: true, midClauseHit });
-    }
-
-    return [...map.values()]
-        .filter(x => {
-            if (x.n < minOcc) return false;
-            const key = x.name.toLowerCase();
-            const multi = x.name.includes(" ");
-            if (firstPerson) {
-                if (possessiveSet.has(key)) return true;
-                if (speechOrTitleSet.has(key)) return true;
-                if (x.mid >= 1) return true;
-                return x.n >= minIfOnlyBreak;
-            }
-            if (balanced && !multi) {
-                if (possessiveSet.has(key)) return true;
-                if (speechOrTitleSet.has(key)) return true;
-                if (x.midClause >= 1) return true;
-                /** High repeat count alone (often scenery or repeated nouns); raised to cut generic caps. */
-                if (x.n >= 10) return true;
-                return false;
-            }
-            return true;
-        })
-        .sort((a, b) => b.n - a.n)
-        .slice(0, maxResults)
-        .map(x => ({ name: x.name, occurrences: x.n }));
+    return extractCharacterNameCandidates(text, {
+        ...opts,
+        loose: opts.loose === true || opts.balanced === false
+    });
 }
 
 function escapeRegExp(s) {

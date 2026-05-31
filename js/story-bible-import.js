@@ -10,7 +10,7 @@ import {
     generateBiblePlaceId,
     saveBiblePlace,
     listBibleCharacters
-} from "./story-bible-api.js?v=7";
+} from "./story-bible-api.js?v=9";
 import { snippetContextsForPhrase } from "./story-bible-scan.js?v=6";
 
 function normalizeNameKey(name) {
@@ -39,19 +39,34 @@ export function draftNotesFromScanName(name, occurrences, plain, sourceLabel = "
  * @param {{ name: string, occurrences?: number }} row
  * @param {string} plain
  * @param {string} [sourceLabel]
+ * @param {ReturnType<import("./story-bible-extract.js").extractProfileDraftForName>} [draft]
  */
-export function characterFromScanSuggestion(row, plain, sourceLabel) {
+export function characterFromScanSuggestion(row, plain, sourceLabel, draft) {
     const name = (row.name || "").trim();
     const occurrences = typeof row.occurrences === "number" ? row.occurrences : 1;
+    let notes = draftNotesFromScanName(name, occurrences, plain, sourceLabel);
+    const profileBits = [];
+    const app = draft?.appearance || {};
+    if (app.eyes) profileBits.push(`Eyes: ${app.eyes}`);
+    if (app.hair) profileBits.push(`Hair: ${app.hair}`);
+    if (app.skin) profileBits.push(`Skin: ${app.skin}`);
+    if (app.height) profileBits.push(`Height: ${app.height}`);
+    if (app.build) profileBits.push(`Build: ${app.build}`);
+    if (draft?.pronouns) profileBits.push(`Pronouns: ${draft.pronouns}`);
+    if (draft?.firstSeenLabel) profileBits.push(`First seen: ${draft.firstSeenLabel}`);
+    if (profileBits.length) {
+        notes += "\n\n[Extracted from manuscript — review and edit]\n" + profileBits.map(b => `• ${b}`).join("\n");
+    }
     return normalizeBibleCharacter(
         {
             name,
             aliases: [],
-            appearance: {},
-            notes: draftNotesFromScanName(name, occurrences, plain, sourceLabel),
+            appearance: { ...(draft?.appearance || {}) },
+            pronouns: draft?.pronouns || "",
+            notes,
             tags: [],
-            introducedSection: "",
-            introducedChapterId: ""
+            introducedSection: draft?.introducedSection || "",
+            introducedChapterId: draft?.introducedChapterId || ""
         },
         generateBibleCharacterId()
     );
@@ -87,9 +102,10 @@ export function placeFromScanSuggestion(row, plain, sourceLabel) {
  * @param {{ name: string, occurrences?: number }} row
  * @param {string} plain
  * @param {string} [sourceLabel]
+ * @param {ReturnType<import("./story-bible-extract.js").extractProfileDraftForName>} [draft]
  */
-export async function saveCharacterFromScan(supabase, uid, bookId, row, plain, sourceLabel) {
-    const character = characterFromScanSuggestion(row, plain, sourceLabel);
+export async function saveCharacterFromScan(supabase, uid, bookId, row, plain, sourceLabel, draft) {
+    const character = characterFromScanSuggestion(row, plain, sourceLabel, draft);
     if (!character.name) throw new Error("Name required");
     await saveBibleCharacter(supabase, uid, bookId, character);
     return character;
@@ -220,12 +236,14 @@ export async function importNameDriftIssueToBible(supabase, uid, bookId, issue, 
  * @param {Array<{ name: string, occurrences?: number }>} rows
  * @param {string} plain
  * @param {string} [sourceLabel]
+ * @param {Map<string, ReturnType<import("./story-bible-extract.js").extractProfileDraftForName>>} [draftByName]
  */
-export async function bulkSaveCharactersFromScan(supabase, uid, bookId, rows, plain, sourceLabel) {
+export async function bulkSaveCharactersFromScan(supabase, uid, bookId, rows, plain, sourceLabel, draftByName) {
     let added = 0;
     for (const row of rows) {
         if (!(row.name || "").trim()) continue;
-        await saveCharacterFromScan(supabase, uid, bookId, row, plain, sourceLabel);
+        const draft = draftByName?.get(row.name.trim().toLowerCase());
+        await saveCharacterFromScan(supabase, uid, bookId, row, plain, sourceLabel, draft);
         added++;
     }
     return added;
