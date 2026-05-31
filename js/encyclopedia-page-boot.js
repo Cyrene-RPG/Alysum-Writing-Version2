@@ -3,6 +3,7 @@
  */
 
 import { supabase } from "../firebase.js";
+import { isDesktopLocalHost } from "./desktop-auth.js?v=1";
 import { wireSupabaseSession } from "./supabase-session.js";
 import { initEncyclopediaSession } from "./encyclopedia-session.js";
 
@@ -12,14 +13,21 @@ import { initEncyclopediaSession } from "./encyclopedia-session.js";
  * @param {(session: import("@supabase/supabase-js").Session | null) => void | Promise<void>} run
  */
 export function wireEncyclopediaStorage(run) {
-    void Promise.resolve(run(null)).catch(console.error);
+    void (async () => {
+        try {
+            await initEncyclopediaSession(supabase);
+        } catch (err) {
+            console.warn("Encyclopedia storage init:", err);
+        }
+        await Promise.resolve(run(null)).catch(console.error);
+    })();
 
     let synced = false;
     wireSupabaseSession(async (session) => {
-        if (synced) return;
+        if (synced && !isDesktopLocalHost()) return;
         synced = true;
         try {
-            await initEncyclopediaSession(supabase, session?.user?.id ?? null);
+            await initEncyclopediaSession(supabase);
         } catch (err) {
             console.warn("Encyclopedia storage init:", err);
         }

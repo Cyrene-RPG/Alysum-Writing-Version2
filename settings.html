@@ -1220,7 +1220,9 @@
 <script type="module">
     import { supabase } from "./firebase.js";
     import { signOutAndGoToLogin } from "./js/auth-logout.js?v=1";
-    import { wireSupabaseSession } from "./js/supabase-session.js?v=1";
+    import { goToLogin } from "./js/desktop-auth.js?v=1";
+    import { resolveStudioSession } from "./js/studio-session.js?v=1";
+    import { getProfileRow, updateProfileRow } from "./js/local-studio-store.js?v=1";
     import { permanentHandleFromUserData } from "./js/profile-display.js?v=1";
     import {
         GRADIENT_THEMES,
@@ -1286,6 +1288,7 @@
 
     let settingsHomeUrl = "writer-dashboard.html";
     let activeAvatarObjectUrl = "";
+    let isLocalSettings = false;
 
     const TAB_PANEL_IDS = ["appearancePanel", "accountModePanel", "profilePanel", "securityPanel"];
     const PASSWORD_BLOCKED_OAUTH = new Set(["google", "discord"]);
@@ -1596,12 +1599,70 @@
         return s;
     }
 
-    wireSupabaseSession(async (session) => {
-        const user = session?.user;
-        if (!user) {
-            window.location.href = "login.html";
+    function finishSettingsShell() {
+        loadingPanel.classList.add("hidden");
+        if (settingsShell) settingsShell.classList.remove("hidden");
+        TAB_PANEL_IDS.forEach((pid) => {
+            const panel = document.getElementById(pid);
+            if (panel) panel.classList.remove("hidden");
+        });
+        applyChromeGradient(getThemePreview(getStoredGradientThemeId()));
+        initAppearancePickers();
+        initSettingsNav();
+
+        const storyBibleUiToggle = document.getElementById("storyBibleUiToggle");
+        if (storyBibleUiToggle && storyBibleUiToggle.dataset.bound !== "1") {
+            storyBibleUiToggle.dataset.bound = "1";
+            storyBibleUiToggle.checked = isStoryBibleUiEnabled();
+            storyBibleUiToggle.addEventListener("change", () => {
+                setStoryBibleUiEnabled(storyBibleUiToggle.checked);
+            });
+        }
+    }
+
+    function initLocalSettingsUi() {
+        isLocalSettings = true;
+        const profile = getProfileRow();
+        emailField.value = "Local on this device — sign in to sync";
+        handleField.textContent = "@guest";
+        displayNameInput.value = String(profile.display_name ?? "Guest").trim();
+        setAvatarPreview(null, profile.display_name || "Guest");
+        settingsHomeUrl = "writer-dashboard.html";
+
+        const acct = normalizeAccountType(profile.account_type || "author");
+        document.querySelectorAll('input[name="settingsAccountType"]').forEach((r) => {
+            r.checked = r.value === acct;
+        });
+
+        finishSettingsShell();
+
+        savePasswordBtn.disabled = true;
+        currentPw.disabled = true;
+        newPw.disabled = true;
+        confirmPw.disabled = true;
+        document.querySelector(".password-panel-body")?.classList.add("hidden");
+        const ssoNote = document.getElementById("ssoPasswordNote");
+        if (ssoNote) {
+            ssoNote.textContent =
+                "Password and cloud profile options need an account. Appearance and display name save on this PC.";
+            ssoNote.classList.remove("hidden");
+        }
+        if (saveAvatarBtn) saveAvatarBtn.disabled = true;
+        if (profileAvatarInput) profileAvatarInput.disabled = true;
+    }
+
+    (async () => {
+        const session = await resolveStudioSession(supabase);
+        if (session.mode === "none") {
+            goToLogin("settings.html");
             return;
         }
+        if (session.mode === "local") {
+            initLocalSettingsUi();
+            return;
+        }
+
+        const user = session.user;
 
         try {
             const { data: row, error } = await supabase.from("users").select("*").eq("id", user.id).maybeSingle();
@@ -1620,24 +1681,7 @@
                 r.checked = r.value === acct;
             });
 
-            loadingPanel.classList.add("hidden");
-            if (settingsShell) settingsShell.classList.remove("hidden");
-            TAB_PANEL_IDS.forEach((pid) => {
-                const panel = document.getElementById(pid);
-                if (panel) panel.classList.remove("hidden");
-            });
-            applyChromeGradient(getThemePreview(getStoredGradientThemeId()));
-            initAppearancePickers();
-            initSettingsNav();
-
-            const storyBibleUiToggle = document.getElementById("storyBibleUiToggle");
-            if (storyBibleUiToggle && storyBibleUiToggle.dataset.bound !== "1") {
-                storyBibleUiToggle.dataset.bound = "1";
-                storyBibleUiToggle.checked = isStoryBibleUiEnabled();
-                storyBibleUiToggle.addEventListener("change", () => {
-                    setStoryBibleUiEnabled(storyBibleUiToggle.checked);
-                });
-            }
+            finishSettingsShell();
 
             const passwordBlocked = isPasswordChangeBlocked(user);
             const ssoNote = document.getElementById("ssoPasswordNote");
@@ -1668,7 +1712,7 @@
             console.error(e);
             loadingPanel.innerHTML = "<p class=\"hint\" style=\"margin:0;color:#f87171\">Could not load profile.</p>";
         }
-    });
+    })();
 
     profileAvatarInput?.addEventListener("change", () => {
         hideMsg(avatarMsg);
@@ -1774,9 +1818,6 @@
 
     saveAccountTypeBtn.addEventListener("click", async () => {
         hideMsg(accountTypeMsg);
-        const { data: udata } = await supabase.auth.getUser();
-        const user = udata?.user;
-        if (!user) return;
 
         const picked = document.querySelector('input[name="settingsAccountType"]:checked');
         const v = picked ? picked.value : "";
@@ -1787,6 +1828,17 @@
 
         saveAccountTypeBtn.disabled = true;
         try {
+            if (isLocalSettings) {
+                updateProfileRow({ account_type: v });
+                settingsHomeUrl = homeUrlForUserData({ accountType: v });
+                showMsg(accountTypeMsg, "Saved locally on this device.", true);
+                return;
+            }
+
+            const { data: udata } = await supabase.auth.getUser();
+            const user = udata?.user;
+            if (!user) return;
+
             const { error } = await supabase.from("users").update({ account_type: v }).eq("id", user.id);
             if (error) throw error;
             settingsHomeUrl = homeUrlForUserData({ accountType: v });
@@ -1801,14 +1853,21 @@
 
     saveDisplayBtn.addEventListener("click", async () => {
         hideMsg(profileMsg);
-        const { data: udata } = await supabase.auth.getUser();
-        const user = udata?.user;
-        if (!user) return;
 
         const name = normalizeDisplayName(displayNameInput.value);
 
         saveDisplayBtn.disabled = true;
         try {
+            if (isLocalSettings) {
+                updateProfileRow({ display_name: name || "Guest" });
+                showMsg(profileMsg, "Display name saved locally.", true);
+                return;
+            }
+
+            const { data: udata } = await supabase.auth.getUser();
+            const user = udata?.user;
+            if (!user) return;
+
             const patch = name ? { display_name: name } : { display_name: null };
             const { error } = await supabase.from("users").update(patch).eq("id", user.id);
             if (error) throw error;

@@ -2,6 +2,7 @@
  * Worldbuilding sheets: Supabase worldbuilding_encyclopedia with localStorage fallback
  * when the table has not been created yet (PGRST205).
  */
+import { isLocalStudioUid } from "./studio-session.js?v=1";
 
 const LOCAL_SHEETS_PREFIX = "alysum-worldbuilding-sheets-v2-";
 
@@ -69,6 +70,14 @@ function sheetToRow(uid, sheet) {
  * @returns {Promise<{ sheets: object[], mode: "cloud" | "local", tableMissing: boolean }>}
  */
 export async function listWorldbuildingSheets(supabase, uid) {
+    if (isLocalStudioUid(uid)) {
+        return {
+            sheets: readLocalSheets(uid),
+            mode: "local",
+            tableMissing: false
+        };
+    }
+
     const { data, error } = await supabase
         .from("worldbuilding_encyclopedia")
         .select("*")
@@ -162,6 +171,10 @@ export async function deleteWorldbuildingSheet(supabase, uid, sheetId, mode) {
  * @param {string} uid
  */
 export async function countWorldbuildingSheets(supabase, uid) {
+    if (isLocalStudioUid(uid)) {
+        return readLocalSheets(uid).length;
+    }
+
     const { count, error } = await supabase
         .from("worldbuilding_encyclopedia")
         .select("id", { count: "exact", head: true })

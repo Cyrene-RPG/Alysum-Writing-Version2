@@ -4,6 +4,11 @@
  */
 
 import { stripHtmlForBibleScan } from "./story-bible-scan.js?v=4";
+import { isLocalStudioUid } from "./studio-session.js?v=1";
+
+async function localBible() {
+    return import("./local-story-bible-backend.js?v=1");
+}
 
 export const BIBLE_CHARACTERS = "bibleCharacters";
 export const BIBLE_PLACES = "biblePlaces";
@@ -124,6 +129,7 @@ export function bibleCharacterToFirestore(c) {
  * @param {string} bookId
  */
 export async function listBibleCharacters(supabase, uid, bookId) {
+    if (isLocalStudioUid(uid)) return (await localBible()).listBibleCharacters(supabase, uid, bookId);
     const { data, error } = await supabase
         .from("story_bible_characters")
         .select("id, body")
@@ -142,6 +148,7 @@ export async function listBibleCharacters(supabase, uid, bookId) {
  * @param {ReturnType<typeof normalizeBibleCharacter>} character
  */
 export async function saveBibleCharacter(supabase, uid, bookId, character) {
+    if (isLocalStudioUid(uid)) return (await localBible()).saveBibleCharacter(supabase, uid, bookId, character);
     const id = character.id || generateBibleCharacterId();
     const payload = bibleCharacterToFirestore({ ...character, id });
     const { error } = await supabase.from("story_bible_characters").upsert(
@@ -159,6 +166,7 @@ export async function saveBibleCharacter(supabase, uid, bookId, character) {
  * @param {string} characterId
  */
 export async function deleteBibleCharacter(supabase, uid, bookId, characterId) {
+    if (isLocalStudioUid(uid)) return (await localBible()).deleteBibleCharacter(supabase, uid, bookId, characterId);
     const { error } = await supabase
         .from("story_bible_characters")
         .delete()
@@ -244,6 +252,7 @@ export function biblePlaceToFirestore(p) {
  * @param {string} bookId
  */
 export async function listBiblePlaces(supabase, uid, bookId) {
+    if (isLocalStudioUid(uid)) return (await localBible()).listBiblePlaces(supabase, uid, bookId);
     const { data, error } = await supabase
         .from("story_bible_places")
         .select("id, body")
@@ -262,6 +271,7 @@ export async function listBiblePlaces(supabase, uid, bookId) {
  * @param {ReturnType<typeof normalizeBiblePlace>} place
  */
 export async function saveBiblePlace(supabase, uid, bookId, place) {
+    if (isLocalStudioUid(uid)) return (await localBible()).saveBiblePlace(supabase, uid, bookId, place);
     const id = place.id || generateBiblePlaceId();
     const payload = biblePlaceToFirestore({ ...place, id });
     const { error } = await supabase.from("story_bible_places").upsert(
@@ -279,6 +289,7 @@ export async function saveBiblePlace(supabase, uid, bookId, place) {
  * @param {string} placeId
  */
 export async function deleteBiblePlace(supabase, uid, bookId, placeId) {
+    if (isLocalStudioUid(uid)) return (await localBible()).deleteBiblePlace(supabase, uid, bookId, placeId);
     const { error } = await supabase
         .from("story_bible_places")
         .delete()
@@ -294,6 +305,7 @@ export async function deleteBiblePlace(supabase, uid, bookId, placeId) {
  * @param {string} bookId
  */
 export async function countBiblePlaces(supabase, uid, bookId) {
+    if (isLocalStudioUid(uid)) return (await localBible()).countBiblePlaces(supabase, uid, bookId);
     const { count, error } = await supabase
         .from("story_bible_places")
         .select("id", { count: "exact", head: true })
@@ -309,6 +321,7 @@ export async function countBiblePlaces(supabase, uid, bookId) {
  * @param {string} bookId
  */
 export async function countBibleCharacters(supabase, uid, bookId) {
+    if (isLocalStudioUid(uid)) return (await localBible()).countBibleCharacters(supabase, uid, bookId);
     const { count, error } = await supabase
         .from("story_bible_characters")
         .select("id", { count: "exact", head: true })
@@ -324,6 +337,7 @@ export async function countBibleCharacters(supabase, uid, bookId) {
  * @returns {Promise<{ bookId: string, title: string, updated: number, characterCount: number, placeCount: number }[]>}
  */
 export async function listUserBooksWithBibleCounts(supabase, uid) {
+    if (isLocalStudioUid(uid)) return (await localBible()).listUserBooksWithBibleCounts(supabase, uid);
     const { data: bookRows, error } = await supabase
         .from("books")
         .select("id, title, updated")
@@ -366,6 +380,7 @@ export async function listUserBooksWithBibleCounts(supabase, uid) {
  * @returns {Promise<{ section: string, id: string, title: string, label: string }[]>}
  */
 export async function loadBookChapterOptions(supabase, uid, bookId) {
+    if (isLocalStudioUid(uid)) return (await localBible()).loadBookChapterOptions(supabase, uid, bookId);
     const { data, error } = await supabase
         .from("books")
         .select("sections")
@@ -402,6 +417,7 @@ export async function loadBookChapterOptions(supabase, uid, bookId) {
  * @param {string} bookId
  */
 export async function getBookTitle(supabase, uid, bookId) {
+    if (isLocalStudioUid(uid)) return (await localBible()).getBookTitle(supabase, uid, bookId);
     const { data, error } = await supabase
         .from("books")
         .select("title")
@@ -419,6 +435,7 @@ export async function getBookTitle(supabase, uid, bookId) {
  * @param {string} bookId
  */
 export async function loadBookPlainTextForScan(supabase, uid, bookId) {
+    if (isLocalStudioUid(uid)) return (await localBible()).loadBookPlainTextForScan(supabase, uid, bookId);
     const { data, error } = await supabase
         .from("books")
         .select("sections")

@@ -6,6 +6,7 @@ import { serializeWikiBody } from "./alysum-wikilinks.js?v=8";
  * @param {object} [backend]
  * @param {import("@supabase/supabase-js").SupabaseClient} [backend.supabase]
  * @param {string} [backend.uid]
+ * @param {string} [backend.localVaultKey]
  */
 export function mountEditorNotes(bookId, backend = null) {
     void bookId;
@@ -37,11 +38,11 @@ export function mountEditorNotes(bookId, backend = null) {
                 deleteItem: document.getElementById("nbDel")
             },
             {
-                storageKey: DEFAULT_VAULT_KEY,
+                storageKey: backend?.localVaultKey || DEFAULT_VAULT_KEY,
                 compact: true,
                 setStatus,
-                supabase: backend?.supabase,
-                supabaseUserId: backend?.uid ?? backend?.userId
+                supabase: backend?.localVaultKey ? undefined : backend?.supabase,
+                supabaseUserId: backend?.localVaultKey ? undefined : (backend?.uid ?? backend?.userId)
             }
         );
     } catch (err) {

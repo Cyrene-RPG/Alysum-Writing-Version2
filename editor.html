@@ -313,6 +313,19 @@
 <div class="sprint-modal" id="sprintOptionsModal"><div class="sprint-modal-box"><h2 class="sprint-modal-title">Choose a timer</h2><p class="sprint-modal-text" id="sprintOptionsSub">Tracks words written during the sprint.</p><div class="sprint-opt-grid" id="sprintOptionsGrid"><button class="sprint-opt" type="button" data-min="10">10 min</button><button class="sprint-opt" type="button" data-min="15">15 min</button><button class="sprint-opt" type="button" data-min="25">25 min</button><button class="sprint-opt" type="button" data-min="60">1 hour</button></div><div class="sprint-modal-actions" style="margin-top:14px;"><button class="secondary" id="sprintOptionsClose" type="button">Close</button></div></div></div>
 <div class="sprint-modal" id="sprintResultModal"><div class="sprint-modal-box"><h2 class="sprint-modal-title" id="sprintResultTitle">Sprint complete</h2><p class="sprint-modal-text" id="sprintResultText">...</p><div class="sprint-modal-actions"><button class="primary" id="sprintResultOk" type="button">OK</button></div></div></div><script type="module">
     import { supabase } from "./firebase.js";
+    import { isDesktopLocalHost, goToLogin } from "./js/desktop-auth.js?v=1";
+    import { alysumPrompt } from "./js/alysum-prompt.js?v=1";
+    import {
+        LOCAL_GUEST_USER,
+        LOCAL_VAULT_STORAGE_KEY,
+        getProfileRow,
+        updateProfileRow,
+        listBooks,
+        getBook,
+        updateBook,
+        deleteBook as deleteLocalBook,
+        notifyLocalStudioSync,
+    } from "./js/local-studio-store.js?v=1";
     import { publicDisplayNameFromUserData } from "./js/profile-display.js?v=1";
     import { localDayKey } from "./js/writing-day-stats.js?v=1";
     import { isStoryBibleUiEnabled, STORY_BIBLE_PREF_KEY, STORY_BIBLE_PREF_EVENT } from "./js/story-bible-prefs.js?v=1";
@@ -401,6 +414,7 @@ function rememberBookId(id) {
     let saveTimer = null;
     let dragged = null;
     let persistedBookWordCount = null;
+    let isLocalStudio = isDesktopLocalHost();
     let suppressResumeSave = false;
     let resumeSaveTimer = null;
     let pendingResumeRestore = null;
@@ -566,6 +580,7 @@ function rememberBookId(id) {
         return list[currentChapterIndex];
     }
     function syncStats() {
+        if (document.activeElement === editor) syncCurrentChapterFromEditor();
         const ch = currentChapter();
         const chWords = countWords(ch.content || "");
         const total = totalWords();
@@ -875,6 +890,10 @@ function rememberBookId(id) {
             const currentTotals = safeObject(currentProfile?.writingDayTotals, {});
             const nextTotals = { ...currentTotals, [dayKey]: safeNumber(currentTotals[dayKey], 0) + delta };
             currentProfile = { ...currentProfile, writingDayTotals: nextTotals };
+            if (isLocalStudio) {
+                updateProfileRow({ writing_day_totals: nextTotals });
+                return;
+            }
             await supabase.from("users").update({ writing_day_totals: nextTotals }).eq("id", currentUser.id);
         } catch (e) { console.error("Daily writing totals update failed:", e); }
     }
@@ -886,16 +905,21 @@ function rememberBookId(id) {
         const nextWords = totalWords();
         const prevPersisted = persistedBookWordCount;
         const patch = toDbBookPatch(currentBook);
+        if (isLocalStudio) {
+            updateBook(bookId, patch);
+        } else {
         const { error } = await supabase.from("books").update(patch)
         .eq("id", bookId);
         if (error) throw error;
+        }
         if (typeof prevPersisted === "number" && Number.isFinite(prevPersisted)) {
             const delta = Math.max(0, nextWords - prevPersisted);
             if (delta > 0) await recordTypedWordsToUserProfile(delta);
         }
         persistedBookWordCount = nextWords;
-        setSaveStatus(doneText);
+        setSaveStatus(isLocalStudio ? "Saved locally" : doneText);
         notifyWriterDashboardSync();
+        if (isLocalStudio) notifyLocalStudioSync();
         plotDoctor?.scheduleScan();
     }
 
@@ -1011,9 +1035,9 @@ function rememberBookId(id) {
         }, 700);
     }
 
-    function addChapterTo(section) {
+    async function addChapterTo(section) {
         const label = section === "body" ? "Chapter name?" : "Section name?";
-        const name = prompt(label);
+        const name = await alysumPrompt(label);
         if (!name) return;
         currentBook.sections[section].push({ id: generateId(), title: name, content: "" });
         renderAllSections();
@@ -1025,9 +1049,13 @@ function rememberBookId(id) {
         const ok = confirm("Delete this entire book?");
         if (!ok) return;
         try {
+            if (isLocalStudio) {
+                deleteLocalBook(bookId);
+            } else {
             const { error } = await supabase.from("books").delete()
         .eq("id", bookId);
             if (error) throw error;
+            }
             window.location.href = "writer-dashboard.html";
         } catch (e) { console.error(e); setSaveStatus("Delete failed"); }
     }
@@ -1085,7 +1113,7 @@ function rememberBookId(id) {
     });
 
     renameBookBtn.addEventListener("click", async () => {
-        const name = prompt("Book name?", currentBook.title || "");
+        const name = await alysumPrompt("Book name?", currentBook.title || "");
         if (!name) return;
         currentBook.title = name;
         renderTitles();
@@ -1094,7 +1122,7 @@ function rememberBookId(id) {
 
     renameChapterBtn.addEventListener("click", async () => {
         const ch = currentChapter();
-        const name = prompt("Rename chapter?", ch.title || "");
+        const name = await alysumPrompt("Rename chapter?", ch.title || "");
         if (!name) return;
         ch.title = name;
         chapterTitle.textContent = name;
@@ -1216,6 +1244,10 @@ function rememberBookId(id) {
     sprintStopBtn?.addEventListener("click", () => endSprintAndReport("stopped"));
 
     async function loadProfile() {
+        if (isLocalStudio) {
+            currentProfile = toCamelProfile(getProfileRow());
+            return;
+        }
         const { data, error } = await supabase.from("users").select("*").eq("id", currentUser.id).maybeSingle();
         if (error) throw error;
         currentProfile = toCamelProfile(data || {});
@@ -1231,6 +1263,15 @@ async function resolveBookId() {
     if (lastSession?.bookId) {
         rememberBookId(lastSession.bookId);
         return true;
+    }
+
+    if (isLocalStudio) {
+        const books = listBooks();
+        if (books[0]?.id) {
+            rememberBookId(books[0].id);
+            return true;
+        }
+        return false;
     }
 
     const { data, error } = await supabase
@@ -1250,9 +1291,14 @@ async function resolveBookId() {
 
 async function loadBook() {
     try {
-            const { data, error } = await supabase.from("books").select("*").eq("id", bookId)
-        .maybeSingle();
-            if (error) throw error;
+        let data;
+        if (isLocalStudio) {
+            data = getBook(bookId);
+        } else {
+            const result = await supabase.from("books").select("*").eq("id", bookId).maybeSingle();
+            if (result.error) throw result.error;
+            data = result.data;
+        }
             if (!data) { setSaveStatus("Book not found"); topBookTitle.textContent = "Book not found"; sidebarBookTitle.textContent = "Book not found"; return; }
             currentBook = normalizeBookData(data);
             await migrateBookIfNeeded();
@@ -1274,10 +1320,19 @@ async function loadBook() {
     }
 
     async function init() {
-        const { data: authData } = await supabase.auth.getUser();
-        const user = authData?.user;
-        if (!user) { window.location.href = "login.html"; return; }
-        currentUser = user;
+        if (isDesktopLocalHost()) {
+            isLocalStudio = true;
+            currentUser = LOCAL_GUEST_USER;
+        } else {
+            const { data: authData } = await supabase.auth.getUser();
+            const user = authData?.user;
+            if (!user) {
+                goToLogin("editor.html");
+                return;
+            }
+            isLocalStudio = false;
+            currentUser = user;
+        }
         applyResponsiveSidebar();
         applyTheme(localStorage.getItem("alysum-theme") || "light");
         fontSelect.value = localStorage.getItem("alysum-font") || "Georgia";
@@ -1308,7 +1363,11 @@ async function loadBook() {
             try {
                 const nb = await import(href);
                 if (nb.mountEditorNotes) {
-                    nb.mountEditorNotes(bookId, { supabase, uid: user.id, userId: user.id });
+                    if (isLocalStudio) {
+                        nb.mountEditorNotes(bookId, { localVaultKey: LOCAL_VAULT_STORAGE_KEY });
+                    } else {
+                        nb.mountEditorNotes(bookId, { supabase, uid: currentUser.id, userId: currentUser.id });
+                    }
                 }
             } catch (e) {
                 console.error("Notes load failed:", e);

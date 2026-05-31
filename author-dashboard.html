@@ -547,6 +547,8 @@
 <script type="module">
     import { supabase } from "./firebase.js";
     import { publicDisplayNameFromUserData } from "./js/profile-display.js?v=1";
+    import { requireStudioSession } from "./js/studio-session.js?v=1";
+    import { listBooks, getProfileRow } from "./js/local-studio-store.js?v=1";
 
     const authorStatus = document.getElementById("authorStatus");
     const totalBooks = document.getElementById("totalBooks");
@@ -927,6 +929,40 @@
         loadNotifications(uid).catch(console.error);
     }
 
+    function chapterCountFromBook(book) {
+        const sections = book?.sections || {};
+        let n = 0;
+        for (const sec of ["front", "body", "back"]) {
+            n += Array.isArray(sections[sec]) ? sections[sec].length : 0;
+        }
+        return n;
+    }
+
+    async function loadLocalDashboard() {
+        showState("loading");
+        try {
+            const profile = getProfileRow();
+            authorStatus.textContent = profile.display_name || "Guest";
+            const books = listBooks().map((b) => ({
+                id: b.id,
+                title: typeof b.title === "string" && b.title.trim() ? b.title.trim() : "Untitled Book",
+                type: "Local draft",
+                rating: "—",
+                chapterCount: chapterCountFromBook(b),
+                updated: typeof b.updated === "number" ? b.updated : 0,
+                views: 0,
+                kudos: 0,
+                comments: 0,
+                words: typeof b.words === "number" ? b.words : 0,
+                recentComments: [],
+            }));
+            renderDashboard(books);
+        } catch (error) {
+            console.error(error);
+            showState("error");
+        }
+    }
+
     async function loadDashboard() {
         if (!currentUser) return;
         showState("loading");
@@ -1011,23 +1047,29 @@
     });
 
     async function bootAuthorDashboard() {
-        const { data, error } = await supabase.auth.getUser();
-        if (error) console.warn(error);
+        const session = await requireStudioSession(supabase, "author-dashboard.html");
+        if (!session) return;
 
-        const user = data?.user;
-        if (!user) {
-            window.location.href = "login.html?next=" + encodeURIComponent("author-dashboard.html");
+        currentUser = session.user;
+
+        if (session.mode === "local") {
+            if (notifLoading) notifLoading.classList.add("hidden");
+            if (notifEmpty) {
+                notifEmpty.textContent = "Reader notifications appear after you sign in and publish.";
+                notifEmpty.classList.remove("hidden");
+            }
+            if (notifList) notifList.innerHTML = "";
+            await loadLocalDashboard();
             return;
         }
 
-        currentUser = user;
-        startRealtime(user.id);
+        startRealtime(session.user.id);
         await loadDashboard();
     }
 
     supabase.auth.onAuthStateChange((event, session) => {
         const user = session?.user;
-        if (!user && event !== "INITIAL_SESSION") {
+        if (!user && event !== "INITIAL_SESSION" && !localStorage.getItem("alysum-desktop-local-host")) {
             window.location.href = "login.html?next=" + encodeURIComponent("author-dashboard.html");
         }
     });
