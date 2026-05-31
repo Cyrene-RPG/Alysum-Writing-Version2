@@ -1081,6 +1081,89 @@ const NON_NAME_DENY = new Set(
 
 const STRONG_NAME_KINDS = new Set(["attribution", "possessive", "vocative", "title", "full_name"]);
 
+/** Capitalized tokens that are virtually never character given names. */
+const NOT_A_PERSON_NAME = new Set(
+    [
+        ...NON_NAME_DENY,
+        "he", "she", "they", "we", "you", "it", "i", "me", "him", "her", "us", "them",
+        "plot", "story", "body", "front", "back", "matter", "editor", "studio", "library",
+        "bible", "codex", "doctor", "continuity", "archangel", "alysum", "chapter", "part",
+        "section", "page", "scene", "act", "verse", "word", "words", "line", "lines",
+        "beginning", "middle", "side", "top", "bottom", "center", "centre", "end", "start",
+        "coffee", "tea", "water", "food", "door", "room", "house", "home", "street", "road",
+        "avenue", "city", "town", "park", "shop", "store", "market", "school", "church",
+        "hospital", "office", "hotel", "restaurant", "kitchen", "bedroom", "bathroom",
+        "university", "college", "station", "airport", "bridge", "river", "lake", "mountain",
+        "island", "kingdom", "empire", "republic", "state", "county", "square", "plaza",
+        "hall", "manor", "tower", "castle", "palace", "temple", "cathedral", "cemetery",
+        "graveyard", "forest", "woods", "field", "meadow", "garden", "yard", "alley",
+        "highway", "freeway", "subway", "train", "plane", "car", "truck", "bus", "boat",
+        "ship", "phone", "computer", "screen", "window", "table", "chair", "bed", "wall",
+        "floor", "ceiling", "roof", "stairs", "elevator", "lobby", "hallway", "corridor",
+        "north", "south", "east", "west", "northern", "southern", "eastern", "western",
+        "white", "black", "red", "blue", "green", "gold", "silver", "grey", "gray",
+        "english", "french", "german", "spanish", "latin", "greek", "roman", "british",
+        "american", "european", "asian", "african", "christian", "catholic", "muslim",
+        "jewish", "hindu", "police", "army", "navy", "guard", "soldier", "officer",
+        "agent", "detective", "inspector", "chief", "boss", "manager", "director",
+        "president", "minister", "senator", "mayor", "governor", "general", "colonel",
+        "captain", "sergeant", "lieutenant", "major", "private", "corporal", "admiral",
+        "professor", "teacher", "student", "nurse", "lawyer", "judge", "clerk", "waiter",
+        "waitress", "bartender", "driver", "pilot", "chef", "cook", "maid", "butler",
+        "servant", "guard", "bouncer", "thief", "killer", "murderer", "victim", "witness",
+        "stranger", "visitor", "guest", "host", "neighbor", "neighbour", "crowd", "mob",
+        "group", "team", "crew", "gang", "band", "club", "company", "firm", "agency",
+        "department", "division", "unit", "squad", "force", "service", "system", "network",
+        "program", "programme", "project", "plan", "idea", "thought", "memory", "dream",
+        "vision", "voice", "sound", "noise", "silence", "light", "dark", "shadow", "sun",
+        "moon", "star", "sky", "cloud", "rain", "snow", "wind", "storm", "fire", "smoke",
+        "blood", "bone", "heart", "mind", "soul", "spirit", "ghost", "angel", "demon",
+        "devil", "satan", "god", "goddess", "deity", "prophet", "priest", "monk", "nun",
+        "saint", "witch", "wizard", "mage", "knight", "warrior", "hunter", "ranger",
+        "rogue", "thief", "assassin", "mercenary", "guardian", "protector", "hero",
+        "villain", "monster", "beast", "creature", "dragon", "wolf", "bear", "lion",
+        "tiger", "horse", "dog", "cat", "bird", "fish", "snake", "spider", "rat"
+    ].map(w => w.toLowerCase())
+);
+
+/** Second word in "Foo Bar" that usually means a place/thing, not a surname. */
+const PLACE_OR_THING_SECOND = new Set(
+    [
+        "street", "st", "road", "rd", "avenue", "ave", "lane", "ln", "drive", "dr",
+        "boulevard", "blvd", "way", "place", "pl", "court", "ct", "circle", "cir",
+        "city", "town", "village", "hamlet", "borough", "district", "quarter", "ward",
+        "park", "gardens", "square", "plaza", "mall", "center", "centre", "station",
+        "airport", "terminal", "harbor", "harbour", "port", "bay", "beach", "coast",
+        "river", "lake", "creek", "brook", "mountain", "mount", "mt", "hill", "valley",
+        "canyon", "ridge", "peak", "forest", "woods", "field", "meadow", "farm",
+        "ranch", "estate", "manor", "hall", "house", "home", "mansion", "palace",
+        "castle", "fort", "tower", "gate", "bridge", "tunnel", "road", "highway",
+        "school", "academy", "college", "university", "hospital", "clinic", "church",
+        "cathedral", "chapel", "temple", "mosque", "synagogue", "monastery", "abbey",
+        "library", "museum", "theater", "theatre", "cinema", "hotel", "inn", "motel",
+        "restaurant", "cafe", "bar", "pub", "shop", "store", "market", "bank",
+        "office", "building", "factory", "warehouse", "prison", "jail", "asylum",
+        "cemetery", "graveyard", "churchyard", "kingdom", "empire", "republic",
+        "nation", "country", "province", "region", "territory", "colony", "state",
+        "county", "island", "archipelago", "peninsula", "continent", "world",
+        "company", "corp", "corporation", "inc", "ltd", "group", "guild", "order",
+        "society", "club", "union", "party", "faction", "clan", "tribe", "house",
+        "family", "dynasty", "line", "bloodline", "doctrine", "bible", "codex",
+        "doctor", "editor", "studio", "matter", "chapter", "section", "part"
+    ].map(w => w.toLowerCase())
+);
+
+function isNameToken(token) {
+    const t = String(token || "").trim();
+    if (t.length < 2) return false;
+    if (!/^[A-Z]/.test(t)) return false;
+    const lower = t.toLowerCase();
+    if (NOT_A_PERSON_NAME.has(lower)) return false;
+    if (FIRST_TOKEN_DENY.has(lower)) return false;
+    if (SCAN_SINGLEWORD_EXTRA_DENY.has(lower)) return false;
+    return true;
+}
+
 function isDeniedNamePhrase(phrase) {
     const p = phrase.trim();
     if (p.length < 2) return true;
@@ -1093,6 +1176,12 @@ function isDeniedNamePhrase(phrase) {
     if (tokens.length === 1 && SCAN_SINGLEWORD_EXTRA_DENY.has(key)) return true;
     if (tokens.length === 1 && p.length > 18) return true;
     if (!/^[A-Z]/.test(tokens[0])) return true;
+    if (tokens.length === 1 && !isNameToken(tokens[0])) return true;
+    if (tokens.length === 2) {
+        if (!isNameToken(tokens[0]) || !isNameToken(tokens[1])) return true;
+        if (PLACE_OR_THING_SECOND.has(tokens[1].toLowerCase())) return true;
+    }
+    if (tokens.length > 2) return true;
     return false;
 }
 
@@ -1102,12 +1191,13 @@ function isDeniedNamePhrase(phrase) {
  * @param {string} text
  * @returns {Map<string, { name: string, score: number, mentions: number, kinds: Set<string> }>}
  */
-function scoreCharacterNamesInText(text) {
+function scoreCharacterNamesInText(text, opts = {}) {
+    const loose = opts.loose === true;
     const source = safeString(text, "")
         .replace(/[ \t\r\f\v]+/g, " ")
         .replace(/\n{3,}/g, "\n\n")
         .trim();
-    /** @type {Map<string, { name: string, score: number, mentions: number, kinds: Set<string> }>} */
+    /** @type {Map<string, { name: string, score: number, mentions: number, strongMentions: number, kinds: Set<string> }>} */
     const map = new Map();
 
     function add(rawName, points, kind, mentionInc = 1) {
@@ -1115,9 +1205,10 @@ function scoreCharacterNamesInText(text) {
         if (isDeniedNamePhrase(name)) return;
         const key = name.toLowerCase();
         let row = map.get(key);
-        if (!row) row = { name, score: 0, mentions: 0, kinds: new Set() };
+        if (!row) row = { name, score: 0, mentions: 0, strongMentions: 0, kinds: new Set() };
         row.score += points;
         row.mentions += mentionInc;
+        if (STRONG_NAME_KINDS.has(kind)) row.strongMentions += mentionInc;
         row.kinds.add(kind);
         if (name.length > row.name.length) row.name = name;
         map.set(key, row);
@@ -1125,13 +1216,13 @@ function scoreCharacterNamesInText(text) {
 
     const patterns = [
         {
-            re: /\b([A-Z][a-z]{2,})\s+(?:said|says|say|replied|replies|answered|answers|asked|asks|whispered|whispers|muttered|mutters|shouted|shouts|yelled|yells|called|calls|texted|texts|emailed|emails|wrote|writes|met|introduced|introduces|mentions|mentioned|told|tells|murmured|murmurs|declared|declares|added|adds|continued|continues|insisted|insists|demanded|demands|pleaded|pleads|warned|warns|promised|promises|admitted|admits|confessed|confesses|explained|explains|remarked|remarks|observed|observes|noted|notes|sighed|sighs|laughed|laughs|chuckled|chuckles|snapped|snaps|growled|growls|hissed|hisses|breathed|breathes|mouthed|mouths)\b/g,
+            re: /\b([A-Z][a-z]{2,})\s+(?:said|says|say|replied|replies|answered|answers|asked|asks|whispered|whispers|muttered|mutters|shouted|shouts|yelled|yells|called|calls|texted|texts|emailed|emails|wrote|writes|told|tells|murmured|murmurs|declared|declares|insisted|insists|demanded|demands|pleaded|pleads|warned|warns|promised|promises|admitted|admits|confessed|confesses|explained|explains|remarked|remarks|growled|growls|hissed|hisses|breathed|breathes|mouthed|mouths)\b/g,
             pick: m => m[1],
             pts: 12,
             kind: "attribution"
         },
         {
-            re: /\b(?:said|says|say|replied|replies|answered|answers|asked|asks|whispered|whispers|muttered|mutters|shouted|shouts|yelled|yells|called|calls|texted|texts|emailed|emails|wrote|writes|met|introduced|introduces|mentioned|mentions|told|tells)\s+([A-Z][a-z]{2,})\b/g,
+            re: /\b(?:said|says|say|replied|replies|answered|answers|asked|asks|whispered|whispers|muttered|mutters|shouted|shouts|yelled|yells|called|calls|texted|texts|emailed|emails|wrote|writes|told|tells)\s+([A-Z][a-z]{2,})\b/g,
             pick: m => m[1],
             pts: 12,
             kind: "attribution"
@@ -1143,30 +1234,29 @@ function scoreCharacterNamesInText(text) {
             kind: "possessive"
         },
         {
-            re: /(?:^|[.!?\n]\s*|[\u201c""])\s*([A-Z][a-z]{2,})\s*[,!?]/gm,
-            pick: m => m[1],
-            pts: 9,
-            kind: "vocative"
-        },
-        {
             re: /\b(?:Mr|Mrs|Ms|Dr)\.\s+([A-Z][a-z]{2,})\b/g,
             pick: m => m[1],
             pts: 11,
             kind: "title"
-        },
-        {
-            re: /\b([A-Z][a-z]{2,})\s+([A-Z][a-z]{2,})\b/g,
-            pick: m => `${m[1]} ${m[2]}`,
-            pts: 14,
-            kind: "full_name"
-        },
-        {
-            re: /\b(?:with|and|meet|met|saw|see|sees|seen|called|named|introduced\s+to)\s+([A-Z][a-z]{2,})\b/g,
-            pick: m => m[1],
-            pts: 6,
-            kind: "context"
         }
     ];
+
+    if (loose) {
+        patterns.push(
+            {
+                re: /(?:^|[.!?\n]\s*|[\u201c""])\s*([A-Z][a-z]{2,})\s*[,!?]/gm,
+                pick: m => m[1],
+                pts: 7,
+                kind: "vocative"
+            },
+            {
+                re: /\b(?:with|and|meet|met|saw|see|sees|seen|named|introduced\s+to)\s+([A-Z][a-z]{2,})\b/g,
+                pick: m => m[1],
+                pts: 5,
+                kind: "context"
+            }
+        );
+    }
 
     for (const { re, pick, pts, kind } of patterns) {
         re.lastIndex = 0;
@@ -1176,23 +1266,17 @@ function scoreCharacterNamesInText(text) {
         }
     }
 
-    const capRe = /\b([A-Z][a-z]{2,})\b/g;
-    capRe.lastIndex = 0;
-    let cap;
-    while ((cap = capRe.exec(source)) !== null) {
-        const word = cap[1];
-        const idx = cap.index;
-        const firstTok = word.toLowerCase();
-        if (isDeniedNamePhrase(word)) continue;
-        const key = word.toLowerCase();
-        const row = map.get(key);
-        if (!row) continue;
-        const midClause = isLikelyMidClauseCapital(idx, source, firstTok);
-        if (midClause) {
-            row.score += 2;
-            row.mentions += 1;
-            row.kinds.add("mid_clause");
-        }
+    const fullNameRe = /\b([A-Z][a-z]{2,})\s+([A-Z][a-z]{2,})\b/g;
+    fullNameRe.lastIndex = 0;
+    let fn;
+    while ((fn = fullNameRe.exec(source)) !== null) {
+        const first = fn[1];
+        const second = fn[2];
+        if (!isNameToken(first) || !isNameToken(second)) continue;
+        if (PLACE_OR_THING_SECOND.has(second.toLowerCase())) continue;
+        const phrase = `${first} ${second}`;
+        if (PHRASE_DENY.has(phrase.toLowerCase())) continue;
+        add(phrase, 14, "full_name");
     }
 
     return map;
@@ -1200,20 +1284,37 @@ function scoreCharacterNamesInText(text) {
 
 function passesNameScoreFilter(row, opts) {
     const loose = opts.loose === true;
-    const strict = opts.firstPerson === true;
-    const minScore = loose ? 8 : strict ? 16 : 14;
-    const minMentions = loose ? 2 : 3;
-
-    if (row.mentions < minMentions && row.score < minScore + 6) return false;
-    if (row.score < minScore) return false;
-
+    const kinds = row.kinds;
+    const hasAttribution = kinds.has("attribution");
+    const hasPossessive = kinds.has("possessive");
+    const hasFullName = kinds.has("full_name");
+    const hasTitle = kinds.has("title");
     const multi = row.name.includes(" ");
-    const hasStrong = [...row.kinds].some(k => STRONG_NAME_KINDS.has(k));
 
-    if (multi && hasStrong) return true;
-    if (multi && row.score >= 12) return true;
-    if (hasStrong) return true;
-    if (loose && row.score >= 8 && row.mentions >= 4) return true;
+    if (loose) {
+        const minScore = 8;
+        const minStrong = 1;
+        if (row.strongMentions < minStrong) return false;
+        if (row.score < minScore) return false;
+        return true;
+    }
+
+    if (hasFullName && multi) {
+        return row.score >= 14 && row.strongMentions >= 1;
+    }
+
+    if (hasTitle) {
+        return row.strongMentions >= 1;
+    }
+
+    if (hasPossessive) {
+        return row.strongMentions >= 2 || (row.strongMentions >= 1 && row.score >= 20);
+    }
+
+    if (hasAttribution) {
+        return row.strongMentions >= 2 && row.score >= 22;
+    }
+
     return false;
 }
 
@@ -1240,20 +1341,21 @@ export function extractCharacterNameCandidates(text, opts = {}) {
         .trim();
     if (!source) return [];
 
-    const scored = scoreCharacterNamesInText(source);
     const scanOpts = {
         loose: opts.loose === true || opts.balanced === false,
         firstPerson: opts.firstPerson === true
     };
 
+    const scored = scoreCharacterNamesInText(source, scanOpts);
+
     return [...scored.values()]
         .filter(row => passesNameScoreFilter(row, scanOpts))
-        .filter(row => row.mentions >= minOcc || row.score >= 12)
-        .sort((a, b) => b.score - a.score || b.mentions - a.mentions || a.name.localeCompare(b.name))
+        .filter(row => row.strongMentions >= (scanOpts.loose ? 1 : 2) || row.score >= 24)
+        .sort((a, b) => b.score - a.score || b.strongMentions - a.strongMentions || a.name.localeCompare(b.name))
         .slice(0, maxResults)
         .map(row => ({
             name: row.name,
-            occurrences: row.mentions,
+            occurrences: row.strongMentions,
             score: row.score,
             signals: [...row.kinds]
         }));

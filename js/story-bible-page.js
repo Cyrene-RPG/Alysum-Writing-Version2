@@ -23,7 +23,7 @@ import {
 import {
     extractCharacterNameCandidates,
     subtractBibleNames,
-} from "./story-bible-scan.js?v=8";
+} from "./story-bible-scan.js?v=9";
 import { scoreCharacter, scoreBibleHealth } from "./story-bible-health.js?v=1";
 import {
     saveCharacterFromScan,
@@ -1043,7 +1043,7 @@ export async function mountStoryBiblePage(opts) {
             top.className = "sb-scan-card-top";
             const cb = document.createElement("input");
             cb.type = "checkbox";
-            cb.checked = (row.score || 0) >= 14 || row.occurrences >= 5;
+            cb.checked = (row.score || 0) >= 22 || row.occurrences >= 3;
             cb.dataset.name = row.name;
 
             const nameEl = document.createElement("span");
@@ -1283,7 +1283,7 @@ export async function mountStoryBiblePage(opts) {
     function refreshScanFromCache() {
         if (!scanResultsEl || lastScanKind !== "rules" || !cachedPlainForScan) return;
         const raw = extractCharacterNameCandidates(cachedPlainForScan, buildScanExtractOpts());
-        const filtered = subtractBibleNames(raw, knownEntriesForScan()).filter(r => r.occurrences >= 3);
+        const filtered = subtractBibleNames(raw, knownEntriesForScan()).filter(r => r.occurrences >= 2);
         const drafts = buildCharacterDraftsFromScan(filtered, cachedPlainForScan, cachedChaptersForScan);
         lastScanDraftByName = new Map(drafts.map(d => [d.name.toLowerCase(), d]));
         renderScanSuggestions(filtered, drafts);
@@ -1305,7 +1305,7 @@ export async function mountStoryBiblePage(opts) {
                 return;
             }
             const raw = extractCharacterNameCandidates(cachedPlainForScan, buildScanExtractOpts());
-            const filtered = subtractBibleNames(raw, knownEntriesForScan()).filter(r => r.occurrences >= 3);
+            const filtered = subtractBibleNames(raw, knownEntriesForScan()).filter(r => r.occurrences >= 2);
             const drafts = buildCharacterDraftsFromScan(filtered, cachedPlainForScan, cachedChaptersForScan);
             lastScanDraftByName = new Map(drafts.map(d => [d.name.toLowerCase(), d]));
             renderScanSuggestions(filtered, drafts);
