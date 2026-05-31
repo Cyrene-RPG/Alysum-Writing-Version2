@@ -193,6 +193,48 @@
     .sprint-opt-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
     .sprint-opt { border: 1px solid var(--border); background: rgba(0,0,0,0.03); color: var(--page-text); border-radius: 12px; padding: 10px; font-weight: 900; cursor: pointer; }
     body.dark .sprint-opt { background: rgba(255,255,255,0.04); }
+    .fr-bar {
+        display: none;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px 12px;
+        padding: 10px 12px;
+        background: var(--toolbar-bg);
+        border-bottom: 1px solid var(--border);
+    }
+    .fr-bar.open { display: flex; }
+    .fr-field { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1 1 160px; }
+    .fr-label { font-size: 12px; font-weight: 800; color: var(--page-subtle); white-space: nowrap; }
+    .fr-input {
+        flex: 1;
+        min-width: 0;
+        height: 34px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: var(--topbar-bg);
+        color: var(--page-text);
+        font-size: 14px;
+        padding: 0 10px;
+    }
+    .fr-check { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: var(--page-subtle); cursor: pointer; white-space: nowrap; }
+    .fr-check input { width: 15px; height: 15px; }
+    .fr-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+    .fr-btn {
+        height: 34px;
+        border: 1px solid var(--border);
+        background: var(--topbar-bg);
+        color: var(--page-text);
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 800;
+        padding: 0 12px;
+        cursor: pointer;
+    }
+    .fr-btn.primary { background: var(--alysum-purple); border-color: var(--alysum-purple); color: #fff; }
+    .fr-btn.icon { width: 34px; padding: 0; }
+    .fr-status { font-size: 12px; font-weight: 700; color: var(--page-subtle); min-width: 5rem; }
+    ::highlight(alysum-find) { background: rgba(250, 204, 21, 0.42); }
+    ::highlight(alysum-find-active) { background: rgba(245, 158, 11, 0.72); }
     @media (max-width: 900px) { .page { padding: 52px 56px 70px; } .chapter-title { font-size: 24px; } .editor { font-size: 18px; } .top-title { max-width: 28vw; } }
     @media (max-width: 760px) { .sidebar { position: fixed; left: 0; top: 0; width: 300px; } .overlay { display: block; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 20; } .overlay.hidden { display: none; } .top-title { max-width: 40vw; } .page { padding: 42px 24px 60px; } .chapter-title { font-size: 22px; margin-bottom: 32px; } .editor { font-size: 17px; line-height: 1.7; } .topbar { height: auto; min-height: 56px; flex-wrap: wrap; row-gap: 8px; } .topbar-left, .topbar-right { flex-wrap: wrap; } .topbar-right { justify-content: flex-end; } }
     @media (max-width: 480px) { .workspace { padding: 16px 10px 40px; } .page { padding: 32px 16px 48px; } .sidebar { width: min(300px, 100vw); } }
@@ -289,11 +331,26 @@
     <button class="tool-btn" type="button" data-cmd="insertUnorderedList">• List</button>
     <button class="tool-btn" type="button" data-cmd="insertOrderedList">1. List</button>
     <button class="tool-btn" type="button" id="quoteBtn">❝</button>
+    <button class="tool-btn" type="button" id="findReplaceBtn" title="Find and replace (Ctrl+F)">⌕</button>
     <select class="tool-select" id="formatSelect"><option value="p">Body</option><option value="h2">Heading</option></select>
     <select class="tool-select" id="fontSelect" aria-label="Font"></select>
     <select class="tool-select" id="fontSizeSelect"><option value="18">Compact</option><option value="20">Book</option><option value="22">Comfort</option><option value="26">Large</option></select>
     <div class="toolbar-spacer"></div>
     <span class="sprint-anchor" id="sprintAnchor"><button class="sprint-btn" id="sprintToolbarBtn" type="button" aria-label="Sprint timer">⏱ Sprint</button></span>
+</div>
+<div class="fr-bar" id="findReplaceBar" role="search" aria-label="Find and replace in current chapter">
+    <label class="fr-field"><span class="fr-label">Find</span><input class="fr-input" id="frFindInput" type="text" autocomplete="off" spellcheck="false" placeholder="Search chapter…" /></label>
+    <label class="fr-field"><span class="fr-label">Replace</span><input class="fr-input" id="frReplaceInput" type="text" autocomplete="off" spellcheck="false" placeholder="Replace with…" /></label>
+    <label class="fr-check"><input type="checkbox" id="frMatchCase" /> Match case</label>
+    <label class="fr-check"><input type="checkbox" id="frWholeWord" /> Whole word</label>
+    <div class="fr-actions">
+        <button type="button" class="fr-btn icon" id="frPrevBtn" title="Previous (Shift+F3)">↑</button>
+        <button type="button" class="fr-btn icon" id="frNextBtn" title="Next (F3)">↓</button>
+        <button type="button" class="fr-btn primary" id="frReplaceBtn">Replace</button>
+        <button type="button" class="fr-btn" id="frReplaceAllBtn" type="button">Replace all</button>
+        <button type="button" class="fr-btn icon" id="frCloseBtn" type="button" aria-label="Close find and replace">×</button>
+    </div>
+    <span class="fr-status" id="frStatus" aria-live="polite"></span>
 </div>
 
 <div class="sprint-float" id="sprintFloat" aria-live="polite"><div class="sprint-float-box"><div class="sprint-float-top"><div class="sprint-float-label">Sprint</div><button class="sprint-mini-btn danger" id="sprintStopBtn" type="button">Stop</button></div><div class="sprint-float-time" id="sprintFloatTime">00:00</div></div></div>
@@ -439,6 +496,18 @@ function rememberBookId(id) {
     const publishQuickWrap = document.getElementById("publishQuickWrap");
     const publishQuickPublishBtn = document.getElementById("publishQuickPublishBtn");
     const publishQuickStatus = document.getElementById("publishQuickStatus");
+    const findReplaceBar = document.getElementById("findReplaceBar");
+    const findReplaceBtn = document.getElementById("findReplaceBtn");
+    const frFindInput = document.getElementById("frFindInput");
+    const frReplaceInput = document.getElementById("frReplaceInput");
+    const frMatchCase = document.getElementById("frMatchCase");
+    const frWholeWord = document.getElementById("frWholeWord");
+    const frPrevBtn = document.getElementById("frPrevBtn");
+    const frNextBtn = document.getElementById("frNextBtn");
+    const frReplaceBtn = document.getElementById("frReplaceBtn");
+    const frReplaceAllBtn = document.getElementById("frReplaceAllBtn");
+    const frCloseBtn = document.getElementById("frCloseBtn");
+    const frStatus = document.getElementById("frStatus");
 
     let currentUser = null;
     let currentBook = null;
@@ -453,6 +522,9 @@ function rememberBookId(id) {
     let suppressResumeSave = false;
     let resumeSaveTimer = null;
     let pendingResumeRestore = null;
+    let frMatches = [];
+    let frActiveIndex = -1;
+    const frSupportsHighlight = typeof Highlight !== "undefined" && !!CSS.highlights;
 
     const sprintToolbarBtn = document.getElementById("sprintToolbarBtn");
     const sprintFloat = document.getElementById("sprintFloat");
@@ -904,6 +976,191 @@ function rememberBookId(id) {
         if (rerender) renderAllSections();
         syncStats();
         applyPendingResumeViewport();
+        frOnChapterChanged();
+    }
+
+    function frIsWholeWordMatch(text, start, length) {
+        const wordChar = /[\w'\u00C0-\u024F]/;
+        if (start > 0 && wordChar.test(text[start - 1])) return false;
+        if (start + length < text.length && wordChar.test(text[start + length])) return false;
+        return true;
+    }
+
+    function frCollectMatches(query) {
+        const matches = [];
+        if (!query || !editor) return matches;
+        const matchCase = !!frMatchCase?.checked;
+        const wholeWord = !!frWholeWord?.checked;
+        const needle = matchCase ? query : query.toLowerCase();
+        const walker = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT);
+        let node;
+        while ((node = walker.nextNode())) {
+            const raw = node.nodeValue || "";
+            if (!raw) continue;
+            const hay = matchCase ? raw : raw.toLowerCase();
+            let pos = 0;
+            while (pos <= hay.length - needle.length) {
+                const idx = hay.indexOf(needle, pos);
+                if (idx === -1) break;
+                if (!wholeWord || frIsWholeWordMatch(raw, idx, query.length)) {
+                    matches.push({ node, start: idx, end: idx + query.length });
+                }
+                pos = idx + Math.max(needle.length, 1);
+            }
+        }
+        return matches;
+    }
+
+    function frClearHighlights() {
+        if (frSupportsHighlight) {
+            CSS.highlights.delete("alysum-find");
+            CSS.highlights.delete("alysum-find-active");
+        }
+    }
+
+    function frApplyHighlights() {
+        frClearHighlights();
+        if (!frSupportsHighlight || !frMatches.length) return;
+        const all = new Highlight();
+        const active = new Highlight();
+        frMatches.forEach((m, i) => {
+            const range = document.createRange();
+            range.setStart(m.node, m.start);
+            range.setEnd(m.node, m.end);
+            all.add(range);
+            if (i === frActiveIndex) active.add(range);
+        });
+        CSS.highlights.set("alysum-find", all);
+        if (frActiveIndex >= 0) CSS.highlights.set("alysum-find-active", active);
+    }
+
+    function frUpdateStatus() {
+        if (!frStatus) return;
+        if (!frFindInput?.value) {
+            frStatus.textContent = "Current chapter";
+            return;
+        }
+        if (!frMatches.length) {
+            frStatus.textContent = "No matches";
+            return;
+        }
+        frStatus.textContent = `${frActiveIndex + 1} of ${frMatches.length}`;
+    }
+
+    function frScrollToMatch(index) {
+        const m = frMatches[index];
+        if (!m) return;
+        const range = document.createRange();
+        range.setStart(m.node, m.start);
+        range.setEnd(m.node, m.end);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+        const rects = range.getClientRects();
+        const rect = rects.length ? rects[0] : range.getBoundingClientRect();
+        if (editorWorkspace && rect) {
+            const wsRect = editorWorkspace.getBoundingClientRect();
+            const top = rect.top - wsRect.top + editorWorkspace.scrollTop;
+            editorWorkspace.scrollTo({ top: Math.max(0, top - editorWorkspace.clientHeight / 3), behavior: "smooth" });
+        }
+    }
+
+    function frRunSearch(keepIndex = false) {
+        const query = frFindInput?.value || "";
+        const prevIndex = keepIndex ? frActiveIndex : -1;
+        frMatches = frCollectMatches(query);
+        if (!query) {
+            frActiveIndex = -1;
+            frClearHighlights();
+            frUpdateStatus();
+            return;
+        }
+        if (!frMatches.length) {
+            frActiveIndex = -1;
+            frClearHighlights();
+            frUpdateStatus();
+            return;
+        }
+        if (keepIndex && prevIndex >= 0 && prevIndex < frMatches.length) frActiveIndex = prevIndex;
+        else if (keepIndex && prevIndex >= frMatches.length) frActiveIndex = frMatches.length - 1;
+        else frActiveIndex = 0;
+        frApplyHighlights();
+        frUpdateStatus();
+        frScrollToMatch(frActiveIndex);
+    }
+
+    function frGo(delta) {
+        if (!frMatches.length) {
+            frRunSearch();
+            return;
+        }
+        frActiveIndex = (frActiveIndex + delta + frMatches.length) % frMatches.length;
+        frApplyHighlights();
+        frUpdateStatus();
+        frScrollToMatch(frActiveIndex);
+    }
+
+    function frAfterEdit() {
+        syncCurrentChapterFromEditor();
+        syncStats();
+        scheduleSave();
+        frRunSearch(true);
+    }
+
+    function frReplaceCurrent() {
+        if (!frFindInput?.value || frActiveIndex < 0 || !frMatches.length) return;
+        const m = frMatches[frActiveIndex];
+        const repl = frReplaceInput?.value ?? "";
+        const text = m.node.textContent || "";
+        m.node.textContent = text.slice(0, m.start) + repl + text.slice(m.end);
+        editor.focus();
+        frAfterEdit();
+    }
+
+    function frReplaceAll() {
+        const query = frFindInput?.value || "";
+        if (!query) return;
+        const repl = frReplaceInput?.value ?? "";
+        const matches = frCollectMatches(query);
+        if (!matches.length) return;
+        for (let i = matches.length - 1; i >= 0; i--) {
+            const m = matches[i];
+            const text = m.node.textContent || "";
+            m.node.textContent = text.slice(0, m.start) + repl + text.slice(m.end);
+        }
+        editor.focus();
+        frAfterEdit();
+    }
+
+    function frIsOpen() {
+        return findReplaceBar?.classList.contains("open");
+    }
+
+    function frOpen(focusReplace = false) {
+        if (!findReplaceBar) return;
+        findReplaceBar.classList.add("open");
+        const sel = window.getSelection();
+        if (sel && !sel.isCollapsed && editor.contains(sel.anchorNode) && !frFindInput.value) {
+            frFindInput.value = sel.toString();
+        }
+        frRunSearch();
+        const target = focusReplace ? frReplaceInput : frFindInput;
+        target?.focus();
+        target?.select();
+    }
+
+    function frClose() {
+        findReplaceBar?.classList.remove("open");
+        frMatches = [];
+        frActiveIndex = -1;
+        frClearHighlights();
+        if (frStatus) frStatus.textContent = "";
+        editor?.focus();
+    }
+
+    function frOnChapterChanged() {
+        if (frIsOpen()) frRunSearch(true);
+        else frClearHighlights();
     }
 
     function openInitialChapterFromResume(resume) {
@@ -1373,6 +1630,24 @@ function rememberBookId(id) {
     fontSelect.addEventListener("change", () => { localStorage.setItem("alysum-font", fontSelect.value); applyEditorStyle(); });
     fontSizeSelect.addEventListener("change", () => { localStorage.setItem("alysum-fontSize", fontSizeSelect.value); applyEditorStyle(); });
 
+    findReplaceBtn?.addEventListener("click", () => frOpen(false));
+    frCloseBtn?.addEventListener("click", () => frClose());
+    frFindInput?.addEventListener("input", () => frRunSearch());
+    frMatchCase?.addEventListener("change", () => frRunSearch());
+    frWholeWord?.addEventListener("change", () => frRunSearch());
+    frPrevBtn?.addEventListener("click", () => frGo(-1));
+    frNextBtn?.addEventListener("click", () => frGo(1));
+    frReplaceBtn?.addEventListener("click", () => frReplaceCurrent());
+    frReplaceAllBtn?.addEventListener("click", () => frReplaceAll());
+    frFindInput?.addEventListener("keydown", e => {
+        if (e.key === "Enter") { e.preventDefault(); frGo(e.shiftKey ? -1 : 1); }
+        if (e.key === "Escape") { e.preventDefault(); frClose(); }
+    });
+    frReplaceInput?.addEventListener("keydown", e => {
+        if (e.key === "Enter") { e.preventDefault(); frReplaceCurrent(); }
+        if (e.key === "Escape") { e.preventDefault(); frClose(); }
+    });
+
     function loadEditorSprint() { try { return JSON.parse(localStorage.getItem(SPRINT_KEY) || "null"); } catch { return null; } }
     function saveEditorSprint(state) { localStorage.setItem(SPRINT_KEY, JSON.stringify(state)); }
     function clearEditorSprint() { localStorage.removeItem(SPRINT_KEY); }
@@ -1521,6 +1796,29 @@ async function loadBook() {
         if (e.altKey && (e.key === "p" || e.key === "P")) {
             e.preventDefault();
             window.location.href = plotDoctorHref(bookId);
+        }
+        const mod = e.ctrlKey || e.metaKey;
+        const tag = (e.target && e.target.tagName) || "";
+        const inField = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
+        if (mod && (e.key === "f" || e.key === "F") && !inField) {
+            e.preventDefault();
+            frOpen(false);
+            return;
+        }
+        if (mod && (e.key === "h" || e.key === "H") && !inField) {
+            e.preventDefault();
+            frOpen(true);
+            return;
+        }
+        if (e.key === "F3" && (frIsOpen() || !inField)) {
+            e.preventDefault();
+            if (!frIsOpen()) frOpen(false);
+            frGo(e.shiftKey ? -1 : 1);
+            return;
+        }
+        if (e.key === "Escape" && frIsOpen()) {
+            e.preventDefault();
+            frClose();
         }
     });
 
