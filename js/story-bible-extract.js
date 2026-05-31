@@ -87,7 +87,7 @@ const SIGNAL_LABELS = {
 export function extractProfileDraftForName(name, plainText, chapters = [], meta = {}) {
     const trimmed = String(name || "").trim();
     const pseudo = normalizeBibleCharacter({ name: trimmed, aliases: [], appearance: {}, pronouns: "" }, "draft");
-    const appearanceHints = suggestAppearanceFills([pseudo], plainText, { minMentions: 1 });
+    const appearanceHints = suggestAppearanceFills([pseudo], plainText, { minMentions: 2 });
     /** @type {Record<string, string>} */
     const appearance = {};
     for (const hint of appearanceHints) {

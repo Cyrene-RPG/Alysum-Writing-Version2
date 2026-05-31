@@ -19,7 +19,7 @@
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
     <link rel="stylesheet" href="css/gradient-themes.css?v=4" />
     <link rel="stylesheet" href="css/magic-codex.css?v=7" />
-    <link rel="stylesheet" href="css/story-bible.css?v=4" />
+    <link rel="stylesheet" href="css/story-bible.css?v=5" />
     <script src="js/gradient-theme-sync.js" defer></script>
 </head>
 <body class="mc-page mc-bible">
@@ -239,26 +239,38 @@
                                         Include weaker matches (noisier — may show non-names)
                                     </label>
                                 </div>
-                                <p class="sb-scan-hint">Finds character names from dialogue tags, possessives, and speech — not random capitalized words like “Normally” or profanity. Prefills eyes, hair, skin, pronouns, and first chapter when adding.</p>
-                                <div id="sbScanResults" class="sb-scan-results hidden" aria-live="polite"></div>
+                                <p class="sb-scan-hint">Finds names from dialogue and speech. Results open in a panel below — review before adding.</p>
                             </div>
 
                             <div class="sb-scan-block sb-scan-block-secondary">
                                 <h4>Existing characters</h4>
                                 <button type="button" class="sb-scan-btn sb-scan-btn-secondary" id="sbEnrichBtn">Re-scan appearance fields</button>
-                                <p class="sb-scan-hint">Runs with the scan above. Suggests eyes, hair, skin, height, and build for roster characters where bible fields are still blank.</p>
-                                <div id="sbEnrichResults" class="sb-scan-results hidden" aria-live="polite"></div>
+                                <p class="sb-scan-hint">Fills blank eyes, hair, skin, height, and build from the manuscript. Shown in the scan panel below.</p>
                             </div>
                         </div>
                     </div>
                 </div>
+
+                <section id="sbScanDrawer" class="sb-scan-drawer hidden" aria-label="Manuscript scan results">
+                    <div class="sb-scan-drawer-inner">
+                        <header class="sb-scan-drawer-head">
+                            <div>
+                                <h2 class="sb-scan-drawer-title">Manuscript scan</h2>
+                                <p class="sb-scan-drawer-summary" id="sbScanDrawerSummary">Review names and details before adding to your bible.</p>
+                            </div>
+                            <button type="button" class="sb-scan-drawer-close" id="sbScanDrawerClose" aria-label="Close scan results">Close</button>
+                        </header>
+                        <div id="sbScanResults" class="sb-scan-results-panel hidden" aria-live="polite"></div>
+                        <div id="sbEnrichResults" class="sb-scan-results-panel sb-scan-enrich-panel hidden" aria-live="polite"></div>
+                    </div>
+                </section>
             </section>
         </div>
     </div>
 
     <script type="module">
         import { supabase } from "./firebase.js";
-        import { mountStoryBiblePage } from "./js/story-bible-page.js?v=20";
+        import { mountStoryBiblePage } from "./js/story-bible-page.js?v=21";
         import { requireStudioSession } from "./js/studio-session.js?v=1";
         import { isStoryBibleUiEnabled, STORY_BIBLE_PREF_KEY, STORY_BIBLE_PREF_EVENT } from "./js/story-bible-prefs.js?v=1";
 
@@ -340,7 +352,10 @@
                 scanResultsEl: document.getElementById("sbScanResults"),
                 scanLooseCheck: document.getElementById("sbScanLoose"),
                 enrichBtn: document.getElementById("sbEnrichBtn"),
-                enrichResultsEl: document.getElementById("sbEnrichResults")
+                enrichResultsEl: document.getElementById("sbEnrichResults"),
+                scanDrawerEl: document.getElementById("sbScanDrawer"),
+                scanDrawerClose: document.getElementById("sbScanDrawerClose"),
+                scanDrawerSummary: document.getElementById("sbScanDrawerSummary")
                 });
             } catch (e) {
                 console.error("[story-bible] mount failed:", e);

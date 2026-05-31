@@ -1201,10 +1201,10 @@ function scoreCharacterNamesInText(text) {
 function passesNameScoreFilter(row, opts) {
     const loose = opts.loose === true;
     const strict = opts.firstPerson === true;
-    const minScore = loose ? 5 : strict ? 14 : 10;
-    const minMentions = loose ? 2 : strict ? 3 : 2;
+    const minScore = loose ? 8 : strict ? 16 : 14;
+    const minMentions = loose ? 2 : 3;
 
-    if (row.mentions < minMentions && row.score < minScore + 4) return false;
+    if (row.mentions < minMentions && row.score < minScore + 6) return false;
     if (row.score < minScore) return false;
 
     const multi = row.name.includes(" ");
@@ -1230,9 +1230,9 @@ function passesNameScoreFilter(row, opts) {
  */
 export function extractCharacterNameCandidates(text, opts = {}) {
     const maxResults =
-        typeof opts.maxResults === "number" && opts.maxResults > 0 ? opts.maxResults : 40;
+        typeof opts.maxResults === "number" && opts.maxResults > 0 ? opts.maxResults : 15;
     const minOcc =
-        typeof opts.minOccurrences === "number" && opts.minOccurrences > 0 ? opts.minOccurrences : 2;
+        typeof opts.minOccurrences === "number" && opts.minOccurrences > 0 ? opts.minOccurrences : 3;
 
     const source = safeString(text, "")
         .replace(/[ \t\r\f\v]+/g, " ")

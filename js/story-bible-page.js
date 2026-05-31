@@ -23,7 +23,7 @@ import {
 import {
     extractCharacterNameCandidates,
     subtractBibleNames,
-} from "./story-bible-scan.js?v=7";
+} from "./story-bible-scan.js?v=8";
 import { scoreCharacter, scoreBibleHealth } from "./story-bible-health.js?v=1";
 import {
     saveCharacterFromScan,
@@ -31,8 +31,7 @@ import {
     bulkSaveCharactersFromScan
 } from "./story-bible-import.js?v=3";
 import {
-    buildCharacterDraftsFromScan,
-    formatProfileDraftSummary
+    buildCharacterDraftsFromScan
 } from "./story-bible-extract.js?v=1";
 import { suggestAppearanceFills, applyAppearanceSuggestions } from "./story-bible-enrich.js?v=2";
 
@@ -113,6 +112,9 @@ function emptyPlace() {
  * @param {HTMLInputElement} [opts.scanLooseCheck]
  * @param {HTMLButtonElement} [opts.enrichBtn]
  * @param {HTMLElement} [opts.enrichResultsEl]
+ * @param {HTMLElement} [opts.scanDrawerEl]
+ * @param {HTMLButtonElement} [opts.scanDrawerClose]
+ * @param {HTMLElement} [opts.scanDrawerSummary]
  */
 export async function mountStoryBiblePage(opts) {
     const {
@@ -153,7 +155,10 @@ export async function mountStoryBiblePage(opts) {
         scanResultsEl,
         scanLooseCheck,
         enrichBtn,
-        enrichResultsEl
+        enrichResultsEl,
+        scanDrawerEl,
+        scanDrawerClose,
+        scanDrawerSummary
     } = opts;
 
     const bookId = (new URLSearchParams(window.location.search).get("book") || "").trim();
@@ -973,6 +978,37 @@ export async function mountStoryBiblePage(opts) {
         }
     }
 
+    function openScanDrawer(summaryText) {
+        if (scanDrawerSummary && summaryText) scanDrawerSummary.textContent = summaryText;
+        scanDrawerEl?.classList.remove("hidden");
+        scanDrawerEl?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function closeScanDrawer() {
+        scanDrawerEl?.classList.add("hidden");
+    }
+
+    scanDrawerClose?.addEventListener("click", closeScanDrawer);
+
+    function renderProfilePills(container, draft) {
+        if (!draft) return;
+        const app = draft.appearance || {};
+        const pills = [];
+        if (app.eyes) pills.push(["Eyes", app.eyes]);
+        if (app.hair) pills.push(["Hair", app.hair]);
+        if (app.skin) pills.push(["Skin", app.skin]);
+        if (app.height) pills.push(["Height", app.height]);
+        if (app.build) pills.push(["Build", app.build]);
+        if (draft.pronouns) pills.push(["Pronouns", draft.pronouns]);
+        if (draft.firstSeenLabel) pills.push(["First seen", draft.firstSeenLabel]);
+        for (const [label, value] of pills) {
+            const pill = document.createElement("span");
+            pill.className = "sb-scan-pill";
+            pill.textContent = `${label}: ${value}`;
+            container.appendChild(pill);
+        }
+    }
+
     function renderScanSuggestions(rows, drafts) {
         if (!scanResultsEl) return;
         scanResultsEl.innerHTML = "";
@@ -984,68 +1020,71 @@ export async function mountStoryBiblePage(opts) {
         const plain = cachedPlainForScan || "";
         const draftMap = new Map((drafts || []).map(d => [d.name.toLowerCase(), d]));
 
-        const head = document.createElement("div");
-        head.className = "sb-scan-title";
-        head.textContent = `${rows.length} character name${rows.length === 1 ? "" : "s"} found in manuscript`;
+        const head = document.createElement("h3");
+        head.className = "sb-scan-panel-title";
+        head.textContent = `${rows.length} character name${rows.length === 1 ? "" : "s"} to review`;
         scanResultsEl.appendChild(head);
 
         const hint = document.createElement("p");
-        hint.className = "sb-scan-results-hint";
-        hint.textContent =
-            "Matched from dialogue tags, possessives, and speech — not random capitalized words. Check who to add; appearance and pronouns are prefilled when the text supports it.";
+        hint.className = "sb-scan-panel-hint";
+        hint.textContent = "Check the people you recognize, then add. Uncheck junk matches.";
         scanResultsEl.appendChild(hint);
 
         const list = document.createElement("div");
-        list.className = "sb-scan-checklist";
+        list.className = "sb-scan-card-grid";
 
         for (const row of rows) {
             const draft = draftMap.get(row.name.toLowerCase());
-            const summary = draft ? formatProfileDraftSummary(draft) : "";
-            const signalText = draft?.signals?.length ? draft.signals.join(", ") : "";
 
-            const line = document.createElement("label");
-            line.className = "sb-scan-row sb-scan-row-check sb-scan-row-rich";
+            const card = document.createElement("article");
+            card.className = "sb-scan-card";
+
+            const top = document.createElement("label");
+            top.className = "sb-scan-card-top";
             const cb = document.createElement("input");
             cb.type = "checkbox";
-            cb.checked = (row.score || 0) >= 12 || row.occurrences >= 4;
+            cb.checked = (row.score || 0) >= 14 || row.occurrences >= 5;
             cb.dataset.name = row.name;
 
-            const main = document.createElement("div");
-            main.className = "sb-scan-row-main";
-            const label = document.createElement("span");
-            label.className = "sb-scan-name";
-            label.textContent = `${row.name} (${row.occurrences}×)`;
-            main.appendChild(label);
+            const nameEl = document.createElement("span");
+            nameEl.className = "sb-scan-card-name";
+            nameEl.textContent = row.name;
 
-            if (summary) {
-                const detail = document.createElement("span");
-                detail.className = "sb-scan-detail";
-                detail.textContent = summary;
-                main.appendChild(detail);
+            const countEl = document.createElement("span");
+            countEl.className = "sb-scan-card-count";
+            countEl.textContent = `${row.occurrences} mentions`;
+
+            top.appendChild(cb);
+            top.appendChild(nameEl);
+            top.appendChild(countEl);
+            card.appendChild(top);
+
+            if (draft?.signals?.length) {
+                const sig = document.createElement("p");
+                sig.className = "sb-scan-card-signals";
+                sig.textContent = `Found via ${draft.signals.join(", ")}`;
+                card.appendChild(sig);
             }
-            if (signalText) {
-                const sig = document.createElement("span");
-                sig.className = "sb-scan-signals";
-                sig.textContent = `Detected via: ${signalText}`;
-                main.appendChild(sig);
-            }
+
+            const pills = document.createElement("div");
+            pills.className = "sb-scan-card-meta";
+            renderProfilePills(pills, draft);
+            if (pills.childElementCount) card.appendChild(pills);
+
             if (draft?.snippets?.[0]) {
-                const sn = document.createElement("span");
-                sn.className = "sb-enrich-snippet";
+                const sn = document.createElement("blockquote");
+                sn.className = "sb-scan-card-snippet";
                 sn.textContent = draft.snippets[0];
-                main.appendChild(sn);
+                card.appendChild(sn);
             }
-
-            line.appendChild(cb);
-            line.appendChild(main);
 
             const btnRow = document.createElement("div");
-            btnRow.className = "sb-scan-row-actions";
+            btnRow.className = "sb-scan-card-actions";
 
             const addChar = document.createElement("button");
             addChar.type = "button";
             addChar.className = "sb-scan-add";
-            addChar.textContent = "Add with details";
+            addChar.textContent = "Add to bible";
             addChar.addEventListener("click", async e => {
                 e.preventDefault();
                 saveCharBtn.disabled = true;
@@ -1067,7 +1106,7 @@ export async function mountStoryBiblePage(opts) {
                     updateBibleTabChrome();
                     persistBibleTab();
                     await selectCharacter(saved.id);
-                    setStatus(`Character “${row.name}” saved with manuscript details.`);
+                    setStatus(`Character “${row.name}” saved.`, false);
                     refreshScanFromCache();
                     updateHealthPanel();
                 } catch (err) {
@@ -1108,10 +1147,8 @@ export async function mountStoryBiblePage(opts) {
 
             btnRow.appendChild(addChar);
             btnRow.appendChild(addPlace);
-            line.appendChild(cb);
-            line.appendChild(main);
-            line.appendChild(btnRow);
-            list.appendChild(line);
+            card.appendChild(btnRow);
+            list.appendChild(card);
         }
         scanResultsEl.appendChild(list);
 
@@ -1119,8 +1156,8 @@ export async function mountStoryBiblePage(opts) {
         footer.className = "sb-scan-bulk";
         const addSelected = document.createElement("button");
         addSelected.type = "button";
-        addSelected.className = "sb-scan-btn sb-scan-btn-secondary";
-        addSelected.textContent = "Add checked as characters";
+        addSelected.className = "sb-scan-btn";
+        addSelected.textContent = "Add all checked characters";
         addSelected.addEventListener("click", async () => {
             const picked = [...list.querySelectorAll('input[type="checkbox"]:checked')].map(cb => ({
                 name: cb.dataset.name || "",
@@ -1152,40 +1189,47 @@ export async function mountStoryBiblePage(opts) {
         }
         enrichResultsEl.classList.remove("hidden");
 
-        const head = document.createElement("div");
-        head.className = "sb-scan-title";
-        head.textContent = `${suggestions.length} appearance field${suggestions.length === 1 ? "" : "s"} found in manuscript`;
+        const head = document.createElement("h3");
+        head.className = "sb-scan-panel-title";
+        head.textContent = `${suggestions.length} appearance field${suggestions.length === 1 ? "" : "s"} for existing characters`;
         enrichResultsEl.appendChild(head);
 
         const hint = document.createElement("p");
-        hint.className = "sb-scan-results-hint";
-        hint.textContent = "Only empty bible fields. Uncheck anything that looks wrong before applying.";
+        hint.className = "sb-scan-panel-hint";
+        hint.textContent = "Only empty bible fields. Uncheck anything wrong before applying.";
         enrichResultsEl.appendChild(hint);
 
         const list = document.createElement("div");
-        list.className = "sb-scan-checklist";
+        list.className = "sb-scan-card-grid";
 
         for (const row of suggestions) {
-            const line = document.createElement("label");
-            line.className = "sb-scan-row sb-scan-row-check sb-enrich-row";
+            const card = document.createElement("label");
+            card.className = "sb-scan-card sb-enrich-card";
+            const top = document.createElement("div");
+            top.className = "sb-scan-card-top";
             const cb = document.createElement("input");
             cb.type = "checkbox";
             cb.checked = true;
             cb.dataset.id = row.id;
-            const meta = document.createElement("div");
-            meta.className = "sb-enrich-meta";
-            const title = document.createElement("div");
-            title.innerHTML = `<strong>${escapeHtml(row.characterName)}</strong> · ${escapeHtml(row.slotLabel)}: <em>${escapeHtml(row.value)}</em> <span class="sb-enrich-count">(${row.count}×)</span>`;
-            meta.appendChild(title);
+            const nameEl = document.createElement("span");
+            nameEl.className = "sb-scan-card-name";
+            nameEl.textContent = row.characterName;
+            top.appendChild(cb);
+            top.appendChild(nameEl);
+            card.appendChild(top);
+
+            const field = document.createElement("p");
+            field.className = "sb-enrich-field-line";
+            field.innerHTML = `<strong>${escapeHtml(row.slotLabel)}:</strong> ${escapeHtml(row.value)} <span class="sb-enrich-count">(${row.count} mentions)</span>`;
+            card.appendChild(field);
+
             if (row.snippet) {
-                const sn = document.createElement("div");
-                sn.className = "sb-enrich-snippet";
-                sn.textContent = `"${row.snippet}"`;
-                meta.appendChild(sn);
+                const sn = document.createElement("blockquote");
+                sn.className = "sb-scan-card-snippet";
+                sn.textContent = row.snippet;
+                card.appendChild(sn);
             }
-            line.appendChild(cb);
-            line.appendChild(meta);
-            list.appendChild(line);
+            list.appendChild(card);
         }
         enrichResultsEl.appendChild(list);
 
@@ -1239,7 +1283,7 @@ export async function mountStoryBiblePage(opts) {
     function refreshScanFromCache() {
         if (!scanResultsEl || lastScanKind !== "rules" || !cachedPlainForScan) return;
         const raw = extractCharacterNameCandidates(cachedPlainForScan, buildScanExtractOpts());
-        const filtered = subtractBibleNames(raw, knownEntriesForScan()).filter(r => r.occurrences >= 2);
+        const filtered = subtractBibleNames(raw, knownEntriesForScan()).filter(r => r.occurrences >= 3);
         const drafts = buildCharacterDraftsFromScan(filtered, cachedPlainForScan, cachedChaptersForScan);
         lastScanDraftByName = new Map(drafts.map(d => [d.name.toLowerCase(), d]));
         renderScanSuggestions(filtered, drafts);
@@ -1256,11 +1300,12 @@ export async function mountStoryBiblePage(opts) {
                 lastScanKind = "none";
                 renderScanSuggestions([], []);
                 renderEnrichSuggestions([]);
+                closeScanDrawer();
                 setStatus("No chapter text found to scan yet.");
                 return;
             }
             const raw = extractCharacterNameCandidates(cachedPlainForScan, buildScanExtractOpts());
-            const filtered = subtractBibleNames(raw, knownEntriesForScan()).filter(r => r.occurrences >= 2);
+            const filtered = subtractBibleNames(raw, knownEntriesForScan()).filter(r => r.occurrences >= 3);
             const drafts = buildCharacterDraftsFromScan(filtered, cachedPlainForScan, cachedChaptersForScan);
             lastScanDraftByName = new Map(drafts.map(d => [d.name.toLowerCase(), d]));
             renderScanSuggestions(filtered, drafts);
@@ -1276,14 +1321,17 @@ export async function mountStoryBiblePage(opts) {
 
             const parts = [];
             if (filtered.length) {
-                parts.push(`${filtered.length} new character name${filtered.length === 1 ? "" : "s"}`);
+                parts.push(`${filtered.length} character name${filtered.length === 1 ? "" : "s"} to review`);
             } else {
                 parts.push("no new character names");
             }
             if (enrichCount) {
-                parts.push(`${enrichCount} empty field${enrichCount === 1 ? "" : "s"} ready to fill`);
+                parts.push(`${enrichCount} empty appearance field${enrichCount === 1 ? "" : "s"} to fill`);
             }
-            setStatus(`Scan complete — ${parts.join("; ")}. Review before adding.`);
+            const summary = parts.join(" · ");
+            setStatus(`Scan complete — ${summary}.`, false);
+            if (filtered.length || enrichCount) openScanDrawer(summary);
+            else closeScanDrawer();
         } catch (e) {
             console.error(e);
             lastScanKind = "none";

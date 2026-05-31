@@ -83,9 +83,9 @@
 .sb-status-line {
     min-height: 1.4em;
     margin-bottom: 14px;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
-    color: var(--sb-muted);
+    color: #cbd5e1;
 }
 .sb-status-line.is-error { color: #fca5a5; }
 .sb-status-line.is-ok { color: #86efac; }
@@ -642,16 +642,181 @@
 .sb-scan-opts input { margin-top: 2px; flex-shrink: 0; }
 .sb-scan-hint {
     margin: 10px 0 0;
-    font-size: 12px;
-    color: #64748b;
+    font-size: 13px;
+    color: #cbd5e1;
+    line-height: 1.5;
+}
+
+/* ── Full-width scan drawer (below workspace) ── */
+.sb-scan-drawer {
+    margin-top: 16px;
+    border-radius: var(--sb-radius);
+    border: 1px solid rgba(196, 181, 253, 0.35);
+    background: rgba(8, 12, 24, 0.98);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+}
+.sb-scan-drawer-inner {
+    padding: 0;
+}
+.sb-scan-drawer-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 20px 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+.sb-scan-drawer-title {
+    margin: 0;
+    font-family: "Cinzel", Georgia, serif;
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #fff7ed;
+    letter-spacing: 0.03em;
+}
+.sb-scan-drawer-summary {
+    margin: 6px 0 0;
+    font-size: 15px;
+    line-height: 1.5;
+    color: #e2e8f0;
+}
+.sb-scan-drawer-close {
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.08);
+    color: #f1f5f9;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+.sb-scan-drawer-close:hover {
+    background: rgba(255, 255, 255, 0.14);
+}
+.sb-scan-results-panel {
+    padding: 20px 24px 24px;
+}
+.sb-scan-enrich-panel {
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(15, 23, 42, 0.5);
+}
+.sb-scan-panel-title {
+    margin: 0 0 8px;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #f8fafc;
+    letter-spacing: 0.02em;
+}
+.sb-scan-panel-hint {
+    margin: 0 0 16px;
+    font-size: 14px;
+    line-height: 1.55;
+    color: #cbd5e1;
+}
+.sb-scan-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 14px;
+}
+.sb-scan-card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px 18px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(30, 41, 59, 0.85);
+}
+.sb-scan-card-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+}
+.sb-scan-card-top input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    accent-color: #8b5cf6;
+}
+.sb-scan-card-name {
+    flex: 1;
+    font-size: 1.125rem;
+    font-weight: 800;
+    color: #ffffff;
+    line-height: 1.3;
+}
+.sb-scan-card-count {
+    font-size: 13px;
+    font-weight: 600;
+    color: #94a3b8;
+    white-space: nowrap;
+}
+.sb-scan-card-signals {
+    margin: 0;
+    font-size: 13px;
+    color: #a5b4fc;
     line-height: 1.45;
 }
+.sb-scan-card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+.sb-scan-pill {
+    font-size: 13px;
+    font-weight: 600;
+    padding: 5px 11px;
+    border-radius: 999px;
+    background: rgba(124, 58, 237, 0.28);
+    color: #ede9fe;
+    border: 1px solid rgba(167, 139, 250, 0.35);
+}
+.sb-scan-card-snippet {
+    margin: 0;
+    padding: 12px 14px;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #e2e8f0;
+    font-style: normal;
+    background: rgba(0, 0, 0, 0.28);
+    border-radius: 8px;
+    border-left: 3px solid var(--sb-gold);
+}
+.sb-scan-card-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 4px;
+}
+.sb-enrich-field-line {
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.5;
+    color: #f1f5f9;
+}
+.sb-enrich-field-line strong {
+    color: #c4b5fd;
+}
+.sb-enrich-count {
+    color: #94a3b8;
+    font-size: 13px;
+    font-weight: 600;
+}
+
 .sb-scan-results {
     margin-top: 12px;
     max-height: 420px;
     overflow-y: auto;
     border-top: 1px solid rgba(255, 255, 255, 0.06);
     padding-top: 10px;
+}
+.sb-scan-results-panel.sb-scan-results {
+    max-height: none;
+    overflow: visible;
+    border-top: none;
+    padding-top: 20px;
 }
 .sb-scan-title {
     font-size: 11px;
@@ -678,12 +843,15 @@
 .sb-scan-add {
     border: none;
     border-radius: 8px;
-    padding: 6px 10px;
-    font-size: 11px;
+    padding: 8px 14px;
+    font-size: 13px;
     font-weight: 800;
     cursor: pointer;
-    background: rgba(124, 58, 237, 0.35);
-    color: #e9d5ff;
+    background: rgba(124, 58, 237, 0.45);
+    color: #faf5ff;
+}
+.sb-scan-add:hover {
+    background: rgba(124, 58, 237, 0.65);
 }
 .sb-scan-add-secondary {
     background: rgba(255, 255, 255, 0.08);
