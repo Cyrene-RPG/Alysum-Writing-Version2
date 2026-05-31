@@ -19,7 +19,7 @@ export function Sidebar({ page, onNavigate, storyTitle, issueCount }: Props) {
   return (
     <aside className="flex w-64 shrink-0 flex-col border-r border-slate-700/60 bg-surface-raised/80 backdrop-blur">
       <div className="border-b border-slate-700/60 px-5 py-6">
-        <p className="text-xs font-bold uppercase tracking-widest text-gold">Alysum Plot Studio</p>
+        <p className="text-xs font-bold uppercase tracking-widest text-gold">Plot Doctor</p>
         <h1 className="mt-1 font-display text-lg font-semibold text-white truncate" title={storyTitle}>
           {storyTitle || "Untitled novel"}
         </h1>

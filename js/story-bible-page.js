@@ -306,7 +306,7 @@ export async function mountStoryBiblePage(opts) {
     bookView.classList.remove("hidden");
     openEditorLink.href = `editor.html?book=${encodeURIComponent(bookId)}`;
     if (openPlotDoctorLink) {
-        openPlotDoctorLink.href = `editor.html?book=${encodeURIComponent(bookId)}&plotDoctor=1`;
+        openPlotDoctorLink.href = `plot-doctor/?book=${encodeURIComponent(bookId)}`;
     }
     populateAppearanceDatalists();
     updateHealthPanel();

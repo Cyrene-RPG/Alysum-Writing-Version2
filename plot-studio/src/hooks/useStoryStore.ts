@@ -4,12 +4,16 @@ import { actsForTemplate, createDefaultState, loadState, saveState } from "../li
 import type { PlotStudioState, Scene, Story, StructureTemplate } from "../types";
 import { createId } from "../types";
 
-export function useStoryStore() {
-  const [state, setState] = useState<PlotStudioState>(() => loadState());
+export function useStoryStore(bookId?: string) {
+  const [state, setState] = useState<PlotStudioState>(() => loadState(bookId));
 
   useEffect(() => {
-    saveState(state);
-  }, [state]);
+    setState(loadState(bookId));
+  }, [bookId]);
+
+  useEffect(() => {
+    saveState(state, bookId);
+  }, [state, bookId]);
 
   const updateStory = useCallback((patch: Partial<Story>) => {
     setState(prev => ({ ...prev, story: { ...prev.story, ...patch } }));
@@ -91,6 +95,11 @@ export function useStoryStore() {
 
   const resetAll = useCallback(() => {
     setState(createDefaultState());
+    saveState(createDefaultState(), bookId);
+  }, [bookId]);
+
+  const replaceState = useCallback((next: PlotStudioState) => {
+    setState(next);
   }, []);
 
   const diagnoses = useMemo(() => analyzePlot(state), [state]);
@@ -106,6 +115,7 @@ export function useStoryStore() {
     moveSceneToAct,
     addScene,
     resetAll,
+    replaceState,
     diagnoses,
     scorecard,
   };

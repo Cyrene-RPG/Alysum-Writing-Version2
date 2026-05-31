@@ -1,7 +1,12 @@
 import type { Act, PlotStudioState, Story, StructureTemplate } from "../types";
 import { createId, DEFAULT_PLOTLINES } from "../types";
 
-const STORAGE_KEY = "alysum-plot-studio-v1";
+const STORAGE_PREFIX = "alysum-plot-doctor";
+
+function storageKey(bookId?: string): string {
+  const id = (bookId || "").trim() || "standalone";
+  return `${STORAGE_PREFIX}-${id}-v1`;
+}
 
 export interface TemplateDef {
   id: StructureTemplate;
@@ -114,9 +119,9 @@ export function createDefaultState(): PlotStudioState {
   };
 }
 
-export function loadState(): PlotStudioState {
+export function loadState(bookId?: string): PlotStudioState {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(storageKey(bookId));
     if (!raw) return createDefaultState();
     const parsed = JSON.parse(raw) as PlotStudioState;
     if (!parsed?.story?.id) return createDefaultState();
@@ -130,12 +135,12 @@ export function loadState(): PlotStudioState {
   }
 }
 
-export function saveState(state: PlotStudioState): void {
+export function saveState(state: PlotStudioState, bookId?: string): void {
   const next = {
     ...state,
     story: { ...state.story, updatedAt: new Date().toISOString() },
   };
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  localStorage.setItem(storageKey(bookId), JSON.stringify(next));
 }
 
 export function exportReportMarkdown(

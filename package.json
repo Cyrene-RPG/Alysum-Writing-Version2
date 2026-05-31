@@ -3,8 +3,8 @@
   "private": true,
   "scripts": {
     "dev": "serve . -l 3000",
-    "dev:plot-studio": "npm run dev --prefix plot-studio",
-    "build:plot-studio": "npm run build --prefix plot-studio",
+    "dev:plot-doctor": "npm run dev --prefix plot-studio",
+    "build:plot-doctor": "npm run build --prefix plot-studio",
     "migrate:beta-notes": "node migrate-firestore-beta-notes.mjs",
     "migrate:beta-notes:dry": "node migrate-firestore-beta-notes.mjs --dry-run"
   },

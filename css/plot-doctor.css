@@ -12,6 +12,9 @@
     cursor: pointer;
     transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
     font-family: "Cinzel", Georgia, serif;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
 }
 .pd-toggle:hover {
     background: rgba(109, 40, 217, 0.35);
