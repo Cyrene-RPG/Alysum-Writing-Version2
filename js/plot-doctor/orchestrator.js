@@ -18,6 +18,7 @@ import { runAttributeDetector } from "./detectors/attribute.js?v=1";
 import { runNameDriftDetector } from "./detectors/name-drift.js?v=1";
 import { runDeadSpeaksDetector } from "./detectors/dead-speaks.js?v=1";
 import { PLOT_STATUS } from "./types.js?v=1";
+import { scoreBibleHealth } from "../story-bible-health.js?v=1";
 
 const DEBOUNCE_MS = 2500;
 const STALE_HARD_DELETE_DAYS = 14;
@@ -38,7 +39,9 @@ export function createOrchestrator(opts) {
         issues: [],
         scanning: false,
         lastScannedAt: 0,
-        lastError: ""
+        lastError: "",
+        bibleHealth: null,
+        bookId: ""
     };
 
     let debounceTimer = null;
@@ -220,10 +223,12 @@ export function createOrchestrator(opts) {
             const scanInput = buildScanInput();
             const bible = await loadBibleSnapshot(ms.bookId);
             const fullInput = { ...scanInput, characters: bible.characters, places: bible.places };
+            state.bookId = ms.bookId;
             const newIssues = runAllDetectors(fullInput);
             const existing = await listIssuesForBook(supabase, sess.uid, ms.bookId);
             state.issues = await persistDiff(newIssues, existing);
             state.lastScannedAt = Date.now();
+            state.bibleHealth = scoreBibleHealth(bible.characters, bible.places);
             const dt = Math.round(performance.now() - t0);
             console.log(
                 `[plot-doctor] scan complete in ${dt}ms — ${newIssues.length} detected, ${state.issues.length} persisted`

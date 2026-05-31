@@ -121,6 +121,26 @@ export function listAttributeSlots() {
     return Object.keys(SLOT_DEFINITIONS);
 }
 
+/** Human labels for bible form sections. */
+export const APPEARANCE_SLOT_LABELS = Object.freeze({
+    eyes: "Eyes",
+    hair: "Hair",
+    skin: "Skin",
+    height: "Height",
+    build: "Build"
+});
+
+/**
+ * Canonical bucket labels for datalist / select suggestions in the Story Bible.
+ * @param {string} slot
+ * @returns {string[]}
+ */
+export function canonicalOptionsForSlot(slot) {
+    const def = SLOT_DEFINITIONS[slot];
+    if (!def || !def.buckets) return [];
+    return Object.keys(def.buckets).map(k => k.replace(/_/g, " "));
+}
+
 /**
  * Compare two canonical bucket labels in the same slot. Returns true if they
  * are different (contradictions are simply "different buckets" today).

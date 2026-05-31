@@ -23,6 +23,8 @@ import {
     subtractBibleNames,
     snippetContextsForPhrase
 } from "./story-bible-scan.js?v=6";
+import { scoreCharacter, scoreBibleHealth } from "./story-bible-health.js?v=1";
+import { canonicalOptionsForSlot } from "./plot-doctor/util/lexicon.js?v=1";
 
 const SB_TAB_STORAGE_KEY = "alysum-story-bible-tab";
 
@@ -70,7 +72,7 @@ function emptyPlace() {
  * @param {HTMLElement} opts.statusEl
  * @param {HTMLElement} opts.hubView
  * @param {HTMLElement} opts.bookView
- * @param {HTMLTableSectionElement} opts.booksTbody
+ * @param {HTMLElement} opts.bookGrid
  * @param {HTMLUListElement} opts.charList
  * @param {HTMLUListElement} opts.placeList
  * @param {HTMLButtonElement} opts.newCharBtn
@@ -81,8 +83,15 @@ function emptyPlace() {
  * @param {HTMLElement} opts.asidePlacesEl
  * @param {HTMLElement} opts.charFieldsEl
  * @param {HTMLElement} opts.placeFieldsEl
- * @param {HTMLElement} opts.placeParentEl
- * @param {HTMLElement} [opts.labelNameEl]
+ * @param {HTMLElement} [opts.charIdentityEl]
+ * @param {HTMLElement} [opts.deceasedFieldEl]
+ * @param {HTMLInputElement} [opts.rosterSearch]
+ * @param {HTMLElement} [opts.formTitleEl]
+ * @param {HTMLElement} [opts.dirtyEl]
+ * @param {HTMLElement} [opts.healthBarEl]
+ * @param {HTMLElement} [opts.healthSummaryEl]
+ * @param {HTMLElement} [opts.healthWarnEl]
+ * @param {HTMLAnchorElement} [opts.openPlotDoctorLink]
  * @param {HTMLElement} [opts.labelAliasesEl]
  * @param {HTMLButtonElement} opts.saveCharBtn
  * @param {HTMLButtonElement} opts.deleteCharBtn
@@ -101,9 +110,10 @@ export async function mountStoryBiblePage(opts) {
         statusEl,
         hubView,
         bookView,
-        booksTbody,
+        bookGrid,
         charList,
         placeList,
+        rosterSearch,
         newCharBtn,
         newPlaceBtn,
         tabCharsBtn,
@@ -115,11 +125,17 @@ export async function mountStoryBiblePage(opts) {
         placeParentEl,
         charIdentityEl,
         deceasedFieldEl,
+        formTitleEl,
+        dirtyEl,
+        healthBarEl,
+        healthSummaryEl,
+        healthWarnEl,
         labelNameEl,
         labelAliasesEl,
         saveCharBtn,
         deleteCharBtn,
         openEditorLink,
+        openPlotDoctorLink,
         bookTitleEl,
         fields,
         scanBtn,
@@ -132,7 +148,60 @@ export async function mountStoryBiblePage(opts) {
 
     function setStatus(msg, isError = false) {
         statusEl.textContent = msg;
-        statusEl.style.color = isError ? "#fca5a5" : "";
+        statusEl.classList.toggle("is-error", isError);
+        statusEl.classList.toggle("is-ok", !isError && !!msg && !msg.includes("…"));
+    }
+
+    function populateAppearanceDatalists() {
+        const map = {
+            sbEyesList: "eyes",
+            sbHairList: "hair",
+            sbSkinList: "skin",
+            sbHeightList: "height",
+            sbBuildList: "build"
+        };
+        for (const [id, slot] of Object.entries(map)) {
+            const dl = document.getElementById(id);
+            if (!dl) continue;
+            dl.innerHTML = canonicalOptionsForSlot(slot)
+                .map(v => `<option value="${escapeHtml(v)}"></option>`)
+                .join("");
+        }
+    }
+
+    function markDirty() {
+        dirtyEl?.classList.add("is-visible");
+    }
+
+    function clearDirty() {
+        dirtyEl?.classList.remove("is-visible");
+    }
+
+    function updateHealthPanel() {
+        if (!healthBarEl && !healthSummaryEl) return;
+        const health = scoreBibleHealth(characters, places);
+        if (healthBarEl) healthBarEl.style.width = `${health.readinessPct}%`;
+        if (healthSummaryEl) healthSummaryEl.textContent = health.summary;
+        if (healthWarnEl) {
+            const warns = [];
+            if (health.deceasedMissingChapter > 0) {
+                warns.push(`${health.deceasedMissingChapter} deceased character(s) missing a death chapter.`);
+            }
+            if (health.appearanceWeak > 0) {
+                warns.push(`${health.appearanceWeak} character(s) need more appearance fields for attribute checks.`);
+            }
+            if (warns.length) {
+                healthWarnEl.textContent = warns.join(" ");
+                healthWarnEl.classList.remove("hidden");
+            } else {
+                healthWarnEl.textContent = "";
+                healthWarnEl.classList.add("hidden");
+            }
+        }
+    }
+
+    function rosterQuery() {
+        return (rosterSearch?.value || "").trim().toLowerCase();
     }
 
     function formatFirestoreErr(e, label = "Save") {
@@ -168,28 +237,32 @@ export async function mountStoryBiblePage(opts) {
         setStatus("Loading your books…");
         try {
             const rows = await listUserBooksWithBibleCounts(supabase, uid);
-            booksTbody.innerHTML = "";
+            if (bookGrid) bookGrid.innerHTML = "";
             if (!rows.length) {
-                const tr = document.createElement("tr");
-                tr.innerHTML =
-                    '<td colspan="5" class="sb-muted">No books yet. Create one in Studio, then add characters and places here.</td>';
-                booksTbody.appendChild(tr);
+                if (bookGrid) {
+                    bookGrid.innerHTML = `<div class="sb-empty">No books yet. Create one in Studio, then build your bible here.</div>`;
+                }
             } else {
                 for (const r of rows) {
-                    const tr = document.createElement("tr");
                     const open = `story-bible.html?book=${encodeURIComponent(r.bookId)}`;
                     const ed = `editor.html?book=${encodeURIComponent(r.bookId)}`;
-                    tr.innerHTML = `
-                        <td class="sb-nowrap"><a class="sb-link" href="${open}">${escapeHtml(r.title)}</a></td>
-                        <td class="sb-num">${r.characterCount}</td>
-                        <td class="sb-num">${r.placeCount ?? 0}</td>
-                        <td class="sb-muted sb-nowrap">${formatUpdated(r.updated)}</td>
-                        <td class="sb-actions"><a class="sb-btn sb-btn-ghost" href="${ed}">Editor</a> <a class="sb-btn sb-btn-primary" href="${open}">Bible</a></td>
-                    `;
-                    booksTbody.appendChild(tr);
+                    const card = document.createElement("article");
+                    card.className = "sb-book-card";
+                    card.innerHTML = `
+                        <h3>${escapeHtml(r.title)}</h3>
+                        <div class="sb-book-stats">
+                            <span><strong>${r.characterCount}</strong> characters</span>
+                            <span><strong>${r.placeCount ?? 0}</strong> places</span>
+                        </div>
+                        <div class="sb-book-stats sb-muted">${formatUpdated(r.updated)}</div>
+                        <div class="sb-book-actions">
+                            <a class="sb-btn sb-btn-ghost" href="${ed}">Editor</a>
+                            <a class="sb-btn sb-btn-primary" href="${open}">Open bible</a>
+                        </div>`;
+                    bookGrid?.appendChild(card);
                 }
             }
-            setStatus(rows.length ? `${rows.length} book(s).` : "");
+            setStatus(rows.length ? `${rows.length} book bible(s).` : "");
         } catch (e) {
             console.error(e);
             setStatus("Could not load books. Check your connection and try again.", true);
@@ -200,6 +273,10 @@ export async function mountStoryBiblePage(opts) {
     hubView.classList.add("hidden");
     bookView.classList.remove("hidden");
     openEditorLink.href = `editor.html?book=${encodeURIComponent(bookId)}`;
+    if (openPlotDoctorLink) {
+        openPlotDoctorLink.href = `editor.html?book=${encodeURIComponent(bookId)}&plotDoctor=1`;
+    }
+    populateAppearanceDatalists();
 
     /** @type {ReturnType<typeof normalizeBibleCharacter>[]} */
     let characters = [];
@@ -362,8 +439,10 @@ export async function mountStoryBiblePage(opts) {
                 refreshScanFromCache();
                 if (!silent) {
                     setStatus("Saved.");
+                    clearDirty();
                     setTimeout(() => setStatus(""), 2000);
                 }
+                updateHealthPanel();
                 return { ok: true };
             } catch (e) {
                 console.error(e);
@@ -398,8 +477,10 @@ export async function mountStoryBiblePage(opts) {
             refreshScanFromCache();
             if (!silent) {
                 setStatus("Saved.");
+                clearDirty();
                 setTimeout(() => setStatus(""), 2000);
             }
+            updateHealthPanel();
             return { ok: true };
         } catch (e) {
             console.error(e);
@@ -437,6 +518,7 @@ export async function mountStoryBiblePage(opts) {
         updateBibleTabChrome();
         clearSharedForm();
         clearCharacterFields();
+        if (formTitleEl) formTitleEl.textContent = c.name?.trim() || "New character";
         fields.name.value = c.name || "";
         fields.aliases.value = (c.aliases || []).join(", ");
         fields.tags.value = (c.tags || []).join(", ");
@@ -475,6 +557,7 @@ export async function mountStoryBiblePage(opts) {
         updateBibleTabChrome();
         clearSharedForm();
         clearCharacterFields();
+        if (formTitleEl) formTitleEl.textContent = p.name?.trim() || "New place";
         fields.name.value = p.name || "";
         fields.aliases.value = (p.aliases || []).join(", ");
         fields.tags.value = (p.tags || []).join(", ");
@@ -490,13 +573,35 @@ export async function mountStoryBiblePage(opts) {
 
     function renderCharList() {
         charList.innerHTML = "";
+        const q = rosterQuery();
         characters.forEach(c => {
+            const name = c.name.trim() || "(unnamed)";
+            const hay = [name, ...(c.aliases || []), ...(c.tags || [])].join(" ").toLowerCase();
+            if (q && !hay.includes(q)) return;
             const li = document.createElement("li");
             const btn = document.createElement("button");
             btn.type = "button";
-            btn.className = "sb-char-item" + (c.id === selectedCharId ? " is-active" : "");
-            btn.textContent = c.name.trim() || "(unnamed)";
+            btn.className = "sb-roster-item" + (c.id === selectedCharId ? " is-active" : "");
             btn.dataset.id = c.id;
+
+            const sc = scoreCharacter(c);
+            const dot = document.createElement("span");
+            dot.className = "sb-ready-dot " + (sc.ready ? "ok" : sc.score >= 3 ? "warn" : "bad");
+            dot.title = sc.gaps.join(", ");
+
+            const nameSpan = document.createElement("span");
+            nameSpan.className = "sb-roster-name";
+            nameSpan.textContent = name;
+
+            btn.appendChild(dot);
+            btn.appendChild(nameSpan);
+            if (c.status === "deceased") {
+                const pill = document.createElement("span");
+                pill.className = "sb-status-pill";
+                pill.textContent = "†";
+                pill.title = "Deceased";
+                btn.appendChild(pill);
+            }
             btn.addEventListener("click", () => void selectCharacter(c.id));
             li.appendChild(btn);
             charList.appendChild(li);
@@ -505,14 +610,20 @@ export async function mountStoryBiblePage(opts) {
 
     function renderPlaceList() {
         placeList.innerHTML = "";
+        const q = rosterQuery();
         places.forEach(p => {
+            const label = p.kind ? `${p.name.trim() || "(unnamed)"} (${p.kind})` : p.name.trim() || "(unnamed)";
+            const hay = [label, ...(p.aliases || []), p.parentPlace || ""].join(" ").toLowerCase();
+            if (q && !hay.includes(q)) return;
             const li = document.createElement("li");
             const btn = document.createElement("button");
             btn.type = "button";
-            btn.className = "sb-char-item" + (p.id === selectedPlaceId ? " is-active" : "");
-            const label = p.kind ? `${p.name.trim() || "(unnamed)"} (${p.kind})` : p.name.trim() || "(unnamed)";
-            btn.textContent = label;
+            btn.className = "sb-roster-item" + (p.id === selectedPlaceId ? " is-active" : "");
             btn.dataset.id = p.id;
+            const nameSpan = document.createElement("span");
+            nameSpan.className = "sb-roster-name";
+            nameSpan.textContent = label;
+            btn.appendChild(nameSpan);
             btn.addEventListener("click", () => void selectPlace(p.id));
             li.appendChild(btn);
             placeList.appendChild(li);
@@ -621,6 +732,7 @@ export async function mountStoryBiblePage(opts) {
                 }
             }
             setStatus("");
+            updateHealthPanel();
         } catch (e) {
             console.error(e);
             setStatus("Could not load Story Bible for this book.", true);
@@ -916,6 +1028,24 @@ export async function mountStoryBiblePage(opts) {
         scanStrictCheck?.addEventListener("change", refreshScanFromCache);
         scanLooseCheck?.addEventListener("change", refreshScanFromCache);
     }
+
+    rosterSearch?.addEventListener("input", () => {
+        renderCharList();
+        renderPlaceList();
+    });
+
+    for (const el of Object.values(fields)) {
+        el?.addEventListener("input", markDirty);
+        el?.addEventListener("change", markDirty);
+    }
+    fields.name?.addEventListener("input", () => {
+        if (formTitleEl && bibleTab === "characters") {
+            formTitleEl.textContent = fields.name.value.trim() || "New character";
+        }
+        if (formTitleEl && bibleTab === "places") {
+            formTitleEl.textContent = fields.name.value.trim() || "New place";
+        }
+    });
 
     document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "hidden") {

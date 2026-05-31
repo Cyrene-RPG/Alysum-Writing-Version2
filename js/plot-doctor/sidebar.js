@@ -105,6 +105,12 @@ export function mountPlotDoctorSidebar(opts) {
                 <button type="button" class="pd-icon-btn" data-action="rescan" title="Re-scan now" aria-label="Re-scan">&#x21BB;</button>
                 <button type="button" class="pd-icon-btn" data-action="close" title="Close" aria-label="Close">&times;</button>
             </header>
+            <div class="pd-bible-health" data-role="bible-health">
+                <h4>Bible readiness</h4>
+                <div class="pd-health-bar"><span data-role="health-bar" style="width:0%"></span></div>
+                <p data-role="health-summary">Scan to check bible readiness.</p>
+                <a class="pd-bible-link" data-role="bible-link" href="story-bible.html">Open Story Bible →</a>
+            </div>
             <div class="pd-status" data-role="status">Idle</div>
             <div class="pd-filters" data-role="filters"></div>
             <div class="pd-status-tabs" data-role="status-tabs"></div>
@@ -123,6 +129,9 @@ export function mountPlotDoctorSidebar(opts) {
     const statusTabsEl = mountEl.querySelector('[data-role="status-tabs"]');
     const bodyEl = mountEl.querySelector('[data-role="body"]');
     const lastScannedEl = mountEl.querySelector('[data-role="last-scanned"]');
+    const healthBarEl = mountEl.querySelector('[data-role="health-bar"]');
+    const healthSummaryEl = mountEl.querySelector('[data-role="health-summary"]');
+    const bibleLinkEl = mountEl.querySelector('[data-role="bible-link"]');
     const closeBtn = mountEl.querySelector('[data-action="close"]');
     const rescanBtn = mountEl.querySelector('[data-action="rescan"]');
 
@@ -193,7 +202,7 @@ export function mountPlotDoctorSidebar(opts) {
 
         if (!filtered.length) {
             bodyEl.innerHTML = `<p class="pd-empty">${filters.status === PLOT_STATUS.OPEN
-                ? "No plot issues. Nice work."
+                ? "No plot issues detected. Your bible and manuscript look aligned."
                 : `No ${STATUS_LABEL[filters.status].toLowerCase()} issues.`}</p>`;
             return;
         }
@@ -202,6 +211,10 @@ export function mountPlotDoctorSidebar(opts) {
             .map(row => {
                 const sevClass = `pd-sev-${row.severity}`;
                 const showTriage = row.status === PLOT_STATUS.OPEN;
+                const showBible =
+                    showTriage &&
+                    (row.category === PLOT_CATEGORIES.ATTRIBUTE_CONTRADICTION ||
+                        row.category === PLOT_CATEGORIES.DEAD_CHARACTER_SPEAKS);
                 return `
                     <article class="pd-card ${sevClass}" data-id="${row.id}">
                         <div class="pd-card-head">
@@ -214,6 +227,7 @@ export function mountPlotDoctorSidebar(opts) {
                         ${row.user_note ? `<div class="pd-note">Note: ${escapeHtml(row.user_note)}</div>` : ""}
                         <div class="pd-actions">
                             <button type="button" data-act="jump">Jump</button>
+                            ${showBible ? `<button type="button" data-act="bible">Fix in Bible</button>` : ""}
                             ${showTriage ? `<button type="button" data-act="ack">Acknowledge</button>` : ""}
                             ${showTriage ? `<button type="button" data-act="fix">Mark fixed</button>` : ""}
                             ${showTriage ? `<button type="button" data-act="dismiss">Dismiss</button>` : ""}
@@ -231,7 +245,17 @@ export function mountPlotDoctorSidebar(opts) {
         const openCount = issues.filter(r => r.status === PLOT_STATUS.OPEN).length;
         updateToggleBadge(openCount);
 
-        if (s.scanning) statusEl.textContent = "Scanning…";
+        if (healthBarEl && s.bibleHealth) {
+            healthBarEl.style.width = `${s.bibleHealth.readinessPct}%`;
+        }
+        if (healthSummaryEl) {
+            healthSummaryEl.textContent = s.bibleHealth?.summary || "Add characters in Story Bible for better checks.";
+        }
+        if (bibleLinkEl && s.bookId) {
+            bibleLinkEl.href = `story-bible.html?book=${encodeURIComponent(s.bookId)}`;
+        }
+
+        if (s.scanning) statusEl.textContent = "Scanning manuscript against bible…";
         else if (s.lastError) statusEl.textContent = s.lastError;
         else statusEl.textContent = `${openCount} open issue${openCount === 1 ? "" : "s"}`;
 
@@ -275,6 +299,13 @@ export function mountPlotDoctorSidebar(opts) {
 
         if (action === "jump") {
             onJump?.(issue.chapter_id, issue.chapter_section, issue.claim_range_start);
+            return;
+        }
+        if (action === "bible") {
+            const bookId = orchestrator.getState().bookId;
+            if (bookId) {
+                window.open(`story-bible.html?book=${encodeURIComponent(bookId)}`, "_blank");
+            }
             return;
         }
         if (action === "ack") {

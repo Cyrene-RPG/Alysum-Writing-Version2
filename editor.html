@@ -17,7 +17,7 @@
     <!-- ALYSUM:ANALYTICS:END --><link rel="stylesheet" href="css/notebook.css?v=9" />
 <link rel="stylesheet" href="css/site-responsive.css?v=1" />
 <link rel="stylesheet" href="css/gradient-themes.css?v=4" />
-<link rel="stylesheet" href="css/plot-doctor.css?v=1" />
+<link rel="stylesheet" href="css/plot-doctor.css?v=2" />
     <script src="js/gradient-theme-sync.js" defer></script>
 <title>Alysum Editor</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"><script src="js/alysum-appearance-boot.js"></script><style>
@@ -324,8 +324,8 @@
         restoreEditorViewport,
         getCaretTextOffset,
     } from "./js/writer-resume.js?v=1";
-    import { createOrchestrator } from "./js/plot-doctor/orchestrator.js?v=1";
-    import { mountPlotDoctorSidebar } from "./js/plot-doctor/sidebar.js?v=1";
+    import { createOrchestrator } from "./js/plot-doctor/orchestrator.js?v=2";
+    import { mountPlotDoctorSidebar } from "./js/plot-doctor/sidebar.js?v=2";
 
 const params = new URLSearchParams(window.location.search);
 let bookId =
@@ -973,6 +973,9 @@ function rememberBookId(id) {
             await plotDoctor.loadInitial();
             await plotDoctor.runScanNow();
             void plotDoctor.sweepHardDeleteStale();
+            if (new URLSearchParams(window.location.search).get("plotDoctor") === "1") {
+                plotDoctorSidebar?.setOpen(true);
+            }
         })();
     }
 
