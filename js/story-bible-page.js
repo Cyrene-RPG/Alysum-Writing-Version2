@@ -23,7 +23,6 @@ import {
     subtractBibleNames,
 } from "./story-bible-scan.js?v=6";
 import { scoreCharacter, scoreBibleHealth } from "./story-bible-health.js?v=1";
-import { canonicalOptionsForSlot } from "./plot-doctor/util/lexicon.js?v=1";
 import {
     saveCharacterFromScan,
     savePlaceFromScan,
@@ -162,20 +161,7 @@ export async function mountStoryBiblePage(opts) {
     }
 
     function populateAppearanceDatalists() {
-        const map = {
-            sbEyesList: "eyes",
-            sbHairList: "hair",
-            sbSkinList: "skin",
-            sbHeightList: "height",
-            sbBuildList: "build"
-        };
-        for (const [id, slot] of Object.entries(map)) {
-            const dl = document.getElementById(id);
-            if (!dl) continue;
-            dl.innerHTML = canonicalOptionsForSlot(slot)
-                .map(v => `<option value="${escapeHtml(v)}"></option>`)
-                .join("");
-        }
+        /* Appearance fields use placeholders; datalists removed (render glitch in some browsers). */
     }
 
     function markDirty() {
@@ -188,23 +174,51 @@ export async function mountStoryBiblePage(opts) {
 
     function updateHealthPanel() {
         if (!healthBarEl && !healthSummaryEl) return;
-        const health = scoreBibleHealth(characters, places);
-        if (healthBarEl) healthBarEl.style.width = `${health.readinessPct}%`;
-        if (healthSummaryEl) healthSummaryEl.textContent = health.summary;
-        if (healthWarnEl) {
-            const warns = [];
-            if (health.deceasedMissingChapter > 0) {
-                warns.push(`${health.deceasedMissingChapter} deceased character(s) missing a death chapter.`);
+        try {
+            const health = scoreBibleHealth(characters, places);
+            if (healthBarEl) healthBarEl.style.width = `${health.readinessPct}%`;
+            if (healthSummaryEl) healthSummaryEl.textContent = health.summary;
+            if (healthWarnEl) {
+                const warns = [];
+                if (health.deceasedMissingChapter > 0) {
+                    warns.push(`${health.deceasedMissingChapter} deceased character(s) missing a death chapter.`);
+                }
+                if (health.appearanceWeak > 0) {
+                    warns.push(`${health.appearanceWeak} character(s) need more appearance fields for attribute checks.`);
+                }
+                if (warns.length) {
+                    healthWarnEl.textContent = warns.join(" ");
+                    healthWarnEl.classList.remove("hidden");
+                } else {
+                    healthWarnEl.textContent = "";
+                    healthWarnEl.classList.add("hidden");
+                }
             }
-            if (health.appearanceWeak > 0) {
-                warns.push(`${health.appearanceWeak} character(s) need more appearance fields for attribute checks.`);
-            }
-            if (warns.length) {
-                healthWarnEl.textContent = warns.join(" ");
-                healthWarnEl.classList.remove("hidden");
-            } else {
-                healthWarnEl.textContent = "";
-                healthWarnEl.classList.add("hidden");
+        } catch (e) {
+            console.error("[story-bible] health panel failed:", e);
+            if (healthSummaryEl) healthSummaryEl.textContent = "Could not compute bible readiness.";
+            if (healthBarEl) healthBarEl.style.width = "0%";
+        }
+    }
+
+    function syncFormEmptyState() {
+        const sections = document.querySelector(".sb-sections");
+        const actions = document.querySelector(".sb-form-actions");
+        if (!sections) return;
+        const hasSelection =
+            bibleTab === "characters" ? !!selectedCharId : !!selectedPlaceId;
+        sections.classList.toggle("hidden", !hasSelection);
+        actions?.classList.toggle("hidden", !hasSelection);
+        if (formTitleEl) {
+            if (!hasSelection) {
+                formTitleEl.textContent =
+                    bibleTab === "characters"
+                        ? characters.length
+                            ? "Select a character"
+                            : "Add your first character"
+                        : places.length
+                          ? "Select a place"
+                          : "Add your first place";
             }
         }
     }
@@ -286,6 +300,7 @@ export async function mountStoryBiblePage(opts) {
         openPlotDoctorLink.href = `editor.html?book=${encodeURIComponent(bookId)}&plotDoctor=1`;
     }
     populateAppearanceDatalists();
+    updateHealthPanel();
 
     /** @type {ReturnType<typeof normalizeBibleCharacter>[]} */
     let characters = [];
@@ -321,6 +336,7 @@ export async function mountStoryBiblePage(opts) {
         fields.name.placeholder = isChar ? "Character name" : "e.g. Chicago, The Old Mill";
         fields.aliases.placeholder = isChar ? "Nicknames, titles…" : "NYC, Second City…";
         saveCharBtn.textContent = isChar ? "Save character" : "Save place";
+        syncFormEmptyState();
     }
 
     function syncDeceasedFieldVisibility() {
@@ -510,6 +526,7 @@ export async function mountStoryBiblePage(opts) {
         if (fields.status) fields.status.value = "alive";
         if (fields.deceased) fields.deceased.value = "|";
         syncDeceasedFieldVisibility();
+        syncFormEmptyState();
     }
 
     function clearSharedForm() {
@@ -559,6 +576,7 @@ export async function mountStoryBiblePage(opts) {
         const key = c.introducedChapterId ? `${c.introducedSection}|${c.introducedChapterId}` : "";
         if (key && [...sel.options].some(o => o.value === key)) sel.value = key;
         else sel.value = "|";
+        syncFormEmptyState();
     }
 
     function fillPlaceForm(p) {
@@ -578,11 +596,20 @@ export async function mountStoryBiblePage(opts) {
         const key = p.introducedChapterId ? `${p.introducedSection}|${p.introducedChapterId}` : "";
         if (key && [...sel.options].some(o => o.value === key)) sel.value = key;
         else sel.value = "|";
+        syncFormEmptyState();
     }
 
     function renderCharList() {
         charList.innerHTML = "";
         const q = rosterQuery();
+        if (!characters.length) {
+            const li = document.createElement("li");
+            li.className = "sb-roster-empty";
+            li.textContent = "No characters yet. Click + New character.";
+            charList.appendChild(li);
+            syncFormEmptyState();
+            return;
+        }
         characters.forEach(c => {
             const name = c.name.trim() || "(unnamed)";
             const hay = [name, ...(c.aliases || []), ...(c.tags || [])].join(" ").toLowerCase();
@@ -615,11 +642,20 @@ export async function mountStoryBiblePage(opts) {
             li.appendChild(btn);
             charList.appendChild(li);
         });
+        syncFormEmptyState();
     }
 
     function renderPlaceList() {
         placeList.innerHTML = "";
         const q = rosterQuery();
+        if (!places.length) {
+            const li = document.createElement("li");
+            li.className = "sb-roster-empty";
+            li.textContent = "No places yet. Click + New place.";
+            placeList.appendChild(li);
+            syncFormEmptyState();
+            return;
+        }
         places.forEach(p => {
             const label = p.kind ? `${p.name.trim() || "(unnamed)"} (${p.kind})` : p.name.trim() || "(unnamed)";
             const hay = [label, ...(p.aliases || []), p.parentPlace || ""].join(" ").toLowerCase();
@@ -637,6 +673,7 @@ export async function mountStoryBiblePage(opts) {
             li.appendChild(btn);
             placeList.appendChild(li);
         });
+        syncFormEmptyState();
     }
 
     async function selectCharacter(id) {
@@ -682,6 +719,7 @@ export async function mountStoryBiblePage(opts) {
                 places = [];
                 renderCharList();
                 renderPlaceList();
+                updateHealthPanel();
                 return;
             }
 
@@ -742,9 +780,12 @@ export async function mountStoryBiblePage(opts) {
             }
             setStatus("");
             updateHealthPanel();
+            syncFormEmptyState();
         } catch (e) {
             console.error(e);
             setStatus("Could not load Story Bible for this book.", true);
+            updateHealthPanel();
+            syncFormEmptyState();
         }
     }
 

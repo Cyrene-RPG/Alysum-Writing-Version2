@@ -271,7 +271,17 @@
     color: var(--sb-text);
     font-size: 14px;
 }
-.sb-roster-search::placeholder { color: #64748b; }
+.sb-roster-empty {
+    padding: 14px 12px;
+    font-size: 13px;
+    line-height: 1.45;
+    color: #94a3b8;
+    font-style: italic;
+}
+.sb-field input::placeholder {
+    color: #64748b;
+    opacity: 1;
+}
 .sb-new-btn {
     display: block;
     width: calc(100% - 24px);
