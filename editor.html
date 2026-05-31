@@ -14,7 +14,11 @@
     <!-- ALYSUM:PWA:END -->
     <!-- ALYSUM:ANALYTICS:START -->
     <script type="module" src="js/vercel-analytics.js"></script>
-    <!-- ALYSUM:ANALYTICS:END --><link rel="stylesheet" href="css/notebook.css?v=9" />
+    <!-- ALYSUM:ANALYTICS:END -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&amp;family=Cormorant+Garamond:wght@400;600&amp;family=Crimson+Pro:wght@400;600&amp;family=EB+Garamond:wght@400;600&amp;family=Inter:wght@400;600&amp;family=Libre+Baskerville:wght@400;700&amp;family=Lora:wght@400;600&amp;family=Merriweather:wght@400;700&amp;family=Nunito:wght@400;600&amp;family=Open+Sans:wght@400;600&amp;family=Playfair+Display:wght@400;700&amp;family=Source+Code+Pro:wght@400;600&amp;family=Source+Serif+4:wght@400;600&amp;family=Spectral:wght@400;600&amp;display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="css/notebook.css?v=9" />
 <link rel="stylesheet" href="css/site-responsive.css?v=1" />
 <link rel="stylesheet" href="css/gradient-themes.css?v=4" />
 <link rel="stylesheet" href="css/plot-doctor.css?v=4" />
@@ -134,6 +138,7 @@
     .topbar .topbar-tip { position: relative; display: inline-flex; align-items: center; vertical-align: middle; }
     .toolbar { min-height: 54px; background: var(--toolbar-bg); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; padding: 8px 12px; overflow-x: auto; flex-wrap: wrap; }
     .tool-btn, .tool-select { height: 36px; border: 1px solid var(--border); background: var(--topbar-bg); border-radius: 10px; color: var(--page-text); font-size: 14px; font-weight: 700; padding: 0 12px; cursor: pointer; }
+    #fontSelect { min-width: 9.5rem; max-width: 12rem; }
     .toolbar-spacer { flex: 1; min-width: 8px; }
     .sprint-btn { height: 36px; border: 1px solid var(--border); background: linear-gradient(135deg, var(--alysum-purple), #a855f7); color: white; border-radius: 999px; padding: 0 14px; font-size: 14px; font-weight: 900; cursor: pointer; white-space: nowrap; }
     .sprint-float { position: fixed; top: 122px; right: 14px; z-index: 2500; display: none; }
@@ -285,7 +290,7 @@
     <button class="tool-btn" type="button" data-cmd="insertOrderedList">1. List</button>
     <button class="tool-btn" type="button" id="quoteBtn">❝</button>
     <select class="tool-select" id="formatSelect"><option value="p">Body</option><option value="h2">Heading</option></select>
-    <select class="tool-select" id="fontSelect"><option value="Georgia">Georgia</option><option value="Times New Roman">Times New Roman</option><option value="Arial">Arial</option><option value="Inter">Inter</option><option value="Courier New">Courier New</option></select>
+    <select class="tool-select" id="fontSelect" aria-label="Font"></select>
     <select class="tool-select" id="fontSizeSelect"><option value="18">Compact</option><option value="20">Book</option><option value="22">Comfort</option><option value="26">Large</option></select>
     <div class="toolbar-spacer"></div>
     <span class="sprint-anchor" id="sprintAnchor"><button class="sprint-btn" id="sprintToolbarBtn" type="button" aria-label="Sprint timer">⏱ Sprint</button></span>
@@ -1129,13 +1134,100 @@ function rememberBookId(id) {
         } catch (e) { console.error(e); setSaveStatus("Delete failed"); }
     }
 
+    const EDITOR_FONT_GROUPS = [
+        {
+            label: "Classic serif",
+            fonts: [
+                { id: "Georgia", label: "Georgia", stack: 'Georgia, "Times New Roman", serif' },
+                { id: "Times New Roman", label: "Times New Roman", stack: '"Times New Roman", Times, serif' },
+                { id: "Garamond", label: "Garamond", stack: 'Garamond, "Palatino Linotype", serif' },
+                { id: "Palatino Linotype", label: "Palatino", stack: '"Palatino Linotype", Palatino, serif' },
+            ],
+        },
+        {
+            label: "Book serif",
+            fonts: [
+                { id: "Lora", label: "Lora", stack: '"Lora", Georgia, serif' },
+                { id: "Merriweather", label: "Merriweather", stack: '"Merriweather", Georgia, serif' },
+                { id: "Libre Baskerville", label: "Libre Baskerville", stack: '"Libre Baskerville", Georgia, serif' },
+                { id: "Crimson Pro", label: "Crimson Pro", stack: '"Crimson Pro", Georgia, serif' },
+                { id: "Cormorant Garamond", label: "Cormorant Garamond", stack: '"Cormorant Garamond", Garamond, serif' },
+                { id: "EB Garamond", label: "EB Garamond", stack: '"EB Garamond", Garamond, serif' },
+                { id: "Spectral", label: "Spectral", stack: '"Spectral", Georgia, serif' },
+                { id: "Source Serif 4", label: "Source Serif 4", stack: '"Source Serif 4", Georgia, serif' },
+                { id: "Playfair Display", label: "Playfair Display", stack: '"Playfair Display", Georgia, serif' },
+            ],
+        },
+        {
+            label: "Sans serif",
+            fonts: [
+                { id: "Arial", label: "Arial", stack: 'Arial, Helvetica, sans-serif' },
+                { id: "Verdana", label: "Verdana", stack: "Verdana, Geneva, sans-serif" },
+                { id: "Tahoma", label: "Tahoma", stack: "Tahoma, Geneva, sans-serif" },
+                { id: "Inter", label: "Inter", stack: '"Inter", system-ui, sans-serif' },
+                { id: "Open Sans", label: "Open Sans", stack: '"Open Sans", system-ui, sans-serif' },
+                { id: "Nunito", label: "Nunito", stack: '"Nunito", system-ui, sans-serif' },
+            ],
+        },
+        {
+            label: "Monospace",
+            fonts: [
+                { id: "Courier New", label: "Courier New", stack: '"Courier New", Courier, monospace' },
+                { id: "Source Code Pro", label: "Source Code Pro", stack: '"Source Code Pro", "Courier New", monospace' },
+            ],
+        },
+        {
+            label: "Display",
+            fonts: [
+                { id: "Cinzel", label: "Cinzel", stack: '"Cinzel", Georgia, serif' },
+            ],
+        },
+    ];
+
+    function editorFontStack(fontId) {
+        for (const group of EDITOR_FONT_GROUPS) {
+            const match = group.fonts.find(f => f.id === fontId);
+            if (match) return match.stack;
+        }
+        return 'Georgia, "Times New Roman", serif';
+    }
+
+    function populateEditorFontSelect() {
+        if (!fontSelect) return;
+        fontSelect.replaceChildren();
+        for (const group of EDITOR_FONT_GROUPS) {
+            const og = document.createElement("optgroup");
+            og.label = group.label;
+            for (const font of group.fonts) {
+                const opt = document.createElement("option");
+                opt.value = font.id;
+                opt.textContent = font.label;
+                og.appendChild(opt);
+            }
+            fontSelect.appendChild(og);
+        }
+    }
+
+    function normalizeStoredEditorFont(fontId) {
+        const id = safeString(fontId, "Georgia");
+        for (const group of EDITOR_FONT_GROUPS) {
+            if (group.fonts.some(f => f.id === id)) return id;
+        }
+        return "Georgia";
+    }
+
     function applyEditorStyle() {
-        const font = localStorage.getItem("alysum-font") || "Georgia";
+        const fontId = normalizeStoredEditorFont(localStorage.getItem("alysum-font") || "Georgia");
         const size = localStorage.getItem("alysum-fontSize") || "20";
-        editor.style.fontFamily = font + (font === "Arial" || font === "Inter" ? ", sans-serif" : ", serif");
+        const stack = editorFontStack(fontId);
+        editor.style.fontFamily = stack;
+        if (chapterTitle) chapterTitle.style.fontFamily = stack;
         editor.style.fontSize = size + "px";
         editor.style.lineHeight = "1.7";
+        if (fontSelect) fontSelect.value = fontId;
     }
+
+    populateEditorFontSelect();
 
     addChapterBtn.addEventListener("click", () => addChapterTo("body"));
     quickAddBtn.addEventListener("click", () => addChapterTo("body"));
@@ -1404,7 +1496,6 @@ async function loadBook() {
         }
         applyResponsiveSidebar();
         applyTheme(localStorage.getItem("alysum-theme") || "light");
-        fontSelect.value = localStorage.getItem("alysum-font") || "Georgia";
         fontSizeSelect.value = localStorage.getItem("alysum-fontSize") || "20";
         applyEditorStyle();
         document.execCommand("defaultParagraphSeparator", false, "p");
