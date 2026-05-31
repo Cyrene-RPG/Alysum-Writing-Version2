@@ -136,6 +136,27 @@
     .top-title { font-size: 18px; font-weight: 700; color: var(--page-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 36vw; }
     .save-status { font-size: 13px; color: var(--page-subtle); font-weight: 700; }
     .topbar .topbar-tip { position: relative; display: inline-flex; align-items: center; vertical-align: middle; }
+    .editor-tooltip {
+        position: fixed;
+        z-index: 100000;
+        pointer-events: none;
+        padding: 6px 11px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 700;
+        line-height: 1.35;
+        background: #1e293b;
+        color: #f8fafc;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
+        max-width: min(320px, 92vw);
+        text-align: center;
+        white-space: nowrap;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.12s ease, visibility 0.12s ease;
+    }
+    .editor-tooltip.is-visible { opacity: 1; visibility: visible; }
+    body.dark .editor-tooltip { background: #0f172a; color: #e2e8f0; border: 1px solid #334155; }
     .toolbar { min-height: 54px; background: var(--toolbar-bg); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; padding: 8px 12px; overflow-x: auto; flex-wrap: wrap; }
     .tool-btn, .tool-select { height: 36px; border: 1px solid var(--border); background: var(--topbar-bg); border-radius: 10px; color: var(--page-text); font-size: 14px; font-weight: 700; padding: 0 12px; cursor: pointer; }
     #fontSelect { min-width: 9.5rem; max-width: 12rem; }
@@ -240,22 +261,23 @@
     @media (max-width: 760px) { .sidebar { position: fixed; left: 0; top: 0; width: 300px; } .overlay { display: block; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 20; } .overlay.hidden { display: none; } .top-title { max-width: 40vw; } .page { padding: 42px 24px 60px; } .chapter-title { font-size: 22px; margin-bottom: 32px; } .editor { font-size: 17px; line-height: 1.7; } .topbar { height: auto; min-height: 56px; flex-wrap: wrap; row-gap: 8px; } .topbar-left, .topbar-right { flex-wrap: wrap; } .topbar-right { justify-content: flex-end; } }
     @media (max-width: 480px) { .workspace { padding: 16px 10px 40px; } .page { padding: 32px 16px 48px; } .sidebar { width: min(300px, 100vw); } }
 </style></head><body>
+    <div id="editorTooltip" class="editor-tooltip" role="tooltip" aria-hidden="true"></div>
     <div id="nbPanel" class="nb-app nb-float nb-theme-mirror hidden" role="dialog" aria-label="Notes">
         <header class="nb-top-hat">
             <span class="nb-workspace-title" id="nbLabel">Notes</span>
             <div class="nb-hat-actions">
-                <button class="nb-hat-btn" id="nbNew" type="button" title="New note inside the selected folder">＋</button>
-                <button class="nb-hat-btn" id="nbNewFolder" type="button" title="New folder">📁</button>
-                <button class="nb-hat-btn" id="nbDel" type="button" title="Delete selected note or folder">⌫</button>
-                <button class="nb-hat-btn" id="nbFull" type="button" title="Open full page">⇱</button>
-                <button class="nb-hat-btn" id="nbClose" type="button" title="Close">×</button>
+                <button class="nb-hat-btn" id="nbNew" type="button" data-tip="New note in selected folder">＋</button>
+                <button class="nb-hat-btn" id="nbNewFolder" type="button" data-tip="New folder">📁</button>
+                <button class="nb-hat-btn" id="nbDel" type="button" data-tip="Delete selected note or folder">⌫</button>
+                <button class="nb-hat-btn" id="nbFull" type="button" data-tip="Open notes full page">⇱</button>
+                <button class="nb-hat-btn" id="nbClose" type="button" data-tip="Close notes">×</button>
             </div>
         </header>
         <div class="nb-frame">
             <nav class="nb-ribbon" aria-label="Ribbon">
-                <button type="button" class="nb-rib-btn is-active" title="Files">≡</button>
-                <button type="button" class="nb-rib-btn" title="Search">⌕</button>
-                <button type="button" class="nb-rib-btn" title="Bookmarks">🔖</button>
+                <button type="button" class="nb-rib-btn is-active" data-tip="Notes — files">≡</button>
+                <button type="button" class="nb-rib-btn" data-tip="Notes — search">⌕</button>
+                <button type="button" class="nb-rib-btn" data-tip="Notes — bookmarks">🔖</button>
             </nav>
             <div class="nb-work">
                 <div class="nb-columns">
@@ -270,10 +292,10 @@
                         <footer class="nb-status">
                             <span class="nb-status-left" id="nbStatus">Ready</span>
                             <div class="nb-status-actions">
-                                <button type="button" class="nb-miniact" id="nbLinkCh">Chapter link</button>
-                                <button type="button" class="nb-miniact" id="nbWiki">[[link]]</button>
-                                <button type="button" class="nb-miniact" id="nbCopy">Copy</button>
-                                <button type="button" class="nb-miniact nb-miniact-accent" id="nbInsert">Insert to chapter</button>
+                                <button type="button" class="nb-miniact" id="nbLinkCh" data-tip="Insert link to current chapter">Chapter link</button>
+                                <button type="button" class="nb-miniact" id="nbWiki" data-tip="Insert wiki-style [[link]]">[[link]]</button>
+                                <button type="button" class="nb-miniact" id="nbCopy" data-tip="Copy note text">Copy</button>
+                                <button type="button" class="nb-miniact nb-miniact-accent" id="nbInsert" data-tip="Insert note into chapter">Insert to chapter</button>
                             </div>
                         </footer>
                     </div>
@@ -284,7 +306,7 @@
     <div class="sidebar-top">
         <div class="sidebar-title-row">
             <div class="sidebar-mini">Manuscript</div>
-            <button class="pill-btn secondary" id="renameBookBtn" type="button">Rename</button>
+            <button class="pill-btn secondary" id="renameBookBtn" type="button" data-tip="Rename this book">Rename</button>
         </div>
         <div class="sidebar-book-title" id="sidebarBookTitle">Loading...</div>
         <div class="sidebar-meta">
@@ -292,18 +314,18 @@
             <div><span id="chapterCount">0</span> chapters</div>
         </div>
         <div class="sidebar-actions">
-            <button class="pill-btn primary" id="addChapterBtn" type="button">Add Chapter</button>
-            <button class="pill-btn secondary" id="deleteChapterBtn" type="button">Delete Chapter</button>
-            <button class="pill-btn secondary" id="themeToggleBtn" type="button">Dark Mode</button>
-            <button class="pill-btn secondary" id="publishBtn" type="button">Publish</button>
-            <a class="pill-btn secondary" id="storyBibleLink" href="story-bible.html">Story Bible</a>
-            <button class="pill-btn danger" id="deleteBookBtn" type="button">Delete Book</button>
+            <button class="pill-btn primary" id="addChapterBtn" type="button" data-tip="Add a new body chapter">Add Chapter</button>
+            <button class="pill-btn secondary" id="deleteChapterBtn" type="button" data-tip="Delete current chapter">Delete Chapter</button>
+            <button class="pill-btn secondary" id="themeToggleBtn" type="button" data-tip="Toggle light / dark mode">Dark Mode</button>
+            <button class="pill-btn secondary" id="publishBtn" type="button" data-tip="Publish chapters to the web">Publish</button>
+            <a class="pill-btn secondary" id="storyBibleLink" href="story-bible.html" data-tip="Open Story Bible for this book">Story Bible</a>
+            <button class="pill-btn danger" id="deleteBookBtn" type="button" data-tip="Permanently delete this book">Delete Book</button>
         </div>
     </div>
     <div class="manuscript">
-        <div class="group"><div class="group-header" data-group="front"><div class="left"><span class="caret" id="caret-front">▼</span>Front matter</div><div>edit</div></div><div class="group-body" id="group-front"></div></div>
-        <div class="group"><div class="group-header" data-group="body"><div class="left"><span class="caret" id="caret-body">▼</span>Body</div><div>edit</div></div><div class="group-body" id="group-body"></div></div>
-        <div class="group"><div class="group-header" data-group="back"><div class="left"><span class="caret" id="caret-back">▼</span>Back matter</div><div>edit</div></div><div class="group-body" id="group-back"></div></div>
+        <div class="group"><div class="group-header" data-group="front" data-tip="Collapse or expand front matter"><div class="left"><span class="caret" id="caret-front">▼</span>Front matter</div><div>edit</div></div><div class="group-body" id="group-front"></div></div>
+        <div class="group"><div class="group-header" data-group="body" data-tip="Collapse or expand body chapters"><div class="left"><span class="caret" id="caret-body">▼</span>Body</div><div>edit</div></div><div class="group-body" id="group-body"></div></div>
+        <div class="group"><div class="group-header" data-group="back" data-tip="Collapse or expand back matter"><div class="left"><span class="caret" id="caret-back">▼</span>Back matter</div><div>edit</div></div><div class="group-body" id="group-back"></div></div>
     </div>
     <div class="side-footer"><span id="footerWords">0</span> words</div>
 </div><div class="overlay hidden" id="overlay"></div><div class="main">
@@ -326,35 +348,35 @@
             <div class="save-status" id="saveStatus" data-tip="Save status" aria-live="polite">Loading...</div>
         </div>
     </div><div class="toolbar">
-    <button class="tool-btn" type="button" data-cmd="bold">B</button>
-    <button class="tool-btn" type="button" data-cmd="italic"><em>I</em></button>
-    <button class="tool-btn" type="button" data-cmd="underline"><u>U</u></button>
-    <button class="tool-btn" type="button" data-cmd="insertUnorderedList">• List</button>
-    <button class="tool-btn" type="button" data-cmd="insertOrderedList">1. List</button>
-    <button class="tool-btn" type="button" id="quoteBtn">❝</button>
-    <button class="tool-btn" type="button" id="findReplaceBtn" title="Find and replace (Ctrl+F)" aria-label="Find and replace">🔍</button>
-    <select class="tool-select" id="formatSelect"><option value="p">Body</option><option value="h2">Heading</option></select>
-    <select class="tool-select" id="fontSelect" aria-label="Font"></select>
-    <select class="tool-select" id="fontSizeSelect"><option value="18">Compact</option><option value="20">Book</option><option value="22">Comfort</option><option value="26">Large</option></select>
+    <button class="tool-btn" type="button" data-cmd="bold" data-tip="Bold">B</button>
+    <button class="tool-btn" type="button" data-cmd="italic" data-tip="Italic"><em>I</em></button>
+    <button class="tool-btn" type="button" data-cmd="underline" data-tip="Underline"><u>U</u></button>
+    <button class="tool-btn" type="button" data-cmd="insertUnorderedList" data-tip="Bulleted list">• List</button>
+    <button class="tool-btn" type="button" data-cmd="insertOrderedList" data-tip="Numbered list">1. List</button>
+    <button class="tool-btn" type="button" id="quoteBtn" data-tip="Block quote">❝</button>
+    <button class="tool-btn" type="button" id="findReplaceBtn" data-tip="Find and replace (Ctrl+F)" aria-label="Find and replace">🔍</button>
+    <select class="tool-select" id="formatSelect" data-tip="Paragraph style" aria-label="Paragraph style"><option value="p">Body</option><option value="h2">Heading</option></select>
+    <select class="tool-select" id="fontSelect" data-tip="Editor font" aria-label="Font"></select>
+    <select class="tool-select" id="fontSizeSelect" data-tip="Editor text size" aria-label="Text size"><option value="18">Compact</option><option value="20">Book</option><option value="22">Comfort</option><option value="26">Large</option></select>
     <div class="toolbar-spacer"></div>
-    <span class="sprint-anchor" id="sprintAnchor"><button class="sprint-btn" id="sprintToolbarBtn" type="button" aria-label="Sprint timer">⏱ Sprint</button></span>
+    <span class="sprint-anchor" id="sprintAnchor"><button class="sprint-btn" id="sprintToolbarBtn" type="button" data-tip="Writing sprint timer" aria-label="Sprint timer">⏱ Sprint</button></span>
 </div>
 <div class="fr-bar" id="findReplaceBar" role="search" aria-label="Find and replace in current chapter">
     <label class="fr-field"><span class="fr-label">Find</span><input class="fr-input" id="frFindInput" type="text" autocomplete="off" spellcheck="false" placeholder="Search chapter…" /></label>
     <label class="fr-field"><span class="fr-label">Replace</span><input class="fr-input" id="frReplaceInput" type="text" autocomplete="off" spellcheck="false" placeholder="Replace with…" /></label>
-    <label class="fr-check"><input type="checkbox" id="frMatchCase" /> Match case</label>
-    <label class="fr-check"><input type="checkbox" id="frWholeWord" /> Whole word</label>
+    <label class="fr-check" data-tip="Case-sensitive search"><input type="checkbox" id="frMatchCase" /> Match case</label>
+    <label class="fr-check" data-tip="Match whole words only"><input type="checkbox" id="frWholeWord" /> Whole word</label>
     <div class="fr-actions">
-        <button type="button" class="fr-btn icon" id="frPrevBtn" title="Previous (Shift+F3)">↑</button>
-        <button type="button" class="fr-btn icon" id="frNextBtn" title="Next (F3)">↓</button>
-        <button type="button" class="fr-btn primary" id="frReplaceBtn">Replace</button>
-        <button type="button" class="fr-btn" id="frReplaceAllBtn" type="button">Replace all</button>
-        <button type="button" class="fr-btn icon" id="frCloseBtn" type="button" aria-label="Close find and replace">×</button>
+        <button type="button" class="fr-btn icon" id="frPrevBtn" data-tip="Previous match (Shift+F3)">↑</button>
+        <button type="button" class="fr-btn icon" id="frNextBtn" data-tip="Next match (F3)">↓</button>
+        <button type="button" class="fr-btn primary" id="frReplaceBtn" data-tip="Replace current match">Replace</button>
+        <button type="button" class="fr-btn" id="frReplaceAllBtn" data-tip="Replace every match in chapter">Replace all</button>
+        <button type="button" class="fr-btn icon" id="frCloseBtn" data-tip="Close find and replace" aria-label="Close find and replace">×</button>
     </div>
     <span class="fr-status" id="frStatus" aria-live="polite"></span>
 </div>
 
-<div class="sprint-float" id="sprintFloat" aria-live="polite"><div class="sprint-float-box"><div class="sprint-float-top"><div class="sprint-float-label">Sprint</div><button class="sprint-mini-btn danger" id="sprintStopBtn" type="button">Stop</button></div><div class="sprint-float-time" id="sprintFloatTime">00:00</div></div></div>
+<div class="sprint-float" id="sprintFloat" aria-live="polite"><div class="sprint-float-box"><div class="sprint-float-top"><div class="sprint-float-label">Sprint</div><button class="sprint-mini-btn danger" id="sprintStopBtn" type="button" data-tip="Stop sprint early">Stop</button></div><div class="sprint-float-time" id="sprintFloatTime">00:00</div></div></div>
 
 <div class="workspace" id="editorWorkspace">
     <div class="page-wrap">
@@ -373,24 +395,24 @@
         <p class="publish-modal-text">Select the chapters you want to publish now.</p>
         <div class="publish-list" id="publishList"></div>
         <div class="publish-modal-actions">
-            <button class="publish-modal-btn secondary" id="closePublishBtn" type="button">Cancel</button>
-            <button class="publish-modal-btn primary" id="publishNextBtn" type="button">Next</button>
+            <button class="publish-modal-btn secondary" id="closePublishBtn" type="button" data-tip="Close without publishing">Cancel</button>
+            <button class="publish-modal-btn primary" id="publishNextBtn" type="button" data-tip="Continue to publish settings">Next</button>
         </div>
         <div class="publish-bypass-overlay" id="publishBypassOverlay" aria-hidden="true">
             <div class="publish-bypass-card">
                 <p class="publish-modal-text" style="margin:0;">You have already filled out the required information for this book. Would you like to skip this and publish anyway?</p>
                 <div class="publish-bypass-actions" id="publishBypassChoiceRow">
-                    <button class="publish-modal-btn secondary" id="publishBypassNo" type="button">No</button>
-                    <button class="publish-modal-btn primary" id="publishBypassYes" type="button">Yes</button>
+                    <button class="publish-modal-btn secondary" id="publishBypassNo" type="button" data-tip="Open full publish flow">No</button>
+                    <button class="publish-modal-btn primary" id="publishBypassYes" type="button" data-tip="Quick publish with saved settings">Yes</button>
                 </div>
-                <div class="publish-quick-wrap" id="publishQuickWrap"><button class="publish-modal-btn primary" id="publishQuickPublishBtn" type="button">Publish update</button></div>
+                <div class="publish-quick-wrap" id="publishQuickWrap"><button class="publish-modal-btn primary" id="publishQuickPublishBtn" type="button" data-tip="Publish selected chapters now">Publish update</button></div>
                 <p class="publish-quick-status" id="publishQuickStatus" aria-live="polite"></p>
             </div>
         </div>
     </div>
-</div><div class="sprint-modal" id="sprintConfirmModal"><div class="sprint-modal-box"><h2 class="sprint-modal-title">Ready to start?</h2><p class="sprint-modal-text" id="sprintConfirmText">Start a sprint?</p><div class="sprint-modal-actions"><button class="secondary" id="sprintConfirmNo" type="button">Not yet</button><button class="primary" id="sprintConfirmYes" type="button">Yes, start</button></div></div></div>
-<div class="sprint-modal" id="sprintOptionsModal"><div class="sprint-modal-box"><h2 class="sprint-modal-title">Choose a timer</h2><p class="sprint-modal-text" id="sprintOptionsSub">Tracks words written during the sprint.</p><div class="sprint-opt-grid" id="sprintOptionsGrid"><button class="sprint-opt" type="button" data-min="10">10 min</button><button class="sprint-opt" type="button" data-min="15">15 min</button><button class="sprint-opt" type="button" data-min="25">25 min</button><button class="sprint-opt" type="button" data-min="60">1 hour</button></div><div class="sprint-modal-actions" style="margin-top:14px;"><button class="secondary" id="sprintOptionsClose" type="button">Close</button></div></div></div>
-<div class="sprint-modal" id="sprintResultModal"><div class="sprint-modal-box"><h2 class="sprint-modal-title" id="sprintResultTitle">Sprint complete</h2><p class="sprint-modal-text" id="sprintResultText">...</p><div class="sprint-modal-actions"><button class="primary" id="sprintResultOk" type="button">OK</button></div></div></div><script type="module">
+</div><div class="sprint-modal" id="sprintConfirmModal"><div class="sprint-modal-box"><h2 class="sprint-modal-title">Ready to start?</h2><p class="sprint-modal-text" id="sprintConfirmText">Start a sprint?</p><div class="sprint-modal-actions"><button class="secondary" id="sprintConfirmNo" type="button" data-tip="Cancel sprint">Not yet</button><button class="primary" id="sprintConfirmYes" type="button" data-tip="Start the sprint">Yes, start</button></div></div></div>
+<div class="sprint-modal" id="sprintOptionsModal"><div class="sprint-modal-box"><h2 class="sprint-modal-title">Choose a timer</h2><p class="sprint-modal-text" id="sprintOptionsSub">Tracks words written during the sprint.</p><div class="sprint-opt-grid" id="sprintOptionsGrid"><button class="sprint-opt" type="button" data-min="10" data-tip="10 minute sprint">10 min</button><button class="sprint-opt" type="button" data-min="15" data-tip="15 minute sprint">15 min</button><button class="sprint-opt" type="button" data-min="25" data-tip="25 minute sprint">25 min</button><button class="sprint-opt" type="button" data-min="60" data-tip="1 hour sprint">1 hour</button></div><div class="sprint-modal-actions" style="margin-top:14px;"><button class="secondary" id="sprintOptionsClose" type="button" data-tip="Close sprint options">Close</button></div></div></div>
+<div class="sprint-modal" id="sprintResultModal"><div class="sprint-modal-box"><h2 class="sprint-modal-title" id="sprintResultTitle">Sprint complete</h2><p class="sprint-modal-text" id="sprintResultText">...</p><div class="sprint-modal-actions"><button class="primary" id="sprintResultOk" type="button" data-tip="Dismiss">OK</button></div></div></div><script type="module">
     import { supabase } from "./firebase.js";
     import { isDesktopLocalHost, goToLogin } from "./js/desktop-auth.js?v=1";
     import { alysumPrompt } from "./js/alysum-prompt.js?v=1";
@@ -868,7 +890,7 @@ function rememberBookId(id) {
             item.dataset.section = section;
             item.dataset.index = String(index);
             const visibleNumber = section === "body" ? index + 1 : "";
-            item.innerHTML = `<div class="chapter-num">${visibleNumber}</div><div class="chapter-name">${escapeHtml(ch.title || "Untitled")}</div><div class="chapter-drag" draggable="true" title="Drag to reorder" aria-label="Drag to reorder">⋮⋮</div>`;
+            item.innerHTML = `<div class="chapter-num">${visibleNumber}</div><div class="chapter-name">${escapeHtml(ch.title || "Untitled")}</div><div class="chapter-drag" draggable="true" data-tip="Drag to reorder chapter" aria-label="Drag to reorder">⋮⋮</div>`;
             const handle = item.querySelector(".chapter-drag");
 
             item.addEventListener("click", () => {
@@ -1756,7 +1778,76 @@ async function loadBook() {
         }
     }
 
+    function initEditorTooltips() {
+        const tipEl = document.getElementById("editorTooltip");
+        if (!tipEl) return;
+        let active = null;
+        let hideTimer = null;
+
+        function hideTip() {
+            hideTimer = setTimeout(() => {
+                tipEl.classList.remove("is-visible");
+                tipEl.setAttribute("aria-hidden", "true");
+                active = null;
+            }, 80);
+        }
+
+        function showTip(target) {
+            const text = target.getAttribute("data-tip");
+            if (!text) return;
+            clearTimeout(hideTimer);
+            active = target;
+            tipEl.textContent = text;
+            tipEl.classList.add("is-visible");
+            tipEl.setAttribute("aria-hidden", "false");
+            const r = target.getBoundingClientRect();
+            let left = r.left + r.width / 2;
+            let top = r.bottom + 8;
+            let transform = "translateX(-50%)";
+            tipEl.style.left = `${left}px`;
+            tipEl.style.top = `${top}px`;
+            tipEl.style.transform = transform;
+            const tipH = tipEl.offsetHeight || 28;
+            if (top + tipH > window.innerHeight - 10) {
+                top = r.top - 8;
+                transform = "translate(-50%, -100%)";
+                tipEl.style.top = `${top}px`;
+                tipEl.style.transform = transform;
+            }
+            const tipW = tipEl.offsetWidth || 120;
+            if (left - tipW / 2 < 8) left = 8 + tipW / 2;
+            if (left + tipW / 2 > window.innerWidth - 8) left = window.innerWidth - 8 - tipW / 2;
+            tipEl.style.left = `${left}px`;
+        }
+
+        document.addEventListener("mouseover", e => {
+            const t = e.target.closest("[data-tip]");
+            if (t) {
+                if (t !== active) showTip(t);
+                return;
+            }
+            if (!e.relatedTarget?.closest?.("[data-tip]")) hideTip();
+        });
+
+        document.addEventListener("mouseout", e => {
+            const t = e.target.closest("[data-tip]");
+            if (!t) return;
+            const rel = e.relatedTarget;
+            if (rel && (t.contains(rel) || rel.closest?.("[data-tip]"))) return;
+            hideTip();
+        });
+
+        document.addEventListener("focusin", e => {
+            const t = e.target.closest("[data-tip]");
+            if (t) showTip(t);
+        });
+        document.addEventListener("focusout", e => {
+            if (!e.relatedTarget?.closest?.("[data-tip]")) hideTip();
+        });
+    }
+
     async function init() {
+        initEditorTooltips();
         if (isDesktopLocalHost()) {
             isLocalStudio = true;
             currentUser = LOCAL_GUEST_USER;
