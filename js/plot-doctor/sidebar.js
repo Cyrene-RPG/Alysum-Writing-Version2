@@ -112,6 +112,7 @@ export function mountPlotDoctorSidebar(opts) {
                 <a class="pd-bible-link" data-role="bible-link" href="story-bible.html">Open Story Bible →</a>
             </div>
             <div class="pd-status" data-role="status">Idle</div>
+            <p class="pd-storage-warn" data-role="storage-warn" hidden></p>
             <div class="pd-filters" data-role="filters"></div>
             <div class="pd-status-tabs" data-role="status-tabs"></div>
             <div class="pd-body" data-role="body">
@@ -258,6 +259,12 @@ export function mountPlotDoctorSidebar(opts) {
         if (s.scanning) statusEl.textContent = "Scanning manuscript against bible…";
         else if (s.lastError) statusEl.textContent = s.lastError;
         else statusEl.textContent = `${openCount} open issue${openCount === 1 ? "" : "s"}`;
+
+        const warnEl = mountEl.querySelector('[data-role="storage-warn"]');
+        if (warnEl) {
+            warnEl.textContent = s.storageWarning || "";
+            warnEl.hidden = !s.storageWarning;
+        }
 
         lastScannedEl.textContent = s.lastScannedAt
             ? `Last scanned ${relativeTime(s.lastScannedAt)}`

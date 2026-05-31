@@ -131,6 +131,15 @@
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
+.pd-storage-warn {
+    margin: 0;
+    padding: 0 16px 10px;
+    font-size: 12px;
+    line-height: 1.45;
+    color: #fcd34d;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
 .pd-filters,
 .pd-status-tabs {
     display: flex;

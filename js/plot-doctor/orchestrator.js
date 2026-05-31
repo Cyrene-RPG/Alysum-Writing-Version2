@@ -12,8 +12,12 @@ import {
     insertIssues,
     updateIssue,
     transitionIssues,
-    deleteStaleBefore
-} from "./store.js?v=1";
+    deleteStaleBefore,
+    isPlotIssuesTableMissing,
+    shouldUseLocalPlotStore,
+    saveLocalIssueSnapshot
+} from "./store.js?v=2";
+import { readLocalIssues } from "./local-store.js?v=1";
 import { runAttributeDetector } from "./detectors/attribute.js?v=1";
 import { runNameDriftDetector } from "./detectors/name-drift.js?v=1";
 import { runDeadSpeaksDetector } from "./detectors/dead-speaks.js?v=1";
@@ -33,13 +37,15 @@ const STALE_HARD_DELETE_DAYS = 14;
 export function createOrchestrator(opts) {
     const { supabase, getSession, getManuscript, onChange } = opts;
 
-    /** @typedef {{ issues: Array<Record<string, any>>, scanning: boolean, lastScannedAt: number, lastError: string }} OrchestratorState */
+    /** @typedef {{ issues: Array<Record<string, any>>, scanning: boolean, lastScannedAt: number, lastError: string, storageWarning: string, tableMissing: boolean }} OrchestratorState */
     /** @type {OrchestratorState} */
     const state = {
         issues: [],
         scanning: false,
         lastScannedAt: 0,
         lastError: "",
+        storageWarning: "",
+        tableMissing: false,
         bibleHealth: null,
         bookId: ""
     };
@@ -56,6 +62,36 @@ export function createOrchestrator(opts) {
         }
     }
 
+    function issueScope(uid, bookId) {
+        return { userId: uid, bookId };
+    }
+
+    function usesLocalStore(uid) {
+        return shouldUseLocalPlotStore(uid) || state.tableMissing;
+    }
+
+    function makeIssueId() {
+        return `pi_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+    }
+
+    function setTableMissingWarning() {
+        state.tableMissing = true;
+        state.storageWarning =
+            "Plot issues are saved in this browser only. Run supabase-plot-issues.sql in Supabase to sync across devices.";
+    }
+
+    async function fetchExistingIssues(uid, bookId) {
+        if (usesLocalStore(uid)) return readLocalIssues(uid, bookId);
+        try {
+            return await listIssuesForBook(supabase, uid, bookId);
+        } catch (e) {
+            if (isPlotIssuesTableMissing(e)) {
+                setTableMissingWarning();
+                return readLocalIssues(uid, bookId);
+            }
+            throw e;
+        }
+    }
     function isReady() {
         const sess = getSession?.();
         const ms = getManuscript?.();
@@ -67,8 +103,7 @@ export function createOrchestrator(opts) {
         const ms = getManuscript?.();
         if (!sess?.uid || !ms?.bookId) return;
         try {
-            const rows = await listIssuesForBook(supabase, sess.uid, ms.bookId);
-            state.issues = rows;
+            state.issues = await fetchExistingIssues(sess.uid, ms.bookId);
             notify();
         } catch (e) {
             console.error("[plot-doctor] initial load failed:", e);
@@ -151,54 +186,83 @@ export function createOrchestrator(opts) {
         const sess = getSession();
         const ms = getManuscript();
         if (!sess?.uid || !ms?.bookId) return existing;
+        const scope = issueScope(sess.uid, ms.bookId);
+        const localMode = usesLocalStore(sess.uid);
         const byKey = new Map();
-        for (const row of existing) byKey.set(row.dedupe_key, row);
+        for (const row of existing) byKey.set(row.dedupe_key, { ...row });
 
         const inserts = [];
         const updates = [];
         const reopen = [];
         const matchedKeys = new Set();
+        const nowIso = new Date().toISOString();
 
         for (const issue of newIssues) {
             const key = issue.dedupeKey;
             matchedKeys.add(key);
             const existingRow = byKey.get(key);
             if (!existingRow) {
-                inserts.push(newRowFromIssue(issue, sess.uid, ms.bookId));
+                const row = newRowFromIssue(issue, sess.uid, ms.bookId);
+                if (localMode) {
+                    row.id = makeIssueId();
+                    row.created_at = nowIso;
+                    row.updated_at = nowIso;
+                }
+                inserts.push(row);
+                if (localMode) byKey.set(key, row);
                 continue;
             }
             if (existingRow.status === PLOT_STATUS.DISMISSED) continue;
             if (existingRow.status === PLOT_STATUS.STALE || existingRow.status === PLOT_STATUS.FIXED) {
                 reopen.push(existingRow.id);
+                existingRow.status = PLOT_STATUS.OPEN;
+                existingRow.resolved_at = null;
             }
-            updates.push({
-                id: existingRow.id,
-                patch: {
-                    last_seen_at: new Date().toISOString(),
-                    claim_text: (issue.claimText || "").slice(0, 240),
-                    claim_range_start: issue.claimRangeStart,
-                    claim_range_end: issue.claimRangeEnd,
-                    evidence_summary: issue.evidenceSummary || existingRow.evidence_summary,
-                    confidence: issue.confidence
-                }
-            });
+            const patch = {
+                last_seen_at: nowIso,
+                claim_text: (issue.claimText || "").slice(0, 240),
+                claim_range_start: issue.claimRangeStart,
+                claim_range_end: issue.claimRangeEnd,
+                evidence_summary: issue.evidenceSummary || existingRow.evidence_summary,
+                confidence: issue.confidence,
+                updated_at: nowIso
+            };
+            Object.assign(existingRow, patch);
+            updates.push({ id: existingRow.id, patch });
         }
 
-        const staleIds = existing
-            .filter(row => row.status === PLOT_STATUS.OPEN && !matchedKeys.has(row.dedupe_key))
-            .map(row => row.id);
+        const staleIds = [];
+        for (const row of byKey.values()) {
+            if (row.status === PLOT_STATUS.OPEN && !matchedKeys.has(row.dedupe_key)) {
+                row.status = PLOT_STATUS.STALE;
+                row.resolved_at = nowIso;
+                row.updated_at = nowIso;
+                staleIds.push(row.id);
+            }
+        }
+
+        const nextRows = [...byKey.values()];
+
+        if (localMode) {
+            saveLocalIssueSnapshot(sess.uid, ms.bookId, nextRows);
+            return nextRows;
+        }
 
         try {
-            const inserted = await insertIssues(supabase, inserts);
-            for (const row of inserted) byKey.set(row.dedupe_key, row);
-
-            await Promise.all(updates.map(u => updateIssue(supabase, u.id, u.patch)));
-            if (reopen.length) await transitionIssues(supabase, reopen, PLOT_STATUS.OPEN);
-            if (staleIds.length) await transitionIssues(supabase, staleIds, PLOT_STATUS.STALE);
-
-            const refreshed = await listIssuesForBook(supabase, sess.uid, ms.bookId);
-            return refreshed;
+            if (inserts.length) {
+                const inserted = await insertIssues(supabase, inserts);
+                for (const row of inserted) byKey.set(row.dedupe_key, row);
+            }
+            await Promise.all(updates.map(u => updateIssue(supabase, u.id, u.patch, scope)));
+            if (reopen.length) await transitionIssues(supabase, reopen, PLOT_STATUS.OPEN, scope);
+            if (staleIds.length) await transitionIssues(supabase, staleIds, PLOT_STATUS.STALE, scope);
+            return await fetchExistingIssues(sess.uid, ms.bookId);
         } catch (e) {
+            if (isPlotIssuesTableMissing(e)) {
+                setTableMissingWarning();
+                saveLocalIssueSnapshot(sess.uid, ms.bookId, nextRows);
+                return nextRows;
+            }
             console.error("[plot-doctor] diff/persist failed:", e);
             state.lastError = "Could not save plot issues.";
             return existing;
@@ -221,11 +285,16 @@ export function createOrchestrator(opts) {
             const sess = getSession();
             const ms = getManuscript();
             const scanInput = buildScanInput();
-            const bible = await loadBibleSnapshot(ms.bookId);
+            let bible = { characters: [], places: [] };
+            try {
+                bible = await loadBibleSnapshot(ms.bookId);
+            } catch (e) {
+                console.warn("[plot-doctor] bible load failed, scanning manuscript only:", e);
+            }
             const fullInput = { ...scanInput, characters: bible.characters, places: bible.places };
             state.bookId = ms.bookId;
             const newIssues = runAllDetectors(fullInput);
-            const existing = await listIssuesForBook(supabase, sess.uid, ms.bookId);
+            const existing = await fetchExistingIssues(sess.uid, ms.bookId);
             state.issues = await persistDiff(newIssues, existing);
             state.lastScannedAt = Date.now();
             state.bibleHealth = scoreBibleHealth(bible.characters, bible.places);
@@ -235,7 +304,12 @@ export function createOrchestrator(opts) {
             );
         } catch (e) {
             console.error("[plot-doctor] scan failed:", e);
-            state.lastError = "Scan failed. Try again.";
+            if (isPlotIssuesTableMissing(e)) {
+                setTableMissingWarning();
+                state.lastError = "";
+            } else {
+                state.lastError = "Scan failed. Check the browser console for details.";
+            }
         } finally {
             scanInFlight = false;
             state.scanning = false;
@@ -256,20 +330,43 @@ export function createOrchestrator(opts) {
     }
 
     async function applyTriage(issueId, nextStatus, userNote) {
+        const sess = getSession();
+        const ms = getManuscript();
+        if (!sess?.uid || !ms?.bookId) return;
+        const patch = {
+            status: nextStatus,
+            user_note: userNote || "",
+            resolved_at: nextStatus === PLOT_STATUS.OPEN ? null : new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        };
         try {
-            await updateIssue(supabase, issueId, {
-                status: nextStatus,
-                user_note: userNote || "",
-                resolved_at: nextStatus === PLOT_STATUS.OPEN ? null : new Date().toISOString()
-            });
-            const row = state.issues.find(r => r.id === issueId);
-            if (row) {
-                row.status = nextStatus;
-                row.user_note = userNote || "";
-                row.resolved_at = nextStatus === PLOT_STATUS.OPEN ? null : new Date().toISOString();
+            if (usesLocalStore(sess.uid)) {
+                const rows = readLocalIssues(sess.uid, ms.bookId);
+                const idx = rows.findIndex(r => r.id === issueId);
+                if (idx >= 0) {
+                    rows[idx] = { ...rows[idx], ...patch };
+                    saveLocalIssueSnapshot(sess.uid, ms.bookId, rows);
+                    state.issues = rows;
+                }
+            } else {
+                await updateIssue(supabase, issueId, patch, issueScope(sess.uid, ms.bookId));
+                const row = state.issues.find(r => r.id === issueId);
+                if (row) Object.assign(row, patch);
             }
             notify();
         } catch (e) {
+            if (isPlotIssuesTableMissing(e)) {
+                setTableMissingWarning();
+                const rows = readLocalIssues(sess.uid, ms.bookId);
+                const idx = rows.findIndex(r => r.id === issueId);
+                if (idx >= 0) {
+                    rows[idx] = { ...rows[idx], ...patch };
+                    saveLocalIssueSnapshot(sess.uid, ms.bookId, rows);
+                    state.issues = rows;
+                    notify();
+                    return;
+                }
+            }
             console.error("[plot-doctor] triage failed:", e);
             state.lastError = "Could not update issue status.";
             notify();
