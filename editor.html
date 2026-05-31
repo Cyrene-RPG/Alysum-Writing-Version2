@@ -103,7 +103,23 @@
     .chapter-item.dragging { opacity: 0.45; }
     .chapter-num { width: 26px; text-align: center; font-size: 16px; font-weight: 800; color: #f8fafc; }
     .chapter-name { flex: 1; min-width: 0; font-size: 16px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .chapter-drag { color: #d5dee7; font-size: 18px; }
+    .chapter-drag {
+        color: #d5dee7;
+        font-size: 18px;
+        cursor: grab;
+        padding: 4px 10px;
+        margin: -4px -6px -4px 0;
+        border-radius: 6px;
+        flex-shrink: 0;
+        touch-action: none;
+    }
+    .chapter-drag:hover { background: rgba(255,255,255,0.08); color: #f8fafc; }
+    .chapter-drag:active { cursor: grabbing; }
+    .chapter-item.drop-before { box-shadow: inset 0 3px 0 0 #60a5fa; }
+    .chapter-item.drop-after { box-shadow: inset 0 -3px 0 0 #60a5fa; }
+    .group-body.is-drop-target,
+    .empty-slot.is-drop-target { background: rgba(96, 165, 250, 0.12); outline: 1px dashed rgba(96, 165, 250, 0.45); outline-offset: -4px; border-radius: 4px; }
+    .chapter-list-end-drop { min-height: 18px; }
     .empty-slot { padding: 12px 18px 18px; color: #aeb9c5; font-style: italic; font-size: 14px; }
     .side-footer { padding: 14px 16px; border-top: 1px solid rgba(255,255,255,0.08); font-size: 13px; color: #dbe3eb; background: #2a3a49; }
     body.dark .side-footer { background: #162132; }
@@ -426,6 +442,7 @@ function rememberBookId(id) {
     let currentChapterIndex = 0;
     let saveTimer = null;
     let dragged = null;
+    let chapterDragDidMove = false;
     let persistedBookWordCount = null;
     let isLocalStudio = isDesktopLocalHost();
     let suppressResumeSave = false;
@@ -673,6 +690,88 @@ function rememberBookId(id) {
         }
     }
 
+    function findChapterLocation(chapterId) {
+        if (!chapterId || !currentBook) return null;
+        for (const sec of ["front", "body", "back"]) {
+            const idx = currentBook.sections[sec].findIndex(ch => ch.id === chapterId);
+            if (idx >= 0) return { section: sec, index: idx };
+        }
+        return null;
+    }
+
+    function clearChapterDropHighlights() {
+        document.querySelectorAll(".chapter-item.drop-before, .chapter-item.drop-after").forEach(el => {
+            el.classList.remove("drop-before", "drop-after");
+        });
+        document.querySelectorAll(".group-body.is-drop-target, .empty-slot.is-drop-target").forEach(el => {
+            el.classList.remove("is-drop-target");
+        });
+    }
+
+    function resolveChapterPlacement(item, e) {
+        const rect = item.getBoundingClientRect();
+        const mid = rect.top + rect.height / 2;
+        return e.clientY < mid ? "before" : "after";
+    }
+
+    function moveChapterInBook(fromSection, fromIndex, toSection, toIndex, placement) {
+        const fromList = currentBook.sections[fromSection];
+        const toList = currentBook.sections[toSection];
+        const moving = fromList[fromIndex];
+        if (!moving) return false;
+
+        let insertAt = toIndex;
+        if (placement === "after") insertAt = toIndex + 1;
+        if (placement === "end") insertAt = toList.length;
+
+        if (fromSection === toSection) {
+            if (fromIndex < insertAt) insertAt -= 1;
+            if (fromIndex === insertAt) return false;
+        }
+
+        fromList.splice(fromIndex, 1);
+        toList.splice(insertAt, 0, moving);
+        return { section: toSection, index: insertAt, chapterId: moving.id };
+    }
+
+    async function commitChapterReorder(toSection, toIndex, placement) {
+        if (!dragged || !currentBook) return;
+        const activeId = currentChapter()?.id;
+        const fromSection = dragged.section;
+        const fromIndex = dragged.index;
+        const result = moveChapterInBook(fromSection, fromIndex, toSection, toIndex, placement);
+        if (!result) return;
+
+        dragged = null;
+        clearChapterDropHighlights();
+        renderAllSections();
+
+        const resumeId = activeId || result.chapterId;
+        const loc = findChapterLocation(resumeId);
+        if (loc) loadChapter(loc.section, loc.index, false);
+        else loadChapter(result.section, result.index, false);
+
+        try { await saveBook("Saved"); } catch (err) { console.error(err); setSaveStatus("Save failed"); }
+    }
+
+    function wireEmptySectionDrop(emptyEl, section) {
+        emptyEl.addEventListener("dragover", e => {
+            if (!dragged) return;
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "move";
+            clearChapterDropHighlights();
+            emptyEl.classList.add("is-drop-target");
+        });
+        emptyEl.addEventListener("dragleave", e => {
+            if (!emptyEl.contains(e.relatedTarget)) emptyEl.classList.remove("is-drop-target");
+        });
+        emptyEl.addEventListener("drop", e => {
+            e.preventDefault();
+            emptyEl.classList.remove("is-drop-target");
+            void commitChapterReorder(section, 0, "end");
+        });
+    }
+
     function renderSection(section) {
         const mount = groupEls[section];
         mount.innerHTML = "";
@@ -682,37 +781,75 @@ function rememberBookId(id) {
             empty.className = "empty-slot";
             empty.textContent = "Drag chapters here";
             mount.appendChild(empty);
+            wireEmptySectionDrop(empty, section);
             return;
         }
         list.forEach((ch, index) => {
             const item = document.createElement("div");
             item.className = "chapter-item" + (section === currentSection && index === currentChapterIndex ? " active" : "");
-            item.draggable = true;
+            item.dataset.section = section;
+            item.dataset.index = String(index);
             const visibleNumber = section === "body" ? index + 1 : "";
-            item.innerHTML = `<div class="chapter-num">${visibleNumber}</div><div class="chapter-name">${escapeHtml(ch.title || "Untitled")}</div><div class="chapter-drag">⋮⋮</div>`;
+            item.innerHTML = `<div class="chapter-num">${visibleNumber}</div><div class="chapter-name">${escapeHtml(ch.title || "Untitled")}</div><div class="chapter-drag" draggable="true" title="Drag to reorder" aria-label="Drag to reorder">⋮⋮</div>`;
+            const handle = item.querySelector(".chapter-drag");
+
             item.addEventListener("click", () => {
+                if (chapterDragDidMove) return;
                 loadChapter(section, index);
                 if (window.innerWidth <= 760 && !sidebar.classList.contains("mobile-hidden")) toggleSidebar();
             });
-            item.addEventListener("dragstart", () => { dragged = { section, index }; item.classList.add("dragging"); });
-            item.addEventListener("dragend", () => { dragged = null; item.classList.remove("dragging"); });
-            item.addEventListener("dragover", e => e.preventDefault());
-            item.addEventListener("drop", async e => {
-                e.preventDefault();
-                if (!dragged) return;
-                const draggedList = currentBook.sections[dragged.section];
-                const targetList = currentBook.sections[section];
-                const draggedItem = draggedList[dragged.index];
-                draggedList.splice(dragged.index, 1);
-                targetList.splice(index, 0, draggedItem);
-                currentSection = section;
-                currentChapterIndex = index;
-                renderAllSections();
-                loadChapter(currentSection, currentChapterIndex, false);
-                try { await saveBook("Saved"); } catch (err) { console.error(err); setSaveStatus("Save failed"); }
+
+            handle.addEventListener("dragstart", e => {
+                chapterDragDidMove = false;
+                dragged = { section, index };
+                e.dataTransfer.setData("text/plain", ch.id || "");
+                e.dataTransfer.effectAllowed = "move";
+                item.classList.add("dragging");
             });
+            handle.addEventListener("drag", () => { chapterDragDidMove = true; });
+            handle.addEventListener("dragend", () => {
+                dragged = null;
+                item.classList.remove("dragging");
+                clearChapterDropHighlights();
+                setTimeout(() => { chapterDragDidMove = false; }, 0);
+            });
+
+            item.addEventListener("dragover", e => {
+                if (!dragged) return;
+                if (dragged.section === section && dragged.index === index) return;
+                e.preventDefault();
+                e.dataTransfer.dropEffect = "move";
+                clearChapterDropHighlights();
+                const placement = resolveChapterPlacement(item, e);
+                item.classList.add(placement === "before" ? "drop-before" : "drop-after");
+            });
+            item.addEventListener("dragleave", e => {
+                if (!item.contains(e.relatedTarget)) item.classList.remove("drop-before", "drop-after");
+            });
+            item.addEventListener("drop", e => {
+                e.preventDefault();
+                item.classList.remove("drop-before", "drop-after");
+                const placement = resolveChapterPlacement(item, e);
+                void commitChapterReorder(section, index, placement);
+            });
+
             mount.appendChild(item);
         });
+
+        const endDrop = document.createElement("div");
+        endDrop.className = "chapter-list-end-drop";
+        endDrop.setAttribute("aria-hidden", "true");
+        endDrop.addEventListener("dragover", e => {
+            if (!dragged) return;
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "move";
+            clearChapterDropHighlights();
+        });
+        endDrop.addEventListener("drop", e => {
+            e.preventDefault();
+            void commitChapterReorder(section, 0, "end");
+        });
+        mount.appendChild(endDrop);
     }
     function renderAllSections() { renderSection("front"); renderSection("body"); renderSection("back"); syncStats(); }
 
