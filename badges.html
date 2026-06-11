@@ -14,35 +14,46 @@
     <link rel="apple-touch-icon" sizes="180x180" href="Alysum-3.png">
     <script src="js/pwa-register.js" defer></script>
     <!-- ALYSUM:PWA:END -->
+
     <!-- ALYSUM:ANALYTICS:START -->
     <script type="module" src="js/vercel-analytics.js"></script>
     <!-- ALYSUM:ANALYTICS:END -->
 
+    <meta charset="UTF-8" />
+    <title>Alysum Achievements</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<meta charset="UTF-8" />
-<title>Alysum Achievements</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<script src="js/alysum-appearance-boot.js"></script>
-<link rel="stylesheet" href="css/site-responsive.css?v=1" />
+    <script src="js/alysum-appearance-boot.js"></script>
+    <link rel="stylesheet" href="css/site-responsive.css?v=1" />
+    <link rel="stylesheet" href="css/gradient-themes.css?v=4" />
+    <script src="js/gradient-theme-sync.js" defer></script>
+
 <style>
 * { box-sizing: border-box; }
 
 :root {
-    --bg: #0b1220;
-    --panel: #111827;
-    --panel-2: #1f2937;
+    --bg: #050816;
+    --panel: #0f172a;
+    --panel-2: #1e293b;
     --text: #ffffff;
-    --muted: #9ca3af;
+    --muted: #a7b0c2;
     --purple: #6d28d9;
-    --border: rgba(255,255,255,0.08);
-    --shadow: 0 14px 28px rgba(0,0,0,0.35);
+    --purple-bright: #8b5cf6;
+    --blue: #3b82f6;
+    --gold: #fbbf24;
+    --border: rgba(255,255,255,0.11);
+    --shadow: 0 18px 42px rgba(0,0,0,0.42);
 }
 
 body {
     margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-    background: var(--bg);
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif;
+    background:
+        radial-gradient(circle at top left, rgba(124,58,237,0.25), transparent 32%),
+        radial-gradient(circle at top right, rgba(59,130,246,0.18), transparent 28%),
+        var(--bg);
     color: var(--text);
+    min-height: 100vh;
 }
 
 .header {
@@ -53,7 +64,8 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, var(--purple-dark), var(--theme-header-mid));
+    background: linear-gradient(135deg, var(--purple-dark, #4c1d95), var(--theme-header-mid, #6d28d9));
+    box-shadow: 0 14px 30px rgba(0,0,0,0.28);
 }
 
 .header-title {
@@ -61,7 +73,7 @@ body {
     left: 50%;
     transform: translateX(-50%);
     font-size: 24px;
-    font-weight: 900;
+    font-weight: 950;
 }
 
 .back-btn {
@@ -69,8 +81,8 @@ body {
     left: 14px;
     width: 44px;
     height: 44px;
-    border-radius: 12px;
-    border: none;
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.16);
     background: rgba(0,0,0,0.25);
     color: white;
     font-size: 22px;
@@ -78,9 +90,9 @@ body {
 }
 
 .container {
-    max-width: 1100px;
+    max-width: 1120px;
     margin: auto;
-    padding: 20px;
+    padding: 22px;
 }
 
 .stats {
@@ -93,79 +105,25 @@ body {
 .stat {
     flex: 1 1 140px;
     min-width: 0;
-    background: var(--panel);
+    background:
+        radial-gradient(circle at top left, rgba(255,255,255,0.08), transparent 35%),
+        rgba(15,23,42,0.92);
     border: 1px solid var(--border);
-    border-radius: 18px;
-    padding: 16px;
+    border-radius: 20px;
+    padding: 17px;
     text-align: center;
+    box-shadow: 0 12px 28px rgba(0,0,0,0.24);
 }
 
 .stat h3 {
     margin: 0;
-    font-size: 22px;
-    font-weight: 900;
+    font-size: 23px;
+    font-weight: 950;
 }
 
 .stat p {
     margin: 6px 0 0;
     font-size: 13px;
-    color: var(--muted);
-}
-
-.badges {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 18px;
-}
-
-.badge {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 18px;
-    transition: 0.2s;
-}
-
-.badge.unlocked {
-    background: linear-gradient(135deg, var(--purple), var(--purple-bright));
-}
-
-.badge.locked {
-    opacity: 0.65;
-}
-
-.badge-icon {
-    font-size: 28px;
-    margin-bottom: 8px;
-}
-
-.badge-title {
-    font-size: 15px;
-    font-weight: 900;
-}
-
-.badge-desc {
-    font-size: 12px;
-    color: var(--muted);
-    margin-bottom: 12px;
-}
-
-.progress-bar {
-    height: 8px;
-    border-radius: 999px;
-    background: rgba(255,255,255,0.12);
-    overflow: hidden;
-}
-
-.progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--purple), var(--theme-header-end));
-    width: 0%;
-}
-
-.progress-text {
-    font-size: 12px;
-    margin-top: 6px;
     color: var(--muted);
     font-weight: 700;
 }
@@ -174,8 +132,8 @@ body {
     margin: 0 0 18px;
     padding: 12px 14px;
     border-radius: 14px;
-    background: rgba(251, 191, 36, 0.1);
-    border: 1px solid rgba(251, 191, 36, 0.35);
+    background: rgba(251,191,36,0.1);
+    border: 1px solid rgba(251,191,36,0.35);
     color: #fcd34d;
     font-size: 13px;
     line-height: 1.45;
@@ -183,6 +141,179 @@ body {
 
 .achievements-hint.hidden {
     display: none;
+}
+
+.badges {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(178px, 1fr));
+    gap: 18px;
+}
+
+.badge {
+    position: relative;
+    overflow: hidden;
+    min-height: 208px;
+    background:
+        radial-gradient(circle at top left, rgba(124,58,237,0.22), transparent 38%),
+        linear-gradient(145deg, #111827, #050816);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 24px;
+    padding: 18px;
+    box-shadow: var(--shadow);
+    transition: transform 0.18s ease, border-color 0.18s ease, opacity 0.18s ease;
+}
+
+.badge:hover {
+    transform: translateY(-3px);
+    border-color: rgba(255,255,255,0.25);
+}
+
+.badge.locked {
+    opacity: 0.72;
+    filter: saturate(0.75);
+}
+
+.badge.unlocked {
+    opacity: 1;
+    background:
+        radial-gradient(circle at top left, rgba(255,255,255,0.24), transparent 34%),
+        radial-gradient(circle at bottom right, rgba(59,130,246,0.35), transparent 40%),
+        linear-gradient(145deg, #2563eb, #6d28d9 55%, #111827);
+    border-color: rgba(255,255,255,0.34);
+}
+
+.badge.unlocked::after {
+    content: "UNLOCKED";
+    position: absolute;
+    top: 13px;
+    right: -32px;
+    transform: rotate(35deg);
+    background: rgba(255,255,255,0.95);
+    color: #111827;
+    font-size: 10px;
+    font-weight: 950;
+    padding: 4px 34px;
+    letter-spacing: 0.06em;
+}
+
+.badge-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 999px;
+    display: grid;
+    place-items: center;
+    font-size: 29px;
+    margin-bottom: 13px;
+    background:
+        radial-gradient(circle at 30% 20%, rgba(255,255,255,0.38), transparent 30%),
+        rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.22);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
+}
+
+.badge-title {
+    font-size: 15px;
+    font-weight: 950;
+    letter-spacing: 0.2px;
+    margin-bottom: 6px;
+}
+
+.badge-desc {
+    font-size: 12px;
+    color: rgba(255,255,255,0.74);
+    margin-bottom: 14px;
+    line-height: 1.35;
+}
+
+.progress-bar {
+    height: 8px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.13);
+    overflow: hidden;
+    margin-top: auto;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #60a5fa, #a78bfa, #fbbf24);
+    width: 0%;
+    border-radius: inherit;
+}
+
+.progress-text {
+    font-size: 12px;
+    margin-top: 7px;
+    color: rgba(255,255,255,0.76);
+    font-weight: 800;
+}
+
+.achievement-toast-wrap {
+    position: fixed;
+    top: 86px;
+    right: 18px;
+    z-index: 9999;
+    display: grid;
+    gap: 12px;
+    pointer-events: none;
+}
+
+.achievement-toast {
+    width: min(390px, calc(100vw - 28px));
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    padding: 16px;
+    border-radius: 22px;
+    background:
+        radial-gradient(circle at top left, rgba(96,165,250,0.35), transparent 34%),
+        linear-gradient(135deg, rgba(15,23,42,0.97), rgba(30,41,59,0.97));
+    border: 1px solid rgba(255,255,255,0.2);
+    box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+    animation: trophyIn 0.45s ease, trophyOut 0.45s ease 5.5s forwards;
+}
+
+.toast-icon {
+    flex: 0 0 auto;
+    width: 60px;
+    height: 60px;
+    border-radius: 999px;
+    display: grid;
+    place-items: center;
+    font-size: 31px;
+    background:
+        radial-gradient(circle at 30% 20%, rgba(255,255,255,0.5), transparent 28%),
+        linear-gradient(145deg, #3b82f6, #7c3aed);
+    box-shadow: inset 0 0 0 2px rgba(255,255,255,0.25);
+}
+
+.toast-kicker {
+    font-size: 11px;
+    color: #93c5fd;
+    font-weight: 950;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.toast-title {
+    margin-top: 3px;
+    font-size: 17px;
+    font-weight: 950;
+}
+
+.toast-desc {
+    margin-top: 5px;
+    font-size: 13px;
+    color: rgba(255,255,255,0.78);
+    line-height: 1.35;
+}
+
+@keyframes trophyIn {
+    from { transform: translateX(120%) scale(0.96); opacity: 0; }
+    to { transform: translateX(0) scale(1); opacity: 1; }
+}
+
+@keyframes trophyOut {
+    to { transform: translateX(120%) scale(0.96); opacity: 0; }
 }
 
 @media (max-width: 540px) {
@@ -205,43 +336,57 @@ body {
     .container {
         padding: 14px 12px;
     }
+
+    .badges {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 14px;
+    }
+
+    .achievement-toast-wrap {
+        top: auto;
+        right: 14px;
+        left: 14px;
+        bottom: 18px;
+    }
+
+    .achievement-toast {
+        width: 100%;
+    }
 }
 </style>
-<link rel="stylesheet" href="css/gradient-themes.css?v=4" />
-    <script src="js/gradient-theme-sync.js" defer></script>
 </head>
 
 <body>
 
 <div class="header">
-<button class="back-btn" id="backBtn">←</button>
-<div class="header-title">🏆 Achievements</div>
+    <button class="back-btn" id="backBtn">←</button>
+    <div class="header-title">🏆 Achievements</div>
 </div>
 
 <div class="container">
 
-<div class="stats">
-<div class="stat">
-<h3 id="totalWords">0</h3>
-<p>Total Words</p>
-</div>
-<div class="stat">
-<h3 id="streak">0</h3>
-<p>Streak 🔥</p>
-</div>
-<div class="stat">
-<h3 id="books">0</h3>
-<p>Books</p>
-</div>
-<div class="stat">
-<h3 id="dailyGoalStreak">0</h3>
-<p>Daily goal streak 🎯</p>
-</div>
-</div>
+    <div class="stats">
+        <div class="stat">
+            <h3 id="totalWords">0</h3>
+            <p>Total Words</p>
+        </div>
+        <div class="stat">
+            <h3 id="streak">0</h3>
+            <p>Streak 🔥</p>
+        </div>
+        <div class="stat">
+            <h3 id="books">0</h3>
+            <p>Books</p>
+        </div>
+        <div class="stat">
+            <h3 id="dailyGoalStreak">0</h3>
+            <p>Daily goal streak 🎯</p>
+        </div>
+    </div>
 
-<p id="achievementsHint" class="achievements-hint hidden" role="status"></p>
+    <p id="achievementsHint" class="achievements-hint hidden" role="status"></p>
 
-<div class="badges" id="badgeGrid"></div>
+    <div class="badges" id="badgeGrid"></div>
 
 </div>
 
@@ -265,42 +410,243 @@ let profileChannel = null;
 let booksChannel = null;
 let userData = {};
 let booksSnap = [];
+let firstRenderComplete = false;
 
-/* FULL BADGES */
 const BADGES = [
-    { icon: "🧩", title: "500 Words", goal: 500, getValue: (d) => d.words, desc: "First step" },
-    { icon: "✍️", title: "1K Words", goal: 1000, getValue: (d) => d.words, desc: "Start writing" },
-    { icon: "🔥", title: "10K Words", goal: 10000, getValue: (d) => d.words, desc: "Momentum" },
-    { icon: "🏆", title: "50K Words", goal: 50000, getValue: (d) => d.words, desc: "Big milestone" },
-    { icon: "💎", title: "100K Words", goal: 100000, getValue: (d) => d.words, desc: "Serious writer" },
-    { icon: "🚀", title: "200K Words", goal: 200000, getValue: (d) => d.words, desc: "Elite output" },
-    { icon: "🧠", title: "500K Words", goal: 500000, getValue: (d) => d.words, desc: "Half million" },
-    { icon: "👑", title: "1M Words", goal: 1000000, getValue: (d) => d.words, desc: "Master writer" },
-
-    { icon: "🌱", title: "Day 1", goal: 1, getValue: (d) => d.streak, desc: "You showed up" },
-    { icon: "⚡", title: "3 Day Streak", goal: 3, getValue: (d) => d.streak, desc: "Consistency" },
-    { icon: "🔥", title: "7 Day Streak", goal: 7, getValue: (d) => d.streak, desc: "Strong habit" },
-    { icon: "💪", title: "14 Day Streak", goal: 14, getValue: (d) => d.streak, desc: "Locked in" },
-    { icon: "📅", title: "30 Day Streak", goal: 30, getValue: (d) => d.streak, desc: "Monthly discipline" },
-    { icon: "🧱", title: "60 Day Streak", goal: 60, getValue: (d) => d.streak, desc: "Unbreakable" },
-    { icon: "📈", title: "90 Day Streak", goal: 90, getValue: (d) => d.streak, desc: "3 month grind" },
-    { icon: "🌀", title: "100 Day Streak", goal: 100, getValue: (d) => d.streak, desc: "Rare discipline" },
-    { icon: "🏔️", title: "180 Day Streak", goal: 180, getValue: (d) => d.streak, desc: "Half year" },
-    { icon: "🎖️", title: "365 Day Streak", goal: 365, getValue: (d) => d.streak, desc: "1 year legend" },
-
-    { icon: "📚", title: "First Book", goal: 1, getValue: (d) => d.books, desc: "You started" },
-    { icon: "📦", title: "5 Books", goal: 5, getValue: (d) => d.books, desc: "Library growing" },
-    { icon: "🏗️", title: "10 Books", goal: 10, getValue: (d) => d.books, desc: "Builder" },
-    { icon: "🏛️", title: "25 Books", goal: 25, getValue: (d) => d.books, desc: "Empire" },
+    {
+        id: "words_500",
+        icon: "🧩",
+        title: "First Sparks",
+        goal: 500,
+        getValue: (d) => d.words,
+        desc: "You wrote 500 words and successfully tricked the blank page into backing down."
+    },
+    {
+        id: "words_1000",
+        icon: "✍️",
+        title: "Keyboard Initiate",
+        goal: 1000,
+        getValue: (d) => d.words,
+        desc: "You crossed 1,000 words. The keyboard now recognizes you as one of its own."
+    },
+    {
+        id: "words_10000",
+        icon: "🔥",
+        title: "Plot Ignition",
+        goal: 10000,
+        getValue: (d) => d.words,
+        desc: "You hit 10,000 words. The story has officially escaped containment."
+    },
+    {
+        id: "words_50000",
+        icon: "🏆",
+        title: "Novel Territory",
+        goal: 50000,
+        getValue: (d) => d.words,
+        desc: "You reached 50,000 words. This is no longer a casual little document."
+    },
+    {
+        id: "words_100000",
+        icon: "💎",
+        title: "Serious Writer",
+        goal: 100000,
+        getValue: (d) => d.words,
+        desc: "You reached 100,000 words. Your fictional universe has requested zoning permits."
+    },
+    {
+        id: "words_200000",
+        icon: "🚀",
+        title: "Word Engine",
+        goal: 200000,
+        getValue: (d) => d.words,
+        desc: "You reached 200,000 words. The draft is now generating its own gravity."
+    },
+    {
+        id: "words_500000",
+        icon: "🧠",
+        title: "Lore Architect",
+        goal: 500000,
+        getValue: (d) => d.words,
+        desc: "You reached half a million words. Somewhere, a side character has a family tree."
+    },
+    {
+        id: "words_1000000",
+        icon: "👑",
+        title: "Million Word Monarch",
+        goal: 1000000,
+        getValue: (d) => d.words,
+        desc: "You reached 1,000,000 words. The blank page has surrendered unconditionally."
+    },
 
     {
+        id: "streak_1",
+        icon: "🌱",
+        title: "You Showed Up",
+        goal: 1,
+        getValue: (d) => d.streak,
+        desc: "You wrote today. The streak flame has been lit."
+    },
+    {
+        id: "streak_3",
+        icon: "⚡",
+        title: "Three-Day Charge",
+        goal: 3,
+        getValue: (d) => d.streak,
+        desc: "You wrote for 3 days in a row. Momentum is beginning to look suspiciously like discipline."
+    },
+    {
+        id: "streak_7",
+        icon: "🥷",
+        title: "Stealth Author",
+        goal: 7,
+        getValue: (d) => d.streak,
+        desc: "You avoided abandoning your book for 7 consecutive days without alerting a single chapter."
+    },
+    {
+        id: "streak_14",
+        icon: "💪",
+        title: "Locked In",
+        goal: 14,
+        getValue: (d) => d.streak,
+        desc: "You wrote for 14 days in a row. Your excuses are currently marked as missing."
+    },
+    {
+        id: "streak_30",
+        icon: "📅",
+        title: "Monthly Menace",
+        goal: 30,
+        getValue: (d) => d.streak,
+        desc: "You kept writing for 30 days. The calendar has filed a formal complaint."
+    },
+    {
+        id: "streak_60",
+        icon: "🧱",
+        title: "Unbreakable Draft",
+        goal: 60,
+        getValue: (d) => d.streak,
+        desc: "You wrote for 60 days in a row. This habit now has structural integrity."
+    },
+    {
+        id: "streak_90",
+        icon: "📈",
+        title: "Three-Month Grind",
+        goal: 90,
+        getValue: (d) => d.streak,
+        desc: "You reached a 90-day streak. Your discipline has entered boss-fight territory."
+    },
+    {
+        id: "streak_100",
+        icon: "🌀",
+        title: "Century Scribe",
+        goal: 100,
+        getValue: (d) => d.streak,
+        desc: "You wrote for 100 days in a row. Reality is now loosely based on your outline."
+    },
+    {
+        id: "streak_180",
+        icon: "🏔️",
+        title: "Half-Year Hermit",
+        goal: 180,
+        getValue: (d) => d.streak,
+        desc: "You reached 180 days. You may now refer to your writing routine as ancient magic."
+    },
+    {
+        id: "streak_365",
+        icon: "🎖️",
+        title: "Yearlong Legend",
+        goal: 365,
+        getValue: (d) => d.streak,
+        desc: "You wrote for 365 days. The archive keepers will speak of this."
+    },
+
+    {
+        id: "books_1",
+        icon: "📚",
+        title: "World Builder",
+        goal: 1,
+        getValue: (d) => d.books,
+        desc: "You created your first book. The fictional universe has been notified."
+    },
+    {
+        id: "books_5",
+        icon: "📦",
+        title: "Shelf Starter",
+        goal: 5,
+        getValue: (d) => d.books,
+        desc: "You created 5 books. Your ideas are no longer traveling light."
+    },
+    {
+        id: "books_10",
+        icon: "🏗️",
+        title: "Library Contractor",
+        goal: 10,
+        getValue: (d) => d.books,
+        desc: "You created 10 books. Someone should probably check the blueprints."
+    },
+    {
+        id: "books_25",
+        icon: "🏛️",
+        title: "Archive Empire",
+        goal: 25,
+        getValue: (d) => d.books,
+        desc: "You created 25 books. This is less a library and more a sovereign territory."
+    },
+
+    {
+        id: "daily_goal_3",
         icon: "🎯",
-        title: "3-Day Goal Streak",
+        title: "Goal Getter",
         goal: 3,
         getValue: (d) => d.dailyGoalStreak,
-        desc: "Hit your daily word goal three days in a row"
+        desc: "You hit your daily word goal 3 days in a row. The target never saw it coming."
     }
 ];
+
+function badgeStorageKey() {
+    const uid = userData?.id || userData?.user_id || "anonymous";
+    return `alysum_unlocked_badges_${uid}`;
+}
+
+function getUnlockedBadgeIds() {
+    try {
+        return JSON.parse(localStorage.getItem(badgeStorageKey()) || "[]");
+    } catch {
+        return [];
+    }
+}
+
+function saveUnlockedBadgeIds(ids) {
+    localStorage.setItem(badgeStorageKey(), JSON.stringify([...new Set(ids)]));
+}
+
+function showAchievementToast(badge) {
+    let wrap = document.querySelector(".achievement-toast-wrap");
+
+    if (!wrap) {
+        wrap = document.createElement("div");
+        wrap.className = "achievement-toast-wrap";
+        document.body.appendChild(wrap);
+    }
+
+    const toast = document.createElement("div");
+    toast.className = "achievement-toast";
+
+    toast.innerHTML = `
+        <div class="toast-icon">${badge.icon}</div>
+        <div>
+            <div class="toast-kicker">Achievement Unlocked</div>
+            <div class="toast-title">"${badge.title}"</div>
+            <div class="toast-desc">Congratulations! ${badge.desc}</div>
+        </div>
+    `;
+
+    wrap.appendChild(toast);
+
+    setTimeout(() => {
+        toast.remove();
+        if (!wrap.children.length) wrap.remove();
+    }, 6300);
+}
 
 function renderAchievementsFromCache() {
     const snap = Array.isArray(booksSnap) ? booksSnap : [];
@@ -319,6 +665,7 @@ function renderAchievementsFromCache() {
         const dailyGoal = clampDailyWordGoal(
             userData.daily_word_goal ?? userData.dailyWordGoal ?? DEFAULT_DAILY_WORD_GOAL
         );
+
         dailyGoalStreak = computeGoalStreakFromTotals(
             userData.writing_day_totals ?? userData.writingDayTotals ?? {},
             dailyGoal
@@ -335,8 +682,8 @@ function renderAchievementsFromCache() {
     };
 
     wordsEl.textContent = data.words.toLocaleString();
-    streakEl.textContent = data.streak;
-    booksEl.textContent = data.books;
+    streakEl.textContent = data.streak.toLocaleString();
+    booksEl.textContent = data.books.toLocaleString();
     dailyGoalStreakEl.textContent = data.dailyGoalStreak.toLocaleString();
 
     try {
@@ -346,40 +693,55 @@ function renderAchievementsFromCache() {
     }
 }
 
-/* RENDER */
 function renderBadges(data) {
     if (!grid) return;
+
     grid.innerHTML = "";
 
-BADGES.forEach((b) => {
+    const previouslyUnlocked = getUnlockedBadgeIds();
+    const nowUnlocked = [];
+
+    BADGES.forEach((b) => {
         const raw = b.getValue(data);
         const value = typeof raw === "number" && Number.isFinite(raw) ? raw : 0;
         const percent = Math.min(value / b.goal, 1) * 100;
         const unlocked = value >= b.goal;
 
+        if (unlocked && b.id) {
+            nowUnlocked.push(b.id);
+
+            if (firstRenderComplete && !previouslyUnlocked.includes(b.id)) {
+                showAchievementToast(b);
+            }
+        }
+
         const el = document.createElement("div");
         el.className = "badge " + (unlocked ? "unlocked" : "locked");
 
         el.innerHTML = `
-<div class="badge-icon">${b.icon}</div>
-<div class="badge-title">${b.title}</div>
-<div class="badge-desc">${b.desc}</div>
+            <div class="badge-icon">${b.icon}</div>
+            <div class="badge-title">${b.title}</div>
+            <div class="badge-desc">${b.desc}</div>
 
-<div class="progress-bar">
-<div class="progress-fill" style="width:${percent}%"></div>
-</div>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width:${percent}%"></div>
+            </div>
 
-<div class="progress-text">
-${Math.min(value, b.goal)} / ${b.goal}
-</div>
-`;
+            <div class="progress-text">
+                ${Math.min(value, b.goal).toLocaleString()} / ${b.goal.toLocaleString()}
+            </div>
+        `;
 
         grid.appendChild(el);
     });
+
+    saveUnlockedBadgeIds([...previouslyUnlocked, ...nowUnlocked]);
+    firstRenderComplete = true;
 }
 
 async function loadUserAndBooks(uid) {
     const hintEl = document.getElementById("achievementsHint");
+
     if (hintEl) {
         hintEl.classList.add("hidden");
         hintEl.textContent = "";
@@ -389,9 +751,11 @@ async function loadUserAndBooks(uid) {
         supabase.from("users").select("*").eq("id", uid).maybeSingle(),
         supabase.from("books").select("sections, words").eq("user_id", uid)
     ]);
+
     if (pErr) console.warn("Achievements profile:", pErr);
     if (bErr) console.warn("Achievements books:", bErr);
-    userData = profile || {};
+
+    userData = profile || { id: uid };
     booksSnap = books || [];
 
     if (hintEl) {
@@ -402,12 +766,14 @@ async function loadUserAndBooks(uid) {
         } else if (!booksSnap.length) {
             let msg =
                 "No books are linked to this login. If you already had a library, those rows may still exist under a different user id.";
+
             if (profile?.firebase_uid || profile?.firebaseUid) {
                 msg +=
-                    " After a Firebase → Supabase migration, run node repair-books-ownership.js from the project folder (then refresh), or set books.user_id to your user id in Supabase.";
+                    " After a Firebase → Supabase migration, run node repair-books-ownership.js from the project folder, then refresh. Or set books.user_id to your user id in Supabase.";
             } else {
                 msg += " Create a book from Studio, or sign in with the account that owns the books.";
             }
+
             hintEl.textContent = msg;
             hintEl.classList.remove("hidden");
         }
@@ -441,9 +807,11 @@ function startAchievementsRealtime(uid) {
 
 wireSupabaseSession((session) => {
     const user = session?.user;
+
     if (!user) {
         if (profileChannel) supabase.removeChannel(profileChannel);
         if (booksChannel) supabase.removeChannel(booksChannel);
+
         profileChannel = null;
         booksChannel = null;
         location.href = "login.html";
@@ -452,23 +820,29 @@ wireSupabaseSession((session) => {
 
     if (profileChannel) supabase.removeChannel(profileChannel);
     if (booksChannel) supabase.removeChannel(booksChannel);
+
     profileChannel = null;
     booksChannel = null;
-
     userData = {};
     booksSnap = [];
+    firstRenderComplete = false;
+
     void loadUserAndBooks(user.id)
         .then(() => startAchievementsRealtime(user.id))
         .catch((err) => {
             console.error("Achievements load failed:", err);
+
             const hintEl = document.getElementById("achievementsHint");
+
             if (hintEl) {
                 hintEl.textContent =
                     "Could not load achievements (" +
                     (err?.message || String(err)) +
                     "). Check your connection, refresh, or open the browser console for details.";
+
                 hintEl.classList.remove("hidden");
             }
+
             renderAchievementsFromCache();
         });
 
