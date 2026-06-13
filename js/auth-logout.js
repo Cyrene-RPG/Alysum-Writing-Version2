@@ -6,20 +6,33 @@ import {
     OAUTH_PENDING_LOGIN_KEY,
     OAUTH_PENDING_SIGNUP_KEY,
 } from "./auth-redirect.js?v=2";
-import { clearDesktopLocalHost, goToLogin, isAlysumDesktop } from "./desktop-auth.js?v=1";
+import {
+    clearDesktopLocalHost,
+    goToLogin,
+    isAlysumDesktop,
+    isDesktopLocalHost,
+} from "./desktop-auth.js?v=1";
 
 let signOutInFlight = false;
 
-/** Sign out of Supabase and clear OAuth state before redirecting to login. */
-export async function signOutAndGoToLogin() {
+function goToSignedOutHome() {
+    if (isAlysumDesktop()) {
+        goToLogin();
+        return;
+    }
+    window.location.href = "index.html";
+}
+
+/** Sign out of Supabase and clear OAuth state before redirecting to the signed-out homepage. */
+export async function signOutAndGoToHome() {
     if (signOutInFlight) {
         return { ok: false, error: new Error("Sign-out already in progress.") };
     }
     signOutInFlight = true;
     try {
-        if (isDesktopLocalHost()) {
+        if (isAlysumDesktop() && isDesktopLocalHost()) {
             clearDesktopLocalHost();
-            goToLogin();
+            goToSignedOutHome();
             return { ok: true };
         }
         const { error } = await supabase.auth.signOut();
@@ -29,13 +42,16 @@ export async function signOutAndGoToLogin() {
         clearLegacyOAuthPending();
         clearAuthCallbackFromUrl();
         if (isAlysumDesktop()) clearDesktopLocalHost();
-        goToLogin();
+        goToSignedOutHome();
         return { ok: true };
     } catch (error) {
         signOutInFlight = false;
         return { ok: false, error };
     }
 }
+
+/** @deprecated Use signOutAndGoToHome. */
+export const signOutAndGoToLogin = signOutAndGoToHome;
 
 /**
  * @param {ParentNode} [root]
@@ -49,7 +65,7 @@ export function wireLogoutButtons(root = document, options = {}) {
         btn.addEventListener("click", async () => {
             if (btn.disabled) return;
             btn.disabled = true;
-            const result = await signOutAndGoToLogin();
+            const result = await signOutAndGoToHome();
             if (!result.ok) {
                 btn.disabled = false;
                 const message =

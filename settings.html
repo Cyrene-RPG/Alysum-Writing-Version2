@@ -1219,7 +1219,7 @@
 
 <script type="module">
     import { supabase } from "./firebase.js";
-    import { signOutAndGoToLogin } from "./js/auth-logout.js?v=1";
+    import { signOutAndGoToHome } from "./js/auth-logout.js?v=2";
     import { goToLogin } from "./js/desktop-auth.js?v=1";
     import { resolveStudioSession } from "./js/studio-session.js?v=1";
     import { getProfileRow, updateProfileRow } from "./js/local-studio-store.js?v=1";
@@ -1583,7 +1583,7 @@
     logoutBtn?.addEventListener("click", async () => {
         if (logoutBtn.disabled) return;
         logoutBtn.disabled = true;
-        const result = await signOutAndGoToLogin();
+        const result = await signOutAndGoToHome();
         if (!result.ok) {
             logoutBtn.disabled = false;
             showMsg(profileMsg, result.error?.message || "Could not log out.", false);
