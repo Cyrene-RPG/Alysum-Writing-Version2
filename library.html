@@ -162,10 +162,10 @@
     <div class="topbar-inner">
         <div class="library-tools">
             <div class="nav-row">
-                <button class="nav-btn active" data-filter="fiction" type="button">Fiction</button>
-                <button class="nav-btn" data-filter="nonfiction" type="button">Nonfiction</button>
+                <button class="nav-btn active" data-filter="all" type="button">All</button>
+                <button class="nav-btn" data-filter="fiction" type="button">Fiction</button>
                 <button class="nav-btn" data-filter="fanfiction" type="button">Fanfiction</button>
-                <button class="nav-btn" data-filter="all" type="button">All</button>
+                <button class="nav-btn" data-filter="nonfiction" type="button">Nonfiction</button>
             </div>
             <div class="search-wrap">
                 <input class="search-input" id="searchInput" type="text" placeholder="Search by title, author, summary, genre, tag, or warning...">
@@ -203,7 +203,7 @@
     wireLogoutButtons();
 
     let allBooks = [];
-    let currentFilter = "fiction";
+    let currentFilter = "all";
     const readCounts = new Map();
 
     function mergedProfile(row) {
