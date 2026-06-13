@@ -1199,7 +1199,6 @@ async function loadBookForPreview(uid) {
             .from("books")
             .select("*")
             .eq("id", bookId)
-            .eq("user_id", uid)
             .maybeSingle();
 
         if (bErr) throw bErr;
@@ -1594,184 +1593,200 @@ function buildExportTabHtml(blobUrl, filename) {
 </html>`;
 }
 
-/**
- * HTML for the placeholder we write into the new tab the instant the user clicks Export.
- * Shown while the PDF is being rasterized so the new tab is never blank.
- */
-function buildExportTabPlaceholderHtml() {
+function buildNativePrintExportHtml(book, filename, mount) {
+    const inputs = currentPreviewInputs();
+    const title = inputs.title || safeString(book.title, "Untitled Book");
+    const pw = parseFloat(mount.getAttribute("data-page-width-in")) || 5;
+    const ph = parseFloat(mount.getAttribute("data-page-height-in")) || 8;
+    const mt = parseFloat(mount.getAttribute("data-margin-top-in") ?? "0.5") || 0.5;
+    const mb = parseFloat(mount.getAttribute("data-margin-bottom-in") ?? "0.5") || 0.5;
+    const mi = parseFloat(mount.getAttribute("data-margin-inner-in") ?? "0.75") || 0.75;
+    const mo = parseFloat(mount.getAttribute("data-margin-outer-in") ?? "0.5") || 0.5;
+    const bodyFont = getPreviewBodyFontStack();
+    const bodyPt = getPreviewBodySizePt();
+    const chapterTitleFont = getPreviewChapterTitleFontStack();
+    const safeName = escapeHtml(filename);
+    const bodyChapters = allChaptersFlat(book).filter(ch => ch.section === "body");
+    const tocItems = bodyChapters
+        .map((ch, i) => `<li>${escapeHtml(safeString(ch.title, "").trim() || `Chapter ${i + 1}`)}</li>`)
+        .join("");
+    const sections = [
+        `<section class="ne-print-title-page">${titlePageHtml(title, inputs.pen, inputs.titleFont, inputs.penFont)}</section>`,
+        `<section class="ne-print-front-page">${copyrightPageHtml(inputs.cp)}</section>`
+    ];
+
+    if (inputs.acknowledgements) {
+        sections.push(`<section class="ne-print-front-page">${acknowledgementsPageHtml(inputs.acknowledgements, inputs.ackFont)}</section>`);
+    }
+    if (inputs.includeToc) {
+        sections.push(
+            `<section class="ne-print-front-page ne-print-toc-page">` +
+            `<h1>Contents</h1><ol>${tocItems || "<li>Untitled</li>"}</ol>` +
+            `</section>`
+        );
+    }
+    bodyChapters.forEach((ch, i) => {
+        const chapterTitle = escapeHtml(safeString(ch.title, "").trim() || `Chapter ${i + 1}`);
+        sections.push(
+            `<section class="ne-print-chapter">` +
+            `<header class="ne-print-chapter-head">` +
+            `<p>Chapter ${i + 1}</p>` +
+            `<h1 style="font-family:${chapterTitleFont}">${chapterTitle}</h1>` +
+            `</header>` +
+            `<div class="ne-print-body">${normalizeChapterBodyHtml(ch.content)}</div>` +
+            `</section>`
+        );
+    });
+    if (inputs.authorsNotes) {
+        sections.push(`<section class="ne-print-back-page">${optionalBackMatterPageHtml("Author's notes", inputs.authorsNotes, inputs.authorsNotesFont)}</section>`);
+    }
+    if (inputs.glossary) {
+        sections.push(`<section class="ne-print-back-page">${optionalBackMatterPageHtml("Glossary", inputs.glossary, inputs.glossaryFont)}</section>`);
+    }
+    if (inputs.aboutAuthor) {
+        sections.push(`<section class="ne-print-back-page">${optionalBackMatterPageHtml("About the author", inputs.aboutAuthor, inputs.aboutAuthorFont)}</section>`);
+    }
+
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Generating PDF…</title>
+<title>${safeName}</title>
 <style>
-    html, body { margin: 0; height: 100%; background: #0b1220; color: #e5e7eb;
+    @page { size: ${pw}in ${ph}in; margin: ${mt}in ${mo}in ${mb}in ${mi}in; }
+    @page :left { margin: ${mt}in ${mi}in ${mb}in ${mo}in; }
+    @page :right { margin: ${mt}in ${mo}in ${mb}in ${mi}in; }
+    html, body { margin: 0; min-height: 100%; background: #0b1220; color: #f8fafc;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-    .wrap { display: flex; flex-direction: column; align-items: center;
-        justify-content: center; height: 100%; gap: 14px; }
-    .dot { width: 12px; height: 12px; border-radius: 50%; background: #7c3aed;
-        animation: pulse 1s ease-in-out infinite; }
-    .label { font-size: 14px; font-weight: 600; letter-spacing: 0.02em; }
-    @keyframes pulse { 0%,100% { transform: scale(0.7); opacity: 0.5; }
-        50% { transform: scale(1.2); opacity: 1; } }
+    .ne-native-print-bar { position: sticky; top: 0; z-index: 10; display: flex; align-items: center;
+        justify-content: space-between; gap: 12px; padding: 10px 14px;
+        background: rgba(11, 18, 32, 0.96); border-bottom: 1px solid rgba(148, 163, 184, 0.28); }
+    .ne-native-print-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        font-size: 14px; font-weight: 800; }
+    .ne-native-print-btn { border: 1px solid rgba(255,255,255,0.16); border-radius: 10px;
+        background: linear-gradient(180deg, #7c3aed, #5b21b6); color: #fff; cursor: pointer;
+        font: inherit; font-size: 14px; font-weight: 800; padding: 8px 14px; }
+    .ne-native-print-shell { max-width: ${pw}in; margin: 22px auto; background: #fff; color: #111827;
+        box-shadow: 0 18px 50px rgba(0,0,0,0.38); padding: ${mt}in ${mo}in ${mb}in ${mi}in; }
+    .ne-native-print-doc { font-family: ${bodyFont}; font-size: ${bodyPt}pt; line-height: 1.48; color: #111827; }
+    .ne-native-print-doc section { break-after: page; page-break-after: always; }
+    .ne-native-print-doc section:last-child { break-after: auto; page-break-after: auto; }
+    .ne-print-title-page, .ne-print-front-page, .ne-print-back-page { min-height: calc(${ph}in - ${mt + mb}in); }
+    .ne-preview-page-frame { min-height: calc(${ph}in - ${mt + mb}in); color: #111827; }
+    .ne-preview-page-title { display: flex; flex-direction: column; align-items: center; text-align: center;
+        padding-top: 18%; }
+    .ne-preview-title-author { margin: 0 0 1.15rem; font-size: 11pt; letter-spacing: 0.08em; text-transform: uppercase; }
+    .ne-preview-title-rule { width: 68%; height: 1px; background: rgba(15,23,42,0.35); margin: 0 0 1.15rem; }
+    .ne-preview-title-work { margin: 0; font-size: 22pt; line-height: 1.05; letter-spacing: 0.03em; }
+    .ne-preview-page-copyright { display: flex; flex-direction: column; justify-content: center;
+        min-height: calc(${ph}in - ${mt + mb}in); font-size: 9.25pt; line-height: 1.38; }
+    .ne-preview-page-copyright p { margin: 0 0 0.65em; }
+    .ne-print-toc-page h1, .ne-extra-h2 { margin: 0 0 0.8rem; text-align: center;
+        font-family: ${chapterTitleFont}; font-size: 16pt; letter-spacing: 0.04em; }
+    .ne-print-toc-page ol { margin: 0; padding-left: 1.2rem; line-height: 1.6; }
+    .ne-print-chapter { break-before: page; page-break-before: always; }
+    .ne-print-chapter-head { text-align: center; margin: 0 0 0.35in; padding-top: 0.25in; }
+    .ne-print-chapter-head p { margin: 0 0 0.4rem; font-size: 9pt; letter-spacing: 0.22em;
+        text-transform: uppercase; color: rgba(15,23,42,0.55); }
+    .ne-print-chapter-head h1 { margin: 0; font-size: 18pt; line-height: 1.14; letter-spacing: 0.035em; }
+    .ne-print-body p, .ne-extra-body .ne-ms-para { margin: 0; text-indent: 0.25in; }
+    .ne-print-body p:first-child, .ne-extra-body .ne-ms-para:first-child { text-indent: 0; }
+    .ne-print-body ul, .ne-print-body ol { margin: 0.4em 0 0.65em; padding-left: 1.25em; }
+    .ne-print-body blockquote { margin: 0.5em 0 0.65em; padding-left: 0.75em;
+        border-left: 2px solid rgba(100,116,139,0.35); color: #334155; }
+    @media print {
+        html, body { background: #fff !important; color: #111827 !important; }
+        .ne-native-print-bar { display: none !important; }
+        .ne-native-print-shell { max-width: none; margin: 0; padding: 0; box-shadow: none; }
+        .ne-native-print-doc { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+    }
 </style>
 </head>
 <body>
-<div class="wrap"><div class="dot"></div><div class="label">Generating your PDF…</div></div>
+<div class="ne-native-print-bar">
+    <span class="ne-native-print-name" title="${safeName}">${safeName}</span>
+    <button class="ne-native-print-btn" type="button" onclick="window.print()">Save as PDF</button>
+</div>
+<main class="ne-native-print-shell"><article class="ne-native-print-doc">${sections.join("\n")}</article></main>
+<script>
+    window.addEventListener("load", async () => {
+        try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch (_) {}
+        setTimeout(() => window.print(), 250);
+    });
+</script>
 </body>
 </html>`;
 }
 
+function writeNativePrintExport(exportWin, html, filename) {
+    if (exportWin && !exportWin.closed && exportWin.document) {
+        try {
+            exportWin.document.open();
+            exportWin.document.write(html);
+            exportWin.document.close();
+            exportWin.focus();
+            return true;
+        } catch (err) {
+            console.error("Failed to write native print export tab:", err);
+        }
+    }
+    try {
+        const frame = document.createElement("iframe");
+        frame.title = filename;
+        frame.setAttribute("aria-hidden", "true");
+        frame.style.cssText =
+            "position:fixed;right:0;bottom:0;width:1px;height:1px;border:0;opacity:0;pointer-events:none;z-index:-1;";
+        frame.srcdoc = html;
+        document.body.appendChild(frame);
+        frame.addEventListener("load", () => {
+            try {
+                frame.contentWindow?.focus();
+                frame.contentWindow?.print();
+            } catch (err) {
+                console.error("Failed to print native export frame:", err);
+            }
+            setTimeout(() => frame.remove(), 2 * 60 * 1000);
+        }, { once: true });
+        return true;
+    } catch (err) {
+        console.error("Failed to create native print export frame:", err);
+        return false;
+    }
+}
+
 /**
- * Rasterize each preview page (same HTML as `buildPreviewPages`) at trim size, then open the PDF
- * in a new tab with a Download button. The tab is opened synchronously on click so popup blockers
- * don't trip; we focus it after the PDF is ready.
+ * Open a print-ready document immediately and let the browser produce the PDF.
+ * This avoids the previous canvas/jsPDF path, which could hang before reaching fallback UI.
  */
 async function exportManuscriptPdf() {
     const btn = document.getElementById("neExportPdfBtn");
     const mount = document.getElementById("pdfPreviewMount");
-    const host = document.getElementById("nePdfExportHost");
-    if (!mount || !host) return;
+    if (!mount) return;
 
     if (!loadedBook) {
         alert("Load a manuscript first (open this page with ?book=…).");
         return;
     }
 
-    const jspdfNs = /** @type {{ jsPDF?: new (opts?: object) => object }} */ (window).jspdf;
-    const h2c = /** @type {undefined | ((el: HTMLElement, opts?: object) => Promise<HTMLCanvasElement>)} */ (
-        /** @type {*} */ (window).html2canvas
-    );
-    if (typeof h2c !== "function" || !jspdfNs?.jsPDF) {
-        alert("PDF libraries did not load. Check your network connection and try again.");
-        return;
-    }
-
-    /* Open the tab synchronously while we're still inside the user-gesture stack.
-       If the popup is blocked, exportWin will be null and we fall back to a download. */
-    const exportWin = window.open("about:blank", "_blank");
-    if (exportWin && exportWin.document) {
-        try {
-            exportWin.document.open();
-            exportWin.document.write(buildExportTabPlaceholderHtml());
-            exportWin.document.close();
-            exportWin.focus();
-        } catch (_) {
-            /* placeholder is best-effort. */
-        }
-    }
-
     const label = (btn?.textContent && btn.textContent.trim()) || "Export PDF";
     if (btn) {
         btn.disabled = true;
-        btn.textContent = "Exporting…";
+        btn.textContent = "Opening PDF…";
     }
-
-    const hostPrevStyle = host.getAttribute("style");
     try {
-        await document.fonts.ready.catch(() => {});
-        if (nePreviewRebuildTimer) clearTimeout(nePreviewRebuildTimer);
-        nePreviewRebuildTimer = null;
-        const exportLayout = computeExportLayoutMetrics(mount, host);
-        const pages = buildPreviewPages(loadedBook, exportLayout);
-        if (!pages.length) {
-            throw new Error("Nothing to export.");
-        }
-
-        const pw = parseFloat(mount.getAttribute("data-page-width-in")) || 5;
-        const ph = parseFloat(mount.getAttribute("data-page-height-in")) || 8;
-        const portrait = pw <= ph;
-        const { jsPDF } = jspdfNs;
-        const pdf = new jsPDF({
-            unit: "in",
-            format: [pw, ph],
-            orientation: portrait ? "portrait" : "landscape",
-            compress: true
-        });
-
-        /* Bring host on-screen (invisible) so layout + html2canvas see non-zero paint bounds. */
-        host.style.cssText =
-            "position:fixed;left:0;top:0;width:max-content;height:max-content;opacity:0.02;pointer-events:none;z-index:2147483646;overflow:visible;";
-
-        for (let i = 0; i < pages.length; i += 1) {
-            host.replaceChildren();
-            const pageEl = cloneExportPageShell(mount);
-            const sc = document.createElement("div");
-            sc.className = "ne-preview-scroll";
-            sc.innerHTML = pages[i].html;
-            pageEl.appendChild(sc);
-            host.appendChild(pageEl);
-
-            await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-            const wPx = Math.ceil(pageEl.offsetWidth);
-            const hPx = Math.ceil(pageEl.offsetHeight);
-            if (wPx < 8 || hPx < 8) {
-                throw new Error("Export page had no measurable layout.");
-            }
-
-            const scale = Math.min(2.5, Math.max(2, (window.devicePixelRatio || 1) * 1.25));
-            const canvas = await h2c(pageEl, {
-                scale,
-                useCORS: true,
-                allowTaint: false,
-                logging: false,
-                backgroundColor: null,
-                width: wPx,
-                height: hPx,
-                windowWidth: wPx,
-                windowHeight: hPx
-            });
-
-            const img = canvas.toDataURL("image/png");
-            if (i > 0) {
-                pdf.addPage([pw, ph], portrait ? "portrait" : "landscape");
-            }
-            pdf.addImage(img, "PNG", 0, 0, pw, ph);
-        }
-
         const inputs = currentPreviewInputs();
         const base = slugForPdfFilename(inputs.title || loadedBook.title || "manuscript");
         const filename = `${base}.pdf`;
-
-        let blob = pdf.output("blob");
-        if (!blob.type || blob.type === "application/octet-stream") {
-            blob = new Blob([blob], { type: "application/pdf" });
-        }
-        const blobUrl = URL.createObjectURL(blob);
-
-        if (exportWin && !exportWin.closed) {
-            try {
-                exportWin.document.open();
-                exportWin.document.write(buildExportTabHtml(blobUrl, filename));
-                exportWin.document.close();
-                exportWin.focus();
-                /* Revoke after the iframe has had time to fetch the blob. */
-                setTimeout(() => URL.revokeObjectURL(blobUrl), 5 * 60 * 1000);
-            } catch (writeErr) {
-                console.error("Failed to write export tab:", writeErr);
-                URL.revokeObjectURL(blobUrl);
-                pdf.save(filename);
-            }
-        } else {
-            /* Popup blocked — fall back to a download so the user still gets the file. */
-            URL.revokeObjectURL(blobUrl);
-            pdf.save(filename);
-            alert(
-                "Your browser blocked the new tab, so the PDF was downloaded instead.\n" +
-                "Allow popups for this site to open the PDF in a new tab next time."
-            );
+        const nativeWin = window.open("about:blank", "_blank");
+        const html = buildNativePrintExportHtml(loadedBook, filename, mount);
+        if (!writeNativePrintExport(nativeWin, html, filename)) {
+            throw new Error("Could not open the PDF print dialog. Allow popups for this site and try again.");
         }
     } catch (err) {
         console.error(err);
-        if (exportWin && !exportWin.closed) {
-            try { exportWin.close(); } catch (_) { /* noop */ }
-        }
         const msg = err && typeof err === "object" && "message" in err ? String(err.message) : String(err);
         alert(msg || "Could not export PDF.");
     } finally {
-        host.replaceChildren();
-        if (hostPrevStyle) host.setAttribute("style", hostPrevStyle);
-        else host.removeAttribute("style");
         if (btn) {
             btn.disabled = false;
             btn.textContent = label;
