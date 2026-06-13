@@ -41,8 +41,8 @@
             --border: rgba(255,255,255,0.08);
             --shadow: 0 14px 34px rgba(0,0,0,0.28);
             --reader-max: 980px;
-            --page-max: 1480px;
-            --sidebar-w: 300px;
+            --page-max: 1640px;
+            --sidebar-w: clamp(360px, 24vw, 430px);
             --font-size: 22px;
             --line-height: 1.95;
             --reader-nav-offset: 82px;
@@ -87,7 +87,14 @@
         .all-notes-label-short, .reader-profile-label-short { display: none; }
         .page { width: 100%; max-width: var(--page-max); margin: 0 auto; padding: 20px 16px 120px; }
         .reader-layout { display: grid; grid-template-columns: minmax(0, var(--sidebar-w)) minmax(0, 1fr); gap: 20px; align-items: start; }
+        body.reader-sidebar-collapsed .reader-layout { grid-template-columns: minmax(0, 1fr); }
         .sidebar { position: sticky; top: calc(var(--reader-nav-offset) + 78px); background: var(--panel); border: 1px solid var(--border); border-radius: 24px; box-shadow: var(--shadow); padding: 18px; }
+        body.reader-sidebar-collapsed .sidebar { display: none; }
+        .sidebar-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+        .sidebar-collapse-btn, .sidebar-restore-btn { border: 1px solid var(--border); background: var(--panel-2); color: var(--muted); border-radius: 999px; font: inherit; font-size: 12px; font-weight: 900; line-height: 1; padding: 9px 11px; cursor: pointer; white-space: nowrap; }
+        .sidebar-collapse-btn:hover, .sidebar-restore-btn:hover { color: var(--text); background: color-mix(in srgb, var(--panel-2) 72%, var(--text) 8%); }
+        .sidebar-restore-btn { display: none; position: sticky; top: calc(var(--reader-nav-offset) + 78px); z-index: 20; width: max-content; margin: 0 0 12px; box-shadow: var(--shadow); }
+        body.reader-sidebar-collapsed .sidebar-restore-btn { display: inline-flex; align-items: center; }
         .sidebar-title { font-size: 24px; line-height: 1.1; font-weight: 900; margin: 0; }
         .sidebar-author { margin-top: 8px; color: var(--muted); font-size: 14px; font-weight: 700; }
         .sidebar-summary { margin-top: 14px; color: var(--muted); font-size: 14px; line-height: 1.65; white-space: pre-wrap; }
@@ -146,7 +153,7 @@
         .comment-input { width: 100%; min-height: 110px; resize: vertical; border-radius: 16px; border: 1px solid var(--border); background: var(--panel-2); color: var(--text); padding: 12px; outline: none; font-family: inherit; font-size: 15px; line-height: 1.6; }
         .footer-space { height: 40px; }
         @media (min-width: 1080px) { .hero { display: none; } .page-main { min-width: 0; } .reader-card, .nav-row, .reader-tools, .likes-card, .comments-card, .status, .error-box { max-width: none; } .topbar-left .menu-toggle { display: none; } }
-        @media (max-width: 1079px) { .reader-layout { grid-template-columns: 1fr; } .sidebar { display: none; } }
+        @media (max-width: 1079px) { .reader-layout { grid-template-columns: 1fr; } .sidebar, .sidebar-restore-btn { display: none !important; } }
         @media (max-width: 1000px) { .reader-workspace-nav { justify-content: flex-start; } }
         @media (max-width: 760px) { :root { --reader-nav-offset: 78px; } body.reader-nav-collapsed { --reader-nav-offset: 34px; } .topbar { grid-template-columns: auto minmax(0, 1fr) auto; } .topbar-center { max-width: none; } .hero-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } .book-title { font-size: 28px; } .chapter-title { font-size: 26px; } .content { font-size: calc(var(--font-size) - 2px); } .likes-row { align-items: stretch; } }
         @media (max-width: 520px) { #betaReadTopBtn, #readerProfileTopBtn, #allNotesTopBtn { padding: 8px 10px; font-size: 12px; } }
@@ -199,14 +206,18 @@
 
 <div class="page">
     <div class="reader-layout">
-        <aside class="sidebar">
-            <h2 class="sidebar-title" id="sideBookTitle">Loading…</h2>
+        <aside class="sidebar" id="readerSidebar">
+            <div class="sidebar-top">
+                <h2 class="sidebar-title" id="sideBookTitle">Loading…</h2>
+                <button type="button" class="sidebar-collapse-btn" id="sidebarCollapseBtn" aria-controls="readerSidebar" aria-expanded="true">Hide details</button>
+            </div>
             <div class="sidebar-author" id="sideBookAuthor"></div>
             <div class="sidebar-summary" id="sideBookSummary"></div>
             <div class="sidebar-block"><div class="chip-label">Tags</div><div class="chip-row" id="sideTagList"></div></div>
             <div class="sidebar-block"><div class="chip-label">Warnings</div><div class="chip-row" id="sideWarningList"></div></div>
         </aside>
         <main class="page-main">
+            <button type="button" class="sidebar-restore-btn" id="sidebarRestoreBtn" aria-controls="readerSidebar" aria-expanded="true">Show story details</button>
             <div class="status hidden" id="statusBox"></div><div class="error-box hidden" id="errorBox"></div>
             <div class="hero">
                 <div class="eyebrow">Alysum Reader</div><h1 class="book-title" id="bookTitle">Loading…</h1><div class="book-author" id="bookAuthor"></div><div class="book-summary hidden" id="bookSummary"></div>
@@ -242,6 +253,7 @@
         "";
 
     const readerNavToggle = document.getElementById("readerNavToggle"), backBtn = document.getElementById("backBtn"), themeBtn = document.getElementById("themeBtn"), fontMinusBtn = document.getElementById("fontMinusBtn"), fontPlusBtn = document.getElementById("fontPlusBtn"), menuBtn = document.getElementById("menuBtn"), mobileDrawer = document.getElementById("mobileDrawer"), drawerBackdrop = document.getElementById("drawerBackdrop"), closeDrawerBtn = document.getElementById("closeDrawerBtn"), topbarTitle = document.getElementById("topbarTitle"), topbarSubtitle = document.getElementById("topbarSubtitle"), betaReadTopBtn = document.getElementById("betaReadTopBtn"), readerProfileTopBtn = document.getElementById("readerProfileTopBtn"), allNotesTopBtn = document.getElementById("allNotesTopBtn"), statusBox = document.getElementById("statusBox"), errorBox = document.getElementById("errorBox"), bookTitle = document.getElementById("bookTitle"), bookAuthor = document.getElementById("bookAuthor"), bookSummary = document.getElementById("bookSummary"), statChapters = document.getElementById("statChapters"), statWords = document.getElementById("statWords"), statReads = document.getElementById("statReads"), statType = document.getElementById("statType"), statRating = document.getElementById("statRating"), tagList = document.getElementById("tagList"), warningList = document.getElementById("warningList"), sideBookTitle = document.getElementById("sideBookTitle"), sideBookAuthor = document.getElementById("sideBookAuthor"), sideBookSummary = document.getElementById("sideBookSummary"), sideTagList = document.getElementById("sideTagList"), sideWarningList = document.getElementById("sideWarningList"), drawerBookTitle = document.getElementById("drawerBookTitle"), drawerBookAuthor = document.getElementById("drawerBookAuthor"), drawerBookSummary = document.getElementById("drawerBookSummary"), drawerTagList = document.getElementById("drawerTagList"), drawerWarningList = document.getElementById("drawerWarningList"), prevBtn = document.getElementById("prevBtn"), nextBtn = document.getElementById("nextBtn"), chapterIndicator = document.getElementById("chapterIndicator"), chapterTitle = document.getElementById("chapterTitle"), chapterMeta = document.getElementById("chapterMeta"), content = document.getElementById("content"), bookmarkBtn = document.getElementById("bookmarkBtn"), resumeBtn = document.getElementById("resumeBtn"), likeBtn = document.getElementById("likeBtn"), likeCount = document.getElementById("likeCount"), commentList = document.getElementById("commentList"), commentInput = document.getElementById("commentInput"), postCommentBtn = document.getElementById("postCommentBtn");
+    const sidebarCollapseBtn = document.getElementById("sidebarCollapseBtn"), sidebarRestoreBtn = document.getElementById("sidebarRestoreBtn");
 
     let currentUser = null, currentBook = null, librarySourceRow = null, currentChapterIndex = 0, isLoaded = false, currentFontSize = 22, hasLikedThisBook = false, readerWatermarkProfileUser = null, bookOwnerHandle = null;
 
@@ -255,6 +267,15 @@
     }
 
     setReaderNavCollapsed(localStorage.getItem("alysum-reader-nav-collapsed") === "1");
+
+    function setReaderSidebarCollapsed(collapsed) {
+        document.body.classList.toggle("reader-sidebar-collapsed", collapsed);
+        sidebarCollapseBtn?.setAttribute("aria-expanded", collapsed ? "false" : "true");
+        sidebarRestoreBtn?.setAttribute("aria-expanded", collapsed ? "false" : "true");
+        localStorage.setItem("alysum-reader-sidebar-collapsed", collapsed ? "1" : "0");
+    }
+
+    setReaderSidebarCollapsed(localStorage.getItem("alysum-reader-sidebar-collapsed") === "1");
 
     function safeString(value, fallback = "") { return typeof value === "string" ? value : fallback; }
     function safeNumber(value, fallback = 0) { return typeof value === "number" && Number.isFinite(value) ? value : fallback; }
@@ -555,6 +576,8 @@
     async function postComment() { const text = commentInput.value.trim(); if (!text) { showStatus("Write a comment first."); setTimeout(hideStatus, 1400); return; } if (!currentUser) { showStatus("Log in to post comments."); setTimeout(hideStatus, 1800); return; } try { const { data: profile } = await supabase.from("users").select("username, display_name, email").eq("id", currentUser.id).maybeSingle(); const handle = String(profile?.username || "").trim() || currentUser.email?.split("@")[0] || "reader"; const displayName = String(profile?.display_name || "").trim() || handle; const { error } = await supabase.from("comments").insert({ book_id: bookId, user_id: currentUser.id, username: handle, display_name: displayName, text, created_at: new Date().toISOString() }); if (error) throw error; commentInput.value = ""; showStatus("Comment posted."); setTimeout(hideStatus, 1200); await loadComments(); } catch (error) { console.error(error); showError("Failed to post comment."); } }
 
     readerNavToggle.addEventListener("click", () => setReaderNavCollapsed(!document.body.classList.contains("reader-nav-collapsed")));
+    sidebarCollapseBtn?.addEventListener("click", () => setReaderSidebarCollapsed(true));
+    sidebarRestoreBtn?.addEventListener("click", () => setReaderSidebarCollapsed(false));
     backBtn.addEventListener("click", () => { window.location.href = "library.html"; });
     readerProfileTopBtn?.addEventListener("click", async () => { if (!bookId) return; if (!currentBook) { showStatus("Wait until this story finishes loading."); setTimeout(hideStatus, 2200); return; } if (!currentUser) { window.location.href = "login.html?next=" + encodeURIComponent(READER_HOME_URL); return; } readerProfileTopBtn.disabled = true; try { await ensureBetaReadShelved(); } finally { readerProfileTopBtn.disabled = false; } window.location.href = READER_HOME_URL; });
     prevBtn.addEventListener("click", () => { if (!currentBook) return; if (currentChapterIndex > 0) { currentChapterIndex--; renderChapter(); } });
