@@ -93,8 +93,8 @@
         .sidebar-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
         .sidebar-collapse-btn, .sidebar-restore-btn { border: 1px solid var(--border); background: var(--panel-2); color: var(--muted); border-radius: 999px; font: inherit; font-size: 12px; font-weight: 900; line-height: 1; padding: 9px 11px; cursor: pointer; white-space: nowrap; }
         .sidebar-collapse-btn:hover, .sidebar-restore-btn:hover { color: var(--text); background: color-mix(in srgb, var(--panel-2) 72%, var(--text) 8%); }
-        .sidebar-restore-btn { display: none; position: sticky; top: calc(var(--reader-nav-offset) + 78px); z-index: 20; width: max-content; margin: 0 0 12px; box-shadow: var(--shadow); }
-        body.reader-sidebar-collapsed .sidebar-restore-btn { display: inline-flex; align-items: center; }
+        .sidebar-restore-btn { display: none; width: 42px; height: 42px; padding: 0; align-items: center; justify-content: center; font-size: 18px; box-shadow: var(--shadow); }
+        body.reader-sidebar-collapsed .sidebar-restore-btn { display: inline-flex; }
         .sidebar-title { font-size: 24px; line-height: 1.1; font-weight: 900; margin: 0; }
         .sidebar-author { margin-top: 8px; color: var(--muted); font-size: 14px; font-weight: 700; }
         .sidebar-summary { margin-top: 14px; color: var(--muted); font-size: 14px; line-height: 1.65; white-space: pre-wrap; }
@@ -194,7 +194,7 @@
 </div>
 
 <div class="topbar">
-    <div class="topbar-left"><button class="btn menu-toggle" id="menuBtn">☰</button><button class="btn" id="backBtn">←</button></div>
+    <div class="topbar-left"><button class="btn menu-toggle" id="menuBtn">☰</button><button class="btn" id="backBtn">←</button><button type="button" class="sidebar-restore-btn" id="sidebarRestoreBtn" aria-controls="readerSidebar" aria-expanded="true" aria-label="Show story details" title="Show story details">☰</button></div>
     <div class="topbar-center"><div class="topbar-title" id="topbarTitle">Loading…</div><div class="topbar-subtitle" id="topbarSubtitle"></div></div>
     <div class="topbar-right">
         <a class="btn primary hidden" id="betaReadTopBtn" href="beta-read.html">Beta reads</a>
@@ -217,7 +217,6 @@
             <div class="sidebar-block"><div class="chip-label">Warnings</div><div class="chip-row" id="sideWarningList"></div></div>
         </aside>
         <main class="page-main">
-            <button type="button" class="sidebar-restore-btn" id="sidebarRestoreBtn" aria-controls="readerSidebar" aria-expanded="true">Show story details</button>
             <div class="status hidden" id="statusBox"></div><div class="error-box hidden" id="errorBox"></div>
             <div class="hero">
                 <div class="eyebrow">Alysum Reader</div><h1 class="book-title" id="bookTitle">Loading…</h1><div class="book-author" id="bookAuthor"></div><div class="book-summary hidden" id="bookSummary"></div>
