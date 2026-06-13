@@ -20,6 +20,8 @@ html[data-display-text-color] :is(
     .header-center,
     .header-title,
     .brand-name,
+    .library-page-title,
+    .library-welcome-title,
     .welcome-copy h2,
     #status,
     .section-head-left h2,
@@ -37,6 +39,8 @@ html[data-display-text-style] :is(
     .header-center,
     .header-title,
     .brand-name,
+    .library-page-title,
+    .library-welcome-title,
     .welcome-copy h2,
     #status,
     .section-head-left h2,
@@ -56,6 +60,8 @@ html[data-display-text-style][data-display-text-caps="1"] :is(
     .header-center,
     .header-title,
     .brand-name,
+    .library-page-title,
+    .library-welcome-title,
     .section-head-left h2,
     .books-panel > .section-head h2,
     .panel-head h2,
@@ -67,12 +73,12 @@ html[data-display-text-style][data-display-text-caps="1"] :is(
     letter-spacing: 0.05em;
 }
 
-html[data-display-text-style] :is(.welcome-copy h2, #status, .wd-welcome-title) {
+html[data-display-text-style] :is(.welcome-copy h2, #status, .wd-welcome-title, .library-welcome-title) {
     text-transform: none;
     letter-spacing: 0.02em;
 }
 
-html[data-display-text-color] .wd-welcome-title .wd-name {
+html[data-display-text-color] :is(.wd-welcome-title .wd-name, .library-welcome-title .library-name) {
     background: none;
     -webkit-background-clip: border-box;
     background-clip: border-box;
@@ -108,6 +114,35 @@ html[data-display-text-style="bebas"] :is(.header-center, .header-title, .brand-
 html[data-display-text-style="anton"] :is(.header-center, .header-title, .brand-name, .welcome-copy h2, #status, .section-head-left h2, .books-panel > .section-head h2, .panel-head h2, .ne-page-title, .wr-page-title, .wd-welcome-title) { font-family: Anton, sans-serif; font-weight: 400; }
 html[data-display-text-style="audiowide"] :is(.header-center, .header-title, .brand-name, .welcome-copy h2, #status, .section-head-left h2, .books-panel > .section-head h2, .panel-head h2, .ne-page-title, .wr-page-title, .wd-welcome-title) { font-family: Audiowide, sans-serif; font-weight: 400; }
 html[data-display-text-style="lobster"] :is(.header-center, .header-title, .brand-name, .welcome-copy h2, #status, .section-head-left h2, .books-panel > .section-head h2, .panel-head h2, .ne-page-title, .wr-page-title, .wd-welcome-title) { font-family: Lobster, cursive; font-weight: 400; }
+
+/* Library header uses its own classes but should honor the same Settings typography choices. */
+html[data-display-text-style="cinzel"] :is(.library-page-title, .library-welcome-title) { font-family: Cinzel, Georgia, serif; font-weight: 700; }
+html[data-display-text-style="cinzeldec"] :is(.library-page-title, .library-welcome-title) { font-family: "Cinzel Decorative", Cinzel, serif; font-weight: 700; }
+html[data-display-text-style="medieval"] :is(.library-page-title, .library-welcome-title) { font-family: "MedievalSharp", cursive; font-weight: 400; }
+html[data-display-text-style="almendra"] :is(.library-page-title, .library-welcome-title) { font-family: Almendra, Georgia, serif; font-weight: 700; }
+html[data-display-text-style="unifraktur"] :is(.library-page-title, .library-welcome-title) { font-family: "UnifrakturMaguntia", serif; font-weight: 400; }
+html[data-display-text-style="imfell"] :is(.library-page-title, .library-welcome-title) { font-family: "IM Fell English SC", Georgia, serif; font-weight: 400; }
+html[data-display-text-style="metalmania"] :is(.library-page-title, .library-welcome-title) { font-family: "Metal Mania", cursive; font-weight: 400; }
+html[data-display-text-style="eagle"] :is(.library-page-title, .library-welcome-title) { font-family: "Eagle Lake", cursive; font-weight: 400; }
+html[data-display-text-style="grenze"] :is(.library-page-title, .library-welcome-title) { font-family: "Grenze Gotisch", serif; font-weight: 600; }
+html[data-display-text-style="playfair"] :is(.library-page-title, .library-welcome-title) { font-family: "Playfair Display", Georgia, serif; font-weight: 700; }
+html[data-display-text-style="lora"] :is(.library-page-title, .library-welcome-title) { font-family: Lora, Georgia, serif; font-weight: 700; }
+html[data-display-text-style="merriweather"] :is(.library-page-title, .library-welcome-title) { font-family: Merriweather, Georgia, serif; font-weight: 900; }
+html[data-display-text-style="cormorant"] :is(.library-page-title, .library-welcome-title) { font-family: "Cormorant Garamond", Georgia, serif; font-weight: 700; }
+html[data-display-text-style="crimson"] :is(.library-page-title, .library-welcome-title) { font-family: "Crimson Pro", Georgia, serif; font-weight: 700; }
+html[data-display-text-style="spectral"] :is(.library-page-title, .library-welcome-title) { font-family: Spectral, Georgia, serif; font-weight: 700; }
+html[data-display-text-style="libre"] :is(.library-page-title, .library-welcome-title) { font-family: "Libre Baskerville", Georgia, serif; font-weight: 700; }
+html[data-display-text-style="abril"] :is(.library-page-title, .library-welcome-title) { font-family: "Abril Fatface", Georgia, serif; font-weight: 400; }
+html[data-display-text-style="oswald"] :is(.library-page-title, .library-welcome-title) { font-family: Oswald, sans-serif; font-weight: 700; }
+html[data-display-text-style="rajdhani"] :is(.library-page-title, .library-welcome-title) { font-family: Rajdhani, sans-serif; font-weight: 700; }
+html[data-display-text-style="archivo"] :is(.library-page-title, .library-welcome-title) { font-family: Archivo, sans-serif; font-weight: 700; }
+html[data-display-text-style="raleway"] :is(.library-page-title, .library-welcome-title) { font-family: Raleway, sans-serif; font-weight: 800; }
+html[data-display-text-style="montserrat"] :is(.library-page-title, .library-welcome-title) { font-family: Montserrat, sans-serif; font-weight: 800; }
+html[data-display-text-style="orbitron"] :is(.library-page-title, .library-welcome-title) { font-family: Orbitron, sans-serif; font-weight: 700; }
+html[data-display-text-style="bebas"] :is(.library-page-title, .library-welcome-title) { font-family: "Bebas Neue", sans-serif; font-weight: 400; }
+html[data-display-text-style="anton"] :is(.library-page-title, .library-welcome-title) { font-family: Anton, sans-serif; font-weight: 400; }
+html[data-display-text-style="audiowide"] :is(.library-page-title, .library-welcome-title) { font-family: Audiowide, sans-serif; font-weight: 400; }
+html[data-display-text-style="lobster"] :is(.library-page-title, .library-welcome-title) { font-family: Lobster, cursive; font-weight: 400; }
 
 /* ——— Settings ——— */
 .text-style-chip-preview {
