@@ -91,10 +91,10 @@
         .sidebar-author { margin-top: 8px; color: var(--muted); font-size: 14px; font-weight: 700; }
         .sidebar-summary { margin-top: 14px; color: var(--muted); font-size: 14px; line-height: 1.65; white-space: pre-wrap; }
         .sidebar-block { margin-top: 16px; }
-        .mobile-drawer-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 79; opacity: 0; pointer-events: none; transition: opacity 0.2s ease; }
+        .mobile-drawer-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.16); z-index: 79; opacity: 0; pointer-events: none; transition: opacity 0.16s ease; }
         .mobile-drawer-backdrop.open { opacity: 1; pointer-events: auto; }
-        .mobile-drawer { position: fixed; top: 0; left: 0; bottom: 0; width: min(88vw, 430px); background: var(--panel); border-right: 1px solid var(--border); box-shadow: var(--shadow); z-index: 80; transform: translateX(-100%); transition: transform 0.22s ease; overflow-y: auto; padding: 18px; }
-        .mobile-drawer.open { transform: translateX(0); }
+        .mobile-drawer { position: fixed; top: calc(var(--reader-nav-offset) + 62px); left: 14px; width: min(420px, calc(100vw - 28px)); max-height: calc(100dvh - var(--reader-nav-offset) - 84px); background: color-mix(in srgb, var(--panel) 94%, transparent); border: 1px solid var(--border); border-radius: 22px; box-shadow: var(--shadow); z-index: 80; transform: translateY(-8px) scale(0.98); opacity: 0; pointer-events: none; transition: transform 0.16s ease, opacity 0.16s ease; overflow-y: auto; padding: 18px; backdrop-filter: blur(14px); }
+        .mobile-drawer.open { transform: translateY(0) scale(1); opacity: 1; pointer-events: auto; }
         .mobile-drawer-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; }
         .drawer-close { min-width: 44px; min-height: 44px; padding: 0; border-radius: 12px; }
         .status, .error-box { max-width: var(--reader-max); margin: 0 auto 16px; padding: 14px 16px; border-radius: 16px; border: 1px solid var(--border); background: var(--panel); box-shadow: var(--shadow); font-size: 14px; line-height: 1.5; }
@@ -154,7 +154,7 @@
 </head>
 <body>
 <div class="mobile-drawer-backdrop hidden" id="drawerBackdrop"></div>
-<aside class="mobile-drawer" id="mobileDrawer">
+<aside class="mobile-drawer" id="mobileDrawer" aria-label="Story details">
     <div class="mobile-drawer-top"><strong>Story Details</strong><button class="btn drawer-close" id="closeDrawerBtn">✕</button></div>
     <h3 class="sidebar-title" id="drawerBookTitle">Loading…</h3>
     <div class="sidebar-author" id="drawerBookAuthor"></div>
@@ -186,7 +186,7 @@
 </div>
 
 <div class="topbar">
-    <div class="topbar-left"><button class="btn menu-toggle" id="menuBtn" aria-label="Story details" title="Story details">☰</button><button class="btn" id="backBtn">←</button></div>
+    <div class="topbar-left"><button class="btn menu-toggle" id="menuBtn" aria-label="Story details" title="Story details" aria-controls="mobileDrawer" aria-expanded="false">☰</button><button class="btn" id="backBtn">←</button></div>
     <div class="topbar-center"><div class="topbar-title" id="topbarTitle">Loading…</div><div class="topbar-subtitle" id="topbarSubtitle"></div></div>
     <div class="topbar-right">
         <a class="btn primary hidden" id="betaReadTopBtn" href="beta-read.html">Beta reads</a>
@@ -267,8 +267,18 @@
     function hideStatus() { statusBox.textContent = ""; statusBox.classList.add("hidden"); }
     function showError(text) { errorBox.textContent = text; errorBox.classList.remove("hidden"); }
     function hideError() { errorBox.textContent = ""; errorBox.classList.add("hidden"); }
-    function openDrawer() { mobileDrawer.classList.add("open"); drawerBackdrop.classList.remove("hidden"); drawerBackdrop.classList.add("open"); }
-    function closeDrawer() { mobileDrawer.classList.remove("open"); drawerBackdrop.classList.remove("open"); drawerBackdrop.classList.add("hidden"); }
+    function openDrawer() {
+        mobileDrawer.classList.add("open");
+        drawerBackdrop.classList.remove("hidden");
+        drawerBackdrop.classList.add("open");
+        menuBtn.setAttribute("aria-expanded", "true");
+    }
+    function closeDrawer() {
+        mobileDrawer.classList.remove("open");
+        drawerBackdrop.classList.remove("open");
+        drawerBackdrop.classList.add("hidden");
+        menuBtn.setAttribute("aria-expanded", "false");
+    }
     function libraryRowData(row) { const data = safeObject(row?.data, {}); return Object.keys(data).length ? data : safeObject(row, {}); }
 
     async function findFallbackBookId() {
