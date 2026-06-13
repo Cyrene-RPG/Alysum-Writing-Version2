@@ -67,26 +67,8 @@
     .wd-nav-logout:hover { color: #fecaca; background: rgba(248,113,113,0.12); }
     .wd-nav-divider { flex-shrink: 0; width: 1px; height: 22px; margin: 0 2px; background: rgba(255,255,255,0.12); }
     .topbar { position: sticky; top: 45px; z-index: 40; border-bottom: 1px solid rgba(255,255,255,0.08); background: linear-gradient(180deg, rgba(14,22,38,0.94), rgba(11,18,32,0.9)); backdrop-filter: blur(14px); box-shadow: 0 10px 30px rgba(0,0,0,0.16); }
-    .topbar-inner { max-width: 1320px; margin: 0 auto; padding: 18px 20px 16px; }
-    .brand-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-    .brand-block { min-width: 0; }
-    .eyebrow { font-size: 12px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--theme-brand-kicker, #c4b5fd); margin-bottom: 6px; }
-    .title { margin: 0; font-size: 34px; font-weight: 900; letter-spacing: -0.02em; }
-    .subtitle { margin-top: 8px; color: var(--text-soft); font-size: 15px; line-height: 1.5; max-width: 760px; }
-    .library-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
-    .home-link { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.045); color: var(--text); padding: 12px 16px; border-radius: 14px; font-weight: 800; white-space: nowrap; box-shadow: inset 0 1px 0 rgba(255,255,255,0.05); }
-    .home-link:hover { background: rgba(255,255,255,0.075); border-color: rgba(255,255,255,0.16); }
-    .home-link.hidden { display: none; }
-    #readerHomeLink.home-link { padding: 10px 14px; font-size: 13px; }
-    .user-status-pill { display: inline-flex; align-items: center; min-height: 35px; border: 1px solid rgba(196,181,253,0.18); background: rgba(124,58,237,0.12); color: #ddd6fe; border-radius: 999px; padding: 8px 12px; font-size: 13px; font-weight: 900; line-height: 1; }
-    .user-status-pill:empty { display: none; }
-    .user-status-pill a { color: #ddd6fe; font-weight: 900; text-decoration: none; }
-    .library-mode-switch { display: inline-flex; border-radius: 12px; padding: 3px; background: rgba(0,0,0,0.28); border: 1px solid rgba(255,255,255,0.1); gap: 2px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.04); }
-    .library-mode-switch.hidden { display: none; }
-    .library-mode-seg { border: none; background: transparent; color: var(--text-soft); font-size: 12px; font-weight: 800; padding: 8px 12px; border-radius: 9px; cursor: pointer; white-space: nowrap; }
-    .library-mode-seg.active { background: rgba(255,255,255,0.12); color: var(--text); box-shadow: 0 6px 16px rgba(0,0,0,0.12); }
-    .library-mode-seg:not(.active):hover { color: var(--text); }
-    .library-tools { margin-top: 16px; padding: 12px; border-radius: 22px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.035); box-shadow: inset 0 1px 0 rgba(255,255,255,0.035); }
+    .topbar-inner { max-width: 1320px; margin: 0 auto; padding: 12px 20px; }
+    .library-tools { padding: 12px; border-radius: 22px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.035); box-shadow: inset 0 1px 0 rgba(255,255,255,0.035); }
     .nav-row { display: flex; gap: 10px; flex-wrap: wrap; }
     .nav-btn { border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.055); color: var(--text-soft); border-radius: 999px; padding: 10px 16px; font-size: 14px; font-weight: 800; cursor: pointer; transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease, transform 0.12s ease; }
     .nav-btn:hover { color: #fff; border-color: rgba(255,255,255,0.14); transform: translateY(-1px); }
@@ -138,7 +120,7 @@
     .hidden { display: none !important; }
     @media (max-width: 1100px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
     @media (max-width: 1000px) { .wd-nav { justify-content: flex-start; } }
-    @media (max-width: 700px) { html, body { overflow-x: hidden; } .library-welcome-bar { min-height: 76px; } .library-pfp { width: 48px; height: 48px; } .library-welcome-sub { display: none; } .topbar { top: 43px; } .topbar-inner, .page { padding-left: 14px; padding-right: 14px; } .title { font-size: 28px; } .library-actions { justify-content: flex-start; } .library-tools { padding: 10px; border-radius: 18px; } .grid { grid-template-columns: 1fr; } .card-title { font-size: 20px; } .card-footer { align-items: stretch; } .read-btn { width: 100%; } }
+    @media (max-width: 700px) { html, body { overflow-x: hidden; } .library-welcome-bar { min-height: 76px; } .library-pfp { width: 48px; height: 48px; } .library-welcome-sub { display: none; } .topbar { top: 43px; } .topbar-inner, .page { padding-left: 14px; padding-right: 14px; } .library-tools { padding: 10px; border-radius: 18px; } .grid { grid-template-columns: 1fr; } .card-title { font-size: 20px; } .card-footer { align-items: stretch; } .read-btn { width: 100%; } }
 </style>
 
 </head>
@@ -157,7 +139,7 @@
 </header>
 <nav class="wd-nav-wrap" aria-label="Workspace">
     <div class="wd-nav">
-        <a href="writer-dashboard.html">Continue writing</a>
+        <a href="writer-dashboard.html">Studio</a>
         <span class="wd-nav-divider" aria-hidden="true"></span>
         <a href="library.html" class="is-active">Library</a>
         <a href="author-dashboard.html">Author stats</a>
@@ -178,22 +160,6 @@
 </nav>
 <div class="topbar">
     <div class="topbar-inner">
-        <div class="brand-row">
-            <div class="brand-block">
-                <div class="eyebrow">Alysum</div>
-                <h1 class="title library-page-title">Alysum Library</h1>
-                <div class="subtitle">Discover published stories from Alysum writers.</div>
-            </div>
-            <div class="library-actions">
-                <a class="home-link hidden" id="readerHomeLink" href="reader-home.html">← Reading profile</a>
-                <div class="user-status-pill" id="userStatus"></div>
-                <div class="library-mode-switch hidden" id="libraryModeSwitch" role="group" aria-label="Reading or studio">
-                    <button type="button" class="library-mode-seg active" data-mode="library">Reading</button>
-                    <button type="button" class="library-mode-seg" data-mode="studio">Studio</button>
-                </div>
-                <a class="home-link" id="libraryBackStudio" href="writer-dashboard.html">Back to Studio</a>
-            </div>
-        </div>
         <div class="library-tools">
             <div class="nav-row">
                 <button class="nav-btn active" data-filter="fiction" type="button">Fiction</button>
@@ -218,7 +184,6 @@
 </main><script type="module">
     import { supabase } from "./firebase.js";
     import { publicDisplayNameFromUserData } from "./js/profile-display.js?v=1";
-    import { accountSupportsModeToggle, normalizeAccountType, ACCOUNT_AUTHOR, ACCOUNT_READER, READER_HOME_URL, setUiMode } from "./js/account-mode.js?v=1";
     import { wireLogoutButtons } from "./js/auth-logout.js?v=1";
 
     const navButtons = document.querySelectorAll(".nav-btn");
@@ -229,27 +194,16 @@
     const errorState = document.getElementById("errorState");
     const emptyState = document.getElementById("emptyState");
     const bookGrid = document.getElementById("bookGrid");
-    const userStatus = document.getElementById("userStatus");
-    const libraryModeSwitch = document.getElementById("libraryModeSwitch");
-    const libraryBackStudio = document.getElementById("libraryBackStudio");
-    const readerHomeLink = document.getElementById("readerHomeLink");
     const libraryPfpImg = document.getElementById("libraryPfpImg");
     const libraryPfpInitial = document.getElementById("libraryPfpInitial");
     const libraryWelcomeTitle = document.getElementById("libraryWelcomeTitle");
     const libraryWelcomeSub = document.getElementById("libraryWelcomeSub");
-    const navReading = document.getElementById("navReading");
     const navLogoutButtons = document.querySelectorAll("[data-logout-btn]");
 
-    if (readerHomeLink) readerHomeLink.href = READER_HOME_URL;
-    if (navReading) navReading.href = READER_HOME_URL;
     wireLogoutButtons();
-
-    const studioLinkDefaultLabel = "Back to Studio";
-    const studioLinkAuthorLabel = "← Profile & studio";
 
     let allBooks = [];
     let currentFilter = "fiction";
-    let currentUser = null;
     const readCounts = new Map();
 
     function mergedProfile(row) {
@@ -265,11 +219,10 @@
     function renderLibraryWelcome(profile, fallbackLabel = "reader") {
         const label = String(fallbackLabel || "reader").trim() || "reader";
         const initial = (label[0] || "A").toUpperCase();
-        const handle = String(profile?.username || "").trim();
         const imageUrl = String(profile?.profileImageUrl || "").trim();
 
-        libraryWelcomeTitle.innerHTML = `Welcome back, <span class="library-name">${escapeHtml(label)}</span>.`;
-        libraryWelcomeSub.textContent = handle ? `@${handle} - Alysum Library` : "Alysum Library";
+        libraryWelcomeTitle.innerHTML = `Welcome to the Library, <span class="library-name">${escapeHtml(label)}</span>.`;
+        libraryWelcomeSub.textContent = "Browse published stories, find your next world, and keep your place across Alysum.";
         libraryPfpInitial.textContent = initial;
 
         if (imageUrl) {
@@ -297,60 +250,16 @@
         libraryPfpInitial.classList.remove("is-hidden");
     }
 
-    function applyLibraryTopNav(accountType) {
-        const t = normalizeAccountType(accountType);
-        if (accountSupportsModeToggle(accountType)) {
-            libraryModeSwitch?.classList.remove("hidden");
-            libraryBackStudio?.classList.add("hidden");
-            if (libraryBackStudio) libraryBackStudio.textContent = studioLinkDefaultLabel;
-            if (readerHomeLink) readerHomeLink.classList.remove("hidden");
-            libraryModeSwitch?.querySelectorAll(".library-mode-seg").forEach((b) => {
-                const m = b.getAttribute("data-mode");
-                b.classList.toggle("active", m === "library");
-            });
-            return;
-        }
-        libraryModeSwitch?.classList.add("hidden");
-        if (t === ACCOUNT_READER) {
-            libraryBackStudio?.classList.add("hidden");
-            if (libraryBackStudio) libraryBackStudio.textContent = studioLinkDefaultLabel;
-            readerHomeLink?.classList.remove("hidden");
-        } else {
-            libraryBackStudio?.classList.remove("hidden");
-            readerHomeLink?.classList.add("hidden");
-            if (libraryBackStudio) libraryBackStudio.textContent = t === ACCOUNT_AUTHOR ? studioLinkAuthorLabel : studioLinkDefaultLabel;
-        }
-    }
-
-    if (libraryModeSwitch) {
-        libraryModeSwitch.addEventListener("click", (ev) => {
-            const btn = ev.target.closest("[data-mode]");
-            if (!btn || btn.classList.contains("active")) return;
-            const mode = btn.getAttribute("data-mode");
-            if (mode === "studio") {
-                setUiMode("studio");
-                window.location.href = "writer-dashboard.html";
-            }
-        });
-    }
-
     async function loadCurrentUser() {
         const { data: authData, error: authError } = await supabase.auth.getUser();
         if (authError) console.warn(authError);
         const user = authData?.user;
         if (!user) {
-            currentUser = null;
             renderGuestWelcome();
-            userStatus.innerHTML = `<a href="login.html">Log in</a>`;
             navLogoutButtons.forEach((btn) => btn.classList.add("is-hidden"));
-            libraryModeSwitch?.classList.add("hidden");
-            libraryBackStudio?.classList.remove("hidden");
-            if (libraryBackStudio) libraryBackStudio.textContent = studioLinkDefaultLabel;
-            readerHomeLink?.classList.add("hidden");
             return;
         }
 
-        currentUser = user;
         navLogoutButtons.forEach((btn) => btn.classList.remove("is-hidden"));
         try {
             const { data, error } = await supabase
@@ -363,13 +272,9 @@
             const profile = mergedProfile(data);
             const label = data ? publicDisplayNameFromUserData(profile) : "user";
             renderLibraryWelcome(profile, label);
-            userStatus.textContent = label;
-            applyLibraryTopNav(profile.account_type ?? profile.accountType);
         } catch (e) {
             console.error(e);
             renderLibraryWelcome({}, "reader");
-            userStatus.textContent = "Logged in";
-            applyLibraryTopNav(undefined);
         }
     }
 
