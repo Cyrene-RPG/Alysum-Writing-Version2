@@ -182,6 +182,11 @@
         background-repeat: var(--editor-bg-repeat, no-repeat);
         background-attachment: local;
     }
+    .workspace.is-bg-dragover {
+        outline: 3px dashed rgba(168, 85, 247, 0.8);
+        outline-offset: -14px;
+        box-shadow: inset 0 0 0 9999px rgba(109, 40, 217, 0.12);
+    }
     .page-wrap { max-width: 980px; margin: 0 auto; }
     .page { background: var(--page-bg); min-height: calc(100vh - 180px); border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.10); padding: 80px 120px 100px; }
     .workspace.has-custom-bg .page {
@@ -1868,6 +1873,25 @@ function rememberBookId(id) {
         const fit = normalizeBackgroundFit(backgroundFitSelect.value);
         localStorage.setItem(EDITOR_BACKGROUND_FIT_KEY, fit);
         void applyUploadedEditorBackground(fit).then(() => setBackgroundStatus("Uploaded background applied."));
+    });
+    editorWorkspace?.addEventListener("dragover", (e) => {
+        const hasFile = Array.from(e.dataTransfer?.items || []).some((item) => item.kind === "file");
+        if (!hasFile) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "copy";
+        editorWorkspace.classList.add("is-bg-dragover");
+        setBackgroundStatus("Drop image to set editor background.");
+    });
+    editorWorkspace?.addEventListener("dragleave", (e) => {
+        if (e.currentTarget.contains(e.relatedTarget)) return;
+        editorWorkspace.classList.remove("is-bg-dragover");
+    });
+    editorWorkspace?.addEventListener("drop", (e) => {
+        const file = Array.from(e.dataTransfer?.files || []).find((item) => item.type.startsWith("image/"));
+        if (!file) return;
+        e.preventDefault();
+        editorWorkspace.classList.remove("is-bg-dragover");
+        void saveUploadedEditorBackground(file);
     });
     backgroundClearBtn?.addEventListener("click", clearEditorBackgroundImage);
     backgroundCloseBtn?.addEventListener("click", () => backgroundBar?.classList.remove("open"));
