@@ -1,4 +1,5 @@
 <!DOCTYPE html><html><head>
+    <meta charset="UTF-8">
     <!-- ALYSUM:PWA:START -->
     <link rel="manifest" href="manifest.webmanifest">
     <meta name="theme-color" content="#7c3aed" media="(prefers-color-scheme: light)">
@@ -172,8 +173,36 @@
     .sprint-mini-btn { border: 1px solid var(--border); background: transparent; color: var(--page-text); border-radius: 10px; font-weight: 900; padding: 6px 10px; cursor: pointer; }
     .sprint-mini-btn.danger { background: var(--danger); border-color: var(--danger); color: white; }
     .workspace { flex: 1; overflow: auto; padding: 34px 18px 60px; background: var(--workspace-bg); }
+    .workspace.has-custom-bg {
+        background-image:
+            linear-gradient(rgba(2, 6, 23, 0.48), rgba(2, 6, 23, 0.6)),
+            var(--editor-bg-image);
+        background-size: var(--editor-bg-size, cover);
+        background-position: var(--editor-bg-position, center);
+        background-repeat: var(--editor-bg-repeat, no-repeat);
+        background-attachment: local;
+    }
     .page-wrap { max-width: 980px; margin: 0 auto; }
     .page { background: var(--page-bg); min-height: calc(100vh - 180px); border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.10); padding: 80px 120px 100px; }
+    .workspace.has-custom-bg .page {
+        background: transparent;
+        box-shadow: none;
+    }
+    .workspace.has-custom-bg .chapter-title,
+    .workspace.has-custom-bg .editor,
+    .workspace.has-custom-bg .bottom-meta {
+        color: rgba(255, 255, 255, 0.92);
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.68);
+    }
+    .workspace.has-custom-bg .chapter-number,
+    .workspace.has-custom-bg .editor:empty:before {
+        color: rgba(255, 255, 255, 0.58);
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.68);
+    }
+    .workspace.has-custom-bg .editor blockquote {
+        color: rgba(255, 255, 255, 0.78);
+        border-left-color: rgba(255, 255, 255, 0.58);
+    }
     .chapter-number { display: none; text-align: center; font-family: Georgia, serif; color: var(--page-subtle); font-size: 18px; margin-bottom: 22px; }
     .chapter-title { text-align: center; font-family: Georgia, "Times New Roman", serif; color: var(--page-text); font-size: 28px; font-weight: 700; margin-bottom: 40px; outline: none; }
     .editor { min-height: 440px; outline: none; font-family: Georgia, "Times New Roman", serif; font-size: 20px; line-height: 1.7; letter-spacing: 0.2px; color: var(--page-text); white-space: normal; word-break: break-word; }
@@ -225,6 +254,46 @@
         border-bottom: 1px solid var(--border);
     }
     .fr-bar.open { display: flex; }
+    .bg-bar {
+        display: none;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px 12px;
+        padding: 10px 12px;
+        background: var(--toolbar-bg);
+        border-bottom: 1px solid var(--border);
+    }
+    .bg-bar.open { display: flex; }
+    .bg-field { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1 1 340px; }
+    .bg-label { font-size: 12px; font-weight: 800; color: var(--page-subtle); white-space: nowrap; }
+    .bg-input {
+        flex: 1;
+        min-width: 0;
+        height: 34px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: var(--topbar-bg);
+        color: var(--page-text);
+        font-size: 14px;
+        padding: 0 10px;
+    }
+    .bg-upload-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 34px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: var(--topbar-bg);
+        color: var(--page-text);
+        font-size: 13px;
+        font-weight: 800;
+        padding: 0 12px;
+        cursor: pointer;
+    }
+    .bg-upload-btn input { display: none; }
+    .bg-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+    .bg-status { font-size: 12px; font-weight: 700; color: var(--page-subtle); min-width: 8rem; }
     .fr-field { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1 1 160px; }
     .fr-label { font-size: 12px; font-weight: 800; color: var(--page-subtle); white-space: nowrap; }
     .fr-input {
@@ -257,11 +326,59 @@
     .fr-status { font-size: 12px; font-weight: 700; color: var(--page-subtle); min-width: 5rem; }
     ::highlight(alysum-find) { background: rgba(250, 204, 21, 0.42); }
     ::highlight(alysum-find-active) { background: rgba(245, 158, 11, 0.72); }
+    .daily-goal-badge {
+        position: fixed;
+        left: 50%;
+        bottom: 34px;
+        z-index: 100001;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        width: min(420px, calc(100vw - 28px));
+        padding: 14px 18px;
+        border: 1px solid rgba(251, 191, 36, 0.48);
+        border-radius: 999px;
+        background: linear-gradient(135deg, rgba(109, 40, 217, 0.98), rgba(245, 158, 11, 0.98));
+        color: #fff;
+        box-shadow: 0 18px 44px rgba(15, 23, 42, 0.3), 0 0 0 6px rgba(251, 191, 36, 0.12);
+        transform: translate(-50%, 28px) scale(0.96);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.24s ease, transform 0.24s ease;
+    }
+    .daily-goal-badge.is-visible {
+        opacity: 1;
+        transform: translate(-50%, 0) scale(1);
+    }
+    .daily-goal-badge-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.2);
+        font-size: 24px;
+        flex: 0 0 auto;
+    }
+    .daily-goal-badge-text { min-width: 0; }
+    .daily-goal-badge-title { display: block; font-size: 15px; font-weight: 900; line-height: 1.2; }
+    .daily-goal-badge-sub { display: block; margin-top: 2px; font-size: 13px; font-weight: 700; opacity: 0.92; }
+    @media (prefers-reduced-motion: reduce) {
+        .daily-goal-badge { transition: none; }
+    }
     @media (max-width: 900px) { .page { padding: 52px 56px 70px; } .chapter-title { font-size: 24px; } .editor { font-size: 18px; } .top-title { max-width: 28vw; } }
     @media (max-width: 760px) { .sidebar { position: fixed; left: 0; top: 0; width: 300px; } .overlay { display: block; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 20; } .overlay.hidden { display: none; } .top-title { max-width: 40vw; } .page { padding: 42px 24px 60px; } .chapter-title { font-size: 22px; margin-bottom: 32px; } .editor { font-size: 17px; line-height: 1.7; } .topbar { height: auto; min-height: 56px; flex-wrap: wrap; row-gap: 8px; } .topbar-left, .topbar-right { flex-wrap: wrap; } .topbar-right { justify-content: flex-end; } }
     @media (max-width: 480px) { .workspace { padding: 16px 10px 40px; } .page { padding: 32px 16px 48px; } .sidebar { width: min(300px, 100vw); } }
 </style></head><body>
     <div id="editorTooltip" class="editor-tooltip" role="tooltip" aria-hidden="true"></div>
+    <div id="dailyGoalBadge" class="daily-goal-badge" role="status" aria-live="polite" aria-hidden="true">
+        <span class="daily-goal-badge-icon" aria-hidden="true">🎯</span>
+        <span class="daily-goal-badge-text">
+            <span class="daily-goal-badge-title">Daily word goal hit!</span>
+            <span class="daily-goal-badge-sub" id="dailyGoalBadgeSub">You wrote 2,000 words today.</span>
+        </span>
+    </div>
     <div id="nbPanel" class="nb-app nb-float nb-theme-mirror hidden" role="dialog" aria-label="Notes">
         <header class="nb-top-hat">
             <span class="nb-workspace-title" id="nbLabel">Notes</span>
@@ -358,8 +475,18 @@
     <select class="tool-select" id="formatSelect" data-tip="Paragraph style" aria-label="Paragraph style"><option value="p">Body</option><option value="h2">Heading</option></select>
     <select class="tool-select" id="fontSelect" data-tip="Editor font" aria-label="Font"></select>
     <select class="tool-select" id="fontSizeSelect" data-tip="Editor text size" aria-label="Text size"><option value="18">Compact</option><option value="20">Book</option><option value="22">Comfort</option><option value="26">Large</option></select>
+    <button class="tool-btn" type="button" id="backgroundBtn" data-tip="Set editor background image">Background</button>
     <div class="toolbar-spacer"></div>
     <span class="sprint-anchor" id="sprintAnchor"><button class="sprint-btn" id="sprintToolbarBtn" type="button" data-tip="Writing sprint timer" aria-label="Sprint timer">⏱ Sprint</button></span>
+</div>
+<div class="bg-bar" id="backgroundBar" aria-label="Editor background image">
+    <label class="bg-field" style="flex:0 1 180px;"><span class="bg-label">Fit</span><select class="bg-input" id="backgroundFitSelect" aria-label="Background image fit"><option value="cover">Cover</option><option value="contain">Contain</option><option value="original">Original</option><option value="tile">Tile</option></select></label>
+    <div class="bg-actions">
+        <label class="bg-upload-btn" for="backgroundUploadInput">Upload image<input id="backgroundUploadInput" type="file" accept="image/png,image/jpeg,image/webp,image/gif" /></label>
+        <button type="button" class="fr-btn" id="backgroundClearBtn" data-tip="Remove custom background">Clear</button>
+        <button type="button" class="fr-btn icon" id="backgroundCloseBtn" data-tip="Close background controls" aria-label="Close background controls">×</button>
+    </div>
+    <span class="bg-status" id="backgroundStatus" aria-live="polite">Upload an image from your device.</span>
 </div>
 <div class="fr-bar" id="findReplaceBar" role="search" aria-label="Find and replace in current chapter">
     <label class="fr-field"><span class="fr-label">Find</span><input class="fr-input" id="frFindInput" type="text" autocomplete="off" spellcheck="false" placeholder="Search chapter…" /></label>
@@ -428,7 +555,7 @@
         notifyLocalStudioSync,
     } from "./js/local-studio-store.js?v=1";
     import { publicDisplayNameFromUserData } from "./js/profile-display.js?v=1";
-    import { localDayKey } from "./js/writing-day-stats.js?v=1";
+    import { clampDailyWordGoal, DEFAULT_DAILY_WORD_GOAL, localDayKey } from "./js/writing-day-stats.js?v=1";
     import { isStoryBibleUiEnabled, STORY_BIBLE_PREF_KEY, STORY_BIBLE_PREF_EVENT } from "./js/story-bible-prefs.js?v=1";
     import {
         readWriterResume,
@@ -498,6 +625,8 @@ function rememberBookId(id) {
     const chapterTitle = document.getElementById("chapterTitle");
     const editor = document.getElementById("editor");
     const editorWorkspace = document.getElementById("editorWorkspace");
+    const dailyGoalBadge = document.getElementById("dailyGoalBadge");
+    const dailyGoalBadgeSub = document.getElementById("dailyGoalBadgeSub");
     const totalWordsEl = document.getElementById("totalWords");
     const chapterCountEl = document.getElementById("chapterCount");
     const footerWordsEl = document.getElementById("footerWords");
@@ -531,6 +660,13 @@ function rememberBookId(id) {
     const frReplaceAllBtn = document.getElementById("frReplaceAllBtn");
     const frCloseBtn = document.getElementById("frCloseBtn");
     const frStatus = document.getElementById("frStatus");
+    const backgroundBtn = document.getElementById("backgroundBtn");
+    const backgroundBar = document.getElementById("backgroundBar");
+    const backgroundFitSelect = document.getElementById("backgroundFitSelect");
+    const backgroundUploadInput = document.getElementById("backgroundUploadInput");
+    const backgroundClearBtn = document.getElementById("backgroundClearBtn");
+    const backgroundCloseBtn = document.getElementById("backgroundCloseBtn");
+    const backgroundStatus = document.getElementById("backgroundStatus");
 
     let currentUser = null;
     let currentBook = null;
@@ -547,6 +683,8 @@ function rememberBookId(id) {
     let pendingResumeRestore = null;
     let frMatches = [];
     let frActiveIndex = -1;
+    let dailyGoalBadgeTimer = null;
+    let activeEditorBackgroundObjectUrl = "";
     const frSupportsHighlight = typeof Highlight !== "undefined" && !!CSS.highlights;
 
     const sprintToolbarBtn = document.getElementById("sprintToolbarBtn");
@@ -565,6 +703,11 @@ function rememberBookId(id) {
     const sprintResultText = document.getElementById("sprintResultText");
     const sprintResultOk = document.getElementById("sprintResultOk");
     const SPRINT_KEY = "alysum-editor-sprint";
+    const EDITOR_BACKGROUND_IMAGE_KEY = "alysum-editor-background-image";
+    const EDITOR_BACKGROUND_FIT_KEY = "alysum-editor-background-fit";
+    const EDITOR_BACKGROUND_DB = "alysum-editor-background-db";
+    const EDITOR_BACKGROUND_STORE = "backgrounds";
+    const EDITOR_BACKGROUND_UPLOAD_ID = "current-upload";
     let sprintTick = null;
     let pendingSprintMinutes = null;
 
@@ -680,6 +823,172 @@ function rememberBookId(id) {
     themeTopBtn.addEventListener("click", toggleTheme);
     homeBtn.onclick = () => { window.location.href = "writer-dashboard.html"; };
 
+    function backgroundUploadStorageValue() {
+        return `upload:${EDITOR_BACKGROUND_UPLOAD_ID}`;
+    }
+
+    function isUploadBackgroundValue(value) {
+        return safeString(value, "").trim().startsWith("upload:");
+    }
+
+    function openBackgroundDb() {
+        return new Promise((resolve, reject) => {
+            const req = indexedDB.open(EDITOR_BACKGROUND_DB, 1);
+            req.onupgradeneeded = () => {
+                req.result.createObjectStore(EDITOR_BACKGROUND_STORE);
+            };
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => reject(req.error || new Error("Could not open background storage."));
+        });
+    }
+
+    async function setUploadedBackgroundBlob(file) {
+        const db = await openBackgroundDb();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(EDITOR_BACKGROUND_STORE, "readwrite");
+            tx.objectStore(EDITOR_BACKGROUND_STORE).put(file, EDITOR_BACKGROUND_UPLOAD_ID);
+            tx.oncomplete = () => {
+                db.close();
+                resolve();
+            };
+            tx.onerror = () => {
+                db.close();
+                reject(tx.error || new Error("Could not save uploaded background."));
+            };
+        });
+    }
+
+    async function getUploadedBackgroundBlob() {
+        const db = await openBackgroundDb();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(EDITOR_BACKGROUND_STORE, "readonly");
+            const req = tx.objectStore(EDITOR_BACKGROUND_STORE).get(EDITOR_BACKGROUND_UPLOAD_ID);
+            req.onsuccess = () => resolve(req.result || null);
+            req.onerror = () => reject(req.error || new Error("Could not load uploaded background."));
+            tx.oncomplete = () => db.close();
+            tx.onerror = () => db.close();
+        });
+    }
+
+    async function clearUploadedBackgroundBlob() {
+        const db = await openBackgroundDb();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(EDITOR_BACKGROUND_STORE, "readwrite");
+            tx.objectStore(EDITOR_BACKGROUND_STORE).delete(EDITOR_BACKGROUND_UPLOAD_ID);
+            tx.oncomplete = () => {
+                db.close();
+                resolve();
+            };
+            tx.onerror = () => {
+                db.close();
+                reject(tx.error || new Error("Could not clear uploaded background."));
+            };
+        });
+    }
+
+    function normalizeBackgroundFit(rawFit) {
+        const fit = safeString(rawFit, "cover");
+        return ["cover", "contain", "original", "tile"].includes(fit) ? fit : "cover";
+    }
+
+    function backgroundFitCss(fit) {
+        if (fit === "contain") return { size: "contain", repeat: "no-repeat", position: "center" };
+        if (fit === "original") return { size: "auto", repeat: "no-repeat", position: "top left" };
+        if (fit === "tile") return { size: "auto", repeat: "repeat", position: "top left" };
+        return { size: "cover", repeat: "no-repeat", position: "center" };
+    }
+
+    function setBackgroundStatus(text, isError = false) {
+        if (!backgroundStatus) return;
+        backgroundStatus.textContent = text;
+        backgroundStatus.style.color = isError ? "#ef4444" : "";
+    }
+
+    function applyEditorBackgroundImage(url, fit = localStorage.getItem(EDITOR_BACKGROUND_FIT_KEY) || "cover") {
+        if (!editorWorkspace) return;
+        const cleanUrl = safeString(url, "").trim();
+        const cleanFit = normalizeBackgroundFit(fit);
+        if (!cleanUrl) {
+            editorWorkspace.classList.remove("has-custom-bg");
+            editorWorkspace.style.removeProperty("--editor-bg-image");
+            editorWorkspace.style.removeProperty("--editor-bg-size");
+            editorWorkspace.style.removeProperty("--editor-bg-position");
+            editorWorkspace.style.removeProperty("--editor-bg-repeat");
+            if (activeEditorBackgroundObjectUrl) {
+                URL.revokeObjectURL(activeEditorBackgroundObjectUrl);
+                activeEditorBackgroundObjectUrl = "";
+            }
+            return;
+        }
+
+        const cssFit = backgroundFitCss(cleanFit);
+        editorWorkspace.style.setProperty("--editor-bg-image", `url("${cleanUrl}")`);
+        editorWorkspace.style.setProperty("--editor-bg-size", cssFit.size);
+        editorWorkspace.style.setProperty("--editor-bg-position", cssFit.position);
+        editorWorkspace.style.setProperty("--editor-bg-repeat", cssFit.repeat);
+        editorWorkspace.classList.add("has-custom-bg");
+        if (backgroundFitSelect) backgroundFitSelect.value = cleanFit;
+    }
+
+    async function applyUploadedEditorBackground(fit = localStorage.getItem(EDITOR_BACKGROUND_FIT_KEY) || "cover") {
+        const file = await getUploadedBackgroundBlob();
+        if (!file) throw new Error("Uploaded background was not found. Choose the image again.");
+        if (activeEditorBackgroundObjectUrl) {
+            URL.revokeObjectURL(activeEditorBackgroundObjectUrl);
+            activeEditorBackgroundObjectUrl = "";
+        }
+        const blobUrl = URL.createObjectURL(file);
+        activeEditorBackgroundObjectUrl = blobUrl;
+        applyEditorBackgroundImage(blobUrl, fit);
+    }
+
+    function clearEditorBackgroundImage() {
+        localStorage.removeItem(EDITOR_BACKGROUND_IMAGE_KEY);
+        localStorage.removeItem(EDITOR_BACKGROUND_FIT_KEY);
+        void clearUploadedBackgroundBlob().catch(() => {});
+        applyEditorBackgroundImage("");
+        setBackgroundStatus("Background cleared.");
+    }
+
+    async function saveUploadedEditorBackground(file) {
+        if (!file) return;
+        if (!file.type.startsWith("image/")) {
+            setBackgroundStatus("Choose an image file.", true);
+            return;
+        }
+        if (file.size > 20 * 1024 * 1024) {
+            setBackgroundStatus("Image is very large. Use an image under 20MB.", true);
+            return;
+        }
+
+        const cleanFit = normalizeBackgroundFit(backgroundFitSelect?.value);
+        try {
+            await setUploadedBackgroundBlob(file);
+            localStorage.setItem(EDITOR_BACKGROUND_IMAGE_KEY, backgroundUploadStorageValue());
+            localStorage.setItem(EDITOR_BACKGROUND_FIT_KEY, cleanFit);
+            await applyUploadedEditorBackground(cleanFit);
+            setBackgroundStatus("Uploaded background applied.");
+        } catch (err) {
+            setBackgroundStatus((err && err.message) || "Could not save uploaded background.", true);
+        }
+    }
+
+    function restoreEditorBackgroundImage() {
+        const savedUrl = localStorage.getItem(EDITOR_BACKGROUND_IMAGE_KEY) || "";
+        const savedFit = localStorage.getItem(EDITOR_BACKGROUND_FIT_KEY) || "cover";
+        if (backgroundFitSelect) backgroundFitSelect.value = normalizeBackgroundFit(savedFit);
+        if (!savedUrl) return;
+        if (!isUploadBackgroundValue(savedUrl)) {
+            clearEditorBackgroundImage();
+            return;
+        }
+        void applyUploadedEditorBackground(savedFit).then(() => {
+            setBackgroundStatus("Uploaded background loaded.");
+        }).catch(() => {
+            clearEditorBackgroundImage();
+        });
+    }
+
     function toggleSidebar() {
         if (window.innerWidth <= 760) {
             sidebar.classList.toggle("mobile-hidden");
@@ -758,6 +1067,23 @@ function rememberBookId(id) {
         const cleaned = cleanEditorHtml(editor.innerHTML);
         currentChapter().content = cleaned;
         return cleaned;
+    }
+
+    function showDailyGoalBadge(wordsToday, goalTarget) {
+        if (!dailyGoalBadge || !dailyGoalBadgeSub) return;
+        clearTimeout(dailyGoalBadgeTimer);
+        dailyGoalBadgeSub.textContent = `You wrote ${wordsToday.toLocaleString()} / ${goalTarget.toLocaleString()} words today.`;
+        dailyGoalBadge.classList.add("is-visible");
+        dailyGoalBadge.setAttribute("aria-hidden", "false");
+        dailyGoalBadgeTimer = setTimeout(() => {
+            dailyGoalBadge.classList.remove("is-visible");
+            dailyGoalBadge.setAttribute("aria-hidden", "true");
+        }, 5200);
+    }
+
+    function previewDailyGoalBadge() {
+        const goalTarget = clampDailyWordGoal(currentProfile?.dailyWordGoal ?? DEFAULT_DAILY_WORD_GOAL);
+        showDailyGoalBadge(goalTarget, goalTarget);
     }
 
     function insertCleanHtml(html) {
@@ -1323,13 +1649,19 @@ function rememberBookId(id) {
         const dayKey = localDayKey();
         try {
             const currentTotals = safeObject(currentProfile?.writingDayTotals, {});
-            const nextTotals = { ...currentTotals, [dayKey]: safeNumber(currentTotals[dayKey], 0) + delta };
+            const wordsBeforeToday = safeNumber(currentTotals[dayKey], 0);
+            const wordsAfterToday = wordsBeforeToday + delta;
+            const goalTarget = clampDailyWordGoal(currentProfile?.dailyWordGoal ?? DEFAULT_DAILY_WORD_GOAL);
+            const crossedDailyGoal = wordsBeforeToday < goalTarget && wordsAfterToday >= goalTarget;
+            const nextTotals = { ...currentTotals, [dayKey]: wordsAfterToday };
             currentProfile = { ...currentProfile, writingDayTotals: nextTotals };
             if (isLocalStudio) {
                 updateProfileRow({ writing_day_totals: nextTotals });
+                if (crossedDailyGoal) showDailyGoalBadge(wordsAfterToday, goalTarget);
                 return;
             }
             await supabase.from("users").update({ writing_day_totals: nextTotals }).eq("id", currentUser.id);
+            if (crossedDailyGoal) showDailyGoalBadge(wordsAfterToday, goalTarget);
         } catch (e) { console.error("Daily writing totals update failed:", e); }
     }
 
@@ -1521,6 +1853,24 @@ function rememberBookId(id) {
     publishBypassYes?.addEventListener("click", () => { publishBypassChoiceRow?.classList.add("hidden"); publishQuickWrap?.classList.add("visible"); });
     publishQuickPublishBtn?.addEventListener("click", () => void quickRepublishFromEditor());
     publishModal.addEventListener("click", e => { if (e.target === publishModal) closePublishModal(); });
+    backgroundBtn?.addEventListener("click", () => {
+        backgroundBar?.classList.toggle("open");
+        if (backgroundBar?.classList.contains("open")) backgroundUploadInput?.focus();
+    });
+    backgroundUploadInput?.addEventListener("change", () => {
+        const file = backgroundUploadInput.files?.[0];
+        void saveUploadedEditorBackground(file);
+        backgroundUploadInput.value = "";
+    });
+    backgroundFitSelect?.addEventListener("change", () => {
+        const current = localStorage.getItem(EDITOR_BACKGROUND_IMAGE_KEY) || "";
+        if (!isUploadBackgroundValue(current)) return;
+        const fit = normalizeBackgroundFit(backgroundFitSelect.value);
+        localStorage.setItem(EDITOR_BACKGROUND_FIT_KEY, fit);
+        void applyUploadedEditorBackground(fit).then(() => setBackgroundStatus("Uploaded background applied."));
+    });
+    backgroundClearBtn?.addEventListener("click", clearEditorBackgroundImage);
+    backgroundCloseBtn?.addEventListener("click", () => backgroundBar?.classList.remove("open"));
     document.getElementById("exportBtn")?.addEventListener("click", () => {
         if (!bookId) {
             alert("No book loaded.");
@@ -1865,9 +2215,13 @@ async function loadBook() {
         applyTheme(localStorage.getItem("alysum-theme") || "light");
         fontSizeSelect.value = localStorage.getItem("alysum-fontSize") || "20";
         applyEditorStyle();
+        restoreEditorBackgroundImage();
         document.execCommand("defaultParagraphSeparator", false, "p");
         setSaveStatus("Connecting...");
     await loadProfile().catch(console.error);
+    if (params.get("testDailyGoalBadge") === "1") {
+        setTimeout(previewDailyGoalBadge, 450);
+    }
 
     const hasBook = await resolveBookId().catch((e) => {
         console.error("Book resolve failed:", e);
