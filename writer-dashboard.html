@@ -206,13 +206,153 @@
         color: #6b7280;
     }
 
-    .wd-stats-foot-label { white-space: nowrap; }
+    .wd-stats-foot-label {
+        border: none;
+        background: transparent;
+        color: inherit;
+        padding: 0;
+        font: inherit;
+        cursor: pointer;
+        white-space: nowrap;
+        text-align: left;
+    }
 
-    .wd-stats-foot-count {
+    .wd-stats-foot-label:hover {
+        color: #cbd5e1;
+    }
+
+    .wd-stats-foot-count,
+    .wd-goal-edit-btn {
         justify-self: end;
         color: #d1d5db;
         font-weight: 700;
         white-space: nowrap;
+    }
+
+    .wd-goal-edit-btn {
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.04);
+        padding: 7px 11px;
+        font: inherit;
+        cursor: pointer;
+        transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+    }
+
+    .wd-goal-edit-btn:hover,
+    .wd-goal-edit-btn[aria-expanded="true"] {
+        color: #fff;
+        border-color: rgba(167, 139, 250, 0.38);
+        background: rgba(124, 58, 237, 0.18);
+    }
+
+    .wd-goal-picker {
+        grid-column: 1 / -1;
+        display: none;
+        padding: 14px;
+        border: 1px solid rgba(167, 139, 250, 0.2);
+        border-radius: 16px;
+        background: rgba(2, 6, 23, 0.62);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    }
+
+    .wd-goal-picker.is-open { display: block; }
+
+    .wd-goal-picker-title {
+        margin: 0;
+        color: #f8fafc;
+        font-size: 13px;
+        font-weight: 900;
+    }
+
+    .wd-goal-picker-hint {
+        margin: 4px 0 12px;
+        color: #94a3b8;
+        font-size: 12px;
+        line-height: 1.4;
+    }
+
+    .wd-goal-presets {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .wd-goal-preset {
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.05);
+        color: #e5e7eb;
+        padding: 8px 11px;
+        font: inherit;
+        font-size: 12px;
+        font-weight: 800;
+        cursor: pointer;
+    }
+
+    .wd-goal-preset:hover,
+    .wd-goal-preset.is-active {
+        border-color: rgba(251, 191, 36, 0.42);
+        background: rgba(251, 191, 36, 0.14);
+        color: #fef3c7;
+    }
+
+    .wd-goal-custom {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        margin-top: 12px;
+    }
+
+    .wd-goal-custom input {
+        flex: 1 1 160px;
+        min-width: 0;
+        height: 38px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 12px;
+        background: rgba(15, 23, 42, 0.92);
+        color: #f8fafc;
+        padding: 0 11px;
+        font: inherit;
+        font-weight: 800;
+        outline: none;
+    }
+
+    .wd-goal-custom input:focus {
+        border-color: rgba(167, 139, 250, 0.55);
+        box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2);
+    }
+
+    .wd-goal-save,
+    .wd-goal-cancel {
+        height: 38px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        padding: 0 12px;
+        font: inherit;
+        font-size: 12px;
+        font-weight: 900;
+        cursor: pointer;
+    }
+
+    .wd-goal-save {
+        border-color: transparent;
+        background: #7c3aed;
+        color: #fff;
+    }
+
+    .wd-goal-cancel {
+        background: transparent;
+        color: #cbd5e1;
+    }
+
+    .wd-goal-picker-status {
+        min-height: 1.2em;
+        margin-top: 10px;
+        color: #94a3b8;
+        font-size: 12px;
+        font-weight: 700;
     }
 
     .wd-goal-bar {
@@ -850,10 +990,23 @@
                 </li>
             </ul>
             <div class="wd-stats-foot">
-                <span class="wd-stats-foot-label">Word goal today</span>
-                <span class="wd-stats-foot-count" id="goalTodayText">0 / 2,000</span>
+                <button class="wd-stats-foot-label" id="goalTodayLabelBtn" type="button" aria-expanded="false" aria-controls="goalPicker">Word goal today</button>
+                <button class="wd-goal-edit-btn" id="goalTodayBtn" type="button" aria-expanded="false" aria-controls="goalPicker" title="Change daily word goal">
+                    <span class="wd-stats-foot-count" id="goalTodayText">0 / 2,000</span>
+                </button>
                 <div class="wd-goal-bar" aria-hidden="true">
                     <div class="wd-goal-fill" id="goalBar"></div>
+                </div>
+                <div class="wd-goal-picker" id="goalPicker" role="dialog" aria-label="Change daily word goal">
+                    <p class="wd-goal-picker-title">Choose today’s word goal</p>
+                    <p class="wd-goal-picker-hint">Pick a preset or enter a custom goal. This updates your daily goal going forward.</p>
+                    <div class="wd-goal-presets" id="goalPresetRow"></div>
+                    <div class="wd-goal-custom">
+                        <input id="goalCustomInput" type="number" min="50" max="20000" step="50" inputmode="numeric" placeholder="Custom word count" />
+                        <button class="wd-goal-save" id="goalCustomSave" type="button">Save custom</button>
+                        <button class="wd-goal-cancel" id="goalPickerClose" type="button">Close</button>
+                    </div>
+                    <div class="wd-goal-picker-status" id="goalPickerStatus" role="status"></div>
                 </div>
             </div>
         </section>
@@ -954,6 +1107,9 @@
         computeGoalStreakFromTotals,
         wordsTypedOnDay,
         DEFAULT_DAILY_WORD_GOAL,
+        DAILY_GOAL_PRESETS,
+        MIN_DAILY_WORD_GOAL,
+        MAX_CUSTOM_DAILY_WORD_GOAL,
     } from "./js/writing-day-stats.js?v=1";
     import {
         readLastWriterSession,
@@ -975,8 +1131,16 @@
     const statBooks = document.getElementById("statBooks");
     const statLoginStreak = document.getElementById("statLoginStreak");
     const statGoalStreak = document.getElementById("statGoalStreak");
+    const goalTodayLabelBtn = document.getElementById("goalTodayLabelBtn");
+    const goalTodayBtn = document.getElementById("goalTodayBtn");
     const goalBar = document.getElementById("goalBar");
     const goalTodayText = document.getElementById("goalTodayText");
+    const goalPicker = document.getElementById("goalPicker");
+    const goalPresetRow = document.getElementById("goalPresetRow");
+    const goalCustomInput = document.getElementById("goalCustomInput");
+    const goalCustomSave = document.getElementById("goalCustomSave");
+    const goalPickerClose = document.getElementById("goalPickerClose");
+    const goalPickerStatus = document.getElementById("goalPickerStatus");
     const bookList = document.getElementById("bookList");
     const bookListViewport = document.getElementById("bookListViewport");
     const bookListScroll = document.getElementById("bookListScroll");
@@ -1170,6 +1334,86 @@
             goalTodayText.textContent = met
                 ? `${wordsToday.toLocaleString()} / ${goal.toLocaleString()} · met`
                 : `${wordsToday.toLocaleString()} / ${goal.toLocaleString()}`;
+        }
+        syncGoalPickerState(goal);
+    }
+
+    function currentDailyGoal() {
+        return clampDailyWordGoal(currentProfile.dailyWordGoal ?? DEFAULT_DAILY_WORD_GOAL);
+    }
+
+    function setGoalPickerOpen(open) {
+        if (!goalPicker || !goalTodayBtn) return;
+        goalPicker.classList.toggle("is-open", open);
+        goalTodayBtn.setAttribute("aria-expanded", open ? "true" : "false");
+        goalTodayLabelBtn?.setAttribute("aria-expanded", open ? "true" : "false");
+        if (open) {
+            if (goalCustomInput) goalCustomInput.value = String(currentDailyGoal());
+            if (goalPickerStatus) goalPickerStatus.textContent = "";
+            syncGoalPickerState(currentDailyGoal());
+            setTimeout(() => goalCustomInput?.focus(), 0);
+        }
+    }
+
+    function syncGoalPickerState(goal = currentDailyGoal()) {
+        if (!goalPresetRow) return;
+        goalPresetRow.querySelectorAll(".wd-goal-preset").forEach((btn) => {
+            btn.classList.toggle("is-active", Number(btn.dataset.goal) === goal);
+        });
+    }
+
+    function renderGoalPresets() {
+        if (!goalPresetRow || goalPresetRow.dataset.ready === "1") return;
+        goalPresetRow.dataset.ready = "1";
+        DAILY_GOAL_PRESETS.forEach((goal) => {
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "wd-goal-preset";
+            btn.dataset.goal = String(goal);
+            btn.textContent = goal.toLocaleString();
+            btn.addEventListener("click", () => saveDailyGoal(goal));
+            goalPresetRow.appendChild(btn);
+        });
+        syncGoalPickerState();
+    }
+
+    async function saveDailyGoal(rawGoal) {
+        const nextGoal = clampDailyWordGoal(rawGoal);
+        if (!currentUser) {
+            if (goalPickerStatus) goalPickerStatus.textContent = "Sign in or open local Studio before changing your goal.";
+            return;
+        }
+        if (goalPickerStatus) goalPickerStatus.textContent = "Saving goal...";
+        if (goalCustomSave) goalCustomSave.disabled = true;
+        goalPresetRow?.querySelectorAll("button").forEach((btn) => {
+            btn.disabled = true;
+        });
+
+        try {
+            if (isLocalStudio) {
+                const row = updateProfileRow({ daily_word_goal: nextGoal });
+                currentProfile = mergeUser(row);
+                notifyLocalStudioSync();
+            } else {
+                const { error } = await supabase
+                    .from("users")
+                    .update({ daily_word_goal: nextGoal })
+                    .eq("id", currentUser.id);
+                if (error) throw error;
+                currentProfile = mergeUser({ ...currentProfile, daily_word_goal: nextGoal });
+            }
+            if (goalPickerStatus) goalPickerStatus.textContent = `Daily goal saved: ${nextGoal.toLocaleString()} words.`;
+            if (goalCustomInput) goalCustomInput.value = String(nextGoal);
+            syncGoalPickerState(nextGoal);
+            await refreshBooksAndStats();
+        } catch (error) {
+            console.error(error);
+            if (goalPickerStatus) goalPickerStatus.textContent = "Could not save goal. Try again.";
+        } finally {
+            if (goalCustomSave) goalCustomSave.disabled = false;
+            goalPresetRow?.querySelectorAll("button").forEach((btn) => {
+                btn.disabled = false;
+            });
         }
     }
 
@@ -1642,6 +1886,53 @@
             alert(e.message || "Could not create book.");
         });
     });
+
+    goalTodayBtn?.addEventListener("click", () => {
+        setGoalPickerOpen(!goalPicker?.classList.contains("is-open"));
+    });
+
+    goalTodayLabelBtn?.addEventListener("click", () => {
+        setGoalPickerOpen(!goalPicker?.classList.contains("is-open"));
+    });
+
+    goalPickerClose?.addEventListener("click", () => {
+        setGoalPickerOpen(false);
+    });
+
+    goalCustomSave?.addEventListener("click", () => {
+        const raw = Number(goalCustomInput?.value);
+        if (!Number.isFinite(raw)) {
+            if (goalPickerStatus) goalPickerStatus.textContent = "Enter a number for your custom goal.";
+            goalCustomInput?.focus();
+            return;
+        }
+        const next = clampDailyWordGoal(raw);
+        if (next !== Math.round(raw) && goalPickerStatus) {
+            goalPickerStatus.textContent = `Goal adjusted to the allowed range: ${MIN_DAILY_WORD_GOAL.toLocaleString()}-${MAX_CUSTOM_DAILY_WORD_GOAL.toLocaleString()} words.`;
+        }
+        saveDailyGoal(next);
+    });
+
+    goalCustomInput?.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            goalCustomSave?.click();
+        }
+        if (e.key === "Escape") {
+            e.preventDefault();
+            setGoalPickerOpen(false);
+            goalTodayBtn?.focus();
+        }
+    });
+
+    document.addEventListener("click", (e) => {
+        if (!goalPicker?.classList.contains("is-open")) return;
+        const target = e.target;
+        if (goalPicker.contains(target) || goalTodayBtn?.contains(target) || goalTodayLabelBtn?.contains(target)) return;
+        setGoalPickerOpen(false);
+    });
+
+    renderGoalPresets();
 
     async function ensureProfileExists(user) {
         if (isLocalStudio) return getProfileRow();
