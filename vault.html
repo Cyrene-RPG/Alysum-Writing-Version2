@@ -33,6 +33,7 @@
             --vault-muted: #94a3b8;
             --vault-panel: rgba(15, 23, 42, 0.88);
             --vault-line: rgba(255, 255, 255, 0.1);
+            overflow-x: hidden;
         }
 
         .vault-top {
@@ -109,17 +110,20 @@
             position: sticky;
             top: 0;
             z-index: 20;
+            overflow: hidden;
             background: rgba(11, 18, 32, 0.92);
             border-bottom: 1px solid rgba(255, 255, 255, 0.08);
             backdrop-filter: blur(10px);
         }
 
         .vault-nav {
+            box-sizing: border-box;
             width: 100%;
+            max-width: 100vw;
             padding: 10px clamp(12px, 2vw, 24px);
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            justify-content: flex-start;
             gap: 6px;
             overflow-x: auto;
             scrollbar-width: none;
