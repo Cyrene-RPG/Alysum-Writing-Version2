@@ -23,39 +23,488 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Notes Library — Alysum</title>
     <script src="js/alysum-appearance-boot.js"></script>
-    <link rel="stylesheet" href="css/gradient-themes.css?v=4" />
+    <link rel="stylesheet" href="css/gradient-themes.css?v=7" />
     <script src="js/gradient-theme-sync.js" defer></script>
     <link rel="stylesheet" href="css/notebook.css?v=9" />
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
+    <style>
+        .vault-page {
+            --vault-ink: #f8fafc;
+            --vault-muted: #94a3b8;
+            --vault-panel: rgba(15, 23, 42, 0.88);
+            --vault-line: rgba(255, 255, 255, 0.1);
+        }
+
+        .vault-top {
+            position: relative;
+            overflow: hidden;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            background: var(--theme-welcome-bar, var(--alysum-chrome-gradient, linear-gradient(135deg, #4c1d95, #7c3aed 45%, #ec4899)));
+            box-shadow: 0 10px 42px rgba(0, 0, 0, 0.32);
+        }
+
+        .vault-top::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(circle at 14% 48%, rgba(255, 255, 255, 0.16), transparent 36%),
+                radial-gradient(circle at 86% 18%, rgba(251, 191, 36, 0.16), transparent 34%);
+            pointer-events: none;
+        }
+
+        .vault-top-inner {
+            position: relative;
+            z-index: 1;
+            width: min(1280px, calc(100% - 32px));
+            margin: 0 auto;
+            min-height: 96px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            padding: 18px 0;
+        }
+
+        .vault-kicker {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0 0 8px;
+            color: rgba(255, 255, 255, 0.78);
+            font-size: 12px;
+            font-weight: 900;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+        }
+
+        .vault-kicker::before {
+            content: "";
+            width: 8px;
+            height: 8px;
+            border-radius: 999px;
+            background: #fbbf24;
+            box-shadow: 0 0 18px rgba(251, 191, 36, 0.8);
+        }
+
+        .vault-title {
+            margin: 0;
+            color: #fff7ed;
+            font-size: clamp(30px, 5vw, 48px);
+            line-height: 0.98;
+            letter-spacing: -0.045em;
+            text-shadow: 0 2px 14px rgba(0, 0, 0, 0.28);
+        }
+
+        .vault-subtitle {
+            max-width: 650px;
+            margin: 10px 0 0;
+            color: rgba(255, 255, 255, 0.84);
+            font-size: 15px;
+            line-height: 1.55;
+            font-weight: 650;
+        }
+
+        .vault-top-actions {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .vault-nav-wrap {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            background: rgba(11, 18, 32, 0.92);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(10px);
+        }
+
+        .vault-nav {
+            width: 100%;
+            padding: 10px clamp(12px, 2vw, 24px);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+
+        .vault-nav::-webkit-scrollbar { display: none; }
+
+        .vault-nav a {
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px clamp(8px, 0.8vw, 14px);
+            border-radius: 999px;
+            border: 1px solid transparent;
+            color: #d1d5db;
+            font-size: clamp(11px, 0.72vw, 13px);
+            font-weight: 750;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+        .vault-nav a:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .vault-nav a.is-active {
+            color: #fff;
+            background: rgba(124, 58, 237, 0.28);
+            border-color: rgba(167, 139, 250, 0.35);
+        }
+
+        .vault-nav-divider {
+            flex-shrink: 0;
+            width: 1px;
+            height: 22px;
+            margin: 0 2px;
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .vault-shell {
+            max-width: 1320px;
+            padding: 22px 18px 46px;
+            gap: 18px;
+        }
+
+        .vault-command-strip {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 14px;
+            align-items: stretch;
+        }
+
+        .vault-brief,
+        .vault-hint-card {
+            border: 1px solid var(--vault-line);
+            border-radius: 22px;
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.014)),
+                var(--vault-panel);
+            box-shadow: 0 18px 44px rgba(0, 0, 0, 0.28);
+        }
+
+        .vault-brief {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 1px;
+            overflow: hidden;
+        }
+
+        .vault-brief-item {
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .vault-brief-label {
+            display: block;
+            color: var(--vault-muted);
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        .vault-brief-text {
+            display: block;
+            margin-top: 6px;
+            color: var(--vault-ink);
+            font-size: 14px;
+            font-weight: 800;
+            line-height: 1.35;
+        }
+
+        .vault-hint-card {
+            min-width: min(360px, 36vw);
+            padding: 16px 18px;
+        }
+
+        .vault-hint-card strong {
+            display: block;
+            color: #fef3c7;
+            font-size: 13px;
+            font-weight: 900;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .vault-hint-card span {
+            display: block;
+            margin-top: 6px;
+            color: var(--vault-muted);
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .vault-grid {
+            grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
+            gap: 18px;
+            min-height: min(720px, calc(100vh - 260px));
+        }
+
+        .vault-panel {
+            border-radius: 26px;
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.01)),
+                var(--vault-panel);
+            border-color: var(--vault-line);
+            box-shadow: 0 18px 46px rgba(0, 0, 0, 0.34);
+        }
+
+        .vault-panel-accent {
+            border-color: rgba(167, 139, 250, 0.22);
+        }
+
+        .vault-side-head {
+            padding: 16px;
+            background: linear-gradient(135deg, rgba(124, 58, 237, 0.24), rgba(236, 72, 153, 0.08));
+        }
+
+        .vault-side-title,
+        .vault-editor-title {
+            margin: 0;
+            color: #f8fafc;
+            font-size: 15px;
+            font-weight: 950;
+            letter-spacing: -0.01em;
+        }
+
+        .vault-side-sub,
+        .vault-editor-sub {
+            margin: 4px 0 0;
+            color: var(--vault-muted);
+            font-size: 12px;
+            font-weight: 650;
+            line-height: 1.4;
+        }
+
+        .vault-side-tools {
+            padding: 12px;
+            background: rgba(2, 6, 23, 0.28);
+        }
+
+        .vault-tool-btn {
+            min-height: 38px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.06);
+            transition: transform 0.12s ease, background 0.14s ease, border-color 0.14s ease;
+        }
+
+        .vault-tool-btn:hover {
+            transform: translateY(-1px);
+            border-color: rgba(167, 139, 250, 0.35);
+        }
+
+        .vault-tool-btn-danger {
+            flex: 0 0 auto;
+            color: #fecaca;
+            border-color: rgba(248, 113, 113, 0.28);
+        }
+
+        .vault-search-wrap {
+            padding: 12px;
+            border-bottom: 1px solid var(--vault-line);
+            background: rgba(2, 6, 23, 0.18);
+        }
+
+        .vault-search-wrap .nb-quick-open {
+            width: 100%;
+            margin: 0;
+            border-radius: 14px;
+            border-left: 1px solid var(--vault-line);
+            border-right: 1px solid var(--vault-line);
+        }
+
+        .vault-tree {
+            padding: 10px 0 16px;
+        }
+
+        .vault-editor-head {
+            padding: 16px;
+            align-items: flex-start;
+            background: linear-gradient(135deg, rgba(2, 6, 23, 0.5), rgba(124, 58, 237, 0.08));
+        }
+
+        .vault-title-input {
+            margin-top: 12px;
+            width: 100%;
+            flex-basis: 100%;
+            border-radius: 16px;
+            font-size: clamp(22px, 4vw, 32px);
+            letter-spacing: -0.035em;
+            background: rgba(2, 6, 23, 0.52);
+        }
+
+        .vault-body {
+            padding: clamp(18px, 3vw, 34px);
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 160px),
+                rgba(2, 6, 23, 0.42);
+            font-size: 16px;
+            line-height: 1.72;
+            font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+        }
+
+        .vault-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-height: 42px;
+            color: #cbd5e1;
+            background: rgba(2, 6, 23, 0.38);
+        }
+
+        .vault-status::before {
+            content: "";
+            width: 8px;
+            height: 8px;
+            flex: 0 0 auto;
+            border-radius: 999px;
+            background: #22c55e;
+            box-shadow: 0 0 12px rgba(34, 197, 94, 0.55);
+        }
+
+        @media (max-width: 900px) {
+            .vault-top-inner {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .vault-command-strip {
+                grid-template-columns: 1fr;
+            }
+
+            .vault-top-actions {
+                justify-content: flex-start;
+            }
+
+            .vault-hint-card {
+                min-width: 0;
+            }
+
+            .vault-brief {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 800px) {
+            .vault-grid {
+                grid-template-columns: 1fr;
+                grid-template-rows: minmax(260px, 38vh) minmax(420px, 1fr);
+            }
+        }
+
+        @media (max-width: 520px) {
+            .vault-top-inner {
+                width: min(100% - 24px, 1280px);
+                min-height: 88px;
+            }
+
+            .vault-shell {
+                padding: 14px 12px 32px;
+            }
+
+            .vault-nav {
+                justify-content: flex-start;
+            }
+
+            .vault-panel,
+            .vault-brief,
+            .vault-hint-card {
+                border-radius: 20px;
+            }
+        }
+    </style>
 </head>
 <body class="vault-page">
-    <div class="vault-shell">
-        <header class="vault-hero">
+    <header class="vault-top" aria-label="Vault welcome">
+        <div class="vault-top-inner">
             <div>
-                <h1>Notes library</h1>
-                <p>
-                    Syncs to your Alysum account when you’re signed in. The same vault opens in the editor scratch panel and scratch page.
+                <p class="vault-kicker">Alysum Vault</p>
+                <h1 class="vault-title">Your story memory, organized.</h1>
+                <p class="vault-subtitle">
+                    Capture lore, scene fragments, research, and scratch thoughts in one synced workspace. Use [[Note title]] to connect ideas as your world grows.
                 </p>
             </div>
-            <div class="vault-hero-actions">
-                <a class="vault-btn vault-btn-ghost" href="scratch.html">Scratch pad</a>
-                <a class="vault-btn vault-btn-ghost" href="writer-dashboard.html">Studio</a>
+            <div class="vault-top-actions">
+                <a class="vault-btn vault-btn-primary" href="scratch.html">Open scratch pad</a>
+                <a class="vault-btn vault-btn-ghost" href="writer-dashboard.html">Back to Studio</a>
             </div>
-        </header>
+        </div>
+    </header>
+
+    <nav class="vault-nav-wrap" aria-label="Workspace">
+        <div class="vault-nav">
+            <a href="writer-dashboard.html">Continue writing</a>
+            <span class="vault-nav-divider" aria-hidden="true"></span>
+            <a href="library.html">Library</a>
+            <a href="author-dashboard.html">Author stats</a>
+            <a href="world-encyclopedia.html">Encyclopedia</a>
+            <span class="vault-nav-divider" aria-hidden="true"></span>
+            <a href="vault.html" class="is-active" aria-current="page">Notes</a>
+            <a href="story-bible.html">Story Bible</a>
+            <a href="plot-doctor/">Plot Doctor</a>
+            <a href="Novel_Exporter.html">Exporter</a>
+            <a href="badges.html">Achievements</a>
+            <a href="leaderboard.html">Leaderboards</a>
+            <span class="vault-nav-divider" aria-hidden="true"></span>
+            <a href="settings.html">Settings</a>
+            <a href="reader-home.html">Reading</a>
+            <a href="index.html">Home</a>
+        </div>
+    </nav>
+
+    <div class="vault-shell">
+        <section class="vault-command-strip" aria-label="Vault guide">
+            <div class="vault-brief">
+                <div class="vault-brief-item">
+                    <span class="vault-brief-label">Link fast</span>
+                    <span class="vault-brief-text">Type [[Note title]] to connect related notes.</span>
+                </div>
+                <div class="vault-brief-item">
+                    <span class="vault-brief-label">Organize</span>
+                    <span class="vault-brief-text">Folders keep worlds, characters, and drafts together.</span>
+                </div>
+                <div class="vault-brief-item">
+                    <span class="vault-brief-label">Sync</span>
+                    <span class="vault-brief-text">Signed-in vaults follow you across Alysum.</span>
+                </div>
+            </div>
+            <aside class="vault-hint-card">
+                <strong>Quick capture</strong>
+                <span>Start messy here, then open notes from the editor, scratch pad, or Story Bible when you need them.</span>
+            </aside>
+        </section>
 
         <div class="vault-grid">
             <aside class="vault-panel">
-                <div class="vault-side-head">Explorer</div>
-                <div class="vault-side-tools">
-                    <button type="button" class="vault-tool-btn" id="vaultNewNote">＋ Note</button>
-                    <button type="button" class="vault-tool-btn" id="vaultNewFolder">📁 Folder</button>
-                    <button type="button" class="vault-tool-btn" id="vaultDel" style="flex:0 0 auto">⌫</button>
+                <div class="vault-side-head">
+                    <h2 class="vault-side-title">Explorer</h2>
+                    <p class="vault-side-sub">Browse, search, and rearrange your notes.</p>
                 </div>
-                <input id="vaultFind" class="nb-quick-open" type="search" placeholder="Search titles and bodies…" autocomplete="off" style="margin:0;border-radius:0;border-left:none;border-right:none" />
+                <div class="vault-side-tools">
+                    <button type="button" class="vault-tool-btn" id="vaultNewNote">＋ New note</button>
+                    <button type="button" class="vault-tool-btn" id="vaultNewFolder">Folder</button>
+                    <button type="button" class="vault-tool-btn vault-tool-btn-danger" id="vaultDel" aria-label="Delete selected note or folder">⌫</button>
+                </div>
+                <div class="vault-search-wrap">
+                    <input id="vaultFind" class="nb-quick-open" type="search" placeholder="Search titles and bodies..." autocomplete="off" />
+                </div>
                 <div id="vaultTree" class="vault-tree"></div>
             </aside>
-            <section class="vault-panel">
+            <section class="vault-panel vault-panel-accent">
                 <div class="vault-editor-head">
+                    <div>
+                        <h2 class="vault-editor-title">Current note</h2>
+                        <p class="vault-editor-sub">Rename the title, then write freely below.</p>
+                    </div>
                     <input id="vaultTitle" class="vault-title-input" type="text" placeholder="Untitled" />
                 </div>
                 <div id="vaultBody" class="vault-body nb-body-ce" contenteditable="false" spellcheck="true" data-placeholder="Write here. [[Note title]] creates or links a note; matching titles auto-link after a short pause."></div>
