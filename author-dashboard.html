@@ -23,7 +23,7 @@
 <script src="js/alysum-appearance-boot.js"></script>
 
 <link rel="stylesheet" href="css/site-responsive.css?v=1" />
-<link rel="stylesheet" href="css/gradient-themes.css?v=4" />
+<link rel="stylesheet" href="css/gradient-themes.css?v=7" />
     <script src="js/gradient-theme-sync.js" defer></script>
 
 <style>
@@ -61,6 +61,112 @@
 
     body { overflow-x: hidden; }
     a { color: inherit; }
+
+    .wd-welcome-bar {
+        position: relative;
+        padding: 0 clamp(16px, 3vw, 32px);
+        min-height: 88px;
+        display: flex;
+        align-items: center;
+        overflow: hidden;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        background: var(
+            --theme-welcome-bar,
+            var(
+                --alysum-chrome-gradient,
+                linear-gradient(
+                    135deg,
+                    rgba(76, 29, 149, 0.95) 0%,
+                    var(--theme-header-mid, #6d28d9) 38%,
+                    var(--theme-header-end, #db2777) 100%
+                )
+            )
+        );
+        background-size: cover;
+        background-position: center;
+        box-shadow:
+            0 4px 32px rgba(0, 0, 0, 0.35),
+            inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    }
+
+    .wd-welcome-bar::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+            radial-gradient(circle at 12% 50%, rgba(255, 255, 255, 0.14) 0%, transparent 42%),
+            radial-gradient(circle at 88% 20%, rgba(251, 191, 36, 0.12) 0%, transparent 40%);
+        pointer-events: none;
+    }
+
+    .wd-welcome-bar::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+        pointer-events: none;
+    }
+
+    .wd-welcome-inner {
+        position: relative;
+        z-index: 1;
+        width: 100%;
+        max-width: 1280px;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        gap: clamp(14px, 2.5vw, 20px);
+    }
+
+    .wd-pfp {
+        flex-shrink: 0;
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        overflow: hidden;
+        background: rgba(0, 0, 0, 0.28);
+        border: 2px solid rgba(255, 255, 255, 0.22);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    }
+
+    .wd-pfp img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    .wd-pfp-initial {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        font-weight: 900;
+        color: #fff;
+    }
+
+    .wd-pfp-initial.is-hidden { display: none; }
+
+    .wd-welcome-title {
+        margin: 0;
+        font-size: clamp(22px, 4vw, 28px);
+        font-weight: 900;
+        line-height: 1.15;
+        color: #fff7ed;
+        text-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+    }
+
+    .wd-welcome-title .wd-name {
+        background: linear-gradient(90deg, #fff 0%, #fde68a 55%, #fbcfe8 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+    }
 
     .topbar {
         position: relative;
@@ -569,17 +675,15 @@
 
 </head>
 <body>
-    <header class="topbar">
-        <div class="brand">
-            <div class="brand-kicker">Alysum</div>
-            <div class="brand-title">Author Dashboard</div>
+    <header class="wd-welcome-bar" aria-label="Welcome">
+        <div class="wd-welcome-inner">
+            <div class="wd-pfp" id="welcomePfp">
+                <img id="welcomePfpImg" alt="" hidden />
+                <span class="wd-pfp-initial" id="welcomePfpInitial" aria-hidden="true">A</span>
+            </div>
+            <h1 class="wd-welcome-title" id="welcomeTitle">Welcome back.</h1>
         </div>
-        <div class="top-actions">
-            <a class="btn" href="writer-dashboard.html">Back to Studio</a>
-            <a class="btn primary" href="library.html">View Library</a>
-        </div>
-    </header>
-    <nav class="wd-nav-wrap" aria-label="Workspace">
+    </header><nav class="wd-nav-wrap" aria-label="Workspace">
         <div class="wd-nav">
             <a href="writer-dashboard.html">Continue writing</a>
             <span class="wd-nav-divider" aria-hidden="true"></span>
@@ -676,6 +780,9 @@
     const navStoryBible = document.getElementById("navStoryBible");
     const navReading = document.getElementById("navReading");
     const navDashBadge = document.getElementById("navDashBadge");
+    const welcomeTitle = document.getElementById("welcomeTitle");
+    const welcomePfpImg = document.getElementById("welcomePfpImg");
+    const welcomePfpInitial = document.getElementById("welcomePfpInitial");
     const authorStatus = document.getElementById("authorStatus");
     const totalBooks = document.getElementById("totalBooks");
     const totalReads = document.getElementById("totalReads");
@@ -755,6 +862,43 @@
         const n = safeNumber(unreadCount);
         navDashBadge.textContent = n > 99 ? "99+" : String(n);
         navDashBadge.classList.toggle("is-hidden", n <= 0);
+    }
+
+    function normalizeProfile(row) {
+        if (!row || typeof row !== "object") return {};
+        return {
+            ...row,
+            displayName: row.display_name ?? row.displayName,
+            profileImageUrl: row.profile_image_url ?? row.profileImageUrl ?? "",
+        };
+    }
+
+    function renderWelcomeProfile(profile, fallbackLabel) {
+        const normalized = normalizeProfile(profile);
+        const label = String(fallbackLabel || publicDisplayNameFromUserData(normalized) || "author").trim() || "author";
+        const initial = (label[0] || "A").toUpperCase();
+        const imageUrl = String(normalized.profileImageUrl || "").trim();
+
+        if (welcomeTitle) {
+            welcomeTitle.innerHTML = 'Welcome back, <span class="wd-name">' + escapeHtml(label) + "</span>.";
+        }
+        if (!welcomePfpImg || !welcomePfpInitial) return;
+
+        welcomePfpInitial.textContent = initial;
+        if (imageUrl) {
+            welcomePfpImg.src = imageUrl;
+            welcomePfpImg.hidden = false;
+            welcomePfpInitial.classList.add("is-hidden");
+            welcomePfpImg.onerror = () => {
+                welcomePfpImg.hidden = true;
+                welcomePfpImg.removeAttribute("src");
+                welcomePfpInitial.classList.remove("is-hidden");
+            };
+        } else {
+            welcomePfpImg.hidden = true;
+            welcomePfpImg.removeAttribute("src");
+            welcomePfpInitial.classList.remove("is-hidden");
+        }
     }
 
     function escapeHtml(str) {
@@ -1084,7 +1228,10 @@
         showState("loading");
         try {
             const profile = getProfileRow();
-            authorStatus.textContent = profile.display_name || "Guest";
+            const normalizedProfile = normalizeProfile(profile);
+            const label = publicDisplayNameFromUserData(normalizedProfile) || "Guest";
+            authorStatus.textContent = label;
+            renderWelcomeProfile(normalizedProfile, label);
             const books = listBooks().map((b) => ({
                 id: b.id,
                 title: typeof b.title === "string" && b.title.trim() ? b.title.trim() : "Untitled Book",
@@ -1118,7 +1265,10 @@
 
             if (pErr) throw pErr;
 
-            authorStatus.textContent = profile ? publicDisplayNameFromUserData(profile) : "author";
+            const normalizedProfile = normalizeProfile(profile);
+            const label = profile ? publicDisplayNameFromUserData(normalizedProfile) : "author";
+            authorStatus.textContent = label;
+            renderWelcomeProfile(normalizedProfile, label);
             navReading?.classList.toggle(
                 "is-hidden",
                 !profile || !accountSupportsModeToggle(profile.accountType ?? profile.account_type)
