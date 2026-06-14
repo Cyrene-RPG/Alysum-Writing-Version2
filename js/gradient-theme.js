@@ -18,6 +18,7 @@ export const GRADIENT_THEMES = [
     { id: "gold", label: "Gold", hint: "Amber & sunshine", preview: "linear-gradient(135deg, #78350f 0%, #f59e0b 50%, #fef08a 100%)" },
     { id: "aurora", label: "Aurora", hint: "Violet with cyan glow", preview: "linear-gradient(135deg, #4c1d95 0%, #7c3aed 40%, #06b6d4 100%)" },
     { id: "forest", label: "Forest", hint: "Emerald & teal", preview: "linear-gradient(135deg, #14532d 0%, #059669 50%, #6ee7b7 100%)" },
+    { id: "forest2", label: "Forest 2 Gradient", hint: "Earthy brown fading into deep green", preview: "linear-gradient(135deg, #5f3b1b 0%, #8b5a2b 35%, #2f6f3e 70%, #14532d 100%)" },
     { id: "neon", label: "Neon", hint: "Cyber magenta & electric mint", preview: "linear-gradient(135deg, #4a044e 0%, #d946ef 45%, #22d3ee 75%, #4ade80 100%)" },
     { id: "silver", label: "Silver", hint: "Cool slate & chrome", preview: "linear-gradient(135deg, #1e293b 0%, #64748b 50%, #e2e8f0 100%)" },
     { id: "lavender", label: "Lavender", hint: "Soft lilac & periwinkle", preview: "linear-gradient(135deg, #5b21b6 0%, #a78bfa 55%, #ede9fe 100%)" },
