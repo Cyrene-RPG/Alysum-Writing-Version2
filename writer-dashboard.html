@@ -682,6 +682,8 @@
         scroll-snap-type: x proximity;
         scroll-padding-inline: 4px;
         -webkit-overflow-scrolling: touch;
+        overscroll-behavior-inline: contain;
+        touch-action: pan-x pan-y;
         scrollbar-width: none;
         -ms-overflow-style: none;
     }
@@ -1194,6 +1196,33 @@
 
     linkBooksScroll(bookListViewport, bookListScroll);
     linkBooksScroll(bookListScroll, bookListViewport);
+
+    function bindBookWheelScroll() {
+        if (!bookListViewport) return;
+        const canUseWheel = window.matchMedia?.("(pointer: fine)").matches ?? true;
+        if (!canUseWheel) return;
+
+        bookListViewport.addEventListener(
+            "wheel",
+            (e) => {
+                const maxScroll = bookListViewport.scrollWidth - bookListViewport.clientWidth;
+                if (maxScroll <= 1) return;
+
+                const delta = Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
+                if (!delta) return;
+
+                const next = Math.max(0, Math.min(maxScroll, bookListViewport.scrollLeft + delta));
+                if (next === bookListViewport.scrollLeft) return;
+
+                e.preventDefault();
+                bookListViewport.scrollLeft = next;
+                syncBooksScrollbars();
+            },
+            { passive: false }
+        );
+    }
+
+    bindBookWheelScroll();
 
     function syncBookCardWidth() {
         if (!bookList) return;
