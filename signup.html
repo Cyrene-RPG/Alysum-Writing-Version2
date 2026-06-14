@@ -28,67 +28,187 @@
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
 
     <style>
+        :root {
+            --auth-ink: #1e1b4b;
+            --auth-muted: #64748b;
+            --auth-border: rgba(124, 58, 237, 0.14);
+            --auth-card: rgba(255, 255, 255, 0.94);
+            --auth-gold: var(--gold, #f5d489);
+        }
+
         * { box-sizing: border-box; }
 
         body {
             margin: 0;
-            height: 100vh;
+            min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--login-page-bg);
+            padding: 34px 18px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            color: var(--auth-ink);
+            background:
+                radial-gradient(circle at 20% 18%, rgba(245, 212, 137, 0.32), transparent 28%),
+                radial-gradient(circle at 80% 12%, rgba(236, 72, 153, 0.24), transparent 24%),
+                radial-gradient(circle at 50% 105%, rgba(124, 58, 237, 0.28), transparent 34%),
+                var(--login-page-bg);
+        }
+
+        .auth-shell {
+            width: min(100%, 920px);
+        }
+
+        .brand-lockup {
+            margin-bottom: 18px;
+            text-align: center;
+            color: #fff;
+        }
+
+        .brand-mark {
+            width: 58px;
+            height: 58px;
+            display: inline-grid;
+            place-items: center;
+            margin-bottom: 10px;
+            border-radius: 18px;
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(245, 212, 137, 0.82));
+            box-shadow: 0 18px 42px rgba(15, 23, 42, 0.34);
+        }
+
+        .brand-mark img {
+            width: 38px;
+            height: 38px;
+            object-fit: contain;
+        }
+
+        .brand-lockup h1 {
+            margin: 0;
+            font-size: 29px;
+            letter-spacing: -0.04em;
+            text-shadow: 0 2px 18px rgba(15, 23, 42, 0.35);
+        }
+
+        .brand-lockup p {
+            margin: 6px 0 0;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.78);
         }
 
         .card {
-            background: white;
-            padding: 30px;
-            border-radius: 20px;
-            width: 90%;
-            max-width: 380px;
-            box-shadow: 0 12px 30px rgba(0,0,0,0.2);
+            position: relative;
+            overflow: hidden;
+            background: var(--auth-card);
+            padding: 26px;
+            border-radius: 28px;
+            width: 100%;
+            border: 1px solid rgba(255, 255, 255, 0.65);
+            box-shadow: 0 24px 70px rgba(15, 23, 42, 0.28);
+            backdrop-filter: blur(18px);
+        }
+
+        #signup-card {
+            max-width: 470px;
+            margin: 0 auto;
+        }
+
+        #onboarding-card {
+            max-width: 920px;
+            margin: 0 auto;
+        }
+
+        .card::before {
+            content: "";
+            position: absolute;
+            inset: 0 0 auto;
+            height: 5px;
+            background: linear-gradient(90deg, var(--purple-dark, #5b21b6), var(--purple, #6d28d9), var(--auth-gold));
         }
 
         h2 {
-            margin: 0 0 15px;
+            margin: 0;
             text-align: center;
             color: #4c1d95;
+            font-size: 22px;
+            letter-spacing: -0.03em;
+        }
+
+        .auth-subtitle {
+            margin: 7px 0 18px;
+            text-align: center;
+            color: var(--auth-muted);
+            font-size: 13px;
+            line-height: 1.45;
+        }
+
+        .field-label {
+            display: block;
+            margin: 12px 0 7px;
+            font-size: 12px;
+            font-weight: 800;
+            color: #4c1d95;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
         }
 
         input {
             width: 100%;
-            padding: 14px;
-            margin: 10px 0;
-            border-radius: 12px;
-            border: 1px solid #ddd;
+            padding: 14px 15px;
+            border-radius: 15px;
+            border: 1px solid #ddd6fe;
+            background: rgba(255, 255, 255, 0.86);
+            color: #1e1b4b;
             font-size: 15px;
+            outline: none;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+        }
+
+        input:focus {
+            border-color: var(--purple, #6d28d9);
+            background: #fff;
+            box-shadow: 0 0 0 4px rgba(109, 40, 217, 0.13);
         }
 
         button {
             width: 100%;
-            padding: 16px;
+            padding: 15px 16px;
             border: none;
-            border-radius: 14px;
-            background: #6d28d9;
+            border-radius: 16px;
+            background: linear-gradient(135deg, var(--purple-dark, #5b21b6), var(--purple, #6d28d9));
             color: white;
-            font-weight: bold;
-            font-size: 16px;
-            margin-top: 10px;
+            font-weight: 800;
+            font-size: 15px;
+            margin-top: 12px;
+            cursor: pointer;
+            box-shadow: 0 12px 26px rgba(109, 40, 217, 0.28);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
         }
+
+        button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 15px 30px rgba(109, 40, 217, 0.34);
+        }
+
+        button:active { transform: translateY(0) scale(0.99); }
 
         .link {
             text-align: center;
             margin-top: 15px;
             font-size: 14px;
+            color: var(--auth-muted);
         }
 
-        .link a {
-            color: #6d28d9;
+        a {
+            color: var(--purple, #6d28d9);
             text-decoration: none;
-            font-weight: 600;
+            font-weight: 700;
         }
 
-        #error-msg {
+        a:hover {
+            text-decoration: underline;
+        }
+
+        #error-msg,
+        #onboarding-error-msg {
             display: none;
             margin-top: 12px;
             padding: 12px 14px;
@@ -100,7 +220,8 @@
             border: 1px solid #fecaca;
         }
 
-        #error-msg.visible {
+        #error-msg.visible,
+        #onboarding-error-msg.visible {
             display: block;
         }
 
@@ -111,38 +232,45 @@
 
         .account-type-label {
             display: block;
-            margin: 14px 0 8px;
-            font-size: 13px;
+            margin: 16px 0 8px;
+            font-size: 12px;
             font-weight: 800;
             color: #4c1d95;
-            letter-spacing: 0.03em;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
         }
 
         .account-options {
-            display: flex;
-            flex-direction: column;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
             gap: 8px;
         }
 
         .account-option {
             display: flex;
-            align-items: flex-start;
+            min-height: 104px;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            flex-direction: column;
             gap: 10px;
-            padding: 12px 12px;
-            border-radius: 12px;
-            border: 2px solid #e9d5ff;
+            padding: 12px 8px;
+            border-radius: 16px;
+            border: 1px solid #e9d5ff;
             cursor: pointer;
-            background: #faf5ff;
-            transition: border-color 0.15s ease, background 0.15s ease;
+            background: rgba(250, 245, 255, 0.78);
+            transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
         }
 
         .account-option:has(input:checked) {
             border-color: #6d28d9;
             background: #f3e8ff;
+            transform: translateY(-1px);
+            box-shadow: 0 10px 24px rgba(109, 40, 217, 0.12);
         }
 
         .account-option input {
-            margin: 4px 0 0;
+            margin: 0;
             width: auto;
             accent-color: #6d28d9;
         }
@@ -191,6 +319,15 @@
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
         }
 
+        .terms-copy {
+            margin: 18px auto 0;
+            max-width: 330px;
+            text-align: center;
+            color: #64748b;
+            font-size: 12px;
+            line-height: 1.45;
+        }
+
         .btn-oauth svg {
             width: 20px;
             height: 20px;
@@ -201,12 +338,206 @@
             fill: #5865f2;
         }
 
+        .is-hidden {
+            display: none !important;
+        }
+
+        .onboarding-steps {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin: 18px 0;
+        }
+
+        .step-dot {
+            width: 34px;
+            height: 6px;
+            border-radius: 999px;
+            background: #ddd6fe;
+        }
+
+        .step-dot.active {
+            background: linear-gradient(90deg, var(--purple, #6d28d9), var(--auth-gold));
+        }
+
+        .lock-note {
+            margin: 10px 0 0;
+            padding: 12px 14px;
+            border-radius: 16px;
+            color: #5b21b6;
+            background: rgba(245, 212, 137, 0.22);
+            border: 1px solid rgba(245, 212, 137, 0.5);
+            font-size: 13px;
+            line-height: 1.45;
+        }
+
+        .choice-section {
+            margin-top: 18px;
+        }
+
+        .choice-title {
+            margin: 0 0 10px;
+            color: #4c1d95;
+            font-size: 13px;
+            font-weight: 900;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .theme-choice-grid,
+        .font-choice-grid {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: 10px;
+            max-height: 290px;
+            overflow: auto;
+            padding: 2px 4px 6px 2px;
+        }
+
+        .theme-choice,
+        .font-choice {
+            min-height: 76px;
+            margin: 0;
+            padding: 11px 9px;
+            border-radius: 16px;
+            border: 2px solid transparent;
+            background: #f8fafc;
+            color: #1e1b4b;
+            font-size: 12px;
+            font-weight: 900;
+            line-height: 1.2;
+            box-shadow: inset 0 0 0 1px rgba(124, 58, 237, 0.16);
+        }
+
+        .theme-choice.active,
+        .font-choice.active {
+            border-color: var(--purple, #6d28d9);
+            box-shadow: 0 12px 24px rgba(109, 40, 217, 0.16);
+        }
+
+        .theme-choice {
+            color: #fff;
+            text-shadow: 0 1px 8px rgba(15, 23, 42, 0.55);
+        }
+
+        .font-preview {
+            display: block;
+            margin-bottom: 6px;
+            color: #6d28d9;
+            font-size: 24px;
+            line-height: 1;
+        }
+
+        .pfp-upload-panel {
+            display: grid;
+            grid-template-columns: 150px 1fr;
+            gap: 18px;
+            align-items: center;
+            margin-top: 18px;
+            padding: 18px;
+            border-radius: 22px;
+            background: rgba(250, 245, 255, 0.78);
+            border: 1px solid #e9d5ff;
+        }
+
+        .pfp-preview {
+            width: 132px;
+            height: 132px;
+            display: grid;
+            place-items: center;
+            overflow: hidden;
+            border-radius: 32px;
+            background: linear-gradient(135deg, var(--purple-dark, #5b21b6), var(--purple, #6d28d9));
+            color: #fff;
+            font-size: 44px;
+            font-weight: 900;
+            box-shadow: 0 16px 34px rgba(109, 40, 217, 0.24);
+        }
+
+        .pfp-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .pfp-copy {
+            margin: 0 0 12px;
+            color: #64748b;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .pfp-upload-label {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 14px 16px;
+            border-radius: 16px;
+            color: #4c1d95;
+            background: #fff;
+            border: 1px solid #ddd6fe;
+            font-weight: 900;
+            cursor: pointer;
+        }
+
+        .pfp-upload-label input {
+            display: none;
+        }
+
+        .onboarding-actions {
+            display: grid;
+            grid-template-columns: 0.7fr 1fr;
+            gap: 10px;
+            margin-top: 18px;
+        }
+
+        .btn-secondary {
+            background: #fff;
+            color: #4c1d95;
+            border: 1px solid #ddd6fe;
+            box-shadow: none;
+        }
+
         @media (max-width: 480px) {
             body {
                 padding: 12px;
                 padding-left: max(12px, env(safe-area-inset-left, 0px));
                 padding-right: max(12px, env(safe-area-inset-right, 0px));
                 padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
+            }
+
+            .card {
+                padding: 22px;
+                border-radius: 24px;
+            }
+
+            .account-options {
+                grid-template-columns: 1fr;
+            }
+
+            .account-option {
+                min-height: auto;
+                align-items: flex-start;
+                text-align: left;
+                flex-direction: row;
+                justify-content: flex-start;
+            }
+
+            .theme-choice-grid,
+            .font-choice-grid {
+                grid-template-columns: repeat(2, 1fr);
+                max-height: 240px;
+            }
+
+            .onboarding-actions {
+                grid-template-columns: 1fr;
+            }
+
+            .pfp-upload-panel {
+                grid-template-columns: 1fr;
+                justify-items: center;
+                text-align: center;
             }
         }
     </style>
@@ -217,8 +548,18 @@
 
 <body>
 
-<div class="card">
-    <h2>Create Account</h2>
+<main class="auth-shell">
+<div class="brand-lockup" aria-label="Alysum">
+    <div class="brand-mark" aria-hidden="true">
+        <img src="Alysum-3.png" alt="">
+    </div>
+    <h1>Alysum</h1>
+    <p>Begin your reading and writing realm.</p>
+</div>
+
+<div class="card" id="signup-card">
+    <h2>Create your account</h2>
+    <p class="auth-subtitle">Choose your path, then continue with email, Google, or Discord.</p>
 
     <span class="account-type-label" id="accountTypeLabel">How will you use Alysum?</span>
 
@@ -261,17 +602,93 @@
 
     <div class="auth-divider" role="presentation"><span>or with email</span></div>
 
-    <input id="username" placeholder="Username" autocomplete="username">
-    <input id="email" type="email" placeholder="Email" autocomplete="email">
-    <input id="password" type="password" placeholder="Password" autocomplete="new-password">
+    <label class="field-label" for="email">Email</label>
+    <input id="email" type="email" placeholder="you@example.com" autocomplete="email">
+    <label class="field-label" for="password">Password</label>
+    <input id="password" type="password" placeholder="Create a password" autocomplete="new-password">
 
     <button type="button" id="signup-btn" onclick="signup()">Create Account</button>
     <p id="error-msg" role="alert"></p>
+
+    <p class="terms-copy">
+        By creating an account, you agree to Alysum's
+        <a href="terms-of-service.html" target="_blank" rel="noopener">Terms of Service</a>
+        and
+        <a href="privacy-policy.html" target="_blank" rel="noopener">Privacy Policy</a>.
+    </p>
 
     <div class="link">
         Already have an account? <a href="login.html">Login</a>
     </div>
 </div>
+
+<div class="card is-hidden" id="onboarding-card">
+    <div class="onboarding-steps" aria-hidden="true">
+        <span class="step-dot active" id="username-step-dot"></span>
+        <span class="step-dot" id="appearance-step-dot"></span>
+        <span class="step-dot" id="pfp-step-dot"></span>
+    </div>
+
+    <section id="username-step">
+        <h2>Claim your username</h2>
+        <p class="auth-subtitle">This is your public Alysum handle. You get one chance to set it before it is locked in.</p>
+
+        <label class="field-label" for="final-username">Username</label>
+        <input id="final-username" placeholder="Choose your Alysum handle" autocomplete="username" maxlength="32">
+
+        <p class="lock-note">
+            Usernames can use letters, numbers, and underscores. Once you continue, this handle becomes permanent.
+        </p>
+
+        <button type="button" id="username-next-btn">Lock Username</button>
+    </section>
+
+    <section class="is-hidden" id="appearance-step">
+        <h2>Make Alysum yours</h2>
+        <p class="auth-subtitle">Pick the accent colors and title font you want to see around the site.</p>
+
+        <div class="choice-section">
+            <p class="choice-title">Site accent</p>
+            <div class="theme-choice-grid" id="theme-choice-grid"></div>
+        </div>
+
+        <div class="choice-section">
+            <p class="choice-title">Display font</p>
+            <div class="font-choice-grid" id="font-choice-grid"></div>
+        </div>
+
+        <div class="onboarding-actions">
+            <button type="button" class="btn-secondary" id="appearance-back-btn">Back</button>
+            <button type="button" id="appearance-next-btn">Continue</button>
+        </div>
+    </section>
+
+    <section class="is-hidden" id="pfp-step">
+        <h2>Add your profile picture</h2>
+        <p class="auth-subtitle">Upload the image people will see around Alysum before you enter Studio.</p>
+
+        <div class="pfp-upload-panel">
+            <div class="pfp-preview" id="pfp-preview" aria-hidden="true">
+                <span id="pfp-preview-initial">A</span>
+            </div>
+            <div>
+                <p class="pfp-copy">Choose a PNG, JPG, WebP, or GIF under 3MB. Square images work best.</p>
+                <label class="pfp-upload-label" for="profile-picture-input">
+                    Upload Profile Picture
+                    <input type="file" id="profile-picture-input" accept="image/png,image/jpeg,image/webp,image/gif">
+                </label>
+            </div>
+        </div>
+
+        <div class="onboarding-actions">
+            <button type="button" class="btn-secondary" id="pfp-back-btn">Back</button>
+            <button type="button" id="finish-onboarding-btn">Enter Studio</button>
+        </div>
+    </section>
+
+    <p id="onboarding-error-msg" role="alert"></p>
+</div>
+</main>
 
 <script type="module">
 import { supabase } from "./firebase.js";
@@ -290,21 +707,62 @@ import {
     ACCOUNT_AUTHOR,
     ACCOUNT_BOTH,
     ACCOUNT_READER,
-    READER_HOME_URL,
-    homeUrlForUserData,
     setUiMode,
 } from "./js/account-mode.js?v=1";
+import {
+    GRADIENT_THEMES,
+    applyChromeGradient,
+    applyGradientTheme,
+    getStoredGradientThemeId,
+    getThemePreview
+} from "./js/gradient-theme.js?v=6";
+import {
+    DISPLAY_TEXT_STYLES,
+    DISPLAY_TEXT_STYLE_META,
+    applyDisplayTextStyle,
+    getStoredDisplayTextStyleId
+} from "./js/display-text-style.js?v=5";
 
 let oauthSignupHandled = false;
 
 const SIGNUP_ACCOUNT_TYPE_KEY = "alysum-signup-account-type";
 
+const signupCard = document.getElementById("signup-card");
+const onboardingCard = document.getElementById("onboarding-card");
+const usernameStep = document.getElementById("username-step");
+const appearanceStep = document.getElementById("appearance-step");
+const pfpStep = document.getElementById("pfp-step");
+const usernameStepDot = document.getElementById("username-step-dot");
+const appearanceStepDot = document.getElementById("appearance-step-dot");
+const pfpStepDot = document.getElementById("pfp-step-dot");
+const finalUsernameInput = document.getElementById("final-username");
+const usernameNextBtn = document.getElementById("username-next-btn");
+const appearanceBackBtn = document.getElementById("appearance-back-btn");
+const appearanceNextBtn = document.getElementById("appearance-next-btn");
+const pfpBackBtn = document.getElementById("pfp-back-btn");
+const finishOnboardingBtn = document.getElementById("finish-onboarding-btn");
+const profilePictureInput = document.getElementById("profile-picture-input");
+const pfpPreview = document.getElementById("pfp-preview");
+const pfpPreviewInitial = document.getElementById("pfp-preview-initial");
+const themeChoiceGrid = document.getElementById("theme-choice-grid");
+const fontChoiceGrid = document.getElementById("font-choice-grid");
 const errorEl = document.getElementById("error-msg");
+const onboardingErrorEl = document.getElementById("onboarding-error-msg");
 const signupBtn = document.getElementById("signup-btn");
 const googleBtn = document.getElementById("google-btn");
 const discordBtn = document.getElementById("discord-btn");
 
 const oauthButtons = [googleBtn, discordBtn];
+
+const ONBOARDING_THEME_IDS = GRADIENT_THEMES.map((theme) => theme.id);
+const ONBOARDING_FONT_IDS = DISPLAY_TEXT_STYLES.map((style) => style.id);
+
+let onboardingUser = null;
+let onboardingAccountType = ACCOUNT_BOTH;
+let lockedUsername = "";
+let selectedThemeId = getStoredGradientThemeId();
+let selectedFontId = getStoredDisplayTextStyleId();
+let activePfpObjectUrl = "";
 
 function setOAuthButtonsDisabled(disabled) {
     for (const btn of oauthButtons) {
@@ -342,26 +800,277 @@ function oauthUsernameFromUser(user) {
     return cleaned || `user${user.id.slice(0, 8)}`;
 }
 
-function redirectAfterSignup(accountType, userData) {
-    if (accountType === ACCOUNT_READER) {
-        setUiMode("library");
-        window.location.href = READER_HOME_URL;
-        return;
-    }
+function redirectAfterSignup() {
     setUiMode("studio");
-    window.location.href = userData
-        ? homeUrlForUserData(userData)
-        : "writer-dashboard.html";
+    window.location.href = "writer-dashboard.html";
+}
+
+function activeErrorElement() {
+    return onboardingCard && !onboardingCard.classList.contains("is-hidden")
+        ? onboardingErrorEl
+        : errorEl;
 }
 
 function showError(text) {
-    errorEl.textContent = text;
-    errorEl.classList.add("visible");
+    const el = activeErrorElement();
+    el.textContent = text;
+    el.classList.add("visible");
 }
 
 function clearError() {
     errorEl.textContent = "";
     errorEl.classList.remove("visible");
+    onboardingErrorEl.textContent = "";
+    onboardingErrorEl.classList.remove("visible");
+}
+
+function sanitizeUsername(raw) {
+    return String(raw || "")
+        .trim()
+        .replace(/^@/, "")
+        .replace(/\s+/g, "_")
+        .replace(/[^\w]/g, "")
+        .slice(0, 32);
+}
+
+function validateLockedUsername(username) {
+    if (!username) return "Choose a username before continuing.";
+    if (username.length < 3) return "Username must be at least 3 characters.";
+    if (!/^[A-Za-z0-9_]{3,32}$/.test(username)) {
+        return "Use only letters, numbers, and underscores.";
+    }
+    return "";
+}
+
+function showOnboardingStep(step) {
+    const usernameOn = step === "username";
+    const appearanceOn = step === "appearance";
+    const pfpOn = step === "pfp";
+    usernameStep.classList.toggle("is-hidden", !usernameOn);
+    appearanceStep.classList.toggle("is-hidden", !appearanceOn);
+    pfpStep.classList.toggle("is-hidden", !pfpOn);
+    usernameStepDot.classList.toggle("active", usernameOn);
+    appearanceStepDot.classList.toggle("active", appearanceOn);
+    pfpStepDot.classList.toggle("active", pfpOn);
+    clearError();
+}
+
+function beginOnboarding(user, accountType, usernameCandidate = "") {
+    onboardingUser = user;
+    onboardingAccountType = isValidAccountType(accountType) ? accountType : ACCOUNT_BOTH;
+    lockedUsername = "";
+    const fallback = usernameCandidate || oauthUsernameFromUser(user);
+    finalUsernameInput.value = sanitizeUsername(fallback);
+    pfpPreviewInitial.textContent = sanitizeUsername(fallback).slice(0, 1).toUpperCase() || "A";
+    signupCard.classList.add("is-hidden");
+    onboardingCard.classList.remove("is-hidden");
+    showOnboardingStep("username");
+    finalUsernameInput.focus();
+}
+
+function selectedProfilePictureFile() {
+    return profilePictureInput?.files?.[0] || null;
+}
+
+function validateProfilePictureFile(file) {
+    if (!file) return "Upload a profile picture before entering Studio.";
+    if (!file.type.startsWith("image/")) return "Please upload an image file.";
+    if (file.size > 3 * 1024 * 1024) return "Image must be under 3MB.";
+    return "";
+}
+
+function updatePfpPreview(file) {
+    if (activePfpObjectUrl) {
+        URL.revokeObjectURL(activePfpObjectUrl);
+        activePfpObjectUrl = "";
+    }
+
+    pfpPreview.innerHTML = "";
+
+    if (!file) {
+        const span = document.createElement("span");
+        span.id = "pfp-preview-initial";
+        span.textContent = (lockedUsername || finalUsernameInput.value || "A").slice(0, 1).toUpperCase();
+        pfpPreview.appendChild(span);
+        return;
+    }
+
+    activePfpObjectUrl = URL.createObjectURL(file);
+    const img = document.createElement("img");
+    img.src = activePfpObjectUrl;
+    img.alt = "";
+    pfpPreview.appendChild(img);
+}
+
+async function uploadProfilePicture(user, file) {
+    const validationMessage = validateProfilePictureFile(file);
+    if (validationMessage) throw new Error(validationMessage);
+
+    const rawExt = file.name.split(".").pop() || "png";
+    const ext = rawExt.toLowerCase().replace(/[^a-z0-9]/g, "") || "png";
+    const path = `${user.id}/profile-${Date.now()}.${ext}`;
+
+    const { error: uploadError } = await supabase.storage
+        .from("profile-pictures")
+        .upload(path, file, {
+            cacheControl: "3600",
+            upsert: true,
+            contentType: file.type
+        });
+
+    if (uploadError) throw uploadError;
+
+    const { data: publicData } = supabase.storage
+        .from("profile-pictures")
+        .getPublicUrl(path);
+
+    const imageUrl = publicData?.publicUrl || "";
+    if (!imageUrl) throw new Error("Could not create profile image URL.");
+    return imageUrl;
+}
+
+function themeById(id) {
+    return GRADIENT_THEMES.find((theme) => theme.id === id);
+}
+
+function paintThemeChoices() {
+    themeChoiceGrid.innerHTML = "";
+    ONBOARDING_THEME_IDS.forEach((id) => {
+        const theme = themeById(id);
+        if (!theme) return;
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "theme-choice" + (id === selectedThemeId ? " active" : "");
+        button.textContent = theme.label;
+        button.style.background = theme.preview || getThemePreview(id);
+        button.addEventListener("click", () => {
+            selectedThemeId = id;
+            applyGradientTheme(id);
+            applyChromeGradient(theme.preview || getThemePreview(id));
+            paintThemeChoices();
+        });
+        themeChoiceGrid.appendChild(button);
+    });
+}
+
+function paintFontChoices() {
+    fontChoiceGrid.innerHTML = "";
+    ONBOARDING_FONT_IDS.forEach((id) => {
+        const style = DISPLAY_TEXT_STYLES.find((item) => item.id === id);
+        const meta = DISPLAY_TEXT_STYLE_META[id] || {};
+        if (!style) return;
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "font-choice" + (id === selectedFontId ? " active" : "");
+
+        const preview = document.createElement("span");
+        preview.className = "font-preview";
+        preview.textContent = "Aa";
+        if (meta.fontFamily) {
+            preview.style.fontFamily = meta.fontFamily;
+            preview.style.fontWeight = String(meta.weight || 700);
+            if (meta.caps) preview.style.textTransform = "uppercase";
+        }
+
+        const label = document.createElement("span");
+        label.textContent = style.label;
+        button.append(preview, label);
+        button.addEventListener("click", () => {
+            selectedFontId = id;
+            applyDisplayTextStyle(id);
+            paintFontChoices();
+        });
+        fontChoiceGrid.appendChild(button);
+    });
+}
+
+async function usernameAlreadyTaken(username, userId) {
+    const { data, error } = await supabase
+        .from("users")
+        .select("id")
+        .eq("username", username)
+        .maybeSingle();
+
+    if (error) throw error;
+    return Boolean(data && data.id !== userId);
+}
+
+async function createProfileAndEnterStudio() {
+    if (!onboardingUser) {
+        showError("Sign-up session was lost. Try logging in.");
+        return;
+    }
+
+    const username = lockedUsername || sanitizeUsername(finalUsernameInput.value);
+    const validationMessage = validateLockedUsername(username);
+    if (validationMessage) {
+        showOnboardingStep("username");
+        showError(validationMessage);
+        return;
+    }
+
+    finishOnboardingBtn.disabled = true;
+    pfpBackBtn.disabled = true;
+    clearError();
+
+    try {
+        const file = selectedProfilePictureFile();
+        const pictureValidation = validateProfilePictureFile(file);
+        if (pictureValidation) {
+            showError(pictureValidation);
+            return;
+        }
+
+        if (await usernameAlreadyTaken(username, onboardingUser.id)) {
+            showOnboardingStep("username");
+            showError("That username is already taken. Choose another before locking it in.");
+            return;
+        }
+
+        applyGradientTheme(selectedThemeId);
+        applyChromeGradient(getThemePreview(selectedThemeId));
+        applyDisplayTextStyle(selectedFontId);
+
+        const profileImageUrl = await uploadProfilePicture(onboardingUser, file);
+
+        const { error: profileError } = await supabase.from("users").insert({
+            id: onboardingUser.id,
+            username,
+            display_name: username,
+            account_type: onboardingAccountType,
+            profile_image_url: profileImageUrl,
+            words: 0,
+            streak: 0,
+            daily_word_goal: 2000,
+            writing_day_totals: {}
+        });
+
+        if (profileError) {
+            showError(profileError.message);
+            return;
+        }
+
+        await supabase.auth.updateUser({
+            data: {
+                username,
+                displayName: username,
+                accountType: onboardingAccountType,
+                profile_image_url: profileImageUrl
+            }
+        });
+
+        if (activePfpObjectUrl) {
+            URL.revokeObjectURL(activePfpObjectUrl);
+            activePfpObjectUrl = "";
+        }
+
+        redirectAfterSignup();
+    } catch (err) {
+        showError((err && err.message) || "Could not finish setup.");
+    } finally {
+        finishOnboardingBtn.disabled = false;
+        pfpBackBtn.disabled = false;
+    }
 }
 
 function signupAuthMessage(message) {
@@ -445,6 +1154,71 @@ async function startOAuth(provider) {
 googleBtn.addEventListener("click", () => startOAuth("google"));
 discordBtn.addEventListener("click", () => startOAuth("discord"));
 
+usernameNextBtn.addEventListener("click", async () => {
+    const username = sanitizeUsername(finalUsernameInput.value);
+    finalUsernameInput.value = username;
+    const validationMessage = validateLockedUsername(username);
+
+    if (validationMessage) {
+        showError(validationMessage);
+        return;
+    }
+
+    usernameNextBtn.disabled = true;
+    clearError();
+
+    try {
+        if (await usernameAlreadyTaken(username, onboardingUser?.id)) {
+            showError("That username is already taken. Choose another before locking it in.");
+            return;
+        }
+        lockedUsername = username;
+        updatePfpPreview(null);
+        paintThemeChoices();
+        paintFontChoices();
+        showOnboardingStep("appearance");
+    } catch (err) {
+        showError((err && err.message) || "Could not check username.");
+    } finally {
+        usernameNextBtn.disabled = false;
+    }
+});
+
+finalUsernameInput.addEventListener("keydown", (ev) => {
+    if (ev.key === "Enter") {
+        ev.preventDefault();
+        usernameNextBtn.click();
+    }
+});
+
+appearanceBackBtn.addEventListener("click", () => {
+    lockedUsername = "";
+    showOnboardingStep("username");
+});
+
+appearanceNextBtn.addEventListener("click", () => {
+    showOnboardingStep("pfp");
+});
+
+pfpBackBtn.addEventListener("click", () => {
+    showOnboardingStep("appearance");
+});
+
+profilePictureInput.addEventListener("change", () => {
+    clearError();
+    const file = selectedProfilePictureFile();
+    const validationMessage = validateProfilePictureFile(file);
+    if (validationMessage) {
+        profilePictureInput.value = "";
+        updatePfpPreview(null);
+        showError(validationMessage);
+        return;
+    }
+    updatePfpPreview(file);
+});
+
+finishOnboardingBtn.addEventListener("click", createProfileAndEnterStudio);
+
 
 async function completeOAuthSignup() {
     const { data: userData } = await supabase.auth.getUser();
@@ -476,38 +1250,14 @@ async function completeOAuthSignup() {
     }
 
     if (row) {
-        redirectAfterSignup(row.account_type, {
-            accountType: row.account_type,
-            account_type: row.account_type
-        });
+        redirectAfterSignup();
         return;
     }
 
-    const username =
+    const usernameCandidate =
         (user.user_metadata && user.user_metadata.username) ||
         oauthUsernameFromUser(user);
-    const displayName =
-        (user.user_metadata && user.user_metadata.displayName) ||
-        (user.user_metadata && user.user_metadata.full_name) ||
-        username;
-
-    const { error: profileError } = await supabase.from("users").insert({
-        id: user.id,
-        username,
-        display_name: displayName,
-        account_type: accountType,
-        words: 0,
-        streak: 0,
-        daily_word_goal: 2000,
-        writing_day_totals: {}
-    });
-
-    if (profileError) {
-        showError(profileError.message);
-        return;
-    }
-
-    redirectAfterSignup(accountType);
+    beginOnboarding(user, accountType, usernameCandidate);
 }
 
 clearLegacyOAuthPending();
@@ -543,13 +1293,12 @@ let signupInFlight = false;
 window.signup = async function () {
     if (signupInFlight) return;
 
-    const username = document.getElementById("username").value.trim();
     const email = document.getElementById("email").value.trim();
     const password = document.getElementById("password").value;
     const accountType = pickedAccountType();
 
-    if (!username || !email || !password) {
-        showError("Fill all fields.");
+    if (!email || !password) {
+        showError("Enter your email and password.");
         return;
     }
 
@@ -569,8 +1318,6 @@ window.signup = async function () {
             password,
             options: {
                 data: {
-                    username,
-                    displayName: username,
                     accountType
                 }
             }
@@ -592,25 +1339,7 @@ window.signup = async function () {
             return;
         }
 
-        const { error: profileError } = await supabase
-            .from("users")
-            .insert({
-                id: user.id,
-                username: username,
-                display_name: username,
-                account_type: accountType,
-                words: 0,
-                streak: 0,
-                daily_word_goal: 2000,
-                writing_day_totals: {}
-            });
-
-        if (profileError) {
-            showError(profileError.message);
-            return;
-        }
-
-        redirectAfterSignup(accountType);
+        beginOnboarding(user, accountType, email.split("@")[0]);
 
     } catch (e) {
         showError((e && e.message) || "Could not create account.");
