@@ -1,7 +1,7 @@
 import { supabase } from "../firebase.js";
 import { requireStudioSession } from "./studio-session.js?v=1";
 import { listBibleCharacters } from "./story-bible-api.js?v=11";
-import { extractCandidateFactsFromSelection, detectNameCandidates } from "./story-bible-fact-rules.js?v=3";
+import { extractCandidateFactsFromSelection, detectNameCandidates } from "./story-bible-fact-rules.js?v=4";
 
 const DB_KEY = "alysum-story-bible-fact-db-v1";
 const HANDOFF_KEY = "alysum-story-bible-selection-v1";
@@ -428,6 +428,13 @@ async function mountPage() {
 
         const matched = result.matchedCharacterNames;
         if (!candidates.length) {
+            if (defaultCharacterName) {
+                setStatus(
+                    `No supported fact patterns were found for "${defaultCharacterName}" in this selected text.`,
+                    true
+                );
+                return;
+            }
             setStatus(
                 matched.length
                     ? `Found known character mention(s): ${matched.join(", ")}. No supported fact patterns matched in this selection.`

@@ -256,6 +256,7 @@ export function detectNameCandidates(text, knownNames = []) {
 
     const known = new Set((Array.isArray(knownNames) ? knownNames : []).map(n => normalizeText(n).toLowerCase()).filter(Boolean));
     const scores = new Map();
+    const singleTokenCounts = new Map();
 
     function add(name, points) {
         const key = normalizeText(name).toLowerCase();
@@ -276,7 +277,12 @@ export function detectNameCandidates(text, knownNames = []) {
     const singleNameRe = /\b([A-Z][a-z]{2,})\b/g;
     while ((m = singleNameRe.exec(src)) !== null) {
         if (!isNameToken(m[1])) continue;
-        add(m[1], 1);
+        const key = normalizeText(m[1]).toLowerCase();
+        singleTokenCounts.set(key, (singleTokenCounts.get(key) || 0) + 1);
+    }
+    for (const [key, count] of singleTokenCounts) {
+        // Single-token names are noisy; require repetition for deterministic confidence.
+        if (count >= 2) add(key, 2 + count - 1);
     }
 
     const attributionRe = /\b(?:said|asked|told|met|called|replied|whispered|shouted)\s+([A-Z][a-z]{2,})\b/g;
@@ -291,7 +297,7 @@ export function detectNameCandidates(text, knownNames = []) {
     }
 
     return [...scores.values()]
-        .filter(row => row.score >= 1)
+        .filter(row => row.score >= 2)
         .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name))
         .slice(0, 6)
         .map(row => row.name);
