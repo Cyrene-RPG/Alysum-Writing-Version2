@@ -1,10 +1,11 @@
 import { supabase } from "../firebase.js";
 import { requireStudioSession } from "./studio-session.js?v=1";
 import { listBibleCharacters } from "./story-bible-api.js?v=11";
-import { extractCandidateFactsFromSelection } from "./story-bible-fact-rules.js?v=1";
+import { extractCandidateFactsFromSelection } from "./story-bible-fact-rules.js?v=2";
 
 const DB_KEY = "alysum-story-bible-fact-db-v1";
 const HANDOFF_KEY = "alysum-story-bible-selection-v1";
+const HANDOFF_BACKUP_KEY = "alysum-story-bible-selection-backup-v1";
 
 function byId(id) {
     return document.getElementById(id);
@@ -101,11 +102,19 @@ function populateDefaultCharacterSelect(knownCharacters) {
     }
 }
 
+function resolveBookIdFromContext(search) {
+    const fromQuery = normalizeText(search.get("book") || "");
+    if (fromQuery) return fromQuery;
+    const fromSession = normalizeText(sessionStorage.getItem("alysum-current-book-id") || "");
+    if (fromSession) return fromSession;
+    return normalizeText(localStorage.getItem("alysum-current-book-id") || "");
+}
+
 function consumeSelectionHandoff(bookId) {
-    const raw = sessionStorage.getItem(HANDOFF_KEY);
-    if (!raw) return;
+    const raw = sessionStorage.getItem(HANDOFF_KEY) || localStorage.getItem(HANDOFF_BACKUP_KEY);
+    if (!raw) return false;
     const payload = safeObject(parseJson(raw, {}), {});
-    if (payload.bookId && bookId && payload.bookId !== bookId) return;
+    if (payload.bookId && bookId && payload.bookId !== bookId) return false;
     const sourceText = normalizeText(payload.sourceText || "");
     if (sourceText) byId("sbnSelectionText").value = sourceText;
     const chapterLabel = normalizeText(payload.chapterTitle || payload.chapterId || "");
@@ -114,6 +123,16 @@ function consumeSelectionHandoff(bookId) {
         byId("sbnSourceParagraph").value = String(payload.sourceParagraph).trim();
     }
     sessionStorage.removeItem(HANDOFF_KEY);
+    localStorage.removeItem(HANDOFF_BACKUP_KEY);
+    return !!sourceText;
+}
+
+function hasPrefilledSelectionText() {
+    return normalizeText(byId("sbnSelectionText")?.value || "").length > 0;
+}
+
+function canAutoAnalyze() {
+    return hasPrefilledSelectionText();
 }
 
 function factsForBook(db, bookId) {
@@ -253,7 +272,7 @@ function buildStoredFact(bookId, characterId, candidate, chapter, paragraph) {
 async function mountPage() {
     bindModeToggle();
     const search = new URLSearchParams(window.location.search);
-    const bookId = normalizeText(search.get("book") || "");
+    const bookId = resolveBookIdFromContext(search);
     const session = await requireStudioSession(supabase, "Story-Bible-New.html" + window.location.search);
     if (!session) return;
 
@@ -275,7 +294,7 @@ async function mountPage() {
     if (syncKnownCharacters(db, knownCharacters, bookId)) saveDb(db);
     mountKnownCharacters(knownCharacters);
     populateDefaultCharacterSelect(knownCharacters);
-    consumeSelectionHandoff(bookId);
+    const gotHandoffText = consumeSelectionHandoff(bookId);
     renderFactsTable(db, bookId);
 
     function renderCandidates() {
@@ -449,6 +468,10 @@ async function mountPage() {
     });
 
     renderCandidates();
+    if (gotHandoffText && canAutoAnalyze()) analyzeSelection();
+    else if (!hasPrefilledSelectionText()) {
+        setStatus("Paste or highlight manuscript text in Editor, then open Story Bible to extract facts.");
+    }
 }
 
 mountPage().catch(err => {
