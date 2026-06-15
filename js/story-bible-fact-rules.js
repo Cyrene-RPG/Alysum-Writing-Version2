@@ -28,8 +28,24 @@ function escapeRegExp(s) {
     return String(s || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+const ENTITY_MAP = {
+    nbsp: " ",
+    amp: "&",
+    lt: "<",
+    gt: ">",
+    quot: '"',
+    apos: "'"
+};
+
+function decodeEntities(s) {
+    return String(s || "").replace(/&([a-z]+);/gi, (full, key) => {
+        const lower = String(key || "").toLowerCase();
+        return Object.prototype.hasOwnProperty.call(ENTITY_MAP, lower) ? ENTITY_MAP[lower] : full;
+    });
+}
+
 function normalizeText(s) {
-    return String(s || "").replace(/\s+/g, " ").trim();
+    return decodeEntities(s).replace(/\s+/g, " ").trim();
 }
 
 function sentenceChunks(text) {
@@ -192,6 +208,93 @@ function dedupeCandidates(candidates) {
         out.push(row);
     }
     return out;
+}
+
+const NAME_STOPWORDS = new Set([
+    "the",
+    "a",
+    "an",
+    "and",
+    "but",
+    "or",
+    "he",
+    "she",
+    "they",
+    "his",
+    "her",
+    "their",
+    "him",
+    "them",
+    "this",
+    "that",
+    "these",
+    "those",
+    "there",
+    "here",
+    "then",
+    "chapter",
+    "crikey",
+    "yes",
+    "no",
+    "okay",
+    "alright",
+    "morning",
+    "night",
+    "afternoon",
+    "evening"
+]);
+
+function isNameToken(token) {
+    const t = String(token || "").trim();
+    if (!/^[A-Z][a-z]{2,}$/.test(t)) return false;
+    return !NAME_STOPWORDS.has(t.toLowerCase());
+}
+
+export function detectNameCandidates(text, knownNames = []) {
+    const src = normalizeText(text || "");
+    if (!src) return [];
+
+    const known = new Set((Array.isArray(knownNames) ? knownNames : []).map(n => normalizeText(n).toLowerCase()).filter(Boolean));
+    const scores = new Map();
+
+    function add(name, points) {
+        const key = normalizeText(name).toLowerCase();
+        if (!key || known.has(key)) return;
+        const prev = scores.get(key) || { name: normalizeText(name), score: 0 };
+        prev.score += points;
+        if (name.length > prev.name.length) prev.name = normalizeText(name);
+        scores.set(key, prev);
+    }
+
+    const fullNameRe = /\b([A-Z][a-z]{2,})\s+([A-Z][a-z]{2,})\b/g;
+    let m;
+    while ((m = fullNameRe.exec(src)) !== null) {
+        if (!isNameToken(m[1]) || !isNameToken(m[2])) continue;
+        add(`${m[1]} ${m[2]}`, 3);
+    }
+
+    const singleNameRe = /\b([A-Z][a-z]{2,})\b/g;
+    while ((m = singleNameRe.exec(src)) !== null) {
+        if (!isNameToken(m[1])) continue;
+        add(m[1], 1);
+    }
+
+    const attributionRe = /\b(?:said|asked|told|met|called|replied|whispered|shouted)\s+([A-Z][a-z]{2,})\b/g;
+    while ((m = attributionRe.exec(src)) !== null) {
+        if (!isNameToken(m[1])) continue;
+        add(m[1], 3);
+    }
+    const reverseAttributionRe = /\b([A-Z][a-z]{2,})\s+(?:said|asked|told|replied|whispered|shouted)\b/g;
+    while ((m = reverseAttributionRe.exec(src)) !== null) {
+        if (!isNameToken(m[1])) continue;
+        add(m[1], 3);
+    }
+
+    return [...scores.values()]
+        .filter(row => row.score >= 1)
+        .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name))
+        .slice(0, 6)
+        .map(row => row.name);
 }
 
 export function findKnownCharacterMentions(text, characters) {

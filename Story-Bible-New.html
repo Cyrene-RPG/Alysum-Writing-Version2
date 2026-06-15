@@ -273,7 +273,12 @@
                         <option value="">None</option>
                     </select>
                 </div>
+                <div class="sbn-field" style="grid-column: 1 / -1">
+                    <label for="sbnManualCharacter">Manual fallback character name</label>
+                    <input id="sbnManualCharacter" class="sbn-input" type="text" placeholder="Type a character name if none is loaded yet" />
+                </div>
             </div>
+            <div id="sbnDetectedNames" style="margin-top: 10px"></div>
             <div class="sbn-field" style="margin-top: 10px">
                 <label for="sbnSelectionText">Selected manuscript text</label>
                 <textarea id="sbnSelectionText" class="sbn-textarea" placeholder="Paste highlighted manuscript text here, or open from Editor with text selected."></textarea>
@@ -299,6 +304,6 @@
         </section>
     </main>
 
-    <script type="module" src="./js/story-bible-new-page.js?v=2"></script>
+    <script type="module" src="./js/story-bible-new-page.js?v=3"></script>
 </body>
 </html>

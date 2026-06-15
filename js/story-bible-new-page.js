@@ -1,7 +1,7 @@
 import { supabase } from "../firebase.js";
 import { requireStudioSession } from "./studio-session.js?v=1";
 import { listBibleCharacters } from "./story-bible-api.js?v=11";
-import { extractCandidateFactsFromSelection } from "./story-bible-fact-rules.js?v=2";
+import { extractCandidateFactsFromSelection, detectNameCandidates } from "./story-bible-fact-rules.js?v=3";
 
 const DB_KEY = "alysum-story-bible-fact-db-v1";
 const HANDOFF_KEY = "alysum-story-bible-selection-v1";
@@ -79,6 +79,20 @@ function mountKnownCharacters(knownCharacters) {
         knownCharacters
             .map(c => `<span class="sbn-pill">${escapeHtml(c.name || "(unnamed)")}</span>`)
             .join("");
+}
+
+function renderDetectedNames(names) {
+    const mount = byId("sbnDetectedNames");
+    if (!mount) return;
+    if (!names?.length) {
+        mount.innerHTML = "";
+        return;
+    }
+    mount.innerHTML =
+        `<div style="margin-bottom:6px;color:var(--muted)">Detected name candidates (deterministic):</div>` +
+        names
+            .map(name => `<button type="button" class="sbn-btn ghost" data-role="pick-detected" data-name="${escapeHtml(name)}">${escapeHtml(name)}</button>`)
+            .join(" ");
 }
 
 function escapeHtml(s) {
@@ -279,6 +293,7 @@ async function mountPage() {
     let db = loadDb();
     let candidates = [];
     let knownCharacters = [];
+    let detectedNames = [];
 
     if (bookId) {
         try {
@@ -392,7 +407,16 @@ async function mountPage() {
 
     function analyzeSelection() {
         const text = byId("sbnSelectionText").value;
-        const defaultCharacterName = byId("sbnDefaultCharacter").value;
+        const selectedFallback = normalizeText(byId("sbnDefaultCharacter").value);
+        const manualFallback = normalizeText(byId("sbnManualCharacter").value);
+        let defaultCharacterName = selectedFallback || manualFallback;
+        const knownNames = knownCharacters.flatMap(c => [c?.name, ...(Array.isArray(c?.aliases) ? c.aliases : [])]);
+        detectedNames = detectNameCandidates(text, knownNames);
+        if (!defaultCharacterName && !knownCharacters.length && detectedNames.length === 1) {
+            defaultCharacterName = detectedNames[0];
+            byId("sbnManualCharacter").value = detectedNames[0];
+        }
+
         const result = extractCandidateFactsFromSelection({
             text,
             characters: knownCharacters,
@@ -400,13 +424,16 @@ async function mountPage() {
         });
         candidates = result.candidates.map(row => ({ ...row, id: id("cand"), pendingConflict: null }));
         renderCandidates();
+        renderDetectedNames(detectedNames);
 
         const matched = result.matchedCharacterNames;
         if (!candidates.length) {
             setStatus(
                 matched.length
                     ? `Found known character mention(s): ${matched.join(", ")}. No supported fact patterns matched in this selection.`
-                    : "No known character names found in this selection.",
+                    : detectedNames.length
+                      ? `No known character names found. Detected candidate name(s): ${detectedNames.join(", ")}. Pick one as manual fallback and run again.`
+                      : "No known character names found in this selection.",
                 true
             );
             return;
@@ -422,8 +449,11 @@ async function mountPage() {
     byId("sbnAnalyzeBtn")?.addEventListener("click", analyzeSelection);
     byId("sbnClearSelectionBtn")?.addEventListener("click", () => {
         byId("sbnSelectionText").value = "";
+        byId("sbnManualCharacter").value = "";
         candidates = [];
+        detectedNames = [];
         renderCandidates();
+        renderDetectedNames([]);
         setStatus("Selection text cleared.");
     });
 
@@ -465,6 +495,15 @@ async function mountPage() {
         candidates = candidates.filter(row => !checks.includes(row.id));
         renderCandidates();
         setStatus(`Rejected ${checks.length} candidate fact(s).`);
+    });
+
+    byId("sbnDetectedNames")?.addEventListener("click", e => {
+        const btn = e.target instanceof Element ? e.target.closest('[data-role="pick-detected"]') : null;
+        if (!btn) return;
+        const name = normalizeText(btn.getAttribute("data-name") || "");
+        if (!name) return;
+        byId("sbnManualCharacter").value = name;
+        setStatus(`Manual fallback set to "${name}". Run analysis to attach facts to this character.`);
     });
 
     renderCandidates();
