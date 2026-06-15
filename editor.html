@@ -715,6 +715,7 @@ function rememberBookId(id) {
     const EDITOR_BACKGROUND_UPLOAD_ID = "current-upload";
     let sprintTick = null;
     let pendingSprintMinutes = null;
+    const STORY_BIBLE_SELECTION_KEY = "alysum-story-bible-selection-v1";
 
     function setSaveStatus(text) { saveStatus.textContent = text; }
     function generateId() { return "ch_" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36); }
@@ -816,6 +817,68 @@ function rememberBookId(id) {
     window.addEventListener("storage", e => { if (e.key === STORY_BIBLE_PREF_KEY) applyEditorStoryBibleLinks(); });
     window.addEventListener(STORY_BIBLE_PREF_EVENT, applyEditorStoryBibleLinks);
     document.addEventListener("visibilitychange", () => { if (!document.hidden) applyEditorStoryBibleLinks(); });
+
+    function normalizeSelectionText(value) {
+        return String(value || "").replace(/\s+/g, " ").trim();
+    }
+
+    function chapterParagraphsFromHtml(html) {
+        const holder = document.createElement("div");
+        holder.innerHTML = safeString(html, "");
+        const blocks = [...holder.querySelectorAll("p, div, li, blockquote, h1, h2, h3")];
+        if (!blocks.length) {
+            const only = normalizeSelectionText(stripHtmlToText(holder.innerHTML));
+            return only ? [only] : [];
+        }
+        return blocks
+            .map(block => normalizeSelectionText(stripHtmlToText(block.innerHTML || block.textContent || "")))
+            .filter(Boolean);
+    }
+
+    function selectedPlainTextInEditor() {
+        const selection = window.getSelection();
+        if (!selection || selection.isCollapsed || !editor.contains(selection.anchorNode)) return "";
+        const container = document.createElement("div");
+        for (let i = 0; i < selection.rangeCount; i++) {
+            container.appendChild(selection.getRangeAt(i).cloneContents());
+        }
+        const html = cleanEditorHtml(container.innerHTML);
+        return normalizeSelectionText(stripHtmlToText(html));
+    }
+
+    function resolveSourceParagraph(html, selectedText) {
+        const needle = normalizeSelectionText(selectedText).toLowerCase();
+        if (!needle) return "";
+        const paragraphs = chapterParagraphsFromHtml(html);
+        for (let i = 0; i < paragraphs.length; i++) {
+            if (paragraphs[i].toLowerCase().includes(needle)) return String(i + 1);
+        }
+        return "";
+    }
+
+    function rememberStoryBibleSelectionHandoff() {
+        if (!bookId || !currentBook) return;
+        const sourceText = selectedPlainTextInEditor();
+        if (!sourceText) {
+            sessionStorage.removeItem(STORY_BIBLE_SELECTION_KEY);
+            return;
+        }
+        const chapter = currentChapter();
+        const payload = {
+            bookId,
+            chapterId: chapter?.id || "",
+            chapterTitle: chapter?.title || "",
+            chapterSection: currentSection,
+            chapterIndex: currentChapterIndex,
+            sourceParagraph: resolveSourceParagraph(chapter?.content || "", sourceText),
+            sourceText,
+            capturedAt: Date.now()
+        };
+        sessionStorage.setItem(STORY_BIBLE_SELECTION_KEY, JSON.stringify(payload));
+    }
+
+    storyBibleLink?.addEventListener("click", rememberStoryBibleSelectionHandoff);
+    storyBibleTopLink?.addEventListener("click", rememberStoryBibleSelectionHandoff);
 
     function applyTheme(theme) {
         const dark = theme === "dark";

@@ -8,7 +8,7 @@
  * Bump SW_VERSION when shipping breaking shell changes to force a refresh.
  */
 
-const SW_VERSION = 'v1.0.56';
+const SW_VERSION = 'v1.0.57';
 const SHELL_CACHE = `alysum-shell-${SW_VERSION}`;
 const ASSET_CACHE = `alysum-assets-${SW_VERSION}`;
 
@@ -58,6 +58,8 @@ const APP_SHELL = [
   'js/alysum-appearance-boot.js',
   'js/display-text-style.js',
   'js/display-text-color.js',
+  'js/story-bible-fact-rules.js',
+  'js/story-bible-new-page.js',
   'story-bible.html',
   'story-bible-new.html',
   'story-bible-legacy.html',
