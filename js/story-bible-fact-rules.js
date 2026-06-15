@@ -236,9 +236,7 @@ export function extractCandidateFactsFromSelection(input) {
             .filter(m => m.start >= chunk.start && m.end <= chunk.end)
             .map(m => m.character_name);
         const active = [...new Set(sentenceMentions)];
-        if (!active.length && onlyOneKnown && /\b(he|she|they|his|her|their)\b/i.test(chunk.text)) {
-            active.push(onlyOneKnown);
-        }
+        if (!active.length && onlyOneKnown) active.push(onlyOneKnown);
         if (!active.length && defaultCharacterName) active.push(defaultCharacterName);
 
         const sentenceFacts = extractFactsFromSentence(chunk.text);
