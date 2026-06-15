@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Story Bible New — Alysum</title>
+    <style>
+        :root {
+            color-scheme: dark;
+            --bg: #050b16;
+            --card: #0f1729;
+            --text: #e6ecff;
+            --muted: #9aa8ca;
+            --accent: #7c3aed;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: radial-gradient(circle at top, #1b2a4f 0%, var(--bg) 60%);
+            color: var(--text);
+            font: 16px/1.4 "Inter", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        }
+
+        .build-banner {
+            width: min(900px, calc(100% - 32px));
+            margin: 24px auto 0;
+            border: 1px solid rgba(140, 160, 220, 0.3);
+            border-radius: 14px;
+            background: var(--card);
+            padding: 14px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .build-banner strong {
+            letter-spacing: 0.01em;
+        }
+
+        .mode-toggle {
+            border: 0;
+            border-radius: 10px;
+            background: var(--accent);
+            color: #fff;
+            font-weight: 700;
+            text-decoration: none;
+            padding: 10px 14px;
+            white-space: nowrap;
+        }
+
+        .mode-toggle:hover {
+            filter: brightness(1.1);
+        }
+
+    </style>
+</head>
+<body>
+    <header class="build-banner">
+        <strong>Webpage build in progress</strong>
+        <a id="modeToggleBtn" class="mode-toggle" href="story-bible-legacy.html">Switch to Legacy</a>
+    </header>
+
+    <script>
+        (function bindModeToggle() {
+            var btn = document.getElementById("modeToggleBtn");
+            if (!btn) return;
+            var query = window.location.search || "";
+            var onNew = /story-bible-new\.html$/i.test(window.location.pathname);
+            btn.href = (onNew ? "story-bible-legacy.html" : "Story-Bible-New.html") + query;
+            btn.textContent = onNew ? "Switch to Legacy" : "Switch to New";
+        })();
+    </script>
+</body>
+</html>

@@ -110,7 +110,7 @@ export function mountPlotDoctorSidebar(opts) {
                 <h4>Bible readiness</h4>
                 <div class="pd-health-bar"><span data-role="health-bar" style="width:0%"></span></div>
                 <p data-role="health-summary">Scan to check bible readiness.</p>
-                <a class="pd-bible-link" data-role="bible-link" href="story-bible.html">Open Story Bible →</a>
+                <a class="pd-bible-link" data-role="bible-link" href="Story-Bible-New.html">Open Story Bible →</a>
             </div>
             <div class="pd-status" data-role="status">Idle</div>
             <p class="pd-storage-warn" data-role="storage-warn" hidden></p>
@@ -258,7 +258,7 @@ export function mountPlotDoctorSidebar(opts) {
             healthSummaryEl.textContent = s.bibleHealth?.summary || "Add characters in Story Bible for better checks.";
         }
         if (bibleLinkEl && s.bookId) {
-            bibleLinkEl.href = `story-bible.html?book=${encodeURIComponent(s.bookId)}`;
+            bibleLinkEl.href = `Story-Bible-New.html?book=${encodeURIComponent(s.bookId)}`;
         }
 
         if (s.scanning) statusEl.textContent = "Scanning manuscript against bible…";
@@ -316,7 +316,7 @@ export function mountPlotDoctorSidebar(opts) {
         if (action === "bible") {
             const bookId = orchestrator.getState().bookId;
             if (bookId) {
-                window.open(`story-bible.html?book=${encodeURIComponent(bookId)}`, "_blank");
+                window.open(`Story-Bible-New.html?book=${encodeURIComponent(bookId)}`, "_blank");
             }
             return;
         }

@@ -28,7 +28,7 @@ export default function App() {
   const [bootDone, setBootDone] = useState(false);
 
   const editorHref = bookId ? `../editor.html?book=${encodeURIComponent(bookId)}` : "../writer-dashboard.html";
-  const bibleHref = bookId ? `../story-bible.html?book=${encodeURIComponent(bookId)}` : "../story-bible.html";
+  const bibleHref = bookId ? `../Story-Bible-New.html?book=${encodeURIComponent(bookId)}` : "../Story-Bible-New.html";
 
   useEffect(() => {
     let cancelled = false;

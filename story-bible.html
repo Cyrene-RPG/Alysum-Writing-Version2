@@ -11,7 +11,7 @@
     <script type="module" src="js/vercel-analytics.js"></script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Story Bible — Alysum</title>
+    <title>Story Bible Legacy — Alysum</title>
     <script src="js/alysum-appearance-boot.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -28,13 +28,14 @@
     <div class="sb-app">
         <header class="sb-hero">
             <div>
-                <p class="sb-hero-brand">Continuity Codex</p>
-                <h1 class="sb-hero-title">Story Bible</h1>
+                <p class="sb-hero-brand">Continuity Codex · Legacy</p>
+                <h1 class="sb-hero-title">Story Bible Legacy</h1>
                 <p class="sb-hero-sub">
                     Canon for every character and place. Plot Doctor reads this bible to catch contradictions while you write.
                 </p>
             </div>
             <nav class="sb-nav" aria-label="Site">
+                <a id="sbToggleNew" href="Story-Bible-New.html">New Bible</a>
                 <a href="writer-dashboard.html">Studio</a>
                 <a href="library.html">Library</a>
                 <a href="vault.html">Notes</a>
@@ -288,6 +289,12 @@
             if (e.key === STORY_BIBLE_PREF_KEY) location.reload();
         });
         window.addEventListener(STORY_BIBLE_PREF_EVENT, () => location.reload());
+
+        (function syncModeToggleHref() {
+            const toggle = document.getElementById("sbToggleNew");
+            if (!toggle) return;
+            toggle.href = `Story-Bible-New.html${window.location.search || ""}`;
+        })();
 
         (async () => {
             const session = await requireStudioSession(supabase, "story-bible.html" + window.location.search);
