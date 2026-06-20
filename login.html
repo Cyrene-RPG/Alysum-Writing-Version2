@@ -411,7 +411,16 @@ function resetEmailCooldownMessage(remainingMs) {
 
 function resetEmailMessage(errorOrMessage) {
     if (isAuthEmailRateLimitError(errorOrMessage)) {
-        return "Too many auth emails were sent from Alysum this hour (Supabase project limit). Wait about an hour, then try once — or email alysum.support@gmail.com for help.";
+        const message =
+            errorOrMessage && typeof errorOrMessage === "object"
+                ? errorOrMessage.message
+                : String(errorOrMessage || "");
+        const secondsMatch = message.match(/after\s+(\d+)\s+seconds?/i);
+        if (secondsMatch) {
+            const seconds = Math.max(1, Number(secondsMatch[1]) || 60);
+            return `Supabase is rate-limiting auth emails (built-in mail allows about 2 per hour). Wait ${seconds} seconds and try once, or email alysum.support@gmail.com for a manual reset link.`;
+        }
+        return "Supabase auth email limit reached (about 2 emails/hour on the built-in mailer). Wait an hour, set up custom SMTP in your Supabase project, or email alysum.support@gmail.com for help.";
     }
 
     const message =
@@ -423,7 +432,7 @@ function resetEmailMessage(errorOrMessage) {
     const lower = message.toLowerCase();
 
     if (lower.includes("redirect") || lower.includes("invalid")) {
-        return "Reset is not configured yet. Email alysum.support@gmail.com and we will reset your password.";
+        return "Reset redirect URL is not allowed. In Supabase → Authentication → URL Configuration, add https://www.alysumwriting.com/reset-password.html and https://alysumwriting.com/reset-password.html — or email alysum.support@gmail.com.";
     }
 
     return message;
