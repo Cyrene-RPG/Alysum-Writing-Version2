@@ -50,7 +50,7 @@ export function mountRelationshipGraph(container, graph, opts = {}) {
                 <g class="sb-graph-edges"></g>
                 <g class="sb-graph-nodes"></g>
             </svg>
-            <p class="sb-graph-hint">Drag nodes to rearrange. Click a character to open their codex entry.</p>
+            <p class="sb-graph-hint">Drag bubbles to rearrange. Click a name to edit that character.</p>
         </div>`;
 
     const svg = container.querySelector(".sb-graph-svg");

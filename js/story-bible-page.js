@@ -43,6 +43,7 @@ import {
     statusLabel,
     normalizeText
 } from "./story-bible-utils.js?v=1";
+import { renderCharacterCards, renderPlaceCards } from "./story-bible-cards.js?v=1";
 
 const SB_TAB_STORAGE_KEY = "alysum-story-bible-tab";
 
@@ -128,6 +129,15 @@ function emptyPlace() {
  * @param {(data: { characters: object[], places: object[], chapterOptions: object[], selectedCharId: string|null }) => void} [opts.onDataReload]
  * @param {HTMLElement} [opts.entryHeroEl]
  * @param {(charId: string) => void} [opts.onCharacterSelect]
+ * @param {HTMLElement} [opts.charGrid]
+ * @param {HTMLElement} [opts.placeGrid]
+ * @param {HTMLInputElement} [opts.placeSearch]
+ * @param {HTMLElement} [opts.editorDrawer]
+ * @param {HTMLButtonElement} [opts.drawerClose]
+ * @param {HTMLElement} [opts.drawerBackdrop]
+ * @param {HTMLAnchorElement} [opts.importEditorLink]
+ * @param {HTMLElement} [opts.sidebarMetaEl]
+ * @param {HTMLElement} [opts.viewHeadingEl]
  * @param {(view: string) => void} [opts.onViewRequest]
  */
 export async function mountStoryBiblePage(opts) {
@@ -140,6 +150,9 @@ export async function mountStoryBiblePage(opts) {
         bookGrid,
         charList,
         placeList,
+        charGrid,
+        placeGrid,
+        placeSearch,
         rosterSearch,
         newCharBtn,
         newPlaceBtn,
@@ -177,10 +190,16 @@ export async function mountStoryBiblePage(opts) {
         onDataReload,
         onCharacterSelect,
         onViewRequest,
-        entryHeroEl
+        entryHeroEl,
+        editorDrawer,
+        drawerClose,
+        drawerBackdrop,
+        importEditorLink,
+        sidebarMetaEl,
+        viewHeadingEl
     } = opts;
 
-    const detailPanel = document.querySelector(".sb-detail");
+    const detailPanel = editorDrawer;
 
     const bookId = (new URLSearchParams(window.location.search).get("book") || "").trim();
 
@@ -231,27 +250,37 @@ export async function mountStoryBiblePage(opts) {
         }
     }
 
+    function openDrawer() {
+        editorDrawer?.classList.remove("hidden");
+        document.body.classList.add("sb-drawer-open");
+    }
+
+    function closeDrawer() {
+        editorDrawer?.classList.add("hidden");
+        document.body.classList.remove("sb-drawer-open");
+    }
+
     function syncFormEmptyState() {
-        const sections = document.querySelector(".sb-sections");
-        const actions = document.querySelector(".sb-form-actions");
-        if (!sections) return;
         const hasSelection =
             bibleTab === "characters" ? !!selectedCharId : !!selectedPlaceId;
-        sections.classList.toggle("hidden", !hasSelection);
-        actions?.classList.toggle("hidden", !hasSelection);
-        if (formTitleEl) {
-            if (!hasSelection) {
-                clearEntryHero();
-                formTitleEl.textContent =
-                    bibleTab === "characters"
-                        ? characters.length
-                            ? "Select a character"
-                            : "Add your first character"
-                        : places.length
-                          ? "Select a place"
-                          : "Add your first place";
-            }
+        if (!hasSelection) {
+            closeDrawer();
+            clearEntryHero();
         }
+        if (formTitleEl && !hasSelection) {
+            formTitleEl.textContent =
+                bibleTab === "characters" ? "Character" : "Place";
+        }
+    }
+
+    function updateSidebarMeta() {
+        if (!sidebarMetaEl) return;
+        sidebarMetaEl.textContent = `${characters.length} character${characters.length === 1 ? "" : "s"} · ${places.length} place${places.length === 1 ? "" : "s"}`;
+    }
+
+    function renderCardGrids() {
+        renderCharacterCards(charGrid, characters, selectedCharId, rosterSearch?.value || "");
+        renderPlaceCards(placeGrid, places, selectedPlaceId, placeSearch?.value || rosterSearch?.value || "");
     }
 
     function rosterQuery() {
@@ -386,7 +415,9 @@ export async function mountStoryBiblePage(opts) {
 
     hubView.classList.add("hidden");
     bookView.classList.remove("hidden");
-    openEditorLink.href = `editor.html?book=${encodeURIComponent(bookId)}`;
+    const editorHref = `editor.html?book=${encodeURIComponent(bookId)}`;
+    openEditorLink.href = editorHref;
+    if (importEditorLink) importEditorLink.href = editorHref;
     if (openPlotDoctorLink) {
         openPlotDoctorLink.href = `plot-doctor/?book=${encodeURIComponent(bookId)}`;
     }
@@ -407,6 +438,7 @@ export async function mountStoryBiblePage(opts) {
     let chapterOptions = [];
 
     function notifyDataReload() {
+        updateSidebarMeta();
         onDataReload?.({
             characters,
             places,
@@ -753,6 +785,7 @@ export async function mountStoryBiblePage(opts) {
             li.appendChild(btn);
             charList.appendChild(li);
         });
+        renderCardGrids();
         syncFormEmptyState();
     }
 
@@ -788,6 +821,7 @@ export async function mountStoryBiblePage(opts) {
             li.appendChild(btn);
             placeList.appendChild(li);
         });
+        renderCardGrids();
         syncFormEmptyState();
     }
 
@@ -799,6 +833,8 @@ export async function mountStoryBiblePage(opts) {
         if (!c) return;
         fillCharacterForm(c);
         updateEntryHero("character", c);
+        openDrawer();
+        onViewRequest?.("characters");
         renderCharList();
         renderPlaceList();
         deleteCharBtn.disabled = false;
@@ -815,6 +851,8 @@ export async function mountStoryBiblePage(opts) {
         if (!p) return;
         fillPlaceForm(p);
         updateEntryHero("place", p);
+        openDrawer();
+        onViewRequest?.("places");
         renderCharList();
         renderPlaceList();
         deleteCharBtn.disabled = false;
@@ -955,6 +993,7 @@ export async function mountStoryBiblePage(opts) {
 
     newCharBtn.addEventListener("click", async () => {
         await persistCurrentEntryFromForm({ silent: true });
+        onViewRequest?.("characters");
         bibleTab = "characters";
         updateBibleTabChrome();
         persistBibleTab();
@@ -966,6 +1005,7 @@ export async function mountStoryBiblePage(opts) {
 
     newPlaceBtn.addEventListener("click", async () => {
         await persistCurrentEntryFromForm({ silent: true });
+        onViewRequest?.("places");
         bibleTab = "places";
         updateBibleTabChrome();
         persistBibleTab();
@@ -1465,7 +1505,34 @@ export async function mountStoryBiblePage(opts) {
 
     rosterSearch?.addEventListener("input", () => {
         renderCharList();
+    });
+    placeSearch?.addEventListener("input", () => {
         renderPlaceList();
+    });
+
+    drawerClose?.addEventListener("click", () => {
+        void persistCurrentEntryFromForm({ silent: true });
+        if (bibleTab === "characters") selectedCharId = null;
+        else selectedPlaceId = null;
+        closeDrawer();
+        renderCharList();
+        renderPlaceList();
+        syncFormEmptyState();
+    });
+    drawerBackdrop?.addEventListener("click", () => drawerClose?.click());
+
+    document.querySelectorAll("[data-place-mode]").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const mode = btn.getAttribute("data-place-mode");
+            document.querySelectorAll("[data-place-mode]").forEach(b =>
+                b.classList.toggle("is-active", b === btn)
+            );
+            placeGrid?.classList.toggle("hidden", mode === "map");
+            document.getElementById("sbAtlasMount")?.classList.toggle("hidden", mode !== "map");
+            if (mode === "map") {
+                window.dispatchEvent(new CustomEvent("alysum-bible-render-atlas"));
+            }
+        });
     });
 
     for (const el of Object.values(fields)) {
@@ -1487,24 +1554,46 @@ export async function mountStoryBiblePage(opts) {
 
     window.addEventListener("alysum-bible-navigate", async ev => {
         const { view, tab, charId, placeId, newPlace } = ev.detail || {};
-        if (view) onViewRequest?.(view);
-        if (tab === "places") {
+        const targetView = view || (tab === "places" ? "places" : tab === "characters" ? "characters" : "");
+        if (targetView) onViewRequest?.(targetView);
+        if (tab === "places" || targetView === "places") {
             bibleTab = "places";
             updateBibleTabChrome();
-            renderCharList();
-            renderPlaceList();
-        } else if (tab === "characters") {
+        } else if (tab === "characters" || targetView === "characters") {
             bibleTab = "characters";
             updateBibleTabChrome();
-            renderCharList();
-            renderPlaceList();
         }
         if (newPlace) {
+            onViewRequest?.("places");
             newPlaceBtn?.click();
             return;
         }
-        if (charId) await selectCharacter(charId);
-        if (placeId) await selectPlace(placeId);
+        if (charId) {
+            bibleTab = "characters";
+            updateBibleTabChrome();
+            await selectCharacter(charId);
+        }
+        if (placeId) {
+            bibleTab = "places";
+            updateBibleTabChrome();
+            await selectPlace(placeId);
+        }
+    });
+
+    window.addEventListener("alysum-bible-open-entry", async ev => {
+        const { kind, id } = ev.detail || {};
+        if (kind === "character" && id) {
+            onViewRequest?.("characters");
+            bibleTab = "characters";
+            updateBibleTabChrome();
+            await selectCharacter(id);
+        }
+        if (kind === "place" && id) {
+            onViewRequest?.("places");
+            bibleTab = "places";
+            updateBibleTabChrome();
+            await selectPlace(id);
+        }
     });
 
     document.addEventListener("visibilitychange", () => {

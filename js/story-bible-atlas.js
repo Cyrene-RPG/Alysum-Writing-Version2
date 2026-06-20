@@ -67,12 +67,12 @@ export function renderWorldAtlas(mount, places) {
     const list = (places || []).filter(p => normalizeText(p.name));
     if (!list.length) {
         mount.innerHTML = `<div class="sb-atlas-empty">
-            <p class="sb-empty-inline">No places catalogued yet. Add cities, regions, and landmarks in the codex — link them with "Inside / near" to build your world tree.</p>
-            <button type="button" class="sb-btn sb-btn-primary" data-sb-goto-codex-places">Add first place</button>
+            <p class="sb-empty-inline">No places yet. Add cities and regions under Places, then link them with "Located inside / near".</p>
+            <button type="button" class="sb-btn sb-btn-primary" data-sb-goto-places">Add first place</button>
         </div>`;
-        mount.querySelector("[data-sb-goto-codex-places]")?.addEventListener("click", () => {
+        mount.querySelector("[data-sb-goto-places]")?.addEventListener("click", () => {
             window.dispatchEvent(
-                new CustomEvent("alysum-bible-navigate", { detail: { view: "codex", tab: "places", newPlace: true } })
+                new CustomEvent("alysum-bible-navigate", { detail: { view: "places", newPlace: true } })
             );
         });
         return;
@@ -86,16 +86,16 @@ export function renderWorldAtlas(mount, places) {
             <header class="sb-atlas-head">
                 <div>
                     <h3 class="sb-view-title">World atlas</h3>
-                    <p class="sb-view-desc">${list.length} location${list.length === 1 ? "" : "s"} — nested by parent place. Click any entry to edit in the codex.</p>
+                    <p class="sb-view-desc">${list.length} location${list.length === 1 ? "" : "s"} — nested by parent. Click to edit.</p>
                 </div>
-                <button type="button" class="sb-btn sb-btn-ghost" data-sb-goto-codex-places">+ New place</button>
+                <button type="button" class="sb-btn sb-btn-ghost" data-sb-goto-places">+ New place</button>
             </header>
             <ul class="sb-atlas-tree">${orphans.map(p => renderBranch(p, childMap)).join("")}</ul>
         </div>`;
 
-    mount.querySelector("[data-sb-goto-codex-places]")?.addEventListener("click", () => {
+    mount.querySelector("[data-sb-goto-places]")?.addEventListener("click", () => {
         window.dispatchEvent(
-            new CustomEvent("alysum-bible-navigate", { detail: { view: "codex", tab: "places", newPlace: true } })
+            new CustomEvent("alysum-bible-navigate", { detail: { view: "places", newPlace: true } })
         );
     });
 
@@ -103,7 +103,7 @@ export function renderWorldAtlas(mount, places) {
         btn.addEventListener("click", () => {
             window.dispatchEvent(
                 new CustomEvent("alysum-bible-navigate", {
-                    detail: { view: "codex", tab: "places", placeId: btn.getAttribute("data-sb-place") }
+                    detail: { view: "places", placeId: btn.getAttribute("data-sb-place") }
                 })
             );
         });

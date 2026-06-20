@@ -101,15 +101,15 @@ export function mountCommandPalette(opts) {
         closePalette();
         if (row.kind === "character") {
             window.dispatchEvent(
-                new CustomEvent("alysum-bible-navigate", { detail: { view: "codex", tab: "characters", charId: row.id } })
+                new CustomEvent("alysum-bible-navigate", { detail: { view: "characters", charId: row.id } })
             );
         } else if (row.kind === "place") {
             window.dispatchEvent(
-                new CustomEvent("alysum-bible-navigate", { detail: { view: "codex", tab: "places", placeId: row.id } })
+                new CustomEvent("alysum-bible-navigate", { detail: { view: "places", placeId: row.id } })
             );
         } else if (row.kind === "fact" && row.charId) {
             window.dispatchEvent(
-                new CustomEvent("alysum-bible-navigate", { detail: { view: "codex", tab: "characters", charId: row.charId } })
+                new CustomEvent("alysum-bible-navigate", { detail: { view: "characters", charId: row.charId } })
             );
         }
     }

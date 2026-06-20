@@ -1,10 +1,9 @@
 /**
- * Story Bible overview dashboard — stats, spotlight, quick timeline.
+ * Story Bible home — friendly starting point with clear next steps.
  */
 
 import { escapeHtml, normalizeText, avatarGradient, getInitials } from "./story-bible-utils.js?v=1";
 import { scoreBibleHealth, scoreCharacter } from "./story-bible-health.js?v=1";
-import { buildTimeline } from "./story-bible-continuity.js?v=1";
 
 /**
  * @param {HTMLElement} mount
@@ -12,137 +11,134 @@ import { buildTimeline } from "./story-bible-continuity.js?v=1";
  */
 export function renderOverview(mount, ctx) {
     if (!mount) return;
-    const { characters = [], places = [], facts = [], chapterOptions = [], conflicts = [], mismatches = [] } = ctx;
+    const { characters = [], places = [], facts = [], conflicts = [], mismatches = [] } = ctx;
     const health = scoreBibleHealth(characters, places);
     const issueCount = conflicts.length + mismatches.length;
-    const tagSet = new Map();
-    for (const c of characters) {
-        for (const t of c.tags || []) {
-            const key = normalizeText(t);
-            if (key) tagSet.set(key, (tagSet.get(key) || 0) + 1);
-        }
-    }
-    const topTags = [...tagSet.entries()].sort((a, b) => b[1] - a[1]).slice(0, 12);
-    const events = buildTimeline(facts, characters, chapterOptions).slice(0, 6);
-    const spotlight = [...characters]
-        .filter(c => normalizeText(c.name))
-        .sort((a, b) => scoreCharacter(b).score - scoreCharacter(a).score)
-        .slice(0, 8);
+    const isEmpty = !characters.length && !places.length;
 
-    const statCards = [
-        { label: "Characters", value: characters.length, accent: "chars" },
-        { label: "Places", value: places.length, accent: "places" },
-        { label: "Canon facts", value: facts.length, accent: "facts" },
-        { label: "Readiness", value: `${health.readinessPct}%`, accent: "ready" },
-        { label: "Issues", value: issueCount, accent: issueCount ? "warn" : "ok" }
-    ];
+    const nextSteps = [];
+    if (!characters.length) {
+        nextSteps.push({
+            icon: "👤",
+            title: "Add your cast",
+            desc: "Start with your main characters — name, look, and role.",
+            action: "characters",
+            label: "Go to Characters"
+        });
+    }
+    if (!places.length && characters.length) {
+        nextSteps.push({
+            icon: "🗺",
+            title: "Map your world",
+            desc: "Add cities, buildings, and regions where scenes happen.",
+            action: "places",
+            label: "Go to Places"
+        });
+    }
+    if (characters.length && facts.length < characters.length) {
+        nextSteps.push({
+            icon: "✍",
+            title: "Pull details from your draft",
+            desc: "Highlight a paragraph in the editor — we'll find hair color, relationships, and more.",
+            action: "import",
+            label: "Import from manuscript"
+        });
+    }
+    if (issueCount > 0) {
+        nextSteps.push({
+            icon: "⚠",
+            title: `${issueCount} story mismatch${issueCount === 1 ? "" : "es"}`,
+            desc: "Something in your bible contradicts itself. Worth a quick fix.",
+            action: "characters",
+            label: "Review characters"
+        });
+    }
+    if (!nextSteps.length) {
+        nextSteps.push({
+            icon: "✓",
+            title: "Your bible looks solid",
+            desc: "Keep writing — Plot Doctor will flag new contradictions as you draft.",
+            action: "import",
+            label: "Import more details"
+        });
+    }
+
+    const recentChars = [...characters]
+        .filter(c => normalizeText(c.name))
+        .slice(0, 6);
 
     mount.innerHTML = `
-        <div class="sb-overview">
-            <header class="sb-overview-head">
-                <div>
-                    <h3 class="sb-view-title">World overview</h3>
-                    <p class="sb-view-desc">Your continuity command center — stats, spotlight characters, and recent canon events at a glance.</p>
+        <div class="sb-home">
+            ${
+                isEmpty
+                    ? `<div class="sb-welcome-banner">
+                <h2>Welcome to your Story Bible</h2>
+                <p>Think of this as a reference book for your novel — who's who, where things happen, and what stays true. Everything syncs to the cloud and helps Plot Doctor catch mistakes.</p>
+            </div>`
+                    : `<div class="sb-home-summary">
+                <div class="sb-home-stat-row">
+                    <div class="sb-home-stat"><strong>${characters.length}</strong><span>Characters</span></div>
+                    <div class="sb-home-stat"><strong>${places.length}</strong><span>Places</span></div>
+                    <div class="sb-home-stat"><strong>${facts.length}</strong><span>Story details</span></div>
+                    <div class="sb-home-stat sb-home-stat-accent"><strong>${health.readinessPct}%</strong><span>Complete</span></div>
                 </div>
-                <div class="sb-overview-actions">
-                    <button type="button" class="sb-btn sb-btn-ghost" data-sb-goto="codex">Open codex</button>
-                    <button type="button" class="sb-btn sb-btn-primary" data-sb-goto="extract">Extract canon</button>
-                </div>
-            </header>
+                <p class="sb-home-health">${escapeHtml(plainHealthSummary(health))}</p>
+            </div>`
+            }
 
-            <div class="sb-stat-grid">
-                ${statCards
+            <section class="sb-home-section">
+                <h3 class="sb-home-heading">What to do next</h3>
+                <div class="sb-next-grid">${nextSteps
+                    .slice(0, 3)
                     .map(
-                        s => `<article class="sb-stat-card sb-stat-${s.accent}">
-                    <span class="sb-stat-value">${escapeHtml(String(s.value))}</span>
-                    <span class="sb-stat-label">${escapeHtml(s.label)}</span>
-                </article>`
+                        step => `<button type="button" class="sb-next-card" data-sb-goto="${escapeHtml(step.action)}">
+                    <span class="sb-next-icon" aria-hidden="true">${step.icon}</span>
+                    <span class="sb-next-body">
+                        <strong>${escapeHtml(step.title)}</strong>
+                        <span>${escapeHtml(step.desc)}</span>
+                    </span>
+                    <span class="sb-next-arrow">→</span>
+                </button>`
                     )
-                    .join("")}
-            </div>
+                    .join("")}</div>
+            </section>
 
-            <div class="sb-overview-grid">
-                <section class="sb-overview-panel">
-                    <h4 class="sb-panel-label">Character spotlight</h4>
-                    ${
-                        spotlight.length
-                            ? `<div class="sb-spotlight-grid">${spotlight
-                                  .map(c => {
-                                      const sc = scoreCharacter(c);
-                                      const name = normalizeText(c.name) || "(unnamed)";
-                                      return `<button type="button" class="sb-spot-card" data-sb-char="${escapeHtml(c.id)}">
-                                    <span class="sb-spot-avatar" style="background:${avatarGradient(name)}">${escapeHtml(getInitials(name))}</span>
-                                    <span class="sb-spot-body">
-                                        <strong>${escapeHtml(name)}</strong>
-                                        <span class="sb-spot-meta">${sc.ready ? "Plot Doctor ready" : sc.gaps.slice(0, 2).join(" · ") || "Needs detail"}</span>
-                                    </span>
-                                    <span class="sb-spot-score">${sc.score}/${sc.max}</span>
-                                </button>`;
-                                  })
-                                  .join("")}</div>`
-                            : `<p class="sb-empty-inline">No characters yet. Scan your manuscript or add them in the codex.</p>`
-                    }
-                </section>
+            ${
+                recentChars.length
+                    ? `<section class="sb-home-section">
+                <div class="sb-home-section-head">
+                    <h3 class="sb-home-heading">Your characters</h3>
+                    <button type="button" class="sb-text-link" data-sb-goto="characters">See all →</button>
+                </div>
+                <div class="sb-home-char-row">${recentChars
+                    .map(c => {
+                        const name = normalizeText(c.name);
+                        const sc = scoreCharacter(c);
+                        return `<button type="button" class="sb-home-char-chip" data-sb-char="${escapeHtml(c.id)}">
+                        <span class="sb-home-char-av" style="background:${avatarGradient(name)}">${escapeHtml(getInitials(name))}</span>
+                        <span>${escapeHtml(name)}</span>
+                        ${!sc.ready ? `<em class="sb-home-char-warn">Incomplete</em>` : ""}
+                    </button>`;
+                    })
+                    .join("")}</div>
+            </section>`
+                    : ""
+            }
 
-                <section class="sb-overview-panel">
-                    <h4 class="sb-panel-label">Recent timeline</h4>
-                    ${
-                        events.length
-                            ? `<ol class="sb-overview-events">${events
-                                  .map(
-                                      ev => `<li class="sb-overview-event sb-ev-${escapeHtml(ev.kind)}">
-                                    <span class="sb-ev-kind">${escapeHtml(ev.kind)}</span>
-                                    <strong>${escapeHtml(ev.characterName)}</strong>
-                                    <span>${escapeHtml(ev.detail)}</span>
-                                    <em>${escapeHtml(ev.chapterLabel || ev.chapter)}</em>
-                                </li>`
-                                  )
-                                  .join("")}</ol>
-                                  <button type="button" class="sb-link-btn" data-sb-goto="timeline">View full timeline →</button>`
-                            : `<p class="sb-empty-inline">Timeline events appear when you set intro/death chapters or accept extracted facts.</p>`
-                    }
-                </section>
-
-                ${
-                    topTags.length
-                        ? `<section class="sb-overview-panel sb-overview-tags">
-                    <h4 class="sb-panel-label">Tag index</h4>
-                    <div class="sb-tag-cloud">${topTags
-                        .map(([tag, count]) => `<span class="sb-tag-chip">${escapeHtml(tag)} <em>${count}</em></span>`)
-                        .join("")}</div>
-                </section>`
-                        : ""
-                }
-
-                <section class="sb-overview-panel sb-overview-health">
-                    <h4 class="sb-panel-label">Bible readiness</h4>
-                    <div class="sb-readiness-ring-wrap">
-                        <svg class="sb-readiness-ring" viewBox="0 0 120 120" aria-hidden="true">
-                            <circle cx="60" cy="60" r="52" class="sb-ring-track"/>
-                            <circle cx="60" cy="60" r="52" class="sb-ring-fill" style="stroke-dasharray:${Math.round(health.readinessPct * 3.27)} 327"/>
-                        </svg>
-                        <div class="sb-readiness-center">
-                            <strong>${health.readinessPct}%</strong>
-                            <span>ready</span>
-                        </div>
-                    </div>
-                    <p class="sb-health-summary">${escapeHtml(health.summary)}</p>
-                    ${
-                        health.deceasedMissingChapter
-                            ? `<p class="sb-health-warn">${health.deceasedMissingChapter} deceased character(s) missing death chapter.</p>`
-                            : ""
-                    }
-                    <button type="button" class="sb-link-btn" data-sb-goto="codex">Improve in codex →</button>
-                </section>
-            </div>
+            <section class="sb-home-section sb-home-help">
+                <h3 class="sb-home-heading">How this works</h3>
+                <ol class="sb-help-steps">
+                    <li><strong>Add people & places</strong> — build your reference here, or scan your manuscript to find names.</li>
+                    <li><strong>Import from writing</strong> — highlight text in the Editor, open Story Bible, and save discovered details.</li>
+                    <li><strong>Stay consistent</strong> — Plot Doctor reads this bible while you write and warns you about contradictions.</li>
+                </ol>
+            </section>
         </div>`;
 
     mount.querySelectorAll("[data-sb-goto]").forEach(btn => {
         btn.addEventListener("click", () => {
             window.dispatchEvent(
-                new CustomEvent("alysum-bible-set-view", {
-                    detail: { view: btn.getAttribute("data-sb-goto") }
-                })
+                new CustomEvent("alysum-bible-set-view", { detail: { view: btn.getAttribute("data-sb-goto") } })
             );
         });
     });
@@ -151,9 +147,17 @@ export function renderOverview(mount, ctx) {
         btn.addEventListener("click", () => {
             window.dispatchEvent(
                 new CustomEvent("alysum-bible-navigate", {
-                    detail: { view: "codex", tab: "characters", charId: btn.getAttribute("data-sb-char") }
+                    detail: { view: "characters", charId: btn.getAttribute("data-sb-char") }
                 })
             );
         });
     });
+}
+
+function plainHealthSummary(health) {
+    if (!health.characterCount) return "Add characters to get started.";
+    if (health.readyCount === health.characterCount) {
+        return "All characters have enough detail for consistency checks.";
+    }
+    return `${health.readyCount} of ${health.characterCount} characters are fully filled in.`;
 }

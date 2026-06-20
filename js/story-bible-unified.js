@@ -2,7 +2,7 @@
  * Unified Story Bible — codex + overview + atlas + timeline + graph + extraction.
  */
 
-import { mountStoryBiblePage } from "./story-bible-page.js?v=24";
+import { mountStoryBiblePage } from "./story-bible-page.js?v=25";
 import { generateBibleCharacterId, saveBibleCharacter, normalizeBibleCharacter } from "./story-bible-api.js?v=12";
 import {
     listBibleFacts,
@@ -27,12 +27,37 @@ import { renderOverview } from "./story-bible-overview.js?v=1";
 import { renderWorldAtlas } from "./story-bible-atlas.js?v=1";
 import { mountRelationshipGraph } from "./story-bible-graph.js?v=1";
 import { mountCommandPalette } from "./story-bible-command-palette.js?v=1";
+import { renderStoryChrome, renderTimelineFilters } from "./story-bible-story.js?v=1";
 import { scoreBibleHealth } from "./story-bible-health.js?v=1";
 
 const HANDOFF_KEY = "alysum-story-bible-selection-v1";
 const HANDOFF_BACKUP_KEY = "alysum-story-bible-selection-backup-v1";
 const VIEW_STORAGE_KEY = "alysum-story-bible-view";
-const VALID_VIEWS = ["overview", "codex", "atlas", "timeline", "relationships", "extract"];
+const VALID_VIEWS = ["home", "characters", "places", "story", "import"];
+const VIEW_HEADINGS = {
+    home: "Home",
+    characters: "Characters",
+    places: "Places",
+    story: "Story",
+    import: "From manuscript"
+};
+const LEGACY_VIEW_MAP = {
+    overview: "home",
+    home: "home",
+    codex: "characters",
+    characters: "characters",
+    atlas: "places",
+    places: "places",
+    timeline: "story",
+    relationships: "story",
+    story: "story",
+    extract: "import",
+    import: "import"
+};
+
+function normalizeView(view) {
+    return LEGACY_VIEW_MAP[view] || view;
+}
 
 function byId(id) {
     return document.getElementById(id);
@@ -103,20 +128,22 @@ function mountUnifiedExtras(ctx) {
     let facts = [];
     let candidates = [];
     let detectedNames = [];
-    let workspaceView = "overview";
+    let workspaceView = "home";
+    let storyTab = "timeline";
     let selectedCharId = null;
     let timelineFilter = "all";
     /** @type {{ destroy?: () => void } | null} */
     let graphHandle = null;
+    let storyChromeReady = false;
 
     const viewPanels = {
-        overview: byId("sbViewOverview"),
-        codex: byId("sbViewCodex"),
-        atlas: byId("sbViewAtlas"),
-        timeline: byId("sbViewTimeline"),
-        relationships: byId("sbViewRelationships"),
-        extract: byId("sbViewExtract")
+        home: byId("sbViewHome"),
+        characters: byId("sbViewCharacters"),
+        places: byId("sbViewPlaces"),
+        story: byId("sbViewStory"),
+        import: byId("sbViewImport")
     };
+    const viewHeadingEl = byId("sbViewHeading");
     const conflictsBanner = byId("sbConflictsBanner");
     const charFactsMount = byId("sbCharFactsMount");
     const cmd = mountCommandPalette({});
@@ -157,14 +184,45 @@ function mountUnifiedExtras(ctx) {
         renderConflicts();
         renderOverviewPanel();
         renderAtlas();
+        ensureStoryChrome();
         renderTimeline();
         renderRelationships();
         renderCharFacts();
         updateHubStats();
     }
 
+    function ensureStoryChrome() {
+        const mount = byId("sbStoryMount");
+        if (!mount || storyChromeReady) return;
+        renderStoryChrome(mount, storyTab, tab => {
+            storyTab = tab;
+            byId("sbStoryTimelinePane")?.classList.toggle("hidden", tab !== "timeline");
+            byId("sbStoryConnectionsPane")?.classList.toggle("hidden", tab !== "connections");
+            if (tab === "connections") renderRelationships();
+            if (tab === "timeline") renderTimeline();
+        });
+        const tlPane = byId("sbStoryTimelinePane");
+        if (tlPane && !tlPane.querySelector(".sb-timeline-filters")) {
+            const filterWrap = document.createElement("div");
+            filterWrap.id = "sbTimelineFiltersHost";
+            renderTimelineFilters(filterWrap);
+            tlPane.before(filterWrap);
+            filterWrap.querySelector(".sb-timeline-filters")?.addEventListener("click", ev => {
+                const chip = ev.target instanceof Element ? ev.target.closest("[data-tl-filter]") : null;
+                if (!chip) return;
+                timelineFilter = chip.getAttribute("data-tl-filter") || "all";
+                filterWrap.querySelectorAll("[data-tl-filter]").forEach(el => {
+                    el.classList.toggle("is-active", el === chip);
+                });
+                renderTimeline();
+            });
+        }
+        storyChromeReady = true;
+    }
+
     function setWorkspaceView(view) {
-        if (!VALID_VIEWS.includes(view)) view = "overview";
+        view = normalizeView(view);
+        if (!VALID_VIEWS.includes(view)) view = "home";
         workspaceView = view;
         try {
             sessionStorage.setItem(VIEW_STORAGE_KEY, view);
@@ -175,7 +233,12 @@ function mountUnifiedExtras(ctx) {
         for (const [key, el] of Object.entries(viewPanels)) {
             el?.classList.toggle("hidden", key !== view);
         }
-        if (view === "relationships") renderRelationships();
+        if (viewHeadingEl) viewHeadingEl.textContent = VIEW_HEADINGS[view] || "Story Bible";
+        if (view === "story") {
+            ensureStoryChrome();
+            if (storyTab === "connections") renderRelationships();
+            else renderTimeline();
+        }
     }
 
     function renderConflicts() {
@@ -203,8 +266,8 @@ function mountUnifiedExtras(ctx) {
                 <div class="sb-conflicts-head">
                     <span class="sb-conflicts-icon" aria-hidden="true">⚠</span>
                     <div>
-                        <strong>${total} continuity issue${total === 1 ? "" : "s"} detected</strong>
-                        <p>Plot Doctor uses this bible — resolve conflicts to keep canon tight.</p>
+                        <strong>${total} story mismatch${total === 1 ? "" : "es"}</strong>
+                        <p>Two details in your bible disagree. Open the character and pick which version is correct.</p>
                     </div>
                 </div>
                 <ul class="sb-conflicts-list">${items.join("")}</ul>
@@ -223,7 +286,7 @@ function mountUnifiedExtras(ctx) {
     }
 
     function renderTimeline() {
-        const mount = byId("sbTimelineMount");
+        const mount = byId("sbStoryTimelinePane") || byId("sbTimelineMount");
         if (!mount) return;
         let events = buildTimeline(facts, characters, chapterOptions);
         if (timelineFilter !== "all") {
@@ -231,7 +294,7 @@ function mountUnifiedExtras(ctx) {
         }
         if (!events.length) {
             mount.innerHTML =
-                '<p class="sb-empty-inline">No timeline events yet. Accept facts from manuscript extraction or set intro/death chapters on characters.</p>';
+                '<p class="sb-empty-inline">Nothing on the timeline yet. Set when characters first appear, or import details from your manuscript.</p>';
             return;
         }
         let lastChapter = "";
@@ -257,7 +320,7 @@ function mountUnifiedExtras(ctx) {
     }
 
     function renderRelationships() {
-        const mount = byId("sbRelationshipsMount");
+        const mount = byId("sbStoryConnectionsPane") || byId("sbRelationshipsMount");
         if (!mount) return;
         graphHandle?.destroy?.();
         graphHandle = null;
@@ -266,7 +329,7 @@ function mountUnifiedExtras(ctx) {
             onNodeClick: id => {
                 window.dispatchEvent(
                     new CustomEvent("alysum-bible-navigate", {
-                        detail: { view: "codex", tab: "characters", charId: id }
+                        detail: { view: "characters", charId: id }
                     })
                 );
             }
@@ -467,23 +530,15 @@ function mountUnifiedExtras(ctx) {
         if (statReady) statReady.textContent = `${health.readinessPct}%`;
     }
 
-    document.querySelectorAll("[data-sb-view]").forEach(btn => {
-        btn.addEventListener("click", () => setWorkspaceView(btn.getAttribute("data-sb-view") || "overview"));
-    });
-
     window.addEventListener("alysum-bible-set-view", ev => {
-        const view = ev.detail?.view;
+        const view = normalizeView(ev.detail?.view);
         if (view) setWorkspaceView(view);
     });
 
-    byId("sbTimelineFilters")?.addEventListener("click", ev => {
-        const chip = ev.target instanceof Element ? ev.target.closest("[data-tl-filter]") : null;
-        if (!chip) return;
-        timelineFilter = chip.getAttribute("data-tl-filter") || "all";
-        byId("sbTimelineFilters")?.querySelectorAll("[data-tl-filter]").forEach(el => {
-            el.classList.toggle("is-active", el === chip);
-        });
-        renderTimeline();
+    window.addEventListener("alysum-bible-render-atlas", () => renderAtlas());
+
+    document.querySelectorAll("[data-sb-view]").forEach(btn => {
+        btn.addEventListener("click", () => setWorkspaceView(btn.getAttribute("data-sb-view") || "home"));
     });
 
     byId("sbAnalyzeExtract")?.addEventListener("click", analyzeSelection);
@@ -540,14 +595,14 @@ function mountUnifiedExtras(ctx) {
     });
 
     try {
-        const savedView = sessionStorage.getItem(VIEW_STORAGE_KEY);
-        if (savedView && VALID_VIEWS.includes(savedView)) workspaceView = savedView;
+        const savedView = normalizeView(sessionStorage.getItem(VIEW_STORAGE_KEY) || "");
+        if (VALID_VIEWS.includes(savedView)) workspaceView = savedView;
     } catch (_) {}
 
     const gotHandoff = consumeSelectionHandoff(bookId);
     if (gotHandoff) {
-        workspaceView = "extract";
-        setWorkspaceView("extract");
+        workspaceView = "import";
+        setWorkspaceView("import");
         analyzeSelection();
     } else {
         setWorkspaceView(workspaceView);
