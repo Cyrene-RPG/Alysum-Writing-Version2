@@ -538,7 +538,7 @@ export async function mountUnifiedStoryBible(opts) {
 
     await mountStoryBiblePage({
         ...opts,
-        hubLinkPath: "Story-Bible-New.html",
+        hubLinkPath: "story-bible.html",
         onDataReload: data => {
             extras?.syncCtx({
                 characters: data.characters,

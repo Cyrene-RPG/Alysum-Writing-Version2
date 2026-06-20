@@ -1,17 +1,454 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta name="theme-color" content="#7c3aed" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#020b18" media="(prefers-color-scheme: dark)">
+    <meta name="color-scheme" content="dark light">
+    <meta name="application-name" content="Alysum">
+    <link rel="icon" type="image/png" href="Alysum-3.png">
+    <script src="js/pwa-register.js" defer></script>
+    <script type="module" src="js/vercel-analytics.js"></script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Story Bible — Alysum</title>
+    <script src="js/alysum-appearance-boot.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Cormorant+Garamond:ital@0;1&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="css/site-responsive.css?v=1" />
+    <link rel="stylesheet" href="css/gradient-themes.css?v=4" />
+    <link rel="stylesheet" href="css/magic-codex.css?v=7" />
+    <link rel="stylesheet" href="css/story-bible.css?v=6" />
+    <script src="js/gradient-theme-sync.js" defer></script>
 </head>
-<body>
-    <p>Opening Story Bible…</p>
-    <script>
-        window.location.replace("Story-Bible-New.html" + (window.location.search || ""));
+<body class="mc-page mc-bible">
+    <div class="mc-veil" aria-hidden="true"></div>
+
+    <div class="sb-app">
+        <header class="sb-hero">
+            <div>
+                <p class="sb-hero-brand">Continuity Codex</p>
+                <h1 class="sb-hero-title">Story Bible</h1>
+                <p class="sb-hero-sub">
+                    Characters, places, timeline, and relationships — synced to the cloud. Highlight text in the editor to extract canon; Plot Doctor flags contradictions while you write.
+                </p>
+            </div>
+            <nav class="sb-nav" aria-label="Site">
+                <a href="writer-dashboard.html">Studio</a>
+                <a href="library.html">Library</a>
+                <a href="vault.html">Notes</a>
+            </nav>
+        </header>
+
+        <div id="sbDisabled" class="sb-panel-muted hidden">
+            <p>Story Bible is turned off for this browser.</p>
+            <p style="margin-top: 10px">
+                Turn it back on under <a class="sb-link" href="settings.html">Account settings</a>.
+            </p>
+        </div>
+
+        <div id="sbEnabledRoot">
+            <div id="sbStatusLine" class="sb-status-line" role="status" aria-live="polite"></div>
+
+            <section id="sbHubView" class="sb-hub hidden">
+                <h2>Your bibles</h2>
+                <div id="sbBookGrid" class="sb-book-grid"></div>
+            </section>
+
+            <section id="sbBookView" class="hidden">
+                <div class="sb-book-toolbar">
+                    <a class="sb-btn sb-btn-ghost" href="story-bible.html">← All bibles</a>
+                    <h2 id="sbBookTitle">…</h2>
+                    <div class="sb-toolbar-stats" aria-label="Bible stats">
+                        <span class="sb-stat-pill"><strong id="sbStatFacts">0</strong> facts</span>
+                    </div>
+                    <div class="sb-toolbar-actions">
+                        <a class="sb-btn sb-btn-gold" id="sbOpenEditor" href="#">Editor</a>
+                        <a class="sb-btn sb-btn-primary" id="sbOpenPlotDoctor" href="#">Plot Doctor</a>
+                    </div>
+                </div>
+
+                <div id="sbConflictsBanner" class="sb-conflicts-banner hidden" role="alert" aria-live="polite"></div>
+
+                <nav class="sb-view-nav" aria-label="Bible views">
+                    <button type="button" class="sb-view-tab is-active" data-sb-view="codex">Codex</button>
+                    <button type="button" class="sb-view-tab" data-sb-view="timeline">Timeline</button>
+                    <button type="button" class="sb-view-tab" data-sb-view="relationships">Relationships</button>
+                    <button type="button" class="sb-view-tab" data-sb-view="extract">Extract Canon</button>
+                </nav>
+
+                <div id="sbViewCodex">
+                    <div class="sb-workspace">
+                        <div class="sb-panel sb-roster-panel">
+                            <div class="sb-tabs" role="tablist" aria-label="Bible section">
+                                <button type="button" class="sb-tab is-active" id="sbTabChars" role="tab" aria-selected="true">Characters</button>
+                                <button type="button" class="sb-tab" id="sbTabPlaces" role="tab" aria-selected="false">Places</button>
+                            </div>
+                            <input type="search" id="sbRosterSearch" class="sb-roster-search" placeholder="Search roster…" autocomplete="off" />
+                            <div id="sbAsideChars" class="sb-aside-panel">
+                                <button type="button" class="sb-new-btn" id="sbNewChar">+ New character</button>
+                                <ul class="sb-roster-list" id="sbCharList" aria-label="Characters"></ul>
+                            </div>
+                            <div id="sbAsidePlaces" class="sb-aside-panel hidden">
+                                <button type="button" class="sb-new-btn" id="sbNewPlace">+ New place</button>
+                                <ul class="sb-roster-list" id="sbPlaceList" aria-label="Places"></ul>
+                            </div>
+                        </div>
+
+                        <div class="sb-panel sb-detail">
+                            <div class="sb-form-header">
+                                <h3 id="sbFormTitle">Select an entry</h3>
+                                <span id="sbDirty" class="sb-dirty">Unsaved changes</span>
+                            </div>
+
+                            <div class="sb-sections">
+                                <fieldset class="sb-section">
+                                    <legend>Identity</legend>
+                                    <div class="sb-field-grid">
+                                        <div class="sb-field sb-field-full">
+                                            <label for="sbName" id="sbLabelName">Name</label>
+                                            <input id="sbName" type="text" autocomplete="off" placeholder="Character name" />
+                                        </div>
+                                        <div class="sb-field sb-field-full">
+                                            <label for="sbAliases" id="sbLabelAliases">Also known as</label>
+                                            <input id="sbAliases" type="text" autocomplete="off" placeholder="Nicknames, titles — comma separated" />
+                                        </div>
+                                        <div id="sbFormCharIdentity" class="sb-field-full">
+                                            <div class="sb-field-grid">
+                                                <div class="sb-field">
+                                                    <label for="sbPronouns">Pronouns</label>
+                                                    <input id="sbPronouns" list="sbPronounList" type="text" autocomplete="off" placeholder="she/her" />
+                                                    <datalist id="sbPronounList">
+                                                        <option value="she/her"></option>
+                                                        <option value="he/him"></option>
+                                                        <option value="they/them"></option>
+                                                        <option value="it/its"></option>
+                                                    </datalist>
+                                                </div>
+                                                <div class="sb-field">
+                                                    <label for="sbCharStatus">Life status</label>
+                                                    <select id="sbCharStatus">
+                                                        <option value="alive">Alive</option>
+                                                        <option value="deceased">Deceased</option>
+                                                        <option value="unknown">Unknown</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div id="sbFormPlaceFields" class="sb-field sb-field-full hidden">
+                                            <label for="sbPlaceKind">Kind</label>
+                                            <select id="sbPlaceKind">
+                                                <option value="">Not specified</option>
+                                                <option value="city">City</option>
+                                                <option value="town">Town</option>
+                                                <option value="village">Village</option>
+                                                <option value="region">Region / state</option>
+                                                <option value="country">Country</option>
+                                                <option value="building">Building</option>
+                                                <option value="landmark">Landmark</option>
+                                                <option value="fictional">Fictional place</option>
+                                                <option value="world">World / plane</option>
+                                                <option value="other">Other</option>
+                                            </select>
+                                        </div>
+                                        <div id="sbFormPlaceParent" class="sb-field sb-field-full hidden">
+                                            <label for="sbPlaceParent">Inside / near</label>
+                                            <input id="sbPlaceParent" type="text" autocomplete="off" placeholder="Country, region, parent place…" />
+                                        </div>
+                                    </div>
+                                </fieldset>
+
+                                <fieldset id="sbFormCharFields" class="sb-section">
+                                    <legend>Appearance</legend>
+                                    <p class="sb-field-hint" style="margin: 0 0 12px">Use simple words Plot Doctor recognizes (e.g. blue, green, tall).</p>
+                                    <div class="sb-field-grid sb-field-grid-3">
+                                        <div class="sb-field">
+                                            <label for="sbAge">Age</label>
+                                            <input id="sbAge" type="text" autocomplete="off" placeholder="e.g. 32" />
+                                        </div>
+                                        <div class="sb-field">
+                                            <label for="sbEyes">Eyes</label>
+                                            <input id="sbEyes" type="text" autocomplete="off" placeholder="e.g. blue" />
+                                        </div>
+                                        <div class="sb-field">
+                                            <label for="sbHair">Hair</label>
+                                            <input id="sbHair" type="text" autocomplete="off" placeholder="e.g. dark brown" />
+                                        </div>
+                                        <div class="sb-field">
+                                            <label for="sbHeight">Height</label>
+                                            <input id="sbHeight" type="text" autocomplete="off" placeholder="e.g. tall" />
+                                        </div>
+                                        <div class="sb-field">
+                                            <label for="sbSkin">Skin</label>
+                                            <input id="sbSkin" type="text" autocomplete="off" placeholder="e.g. olive" />
+                                        </div>
+                                        <div class="sb-field">
+                                            <label for="sbBuild">Build</label>
+                                            <input id="sbBuild" type="text" autocomplete="off" placeholder="e.g. slim" />
+                                        </div>
+                                        <div class="sb-field sb-field-full">
+                                            <label for="sbDistinctive">Distinctive</label>
+                                            <input id="sbDistinctive" type="text" autocomplete="off" placeholder="Scars, voice, habits…" />
+                                        </div>
+                                    </div>
+                                </fieldset>
+
+                                <fieldset id="sbCharFactsSection" class="sb-section">
+                                    <legend>Extracted canon</legend>
+                                    <div id="sbCharFactsMount"></div>
+                                </fieldset>
+
+                                <fieldset class="sb-section">
+                                    <legend>Continuity</legend>
+                                    <div class="sb-field-grid">
+                                        <div class="sb-field sb-field-full">
+                                            <label for="sbTags">Tags</label>
+                                            <input id="sbTags" type="text" autocomplete="off" placeholder="POV, faction — comma separated" />
+                                        </div>
+                                        <div class="sb-field sb-field-full">
+                                            <label for="sbIntroduced">Introduced in</label>
+                                            <select id="sbIntroduced"></select>
+                                        </div>
+                                        <div id="sbFormDeceasedField" class="sb-field sb-field-full hidden">
+                                            <label for="sbDeceased">Died in</label>
+                                            <select id="sbDeceased"></select>
+                                            <p class="sb-field-hint">Required for Plot Doctor death continuity checks.</p>
+                                        </div>
+                                    </div>
+                                </fieldset>
+
+                                <fieldset class="sb-section">
+                                    <legend>Notes</legend>
+                                    <div class="sb-field">
+                                        <label for="sbNotes" class="hidden">Notes</label>
+                                        <textarea id="sbNotes" placeholder="Backstory, secrets, voice notes…"></textarea>
+                                    </div>
+                                </fieldset>
+                            </div>
+
+                            <div class="sb-form-actions">
+                                <button type="button" class="sb-save" id="sbSaveChar">Save</button>
+                                <button type="button" class="sb-del" id="sbDeleteChar">Delete</button>
+                            </div>
+                        </div>
+
+                        <div class="sb-panel sb-tools">
+                            <div class="sb-panel-head">Manuscript tools</div>
+                            <div class="sb-tools-body">
+                                <div class="sb-health-card" id="sbHealthCard">
+                                    <h4>Bible readiness</h4>
+                                    <div class="sb-health-bar"><span id="sbHealthBar" style="width:0%"></span></div>
+                                    <p class="sb-health-summary" id="sbHealthSummary">Add characters to start building your bible.</p>
+                                    <p class="sb-health-warn hidden" id="sbHealthWarn"></p>
+                                </div>
+
+                                <div class="sb-scan-block">
+                                    <h4>From manuscript</h4>
+                                    <button type="button" class="sb-scan-btn" id="sbScanBtn">Scan for new characters</button>
+                                    <div class="sb-scan-opts">
+                                        <label>
+                                            <input type="checkbox" id="sbScanLoose" />
+                                            Include weaker matches
+                                        </label>
+                                    </div>
+                                    <p class="sb-scan-hint">Finds names from dialogue. Review before adding.</p>
+                                </div>
+
+                                <div class="sb-scan-block sb-scan-block-secondary">
+                                    <h4>Existing characters</h4>
+                                    <button type="button" class="sb-scan-btn sb-scan-btn-secondary" id="sbEnrichBtn">Fill appearance from manuscript</button>
+                                    <p class="sb-scan-hint">Fills blank eyes, hair, skin, height, and build fields.</p>
+                                </div>
+
+                                <div class="sb-scan-block sb-scan-block-secondary">
+                                    <h4>Extract canon</h4>
+                                    <button type="button" class="sb-scan-btn sb-scan-btn-secondary" data-sb-view="extract" id="sbGoExtract">Open Extract Canon →</button>
+                                    <p class="sb-scan-hint">Highlight text in the editor, then extract facts with source citations.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <section id="sbScanDrawer" class="sb-scan-drawer hidden" aria-label="Manuscript scan results">
+                        <div class="sb-scan-drawer-inner">
+                            <header class="sb-scan-drawer-head">
+                                <div>
+                                    <h2 class="sb-scan-drawer-title">Manuscript scan</h2>
+                                    <p class="sb-scan-drawer-summary" id="sbScanDrawerSummary">Review names and details before adding to your bible.</p>
+                                </div>
+                                <button type="button" class="sb-scan-drawer-close" id="sbScanDrawerClose" aria-label="Close scan results">Close</button>
+                            </header>
+                            <div id="sbScanResults" class="sb-scan-results-panel hidden" aria-live="polite"></div>
+                            <div id="sbEnrichResults" class="sb-scan-results-panel sb-scan-enrich-panel hidden" aria-live="polite"></div>
+                        </div>
+                    </section>
+                </div>
+
+                <div id="sbViewTimeline" class="sb-view-panel hidden">
+                    <div class="sb-panel sb-view-panel-inner">
+                        <h3 class="sb-view-title">Story timeline</h3>
+                        <p class="sb-view-desc">Character introductions, deaths, and extracted facts ordered by chapter.</p>
+                        <div id="sbTimelineMount"></div>
+                    </div>
+                </div>
+
+                <div id="sbViewRelationships" class="sb-view-panel hidden">
+                    <div class="sb-panel sb-view-panel-inner">
+                        <h3 class="sb-view-title">Relationship map</h3>
+                        <p class="sb-view-desc">Connections extracted from your manuscript — sisters, rivals, spouses, and more.</p>
+                        <div id="sbRelationshipsMount"></div>
+                    </div>
+                </div>
+
+                <div id="sbViewExtract" class="sb-view-panel hidden">
+                    <div class="sb-panel sb-view-panel-inner sb-extract-panel">
+                        <h3 class="sb-view-title">Extract canon from manuscript</h3>
+                        <p class="sb-view-desc">Highlight text in the editor and open Story Bible — or paste a passage here. Accept facts to build your cloud-synced canon database.</p>
+
+                        <div class="sb-extract-grid">
+                            <div class="sb-extract-col">
+                                <label for="sbExtractText">Selected text</label>
+                                <textarea id="sbExtractText" rows="8" placeholder="Paste or import highlighted text from the editor…"></textarea>
+                                <div class="sb-extract-meta">
+                                    <div class="sb-field">
+                                        <label for="sbExtractChapter">Source chapter</label>
+                                        <input id="sbExtractChapter" type="text" autocomplete="off" placeholder="Chapter title" />
+                                    </div>
+                                    <div class="sb-field">
+                                        <label for="sbExtractParagraph">Paragraph #</label>
+                                        <input id="sbExtractParagraph" type="text" autocomplete="off" placeholder="e.g. 3" />
+                                    </div>
+                                </div>
+                                <div class="sb-extract-meta">
+                                    <div class="sb-field">
+                                        <label for="sbExtractCharacter">Default character</label>
+                                        <select id="sbExtractCharacter"></select>
+                                    </div>
+                                    <div class="sb-field">
+                                        <label for="sbExtractManual">Manual fallback name</label>
+                                        <input id="sbExtractManual" type="text" autocomplete="off" placeholder="If auto-detect misses" />
+                                    </div>
+                                </div>
+                                <div id="sbDetectedNames" class="sb-detected-names"></div>
+                                <div class="sb-extract-toolbar">
+                                    <button type="button" class="sb-btn sb-btn-primary" id="sbAnalyzeExtract">Analyze selection</button>
+                                    <button type="button" class="sb-btn sb-btn-ghost" id="sbClearExtract">Clear</button>
+                                    <button type="button" class="sb-btn sb-btn-gold" id="sbAcceptAllExtract">Accept checked</button>
+                                </div>
+                            </div>
+                            <div class="sb-extract-col">
+                                <h4 class="sb-extract-review-title">Candidate facts</h4>
+                                <div id="sbExtractReview" class="sb-extract-review"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script type="module">
+        import { supabase } from "./firebase.js";
+        import { mountUnifiedStoryBible } from "./js/story-bible-unified.js?v=2";
+        import { requireStudioSession } from "./js/studio-session.js?v=1";
+        import { isStoryBibleUiEnabled, STORY_BIBLE_PREF_KEY, STORY_BIBLE_PREF_EVENT } from "./js/story-bible-prefs.js?v=1";
+
+        function applyStoryBiblePageGate() {
+            const disabled = document.getElementById("sbDisabled");
+            const root = document.getElementById("sbEnabledRoot");
+            if (!disabled || !root) return !isStoryBibleUiEnabled();
+            const off = !isStoryBibleUiEnabled();
+            disabled.classList.toggle("hidden", !off);
+            root.classList.toggle("hidden", off);
+            return off;
+        }
+
+        window.addEventListener("storage", e => {
+            if (e.key === STORY_BIBLE_PREF_KEY) location.reload();
+        });
+        window.addEventListener(STORY_BIBLE_PREF_EVENT, () => location.reload());
+
+        document.getElementById("sbGoExtract")?.addEventListener("click", () => {
+            document.querySelector('[data-sb-view="extract"]')?.click();
+        });
+
+        (async () => {
+            const session = await requireStudioSession(supabase, "story-bible.html" + window.location.search);
+            if (!session) return;
+            if (applyStoryBiblePageGate()) return;
+
+            try {
+                await mountUnifiedStoryBible({
+                    supabase,
+                    uid: session.user.id,
+                    statusEl: document.getElementById("sbStatusLine"),
+                    hubView: document.getElementById("sbHubView"),
+                    bookView: document.getElementById("sbBookView"),
+                    bookGrid: document.getElementById("sbBookGrid"),
+                    charList: document.getElementById("sbCharList"),
+                    placeList: document.getElementById("sbPlaceList"),
+                    rosterSearch: document.getElementById("sbRosterSearch"),
+                    newCharBtn: document.getElementById("sbNewChar"),
+                    newPlaceBtn: document.getElementById("sbNewPlace"),
+                    tabCharsBtn: document.getElementById("sbTabChars"),
+                    tabPlacesBtn: document.getElementById("sbTabPlaces"),
+                    asideCharsEl: document.getElementById("sbAsideChars"),
+                    asidePlacesEl: document.getElementById("sbAsidePlaces"),
+                    charFieldsEl: document.getElementById("sbFormCharFields"),
+                    placeFieldsEl: document.getElementById("sbFormPlaceFields"),
+                    placeParentEl: document.getElementById("sbFormPlaceParent"),
+                    charIdentityEl: document.getElementById("sbFormCharIdentity"),
+                    deceasedFieldEl: document.getElementById("sbFormDeceasedField"),
+                    formTitleEl: document.getElementById("sbFormTitle"),
+                    dirtyEl: document.getElementById("sbDirty"),
+                    healthBarEl: document.getElementById("sbHealthBar"),
+                    healthSummaryEl: document.getElementById("sbHealthSummary"),
+                    healthWarnEl: document.getElementById("sbHealthWarn"),
+                    labelNameEl: document.getElementById("sbLabelName"),
+                    labelAliasesEl: document.getElementById("sbLabelAliases"),
+                    saveCharBtn: document.getElementById("sbSaveChar"),
+                    deleteCharBtn: document.getElementById("sbDeleteChar"),
+                    openEditorLink: document.getElementById("sbOpenEditor"),
+                    openPlotDoctorLink: document.getElementById("sbOpenPlotDoctor"),
+                    bookTitleEl: document.getElementById("sbBookTitle"),
+                    fields: {
+                        name: document.getElementById("sbName"),
+                        aliases: document.getElementById("sbAliases"),
+                        pronouns: document.getElementById("sbPronouns"),
+                        status: document.getElementById("sbCharStatus"),
+                        deceased: document.getElementById("sbDeceased"),
+                        placeKind: document.getElementById("sbPlaceKind"),
+                        placeParent: document.getElementById("sbPlaceParent"),
+                        age: document.getElementById("sbAge"),
+                        eyes: document.getElementById("sbEyes"),
+                        hair: document.getElementById("sbHair"),
+                        height: document.getElementById("sbHeight"),
+                        skin: document.getElementById("sbSkin"),
+                        build: document.getElementById("sbBuild"),
+                        distinctive: document.getElementById("sbDistinctive"),
+                        tags: document.getElementById("sbTags"),
+                        introduced: document.getElementById("sbIntroduced"),
+                        notes: document.getElementById("sbNotes")
+                    },
+                    scanBtn: document.getElementById("sbScanBtn"),
+                    scanResultsEl: document.getElementById("sbScanResults"),
+                    scanLooseCheck: document.getElementById("sbScanLoose"),
+                    enrichBtn: document.getElementById("sbEnrichBtn"),
+                    enrichResultsEl: document.getElementById("sbEnrichResults"),
+                    scanDrawerEl: document.getElementById("sbScanDrawer"),
+                    scanDrawerClose: document.getElementById("sbScanDrawerClose"),
+                    scanDrawerSummary: document.getElementById("sbScanDrawerSummary")
+                });
+            } catch (e) {
+                console.error("[story-bible] mount failed:", e);
+                const status = document.getElementById("sbStatusLine");
+                if (status) {
+                    status.textContent = "Story Bible failed to load. Hard-refresh and try again.";
+                    status.classList.add("is-error");
+                }
+            }
+        })();
     </script>
-    <noscript>
-        <a href="Story-Bible-New.html">Open Story Bible</a>
-    </noscript>
 </body>
 </html>

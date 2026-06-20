@@ -1,6 +1,8 @@
 {
   "rewrites": [
-    { "source": "/story-bible-new.html", "destination": "/Story-Bible-New.html" }
+    { "source": "/Story-Bible-New.html", "destination": "/story-bible.html" },
+    { "source": "/story-bible-new.html", "destination": "/story-bible.html" },
+    { "source": "/story-bible-legacy.html", "destination": "/story-bible.html" }
   ],
   "headers": [
     {
