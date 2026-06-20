@@ -10,12 +10,21 @@
     --sb-accent-soft: rgba(167, 139, 250, 0.12);
     --sb-gold: #fbbf24;
     --sb-muted: #94a3b8;
-    --sb-surface: rgba(8, 12, 24, 0.96);
+    --sb-surface: rgba(8, 12, 24, 0.98);
     --sb-surface-2: rgba(14, 20, 36, 0.98);
-    --sb-surface-3: rgba(22, 30, 52, 0.95);
+    --sb-surface-3: #121a2e;
+    --sb-input-bg: #1a2438;
     --sb-border: rgba(255, 255, 255, 0.07);
     --sb-border-strong: rgba(167, 139, 250, 0.22);
     --sb-glow: rgba(124, 58, 237, 0.15);
+}
+
+/* Keep codex workspace above fixed page glow layers */
+.mc-page.mc-bible .sb-v10 {
+    position: relative;
+    z-index: 1;
+    isolation: isolate;
+    background: var(--sb-surface-3);
 }
 
 .mc-page.mc-bible .sb-app {
@@ -59,9 +68,6 @@
     flex-direction: column;
     min-height: 100vh;
     width: 100%;
-    background:
-        radial-gradient(1200px 600px at 10% -10%, rgba(124, 58, 237, 0.12), transparent 55%),
-        radial-gradient(900px 500px at 90% 0%, rgba(56, 189, 248, 0.06), transparent 50%);
 }
 
 .sb-appbar {
@@ -356,6 +362,7 @@
     min-width: 0;
     background: var(--sb-surface-3);
     position: relative;
+    isolation: isolate;
 }
 .sb-sheet-empty {
     flex: 1;
@@ -389,6 +396,8 @@
     flex-direction: column;
     min-height: 0;
     overflow: hidden;
+    background: var(--sb-surface-3);
+    isolation: isolate;
 }
 
 .sb-sheet-toolbar {
@@ -487,6 +496,7 @@
     overflow-y: auto;
     padding: 24px 32px 32px;
     min-height: 0;
+    background: var(--sb-surface-3);
 }
 @media (max-width: 640px) {
     .sb-sheet-body { padding: 20px 16px 24px; }
@@ -511,6 +521,8 @@
     border: none;
     margin: 0;
     padding: 0;
+    min-width: 0;
+    background: transparent;
 }
 .sb-block-title {
     font-family: var(--sb-ui);
@@ -553,11 +565,18 @@
     padding: 12px 14px;
     border-radius: 10px;
     border: 1px solid var(--sb-border);
-    background: rgba(0,0,0,0.35);
+    background: var(--sb-input-bg);
     color: #f1f5f9;
     font-family: var(--sb-ui);
     font-size: 15px;
     line-height: 1.4;
+    box-shadow: none;
+}
+.sb-sheet-editor .sb-field input,
+.sb-sheet-editor .sb-field select,
+.sb-sheet-editor .sb-field textarea {
+    background: var(--sb-input-bg);
+    font-family: var(--sb-ui);
 }
 .sb-field input:focus,
 .sb-field select:focus,
@@ -565,6 +584,12 @@
     outline: none;
     border-color: var(--sb-border-strong);
     box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15);
+    background: var(--sb-input-bg);
+}
+.sb-field input:focus-visible,
+.sb-field select:focus-visible,
+.sb-field textarea:focus-visible {
+    outline: none;
 }
 .sb-field-hint {
     margin: 0 0 12px;
@@ -788,9 +813,6 @@
     display: flex !important;
     flex-direction: column;
 }
-
-.sb-section { border: none; margin: 0; padding: 0; }
-.sb-section legend { display: none; }
 
 #sbEnabledRoot > .sb-status-line {
     position: fixed;

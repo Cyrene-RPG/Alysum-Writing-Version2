@@ -20,7 +20,7 @@
     <link rel="stylesheet" href="css/gradient-themes.css?v=4" />
     <link rel="stylesheet" href="css/magic-codex.css?v=7" />
     <link rel="stylesheet" href="css/story-bible.css?v=9" />
-    <link rel="stylesheet" href="css/story-bible-v10.css?v=1" />
+    <link rel="stylesheet" href="css/story-bible-v10.css?v=2" />
     <script src="js/gradient-theme-sync.js" defer></script>
 </head>
 <body class="mc-page mc-bible">
@@ -225,10 +225,10 @@
                         </div>
                     </header>
                     <div id="sbEntryHero" class="sb-entry-hero hidden"></div>
-                    <div class="sb-sheet-body sb-sections">
+                    <div class="sb-sheet-body">
                         <div class="sb-sheet-grid">
-                            <fieldset class="sb-block sb-sheet-col-12 sb-section">
-                                <legend class="sb-block-title">Identity</legend>
+                            <div class="sb-block sb-sheet-col-12">
+                                <h3 class="sb-block-title">Identity</h3>
                                 <div class="sb-field-grid">
                                     <div class="sb-field sb-field-full">
                                         <label for="sbName" id="sbLabelName">Name</label>
@@ -281,10 +281,10 @@
                                         <input id="sbPlaceParent" type="text" autocomplete="off" placeholder="e.g. France, Northern Realm…" />
                                     </div>
                                 </div>
-                            </fieldset>
+                            </div>
 
-                            <fieldset id="sbFormCharFields" class="sb-block sb-sheet-col-12 sb-section">
-                                <legend class="sb-block-title">Appearance</legend>
+                            <div id="sbFormCharFields" class="sb-block sb-sheet-col-12">
+                                <h3 class="sb-block-title">Appearance</h3>
                                 <p class="sb-field-hint">Short words work best — e.g. <em>blue eyes</em>, <em>tall</em>, <em>dark brown hair</em></p>
                                 <div class="sb-field-grid sb-field-grid-3">
                                     <div class="sb-field"><label for="sbAge">Age</label><input id="sbAge" type="text" placeholder="32" autocomplete="off" /></div>
@@ -295,15 +295,15 @@
                                     <div class="sb-field"><label for="sbBuild">Build</label><input id="sbBuild" type="text" placeholder="slim" autocomplete="off" /></div>
                                     <div class="sb-field sb-field-full"><label for="sbDistinctive">Stand-out features</label><input id="sbDistinctive" type="text" placeholder="Scar, accent, habit…" autocomplete="off" /></div>
                                 </div>
-                            </fieldset>
+                            </div>
 
-                            <fieldset id="sbCharFactsSection" class="sb-block sb-sheet-col-6 sb-section">
-                                <legend class="sb-block-title">From your writing</legend>
+                            <div id="sbCharFactsSection" class="sb-block sb-sheet-col-6">
+                                <h3 class="sb-block-title">From your writing</h3>
                                 <div id="sbCharFactsMount"></div>
-                            </fieldset>
+                            </div>
 
-                            <fieldset class="sb-block sb-sheet-col-6 sb-section">
-                                <legend class="sb-block-title">Story presence</legend>
+                            <div class="sb-block sb-sheet-col-6">
+                                <h3 class="sb-block-title">Story presence</h3>
                                 <div class="sb-field-grid">
                                     <div class="sb-field sb-field-full">
                                         <label for="sbTags">Groups & tags</label>
@@ -319,14 +319,14 @@
                                         <p class="sb-field-hint">Plot Doctor uses this so deceased characters aren't flagged in later chapters.</p>
                                     </div>
                                 </div>
-                            </fieldset>
+                            </div>
 
-                            <fieldset class="sb-block sb-sheet-col-12 sb-section">
-                                <legend class="sb-block-title">Backstory & notes</legend>
+                            <div class="sb-block sb-sheet-col-12">
+                                <h3 class="sb-block-title">Backstory & notes</h3>
                                 <div class="sb-field">
                                     <textarea id="sbNotes" rows="6" placeholder="Secrets, motivation, voice, arc…"></textarea>
                                 </div>
-                            </fieldset>
+                            </div>
                         </div>
                     </div>
                 </div>
