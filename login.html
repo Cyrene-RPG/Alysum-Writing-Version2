@@ -344,8 +344,8 @@ function authMessage(message) {
         return "Check your email and confirm your account before logging in.";
     }
 
-    if (lower.includes("network")) {
-        return "Network error. Check your connection and try again.";
+    if (lower.includes("network") || lower.includes("failed to fetch")) {
+        return "Cannot reach Alysum servers. The live site may still point at the old deleted Supabase project — redeploy the updated Supabase config. Otherwise check your connection.";
     }
 
     return message;
