@@ -252,11 +252,13 @@ export async function mountStoryBiblePage(opts) {
 
     function openDrawer() {
         editorDrawer?.classList.remove("hidden");
+        bookView?.classList.add("sb-editing");
         document.body.classList.add("sb-drawer-open");
     }
 
     function closeDrawer() {
         editorDrawer?.classList.add("hidden");
+        bookView?.classList.remove("sb-editing");
         document.body.classList.remove("sb-drawer-open");
     }
 

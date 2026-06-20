@@ -20,7 +20,7 @@
     <link rel="stylesheet" href="css/gradient-themes.css?v=4" />
     <link rel="stylesheet" href="css/magic-codex.css?v=7" />
     <link rel="stylesheet" href="css/story-bible.css?v=9" />
-    <link rel="stylesheet" href="css/story-bible-v9.css?v=1" />
+    <link rel="stylesheet" href="css/story-bible-v9.css?v=2" />
     <script src="js/gradient-theme-sync.js" defer></script>
 </head>
 <body class="mc-page mc-bible">
@@ -209,128 +209,128 @@
                         </section>
                     </div>
                 </div>
-            </section>
-        </div>
-    </div>
 
-    <!-- Editor drawer -->
-    <div id="sbEditorDrawer" class="sb-drawer hidden" role="dialog" aria-modal="true" aria-labelledby="sbFormTitle">
-        <div class="sb-drawer-backdrop" id="sbDrawerBackdrop"></div>
-        <div class="sb-drawer-panel">
-            <header class="sb-drawer-head">
-                <div>
-                    <h2 id="sbFormTitle">Character</h2>
-                    <span id="sbDirty" class="sb-dirty">Unsaved changes</span>
-                </div>
-                <button type="button" class="sb-drawer-close" id="sbDrawerClose" aria-label="Close">×</button>
-            </header>
-            <div id="sbEntryHero" class="sb-entry-hero hidden"></div>
-            <div class="sb-drawer-body sb-sections">
-                <fieldset class="sb-section">
-                    <legend>Who they are</legend>
-                    <div class="sb-field-grid">
-                        <div class="sb-field sb-field-full">
-                            <label for="sbName" id="sbLabelName">Name</label>
-                            <input id="sbName" type="text" autocomplete="off" placeholder="Full name" />
-                        </div>
-                        <div class="sb-field sb-field-full">
-                            <label for="sbAliases" id="sbLabelAliases">Also called</label>
-                            <input id="sbAliases" type="text" autocomplete="off" placeholder="Nicknames, titles — comma separated" />
-                        </div>
-                        <div id="sbFormCharIdentity" class="sb-field-full">
-                            <div class="sb-field-grid">
-                                <div class="sb-field">
-                                    <label for="sbPronouns">Pronouns</label>
-                                    <input id="sbPronouns" list="sbPronounList" type="text" autocomplete="off" placeholder="she/her" />
-                                    <datalist id="sbPronounList">
-                                        <option value="she/her"></option>
-                                        <option value="he/him"></option>
-                                        <option value="they/them"></option>
-                                        <option value="it/its"></option>
-                                    </datalist>
-                                </div>
-                                <div class="sb-field">
-                                    <label for="sbCharStatus">Alive or deceased?</label>
-                                    <select id="sbCharStatus">
-                                        <option value="alive">Alive</option>
-                                        <option value="deceased">Deceased</option>
-                                        <option value="unknown">Unknown</option>
-                                    </select>
-                                </div>
+                <!-- Editor pane: split column on desktop, overlay on mobile -->
+                <aside id="sbEditorDrawer" class="sb-editor-pane hidden" aria-label="Edit entry">
+                    <div class="sb-drawer-backdrop" id="sbDrawerBackdrop"></div>
+                    <div class="sb-drawer-panel">
+                        <header class="sb-drawer-head">
+                            <div>
+                                <h2 id="sbFormTitle">Character</h2>
+                                <span id="sbDirty" class="sb-dirty">Unsaved changes</span>
                             </div>
-                        </div>
-                        <div id="sbFormPlaceFields" class="sb-field sb-field-full hidden">
-                            <label for="sbPlaceKind">Type of place</label>
-                            <select id="sbPlaceKind">
-                                <option value="">Pick one…</option>
-                                <option value="city">City</option>
-                                <option value="town">Town</option>
-                                <option value="village">Village</option>
-                                <option value="region">Region / state</option>
-                                <option value="country">Country</option>
-                                <option value="building">Building</option>
-                                <option value="landmark">Landmark</option>
-                                <option value="fictional">Fictional place</option>
-                                <option value="world">World / plane</option>
-                                <option value="other">Other</option>
-                            </select>
-                        </div>
-                        <div id="sbFormPlaceParent" class="sb-field sb-field-full hidden">
-                            <label for="sbPlaceParent">Located inside / near</label>
-                            <input id="sbPlaceParent" type="text" autocomplete="off" placeholder="e.g. France, Northern Realm…" />
-                        </div>
-                    </div>
-                </fieldset>
+                            <button type="button" class="sb-drawer-close" id="sbDrawerClose" aria-label="Close">×</button>
+                        </header>
+                        <div id="sbEntryHero" class="sb-entry-hero hidden"></div>
+                        <div class="sb-drawer-body sb-sections">
+                            <fieldset class="sb-section">
+                                <legend>Who they are</legend>
+                                <div class="sb-field-grid">
+                                    <div class="sb-field sb-field-full">
+                                        <label for="sbName" id="sbLabelName">Name</label>
+                                        <input id="sbName" type="text" autocomplete="off" placeholder="Full name" />
+                                    </div>
+                                    <div class="sb-field sb-field-full">
+                                        <label for="sbAliases" id="sbLabelAliases">Also called</label>
+                                        <input id="sbAliases" type="text" autocomplete="off" placeholder="Nicknames, titles — comma separated" />
+                                    </div>
+                                    <div id="sbFormCharIdentity" class="sb-field-full">
+                                        <div class="sb-field-grid">
+                                            <div class="sb-field">
+                                                <label for="sbPronouns">Pronouns</label>
+                                                <input id="sbPronouns" list="sbPronounList" type="text" autocomplete="off" placeholder="she/her" />
+                                                <datalist id="sbPronounList">
+                                                    <option value="she/her"></option>
+                                                    <option value="he/him"></option>
+                                                    <option value="they/them"></option>
+                                                    <option value="it/its"></option>
+                                                </datalist>
+                                            </div>
+                                            <div class="sb-field">
+                                                <label for="sbCharStatus">Alive or deceased?</label>
+                                                <select id="sbCharStatus">
+                                                    <option value="alive">Alive</option>
+                                                    <option value="deceased">Deceased</option>
+                                                    <option value="unknown">Unknown</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div id="sbFormPlaceFields" class="sb-field sb-field-full hidden">
+                                        <label for="sbPlaceKind">Type of place</label>
+                                        <select id="sbPlaceKind">
+                                            <option value="">Pick one…</option>
+                                            <option value="city">City</option>
+                                            <option value="town">Town</option>
+                                            <option value="village">Village</option>
+                                            <option value="region">Region / state</option>
+                                            <option value="country">Country</option>
+                                            <option value="building">Building</option>
+                                            <option value="landmark">Landmark</option>
+                                            <option value="fictional">Fictional place</option>
+                                            <option value="world">World / plane</option>
+                                            <option value="other">Other</option>
+                                        </select>
+                                    </div>
+                                    <div id="sbFormPlaceParent" class="sb-field sb-field-full hidden">
+                                        <label for="sbPlaceParent">Located inside / near</label>
+                                        <input id="sbPlaceParent" type="text" autocomplete="off" placeholder="e.g. France, Northern Realm…" />
+                                    </div>
+                                </div>
+                            </fieldset>
 
-                <fieldset id="sbFormCharFields" class="sb-section">
-                    <legend>How they look</legend>
-                    <p class="sb-field-hint">Simple words work best — e.g. <em>blue</em>, <em>tall</em>, <em>dark brown</em></p>
-                    <div class="sb-field-grid sb-field-grid-3">
-                        <div class="sb-field"><label for="sbAge">Age</label><input id="sbAge" type="text" placeholder="32" autocomplete="off" /></div>
-                        <div class="sb-field"><label for="sbEyes">Eyes</label><input id="sbEyes" type="text" placeholder="blue" autocomplete="off" /></div>
-                        <div class="sb-field"><label for="sbHair">Hair</label><input id="sbHair" type="text" placeholder="dark brown" autocomplete="off" /></div>
-                        <div class="sb-field"><label for="sbHeight">Height</label><input id="sbHeight" type="text" placeholder="tall" autocomplete="off" /></div>
-                        <div class="sb-field"><label for="sbSkin">Skin</label><input id="sbSkin" type="text" placeholder="olive" autocomplete="off" /></div>
-                        <div class="sb-field"><label for="sbBuild">Build</label><input id="sbBuild" type="text" placeholder="slim" autocomplete="off" /></div>
-                        <div class="sb-field sb-field-full"><label for="sbDistinctive">Stand-out features</label><input id="sbDistinctive" type="text" placeholder="Scar, accent, habit…" autocomplete="off" /></div>
-                    </div>
-                </fieldset>
+                            <fieldset id="sbFormCharFields" class="sb-section">
+                                <legend>How they look</legend>
+                                <p class="sb-field-hint">Simple words work best — e.g. <em>blue</em>, <em>tall</em>, <em>dark brown</em></p>
+                                <div class="sb-field-grid sb-field-grid-3">
+                                    <div class="sb-field"><label for="sbAge">Age</label><input id="sbAge" type="text" placeholder="32" autocomplete="off" /></div>
+                                    <div class="sb-field"><label for="sbEyes">Eyes</label><input id="sbEyes" type="text" placeholder="blue" autocomplete="off" /></div>
+                                    <div class="sb-field"><label for="sbHair">Hair</label><input id="sbHair" type="text" placeholder="dark brown" autocomplete="off" /></div>
+                                    <div class="sb-field"><label for="sbHeight">Height</label><input id="sbHeight" type="text" placeholder="tall" autocomplete="off" /></div>
+                                    <div class="sb-field"><label for="sbSkin">Skin</label><input id="sbSkin" type="text" placeholder="olive" autocomplete="off" /></div>
+                                    <div class="sb-field"><label for="sbBuild">Build</label><input id="sbBuild" type="text" placeholder="slim" autocomplete="off" /></div>
+                                    <div class="sb-field sb-field-full"><label for="sbDistinctive">Stand-out features</label><input id="sbDistinctive" type="text" placeholder="Scar, accent, habit…" autocomplete="off" /></div>
+                                </div>
+                            </fieldset>
 
-                <fieldset id="sbCharFactsSection" class="sb-section">
-                    <legend>Details from your writing</legend>
-                    <div id="sbCharFactsMount"></div>
-                </fieldset>
+                            <fieldset id="sbCharFactsSection" class="sb-section">
+                                <legend>Details from your writing</legend>
+                                <div id="sbCharFactsMount"></div>
+                            </fieldset>
 
-                <fieldset class="sb-section">
-                    <legend>When they appear</legend>
-                    <div class="sb-field-grid">
-                        <div class="sb-field sb-field-full">
-                            <label for="sbTags">Groups & tags</label>
-                            <input id="sbTags" type="text" autocomplete="off" placeholder="POV, villain, royal court…" />
-                        </div>
-                        <div class="sb-field sb-field-full">
-                            <label for="sbIntroduced">First appears in</label>
-                            <select id="sbIntroduced"></select>
-                        </div>
-                        <div id="sbFormDeceasedField" class="sb-field sb-field-full hidden">
-                            <label for="sbDeceased">Died in chapter</label>
-                            <select id="sbDeceased"></select>
-                            <p class="sb-field-hint">Needed so Plot Doctor knows not to flag their dialogue later.</p>
-                        </div>
-                    </div>
-                </fieldset>
+                            <fieldset class="sb-section">
+                                <legend>When they appear</legend>
+                                <div class="sb-field-grid">
+                                    <div class="sb-field sb-field-full">
+                                        <label for="sbTags">Groups & tags</label>
+                                        <input id="sbTags" type="text" autocomplete="off" placeholder="POV, villain, royal court…" />
+                                    </div>
+                                    <div class="sb-field sb-field-full">
+                                        <label for="sbIntroduced">First appears in</label>
+                                        <select id="sbIntroduced"></select>
+                                    </div>
+                                    <div id="sbFormDeceasedField" class="sb-field sb-field-full hidden">
+                                        <label for="sbDeceased">Died in chapter</label>
+                                        <select id="sbDeceased"></select>
+                                        <p class="sb-field-hint">Needed so Plot Doctor knows not to flag their dialogue later.</p>
+                                    </div>
+                                </div>
+                            </fieldset>
 
-                <fieldset class="sb-section">
-                    <legend>Backstory & notes</legend>
-                    <div class="sb-field">
-                        <textarea id="sbNotes" rows="5" placeholder="Secrets, motivation, voice, arc…"></textarea>
+                            <fieldset class="sb-section">
+                                <legend>Backstory & notes</legend>
+                                <div class="sb-field">
+                                    <textarea id="sbNotes" rows="5" placeholder="Secrets, motivation, voice, arc…"></textarea>
+                                </div>
+                            </fieldset>
+                        </div>
+                        <footer class="sb-drawer-foot">
+                            <button type="button" class="sb-save" id="sbSaveChar">Save</button>
+                            <button type="button" class="sb-del" id="sbDeleteChar">Delete</button>
+                        </footer>
                     </div>
-                </fieldset>
-            </div>
-            <footer class="sb-drawer-foot">
-                <button type="button" class="sb-save" id="sbSaveChar">Save</button>
-                <button type="button" class="sb-del" id="sbDeleteChar">Delete</button>
-            </footer>
+                </aside>
+            </section>
         </div>
     </div>
 
