@@ -1868,7 +1868,8 @@
             const user = udata?.user;
             if (!user) return;
 
-            const patch = name ? { display_name: name } : { display_name: null };
+            const fallbackName = String(handleField.textContent || "").replace(/^@/, "") || "user";
+            const patch = { display_name: name || fallbackName };
             const { error } = await supabase.from("users").update(patch).eq("id", user.id);
             if (error) throw error;
             const { error: metaErr } = await supabase.auth.updateUser({ data: { display_name: name || null } });

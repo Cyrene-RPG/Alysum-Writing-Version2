@@ -61,7 +61,6 @@ const APP_SHELL = [
   'js/story-bible-fact-rules.js',
   'js/story-bible-new-page.js',
   'story-bible.html',
-  'story-bible-new.html',
   'story-bible-legacy.html',
   'Story-Bible-New.html'
 ];

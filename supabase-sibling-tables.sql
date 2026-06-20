@@ -192,6 +192,19 @@ CREATE POLICY "notifications_insert_beta_share_reader" ON public.notifications
     AND coalesce(data->>'readerUid', '') = (auth.uid())::text
   );
 
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.beta_shares_index TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.prompt_entries TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.story_bible_characters TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.story_bible_places TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.character_profile_sheets TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.worldbuilding_workbooks TO authenticated;
+
+DROP POLICY IF EXISTS "notifications_update_beta_share_reader" ON public.notifications;
+CREATE POLICY "notifications_update_beta_share_reader" ON public.notifications
+  FOR UPDATE TO authenticated
+  USING (coalesce(data->>'readerUid', '') = (auth.uid())::text)
+  WITH CHECK (coalesce(data->>'readerUid', '') = (auth.uid())::text);
+
 -- ---------------------------------------------------------------------------
 -- Reader engagement (read.html, author-dashboard.html, library.html, index)
 -- Was Firestore: library/{bookId}/comments, library/{bookId}/likes, reads.

@@ -1,4 +1,7 @@
 {
+  "rewrites": [
+    { "source": "/story-bible-new.html", "destination": "/Story-Bible-New.html" }
+  ],
   "headers": [
     {
       "source": "/firebase.js",
