@@ -1,5 +1,20 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+/** Deleted Supabase project — purge stale browser sessions so refresh does not hit a dead domain. */
+const DEAD_SUPABASE_PROJECT = "tiqmhozzxhiydjnyuuaw";
+if (typeof window !== "undefined" && window.localStorage) {
+    try {
+        for (let i = localStorage.length - 1; i >= 0; i--) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith(`sb-${DEAD_SUPABASE_PROJECT}`)) {
+                localStorage.removeItem(key);
+            }
+        }
+    } catch {
+        /* ignore */
+    }
+}
+
 const supabaseUrl = "https://jrfxgpkpbacajhcwimgz.supabase.co";
 const supabaseKey = "sb_publishable_FnVMe0O37DKb87PCYdg6-g_DbI28pcE";
 

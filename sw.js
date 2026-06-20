@@ -8,7 +8,7 @@
  * Bump SW_VERSION when shipping breaking shell changes to force a refresh.
  */
 
-const SW_VERSION = 'v1.0.60';
+const SW_VERSION = 'v1.0.61';
 const SHELL_CACHE = `alysum-shell-${SW_VERSION}`;
 const ASSET_CACHE = `alysum-assets-${SW_VERSION}`;
 
@@ -107,6 +107,8 @@ function isHtmlRequest(request) {
 
 function isCacheableAsset(url) {
   if (url.origin !== self.location.origin) return false;
+  // Never cache Supabase client config — must update immediately after project migration.
+  if (url.pathname === '/firebase.js' || url.pathname.endsWith('/firebase.js')) return false;
   return /\.(?:css|js|mjs|png|jpg|jpeg|gif|webp|svg|ico|woff2?|ttf|otf|eot|json|webmanifest)$/i
     .test(url.pathname);
 }

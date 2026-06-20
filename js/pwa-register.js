@@ -9,6 +9,17 @@
 (function () {
   'use strict';
 
+  // Drop auth tokens for the deleted Supabase project before any client loads.
+  (function purgeLegacySupabaseAuth() {
+    const dead = 'tiqmhozzxhiydjnyuuaw';
+    try {
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('sb-' + dead)) localStorage.removeItem(key);
+      }
+    } catch (_) {}
+  })();
+
   const isSecure = location.protocol === 'https:' ||
                    location.hostname === 'localhost' ||
                    location.hostname === '127.0.0.1';

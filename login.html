@@ -13,6 +13,17 @@
     <link rel="apple-touch-icon" href="Alysum-3.png">
     <link rel="apple-touch-icon" sizes="180x180" href="Alysum-3.png">
     <script src="js/pwa-register.js" defer></script>
+    <script>
+    (function () {
+        var dead = "tiqmhozzxhiydjnyuuaw";
+        try {
+            for (var i = localStorage.length - 1; i >= 0; i--) {
+                var key = localStorage.key(i);
+                if (key && key.indexOf("sb-" + dead) === 0) localStorage.removeItem(key);
+            }
+        } catch (e) {}
+    })();
+    </script>
     <!-- ALYSUM:PWA:END -->
     <!-- ALYSUM:ANALYTICS:START -->
     <script type="module" src="js/vercel-analytics.js"></script>
@@ -273,7 +284,7 @@
 </div>
 
 <script type="module">
-import { supabase } from "./firebase.js";
+import { supabase } from "./firebase.js?v=jrfxg";
 import { homeUrlForUserData, WRITER_HOME_URL } from "./js/account-mode.js?v=1";
 import {
     authRedirectUrl,
