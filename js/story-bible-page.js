@@ -34,6 +34,15 @@ import {
     buildCharacterDraftsFromScan
 } from "./story-bible-extract.js?v=1";
 import { suggestAppearanceFills, applyAppearanceSuggestions } from "./story-bible-enrich.js?v=2";
+import {
+    escapeHtml,
+    avatarGradient,
+    getInitials,
+    bookCoverGradient,
+    placeKindIcon,
+    statusLabel,
+    normalizeText
+} from "./story-bible-utils.js?v=1";
 
 const SB_TAB_STORAGE_KEY = "alysum-story-bible-tab";
 
@@ -117,7 +126,9 @@ function emptyPlace() {
  * @param {HTMLElement} [opts.scanDrawerSummary]
  * @param {string} [opts.hubLinkPath]
  * @param {(data: { characters: object[], places: object[], chapterOptions: object[], selectedCharId: string|null }) => void} [opts.onDataReload]
+ * @param {HTMLElement} [opts.entryHeroEl]
  * @param {(charId: string) => void} [opts.onCharacterSelect]
+ * @param {(view: string) => void} [opts.onViewRequest]
  */
 export async function mountStoryBiblePage(opts) {
     const {
@@ -164,8 +175,12 @@ export async function mountStoryBiblePage(opts) {
         scanDrawerSummary,
         hubLinkPath = "story-bible.html",
         onDataReload,
-        onCharacterSelect
+        onCharacterSelect,
+        onViewRequest,
+        entryHeroEl
     } = opts;
+
+    const detailPanel = document.querySelector(".sb-detail");
 
     const bookId = (new URLSearchParams(window.location.search).get("book") || "").trim();
 
@@ -226,6 +241,7 @@ export async function mountStoryBiblePage(opts) {
         actions?.classList.toggle("hidden", !hasSelection);
         if (formTitleEl) {
             if (!hasSelection) {
+                clearEntryHero();
                 formTitleEl.textContent =
                     bibleTab === "characters"
                         ? characters.length
@@ -249,12 +265,67 @@ export async function mountStoryBiblePage(opts) {
         return code ? `${label} failed (${code}). ${short}` : `${label} failed. ${short}`;
     }
 
-    function escapeHtml(s) {
-        return String(s)
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;");
+    function updateEntryHero(kind, record) {
+        if (!entryHeroEl) return;
+        const name = normalizeText(record?.name);
+        if (!name) {
+            entryHeroEl.classList.add("hidden");
+            entryHeroEl.setAttribute("aria-hidden", "true");
+            detailPanel?.classList.remove("has-hero");
+            return;
+        }
+        entryHeroEl.classList.remove("hidden");
+        entryHeroEl.setAttribute("aria-hidden", "false");
+        detailPanel?.classList.add("has-hero");
+
+        if (kind === "character") {
+            const st = statusLabel(record.status);
+            const app = record.appearance || {};
+            const chips = [
+                app.eyes && `Eyes: ${app.eyes}`,
+                app.hair && `Hair: ${app.hair}`,
+                app.height && `Height: ${app.height}`,
+                record.pronouns && record.pronouns
+            ].filter(Boolean);
+            const tags = (record.tags || []).slice(0, 4);
+            entryHeroEl.className = "sb-entry-hero";
+            entryHeroEl.innerHTML = `
+                <div class="sb-hero-avatar" style="background:${avatarGradient(name)}">${escapeHtml(getInitials(name))}</div>
+                <div class="sb-hero-meta">
+                    <h4>${escapeHtml(name)}</h4>
+                    <div class="sb-hero-badges">
+                        <span class="sb-hero-badge ${st.cls}">${escapeHtml(st.text)}</span>
+                        ${(record.aliases || []).slice(0, 2).map(a => `<span class="sb-hero-badge">${escapeHtml(a)}</span>`).join("")}
+                    </div>
+                    <div class="sb-hero-chips">
+                        ${chips.map(c => `<span class="sb-hero-chip">${escapeHtml(c)}</span>`).join("")}
+                        ${tags.map(t => `<span class="sb-hero-chip"><em>#</em>${escapeHtml(t)}</span>`).join("")}
+                    </div>
+                </div>`;
+        } else {
+            const placeKind = record.kind || "";
+            entryHeroEl.className = "sb-entry-hero is-place";
+            entryHeroEl.innerHTML = `
+                <div class="sb-hero-avatar is-place">${placeKindIcon(placeKind)}</div>
+                <div class="sb-hero-meta">
+                    <h4>${escapeHtml(name)}</h4>
+                    <div class="sb-hero-badges">
+                        ${placeKind ? `<span class="sb-hero-badge">${escapeHtml(placeKind)}</span>` : ""}
+                        ${record.parentPlace ? `<span class="sb-hero-badge">in ${escapeHtml(record.parentPlace)}</span>` : ""}
+                    </div>
+                    <div class="sb-hero-chips">
+                        ${(record.tags || []).slice(0, 5).map(t => `<span class="sb-hero-chip"><em>#</em>${escapeHtml(t)}</span>`).join("")}
+                    </div>
+                </div>`;
+        }
+    }
+
+    function clearEntryHero() {
+        if (!entryHeroEl) return;
+        entryHeroEl.classList.add("hidden");
+        entryHeroEl.setAttribute("aria-hidden", "true");
+        entryHeroEl.innerHTML = "";
+        detailPanel?.classList.remove("has-hero");
     }
 
     function formatUpdated(ms) {
@@ -287,15 +358,20 @@ export async function mountStoryBiblePage(opts) {
                     const card = document.createElement("article");
                     card.className = "sb-book-card";
                     card.innerHTML = `
-                        <h3>${escapeHtml(r.title)}</h3>
-                        <div class="sb-book-stats">
-                            <span><strong>${r.characterCount}</strong> characters</span>
-                            <span><strong>${r.placeCount ?? 0}</strong> places</span>
+                        <div class="sb-book-card-cover" style="background:${bookCoverGradient(r.title)}">
+                            <h3>${escapeHtml(r.title)}</h3>
                         </div>
-                        <div class="sb-book-stats sb-muted">${formatUpdated(r.updated)}</div>
-                        <div class="sb-book-actions">
-                            <a class="sb-btn sb-btn-ghost" href="${ed}">Editor</a>
-                            <a class="sb-btn sb-btn-primary" href="${open}">Open bible</a>
+                        <div class="sb-book-card-body">
+                            <div class="sb-book-card-metrics">
+                                <div class="sb-book-metric"><strong>${r.characterCount}</strong><span>Characters</span></div>
+                                <div class="sb-book-metric"><strong>${r.placeCount ?? 0}</strong><span>Places</span></div>
+                                <div class="sb-book-metric"><strong>${r.characterCount + (r.placeCount ?? 0)}</strong><span>Entries</span></div>
+                            </div>
+                            <div class="sb-book-stats sb-muted">Updated ${formatUpdated(r.updated)}</div>
+                            <div class="sb-book-actions">
+                                <a class="sb-btn sb-btn-ghost" href="${ed}">Editor</a>
+                                <a class="sb-btn sb-btn-primary" href="${open}">Open bible</a>
+                            </div>
                         </div>`;
                     bookGrid?.appendChild(card);
                 }
@@ -604,6 +680,7 @@ export async function mountStoryBiblePage(opts) {
         if (key && [...sel.options].some(o => o.value === key)) sel.value = key;
         else sel.value = "|";
         syncFormEmptyState();
+        updateEntryHero("character", c);
     }
 
     function fillPlaceForm(p) {
@@ -624,6 +701,7 @@ export async function mountStoryBiblePage(opts) {
         if (key && [...sel.options].some(o => o.value === key)) sel.value = key;
         else sel.value = "|";
         syncFormEmptyState();
+        updateEntryHero("place", p);
     }
 
     function renderCharList() {
@@ -652,12 +730,18 @@ export async function mountStoryBiblePage(opts) {
             dot.className = "sb-ready-dot " + (sc.ready ? "ok" : sc.score >= 3 ? "warn" : "bad");
             dot.title = sc.gaps.join(", ");
 
+            const avatar = document.createElement("span");
+            avatar.className = "sb-roster-avatar";
+            avatar.style.background = avatarGradient(name);
+            avatar.textContent = getInitials(name);
+
             const nameSpan = document.createElement("span");
             nameSpan.className = "sb-roster-name";
             nameSpan.textContent = name;
 
-            btn.appendChild(dot);
+            btn.appendChild(avatar);
             btn.appendChild(nameSpan);
+            btn.appendChild(dot);
             if (c.status === "deceased") {
                 const pill = document.createElement("span");
                 pill.className = "sb-status-pill";
@@ -692,9 +776,13 @@ export async function mountStoryBiblePage(opts) {
             btn.type = "button";
             btn.className = "sb-roster-item" + (p.id === selectedPlaceId ? " is-active" : "");
             btn.dataset.id = p.id;
+            const avatar = document.createElement("span");
+            avatar.className = "sb-roster-avatar is-place";
+            avatar.textContent = placeKindIcon(p.kind);
             const nameSpan = document.createElement("span");
             nameSpan.className = "sb-roster-name";
             nameSpan.textContent = label;
+            btn.appendChild(avatar);
             btn.appendChild(nameSpan);
             btn.addEventListener("click", () => void selectPlace(p.id));
             li.appendChild(btn);
@@ -710,6 +798,7 @@ export async function mountStoryBiblePage(opts) {
         const c = characters.find(x => x.id === id);
         if (!c) return;
         fillCharacterForm(c);
+        updateEntryHero("character", c);
         renderCharList();
         renderPlaceList();
         deleteCharBtn.disabled = false;
@@ -725,6 +814,7 @@ export async function mountStoryBiblePage(opts) {
         const p = places.find(x => x.id === id);
         if (!p) return;
         fillPlaceForm(p);
+        updateEntryHero("place", p);
         renderCharList();
         renderPlaceList();
         deleteCharBtn.disabled = false;
@@ -1385,10 +1475,36 @@ export async function mountStoryBiblePage(opts) {
     fields.name?.addEventListener("input", () => {
         if (formTitleEl && bibleTab === "characters") {
             formTitleEl.textContent = fields.name.value.trim() || "New character";
+            const c = characters.find(x => x.id === selectedCharId);
+            if (c) updateEntryHero("character", { ...c, name: fields.name.value });
         }
         if (formTitleEl && bibleTab === "places") {
             formTitleEl.textContent = fields.name.value.trim() || "New place";
+            const p = places.find(x => x.id === selectedPlaceId);
+            if (p) updateEntryHero("place", { ...p, name: fields.name.value });
         }
+    });
+
+    window.addEventListener("alysum-bible-navigate", async ev => {
+        const { view, tab, charId, placeId, newPlace } = ev.detail || {};
+        if (view) onViewRequest?.(view);
+        if (tab === "places") {
+            bibleTab = "places";
+            updateBibleTabChrome();
+            renderCharList();
+            renderPlaceList();
+        } else if (tab === "characters") {
+            bibleTab = "characters";
+            updateBibleTabChrome();
+            renderCharList();
+            renderPlaceList();
+        }
+        if (newPlace) {
+            newPlaceBtn?.click();
+            return;
+        }
+        if (charId) await selectCharacter(charId);
+        if (placeId) await selectPlace(placeId);
     });
 
     document.addEventListener("visibilitychange", () => {

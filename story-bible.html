@@ -19,7 +19,7 @@
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
     <link rel="stylesheet" href="css/gradient-themes.css?v=4" />
     <link rel="stylesheet" href="css/magic-codex.css?v=7" />
-    <link rel="stylesheet" href="css/story-bible.css?v=6" />
+    <link rel="stylesheet" href="css/story-bible.css?v=8" />
     <script src="js/gradient-theme-sync.js" defer></script>
 </head>
 <body class="mc-page mc-bible">
@@ -27,11 +27,11 @@
 
     <div class="sb-app">
         <header class="sb-hero">
-            <div>
+            <div class="sb-hero-copy">
                 <p class="sb-hero-brand">Continuity Codex</p>
                 <h1 class="sb-hero-title">Story Bible</h1>
                 <p class="sb-hero-sub">
-                    Characters, places, timeline, and relationships — synced to the cloud. Highlight text in the editor to extract canon; Plot Doctor flags contradictions while you write.
+                    Your living world encyclopedia — characters, places, canon facts, and relationship webs. Highlight text in the editor to extract lore; Plot Doctor flags contradictions while you write.
                 </p>
             </div>
             <nav class="sb-nav" aria-label="Site">
@@ -52,7 +52,10 @@
             <div id="sbStatusLine" class="sb-status-line" role="status" aria-live="polite"></div>
 
             <section id="sbHubView" class="sb-hub hidden">
-                <h2>Your bibles</h2>
+                <div class="sb-hub-head">
+                    <h2>Your world bibles</h2>
+                    <p class="sb-hub-desc">One continuity codex per book — cloud-synced across devices.</p>
+                </div>
                 <div id="sbBookGrid" class="sb-book-grid"></div>
             </section>
 
@@ -61,9 +64,15 @@
                     <a class="sb-btn sb-btn-ghost" href="story-bible.html">← All bibles</a>
                     <h2 id="sbBookTitle">…</h2>
                     <div class="sb-toolbar-stats" aria-label="Bible stats">
+                        <span class="sb-stat-pill"><strong id="sbStatChars">0</strong> chars</span>
+                        <span class="sb-stat-pill"><strong id="sbStatPlaces">0</strong> places</span>
                         <span class="sb-stat-pill"><strong id="sbStatFacts">0</strong> facts</span>
+                        <span class="sb-stat-pill sb-stat-ready"><strong id="sbStatReadiness">0%</strong> ready</span>
                     </div>
                     <div class="sb-toolbar-actions">
+                        <button type="button" class="sb-btn sb-btn-ghost sb-search-btn" id="sbSearchBtn" title="Search bible (Ctrl+K)">
+                            <span class="sb-search-icon" aria-hidden="true">⌕</span> Search <kbd class="sb-kbd">Ctrl K</kbd>
+                        </button>
                         <a class="sb-btn sb-btn-gold" id="sbOpenEditor" href="#">Editor</a>
                         <a class="sb-btn sb-btn-primary" id="sbOpenPlotDoctor" href="#">Plot Doctor</a>
                     </div>
@@ -72,20 +81,28 @@
                 <div id="sbConflictsBanner" class="sb-conflicts-banner hidden" role="alert" aria-live="polite"></div>
 
                 <nav class="sb-view-nav" aria-label="Bible views">
-                    <button type="button" class="sb-view-tab is-active" data-sb-view="codex">Codex</button>
+                    <button type="button" class="sb-view-tab is-active" data-sb-view="overview">Overview</button>
+                    <button type="button" class="sb-view-tab" data-sb-view="codex">Codex</button>
+                    <button type="button" class="sb-view-tab" data-sb-view="atlas">World Atlas</button>
                     <button type="button" class="sb-view-tab" data-sb-view="timeline">Timeline</button>
-                    <button type="button" class="sb-view-tab" data-sb-view="relationships">Relationships</button>
+                    <button type="button" class="sb-view-tab" data-sb-view="relationships">Relationship Web</button>
                     <button type="button" class="sb-view-tab" data-sb-view="extract">Extract Canon</button>
                 </nav>
 
-                <div id="sbViewCodex">
+                <div id="sbViewOverview" class="sb-view-panel">
+                    <div class="sb-panel sb-view-panel-inner sb-view-panel-flush">
+                        <div id="sbOverviewMount"></div>
+                    </div>
+                </div>
+
+                <div id="sbViewCodex" class="sb-view-panel hidden">
                     <div class="sb-workspace">
                         <div class="sb-panel sb-roster-panel">
                             <div class="sb-tabs" role="tablist" aria-label="Bible section">
                                 <button type="button" class="sb-tab is-active" id="sbTabChars" role="tab" aria-selected="true">Characters</button>
                                 <button type="button" class="sb-tab" id="sbTabPlaces" role="tab" aria-selected="false">Places</button>
                             </div>
-                            <input type="search" id="sbRosterSearch" class="sb-roster-search" placeholder="Search roster…" autocomplete="off" />
+                            <input type="search" id="sbRosterSearch" class="sb-roster-search" placeholder="Filter roster…" autocomplete="off" />
                             <div id="sbAsideChars" class="sb-aside-panel">
                                 <button type="button" class="sb-new-btn" id="sbNewChar">+ New character</button>
                                 <ul class="sb-roster-list" id="sbCharList" aria-label="Characters"></ul>
@@ -97,13 +114,14 @@
                         </div>
 
                         <div class="sb-panel sb-detail">
+                            <div id="sbEntryHero" class="sb-entry-hero hidden" aria-hidden="true"></div>
                             <div class="sb-form-header">
                                 <h3 id="sbFormTitle">Select an entry</h3>
                                 <span id="sbDirty" class="sb-dirty">Unsaved changes</span>
                             </div>
 
                             <div class="sb-sections">
-                                <fieldset class="sb-section">
+                                <fieldset class="sb-section sb-section-identity">
                                     <legend>Identity</legend>
                                     <div class="sb-field-grid">
                                         <div class="sb-field sb-field-full">
@@ -161,7 +179,7 @@
 
                                 <fieldset id="sbFormCharFields" class="sb-section">
                                     <legend>Appearance</legend>
-                                    <p class="sb-field-hint" style="margin: 0 0 12px">Use simple words Plot Doctor recognizes (e.g. blue, green, tall).</p>
+                                    <p class="sb-field-hint sb-appearance-hint">Use simple words Plot Doctor recognizes (e.g. blue, green, tall).</p>
                                     <div class="sb-field-grid sb-field-grid-3">
                                         <div class="sb-field">
                                             <label for="sbAge">Age</label>
@@ -285,18 +303,38 @@
                     </section>
                 </div>
 
+                <div id="sbViewAtlas" class="sb-view-panel hidden">
+                    <div class="sb-panel sb-view-panel-inner sb-view-panel-flush">
+                        <div id="sbAtlasMount"></div>
+                    </div>
+                </div>
+
                 <div id="sbViewTimeline" class="sb-view-panel hidden">
                     <div class="sb-panel sb-view-panel-inner">
-                        <h3 class="sb-view-title">Story timeline</h3>
-                        <p class="sb-view-desc">Character introductions, deaths, and extracted facts ordered by chapter.</p>
+                        <div class="sb-timeline-head">
+                            <div>
+                                <h3 class="sb-view-title">Story timeline</h3>
+                                <p class="sb-view-desc">Character introductions, deaths, and extracted facts ordered by chapter.</p>
+                            </div>
+                            <div class="sb-timeline-filters" id="sbTimelineFilters" role="group" aria-label="Filter timeline">
+                                <button type="button" class="sb-filter-chip is-active" data-tl-filter="all">All</button>
+                                <button type="button" class="sb-filter-chip" data-tl-filter="introduced">Introductions</button>
+                                <button type="button" class="sb-filter-chip" data-tl-filter="death">Deaths</button>
+                                <button type="button" class="sb-filter-chip" data-tl-filter="fact">Canon facts</button>
+                            </div>
+                        </div>
                         <div id="sbTimelineMount"></div>
                     </div>
                 </div>
 
                 <div id="sbViewRelationships" class="sb-view-panel hidden">
-                    <div class="sb-panel sb-view-panel-inner">
-                        <h3 class="sb-view-title">Relationship map</h3>
-                        <p class="sb-view-desc">Connections extracted from your manuscript — sisters, rivals, spouses, and more.</p>
+                    <div class="sb-panel sb-view-panel-inner sb-view-panel-flush">
+                        <div class="sb-rel-head">
+                            <div>
+                                <h3 class="sb-view-title">Relationship web</h3>
+                                <p class="sb-view-desc">Interactive map of bonds extracted from your manuscript — drag nodes, click to open codex entries.</p>
+                            </div>
+                        </div>
                         <div id="sbRelationshipsMount"></div>
                     </div>
                 </div>
@@ -348,9 +386,20 @@
         </div>
     </div>
 
+    <div id="sbCommandPalette" class="sb-cmd hidden" role="dialog" aria-modal="true" aria-label="Search bible">
+        <div class="sb-cmd-dialog">
+            <div class="sb-cmd-input-wrap">
+                <span class="sb-cmd-search-icon" aria-hidden="true">⌕</span>
+                <input id="sbCommandInput" type="search" placeholder="Search characters, places, canon facts…" autocomplete="off" />
+                <kbd class="sb-kbd">Esc</kbd>
+            </div>
+            <div id="sbCommandResults" class="sb-cmd-results"></div>
+        </div>
+    </div>
+
     <script type="module">
         import { supabase } from "./firebase.js";
-        import { mountUnifiedStoryBible } from "./js/story-bible-unified.js?v=2";
+        import { mountUnifiedStoryBible } from "./js/story-bible-unified.js?v=3";
         import { requireStudioSession } from "./js/studio-session.js?v=1";
         import { isStoryBibleUiEnabled, STORY_BIBLE_PREF_KEY, STORY_BIBLE_PREF_EVENT } from "./js/story-bible-prefs.js?v=1";
 
@@ -400,6 +449,7 @@
                     placeParentEl: document.getElementById("sbFormPlaceParent"),
                     charIdentityEl: document.getElementById("sbFormCharIdentity"),
                     deceasedFieldEl: document.getElementById("sbFormDeceasedField"),
+                    entryHeroEl: document.getElementById("sbEntryHero"),
                     formTitleEl: document.getElementById("sbFormTitle"),
                     dirtyEl: document.getElementById("sbDirty"),
                     healthBarEl: document.getElementById("sbHealthBar"),
