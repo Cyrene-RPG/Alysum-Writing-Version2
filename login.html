@@ -362,7 +362,8 @@ function authMessage(message) {
     return message;
 }
 
-const RESET_EMAIL_COOLDOWN_MS = 60 * 60 * 1000;
+/** Prevent accidental double-clicks; Supabase enforces real email rate limits. */
+const RESET_EMAIL_COOLDOWN_MS = 2 * 60 * 1000;
 const RESET_EMAIL_COOLDOWN_PREFIX = "alysum-reset-email-until:";
 
 function isAuthEmailRateLimitError(errorOrMessage) {
@@ -405,8 +406,12 @@ function markResetEmailSent(email) {
 }
 
 function resetEmailCooldownMessage(remainingMs) {
+    const seconds = Math.max(1, Math.ceil(remainingMs / 1000));
+    if (seconds <= 90) {
+        return `Please wait ${seconds} seconds before requesting another reset email.`;
+    }
     const minutes = Math.max(1, Math.ceil(remainingMs / 60000));
-    return `A reset email was sent recently. Wait about ${minutes} minute${minutes === 1 ? "" : "s"}, then try once. For help: alysum.support@gmail.com`;
+    return `Please wait about ${minutes} minute${minutes === 1 ? "" : "s"} before requesting another reset email.`;
 }
 
 function resetEmailMessage(errorOrMessage) {
@@ -418,9 +423,9 @@ function resetEmailMessage(errorOrMessage) {
         const secondsMatch = message.match(/after\s+(\d+)\s+seconds?/i);
         if (secondsMatch) {
             const seconds = Math.max(1, Number(secondsMatch[1]) || 60);
-            return `Supabase is rate-limiting auth emails (built-in mail allows about 2 per hour). Wait ${seconds} seconds and try once, or email alysum.support@gmail.com for a manual reset link.`;
+            return `Too many reset emails sent. Wait ${seconds} seconds and try again.`;
         }
-        return "Supabase auth email limit reached (about 2 emails/hour on the built-in mailer). Wait an hour, set up custom SMTP in your Supabase project, or email alysum.support@gmail.com for help.";
+        return "Too many reset emails sent. Wait a few minutes and try again, or email alysum.support@gmail.com for help.";
     }
 
     const message =
