@@ -220,6 +220,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON public.beta_shares_index TO authenticate
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.prompt_entries TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.story_bible_characters TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.story_bible_places TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.story_bible_facts TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.character_profile_sheets TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.worldbuilding_workbooks TO authenticated;
 

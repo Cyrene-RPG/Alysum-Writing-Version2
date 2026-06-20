@@ -816,7 +816,7 @@ export async function mountStoryBiblePage(opts) {
             console.error(e);
             if (isStoryBibleTableMissing(e)) {
                 setStatus(
-                    "Story Bible tables are missing in Supabase. Run supabase-sibling-tables.sql in the SQL editor, then refresh.",
+                    "Story Bible tables are missing in Supabase. Run recovery-audit/create-story-bible-tables.sql in the SQL editor, then hard-refresh.",
                     true
                 );
             } else {
