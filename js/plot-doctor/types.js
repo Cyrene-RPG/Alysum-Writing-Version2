@@ -33,7 +33,7 @@ export const PLOT_EVIDENCE_KIND = Object.freeze({
 /**
  * Engine identifier for an issue. Bumping the version effectively invalidates older
  * dedupe keys produced by previous logic.
- * @typedef {"attr_v1" | "namedrift_v1" | "deadspeaks_v1"} EngineId
+ * @typedef {"attr_v1" | "namedrift_v1" | "deadspeaks_v1" | "factconflicts_v1"} EngineId
  */
 
 /**

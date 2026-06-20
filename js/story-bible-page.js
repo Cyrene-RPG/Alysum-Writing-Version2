@@ -115,6 +115,9 @@ function emptyPlace() {
  * @param {HTMLElement} [opts.scanDrawerEl]
  * @param {HTMLButtonElement} [opts.scanDrawerClose]
  * @param {HTMLElement} [opts.scanDrawerSummary]
+ * @param {string} [opts.hubLinkPath]
+ * @param {(data: { characters: object[], places: object[], chapterOptions: object[], selectedCharId: string|null }) => void} [opts.onDataReload]
+ * @param {(charId: string) => void} [opts.onCharacterSelect]
  */
 export async function mountStoryBiblePage(opts) {
     const {
@@ -158,7 +161,10 @@ export async function mountStoryBiblePage(opts) {
         enrichResultsEl,
         scanDrawerEl,
         scanDrawerClose,
-        scanDrawerSummary
+        scanDrawerSummary,
+        hubLinkPath = "story-bible.html",
+        onDataReload,
+        onCharacterSelect
     } = opts;
 
     const bookId = (new URLSearchParams(window.location.search).get("book") || "").trim();
@@ -276,7 +282,7 @@ export async function mountStoryBiblePage(opts) {
                 }
             } else {
                 for (const r of rows) {
-                    const open = `story-bible.html?book=${encodeURIComponent(r.bookId)}`;
+                    const open = `${hubLinkPath}?book=${encodeURIComponent(r.bookId)}`;
                     const ed = `editor.html?book=${encodeURIComponent(r.bookId)}`;
                     const card = document.createElement("article");
                     card.className = "sb-book-card";
@@ -321,6 +327,17 @@ export async function mountStoryBiblePage(opts) {
     let selectedCharId = null;
     /** @type {string | null} */
     let selectedPlaceId = null;
+    /** @type {{ section: string, id: string, title: string, label: string }[]} */
+    let chapterOptions = [];
+
+    function notifyDataReload() {
+        onDataReload?.({
+            characters,
+            places,
+            chapterOptions,
+            selectedCharId
+        });
+    }
 
     function knownEntriesForScan() {
         return [...characters, ...places];
@@ -335,6 +352,7 @@ export async function mountStoryBiblePage(opts) {
         asideCharsEl?.classList.toggle("hidden", !isChar);
         asidePlacesEl?.classList.toggle("hidden", isChar);
         charFieldsEl?.classList.toggle("hidden", !isChar);
+        document.getElementById("sbCharFactsSection")?.classList.toggle("hidden", !isChar);
         charIdentityEl?.classList.toggle("hidden", !isChar);
         placeFieldsEl?.classList.toggle("hidden", isChar);
         placeParentEl?.classList.toggle("hidden", isChar);
@@ -696,6 +714,8 @@ export async function mountStoryBiblePage(opts) {
         renderPlaceList();
         deleteCharBtn.disabled = false;
         persistBibleTab();
+        onCharacterSelect?.(id);
+        notifyDataReload();
     }
 
     async function selectPlace(id) {
@@ -735,6 +755,7 @@ export async function mountStoryBiblePage(opts) {
             bookTitleEl.textContent = title;
             characters = charListResult;
             places = placeListResult;
+            chapterOptions = chapters;
 
             let savedTab = "characters";
             try {
@@ -790,6 +811,7 @@ export async function mountStoryBiblePage(opts) {
             setStatus("");
             updateHealthPanel();
             syncFormEmptyState();
+            notifyDataReload();
         } catch (e) {
             console.error(e);
             if (isStoryBibleTableMissing(e)) {
@@ -1373,6 +1395,10 @@ export async function mountStoryBiblePage(opts) {
         if (document.visibilityState === "hidden") {
             void persistCurrentEntryFromForm({ silent: true });
         }
+    });
+
+    window.addEventListener("alysum-bible-characters-changed", () => {
+        void reloadFromServer();
     });
 
     updateBibleTabChrome();

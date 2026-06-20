@@ -10,7 +10,11 @@ import {
   biblePlaceToFirestore,
 } from "./story-bible-api.js?v=6";
 import { stripHtmlForBibleScan } from "./story-bible-scan.js?v=6";
-import { listBooks, getBook, getStoryBibleRows, setStoryBibleRows } from "./local-studio-store.js?v=1";
+import { listBooks, getBook, getStoryBibleRows, setStoryBibleRows } from "./local-studio-store.js?v=2";
+import {
+  normalizeBibleFact,
+  generateBibleFactId,
+} from "./story-bible-facts-api.js?v=1";
 
 export async function listBibleCharacters(_supabase, _uid, bookId) {
   const { characters } = getStoryBibleRows();
@@ -29,15 +33,17 @@ export async function saveBibleCharacter(_supabase, _uid, bookId, character) {
   const row = { book_id: bookId, id, body: payload };
   if (ix >= 0) characters[ix] = row;
   else characters.push(row);
-  setStoryBibleRows(characters, places);
+  const { facts } = getStoryBibleRows();
+  setStoryBibleRows(characters, places, facts);
   return id;
 }
 
 export async function deleteBibleCharacter(_supabase, _uid, bookId, characterId) {
-  const { characters, places } = getStoryBibleRows();
+  const { characters, places, facts } = getStoryBibleRows();
   setStoryBibleRows(
     characters.filter((r) => !(r.book_id === bookId && r.id === characterId)),
-    places
+    places,
+    facts.filter((r) => !(r.book_id === bookId && r.character_id === characterId))
   );
 }
 
@@ -58,15 +64,17 @@ export async function saveBiblePlace(_supabase, _uid, bookId, place) {
   const row = { book_id: bookId, id, body: payload };
   if (ix >= 0) places[ix] = row;
   else places.push(row);
-  setStoryBibleRows(characters, places);
+  const { facts } = getStoryBibleRows();
+  setStoryBibleRows(characters, places, facts);
   return id;
 }
 
 export async function deleteBiblePlace(_supabase, _uid, bookId, placeId) {
-  const { characters, places } = getStoryBibleRows();
+  const { characters, places, facts } = getStoryBibleRows();
   setStoryBibleRows(
     characters,
-    places.filter((r) => !(r.book_id === bookId && r.id === placeId))
+    places.filter((r) => !(r.book_id === bookId && r.id === placeId)),
+    facts
   );
 }
 
@@ -153,4 +161,73 @@ export async function loadBookChaptersPlainForScan(_supabase, _uid, bookId) {
     });
   }
   return out;
+}
+
+export async function listBibleFacts(_supabase, _uid, bookId) {
+  const { facts } = getStoryBibleRows();
+  const list = facts
+    .filter((r) => r.book_id === bookId)
+    .map((r) =>
+      normalizeBibleFact(
+        {
+          book_id: bookId,
+          character_id: r.character_id,
+          category: r.category,
+          value: r.value,
+          source_chapter: r.source_chapter,
+          source_paragraph: r.source_paragraph,
+          source_text: r.source_text,
+          date_added: r.date_added,
+          updated: r.updated,
+        },
+        r.id
+      )
+    );
+  list.sort((a, b) => String(b.date_added).localeCompare(String(a.date_added)));
+  return list;
+}
+
+export async function saveBibleFact(_supabase, _uid, bookId, fact) {
+  const id = fact.id || generateBibleFactId();
+  const row = normalizeBibleFact({ ...fact, book_id: bookId }, id);
+  const { characters, places, facts } = getStoryBibleRows();
+  const ix = facts.findIndex((r) => r.book_id === bookId && r.id === id);
+  const stored = {
+    book_id: bookId,
+    id: row.id,
+    character_id: row.character_id,
+    category: row.category,
+    value: row.value,
+    source_chapter: row.source_chapter,
+    source_paragraph: row.source_paragraph,
+    source_text: row.source_text,
+    date_added: row.date_added,
+    updated: Date.now(),
+  };
+  if (ix >= 0) facts[ix] = stored;
+  else facts.push(stored);
+  setStoryBibleRows(characters, places, facts);
+  return id;
+}
+
+export async function deleteBibleFact(_supabase, _uid, bookId, factId) {
+  const { characters, places, facts } = getStoryBibleRows();
+  setStoryBibleRows(
+    characters,
+    places,
+    facts.filter((r) => !(r.book_id === bookId && r.id === factId))
+  );
+}
+
+export async function deleteBibleFactsForCharacter(_supabase, _uid, bookId, characterId) {
+  const { characters, places, facts } = getStoryBibleRows();
+  setStoryBibleRows(
+    characters,
+    places,
+    facts.filter((r) => !(r.book_id === bookId && r.character_id === characterId))
+  );
+}
+
+export async function countBibleFacts(_supabase, _uid, bookId) {
+  return getStoryBibleRows().facts.filter((r) => r.book_id === bookId).length;
 }

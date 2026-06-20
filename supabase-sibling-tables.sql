@@ -33,6 +33,25 @@ CREATE TABLE IF NOT EXISTS public.story_bible_places (
   PRIMARY KEY (user_id, book_id, id)
 );
 
+-- Story Bible canon facts (extracted from manuscript selections, cloud-synced)
+CREATE TABLE IF NOT EXISTS public.story_bible_facts (
+  user_id uuid NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE,
+  book_id text NOT NULL,
+  id text NOT NULL,
+  character_id text NOT NULL DEFAULT '',
+  category text NOT NULL DEFAULT '',
+  value text NOT NULL DEFAULT '',
+  source_chapter text NOT NULL DEFAULT '',
+  source_paragraph text NOT NULL DEFAULT '',
+  source_text text NOT NULL DEFAULT '',
+  date_added timestamptz NOT NULL DEFAULT now(),
+  updated bigint NOT NULL DEFAULT 0,
+  PRIMARY KEY (user_id, book_id, id)
+);
+
+CREATE INDEX IF NOT EXISTS story_bible_facts_character_idx
+  ON public.story_bible_facts (user_id, book_id, character_id);
+
 -- Worldbuilding encyclopedia (worldbuilding.html — was users/{uid}/worldbuilding/{sheetId})
 CREATE TABLE IF NOT EXISTS public.worldbuilding_encyclopedia (
   user_id uuid NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE,
@@ -109,6 +128,7 @@ CREATE TABLE IF NOT EXISTS public.notebook_vault (
 
 ALTER TABLE public.story_bible_characters ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.story_bible_places ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.story_bible_facts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.world_encyclopedias ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.encyclopedia_blobs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.worldbuilding_encyclopedia ENABLE ROW LEVEL SECURITY;
@@ -122,6 +142,10 @@ CREATE POLICY "story_bible_characters_own" ON public.story_bible_characters
 
 DROP POLICY IF EXISTS "story_bible_places_own" ON public.story_bible_places;
 CREATE POLICY "story_bible_places_own" ON public.story_bible_places
+  FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "story_bible_facts_own" ON public.story_bible_facts;
+CREATE POLICY "story_bible_facts_own" ON public.story_bible_facts
   FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 
 DROP POLICY IF EXISTS "world_encyclopedias_own" ON public.world_encyclopedias;

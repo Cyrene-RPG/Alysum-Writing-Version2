@@ -175,13 +175,15 @@ export function getStoryBibleRows() {
   return {
     characters: state.bibleCharacters || [],
     places: state.biblePlaces || [],
+    facts: state.bibleFacts || [],
   };
 }
 
-export function setStoryBibleRows(characters, places) {
+export function setStoryBibleRows(characters, places, facts) {
   const state = readState();
   state.bibleCharacters = characters;
   state.biblePlaces = places;
+  if (facts !== undefined) state.bibleFacts = facts;
   writeState(state);
 }
 

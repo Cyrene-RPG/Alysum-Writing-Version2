@@ -7,7 +7,7 @@ import { stripHtmlForBibleScan } from "./story-bible-scan.js?v=4";
 import { isLocalStudioUid } from "./studio-session.js?v=1";
 
 async function localBible() {
-    return import("./local-story-bible-backend.js?v=1");
+    return import("./local-story-bible-backend.js?v=2");
 }
 
 export const BIBLE_CHARACTERS = "bibleCharacters";

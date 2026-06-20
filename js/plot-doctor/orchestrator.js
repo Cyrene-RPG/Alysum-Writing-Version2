@@ -6,7 +6,8 @@
  */
 
 import { htmlToPlainText } from "./util/text.js?v=1";
-import { listBibleCharacters, listBiblePlaces, isStoryBibleTableMissing } from "../story-bible-api.js?v=9";
+import { listBibleCharacters, listBiblePlaces, isStoryBibleTableMissing } from "../story-bible-api.js?v=12";
+import { listBibleFacts, isStoryBibleFactsTableMissing } from "../story-bible-facts-api.js?v=1";
 import {
     listIssuesForBook,
     insertIssues,
@@ -21,6 +22,7 @@ import { readLocalIssues } from "./local-store.js?v=1";
 import { runAttributeDetector } from "./detectors/attribute.js?v=1";
 import { runNameDriftDetector } from "./detectors/name-drift.js?v=1";
 import { runDeadSpeaksDetector } from "./detectors/dead-speaks.js?v=1";
+import { runFactConflictDetector } from "./detectors/fact-conflicts.js?v=1";
 import { PLOT_STATUS, PLOT_CATEGORIES } from "./types.js?v=1";
 import { scoreBibleHealth } from "../story-bible-health.js?v=1";
 
@@ -127,19 +129,24 @@ export function createOrchestrator(opts) {
 
     async function loadBibleSnapshot(bookId) {
         const sess = getSession();
-        if (!sess?.uid) return { characters: [], places: [] };
-        const [characters, places] = await Promise.all([
+        if (!sess?.uid) return { characters: [], places: [], facts: [] };
+        const [characters, places, facts] = await Promise.all([
             listBibleCharacters(supabase, sess.uid, bookId),
-            listBiblePlaces(supabase, sess.uid, bookId)
+            listBiblePlaces(supabase, sess.uid, bookId),
+            listBibleFacts(supabase, sess.uid, bookId).catch(e => {
+                if (isStoryBibleFactsTableMissing(e)) return [];
+                throw e;
+            })
         ]);
-        return { characters, places };
+        return { characters, places, facts };
     }
 
     function runAllDetectors(scanInput) {
         const detectors = [
             { name: "attr", fn: runAttributeDetector },
             { name: "namedrift", fn: runNameDriftDetector },
-            { name: "deadspeaks", fn: runDeadSpeaksDetector }
+            { name: "deadspeaks", fn: runDeadSpeaksDetector },
+            { name: "factconflicts", fn: runFactConflictDetector }
         ];
         const out = [];
         for (const d of detectors) {
@@ -297,7 +304,12 @@ export function createOrchestrator(opts) {
                     console.warn("[plot-doctor] bible load failed, scanning manuscript only:", e);
                 }
             }
-            const fullInput = { ...scanInput, characters: bible.characters, places: bible.places };
+            const fullInput = {
+                ...scanInput,
+                characters: bible.characters,
+                places: bible.places,
+                facts: bible.facts || []
+            };
             state.bookId = ms.bookId;
             const newIssues = runAllDetectors(fullInput);
             const existing = await fetchExistingIssues(sess.uid, ms.bookId);
