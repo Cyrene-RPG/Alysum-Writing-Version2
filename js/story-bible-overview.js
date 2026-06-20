@@ -1,5 +1,5 @@
 /**
- * Story Bible home — friendly starting point with clear next steps.
+ * Story Bible home — dashboard with clear next steps.
  */
 
 import { escapeHtml, normalizeText, avatarGradient, getInitials } from "./story-bible-utils.js?v=1";
@@ -20,26 +20,26 @@ export function renderOverview(mount, ctx) {
     if (!characters.length) {
         nextSteps.push({
             icon: "👤",
-            title: "Add your cast",
-            desc: "Start with your main characters — name, look, and role.",
+            title: "Build your cast",
+            desc: "Add protagonists, antagonists, and side characters. Each gets a full profile sheet.",
             action: "characters",
-            label: "Go to Characters"
+            label: "Open Cast"
         });
     }
     if (!places.length && characters.length) {
         nextSteps.push({
             icon: "🗺",
             title: "Map your world",
-            desc: "Add cities, buildings, and regions where scenes happen.",
+            desc: "Catalogue cities, buildings, and regions. Link places together on the world map.",
             action: "places",
-            label: "Go to Places"
+            label: "Open World"
         });
     }
     if (characters.length && facts.length < characters.length) {
         nextSteps.push({
             icon: "✍",
             title: "Pull details from your draft",
-            desc: "Highlight a paragraph in the editor — we'll find hair color, relationships, and more.",
+            desc: "Highlight a paragraph in the Editor — eye color, relationships, and more appear here ready to save.",
             action: "import",
             label: "Import from manuscript"
         });
@@ -48,46 +48,47 @@ export function renderOverview(mount, ctx) {
         nextSteps.push({
             icon: "⚠",
             title: `${issueCount} story mismatch${issueCount === 1 ? "" : "es"}`,
-            desc: "Something in your bible contradicts itself. Worth a quick fix.",
+            desc: "Two details in your bible disagree. Open the character and pick which version is canon.",
             action: "characters",
-            label: "Review characters"
+            label: "Review cast"
         });
     }
     if (!nextSteps.length) {
         nextSteps.push({
             icon: "✓",
-            title: "Your bible looks solid",
-            desc: "Keep writing — Plot Doctor will flag new contradictions as you draft.",
-            action: "import",
-            label: "Import more details"
+            title: "Bible looks solid",
+            desc: "Keep writing — Plot Doctor flags new contradictions as you draft.",
+            action: "story",
+            label: "View timeline"
         });
     }
 
     const recentChars = [...characters]
         .filter(c => normalizeText(c.name))
-        .slice(0, 6);
+        .slice(0, 8);
 
     mount.innerHTML = `
-        <div class="sb-home">
+        <div class="sb-home-page">
             ${
                 isEmpty
-                    ? `<div class="sb-welcome-banner">
+                    ? `<div class="sb-home-hero">
                 <h2>Welcome to your Story Bible</h2>
-                <p>Think of this as a reference book for your novel — who's who, where things happen, and what stays true. Everything syncs to the cloud and helps Plot Doctor catch mistakes.</p>
+                <p>This is the reference book for your novel — who's who, where things happen, and what stays true. Everything syncs to the cloud and powers Plot Doctor while you write.</p>
             </div>`
-                    : `<div class="sb-home-summary">
-                <div class="sb-home-stat-row">
-                    <div class="sb-home-stat"><strong>${characters.length}</strong><span>Characters</span></div>
-                    <div class="sb-home-stat"><strong>${places.length}</strong><span>Places</span></div>
-                    <div class="sb-home-stat"><strong>${facts.length}</strong><span>Story details</span></div>
-                    <div class="sb-home-stat sb-home-stat-accent"><strong>${health.readinessPct}%</strong><span>Complete</span></div>
-                </div>
-                <p class="sb-home-health">${escapeHtml(plainHealthSummary(health))}</p>
+                    : `<div class="sb-home-hero">
+                <h2>${escapeHtml(characters.length ? `${characters.length} character${characters.length === 1 ? "" : "s"}` : "Your bible")}${places.length ? ` · ${places.length} place${places.length === 1 ? "" : "s"}` : ""}</h2>
+                <p>${escapeHtml(plainHealthSummary(health))}</p>
+            </div>
+            <div class="sb-home-metrics">
+                <div class="sb-home-metric"><strong>${characters.length}</strong><span>Characters</span></div>
+                <div class="sb-home-metric"><strong>${places.length}</strong><span>Places</span></div>
+                <div class="sb-home-metric"><strong>${facts.length}</strong><span>Canon facts</span></div>
+                <div class="sb-home-metric is-accent"><strong>${health.readinessPct}%</strong><span>Complete</span></div>
             </div>`
             }
 
             <section class="sb-home-section">
-                <h3 class="sb-home-heading">What to do next</h3>
+                <h3 class="sb-home-heading">Suggested next steps</h3>
                 <div class="sb-next-grid">${nextSteps
                     .slice(0, 3)
                     .map(
@@ -106,18 +107,18 @@ export function renderOverview(mount, ctx) {
             ${
                 recentChars.length
                     ? `<section class="sb-home-section">
-                <div class="sb-home-section-head">
-                    <h3 class="sb-home-heading">Your characters</h3>
-                    <button type="button" class="sb-text-link" data-sb-goto="characters">See all →</button>
+                <div class="sb-home-section-head" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+                    <h3 class="sb-home-heading" style="margin:0">Quick access</h3>
+                    <button type="button" class="sb-text-link" data-sb-goto="characters">All characters →</button>
                 </div>
-                <div class="sb-home-char-row">${recentChars
+                <div class="sb-home-char-grid">${recentChars
                     .map(c => {
                         const name = normalizeText(c.name);
                         const sc = scoreCharacter(c);
                         return `<button type="button" class="sb-home-char-chip" data-sb-char="${escapeHtml(c.id)}">
                         <span class="sb-home-char-av" style="background:${avatarGradient(name)}">${escapeHtml(getInitials(name))}</span>
                         <span>${escapeHtml(name)}</span>
-                        ${!sc.ready ? `<em class="sb-home-char-warn">Incomplete</em>` : ""}
+                        ${!sc.ready ? `<em class="sb-home-char-warn">Draft</em>` : ""}
                     </button>`;
                     })
                     .join("")}</div>
@@ -125,12 +126,12 @@ export function renderOverview(mount, ctx) {
                     : ""
             }
 
-            <section class="sb-home-section sb-home-help">
-                <h3 class="sb-home-heading">How this works</h3>
+            <section class="sb-home-section">
+                <h3 class="sb-home-heading">How it works</h3>
                 <ol class="sb-help-steps">
-                    <li><strong>Add people & places</strong> — build your reference here, or scan your manuscript to find names.</li>
-                    <li><strong>Import from writing</strong> — highlight text in the Editor, open Story Bible, and save discovered details.</li>
-                    <li><strong>Stay consistent</strong> — Plot Doctor reads this bible while you write and warns you about contradictions.</li>
+                    <li><strong>Cast & World</strong> — roster on the left, full profile sheet on the right. No pop-ups, no cramped panels.</li>
+                    <li><strong>Import while writing</strong> — highlight text in the Editor, open Story Bible, save discovered details.</li>
+                    <li><strong>Stay consistent</strong> — Plot Doctor reads this bible and warns you about contradictions.</li>
                 </ol>
             </section>
         </div>`;
@@ -155,7 +156,7 @@ export function renderOverview(mount, ctx) {
 }
 
 function plainHealthSummary(health) {
-    if (!health.characterCount) return "Add characters to get started.";
+    if (!health.characterCount) return "Start by adding characters to your cast.";
     if (health.readyCount === health.characterCount) {
         return "All characters have enough detail for consistency checks.";
     }

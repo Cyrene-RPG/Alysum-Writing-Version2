@@ -1,5 +1,5 @@
 /**
- * Character & place card grids — browse-first Story Bible UI.
+ * Character & place roster lists — codex master-detail UI.
  */
 
 import {
@@ -16,6 +16,15 @@ function appearanceLine(char) {
     const app = char.appearance || {};
     const parts = [app.hair, app.eyes, app.height].filter(v => normalizeText(v));
     return parts.slice(0, 2).join(" · ") || "";
+}
+
+function subtitleForCharacter(c) {
+    const parts = [];
+    if (c.pronouns) parts.push(c.pronouns);
+    const line = appearanceLine(c);
+    if (line) parts.push(line);
+    else if (c.notes) parts.push(String(c.notes).slice(0, 48));
+    return parts.join(" · ") || "Tap to add details";
 }
 
 /**
@@ -38,37 +47,31 @@ export function renderCharacterCards(mount, characters, selectedId, query = "") 
     if (!list.length) {
         mount.innerHTML = `
             <div class="sb-empty-state">
-                <div class="sb-empty-icon" aria-hidden="true">👤</div>
-                <h3>No characters yet</h3>
-                <p>Add the people in your story — protagonists, villains, side characters. You can also scan your manuscript to find names automatically.</p>
-                <button type="button" class="sb-btn sb-btn-primary" data-sb-action="new-char">Add your first character</button>
-                <button type="button" class="sb-btn sb-btn-ghost" data-sb-goto="import">Scan manuscript for names</button>
+                <h3>${q ? "No matches" : "No characters yet"}</h3>
+                <p>${q ? "Try a different search." : "Add your cast — protagonists, villains, anyone who matters."}</p>
+                ${q ? "" : `<button type="button" class="sb-btn sb-btn-primary" data-sb-action="new-char">+ New character</button>`}
             </div>`;
         wireEmptyActions(mount);
         return;
     }
 
-    mount.innerHTML = `<div class="sb-card-grid">${list
+    mount.innerHTML = list
         .map(c => {
             const name = normalizeText(c.name) || "Unnamed";
-            const sc = scoreCharacter(c);
             const st = statusLabel(c.status);
-            const line = appearanceLine(c) || (c.notes || "").slice(0, 80);
-            const tags = (c.tags || []).slice(0, 2);
-            return `<button type="button" class="sb-entity-card${c.id === selectedId ? " is-selected" : ""}" data-char-id="${escapeHtml(c.id)}">
-                <span class="sb-entity-avatar" style="background:${avatarGradient(name)}">${escapeHtml(getInitials(name))}</span>
-                <span class="sb-entity-body">
-                    <span class="sb-entity-name">${escapeHtml(name)}</span>
-                    ${line ? `<span class="sb-entity-desc">${escapeHtml(line)}${line.length >= 80 ? "…" : ""}</span>` : `<span class="sb-entity-desc sb-entity-desc-muted">Tap to add details</span>`}
-                    <span class="sb-entity-meta">
-                        <span class="sb-entity-badge ${st.cls}">${escapeHtml(st.text)}</span>
-                        ${tags.map(t => `<span class="sb-entity-tag">${escapeHtml(t)}</span>`).join("")}
-                        ${!sc.ready ? `<span class="sb-entity-tag sb-entity-tag-warn">Needs info</span>` : ""}
-                    </span>
+            const sub = subtitleForCharacter(c);
+            const sc = scoreCharacter(c);
+            return `<button type="button" class="sb-roster-row${c.id === selectedId ? " is-selected" : ""}" data-char-id="${escapeHtml(c.id)}">
+                <span class="sb-roster-av" style="background:${avatarGradient(name)}">${escapeHtml(getInitials(name))}</span>
+                <span class="sb-roster-info">
+                    <strong>${escapeHtml(name)}</strong>
+                    <span>${escapeHtml(sub)}</span>
                 </span>
+                <span class="sb-roster-badge ${st.cls}">${escapeHtml(st.text)}</span>
+                ${!sc.ready ? `<span class="sb-roster-badge" style="color:var(--sb-gold)">Draft</span>` : ""}
             </button>`;
         })
-        .join("")}</div>`;
+        .join("");
 
     mount.querySelectorAll("[data-char-id]").forEach(btn => {
         btn.addEventListener("click", () => {
@@ -101,29 +104,28 @@ export function renderPlaceCards(mount, places, selectedId, query = "") {
     if (!list.length) {
         mount.innerHTML = `
             <div class="sb-empty-state">
-                <div class="sb-empty-icon" aria-hidden="true">🗺</div>
-                <h3>No places yet</h3>
-                <p>Catalogue cities, buildings, regions — anywhere your story happens. Link places together to build a world map.</p>
-                <button type="button" class="sb-btn sb-btn-primary" data-sb-action="new-place">Add your first place</button>
+                <h3>${q ? "No matches" : "No places yet"}</h3>
+                <p>${q ? "Try a different search." : "Add cities, buildings, regions — anywhere your story happens."}</p>
+                ${q ? "" : `<button type="button" class="sb-btn sb-btn-primary" data-sb-action="new-place">+ New place</button>`}
             </div>`;
         wireEmptyActions(mount);
         return;
     }
 
-    mount.innerHTML = `<div class="sb-card-grid">${list
+    mount.innerHTML = list
         .map(p => {
             const name = normalizeText(p.name) || "Unnamed";
             const kind = p.kind || "";
-            const sub = [kind, p.parentPlace].filter(Boolean).join(" · ");
-            return `<button type="button" class="sb-entity-card sb-entity-card-place${p.id === selectedId ? " is-selected" : ""}" data-place-id="${escapeHtml(p.id)}">
-                <span class="sb-entity-avatar is-place">${placeKindIcon(kind)}</span>
-                <span class="sb-entity-body">
-                    <span class="sb-entity-name">${escapeHtml(name)}</span>
-                    ${sub ? `<span class="sb-entity-desc">${escapeHtml(sub)}</span>` : `<span class="sb-entity-desc sb-entity-desc-muted">Tap to add details</span>`}
+            const sub = [kind, p.parentPlace].filter(Boolean).join(" · ") || "Tap to add details";
+            return `<button type="button" class="sb-roster-row${p.id === selectedId ? " is-selected" : ""}" data-place-id="${escapeHtml(p.id)}">
+                <span class="sb-roster-av is-place">${placeKindIcon(kind)}</span>
+                <span class="sb-roster-info">
+                    <strong>${escapeHtml(name)}</strong>
+                    <span>${escapeHtml(sub)}</span>
                 </span>
             </button>`;
         })
-        .join("")}</div>`;
+        .join("");
 
     mount.querySelectorAll("[data-place-id]").forEach(btn => {
         btn.addEventListener("click", () => {

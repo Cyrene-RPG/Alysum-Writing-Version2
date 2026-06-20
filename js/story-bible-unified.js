@@ -2,7 +2,7 @@
  * Unified Story Bible — codex + overview + atlas + timeline + graph + extraction.
  */
 
-import { mountStoryBiblePage } from "./story-bible-page.js?v=25";
+import { mountStoryBiblePage } from "./story-bible-page.js?v=26";
 import { generateBibleCharacterId, saveBibleCharacter, normalizeBibleCharacter } from "./story-bible-api.js?v=12";
 import {
     listBibleFacts,
@@ -23,7 +23,7 @@ import {
 } from "./story-bible-continuity.js?v=1";
 import { extractCandidateFactsFromSelection, detectNameCandidates } from "./story-bible-fact-rules.js?v=4";
 import { escapeHtml, normalizeText } from "./story-bible-utils.js?v=1";
-import { renderOverview } from "./story-bible-overview.js?v=1";
+import { renderOverview } from "./story-bible-overview.js?v=2";
 import { renderWorldAtlas } from "./story-bible-atlas.js?v=1";
 import { mountRelationshipGraph } from "./story-bible-graph.js?v=1";
 import { mountCommandPalette } from "./story-bible-command-palette.js?v=1";
@@ -36,10 +36,10 @@ const VIEW_STORAGE_KEY = "alysum-story-bible-view";
 const VALID_VIEWS = ["home", "characters", "places", "story", "import"];
 const VIEW_HEADINGS = {
     home: "Home",
-    characters: "Characters",
-    places: "Places",
+    characters: "Cast",
+    places: "World",
     story: "Story",
-    import: "From manuscript"
+    import: "Import"
 };
 const LEGACY_VIEW_MAP = {
     overview: "home",

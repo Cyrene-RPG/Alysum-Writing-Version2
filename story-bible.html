@@ -20,7 +20,7 @@
     <link rel="stylesheet" href="css/gradient-themes.css?v=4" />
     <link rel="stylesheet" href="css/magic-codex.css?v=7" />
     <link rel="stylesheet" href="css/story-bible.css?v=9" />
-    <link rel="stylesheet" href="css/story-bible-v9.css?v=2" />
+    <link rel="stylesheet" href="css/story-bible-v10.css?v=1" />
     <script src="js/gradient-theme-sync.js" defer></script>
 </head>
 <body class="mc-page mc-bible">
@@ -48,84 +48,87 @@
         <div id="sbEnabledRoot">
             <div id="sbStatusLine" class="sb-status-line" role="status" aria-live="polite"></div>
 
-            <!-- Book workspace: sidebar app shell -->
-            <section id="sbBookView" class="sb-shell hidden">
-                <aside class="sb-sidebar" aria-label="Story Bible sections">
-                    <a class="sb-sidebar-back" href="story-bible.html">← All books</a>
-                    <div class="sb-sidebar-book">
-                        <h2 id="sbBookTitle" class="sb-sidebar-title">…</h2>
-                        <p class="sb-sidebar-meta" id="sbSidebarMeta">Loading…</p>
+            <!-- Book workspace: top nav + codex -->
+            <section id="sbBookView" class="sb-v10 hidden">
+                <header class="sb-appbar">
+                    <div class="sb-appbar-start">
+                        <a class="sb-appbar-back" href="story-bible.html">← All books</a>
+                        <div class="sb-appbar-book">
+                            <h2 id="sbBookTitle">…</h2>
+                            <span id="sbSidebarMeta">Loading…</span>
+                        </div>
                     </div>
-                    <nav class="sb-sidebar-nav">
-                        <button type="button" class="sb-nav-item is-active" data-sb-view="home">
-                            <span class="sb-nav-icon" aria-hidden="true">⌂</span>
-                            <span class="sb-nav-text"><strong>Home</strong><em>Start here</em></span>
-                        </button>
-                        <button type="button" class="sb-nav-item" data-sb-view="characters">
-                            <span class="sb-nav-icon" aria-hidden="true">👤</span>
-                            <span class="sb-nav-text"><strong>Characters</strong><em>People in your story</em></span>
-                        </button>
-                        <button type="button" class="sb-nav-item" data-sb-view="places">
-                            <span class="sb-nav-icon" aria-hidden="true">🗺</span>
-                            <span class="sb-nav-text"><strong>Places</strong><em>Locations & world</em></span>
-                        </button>
-                        <button type="button" class="sb-nav-item" data-sb-view="story">
-                            <span class="sb-nav-icon" aria-hidden="true">📅</span>
-                            <span class="sb-nav-text"><strong>Story</strong><em>Timeline & connections</em></span>
-                        </button>
-                        <button type="button" class="sb-nav-item" data-sb-view="import">
-                            <span class="sb-nav-icon" aria-hidden="true">✍</span>
-                            <span class="sb-nav-text"><strong>From manuscript</strong><em>Import while you write</em></span>
-                        </button>
+                    <nav class="sb-appnav" aria-label="Story Bible sections">
+                        <button type="button" class="sb-appnav-item is-active" data-sb-view="home">Home</button>
+                        <button type="button" class="sb-appnav-item" data-sb-view="characters">Cast</button>
+                        <button type="button" class="sb-appnav-item" data-sb-view="places">World</button>
+                        <button type="button" class="sb-appnav-item" data-sb-view="story">Story</button>
+                        <button type="button" class="sb-appnav-item" data-sb-view="import">Import</button>
                     </nav>
-                    <div class="sb-sidebar-foot">
-                        <a class="sb-sidebar-link" id="sbOpenEditor" href="#">Open Editor</a>
-                        <a class="sb-sidebar-link sb-sidebar-link-accent" id="sbOpenPlotDoctor" href="#">Plot Doctor</a>
+                    <div class="sb-appbar-end">
+                        <button type="button" class="sb-appbar-btn" id="sbSearchBtn" title="Search (Ctrl+K)">⌕ Search</button>
+                        <a class="sb-appbar-btn" id="sbOpenEditor" href="#">Editor</a>
+                        <a class="sb-appbar-btn sb-appbar-btn-accent" id="sbOpenPlotDoctor" href="#">Plot Doctor</a>
                     </div>
-                </aside>
+                </header>
 
-                <div class="sb-main">
-                    <header class="sb-topbar">
-                        <h1 id="sbViewHeading" class="sb-topbar-title">Home</h1>
-                        <button type="button" class="sb-topbar-search" id="sbSearchBtn" title="Search (Ctrl+K)">
-                            <span aria-hidden="true">⌕</span> Search
-                        </button>
-                    </header>
+                <div id="sbConflictsBanner" class="sb-conflicts-banner hidden" role="alert"></div>
 
-                    <div id="sbConflictsBanner" class="sb-conflicts-banner hidden" role="alert"></div>
+                <main class="sb-stage">
+                    <h1 id="sbViewHeading" class="visually-hidden">Home</h1>
 
-                    <div id="sbViewHome" class="sb-view-panel">
+                    <div id="sbViewHome" class="sb-view">
                         <div id="sbOverviewMount"></div>
                     </div>
 
-                    <div id="sbViewCharacters" class="sb-view-panel hidden">
-                        <div class="sb-browse-bar">
-                            <input type="search" id="sbRosterSearch" class="sb-browse-search" placeholder="Search characters…" autocomplete="off" />
-                            <button type="button" class="sb-btn sb-btn-primary" id="sbNewChar">+ Add character</button>
-                        </div>
-                        <div id="sbCharGrid"></div>
-                        <ul id="sbCharList" class="visually-hidden" aria-hidden="true"></ul>
-                    </div>
-
-                    <div id="sbViewPlaces" class="sb-view-panel hidden">
-                        <div class="sb-browse-bar">
-                            <input type="search" id="sbPlaceSearch" class="sb-browse-search" placeholder="Search places…" autocomplete="off" />
-                            <div class="sb-place-toggle" role="tablist">
-                                <button type="button" class="sb-place-toggle-btn is-active" data-place-mode="cards" role="tab">Cards</button>
-                                <button type="button" class="sb-place-toggle-btn" data-place-mode="map" role="tab">Map</button>
+                    <div id="sbViewCharacters" class="sb-view sb-codex hidden">
+                        <aside class="sb-roster" aria-label="Character roster">
+                            <header class="sb-roster-toolbar">
+                                <input type="search" id="sbRosterSearch" placeholder="Search cast…" autocomplete="off" />
+                                <button type="button" class="sb-roster-add" id="sbNewChar">+ New</button>
+                            </header>
+                            <div id="sbCharGrid" class="sb-roster-list"></div>
+                            <ul id="sbCharList" class="visually-hidden" aria-hidden="true"></ul>
+                        </aside>
+                        <section class="sb-sheet" id="sbCharSheet">
+                            <div id="sbCharDetailEmpty" class="sb-sheet-empty">
+                                <span class="sb-sheet-empty-icon" aria-hidden="true">👤</span>
+                                <h2>Your cast lives here</h2>
+                                <p>Select a character from the list, or create someone new. Their profile opens full-width — name, look, backstory, all in one place.</p>
+                                <button type="button" class="sb-btn sb-btn-primary" id="sbNewCharEmpty">+ Create character</button>
                             </div>
-                            <button type="button" class="sb-btn sb-btn-primary" id="sbNewPlace">+ Add place</button>
-                        </div>
-                        <div id="sbPlaceGrid"></div>
-                        <div id="sbAtlasMount" class="hidden"></div>
-                        <ul id="sbPlaceList" class="visually-hidden" aria-hidden="true"></ul>
+                        </section>
                     </div>
 
-                    <div id="sbViewStory" class="sb-view-panel hidden">
+                    <div id="sbViewPlaces" class="sb-view sb-codex hidden">
+                        <aside class="sb-roster sb-roster-places" aria-label="Place roster">
+                            <header class="sb-roster-toolbar">
+                                <input type="search" id="sbPlaceSearch" placeholder="Search places…" autocomplete="off" />
+                                <div class="sb-place-toggle" role="tablist">
+                                    <button type="button" class="sb-place-toggle-btn is-active" data-place-mode="cards" role="tab">List</button>
+                                    <button type="button" class="sb-place-toggle-btn" data-place-mode="map" role="tab">Map</button>
+                                </div>
+                                <button type="button" class="sb-roster-add" id="sbNewPlace">+ New</button>
+                            </header>
+                            <div id="sbPlaceGrid" class="sb-roster-list"></div>
+                            <ul id="sbPlaceList" class="visually-hidden" aria-hidden="true"></ul>
+                        </aside>
+                        <section class="sb-sheet" id="sbPlaceSheet">
+                            <div id="sbPlaceDetailEmpty" class="sb-sheet-empty">
+                                <span class="sb-sheet-empty-icon" aria-hidden="true">🗺</span>
+                                <h2>Build your world</h2>
+                                <p>Cities, buildings, regions — pick a place from the list or add a new location. Switch to Map view to see how places connect.</p>
+                                <button type="button" class="sb-btn sb-btn-primary" id="sbNewPlaceEmpty">+ Create place</button>
+                            </div>
+                            <div id="sbAtlasMount" class="sb-atlas-full hidden"></div>
+                        </section>
+                    </div>
+
+                    <div id="sbViewStory" class="sb-view sb-page-view sb-page-view-wide hidden">
                         <div id="sbStoryMount"></div>
                     </div>
 
-                    <div id="sbViewImport" class="sb-view-panel hidden">
+                    <div id="sbViewImport" class="sb-view sb-page-view hidden">
                         <div class="sb-import-page">
                             <header class="sb-page-intro">
                                 <h2 class="sb-page-title">Import from your manuscript</h2>
@@ -208,30 +211,31 @@
                             </div>
                         </section>
                     </div>
-                </div>
+                </main>
 
-                <!-- Editor pane: split column on desktop, overlay on mobile -->
-                <aside id="sbEditorDrawer" class="sb-editor-pane hidden" aria-label="Edit entry">
-                    <div class="sb-drawer-backdrop" id="sbDrawerBackdrop"></div>
-                    <div class="sb-drawer-panel">
-                        <header class="sb-drawer-head">
-                            <div>
-                                <h2 id="sbFormTitle">Character</h2>
-                                <span id="sbDirty" class="sb-dirty">Unsaved changes</span>
-                            </div>
-                            <button type="button" class="sb-drawer-close" id="sbDrawerClose" aria-label="Close">×</button>
-                        </header>
-                        <div id="sbEntryHero" class="sb-entry-hero hidden"></div>
-                        <div class="sb-drawer-body sb-sections">
-                            <fieldset class="sb-section">
-                                <legend>Who they are</legend>
+                <!-- Shared character/place sheet editor -->
+                <div id="sbEditorDrawer" class="sb-sheet-editor hidden" aria-label="Edit entry">
+                    <header class="sb-sheet-toolbar">
+                        <button type="button" class="sb-sheet-back" id="sbDrawerClose" aria-label="Back to list">← List</button>
+                        <span id="sbFormTitle" class="visually-hidden">Character</span>
+                        <span id="sbDirty" class="sb-dirty">Unsaved changes</span>
+                        <div class="sb-sheet-toolbar-actions">
+                            <button type="button" class="sb-del" id="sbDeleteChar">Delete</button>
+                            <button type="button" class="sb-save" id="sbSaveChar">Save</button>
+                        </div>
+                    </header>
+                    <div id="sbEntryHero" class="sb-entry-hero hidden"></div>
+                    <div class="sb-sheet-body sb-sections">
+                        <div class="sb-sheet-grid">
+                            <fieldset class="sb-block sb-sheet-col-12 sb-section">
+                                <legend class="sb-block-title">Identity</legend>
                                 <div class="sb-field-grid">
                                     <div class="sb-field sb-field-full">
                                         <label for="sbName" id="sbLabelName">Name</label>
                                         <input id="sbName" type="text" autocomplete="off" placeholder="Full name" />
                                     </div>
                                     <div class="sb-field sb-field-full">
-                                        <label for="sbAliases" id="sbLabelAliases">Also called</label>
+                                        <label for="sbAliases" id="sbLabelAliases">Also known as</label>
                                         <input id="sbAliases" type="text" autocomplete="off" placeholder="Nicknames, titles — comma separated" />
                                     </div>
                                     <div id="sbFormCharIdentity" class="sb-field-full">
@@ -247,7 +251,7 @@
                                                 </datalist>
                                             </div>
                                             <div class="sb-field">
-                                                <label for="sbCharStatus">Alive or deceased?</label>
+                                                <label for="sbCharStatus">Status</label>
                                                 <select id="sbCharStatus">
                                                     <option value="alive">Alive</option>
                                                     <option value="deceased">Deceased</option>
@@ -279,9 +283,9 @@
                                 </div>
                             </fieldset>
 
-                            <fieldset id="sbFormCharFields" class="sb-section">
-                                <legend>How they look</legend>
-                                <p class="sb-field-hint">Simple words work best — e.g. <em>blue</em>, <em>tall</em>, <em>dark brown</em></p>
+                            <fieldset id="sbFormCharFields" class="sb-block sb-sheet-col-12 sb-section">
+                                <legend class="sb-block-title">Appearance</legend>
+                                <p class="sb-field-hint">Short words work best — e.g. <em>blue eyes</em>, <em>tall</em>, <em>dark brown hair</em></p>
                                 <div class="sb-field-grid sb-field-grid-3">
                                     <div class="sb-field"><label for="sbAge">Age</label><input id="sbAge" type="text" placeholder="32" autocomplete="off" /></div>
                                     <div class="sb-field"><label for="sbEyes">Eyes</label><input id="sbEyes" type="text" placeholder="blue" autocomplete="off" /></div>
@@ -293,13 +297,13 @@
                                 </div>
                             </fieldset>
 
-                            <fieldset id="sbCharFactsSection" class="sb-section">
-                                <legend>Details from your writing</legend>
+                            <fieldset id="sbCharFactsSection" class="sb-block sb-sheet-col-6 sb-section">
+                                <legend class="sb-block-title">From your writing</legend>
                                 <div id="sbCharFactsMount"></div>
                             </fieldset>
 
-                            <fieldset class="sb-section">
-                                <legend>When they appear</legend>
+                            <fieldset class="sb-block sb-sheet-col-6 sb-section">
+                                <legend class="sb-block-title">Story presence</legend>
                                 <div class="sb-field-grid">
                                     <div class="sb-field sb-field-full">
                                         <label for="sbTags">Groups & tags</label>
@@ -312,24 +316,20 @@
                                     <div id="sbFormDeceasedField" class="sb-field sb-field-full hidden">
                                         <label for="sbDeceased">Died in chapter</label>
                                         <select id="sbDeceased"></select>
-                                        <p class="sb-field-hint">Needed so Plot Doctor knows not to flag their dialogue later.</p>
+                                        <p class="sb-field-hint">Plot Doctor uses this so deceased characters aren't flagged in later chapters.</p>
                                     </div>
                                 </div>
                             </fieldset>
 
-                            <fieldset class="sb-section">
-                                <legend>Backstory & notes</legend>
+                            <fieldset class="sb-block sb-sheet-col-12 sb-section">
+                                <legend class="sb-block-title">Backstory & notes</legend>
                                 <div class="sb-field">
-                                    <textarea id="sbNotes" rows="5" placeholder="Secrets, motivation, voice, arc…"></textarea>
+                                    <textarea id="sbNotes" rows="6" placeholder="Secrets, motivation, voice, arc…"></textarea>
                                 </div>
                             </fieldset>
                         </div>
-                        <footer class="sb-drawer-foot">
-                            <button type="button" class="sb-save" id="sbSaveChar">Save</button>
-                            <button type="button" class="sb-del" id="sbDeleteChar">Delete</button>
-                        </footer>
                     </div>
-                </aside>
+                </div>
             </section>
         </div>
     </div>
@@ -352,7 +352,7 @@
 
     <script type="module">
         import { supabase } from "./firebase.js";
-        import { mountUnifiedStoryBible } from "./js/story-bible-unified.js?v=5";
+        import { mountUnifiedStoryBible } from "./js/story-bible-unified.js?v=6";
         import { requireStudioSession } from "./js/studio-session.js?v=1";
         import { isStoryBibleUiEnabled, STORY_BIBLE_PREF_KEY, STORY_BIBLE_PREF_EVENT } from "./js/story-bible-prefs.js?v=1";
 
@@ -402,7 +402,6 @@
                     entryHeroEl: document.getElementById("sbEntryHero"),
                     editorDrawer: document.getElementById("sbEditorDrawer"),
                     drawerClose: document.getElementById("sbDrawerClose"),
-                    drawerBackdrop: document.getElementById("sbDrawerBackdrop"),
                     formTitleEl: document.getElementById("sbFormTitle"),
                     dirtyEl: document.getElementById("sbDirty"),
                     healthBarEl: document.getElementById("sbHealthBar"),

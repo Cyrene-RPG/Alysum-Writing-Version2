@@ -43,7 +43,7 @@ import {
     statusLabel,
     normalizeText
 } from "./story-bible-utils.js?v=1";
-import { renderCharacterCards, renderPlaceCards } from "./story-bible-cards.js?v=1";
+import { renderCharacterCards, renderPlaceCards } from "./story-bible-cards.js?v=2";
 
 const SB_TAB_STORAGE_KEY = "alysum-story-bible-tab";
 
@@ -200,6 +200,12 @@ export async function mountStoryBiblePage(opts) {
     } = opts;
 
     const detailPanel = editorDrawer;
+    const charSheet = document.getElementById("sbCharSheet");
+    const placeSheet = document.getElementById("sbPlaceSheet");
+    const charDetailEmpty = document.getElementById("sbCharDetailEmpty");
+    const placeDetailEmpty = document.getElementById("sbPlaceDetailEmpty");
+    const charCodex = document.getElementById("sbViewCharacters");
+    const placeCodex = document.getElementById("sbViewPlaces");
 
     const bookId = (new URLSearchParams(window.location.search).get("book") || "").trim();
 
@@ -250,16 +256,40 @@ export async function mountStoryBiblePage(opts) {
         }
     }
 
+    function activeSheet() {
+        return bibleTab === "characters" ? charSheet : placeSheet;
+    }
+
+    function activeEmpty() {
+        return bibleTab === "characters" ? charDetailEmpty : placeDetailEmpty;
+    }
+
+    function activeCodex() {
+        return bibleTab === "characters" ? charCodex : placeCodex;
+    }
+
+    function mountEditorInSheet() {
+        const sheet = activeSheet();
+        if (sheet && editorDrawer && editorDrawer.parentElement !== sheet) {
+            sheet.appendChild(editorDrawer);
+        }
+    }
+
     function openDrawer() {
+        mountEditorInSheet();
         editorDrawer?.classList.remove("hidden");
-        bookView?.classList.add("sb-editing");
-        document.body.classList.add("sb-drawer-open");
+        activeEmpty()?.classList.add("hidden");
+        activeCodex()?.classList.add("sb-sheet-open");
     }
 
     function closeDrawer() {
         editorDrawer?.classList.add("hidden");
-        bookView?.classList.remove("sb-editing");
-        document.body.classList.remove("sb-drawer-open");
+        if (bibleTab === "characters") {
+            charDetailEmpty?.classList.remove("hidden");
+        } else if (!placeCodex?.classList.contains("is-map-mode")) {
+            placeDetailEmpty?.classList.remove("hidden");
+        }
+        activeCodex()?.classList.remove("sb-sheet-open");
     }
 
     function syncFormEmptyState() {
@@ -467,6 +497,7 @@ export async function mountStoryBiblePage(opts) {
         placeFieldsEl?.classList.toggle("hidden", isChar);
         placeParentEl?.classList.toggle("hidden", isChar);
         syncDeceasedFieldVisibility();
+        mountEditorInSheet();
         if (labelNameEl) labelNameEl.textContent = isChar ? "Name" : "Place name";
         if (labelAliasesEl)
             labelAliasesEl.textContent = isChar ? "Also known as (comma-separated)" : "Alternate names (comma-separated)";
@@ -1521,7 +1552,9 @@ export async function mountStoryBiblePage(opts) {
         renderPlaceList();
         syncFormEmptyState();
     });
-    drawerBackdrop?.addEventListener("click", () => drawerClose?.click());
+
+    document.getElementById("sbNewCharEmpty")?.addEventListener("click", () => newCharBtn?.click());
+    document.getElementById("sbNewPlaceEmpty")?.addEventListener("click", () => newPlaceBtn?.click());
 
     document.querySelectorAll("[data-place-mode]").forEach(btn => {
         btn.addEventListener("click", () => {
@@ -1529,10 +1562,16 @@ export async function mountStoryBiblePage(opts) {
             document.querySelectorAll("[data-place-mode]").forEach(b =>
                 b.classList.toggle("is-active", b === btn)
             );
-            placeGrid?.classList.toggle("hidden", mode === "map");
-            document.getElementById("sbAtlasMount")?.classList.toggle("hidden", mode !== "map");
-            if (mode === "map") {
+            const isMap = mode === "map";
+            placeCodex?.classList.toggle("is-map-mode", isMap);
+            placeGrid?.classList.toggle("hidden", isMap);
+            placeDetailEmpty?.classList.toggle("hidden", isMap);
+            document.getElementById("sbAtlasMount")?.classList.toggle("hidden", !isMap);
+            if (isMap) {
+                editorDrawer?.classList.add("hidden");
                 window.dispatchEvent(new CustomEvent("alysum-bible-render-atlas"));
+            } else {
+                syncFormEmptyState();
             }
         });
     });
