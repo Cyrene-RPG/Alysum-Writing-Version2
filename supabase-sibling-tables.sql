@@ -1,5 +1,7 @@
 -- Run in Supabase SQL editor once. Adds tables/columns used by the static site after the Firestore migration.
 
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS last_login text;
+
 -- Optional: beta reader shelf + notes (merged JSON on users, same shapes as legacy Firestore fields)
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS beta_read_shelf jsonb NOT NULL DEFAULT '{}'::jsonb;
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS beta_read_notes_by_book jsonb NOT NULL DEFAULT '{}'::jsonb;

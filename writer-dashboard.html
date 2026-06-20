@@ -1325,7 +1325,15 @@
         const lastLogin = typeof data.lastLogin === "string" ? data.lastLogin : "";
         const currentStreak = Number.isFinite(Number(data.streak)) ? Number(data.streak) : 0;
 
-        const patch = (fields) => supabase.from("users").update(fields).eq("id", currentUser.id);
+        const patch = async (fields) => {
+            const { error } = await supabase.from("users").update(fields).eq("id", currentUser.id);
+            if (error?.message?.includes("last_login")) {
+                const { last_login: _drop, ...rest } = fields;
+                if (Object.keys(rest).length) {
+                    await supabase.from("users").update(rest).eq("id", currentUser.id);
+                }
+            }
+        };
 
         if (!lastLogin) {
             const restored = Math.max(currentStreak, 1);
@@ -1706,6 +1714,9 @@
         };
     }
 
+    const PROFILE_SELECT =
+        "display_name, username, account_type, streak, writing_day_totals, daily_word_goal, profile_image_url";
+
     async function refreshProfileFromServer() {
         if (!currentUser) return;
         if (isLocalStudio) {
@@ -1713,7 +1724,7 @@
         } else {
         const { data: row, error } = await supabase
             .from("users")
-            .select("display_name, username, account_type, streak, last_login, writing_day_totals, daily_word_goal, profile_image_url")
+            .select(PROFILE_SELECT)
             .eq("id", currentUser.id)
             .maybeSingle();
         if (error || !row) return;
@@ -1967,7 +1978,7 @@
         if (isLocalStudio) return getProfileRow();
         const { data, error } = await supabase
             .from("users")
-            .select("display_name, username, account_type, streak, last_login, writing_day_totals, daily_word_goal, profile_image_url")
+            .select(PROFILE_SELECT)
             .eq("id", user.id)
             .maybeSingle();
 
@@ -1975,21 +1986,21 @@
         if (data) return data;
 
         const fallbackUsername = user.email ? user.email.split("@")[0] : "writer";
-        const { data: inserted, error: insertError } = await supabase
-            .from("users")
-            .insert({
+        const insertRow = {
                 id: user.id,
                 username: fallbackUsername,
                 display_name: fallbackUsername,
                 account_type: ACCOUNT_BOTH,
                 words: 0,
                 streak: 1,
-                last_login: localDayKey(),
                 daily_word_goal: DEFAULT_DAILY_WORD_GOAL,
                 writing_day_totals: {},
                 profile_image_url: null,
-            })
-            .select("display_name, username, account_type, streak, last_login, writing_day_totals, daily_word_goal, profile_image_url")
+            };
+        const { data: inserted, error: insertError } = await supabase
+            .from("users")
+            .insert(insertRow)
+            .select(PROFILE_SELECT)
             .single();
 
         if (insertError) throw insertError;
