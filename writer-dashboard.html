@@ -1838,6 +1838,7 @@
 
         const now = Date.now();
         const payload = {
+            id: crypto.randomUUID(),
             user_id: currentUser.id,
             title,
             created: now,
