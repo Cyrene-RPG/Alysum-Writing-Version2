@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS public.users (
   profile_image_url text,
   words integer NOT NULL DEFAULT 0,
   streak integer NOT NULL DEFAULT 0,
+  last_login text,
   daily_word_goal integer NOT NULL DEFAULT 2000,
   writing_day_totals jsonb NOT NULL DEFAULT '{}'::jsonb,
   created_at timestamptz NOT NULL DEFAULT now(),

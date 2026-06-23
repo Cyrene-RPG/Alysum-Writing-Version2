@@ -1113,6 +1113,7 @@
         MIN_DAILY_WORD_GOAL,
         MAX_CUSTOM_DAILY_WORD_GOAL,
     } from "./js/writing-day-stats.js?v=1";
+    import { ensureLoginStreakCloud } from "./js/ensure-login-streak.js?v=3";
     import {
         readLastWriterSession,
         pickContinueWritingBookId,
@@ -1310,47 +1311,15 @@
         }
     }
 
-    function daysBetween(dateA, dateB) {
-        const a = new Date(dateA + "T00:00:00");
-        const b = new Date(dateB + "T00:00:00");
-        return Math.round((b - a) / (1000 * 60 * 60 * 24));
-    }
-
     async function ensureUserStreak(data) {
         if (isLocalStudio) {
             const updated = ensureUserStreakLocal(data);
-            return updated.streak || 0;
+            return {
+                streak: updated.streak || 0,
+                lastLogin: updated.last_login || data.lastLogin || "",
+            };
         }
-        const today = localDayKey();
-        const lastLogin = typeof data.lastLogin === "string" ? data.lastLogin : "";
-        const currentStreak = Number.isFinite(Number(data.streak)) ? Number(data.streak) : 0;
-
-        const patch = async (fields) => {
-            const { error } = await supabase.from("users").update(fields).eq("id", currentUser.id);
-            if (error?.message?.includes("last_login")) {
-                const { last_login: _drop, ...rest } = fields;
-                if (Object.keys(rest).length) {
-                    await supabase.from("users").update(rest).eq("id", currentUser.id);
-                }
-            }
-        };
-
-        if (!lastLogin) {
-            const restored = Math.max(currentStreak, 1);
-            await patch({ last_login: today, streak: restored });
-            return restored;
-        }
-
-        const diff = daysBetween(lastLogin, today);
-        if (diff <= 0) return Math.max(currentStreak, 1);
-        if (diff === 1) {
-            const next = Math.max(currentStreak, 0) + 1;
-            await patch({ last_login: today, streak: next });
-            return next;
-        }
-
-        await patch({ last_login: today, streak: 1 });
-        return 1;
+        return ensureLoginStreakCloud(supabase, currentUser.id, data);
     }
 
     function paintStats({ totalWords, bookCount, loginStreak, goalStreak, wordsToday, goalTarget }) {
@@ -1715,7 +1684,7 @@
     }
 
     const PROFILE_SELECT =
-        "display_name, username, account_type, streak, writing_day_totals, daily_word_goal, profile_image_url";
+        "display_name, username, account_type, streak, last_login, writing_day_totals, daily_word_goal, profile_image_url";
 
     async function refreshProfileFromServer() {
         if (!currentUser) return;
@@ -2044,8 +2013,8 @@
         applyStoryBibleNav();
 
         try {
-            const streak = await ensureUserStreak(profile);
-            profile = { ...profile, streak };
+            const { streak, lastLogin } = await ensureUserStreak(profile);
+            profile = { ...profile, streak, lastLogin };
         } catch (e) {
             console.warn(e);
         }

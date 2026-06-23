@@ -3,6 +3,7 @@
  * Same shapes as Supabase rows; persisted in localStorage on this device.
  */
 import { localDayKey } from "./writing-day-stats.js?v=1";
+import { ensureLoginStreakLocalPatch } from "./ensure-login-streak.js?v=3";
 
 export const LOCAL_GUEST_USER_ID = "alysum-local-guest";
 export const LOCAL_GUEST_USER = { id: LOCAL_GUEST_USER_ID, email: null };
@@ -122,22 +123,7 @@ export function deleteBook(id) {
 }
 
 export function ensureUserStreakLocal(profile) {
-  const today = localDayKey();
-  const lastLogin = typeof profile.last_login === "string" ? profile.last_login : "";
-  const currentStreak = Number.isFinite(Number(profile.streak)) ? Number(profile.streak) : 0;
-
-  if (!lastLogin) {
-    const restored = Math.max(currentStreak, 1);
-    return updateProfileRow({ last_login: today, streak: restored });
-  }
-
-  const a = new Date(lastLogin + "T00:00:00");
-  const b = new Date(today + "T00:00:00");
-  const diff = Math.round((b - a) / (86400000));
-
-  if (diff <= 0) return updateProfileRow({ streak: Math.max(currentStreak, 1) });
-  if (diff === 1) return updateProfileRow({ last_login: today, streak: Math.max(currentStreak, 0) + 1 });
-  return updateProfileRow({ last_login: today, streak: 1 });
+  return ensureLoginStreakLocalPatch(profile, updateProfileRow);
 }
 
 export function listPromptEntries() {

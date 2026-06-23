@@ -553,6 +553,7 @@
         LOCAL_VAULT_STORAGE_KEY,
         getProfileRow,
         updateProfileRow,
+        ensureUserStreakLocal,
         listBooks,
         getBook,
         updateBook,
@@ -561,6 +562,7 @@
     } from "./js/local-studio-store.js?v=1";
     import { publicDisplayNameFromUserData } from "./js/profile-display.js?v=1";
     import { clampDailyWordGoal, DEFAULT_DAILY_WORD_GOAL, localDayKey } from "./js/writing-day-stats.js?v=1";
+    import { ensureLoginStreakCloud } from "./js/ensure-login-streak.js?v=3";
     import { isStoryBibleUiEnabled, STORY_BIBLE_PREF_KEY, STORY_BIBLE_PREF_EVENT } from "./js/story-bible-prefs.js?v=1";
     import {
         readWriterResume,
@@ -803,7 +805,8 @@ function rememberBookId(id) {
             displayName: row.display_name ?? row.displayName,
             accountType: row.account_type ?? row.accountType,
             dailyWordGoal: row.daily_word_goal ?? row.dailyWordGoal,
-            writingDayTotals: row.writing_day_totals ?? row.writingDayTotals ?? {}
+            writingDayTotals: row.writing_day_totals ?? row.writingDayTotals ?? {},
+            lastLogin: row.last_login ?? row.lastLogin ?? "",
         };
     }
 
@@ -2181,12 +2184,23 @@ function rememberBookId(id) {
 
     async function loadProfile() {
         if (isLocalStudio) {
-            currentProfile = toCamelProfile(getProfileRow());
+            const row = getProfileRow();
+            currentProfile = toCamelProfile(ensureUserStreakLocal(row));
             return;
         }
         const { data, error } = await supabase.from("users").select("*").eq("id", currentUser.id).maybeSingle();
         if (error) throw error;
         currentProfile = toCamelProfile(data || {});
+        try {
+            const { streak, lastLogin } = await ensureLoginStreakCloud(
+                supabase,
+                currentUser.id,
+                currentProfile
+            );
+            currentProfile = { ...currentProfile, streak, lastLogin };
+        } catch (e) {
+            console.warn("Login streak update failed:", e);
+        }
     }
 
 async function resolveBookId() {

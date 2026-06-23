@@ -298,6 +298,7 @@ import {
     shouldAutoContinueOAuth,
 } from "./js/auth-redirect.js?v=2";
 import { wireSupabaseSession } from "./js/supabase-session.js?v=1";
+import { ensureLoginStreakCloud } from "./js/ensure-login-streak.js?v=3";
 
 let oauthRedirectHandled = false;
 
@@ -505,6 +506,13 @@ async function redirectAfterLogin() {
             dailyWordGoal: data.daily_word_goal,
             writingDayTotals: data.writing_day_totals || {}
         };
+
+        try {
+            const { streak } = await ensureLoginStreakCloud(supabase, user.id, data);
+            firebaseStyleData.streak = streak;
+        } catch (e) {
+            console.warn("Login streak update failed:", e);
+        }
 
         window.location.href = homeUrlForUserData(firebaseStyleData);
     } catch (e) {
