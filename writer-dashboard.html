@@ -1108,11 +1108,12 @@
         clampDailyWordGoal,
         computeGoalStreakFromTotals,
         wordsTypedOnDay,
+        normalizeWritingDayTotals,
         DEFAULT_DAILY_WORD_GOAL,
         DAILY_GOAL_PRESETS,
         MIN_DAILY_WORD_GOAL,
         MAX_CUSTOM_DAILY_WORD_GOAL,
-    } from "./js/writing-day-stats.js?v=1";
+    } from "./js/writing-day-stats.js?v=2";
     import { ensureLoginStreakCloud } from "./js/ensure-login-streak.js?v=3";
     import {
         readLastWriterSession,
@@ -1164,6 +1165,7 @@
     let firstBookId = null;
     let isLocalStudio = isDesktopLocalHost();
     let booksChannel = null;
+    let profileChannel = null;
     let notificationsChannel = null;
 
     const BOOK_ROW_GAP = 14;
@@ -1280,7 +1282,9 @@
             ...row,
             displayName: row.display_name ?? row.displayName,
             accountType: row.account_type ?? row.accountType,
-            writingDayTotals: row.writing_day_totals ?? row.writingDayTotals ?? {},
+            writingDayTotals: normalizeWritingDayTotals(
+                row.writing_day_totals ?? row.writingDayTotals ?? {}
+            ),
             lastLogin: row.last_login ?? row.lastLogin ?? "",
             streak: Number(row.streak || 0),
             dailyWordGoal: row.daily_word_goal ?? row.dailyWordGoal,
@@ -1740,6 +1744,29 @@
             .subscribe();
     }
 
+    function startProfileRealtime() {
+        if (isLocalStudio) return;
+        if (!currentUser) return;
+        if (profileChannel) supabase.removeChannel(profileChannel);
+
+        profileChannel = supabase
+            .channel("wd_profile_" + currentUser.id)
+            .on(
+                "postgres_changes",
+                {
+                    event: "UPDATE",
+                    schema: "public",
+                    table: "users",
+                    filter: "id=eq." + currentUser.id,
+                },
+                () =>
+                    refreshProfileFromServer()
+                        .then(() => refreshBooksAndStats())
+                        .catch(console.error)
+            )
+            .subscribe();
+    }
+
     function startNotificationsRealtime() {
         if (isLocalStudio) return;
         if (!currentUser) return;
@@ -2031,6 +2058,7 @@
         if (!isLocalStudio) {
             void loadDashboardBadge(user.id);
             startBooksRealtime();
+            startProfileRealtime();
             startNotificationsRealtime();
         } else if (navDashBadge) {
             navDashBadge.classList.add("is-hidden");
@@ -2094,6 +2122,7 @@
 
     window.addEventListener("beforeunload", () => {
         if (booksChannel) supabase.removeChannel(booksChannel);
+        if (profileChannel) supabase.removeChannel(profileChannel);
         if (notificationsChannel) supabase.removeChannel(notificationsChannel);
     });
 

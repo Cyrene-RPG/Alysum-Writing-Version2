@@ -420,7 +420,8 @@ import { wireSupabaseSession } from "./js/supabase-session.js?v=2";
 import {
     clampDailyWordGoal,
     computeGoalStreakFromTotals,
-    DEFAULT_DAILY_WORD_GOAL
+    DEFAULT_DAILY_WORD_GOAL,
+    normalizeWritingDayTotals,
 } from "./js/writing-day-stats.js?v=2";
 import { countBookWords } from "./js/book-word-count.js?v=3";
 
@@ -530,7 +531,9 @@ function renderAchievementsFromCache() {
         );
 
         dailyGoalStreak = computeGoalStreakFromTotals(
-            userData.writing_day_totals ?? userData.writingDayTotals ?? {},
+            normalizeWritingDayTotals(
+                userData.writing_day_totals ?? userData.writingDayTotals ?? {}
+            ),
             dailyGoal
         );
     } catch (e) {

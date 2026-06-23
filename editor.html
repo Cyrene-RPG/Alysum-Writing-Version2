@@ -561,7 +561,13 @@
         notifyLocalStudioSync,
     } from "./js/local-studio-store.js?v=1";
     import { publicDisplayNameFromUserData } from "./js/profile-display.js?v=1";
-    import { clampDailyWordGoal, DEFAULT_DAILY_WORD_GOAL, localDayKey } from "./js/writing-day-stats.js?v=1";
+    import {
+        applyWritingDayDelta,
+        clampDailyWordGoal,
+        DEFAULT_DAILY_WORD_GOAL,
+        localDayKey,
+        normalizeWritingDayTotals,
+    } from "./js/writing-day-stats.js?v=2";
     import { ensureLoginStreakCloud } from "./js/ensure-login-streak.js?v=3";
     import { isStoryBibleUiEnabled, STORY_BIBLE_PREF_KEY, STORY_BIBLE_PREF_EVENT } from "./js/story-bible-prefs.js?v=1";
     import {
@@ -805,7 +811,9 @@ function rememberBookId(id) {
             displayName: row.display_name ?? row.displayName,
             accountType: row.account_type ?? row.accountType,
             dailyWordGoal: row.daily_word_goal ?? row.dailyWordGoal,
-            writingDayTotals: row.writing_day_totals ?? row.writingDayTotals ?? {},
+            writingDayTotals: normalizeWritingDayTotals(
+                row.writing_day_totals ?? row.writingDayTotals ?? {}
+            ),
             lastLogin: row.last_login ?? row.lastLogin ?? "",
         };
     }
@@ -1758,20 +1766,36 @@ function rememberBookId(id) {
         if (!currentUser || !delta || delta <= 0) return;
         const dayKey = localDayKey();
         try {
-            const currentTotals = safeObject(currentProfile?.writingDayTotals, {});
-            const wordsBeforeToday = safeNumber(currentTotals[dayKey], 0);
-            const wordsAfterToday = wordsBeforeToday + delta;
+            let storedTotals = {};
+            if (isLocalStudio) {
+                storedTotals = getProfileRow()?.writing_day_totals;
+            } else {
+                const { data, error } = await supabase
+                    .from("users")
+                    .select("writing_day_totals")
+                    .eq("id", currentUser.id)
+                    .maybeSingle();
+                if (error) throw error;
+                storedTotals = data?.writing_day_totals;
+            }
+            const { nextTotals, wordsBefore, wordsAfter } = applyWritingDayDelta(
+                storedTotals,
+                dayKey,
+                delta
+            );
             const goalTarget = clampDailyWordGoal(currentProfile?.dailyWordGoal ?? DEFAULT_DAILY_WORD_GOAL);
-            const crossedDailyGoal = wordsBeforeToday < goalTarget && wordsAfterToday >= goalTarget;
-            const nextTotals = { ...currentTotals, [dayKey]: wordsAfterToday };
-            currentProfile = { ...currentProfile, writingDayTotals: nextTotals };
+            const crossedDailyGoal = wordsBefore < goalTarget && wordsAfter >= goalTarget;
+            currentProfile = {
+                ...currentProfile,
+                writingDayTotals: normalizeWritingDayTotals(nextTotals),
+            };
             if (isLocalStudio) {
                 updateProfileRow({ writing_day_totals: nextTotals });
-                if (crossedDailyGoal) showDailyGoalBadge(wordsAfterToday, goalTarget);
+                if (crossedDailyGoal) showDailyGoalBadge(wordsAfter, goalTarget);
                 return;
             }
             await supabase.from("users").update({ writing_day_totals: nextTotals }).eq("id", currentUser.id);
-            if (crossedDailyGoal) showDailyGoalBadge(wordsAfterToday, goalTarget);
+            if (crossedDailyGoal) showDailyGoalBadge(wordsAfter, goalTarget);
         } catch (e) { console.error("Daily writing totals update failed:", e); }
     }
 
