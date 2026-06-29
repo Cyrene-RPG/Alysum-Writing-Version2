@@ -995,6 +995,117 @@
         font-weight: 800;
     }
 
+    .backup-panel-body {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .backup-status-card {
+        padding: 16px 18px;
+        border-radius: 14px;
+        border: 1px solid color-mix(in srgb, var(--purple-bright, #a78bfa) 35%, var(--border));
+        background: rgba(0, 0, 0, 0.28);
+    }
+
+    .backup-status-label {
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 6px;
+    }
+
+    .backup-status-datetime {
+        font-size: 18px;
+        font-weight: 900;
+        color: #fff;
+        line-height: 1.35;
+    }
+
+    .backup-status-file {
+        margin-top: 8px;
+        margin-bottom: 0;
+        word-break: break-all;
+    }
+
+    .backup-step-num {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 22px;
+        height: 22px;
+        margin-right: 8px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.12);
+        font-size: 12px;
+        font-weight: 900;
+        vertical-align: middle;
+    }
+
+    .backup-path-row {
+        margin-bottom: 14px;
+    }
+
+    .backup-path-row label {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 13px;
+        font-weight: 800;
+        color: var(--muted);
+    }
+
+    .backup-path-field {
+        display: flex;
+        gap: 10px;
+        align-items: stretch;
+    }
+
+    .backup-path-field input {
+        flex: 1;
+        min-width: 0;
+        padding: 12px 14px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: rgba(0, 0, 0, 0.2);
+        color: #e5e7eb;
+        font-size: 14px;
+        font-family: ui-monospace, monospace;
+    }
+
+    .backup-path-field input::placeholder {
+        color: var(--muted);
+        font-family: inherit;
+    }
+
+    .btn-secondary {
+        flex-shrink: 0;
+        margin-top: 0;
+        background: rgba(255, 255, 255, 0.08);
+        color: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        box-shadow: none;
+        text-shadow: none;
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+        background: rgba(255, 255, 255, 0.14);
+        filter: none;
+    }
+
+    .backup-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .backup-actions .msg {
+        flex: 1 1 100%;
+        margin-top: 0;
+    }
+
 </style>
 <link rel="stylesheet" href="css/gradient-themes.css?v=7" />
 <script src="js/gradient-theme-sync.js" defer></script>
@@ -1015,7 +1126,7 @@
             <button type="button" role="tab" id="tab-account" data-section="accountModePanel" aria-controls="accountModePanel" aria-selected="false">Account focus</button>
             <button type="button" role="tab" id="tab-profile" data-section="profilePanel" aria-controls="profilePanel" aria-selected="false">Profile</button>
             <button type="button" role="tab" id="tab-password" data-section="securityPanel" aria-controls="securityPanel" aria-selected="false">Password</button>
-            <button type="button" role="tab" id="tab-backup" data-section="backupPanel" aria-controls="backupPanel" aria-selected="false">Data &amp; backup</button>
+            <button type="button" role="tab" id="tab-backup" data-section="backupPanel" aria-controls="backupPanel" aria-selected="false">Backup</button>
             <button type="button" class="settings-nav-logout" id="logoutBtn">Log out</button>
         </nav>
 
@@ -1216,32 +1327,46 @@
     </div>
 
     <div class="panel hidden settings-tab-panel" id="backupPanel" role="tabpanel" aria-labelledby="tab-backup" hidden>
-        <h2>Data &amp; backup</h2>
-        <p class="hint">Save a copy of your Alysum data to this device, or restore from a backup file. Backups include manuscripts, Story Bible, worldbuilding, notebook vault, and your appearance preferences on this device.</p>
+        <h2>Backup</h2>
+        <p class="hint">Keep a copy of your Alysum work on your computer. Useful if you switch devices or want a safety net.</p>
 
-        <div class="profile-panel-body">
+        <div class="profile-panel-body backup-panel-body">
+            <section class="backup-status-card" aria-live="polite">
+                <div class="backup-status-label">Last backup on this device</div>
+                <div class="backup-status-datetime" id="lastBackupDateTime">No backup created yet</div>
+                <p class="hint backup-status-file" id="lastBackupFileName" hidden></p>
+            </section>
+
             <section class="profile-box" aria-labelledby="backupExportTitle">
-                <h3 class="profile-box-title" id="backupExportTitle">Download backup</h3>
+                <h3 class="profile-box-title" id="backupExportTitle">
+                    <span class="backup-step-num" aria-hidden="true">1</span>Create backup
+                </h3>
                 <p class="hint" style="margin: 0 0 14px">
-                    Creates a <strong>.json</strong> file on your computer. Store it somewhere safe — Alysum does not upload this file anywhere.
+                    Saves your books, Story Bible, worldbuilding, notebook, and settings. The file stays on your computer — Alysum never receives it.
                 </p>
-                <div class="profile-box-actions">
-                    <button type="button" class="btn btn-primary" id="downloadBackupBtn">Download backup</button>
+                <div class="backup-actions">
+                    <button type="button" class="btn btn-primary" id="saveBackupBtn">Choose save location…</button>
                     <div class="msg" id="backupExportMsg" role="status"></div>
                 </div>
             </section>
 
             <section class="profile-box" aria-labelledby="backupRestoreTitle">
-                <h3 class="profile-box-title" id="backupRestoreTitle">Restore from backup</h3>
+                <h3 class="profile-box-title" id="backupRestoreTitle">
+                    <span class="backup-step-num" aria-hidden="true">2</span>Restore backup
+                </h3>
                 <p class="hint" style="margin: 0 0 14px">
-                    Choose a backup file you downloaded earlier. Existing cloud data is merged (same IDs are updated). This cannot be undone — download a fresh backup first if you want a safety copy.
+                    Load a backup you saved earlier. Create a new backup first if you want to keep your current work unchanged.
                 </p>
-                <div class="field">
-                    <label for="backupFileInput">Backup file</label>
-                    <input type="file" id="backupFileInput" accept="application/json,.json" />
+                <div class="backup-path-row">
+                    <label for="restorePathDisplay">Backup location</label>
+                    <div class="backup-path-field">
+                        <input type="text" id="restorePathDisplay" readonly placeholder="No backup selected — click Browse" />
+                        <button type="button" class="btn btn-secondary" id="chooseRestorePathBtn">Browse…</button>
+                    </div>
+                    <input type="file" id="backupFileInput" accept=".alysum-backup,.json,application/json" hidden />
                 </div>
-                <div class="profile-box-actions">
-                    <button type="button" class="btn btn-primary" id="restoreBackupBtn">Restore from backup</button>
+                <div class="backup-actions">
+                    <button type="button" class="btn btn-primary" id="restoreBackupBtn" disabled>Restore backup</button>
                     <div class="msg" id="backupRestoreMsg" role="status"></div>
                 </div>
             </section>
@@ -1287,11 +1412,14 @@
     import { isStoryBibleUiEnabled, setStoryBibleUiEnabled } from "./js/story-bible-prefs.js?v=1";
     import {
         exportUserBackup,
-        downloadUserBackup,
+        saveUserBackupToDisk,
+        pickBackupFileFromDisk,
         parseBackupFile,
         restoreUserBackup,
-        summarizeBackup
-    } from "./js/user-backup.js?v=1";
+        summarizeBackup,
+        getLastBackupMeta,
+        formatBackupDateTime
+    } from "./js/user-backup.js?v=2";
 
     const backBtn = document.getElementById("backBtn");
     const loadingPanel = document.getElementById("loadingPanel");
@@ -1326,17 +1454,22 @@
     const profileAvatarInitial = document.getElementById("profileAvatarInitial");
     const saveAvatarBtn = document.getElementById("saveAvatarBtn");
     const avatarMsg = document.getElementById("avatarMsg");
-    const downloadBackupBtn = document.getElementById("downloadBackupBtn");
+    const downloadBackupBtn = document.getElementById("saveBackupBtn");
     const backupExportMsg = document.getElementById("backupExportMsg");
     const backupFileInput = document.getElementById("backupFileInput");
+    const chooseRestorePathBtn = document.getElementById("chooseRestorePathBtn");
+    const restorePathDisplay = document.getElementById("restorePathDisplay");
     const restoreBackupBtn = document.getElementById("restoreBackupBtn");
     const backupRestoreMsg = document.getElementById("backupRestoreMsg");
+    const lastBackupDateTime = document.getElementById("lastBackupDateTime");
+    const lastBackupFileName = document.getElementById("lastBackupFileName");
 
     let settingsHomeUrl = "writer-dashboard.html";
     let activeAvatarObjectUrl = "";
     let isLocalSettings = false;
     let settingsUserId = "";
     let settingsUserEmail = "";
+    let selectedRestoreFile = null;
 
     const TAB_PANEL_IDS = ["appearancePanel", "accountModePanel", "profilePanel", "securityPanel", "backupPanel"];
     const PASSWORD_BLOCKED_OAUTH = new Set(["google", "discord"]);
@@ -1666,6 +1799,52 @@
                 setStoryBibleUiEnabled(storyBibleUiToggle.checked);
             });
         }
+        refreshBackupStatusUi();
+    }
+
+    function refreshBackupStatusUi() {
+        const meta = getLastBackupMeta();
+        if (!lastBackupDateTime) return;
+        if (!meta?.createdAt) {
+            lastBackupDateTime.textContent = "No backup created yet";
+            if (lastBackupFileName) {
+                lastBackupFileName.hidden = true;
+                lastBackupFileName.textContent = "";
+            }
+            return;
+        }
+        lastBackupDateTime.textContent = formatBackupDateTime(meta.createdAt);
+        if (lastBackupFileName) {
+            const parts = [];
+            if (meta.fileName) parts.push(`Saved as ${meta.fileName}`);
+            if (meta.summary) parts.push(meta.summary);
+            lastBackupFileName.textContent = parts.join(" · ");
+            lastBackupFileName.hidden = !parts.length;
+        }
+    }
+
+    function setSelectedRestoreFile(file, displayPath) {
+        selectedRestoreFile = file || null;
+        if (restorePathDisplay) {
+            restorePathDisplay.value = displayPath || (file?.name ?? "");
+        }
+        if (restoreBackupBtn) {
+            restoreBackupBtn.disabled = !selectedRestoreFile;
+        }
+    }
+
+    async function browseForRestoreBackup() {
+        hideMsg(backupRestoreMsg);
+        try {
+            const picked = await pickBackupFileFromDisk();
+            if (picked) {
+                setSelectedRestoreFile(picked.file, picked.fileName);
+                return;
+            }
+        } catch (e) {
+            if (e?.name === "AbortError") return;
+        }
+        backupFileInput?.click();
     }
 
     function initLocalSettingsUi() {
@@ -2014,14 +2193,18 @@
                 mode,
                 email: settingsUserEmail
             });
-            downloadUserBackup(backup);
+            const { fileName, usedNativePicker } = await saveUserBackupToDisk(backup);
+            refreshBackupStatusUi();
             const summary = summarizeBackup(backup);
-            let msg = `Backup downloaded (${summary}).`;
+            let msg = usedNativePicker
+                ? `Backup saved to ${fileName} (${summary}).`
+                : `Backup saved as ${fileName} in your Downloads folder (${summary}).`;
             if (backup.skippedTables?.length) {
-                msg += ` Some tables were unavailable: ${backup.skippedTables.join(", ")}.`;
+                msg += ` Some data was skipped: ${backup.skippedTables.join(", ")}.`;
             }
             showMsg(backupExportMsg, msg, true);
         } catch (e) {
+            if (e?.name === "AbortError") return;
             console.error(e);
             showMsg(backupExportMsg, e?.message || "Could not create backup.", false);
         } finally {
@@ -2029,11 +2212,25 @@
         }
     });
 
+    chooseRestorePathBtn?.addEventListener("click", () => {
+        void browseForRestoreBackup();
+    });
+
+    backupFileInput?.addEventListener("change", () => {
+        hideMsg(backupRestoreMsg);
+        const file = backupFileInput.files?.[0];
+        if (!file) {
+            setSelectedRestoreFile(null, "");
+            return;
+        }
+        setSelectedRestoreFile(file, file.name);
+    });
+
     restoreBackupBtn?.addEventListener("click", async () => {
         hideMsg(backupRestoreMsg);
-        const file = backupFileInput?.files?.[0];
+        const file = selectedRestoreFile;
         if (!file) {
-            showMsg(backupRestoreMsg, "Choose a backup file first.", false);
+            showMsg(backupRestoreMsg, "Choose a backup location first.", false);
             return;
         }
 
@@ -2041,24 +2238,24 @@
         try {
             backup = await parseBackupFile(file);
         } catch (e) {
-            showMsg(backupRestoreMsg, e?.message || "Invalid backup file.", false);
+            showMsg(backupRestoreMsg, e?.message || "That file is not a valid Alysum backup.", false);
             return;
         }
 
         const summary = summarizeBackup(backup);
+        const backupWhen = backup.exportedAt ? formatBackupDateTime(backup.exportedAt) : "unknown date";
         const fromOtherAccount =
             backup.userId && settingsUserId && backup.userId !== settingsUserId && backup.mode === "cloud";
         const cloudBackupOnLocal = backup.mode === "cloud" && isLocalSettings;
-        let confirmText =
-            `Restore this backup?\n\nContents: ${summary}\nExported: ${backup.exportedAt || "unknown"}`;
+        let confirmText = `Restore this backup?\n\nFrom: ${backupWhen}\nIncludes: ${summary}`;
         if (fromOtherAccount) {
-            confirmText += "\n\nThis backup is from a different account. Data will be merged into your current account.";
+            confirmText += "\n\nThis backup belongs to a different account. Its data will be added to your current account.";
         }
         if (cloudBackupOnLocal) {
             confirmText +=
-                "\n\nThis is a cloud account backup. Sign in with your account to restore manuscripts to the cloud. Only device preferences will apply in local mode.";
+                "\n\nThis backup needs a signed-in account to restore books. Only settings will change while you are in local mode.";
         }
-        confirmText += "\n\nExisting records with the same IDs will be updated.";
+        confirmText += "\n\nYour current data may be overwritten where IDs match.";
 
         if (!window.confirm(confirmText)) return;
 
@@ -2071,17 +2268,18 @@
                 mode,
                 backup
             });
-            backupFileInput.value = "";
+            setSelectedRestoreFile(null, "");
+            if (backupFileInput) backupFileInput.value = "";
             let msg = restored.length
-                ? `Restore complete: ${restored.join(", ")}.`
-                : "Nothing to restore from this file.";
+                ? `Restore finished. Updated: ${restored.join(", ")}.`
+                : "Nothing in that backup could be restored.";
             if (warnings.length) msg += " " + warnings.join(" ");
             showMsg(backupRestoreMsg, msg, true);
         } catch (e) {
             console.error(e);
             showMsg(backupRestoreMsg, e?.message || "Restore failed.", false);
         } finally {
-            restoreBackupBtn.disabled = false;
+            restoreBackupBtn.disabled = !selectedRestoreFile;
         }
     });
 </script>

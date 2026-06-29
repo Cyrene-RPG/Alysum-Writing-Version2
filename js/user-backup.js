@@ -13,6 +13,8 @@ import { ENCYCLOPEDIA_BLOB_PREFIXES } from "./encyclopedia-blob-store.js?v=1";
 
 export const BACKUP_VERSION = 1;
 export const BACKUP_FILENAME_PREFIX = "alysum-backup";
+export const LAST_BACKUP_META_KEY = "alysum-last-backup-meta-v1";
+export const BACKUP_FILE_EXTENSION = ".alysum-backup";
 
 const PAGE_SIZE = 500;
 
@@ -234,34 +236,22 @@ export async function exportUserBackup({ supabase, userId, mode, email = "" }) {
   };
 }
 
-export function downloadUserBackup(backup) {
-  const stamp = new Date().toISOString().slice(0, 10);
-  const json = JSON.stringify(backup, null, 2);
-  const blob = new Blob([json], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `${BACKUP_FILENAME_PREFIX}-${stamp}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
 export async function parseBackupFile(file) {
   const text = await file.text();
   let parsed;
   try {
     parsed = JSON.parse(text);
   } catch {
-    throw new Error("Backup file is not valid JSON.");
+    throw new Error("That file is not a valid Alysum backup.");
   }
   if (!parsed || typeof parsed !== "object") {
-    throw new Error("Backup file is empty or invalid.");
+    throw new Error("That backup file is empty or damaged.");
   }
   if (parsed.version !== BACKUP_VERSION) {
-    throw new Error(`Unsupported backup version (${parsed.version ?? "unknown"}).`);
+    throw new Error(`This backup version is not supported (${parsed.version ?? "unknown"}).`);
   }
   if (!parsed.tables && !parsed.localData && !parsed.devicePreferences) {
-    throw new Error("Backup file does not contain any Alysum data.");
+    throw new Error("That file does not contain Alysum backup data.");
   }
   return parsed;
 }
@@ -391,4 +381,121 @@ export function summarizeBackup(backup) {
   const prefCount = backup.devicePreferences ? Object.keys(backup.devicePreferences).length : 0;
   if (prefCount) parts.push(`${prefCount} device preference${prefCount === 1 ? "" : "s"}`);
   return parts.length ? parts.join(", ") : "minimal data";
+}
+
+export function formatBackupDateTime(iso) {
+  if (!iso) return "";
+  try {
+    return new Intl.DateTimeFormat(undefined, {
+      dateStyle: "full",
+      timeStyle: "short",
+    }).format(new Date(iso));
+  } catch {
+    return String(iso);
+  }
+}
+
+export function defaultBackupFilename() {
+  const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+  return `${BACKUP_FILENAME_PREFIX}-${stamp}${BACKUP_FILE_EXTENSION}`;
+}
+
+export function supportsBackupFilePicker() {
+  return typeof window !== "undefined" && "showSaveFilePicker" in window;
+}
+
+export function getLastBackupMeta() {
+  try {
+    const raw = localStorage.getItem(LAST_BACKUP_META_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+export function setLastBackupMeta(meta) {
+  localStorage.setItem(
+    LAST_BACKUP_META_KEY,
+    JSON.stringify({
+      createdAt: meta.createdAt,
+      fileName: meta.fileName || "",
+      summary: meta.summary || "",
+    })
+  );
+}
+
+export function downloadUserBackup(backup, fileName) {
+  const name = fileName || defaultBackupFilename();
+  const json = JSON.stringify(backup, null, 2);
+  const blob = new Blob([json], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  a.click();
+  URL.revokeObjectURL(url);
+  return name;
+}
+
+/**
+ * Save backup via native Save dialog when available, otherwise download.
+ * @returns {Promise<{ fileName: string, usedNativePicker: boolean }>}
+ */
+export async function saveUserBackupToDisk(backup) {
+  const json = JSON.stringify(backup, null, 2);
+  const suggestedName = defaultBackupFilename();
+  const summary = summarizeBackup(backup);
+
+  if (supportsBackupFilePicker()) {
+    try {
+      const handle = await window.showSaveFilePicker({
+        suggestedName,
+        types: [
+          {
+            description: "Alysum backup",
+            accept: { "application/json": [BACKUP_FILE_EXTENSION, ".json"] },
+          },
+        ],
+      });
+      const writable = await handle.createWritable();
+      await writable.write(json);
+      await writable.close();
+      const fileName = handle.name || suggestedName;
+      setLastBackupMeta({ createdAt: backup.exportedAt, fileName, summary });
+      return { fileName, usedNativePicker: true };
+    } catch (e) {
+      if (e?.name === "AbortError") throw e;
+    }
+  }
+
+  const fileName = downloadUserBackup(backup, suggestedName);
+  setLastBackupMeta({ createdAt: backup.exportedAt, fileName, summary });
+  return { fileName, usedNativePicker: false };
+}
+
+/**
+ * Open native file picker for restore. Returns null if unsupported (use hidden input).
+ * @returns {Promise<{ file: File, fileName: string } | null>}
+ */
+export async function pickBackupFileFromDisk() {
+  if (!supportsBackupFilePicker()) return null;
+
+  try {
+    const [handle] = await window.showOpenFilePicker({
+      types: [
+        {
+          description: "Alysum backup",
+          accept: { "application/json": [BACKUP_FILE_EXTENSION, ".json"] },
+        },
+      ],
+      multiple: false,
+    });
+    const file = await handle.getFile();
+    return { file, fileName: handle.name || file.name };
+  } catch (e) {
+    if (e?.name === "AbortError") throw e;
+    return null;
+  }
 }
