@@ -1015,6 +1015,7 @@
             <button type="button" role="tab" id="tab-account" data-section="accountModePanel" aria-controls="accountModePanel" aria-selected="false">Account focus</button>
             <button type="button" role="tab" id="tab-profile" data-section="profilePanel" aria-controls="profilePanel" aria-selected="false">Profile</button>
             <button type="button" role="tab" id="tab-password" data-section="securityPanel" aria-controls="securityPanel" aria-selected="false">Password</button>
+            <button type="button" role="tab" id="tab-backup" data-section="backupPanel" aria-controls="backupPanel" aria-selected="false">Data &amp; backup</button>
             <button type="button" class="settings-nav-logout" id="logoutBtn">Log out</button>
         </nav>
 
@@ -1213,6 +1214,39 @@
             </div>
         </div>
     </div>
+
+    <div class="panel hidden settings-tab-panel" id="backupPanel" role="tabpanel" aria-labelledby="tab-backup" hidden>
+        <h2>Data &amp; backup</h2>
+        <p class="hint">Save a copy of your Alysum data to this device, or restore from a backup file. Backups include manuscripts, Story Bible, worldbuilding, notebook vault, and your appearance preferences on this device.</p>
+
+        <div class="profile-panel-body">
+            <section class="profile-box" aria-labelledby="backupExportTitle">
+                <h3 class="profile-box-title" id="backupExportTitle">Download backup</h3>
+                <p class="hint" style="margin: 0 0 14px">
+                    Creates a <strong>.json</strong> file on your computer. Store it somewhere safe — Alysum does not upload this file anywhere.
+                </p>
+                <div class="profile-box-actions">
+                    <button type="button" class="btn btn-primary" id="downloadBackupBtn">Download backup</button>
+                    <div class="msg" id="backupExportMsg" role="status"></div>
+                </div>
+            </section>
+
+            <section class="profile-box" aria-labelledby="backupRestoreTitle">
+                <h3 class="profile-box-title" id="backupRestoreTitle">Restore from backup</h3>
+                <p class="hint" style="margin: 0 0 14px">
+                    Choose a backup file you downloaded earlier. Existing cloud data is merged (same IDs are updated). This cannot be undone — download a fresh backup first if you want a safety copy.
+                </p>
+                <div class="field">
+                    <label for="backupFileInput">Backup file</label>
+                    <input type="file" id="backupFileInput" accept="application/json,.json" />
+                </div>
+                <div class="profile-box-actions">
+                    <button type="button" class="btn btn-primary" id="restoreBackupBtn">Restore from backup</button>
+                    <div class="msg" id="backupRestoreMsg" role="status"></div>
+                </div>
+            </section>
+        </div>
+    </div>
         </div>
     </div>
 </div>
@@ -1222,7 +1256,7 @@
     import { signOutAndGoToHome } from "./js/auth-logout.js?v=2";
     import { goToLogin } from "./js/desktop-auth.js?v=1";
     import { resolveStudioSession } from "./js/studio-session.js?v=1";
-    import { getProfileRow, updateProfileRow } from "./js/local-studio-store.js?v=1";
+    import { getProfileRow, updateProfileRow, LOCAL_GUEST_USER_ID } from "./js/local-studio-store.js?v=1";
     import { permanentHandleFromUserData } from "./js/profile-display.js?v=1";
     import {
         GRADIENT_THEMES,
@@ -1251,6 +1285,13 @@
     } from "./js/display-text-color.js?v=4";
     import { normalizeAccountType, ACCOUNT_AUTHOR, ACCOUNT_READER, ACCOUNT_BOTH, homeUrlForUserData } from "./js/account-mode.js?v=1";
     import { isStoryBibleUiEnabled, setStoryBibleUiEnabled } from "./js/story-bible-prefs.js?v=1";
+    import {
+        exportUserBackup,
+        downloadUserBackup,
+        parseBackupFile,
+        restoreUserBackup,
+        summarizeBackup
+    } from "./js/user-backup.js?v=1";
 
     const backBtn = document.getElementById("backBtn");
     const loadingPanel = document.getElementById("loadingPanel");
@@ -1285,12 +1326,19 @@
     const profileAvatarInitial = document.getElementById("profileAvatarInitial");
     const saveAvatarBtn = document.getElementById("saveAvatarBtn");
     const avatarMsg = document.getElementById("avatarMsg");
+    const downloadBackupBtn = document.getElementById("downloadBackupBtn");
+    const backupExportMsg = document.getElementById("backupExportMsg");
+    const backupFileInput = document.getElementById("backupFileInput");
+    const restoreBackupBtn = document.getElementById("restoreBackupBtn");
+    const backupRestoreMsg = document.getElementById("backupRestoreMsg");
 
     let settingsHomeUrl = "writer-dashboard.html";
     let activeAvatarObjectUrl = "";
     let isLocalSettings = false;
+    let settingsUserId = "";
+    let settingsUserEmail = "";
 
-    const TAB_PANEL_IDS = ["appearancePanel", "accountModePanel", "profilePanel", "securityPanel"];
+    const TAB_PANEL_IDS = ["appearancePanel", "accountModePanel", "profilePanel", "securityPanel", "backupPanel"];
     const PASSWORD_BLOCKED_OAUTH = new Set(["google", "discord"]);
 
     /** Only Google- or Discord-only sign-in cannot change password here (uses linked identities). */
@@ -1622,6 +1670,8 @@
 
     function initLocalSettingsUi() {
         isLocalSettings = true;
+        settingsUserId = LOCAL_GUEST_USER_ID;
+        settingsUserEmail = "";
         const profile = getProfileRow();
         emailField.value = "Local on this device — sign in to sync";
         handleField.textContent = "@guest";
@@ -1663,6 +1713,8 @@
         }
 
         const user = session.user;
+        settingsUserId = user.id;
+        settingsUserEmail = user.email || "";
 
         try {
             const { data: row, error } = await supabase.from("users").select("*").eq("id", user.id).maybeSingle();
@@ -1948,6 +2000,88 @@
             showMsg(passwordMsg, e?.message || "Could not update password.", false);
         } finally {
             savePasswordBtn.disabled = false;
+        }
+    });
+
+    downloadBackupBtn?.addEventListener("click", async () => {
+        hideMsg(backupExportMsg);
+        downloadBackupBtn.disabled = true;
+        try {
+            const mode = isLocalSettings ? "local" : "cloud";
+            const backup = await exportUserBackup({
+                supabase: isLocalSettings ? null : supabase,
+                userId: settingsUserId,
+                mode,
+                email: settingsUserEmail
+            });
+            downloadUserBackup(backup);
+            const summary = summarizeBackup(backup);
+            let msg = `Backup downloaded (${summary}).`;
+            if (backup.skippedTables?.length) {
+                msg += ` Some tables were unavailable: ${backup.skippedTables.join(", ")}.`;
+            }
+            showMsg(backupExportMsg, msg, true);
+        } catch (e) {
+            console.error(e);
+            showMsg(backupExportMsg, e?.message || "Could not create backup.", false);
+        } finally {
+            downloadBackupBtn.disabled = false;
+        }
+    });
+
+    restoreBackupBtn?.addEventListener("click", async () => {
+        hideMsg(backupRestoreMsg);
+        const file = backupFileInput?.files?.[0];
+        if (!file) {
+            showMsg(backupRestoreMsg, "Choose a backup file first.", false);
+            return;
+        }
+
+        let backup;
+        try {
+            backup = await parseBackupFile(file);
+        } catch (e) {
+            showMsg(backupRestoreMsg, e?.message || "Invalid backup file.", false);
+            return;
+        }
+
+        const summary = summarizeBackup(backup);
+        const fromOtherAccount =
+            backup.userId && settingsUserId && backup.userId !== settingsUserId && backup.mode === "cloud";
+        const cloudBackupOnLocal = backup.mode === "cloud" && isLocalSettings;
+        let confirmText =
+            `Restore this backup?\n\nContents: ${summary}\nExported: ${backup.exportedAt || "unknown"}`;
+        if (fromOtherAccount) {
+            confirmText += "\n\nThis backup is from a different account. Data will be merged into your current account.";
+        }
+        if (cloudBackupOnLocal) {
+            confirmText +=
+                "\n\nThis is a cloud account backup. Sign in with your account to restore manuscripts to the cloud. Only device preferences will apply in local mode.";
+        }
+        confirmText += "\n\nExisting records with the same IDs will be updated.";
+
+        if (!window.confirm(confirmText)) return;
+
+        restoreBackupBtn.disabled = true;
+        try {
+            const mode = isLocalSettings ? "local" : "cloud";
+            const { restored, warnings } = await restoreUserBackup({
+                supabase: isLocalSettings ? null : supabase,
+                userId: settingsUserId,
+                mode,
+                backup
+            });
+            backupFileInput.value = "";
+            let msg = restored.length
+                ? `Restore complete: ${restored.join(", ")}.`
+                : "Nothing to restore from this file.";
+            if (warnings.length) msg += " " + warnings.join(" ");
+            showMsg(backupRestoreMsg, msg, true);
+        } catch (e) {
+            console.error(e);
+            showMsg(backupRestoreMsg, e?.message || "Restore failed.", false);
+        } finally {
+            restoreBackupBtn.disabled = false;
         }
     });
 </script>

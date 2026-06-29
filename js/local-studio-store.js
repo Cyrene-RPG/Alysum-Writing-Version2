@@ -10,7 +10,8 @@ export const LOCAL_GUEST_USER = { id: LOCAL_GUEST_USER_ID, email: null };
 /** Vault + scratch + editor notes when hosting locally */
 export const LOCAL_VAULT_STORAGE_KEY = "alysum-local-host-vault";
 
-const STORAGE_KEY = "alysum-local-studio-v1";
+export const LOCAL_STUDIO_STORAGE_KEY = "alysum-local-studio-v1";
+const STORAGE_KEY = LOCAL_STUDIO_STORAGE_KEY;
 const DEFAULT_GOAL = 2000;
 
 function defaultState() {
