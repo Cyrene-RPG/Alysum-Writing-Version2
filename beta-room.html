@@ -2,13 +2,13 @@
 <html lang="en">
 <head>
     <link rel="manifest" href="manifest.webmanifest">
-    <meta name="theme-color" content="#d97706" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#7c3aed" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#0b1220" media="(prefers-color-scheme: dark)">
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Beta room — Alysum</title>
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
-    <link rel="stylesheet" href="css/gradient-themes.css?v=4" />
+    <link rel="stylesheet" href="css/gradient-themes.css?v=5" />
     <script src="js/gradient-theme-sync.js" defer></script>
     <script src="js/alysum-appearance-boot.js"></script>
     <style>
@@ -16,9 +16,6 @@
         :root {
             --purple: #6d28d9;
             --purple-dark: #5b21b6;
-            --beta-amber: #f59e0b;
-            --beta-amber-soft: #fde68a;
-            --beta-teal: #14b8a6;
             --bg: #0b1220;
             --panel: #111827;
             --panel-2: #172132;
@@ -46,7 +43,6 @@
             margin: 0;
             min-height: 100vh;
             background:
-                radial-gradient(ellipse 120% 55% at 50% -8%, rgba(245, 158, 11, 0.1) 0%, transparent 52%),
                 radial-gradient(ellipse 120% 60% at 50% -10%, var(--theme-body-spot, rgba(124, 58, 237, 0.2)) 0%, transparent 55%),
                 var(--bg);
             color: var(--text);
@@ -54,7 +50,6 @@
         }
         .hidden { display: none !important; }
 
-        /* Library-adjacent chrome, beta-tinted welcome bar */
         .beta-welcome-bar {
             position: relative;
             min-height: 84px;
@@ -65,8 +60,18 @@
             border-bottom: 1px solid rgba(255,255,255,0.1);
             background: var(
                 --theme-welcome-bar,
-                linear-gradient(135deg, rgba(120, 53, 15, 0.96) 0%, #b45309 38%, var(--theme-header-end, #0f766e) 100%)
+                var(
+                    --alysum-chrome-gradient,
+                    linear-gradient(
+                        135deg,
+                        rgba(76, 29, 149, 0.95) 0%,
+                        var(--theme-header-mid, #6d28d9) 38%,
+                        var(--theme-header-end, #db2777) 100%
+                    )
+                )
             );
+            background-size: cover;
+            background-position: center;
             box-shadow: 0 4px 32px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.12);
         }
         .beta-welcome-bar::before {
@@ -75,7 +80,7 @@
             inset: 0;
             background:
                 radial-gradient(circle at 12% 50%, rgba(255,255,255,0.14) 0%, transparent 42%),
-                radial-gradient(circle at 88% 20%, rgba(253, 230, 138, 0.16) 0%, transparent 40%);
+                radial-gradient(circle at 88% 20%, rgba(251,191,36,0.12) 0%, transparent 40%);
             pointer-events: none;
         }
         .beta-welcome-inner {
@@ -107,7 +112,7 @@
             font-size: clamp(20px, 3.6vw, 26px);
             font-weight: 900;
             line-height: 1.15;
-            color: #fff7ed;
+            color: #fff;
             text-shadow: 0 2px 12px rgba(0,0,0,0.25);
         }
         .beta-welcome-sub {
@@ -150,9 +155,9 @@
         }
         .wd-nav a:hover { color: var(--text); background: rgba(255,255,255,0.06); }
         .wd-nav a.is-active {
-            color: var(--text);
-            background: rgba(245, 158, 11, 0.22);
-            border-color: rgba(253, 230, 138, 0.35);
+            color: #fff;
+            background: rgba(124, 58, 237, 0.28);
+            border-color: rgba(167, 139, 250, 0.35);
         }
         .wd-nav-divider {
             flex-shrink: 0;
@@ -212,7 +217,7 @@
         }
         .btn:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
         .btn.primary {
-            background: linear-gradient(135deg, var(--theme-header-mid, #b45309), var(--theme-header-end, var(--beta-amber)));
+            background: linear-gradient(135deg, var(--theme-header-mid, #6d28d9), var(--theme-header-end, #db2777));
             color: #fff;
             border-color: transparent;
         }
@@ -245,8 +250,12 @@
             line-height: 1.5;
         }
         .error-box { color: #fecaca; background: rgba(127,29,29,0.28); border-color: rgba(239,68,68,0.35); }
-        .status-box.wait { background: rgba(245,158,11,0.12); border-color: rgba(245,158,11,0.28); color: #fde68a; }
-        body.light .status-box.wait { color: #a16207; }
+        .status-box.wait {
+            background: var(--theme-accent-soft-bg, rgba(124, 58, 237, 0.16));
+            border-color: var(--accent-muted, rgba(124, 58, 237, 0.28));
+            color: var(--theme-brand-kicker, #c4b5fd);
+        }
+        body.light .status-box.wait { color: var(--theme-header-mid, #6d28d9); }
 
         .hero {
             margin-bottom: 18px;
@@ -265,7 +274,7 @@
             top: 0;
             bottom: 0;
             width: 4px;
-            background: linear-gradient(180deg, var(--beta-amber), var(--beta-teal));
+            background: linear-gradient(180deg, var(--theme-header-mid, #6d28d9), var(--theme-header-end, #db2777));
             border-radius: 4px 0 0 4px;
         }
         .eyebrow {
@@ -273,7 +282,7 @@
             font-weight: 900;
             letter-spacing: 0.08em;
             text-transform: uppercase;
-            color: #fcd34d;
+            color: var(--theme-brand-kicker, #c4b5fd);
             margin-bottom: 8px;
         }
         .book-title {
@@ -292,14 +301,17 @@
             margin-top: 14px;
             padding: 12px 14px;
             border-radius: 14px;
-            background: rgba(245, 158, 11, 0.1);
-            border: 1px solid rgba(245, 158, 11, 0.22);
-            color: color-mix(in srgb, var(--text) 88%, var(--beta-amber-soft));
+            background: var(--theme-accent-soft-bg, rgba(124, 58, 237, 0.12));
+            border: 1px solid var(--accent-muted, rgba(124, 58, 237, 0.22));
+            color: color-mix(in srgb, var(--text) 88%, var(--theme-brand-kicker, #c4b5fd));
             font-size: 13px;
             line-height: 1.55;
             font-weight: 600;
         }
-        body.light .beta-notice { color: #92400e; background: rgba(245, 158, 11, 0.08); }
+        body.light .beta-notice {
+            color: color-mix(in srgb, var(--text) 90%, var(--theme-header-mid, #6d28d9));
+            background: var(--theme-accent-soft-bg, rgba(124, 58, 237, 0.08));
+        }
         .hero-stats {
             margin-top: 18px;
             display: grid;
@@ -368,7 +380,7 @@
             font-size: 10px;
             font-weight: 900;
             letter-spacing: 0.14em;
-            color: rgba(245, 158, 11, 0.14);
+            color: color-mix(in srgb, var(--theme-header-mid, #7c3aed) 14%, transparent);
             pointer-events: none;
             user-select: none;
         }
@@ -414,7 +426,7 @@
             font-weight: 900;
             letter-spacing: 0.1em;
             text-transform: uppercase;
-            color: #fcd34d;
+            color: var(--theme-brand-kicker, #c4b5fd);
             margin-bottom: 6px;
         }
         .feedback-title {
@@ -476,8 +488,8 @@
             line-height: 1.6;
         }
         .comment-input:focus {
-            border-color: rgba(245, 158, 11, 0.45);
-            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.12);
+            border-color: color-mix(in srgb, var(--theme-header-mid, #7c3aed) 45%, transparent);
+            box-shadow: 0 0 0 3px var(--accent-muted, rgba(124, 58, 237, 0.12));
         }
         .feedback-actions { margin-top: 10px; }
         .feedback-actions .btn { width: 100%; }
@@ -489,6 +501,54 @@
             color: var(--muted);
             font-size: 15px;
             font-weight: 700;
+        }
+
+        .auth-gate {
+            max-width: 520px;
+            margin: 32px auto 48px;
+            padding: 28px 24px;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            box-shadow: var(--shadow);
+            text-align: center;
+        }
+        .auth-gate-badge {
+            width: 56px;
+            height: 56px;
+            margin: 0 auto 14px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            background: var(--theme-accent-soft-bg, rgba(124, 58, 237, 0.16));
+            border: 1px solid var(--accent-muted, rgba(124, 58, 237, 0.22));
+        }
+        .auth-gate-title {
+            margin: 0 0 10px;
+            font-size: clamp(22px, 4vw, 28px);
+            font-weight: 900;
+            line-height: 1.15;
+        }
+        .auth-gate-copy {
+            margin: 0 0 20px;
+            color: var(--muted);
+            font-size: 15px;
+            line-height: 1.6;
+        }
+        .auth-gate-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+        .auth-gate-actions .btn { min-width: 148px; }
+        .auth-gate-foot {
+            margin: 16px 0 0;
+            font-size: 13px;
+            color: var(--muted);
+            line-height: 1.5;
         }
 
         @media (max-width: 760px) {
@@ -540,6 +600,22 @@
 
     <div id="loadingPanel" class="loading-panel">Loading beta room…</div>
     <div id="errorPanel" class="page hidden"><div class="error-box" id="errorText"></div></div>
+
+    <div id="authGatePanel" class="page hidden" role="region" aria-labelledby="authGateTitle">
+        <div class="auth-gate">
+            <div class="auth-gate-badge" aria-hidden="true">🔒</div>
+            <div class="feedback-kicker">Private beta</div>
+            <h2 class="auth-gate-title" id="authGateTitle">Sign in to open this beta room</h2>
+            <p class="auth-gate-copy" id="authGateCopy">
+                You've been invited to read a private unpublished draft and leave feedback. Sign in or create a free Alysum account first — then we'll open the room for you.
+            </p>
+            <div class="auth-gate-actions">
+                <a class="btn primary" id="authGateLoginBtn" href="login.html">Sign in</a>
+                <a class="btn" id="authGateSignupBtn" href="signup.html">Create account</a>
+            </div>
+            <p class="auth-gate-foot">After you're signed in, you'll return here automatically.</p>
+        </div>
+    </div>
 
     <div id="mainLayout" class="page hidden">
         <div class="beta-layout">
@@ -630,6 +706,11 @@
         const loadingPanel = document.getElementById("loadingPanel");
         const errorPanel = document.getElementById("errorPanel");
         const errorText = document.getElementById("errorText");
+        const authGatePanel = document.getElementById("authGatePanel");
+        const authGateTitle = document.getElementById("authGateTitle");
+        const authGateCopy = document.getElementById("authGateCopy");
+        const authGateLoginBtn = document.getElementById("authGateLoginBtn");
+        const authGateSignupBtn = document.getElementById("authGateSignupBtn");
         const mainLayout = document.getElementById("mainLayout");
         const welcomeSub = document.getElementById("welcomeSub");
         const topTitle = document.getElementById("topTitle");
@@ -712,9 +793,41 @@
 
         function showFatal(msg) {
             loadingPanel.classList.add("hidden");
+            authGatePanel.classList.add("hidden");
             mainLayout.classList.add("hidden");
             errorText.textContent = msg;
             errorPanel.classList.remove("hidden");
+        }
+
+        function authReturnQuery() {
+            const returnPath = window.location.pathname + window.location.search;
+            return "?next=" + encodeURIComponent(returnPath);
+        }
+
+        function showAuthGate() {
+            loadingPanel.classList.add("hidden");
+            mainLayout.classList.add("hidden");
+            errorPanel.classList.add("hidden");
+
+            const nextQs = authReturnQuery();
+            authGateLoginBtn.href = "login.html" + nextQs;
+            authGateSignupBtn.href = "signup.html" + nextQs;
+
+            const isInvite = !!inviteToken;
+            authGateTitle.textContent = isInvite
+                ? "Sign in to accept this beta invite"
+                : "Sign in to open this beta room";
+            authGateCopy.textContent = isInvite
+                ? "You've been invited to read a private unpublished draft and leave feedback. Sign in or create a free Alysum account first — then we'll open the room for you."
+                : "This beta room is private. Sign in or create a free Alysum account to read the snapshot and leave feedback.";
+            if (topSub) topSub.textContent = isInvite ? "Invite link · sign in required" : "Sign in required";
+            if (welcomeSub) {
+                welcomeSub.textContent = isInvite
+                    ? "Private beta invite — sign in or create an account to continue"
+                    : "Private beta room — sign in or create an account to continue";
+            }
+
+            authGatePanel.classList.remove("hidden");
         }
 
         function friendlyInviteError(err) {
@@ -856,6 +969,7 @@
             }
 
             loadingPanel.classList.add("hidden");
+            authGatePanel.classList.add("hidden");
             mainLayout.classList.remove("hidden");
         }
 
@@ -903,8 +1017,7 @@
         wireSupabaseSession(async (session) => {
             currentUser = session?.user ?? null;
             if (!currentUser) {
-                const next = window.location.pathname + window.location.search;
-                window.location.href = "login.html?next=" + encodeURIComponent(next);
+                showAuthGate();
                 return;
             }
 

@@ -153,3 +153,56 @@ export function clearAuthCallbackFromUrl() {
     const next = url.pathname + (search ? `?${search}` : "");
     history.replaceState({}, document.title, next);
 }
+
+/** Same-origin navigation only; supports root-relative and same-folder relative ?next= values. */
+export function resolveInternalRedirect(next) {
+    if (!next || typeof next !== "string") return null;
+    if (next.startsWith("//")) return null;
+    try {
+        const resolved = new URL(next, typeof location !== "undefined" ? location.href : PRODUCTION_ORIGIN + "/");
+        if (typeof location !== "undefined" && resolved.origin !== location.origin) return null;
+        return resolved.href;
+    } catch {
+        return null;
+    }
+}
+
+export const LOGIN_RETURN_NEXT_KEY = "alysum-login-next";
+export const SIGNUP_RETURN_NEXT_KEY = "alysum-signup-next";
+
+export function persistAuthReturnNext(next, storageKey) {
+    const safe = resolveInternalRedirect(next);
+    try {
+        if (safe) sessionStorage.setItem(storageKey, safe);
+        else sessionStorage.removeItem(storageKey);
+    } catch {
+        /* ignore */
+    }
+    return safe;
+}
+
+export function consumeAuthReturnNext(storageKey) {
+    try {
+        const stored = sessionStorage.getItem(storageKey);
+        if (stored) sessionStorage.removeItem(storageKey);
+        return resolveInternalRedirect(stored);
+    } catch {
+        return null;
+    }
+}
+
+export function resolveAuthReturnNext(searchParams, storageKey) {
+    const fromQuery = resolveInternalRedirect(searchParams?.get?.("next"));
+    if (fromQuery) return fromQuery;
+    return consumeAuthReturnNext(storageKey);
+}
+
+/** True when a post-auth redirect should land on a beta room page. */
+export function isBetaRoomReturnUrl(url) {
+    try {
+        const u = typeof url === "string" ? new URL(url, typeof location !== "undefined" ? location.href : PRODUCTION_ORIGIN + "/") : url;
+        return /(^|\/)beta-room\.html$/i.test(u.pathname);
+    } catch {
+        return false;
+    }
+}

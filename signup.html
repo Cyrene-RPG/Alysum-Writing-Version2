@@ -140,6 +140,27 @@
             line-height: 1.45;
         }
 
+        .beta-invite-banner {
+            display: none;
+            margin: 0 0 16px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            font-size: 13px;
+            line-height: 1.45;
+            color: #4c1d95;
+            background: #ede9fe;
+            border: 1px solid #c4b5fd;
+            text-align: left;
+        }
+
+        .beta-invite-banner.visible {
+            display: block;
+        }
+
+        .beta-invite-banner strong {
+            color: #312e81;
+        }
+
         .field-label {
             display: block;
             margin: 12px 0 7px;
@@ -599,6 +620,9 @@
 
 <div class="card" id="signup-card">
     <h2>Create your account</h2>
+    <div class="beta-invite-banner" id="beta-invite-banner" role="status">
+        <strong>Private beta invite.</strong> Create a free account below — we'll open the draft for you as soon as you're set up.
+    </div>
     <p class="auth-subtitle">Choose your path, then continue with email, Google, or Discord.</p>
 
     <span class="account-type-label" id="accountTypeLabel">How will you use Alysum?</span>
@@ -658,7 +682,7 @@
     </p>
 
     <div class="link">
-        Already have an account? <a href="login.html">Login</a>
+        Already have an account? <a href="login.html" id="signup-login-link">Login</a>
     </div>
 </div>
 
@@ -679,7 +703,7 @@
         Wrong address? <a href="signup.html" id="confirm-change-email">Start over</a>
     </div>
     <div class="link">
-        Already confirmed? <a href="login.html">Log in</a>
+        Already confirmed? <a href="login.html" id="confirm-login-link">Log in</a>
     </div>
 </div>
 
@@ -764,7 +788,12 @@ import {
     OAUTH_PENDING_SIGNUP_KEY,
     setOAuthPending,
     shouldAutoContinueSignup,
-} from "./js/auth-redirect.js?v=3";
+    resolveInternalRedirect,
+    persistAuthReturnNext,
+    resolveAuthReturnNext,
+    isBetaRoomReturnUrl,
+    SIGNUP_RETURN_NEXT_KEY,
+} from "./js/auth-redirect.js?v=4";
 import { wireSupabaseSession } from "./js/supabase-session.js?v=1";
 import {
     ACCOUNT_AUTHOR,
@@ -877,7 +906,28 @@ function oauthUsernameFromUser(user) {
 function redirectAfterSignup() {
     clearSignupFlowState();
     setUiMode("studio");
-    window.location.href = "writer-dashboard.html";
+    const params = new URLSearchParams(window.location.search);
+    const safe = resolveAuthReturnNext(params, SIGNUP_RETURN_NEXT_KEY);
+    window.location.href = safe || "writer-dashboard.html";
+}
+
+function applySignupReturnContext() {
+    const params = new URLSearchParams(window.location.search);
+    const safe = persistAuthReturnNext(params.get("next"), SIGNUP_RETURN_NEXT_KEY);
+    const nextQs = safe ? `?next=${encodeURIComponent(safe)}` : "";
+
+    document.querySelectorAll('a[href="login.html"], a[href^="login.html?"]').forEach((link) => {
+        link.href = safe ? `login.html${nextQs}` : "login.html";
+    });
+
+    if (!safe || !isBetaRoomReturnUrl(safe)) return;
+
+    document.getElementById("beta-invite-banner")?.classList.add("visible");
+    const heading = document.querySelector("#signup-card h2");
+    if (heading) heading.textContent = "Create account to open beta room";
+
+    const readerRadio = document.querySelector('input[name="accountType"][value="reader"]');
+    if (readerRadio) readerRadio.checked = true;
 }
 
 function loadSignupFlowState() {
@@ -1343,6 +1393,7 @@ async function startOAuth(provider) {
     try {
         setOAuthPending(OAUTH_PENDING_SIGNUP_KEY);
         sessionStorage.setItem(SIGNUP_ACCOUNT_TYPE_KEY, accountType);
+        persistAuthReturnNext(new URLSearchParams(window.location.search).get("next"), SIGNUP_RETURN_NEXT_KEY);
     } catch {
         /* ignore */
     }
@@ -1501,6 +1552,7 @@ async function resumeSignupAfterEmailConfirm(session, event) {
 }
 
 clearLegacyOAuthPending();
+applySignupReturnContext();
 
 if (!isOAuthCallbackLanding()) {
     clearOAuthPending(OAUTH_PENDING_SIGNUP_KEY);

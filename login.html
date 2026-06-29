@@ -150,6 +150,26 @@
             display: block;
         }
 
+        .beta-invite-banner {
+            display: none;
+            margin-bottom: 14px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            font-size: 13px;
+            line-height: 1.45;
+            color: #4c1d95;
+            background: #ede9fe;
+            border: 1px solid #c4b5fd;
+        }
+
+        .beta-invite-banner.visible {
+            display: block;
+        }
+
+        .beta-invite-banner strong {
+            color: #312e81;
+        }
+
         .session-banner strong {
             color: #0f172a;
         }
@@ -242,6 +262,10 @@
 <div class="card">
     <h2>Welcome Back</h2>
 
+    <div class="beta-invite-banner" id="beta-invite-banner" role="status">
+        <strong>Private beta invite.</strong> Sign in below — we'll bring you back to the draft right after you're in.
+    </div>
+
     <div class="session-banner" id="session-banner" aria-live="polite">
         You are still signed in as <strong id="session-label"></strong>.
         Sign out to use a different account or email instead of Discord or Google.
@@ -274,7 +298,7 @@
     </div>
 
     <div class="signup-link">
-        New here? <a href="signup.html">Create account</a>
+        New here? <a href="signup.html" id="signup-link">Create account</a>
     </div>
 
     <p class="support-footnote" id="support-footnote">
@@ -296,7 +320,11 @@ import {
     OAUTH_PENDING_LOGIN_KEY,
     setOAuthPending,
     shouldAutoContinueOAuth,
-} from "./js/auth-redirect.js?v=2";
+    resolveInternalRedirect,
+    persistAuthReturnNext,
+    isBetaRoomReturnUrl,
+    LOGIN_RETURN_NEXT_KEY,
+} from "./js/auth-redirect.js?v=4";
 import { wireSupabaseSession } from "./js/supabase-session.js?v=1";
 import { ensureLoginStreakCloud } from "./js/ensure-login-streak.js?v=3";
 
@@ -311,6 +339,8 @@ const forgotLink = document.getElementById("forgot-link");
 const sessionBanner = document.getElementById("session-banner");
 const sessionLabel = document.getElementById("session-label");
 const signOutBtn = document.getElementById("sign-out-btn");
+const betaInviteBanner = document.getElementById("beta-invite-banner");
+const signupLink = document.getElementById("signup-link");
 
 const oauthButtons = [googleBtn, discordBtn];
 
@@ -444,16 +474,19 @@ function resetEmailMessage(errorOrMessage) {
     return message;
 }
 
-/** Same-origin navigation only; supports root-relative and same-folder relative ?next= values. */
-function resolveInternalRedirect(next) {
-    if (!next || typeof next !== "string") return null;
-    if (next.startsWith("//")) return null;
-    try {
-        const resolved = new URL(next, window.location.href);
-        if (resolved.origin !== window.location.origin) return null;
-        return resolved.href;
-    } catch {
-        return null;
+function applyLoginReturnContext() {
+    const params = new URLSearchParams(window.location.search);
+    const next = params.get("next");
+    const safe = persistAuthReturnNext(next, LOGIN_RETURN_NEXT_KEY);
+
+    if (signupLink) {
+        signupLink.href = safe ? `signup.html?next=${encodeURIComponent(safe)}` : "signup.html";
+    }
+
+    if (safe && isBetaRoomReturnUrl(safe)) {
+        betaInviteBanner?.classList.add("visible");
+        const heading = document.querySelector(".card h2");
+        if (heading) heading.textContent = "Sign in to open beta room";
     }
 }
 
@@ -463,8 +496,8 @@ async function redirectAfterLogin() {
     const oauthReturn = isOAuthCallbackLanding();
     if (!next && oauthReturn) {
         try {
-            next = sessionStorage.getItem("alysum-login-next");
-            if (next) sessionStorage.removeItem("alysum-login-next");
+            next = sessionStorage.getItem(LOGIN_RETURN_NEXT_KEY);
+            if (next) sessionStorage.removeItem(LOGIN_RETURN_NEXT_KEY);
         } catch {
             /* ignore */
         }
@@ -563,11 +596,7 @@ async function startOAuth(provider) {
         setOAuthPending(OAUTH_PENDING_LOGIN_KEY);
         const p = new URLSearchParams(window.location.search);
         const next = p.get("next");
-        if (resolveInternalRedirect(next)) {
-            sessionStorage.setItem("alysum-login-next", next);
-        } else {
-            sessionStorage.removeItem("alysum-login-next");
-        }
+        persistAuthReturnNext(next, LOGIN_RETURN_NEXT_KEY);
     } catch {
         /* ignore */
     }
@@ -621,6 +650,7 @@ if (resetParams.get("reset") === "success") {
 }
 
 clearLegacyOAuthPending();
+applyLoginReturnContext();
 
 if (!isRecoveryLanding) {
     if (!isOAuthCallbackLanding()) {
