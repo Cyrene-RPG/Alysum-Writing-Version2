@@ -71,3 +71,7 @@ node_modules/
 # Extensionless `index` is treated as binary at `/` on static hosts (download instead of the site). Use index.html only.
 /index
 firebase-to-supabase/
+
+# Local Supabase exports (PII + manuscripts)
+recovery-audit/backups/
+test-output/
