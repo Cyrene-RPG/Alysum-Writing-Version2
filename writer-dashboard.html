@@ -756,6 +756,30 @@
         box-shadow: 0 20px 36px rgba(0, 0, 0, 0.48), inset 6px 0 0 rgba(0, 0, 0, 0.16);
     }
 
+    .wd-book-beta-btn {
+        position: absolute;
+        right: 8px;
+        bottom: 8px;
+        z-index: 3;
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        background: rgba(15, 23, 42, 0.82);
+        color: #e9d5ff;
+        border-radius: 999px;
+        padding: 5px 10px;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        text-decoration: none;
+        backdrop-filter: blur(8px);
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+    }
+
+    .wd-book-beta-btn:hover {
+        background: rgba(91, 33, 182, 0.92);
+        color: #fff;
+    }
+
     .wd-book-cover-img {
         position: absolute;
         inset: 0;
@@ -1514,12 +1538,16 @@
             div.onclick = () => {
                 window.location.href = "editor.html?book=" + encodeURIComponent(data.id);
             };
+            const betaBtn = !isLocalStudio
+                ? `<a class="wd-book-beta-btn" href="beta-room-manage.html?book=${escapeAttribute(data.id)}" title="Share unpublished draft with beta readers" onclick="event.stopPropagation()">Beta invite</a>`
+                : "";
             if (coverUrl) {
                 div.innerHTML =
                     placeholder +
-                    `<img class="wd-book-cover-img" src="${escapeAttribute(coverUrl)}" alt="${escapeAttribute(title)} cover" loading="lazy" onerror="this.style.display='none'">`;
+                    `<img class="wd-book-cover-img" src="${escapeAttribute(coverUrl)}" alt="${escapeAttribute(title)} cover" loading="lazy" onerror="this.style.display='none'">` +
+                    betaBtn;
             } else {
-                div.innerHTML = placeholder;
+                div.innerHTML = placeholder + betaBtn;
             }
             bookList.appendChild(div);
         });

@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="js/alysum-appearance-boot.js"></script>
+    <link rel="stylesheet" href="css/site-responsive.css?v=1" />
+    <title>Beta room — Alysum</title>
+    <style>
+        * { box-sizing: border-box; }
+        :root {
+            --bg: #0b1220;
+            --panel: #111827;
+            --panel-2: #172132;
+            --text: #f9fafb;
+            --muted: #9ca3af;
+            --border: rgba(255,255,255,0.1);
+            --purple: #7c3aed;
+            --font-size: 19px;
+            --line-height: 1.8;
+        }
+        body { margin: 0; min-height: 100dvh; font-family: Georgia, "Times New Roman", serif; background: var(--bg); color: var(--text); }
+        body.light { --bg: #f4f6fb; --panel: #fff; --panel-2: #f7f9fc; --text: #171717; --muted: #5f6470; --border: rgba(0,0,0,0.08); }
+        .hidden { display: none !important; }
+        .topbar { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--border); background: color-mix(in srgb, var(--bg) 92%, transparent); position: sticky; top: 0; z-index: 20; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+        .topbar-fill { flex: 1; min-width: 0; text-align: center; }
+        .topbar-fill strong { display: block; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .topbar-fill span { font-size: 12px; color: var(--muted); }
+        .btn { border: 1px solid var(--border); background: var(--panel); color: var(--text); border-radius: 10px; padding: 8px 12px; font-weight: 700; font-size: 13px; cursor: pointer; text-decoration: none; font-family: inherit; }
+        .layout { display: grid; grid-template-columns: 1fr min(360px, 38vw); min-height: calc(100dvh - 52px); }
+        @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } .rail { border-top: 1px solid var(--border); } }
+        .reader { padding: 24px 20px 48px; overflow-y: auto; }
+        .reader-inner { max-width: 720px; margin: 0 auto; }
+        .chapter-head { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin-bottom: 18px; }
+        .chapter-head h2 { margin: 0 0 6px; font-size: 22px; }
+        .chapter-head p { margin: 0; color: var(--muted); font-size: 13px; }
+        .chapter-body { font-size: var(--font-size); line-height: var(--line-height); }
+        .chapter-body p { margin: 0 0 1em; }
+        .nav-row { display: flex; gap: 8px; margin-top: 24px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+        .rail { background: var(--panel); border-left: 1px solid var(--border); padding: 16px; overflow-y: auto; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+        .rail h3 { margin: 0 0 6px; font-size: 15px; }
+        .rail .hint { margin: 0 0 12px; color: var(--muted); font-size: 13px; line-height: 1.45; }
+        .msg-list { display: flex; flex-direction: column; gap: 10px; max-height: 50vh; overflow-y: auto; margin-bottom: 12px; }
+        .msg { border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; background: var(--panel-2); font-size: 14px; }
+        .msg-meta { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+        .msg-body { white-space: pre-wrap; word-break: break-word; }
+        .composer textarea { width: 100%; min-height: 88px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: var(--text); padding: 10px; font-size: 14px; resize: vertical; font-family: inherit; }
+        .composer .btn { margin-top: 8px; width: 100%; justify-content: center; background: linear-gradient(135deg, #5b21b6, var(--purple)); border: none; color: #fff; }
+        .status-box { padding: 10px; border-radius: 10px; font-size: 14px; margin-bottom: 12px; }
+        .status-box.error { background: rgba(248,113,113,0.12); color: #fecaca; }
+        .status-box.wait { background: rgba(251,191,36,0.12); color: #fde68a; }
+        body.light .status-box.error { color: #b91c1c; }
+        body.light .status-box.wait { color: #a16207; }
+        .watermark { pointer-events: none; position: fixed; inset: 0; z-index: 5; opacity: 0.06; font-size: 14px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 80px; padding: 40px; overflow: hidden; user-select: none; font-family: -apple-system, sans-serif; }
+    </style>
+</head>
+<body>
+    <header class="topbar">
+        <a class="btn" id="backBtn" href="reader-home.html">← Back</a>
+        <div class="topbar-fill">
+            <strong id="topTitle">Beta room</strong>
+            <span id="topSub">Private manuscript review</span>
+        </div>
+        <button type="button" class="btn" id="themeBtn">Light</button>
+    </header>
+
+    <div id="watermarkLayer" class="watermark hidden" aria-hidden="true"></div>
+
+    <div id="loadingPanel" class="reader"><p>Loading beta room…</p></div>
+    <div id="errorPanel" class="reader hidden"><div class="status-box error" id="errorText"></div></div>
+
+    <div id="mainLayout" class="layout hidden">
+        <section class="reader">
+            <div class="reader-inner">
+                <div class="chapter-head">
+                    <h2 id="chapterTitle">—</h2>
+                    <p id="chapterMeta">—</p>
+                </div>
+                <div class="chapter-body" id="chapterBody"></div>
+                <div class="nav-row">
+                    <button type="button" class="btn" id="prevBtn">← Prev</button>
+                    <button type="button" class="btn" id="nextBtn">Next →</button>
+                </div>
+            </div>
+        </section>
+        <aside class="rail">
+            <h3>Feedback thread</h3>
+            <p class="hint">Messages are logged and visible to both participants. Be constructive — this is a monitored beta space.</p>
+            <div id="threadStatus" class="status-box hidden"></div>
+            <div class="msg-list" id="msgList"></div>
+            <div class="composer" id="composer">
+                <textarea id="msgInput" placeholder="Overall thoughts, pacing, clarity…" maxlength="8000"></textarea>
+                <button type="button" class="btn" id="sendBtn">Send feedback</button>
+            </div>
+        </aside>
+    </div>
+
+    <script type="module">
+        import { supabase } from "./firebase.js";
+        import { wireSupabaseSession } from "./js/supabase-session.js?v=1";
+        import { publicDisplayNameFromUserData } from "./js/profile-display.js?v=1";
+        import {
+            acceptManuscriptInvite,
+            loadBetaRoomShare,
+            listBetaThreads,
+            listBetaMessages,
+            sendBetaMessage,
+            chaptersFromSnapshot,
+            isBetaRoomsSchemaMissing
+        } from "./js/beta-rooms-api.js?v=1";
+
+        const params = new URLSearchParams(window.location.search);
+        let shareId = String(params.get("share") || "").trim();
+        const inviteToken = String(params.get("invite") || "").trim();
+
+        const loadingPanel = document.getElementById("loadingPanel");
+        const errorPanel = document.getElementById("errorPanel");
+        const errorText = document.getElementById("errorText");
+        const mainLayout = document.getElementById("mainLayout");
+        const topTitle = document.getElementById("topTitle");
+        const topSub = document.getElementById("topSub");
+        const backBtn = document.getElementById("backBtn");
+        const themeBtn = document.getElementById("themeBtn");
+        const chapterTitle = document.getElementById("chapterTitle");
+        const chapterMeta = document.getElementById("chapterMeta");
+        const chapterBody = document.getElementById("chapterBody");
+        const prevBtn = document.getElementById("prevBtn");
+        const nextBtn = document.getElementById("nextBtn");
+        const threadStatus = document.getElementById("threadStatus");
+        const msgList = document.getElementById("msgList");
+        const msgInput = document.getElementById("msgInput");
+        const sendBtn = document.getElementById("sendBtn");
+        const composer = document.getElementById("composer");
+        const watermarkLayer = document.getElementById("watermarkLayer");
+
+        let currentUser = null;
+        let currentProfile = {};
+        let shareRow = null;
+        let chapters = [];
+        let chapterIndex = 0;
+        let generalThread = null;
+        let messagesChannel = null;
+        let nameByUserId = new Map();
+
+        function escapeHtml(str) {
+            return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        function setThreadStatus(msg, kind = "") {
+            if (!msg) { threadStatus.classList.add("hidden"); return; }
+            threadStatus.textContent = msg;
+            threadStatus.className = "status-box " + kind;
+            threadStatus.classList.remove("hidden");
+        }
+
+        function showFatal(msg) {
+            loadingPanel.classList.add("hidden");
+            mainLayout.classList.add("hidden");
+            errorText.textContent = msg;
+            errorPanel.classList.remove("hidden");
+        }
+
+        function renderChapter() {
+            const ch = chapters[chapterIndex];
+            if (!ch) return;
+            chapterTitle.textContent = ch.title || `Chapter ${chapterIndex + 1}`;
+            chapterMeta.textContent = `Chapter ${chapterIndex + 1} of ${chapters.length} · Snapshot review`;
+            chapterBody.innerHTML = ch.content || "<p></p>";
+            prevBtn.disabled = chapterIndex <= 0;
+            nextBtn.disabled = chapterIndex >= chapters.length - 1;
+        }
+
+        function applyWatermark(label) {
+            if (!label || !watermarkLayer) return;
+            const cells = Array.from({ length: 24 }, () => `<span>${escapeHtml(label)}</span>`);
+            watermarkLayer.innerHTML = cells.join("");
+            watermarkLayer.classList.remove("hidden");
+        }
+
+        async function resolveDisplayName(userId) {
+            if (!userId) return "Unknown";
+            if (nameByUserId.has(userId)) return nameByUserId.get(userId);
+            if (userId === currentUser?.id) {
+                const n = publicDisplayNameFromUserData(currentProfile) || currentUser.email || "You";
+                nameByUserId.set(userId, n);
+                return n;
+            }
+            const { data } = await supabase.from("users").select("display_name, username").eq("id", userId).maybeSingle();
+            const n = publicDisplayNameFromUserData(data || {}) || data?.username || "Reader";
+            nameByUserId.set(userId, n);
+            return n;
+        }
+
+        async function renderMessages() {
+            if (!generalThread?.id) {
+                msgList.innerHTML = "";
+                return;
+            }
+            const rows = await listBetaMessages(generalThread.id);
+            if (!rows.length) {
+                msgList.innerHTML = '<p class="hint">No messages yet. Start the conversation.</p>';
+                return;
+            }
+            const html = [];
+            for (const row of rows) {
+                const name = await resolveDisplayName(row.sender_id);
+                const when = row.created_at ? new Date(row.created_at).toLocaleString() : "";
+                html.push(`<div class="msg"><div class="msg-meta">${escapeHtml(name)} · ${escapeHtml(when)}</div><div class="msg-body">${escapeHtml(row.body)}</div></div>`);
+            }
+            msgList.innerHTML = html.join("");
+            msgList.scrollTop = msgList.scrollHeight;
+        }
+
+        function otherParticipantId() {
+            if (!shareRow || !currentUser) return "";
+            if (shareRow.author_id === currentUser.id) return shareRow.reader_id || "";
+            return shareRow.author_id;
+        }
+
+        async function loadRoom() {
+            shareRow = await loadBetaRoomShare(shareId);
+            if (!shareRow) throw new Error("Beta room not found or you do not have access.");
+            if (shareRow.status !== "active") {
+                if (shareRow.author_id === currentUser.id && shareRow.status === "pending") {
+                    setThreadStatus("Waiting for a reader to accept the invite.", "wait");
+                    composer.classList.add("hidden");
+                } else {
+                    throw new Error(`This beta room is ${shareRow.status}.`);
+                }
+            }
+
+            const snap = shareRow.beta_snapshots;
+            chapters = chaptersFromSnapshot(snap);
+            if (!chapters.length) throw new Error("This snapshot has no chapters.");
+
+            topTitle.textContent = snap?.title || "Untitled";
+            const isAuthor = shareRow.author_id === currentUser.id;
+            topSub.textContent = isAuthor ? "Your private beta room" : "Shared manuscript · monitored feedback";
+            if (isAuthor) backBtn.href = `beta-room-manage.html?book=${encodeURIComponent(shareRow.book_id)}`;
+            else backBtn.href = "reader-home.html";
+
+            if (!isAuthor) {
+                const wm = publicDisplayNameFromUserData(currentProfile) || currentUser.email || currentUser.id.slice(0, 8);
+                applyWatermark(`${wm} · private beta`);
+            }
+
+            renderChapter();
+
+            const threads = await listBetaThreads(shareId);
+            generalThread = threads.find((t) => t.thread_type === "general") || threads[0] || null;
+
+            if (shareRow.status === "active") {
+                await renderMessages();
+                startMessagesRealtime();
+            }
+
+            loadingPanel.classList.add("hidden");
+            mainLayout.classList.remove("hidden");
+        }
+
+        function startMessagesRealtime() {
+            if (!generalThread?.id || messagesChannel) return;
+            messagesChannel = supabase
+                .channel("beta_room_msgs_" + generalThread.id)
+                .on(
+                    "postgres_changes",
+                    { event: "*", schema: "public", table: "beta_messages", filter: `thread_id=eq.${generalThread.id}` },
+                    () => { renderMessages().catch(console.error); }
+                )
+                .subscribe();
+        }
+
+        sendBtn.addEventListener("click", async () => {
+            if (!generalThread || shareRow?.status !== "active") return;
+            const body = msgInput.value.trim();
+            if (!body) return;
+            sendBtn.disabled = true;
+            try {
+                const recipient = otherParticipantId();
+                const senderName = publicDisplayNameFromUserData(currentProfile) || "Someone";
+                await sendBetaMessage({
+                    threadId: generalThread.id,
+                    shareId,
+                    body,
+                    recipientUserId: recipient,
+                    bookTitle: shareRow.beta_snapshots?.title,
+                    senderName
+                });
+                msgInput.value = "";
+                await renderMessages();
+            } catch (err) {
+                console.error(err);
+                setThreadStatus(err?.message || "Could not send message.", "error");
+            } finally {
+                sendBtn.disabled = false;
+            }
+        });
+
+        prevBtn.addEventListener("click", () => { if (chapterIndex > 0) { chapterIndex--; renderChapter(); } });
+        nextBtn.addEventListener("click", () => { if (chapterIndex < chapters.length - 1) { chapterIndex++; renderChapter(); } });
+
+        themeBtn?.addEventListener("click", () => {
+            document.body.classList.toggle("light");
+            themeBtn.textContent = document.body.classList.contains("light") ? "Dark" : "Light";
+        });
+
+        wireSupabaseSession(async (session) => {
+            currentUser = session?.user ?? null;
+            if (!currentUser) {
+                const next = window.location.pathname + window.location.search;
+                window.location.href = "login.html?next=" + encodeURIComponent(next);
+                return;
+            }
+
+            const { data: profile } = await supabase.from("users").select("display_name, username").eq("id", currentUser.id).maybeSingle();
+            currentProfile = profile || {};
+
+            try {
+                if (inviteToken && !shareId) {
+                    const accepted = await acceptManuscriptInvite(inviteToken);
+                    shareId = accepted.id;
+                    const url = new URL(window.location.href);
+                    url.searchParams.delete("invite");
+                    url.searchParams.set("share", shareId);
+                    history.replaceState({}, "", url.pathname + url.search);
+                }
+                if (!shareId) {
+                    showFatal("Missing beta room link. Ask the author for an invite.");
+                    return;
+                }
+                await loadRoom();
+            } catch (err) {
+                console.error(err);
+                if (isBetaRoomsSchemaMissing(err)) {
+                    showFatal("Beta rooms are not set up in Supabase yet. Ask the site admin to run supabase-beta-rooms.sql.");
+                } else {
+                    showFatal(err?.message || "Could not open beta room.");
+                }
+            }
+        });
+    </script>
+</body>
+</html>

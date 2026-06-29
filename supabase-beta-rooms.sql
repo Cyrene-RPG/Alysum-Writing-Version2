@@ -512,8 +512,55 @@ CREATE TRIGGER beta_messages_audit_trg
   EXECUTE FUNCTION public.beta_messages_audit_trigger();
 
 -- ---------------------------------------------------------------------------
--- 6. Notifications — beta room events
+-- 6. Notifications — ensure table exists, then beta room insert policy
+-- (Copied from supabase-base-schema.sql + supabase-sibling-tables.sql so this
+--  file can run standalone when notifications was never migrated.)
 -- ---------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS public.notifications (
+  id text PRIMARY KEY,
+  user_id uuid NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE,
+  read boolean NOT NULL DEFAULT false,
+  data jsonb NOT NULL DEFAULT '{}'::jsonb,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS notifications_user_id_idx ON public.notifications (user_id);
+CREATE INDEX IF NOT EXISTS notifications_user_read_idx ON public.notifications (user_id, read);
+
+ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "notifications_select_own" ON public.notifications;
+CREATE POLICY "notifications_select_own" ON public.notifications
+  FOR SELECT TO authenticated
+  USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "notifications_update_own" ON public.notifications;
+CREATE POLICY "notifications_update_own" ON public.notifications
+  FOR UPDATE TO authenticated
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "notifications_delete_own" ON public.notifications;
+CREATE POLICY "notifications_delete_own" ON public.notifications
+  FOR DELETE TO authenticated
+  USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "notifications_insert_beta_share_reader" ON public.notifications;
+CREATE POLICY "notifications_insert_beta_share_reader" ON public.notifications
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    data IS NOT NULL
+    AND coalesce(data->>'readerUid', '') = (auth.uid())::text
+  );
+
+DROP POLICY IF EXISTS "notifications_update_beta_share_reader" ON public.notifications;
+CREATE POLICY "notifications_update_beta_share_reader" ON public.notifications
+  FOR UPDATE TO authenticated
+  USING (coalesce(data->>'readerUid', '') = (auth.uid())::text)
+  WITH CHECK (coalesce(data->>'readerUid', '') = (auth.uid())::text);
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.notifications TO authenticated;
 
 DROP POLICY IF EXISTS "notifications_insert_beta_room" ON public.notifications;
 CREATE POLICY "notifications_insert_beta_room" ON public.notifications

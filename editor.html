@@ -440,6 +440,7 @@
             <button class="pill-btn secondary" id="deleteChapterBtn" type="button" data-tip="Delete current chapter">Delete Chapter</button>
             <button class="pill-btn secondary" id="themeToggleBtn" type="button" data-tip="Toggle light / dark mode">Dark Mode</button>
             <button class="pill-btn secondary" id="publishBtn" type="button" data-tip="Publish chapters to the web">Publish</button>
+            <a class="pill-btn secondary" id="betaShareLink" href="beta-room-manage.html" data-tip="Share an unpublished snapshot with beta readers">Beta share</a>
             <a class="pill-btn secondary" id="storyBibleLink" href="Story-Bible-New.html" data-tip="Open Story Bible for this book">Story Bible</a>
             <button class="pill-btn danger" id="deleteBookBtn" type="button" data-tip="Permanently delete this book">Delete Book</button>
         </div>
@@ -460,6 +461,7 @@
         <div class="topbar-right">
             <span class="topbar-tip" data-tip="New chapter"><button class="icon-btn purple" id="quickAddBtn" type="button" aria-label="Add chapter">＋</button></span>
             <span class="topbar-tip" data-tip="Publish to web"><button class="icon-btn purple" id="publishTopBtn" type="button" aria-label="Publish">🚀</button></span>
+            <span class="topbar-tip" data-tip="Share unpublished draft with beta readers" id="betaShareTopLinkWrap"><a class="icon-btn" id="betaShareTopLink" href="beta-room-manage.html" aria-label="Beta share">✉</a></span>
             <span class="topbar-tip" data-tip="Export / print"><button class="icon-btn purple" id="exportBtn" type="button" aria-label="Export">📄</button></span>
             <span class="topbar-tip" data-tip="Story Bible" id="storyBibleTopLinkWrap"><a class="icon-btn" id="storyBibleTopLink" href="Story-Bible-New.html" aria-label="Story Bible">📖</a></span>
             <span class="topbar-tip" data-tip="Plot Doctor (Alt+P)"><a class="pd-toggle" id="plotDoctorLink" href="plot-doctor/">Plot Doctor</a></span>
@@ -608,12 +610,16 @@ function rememberBookId(id) {
     localStorage.setItem("alysum-current-book-id", bookId);
     sessionStorage.setItem("alysum-current-book-id", bookId);
     syncPlotDoctorLink();
+    applyEditorStoryBibleLinks();
     const url = new URL(window.location.href);
     url.searchParams.set("book", bookId);
     window.history.replaceState({}, "", url.toString());
 }
 
     const storyBibleLink = document.getElementById("storyBibleLink");
+    const betaShareLink = document.getElementById("betaShareLink");
+    const betaShareTopLink = document.getElementById("betaShareTopLink");
+    const betaShareTopLinkWrap = document.getElementById("betaShareTopLinkWrap");
     const storyBibleTopLink = document.getElementById("storyBibleTopLink");
     const storyBibleTopLinkWrap = document.getElementById("storyBibleTopLinkWrap");
     const sidebar = document.getElementById("sidebar");
@@ -826,6 +832,15 @@ function rememberBookId(id) {
         if (storyBibleLink) { storyBibleLink.style.display = show ? "" : "none"; if (hasBook) storyBibleLink.href = `Story-Bible-New.html?book=${encodeURIComponent(bookId)}`; }
         if (storyBibleTopLinkWrap) storyBibleTopLinkWrap.classList.toggle("hidden", !show);
         if (storyBibleTopLink && hasBook) storyBibleTopLink.href = `Story-Bible-New.html?book=${encodeURIComponent(bookId)}`;
+        if (betaShareLink) {
+            const showBeta = hasBook && !isLocalStudio;
+            betaShareLink.style.display = showBeta ? "" : "none";
+            if (showBeta) betaShareLink.href = `beta-room-manage.html?book=${encodeURIComponent(bookId)}`;
+        }
+        if (betaShareTopLinkWrap) betaShareTopLinkWrap.classList.toggle("hidden", !(hasBook && !isLocalStudio));
+        if (betaShareTopLink && hasBook && !isLocalStudio) {
+            betaShareTopLink.href = `beta-room-manage.html?book=${encodeURIComponent(bookId)}`;
+        }
     }
     applyEditorStoryBibleLinks();
     window.addEventListener("storage", e => { if (e.key === STORY_BIBLE_PREF_KEY) applyEditorStoryBibleLinks(); });
@@ -2288,6 +2303,7 @@ async function loadBook() {
             persistedBookWordCount = totalWords();
             setSaveStatus("Ready");
             scheduleWriterResumeSave();
+            applyEditorStoryBibleLinks();
         } catch (e) {
             console.error("LOAD ERROR:", e);
             setSaveStatus("Error loading");
