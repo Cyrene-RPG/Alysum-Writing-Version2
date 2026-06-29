@@ -1,104 +1,614 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta name="theme-color" content="#d97706" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#0b1220" media="(prefers-color-scheme: dark)">
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script src="js/alysum-appearance-boot.js"></script>
-    <link rel="stylesheet" href="css/site-responsive.css?v=1" />
     <title>Beta room — Alysum</title>
+    <link rel="stylesheet" href="css/site-responsive.css?v=1" />
+    <link rel="stylesheet" href="css/gradient-themes.css?v=4" />
+    <script src="js/gradient-theme-sync.js" defer></script>
+    <script src="js/alysum-appearance-boot.js"></script>
     <style>
         * { box-sizing: border-box; }
         :root {
+            --purple: #6d28d9;
+            --purple-dark: #5b21b6;
+            --beta-amber: #f59e0b;
+            --beta-amber-soft: #fde68a;
+            --beta-teal: #14b8a6;
             --bg: #0b1220;
             --panel: #111827;
             --panel-2: #172132;
             --text: #f9fafb;
             --muted: #9ca3af;
-            --border: rgba(255,255,255,0.1);
-            --purple: #7c3aed;
-            --font-size: 19px;
-            --line-height: 1.8;
+            --border: rgba(255,255,255,0.08);
+            --shadow: 0 14px 34px rgba(0,0,0,0.28);
+            --reader-max: 980px;
+            --page-max: 1320px;
+            --font-size: 22px;
+            --line-height: 1.95;
+            --reader-nav-offset: 45px;
         }
-        body { margin: 0; min-height: 100dvh; font-family: Georgia, "Times New Roman", serif; background: var(--bg); color: var(--text); }
-        body.light { --bg: #f4f6fb; --panel: #fff; --panel-2: #f7f9fc; --text: #171717; --muted: #5f6470; --border: rgba(0,0,0,0.08); }
+        body.light {
+            --bg: #f4f6fb;
+            --panel: #ffffff;
+            --panel-2: #f7f9fc;
+            --text: #171717;
+            --muted: #5f6470;
+            --border: rgba(0,0,0,0.08);
+            --shadow: 0 14px 34px rgba(0,0,0,0.08);
+        }
+        html { scroll-behavior: smooth; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background:
+                radial-gradient(ellipse 120% 55% at 50% -8%, rgba(245, 158, 11, 0.14) 0%, transparent 52%),
+                radial-gradient(ellipse 80% 40% at 100% 0%, rgba(20, 184, 166, 0.08) 0%, transparent 45%),
+                var(--bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
         .hidden { display: none !important; }
-        .topbar { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--border); background: color-mix(in srgb, var(--bg) 92%, transparent); position: sticky; top: 0; z-index: 20; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-        .topbar-fill { flex: 1; min-width: 0; text-align: center; }
-        .topbar-fill strong { display: block; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .topbar-fill span { font-size: 12px; color: var(--muted); }
-        .btn { border: 1px solid var(--border); background: var(--panel); color: var(--text); border-radius: 10px; padding: 8px 12px; font-weight: 700; font-size: 13px; cursor: pointer; text-decoration: none; font-family: inherit; }
-        .layout { display: grid; grid-template-columns: 1fr min(360px, 38vw); min-height: calc(100dvh - 52px); }
-        @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } .rail { border-top: 1px solid var(--border); } }
-        .reader { padding: 24px 20px 48px; overflow-y: auto; }
-        .reader-inner { max-width: 720px; margin: 0 auto; }
-        .chapter-head { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin-bottom: 18px; }
-        .chapter-head h2 { margin: 0 0 6px; font-size: 22px; }
-        .chapter-head p { margin: 0; color: var(--muted); font-size: 13px; }
-        .chapter-body { font-size: var(--font-size); line-height: var(--line-height); }
-        .chapter-body p { margin: 0 0 1em; }
-        .nav-row { display: flex; gap: 8px; margin-top: 24px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-        .rail { background: var(--panel); border-left: 1px solid var(--border); padding: 16px; overflow-y: auto; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-        .rail h3 { margin: 0 0 6px; font-size: 15px; }
-        .rail .hint { margin: 0 0 12px; color: var(--muted); font-size: 13px; line-height: 1.45; }
-        .msg-list { display: flex; flex-direction: column; gap: 10px; max-height: 50vh; overflow-y: auto; margin-bottom: 12px; }
-        .msg { border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; background: var(--panel-2); font-size: 14px; }
-        .msg-meta { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
-        .msg-body { white-space: pre-wrap; word-break: break-word; }
-        .composer textarea { width: 100%; min-height: 88px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: var(--text); padding: 10px; font-size: 14px; resize: vertical; font-family: inherit; }
-        .composer .btn { margin-top: 8px; width: 100%; justify-content: center; background: linear-gradient(135deg, #5b21b6, var(--purple)); border: none; color: #fff; }
-        .status-box { padding: 10px; border-radius: 10px; font-size: 14px; margin-bottom: 12px; }
-        .status-box.error { background: rgba(248,113,113,0.12); color: #fecaca; }
-        .status-box.wait { background: rgba(251,191,36,0.12); color: #fde68a; }
-        body.light .status-box.error { color: #b91c1c; }
+
+        /* Library-adjacent chrome, beta-tinted welcome bar */
+        .beta-welcome-bar {
+            position: relative;
+            min-height: 84px;
+            padding: 0 clamp(16px, 3vw, 32px);
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            background: linear-gradient(135deg, rgba(120, 53, 15, 0.96) 0%, #b45309 38%, #0f766e 100%);
+            box-shadow: 0 4px 32px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.12);
+        }
+        .beta-welcome-bar::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(circle at 12% 50%, rgba(255,255,255,0.14) 0%, transparent 42%),
+                radial-gradient(circle at 88% 20%, rgba(253, 230, 138, 0.16) 0%, transparent 40%);
+            pointer-events: none;
+        }
+        .beta-welcome-inner {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: var(--page-max);
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .beta-badge {
+            flex-shrink: 0;
+            width: 52px;
+            height: 52px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            background: rgba(0,0,0,0.28);
+            border: 2px solid rgba(255,255,255,0.22);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+        }
+        .beta-welcome-copy { min-width: 0; }
+        .beta-welcome-title {
+            margin: 0;
+            font-size: clamp(20px, 3.6vw, 26px);
+            font-weight: 900;
+            line-height: 1.15;
+            color: #fff7ed;
+            text-shadow: 0 2px 12px rgba(0,0,0,0.25);
+        }
+        .beta-welcome-sub {
+            margin-top: 5px;
+            color: rgba(255,255,255,0.82);
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .wd-nav-wrap {
+            position: sticky;
+            top: 0;
+            z-index: 60;
+            background: rgba(11,18,32,0.92);
+            border-bottom: 1px solid var(--border);
+            backdrop-filter: blur(10px);
+        }
+        .wd-nav {
+            width: 100%;
+            max-width: var(--page-max);
+            margin: 0 auto;
+            padding: 10px clamp(12px, 2vw, 24px);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .wd-nav::-webkit-scrollbar { display: none; }
+        .wd-nav a {
+            flex-shrink: 0;
+            padding: 8px clamp(8px, 0.8vw, 14px);
+            border-radius: 999px;
+            border: 1px solid transparent;
+            color: var(--muted);
+            font-size: clamp(11px, 0.72vw, 13px);
+            font-weight: 700;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+        .wd-nav a:hover { color: var(--text); background: rgba(255,255,255,0.06); }
+        .wd-nav a.is-active {
+            color: var(--text);
+            background: rgba(245, 158, 11, 0.22);
+            border-color: rgba(253, 230, 138, 0.35);
+        }
+        .wd-nav-divider {
+            flex-shrink: 0;
+            width: 1px;
+            height: 22px;
+            background: var(--border);
+        }
+
+        .topbar {
+            position: sticky;
+            top: var(--reader-nav-offset);
+            z-index: 50;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(180px, auto) minmax(0, 1fr);
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            background: color-mix(in srgb, var(--bg) 88%, transparent);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+        }
+        .topbar-left, .topbar-right { display: flex; align-items: center; gap: 8px; min-width: 0; }
+        .topbar-left { justify-self: start; }
+        .topbar-right { justify-self: end; }
+        .topbar-center {
+            min-width: 0;
+            text-align: center;
+            justify-self: center;
+            max-width: min(42vw, 420px);
+        }
+        .topbar-title {
+            font-size: 15px;
+            font-weight: 900;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .topbar-subtitle {
+            margin-top: 2px;
+            font-size: 12px;
+            color: var(--muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .btn {
+            border: 1px solid var(--border);
+            background: var(--panel);
+            color: var(--text);
+            border-radius: 12px;
+            padding: 10px 14px;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+            font-family: inherit;
+            font-size: 14px;
+        }
+        .btn:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
+        .btn.primary {
+            background: linear-gradient(135deg, #b45309, var(--beta-amber));
+            color: #1c1917;
+            border-color: transparent;
+        }
+        a.btn { text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
+
+        .page {
+            width: 100%;
+            max-width: var(--page-max);
+            margin: 0 auto;
+            padding: 20px 16px 120px;
+        }
+        .beta-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) min(340px, 32vw);
+            gap: 20px;
+            align-items: start;
+        }
+        @media (max-width: 1080px) {
+            .beta-layout { grid-template-columns: 1fr; }
+        }
+
+        .status-box, .error-box {
+            margin-bottom: 16px;
+            padding: 14px 16px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            background: var(--panel);
+            box-shadow: var(--shadow);
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .error-box { color: #fecaca; background: rgba(127,29,29,0.28); border-color: rgba(239,68,68,0.35); }
+        .status-box.wait { background: rgba(245,158,11,0.12); border-color: rgba(245,158,11,0.28); color: #fde68a; }
         body.light .status-box.wait { color: #a16207; }
-        .watermark { pointer-events: none; position: fixed; inset: 0; z-index: 5; opacity: 0.06; font-size: 14px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 80px; padding: 40px; overflow: hidden; user-select: none; font-family: -apple-system, sans-serif; }
+
+        .hero {
+            margin-bottom: 18px;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            box-shadow: var(--shadow);
+            padding: 22px;
+            position: relative;
+            overflow: hidden;
+        }
+        .hero::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: linear-gradient(180deg, var(--beta-amber), var(--beta-teal));
+            border-radius: 4px 0 0 4px;
+        }
+        .eyebrow {
+            font-size: 12px;
+            font-weight: 900;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #fcd34d;
+            margin-bottom: 8px;
+        }
+        .book-title {
+            margin: 0;
+            font-size: clamp(26px, 4vw, 34px);
+            line-height: 1.08;
+            font-weight: 900;
+        }
+        .book-author {
+            margin-top: 8px;
+            color: var(--muted);
+            font-size: 15px;
+            font-weight: 700;
+        }
+        .beta-notice {
+            margin-top: 14px;
+            padding: 12px 14px;
+            border-radius: 14px;
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.22);
+            color: color-mix(in srgb, var(--text) 88%, var(--beta-amber-soft));
+            font-size: 13px;
+            line-height: 1.55;
+            font-weight: 600;
+        }
+        body.light .beta-notice { color: #92400e; background: rgba(245, 158, 11, 0.08); }
+        .hero-stats {
+            margin-top: 18px;
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 12px;
+        }
+        @media (max-width: 640px) {
+            .hero-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+        .stat {
+            background: var(--panel-2);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 14px;
+        }
+        .stat-label {
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+        .stat-value {
+            margin-top: 8px;
+            font-size: 17px;
+            font-weight: 900;
+        }
+
+        .nav-row {
+            margin-bottom: 18px;
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: 12px;
+            align-items: center;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 12px;
+            box-shadow: var(--shadow);
+        }
+        .nav-center { min-width: 0; text-align: center; }
+        .nav-label { font-size: 12px; color: var(--muted); font-weight: 800; }
+        .nav-current {
+            margin-top: 3px;
+            font-size: 17px;
+            font-weight: 900;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .reader-card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 26px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            position: relative;
+        }
+        .reader-card::after {
+            content: "PRIVATE BETA";
+            position: absolute;
+            top: 18px;
+            right: -28px;
+            transform: rotate(32deg);
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: 0.14em;
+            color: rgba(245, 158, 11, 0.14);
+            pointer-events: none;
+            user-select: none;
+        }
+        .reader-head {
+            padding: 24px 24px 0;
+            text-align: center;
+        }
+        .chapter-title {
+            margin: 0;
+            font-size: clamp(24px, 3.5vw, 32px);
+            line-height: 1.1;
+            font-weight: 900;
+        }
+        .chapter-meta {
+            margin-top: 8px;
+            color: var(--muted);
+            font-size: 14px;
+        }
+        .reader-body { padding: 24px; }
+        .content {
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: var(--font-size);
+            line-height: var(--line-height);
+            word-wrap: break-word;
+        }
+        .content p { margin: 0 0 1.15em; }
+        .content h1, .content h2, .content h3 { line-height: 1.24; margin: 1.35em 0 0.7em; }
+
+        .feedback-card {
+            position: sticky;
+            top: calc(var(--reader-nav-offset) + 72px);
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            box-shadow: var(--shadow);
+            padding: 18px;
+        }
+        @media (max-width: 1080px) {
+            .feedback-card { position: static; }
+        }
+        .feedback-kicker {
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: #fcd34d;
+            margin-bottom: 6px;
+        }
+        .feedback-title {
+            margin: 0 0 8px;
+            font-size: 18px;
+            font-weight: 900;
+        }
+        .feedback-hint {
+            margin: 0 0 14px;
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        .msg-list {
+            display: grid;
+            gap: 10px;
+            max-height: min(42vh, 360px);
+            overflow-y: auto;
+            margin-bottom: 12px;
+        }
+        .msg {
+            border: 1px solid var(--border);
+            background: var(--panel-2);
+            border-radius: 16px;
+            padding: 12px;
+        }
+        .msg-meta {
+            font-size: 12px;
+            font-weight: 900;
+            color: var(--muted);
+            margin-bottom: 6px;
+        }
+        .msg-body {
+            font-size: 14px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .msg-empty {
+            font-size: 13px;
+            color: var(--muted);
+            padding: 12px;
+            border-radius: 14px;
+            border: 1px dashed var(--border);
+            text-align: center;
+        }
+        .comment-input {
+            width: 100%;
+            min-height: 100px;
+            resize: vertical;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            background: var(--panel-2);
+            color: var(--text);
+            padding: 12px;
+            outline: none;
+            font-family: inherit;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+        .comment-input:focus {
+            border-color: rgba(245, 158, 11, 0.45);
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.12);
+        }
+        .feedback-actions { margin-top: 10px; }
+        .feedback-actions .btn { width: 100%; }
+
+        .loading-panel {
+            max-width: var(--reader-max);
+            margin: 40px auto;
+            text-align: center;
+            color: var(--muted);
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        @media (max-width: 760px) {
+            .topbar { grid-template-columns: auto minmax(0, 1fr) auto; }
+            .topbar-center { max-width: none; }
+            .content { font-size: calc(var(--font-size) - 2px); }
+        }
     </style>
 </head>
 <body>
-    <header class="topbar">
-        <a class="btn" id="backBtn" href="reader-home.html">← Back</a>
-        <div class="topbar-fill">
-            <strong id="topTitle">Beta room</strong>
-            <span id="topSub">Private manuscript review</span>
+    <header class="beta-welcome-bar" aria-label="Beta room">
+        <div class="beta-welcome-inner">
+            <div class="beta-badge" aria-hidden="true">🔒</div>
+            <div class="beta-welcome-copy">
+                <h1 class="beta-welcome-title">Private beta room</h1>
+                <p class="beta-welcome-sub" id="welcomeSub">Unpublished snapshot · monitored feedback · not in the Library</p>
+            </div>
         </div>
-        <button type="button" class="btn" id="themeBtn">Light</button>
     </header>
 
-    <div id="watermarkLayer" class="watermark hidden" aria-hidden="true"></div>
+    <nav class="wd-nav-wrap" aria-label="Workspace">
+        <div class="wd-nav">
+            <a href="writer-dashboard.html">Studio</a>
+            <span class="wd-nav-divider" aria-hidden="true"></span>
+            <a href="library.html">Library</a>
+            <a href="reader-home.html">Reading</a>
+            <span class="wd-nav-divider" aria-hidden="true"></span>
+            <a href="beta-room.html" class="is-active">Beta room</a>
+            <span class="wd-nav-divider" aria-hidden="true"></span>
+            <a href="settings.html">Settings</a>
+            <a href="index.html">Home</a>
+        </div>
+    </nav>
 
-    <div id="loadingPanel" class="reader"><p>Loading beta room…</p></div>
-    <div id="errorPanel" class="reader hidden"><div class="status-box error" id="errorText"></div></div>
+    <div class="topbar">
+        <div class="topbar-left">
+            <a class="btn" id="backBtn" href="reader-home.html">← Back</a>
+        </div>
+        <div class="topbar-center">
+            <div class="topbar-title" id="topTitle">Beta room</div>
+            <div class="topbar-subtitle" id="topSub">Loading…</div>
+        </div>
+        <div class="topbar-right">
+            <button type="button" class="btn" id="themeBtn">Theme</button>
+            <button type="button" class="btn" id="fontMinusBtn">A−</button>
+            <button type="button" class="btn" id="fontPlusBtn">A+</button>
+        </div>
+    </div>
 
-    <div id="mainLayout" class="layout hidden">
-        <section class="reader">
-            <div class="reader-inner">
-                <div class="chapter-head">
-                    <h2 id="chapterTitle">—</h2>
-                    <p id="chapterMeta">—</p>
-                </div>
-                <div class="chapter-body" id="chapterBody"></div>
+    <div id="loadingPanel" class="loading-panel">Loading beta room…</div>
+    <div id="errorPanel" class="page hidden"><div class="error-box" id="errorText"></div></div>
+
+    <div id="mainLayout" class="page hidden">
+        <div class="beta-layout">
+            <main class="beta-main">
+                <section class="hero">
+                    <div class="eyebrow">Private beta snapshot</div>
+                    <h2 class="book-title" id="heroTitle">—</h2>
+                    <div class="book-author" id="heroAuthor">—</div>
+                    <p class="beta-notice" id="betaNotice">
+                        You are reading a frozen copy shared only with invited beta readers. It is not published in the Alysum Library. Feedback here is logged and visible to the author.
+                    </p>
+                    <div class="hero-stats">
+                        <div class="stat">
+                            <div class="stat-label">Chapters</div>
+                            <div class="stat-value" id="statChapters">—</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-label">Words</div>
+                            <div class="stat-value" id="statWords">—</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-label">Snapshot</div>
+                            <div class="stat-value" id="statSnapshot">—</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-label">Access</div>
+                            <div class="stat-value" id="statAccess">Invite</div>
+                        </div>
+                    </div>
+                </section>
+
                 <div class="nav-row">
                     <button type="button" class="btn" id="prevBtn">← Prev</button>
+                    <div class="nav-center">
+                        <div class="nav-label">Current chapter</div>
+                        <div class="nav-current" id="chapterIndicator">—</div>
+                    </div>
                     <button type="button" class="btn" id="nextBtn">Next →</button>
                 </div>
-            </div>
-        </section>
-        <aside class="rail">
-            <h3>Feedback thread</h3>
-            <p class="hint">Messages are logged and visible to both participants. Be constructive — this is a monitored beta space.</p>
-            <div id="threadStatus" class="status-box hidden"></div>
-            <div class="msg-list" id="msgList"></div>
-            <div class="composer" id="composer">
-                <textarea id="msgInput" placeholder="Overall thoughts, pacing, clarity…" maxlength="8000"></textarea>
-                <button type="button" class="btn" id="sendBtn">Send feedback</button>
-            </div>
-        </aside>
+
+                <article class="reader-card">
+                    <div class="reader-head">
+                        <h3 class="chapter-title" id="chapterTitle">—</h3>
+                        <div class="chapter-meta" id="chapterMeta">—</div>
+                    </div>
+                    <div class="reader-body">
+                        <div class="content" id="chapterBody"></div>
+                    </div>
+                </article>
+            </main>
+
+            <aside class="feedback-card" id="feedbackCard">
+                <div class="feedback-kicker">Monitored thread</div>
+                <h3 class="feedback-title">Feedback for the author</h3>
+                <p class="feedback-hint">Share overall thoughts on pacing, clarity, and character. Messages are stored and visible to both of you.</p>
+                <div id="threadStatus" class="status-box hidden"></div>
+                <div class="msg-list" id="msgList"></div>
+                <div class="composer" id="composer">
+                    <textarea class="comment-input" id="msgInput" placeholder="Your feedback for this draft…" maxlength="8000"></textarea>
+                    <div class="feedback-actions">
+                        <button type="button" class="btn primary" id="sendBtn">Send feedback</button>
+                    </div>
+                </div>
+            </aside>
+        </div>
     </div>
 
     <script type="module">
         import { supabase } from "./firebase.js";
         import { wireSupabaseSession } from "./js/supabase-session.js?v=1";
         import { publicDisplayNameFromUserData } from "./js/profile-display.js?v=1";
+        import { installReaderCopyGuards } from "./js/reader-copy-guards.js?v=1";
         import {
             acceptManuscriptInvite,
             loadBetaRoomShare,
@@ -117,10 +627,21 @@
         const errorPanel = document.getElementById("errorPanel");
         const errorText = document.getElementById("errorText");
         const mainLayout = document.getElementById("mainLayout");
+        const welcomeSub = document.getElementById("welcomeSub");
         const topTitle = document.getElementById("topTitle");
         const topSub = document.getElementById("topSub");
         const backBtn = document.getElementById("backBtn");
         const themeBtn = document.getElementById("themeBtn");
+        const fontMinusBtn = document.getElementById("fontMinusBtn");
+        const fontPlusBtn = document.getElementById("fontPlusBtn");
+        const heroTitle = document.getElementById("heroTitle");
+        const heroAuthor = document.getElementById("heroAuthor");
+        const betaNotice = document.getElementById("betaNotice");
+        const statChapters = document.getElementById("statChapters");
+        const statWords = document.getElementById("statWords");
+        const statSnapshot = document.getElementById("statSnapshot");
+        const statAccess = document.getElementById("statAccess");
+        const chapterIndicator = document.getElementById("chapterIndicator");
         const chapterTitle = document.getElementById("chapterTitle");
         const chapterMeta = document.getElementById("chapterMeta");
         const chapterBody = document.getElementById("chapterBody");
@@ -131,7 +652,6 @@
         const msgInput = document.getElementById("msgInput");
         const sendBtn = document.getElementById("sendBtn");
         const composer = document.getElementById("composer");
-        const watermarkLayer = document.getElementById("watermarkLayer");
 
         let currentUser = null;
         let currentProfile = {};
@@ -141,10 +661,43 @@
         let generalThread = null;
         let messagesChannel = null;
         let nameByUserId = new Map();
+        let currentFontSize = 22;
+        let isReaderView = false;
+
+        installReaderCopyGuards(chapterBody, { isActive: () => isReaderView && !!chapters.length });
 
         function escapeHtml(str) {
             return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
         }
+
+        function formatNumber(n) {
+            return new Intl.NumberFormat().format(n || 0);
+        }
+
+        function applyFontSize(size) {
+            currentFontSize = Math.max(16, Math.min(32, size));
+            document.documentElement.style.setProperty("--font-size", `${currentFontSize}px`);
+            try { localStorage.setItem("alysum-reader-font-size", String(currentFontSize)); } catch { /* ignore */ }
+        }
+
+        function applyTheme(theme) {
+            document.body.classList.toggle("light", theme === "light");
+            if (themeBtn) themeBtn.textContent = theme === "light" ? "Dark" : "Light";
+            try { localStorage.setItem("alysum-reader-theme", theme); } catch { /* ignore */ }
+        }
+
+        try {
+            const savedTheme = localStorage.getItem("alysum-reader-theme");
+            if (savedTheme === "light") applyTheme("light");
+            const savedFont = Number(localStorage.getItem("alysum-reader-font-size"));
+            if (Number.isFinite(savedFont) && savedFont >= 16) applyFontSize(savedFont);
+        } catch { /* ignore */ }
+
+        themeBtn?.addEventListener("click", () => {
+            applyTheme(document.body.classList.contains("light") ? "dark" : "light");
+        });
+        fontMinusBtn?.addEventListener("click", () => applyFontSize(currentFontSize - 1));
+        fontPlusBtn?.addEventListener("click", () => applyFontSize(currentFontSize + 1));
 
         function setThreadStatus(msg, kind = "") {
             if (!msg) { threadStatus.classList.add("hidden"); return; }
@@ -163,18 +716,13 @@
         function renderChapter() {
             const ch = chapters[chapterIndex];
             if (!ch) return;
-            chapterTitle.textContent = ch.title || `Chapter ${chapterIndex + 1}`;
-            chapterMeta.textContent = `Chapter ${chapterIndex + 1} of ${chapters.length} · Snapshot review`;
+            const title = ch.title || `Chapter ${chapterIndex + 1}`;
+            chapterTitle.textContent = title;
+            chapterIndicator.textContent = title;
+            chapterMeta.textContent = `Chapter ${chapterIndex + 1} of ${chapters.length}`;
             chapterBody.innerHTML = ch.content || "<p></p>";
             prevBtn.disabled = chapterIndex <= 0;
             nextBtn.disabled = chapterIndex >= chapters.length - 1;
-        }
-
-        function applyWatermark(label) {
-            if (!label || !watermarkLayer) return;
-            const cells = Array.from({ length: 24 }, () => `<span>${escapeHtml(label)}</span>`);
-            watermarkLayer.innerHTML = cells.join("");
-            watermarkLayer.classList.remove("hidden");
         }
 
         async function resolveDisplayName(userId) {
@@ -198,7 +746,7 @@
             }
             const rows = await listBetaMessages(generalThread.id);
             if (!rows.length) {
-                msgList.innerHTML = '<p class="hint">No messages yet. Start the conversation.</p>';
+                msgList.innerHTML = '<div class="msg-empty">No feedback yet. Be the first to share thoughts on this draft.</div>';
                 return;
             }
             const html = [];
@@ -220,28 +768,53 @@
         async function loadRoom() {
             shareRow = await loadBetaRoomShare(shareId);
             if (!shareRow) throw new Error("Beta room not found or you do not have access.");
-            if (shareRow.status !== "active") {
-                if (shareRow.author_id === currentUser.id && shareRow.status === "pending") {
-                    setThreadStatus("Waiting for a reader to accept the invite.", "wait");
-                    composer.classList.add("hidden");
-                } else {
-                    throw new Error(`This beta room is ${shareRow.status}.`);
-                }
-            }
 
             const snap = shareRow.beta_snapshots;
             chapters = chaptersFromSnapshot(snap);
             if (!chapters.length) throw new Error("This snapshot has no chapters.");
 
-            topTitle.textContent = snap?.title || "Untitled";
             const isAuthor = shareRow.author_id === currentUser.id;
-            topSub.textContent = isAuthor ? "Your private beta room" : "Shared manuscript · monitored feedback";
-            if (isAuthor) backBtn.href = `beta-room-manage.html?book=${encodeURIComponent(shareRow.book_id)}`;
-            else backBtn.href = "reader-home.html";
+            isReaderView = !isAuthor;
 
-            if (!isAuthor) {
-                const wm = publicDisplayNameFromUserData(currentProfile) || currentUser.email || currentUser.id.slice(0, 8);
-                applyWatermark(`${wm} · private beta`);
+            const { data: authorProfile } = await supabase
+                .from("users")
+                .select("display_name, username")
+                .eq("id", shareRow.author_id)
+                .maybeSingle();
+            const authorName = publicDisplayNameFromUserData(authorProfile || {}) || authorProfile?.username || "Author";
+
+            const title = snap?.title || "Untitled";
+            const snapshotLabel = snap?.label || "Draft copy";
+            const wordCount = Number(snap?.word_count || 0);
+
+            heroTitle.textContent = title;
+            heroAuthor.textContent = isAuthor ? "You are the author reviewing this invite" : `by @${authorName}`;
+            topTitle.textContent = title;
+            topSub.textContent = isAuthor ? "Your private beta room" : `@${authorName} · private beta`;
+            welcomeSub.textContent = isAuthor
+                ? "Manage invites from Studio · this snapshot is not in the Library"
+                : `Shared by @${authorName} · unpublished · not in the Library`;
+
+            statChapters.textContent = String(chapters.length);
+            statWords.textContent = formatNumber(wordCount);
+            statSnapshot.textContent = snapshotLabel;
+            statAccess.textContent = shareRow.status === "active" ? "Active" : shareRow.status;
+
+            if (isAuthor) {
+                backBtn.href = `beta-room-manage.html?book=${encodeURIComponent(shareRow.book_id)}`;
+                betaNotice.textContent = "You are previewing the snapshot your beta readers see. Feedback below is the monitored thread for this invite.";
+            } else {
+                backBtn.href = "reader-home.html";
+                betaNotice.textContent = "This is a private, unpublished draft — not listed in the Alysum Library. Your feedback is logged and shared with the author only.";
+            }
+
+            if (shareRow.status !== "active") {
+                if (isAuthor && shareRow.status === "pending") {
+                    setThreadStatus("Waiting for a reader to accept your invite link.", "wait");
+                    composer.classList.add("hidden");
+                } else {
+                    throw new Error(`This beta room is ${shareRow.status}.`);
+                }
             }
 
             renderChapter();
@@ -299,11 +872,6 @@
         prevBtn.addEventListener("click", () => { if (chapterIndex > 0) { chapterIndex--; renderChapter(); } });
         nextBtn.addEventListener("click", () => { if (chapterIndex < chapters.length - 1) { chapterIndex++; renderChapter(); } });
 
-        themeBtn?.addEventListener("click", () => {
-            document.body.classList.toggle("light");
-            themeBtn.textContent = document.body.classList.contains("light") ? "Dark" : "Light";
-        });
-
         wireSupabaseSession(async (session) => {
             currentUser = session?.user ?? null;
             if (!currentUser) {
@@ -332,7 +900,7 @@
             } catch (err) {
                 console.error(err);
                 if (isBetaRoomsSchemaMissing(err)) {
-                    showFatal("Beta rooms are not set up in Supabase yet. Ask the site admin to run supabase-beta-rooms.sql.");
+                    showFatal("Beta rooms are not set up in Supabase yet. Run supabase-beta-rooms.sql in the SQL Editor.");
                 } else {
                     showFatal(err?.message || "Could not open beta room.");
                 }
