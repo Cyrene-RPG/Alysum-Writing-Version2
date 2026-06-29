@@ -10,11 +10,17 @@ import {
   notifyLocalStudioSync,
 } from "./local-studio-store.js?v=1";
 import { ENCYCLOPEDIA_BLOB_PREFIXES } from "./encyclopedia-blob-store.js?v=1";
+import {
+  localBackupTimestamp,
+  buildBackupZipBlob,
+  readManifestFromZip,
+  getBooksFromBackup,
+} from "./backup-zip.js?v=1";
 
 export const BACKUP_VERSION = 1;
 export const BACKUP_FILENAME_PREFIX = "alysum-backup";
 export const LAST_BACKUP_META_KEY = "alysum-last-backup-meta-v1";
-export const BACKUP_FILE_EXTENSION = ".alysum-backup";
+export const BACKUP_FILE_EXTENSION = ".zip";
 
 const PAGE_SIZE = 500;
 
@@ -222,10 +228,13 @@ export async function exportUserBackup({ supabase, userId, mode, email = "" }) {
   }
 
   const devicePreferences = collectDevicePreferences(userId);
+  const exportedAt = new Date().toISOString();
+  const exportedAtLocal = localBackupTimestamp();
 
   return {
     version: BACKUP_VERSION,
-    exportedAt: new Date().toISOString(),
+    exportedAt,
+    exportedAtLocal,
     mode,
     userId,
     email: email || null,
@@ -237,13 +246,28 @@ export async function exportUserBackup({ supabase, userId, mode, email = "" }) {
 }
 
 export async function parseBackupFile(file) {
-  const text = await file.text();
+  const name = String(file?.name || "").toLowerCase();
+  const isZip =
+    name.endsWith(".zip") ||
+    file.type === "application/zip" ||
+    file.type === "application/x-zip-compressed";
+
   let parsed;
-  try {
-    parsed = JSON.parse(text);
-  } catch {
-    throw new Error("That file is not a valid Alysum backup.");
+  if (isZip) {
+    parsed = await readManifestFromZip(file);
+  } else {
+    const text = await file.text();
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      throw new Error("That file is not a valid Alysum backup.");
+    }
   }
+
+  return validateBackupPayload(parsed);
+}
+
+function validateBackupPayload(parsed) {
   if (!parsed || typeof parsed !== "object") {
     throw new Error("That backup file is empty or damaged.");
   }
@@ -361,25 +385,187 @@ export async function restoreUserBackup({ supabase, userId, mode, backup }) {
   return { restored, warnings };
 }
 
+/**
+ * Dry-run: describe what restore would do without writing anything.
+ * @param {object} opts
+ * @param {string} opts.userId
+ * @param {"cloud" | "local"} opts.mode
+ * @param {object} opts.backup
+ */
+export function previewRestoreBackup({ userId, mode, backup }) {
+  const lines = [];
+  const warnings = [];
+  const books = getBooksFromBackup(backup);
+
+  if (backup.isPracticeSample) {
+    lines.push("Practice sample — fake books only, no real account data.");
+  }
+
+  if (books.length) {
+    lines.push(`${books.length} book${books.length === 1 ? "" : "s"} in backup`);
+    for (const book of books.slice(0, 8)) {
+      lines.push(`  · ${book.title || "Untitled"}`);
+    }
+    if (books.length > 8) lines.push(`  · …and ${books.length - 8} more`);
+  }
+
+  if (mode === "local" && backup.localData?.localStudio) {
+    lines.push("Would replace local guest studio on this device.");
+  }
+
+  if (backup.localData?.localVault) {
+    lines.push("Would replace local notebook vault on this device.");
+  }
+
+  if (backup.devicePreferences && Object.keys(backup.devicePreferences).length) {
+    lines.push(`Would apply ${Object.keys(backup.devicePreferences).length} device preference(s).`);
+  }
+
+  if (mode === "cloud" && supabaseTablesWouldChange(backup)) {
+    const userRow = backup.tables?.users;
+    if (userRow && typeof userRow === "object") {
+      lines.push("Would update your profile fields (display name, goals, etc.).");
+    }
+    for (const cfg of RESTORE_TABLES) {
+      if (cfg.skipRestore) continue;
+      const raw = backup.tables?.[cfg.table];
+      if (raw == null) continue;
+      const count = cfg.single
+        ? raw && typeof raw === "object"
+          ? 1
+          : 0
+        : Array.isArray(raw)
+          ? raw.length
+          : 0;
+      if (count) lines.push(`Would upsert ${count} row(s) in ${cfg.table}.`);
+    }
+  }
+
+  if (backup.userId && userId && backup.userId !== userId && backup.mode === "cloud") {
+    warnings.push("This backup belongs to a different account — data merges into yours.");
+  }
+  if (mode === "cloud" && backup.mode === "cloud" && !backup.isPracticeSample) {
+    warnings.push("Restore writes to your signed-in Alysum account. Preview first if you are unsure.");
+  }
+  if (mode === "local" && backup.mode === "cloud" && !backup.isPracticeSample) {
+    warnings.push("Cloud backups only fully restore when signed in — local mode gets preferences only.");
+  }
+  if (Array.isArray(backup.tables?.notifications) && backup.tables.notifications.length) {
+    warnings.push("Inbox notifications in this backup would not be restored.");
+  }
+
+  return {
+    lines,
+    warnings,
+    summary: summarizeBackup(backup),
+    exportedAt: backup.exportedAt,
+    isPracticeSample: Boolean(backup.isPracticeSample),
+  };
+}
+
+function supabaseTablesWouldChange(backup) {
+  if (!backup.tables || typeof backup.tables !== "object") return false;
+  return RESTORE_TABLES.some((cfg) => {
+    if (cfg.skipRestore) return false;
+    const raw = backup.tables[cfg.table];
+    if (raw == null) return false;
+    if (cfg.single) return raw && typeof raw === "object";
+    return Array.isArray(raw) && raw.length > 0;
+  }) || (backup.tables.users && typeof backup.tables.users === "object");
+}
+
+/** Fake backup for safe practice — does not read your real data. */
+export function buildPracticeBackup() {
+  const exportedAt = new Date().toISOString();
+  return {
+    version: BACKUP_VERSION,
+    exportedAt,
+    exportedAtLocal: localBackupTimestamp(),
+    mode: "local",
+    userId: LOCAL_GUEST_USER_ID,
+    email: null,
+    isPracticeSample: true,
+    tables: {},
+    localData: {
+      localStudio: {
+        profile: {
+          id: LOCAL_GUEST_USER_ID,
+          display_name: "Practice Author",
+          account_type: "author",
+        },
+        books: [
+          {
+            id: "practice-book-lighthouse",
+            title: "Practice — The Lighthouse Keeper",
+            sections: {
+              front: [{ title: "Note", content: "<p>This is a practice backup. Safe to restore in local guest mode.</p>" }],
+              body: [
+                {
+                  title: "Chapter 1",
+                  content: "<p>The fog rolled in before dawn.</p><p>Nothing here is your real work.</p>",
+                },
+              ],
+              back: [],
+            },
+          },
+          {
+            id: "practice-book-fragments",
+            title: "Practice — Notes & Fragments",
+            sections: {
+              front: [],
+              body: [{ title: "Fragment", content: "<p>A single practice paragraph.</p>" }],
+              back: [],
+            },
+          },
+        ],
+      },
+    },
+    devicePreferences: {},
+    skippedTables: [],
+  };
+}
+
+export async function savePracticeBackupToDisk() {
+  const backup = buildPracticeBackup();
+  return saveUserBackupToDisk(backup);
+}
+
+export function formatRestorePreviewText(preview) {
+  const when = preview.exportedAt ? formatBackupDateTime(preview.exportedAt) : "unknown date";
+  const parts = [
+    "Preview only — nothing was changed.",
+    "",
+    `Backup from: ${when}`,
+    `Includes: ${preview.summary}`,
+    "",
+    "Would do:",
+    ...preview.lines.map((l) => (l.startsWith("  ") ? l : `• ${l}`)),
+  ];
+  if (preview.warnings.length) {
+    parts.push("", "Notes:", ...preview.warnings.map((w) => `• ${w}`));
+  }
+  return parts.join("\n");
+}
+
 export function summarizeBackup(backup) {
   const parts = [];
+  const books = getBooksFromBackup(backup);
+  if (books.length) {
+    parts.push(`${books.length} book${books.length === 1 ? "" : "s"} as HTML`);
+  }
   if (backup.mode === "cloud" && backup.tables) {
-    const bookCount = Array.isArray(backup.tables.books) ? backup.tables.books.length : 0;
-    if (bookCount) parts.push(`${bookCount} book${bookCount === 1 ? "" : "s"}`);
     const tableCount = Object.keys(backup.tables).filter((k) => {
+      if (k === "books") return false;
       const v = backup.tables[k];
       return Array.isArray(v) ? v.length > 0 : v != null;
     }).length;
-    if (tableCount) parts.push(`${tableCount} data categories`);
+    if (tableCount) parts.push(`${tableCount} other data categories`);
   }
-  if (backup.localData?.localStudio) {
-    const books = backup.localData.localStudio.books;
-    const bookCount = Array.isArray(books) ? books.length : 0;
-    if (bookCount) parts.push(`${bookCount} local book${bookCount === 1 ? "" : "s"}`);
-    else parts.push("local studio data");
+  if (backup.localData?.localStudio && !books.length) {
+    parts.push("local studio data");
   }
   const prefCount = backup.devicePreferences ? Object.keys(backup.devicePreferences).length : 0;
-  if (prefCount) parts.push(`${prefCount} device preference${prefCount === 1 ? "" : "s"}`);
+  if (prefCount) parts.push("settings on this device");
   return parts.length ? parts.join(", ") : "minimal data";
 }
 
@@ -396,8 +582,7 @@ export function formatBackupDateTime(iso) {
 }
 
 export function defaultBackupFilename() {
-  const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
-  return `${BACKUP_FILENAME_PREFIX}-${stamp}${BACKUP_FILE_EXTENSION}`;
+  return `${BACKUP_FILENAME_PREFIX}-${localBackupTimestamp()}${BACKUP_FILE_EXTENSION}`;
 }
 
 export function supportsBackupFilePicker() {
@@ -428,15 +613,22 @@ export function setLastBackupMeta(meta) {
 
 export function downloadUserBackup(backup, fileName) {
   const name = fileName || defaultBackupFilename();
-  const json = JSON.stringify(backup, null, 2);
-  const blob = new Blob([json], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = name;
-  a.click();
-  URL.revokeObjectURL(url);
-  return name;
+  const exportedLabel = formatBackupDateTime(backup.exportedAt);
+  return buildBackupZipBlob(backup, exportedLabel).then((blob) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = name;
+    a.click();
+    URL.revokeObjectURL(url);
+    return name;
+  });
+}
+
+async function writeBackupBlobToHandle(handle, blob) {
+  const writable = await handle.createWritable();
+  await writable.write(blob);
+  await writable.close();
 }
 
 /**
@@ -444,9 +636,10 @@ export function downloadUserBackup(backup, fileName) {
  * @returns {Promise<{ fileName: string, usedNativePicker: boolean }>}
  */
 export async function saveUserBackupToDisk(backup) {
-  const json = JSON.stringify(backup, null, 2);
   const suggestedName = defaultBackupFilename();
   const summary = summarizeBackup(backup);
+  const exportedLabel = formatBackupDateTime(backup.exportedAt);
+  const blob = await buildBackupZipBlob(backup, exportedLabel);
 
   if (supportsBackupFilePicker()) {
     try {
@@ -454,14 +647,12 @@ export async function saveUserBackupToDisk(backup) {
         suggestedName,
         types: [
           {
-            description: "Alysum backup",
-            accept: { "application/json": [BACKUP_FILE_EXTENSION, ".json"] },
+            description: "Alysum backup (ZIP)",
+            accept: { "application/zip": [BACKUP_FILE_EXTENSION] },
           },
         ],
       });
-      const writable = await handle.createWritable();
-      await writable.write(json);
-      await writable.close();
+      await writeBackupBlobToHandle(handle, blob);
       const fileName = handle.name || suggestedName;
       setLastBackupMeta({ createdAt: backup.exportedAt, fileName, summary });
       return { fileName, usedNativePicker: true };
@@ -470,7 +661,7 @@ export async function saveUserBackupToDisk(backup) {
     }
   }
 
-  const fileName = downloadUserBackup(backup, suggestedName);
+  const fileName = await downloadUserBackup(backup, suggestedName);
   setLastBackupMeta({ createdAt: backup.exportedAt, fileName, summary });
   return { fileName, usedNativePicker: false };
 }
@@ -486,8 +677,8 @@ export async function pickBackupFileFromDisk() {
     const [handle] = await window.showOpenFilePicker({
       types: [
         {
-          description: "Alysum backup",
-          accept: { "application/json": [BACKUP_FILE_EXTENSION, ".json"] },
+          description: "Alysum backup (ZIP)",
+          accept: { "application/zip": [BACKUP_FILE_EXTENSION, ".alysum-backup", ".json"] },
         },
       ],
       multiple: false,

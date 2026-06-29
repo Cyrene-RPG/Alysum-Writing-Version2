@@ -146,20 +146,37 @@
         box-shadow: 0 2px 14px rgba(0, 0, 0, 0.35);
     }
 
-    .settings-nav-logout {
+    .settings-nav-logout,
+    .settings-nav-delete {
         flex: 1 1 100%;
-        margin-top: 4px;
         padding: 10px 12px;
         border-radius: 10px;
-        border: 1px solid rgba(248, 113, 113, 0.35);
-        background: rgba(127, 29, 29, 0.35);
-        color: #fecaca;
         font-size: 13px;
         font-weight: 800;
         font-family: inherit;
         text-align: center;
         cursor: pointer;
         transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    }
+
+    .settings-nav-delete {
+        margin-top: 4px;
+        border: 1px solid rgba(248, 113, 113, 0.28);
+        background: rgba(69, 10, 10, 0.42);
+        color: #fca5a5;
+    }
+
+    .settings-nav-delete:hover:not(:disabled) {
+        color: #fff;
+        border-color: rgba(248, 113, 113, 0.5);
+        background: rgba(127, 29, 29, 0.55);
+    }
+
+    .settings-nav-logout {
+        margin-top: 4px;
+        border: 1px solid rgba(248, 113, 113, 0.35);
+        background: rgba(127, 29, 29, 0.35);
+        color: #fecaca;
     }
 
     .settings-nav-logout:hover:not(:disabled) {
@@ -169,6 +186,11 @@
     }
 
     .settings-nav-logout:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+    }
+
+    .settings-nav-delete:disabled {
         opacity: 0.55;
         cursor: not-allowed;
     }
@@ -843,6 +865,7 @@
 
     #profilePanel input[type="text"],
     #profilePanel input[type="email"],
+    #profilePanel input[type="password"],
     #profilePanel .readonly,
     #securityPanel input[type="password"] {
         border-width: 1.5px;
@@ -852,6 +875,7 @@
 
     #profilePanel input[type="text"]:focus,
     #profilePanel input[type="email"]:focus,
+    #profilePanel input[type="password"]:focus,
     #securityPanel input[type="password"]:focus {
         border-color: color-mix(in srgb, var(--purple-bright) 78%, transparent);
         box-shadow:
@@ -860,6 +884,7 @@
     }
 
     #profilePanel input[type="email"]:disabled,
+    #profilePanel input[type="password"]:disabled,
     #securityPanel input[type="password"]:disabled {
         background: color-mix(in srgb, var(--theme-accent-soft-bg) 35%, rgba(0, 0, 0, 0.35));
         border-color: color-mix(in srgb, var(--purple-bright) 36%, rgba(255, 255, 255, 0.1));
@@ -1094,6 +1119,43 @@
         filter: none;
     }
 
+    .btn-danger {
+        margin-top: 0;
+        background: rgba(127, 29, 29, 0.55);
+        color: #fecaca;
+        border: 1px solid rgba(248, 113, 113, 0.45);
+        box-shadow: none;
+        text-shadow: none;
+    }
+
+    .btn-danger:hover:not(:disabled) {
+        background: rgba(153, 27, 27, 0.72);
+        color: #fff;
+        filter: none;
+    }
+
+    .profile-danger-box {
+        border-color: rgba(248, 113, 113, 0.35);
+        background: rgba(69, 10, 10, 0.28);
+    }
+
+    .profile-danger-box .profile-box-title {
+        color: #fecaca;
+    }
+
+    @media (min-width: 768px) {
+        .story-bible-box {
+            grid-column: 1;
+            grid-row: 2;
+        }
+
+        .profile-danger-box {
+            grid-column: 2;
+            grid-row: 2;
+            align-self: stretch;
+        }
+    }
+
     .backup-actions {
         display: flex;
         flex-wrap: wrap;
@@ -1106,8 +1168,34 @@
         margin-top: 0;
     }
 
+    .backup-practice-box {
+        border-color: rgba(96, 165, 250, 0.35);
+        background: rgba(30, 58, 138, 0.2);
+    }
+
+    .backup-practice-box .profile-box-title {
+        color: #bfdbfe;
+    }
+
+    .backup-practice-steps {
+        margin: 0 0 14px;
+        padding-left: 1.2rem;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.55;
+    }
+
+    .backup-practice-steps li {
+        margin-bottom: 6px;
+    }
+
+    .backup-practice-steps strong {
+        color: #e5e7eb;
+    }
+
 </style>
 <link rel="stylesheet" href="css/gradient-themes.css?v=7" />
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <script src="js/gradient-theme-sync.js" defer></script>
 
 </head>
@@ -1127,6 +1215,7 @@
             <button type="button" role="tab" id="tab-profile" data-section="profilePanel" aria-controls="profilePanel" aria-selected="false">Profile</button>
             <button type="button" role="tab" id="tab-password" data-section="securityPanel" aria-controls="securityPanel" aria-selected="false">Password</button>
             <button type="button" role="tab" id="tab-backup" data-section="backupPanel" aria-controls="backupPanel" aria-selected="false">Backup</button>
+            <button type="button" class="settings-nav-delete hidden" id="deleteAccountNavBtn">Delete account</button>
             <button type="button" class="settings-nav-logout" id="logoutBtn">Log out</button>
         </nav>
 
@@ -1288,6 +1377,25 @@
                 </span>
             </label>
         </section>
+
+        <section class="profile-box profile-danger-box hidden" id="deleteAccountSection" aria-labelledby="deleteAccountTitle">
+            <h3 class="profile-box-title" id="deleteAccountTitle">Delete account</h3>
+            <p class="hint" style="margin: 0 0 10px">
+                Permanently removes your Alysum account, books, comments, and profile. Published library entries may remain listed without an author link.
+            </p>
+            <p class="hint" style="margin: 0 0 14px">
+                Download a backup from the Backup tab first if you want to keep your work. This cannot be undone.
+            </p>
+            <div class="field hidden" id="deleteAccountPasswordField">
+                <label for="deleteAccountPassword">Current password</label>
+                <input type="password" id="deleteAccountPassword" autocomplete="current-password" />
+                <p class="hint" style="margin-top:8px;margin-bottom:0">Required to confirm deletion for email sign-in.</p>
+            </div>
+            <div class="profile-box-actions">
+                <button type="button" class="btn btn-danger" id="deleteAccountBtn">Delete my account</button>
+                <div class="msg" id="deleteAccountMsg" role="status"></div>
+            </div>
+        </section>
         </div>
     </div>
 
@@ -1328,7 +1436,7 @@
 
     <div class="panel hidden settings-tab-panel" id="backupPanel" role="tabpanel" aria-labelledby="tab-backup" hidden>
         <h2>Backup</h2>
-        <p class="hint">Keep a copy of your Alysum work on your computer. Useful if you switch devices or want a safety net.</p>
+        <p class="hint">Save your work to your computer as a ZIP file. Each book becomes an HTML page you can open anywhere. Use Restore to load a ZIP back into Alysum.</p>
 
         <div class="profile-panel-body backup-panel-body">
             <section class="backup-status-card" aria-live="polite">
@@ -1337,12 +1445,29 @@
                 <p class="hint backup-status-file" id="lastBackupFileName" hidden></p>
             </section>
 
+            <section class="profile-box backup-practice-box" aria-labelledby="backupPracticeTitle">
+                <h3 class="profile-box-title" id="backupPracticeTitle">Try it safely first</h3>
+                <p class="hint" style="margin: 0 0 10px">
+                    Don’t test restore on your main account until you’re comfortable. Use the practice flow below — it never reads or overwrites your real books.
+                </p>
+                <ol class="backup-practice-steps">
+                    <li><strong>Download practice backup</strong> — a ZIP with two fake books.</li>
+                    <li><strong>Preview restore</strong> — see exactly what would change. Nothing is saved.</li>
+                    <li>When you trust it, restore the practice ZIP in <strong>local guest mode</strong> (desktop app → Host Local), or use your real backup on your account.</li>
+                </ol>
+                <div class="backup-actions">
+                    <button type="button" class="btn btn-secondary" id="downloadPracticeBackupBtn">Download practice backup</button>
+                    <button type="button" class="btn btn-secondary" id="previewRestoreBtn" disabled>Preview restore</button>
+                    <div class="msg" id="backupPracticeMsg" role="status"></div>
+                </div>
+            </section>
+
             <section class="profile-box" aria-labelledby="backupExportTitle">
                 <h3 class="profile-box-title" id="backupExportTitle">
                     <span class="backup-step-num" aria-hidden="true">1</span>Create backup
                 </h3>
                 <p class="hint" style="margin: 0 0 14px">
-                    Saves your books, Story Bible, worldbuilding, notebook, and settings. The file stays on your computer — Alysum never receives it.
+                    Packages your books as HTML pages inside a ZIP file. The filename includes today’s date and time on your computer. Nothing is uploaded to Alysum’s servers.
                 </p>
                 <div class="backup-actions">
                     <button type="button" class="btn btn-primary" id="saveBackupBtn">Choose save location…</button>
@@ -1355,15 +1480,15 @@
                     <span class="backup-step-num" aria-hidden="true">2</span>Restore backup
                 </h3>
                 <p class="hint" style="margin: 0 0 14px">
-                    Load a backup you saved earlier. Create a new backup first if you want to keep your current work unchanged.
+                    Select a ZIP you saved earlier and load it back into Alysum. <strong>Preview restore</strong> first if this is your real account. Make a new backup before overwriting anything.
                 </p>
                 <div class="backup-path-row">
-                    <label for="restorePathDisplay">Backup location</label>
+                    <label for="restorePathDisplay">Backup file</label>
                     <div class="backup-path-field">
-                        <input type="text" id="restorePathDisplay" readonly placeholder="No backup selected — click Browse" />
+                        <input type="text" id="restorePathDisplay" readonly placeholder="No file selected — click Browse" />
                         <button type="button" class="btn btn-secondary" id="chooseRestorePathBtn">Browse…</button>
                     </div>
-                    <input type="file" id="backupFileInput" accept=".alysum-backup,.json,application/json" hidden />
+                    <input type="file" id="backupFileInput" accept=".zip,.alysum-backup,.json,application/zip" hidden />
                 </div>
                 <div class="backup-actions">
                     <button type="button" class="btn btn-primary" id="restoreBackupBtn" disabled>Restore backup</button>
@@ -1379,6 +1504,7 @@
 <script type="module">
     import { supabase } from "./firebase.js";
     import { signOutAndGoToHome } from "./js/auth-logout.js?v=2";
+    import { deleteOwnAccount } from "./js/auth-delete-account.js?v=1";
     import { goToLogin } from "./js/desktop-auth.js?v=1";
     import { resolveStudioSession } from "./js/studio-session.js?v=1";
     import { getProfileRow, updateProfileRow, LOCAL_GUEST_USER_ID } from "./js/local-studio-store.js?v=1";
@@ -1413,13 +1539,16 @@
     import {
         exportUserBackup,
         saveUserBackupToDisk,
+        savePracticeBackupToDisk,
         pickBackupFileFromDisk,
         parseBackupFile,
         restoreUserBackup,
+        previewRestoreBackup,
+        formatRestorePreviewText,
         summarizeBackup,
         getLastBackupMeta,
         formatBackupDateTime
-    } from "./js/user-backup.js?v=2";
+    } from "./js/user-backup.js?v=4";
 
     const backBtn = document.getElementById("backBtn");
     const loadingPanel = document.getElementById("loadingPanel");
@@ -1448,6 +1577,7 @@
     const settingsShell = document.getElementById("settingsShell");
     const settingsNav = document.getElementById("settingsNav");
     const logoutBtn = document.getElementById("logoutBtn");
+    const deleteAccountNavBtn = document.getElementById("deleteAccountNavBtn");
     const profileAvatarInput = document.getElementById("profileAvatarInput");
     const profileAvatarPreview = document.getElementById("profileAvatarPreview");
     const profileAvatarPreviewWrap = document.getElementById("profileAvatarPreviewWrap");
@@ -1463,12 +1593,21 @@
     const backupRestoreMsg = document.getElementById("backupRestoreMsg");
     const lastBackupDateTime = document.getElementById("lastBackupDateTime");
     const lastBackupFileName = document.getElementById("lastBackupFileName");
+    const downloadPracticeBackupBtn = document.getElementById("downloadPracticeBackupBtn");
+    const previewRestoreBtn = document.getElementById("previewRestoreBtn");
+    const backupPracticeMsg = document.getElementById("backupPracticeMsg");
+    const deleteAccountSection = document.getElementById("deleteAccountSection");
+    const deleteAccountPasswordField = document.getElementById("deleteAccountPasswordField");
+    const deleteAccountPassword = document.getElementById("deleteAccountPassword");
+    const deleteAccountBtn = document.getElementById("deleteAccountBtn");
+    const deleteAccountMsg = document.getElementById("deleteAccountMsg");
 
     let settingsHomeUrl = "writer-dashboard.html";
     let activeAvatarObjectUrl = "";
     let isLocalSettings = false;
     let settingsUserId = "";
     let settingsUserEmail = "";
+    let settingsSessionUser = null;
     let selectedRestoreFile = null;
 
     const TAB_PANEL_IDS = ["appearancePanel", "accountModePanel", "profilePanel", "securityPanel", "backupPanel"];
@@ -1773,6 +1912,17 @@
         }
     });
 
+    deleteAccountBtn?.addEventListener("click", () => {
+        runDeleteAccountFlow();
+    });
+
+    deleteAccountNavBtn?.addEventListener("click", () => {
+        showSettingsTab("profilePanel");
+        if (settingsSessionUser) configureDeleteAccountUi(settingsSessionUser);
+        deleteAccountSection?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        deleteAccountBtn?.focus();
+    });
+
     function normalizeDisplayName(raw) {
         const s = String(raw ?? "").trim().replace(/\s+/g, " ");
         if (!s) return "";
@@ -1831,6 +1981,9 @@
         if (restoreBackupBtn) {
             restoreBackupBtn.disabled = !selectedRestoreFile;
         }
+        if (previewRestoreBtn) {
+            previewRestoreBtn.disabled = !selectedRestoreFile;
+        }
     }
 
     async function browseForRestoreBackup() {
@@ -1878,6 +2031,62 @@
         }
         if (saveAvatarBtn) saveAvatarBtn.disabled = true;
         if (profileAvatarInput) profileAvatarInput.disabled = true;
+        deleteAccountSection?.classList.add("hidden");
+        deleteAccountNavBtn?.classList.add("hidden");
+    }
+
+    function configureDeleteAccountUi(user) {
+        const show = Boolean(user) && !isLocalSettings;
+        deleteAccountSection?.classList.toggle("hidden", !show);
+        deleteAccountNavBtn?.classList.toggle("hidden", !show);
+        if (!show || !deleteAccountSection) return;
+
+        const requirePassword = !isPasswordChangeBlocked(user);
+        if (deleteAccountPasswordField) {
+            deleteAccountPasswordField.classList.toggle("hidden", !requirePassword);
+        }
+        if (deleteAccountPassword) {
+            deleteAccountPassword.value = "";
+            deleteAccountPassword.disabled = !requirePassword;
+        }
+    }
+
+    async function runDeleteAccountFlow() {
+        if (deleteAccountBtn?.disabled || isLocalSettings) return;
+        hideMsg(deleteAccountMsg);
+
+        const requirePassword = deleteAccountPasswordField && !deleteAccountPasswordField.classList.contains("hidden");
+        const confirmText =
+            "Delete your Alysum account permanently?\n\n" +
+            "This removes your profile, books, comments, and other account data. " +
+            "Download a backup from the Backup tab first if you want to keep your work.\n\n" +
+            "This cannot be undone.";
+
+        if (!window.confirm(confirmText)) return;
+
+        if (deleteAccountBtn) deleteAccountBtn.disabled = true;
+        if (deleteAccountNavBtn) deleteAccountNavBtn.disabled = true;
+        try {
+            const result = await deleteOwnAccount({
+                password: deleteAccountPassword?.value || "",
+                userEmail: settingsUserEmail,
+                requirePassword
+            });
+            if (result.cancelled) {
+                showMsg(deleteAccountMsg, "Account deletion cancelled.", false);
+                showSettingsTab("profilePanel");
+                deleteAccountSection?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+                return;
+            }
+        } catch (e) {
+            console.error(e);
+            showMsg(deleteAccountMsg, e?.message || "Could not delete account.", false);
+            showSettingsTab("profilePanel");
+            deleteAccountSection?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        } finally {
+            if (deleteAccountBtn) deleteAccountBtn.disabled = false;
+            if (deleteAccountNavBtn) deleteAccountNavBtn.disabled = false;
+        }
     }
 
     (async () => {
@@ -1892,6 +2101,7 @@
         }
 
         const user = session.user;
+        settingsSessionUser = user;
         settingsUserId = user.id;
         settingsUserEmail = user.email || "";
 
@@ -1913,6 +2123,7 @@
             });
 
             finishSettingsShell();
+            configureDeleteAccountUi(user);
 
             const passwordBlocked = isPasswordChangeBlocked(user);
             const ssoNote = document.getElementById("ssoPasswordNote");
@@ -2182,6 +2393,52 @@
         }
     });
 
+    downloadPracticeBackupBtn?.addEventListener("click", async () => {
+        hideMsg(backupPracticeMsg);
+        downloadPracticeBackupBtn.disabled = true;
+        try {
+            const { fileName } = await savePracticeBackupToDisk();
+            showMsg(
+                backupPracticeMsg,
+                `Practice ZIP saved as ${fileName}. Select it with Browse, then click Preview restore.`,
+                true
+            );
+        } catch (e) {
+            if (e?.name === "AbortError") return;
+            console.error(e);
+            showMsg(backupPracticeMsg, e?.message || "Could not create practice backup.", false);
+        } finally {
+            downloadPracticeBackupBtn.disabled = false;
+        }
+    });
+
+    previewRestoreBtn?.addEventListener("click", async () => {
+        hideMsg(backupPracticeMsg);
+        hideMsg(backupRestoreMsg);
+        const file = selectedRestoreFile;
+        if (!file) {
+            showMsg(backupPracticeMsg, "Choose a backup file with Browse first.", false);
+            return;
+        }
+        previewRestoreBtn.disabled = true;
+        try {
+            const backup = await parseBackupFile(file);
+            const mode = isLocalSettings ? "local" : "cloud";
+            const preview = previewRestoreBackup({
+                userId: settingsUserId,
+                mode,
+                backup
+            });
+            window.alert(formatRestorePreviewText(preview));
+            showMsg(backupPracticeMsg, "Preview complete — your account was not changed.", true);
+        } catch (e) {
+            console.error(e);
+            showMsg(backupPracticeMsg, e?.message || "Could not preview that backup.", false);
+        } finally {
+            previewRestoreBtn.disabled = !selectedRestoreFile;
+        }
+    });
+
     downloadBackupBtn?.addEventListener("click", async () => {
         hideMsg(backupExportMsg);
         downloadBackupBtn.disabled = true;
@@ -2197,8 +2454,8 @@
             refreshBackupStatusUi();
             const summary = summarizeBackup(backup);
             let msg = usedNativePicker
-                ? `Backup saved to ${fileName} (${summary}).`
-                : `Backup saved as ${fileName} in your Downloads folder (${summary}).`;
+                ? `Backup saved as ${fileName} — ZIP with HTML pages (${summary}).`
+                : `Backup saved as ${fileName} in Downloads — ZIP with HTML pages (${summary}).`;
             if (backup.skippedTables?.length) {
                 msg += ` Some data was skipped: ${backup.skippedTables.join(", ")}.`;
             }
@@ -2247,7 +2504,12 @@
         const fromOtherAccount =
             backup.userId && settingsUserId && backup.userId !== settingsUserId && backup.mode === "cloud";
         const cloudBackupOnLocal = backup.mode === "cloud" && isLocalSettings;
+        const isRealAccountRestore = !backup.isPracticeSample && !isLocalSettings;
         let confirmText = `Restore this backup?\n\nFrom: ${backupWhen}\nIncludes: ${summary}`;
+        if (isRealAccountRestore) {
+            confirmText +=
+                "\n\nThis will change your signed-in Alysum account. Use Preview restore first if you have not tested yet.";
+        }
         if (fromOtherAccount) {
             confirmText += "\n\nThis backup belongs to a different account. Its data will be added to your current account.";
         }
