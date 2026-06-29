@@ -43,6 +43,15 @@ function hashAuthParams() {
     }
 }
 
+/** Email confirmation link return (hash includes type=signup). */
+export function isEmailSignupCallback() {
+    if (typeof location === "undefined") return false;
+    const hash = location.hash || "";
+    if (!hash || hash.length <= 2) return false;
+    if (hash.includes("type=recovery")) return false;
+    return hash.includes("type=signup");
+}
+
 /** True only when the URL looks like a Supabase OAuth callback (not any stray hash). */
 export function isOAuthCallbackLanding() {
     if (typeof location === "undefined") return false;
@@ -103,6 +112,20 @@ export function shouldAutoContinueOAuth(session, event, pendingKey) {
     if (!session || event === "SIGNED_OUT") return false;
     if (event === "SIGNED_IN") return true;
     return hasOAuthPending(pendingKey);
+}
+
+/**
+ * Signup page only: continue after OAuth return or email confirmation — not every SIGNED_IN.
+ * @param {(userId?: string) => boolean} isActiveSignupFlow
+ */
+export function shouldAutoContinueSignup(session, event, pendingKey, isActiveSignupFlow) {
+    if (!session || event === "SIGNED_OUT") return false;
+    if (hasOAuthPending(pendingKey)) return true;
+    if (isEmailSignupCallback()) {
+        return event === "SIGNED_IN" || event === "INITIAL_SESSION";
+    }
+    if (!isActiveSignupFlow?.(session.user?.id)) return false;
+    return event === "SIGNED_IN" || event === "INITIAL_SESSION";
 }
 
 /** Remove OAuth tokens from the address bar so revisiting login does not re-trigger handling. */

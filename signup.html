@@ -759,11 +759,12 @@ import {
     clearLegacyOAuthPending,
     clearOAuthPending,
     hasOAuthPending,
+    isEmailSignupCallback,
     isOAuthCallbackLanding,
     OAUTH_PENDING_SIGNUP_KEY,
     setOAuthPending,
-    shouldAutoContinueOAuth,
-} from "./js/auth-redirect.js?v=2";
+    shouldAutoContinueSignup,
+} from "./js/auth-redirect.js?v=3";
 import { wireSupabaseSession } from "./js/supabase-session.js?v=1";
 import {
     ACCOUNT_AUTHOR,
@@ -791,6 +792,7 @@ let pendingConfirmEmail = "";
 
 const SIGNUP_ACCOUNT_TYPE_KEY = "alysum-signup-account-type";
 const SIGNUP_PENDING_EMAIL_KEY = "alysum-signup-pending-email";
+const SIGNUP_FLOW_STATE_KEY = "alysum-signup-flow-state";
 const CONFIRM_EMAIL_COOLDOWN_PREFIX = "alysum-confirm-email-until:";
 const CONFIRM_EMAIL_COOLDOWN_MS = 2 * 60 * 1000;
 
@@ -873,8 +875,51 @@ function oauthUsernameFromUser(user) {
 }
 
 function redirectAfterSignup() {
+    clearSignupFlowState();
     setUiMode("studio");
     window.location.href = "writer-dashboard.html";
+}
+
+function loadSignupFlowState() {
+    try {
+        const raw = sessionStorage.getItem(SIGNUP_FLOW_STATE_KEY);
+        return raw ? JSON.parse(raw) : null;
+    } catch {
+        return null;
+    }
+}
+
+function saveSignupFlowState(patch) {
+    const prev = loadSignupFlowState() || {};
+    try {
+        sessionStorage.setItem(
+            SIGNUP_FLOW_STATE_KEY,
+            JSON.stringify({ ...prev, ...patch })
+        );
+    } catch {
+        /* ignore */
+    }
+}
+
+function clearSignupFlowState() {
+    try {
+        sessionStorage.removeItem(SIGNUP_FLOW_STATE_KEY);
+        sessionStorage.removeItem(SIGNUP_ACCOUNT_TYPE_KEY);
+        sessionStorage.removeItem(SIGNUP_PENDING_EMAIL_KEY);
+    } catch {
+        /* ignore */
+    }
+}
+
+function isActiveSignupFlow(userId) {
+    const flow = loadSignupFlowState();
+    if (!flow) return false;
+    if (userId && flow.userId && flow.userId !== userId) return false;
+    return (
+        flow.step === "confirm-email" ||
+        flow.step === "onboarding" ||
+        flow.step === "signup-started"
+    );
 }
 
 function activeErrorElement() {
@@ -954,8 +999,13 @@ function confirmEmailCooldownMessage(ms) {
     return `Please wait about ${minutes} minute${minutes === 1 ? "" : "s"} before requesting another confirmation email.`;
 }
 
-function showConfirmEmailStep(email) {
+function showConfirmEmailStep(email, userId = "") {
     setPendingConfirmEmail(email);
+    saveSignupFlowState({
+        userId: userId || loadSignupFlowState()?.userId || "",
+        email,
+        step: "confirm-email"
+    });
     confirmEmailAddressEl.textContent = email;
     clearError();
     clearConfirmSuccess();
@@ -1019,6 +1069,11 @@ function beginOnboarding(user, accountType, usernameCandidate = "") {
     const fallback = usernameCandidate || oauthUsernameFromUser(user);
     finalUsernameInput.value = sanitizeUsername(fallback);
     pfpPreviewInitial.textContent = sanitizeUsername(fallback).slice(0, 1).toUpperCase() || "A";
+    saveSignupFlowState({
+        userId: user.id,
+        accountType: onboardingAccountType,
+        step: "onboarding"
+    });
     hideConfirmEmailStep();
     clearPendingConfirmEmail();
     signupCard.classList.add("is-hidden");
@@ -1416,11 +1471,7 @@ async function resumeSignupOnboarding(user) {
     }
 
     if (row) {
-        try {
-            sessionStorage.removeItem(SIGNUP_ACCOUNT_TYPE_KEY);
-        } catch {
-            /* ignore */
-        }
+        clearSignupFlowState();
         redirectAfterSignup();
         return;
     }
@@ -1441,9 +1492,9 @@ async function resumeSignupAfterEmailConfirm(session, event) {
     if (!session?.user) return;
     if (hasOAuthPending(OAUTH_PENDING_SIGNUP_KEY)) return;
     if (onboardingUser) return;
-
-    const resumeEvents = new Set(["INITIAL_SESSION", "SIGNED_IN", "USER_UPDATED"]);
-    if (!resumeEvents.has(event)) return;
+    if (!shouldAutoContinueSignup(session, event, OAUTH_PENDING_SIGNUP_KEY, isActiveSignupFlow)) {
+        return;
+    }
 
     emailSignupResumeHandled = true;
     await resumeSignupOnboarding(session.user);
@@ -1456,10 +1507,22 @@ if (!isOAuthCallbackLanding()) {
 }
 
 wireSupabaseSession(async (session, event) => {
-    if (shouldAutoContinueOAuth(session, event, OAUTH_PENDING_SIGNUP_KEY)) {
+    if (!session) {
+        return;
+    }
+
+    const authReturnEvent = event === "SIGNED_IN" || event === "INITIAL_SESSION";
+
+    if (authReturnEvent && hasOAuthPending(OAUTH_PENDING_SIGNUP_KEY)) {
         await goAfterOAuthSignup();
         return;
     }
+
+    if (authReturnEvent && isEmailSignupCallback()) {
+        await goAfterOAuthSignup();
+        return;
+    }
+
     await resumeSignupAfterEmailConfirm(session, event);
 });
 
@@ -1560,6 +1623,7 @@ window.signup = async function () {
     try {
         try {
             sessionStorage.setItem(SIGNUP_ACCOUNT_TYPE_KEY, accountType);
+            saveSignupFlowState({ accountType, step: "signup-started" });
         } catch {
             /* ignore */
         }
@@ -1598,11 +1662,13 @@ window.signup = async function () {
 
         if (signupNeedsEmailConfirmation(data)) {
             markConfirmEmailSent(email);
-            showConfirmEmailStep(email);
+            saveSignupFlowState({ userId: user.id, email, accountType, step: "confirm-email" });
+            showConfirmEmailStep(email, user.id);
             return;
         }
 
         clearPendingConfirmEmail();
+        saveSignupFlowState({ userId: user.id, accountType, step: "onboarding" });
         beginOnboarding(user, accountType, email.split("@")[0]);
 
     } catch (e) {
