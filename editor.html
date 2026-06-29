@@ -771,7 +771,8 @@ function rememberBookId(id) {
             warnings: normalizeWarningDataForPublish(meta.warnings),
             summary: safeString(meta.summary, ""),
             extraTags: safeArray(meta.extraTags || meta.extra_tags, []).filter(item => typeof item === "string"),
-            coverUrl
+            coverUrl,
+            isAnonymous: !!(meta.isAnonymous ?? meta.is_anonymous)
         };
     }
 
@@ -1713,6 +1714,7 @@ function rememberBookId(id) {
         try {
             let authorName = "unknown";
             if (currentProfile) authorName = publicDisplayNameFromUserData(currentProfile);
+            const libraryAuthor = publishMeta.isAnonymous ? "Anonymous" : (authorName || "unknown");
             const { data: existingLibrary } = await supabase.from("library").select("*").eq("id", bookId).maybeSingle();
             const firstPublishedAt = safeNumber(existingLibrary?.data?.publishedAt ?? existingLibrary?.publishedAt, safeNumber(existingLibrary?.createdAt, now));
             const libraryPayload = {
@@ -1721,7 +1723,8 @@ function rememberBookId(id) {
                     bookId,
                     ownerUid: currentUser.id,
                     title: payloadTitle,
-                    author: authorName || "unknown",
+                    author: libraryAuthor,
+                    isAnonymous: !!publishMeta.isAnonymous,
                     type: currentBook.libraryType,
                     genres: publishMeta.genres,
                     rating: publishMeta.rating,

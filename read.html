@@ -340,7 +340,7 @@
         if (publishedIds.length) chapters = chapters.filter(ch => publishedIds.includes(ch.id));
         chapters.sort((a, b) => a.order - b.order);
         const totalWords = safeNumber(data.words, chapters.reduce((sum, ch) => sum + safeNumber(ch.words, 0), 0));
-        return { id: safeString(data.bookId || row?.id, bookId), ownerUid: safeString(data.ownerUid || data.user_id || row?.user_id, ""), title: safeString(data.title, "Untitled"), author: safeString(data.author, "unknown"), summary: safeString(data.summary, ""), rating: safeString(data.rating, ""), type: safeString(data.type, "fiction"), tags: rawTags.filter(v => typeof v === "string" && v.trim()), warnings: flattenWarnings(data.warnings), chapterCount: safeNumber(data.chapterCount, chapters.length), words: totalWords, views: safeNumber(data.views, 0), likes: safeNumber(data.likes, 0), chapters };
+        return { id: safeString(data.bookId || row?.id, bookId), ownerUid: safeString(data.ownerUid || data.user_id || row?.user_id, ""), title: safeString(data.title, "Untitled"), author: safeString(data.author, "unknown"), isAnonymous: !!(data.isAnonymous ?? data.is_anonymous), summary: safeString(data.summary, ""), rating: safeString(data.rating, ""), type: safeString(data.type, "fiction"), tags: rawTags.filter(v => typeof v === "string" && v.trim()), warnings: flattenWarnings(data.warnings), chapterCount: safeNumber(data.chapterCount, chapters.length), words: totalWords, views: safeNumber(data.views, 0), likes: safeNumber(data.likes, 0), chapters };
     }
 
     /** All plausible `comments.book_id` / `likes.book_id` keys (URL id, JSON aliases, Firestore-era ids). */
@@ -451,7 +451,7 @@
 
     function updateReaderWatermark() { const sheet = document.getElementById("readerWatermarkSheet"); const footer = document.getElementById("readerWatermarkFooter"); if (!sheet || !footer) return; if (!bookId || !currentBook) { sheet.innerHTML = ""; footer.textContent = ""; return; } const ownerName = bookOwnerHandle || currentBook.author || null; applyReaderWatermark(sheet, footer, { bookId, currentUser, profileUsername: readerWatermarkProfileUser, bookOwnerUsername: ownerName }); }
     async function syncReaderWatermarkProfile() { const u = currentUser; if (!u?.id) { readerWatermarkProfileUser = null; updateReaderWatermark(); return; } try { const { data } = await supabase.from("users").select("username").eq("id", u.id).maybeSingle(); readerWatermarkProfileUser = String(data?.username || "").trim() || null; } catch { readerWatermarkProfileUser = null; } updateReaderWatermark(); }
-    async function syncBookOwnerHandle() { const ownerUid = currentBook?.ownerUid; if (!ownerUid) { bookOwnerHandle = null; updateReaderWatermark(); return; } try { const { data } = await supabase.from("users").select("username").eq("id", ownerUid).maybeSingle(); bookOwnerHandle = String(data?.username || "").trim() || null; } catch { bookOwnerHandle = null; } updateReaderWatermark(); }
+    async function syncBookOwnerHandle() { if (currentBook?.isAnonymous) { bookOwnerHandle = "Anonymous"; updateReaderWatermark(); return; } const ownerUid = currentBook?.ownerUid; if (!ownerUid) { bookOwnerHandle = null; updateReaderWatermark(); return; } try { const { data } = await supabase.from("users").select("username").eq("id", ownerUid).maybeSingle(); bookOwnerHandle = String(data?.username || "").trim() || null; } catch { bookOwnerHandle = null; } updateReaderWatermark(); }
 
     async function loadBook() {
         if (!bookId) bookId = await findFallbackBookId();
