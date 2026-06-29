@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Beta rooms — Alysum</title>
+    <script src="js/alysum-appearance-boot.js"></script>
+    <link rel="stylesheet" href="css/site-responsive.css?v=1" />
+    <link rel="stylesheet" href="css/gradient-themes.css?v=4" />
+    <script src="js/gradient-theme-sync.js" defer></script>
+    <style>
+        * { box-sizing: border-box; }
+        :root {
+            --bg: #0b1220;
+            --panel: #111827;
+            --panel-2: #172132;
+            --text: #f9fafb;
+            --muted: #9ca3af;
+            --border: rgba(255,255,255,0.08);
+            --shadow: 0 14px 34px rgba(0,0,0,0.28);
+            --beta-accent: #f59e0b;
+        }
+        html, body {
+            margin: 0;
+            min-height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background:
+                radial-gradient(ellipse 120% 55% at 50% -8%, rgba(245, 158, 11, 0.12) 0%, transparent 52%),
+                radial-gradient(ellipse 120% 60% at 50% -10%, var(--theme-body-spot, rgba(124, 58, 237, 0.24)) 0%, transparent 55%),
+                linear-gradient(180deg, #0d1426 0%, var(--bg) 42%);
+            color: var(--text);
+        }
+        .hidden { display: none !important; }
+        .beta-welcome-bar {
+            position: relative;
+            min-height: 84px;
+            padding: 0 clamp(16px, 3vw, 32px);
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            background: var(
+                --theme-welcome-bar,
+                linear-gradient(135deg, rgba(120, 53, 15, 0.96) 0%, #b45309 38%, var(--theme-header-end, #0f766e) 100%)
+            );
+            box-shadow: 0 4px 32px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.12);
+        }
+        .beta-welcome-inner {
+            width: 100%;
+            max-width: 1320px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .beta-badge {
+            width: 52px;
+            height: 52px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            background: rgba(0,0,0,0.28);
+            border: 2px solid rgba(255,255,255,0.22);
+        }
+        .beta-welcome-title { margin: 0; font-size: clamp(20px, 3.6vw, 26px); font-weight: 900; color: #fff7ed; }
+        .beta-welcome-sub { margin: 4px 0 0; font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.82); }
+        .wd-nav-wrap {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            background: rgba(11,18,32,0.92);
+            border-bottom: 1px solid var(--border);
+            backdrop-filter: blur(10px);
+        }
+        .wd-nav {
+            max-width: 1320px;
+            margin: 0 auto;
+            padding: 10px clamp(12px, 2vw, 24px);
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .wd-nav::-webkit-scrollbar { display: none; }
+        .wd-nav a, .wd-nav button {
+            flex-shrink: 0;
+            padding: 8px clamp(8px, 0.8vw, 14px);
+            border-radius: 999px;
+            border: 1px solid transparent;
+            background: transparent;
+            color: #d1d5db;
+            font: inherit;
+            font-size: clamp(11px, 0.72vw, 13px);
+            font-weight: 700;
+            text-decoration: none;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .wd-nav a:hover, .wd-nav button:hover { color: #fff; background: rgba(255,255,255,0.06); }
+        .wd-nav a.is-active {
+            color: #fff;
+            background: rgba(245, 158, 11, 0.22);
+            border-color: rgba(253, 230, 138, 0.35);
+        }
+        .wd-nav-divider { width: 1px; height: 22px; background: rgba(255,255,255,0.12); flex-shrink: 0; }
+        .page { max-width: 1320px; margin: 0 auto; padding: 22px 20px 48px; }
+        .page-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+        .page-head h2 { margin: 0; font-size: 22px; font-weight: 900; }
+        .hint { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.5; }
+        .btn {
+            border: 1px solid var(--border);
+            background: var(--panel);
+            color: var(--text);
+            border-radius: 12px;
+            padding: 10px 14px;
+            font-weight: 800;
+            font-size: 14px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+        }
+        .btn.primary {
+            background: linear-gradient(135deg, var(--theme-header-mid, #5b21b6), var(--theme-header-end, #7c3aed));
+            border: none;
+            color: #fff;
+        }
+        .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+        @media (max-width: 900px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        @media (max-width: 560px) { .grid { grid-template-columns: 1fr; } }
+        .card {
+            background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent), var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 16px;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+        .card::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: linear-gradient(180deg, var(--beta-accent), var(--theme-header-end, #14b8a6));
+        }
+        .card-top { display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; }
+        .card-title { margin: 0; font-size: 18px; font-weight: 900; line-height: 1.2; }
+        .badge {
+            font-size: 10px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            padding: 4px 8px;
+            border-radius: 999px;
+            background: rgba(245,158,11,0.18);
+            color: #fcd34d;
+            flex-shrink: 0;
+        }
+        .badge.pending { background: rgba(251,191,36,0.15); }
+        .badge.active { background: rgba(20,184,166,0.18); color: #99f6e4; }
+        .card-meta { color: var(--muted); font-size: 13px; line-height: 1.45; }
+        .card-actions { margin-top: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+        .empty, .loading, .status {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 28px 20px;
+            text-align: center;
+            color: var(--muted);
+            line-height: 1.55;
+        }
+        .status.error { color: #fecaca; border-color: rgba(239,68,68,0.35); background: rgba(127,29,29,0.2); }
+    </style>
+</head>
+<body>
+    <header class="beta-welcome-bar">
+        <div class="beta-welcome-inner">
+            <div class="beta-badge" aria-hidden="true">🔒</div>
+            <div>
+                <h1 class="beta-welcome-title">Beta rooms</h1>
+                <p class="beta-welcome-sub">Private unpublished drafts you’ve opened or shared — not in the Library.</p>
+            </div>
+        </div>
+    </header>
+
+    <nav class="wd-nav-wrap" aria-label="Workspace">
+        <div class="wd-nav">
+            <a href="writer-dashboard.html">Studio</a>
+            <span class="wd-nav-divider"></span>
+            <a href="library.html">Library</a>
+            <a href="author-dashboard.html">Author stats</a>
+            <a href="beta-rooms.html" class="is-active">Beta rooms</a>
+            <span class="wd-nav-divider"></span>
+            <a href="reader-home.html">Reading</a>
+            <a href="settings.html">Settings</a>
+            <a href="index.html">Home</a>
+        </div>
+    </nav>
+
+    <main class="page">
+        <div class="page-head">
+            <div>
+                <h2>Your beta rooms</h2>
+                <p class="hint">Rooms appear here when you open an invite link or enter a shared draft.</p>
+            </div>
+            <a class="btn" href="writer-dashboard.html">Studio → share a draft</a>
+        </div>
+
+        <div id="pageStatus" class="status hidden"></div>
+        <div id="loadingState" class="loading">Loading beta rooms…</div>
+        <div id="emptyState" class="empty hidden">No beta rooms yet. Open an invite link, or share a draft from Studio → Beta invite.</div>
+        <div id="roomGrid" class="grid hidden"></div>
+    </main>
+
+    <script type="module">
+        import { supabase } from "./firebase.js";
+        import { wireSupabaseSession } from "./js/supabase-session.js?v=1";
+        import { publicDisplayNameFromUserData } from "./js/profile-display.js?v=1";
+        import { listMyBetaRooms, betaRoomShareUrl, isBetaRoomsSchemaMissing } from "./js/beta-rooms-api.js?v=2";
+        import { mergeBetaRoomShelf, betaRoomShelfRows } from "./js/beta-room-shelf.js?v=1";
+
+        const loadingState = document.getElementById("loadingState");
+        const emptyState = document.getElementById("emptyState");
+        const roomGrid = document.getElementById("roomGrid");
+        const pageStatus = document.getElementById("pageStatus");
+
+        function escapeHtml(str) {
+            return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        function formatWhen(ms) {
+            if (!ms) return "—";
+            try { return new Date(ms).toLocaleString(); } catch { return "—"; }
+        }
+
+        function setStatus(msg, isError = false) {
+            if (!msg) { pageStatus.classList.add("hidden"); return; }
+            pageStatus.textContent = msg;
+            pageStatus.className = "status" + (isError ? " error" : "");
+            pageStatus.classList.remove("hidden");
+        }
+
+        function mergeShelfWithShares(shelfRows, shareRows, uid) {
+            const byId = new Map();
+            for (const row of shelfRows) {
+                if (row?.shareId) byId.set(row.shareId, { ...row, source: "shelf" });
+            }
+            for (const sh of shareRows) {
+                const snap = sh.beta_snapshots || {};
+                const role = sh.author_id === uid ? "author" : "reader";
+                const existing = byId.get(sh.id) || {};
+                byId.set(sh.id, {
+                    shareId: sh.id,
+                    bookId: sh.book_id || existing.bookId || "",
+                    title: existing.title || snap.title || "Untitled",
+                    authorName: existing.authorName || "",
+                    snapshotLabel: existing.snapshotLabel || snap.label || "",
+                    status: sh.status || existing.status || "pending",
+                    role: existing.role || role,
+                    lastOpenedAt: existing.lastOpenedAt || (sh.accepted_at ? Date.parse(sh.accepted_at) : 0) || (sh.created_at ? Date.parse(sh.created_at) : 0),
+                    shelvedAt: existing.shelvedAt || 0
+                });
+            }
+            return [...byId.values()].sort((a, b) => (b.lastOpenedAt || 0) - (a.lastOpenedAt || 0));
+        }
+
+        function renderCards(rows, uid) {
+            if (!rows.length) {
+                roomGrid.classList.add("hidden");
+                emptyState.classList.remove("hidden");
+                return;
+            }
+            emptyState.classList.add("hidden");
+            roomGrid.classList.remove("hidden");
+            roomGrid.innerHTML = rows.map((row) => {
+                const status = String(row.status || "pending");
+                const roleLabel = row.role === "author" ? "You shared" : "Shared with you";
+                const manageLink = row.role === "author" && row.bookId
+                    ? `<a class="btn" href="beta-room-manage.html?book=${encodeURIComponent(row.bookId)}">Manage</a>`
+                    : "";
+                return `
+                    <article class="card">
+                        <div class="card-top">
+                            <h3 class="card-title">${escapeHtml(row.title || "Untitled")}</h3>
+                            <span class="badge ${escapeHtml(status)}">${escapeHtml(status)}</span>
+                        </div>
+                        <div class="card-meta">
+                            ${escapeHtml(row.snapshotLabel || "Snapshot")}<br />
+                            ${escapeHtml(roleLabel)}${row.authorName ? ` · @${escapeHtml(row.authorName)}` : ""}<br />
+                            Last opened ${escapeHtml(formatWhen(row.lastOpenedAt))}
+                        </div>
+                        <div class="card-actions">
+                            <a class="btn primary" href="${escapeHtml(betaRoomShareUrl(row.shareId))}">Open</a>
+                            ${manageLink}
+                        </div>
+                    </article>
+                `;
+            }).join("");
+        }
+
+        async function loadHub(uid) {
+            loadingState.classList.remove("hidden");
+            emptyState.classList.add("hidden");
+            roomGrid.classList.add("hidden");
+            try {
+                const shelf = await mergeBetaRoomShelf(uid);
+                const shelfRows = betaRoomShelfRows(shelf);
+                let shareRows = [];
+                try {
+                    shareRows = await listMyBetaRooms();
+                } catch (err) {
+                    if (!isBetaRoomsSchemaMissing(err)) console.warn(err);
+                }
+
+                const authorIds = [...new Set(shareRows.map((s) => s.author_id).filter(Boolean))];
+                const names = new Map();
+                if (authorIds.length) {
+                    const { data: profiles } = await supabase.from("users").select("id, display_name, username").in("id", authorIds);
+                    for (const p of profiles || []) {
+                        names.set(p.id, publicDisplayNameFromUserData(p) || p.username || "Author");
+                    }
+                }
+
+                for (const sh of shareRows) {
+                    if (sh.author_id === uid) continue;
+                    const shelfRow = shelf[sh.id];
+                    if (shelfRow && !shelfRow.authorName) {
+                        shelfRow.authorName = names.get(sh.author_id) || "";
+                    }
+                }
+
+                const merged = mergeShelfWithShares(shelfRows, shareRows, uid).map((row) => {
+                    if (!row.authorName && row.role === "reader") {
+                        const sh = shareRows.find((s) => s.id === row.shareId);
+                        if (sh) row.authorName = names.get(sh.author_id) || "";
+                    }
+                    return row;
+                });
+
+                loadingState.classList.add("hidden");
+                renderCards(merged, uid);
+            } catch (err) {
+                console.error(err);
+                loadingState.classList.add("hidden");
+                setStatus(err?.message || "Could not load beta rooms.", true);
+            }
+        }
+
+        wireSupabaseSession(async (session) => {
+            const uid = session?.user?.id;
+            if (!uid) {
+                window.location.href = "login.html?next=" + encodeURIComponent(window.location.pathname);
+                return;
+            }
+            await loadHub(uid);
+        });
+    </script>
+</body>
+</html>

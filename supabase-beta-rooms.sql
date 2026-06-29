@@ -671,3 +671,6 @@ WHERE status = 'pending'
 UPDATE public.manuscript_shares
 SET expires_at = NULL
 WHERE status = 'active';
+
+-- Optional shelf sync on users (beta-rooms.html hub)
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS beta_room_shelf jsonb NOT NULL DEFAULT '{}'::jsonb;

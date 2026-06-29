@@ -46,8 +46,8 @@
             margin: 0;
             min-height: 100vh;
             background:
-                radial-gradient(ellipse 120% 55% at 50% -8%, rgba(245, 158, 11, 0.14) 0%, transparent 52%),
-                radial-gradient(ellipse 80% 40% at 100% 0%, rgba(20, 184, 166, 0.08) 0%, transparent 45%),
+                radial-gradient(ellipse 120% 55% at 50% -8%, rgba(245, 158, 11, 0.1) 0%, transparent 52%),
+                radial-gradient(ellipse 120% 60% at 50% -10%, var(--theme-body-spot, rgba(124, 58, 237, 0.2)) 0%, transparent 55%),
                 var(--bg);
             color: var(--text);
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -63,7 +63,10 @@
             align-items: center;
             overflow: hidden;
             border-bottom: 1px solid rgba(255,255,255,0.1);
-            background: linear-gradient(135deg, rgba(120, 53, 15, 0.96) 0%, #b45309 38%, #0f766e 100%);
+            background: var(
+                --theme-welcome-bar,
+                linear-gradient(135deg, rgba(120, 53, 15, 0.96) 0%, #b45309 38%, var(--theme-header-end, #0f766e) 100%)
+            );
             box-shadow: 0 4px 32px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.12);
         }
         .beta-welcome-bar::before {
@@ -118,7 +121,7 @@
             position: sticky;
             top: 0;
             z-index: 60;
-            background: rgba(11,18,32,0.92);
+            background: color-mix(in srgb, var(--bg) 92%, transparent);
             border-bottom: 1px solid var(--border);
             backdrop-filter: blur(10px);
         }
@@ -209,8 +212,8 @@
         }
         .btn:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
         .btn.primary {
-            background: linear-gradient(135deg, #b45309, var(--beta-amber));
-            color: #1c1917;
+            background: linear-gradient(135deg, var(--theme-header-mid, #b45309), var(--theme-header-end, var(--beta-amber)));
+            color: #fff;
             border-color: transparent;
         }
         a.btn { text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
@@ -513,7 +516,7 @@
             <a href="library.html">Library</a>
             <a href="reader-home.html">Reading</a>
             <span class="wd-nav-divider" aria-hidden="true"></span>
-            <a href="beta-room.html" class="is-active">Beta room</a>
+            <a href="beta-rooms.html" class="is-active">Beta rooms</a>
             <span class="wd-nav-divider" aria-hidden="true"></span>
             <a href="settings.html">Settings</a>
             <a href="index.html">Home</a>
@@ -522,7 +525,7 @@
 
     <div class="topbar">
         <div class="topbar-left">
-            <a class="btn" id="backBtn" href="reader-home.html">← Back</a>
+            <a class="btn" id="backBtn" href="beta-rooms.html">← Beta rooms</a>
         </div>
         <div class="topbar-center">
             <div class="topbar-title" id="topTitle">Beta room</div>
@@ -617,7 +620,8 @@
             sendBetaMessage,
             chaptersFromSnapshot,
             isBetaRoomsSchemaMissing
-        } from "./js/beta-rooms-api.js?v=1";
+        } from "./js/beta-rooms-api.js?v=2";
+        import { rememberBetaRoomOpen } from "./js/beta-room-shelf.js?v=1";
 
         const params = new URLSearchParams(window.location.search);
         let shareId = String(params.get("share") || "").trim();
@@ -815,12 +819,22 @@
             statAccess.textContent = shareRow.status === "active" ? "Active" : shareRow.status;
 
             if (isAuthor) {
-                backBtn.href = `beta-room-manage.html?book=${encodeURIComponent(shareRow.book_id)}`;
+                backBtn.href = "beta-rooms.html";
                 betaNotice.textContent = "You are previewing the snapshot your beta readers see. Feedback below is the monitored thread for this invite.";
             } else {
-                backBtn.href = "reader-home.html";
+                backBtn.href = "beta-rooms.html";
                 betaNotice.textContent = "This is a private, unpublished draft — not listed in the Alysum Library. Your feedback is logged and shared with the author only.";
             }
+
+            void rememberBetaRoomOpen(currentUser.id, {
+                shareId,
+                bookId: shareRow.book_id,
+                title: snap?.title || "Untitled",
+                authorName: isAuthor ? "" : authorName,
+                snapshotLabel: snap?.label || "",
+                status: shareRow.status,
+                role: isAuthor ? "author" : "reader"
+            });
 
             if (shareRow.status !== "active") {
                 if (isAuthor && shareRow.status === "pending") {

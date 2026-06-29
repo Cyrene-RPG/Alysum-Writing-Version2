@@ -130,10 +130,23 @@ export async function listMyBetaRooms() {
     const { data, error } = await supabase
         .from("manuscript_shares")
         .select("*, beta_snapshots(title, label, word_count)")
-        .eq("status", "active")
-        .order("accepted_at", { ascending: false });
+        .in("status", ["pending", "active"])
+        .order("created_at", { ascending: false });
     if (error) throw error;
     return data || [];
+}
+
+export function shareToShelfEntry(shareRow, { title, authorName, role }) {
+    const snap = shareRow?.beta_snapshots || {};
+    return {
+        shareId: shareRow.id,
+        bookId: shareRow.book_id || "",
+        title: title || snap.title || "Untitled",
+        authorName: authorName || "",
+        snapshotLabel: snap.label || "",
+        status: shareRow.status || "pending",
+        role: role || "reader"
+    };
 }
 
 export async function loadBetaRoomShare(shareId) {
