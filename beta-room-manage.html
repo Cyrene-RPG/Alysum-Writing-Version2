@@ -49,6 +49,7 @@
         .badge { display: inline-block; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; padding: 3px 8px; border-radius: 999px; background: rgba(124,58,237,0.2); color: #c4b5fd; }
         .badge.pending { background: rgba(251,191,36,0.15); color: #fcd34d; }
         .badge.revoked { background: rgba(248,113,113,0.15); color: #fca5a5; }
+        .badge.expired { background: rgba(251,191,36,0.15); color: #fcd34d; }
     </style>
 </head>
 <body>
@@ -90,6 +91,7 @@
             createManuscriptInvite,
             listBetaSnapshots,
             listManuscriptShares,
+            extendManuscriptInvite,
             revokeManuscriptShare,
             betaRoomInviteUrl,
             betaRoomShareUrl,
@@ -151,7 +153,7 @@
 
         function statusBadge(status) {
             const s = String(status || "");
-            return `<span class="badge ${s === "pending" || s === "revoked" ? s : ""}">${escapeHtml(s)}</span>`;
+            return `<span class="badge ${s === "pending" || s === "revoked" || s === "expired" ? s : ""}">${escapeHtml(s)}</span>`;
         }
 
         async function refreshSnapshots() {
@@ -197,6 +199,16 @@
             }
         }
 
+        function formatExpiry(sh) {
+            if (sh.status === "active") return "No expiry while active";
+            if (!sh.expires_at) return "No expiry set";
+            try {
+                return `Expires ${new Date(sh.expires_at).toLocaleString()}`;
+            } catch {
+                return `Expires ${sh.expires_at}`;
+            }
+        }
+
         async function refreshShares() {
             try {
                 const rows = await listManuscriptShares(bookId);
@@ -206,20 +218,22 @@
                 }
                 sharesList.innerHTML = rows.map((sh) => {
                     const snap = sh.beta_snapshots || {};
-                    const inviteUrl = sh.status === "pending" && sh.invite_token
+                    const inviteUrl = sh.invite_token && (sh.status === "pending" || sh.status === "active")
                         ? `<div class="invite-url">${escapeHtml(window.location.origin + betaRoomInviteUrl(sh.invite_token))}</div>`
                         : "";
                     const roomUrl = sh.status === "active"
                         ? `<a class="btn" href="${escapeHtml(betaRoomShareUrl(sh.id))}">Open beta room</a>`
                         : "";
+                    const canExtend = sh.status === "pending" || sh.status === "active" || sh.status === "expired";
                     return `
                         <div class="share-item" data-share-id="${escapeHtml(sh.id)}">
                             <div>${statusBadge(sh.status)} <strong>${escapeHtml(snap.label || snap.title || "Snapshot")}</strong></div>
-                            <div class="share-meta">Created ${formatDate(sh.created_at)}${sh.accepted_at ? ` · Accepted ${formatDate(sh.accepted_at)}` : ""}</div>
+                            <div class="share-meta">Created ${formatDate(sh.created_at)}${sh.accepted_at ? ` · Accepted ${formatDate(sh.accepted_at)}` : ""} · ${escapeHtml(formatExpiry(sh))}</div>
                             ${inviteUrl}
                             <div class="share-actions">
                                 ${roomUrl}
                                 <button type="button" class="btn copy-invite-btn" ${sh.invite_token ? "" : "disabled"}>Copy invite</button>
+                                ${canExtend ? '<button type="button" class="btn extend-btn">Extend 1 year</button>' : ""}
                                 ${sh.status === "active" || sh.status === "pending" ? '<button type="button" class="btn danger revoke-btn">Revoke</button>' : ""}
                             </div>
                         </div>
@@ -238,6 +252,25 @@
                             setStatus("Invite link copied.", "ok");
                         } catch {
                             setStatus(url, "ok");
+                        }
+                    });
+                });
+
+                sharesList.querySelectorAll(".extend-btn").forEach((btn) => {
+                    btn.addEventListener("click", async () => {
+                        const item = btn.closest(".share-item");
+                        const shareId = item?.dataset?.shareId;
+                        if (!shareId) return;
+                        btn.disabled = true;
+                        try {
+                            await extendManuscriptInvite(shareId);
+                            setStatus("Invite extended by 1 year.", "ok");
+                            await refreshShares();
+                        } catch (err) {
+                            console.error(err);
+                            setStatus(err?.message || "Could not extend invite.", "error");
+                        } finally {
+                            btn.disabled = false;
                         }
                     });
                 });

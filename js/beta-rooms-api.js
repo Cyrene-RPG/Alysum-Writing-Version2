@@ -100,6 +100,14 @@ export async function acceptManuscriptInvite(token) {
     return data;
 }
 
+export async function extendManuscriptInvite(shareId) {
+    const { data, error } = await supabase.rpc("extend_manuscript_invite", {
+        p_share_id: shareId
+    });
+    if (error) throw error;
+    return data;
+}
+
 export async function revokeManuscriptShare(shareId) {
     const { data, error } = await supabase.rpc("revoke_manuscript_share", {
         p_share_id: shareId
@@ -225,6 +233,6 @@ export function isBetaRoomsSchemaMissing(error) {
         code === "42P01" ||
         code === "PGRST202" ||
         /beta_snapshots|manuscript_shares|beta_threads|beta_messages/i.test(msg) ||
-        /create_beta_snapshot|accept_manuscript_invite/i.test(msg)
+            /create_beta_snapshot|accept_manuscript_invite|extend_manuscript_invite/i.test(msg)
     );
 }

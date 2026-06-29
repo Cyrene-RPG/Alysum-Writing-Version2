@@ -713,6 +713,20 @@
             errorPanel.classList.remove("hidden");
         }
 
+        function friendlyInviteError(err) {
+            const msg = String(err?.message || "");
+            if (/invite_expired/i.test(msg)) {
+                return "This invite has expired. Ask the author to tap Extend 1 year on the beta share page, or send a new invite.";
+            }
+            if (/invite_revoked/i.test(msg)) {
+                return "This invite was revoked by the author. Ask them to create a new invite link.";
+            }
+            if (/invite_not_found/i.test(msg)) {
+                return "This invite link is no longer valid. Ask the author for a fresh link.";
+            }
+            return msg || "Could not open beta room.";
+        }
+
         function renderChapter() {
             const ch = chapters[chapterIndex];
             if (!ch) return;
@@ -902,7 +916,7 @@
                 if (isBetaRoomsSchemaMissing(err)) {
                     showFatal("Beta rooms are not set up in Supabase yet. Run supabase-beta-rooms.sql in the SQL Editor.");
                 } else {
-                    showFatal(err?.message || "Could not open beta room.");
+                    showFatal(friendlyInviteError(err));
                 }
             }
         });

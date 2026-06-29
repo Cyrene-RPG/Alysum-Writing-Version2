@@ -105,6 +105,7 @@ AS $$
     FROM public.manuscript_shares ms
     WHERE ms.id = p_share_id
       AND ms.status = 'active'
+      AND (ms.expires_at IS NULL OR ms.expires_at > now())
       AND (
         ms.author_id = auth.uid()
         OR ms.reader_id = auth.uid()
@@ -130,6 +131,7 @@ AS $$
           FROM public.manuscript_shares ms
           WHERE ms.snapshot_id = s.id
             AND ms.status = 'active'
+            AND (ms.expires_at IS NULL OR ms.expires_at > now())
             AND ms.reader_id = auth.uid()
         )
       )
@@ -278,7 +280,7 @@ BEGIN
     v_uid,
     p_snapshot_id,
     COALESCE(trim(p_invited_email), ''),
-    now() + interval '30 days'
+    now() + interval '365 days'
   )
   RETURNING * INTO v_row;
 
@@ -319,15 +321,38 @@ BEGIN
   SELECT * INTO v_row
   FROM public.manuscript_shares
   WHERE invite_token = trim(p_token)
-    AND status = 'pending'
   FOR UPDATE;
 
   IF NOT FOUND THEN
     RAISE EXCEPTION 'invite_not_found';
   END IF;
 
+  IF v_row.status = 'revoked' THEN
+    RAISE EXCEPTION 'invite_revoked';
+  END IF;
+
+  -- Invite links keep working after acceptance (and for author preview).
+  IF v_row.status = 'active' THEN
+    IF v_row.author_id = v_uid OR v_row.reader_id = v_uid THEN
+      IF v_row.expires_at IS NOT NULL AND v_row.expires_at < now() THEN
+        RAISE EXCEPTION 'invite_expired';
+      END IF;
+      RETURN v_row;
+    END IF;
+    RAISE EXCEPTION 'invite_not_found';
+  END IF;
+
+  IF v_row.status = 'expired' THEN
+    RAISE EXCEPTION 'invite_expired';
+  END IF;
+
+  IF v_row.status <> 'pending' THEN
+    RAISE EXCEPTION 'invite_not_found';
+  END IF;
+
+  -- Author can open a pending invite to preview the waiting room.
   IF v_row.author_id = v_uid THEN
-    RAISE EXCEPTION 'cannot_accept_own_invite';
+    RETURN v_row;
   END IF;
 
   IF v_row.expires_at IS NOT NULL AND v_row.expires_at < now() THEN
@@ -339,7 +364,8 @@ BEGIN
   SET
     reader_id = v_uid,
     status = 'active',
-    accepted_at = now()
+    accepted_at = now(),
+    expires_at = NULL
   WHERE id = v_row.id
   RETURNING * INTO v_row;
 
@@ -350,6 +376,66 @@ BEGIN
     v_uid,
     'invite_accepted',
     jsonb_build_object('book_id', v_row.book_id)
+  );
+
+  RETURN v_row;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.extend_manuscript_invite(p_share_id uuid)
+RETURNS public.manuscript_shares
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_uid uuid := auth.uid();
+  v_row public.manuscript_shares;
+BEGIN
+  IF v_uid IS NULL THEN
+    RAISE EXCEPTION 'not_authenticated';
+  END IF;
+
+  SELECT * INTO v_row
+  FROM public.manuscript_shares
+  WHERE id = p_share_id
+    AND author_id = v_uid
+  FOR UPDATE;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'share_not_found';
+  END IF;
+
+  IF v_row.status = 'revoked' THEN
+    RAISE EXCEPTION 'invite_revoked';
+  END IF;
+
+  IF v_row.status = 'expired' THEN
+    UPDATE public.manuscript_shares
+    SET status = 'pending', expires_at = now() + interval '365 days', revoked_at = NULL
+    WHERE id = p_share_id
+    RETURNING * INTO v_row;
+  ELSIF v_row.status = 'pending' THEN
+    UPDATE public.manuscript_shares
+    SET expires_at = now() + interval '365 days'
+    WHERE id = p_share_id
+    RETURNING * INTO v_row;
+  ELSIF v_row.status = 'active' THEN
+    UPDATE public.manuscript_shares
+    SET expires_at = NULL
+    WHERE id = p_share_id
+    RETURNING * INTO v_row;
+  ELSE
+    RAISE EXCEPTION 'share_not_found';
+  END IF;
+
+  INSERT INTO public.beta_audit_log (table_name, row_id, actor_id, action, payload)
+  VALUES (
+    'manuscript_shares',
+    v_row.id::text,
+    v_uid,
+    'invite_extended',
+    jsonb_build_object('status', v_row.status, 'expires_at', v_row.expires_at)
   );
 
   RETURN v_row;
@@ -399,6 +485,7 @@ REVOKE ALL ON FUNCTION public.beta_snapshot_visible(uuid) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.create_beta_snapshot(text, jsonb, text) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.create_manuscript_invite(text, uuid, text) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.accept_manuscript_invite(text) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.extend_manuscript_invite(uuid) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.revoke_manuscript_share(uuid) FROM PUBLIC;
 
 GRANT EXECUTE ON FUNCTION public.is_beta_share_participant(uuid) TO authenticated;
@@ -406,6 +493,7 @@ GRANT EXECUTE ON FUNCTION public.beta_snapshot_visible(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.create_beta_snapshot(text, jsonb, text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.create_manuscript_invite(text, uuid, text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.accept_manuscript_invite(text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.extend_manuscript_invite(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.revoke_manuscript_share(uuid) TO authenticated;
 
 -- ---------------------------------------------------------------------------
@@ -570,3 +658,16 @@ CREATE POLICY "notifications_insert_beta_room" ON public.notifications
     AND coalesce(data->>'type', '') IN ('beta_room_invite', 'beta_room_message')
     AND coalesce(data->>'senderUid', '') = (auth.uid())::text
   );
+
+-- ---------------------------------------------------------------------------
+-- 7. Backfill — lengthen existing invites (safe to re-run)
+-- ---------------------------------------------------------------------------
+
+UPDATE public.manuscript_shares
+SET expires_at = now() + interval '365 days'
+WHERE status = 'pending'
+  AND (expires_at IS NULL OR expires_at < now() + interval '300 days');
+
+UPDATE public.manuscript_shares
+SET expires_at = NULL
+WHERE status = 'active';
