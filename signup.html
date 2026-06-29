@@ -208,7 +208,8 @@
         }
 
         #error-msg,
-        #onboarding-error-msg {
+        #onboarding-error-msg,
+        #confirm-error-msg {
             display: none;
             margin-top: 12px;
             padding: 12px 14px;
@@ -221,8 +222,47 @@
         }
 
         #error-msg.visible,
-        #onboarding-error-msg.visible {
+        #onboarding-error-msg.visible,
+        #confirm-error-msg.visible {
             display: block;
+        }
+
+        #confirm-success-msg {
+            display: none;
+            margin-top: 12px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            font-size: 14px;
+            line-height: 1.45;
+            color: #14532d;
+            background: #dcfce7;
+            border: 1px solid #bbf7d0;
+        }
+
+        #confirm-success-msg.visible {
+            display: block;
+        }
+
+        #confirm-email-card {
+            max-width: 470px;
+            margin: 0 auto;
+        }
+
+        .confirm-email-hint {
+            margin: 0 0 6px;
+            text-align: center;
+            color: var(--auth-muted);
+            font-size: 13px;
+            line-height: 1.45;
+        }
+
+        #confirm-email-address {
+            color: #4c1d95;
+            word-break: break-all;
+        }
+
+        #resend-confirm-btn {
+            margin-top: 4px;
         }
 
         button:disabled {
@@ -622,6 +662,27 @@
     </div>
 </div>
 
+<div class="card is-hidden" id="confirm-email-card">
+    <h2>Check your email</h2>
+    <p class="auth-subtitle">
+        We sent a confirmation link to
+        <strong id="confirm-email-address"></strong>.
+        Open it to verify your account, then return here to finish your profile.
+    </p>
+    <p class="confirm-email-hint">If nothing arrives within a minute, check spam and Promotions.</p>
+
+    <button type="button" id="resend-confirm-btn">Resend confirmation email</button>
+    <p id="confirm-success-msg" role="status"></p>
+    <p id="confirm-error-msg" role="alert"></p>
+
+    <div class="link">
+        Wrong address? <a href="signup.html" id="confirm-change-email">Start over</a>
+    </div>
+    <div class="link">
+        Already confirmed? <a href="login.html">Log in</a>
+    </div>
+</div>
+
 <div class="card is-hidden" id="onboarding-card">
     <div class="onboarding-steps" aria-hidden="true">
         <span class="step-dot active" id="username-step-dot"></span>
@@ -697,6 +758,7 @@ import {
     clearAuthCallbackFromUrl,
     clearLegacyOAuthPending,
     clearOAuthPending,
+    hasOAuthPending,
     isOAuthCallbackLanding,
     OAUTH_PENDING_SIGNUP_KEY,
     setOAuthPending,
@@ -724,10 +786,20 @@ import {
 } from "./js/display-text-style.js?v=5";
 
 let oauthSignupHandled = false;
+let emailSignupResumeHandled = false;
+let pendingConfirmEmail = "";
 
 const SIGNUP_ACCOUNT_TYPE_KEY = "alysum-signup-account-type";
+const SIGNUP_PENDING_EMAIL_KEY = "alysum-signup-pending-email";
+const CONFIRM_EMAIL_COOLDOWN_PREFIX = "alysum-confirm-email-until:";
+const CONFIRM_EMAIL_COOLDOWN_MS = 2 * 60 * 1000;
 
 const signupCard = document.getElementById("signup-card");
+const confirmEmailCard = document.getElementById("confirm-email-card");
+const confirmEmailAddressEl = document.getElementById("confirm-email-address");
+const resendConfirmBtn = document.getElementById("resend-confirm-btn");
+const confirmSuccessEl = document.getElementById("confirm-success-msg");
+const confirmErrorEl = document.getElementById("confirm-error-msg");
 const onboardingCard = document.getElementById("onboarding-card");
 const usernameStep = document.getElementById("username-step");
 const appearanceStep = document.getElementById("appearance-step");
@@ -806,6 +878,9 @@ function redirectAfterSignup() {
 }
 
 function activeErrorElement() {
+    if (confirmEmailCard && !confirmEmailCard.classList.contains("is-hidden")) {
+        return confirmErrorEl;
+    }
     return onboardingCard && !onboardingCard.classList.contains("is-hidden")
         ? onboardingErrorEl
         : errorEl;
@@ -822,6 +897,88 @@ function clearError() {
     errorEl.classList.remove("visible");
     onboardingErrorEl.textContent = "";
     onboardingErrorEl.classList.remove("visible");
+    confirmErrorEl.textContent = "";
+    confirmErrorEl.classList.remove("visible");
+}
+
+function showConfirmSuccess(text) {
+    clearError();
+    confirmSuccessEl.textContent = text;
+    confirmSuccessEl.classList.add("visible");
+}
+
+function clearConfirmSuccess() {
+    confirmSuccessEl.textContent = "";
+    confirmSuccessEl.classList.remove("visible");
+}
+
+function setPendingConfirmEmail(email) {
+    pendingConfirmEmail = String(email || "").trim();
+    try {
+        if (pendingConfirmEmail) {
+            sessionStorage.setItem(SIGNUP_PENDING_EMAIL_KEY, pendingConfirmEmail);
+        } else {
+            sessionStorage.removeItem(SIGNUP_PENDING_EMAIL_KEY);
+        }
+    } catch {
+        /* ignore */
+    }
+}
+
+function clearPendingConfirmEmail() {
+    setPendingConfirmEmail("");
+}
+
+function confirmEmailCooldownRemainingMs(email) {
+    try {
+        const until = Number(sessionStorage.getItem(`${CONFIRM_EMAIL_COOLDOWN_PREFIX}${email}`) || 0);
+        return Math.max(0, until - Date.now());
+    } catch {
+        return 0;
+    }
+}
+
+function markConfirmEmailSent(email) {
+    try {
+        sessionStorage.setItem(
+            `${CONFIRM_EMAIL_COOLDOWN_PREFIX}${email}`,
+            String(Date.now() + CONFIRM_EMAIL_COOLDOWN_MS)
+        );
+    } catch {
+        /* ignore */
+    }
+}
+
+function confirmEmailCooldownMessage(ms) {
+    const minutes = Math.max(1, Math.ceil(ms / 60000));
+    return `Please wait about ${minutes} minute${minutes === 1 ? "" : "s"} before requesting another confirmation email.`;
+}
+
+function showConfirmEmailStep(email) {
+    setPendingConfirmEmail(email);
+    confirmEmailAddressEl.textContent = email;
+    clearError();
+    clearConfirmSuccess();
+    signupCard.classList.add("is-hidden");
+    onboardingCard.classList.add("is-hidden");
+    confirmEmailCard.classList.remove("is-hidden");
+}
+
+function hideConfirmEmailStep() {
+    confirmEmailCard.classList.add("is-hidden");
+}
+
+function looksLikeDuplicateSignup(data) {
+    const user = data?.user;
+    if (!user || data?.session) return false;
+    const identities = user.identities;
+    return Array.isArray(identities) && identities.length === 0;
+}
+
+function signupNeedsEmailConfirmation(data) {
+    if (!data?.user || data.session) return false;
+    if (looksLikeDuplicateSignup(data)) return false;
+    return true;
 }
 
 function sanitizeUsername(raw) {
@@ -862,6 +1019,8 @@ function beginOnboarding(user, accountType, usernameCandidate = "") {
     const fallback = usernameCandidate || oauthUsernameFromUser(user);
     finalUsernameInput.value = sanitizeUsername(fallback);
     pfpPreviewInitial.textContent = sanitizeUsername(fallback).slice(0, 1).toUpperCase() || "A";
+    hideConfirmEmailStep();
+    clearPendingConfirmEmail();
     signupCard.classList.add("is-hidden");
     onboardingCard.classList.remove("is-hidden");
     showOnboardingStep("username");
@@ -1220,23 +1379,27 @@ profilePictureInput.addEventListener("change", () => {
 finishOnboardingBtn.addEventListener("click", createProfileAndEnterStudio);
 
 
-async function completeOAuthSignup() {
-    const { data: userData } = await supabase.auth.getUser();
-    const user = userData && userData.user;
-
-    if (!user) return;
-
+function accountTypeForSignupUser(user) {
     let accountType = ACCOUNT_BOTH;
     try {
         const stored = sessionStorage.getItem(SIGNUP_ACCOUNT_TYPE_KEY);
-        sessionStorage.removeItem(SIGNUP_ACCOUNT_TYPE_KEY);
         if (stored && isValidAccountType(stored)) accountType = stored;
     } catch {
         /* ignore */
     }
 
-    const metaType = user.user_metadata && user.user_metadata.accountType;
+    const metaType = user?.user_metadata?.accountType;
     if (isValidAccountType(metaType)) accountType = metaType;
+    return accountType;
+}
+
+async function resumeSignupOnboarding(user) {
+    if (!user) return;
+
+    hideConfirmEmailStep();
+    clearPendingConfirmEmail();
+
+    const accountType = accountTypeForSignupUser(user);
 
     const { data: row, error: rowError } = await supabase
         .from("users")
@@ -1245,11 +1408,19 @@ async function completeOAuthSignup() {
         .maybeSingle();
 
     if (rowError) {
+        signupCard.classList.remove("is-hidden");
+        hideConfirmEmailStep();
+        onboardingCard.classList.add("is-hidden");
         showError(rowError.message);
         return;
     }
 
     if (row) {
+        try {
+            sessionStorage.removeItem(SIGNUP_ACCOUNT_TYPE_KEY);
+        } catch {
+            /* ignore */
+        }
         redirectAfterSignup();
         return;
     }
@@ -1260,6 +1431,24 @@ async function completeOAuthSignup() {
     beginOnboarding(user, accountType, usernameCandidate);
 }
 
+async function completeOAuthSignup() {
+    const { data: userData } = await supabase.auth.getUser();
+    await resumeSignupOnboarding(userData?.user);
+}
+
+async function resumeSignupAfterEmailConfirm(session, event) {
+    if (emailSignupResumeHandled || oauthSignupHandled) return;
+    if (!session?.user) return;
+    if (hasOAuthPending(OAUTH_PENDING_SIGNUP_KEY)) return;
+    if (onboardingUser) return;
+
+    const resumeEvents = new Set(["INITIAL_SESSION", "SIGNED_IN", "USER_UPDATED"]);
+    if (!resumeEvents.has(event)) return;
+
+    emailSignupResumeHandled = true;
+    await resumeSignupOnboarding(session.user);
+}
+
 clearLegacyOAuthPending();
 
 if (!isOAuthCallbackLanding()) {
@@ -1267,8 +1456,11 @@ if (!isOAuthCallbackLanding()) {
 }
 
 wireSupabaseSession(async (session, event) => {
-    if (!shouldAutoContinueOAuth(session, event, OAUTH_PENDING_SIGNUP_KEY)) return;
-    await goAfterOAuthSignup();
+    if (shouldAutoContinueOAuth(session, event, OAUTH_PENDING_SIGNUP_KEY)) {
+        await goAfterOAuthSignup();
+        return;
+    }
+    await resumeSignupAfterEmailConfirm(session, event);
 });
 
 if (isOAuthCallbackLanding()) {
@@ -1287,6 +1479,59 @@ if (isOAuthCallbackLanding()) {
         }
     })();
 }
+
+resendConfirmBtn.addEventListener("click", async () => {
+    const email = pendingConfirmEmail || confirmEmailAddressEl.textContent.trim();
+    if (!email) {
+        showError("No email on file. Start sign-up again.");
+        return;
+    }
+
+    clearError();
+    clearConfirmSuccess();
+
+    const cooldownMs = confirmEmailCooldownRemainingMs(email);
+    if (cooldownMs > 0) {
+        showError(confirmEmailCooldownMessage(cooldownMs));
+        return;
+    }
+
+    resendConfirmBtn.disabled = true;
+
+    try {
+        const { error } = await supabase.auth.resend({
+            type: "signup",
+            email,
+            options: {
+                emailRedirectTo: authRedirectUrl("signup.html")
+            }
+        });
+
+        if (error) {
+            showError(signupAuthMessage(error.message));
+            return;
+        }
+
+        markConfirmEmailSent(email);
+        showConfirmSuccess("Confirmation email sent again. Check spam and Promotions too.");
+    } catch (err) {
+        showError((err && err.message) || "Could not resend confirmation email.");
+    } finally {
+        resendConfirmBtn.disabled = false;
+    }
+});
+
+void supabase.auth.getSession().then(({ data }) => {
+    if (data.session) return;
+    try {
+        const storedPendingEmail = sessionStorage.getItem(SIGNUP_PENDING_EMAIL_KEY);
+        if (storedPendingEmail) {
+            showConfirmEmailStep(storedPendingEmail);
+        }
+    } catch {
+        /* ignore */
+    }
+});
 
 let signupInFlight = false;
 
@@ -1313,10 +1558,17 @@ window.signup = async function () {
     setOAuthButtonsDisabled(true);
 
     try {
+        try {
+            sessionStorage.setItem(SIGNUP_ACCOUNT_TYPE_KEY, accountType);
+        } catch {
+            /* ignore */
+        }
+
         const { data, error } = await supabase.auth.signUp({
             email,
             password,
             options: {
+                emailRedirectTo: authRedirectUrl("signup.html"),
                 data: {
                     accountType
                 }
@@ -1339,6 +1591,18 @@ window.signup = async function () {
             return;
         }
 
+        if (looksLikeDuplicateSignup(data)) {
+            showError("That email is already registered. Try logging in instead.");
+            return;
+        }
+
+        if (signupNeedsEmailConfirmation(data)) {
+            markConfirmEmailSent(email);
+            showConfirmEmailStep(email);
+            return;
+        }
+
+        clearPendingConfirmEmail();
         beginOnboarding(user, accountType, email.split("@")[0]);
 
     } catch (e) {
