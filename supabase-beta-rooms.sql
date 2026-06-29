@@ -284,9 +284,6 @@ BEGIN
   )
   RETURNING * INTO v_row;
 
-  INSERT INTO public.beta_threads (share_id, book_id, author_id, thread_type)
-  VALUES (v_row.id, p_book_id, v_uid, 'general');
-
   INSERT INTO public.beta_audit_log (table_name, row_id, actor_id, action, payload)
   VALUES (
     'manuscript_shares',
@@ -598,6 +595,119 @@ CREATE TRIGGER beta_messages_audit_trg
   AFTER INSERT OR UPDATE ON public.beta_messages
   FOR EACH ROW
   EXECUTE FUNCTION public.beta_messages_audit_trigger();
+
+-- ---------------------------------------------------------------------------
+-- 5b. Per-reader DM threads (text-style beta feedback)
+-- ---------------------------------------------------------------------------
+
+ALTER TABLE public.beta_threads
+  ADD COLUMN IF NOT EXISTS reader_id uuid REFERENCES auth.users (id) ON DELETE CASCADE;
+
+ALTER TABLE public.beta_threads DROP CONSTRAINT IF EXISTS beta_threads_thread_type_check;
+ALTER TABLE public.beta_threads ADD CONSTRAINT beta_threads_thread_type_check
+  CHECK (thread_type IN ('general', 'chapter', 'inline', 'dm'));
+
+DROP INDEX IF EXISTS beta_threads_general_per_share_idx;
+CREATE UNIQUE INDEX IF NOT EXISTS beta_threads_dm_per_reader_share_idx
+  ON public.beta_threads (share_id, reader_id)
+  WHERE thread_type = 'dm' AND reader_id IS NOT NULL;
+
+-- Migrate legacy single "general" threads into per-reader DMs where possible.
+UPDATE public.beta_threads t
+SET
+  thread_type = 'dm',
+  reader_id = ms.reader_id
+FROM public.manuscript_shares ms
+WHERE t.share_id = ms.id
+  AND t.thread_type = 'general'
+  AND ms.reader_id IS NOT NULL
+  AND t.reader_id IS NULL;
+
+CREATE OR REPLACE FUNCTION public.get_or_create_beta_dm_thread(
+  p_share_id uuid,
+  p_reader_id uuid DEFAULT NULL
+)
+RETURNS public.beta_threads
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_uid uuid := auth.uid();
+  v_share public.manuscript_shares;
+  v_reader uuid;
+  v_thread public.beta_threads;
+BEGIN
+  IF v_uid IS NULL THEN
+    RAISE EXCEPTION 'not_authenticated';
+  END IF;
+
+  SELECT * INTO v_share
+  FROM public.manuscript_shares
+  WHERE id = p_share_id;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'share_not_found';
+  END IF;
+
+  IF v_share.status <> 'active' THEN
+    RAISE EXCEPTION 'share_not_active';
+  END IF;
+
+  IF v_share.expires_at IS NOT NULL AND v_share.expires_at < now() THEN
+    RAISE EXCEPTION 'invite_expired';
+  END IF;
+
+  IF v_share.author_id = v_uid THEN
+    v_reader := p_reader_id;
+    IF v_reader IS NULL THEN
+      RAISE EXCEPTION 'reader_id_required';
+    END IF;
+    IF NOT EXISTS (
+      SELECT 1
+      FROM public.manuscript_shares ms
+      WHERE ms.book_id = v_share.book_id
+        AND ms.author_id = v_uid
+        AND ms.reader_id = v_reader
+        AND ms.status = 'active'
+        AND (ms.expires_at IS NULL OR ms.expires_at > now())
+    ) THEN
+      RAISE EXCEPTION 'reader_not_on_share';
+    END IF;
+  ELSIF v_share.reader_id = v_uid THEN
+    v_reader := v_uid;
+  ELSE
+    RAISE EXCEPTION 'not_participant';
+  END IF;
+
+  SELECT * INTO v_thread
+  FROM public.beta_threads
+  WHERE share_id = p_share_id
+    AND thread_type = 'dm'
+    AND reader_id = v_reader;
+
+  IF FOUND THEN
+    RETURN v_thread;
+  END IF;
+
+  INSERT INTO public.beta_threads (share_id, book_id, author_id, thread_type, reader_id)
+  VALUES (p_share_id, v_share.book_id, v_share.author_id, 'dm', v_reader)
+  RETURNING * INTO v_thread;
+
+  INSERT INTO public.beta_audit_log (table_name, row_id, actor_id, action, payload)
+  VALUES (
+    'beta_threads',
+    v_thread.id::text,
+    v_uid,
+    'dm_thread_created',
+    jsonb_build_object('share_id', p_share_id, 'reader_id', v_reader)
+  );
+
+  RETURN v_thread;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.get_or_create_beta_dm_thread(uuid, uuid) TO authenticated;
 
 -- ---------------------------------------------------------------------------
 -- 6. Notifications — ensure table exists, then beta room insert policy

@@ -1,5 +1,5 @@
 /**
- * Beta rooms API — unpublished manuscript snapshots, invites, threaded feedback.
+ * Beta rooms API — unpublished manuscript snapshots, invites, per-reader DM feedback.
  * Requires supabase-beta-rooms.sql applied in Supabase.
  */
 
@@ -169,6 +169,49 @@ export async function listBetaThreads(shareId) {
     return data || [];
 }
 
+export async function getOrCreateBetaDmThread(shareId, readerId = null) {
+    const { data, error } = await supabase.rpc("get_or_create_beta_dm_thread", {
+        p_share_id: shareId,
+        p_reader_id: readerId
+    });
+    if (error) throw error;
+    return data;
+}
+
+/** Author inbox: one DM thread per beta reader who has texted on this book. */
+export async function listAuthorBetaDmInbox(bookId) {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const authorId = sessionData?.session?.user?.id;
+    if (!authorId) throw new Error("Sign in required.");
+
+    const { data: threads, error } = await supabase
+        .from("beta_threads")
+        .select("id, share_id, reader_id, book_id, author_id, created_at")
+        .eq("book_id", bookId)
+        .eq("author_id", authorId)
+        .eq("thread_type", "dm")
+        .not("reader_id", "is", null)
+        .order("created_at", { ascending: false });
+    if (error) throw error;
+
+    const rows = threads || [];
+    const enriched = await Promise.all(
+        rows.map(async (thread) => {
+            const messages = await listBetaMessages(thread.id);
+            const last = messages[messages.length - 1] || null;
+            return { ...thread, messages, lastMessage: last };
+        })
+    );
+
+    enriched.sort((a, b) => {
+        const ta = a.lastMessage?.created_at || a.created_at;
+        const tb = b.lastMessage?.created_at || b.created_at;
+        return new Date(tb).getTime() - new Date(ta).getTime();
+    });
+
+    return enriched;
+}
+
 export async function listBetaMessages(threadId) {
     const { data, error } = await supabase
         .from("beta_messages")
@@ -246,6 +289,6 @@ export function isBetaRoomsSchemaMissing(error) {
         code === "42P01" ||
         code === "PGRST202" ||
         /beta_snapshots|manuscript_shares|beta_threads|beta_messages/i.test(msg) ||
-            /create_beta_snapshot|accept_manuscript_invite|extend_manuscript_invite/i.test(msg)
+            /create_beta_snapshot|accept_manuscript_invite|extend_manuscript_invite|get_or_create_beta_dm_thread/i.test(msg)
     );
 }

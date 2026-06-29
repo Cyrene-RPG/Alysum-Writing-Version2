@@ -231,7 +231,7 @@
         }
         .beta-layout {
             display: grid;
-            grid-template-columns: minmax(0, 1fr) min(340px, 32vw);
+            grid-template-columns: minmax(0, 1fr) min(380px, 34vw);
             gap: 20px;
             align-items: start;
         }
@@ -409,90 +409,232 @@
         .content p { margin: 0 0 1.15em; }
         .content h1, .content h2, .content h3 { line-height: 1.24; margin: 1.35em 0 0.7em; }
 
-        .feedback-card {
+        .text-panel {
             position: sticky;
             top: calc(var(--reader-nav-offset) + 72px);
+            display: flex;
+            flex-direction: column;
+            min-height: min(72vh, 640px);
+            max-height: min(82vh, 720px);
             background: var(--panel);
             border: 1px solid var(--border);
             border-radius: 24px;
             box-shadow: var(--shadow);
-            padding: 18px;
+            overflow: hidden;
         }
         @media (max-width: 1080px) {
-            .feedback-card { position: static; }
+            .text-panel { position: static; min-height: 420px; max-height: none; }
         }
-        .feedback-kicker {
-            font-size: 11px;
-            font-weight: 900;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            color: var(--theme-brand-kicker, #c4b5fd);
-            margin-bottom: 6px;
+        .text-panel-head {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border);
+            background: color-mix(in srgb, var(--panel) 92%, var(--bg));
         }
-        .feedback-title {
-            margin: 0 0 8px;
-            font-size: 18px;
-            font-weight: 900;
-        }
-        .feedback-hint {
-            margin: 0 0 14px;
-            color: var(--muted);
-            font-size: 13px;
-            line-height: 1.5;
-        }
-        .msg-list {
-            display: grid;
-            gap: 10px;
-            max-height: min(42vh, 360px);
-            overflow-y: auto;
-            margin-bottom: 12px;
-        }
-        .msg {
-            border: 1px solid var(--border);
-            background: var(--panel-2);
-            border-radius: 16px;
-            padding: 12px;
-        }
-        .msg-meta {
-            font-size: 12px;
-            font-weight: 900;
-            color: var(--muted);
-            margin-bottom: 6px;
-        }
-        .msg-body {
-            font-size: 14px;
-            line-height: 1.6;
-            white-space: pre-wrap;
-            word-break: break-word;
-        }
-        .msg-empty {
-            font-size: 13px;
-            color: var(--muted);
-            padding: 12px;
-            border-radius: 14px;
-            border: 1px dashed var(--border);
-            text-align: center;
-        }
-        .comment-input {
-            width: 100%;
-            min-height: 100px;
-            resize: vertical;
-            border-radius: 16px;
+        .text-panel-back {
+            flex-shrink: 0;
             border: 1px solid var(--border);
             background: var(--panel-2);
             color: var(--text);
+            border-radius: 999px;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: 800;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .text-panel-avatar {
+            flex-shrink: 0;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 900;
+            color: #fff;
+            background: linear-gradient(135deg, var(--theme-header-mid, #6d28d9), var(--theme-header-end, #db2777));
+        }
+        .text-panel-title-wrap { min-width: 0; flex: 1; }
+        .text-panel-title {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 900;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .text-panel-sub {
+            margin-top: 2px;
+            font-size: 12px;
+            color: var(--muted);
+            font-weight: 600;
+        }
+        .text-chat-msgs {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            padding: 14px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background:
+                radial-gradient(circle at 50% 0%, var(--theme-accent-soft-bg, rgba(124, 58, 237, 0.08)) 0%, transparent 55%),
+                color-mix(in srgb, var(--bg) 35%, var(--panel));
+        }
+        .text-bubble {
+            max-width: 88%;
+            padding: 10px 14px;
+            border-radius: 18px;
+            font-size: 15px;
+            line-height: 1.45;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .text-bubble.sent {
+            align-self: flex-end;
+            color: #fff;
+            background: linear-gradient(135deg, var(--theme-header-mid, #6d28d9), var(--theme-header-end, #db2777));
+            border-bottom-right-radius: 6px;
+        }
+        .text-bubble.recv {
+            align-self: flex-start;
+            color: var(--text);
+            background: var(--panel-2);
+            border: 1px solid var(--border);
+            border-bottom-left-radius: 6px;
+        }
+        .text-bubble-time {
+            margin-top: 5px;
+            font-size: 10px;
+            font-weight: 700;
+            opacity: 0.72;
+        }
+        .text-bubble.sent .text-bubble-time { text-align: right; }
+        .text-empty {
+            margin: auto;
+            max-width: 240px;
+            text-align: center;
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.55;
             padding: 12px;
+        }
+        .text-composer {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px;
+            border-top: 1px solid var(--border);
+            background: var(--panel);
+        }
+        .text-input {
+            flex: 1;
+            min-width: 0;
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            background: var(--panel-2);
+            color: var(--text);
+            padding: 11px 16px;
+            font-size: 15px;
             outline: none;
             font-family: inherit;
-            font-size: 15px;
-            line-height: 1.6;
         }
-        .comment-input:focus {
+        .text-input:focus {
             border-color: color-mix(in srgb, var(--theme-header-mid, #7c3aed) 45%, transparent);
             box-shadow: 0 0 0 3px var(--accent-muted, rgba(124, 58, 237, 0.12));
         }
-        .feedback-actions { margin-top: 10px; }
-        .feedback-actions .btn { width: 100%; }
+        .text-send {
+            flex-shrink: 0;
+            width: 42px;
+            height: 42px;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: 900;
+            color: #fff;
+            background: linear-gradient(135deg, var(--theme-header-mid, #6d28d9), var(--theme-header-end, #db2777));
+            box-shadow: var(--shadow);
+        }
+        .text-send:disabled { opacity: 0.45; cursor: not-allowed; }
+        .inbox-list {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            padding: 8px;
+        }
+        .inbox-row {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border: 1px solid transparent;
+            border-radius: 16px;
+            background: transparent;
+            color: inherit;
+            text-align: left;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .inbox-row:hover { background: rgba(255,255,255,0.05); }
+        body.light .inbox-row:hover { background: rgba(0,0,0,0.04); }
+        .inbox-row.is-active {
+            background: var(--theme-accent-soft-bg, rgba(124, 58, 237, 0.16));
+            border-color: var(--accent-muted, rgba(124, 58, 237, 0.22));
+        }
+        .inbox-row-main { min-width: 0; flex: 1; }
+        .inbox-row-name {
+            font-size: 15px;
+            font-weight: 900;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .inbox-row-preview {
+            margin-top: 3px;
+            font-size: 13px;
+            color: var(--muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .inbox-row-time {
+            flex-shrink: 0;
+            font-size: 11px;
+            color: var(--muted);
+            font-weight: 700;
+        }
+        .text-status {
+            margin: 0 12px 10px;
+            padding: 10px 12px;
+            border-radius: 12px;
+            font-size: 13px;
+            line-height: 1.45;
+        }
+        .text-status.wait {
+            background: var(--theme-accent-soft-bg, rgba(124, 58, 237, 0.16));
+            border: 1px solid var(--accent-muted, rgba(124, 58, 237, 0.28));
+            color: var(--theme-brand-kicker, #c4b5fd);
+        }
+        .text-status.error {
+            color: #fecaca;
+            background: rgba(127,29,29,0.28);
+            border: 1px solid rgba(239,68,68,0.35);
+        }
+
+        .text-panel-view {
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            flex: 1;
+        }
 
         .loading-panel {
             max-width: var(--reader-max);
@@ -667,16 +809,33 @@
                 </article>
             </main>
 
-            <aside class="feedback-card" id="feedbackCard">
-                <div class="feedback-kicker">Monitored thread</div>
-                <h3 class="feedback-title">Feedback for the author</h3>
-                <p class="feedback-hint">Share overall thoughts on pacing, clarity, and character. Messages are stored and visible to both of you.</p>
-                <div id="threadStatus" class="status-box hidden"></div>
-                <div class="msg-list" id="msgList"></div>
-                <div class="composer" id="composer">
-                    <textarea class="comment-input" id="msgInput" placeholder="Your feedback for this draft…" maxlength="8000"></textarea>
-                    <div class="feedback-actions">
-                        <button type="button" class="btn primary" id="sendBtn">Send feedback</button>
+            <aside class="text-panel" id="textPanel">
+                <div id="authorInboxView" class="text-panel-view hidden">
+                    <div class="text-panel-head">
+                        <div class="text-panel-avatar" aria-hidden="true">💬</div>
+                        <div class="text-panel-title-wrap">
+                            <h3 class="text-panel-title">Beta reader texts</h3>
+                            <div class="text-panel-sub">One conversation per reader</div>
+                        </div>
+                    </div>
+                    <div id="inboxStatus" class="text-status hidden"></div>
+                    <div class="inbox-list" id="inboxList"></div>
+                </div>
+
+                <div id="chatView" class="text-panel-view hidden">
+                    <div class="text-panel-head">
+                        <button type="button" class="text-panel-back hidden" id="inboxBackBtn">← All</button>
+                        <div class="text-panel-avatar" id="chatPeerAvatar" aria-hidden="true">A</div>
+                        <div class="text-panel-title-wrap">
+                            <h3 class="text-panel-title" id="chatPeerName">Author</h3>
+                            <div class="text-panel-sub" id="chatPeerSub">Private beta · texts are logged</div>
+                        </div>
+                    </div>
+                    <div id="threadStatus" class="text-status hidden"></div>
+                    <div class="text-chat-msgs" id="msgList"></div>
+                    <div class="text-composer" id="composer">
+                        <input type="text" class="text-input" id="msgInput" placeholder="Text the author…" maxlength="8000" autocomplete="off" />
+                        <button type="button" class="text-send" id="sendBtn" aria-label="Send message">↑</button>
                     </div>
                 </div>
             </aside>
@@ -691,12 +850,13 @@
         import {
             acceptManuscriptInvite,
             loadBetaRoomShare,
-            listBetaThreads,
+            getOrCreateBetaDmThread,
+            listAuthorBetaDmInbox,
             listBetaMessages,
             sendBetaMessage,
             chaptersFromSnapshot,
             isBetaRoomsSchemaMissing
-        } from "./js/beta-rooms-api.js?v=2";
+        } from "./js/beta-rooms-api.js?v=3";
         import { rememberBetaRoomOpen } from "./js/beta-room-shelf.js?v=1";
 
         const params = new URLSearchParams(window.location.search);
@@ -737,17 +897,29 @@
         const msgInput = document.getElementById("msgInput");
         const sendBtn = document.getElementById("sendBtn");
         const composer = document.getElementById("composer");
+        const authorInboxView = document.getElementById("authorInboxView");
+        const chatView = document.getElementById("chatView");
+        const inboxList = document.getElementById("inboxList");
+        const inboxStatus = document.getElementById("inboxStatus");
+        const inboxBackBtn = document.getElementById("inboxBackBtn");
+        const chatPeerName = document.getElementById("chatPeerName");
+        const chatPeerSub = document.getElementById("chatPeerSub");
+        const chatPeerAvatar = document.getElementById("chatPeerAvatar");
 
         let currentUser = null;
         let currentProfile = {};
         let shareRow = null;
         let chapters = [];
         let chapterIndex = 0;
-        let generalThread = null;
+        let activeThread = null;
+        let authorInbox = [];
+        let authorNameCache = "";
         let messagesChannel = null;
+        let inboxChannels = [];
         let nameByUserId = new Map();
         let currentFontSize = 22;
         let isReaderView = false;
+        let isAuthorView = false;
 
         installReaderCopyGuards(chapterBody, { isActive: () => isReaderView && !!chapters.length });
 
@@ -787,8 +959,235 @@
         function setThreadStatus(msg, kind = "") {
             if (!msg) { threadStatus.classList.add("hidden"); return; }
             threadStatus.textContent = msg;
-            threadStatus.className = "status-box " + kind;
+            threadStatus.className = "text-status " + kind;
             threadStatus.classList.remove("hidden");
+        }
+
+        function setInboxStatus(msg, kind = "") {
+            if (!inboxStatus) return;
+            if (!msg) { inboxStatus.classList.add("hidden"); return; }
+            inboxStatus.textContent = msg;
+            inboxStatus.className = "text-status " + kind;
+            inboxStatus.classList.remove("hidden");
+        }
+
+        function formatMessageTime(iso) {
+            if (!iso) return "";
+            try {
+                return new Date(iso).toLocaleString(undefined, {
+                    month: "short",
+                    day: "numeric",
+                    hour: "numeric",
+                    minute: "2-digit"
+                });
+            } catch {
+                return "";
+            }
+        }
+
+        function formatShortTime(iso) {
+            if (!iso) return "";
+            try {
+                return new Date(iso).toLocaleString(undefined, {
+                    hour: "numeric",
+                    minute: "2-digit"
+                });
+            } catch {
+                return "";
+            }
+        }
+
+        function initialsFromName(name) {
+            const parts = String(name || "?").trim().split(/\s+/).filter(Boolean);
+            if (!parts.length) return "?";
+            if (parts.length === 1) return parts[0].slice(0, 1).toUpperCase();
+            return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+        }
+
+        function showAuthorInbox() {
+            authorInboxView.classList.remove("hidden");
+            chatView.classList.add("hidden");
+            inboxBackBtn.classList.add("hidden");
+            composer.classList.add("hidden");
+            activeThread = null;
+        }
+
+        function showChatView() {
+            authorInboxView.classList.add("hidden");
+            chatView.classList.remove("hidden");
+            if (isAuthorView) inboxBackBtn.classList.remove("hidden");
+            else inboxBackBtn.classList.add("hidden");
+            if (shareRow?.status === "active") composer.classList.remove("hidden");
+        }
+
+        async function renderMessages() {
+            if (!activeThread?.id) {
+                msgList.innerHTML = "";
+                return;
+            }
+            const rows = await listBetaMessages(activeThread.id);
+            if (!rows.length) {
+                const emptyCopy = isAuthorView
+                    ? "No texts in this thread yet."
+                    : "Text the author about pacing, clarity, or anything on your mind.";
+                msgList.innerHTML = `<div class="text-empty">${escapeHtml(emptyCopy)}</div>`;
+                return;
+            }
+            const html = [];
+            for (const row of rows) {
+                const mine = row.sender_id === currentUser?.id;
+                const when = formatMessageTime(row.created_at);
+                html.push(
+                    `<div class="text-bubble ${mine ? "sent" : "recv"}">` +
+                    `${escapeHtml(row.body)}` +
+                    `<div class="text-bubble-time">${escapeHtml(when)}</div>` +
+                    `</div>`
+                );
+            }
+            msgList.innerHTML = html.join("");
+            msgList.scrollTop = msgList.scrollHeight;
+        }
+
+        async function renderAuthorInbox() {
+            if (!isAuthorView || !shareRow?.book_id) return;
+            try {
+                authorInbox = await listAuthorBetaDmInbox(shareRow.book_id);
+            } catch (err) {
+                console.error(err);
+                setInboxStatus(err?.message || "Could not load reader texts.", "error");
+                inboxList.innerHTML = "";
+                return;
+            }
+
+            setInboxStatus("");
+
+            if (!authorInbox.length) {
+                inboxList.innerHTML = '<div class="text-empty">No reader texts yet. When someone messages you about this draft, their conversation will show up here.</div>';
+                return;
+            }
+
+            const html = [];
+            for (const row of authorInbox) {
+                const readerName = await resolveDisplayName(row.reader_id);
+                const preview = row.lastMessage?.body || "No messages yet";
+                const when = formatShortTime(row.lastMessage?.created_at || row.created_at);
+                const active = activeThread?.id === row.id ? " is-active" : "";
+                html.push(
+                    `<button type="button" class="inbox-row${active}" data-thread-id="${escapeHtml(row.id)}" data-reader-id="${escapeHtml(row.reader_id)}" data-share-id="${escapeHtml(row.share_id)}">` +
+                    `<div class="text-panel-avatar" aria-hidden="true">${escapeHtml(initialsFromName(readerName))}</div>` +
+                    `<div class="inbox-row-main">` +
+                    `<div class="inbox-row-name">${escapeHtml(readerName)}</div>` +
+                    `<div class="inbox-row-preview">${escapeHtml(preview)}</div>` +
+                    `</div>` +
+                    `<div class="inbox-row-time">${escapeHtml(when)}</div>` +
+                    `</button>`
+                );
+            }
+            inboxList.innerHTML = html.join("");
+        }
+
+        async function openAuthorThread(threadRow) {
+            if (!threadRow?.id || !threadRow.reader_id) return;
+            activeThread = threadRow;
+            const readerName = await resolveDisplayName(threadRow.reader_id);
+            chatPeerName.textContent = readerName;
+            chatPeerSub.textContent = "Beta reader · private text thread";
+            chatPeerAvatar.textContent = initialsFromName(readerName);
+            msgInput.placeholder = `Text ${readerName}…`;
+            setThreadStatus("");
+            showChatView();
+            await renderMessages();
+            startMessagesRealtime();
+        }
+
+        async function ensureReaderThread() {
+            if (!shareRow?.id || !currentUser?.id) return null;
+            try {
+                return await getOrCreateBetaDmThread(shareRow.id);
+            } catch (err) {
+                console.error(err);
+                setThreadStatus(err?.message || "Could not open text thread.", "error");
+                return null;
+            }
+        }
+
+        async function setupReaderChat(authorName) {
+            isAuthorView = false;
+            showChatView();
+            chatPeerName.textContent = authorName || "Author";
+            chatPeerSub.textContent = "Text your thoughts on this draft";
+            chatPeerAvatar.textContent = initialsFromName(authorName || "Author");
+            msgInput.placeholder = `Text ${authorName || "the author"}…`;
+
+            if (shareRow.status !== "active") return;
+
+            activeThread = await ensureReaderThread();
+            if (activeThread) {
+                await renderMessages();
+                startMessagesRealtime();
+            }
+        }
+
+        async function setupAuthorTexts() {
+            isAuthorView = true;
+            showAuthorInbox();
+            await renderAuthorInbox();
+            startInboxRealtime();
+        }
+
+        function messageRecipientId() {
+            if (!shareRow || !currentUser || !activeThread) return "";
+            if (shareRow.author_id === currentUser.id) return activeThread.reader_id || "";
+            return shareRow.author_id;
+        }
+
+        function stopMessagesRealtime() {
+            if (messagesChannel) {
+                supabase.removeChannel(messagesChannel);
+                messagesChannel = null;
+            }
+        }
+
+        function stopInboxRealtime() {
+            for (const ch of inboxChannels) supabase.removeChannel(ch);
+            inboxChannels = [];
+        }
+
+        function startMessagesRealtime() {
+            stopMessagesRealtime();
+            if (!activeThread?.id) return;
+            messagesChannel = supabase
+                .channel("beta_room_dm_" + activeThread.id)
+                .on(
+                    "postgres_changes",
+                    { event: "*", schema: "public", table: "beta_messages", filter: `thread_id=eq.${activeThread.id}` },
+                    () => {
+                        renderMessages().catch(console.error);
+                        if (isAuthorView) renderAuthorInbox().catch(console.error);
+                    }
+                )
+                .subscribe();
+        }
+
+        function startInboxRealtime() {
+            stopInboxRealtime();
+            if (!isAuthorView || !shareRow?.book_id) return;
+            const shareIds = [...new Set(authorInbox.map((row) => row.share_id).filter(Boolean))];
+            if (!shareIds.length) shareIds.push(shareRow.id);
+            shareIds.forEach((sid) => {
+                const ch = supabase
+                    .channel("beta_room_inbox_" + sid)
+                    .on(
+                        "postgres_changes",
+                        { event: "*", schema: "public", table: "beta_messages", filter: `share_id=eq.${sid}` },
+                        () => {
+                            renderAuthorInbox().catch(console.error);
+                            if (activeThread?.share_id === sid) renderMessages().catch(console.error);
+                        }
+                    )
+                    .subscribe();
+                inboxChannels.push(ch);
+            });
         }
 
         function showFatal(msg) {
@@ -870,32 +1269,6 @@
             return n;
         }
 
-        async function renderMessages() {
-            if (!generalThread?.id) {
-                msgList.innerHTML = "";
-                return;
-            }
-            const rows = await listBetaMessages(generalThread.id);
-            if (!rows.length) {
-                msgList.innerHTML = '<div class="msg-empty">No feedback yet. Be the first to share thoughts on this draft.</div>';
-                return;
-            }
-            const html = [];
-            for (const row of rows) {
-                const name = await resolveDisplayName(row.sender_id);
-                const when = row.created_at ? new Date(row.created_at).toLocaleString() : "";
-                html.push(`<div class="msg"><div class="msg-meta">${escapeHtml(name)} · ${escapeHtml(when)}</div><div class="msg-body">${escapeHtml(row.body)}</div></div>`);
-            }
-            msgList.innerHTML = html.join("");
-            msgList.scrollTop = msgList.scrollHeight;
-        }
-
-        function otherParticipantId() {
-            if (!shareRow || !currentUser) return "";
-            if (shareRow.author_id === currentUser.id) return shareRow.reader_id || "";
-            return shareRow.author_id;
-        }
-
         async function loadRoom() {
             shareRow = await loadBetaRoomShare(shareId);
             if (!shareRow) throw new Error("Beta room not found or you do not have access.");
@@ -906,6 +1279,8 @@
 
             const isAuthor = shareRow.author_id === currentUser.id;
             isReaderView = !isAuthor;
+            isAuthorView = isAuthor;
+            authorNameCache = "";
 
             const { data: authorProfile } = await supabase
                 .from("users")
@@ -913,6 +1288,7 @@
                 .eq("id", shareRow.author_id)
                 .maybeSingle();
             const authorName = publicDisplayNameFromUserData(authorProfile || {}) || authorProfile?.username || "Author";
+            authorNameCache = authorName;
 
             const title = snap?.title || "Untitled";
             const snapshotLabel = snap?.label || "Draft copy";
@@ -933,10 +1309,10 @@
 
             if (isAuthor) {
                 backBtn.href = "beta-rooms.html";
-                betaNotice.textContent = "You are previewing the snapshot your beta readers see. Feedback below is the monitored thread for this invite.";
+                betaNotice.textContent = "You are previewing the snapshot your beta readers see. Reader texts appear in the panel — one conversation per reader.";
             } else {
                 backBtn.href = "beta-rooms.html";
-                betaNotice.textContent = "This is a private, unpublished draft — not listed in the Alysum Library. Your feedback is logged and shared with the author only.";
+                betaNotice.textContent = "This is a private, unpublished draft — not listed in the Alysum Library. Text the author anytime from the panel on the right.";
             }
 
             void rememberBetaRoomOpen(currentUser.id, {
@@ -949,23 +1325,24 @@
                 role: isAuthor ? "author" : "reader"
             });
 
+            renderChapter();
+
+            stopMessagesRealtime();
+            stopInboxRealtime();
+
             if (shareRow.status !== "active") {
                 if (isAuthor && shareRow.status === "pending") {
-                    setThreadStatus("Waiting for a reader to accept your invite link.", "wait");
+                    await setupAuthorTexts();
+                    setInboxStatus("Waiting for a reader to accept your invite link.", "wait");
                     composer.classList.add("hidden");
                 } else {
                     throw new Error(`This beta room is ${shareRow.status}.`);
                 }
-            }
-
-            renderChapter();
-
-            const threads = await listBetaThreads(shareId);
-            generalThread = threads.find((t) => t.thread_type === "general") || threads[0] || null;
-
-            if (shareRow.status === "active") {
-                await renderMessages();
-                startMessagesRealtime();
+            } else if (isAuthor) {
+                await setupAuthorTexts();
+            } else {
+                composer.classList.remove("hidden");
+                await setupReaderChat(authorName);
             }
 
             loadingPanel.classList.add("hidden");
@@ -973,29 +1350,30 @@
             mainLayout.classList.remove("hidden");
         }
 
-        function startMessagesRealtime() {
-            if (!generalThread?.id || messagesChannel) return;
-            messagesChannel = supabase
-                .channel("beta_room_msgs_" + generalThread.id)
-                .on(
-                    "postgres_changes",
-                    { event: "*", schema: "public", table: "beta_messages", filter: `thread_id=eq.${generalThread.id}` },
-                    () => { renderMessages().catch(console.error); }
-                )
-                .subscribe();
-        }
-
-        sendBtn.addEventListener("click", async () => {
-            if (!generalThread || shareRow?.status !== "active") return;
+        async function sendCurrentMessage() {
+            if (shareRow?.status !== "active") return;
             const body = msgInput.value.trim();
             if (!body) return;
+
             sendBtn.disabled = true;
             try {
-                const recipient = otherParticipantId();
+                if (!activeThread?.id) {
+                    if (isAuthorView) {
+                        setThreadStatus("Open a reader conversation first.", "error");
+                        return;
+                    }
+                    activeThread = await ensureReaderThread();
+                    if (!activeThread?.id) return;
+                    startMessagesRealtime();
+                }
+
+                const recipient = messageRecipientId();
                 const senderName = publicDisplayNameFromUserData(currentProfile) || "Someone";
+                const threadShareId = activeThread.share_id || shareId;
+
                 await sendBetaMessage({
-                    threadId: generalThread.id,
-                    shareId,
+                    threadId: activeThread.id,
+                    shareId: threadShareId,
                     body,
                     recipientUserId: recipient,
                     bookTitle: shareRow.beta_snapshots?.title,
@@ -1003,12 +1381,36 @@
                 });
                 msgInput.value = "";
                 await renderMessages();
+                if (isAuthorView) await renderAuthorInbox();
             } catch (err) {
                 console.error(err);
                 setThreadStatus(err?.message || "Could not send message.", "error");
             } finally {
                 sendBtn.disabled = false;
+                msgInput.focus();
             }
+        }
+
+        sendBtn.addEventListener("click", () => { void sendCurrentMessage(); });
+        msgInput.addEventListener("keydown", (ev) => {
+            if (ev.key === "Enter" && !ev.shiftKey) {
+                ev.preventDefault();
+                void sendCurrentMessage();
+            }
+        });
+
+        inboxList.addEventListener("click", (ev) => {
+            const row = ev.target.closest(".inbox-row");
+            if (!row) return;
+            const threadId = row.getAttribute("data-thread-id");
+            const threadRow = authorInbox.find((t) => t.id === threadId);
+            if (threadRow) void openAuthorThread(threadRow);
+        });
+
+        inboxBackBtn.addEventListener("click", () => {
+            stopMessagesRealtime();
+            showAuthorInbox();
+            void renderAuthorInbox();
         });
 
         prevBtn.addEventListener("click", () => { if (chapterIndex > 0) { chapterIndex--; renderChapter(); } });
