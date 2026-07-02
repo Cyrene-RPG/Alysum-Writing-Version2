@@ -4,23 +4,45 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Users — Staff — Alysum</title>
-    <link rel="stylesheet" href="css/library-reports.css?v=2">
+    <link rel="stylesheet" href="css/site-responsive.css?v=1">
+    <link rel="stylesheet" href="css/gradient-themes.css?v=5">
+    <link rel="stylesheet" href="css/library-reports.css?v=3">
+    <script src="js/gradient-theme-sync.js" defer></script>
     <script src="js/alysum-appearance-boot.js"></script>
 </head>
 <body class="mod-page">
+<header class="mod-topbar">
+    <div class="mod-topbar-inner">
+        <a class="mod-brand" href="writer-dashboard.html">Alysum <span>Support</span></a>
+        <a class="mod-btn" href="settings.html#libraryPanel">Settings</a>
+    </div>
+</header>
+
 <div class="mod-shell" id="modApp">
     <div class="mod-denied hidden" id="modDenied">
-        <h1>Access denied</h1>
-        <p>This page is for Alysum moderation staff only.</p>
-        <p><a href="library.html">← Back to Library</a></p>
+        <div class="mod-denied-card">
+            <h1>Staff setup required</h1>
+            <p id="modDeniedHint">You need database setup before moderation tools will open.</p>
+            <ol class="mod-setup-steps">
+                <li id="modStepReports"><strong>supabase-library-reports.sql</strong> — reports, strikes, staff table</li>
+                <li id="modStepStaffUsers"><strong>supabase-staff-users.sql</strong> — user browser RPCs</li>
+                <li id="modStepBootstrap"><strong>Bootstrap SQL</strong> — add your account to <code>moderation_staff</code></li>
+            </ol>
+            <pre class="mod-denied-code" id="modDeniedSql"></pre>
+            <div class="mod-denied-actions">
+                <button type="button" class="mod-btn" id="modCopyBootstrapBtn">Copy bootstrap SQL</button>
+                <a class="mod-btn primary" id="modOpenSqlBtn" href="#" target="_blank" rel="noopener">Open Supabase SQL Editor</a>
+                <button type="button" class="mod-btn" id="modRecheckBtn">Check again</button>
+                <a class="mod-btn" href="settings.html#libraryPanel">← Settings</a>
+            </div>
+            <p class="mod-denied-meta">Your user ID: <code id="modDeniedUid"></code></p>
+        </div>
     </div>
 
     <div class="hidden" id="modContent">
-        <nav class="mod-nav">
-            <a class="mod-btn" href="moderation-dashboard.html">Report queue</a>
-            <a class="mod-btn is-active" href="moderation-users.html">Users</a>
-            <a class="mod-btn" href="library.html">Library</a>
-            <a class="mod-btn" href="settings.html">Settings</a>
+        <nav class="mod-nav" aria-label="Moderation">
+            <a class="mod-btn" data-mod-nav="dashboard" href="moderation-dashboard.html">Report queue</a>
+            <a class="mod-btn" data-mod-nav="users" href="moderation-users.html">Users</a>
         </nav>
 
         <header class="mod-header">
@@ -67,12 +89,9 @@
 </div>
 
 <script type="module">
-    import { supabase } from "./firebase.js";
-    import { isModerationStaff } from "./js/library-reports-api.js?v=1";
-    import { staffSearchUsers, staffUsersOverviewStats } from "./js/staff-users-api.js?v=1";
+    import { bootModerationPage } from "./js/moderation-access.js";
+    import { staffSearchUsers, staffUsersOverviewStats } from "./js/staff-users-api.js";
 
-    const modDenied = document.getElementById("modDenied");
-    const modContent = document.getElementById("modContent");
     const modStats = document.getElementById("modStats");
     const modStatus = document.getElementById("modStatus");
     const modSearch = document.getElementById("modSearch");
@@ -222,25 +241,17 @@
         query = modSearch.value.trim();
     }
 
-    const { data: authData } = await supabase.auth.getUser();
-    if (!authData?.user) {
-        window.location.href = "login.html?next=" + encodeURIComponent("moderation-users.html");
-    } else {
-        const staff = await isModerationStaff();
-        if (!staff) {
-            modDenied.classList.remove("hidden");
-        } else {
-            modContent.classList.remove("hidden");
-            try {
-                await loadAll();
-            } catch (err) {
-                showStatus(
-                    (err.message || "").includes("staff_search_users")
-                        ? "User browser SQL not applied yet. In Supabase SQL Editor, run the full supabase-staff-users.sql file, then refresh this page."
-                        : (err.message || "Could not load user data. Run supabase-staff-users.sql in Supabase first."),
-                    "error"
-                );
-            }
+    const access = await bootModerationPage({ active: "users", returnPath: "moderation-users.html" });
+    if (access) {
+        try {
+            await loadAll();
+        } catch (err) {
+            showStatus(
+                (err.message || "").includes("staff_search_users")
+                    ? "User browser SQL not applied yet. Run supabase-staff-users.sql in Supabase, then refresh."
+                    : (err.message || "Could not load user data."),
+                "error"
+            );
         }
     }
 </script>

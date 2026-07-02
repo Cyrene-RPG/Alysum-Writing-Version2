@@ -92,12 +92,8 @@ export async function submitLibraryReport(bookId, reason, details = "") {
 
 /** @returns {Promise<boolean>} */
 export async function isModerationStaff() {
-    const { data, error } = await supabase.rpc("is_moderation_staff");
-    if (error) {
-        console.warn("is_moderation_staff:", error);
-        return false;
-    }
-    return !!data;
+    const { isModerationStaffReliable } = await import("./moderation-access.js");
+    return isModerationStaffReliable();
 }
 
 /** @returns {Promise<boolean>} */

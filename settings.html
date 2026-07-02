@@ -2083,7 +2083,9 @@
             });
         }
         refreshBackupStatusUi();
-        void isModerationStaff().then((staff) => {
+        void import("./js/moderation-access.js").then(({ isModerationStaffReliable }) => {
+            return isModerationStaffReliable();
+        }).then((staff) => {
             const staffSection = document.getElementById("libraryStaffSection");
             if (staffSection && staff) staffSection.classList.remove("hidden");
         });
