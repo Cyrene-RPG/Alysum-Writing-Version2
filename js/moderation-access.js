@@ -6,9 +6,24 @@ import { supabase } from "../firebase.js";
 
 const SQL_EDITOR = "https://supabase.com/dashboard/project/jrfxgpkpbacajhcwimgz/sql/new";
 
-const BOOTSTRAP_SQL = (uid) => `INSERT INTO public.moderation_staff (user_id, role, created_by)
-VALUES ('${uid}', 'admin', '${uid}')
+/** Strip stray punctuation from pasted/copied user IDs. */
+function normalizeUuid(uid) {
+    const match = String(uid || "").match(
+        /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i
+    );
+    return match ? match[0].toLowerCase() : String(uid || "").trim();
+}
+
+const BOOTSTRAP_SQL = (uid) => {
+    const id = normalizeUuid(uid);
+    return `INSERT INTO public.moderation_staff (user_id, role, created_by)
+VALUES (
+  '${id}',
+  'admin',
+  '${id}'
+)
 ON CONFLICT (user_id) DO UPDATE SET role = EXCLUDED.role;`;
+};
 
 /**
  * @returns {Promise<{
