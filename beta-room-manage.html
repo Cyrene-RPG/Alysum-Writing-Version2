@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="manifest" href="manifest.webmanifest">
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script src="js/alysum-appearance-boot.js"></script>
@@ -13,106 +14,565 @@
         :root {
             --bg: #0b1220;
             --panel: #111827;
+            --panel-2: #172132;
             --text: #f9fafb;
             --muted: #9ca3af;
-            --border: rgba(255,255,255,0.1);
-            --purple: #7c3aed;
+            --border: rgba(255,255,255,0.08);
+            --shadow: 0 14px 34px rgba(0,0,0,0.28);
             --danger: #f87171;
+            --page-max: 1320px;
         }
-        body {
+        body.light {
+            --bg: #f4f6fb;
+            --panel: #ffffff;
+            --panel-2: #f7f9fc;
+            --text: #171717;
+            --muted: #5f6470;
+            --border: rgba(0,0,0,0.08);
+            --shadow: 0 14px 34px rgba(0,0,0,0.08);
+        }
+        html, body {
             margin: 0;
-            min-height: 100dvh;
+            min-height: 100%;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
             background:
-                radial-gradient(ellipse 120% 60% at 50% -10%, var(--theme-body-spot, rgba(124, 58, 237, 0.2)) 0%, transparent 55%),
-                var(--bg);
+                radial-gradient(ellipse 120% 60% at 50% -10%, var(--theme-body-spot, rgba(124, 58, 237, 0.24)) 0%, transparent 55%),
+                linear-gradient(180deg, #0d1426 0%, var(--bg) 42%);
             color: var(--text);
         }
-        body.light { --bg: #f4f6fb; --panel: #fff; --text: #171717; --muted: #5f6470; --border: rgba(0,0,0,0.08); }
-        .hidden { display: none !important; }
-        .mini-nav {
-            display: flex;
-            gap: 8px;
-            padding: 10px 16px;
-            border-bottom: 1px solid var(--border);
-            background: color-mix(in srgb, var(--bg) 90%, transparent);
-            overflow-x: auto;
+        body.light {
+            background:
+                radial-gradient(ellipse 120% 60% at 50% -10%, var(--theme-body-spot, rgba(124, 58, 237, 0.12)) 0%, transparent 55%),
+                var(--bg);
         }
-        .mini-nav a {
+        .hidden { display: none !important; }
+
+        .beta-welcome-bar {
+            position: relative;
+            min-height: 84px;
+            padding: 0 clamp(16px, 3vw, 32px);
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            background: var(
+                --theme-welcome-bar,
+                var(
+                    --alysum-chrome-gradient,
+                    linear-gradient(
+                        135deg,
+                        rgba(76, 29, 149, 0.95) 0%,
+                        var(--theme-header-mid, #6d28d9) 38%,
+                        var(--theme-header-end, #db2777) 100%
+                    )
+                )
+            );
+            background-size: cover;
+            background-position: center;
+            box-shadow: 0 4px 32px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.12);
+        }
+        .beta-welcome-bar::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(circle at 12% 50%, rgba(255,255,255,0.14) 0%, transparent 42%),
+                radial-gradient(circle at 88% 20%, rgba(251,191,36,0.12) 0%, transparent 40%);
+            pointer-events: none;
+        }
+        .beta-welcome-inner {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: var(--page-max);
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .beta-badge {
+            width: 52px;
+            height: 52px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            background: rgba(0,0,0,0.28);
+            border: 2px solid rgba(255,255,255,0.22);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.25);
             flex-shrink: 0;
-            padding: 8px 12px;
-            border-radius: 999px;
-            color: var(--muted);
+        }
+        .beta-welcome-title {
+            margin: 0;
+            font-size: clamp(20px, 3.6vw, 26px);
+            font-weight: 900;
+            color: #fff;
+            text-shadow: 0 2px 12px rgba(0,0,0,0.25);
+        }
+        .beta-welcome-sub {
+            margin: 4px 0 0;
             font-size: 13px;
             font-weight: 700;
+            color: rgba(255,255,255,0.82);
+        }
+
+        .wd-nav-wrap {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            background: rgba(11,18,32,0.92);
+            border-bottom: 1px solid var(--border);
+            backdrop-filter: blur(10px);
+        }
+        body.light .wd-nav-wrap { background: rgba(244,246,251,0.92); }
+        .wd-nav {
+            max-width: var(--page-max);
+            margin: 0 auto;
+            padding: 10px clamp(12px, 2vw, 24px);
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .wd-nav::-webkit-scrollbar { display: none; }
+        .wd-nav a {
+            flex-shrink: 0;
+            padding: 8px clamp(8px, 0.8vw, 14px);
+            border-radius: 999px;
+            border: 1px solid transparent;
+            background: transparent;
+            color: #d1d5db;
+            font: inherit;
+            font-size: clamp(11px, 0.72vw, 13px);
+            font-weight: 700;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+        body.light .wd-nav a { color: var(--muted); }
+        .wd-nav a:hover { color: #fff; background: rgba(255,255,255,0.06); }
+        body.light .wd-nav a:hover { color: var(--text); background: rgba(0,0,0,0.04); }
+        .wd-nav a.is-active {
+            color: #fff;
+            background: rgba(124, 58, 237, 0.28);
+            border-color: rgba(167, 139, 250, 0.35);
+        }
+        .wd-nav-divider {
+            width: 1px;
+            height: 22px;
+            background: rgba(255,255,255,0.12);
+            flex-shrink: 0;
+        }
+        body.light .wd-nav-divider { background: var(--border); }
+
+        .page {
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 22px 20px 48px;
+        }
+        .page-head {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+        .page-head-main { min-width: 0; }
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 10px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--muted);
             text-decoration: none;
         }
-        .mini-nav a:hover { color: var(--text); background: rgba(255,255,255,0.06); }
-        .topbar { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--border); background: color-mix(in srgb, var(--bg) 90%, transparent); position: sticky; top: 0; z-index: 10; }
-        .topbar h1 { margin: 0; font-size: 18px; flex: 1; }
-        .btn { border: 1px solid var(--border); background: var(--panel); color: var(--text); border-radius: 10px; padding: 9px 14px; font-weight: 700; font-size: 14px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; }
-        .btn.primary { background: linear-gradient(135deg, var(--theme-header-mid, #5b21b6), var(--theme-header-end, var(--purple))); border: none; color: #fff; }
-        .btn.danger { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 40%, var(--border)); }
+        .back-link:hover { color: var(--text); }
+        .page-head h2 {
+            margin: 0;
+            font-size: clamp(20px, 3vw, 24px);
+            font-weight: 900;
+            line-height: 1.2;
+        }
+        .hint {
+            margin: 8px 0 0;
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.55;
+        }
+        .page-head-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            flex-shrink: 0;
+        }
+
+        .btn {
+            border: 1px solid var(--border);
+            background: var(--panel);
+            color: var(--text);
+            border-radius: 12px;
+            padding: 10px 14px;
+            font-weight: 800;
+            font-size: 14px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: background 0.15s, border-color 0.15s, transform 0.1s;
+        }
+        .btn:hover:not(:disabled) { background: var(--panel-2); }
+        .btn:active:not(:disabled) { transform: translateY(1px); }
+        .btn.primary {
+            background: linear-gradient(135deg, var(--theme-header-mid, #5b21b6), var(--theme-header-end, #7c3aed));
+            border: none;
+            color: #fff;
+        }
+        .btn.primary:hover:not(:disabled) {
+            filter: brightness(1.06);
+            background: linear-gradient(135deg, var(--theme-header-mid, #5b21b6), var(--theme-header-end, #7c3aed));
+        }
+        .btn.danger {
+            color: var(--danger);
+            border-color: color-mix(in srgb, var(--danger) 35%, var(--border));
+        }
+        .btn.danger:hover:not(:disabled) {
+            background: rgba(248,113,113,0.1);
+        }
         .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        main { max-width: 820px; margin: 0 auto; padding: 20px 16px 48px; }
-        .card { background: var(--panel); border: 1px solid var(--border); border-radius: 16px; padding: 18px; margin-bottom: 16px; }
-        .card h2 { margin: 0 0 8px; font-size: 17px; }
-        .hint { margin: 0 0 14px; color: var(--muted); font-size: 14px; line-height: 1.5; }
-        .status { padding: 10px 12px; border-radius: 10px; font-size: 14px; margin-bottom: 14px; }
-        .status.error { background: rgba(248,113,113,0.12); color: #fecaca; }
-        .status.ok { background: rgba(34,197,94,0.12); color: #bbf7d0; }
-        body.light .status.error { color: #b91c1c; }
-        body.light .status.ok { color: #15803d; }
-        .chapter-list { border: 1px solid var(--border); border-radius: 12px; max-height: 280px; overflow: auto; margin-bottom: 12px; }
-        .chapter-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-bottom: 1px solid var(--border); font-size: 14px; }
+        .btn.sm {
+            padding: 8px 12px;
+            font-size: 13px;
+            border-radius: 10px;
+        }
+
+        .status {
+            padding: 12px 16px;
+            border-radius: 14px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            line-height: 1.45;
+        }
+        .status.error {
+            color: #fecaca;
+            border: 1px solid rgba(239,68,68,0.35);
+            background: rgba(127,29,29,0.2);
+        }
+        .status.ok {
+            color: #bbf7d0;
+            border: 1px solid rgba(34,197,94,0.35);
+            background: rgba(20,83,45,0.25);
+        }
+        body.light .status.error { color: #b91c1c; background: rgba(254,226,226,0.7); }
+        body.light .status.ok { color: #15803d; background: rgba(220,252,231,0.8); }
+
+        .card {
+            background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent), var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 18px;
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: hidden;
+        }
+        .card::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: linear-gradient(180deg, var(--theme-header-mid, #6d28d9), var(--theme-header-end, #db2777));
+        }
+        .card-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 6px;
+        }
+        .card h2 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 900;
+        }
+        .card-icon {
+            flex-shrink: 0;
+            width: 36px;
+            height: 36px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            background: var(--theme-accent-soft-bg, rgba(124, 58, 237, 0.15));
+            border: 1px solid rgba(167, 139, 250, 0.2);
+        }
+        .card > .hint { margin-bottom: 16px; }
+
+        .field { margin-bottom: 14px; }
+        .field label {
+            display: block;
+            font-size: 11px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: var(--muted);
+            margin-bottom: 7px;
+        }
+        .field input {
+            width: 100%;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: var(--bg);
+            color: var(--text);
+            padding: 11px 14px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        .field input:focus {
+            outline: none;
+            border-color: rgba(167, 139, 250, 0.5);
+            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15);
+        }
+
+        .chapter-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .chapter-toolbar span {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--muted);
+        }
+        .chapter-toolbar button {
+            border: none;
+            background: transparent;
+            color: var(--theme-brand-kicker, #c4b5fd);
+            font: inherit;
+            font-size: 12px;
+            font-weight: 800;
+            cursor: pointer;
+            padding: 4px 0;
+        }
+        .chapter-toolbar button:hover { text-decoration: underline; }
+
+        .chapter-list {
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            max-height: 300px;
+            overflow: auto;
+            margin-bottom: 16px;
+            background: var(--bg);
+        }
+        .chapter-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 11px 14px;
+            border-bottom: 1px solid var(--border);
+            font-size: 14px;
+            transition: background 0.12s;
+        }
         .chapter-row:last-child { border-bottom: none; }
-        label.row { display: flex; align-items: center; gap: 10px; cursor: pointer; width: 100%; }
-        .field { margin-bottom: 12px; }
-        .field label { display: block; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 6px; }
-        .field input { width: 100%; border: 1px solid var(--border); border-radius: 10px; background: var(--bg); color: var(--text); padding: 10px 12px; font-size: 14px; }
-        .snapshot-item, .share-item { border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 10px; }
-        .snapshot-meta, .share-meta { font-size: 13px; color: var(--muted); margin-top: 4px; }
-        .share-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-        .invite-url { font-family: ui-monospace, monospace; font-size: 12px; word-break: break-all; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px; margin-top: 8px; }
-        .badge { display: inline-block; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; padding: 3px 8px; border-radius: 999px; background: rgba(124,58,237,0.2); color: #c4b5fd; }
-        .badge.pending { background: var(--theme-accent-soft-bg, rgba(124, 58, 237, 0.15)); color: var(--theme-brand-kicker, #c4b5fd); }
+        .chapter-row:hover { background: rgba(255,255,255,0.03); }
+        body.light .chapter-row:hover { background: rgba(0,0,0,0.03); }
+        label.row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            width: 100%;
+            min-width: 0;
+        }
+        label.row span {
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        label.row input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
+            accent-color: var(--theme-header-mid, #6d28d9);
+            cursor: pointer;
+        }
+
+        .item-list { display: flex; flex-direction: column; gap: 10px; }
+        .item-list .hint { padding: 8px 0; }
+
+        .list-item {
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 14px 16px;
+            background: var(--bg);
+            transition: border-color 0.15s;
+        }
+        .list-item:hover { border-color: rgba(167, 139, 250, 0.25); }
+        .list-item-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .list-item-title {
+            font-size: 15px;
+            font-weight: 800;
+            line-height: 1.3;
+            min-width: 0;
+        }
+        .list-item-meta {
+            font-size: 13px;
+            color: var(--muted);
+            margin-top: 6px;
+            line-height: 1.45;
+        }
+        .share-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .invite-url-wrap {
+            margin-top: 10px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            background: var(--panel-2);
+            border: 1px dashed rgba(167, 139, 250, 0.3);
+        }
+        .invite-url-label {
+            font-size: 10px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: var(--muted);
+            margin-bottom: 5px;
+        }
+        .invite-url {
+            font-family: ui-monospace, "Cascadia Code", "Segoe UI Mono", monospace;
+            font-size: 12px;
+            line-height: 1.5;
+            word-break: break-all;
+            color: var(--theme-brand-kicker, #c4b5fd);
+        }
+        body.light .invite-url { color: var(--theme-header-mid, #6d28d9); }
+
+        .badge {
+            display: inline-block;
+            font-size: 10px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            padding: 4px 8px;
+            border-radius: 999px;
+            background: var(--theme-accent-soft-bg, rgba(124, 58, 237, 0.18));
+            color: var(--theme-brand-kicker, #c4b5fd);
+            flex-shrink: 0;
+        }
+        .badge.pending { background: var(--theme-accent-soft-bg, rgba(124, 58, 237, 0.15)); }
+        .badge.active { background: rgba(20,184,166,0.18); color: #99f6e4; }
         .badge.revoked { background: rgba(248,113,113,0.15); color: #fca5a5; }
-        .badge.expired { background: var(--theme-accent-soft-bg, rgba(124, 58, 237, 0.15)); color: var(--theme-brand-kicker, #c4b5fd); }
+        .badge.expired { background: rgba(251,191,36,0.15); color: #fde68a; }
+        body.light .badge.active { color: #0f766e; }
+        body.light .badge.revoked { color: #b91c1c; }
+        body.light .badge.expired { color: #b45309; }
+
+        .card-footer { margin-top: 4px; }
     </style>
 </head>
 <body>
-    <nav class="mini-nav" aria-label="Workspace">
-        <a href="writer-dashboard.html">Studio</a>
-        <a href="beta-rooms.html">Beta rooms</a>
-        <a href="library.html">Library</a>
-    </nav>
-    <header class="topbar">
-        <a class="btn" id="backBtn" href="beta-rooms.html">← Beta rooms</a>
-        <h1 id="pageTitle">Beta share</h1>
+    <header class="beta-welcome-bar">
+        <div class="beta-welcome-inner">
+            <div class="beta-badge" aria-hidden="true">✉</div>
+            <div>
+                <h1 class="beta-welcome-title">Beta share</h1>
+                <p class="beta-welcome-sub">Freeze a draft snapshot and invite trusted readers — they never see your live manuscript.</p>
+            </div>
+        </div>
     </header>
-    <main>
+
+    <nav class="wd-nav-wrap" aria-label="Workspace">
+        <div class="wd-nav">
+            <a href="writer-dashboard.html">Studio</a>
+            <span class="wd-nav-divider"></span>
+            <a href="library.html">Library</a>
+            <a href="author-dashboard.html">Author stats</a>
+            <a href="beta-rooms.html" class="is-active">Beta rooms</a>
+            <span class="wd-nav-divider"></span>
+            <a href="reader-home.html">Reading</a>
+            <a href="settings.html">Settings</a>
+            <a href="index.html">Home</a>
+        </div>
+    </nav>
+
+    <main class="page">
+        <div class="page-head">
+            <div class="page-head-main">
+                <a class="back-link" id="backBtn" href="beta-rooms.html">← Beta rooms</a>
+                <h2 id="pageTitle">Beta share</h2>
+                <p class="hint" id="pageSub">Pick chapters, create a snapshot, then send invite links to beta readers.</p>
+            </div>
+            <div class="page-head-actions">
+                <a class="btn" id="editorBtn" href="writer-dashboard.html" hidden>Open in Studio</a>
+            </div>
+        </div>
+
         <div id="schemaWarn" class="status error hidden"></div>
         <div id="pageStatus" class="status hidden" role="status"></div>
 
         <section class="card" id="snapshotCard">
-            <h2>Create snapshot</h2>
+            <div class="card-head">
+                <h2>Create snapshot</h2>
+                <div class="card-icon" aria-hidden="true">📸</div>
+            </div>
             <p class="hint">Readers never see your live draft — only a frozen copy of the chapters you pick. You can keep editing while they review this version.</p>
             <div class="field">
                 <label for="snapshotLabel">Version label (optional)</label>
                 <input id="snapshotLabel" type="text" placeholder="e.g. Act I — March draft" maxlength="120" />
             </div>
+            <div class="chapter-toolbar">
+                <span id="chapterCount">Chapters</span>
+                <div>
+                    <button type="button" id="selectAllChapters">Select all</button>
+                    <span aria-hidden="true"> · </span>
+                    <button type="button" id="clearAllChapters">Clear</button>
+                </div>
+            </div>
             <div class="chapter-list" id="chapterList"></div>
-            <button type="button" class="btn primary" id="createSnapshotBtn">Create snapshot</button>
+            <div class="card-footer">
+                <button type="button" class="btn primary" id="createSnapshotBtn">Create snapshot</button>
+            </div>
         </section>
 
         <section class="card">
-            <h2>Snapshots</h2>
-            <div id="snapshotsList"><p class="hint">Loading…</p></div>
+            <div class="card-head">
+                <h2>Snapshots</h2>
+                <div class="card-icon" aria-hidden="true">📚</div>
+            </div>
+            <p class="hint">Frozen versions of your manuscript. Create an invite from any snapshot below.</p>
+            <div id="snapshotsList" class="item-list"><p class="hint">Loading…</p></div>
         </section>
 
         <section class="card">
-            <h2>Invites &amp; beta rooms</h2>
-            <div id="sharesList"><p class="hint">Loading…</p></div>
+            <div class="card-head">
+                <h2>Invites &amp; beta rooms</h2>
+                <div class="card-icon" aria-hidden="true">🔗</div>
+            </div>
+            <p class="hint">Share invite links with readers. Once accepted, the room opens for private feedback.</p>
+            <div id="sharesList" class="item-list"><p class="hint">Loading…</p></div>
         </section>
     </main>
 
@@ -134,10 +594,15 @@
         const params = new URLSearchParams(window.location.search);
         const bookId = String(params.get("book") || "").trim();
         const backBtn = document.getElementById("backBtn");
+        const editorBtn = document.getElementById("editorBtn");
         const pageTitle = document.getElementById("pageTitle");
+        const pageSub = document.getElementById("pageSub");
         const schemaWarn = document.getElementById("schemaWarn");
         const pageStatus = document.getElementById("pageStatus");
         const chapterList = document.getElementById("chapterList");
+        const chapterCount = document.getElementById("chapterCount");
+        const selectAllChapters = document.getElementById("selectAllChapters");
+        const clearAllChapters = document.getElementById("clearAllChapters");
         const snapshotLabel = document.getElementById("snapshotLabel");
         const createSnapshotBtn = document.getElementById("createSnapshotBtn");
         const snapshotsList = document.getElementById("snapshotsList");
@@ -158,10 +623,19 @@
             pageStatus.classList.remove("hidden");
         }
 
+        function updateChapterCount() {
+            const total = bodyChapters.length;
+            const selected = chapterList.querySelectorAll(".ch-pick:checked").length;
+            chapterCount.textContent = total
+                ? `${selected} of ${total} chapter${total === 1 ? "" : "s"} selected`
+                : "No chapters";
+        }
+
         function renderChapters() {
             if (!bodyChapters.length) {
-                chapterList.innerHTML = '<p class="hint" style="padding:12px">No body chapters in this book yet.</p>';
+                chapterList.innerHTML = '<p class="hint" style="padding:14px;margin:0">No body chapters in this book yet.</p>';
                 createSnapshotBtn.disabled = true;
+                updateChapterCount();
                 return;
             }
             chapterList.innerHTML = bodyChapters.map((ch) => `
@@ -172,8 +646,21 @@
                     </label>
                 </div>
             `).join("");
+            chapterList.querySelectorAll(".ch-pick").forEach((el) => {
+                el.addEventListener("change", updateChapterCount);
+            });
             createSnapshotBtn.disabled = false;
+            updateChapterCount();
         }
+
+        selectAllChapters.addEventListener("click", () => {
+            chapterList.querySelectorAll(".ch-pick").forEach((el) => { el.checked = true; });
+            updateChapterCount();
+        });
+        clearAllChapters.addEventListener("click", () => {
+            chapterList.querySelectorAll(".ch-pick").forEach((el) => { el.checked = false; });
+            updateChapterCount();
+        });
 
         function selectedChapterIds() {
             return [...chapterList.querySelectorAll(".ch-pick:checked")].map((el) => el.value);
@@ -186,7 +673,8 @@
 
         function statusBadge(status) {
             const s = String(status || "");
-            return `<span class="badge ${s === "pending" || s === "revoked" || s === "expired" ? s : ""}">${escapeHtml(s)}</span>`;
+            const cls = s === "pending" || s === "active" || s === "revoked" || s === "expired" ? s : "";
+            return `<span class="badge ${cls}">${escapeHtml(s)}</span>`;
         }
 
         async function refreshSnapshots() {
@@ -197,11 +685,13 @@
                     return;
                 }
                 snapshotsList.innerHTML = rows.map((s) => `
-                    <div class="snapshot-item" data-snapshot-id="${escapeHtml(s.id)}">
-                        <strong>${escapeHtml(s.label || s.title || "Snapshot")}</strong>
-                        <div class="snapshot-meta">${escapeHtml(s.title)} · ${Number(s.word_count || 0).toLocaleString()} words · ${formatDate(s.created_at)}</div>
+                    <div class="list-item snapshot-item" data-snapshot-id="${escapeHtml(s.id)}">
+                        <div class="list-item-top">
+                            <div class="list-item-title">${escapeHtml(s.label || s.title || "Snapshot")}</div>
+                        </div>
+                        <div class="list-item-meta">${escapeHtml(s.title)} · ${Number(s.word_count || 0).toLocaleString()} words · ${formatDate(s.created_at)}</div>
                         <div class="share-actions">
-                            <button type="button" class="btn primary invite-btn">Create invite link</button>
+                            <button type="button" class="btn primary sm invite-btn">Create invite link</button>
                         </div>
                     </div>
                 `).join("");
@@ -252,22 +742,25 @@
                 sharesList.innerHTML = rows.map((sh) => {
                     const snap = sh.beta_snapshots || {};
                     const inviteUrl = sh.invite_token && (sh.status === "pending" || sh.status === "active")
-                        ? `<div class="invite-url">${escapeHtml(window.location.origin + betaRoomInviteUrl(sh.invite_token))}</div>`
+                        ? `<div class="invite-url-wrap"><div class="invite-url-label">Invite link</div><div class="invite-url">${escapeHtml(window.location.origin + betaRoomInviteUrl(sh.invite_token))}</div></div>`
                         : "";
                     const roomUrl = sh.status === "active"
-                        ? `<a class="btn" href="${escapeHtml(betaRoomShareUrl(sh.id))}">Open beta room</a>`
+                        ? `<a class="btn sm" href="${escapeHtml(betaRoomShareUrl(sh.id))}">Open beta room</a>`
                         : "";
                     const canExtend = sh.status === "pending" || sh.status === "active" || sh.status === "expired";
                     return `
-                        <div class="share-item" data-share-id="${escapeHtml(sh.id)}">
-                            <div>${statusBadge(sh.status)} <strong>${escapeHtml(snap.label || snap.title || "Snapshot")}</strong></div>
-                            <div class="share-meta">Created ${formatDate(sh.created_at)}${sh.accepted_at ? ` · Accepted ${formatDate(sh.accepted_at)}` : ""} · ${escapeHtml(formatExpiry(sh))}</div>
+                        <div class="list-item share-item" data-share-id="${escapeHtml(sh.id)}">
+                            <div class="list-item-top">
+                                <div class="list-item-title">${escapeHtml(snap.label || snap.title || "Snapshot")}</div>
+                                ${statusBadge(sh.status)}
+                            </div>
+                            <div class="list-item-meta">Created ${formatDate(sh.created_at)}${sh.accepted_at ? ` · Accepted ${formatDate(sh.accepted_at)}` : ""} · ${escapeHtml(formatExpiry(sh))}</div>
                             ${inviteUrl}
                             <div class="share-actions">
                                 ${roomUrl}
-                                <button type="button" class="btn copy-invite-btn" ${sh.invite_token ? "" : "disabled"}>Copy invite</button>
-                                ${canExtend ? '<button type="button" class="btn extend-btn">Extend 1 year</button>' : ""}
-                                ${sh.status === "active" || sh.status === "pending" ? '<button type="button" class="btn danger revoke-btn">Revoke</button>' : ""}
+                                <button type="button" class="btn sm copy-invite-btn" ${sh.invite_token ? "" : "disabled"}>Copy invite</button>
+                                ${canExtend ? '<button type="button" class="btn sm extend-btn">Extend 1 year</button>' : ""}
+                                ${sh.status === "active" || sh.status === "pending" ? '<button type="button" class="btn sm danger revoke-btn">Revoke</button>' : ""}
                             </div>
                         </div>
                     `;
@@ -348,8 +841,15 @@
                 id: String(ch?.id || `ch-${i}`),
                 title: String(ch?.title || `Chapter ${i + 1}`)
             })) : [];
-            pageTitle.textContent = `Beta share · ${data.title || "Untitled"}`;
+            const title = data.title || "Untitled";
+            pageTitle.textContent = title;
+            pageSub.textContent = `Share "${title}" with beta readers via frozen snapshots.`;
+            document.title = `Beta share · ${title} — Alysum`;
             if (backBtn) backBtn.href = "beta-rooms.html";
+            if (editorBtn) {
+                editorBtn.href = `editor.html?book=${encodeURIComponent(bookId)}`;
+                editorBtn.hidden = false;
+            }
             renderChapters();
         }
 
