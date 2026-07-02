@@ -708,6 +708,24 @@
             text-transform: uppercase;
             color: var(--muted);
         }
+        .dob-fields {
+            display: grid;
+            grid-template-columns: 1.35fr 0.75fr 1fr;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        .dob-fields select {
+            width: 100%;
+            margin-bottom: 0;
+        }
+        .age-gate-hint {
+            margin: 0 0 12px;
+            font-size: 13px;
+            font-weight: 700;
+            color: #fca5a5;
+        }
+        .age-gate-hint.hidden { display: none; }
+
         .safety-card select,
         .safety-card textarea {
             width: 100%;
@@ -951,12 +969,19 @@
         <div class="safety-card">
             <h3 id="ageGateTitle">Beta texting is 18+ only</h3>
             <p>Before you send manuscript feedback texts, confirm your age. Beta rooms are for draft feedback only — not personal contact or harassment.</p>
-            <label for="ageGateSelect">I confirm that I am…</label>
-            <select id="ageGateSelect">
-                <option value="">Choose one</option>
-                <option value="under18">Under 18</option>
-                <option value="18plus">18 or older</option>
-            </select>
+            <label>Date of birth</label>
+            <div class="dob-fields">
+                <select id="ageGateMonth" aria-label="Birth month">
+                    <option value="">Month</option>
+                </select>
+                <select id="ageGateDay" aria-label="Birth day">
+                    <option value="">Day</option>
+                </select>
+                <select id="ageGateYear" aria-label="Birth year">
+                    <option value="">Year</option>
+                </select>
+            </div>
+            <p id="ageGateHint" class="age-gate-hint hidden" role="alert"></p>
             <div class="safety-actions">
                 <button type="button" class="btn" id="ageGateCancelBtn">Not now</button>
                 <button type="button" class="btn primary" id="ageGateConfirmBtn" disabled>Continue</button>
@@ -1006,12 +1031,17 @@
             listMyBetaBlocks,
             chaptersFromSnapshot,
             isBetaRoomsSchemaMissing
-        } from "./js/beta-rooms-api.js?v=4";
+        } from "./js/beta-rooms-api.js?v=5";
         import {
             isBetaAgeVerifiedLocally,
             setBetaAgeVerifiedLocally,
-            friendlyBetaSafetyError
-        } from "./js/beta-room-safety.js?v=1";
+            friendlyBetaSafetyError,
+            populateDobMonthSelect,
+            populateDobYearSelect,
+            populateDobDaySelect,
+            evaluateAgeGateDob,
+            birthDateIso
+        } from "./js/beta-room-safety.js?v=2";
         import { rememberBetaRoomOpen } from "./js/beta-room-shelf.js?v=1";
 
         const params = new URLSearchParams(window.location.search);
@@ -1065,7 +1095,10 @@
         const reportUserBtn = document.getElementById("reportUserBtn");
         const blockUserBtn = document.getElementById("blockUserBtn");
         const ageGateOverlay = document.getElementById("ageGateOverlay");
-        const ageGateSelect = document.getElementById("ageGateSelect");
+        const ageGateMonth = document.getElementById("ageGateMonth");
+        const ageGateDay = document.getElementById("ageGateDay");
+        const ageGateYear = document.getElementById("ageGateYear");
+        const ageGateHint = document.getElementById("ageGateHint");
         const ageGateConfirmBtn = document.getElementById("ageGateConfirmBtn");
         const ageGateCancelBtn = document.getElementById("ageGateCancelBtn");
         const reportOverlay = document.getElementById("reportOverlay");
@@ -1175,10 +1208,43 @@
             return peer ? blockedUserIds.has(peer) : false;
         }
 
+        function resetAgeGateDob() {
+            if (ageGateMonth) ageGateMonth.value = "";
+            if (ageGateDay) ageGateDay.value = "";
+            if (ageGateYear) ageGateYear.value = "";
+            populateDobDaySelect(ageGateDay, "", "");
+            updateAgeGateState();
+        }
+
+        function updateAgeGateState() {
+            const result = evaluateAgeGateDob(
+                ageGateMonth?.value,
+                ageGateDay?.value,
+                ageGateYear?.value
+            );
+            if (ageGateHint) {
+                if (result.message) {
+                    ageGateHint.textContent = result.message;
+                    ageGateHint.classList.remove("hidden");
+                } else {
+                    ageGateHint.textContent = "";
+                    ageGateHint.classList.add("hidden");
+                }
+            }
+            if (ageGateConfirmBtn) {
+                ageGateConfirmBtn.disabled = !(result.complete && result.valid && result.adult);
+            }
+        }
+
+        function initAgeGateDob() {
+            populateDobMonthSelect(ageGateMonth);
+            populateDobYearSelect(ageGateYear);
+            populateDobDaySelect(ageGateDay, "", "");
+        }
+
         function showAgeGate() {
             ageGateOverlay?.classList.remove("hidden");
-            if (ageGateSelect) ageGateSelect.value = "";
-            if (ageGateConfirmBtn) ageGateConfirmBtn.disabled = true;
+            resetAgeGateDob();
         }
 
         function hideAgeGate() {
@@ -1250,13 +1316,19 @@
         }
 
         async function confirmAgeGate() {
-            if (ageGateSelect?.value !== "18plus") {
-                setThreadStatus("You must be 18 or older to use beta texting.", "error");
-                hideAgeGate();
+            const result = evaluateAgeGateDob(
+                ageGateMonth?.value,
+                ageGateDay?.value,
+                ageGateYear?.value
+            );
+            if (!result.adult) {
+                updateAgeGateState();
+                if (result.message) setThreadStatus(result.message, "error");
                 return;
             }
+            const iso = birthDateIso(ageGateMonth?.value, ageGateDay?.value, ageGateYear?.value);
             try {
-                await attestBetaMessaging18Plus();
+                await attestBetaMessaging18Plus(iso);
                 setBetaAgeVerifiedLocally();
                 messagingEligible = true;
                 hideAgeGate();
@@ -1763,11 +1835,16 @@
         blockUserBtn?.addEventListener("click", () => { void blockCurrentPeer(); });
         reportCancelBtn?.addEventListener("click", closeReportDialog);
         reportSubmitBtn?.addEventListener("click", () => { void submitReport(); });
-        ageGateSelect?.addEventListener("change", () => {
-            if (ageGateConfirmBtn) ageGateConfirmBtn.disabled = ageGateSelect.value !== "18plus";
-        });
+        const onAgeGateDobChange = () => {
+            populateDobDaySelect(ageGateDay, ageGateMonth?.value, ageGateYear?.value);
+            updateAgeGateState();
+        };
+        ageGateMonth?.addEventListener("change", onAgeGateDobChange);
+        ageGateYear?.addEventListener("change", onAgeGateDobChange);
+        ageGateDay?.addEventListener("change", updateAgeGateState);
         ageGateConfirmBtn?.addEventListener("click", () => { void confirmAgeGate(); });
         ageGateCancelBtn?.addEventListener("click", hideAgeGate);
+        initAgeGateDob();
         document.addEventListener("click", (ev) => {
             if (!chatSafetyMenu || chatSafetyMenu.classList.contains("hidden")) return;
             if (ev.target.closest("#chatSafetyMenu") || ev.target.closest("#chatSafetyBtn")) return;

@@ -242,8 +242,12 @@ export async function sendBetaMessage({ threadId, shareId, body, recipientUserId
     return row;
 }
 
-export async function attestBetaMessaging18Plus() {
-    const { error } = await supabase.rpc("attest_beta_messaging_18plus");
+export async function attestBetaMessaging18Plus(birthDate) {
+    const iso = String(birthDate || "").trim();
+    if (!iso) throw new Error("birth_date_required");
+    const { error } = await supabase.rpc("attest_beta_messaging_18plus", {
+        p_birth_date: iso
+    });
     if (error) throw error;
 }
 

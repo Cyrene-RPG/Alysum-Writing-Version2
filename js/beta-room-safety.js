@@ -28,8 +28,113 @@ export function clearBetaAgeVerifiedLocally() {
     }
 }
 
+const DOB_MONTHS = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+];
+
+export function isValidBirthDate(month, day, year) {
+    const m = Number(month);
+    const d = Number(day);
+    const y = Number(year);
+    if (!m || !d || !y) return false;
+    const dt = new Date(y, m - 1, d);
+    return dt.getFullYear() === y && dt.getMonth() === m - 1 && dt.getDate() === d;
+}
+
+export function isAtLeast18(month, day, year) {
+    if (!isValidBirthDate(month, day, year)) return false;
+    const m = Number(month);
+    const d = Number(day);
+    const y = Number(year);
+    const birth = new Date(y, m - 1, d);
+    const today = new Date();
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+        age -= 1;
+    }
+    return age >= 18;
+}
+
+export function birthDateIso(month, day, year) {
+    const m = Number(month);
+    const d = Number(day);
+    const y = Number(year);
+    if (!isValidBirthDate(m, d, y)) return "";
+    return `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+}
+
+export function populateDobMonthSelect(selectEl) {
+    if (!selectEl) return;
+    selectEl.innerHTML = '<option value="">Month</option>';
+    DOB_MONTHS.forEach((name, idx) => {
+        const opt = document.createElement("option");
+        opt.value = String(idx + 1);
+        opt.textContent = name;
+        selectEl.appendChild(opt);
+    });
+}
+
+export function populateDobYearSelect(selectEl, { maxYear = new Date().getFullYear(), span = 100 } = {}) {
+    if (!selectEl) return;
+    selectEl.innerHTML = '<option value="">Year</option>';
+    const minYear = maxYear - span;
+    for (let y = maxYear; y >= minYear; y -= 1) {
+        const opt = document.createElement("option");
+        opt.value = String(y);
+        opt.textContent = String(y);
+        selectEl.appendChild(opt);
+    }
+}
+
+export function populateDobDaySelect(selectEl, month, year) {
+    if (!selectEl) return;
+    const prev = selectEl.value;
+    selectEl.innerHTML = '<option value="">Day</option>';
+    const m = Number(month);
+    const y = Number(year);
+    if (!m || !y) return;
+    const daysInMonth = new Date(y, m, 0).getDate();
+    for (let d = 1; d <= daysInMonth; d += 1) {
+        const opt = document.createElement("option");
+        opt.value = String(d);
+        opt.textContent = String(d);
+        selectEl.appendChild(opt);
+    }
+    if (prev && Number(prev) <= daysInMonth) {
+        selectEl.value = prev;
+    }
+}
+
+export function evaluateAgeGateDob(month, day, year) {
+    if (!month || !day || !year) {
+        return { complete: false, valid: false, adult: false, message: "" };
+    }
+    if (!isValidBirthDate(month, day, year)) {
+        return {
+            complete: true,
+            valid: false,
+            adult: false,
+            message: "Enter a valid date of birth."
+        };
+    }
+    if (!isAtLeast18(month, day, year)) {
+        return {
+            complete: true,
+            valid: true,
+            adult: false,
+            message: "You must be 18 or older to use beta texting."
+        };
+    }
+    return { complete: true, valid: true, adult: true, message: "" };
+}
+
 export function friendlyBetaSafetyError(err) {
     const msg = String(err?.message || err || "");
+    if (/underage|birth_date_required|invalid_birth_date/i.test(msg)) {
+        return "You must be 18 or older to use beta texting.";
+    }
     if (/age_attestation_required/i.test(msg)) {
         return "Confirm you are 18 or older before sending beta texts.";
     }

@@ -785,7 +785,9 @@ AS $$
   );
 $$;
 
-CREATE OR REPLACE FUNCTION public.attest_beta_messaging_18plus()
+DROP FUNCTION IF EXISTS public.attest_beta_messaging_18plus();
+
+CREATE OR REPLACE FUNCTION public.attest_beta_messaging_18plus(p_birth_date date DEFAULT NULL)
 RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -793,9 +795,23 @@ SET search_path = public
 AS $$
 DECLARE
   v_uid uuid := auth.uid();
+  v_cutoff date;
 BEGIN
   IF v_uid IS NULL THEN
     RAISE EXCEPTION 'not_authenticated';
+  END IF;
+
+  IF p_birth_date IS NULL THEN
+    RAISE EXCEPTION 'birth_date_required';
+  END IF;
+
+  IF p_birth_date > CURRENT_DATE THEN
+    RAISE EXCEPTION 'invalid_birth_date';
+  END IF;
+
+  v_cutoff := (CURRENT_DATE - INTERVAL '18 years')::date;
+  IF p_birth_date > v_cutoff THEN
+    RAISE EXCEPTION 'underage';
   END IF;
 
   INSERT INTO public.beta_messaging_attestations (user_id, attested_at, context)
@@ -1234,7 +1250,7 @@ GRANT INSERT ON public.beta_message_reports TO authenticated;
 GRANT SELECT ON public.beta_messaging_attestations TO authenticated;
 
 GRANT EXECUTE ON FUNCTION public.has_beta_messaging_attestation(uuid) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.attest_beta_messaging_18plus() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.attest_beta_messaging_18plus(date) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.revoke_beta_messaging_attestation() TO authenticated;
 GRANT EXECUTE ON FUNCTION public.is_beta_user_blocked(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.block_beta_user(uuid, uuid) TO authenticated;
