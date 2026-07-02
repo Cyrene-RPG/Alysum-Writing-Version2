@@ -6,7 +6,7 @@
     <title>Moderation — Alysum</title>
     <link rel="stylesheet" href="css/site-responsive.css?v=1">
     <link rel="stylesheet" href="css/gradient-themes.css?v=5">
-    <link rel="stylesheet" href="css/library-reports.css?v=3">
+    <link rel="stylesheet" href="css/library-reports.css?v=4">
     <script src="js/gradient-theme-sync.js" defer></script>
     <script src="js/alysum-appearance-boot.js"></script>
 </head>
@@ -25,7 +25,7 @@
             <p id="modDeniedHint">You need database setup before moderation tools will open.</p>
             <ol class="mod-setup-steps">
                 <li id="modStepReports"><strong>supabase-library-reports.sql</strong> — reports, strikes, staff table</li>
-                <li id="modStepStaffUsers"><strong>supabase-staff-users.sql</strong> — user browser RPCs</li>
+                <li id="modStepStaffUsers"><strong>supabase-staff-users.sql</strong> — user browser + online presence</li>
                 <li id="modStepBootstrap"><strong>Bootstrap SQL</strong> — add your account to <code>moderation_staff</code></li>
             </ol>
             <pre class="mod-denied-code" id="modDeniedSql"></pre>
@@ -40,72 +40,112 @@
     </div>
 
     <div class="hidden" id="modContent">
-        <nav class="mod-nav" aria-label="Moderation">
-            <a class="mod-btn" data-mod-nav="dashboard" href="moderation-dashboard.html">Report queue</a>
-            <a class="mod-btn" data-mod-nav="users" href="moderation-users.html">Users</a>
-        </nav>
-
         <header class="mod-header">
-            <h1>Library moderation</h1>
-            <p>Priority queue for manual review. Strikes, violations, and appeals follow Alysum Writing policy.</p>
+            <h1>Moderation</h1>
+            <p>Library reports, user accounts, and live site usage — one place.</p>
         </header>
 
+        <nav class="mod-nav" aria-label="Moderation sections">
+            <button type="button" class="mod-btn" data-mod-tab="reports">Reports</button>
+            <button type="button" class="mod-btn" data-mod-tab="users">Users &amp; usage</button>
+        </nav>
+
         <div class="mod-status hidden" id="modStatus"></div>
-        <div class="mod-stats" id="modStats"></div>
 
-        <div class="mod-toolbar">
-            <button type="button" class="mod-btn primary" id="modRefreshBtn">Refresh queue</button>
-            <button type="button" class="mod-btn" id="modCheckDeadlinesBtn">Check missed deadlines</button>
+        <!-- Reports tab -->
+        <div id="modTabReports" data-mod-panel="reports">
+            <div class="mod-stats" id="modReportStats"></div>
+            <div class="mod-toolbar">
+                <button type="button" class="mod-btn primary" id="modRefreshBtn">Refresh queue</button>
+                <button type="button" class="mod-btn" id="modCheckDeadlinesBtn">Check missed deadlines</button>
+            </div>
+            <div class="mod-layout">
+                <section class="mod-panel">
+                    <h2>Report queue</h2>
+                    <div class="mod-queue" id="modQueue">
+                        <div class="mod-detail-empty">Loading reports…</div>
+                    </div>
+                </section>
+                <section class="mod-panel">
+                    <h2>Review</h2>
+                    <div id="modDetail">
+                        <p class="mod-detail-empty">Select a report from the queue to review it.</p>
+                    </div>
+                </section>
+            </div>
+            <section class="mod-panel mod-panel-spaced">
+                <h2>Pending appeals</h2>
+                <div id="modAppeals" class="mod-queue"></div>
+            </section>
         </div>
 
-        <div class="mod-layout">
-            <section class="mod-panel">
-                <h2>Report queue</h2>
-                <div class="mod-queue" id="modQueue">
-                    <div class="mod-detail-empty">Loading reports…</div>
+        <!-- Users tab -->
+        <div id="modTabUsers" class="hidden" data-mod-panel="users">
+            <div class="mod-stats" id="modUsageStats"></div>
+
+            <section class="mod-panel mod-panel-spaced">
+                <div class="mod-panel-head">
+                    <h2>Online now</h2>
+                    <button type="button" class="mod-btn" id="modRefreshUsersBtn">Refresh</button>
+                </div>
+                <p class="mod-detail-empty mod-panel-intro">Users active in the last 5 minutes (heartbeat while browsing while signed in).</p>
+                <div class="mod-online-list" id="modOnlineList">
+                    <p class="mod-detail-empty">Loading…</p>
                 </div>
             </section>
 
+            <div class="mod-search-row">
+                <input class="mod-input" id="modSearch" type="search" placeholder="Username, display name, email, or user ID…" autocomplete="off" />
+                <button type="button" class="mod-btn primary" id="modSearchBtn">Search</button>
+                <button type="button" class="mod-btn" id="modClearBtn">Clear</button>
+            </div>
+
+            <div class="mod-filter-row">
+                <button type="button" class="mod-btn is-active" data-user-filter="all">All users</button>
+                <button type="button" class="mod-btn" data-user-filter="online">Online now</button>
+                <button type="button" class="mod-btn" data-user-filter="today">Active today</button>
+            </div>
+
             <section class="mod-panel">
-                <h2>Review</h2>
-                <div id="modDetail">
-                    <p class="mod-detail-empty">Select a report from the queue to review it.</p>
+                <h2 id="modResultsTitle">All users</h2>
+                <div class="mod-table-wrap">
+                    <table class="mod-table" id="modUsersTable">
+                        <thead>
+                            <tr>
+                                <th>Status</th>
+                                <th>User</th>
+                                <th>Account</th>
+                                <th>Books</th>
+                                <th>Writing</th>
+                                <th>Flags</th>
+                                <th>Joined</th>
+                                <th>Last seen</th>
+                            </tr>
+                        </thead>
+                        <tbody id="modUsersBody">
+                            <tr><td colspan="8" class="mod-detail-empty">Loading…</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mod-pagination hidden" id="modPagination">
+                    <button type="button" class="mod-btn" id="modPrevBtn">← Prev</button>
+                    <span id="modPageInfo"></span>
+                    <button type="button" class="mod-btn" id="modNextBtn">Next →</button>
                 </div>
             </section>
         </div>
-
-        <section class="mod-panel" style="margin-top:18px">
-            <h2>Pending appeals</h2>
-            <div id="modAppeals" class="mod-queue"></div>
-        </section>
     </div>
 </div>
 
 <script type="module">
     import { bootModerationPage } from "./js/moderation-access.js";
-    import {
-        getDashboardStats,
-        listPendingReports,
-        reviewReportNoViolation,
-        dismissReport,
-        confirmViolation,
-        setBookVisibility,
-        resolveAppeal,
-        checkViolationDeadlines,
-        fetchPendingAppeals,
-        reportReasonLabel,
-        priorityLabel,
-        reportStatusLabel,
-    } from "./js/library-reports-api.js";
+    import { initReportsPanel } from "./js/moderation-reports-panel.js";
+    import { initUsersPanel } from "./js/moderation-users-panel.js";
 
-    const modStats = document.getElementById("modStats");
-    const modQueue = document.getElementById("modQueue");
-    const modDetail = document.getElementById("modDetail");
-    const modAppeals = document.getElementById("modAppeals");
     const modStatus = document.getElementById("modStatus");
-
-    let reports = [];
-    let selectedId = null;
+    let reportsApi = null;
+    let usersApi = null;
+    let activeTab = "reports";
 
     function showStatus(msg, type = "ok") {
         modStatus.textContent = msg;
@@ -114,263 +154,56 @@
         if (type === "ok") setTimeout(() => modStatus.classList.add("hidden"), 4000);
     }
 
-    function escapeHtml(str) {
-        return String(str || "")
-            .replaceAll("&", "&amp;")
-            .replaceAll("<", "&lt;")
-            .replaceAll(">", "&gt;")
-            .replaceAll('"', "&quot;");
-    }
-
-    function formatDate(iso) {
-        if (!iso) return "—";
-        return new Date(iso).toLocaleString();
-    }
-
-    function snapshotTitle(report) {
-        return report?.snapshot?.title || report?.book_id || "Unknown book";
-    }
-
-    function renderStats(stats) {
-        const items = [
-            { label: "Pending", value: stats.pendingReports || 0 },
-            { label: "Critical", value: stats.criticalReports || 0, critical: true },
-            { label: "Open violations", value: stats.openViolations || 0 },
-            { label: "Missed deadlines", value: stats.missedDeadlines || 0 },
-            { label: "Pending appeals", value: stats.pendingAppeals || 0 },
-            { label: "Hidden books", value: stats.hiddenBooks || 0 },
-            { label: "Removed books", value: stats.removedBooks || 0 },
-        ];
-        modStats.innerHTML = items.map((item) => `
-            <div class="mod-stat${item.critical ? " is-critical" : ""}">
-                <div class="mod-stat-label">${escapeHtml(item.label)}</div>
-                <div class="mod-stat-value">${item.value}</div>
-            </div>
-        `).join("");
-    }
-
-    function renderQueue() {
-        if (!reports.length) {
-            modQueue.innerHTML = '<div class="mod-detail-empty">No pending reports in the queue.</div>';
-            return;
-        }
-
-        modQueue.innerHTML = reports.map((r) => {
-            const critical = r.priority === "critical";
-            return `
-                <div class="mod-queue-item${critical ? " is-critical" : ""}${r.id === selectedId ? " is-selected" : ""}"
-                     data-report-id="${r.id}">
-                    <div class="mod-queue-title">${escapeHtml(snapshotTitle(r))}</div>
-                    <div class="mod-queue-meta">
-                        <span class="mod-badge ${critical ? "critical" : r.priority === "high" ? "high" : ""}">${escapeHtml(priorityLabel(r.priority))}</span>
-                        <span>${escapeHtml(reportReasonLabel(r.reason))}</span>
-                        <span>Score: ${Number(r.weighted_points || 0).toFixed(1)}</span>
-                        <span>${escapeHtml(formatDate(r.created_at))}</span>
-                    </div>
-                </div>
-            `;
-        }).join("");
-
-        modQueue.querySelectorAll("[data-report-id]").forEach((el) => {
-            el.addEventListener("click", () => {
-                selectedId = el.dataset.reportId;
-                renderQueue();
-                renderDetail(reports.find((r) => r.id === selectedId));
-            });
+    function showTab(tab) {
+        activeTab = tab === "users" ? "users" : "reports";
+        document.querySelectorAll("[data-mod-tab]").forEach((btn) => {
+            btn.classList.toggle("is-active", btn.dataset.modTab === activeTab);
         });
+        document.querySelectorAll("[data-mod-panel]").forEach((panel) => {
+            panel.classList.toggle("hidden", panel.dataset.modPanel !== activeTab);
+        });
+        const url = new URL(window.location.href);
+        if (activeTab === "users") url.searchParams.set("tab", "users");
+        else url.searchParams.delete("tab");
+        window.history.replaceState({}, "", url.pathname + url.search);
     }
 
-    function renderDetail(report) {
-        if (!report) {
-            modDetail.innerHTML = '<p class="mod-detail-empty">Select a report from the queue.</p>';
-            return;
-        }
-
-        const snap = report.snapshot || {};
-        modDetail.innerHTML = `
-            <div class="mod-detail-block">
-                <h3>Book</h3>
-                <p><strong>${escapeHtml(snap.title || report.book_id)}</strong> · @${escapeHtml(snap.author || "unknown")}</p>
-                <p>Rating: ${escapeHtml(snap.rating || "—")} · Type: ${escapeHtml(snap.type || "—")}</p>
-                <p>Book ID: <code>${escapeHtml(report.book_id)}</code></p>
-            </div>
-            <div class="mod-detail-block">
-                <h3>Report</h3>
-                <p><span class="mod-badge ${report.priority === "critical" ? "critical" : ""}">${escapeHtml(priorityLabel(report.priority))}</span>
-                   ${escapeHtml(reportReasonLabel(report.reason))}</p>
-                <p>Weighted points: <strong>${Number(report.weighted_points || 0).toFixed(1)}</strong>
-                   (reporter ${Number(report.reporter_weight || 1).toFixed(1)} × severity ${report.infraction_score})</p>
-                <p>Status: ${escapeHtml(reportStatusLabel(report.status))}</p>
-                ${report.details ? `<pre>${escapeHtml(report.details)}</pre>` : "<p><em>No additional details.</em></p>"}
-            </div>
-            <div class="mod-detail-block">
-                <h3>Resolve — no violation</h3>
-                <div class="mod-form">
-                    <textarea class="mod-textarea" id="modNoViolationNotes" placeholder="Internal notes (optional)"></textarea>
-                    <label><input type="checkbox" id="modFalseReport"> Mark as false / malicious report (reporter strike)</label>
-                    <div class="mod-actions">
-                        <button type="button" class="mod-btn success" id="modNoViolationBtn">Close — no violation</button>
-                        <button type="button" class="mod-btn" id="modDismissBtn">Dismiss</button>
-                    </div>
-                </div>
-            </div>
-            <div class="mod-detail-block">
-                <h3>Confirm violation</h3>
-                <p class="mod-detail-empty" style="margin-bottom:8px">Notifies the author with policy, corrections required, and a deadline. Applies strike tier.</p>
-                <div class="mod-form">
-                    <input class="mod-input" id="modPolicy" placeholder="Policy violated (required)" />
-                    <textarea class="mod-textarea" id="modCorrections" placeholder="Correction requirements — tags, rating, warnings to update…"></textarea>
-                    <label>Deadline (days)
-                        <input class="mod-input" type="number" id="modDeadlineDays" value="7" min="1" max="90" />
-                    </label>
-                    <label><input type="checkbox" id="modSevere"> Severe violation (bypass strikes — suspend / remove)</label>
-                    <div class="mod-actions">
-                        <button type="button" class="mod-btn danger" id="modConfirmBtn">Confirm violation & notify author</button>
-                    </div>
-                </div>
-            </div>
-            <div class="mod-detail-block">
-                <h3>Book visibility</h3>
-                <div class="mod-actions">
-                    <button type="button" class="mod-btn" data-vis="public">Restore public</button>
-                    <button type="button" class="mod-btn" data-vis="hidden">Temporarily hide</button>
-                    <button type="button" class="mod-btn danger" data-vis="removed">Remove from library</button>
-                </div>
-            </div>
-        `;
-
-        modDetail.querySelector("#modNoViolationBtn")?.addEventListener("click", async () => {
-            try {
-                await reviewReportNoViolation(
-                    report.id,
-                    modDetail.querySelector("#modNoViolationNotes").value.trim(),
-                    modDetail.querySelector("#modFalseReport").checked
-                );
-                showStatus("Report closed — no violation.");
-                await loadAll();
-            } catch (err) {
-                showStatus(err.message || "Action failed.", "error");
+    document.querySelectorAll("[data-mod-tab]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+            const tab = btn.dataset.modTab;
+            showTab(tab);
+            if (tab === "users" && usersApi) {
+                usersApi.loadAll().catch((e) => showStatus(e.message, "error"));
+            } else if (tab === "reports" && reportsApi) {
+                reportsApi.loadAll().catch((e) => showStatus(e.message, "error"));
             }
         });
-
-        modDetail.querySelector("#modDismissBtn")?.addEventListener("click", async () => {
-            try {
-                await dismissReport(report.id, modDetail.querySelector("#modNoViolationNotes").value.trim());
-                showStatus("Report dismissed.");
-                await loadAll();
-            } catch (err) {
-                showStatus(err.message || "Action failed.", "error");
-            }
-        });
-
-        modDetail.querySelector("#modConfirmBtn")?.addEventListener("click", async () => {
-            const policy = modDetail.querySelector("#modPolicy").value.trim();
-            if (!policy) {
-                showStatus("Policy violated description is required.", "error");
-                return;
-            }
-            try {
-                await confirmViolation(report.id, {
-                    policyViolated: policy,
-                    correctionRequirements: modDetail.querySelector("#modCorrections").value.trim(),
-                    deadlineDays: parseInt(modDetail.querySelector("#modDeadlineDays").value, 10) || 7,
-                    isSevere: modDetail.querySelector("#modSevere").checked,
-                });
-                showStatus("Violation confirmed. Author notified.");
-                await loadAll();
-            } catch (err) {
-                showStatus(err.message || "Action failed.", "error");
-            }
-        });
-
-        modDetail.querySelectorAll("[data-vis]").forEach((btn) => {
-            btn.addEventListener("click", async () => {
-                const vis = btn.dataset.vis;
-                const reason = window.prompt(`Reason for setting visibility to "${vis}":`) || "";
-                try {
-                    await setBookVisibility(report.book_id, vis, reason);
-                    showStatus(`Book visibility set to ${vis}.`);
-                } catch (err) {
-                    showStatus(err.message || "Action failed.", "error");
-                }
-            });
-        });
-    }
-
-    async function renderAppeals() {
-        try {
-            const appeals = await fetchPendingAppeals();
-            if (!appeals.length) {
-                modAppeals.innerHTML = '<div class="mod-detail-empty">No pending appeals.</div>';
-                return;
-            }
-            modAppeals.innerHTML = appeals.map((a) => {
-                const v = a.moderation_violations || {};
-                return `
-                    <div class="mod-queue-item" data-appeal-id="${a.id}">
-                        <div class="mod-queue-title">Appeal · book ${escapeHtml(v.book_id || "")}</div>
-                        <div class="mod-queue-meta">
-                            <span>${escapeHtml(formatDate(a.created_at))}</span>
-                        </div>
-                        <pre style="margin-top:8px;font-size:13px">${escapeHtml(a.appeal_text)}</pre>
-                        <div class="mod-actions" style="margin-top:10px">
-                            <button type="button" class="mod-btn success" data-outcome="overturned" data-appeal="${a.id}">Overturn</button>
-                            <button type="button" class="mod-btn" data-outcome="partial" data-appeal="${a.id}">Partial</button>
-                            <button type="button" class="mod-btn danger" data-outcome="upheld" data-appeal="${a.id}">Uphold</button>
-                        </div>
-                    </div>
-                `;
-            }).join("");
-
-            modAppeals.querySelectorAll("[data-outcome]").forEach((btn) => {
-                btn.addEventListener("click", async () => {
-                    const notes = window.prompt("Resolution notes (optional):") || "";
-                    try {
-                        await resolveAppeal(btn.dataset.appeal, btn.dataset.outcome, notes);
-                        showStatus("Appeal resolved.");
-                        await loadAll();
-                    } catch (err) {
-                        showStatus(err.message || "Action failed.", "error");
-                    }
-                });
-            });
-        } catch (err) {
-            modAppeals.innerHTML = `<div class="mod-detail-empty">Could not load appeals: ${escapeHtml(err.message)}</div>`;
-        }
-    }
-
-    async function loadAll() {
-        selectedId = null;
-        const [stats, pending, reviewing] = await Promise.all([
-            getDashboardStats(),
-            listPendingReports("pending", 100),
-            listPendingReports("reviewing", 100),
-        ]);
-        reports = [...pending, ...reviewing];
-        renderStats(stats);
-        renderQueue();
-        renderDetail(null);
-        await renderAppeals();
-    }
-
-    document.getElementById("modRefreshBtn").addEventListener("click", () => loadAll().catch((e) => showStatus(e.message, "error")));
-    document.getElementById("modCheckDeadlinesBtn").addEventListener("click", async () => {
-        try {
-            const n = await checkViolationDeadlines();
-            showStatus(n ? `Processed ${n} missed deadline(s).` : "No missed deadlines.");
-            await loadAll();
-        } catch (err) {
-            showStatus(err.message || "Check failed.", "error");
-        }
     });
 
-    const access = await bootModerationPage({ active: "dashboard", returnPath: "moderation-dashboard.html" });
+    const params = new URLSearchParams(window.location.search);
+    const initialTab = params.get("tab") === "users" ? "users" : "reports";
+
+    const access = await bootModerationPage({ returnPath: "moderation-dashboard.html" });
     if (access) {
+        reportsApi = initReportsPanel({ showStatus });
+        usersApi = initUsersPanel({ showStatus });
+        showTab(initialTab);
+
         try {
-            await loadAll();
+            if (initialTab === "users") {
+                await usersApi.loadAll();
+            } else {
+                await reportsApi.loadAll();
+            }
         } catch (err) {
             showStatus(err.message || "Could not load moderation data.", "error");
         }
+
+        window.setInterval(() => {
+            if (activeTab === "users" && document.visibilityState === "visible") {
+                usersApi.loadAll().catch(() => {});
+            }
+        }, 60_000);
     }
 </script>
 </body>

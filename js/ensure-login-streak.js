@@ -138,6 +138,7 @@ export async function ensureLoginStreakCloud(supabase, userId, profile) {
     }
 
     cacheLoginStreak(userId, next.streak, today);
+    void supabase.rpc("touch_user_presence").catch(() => {});
     return { streak: next.streak, lastLogin: next.lastLogin };
 }
 

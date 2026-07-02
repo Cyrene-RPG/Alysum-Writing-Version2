@@ -3,13 +3,48 @@
 -- Safe to re-run.
 
 -- ---------------------------------------------------------------------------
+-- 0. Presence — last_seen_at for "who's online" in staff tools
+-- ---------------------------------------------------------------------------
+
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS last_seen_at timestamptz;
+
+CREATE OR REPLACE FUNCTION public.touch_user_presence()
+RETURNS timestamptz
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_seen timestamptz;
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'You must be logged in.';
+  END IF;
+
+  UPDATE public.users u
+  SET last_seen_at = now()
+  WHERE u.id = auth.uid()
+    AND (u.last_seen_at IS NULL OR u.last_seen_at < now() - interval '90 seconds')
+  RETURNING u.last_seen_at INTO v_seen;
+
+  IF v_seen IS NULL THEN
+    SELECT last_seen_at INTO v_seen FROM public.users WHERE id = auth.uid();
+  END IF;
+
+  RETURN v_seen;
+END;
+$$;
+
+-- ---------------------------------------------------------------------------
 -- 1. Search / list users
 -- ---------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION public.staff_search_users(
   p_limit integer DEFAULT 50,
   p_offset integer DEFAULT 0,
-  p_query text DEFAULT ''
+  p_query text DEFAULT '',
+  p_online_only boolean DEFAULT false,
+  p_active_today boolean DEFAULT false
 )
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -34,13 +69,15 @@ BEGIN
   SELECT COUNT(*) INTO v_total
   FROM public.users u
   WHERE
-    v_query = ''
-    OR u.id::text = v_query
-    OR lower(u.username) LIKE '%' || lower(v_query) || '%'
-    OR lower(u.display_name) LIKE '%' || lower(v_query) || '%'
-    OR lower(COALESCE(u.email, '')) LIKE '%' || lower(v_query) || '%';
+    (v_query = ''
+      OR u.id::text = v_query
+      OR lower(u.username) LIKE '%' || lower(v_query) || '%'
+      OR lower(u.display_name) LIKE '%' || lower(v_query) || '%'
+      OR lower(COALESCE(u.email, '')) LIKE '%' || lower(v_query) || '%')
+    AND (NOT p_online_only OR u.last_seen_at >= now() - interval '5 minutes')
+    AND (NOT p_active_today OR u.last_seen_at >= now() - interval '24 hours');
 
-  SELECT COALESCE(jsonb_agg(row_to_json(t)::jsonb ORDER BY t.created_at DESC), '[]'::jsonb)
+  SELECT COALESCE(jsonb_agg(row_to_json(t)::jsonb ORDER BY t.sort_seen DESC NULLS LAST, t.created_at DESC), '[]'::jsonb)
   INTO v_users
   FROM (
     SELECT
@@ -53,8 +90,12 @@ BEGIN
       u.words,
       u.streak,
       u.last_login,
+      u.last_seen_at,
       u.created_at,
       u.updated_at,
+      (u.last_seen_at >= now() - interval '5 minutes') AS is_online,
+      (u.last_seen_at >= now() - interval '30 minutes') AS is_recent,
+      COALESCE(u.last_seen_at, au.last_sign_in_at) AS sort_seen,
       (SELECT COUNT(*)::integer FROM public.books b WHERE b.user_id = u.id) AS book_count,
       (SELECT COUNT(*)::integer FROM public.books b WHERE b.user_id = u.id AND b.is_published) AS published_count,
       (
@@ -70,12 +111,14 @@ BEGIN
     LEFT JOIN auth.users au ON au.id = u.id
     LEFT JOIN public.author_moderation_status ams ON ams.user_id = u.id
     WHERE
-      v_query = ''
-      OR u.id::text = v_query
-      OR lower(u.username) LIKE '%' || lower(v_query) || '%'
-      OR lower(u.display_name) LIKE '%' || lower(v_query) || '%'
-      OR lower(COALESCE(u.email, '')) LIKE '%' || lower(v_query) || '%'
-    ORDER BY u.created_at DESC
+      (v_query = ''
+        OR u.id::text = v_query
+        OR lower(u.username) LIKE '%' || lower(v_query) || '%'
+        OR lower(u.display_name) LIKE '%' || lower(v_query) || '%'
+        OR lower(COALESCE(u.email, '')) LIKE '%' || lower(v_query) || '%')
+      AND (NOT p_online_only OR u.last_seen_at >= now() - interval '5 minutes')
+      AND (NOT p_active_today OR u.last_seen_at >= now() - interval '24 hours')
+    ORDER BY sort_seen DESC NULLS LAST, u.created_at DESC
     LIMIT v_limit
     OFFSET v_offset
   ) t;
@@ -86,6 +129,36 @@ BEGIN
     'offset', v_offset,
     'users', v_users
   );
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.staff_list_online_users(p_limit integer DEFAULT 30)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF NOT public.is_moderation_staff() THEN
+    RAISE EXCEPTION 'Moderation staff only.';
+  END IF;
+
+  RETURN COALESCE((
+    SELECT jsonb_agg(row_to_json(t)::jsonb ORDER BY t.last_seen_at DESC)
+    FROM (
+      SELECT
+        u.id,
+        u.username,
+        u.display_name,
+        u.account_type,
+        u.profile_image_url,
+        u.last_seen_at
+      FROM public.users u
+      WHERE u.last_seen_at >= now() - interval '5 minutes'
+      ORDER BY u.last_seen_at DESC
+      LIMIT GREATEST(1, LEAST(COALESCE(p_limit, 30), 100))
+    ) t
+  ), '[]'::jsonb);
 END;
 $$;
 
@@ -394,6 +467,18 @@ BEGIN
     'totalUsers', (SELECT COUNT(*) FROM public.users),
     'authors', (SELECT COUNT(*) FROM public.users WHERE account_type IN ('author', 'both')),
     'readers', (SELECT COUNT(*) FROM public.users WHERE account_type IN ('reader', 'both')),
+    'onlineNow', (
+      SELECT COUNT(*) FROM public.users
+      WHERE last_seen_at >= now() - interval '5 minutes'
+    ),
+    'activeToday', (
+      SELECT COUNT(*) FROM public.users
+      WHERE last_seen_at >= now() - interval '24 hours'
+    ),
+    'activeWeek', (
+      SELECT COUNT(*) FROM public.users
+      WHERE last_seen_at >= date_trunc('week', now())
+    ),
     'newThisWeek', (
       SELECT COUNT(*) FROM public.users
       WHERE created_at >= date_trunc('week', now())
@@ -416,14 +501,18 @@ $$;
 -- Grants
 -- ---------------------------------------------------------------------------
 
-REVOKE ALL ON FUNCTION public.staff_search_users(integer, integer, text) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.staff_search_users(integer, integer, text, boolean, boolean) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.staff_list_online_users(integer) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.touch_user_presence() FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.staff_get_user_detail(uuid) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.staff_list_user_books(uuid) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.staff_get_user_safety(uuid) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.staff_get_user_engagement(uuid) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.staff_users_overview_stats() FROM PUBLIC;
 
-GRANT EXECUTE ON FUNCTION public.staff_search_users(integer, integer, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.touch_user_presence() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.staff_search_users(integer, integer, text, boolean, boolean) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.staff_list_online_users(integer) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.staff_get_user_detail(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.staff_list_user_books(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.staff_get_user_safety(uuid) TO authenticated;

@@ -33,7 +33,7 @@
                 <button type="button" class="mod-btn" id="modCopyBootstrapBtn">Copy bootstrap SQL</button>
                 <a class="mod-btn primary" id="modOpenSqlBtn" href="#" target="_blank" rel="noopener">Open Supabase SQL Editor</a>
                 <button type="button" class="mod-btn" id="modRecheckBtn">Check again</button>
-                <a class="mod-btn" href="moderation-users.html">← Users</a>
+                <a class="mod-btn" href="moderation-dashboard.html?tab=users">← Users</a>
             </div>
             <p class="mod-denied-meta">Your user ID: <code id="modDeniedUid"></code></p>
         </div>
@@ -41,8 +41,8 @@
 
     <div class="hidden" id="modContent">
         <nav class="mod-nav" aria-label="Moderation">
-            <a class="mod-btn" data-mod-nav="dashboard" href="moderation-dashboard.html">Report queue</a>
-            <a class="mod-btn" data-mod-nav="users" href="moderation-users.html">Users</a>
+            <a class="mod-btn" href="moderation-dashboard.html">Reports</a>
+            <a class="mod-btn is-active" href="moderation-dashboard.html?tab=users">Users &amp; usage</a>
         </nav>
 
         <div class="mod-status hidden" id="modStatus"></div>
@@ -306,6 +306,7 @@
                         <p>Last login (profile): ${escapeHtml(p.last_login || "—")}</p>
                         <p>Auth created: ${escapeHtml(formatDate(auth.auth_created_at))}</p>
                         <p>Last sign-in: ${escapeHtml(formatDate(auth.last_sign_in_at))}</p>
+                        <p>Last seen (live): ${escapeHtml(formatDate(p.last_seen_at))}</p>
                         <p>Daily word goal: ${Number(p.daily_word_goal || 0).toLocaleString()}</p>
                         <p>Providers: ${escapeHtml((auth.providers || []).join(", ") || "—")}</p>
                         ${reporter ? `<p>Reporter weight: <strong>${reporter.weight}</strong> — ${escapeHtml(reporter.notes || "")}</p>` : ""}
@@ -432,7 +433,7 @@
 
     async function loadUser() {
         if (!userId) {
-            modUserRoot.innerHTML = '<p class="mod-detail-empty">Missing <code>?user=</code> parameter. <a href="moderation-users.html">Back to users</a></p>';
+            modUserRoot.innerHTML = '<p class="mod-detail-empty">Missing <code>?user=</code> parameter. <a href="moderation-dashboard.html?tab=users">Back to users</a></p>';
             return;
         }
 
@@ -449,7 +450,6 @@
     }
 
     const access = await bootModerationPage({
-        active: "users",
         returnPath: window.location.pathname + window.location.search,
     });
     if (access) {

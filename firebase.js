@@ -26,3 +26,7 @@ export const supabase = createClient(supabaseUrl, supabaseKey, {
         storage: typeof window !== "undefined" ? window.localStorage : undefined
     }
 });
+
+if (typeof window !== "undefined") {
+    import("./js/user-presence.js").then((m) => m.bootUserPresence()).catch(() => {});
+}

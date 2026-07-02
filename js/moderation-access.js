@@ -137,7 +137,7 @@ function migrationHint(status) {
 }
 
 /**
- * @param {{ active: 'dashboard' | 'users' | 'user', returnPath: string }} opts
+ * @param {{ returnPath: string }} opts
  */
 export async function bootModerationPage(opts) {
     const deniedEl = document.getElementById("modDenied");
@@ -201,10 +201,6 @@ export async function bootModerationPage(opts) {
 
     deniedEl?.classList.add("hidden");
     contentEl?.classList.remove("hidden");
-
-    document.querySelectorAll("[data-mod-nav]").forEach((el) => {
-        el.classList.toggle("is-active", el.dataset.modNav === opts.active);
-    });
 
     return status;
 }
