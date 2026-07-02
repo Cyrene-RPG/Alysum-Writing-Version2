@@ -628,6 +628,106 @@
             background: rgba(127,29,29,0.28);
             border: 1px solid rgba(239,68,68,0.35);
         }
+        .text-safety-btn {
+            flex-shrink: 0;
+            width: 36px;
+            height: 36px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            background: var(--panel-2);
+            color: var(--text);
+            font-size: 18px;
+            line-height: 1;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .text-safety-menu {
+            position: absolute;
+            top: calc(100% + 6px);
+            right: 12px;
+            z-index: 20;
+            min-width: 180px;
+            padding: 6px;
+            border-radius: 14px;
+            border: 1px solid var(--border);
+            background: var(--panel);
+            box-shadow: var(--shadow);
+        }
+        .text-safety-menu button {
+            width: 100%;
+            text-align: left;
+            border: none;
+            background: transparent;
+            color: var(--text);
+            padding: 10px 12px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .text-safety-menu button:hover { background: rgba(255,255,255,0.06); }
+        .text-safety-menu button.danger { color: #fca5a5; }
+        .text-panel-head { position: relative; }
+
+        .safety-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: rgba(0,0,0,0.55);
+        }
+        .safety-card {
+            width: min(440px, 100%);
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 22px;
+            box-shadow: var(--shadow);
+        }
+        .safety-card h3 {
+            margin: 0 0 8px;
+            font-size: 20px;
+            font-weight: 900;
+        }
+        .safety-card p {
+            margin: 0 0 14px;
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.55;
+        }
+        .safety-card label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+        .safety-card select,
+        .safety-card textarea {
+            width: 100%;
+            margin-bottom: 12px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: var(--panel-2);
+            color: var(--text);
+            padding: 10px 12px;
+            font-family: inherit;
+            font-size: 14px;
+        }
+        .safety-card textarea { min-height: 88px; resize: vertical; }
+        .safety-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+        }
+        .safety-actions .btn { min-width: 110px; }
 
         .text-panel-view {
             display: flex;
@@ -828,7 +928,12 @@
                         <div class="text-panel-avatar" id="chatPeerAvatar" aria-hidden="true">A</div>
                         <div class="text-panel-title-wrap">
                             <h3 class="text-panel-title" id="chatPeerName">Author</h3>
-                            <div class="text-panel-sub" id="chatPeerSub">Private beta · texts are logged</div>
+                            <div class="text-panel-sub" id="chatPeerSub">Manuscript feedback only · texts are logged</div>
+                        </div>
+                        <button type="button" class="text-safety-btn hidden" id="chatSafetyBtn" aria-label="Safety options" aria-haspopup="true" aria-expanded="false">⋯</button>
+                        <div class="text-safety-menu hidden" id="chatSafetyMenu" role="menu">
+                            <button type="button" role="menuitem" id="reportUserBtn">Report user</button>
+                            <button type="button" role="menuitem" class="danger" id="blockUserBtn">Block user</button>
                         </div>
                     </div>
                     <div id="threadStatus" class="text-status hidden"></div>
@@ -839,6 +944,45 @@
                     </div>
                 </div>
             </aside>
+        </div>
+    </div>
+
+    <div id="ageGateOverlay" class="safety-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="ageGateTitle">
+        <div class="safety-card">
+            <h3 id="ageGateTitle">Beta texting is 18+ only</h3>
+            <p>Before you send manuscript feedback texts, confirm your age. Beta rooms are for draft feedback only — not personal contact or harassment.</p>
+            <label for="ageGateSelect">I confirm that I am…</label>
+            <select id="ageGateSelect">
+                <option value="">Choose one</option>
+                <option value="under18">Under 18</option>
+                <option value="18plus">18 or older</option>
+            </select>
+            <div class="safety-actions">
+                <button type="button" class="btn" id="ageGateCancelBtn">Not now</button>
+                <button type="button" class="btn primary" id="ageGateConfirmBtn" disabled>Continue</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="reportOverlay" class="safety-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="reportTitle">
+        <div class="safety-card">
+            <h3 id="reportTitle">Report user</h3>
+            <p>Tell us what happened. Reports are reviewed and kept on file.</p>
+            <label for="reportReason">Reason</label>
+            <select id="reportReason">
+                <option value="">Choose a reason</option>
+                <option value="harassment">Harassment or bullying</option>
+                <option value="spam">Spam or off-topic</option>
+                <option value="inappropriate">Inappropriate content</option>
+                <option value="off_platform">Pressure to contact off-platform</option>
+                <option value="other">Other</option>
+            </select>
+            <label for="reportDetails">Details (optional)</label>
+            <textarea id="reportDetails" maxlength="2000" placeholder="What should we know?"></textarea>
+            <div class="safety-actions">
+                <button type="button" class="btn" id="reportCancelBtn">Cancel</button>
+                <button type="button" class="btn primary" id="reportSubmitBtn">Submit report</button>
+            </div>
         </div>
     </div>
 
@@ -854,9 +998,20 @@
             listAuthorBetaDmInbox,
             listBetaMessages,
             sendBetaMessage,
+            attestBetaMessaging18Plus,
+            hasBetaMessagingAttestation,
+            isBetaUserBlocked,
+            blockBetaUser,
+            reportBetaUser,
+            listMyBetaBlocks,
             chaptersFromSnapshot,
             isBetaRoomsSchemaMissing
-        } from "./js/beta-rooms-api.js?v=3";
+        } from "./js/beta-rooms-api.js?v=4";
+        import {
+            isBetaAgeVerifiedLocally,
+            setBetaAgeVerifiedLocally,
+            friendlyBetaSafetyError
+        } from "./js/beta-room-safety.js?v=1";
         import { rememberBetaRoomOpen } from "./js/beta-room-shelf.js?v=1";
 
         const params = new URLSearchParams(window.location.search);
@@ -905,6 +1060,19 @@
         const chatPeerName = document.getElementById("chatPeerName");
         const chatPeerSub = document.getElementById("chatPeerSub");
         const chatPeerAvatar = document.getElementById("chatPeerAvatar");
+        const chatSafetyBtn = document.getElementById("chatSafetyBtn");
+        const chatSafetyMenu = document.getElementById("chatSafetyMenu");
+        const reportUserBtn = document.getElementById("reportUserBtn");
+        const blockUserBtn = document.getElementById("blockUserBtn");
+        const ageGateOverlay = document.getElementById("ageGateOverlay");
+        const ageGateSelect = document.getElementById("ageGateSelect");
+        const ageGateConfirmBtn = document.getElementById("ageGateConfirmBtn");
+        const ageGateCancelBtn = document.getElementById("ageGateCancelBtn");
+        const reportOverlay = document.getElementById("reportOverlay");
+        const reportReason = document.getElementById("reportReason");
+        const reportDetails = document.getElementById("reportDetails");
+        const reportCancelBtn = document.getElementById("reportCancelBtn");
+        const reportSubmitBtn = document.getElementById("reportSubmitBtn");
 
         let currentUser = null;
         let currentProfile = {};
@@ -914,6 +1082,9 @@
         let activeThread = null;
         let authorInbox = [];
         let authorNameCache = "";
+        let chatPeerUserId = "";
+        let blockedUserIds = new Set();
+        let messagingEligible = false;
         let messagesChannel = null;
         let inboxChannels = [];
         let nameByUserId = new Map();
@@ -969,6 +1140,185 @@
             inboxStatus.textContent = msg;
             inboxStatus.className = "text-status " + kind;
             inboxStatus.classList.remove("hidden");
+        }
+
+        function chatPeerId() {
+            if (!shareRow || !currentUser) return "";
+            if (shareRow.author_id === currentUser.id) return activeThread?.reader_id || "";
+            return shareRow.author_id;
+        }
+
+        function hideSafetyMenu() {
+            chatSafetyMenu?.classList.add("hidden");
+            chatSafetyBtn?.setAttribute("aria-expanded", "false");
+        }
+
+        function toggleSafetyMenu() {
+            if (!chatSafetyMenu || !chatSafetyBtn) return;
+            const open = chatSafetyMenu.classList.contains("hidden");
+            chatSafetyMenu.classList.toggle("hidden", !open);
+            chatSafetyBtn.setAttribute("aria-expanded", open ? "true" : "false");
+        }
+
+        async function refreshBlockedUsers() {
+            try {
+                const ids = await listMyBetaBlocks();
+                blockedUserIds = new Set(ids);
+            } catch (err) {
+                console.warn(err);
+                blockedUserIds = new Set();
+            }
+        }
+
+        function isChatPeerBlocked() {
+            const peer = chatPeerId();
+            return peer ? blockedUserIds.has(peer) : false;
+        }
+
+        function showAgeGate() {
+            ageGateOverlay?.classList.remove("hidden");
+            if (ageGateSelect) ageGateSelect.value = "";
+            if (ageGateConfirmBtn) ageGateConfirmBtn.disabled = true;
+        }
+
+        function hideAgeGate() {
+            ageGateOverlay?.classList.add("hidden");
+        }
+
+        async function syncMessagingEligibility({ promptIfNeeded = false } = {}) {
+            const localOk = isBetaAgeVerifiedLocally();
+            let serverOk = false;
+            try {
+                serverOk = await hasBetaMessagingAttestation();
+            } catch {
+                serverOk = false;
+            }
+
+            if (localOk && serverOk) {
+                messagingEligible = true;
+                hideAgeGate();
+                return true;
+            }
+
+            if (localOk && !serverOk) {
+                try {
+                    await attestBetaMessaging18Plus();
+                    messagingEligible = true;
+                    hideAgeGate();
+                    return true;
+                } catch (err) {
+                    console.error(err);
+                }
+            }
+
+            messagingEligible = false;
+            if (promptIfNeeded) showAgeGate();
+            return false;
+        }
+
+        async function applyComposerSafetyState() {
+            hideSafetyMenu();
+            const peer = chatPeerId();
+            chatPeerUserId = peer;
+
+            if (!peer || !shareRow || shareRow.status !== "active") {
+                chatSafetyBtn?.classList.add("hidden");
+                return;
+            }
+
+            chatSafetyBtn?.classList.remove("hidden");
+
+            if (isChatPeerBlocked()) {
+                composer.classList.add("hidden");
+                setThreadStatus("Messaging is blocked with this person.", "error");
+                return;
+            }
+
+            const eligible = await syncMessagingEligibility({ promptIfNeeded: true });
+            if (!eligible) {
+                composer.classList.add("hidden");
+                if (!ageGateOverlay?.classList.contains("hidden")) {
+                    setThreadStatus("");
+                } else {
+                    setThreadStatus("Confirm you are 18 or older to send beta texts.", "wait");
+                }
+                return;
+            }
+
+            composer.classList.remove("hidden");
+            setThreadStatus("");
+        }
+
+        async function confirmAgeGate() {
+            if (ageGateSelect?.value !== "18plus") {
+                setThreadStatus("You must be 18 or older to use beta texting.", "error");
+                hideAgeGate();
+                return;
+            }
+            try {
+                await attestBetaMessaging18Plus();
+                setBetaAgeVerifiedLocally();
+                messagingEligible = true;
+                hideAgeGate();
+                await applyComposerSafetyState();
+            } catch (err) {
+                setThreadStatus(friendlyBetaSafetyError(err), "error");
+            }
+        }
+
+        function openReportDialog() {
+            hideSafetyMenu();
+            if (reportReason) reportReason.value = "";
+            if (reportDetails) reportDetails.value = "";
+            reportOverlay?.classList.remove("hidden");
+        }
+
+        function closeReportDialog() {
+            reportOverlay?.classList.add("hidden");
+        }
+
+        async function submitReport() {
+            const peer = chatPeerId();
+            const reason = String(reportReason?.value || "").trim();
+            if (!peer || !reason) {
+                setThreadStatus("Choose a reason for your report.", "error");
+                return;
+            }
+            reportSubmitBtn.disabled = true;
+            try {
+                const lastMsg = activeThread?.messages?.[activeThread.messages.length - 1];
+                await reportBetaUser({
+                    reportedUserId: peer,
+                    reason,
+                    details: String(reportDetails?.value || "").trim(),
+                    messageId: lastMsg?.id || null,
+                    threadId: activeThread?.id || null,
+                    shareId: activeThread?.share_id || shareId
+                });
+                closeReportDialog();
+                setThreadStatus("Report submitted. Thank you — our team will review it.", "wait");
+            } catch (err) {
+                setThreadStatus(friendlyBetaSafetyError(err), "error");
+            } finally {
+                reportSubmitBtn.disabled = false;
+            }
+        }
+
+        async function blockCurrentPeer() {
+            hideSafetyMenu();
+            const peer = chatPeerId();
+            if (!peer) return;
+            const name = chatPeerName?.textContent || "this user";
+            if (!window.confirm(`Block ${name}? You will not be able to message each other in beta rooms.`)) return;
+            try {
+                await blockBetaUser(peer, activeThread?.share_id || shareId);
+                blockedUserIds.add(peer);
+                await applyComposerSafetyState();
+                if (isAuthorView) await renderAuthorInbox();
+                setThreadStatus(`Blocked ${name}. Messaging is disabled.`, "wait");
+            } catch (err) {
+                setThreadStatus(friendlyBetaSafetyError(err), "error");
+            }
         }
 
         function formatMessageTime(iso) {
@@ -1068,6 +1418,7 @@
 
             const html = [];
             for (const row of authorInbox) {
+                if (blockedUserIds.has(row.reader_id)) continue;
                 const readerName = await resolveDisplayName(row.reader_id);
                 const preview = row.lastMessage?.body || "No messages yet";
                 const when = formatShortTime(row.lastMessage?.created_at || row.created_at);
@@ -1096,6 +1447,7 @@
             msgInput.placeholder = `Text ${readerName}…`;
             setThreadStatus("");
             showChatView();
+            await applyComposerSafetyState();
             await renderMessages();
             startMessagesRealtime();
         }
@@ -1106,7 +1458,7 @@
                 return await getOrCreateBetaDmThread(shareRow.id);
             } catch (err) {
                 console.error(err);
-                setThreadStatus(err?.message || "Could not open text thread.", "error");
+                setThreadStatus(friendlyBetaSafetyError(err), "error");
                 return null;
             }
         }
@@ -1115,14 +1467,20 @@
             isAuthorView = false;
             showChatView();
             chatPeerName.textContent = authorName || "Author";
-            chatPeerSub.textContent = "Text your thoughts on this draft";
+            chatPeerSub.textContent = "Manuscript feedback only · texts are logged";
             chatPeerAvatar.textContent = initialsFromName(authorName || "Author");
             msgInput.placeholder = `Text ${authorName || "the author"}…`;
+            chatPeerUserId = shareRow?.author_id || "";
 
             if (shareRow.status !== "active") return;
 
+            if (await isBetaUserBlocked(chatPeerUserId)) {
+                blockedUserIds.add(chatPeerUserId);
+            }
+
             activeThread = await ensureReaderThread();
             if (activeThread) {
+                await applyComposerSafetyState();
                 await renderMessages();
                 startMessagesRealtime();
             }
@@ -1133,12 +1491,6 @@
             showAuthorInbox();
             await renderAuthorInbox();
             startInboxRealtime();
-        }
-
-        function messageRecipientId() {
-            if (!shareRow || !currentUser || !activeThread) return "";
-            if (shareRow.author_id === currentUser.id) return activeThread.reader_id || "";
-            return shareRow.author_id;
         }
 
         function stopMessagesRealtime() {
@@ -1309,10 +1661,10 @@
 
             if (isAuthor) {
                 backBtn.href = "beta-rooms.html";
-                betaNotice.textContent = "You are previewing the snapshot your beta readers see. Reader texts appear in the panel — one conversation per reader.";
+                betaNotice.textContent = "You are previewing the snapshot your beta readers see. Reader texts appear in the panel — one conversation per reader. Use ⋯ to report or block.";
             } else {
                 backBtn.href = "beta-rooms.html";
-                betaNotice.textContent = "This is a private, unpublished draft — not listed in the Alysum Library. Text the author anytime from the panel on the right.";
+                betaNotice.textContent = "This is a private, unpublished draft — not listed in the Alysum Library. Text the author from the panel (18+, manuscript feedback only).";
             }
 
             void rememberBetaRoomOpen(currentUser.id, {
@@ -1329,6 +1681,7 @@
 
             stopMessagesRealtime();
             stopInboxRealtime();
+            await refreshBlockedUsers();
 
             if (shareRow.status !== "active") {
                 if (isAuthor && shareRow.status === "pending") {
@@ -1355,6 +1708,14 @@
             const body = msgInput.value.trim();
             if (!body) return;
 
+            const eligible = await syncMessagingEligibility({ promptIfNeeded: true });
+            if (!eligible) return;
+
+            if (isChatPeerBlocked()) {
+                setThreadStatus("Messaging is blocked with this person.", "error");
+                return;
+            }
+
             sendBtn.disabled = true;
             try {
                 if (!activeThread?.id) {
@@ -1367,24 +1728,19 @@
                     startMessagesRealtime();
                 }
 
-                const recipient = messageRecipientId();
-                const senderName = publicDisplayNameFromUserData(currentProfile) || "Someone";
                 const threadShareId = activeThread.share_id || shareId;
 
                 await sendBetaMessage({
                     threadId: activeThread.id,
                     shareId: threadShareId,
-                    body,
-                    recipientUserId: recipient,
-                    bookTitle: shareRow.beta_snapshots?.title,
-                    senderName
+                    body
                 });
                 msgInput.value = "";
                 await renderMessages();
                 if (isAuthorView) await renderAuthorInbox();
             } catch (err) {
                 console.error(err);
-                setThreadStatus(err?.message || "Could not send message.", "error");
+                setThreadStatus(friendlyBetaSafetyError(err), "error");
             } finally {
                 sendBtn.disabled = false;
                 msgInput.focus();
@@ -1397,6 +1753,25 @@
                 ev.preventDefault();
                 void sendCurrentMessage();
             }
+        });
+
+        chatSafetyBtn?.addEventListener("click", (ev) => {
+            ev.stopPropagation();
+            toggleSafetyMenu();
+        });
+        reportUserBtn?.addEventListener("click", () => { void openReportDialog(); });
+        blockUserBtn?.addEventListener("click", () => { void blockCurrentPeer(); });
+        reportCancelBtn?.addEventListener("click", closeReportDialog);
+        reportSubmitBtn?.addEventListener("click", () => { void submitReport(); });
+        ageGateSelect?.addEventListener("change", () => {
+            if (ageGateConfirmBtn) ageGateConfirmBtn.disabled = ageGateSelect.value !== "18plus";
+        });
+        ageGateConfirmBtn?.addEventListener("click", () => { void confirmAgeGate(); });
+        ageGateCancelBtn?.addEventListener("click", hideAgeGate);
+        document.addEventListener("click", (ev) => {
+            if (!chatSafetyMenu || chatSafetyMenu.classList.contains("hidden")) return;
+            if (ev.target.closest("#chatSafetyMenu") || ev.target.closest("#chatSafetyBtn")) return;
+            hideSafetyMenu();
         });
 
         inboxList.addEventListener("click", (ev) => {

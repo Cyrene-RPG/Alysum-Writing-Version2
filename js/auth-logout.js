@@ -5,7 +5,9 @@ import {
     clearOAuthPending,
     OAUTH_PENDING_LOGIN_KEY,
     OAUTH_PENDING_SIGNUP_KEY,
-} from "./auth-redirect.js?v=2";
+} from "./auth-redirect.js?v=4";
+import { clearBetaAgeVerifiedLocally } from "./beta-room-safety.js?v=1";
+import { revokeBetaMessagingAttestation } from "./beta-rooms-api.js?v=4";
 import {
     clearDesktopLocalHost,
     goToLogin,
@@ -37,6 +39,12 @@ export async function signOutAndGoToHome() {
         }
         const { error } = await supabase.auth.signOut();
         if (error) throw error;
+        clearBetaAgeVerifiedLocally();
+        try {
+            await revokeBetaMessagingAttestation();
+        } catch {
+            /* ignore — session may already be invalid */
+        }
         clearOAuthPending(OAUTH_PENDING_LOGIN_KEY);
         clearOAuthPending(OAUTH_PENDING_SIGNUP_KEY);
         clearLegacyOAuthPending();

@@ -227,47 +227,89 @@ export async function sendBetaMessage({ threadId, shareId, body, recipientUserId
     const trimmed = safeString(body).trim();
     if (!trimmed) throw new Error("Message cannot be empty.");
     if (trimmed.length > 8000) throw new Error("Message is too long.");
+    if (/<[^>]+>/.test(trimmed)) throw new Error("text_only_messages");
 
     const { data: sessionData } = await supabase.auth.getSession();
     const senderId = sessionData?.session?.user?.id;
     if (!senderId) throw new Error("Sign in to send messages.");
 
-    const { data: row, error } = await supabase
-        .from("beta_messages")
-        .insert({
-            thread_id: threadId,
-            share_id: shareId,
-            sender_id: senderId,
-            body: trimmed
-        })
-        .select()
-        .single();
+    const { data: row, error } = await supabase.rpc("send_beta_message", {
+        p_thread_id: threadId,
+        p_share_id: shareId,
+        p_body: trimmed
+    });
     if (error) throw error;
-
-    if (recipientUserId && recipientUserId !== senderId) {
-        const notifId = `beta_room_msg_${row.id}`;
-        await supabase.from("notifications").insert(
-            {
-                id: notifId,
-                user_id: recipientUserId,
-                read: false,
-                data: {
-                    type: "beta_room_message",
-                    senderUid: senderId,
-                    senderName: senderName || "Someone",
-                    shareId,
-                    threadId,
-                    messageId: row.id,
-                    bookTitle: bookTitle || "Manuscript",
-                    preview: trimmed.slice(0, 240),
-                    createdAt: Date.now()
-                }
-            },
-            { ignoreDuplicates: true }
-        );
-    }
-
     return row;
+}
+
+export async function attestBetaMessaging18Plus() {
+    const { error } = await supabase.rpc("attest_beta_messaging_18plus");
+    if (error) throw error;
+}
+
+export async function revokeBetaMessagingAttestation() {
+    const { error } = await supabase.rpc("revoke_beta_messaging_attestation");
+    if (error) throw error;
+}
+
+export async function hasBetaMessagingAttestation() {
+    const { data, error } = await supabase.rpc("has_beta_messaging_attestation");
+    if (error) throw error;
+    return !!data;
+}
+
+export async function isBetaUserBlocked(otherUserId) {
+    if (!otherUserId) return false;
+    const { data, error } = await supabase.rpc("is_beta_user_blocked", {
+        p_other_id: otherUserId
+    });
+    if (error) throw error;
+    return !!data;
+}
+
+export async function blockBetaUser(blockedUserId, shareId = null) {
+    const { data, error } = await supabase.rpc("block_beta_user", {
+        p_blocked_id: blockedUserId,
+        p_share_id: shareId
+    });
+    if (error) throw error;
+    return data;
+}
+
+export async function unblockBetaUser(blockedUserId) {
+    const { error } = await supabase.rpc("unblock_beta_user", {
+        p_blocked_id: blockedUserId
+    });
+    if (error) throw error;
+}
+
+export async function reportBetaUser({
+    reportedUserId,
+    reason,
+    details = "",
+    messageId = null,
+    threadId = null,
+    shareId = null
+}) {
+    const { data, error } = await supabase.rpc("report_beta_user", {
+        p_reported_user_id: reportedUserId,
+        p_reason: reason,
+        p_details: details,
+        p_message_id: messageId,
+        p_thread_id: threadId,
+        p_share_id: shareId
+    });
+    if (error) throw error;
+    return data;
+}
+
+export async function listMyBetaBlocks() {
+    const { data, error } = await supabase
+        .from("user_blocks")
+        .select("blocked_id")
+        .eq("context", "beta_room");
+    if (error) throw error;
+    return (data || []).map((row) => row.blocked_id).filter(Boolean);
 }
 
 export async function softDeleteBetaMessage(messageId) {
@@ -288,7 +330,7 @@ export function isBetaRoomsSchemaMissing(error) {
     return (
         code === "42P01" ||
         code === "PGRST202" ||
-        /beta_snapshots|manuscript_shares|beta_threads|beta_messages/i.test(msg) ||
-            /create_beta_snapshot|accept_manuscript_invite|extend_manuscript_invite|get_or_create_beta_dm_thread/i.test(msg)
+        /beta_snapshots|manuscript_shares|beta_threads|beta_messages|user_blocks|beta_message_reports/i.test(msg) ||
+            /create_beta_snapshot|accept_manuscript_invite|extend_manuscript_invite|get_or_create_beta_dm_thread|send_beta_message|attest_beta_messaging_18plus/i.test(msg)
     );
 }
