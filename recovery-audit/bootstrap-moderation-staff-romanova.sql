@@ -1,9 +1,11 @@
 -- ============================================================================
--- STEP 2 ONLY — run AFTER supabase-library-reports.sql
+-- STEP 3 ONLY — run AFTER supabase-library-reports.sql AND supabase-staff-users.sql
 -- ============================================================================
+-- User browser error "staff_search_users ... schema cache" means step 2 was skipped.
+-- Run the FULL file: Alysum-Web/supabase-staff-users.sql
+--
 -- If you see: relation "public.moderation_staff" does not exist
--- you skipped step 1. Run the FULL migration first:
---   Alysum-Web/supabase-library-reports.sql  (~1470 lines)
+-- you skipped step 1. Run: Alysum-Web/supabase-library-reports.sql
 -- in Supabase → SQL Editor → New query → paste entire file → Run
 --
 -- SQL Editor: https://supabase.com/dashboard/project/jrfxgpkpbacajhcwimgz/sql/new

@@ -7,9 +7,9 @@
 -- ---------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION public.staff_search_users(
-  p_query text DEFAULT '',
   p_limit integer DEFAULT 50,
-  p_offset integer DEFAULT 0
+  p_offset integer DEFAULT 0,
+  p_query text DEFAULT ''
 )
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -416,16 +416,19 @@ $$;
 -- Grants
 -- ---------------------------------------------------------------------------
 
-REVOKE ALL ON FUNCTION public.staff_search_users(text, integer, integer) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.staff_search_users(integer, integer, text) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.staff_get_user_detail(uuid) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.staff_list_user_books(uuid) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.staff_get_user_safety(uuid) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.staff_get_user_engagement(uuid) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.staff_users_overview_stats() FROM PUBLIC;
 
-GRANT EXECUTE ON FUNCTION public.staff_search_users(text, integer, integer) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.staff_search_users(integer, integer, text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.staff_get_user_detail(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.staff_list_user_books(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.staff_get_user_safety(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.staff_get_user_engagement(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.staff_users_overview_stats() TO authenticated;
+
+-- Refresh PostgREST schema cache (Supabase API)
+NOTIFY pgrst, 'reload schema';

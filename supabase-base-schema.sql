@@ -7,6 +7,7 @@
 --   3. supabase-leaderboard.sql
 --   4. supabase-plot-issues.sql
 --   5. supabase-library-reports.sql (after library RLS)
+--   6. supabase-staff-users.sql (after library reports — user browser RPCs)
 --   6. supabase-staff-users.sql (after library reports)
 
 -- ---------------------------------------------------------------------------

@@ -18,9 +18,9 @@ export async function staffUsersOverviewStats() {
  */
 export async function staffSearchUsers(query = "", limit = 50, offset = 0) {
     const { data, error } = await supabase.rpc("staff_search_users", {
-        p_query: query || "",
         p_limit: limit,
         p_offset: offset,
+        p_query: query || "",
     });
     if (error) throw error;
     return data || { total: 0, users: [], limit, offset };

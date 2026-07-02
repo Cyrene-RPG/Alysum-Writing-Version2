@@ -24,7 +24,9 @@ const ref = url.match(/https:\/\/([^.]+)\.supabase\.co/)?.[1] || PROJECT_REF;
 const STAFF_USER_ID = process.env.MODERATION_STAFF_USER_ID || "3ce04b19-0cbc-45f8-88f5-5ac18c8ba6a5";
 
 const migrationFile = path.join(process.cwd(), "supabase-library-reports.sql");
+const staffUsersFile = path.join(process.cwd(), "supabase-staff-users.sql");
 const ddl = fs.readFileSync(migrationFile, "utf8");
+const staffDdl = fs.readFileSync(staffUsersFile, "utf8");
 
 const bootstrapSql = `
 INSERT INTO public.moderation_staff (user_id, role, created_by)
@@ -82,6 +84,7 @@ async function applyViaPostgres(sql, label) {
 
 async function run(applyFn) {
   await applyFn(ddl, "supabase-library-reports.sql");
+  await applyFn(staffDdl, "supabase-staff-users.sql");
   await applyFn(bootstrapSql, "moderation staff bootstrap");
 }
 
@@ -111,7 +114,8 @@ try {
 
 Or in SQL Editor (run IN ORDER):
   1. Paste ALL of supabase-library-reports.sql → Run
-  2. Paste recovery-audit/bootstrap-moderation-staff-romanova.sql → Run
+  2. Paste ALL of supabase-staff-users.sql → Run
+  3. Paste recovery-audit/bootstrap-moderation-staff-romanova.sql → Run
 
 SQL Editor: https://supabase.com/dashboard/project/${ref}/sql/new`);
     process.exit(1);

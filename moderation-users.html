@@ -235,7 +235,9 @@
                 await loadAll();
             } catch (err) {
                 showStatus(
-                    err.message || "Could not load user data. Run supabase-staff-users.sql in Supabase first.",
+                    (err.message || "").includes("staff_search_users")
+                        ? "User browser SQL not applied yet. In Supabase SQL Editor, run the full supabase-staff-users.sql file, then refresh this page."
+                        : (err.message || "Could not load user data. Run supabase-staff-users.sql in Supabase first."),
                     "error"
                 );
             }
