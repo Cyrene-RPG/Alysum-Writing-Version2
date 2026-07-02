@@ -1193,6 +1193,90 @@
         color: #e5e7eb;
     }
 
+    #libraryPanel .library-panel-body {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        max-width: 52rem;
+    }
+
+    .library-settings-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    @media (min-width: 640px) {
+        .library-settings-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    a.library-settings-card {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 18px 16px;
+        border-radius: 16px;
+        border: 1px solid color-mix(in srgb, var(--purple-bright) 32%, rgba(255, 255, 255, 0.1));
+        background: linear-gradient(
+            165deg,
+            color-mix(in srgb, var(--theme-accent-soft-bg) 45%, transparent),
+            rgba(255, 255, 255, 0.02)
+        );
+        text-decoration: none;
+        color: inherit;
+        transition: transform 0.12s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+        min-height: 100%;
+    }
+
+    a.library-settings-card:hover {
+        transform: translateY(-2px);
+        border-color: color-mix(in srgb, var(--purple-bright) 55%, transparent);
+        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
+    }
+
+    a.library-settings-card.is-staff {
+        border-color: color-mix(in srgb, var(--gold) 35%, rgba(255, 255, 255, 0.1));
+    }
+
+    .library-settings-icon {
+        font-size: 22px;
+        line-height: 1;
+    }
+
+    .library-settings-card-title {
+        font-size: 15px;
+        font-weight: 900;
+        color: var(--text);
+        letter-spacing: 0.01em;
+    }
+
+    .library-settings-card-desc {
+        font-size: 13px;
+        line-height: 1.5;
+        color: var(--muted);
+        margin: 0;
+    }
+
+    .library-settings-card-cta {
+        margin-top: auto;
+        padding-top: 6px;
+        font-size: 12px;
+        font-weight: 900;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: color-mix(in srgb, var(--purple-bright) 85%, #fff);
+    }
+
+    .library-staff-box {
+        border-color: color-mix(in srgb, var(--gold) 42%, rgba(255, 255, 255, 0.1));
+    }
+
+    .library-staff-box .profile-box-title {
+        color: var(--gold);
+    }
+
 </style>
 <link rel="stylesheet" href="css/gradient-themes.css?v=7" />
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
@@ -1213,6 +1297,7 @@
             <button type="button" role="tab" id="tab-appearance" data-section="appearancePanel" aria-controls="appearancePanel" aria-selected="true">Appearance</button>
             <button type="button" role="tab" id="tab-account" data-section="accountModePanel" aria-controls="accountModePanel" aria-selected="false">Account focus</button>
             <button type="button" role="tab" id="tab-profile" data-section="profilePanel" aria-controls="profilePanel" aria-selected="false">Profile</button>
+            <button type="button" role="tab" id="tab-library" data-section="libraryPanel" aria-controls="libraryPanel" aria-selected="false">Library</button>
             <button type="button" role="tab" id="tab-password" data-section="securityPanel" aria-controls="securityPanel" aria-selected="false">Password</button>
             <button type="button" role="tab" id="tab-backup" data-section="backupPanel" aria-controls="backupPanel" aria-selected="false">Backup</button>
             <button type="button" class="settings-nav-delete hidden" id="deleteAccountNavBtn">Delete account</button>
@@ -1378,16 +1463,6 @@
             </label>
         </section>
 
-        <section class="profile-box" aria-labelledby="libraryViolationsTitle">
-            <h3 class="profile-box-title" id="libraryViolationsTitle">Library policy & appeals</h3>
-            <p class="hint" style="margin: 0 0 12px">
-                If Alysum Support confirms a library policy issue on your published work, you will be notified with required corrections and a deadline. You may appeal decisions you believe were made in error.
-            </p>
-            <a href="library-violations.html" class="btn">View violations &amp; appeals</a>
-            <a href="moderation-dashboard.html" class="btn hidden" id="modDashboardLink" style="margin-left:8px">Moderation dashboard</a>
-            <a href="moderation-users.html" class="btn hidden" id="modUsersLink" style="margin-left:8px">User browser</a>
-        </section>
-
         <section class="profile-box profile-danger-box hidden" id="deleteAccountSection" aria-labelledby="deleteAccountTitle">
             <h3 class="profile-box-title" id="deleteAccountTitle">Delete account</h3>
             <p class="hint" style="margin: 0 0 10px">
@@ -1406,6 +1481,53 @@
                 <div class="msg" id="deleteAccountMsg" role="status"></div>
             </div>
         </section>
+        </div>
+    </div>
+
+    <div class="panel hidden settings-tab-panel" id="libraryPanel" role="tabpanel" aria-labelledby="tab-library" hidden>
+        <h2>Library</h2>
+        <p class="hint">Published-work policy notices, appeals, and — for Alysum Support — moderation tools.</p>
+
+        <div class="library-panel-body">
+            <section class="profile-box" aria-labelledby="libraryAuthorTitle">
+                <h3 class="profile-box-title" id="libraryAuthorTitle">Your published work</h3>
+                <p class="hint" style="margin: 0 0 16px">
+                    If Alysum Support confirms a library policy issue on your book, you will be notified with required corrections and a deadline. You may appeal a decision you believe was made in error.
+                </p>
+                <div class="library-settings-grid">
+                    <a class="library-settings-card" href="library-violations.html">
+                        <span class="library-settings-icon" aria-hidden="true">⚖️</span>
+                        <span class="library-settings-card-title">Violations &amp; appeals</span>
+                        <p class="library-settings-card-desc">View policy notices, correction deadlines, and submit an appeal.</p>
+                        <span class="library-settings-card-cta">Open →</span>
+                    </a>
+                    <a class="library-settings-card" href="library.html">
+                        <span class="library-settings-icon" aria-hidden="true">📚</span>
+                        <span class="library-settings-card-title">Browse the library</span>
+                        <p class="library-settings-card-desc">Read published stories and report content that violates Alysum guidelines.</p>
+                        <span class="library-settings-card-cta">Open library →</span>
+                    </a>
+                </div>
+            </section>
+
+            <section class="profile-box library-staff-box hidden" id="libraryStaffSection" aria-labelledby="libraryStaffTitle">
+                <h3 class="profile-box-title" id="libraryStaffTitle">Staff tools</h3>
+                <p class="hint" style="margin: 0 0 16px">Moderation queue, user lookup, and enforcement actions for Alysum Support.</p>
+                <div class="library-settings-grid">
+                    <a class="library-settings-card is-staff" href="moderation-dashboard.html" id="modDashboardLink">
+                        <span class="library-settings-icon" aria-hidden="true">🛡️</span>
+                        <span class="library-settings-card-title">Moderation dashboard</span>
+                        <p class="library-settings-card-desc">Review reader reports, confirm violations, and manage book visibility.</p>
+                        <span class="library-settings-card-cta">Open queue →</span>
+                    </a>
+                    <a class="library-settings-card is-staff" href="moderation-users.html" id="modUsersLink">
+                        <span class="library-settings-icon" aria-hidden="true">👥</span>
+                        <span class="library-settings-card-title">User browser</span>
+                        <p class="library-settings-card-desc">Search accounts, inspect books, strikes, and activity history.</p>
+                        <span class="library-settings-card-cta">Browse users →</span>
+                    </a>
+                </div>
+            </section>
         </div>
     </div>
 
@@ -1621,7 +1743,7 @@
     let settingsSessionUser = null;
     let selectedRestoreFile = null;
 
-    const TAB_PANEL_IDS = ["appearancePanel", "accountModePanel", "profilePanel", "securityPanel", "backupPanel"];
+    const TAB_PANEL_IDS = ["appearancePanel", "accountModePanel", "profilePanel", "libraryPanel", "securityPanel", "backupPanel"];
     const PASSWORD_BLOCKED_OAUTH = new Set(["google", "discord"]);
 
     /** Only Google- or Discord-only sign-in cannot change password here (uses linked identities). */
@@ -1962,10 +2084,8 @@
         }
         refreshBackupStatusUi();
         void isModerationStaff().then((staff) => {
-            const link = document.getElementById("modDashboardLink");
-            const usersLink = document.getElementById("modUsersLink");
-            if (link && staff) link.classList.remove("hidden");
-            if (usersLink && staff) usersLink.classList.remove("hidden");
+            const staffSection = document.getElementById("libraryStaffSection");
+            if (staffSection && staff) staffSection.classList.remove("hidden");
         });
     }
 
