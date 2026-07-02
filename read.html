@@ -23,6 +23,7 @@
     <title>Alysum Reader</title>
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
     <link rel="stylesheet" href="css/gradient-themes.css?v=4" />
+    <link rel="stylesheet" href="css/library-reports.css?v=1" />
     <script src="js/gradient-theme-sync.js" defer></script>
 
     <script src="js/alysum-appearance-boot.js"></script>
@@ -214,7 +215,7 @@
             </div>
             <div class="nav-row"><button class="btn" id="prevBtn">← Prev</button><div class="nav-center"><div class="nav-label">Current Chapter</div><div class="nav-current" id="chapterIndicator">Loading…</div></div><button class="btn" id="nextBtn">Next →</button></div>
             <div class="reader-card"><div class="reader-head"><h2 class="chapter-title" id="chapterTitle">Loading…</h2><div class="chapter-meta" id="chapterMeta"></div></div><div class="reader-chapter-wrap alysum-rw-wrap"><div class="alysum-rw-sheet" id="readerWatermarkSheet" aria-hidden="true"></div><div class="reader-body alysum-rw-body"><div class="content" id="content"></div></div><div class="alysum-rw-footer" id="readerWatermarkFooter"></div></div></div>
-            <div class="reader-tools"><button class="btn primary" id="bookmarkBtn">Bookmark This Chapter</button><button class="btn" id="resumeBtn">Resume Where I Left Off</button></div>
+            <div class="reader-tools"><button class="btn primary" id="bookmarkBtn">Bookmark This Chapter</button><button class="btn" id="resumeBtn">Resume Where I Left Off</button><button class="btn btn-report hidden" id="reportBookBtn" type="button">Report Book</button></div>
             <div class="likes-card"><div class="likes-title">Kudos</div><div class="likes-row"><button class="btn primary" id="likeBtn">❤️ Leave Kudos</button><div class="kudos-note">One Per User.</div></div><div class="kudos-count" id="likeCount">0 kudos</div></div>
             <div class="comments-card"><div class="comments-title">Comments</div><div class="comment-list" id="commentList"></div><div class="comment-form"><textarea class="comment-input" id="commentInput" placeholder="Write a comment…"></textarea><button class="btn primary" id="postCommentBtn">Post Comment</button></div></div>
             <div class="footer-space"></div>
@@ -228,6 +229,8 @@
     import { READER_HOME_URL } from "./js/account-mode.js";
     import { installReaderCopyGuards } from "./js/reader-copy-guards.js?v=1";
     import { applyReaderWatermark } from "./js/reader-watermark.js?v=3";
+    import { openLibraryReportModal } from "./js/library-report-modal.js?v=1";
+    import { isBookReadable } from "./js/library-reports-api.js?v=1";
 
     const params = new URLSearchParams(window.location.search);
     let bookId =
@@ -240,7 +243,7 @@
         localStorage.getItem("alysum-last-book") ||
         "";
 
-    const readerNavToggle = document.getElementById("readerNavToggle"), backBtn = document.getElementById("backBtn"), themeBtn = document.getElementById("themeBtn"), fontMinusBtn = document.getElementById("fontMinusBtn"), fontPlusBtn = document.getElementById("fontPlusBtn"), menuBtn = document.getElementById("menuBtn"), mobileDrawer = document.getElementById("mobileDrawer"), drawerBackdrop = document.getElementById("drawerBackdrop"), closeDrawerBtn = document.getElementById("closeDrawerBtn"), topbarTitle = document.getElementById("topbarTitle"), topbarSubtitle = document.getElementById("topbarSubtitle"), betaReadTopBtn = document.getElementById("betaReadTopBtn"), readerProfileTopBtn = document.getElementById("readerProfileTopBtn"), allNotesTopBtn = document.getElementById("allNotesTopBtn"), statusBox = document.getElementById("statusBox"), errorBox = document.getElementById("errorBox"), bookTitle = document.getElementById("bookTitle"), bookAuthor = document.getElementById("bookAuthor"), bookSummary = document.getElementById("bookSummary"), statChapters = document.getElementById("statChapters"), statWords = document.getElementById("statWords"), statReads = document.getElementById("statReads"), statType = document.getElementById("statType"), statRating = document.getElementById("statRating"), tagList = document.getElementById("tagList"), warningList = document.getElementById("warningList"), sideBookTitle = document.getElementById("sideBookTitle"), sideBookAuthor = document.getElementById("sideBookAuthor"), sideBookSummary = document.getElementById("sideBookSummary"), sideTagList = document.getElementById("sideTagList"), sideWarningList = document.getElementById("sideWarningList"), drawerBookTitle = document.getElementById("drawerBookTitle"), drawerBookAuthor = document.getElementById("drawerBookAuthor"), drawerBookSummary = document.getElementById("drawerBookSummary"), drawerTagList = document.getElementById("drawerTagList"), drawerWarningList = document.getElementById("drawerWarningList"), prevBtn = document.getElementById("prevBtn"), nextBtn = document.getElementById("nextBtn"), chapterIndicator = document.getElementById("chapterIndicator"), chapterTitle = document.getElementById("chapterTitle"), chapterMeta = document.getElementById("chapterMeta"), content = document.getElementById("content"), bookmarkBtn = document.getElementById("bookmarkBtn"), resumeBtn = document.getElementById("resumeBtn"), likeBtn = document.getElementById("likeBtn"), likeCount = document.getElementById("likeCount"), commentList = document.getElementById("commentList"), commentInput = document.getElementById("commentInput"), postCommentBtn = document.getElementById("postCommentBtn");
+    const readerNavToggle = document.getElementById("readerNavToggle"), backBtn = document.getElementById("backBtn"), themeBtn = document.getElementById("themeBtn"), fontMinusBtn = document.getElementById("fontMinusBtn"), fontPlusBtn = document.getElementById("fontPlusBtn"), menuBtn = document.getElementById("menuBtn"), mobileDrawer = document.getElementById("mobileDrawer"), drawerBackdrop = document.getElementById("drawerBackdrop"), closeDrawerBtn = document.getElementById("closeDrawerBtn"), topbarTitle = document.getElementById("topbarTitle"), topbarSubtitle = document.getElementById("topbarSubtitle"), betaReadTopBtn = document.getElementById("betaReadTopBtn"), readerProfileTopBtn = document.getElementById("readerProfileTopBtn"), allNotesTopBtn = document.getElementById("allNotesTopBtn"), statusBox = document.getElementById("statusBox"), errorBox = document.getElementById("errorBox"), bookTitle = document.getElementById("bookTitle"), bookAuthor = document.getElementById("bookAuthor"), bookSummary = document.getElementById("bookSummary"), statChapters = document.getElementById("statChapters"), statWords = document.getElementById("statWords"), statReads = document.getElementById("statReads"), statType = document.getElementById("statType"), statRating = document.getElementById("statRating"), tagList = document.getElementById("tagList"), warningList = document.getElementById("warningList"), sideBookTitle = document.getElementById("sideBookTitle"), sideBookAuthor = document.getElementById("sideBookAuthor"), sideBookSummary = document.getElementById("sideBookSummary"), sideTagList = document.getElementById("sideTagList"), sideWarningList = document.getElementById("sideWarningList"), drawerBookTitle = document.getElementById("drawerBookTitle"), drawerBookAuthor = document.getElementById("drawerBookAuthor"), drawerBookSummary = document.getElementById("drawerBookSummary"), drawerTagList = document.getElementById("drawerTagList"), drawerWarningList = document.getElementById("drawerWarningList"), prevBtn = document.getElementById("prevBtn"), nextBtn = document.getElementById("nextBtn"), chapterIndicator = document.getElementById("chapterIndicator"), chapterTitle = document.getElementById("chapterTitle"), chapterMeta = document.getElementById("chapterMeta"), content = document.getElementById("content"), bookmarkBtn = document.getElementById("bookmarkBtn"), resumeBtn = document.getElementById("resumeBtn"), reportBookBtn = document.getElementById("reportBookBtn"), likeBtn = document.getElementById("likeBtn"), likeCount = document.getElementById("likeCount"), commentList = document.getElementById("commentList"), commentInput = document.getElementById("commentInput"), postCommentBtn = document.getElementById("postCommentBtn");
 
     let currentUser = null, currentBook = null, librarySourceRow = null, currentChapterIndex = 0, isLoaded = false, currentFontSize = 22, hasLikedThisBook = false, readerWatermarkProfileUser = null, bookOwnerHandle = null;
 
@@ -479,6 +482,14 @@
             currentBook = normalizeBook(data);
             await recordStoryView();
 
+            const readable = await isBookReadable(bookId);
+            if (!readable && !isBookOwnerModerator()) {
+                showError("This story is temporarily unavailable in the public library.");
+                topbarTitle.textContent = "Unavailable";
+                hideStatus();
+                return;
+            }
+
             if (!currentBook.chapters.length) {
                 showError("This story has no readable chapters.");
                 topbarTitle.textContent = currentBook.title || "Untitled";
@@ -499,6 +510,7 @@
             await loadLikeState();
             hideStatus();
             isLoaded = true;
+            updateReportButton();
             void ensureBetaReadShelved();
             updateReaderWatermark();
             void syncReaderWatermarkProfile();
@@ -516,6 +528,25 @@
     async function ensureBetaReadShelved() { const user = currentUser; if (!user || !bookId || !currentBook) return; const title = safeString(currentBook.title, "Untitled"); const author = safeString(currentBook.author, ""); writeBetaShelfEntryLocal(user.id, bookId, { title, author }); try { await supabase.from("users").update({ current_read_book_id: bookId, current_read_story_title: title, current_read_author: author, current_read_updated_at: new Date().toISOString() }).eq("id", user.id); } catch (err) { console.warn("Could not sync beta shelf/current read to Supabase.", err); } }
     function getBestUsername(user, fallback = "reader") { if (!user) return fallback; const rawUsername = user.display_name || user.displayName || user.username || user.handle || user.penName || user.name || user.email || fallback; const value = safeString(rawUsername, fallback).trim(); if (!value) return fallback; if (value.includes("@")) return value.split("@")[0]; return value; }
     function isBookOwnerModerator() { return !!(currentUser && currentBook && currentBook.ownerUid && currentUser.id === currentBook.ownerUid); }
+
+    function updateReportButton() {
+        if (!reportBookBtn) return;
+        const canReport = !!(currentUser && currentBook && !isBookOwnerModerator());
+        reportBookBtn.classList.toggle("hidden", !canReport);
+    }
+
+    reportBookBtn?.addEventListener("click", () => {
+        if (!currentUser) {
+            window.location.href = "login.html?next=" + encodeURIComponent(window.location.href);
+            return;
+        }
+        if (!currentBook || isBookOwnerModerator()) return;
+        openLibraryReportModal({
+            bookId,
+            title: currentBook.title,
+            author: currentBook.author,
+        });
+    });
 
     function buildCommentRow(comment) {
         const item = document.createElement("div"); item.className = "comment-item"; item.dataset.commentId = comment.id;

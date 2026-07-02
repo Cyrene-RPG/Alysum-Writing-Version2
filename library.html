@@ -21,6 +21,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="stylesheet" href="css/site-responsive.css?v=1" />
 <link rel="stylesheet" href="css/gradient-themes.css?v=5" />
+<link rel="stylesheet" href="css/library-reports.css?v=1" />
     <script src="js/gradient-theme-sync.js" defer></script>
 
 <script src="js/alysum-appearance-boot.js"></script>
@@ -116,6 +117,8 @@
     .card-footer { margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding-top: 6px; }
     .footer-meta { color: var(--text-soft); font-size: 13px; font-weight: 700; }
     .read-btn { border: none; background: linear-gradient(135deg, var(--alysum-purple-dark), var(--alysum-purple)); color: white; border-radius: 12px; padding: 11px 14px; font-size: 14px; font-weight: 900; cursor: pointer; }
+    .card-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .report-card-btn { border: 1px solid rgba(239,68,68,0.25); background: rgba(127,29,29,0.12); color: #fecaca; border-radius: 12px; padding: 11px 12px; font-size: 13px; font-weight: 800; cursor: pointer; }
     .empty, .loading, .error { background: var(--panel); border: 1px solid var(--border); border-radius: 24px; padding: 34px 22px; text-align: center; color: var(--text-soft); font-size: 15px; line-height: 1.6; }
     .hidden { display: none !important; }
     @media (max-width: 1100px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
@@ -185,6 +188,7 @@
     import { supabase } from "./firebase.js";
     import { publicDisplayNameFromUserData } from "./js/profile-display.js?v=1";
     import { wireLogoutButtons } from "./js/auth-logout.js?v=2";
+    import { openLibraryReportModal } from "./js/library-report-modal.js?v=1";
 
     const navButtons = document.querySelectorAll(".nav-btn");
     const searchInput = document.getElementById("searchInput");
@@ -204,6 +208,7 @@
 
     let allBooks = [];
     let currentFilter = "all";
+    let currentUserId = null;
     const readCounts = new Map();
 
     function mergedProfile(row) {
@@ -255,11 +260,13 @@
         if (authError) console.warn(authError);
         const user = authData?.user;
         if (!user) {
+            currentUserId = null;
             renderGuestWelcome();
             navLogoutButtons.forEach((btn) => btn.classList.add("is-hidden"));
             return;
         }
 
+        currentUserId = user.id;
         navLogoutButtons.forEach((btn) => btn.classList.remove("is-hidden"));
         try {
             const { data, error } = await supabase
@@ -320,6 +327,7 @@
             chapterCount: safeNumber(data.chapterCount, chapters.length),
             words: safeNumber(data.words, 0),
             views: safeNumber(data.views, 0),
+            ownerUid: safeString(data.ownerUid || data.user_id || row?.user_id, ""),
             updated: safeNumber(data.updated, 0),
             isPublished: data.isPublished !== false
         };
@@ -434,12 +442,24 @@
                 ${topTags.length ? `<div class="warning-block"><div class="block-label">Extra Tags</div><div class="tag-chips">${topTags.map(item => `<div class="chip soft">${escapeHtml(item)}</div>`).join("")}</div></div>` : ""}
                 <div class="card-footer">
                     <div class="footer-meta">${escapeHtml(formatRelativeUpdate(book.updated))}</div>
-                    <button class="read-btn" type="button">Read Story</button>
+                    <div class="card-actions">
+                        ${currentUserId && book.ownerUid !== currentUserId ? '<button class="report-card-btn" type="button">Report</button>' : ""}
+                        <button class="read-btn" type="button">Read Story</button>
+                    </div>
                 </div>
             `;
             const openBook = () => { window.location.href = "read.html?book=" + encodeURIComponent(book.id); };
             card.addEventListener("click", openBook);
             card.querySelector(".read-btn").addEventListener("click", (e) => { e.stopPropagation(); openBook(); });
+            const reportBtn = card.querySelector(".report-card-btn");
+            reportBtn?.addEventListener("click", (e) => {
+                e.stopPropagation();
+                if (!currentUserId) {
+                    window.location.href = "login.html?next=" + encodeURIComponent(window.location.href);
+                    return;
+                }
+                openLibraryReportModal({ bookId: book.id, title: book.title, author: book.author });
+            });
             bookGrid.appendChild(card);
         });
     }

@@ -1378,6 +1378,16 @@
             </label>
         </section>
 
+        <section class="profile-box" aria-labelledby="libraryViolationsTitle">
+            <h3 class="profile-box-title" id="libraryViolationsTitle">Library policy & appeals</h3>
+            <p class="hint" style="margin: 0 0 12px">
+                If Alysum Support confirms a library policy issue on your published work, you will be notified with required corrections and a deadline. You may appeal decisions you believe were made in error.
+            </p>
+            <a href="library-violations.html" class="btn">View violations &amp; appeals</a>
+            <a href="moderation-dashboard.html" class="btn hidden" id="modDashboardLink" style="margin-left:8px">Moderation dashboard</a>
+            <a href="moderation-users.html" class="btn hidden" id="modUsersLink" style="margin-left:8px">User browser</a>
+        </section>
+
         <section class="profile-box profile-danger-box hidden" id="deleteAccountSection" aria-labelledby="deleteAccountTitle">
             <h3 class="profile-box-title" id="deleteAccountTitle">Delete account</h3>
             <p class="hint" style="margin: 0 0 10px">
@@ -1536,6 +1546,7 @@
     } from "./js/display-text-color.js?v=4";
     import { normalizeAccountType, ACCOUNT_AUTHOR, ACCOUNT_READER, ACCOUNT_BOTH, homeUrlForUserData } from "./js/account-mode.js?v=1";
     import { isStoryBibleUiEnabled, setStoryBibleUiEnabled } from "./js/story-bible-prefs.js?v=1";
+    import { isModerationStaff } from "./js/library-reports-api.js?v=1";
     import {
         exportUserBackup,
         saveUserBackupToDisk,
@@ -1950,6 +1961,12 @@
             });
         }
         refreshBackupStatusUi();
+        void isModerationStaff().then((staff) => {
+            const link = document.getElementById("modDashboardLink");
+            const usersLink = document.getElementById("modUsersLink");
+            if (link && staff) link.classList.remove("hidden");
+            if (usersLink && staff) usersLink.classList.remove("hidden");
+        });
     }
 
     function refreshBackupStatusUi() {

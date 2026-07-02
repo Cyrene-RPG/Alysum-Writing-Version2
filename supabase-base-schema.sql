@@ -6,6 +6,8 @@
 --   2. supabase-library-rls.sql
 --   3. supabase-leaderboard.sql
 --   4. supabase-plot-issues.sql
+--   5. supabase-library-reports.sql (after library RLS)
+--   6. supabase-staff-users.sql (after library reports)
 
 -- ---------------------------------------------------------------------------
 -- public.users — profile row keyed to auth.users

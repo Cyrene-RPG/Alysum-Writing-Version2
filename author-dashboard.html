@@ -1091,37 +1091,88 @@
         markAllNotifsRead.disabled = unreadRows.length === 0;
 
         notifList.innerHTML = rows
-            .map((data) => {
-                const unread = data.read !== true;
-                const reader = escapeHtml(safeString(data.readerName, "Reader"));
-                const book = escapeHtml(safeString(data.bookTitle, "Story"));
-                const chapter = escapeHtml(safeString(data.chapterTitle, ""));
-                const quote = escapeHtml(truncateText(data.quote, 320));
-                const comment = escapeHtml(truncateText(data.comment, 900));
-                const bookId = safeString(data.bookId, "");
-                const betaUrl = bookId ? `beta-read.html?book=${encodeURIComponent(bookId)}` : "#";
-                return `
-                    <article class="notif-card${unread ? " unread" : ""}" role="listitem" data-notif-id="${escapeHtml(data.id)}">
-                        <div class="notif-top">
-                            <div>
-                                <div class="notif-kicker">Beta note shared</div>
-                                <h3 class="notif-title">${reader} · ${book}</h3>
-                                <div class="notif-meta">${chapter ? `${chapter} · ` : ""}${escapeHtml(formatDate(data.createdAt))}</div>
-                            </div>
-                        </div>
-                        ${quote ? `<div class="notif-quote">${quote}</div>` : ""}
-                        ${comment ? `<div class="notif-comment">${comment}</div>` : ""}
-                        <div class="notif-actions">
-                            <a class="mini-btn" href="${betaUrl}">Open beta workspace</a>
-                            ${unread
-                                ? `<button type="button" class="mini-btn" data-mark-read="${escapeHtml(data.id)}">Mark read</button>`
-                                : `<span class="mini-btn" style="opacity:0.55;cursor:default;">Read</span>`
-                            }
-                        </div>
-                    </article>
-                `;
-            })
+            .map((data) => buildNotifCard(data))
             .join("");
+    }
+
+    function buildNotifCard(data) {
+        const unread = data.read !== true;
+        const type = safeString(data.type, "beta_note_shared");
+        const markReadBtn = unread
+            ? `<button type="button" class="mini-btn" data-mark-read="${escapeHtml(data.id)}">Mark read</button>`
+            : `<span class="mini-btn" style="opacity:0.55;cursor:default;">Read</span>`;
+
+        if (type === "library_violation" || type === "library_violation_deadline") {
+            const book = escapeHtml(safeString(data.bookTitle, "Your book"));
+            const policy = escapeHtml(truncateText(data.policyViolated || data.preview, 400));
+            const corrections = escapeHtml(truncateText(data.correctionRequirements, 600));
+            const deadline = data.deadline ? escapeHtml(formatDate(data.deadline)) : "";
+            const strike = data.strikeNumber ? `Strike ${data.strikeNumber}` : "";
+            const kicker = type === "library_violation_deadline" ? "Correction deadline passed" : "Library policy notice";
+            return `
+                <article class="notif-card${unread ? " unread" : ""}" role="listitem" data-notif-id="${escapeHtml(data.id)}">
+                    <div class="notif-top">
+                        <div>
+                            <div class="notif-kicker">${kicker}</div>
+                            <h3 class="notif-title">${book}${strike ? ` · ${strike}` : ""}</h3>
+                            <div class="notif-meta">${deadline ? `Deadline: ${deadline} · ` : ""}${escapeHtml(formatDate(data.createdAt))}</div>
+                        </div>
+                    </div>
+                    ${policy ? `<div class="notif-quote">${policy}</div>` : ""}
+                    ${corrections ? `<div class="notif-comment"><strong>Corrections required:</strong> ${corrections}</div>` : ""}
+                    <div class="notif-actions">
+                        <a class="mini-btn" href="library-violations.html">View &amp; appeal</a>
+                        ${markReadBtn}
+                    </div>
+                </article>
+            `;
+        }
+
+        if (type === "library_appeal_resolved") {
+            const outcome = escapeHtml(safeString(data.outcome, "resolved"));
+            const notes = escapeHtml(truncateText(data.notes, 400));
+            return `
+                <article class="notif-card${unread ? " unread" : ""}" role="listitem" data-notif-id="${escapeHtml(data.id)}">
+                    <div class="notif-top">
+                        <div>
+                            <div class="notif-kicker">Appeal resolved</div>
+                            <h3 class="notif-title">Decision: ${outcome}</h3>
+                            <div class="notif-meta">${escapeHtml(formatDate(data.createdAt))}</div>
+                        </div>
+                    </div>
+                    ${notes ? `<div class="notif-comment">${notes}</div>` : ""}
+                    <div class="notif-actions">
+                        <a class="mini-btn" href="library-violations.html">View details</a>
+                        ${markReadBtn}
+                    </div>
+                </article>
+            `;
+        }
+
+        const reader = escapeHtml(safeString(data.readerName, "Reader"));
+        const book = escapeHtml(safeString(data.bookTitle, "Story"));
+        const chapter = escapeHtml(safeString(data.chapterTitle, ""));
+        const quote = escapeHtml(truncateText(data.quote, 320));
+        const comment = escapeHtml(truncateText(data.comment, 900));
+        const bookId = safeString(data.bookId, "");
+        const betaUrl = bookId ? `beta-read.html?book=${encodeURIComponent(bookId)}` : "#";
+        return `
+            <article class="notif-card${unread ? " unread" : ""}" role="listitem" data-notif-id="${escapeHtml(data.id)}">
+                <div class="notif-top">
+                    <div>
+                        <div class="notif-kicker">Beta note shared</div>
+                        <h3 class="notif-title">${reader} · ${book}</h3>
+                        <div class="notif-meta">${chapter ? `${chapter} · ` : ""}${escapeHtml(formatDate(data.createdAt))}</div>
+                    </div>
+                </div>
+                ${quote ? `<div class="notif-quote">${quote}</div>` : ""}
+                ${comment ? `<div class="notif-comment">${comment}</div>` : ""}
+                <div class="notif-actions">
+                    <a class="mini-btn" href="${betaUrl}">Open beta workspace</a>
+                    ${markReadBtn}
+                </div>
+            </article>
+        `;
     }
 
     function scheduleDashboardRefresh() {
