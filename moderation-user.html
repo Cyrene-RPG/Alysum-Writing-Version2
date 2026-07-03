@@ -290,7 +290,7 @@
             <div class="mod-stats">
                 <div class="mod-stat"><div class="mod-stat-label">Books</div><div class="mod-stat-value">${counts.books || 0}</div></div>
                 <div class="mod-stat"><div class="mod-stat-label">Published</div><div class="mod-stat-value">${counts.published_books || 0}</div></div>
-                <div class="mod-stat"><div class="mod-stat-label">Words</div><div class="mod-stat-value">${Number(p.words || 0).toLocaleString()}</div></div>
+                <div class="mod-stat"><div class="mod-stat-label">Words (manuscripts)</div><div class="mod-stat-value">${Number(counts.book_words_total ?? p.words ?? 0).toLocaleString()}</div></div>
                 <div class="mod-stat"><div class="mod-stat-label">Streak</div><div class="mod-stat-value">${p.streak || 0}</div></div>
                 <div class="mod-stat"><div class="mod-stat-label">Comments</div><div class="mod-stat-value">${counts.comments || 0}</div></div>
                 <div class="mod-stat"><div class="mod-stat-label">Reports against</div><div class="mod-stat-value">${counts.reports_against || 0}</div></div>

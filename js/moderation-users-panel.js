@@ -118,7 +118,7 @@ export function initUsersPanel(opts) {
                 </td>
                 <td>${escapeHtml(u.account_type || "—")}</td>
                 <td>${u.published_count || 0} pub · ${u.book_count || 0} total</td>
-                <td>${Number(u.words || 0).toLocaleString()} words<br><span class="mod-queue-meta">streak ${u.streak || 0}</span></td>
+                <td>${Number(u.book_words_total ?? u.words ?? 0).toLocaleString()} words<br><span class="mod-queue-meta">streak ${u.streak || 0}</span></td>
                 <td>${renderFlags(u)}</td>
                 <td>${escapeHtml(formatDate(u.created_at))}</td>
                 <td>${escapeHtml(formatRelative(u.last_seen_at || u.last_sign_in_at || u.last_login))}</td>

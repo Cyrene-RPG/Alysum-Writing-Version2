@@ -93,6 +93,9 @@ BEGIN
       u.last_seen_at,
       u.created_at,
       u.updated_at,
+      COALESCE((
+        SELECT SUM(b.words)::bigint FROM public.books b WHERE b.user_id = u.id
+      ), 0) AS book_words_total,
       (u.last_seen_at >= now() - interval '5 minutes') AS is_online,
       (u.last_seen_at >= now() - interval '30 minutes') AS is_recent,
       COALESCE(u.last_seen_at, au.last_sign_in_at) AS sort_seen,
@@ -212,6 +215,10 @@ BEGIN
     'books', (SELECT COUNT(*) FROM public.books b WHERE b.user_id = p_user_id),
     'published_books', (SELECT COUNT(*) FROM public.books b WHERE b.user_id = p_user_id AND b.is_published),
     'draft_books', (SELECT COUNT(*) FROM public.books b WHERE b.user_id = p_user_id AND NOT b.is_published),
+    'book_words_total', (
+      SELECT COALESCE(SUM(b.words), 0)::bigint FROM public.books b WHERE b.user_id = p_user_id
+    ),
+    'profile_words', (SELECT words FROM public.users WHERE id = p_user_id),
     'comments', (SELECT COUNT(*) FROM public.comments c WHERE c.user_id = p_user_id),
     'likes_given', (SELECT COUNT(*) FROM public.likes l WHERE l.user_id = p_user_id),
     'likes_on_books', (
