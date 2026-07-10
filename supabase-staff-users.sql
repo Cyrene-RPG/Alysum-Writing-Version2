@@ -39,6 +39,12 @@ $$;
 -- 1. Search / list users
 -- ---------------------------------------------------------------------------
 
+-- Drop legacy overloads so PostgREST is not ambiguous (5-arg vs 6-arg).
+DROP FUNCTION IF EXISTS public.staff_search_users(text, integer, integer);
+DROP FUNCTION IF EXISTS public.staff_search_users(integer, integer, text);
+DROP FUNCTION IF EXISTS public.staff_search_users(integer, integer, text, boolean, boolean);
+DROP FUNCTION IF EXISTS public.staff_search_users(integer, integer, text, boolean, boolean, boolean);
+
 CREATE OR REPLACE FUNCTION public.staff_search_users(
   p_limit integer DEFAULT 50,
   p_offset integer DEFAULT 0,
