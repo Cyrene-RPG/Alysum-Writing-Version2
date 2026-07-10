@@ -1277,21 +1277,6 @@
         color: var(--gold);
     }
 
-    .settings-nav-staff {
-        color: #fde68a !important;
-        border-color: rgba(251, 191, 36, 0.35) !important;
-    }
-
-    .settings-nav-staff.is-active,
-    .settings-nav-staff[aria-selected="true"] {
-        background: rgba(251, 191, 36, 0.14) !important;
-        color: #fef3c7 !important;
-    }
-
-    #staffPanel .library-settings-grid {
-        max-width: 720px;
-    }
-
 </style>
 <link rel="stylesheet" href="css/gradient-themes.css?v=7" />
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
@@ -1312,7 +1297,6 @@
             <button type="button" role="tab" id="tab-appearance" data-section="appearancePanel" aria-controls="appearancePanel" aria-selected="true">Appearance</button>
             <button type="button" role="tab" id="tab-account" data-section="accountModePanel" aria-controls="accountModePanel" aria-selected="false">Account focus</button>
             <button type="button" role="tab" id="tab-profile" data-section="profilePanel" aria-controls="profilePanel" aria-selected="false">Profile</button>
-            <button type="button" role="tab" id="tab-staff" class="settings-nav-staff hidden" data-section="staffPanel" aria-controls="staffPanel" aria-selected="false">Support</button>
             <button type="button" role="tab" id="tab-library" data-section="libraryPanel" aria-controls="libraryPanel" aria-selected="false">Policy &amp; appeals</button>
             <button type="button" role="tab" id="tab-password" data-section="securityPanel" aria-controls="securityPanel" aria-selected="false">Password</button>
             <button type="button" role="tab" id="tab-backup" data-section="backupPanel" aria-controls="backupPanel" aria-selected="false">Backup</button>
@@ -1497,25 +1481,6 @@
                 <div class="msg" id="deleteAccountMsg" role="status"></div>
             </div>
         </section>
-        </div>
-    </div>
-
-    <div class="panel hidden settings-tab-panel" id="staffPanel" role="tabpanel" aria-labelledby="tab-staff" hidden>
-        <h2>Alysum Support</h2>
-        <p class="hint">Staff moderation tools — reports, user lookup, and enforcement.</p>
-        <div class="library-settings-grid">
-            <a class="library-settings-card is-staff" href="moderation-dashboard.html?view=inbox" id="modDashboardLink">
-                <span class="library-settings-icon" aria-hidden="true">🛡️</span>
-                <span class="library-settings-card-title">Moderation inbox</span>
-                <p class="library-settings-card-desc">Review reader reports, confirm violations, and manage book visibility.</p>
-                <span class="library-settings-card-cta">Open inbox →</span>
-            </a>
-            <a class="library-settings-card is-staff" href="moderation-dashboard.html?view=people" id="modUsersLink">
-                <span class="library-settings-icon" aria-hidden="true">👥</span>
-                <span class="library-settings-card-title">User browser</span>
-                <p class="library-settings-card-desc">Browse accounts, see who's online, and find users who need attention.</p>
-                <span class="library-settings-card-cta">Browse users →</span>
-            </a>
         </div>
     </div>
 
@@ -1759,7 +1724,7 @@
     let settingsSessionUser = null;
     let selectedRestoreFile = null;
 
-    const TAB_PANEL_IDS = ["appearancePanel", "accountModePanel", "profilePanel", "staffPanel", "libraryPanel", "securityPanel", "backupPanel"];
+    const TAB_PANEL_IDS = ["appearancePanel", "accountModePanel", "profilePanel", "libraryPanel", "securityPanel", "backupPanel"];
     const PASSWORD_BLOCKED_OAUTH = new Set(["google", "discord"]);
 
     /** Only Google- or Discord-only sign-in cannot change password here (uses linked identities). */
@@ -2099,12 +2064,6 @@
             });
         }
         refreshBackupStatusUi();
-        void import("./js/moderation-access.js").then(({ isModerationStaffReliable }) => {
-            return isModerationStaffReliable();
-        }).then((staff) => {
-            const staffTab = document.getElementById("tab-staff");
-            if (staffTab && staff) staffTab.classList.remove("hidden");
-        });
     }
 
     function refreshBackupStatusUi() {
