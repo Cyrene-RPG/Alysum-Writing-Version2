@@ -1277,6 +1277,21 @@
         color: var(--gold);
     }
 
+    .settings-nav-staff {
+        color: #fde68a !important;
+        border-color: rgba(251, 191, 36, 0.35) !important;
+    }
+
+    .settings-nav-staff.is-active,
+    .settings-nav-staff[aria-selected="true"] {
+        background: rgba(251, 191, 36, 0.14) !important;
+        color: #fef3c7 !important;
+    }
+
+    #staffPanel .library-settings-grid {
+        max-width: 720px;
+    }
+
 </style>
 <link rel="stylesheet" href="css/gradient-themes.css?v=7" />
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
@@ -1297,6 +1312,7 @@
             <button type="button" role="tab" id="tab-appearance" data-section="appearancePanel" aria-controls="appearancePanel" aria-selected="true">Appearance</button>
             <button type="button" role="tab" id="tab-account" data-section="accountModePanel" aria-controls="accountModePanel" aria-selected="false">Account focus</button>
             <button type="button" role="tab" id="tab-profile" data-section="profilePanel" aria-controls="profilePanel" aria-selected="false">Profile</button>
+            <button type="button" role="tab" id="tab-staff" class="settings-nav-staff hidden" data-section="staffPanel" aria-controls="staffPanel" aria-selected="false">Support</button>
             <button type="button" role="tab" id="tab-library" data-section="libraryPanel" aria-controls="libraryPanel" aria-selected="false">Policy &amp; appeals</button>
             <button type="button" role="tab" id="tab-password" data-section="securityPanel" aria-controls="securityPanel" aria-selected="false">Password</button>
             <button type="button" role="tab" id="tab-backup" data-section="backupPanel" aria-controls="backupPanel" aria-selected="false">Backup</button>
@@ -1484,9 +1500,28 @@
         </div>
     </div>
 
+    <div class="panel hidden settings-tab-panel" id="staffPanel" role="tabpanel" aria-labelledby="tab-staff" hidden>
+        <h2>Alysum Support</h2>
+        <p class="hint">Staff moderation tools — reports, user lookup, and enforcement.</p>
+        <div class="library-settings-grid">
+            <a class="library-settings-card is-staff" href="moderation-dashboard.html?view=inbox" id="modDashboardLink">
+                <span class="library-settings-icon" aria-hidden="true">🛡️</span>
+                <span class="library-settings-card-title">Moderation inbox</span>
+                <p class="library-settings-card-desc">Review reader reports, confirm violations, and manage book visibility.</p>
+                <span class="library-settings-card-cta">Open inbox →</span>
+            </a>
+            <a class="library-settings-card is-staff" href="moderation-dashboard.html?view=people" id="modUsersLink">
+                <span class="library-settings-icon" aria-hidden="true">👥</span>
+                <span class="library-settings-card-title">User browser</span>
+                <p class="library-settings-card-desc">Browse accounts, see who's online, and find users who need attention.</p>
+                <span class="library-settings-card-cta">Browse users →</span>
+            </a>
+        </div>
+    </div>
+
     <div class="panel hidden settings-tab-panel" id="libraryPanel" role="tabpanel" aria-labelledby="tab-library" hidden>
         <h2>Policy &amp; appeals</h2>
-        <p class="hint">Policy notices on your published work, appeals, and — for Alysum Support — moderation tools.</p>
+        <p class="hint">Policy notices on your published work and how to appeal a decision.</p>
 
         <div class="library-panel-body">
             <section class="profile-box" aria-labelledby="libraryAuthorTitle">
@@ -1506,25 +1541,6 @@
                         <span class="library-settings-card-title">Browse the library</span>
                         <p class="library-settings-card-desc">Read published stories and report content that violates Alysum guidelines.</p>
                         <span class="library-settings-card-cta">Open library →</span>
-                    </a>
-                </div>
-            </section>
-
-            <section class="profile-box library-staff-box hidden" id="libraryStaffSection" aria-labelledby="libraryStaffTitle">
-                <h3 class="profile-box-title" id="libraryStaffTitle">Staff tools</h3>
-                <p class="hint" style="margin: 0 0 16px">Reports, user lookup, live usage, and enforcement for Alysum Support.</p>
-                <div class="library-settings-grid">
-                    <a class="library-settings-card is-staff" href="moderation-dashboard.html?view=inbox" id="modDashboardLink">
-                        <span class="library-settings-icon" aria-hidden="true">🛡️</span>
-                        <span class="library-settings-card-title">Moderation inbox</span>
-                        <p class="library-settings-card-desc">Review reader reports, confirm violations, and manage book visibility.</p>
-                        <span class="library-settings-card-cta">Open inbox →</span>
-                    </a>
-                    <a class="library-settings-card is-staff" href="moderation-dashboard.html?view=people" id="modUsersLink">
-                        <span class="library-settings-icon" aria-hidden="true">👥</span>
-                        <span class="library-settings-card-title">User browser</span>
-                        <p class="library-settings-card-desc">Browse accounts, see who's online, and find users who need attention.</p>
-                        <span class="library-settings-card-cta">Browse users →</span>
                     </a>
                 </div>
             </section>
@@ -1743,7 +1759,7 @@
     let settingsSessionUser = null;
     let selectedRestoreFile = null;
 
-    const TAB_PANEL_IDS = ["appearancePanel", "accountModePanel", "profilePanel", "libraryPanel", "securityPanel", "backupPanel"];
+    const TAB_PANEL_IDS = ["appearancePanel", "accountModePanel", "profilePanel", "staffPanel", "libraryPanel", "securityPanel", "backupPanel"];
     const PASSWORD_BLOCKED_OAUTH = new Set(["google", "discord"]);
 
     /** Only Google- or Discord-only sign-in cannot change password here (uses linked identities). */
@@ -2086,8 +2102,8 @@
         void import("./js/moderation-access.js").then(({ isModerationStaffReliable }) => {
             return isModerationStaffReliable();
         }).then((staff) => {
-            const staffSection = document.getElementById("libraryStaffSection");
-            if (staffSection && staff) staffSection.classList.remove("hidden");
+            const staffTab = document.getElementById("tab-staff");
+            if (staffTab && staff) staffTab.classList.remove("hidden");
         });
     }
 
