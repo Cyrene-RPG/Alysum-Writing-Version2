@@ -91,13 +91,28 @@ export function initUsersPanel(opts) {
     }
 
     async function pickUser(userId) {
+        if (!userId) return;
         selectedUserId = userId;
         onUserSelect?.(userId);
         modUserList?.querySelectorAll("[data-pick-user]").forEach((btn) => {
             btn.classList.toggle("is-selected", btn.dataset.pickUser === userId);
         });
         if (!modUserDetailPane) return;
-        await mountUserDetail(userId, modUserDetailPane, { showStatus });
+        try {
+            await mountUserDetail(userId, modUserDetailPane, { showStatus });
+        } catch {
+            /* mountUserDetail shows inline error */
+        }
+    }
+
+    function showPickUserHint() {
+        if (!modUserDetailPane) return;
+        modUserDetailPane.innerHTML = `
+            <div class="mod-detail-empty mod-pick-user-hint">
+                <h2>Select a user</h2>
+                <p>Pick someone from the list to see account standing, pending reports, appeals, violations, and books.</p>
+            </div>
+        `;
     }
 
     function updatePagination() {
@@ -121,16 +136,24 @@ export function initUsersPanel(opts) {
 
     async function loadUsers() {
         if (modUserList) modUserList.innerHTML = '<p class="mod-detail-empty">Loading…</p>';
-        const onlineOnly = filter === "online";
-        const activeToday = filter === "today";
-        const needsAttention = filter === "attention";
-        const result = await staffSearchUsers(query, PAGE_SIZE, offset, { onlineOnly, activeToday, needsAttention });
-        total = Number(result.total || 0);
-        renderUserList(result.users || []);
-        updatePagination();
+        try {
+            const onlineOnly = filter === "online";
+            const activeToday = filter === "today";
+            const needsAttention = filter === "attention";
+            const result = await staffSearchUsers(query, PAGE_SIZE, offset, { onlineOnly, activeToday, needsAttention });
+            total = Number(result.total || 0);
+            renderUserList(result.users || []);
+            updatePagination();
+        } catch (err) {
+            if (modUserList) {
+                modUserList.innerHTML = `<p class="mod-detail-empty mod-load-error">Could not load users: ${escapeHtml(err.message || String(err))}</p>`;
+            }
+            throw err;
+        }
     }
 
-    async function loadAll() {
+    async function loadAll(options = {}) {
+        const { remountUser = false } = options;
         const [stats, online] = await Promise.all([
             staffUsersOverviewStats(),
             staffListOnlineUsers(16),
@@ -138,8 +161,8 @@ export function initUsersPanel(opts) {
         ]);
         setSidebarBadges(stats);
         renderOnlineNow(online);
-        if (selectedUserId && modUserDetailPane) {
-            await mountUserDetail(selectedUserId, modUserDetailPane, { showStatus });
+        if (remountUser && selectedUserId && modUserDetailPane) {
+            await pickUser(selectedUserId);
         }
         return stats;
     }
@@ -176,7 +199,7 @@ export function initUsersPanel(opts) {
     });
 
     document.getElementById("modRefreshUsersBtn")?.addEventListener("click", () => {
-        loadAll().catch((e) => showStatus(e.message, "error"));
+        loadAll({ remountUser: !!selectedUserId }).catch((e) => showStatus(e.message, "error"));
     });
 
     document.querySelectorAll("[data-user-filter]").forEach((btn) => {
@@ -191,7 +214,11 @@ export function initUsersPanel(opts) {
         modSearch.value = params.get("q");
         query = modSearch.value.trim();
     }
-    if (params.get("user")) selectedUserId = params.get("user");
+    if (params.get("user")) {
+        selectedUserId = params.get("user");
+    } else {
+        showPickUserHint();
+    }
 
-    return { loadAll, pickUser, setFilter };
+    return { loadAll, pickUser, setFilter, showPickUserHint };
 }

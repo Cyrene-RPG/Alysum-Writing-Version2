@@ -342,7 +342,7 @@ function renderUserHtml(userId, detail, books, safety, engagement) {
                         <p>Last sign-in: ${escapeHtml(formatDate(auth.last_sign_in_at))}</p>
                         <p>Last seen: ${escapeHtml(formatDate(p.last_seen_at))}</p>
                         <p>Daily word goal: ${Number(p.daily_word_goal || 0).toLocaleString()}</p>
-                        <p>Providers: ${escapeHtml((auth.providers || []).join(", ") || "—")}</p>
+                        <p>Providers: ${escapeHtml((Array.isArray(auth.providers) ? auth.providers : []).join(", ") || "—")}</p>
                         ${detail.reporter_score ? `<p>Reporter weight: <strong>${detail.reporter_score.weight}</strong></p>` : ""}
                     </div>
                 </section>
@@ -400,26 +400,67 @@ function wireAppealActions(root, showStatus, reload) {
  * @param {HTMLElement} container
  * @param {{ showStatus: (msg: string, type?: string) => void }} opts
  */
+let userDetailLoadGen = 0;
+
+function asArray(value) {
+    return Array.isArray(value) ? value : [];
+}
+
 export async function mountUserDetail(userId, container, opts) {
     const { showStatus } = opts;
+    const loadGen = ++userDetailLoadGen;
     container.innerHTML = '<p class="mod-detail-empty">Loading user…</p>';
 
-    async function load() {
-        const [detail, books, safety, engagement] = await Promise.all([
+    try {
+        const [detail, booksRaw, safetyRaw, engagementRaw] = await Promise.all([
             staffGetUserDetail(userId),
             staffListUserBooks(userId),
             staffGetUserSafety(userId),
             staffGetUserEngagement(userId),
         ]);
+
+        if (loadGen !== userDetailLoadGen) return null;
+
+        const books = asArray(booksRaw);
+        const safety = safetyRaw && typeof safetyRaw === "object" ? safetyRaw : {};
+        safety.strikes = asArray(safety.strikes);
+        safety.violations = asArray(safety.violations);
+        safety.reports_as_author = asArray(safety.reports_as_author);
+        safety.reports_as_reporter = asArray(safety.reports_as_reporter);
+        safety.appeals = asArray(safety.appeals);
+        safety.audit_log = asArray(safety.audit_log);
+
+        const engagement = engagementRaw && typeof engagementRaw === "object" ? engagementRaw : {};
+        engagement.recent_comments = asArray(engagement.recent_comments);
+        engagement.beta_shares = asArray(engagement.beta_shares);
+        engagement.blocks_made = asArray(engagement.blocks_made);
+        engagement.blocks_received = asArray(engagement.blocks_received);
+        engagement.beta_message_reports = asArray(engagement.beta_message_reports);
+
         container.innerHTML = renderUserHtml(userId, detail, books, safety, engagement);
         const root = container.querySelector(".mod-user-detail");
-        wireUserTabs(root);
-        wireBookActions(root, userId, showStatus, load);
-        wireAppealActions(root, showStatus, load);
-        return { detail, books, safety, engagement };
-    }
+        if (!root) {
+            throw new Error("Could not render user detail.");
+        }
 
-    return load();
+        async function reload() {
+            return mountUserDetail(userId, container, opts);
+        }
+
+        wireUserTabs(root);
+        wireBookActions(root, userId, showStatus, reload);
+        wireAppealActions(root, showStatus, reload);
+        return { detail, books, safety, engagement };
+    } catch (err) {
+        if (loadGen !== userDetailLoadGen) return null;
+        const msg = err?.message || String(err);
+        container.innerHTML = `<div class="mod-detail-empty mod-load-error"><h2>Could not load user</h2><p>${escapeHtml(msg)}</p><button type="button" class="mod-btn" data-retry-user>Retry</button></div>`;
+        container.querySelector("[data-retry-user]")?.addEventListener("click", () => {
+            void mountUserDetail(userId, container, opts);
+        });
+        showStatus(msg, "error");
+        throw err;
+    }
 }
 
 export function listUserStandingLabel(user) {

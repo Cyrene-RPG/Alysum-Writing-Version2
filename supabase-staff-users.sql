@@ -425,16 +425,24 @@ BEGIN
       WHERE v.author_id = p_user_id
     ), '[]'::jsonb),
     'reports_as_author', COALESCE((
-      SELECT jsonb_agg(to_jsonb(r) ORDER BY r.created_at DESC)
-      FROM public.library_reports r
-      WHERE r.author_id = p_user_id
-      LIMIT 50
+      SELECT jsonb_agg(row_to_json(t)::jsonb ORDER BY t.created_at DESC)
+      FROM (
+        SELECT r.*
+        FROM public.library_reports r
+        WHERE r.author_id = p_user_id
+        ORDER BY r.created_at DESC
+        LIMIT 50
+      ) t
     ), '[]'::jsonb),
     'reports_as_reporter', COALESCE((
-      SELECT jsonb_agg(to_jsonb(r) ORDER BY r.created_at DESC)
-      FROM public.library_reports r
-      WHERE r.reporter_id = p_user_id
-      LIMIT 50
+      SELECT jsonb_agg(row_to_json(t)::jsonb ORDER BY t.created_at DESC)
+      FROM (
+        SELECT r.*
+        FROM public.library_reports r
+        WHERE r.reporter_id = p_user_id
+        ORDER BY r.created_at DESC
+        LIMIT 50
+      ) t
     ), '[]'::jsonb),
     'appeals', COALESCE((
       SELECT jsonb_agg(to_jsonb(a) ORDER BY a.created_at DESC)

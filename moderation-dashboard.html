@@ -6,7 +6,7 @@
     <title>Moderation — Alysum</title>
     <link rel="stylesheet" href="css/site-responsive.css?v=1">
     <link rel="stylesheet" href="css/gradient-themes.css?v=5">
-    <link rel="stylesheet" href="css/library-reports.css?v=5">
+    <link rel="stylesheet" href="css/library-reports.css?v=6">
     <script src="js/gradient-theme-sync.js" defer></script>
     <script src="js/alysum-appearance-boot.js"></script>
 </head>
@@ -222,12 +222,18 @@
         reportsApi = initReportsPanel({ showStatus });
         usersApi = initUsersPanel({ showStatus, onUserSelect, getSelectedUserId: () => new URLSearchParams(window.location.search).get("user") });
         showView(initialView);
+        if (initialView === "people") {
+            document.querySelector('[data-mod-view="people"]')?.classList.add("is-active");
+            document.querySelector('[data-mod-view="inbox"]')?.classList.remove("is-active");
+        }
 
         try {
             await refreshSidebarStats();
             if (initialView === "people") {
                 await usersApi.loadAll();
-                if (params.get("user")) await usersApi.pickUser(params.get("user"));
+                if (params.get("user")) {
+                    await usersApi.pickUser(params.get("user"));
+                }
             } else {
                 await reportsApi.loadAll();
             }
@@ -238,7 +244,9 @@
         window.setInterval(() => {
             if (document.visibilityState !== "visible") return;
             refreshSidebarStats().catch(() => {});
-            if (activeView === "people") usersApi.loadAll().catch(() => {});
+            if (activeView === "people") {
+                usersApi.loadAll({ remountUser: false }).catch(() => {});
+            }
         }, 90_000);
     }
 </script>
