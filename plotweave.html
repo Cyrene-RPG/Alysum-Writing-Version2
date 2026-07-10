@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- ALYSUM:PWA:START -->
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta name="theme-color" content="#7c3aed" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#020b18" media="(prefers-color-scheme: dark)">
+    <meta name="color-scheme" content="dark light">
+    <meta name="application-name" content="Alysum">
+    <meta name="msapplication-TileColor" content="#7c3aed">
+    <meta name="msapplication-TileImage" content="Alysum-3.png">
+    <link rel="icon" type="image/png" sizes="any" href="Alysum-3.png">
+    <link rel="apple-touch-icon" href="Alysum-3.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="Alysum-3.png">
+    <script src="js/pwa-register.js" defer></script>
+    <!-- ALYSUM:PWA:END -->
+    <!-- ALYSUM:ANALYTICS:START -->
+    <script type="module" src="js/vercel-analytics.js"></script>
+    <!-- ALYSUM:ANALYTICS:END -->
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Plotweave — Alysum</title>
+    <script src="js/alysum-appearance-boot.js"></script>
+    <link rel="stylesheet" href="css/site-responsive.css?v=1" />
+    <link rel="stylesheet" href="css/gradient-themes.css?v=6" />
+    <link rel="stylesheet" href="css/plotweave.css?v=5" />
+    <script src="js/gradient-theme-sync.js" defer></script>
+</head>
+<body>
+    <div class="fm-app" id="fmApp">
+        <header class="fm-toolbar" role="toolbar" aria-label="Plotweave tools">
+            <div class="fm-toolbar-left">
+                <a class="fm-brand" href="writer-dashboard.html" title="Back to Studio">
+                    <img src="Alysum-3.png" alt="" />
+                    <span>Plotweave</span>
+                </a>
+                <span class="fm-sep" aria-hidden="true"></span>
+                <input
+                    class="fm-title-input"
+                    id="fmTitle"
+                    type="text"
+                    maxlength="80"
+                    aria-label="Map title"
+                    placeholder="Untitled map"
+                />
+                <span class="fm-status" id="fmStatus">Ready</span>
+            </div>
+
+            <div class="fm-toolbar-center">
+                <button type="button" class="fm-btn is-active" id="fmBtnSelect" title="Select (V)">Select</button>
+                <button type="button" class="fm-btn" id="fmBtnPan" title="Pan (H) · hold Space">Pan</button>
+                <button type="button" class="fm-btn" id="fmBtnConnect" title="Connect (C)">Connect</button>
+                <span class="fm-sep" aria-hidden="true"></span>
+                <button type="button" class="fm-btn" id="fmBtnUndo" title="Undo (Ctrl+Z)" disabled>Undo</button>
+                <button type="button" class="fm-btn" id="fmBtnRedo" title="Redo (Ctrl+Y)" disabled>Redo</button>
+            </div>
+
+            <div class="fm-toolbar-right">
+                <button type="button" class="fm-btn" id="fmBtnNew" title="New map">New</button>
+                <button type="button" class="fm-btn" id="fmBtnDuplicate" title="Duplicate map">Duplicate</button>
+                <button type="button" class="fm-btn fm-btn-primary" id="fmBtnSave" title="Save (Ctrl+S)">Save</button>
+                <a class="fm-btn fm-btn-ghost" href="writer-dashboard.html">Studio</a>
+            </div>
+        </header>
+
+        <div class="fm-workspace" id="fmWorkspace">
+            <aside class="fm-side" aria-label="Maps and shapes">
+                <div class="fm-side-head">
+                    <h2>Library</h2>
+                </div>
+                <div class="fm-side-body">
+                    <div class="fm-side-section">
+                        <h3>Your maps</h3>
+                        <div class="fm-diagram-list" id="fmDiagramList"></div>
+                        <button type="button" class="fm-btn fm-danger-btn" id="fmBtnDeleteMap" style="margin-top:8px">Delete map</button>
+                    </div>
+                    <div class="fm-side-section">
+                        <h3>Shapes</h3>
+                        <div class="fm-palette" id="fmPalette">
+                            <button type="button" class="fm-palette-item" data-type="start" title="Start / terminator">
+                                <svg class="fm-palette-glyph" viewBox="0 0 44 28" aria-hidden="true">
+                                    <rect x="2" y="4" width="40" height="20" rx="10" fill="#14532d" stroke="#4ade80" stroke-width="2"/>
+                                </svg>
+                                Start
+                            </button>
+                            <button type="button" class="fm-palette-item" data-type="process" title="Process / scene">
+                                <svg class="fm-palette-glyph" viewBox="0 0 44 28" aria-hidden="true">
+                                    <rect x="2" y="4" width="40" height="20" rx="4" fill="#1e1b4b" stroke="#a78bfa" stroke-width="2"/>
+                                </svg>
+                                Process
+                            </button>
+                            <button type="button" class="fm-palette-item" data-type="box" title="Generic box">
+                                <svg class="fm-palette-glyph" viewBox="0 0 44 28" aria-hidden="true">
+                                    <rect x="2" y="4" width="40" height="20" fill="#1e293b" stroke="#cbd5e1" stroke-width="2"/>
+                                </svg>
+                                Box
+                            </button>
+                            <button type="button" class="fm-palette-item" data-type="decision" title="Decision">
+                                <svg class="fm-palette-glyph" viewBox="0 0 44 28" aria-hidden="true">
+                                    <path d="M22 2 L42 14 L22 26 L2 14 Z" fill="#422006" stroke="#fbbf24" stroke-width="2"/>
+                                </svg>
+                                Decision
+                            </button>
+                            <button type="button" class="fm-palette-item" data-type="data" title="Data / beat">
+                                <svg class="fm-palette-glyph" viewBox="0 0 44 28" aria-hidden="true">
+                                    <path d="M8 4 H42 L36 24 H2 Z" fill="#0c4a6e" stroke="#38bdf8" stroke-width="2"/>
+                                </svg>
+                                Data
+                            </button>
+                            <button type="button" class="fm-palette-item" data-type="note" title="Note">
+                                <svg class="fm-palette-glyph" viewBox="0 0 44 28" aria-hidden="true">
+                                    <path d="M4 2 H32 L40 10 V26 H4 Z" fill="#1e293b" stroke="#94a3b8" stroke-width="2"/>
+                                </svg>
+                                Note
+                            </button>
+                            <button type="button" class="fm-palette-item" data-type="end" title="End">
+                                <svg class="fm-palette-glyph" viewBox="0 0 44 28" aria-hidden="true">
+                                    <rect x="2" y="4" width="40" height="20" rx="10" fill="#4c0519" stroke="#fb7185" stroke-width="2"/>
+                                </svg>
+                                End
+                            </button>
+                        </div>
+                        <p class="fm-hint" style="margin-top:10px">Click a shape, then click the canvas to place it. Drag ports (dots) to connect — select a line to label it Yes / No.</p>
+                    </div>
+                </div>
+            </aside>
+
+            <div class="fm-stage-wrap">
+                <div class="fm-empty" id="fmEmpty">
+                    <div class="fm-empty-card">
+                        <h3>Weave your story flow</h3>
+                        <p>Pick a shape from the library, place it on the canvas, then connect beats like a process map — for plots, quests, or world systems.</p>
+                    </div>
+                </div>
+                <svg class="fm-stage" id="fmStage" tabindex="0" role="img" aria-label="Plotweave canvas">
+                    <defs>
+                        <pattern id="fmGrid" width="24" height="24" patternUnits="userSpaceOnUse">
+                            <path d="M 24 0 L 0 0 0 24" fill="none" stroke="rgba(255,255,255,0.045)" stroke-width="1"/>
+                        </pattern>
+                        <marker id="fmArrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+                            <path d="M0,0 L8,3 L0,6 Z" fill="rgba(196,181,253,0.85)"/>
+                        </marker>
+                    </defs>
+                    <rect width="100%" height="100%" fill="url(#fmGrid)" pointer-events="none"/>
+                    <g class="fm-world">
+                        <g class="fm-edges"></g>
+                        <g class="fm-nodes"></g>
+                        <g class="fm-overlay"></g>
+                    </g>
+                </svg>
+                <div class="fm-viewbar" aria-label="View controls">
+                    <button type="button" class="fm-btn" id="fmBtnZoomOut" title="Zoom out">−</button>
+                    <span class="fm-zoom-label" id="fmZoomLabel">100%</span>
+                    <button type="button" class="fm-btn" id="fmBtnZoomIn" title="Zoom in">+</button>
+                    <button type="button" class="fm-btn" id="fmBtnFit" title="Fit to view">Fit</button>
+                </div>
+            </div>
+
+            <aside class="fm-side fm-side-right" aria-label="Properties">
+                <div class="fm-side-head">
+                    <h2>Properties</h2>
+                </div>
+                <div class="fm-side-body fm-props-panel">
+                    <div id="fmPropsBody">
+                        <p class="fm-props-empty">Select a shape or connector to edit its properties.</p>
+                    </div>
+                    <div class="fm-shortcuts">
+                        <p class="fm-hint">
+                            <strong style="color:#c4b5fd">Shortcuts</strong><br />
+                            V select · H pan · C connect · Space pan<br />
+                            Scroll zoom · Right-drag pan · Del delete<br />
+                            Ctrl+Z / Ctrl+Y undo · Ctrl+S save
+                        </p>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <script type="module">
+        import { supabase } from "./firebase.js";
+        import { requireStudioSession } from "./js/studio-session.js?v=1";
+        import { createPlotweave } from "./js/plotweave.js?v=3";
+
+        const session = await requireStudioSession(supabase, "plotweave.html");
+        if (!session) {
+            // requireStudioSession redirects when unauthenticated
+        }
+
+        const statusEl = document.getElementById("fmStatus");
+
+        createPlotweave({
+            stage: document.getElementById("fmStage"),
+            empty: document.getElementById("fmEmpty"),
+            titleInput: document.getElementById("fmTitle"),
+            diagramList: document.getElementById("fmDiagramList"),
+            propsBody: document.getElementById("fmPropsBody"),
+            palette: document.getElementById("fmPalette"),
+            zoomLabel: document.getElementById("fmZoomLabel"),
+            btnUndo: document.getElementById("fmBtnUndo"),
+            btnRedo: document.getElementById("fmBtnRedo"),
+            btnSave: document.getElementById("fmBtnSave"),
+            btnSelect: document.getElementById("fmBtnSelect"),
+            btnPan: document.getElementById("fmBtnPan"),
+            btnConnect: document.getElementById("fmBtnConnect"),
+            btnZoomIn: document.getElementById("fmBtnZoomIn"),
+            btnZoomOut: document.getElementById("fmBtnZoomOut"),
+            btnFit: document.getElementById("fmBtnFit"),
+            btnNew: document.getElementById("fmBtnNew"),
+            btnDuplicate: document.getElementById("fmBtnDuplicate"),
+            btnDeleteMap: document.getElementById("fmBtnDeleteMap"),
+            setStatus(text, kind) {
+                statusEl.textContent = text;
+                statusEl.classList.toggle("is-saved", kind === "saved");
+                statusEl.classList.toggle("is-dirty", kind === "dirty");
+            },
+        });
+    </script>
+</body>
+</html>
