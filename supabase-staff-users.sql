@@ -44,7 +44,8 @@ CREATE OR REPLACE FUNCTION public.staff_search_users(
   p_offset integer DEFAULT 0,
   p_query text DEFAULT '',
   p_online_only boolean DEFAULT false,
-  p_active_today boolean DEFAULT false
+  p_active_today boolean DEFAULT false,
+  p_needs_attention boolean DEFAULT false
 )
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -68,6 +69,7 @@ BEGIN
 
   SELECT COUNT(*) INTO v_total
   FROM public.users u
+  LEFT JOIN public.author_moderation_status ams ON ams.user_id = u.id
   WHERE
     (v_query = ''
       OR u.id::text = v_query
@@ -75,9 +77,31 @@ BEGIN
       OR lower(u.display_name) LIKE '%' || lower(v_query) || '%'
       OR lower(COALESCE(u.email, '')) LIKE '%' || lower(v_query) || '%')
     AND (NOT p_online_only OR u.last_seen_at >= now() - interval '5 minutes')
-    AND (NOT p_active_today OR u.last_seen_at >= now() - interval '24 hours');
+    AND (NOT p_active_today OR u.last_seen_at >= now() - interval '24 hours')
+    AND (NOT p_needs_attention OR (
+      COALESCE(ams.account_suspended, false)
+      OR COALESCE(ams.account_terminated, false)
+      OR COALESCE(ams.publishing_revoked, false)
+      OR EXISTS (
+        SELECT 1 FROM public.moderation_strikes ms
+        WHERE ms.user_id = u.id AND ms.expires_at > now()
+      )
+      OR EXISTS (
+        SELECT 1 FROM public.library_reports r
+        WHERE r.author_id = u.id AND r.status IN ('pending', 'reviewing')
+      )
+      OR EXISTS (
+        SELECT 1 FROM public.moderation_violations v
+        WHERE v.author_id = u.id AND v.status IN ('open', 'deadline_missed', 'appealed')
+      )
+      OR EXISTS (
+        SELECT 1 FROM public.moderation_appeals a
+        JOIN public.moderation_violations v ON v.id = a.violation_id
+        WHERE v.author_id = u.id AND a.status IN ('pending', 'reviewing')
+      )
+    ));
 
-  SELECT COALESCE(jsonb_agg(row_to_json(t)::jsonb ORDER BY t.sort_seen DESC NULLS LAST, t.created_at DESC), '[]'::jsonb)
+  SELECT COALESCE(jsonb_agg(row_to_json(t)::jsonb ORDER BY t.attention_score DESC, t.sort_seen DESC NULLS LAST), '[]'::jsonb)
   INTO v_users
   FROM (
     SELECT
@@ -106,10 +130,40 @@ BEGIN
         FROM public.moderation_strikes ms
         WHERE ms.user_id = u.id AND ms.expires_at > now()
       ) AS active_strikes,
+      (
+        SELECT COUNT(*)::integer
+        FROM public.library_reports r
+        WHERE r.author_id = u.id AND r.status IN ('pending', 'reviewing')
+      ) AS pending_reports,
+      (
+        SELECT COUNT(*)::integer
+        FROM public.moderation_violations v
+        WHERE v.author_id = u.id AND v.status IN ('open', 'deadline_missed', 'appealed')
+      ) AS open_violations,
+      (
+        SELECT COUNT(*)::integer
+        FROM public.moderation_appeals a
+        JOIN public.moderation_violations v ON v.id = a.violation_id
+        WHERE v.author_id = u.id AND a.status IN ('pending', 'reviewing')
+      ) AS pending_appeals,
       COALESCE(ams.publishing_revoked, false) AS publishing_revoked,
       COALESCE(ams.account_suspended, false) AS account_suspended,
       COALESCE(ams.account_terminated, false) AS account_terminated,
-      au.last_sign_in_at
+      ams.publishing_suspended_until,
+      au.last_sign_in_at,
+      (
+        (CASE WHEN COALESCE(ams.account_terminated, false) THEN 100 ELSE 0 END)
+        + (CASE WHEN COALESCE(ams.account_suspended, false) THEN 80 ELSE 0 END)
+        + (SELECT COUNT(*)::integer * 10 FROM public.library_reports r
+           WHERE r.author_id = u.id AND r.status IN ('pending', 'reviewing'))
+        + (SELECT COUNT(*)::integer * 15 FROM public.moderation_appeals a
+           JOIN public.moderation_violations v ON v.id = a.violation_id
+           WHERE v.author_id = u.id AND a.status IN ('pending', 'reviewing'))
+        + (SELECT COUNT(*)::integer * 8 FROM public.moderation_violations v
+           WHERE v.author_id = u.id AND v.status IN ('open', 'deadline_missed'))
+        + (SELECT COUNT(*)::integer * 5 FROM public.moderation_strikes ms
+           WHERE ms.user_id = u.id AND ms.expires_at > now())
+      ) AS attention_score
     FROM public.users u
     LEFT JOIN auth.users au ON au.id = u.id
     LEFT JOIN public.author_moderation_status ams ON ams.user_id = u.id
@@ -121,7 +175,29 @@ BEGIN
         OR lower(COALESCE(u.email, '')) LIKE '%' || lower(v_query) || '%')
       AND (NOT p_online_only OR u.last_seen_at >= now() - interval '5 minutes')
       AND (NOT p_active_today OR u.last_seen_at >= now() - interval '24 hours')
-    ORDER BY sort_seen DESC NULLS LAST, u.created_at DESC
+      AND (NOT p_needs_attention OR (
+        COALESCE(ams.account_suspended, false)
+        OR COALESCE(ams.account_terminated, false)
+        OR COALESCE(ams.publishing_revoked, false)
+        OR EXISTS (
+          SELECT 1 FROM public.moderation_strikes ms
+          WHERE ms.user_id = u.id AND ms.expires_at > now()
+        )
+        OR EXISTS (
+          SELECT 1 FROM public.library_reports r
+          WHERE r.author_id = u.id AND r.status IN ('pending', 'reviewing')
+        )
+        OR EXISTS (
+          SELECT 1 FROM public.moderation_violations v
+          WHERE v.author_id = u.id AND v.status IN ('open', 'deadline_missed', 'appealed')
+        )
+        OR EXISTS (
+          SELECT 1 FROM public.moderation_appeals a
+          JOIN public.moderation_violations v ON v.id = a.violation_id
+          WHERE v.author_id = u.id AND a.status IN ('pending', 'reviewing')
+        )
+      ))
+    ORDER BY attention_score DESC, sort_seen DESC NULLS LAST, u.created_at DESC
     LIMIT v_limit
     OFFSET v_offset
   ) t;
@@ -237,7 +313,16 @@ BEGIN
     'reports_filed', (SELECT COUNT(*) FROM public.library_reports r WHERE r.reporter_id = p_user_id),
     'open_violations', (
       SELECT COUNT(*) FROM public.moderation_violations v
-      WHERE v.author_id = p_user_id AND v.status = 'open'
+      WHERE v.author_id = p_user_id AND v.status IN ('open', 'deadline_missed', 'appealed')
+    ),
+    'pending_reports', (
+      SELECT COUNT(*) FROM public.library_reports r
+      WHERE r.author_id = p_user_id AND r.status IN ('pending', 'reviewing')
+    ),
+    'pending_appeals', (
+      SELECT COUNT(*) FROM public.moderation_appeals a
+      JOIN public.moderation_violations v ON v.id = a.violation_id
+      WHERE v.author_id = p_user_id AND a.status IN ('pending', 'reviewing')
     ),
     'active_strikes', (
       SELECT COUNT(*) FROM public.moderation_strikes ms
@@ -499,7 +584,32 @@ BEGIN
       WHERE account_suspended OR account_terminated
     ),
     'totalBooks', (SELECT COUNT(*) FROM public.books),
-    'publishedBooks', (SELECT COUNT(*) FROM public.books WHERE is_published)
+    'publishedBooks', (SELECT COUNT(*) FROM public.books WHERE is_published),
+    'usersNeedingAttention', (
+      SELECT COUNT(DISTINCT u.id)
+      FROM public.users u
+      LEFT JOIN public.author_moderation_status ams ON ams.user_id = u.id
+      WHERE COALESCE(ams.account_suspended, false)
+        OR COALESCE(ams.account_terminated, false)
+        OR COALESCE(ams.publishing_revoked, false)
+        OR EXISTS (
+          SELECT 1 FROM public.moderation_strikes ms
+          WHERE ms.user_id = u.id AND ms.expires_at > now()
+        )
+        OR EXISTS (
+          SELECT 1 FROM public.library_reports r
+          WHERE r.author_id = u.id AND r.status IN ('pending', 'reviewing')
+        )
+        OR EXISTS (
+          SELECT 1 FROM public.moderation_violations v
+          WHERE v.author_id = u.id AND v.status IN ('open', 'deadline_missed', 'appealed')
+        )
+        OR EXISTS (
+          SELECT 1 FROM public.moderation_appeals a
+          JOIN public.moderation_violations v ON v.id = a.violation_id
+          WHERE v.author_id = u.id AND a.status IN ('pending', 'reviewing')
+        )
+    )
   );
 END;
 $$;
@@ -508,7 +618,7 @@ $$;
 -- Grants
 -- ---------------------------------------------------------------------------
 
-REVOKE ALL ON FUNCTION public.staff_search_users(integer, integer, text, boolean, boolean) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.staff_search_users(integer, integer, text, boolean, boolean, boolean) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.staff_list_online_users(integer) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.touch_user_presence() FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.staff_get_user_detail(uuid) FROM PUBLIC;
@@ -518,7 +628,7 @@ REVOKE ALL ON FUNCTION public.staff_get_user_engagement(uuid) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.staff_users_overview_stats() FROM PUBLIC;
 
 GRANT EXECUTE ON FUNCTION public.touch_user_presence() TO authenticated;
-GRANT EXECUTE ON FUNCTION public.staff_search_users(integer, integer, text, boolean, boolean) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.staff_search_users(integer, integer, text, boolean, boolean, boolean) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.staff_list_online_users(integer) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.staff_get_user_detail(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.staff_list_user_books(uuid) TO authenticated;

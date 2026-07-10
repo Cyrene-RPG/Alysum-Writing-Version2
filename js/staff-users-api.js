@@ -24,6 +24,7 @@ export async function staffSearchUsers(query = "", limit = 50, offset = 0, filte
         p_query: query || "",
         p_online_only: !!filters.onlineOnly,
         p_active_today: !!filters.activeToday,
+        p_needs_attention: !!filters.needsAttention,
     });
     if (error) throw error;
     return data || { total: 0, users: [], limit, offset };

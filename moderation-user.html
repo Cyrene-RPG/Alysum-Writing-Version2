@@ -3,69 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User — Staff — Alysum</title>
+    <title>User — Moderation — Alysum</title>
     <link rel="stylesheet" href="css/site-responsive.css?v=1">
     <link rel="stylesheet" href="css/gradient-themes.css?v=5">
-    <link rel="stylesheet" href="css/library-reports.css?v=3">
+    <link rel="stylesheet" href="css/library-reports.css?v=5">
     <script src="js/gradient-theme-sync.js" defer></script>
     <script src="js/alysum-appearance-boot.js"></script>
 </head>
-<body class="mod-page">
+<body class="mod-page mod-console-page">
 <header class="mod-topbar">
     <div class="mod-topbar-inner">
         <a class="mod-brand" href="writer-dashboard.html">Alysum <span>Support</span></a>
-        <a class="mod-btn" href="settings.html#libraryPanel">Settings</a>
+        <a class="mod-btn" href="moderation-dashboard.html?view=people">← People</a>
     </div>
 </header>
 
 <div class="mod-shell" id="modApp">
     <div class="mod-denied hidden" id="modDenied">
-        <div class="mod-denied-card">
-            <h1>Staff setup required</h1>
-            <p id="modDeniedHint">You need database setup before moderation tools will open.</p>
-            <ol class="mod-setup-steps">
-                <li id="modStepReports"><strong>supabase-library-reports.sql</strong> — reports, strikes, staff table</li>
-                <li id="modStepStaffUsers"><strong>supabase-staff-users.sql</strong> — user browser RPCs</li>
-                <li id="modStepBootstrap"><strong>Bootstrap SQL</strong> — add your account to <code>moderation_staff</code></li>
-            </ol>
-            <pre class="mod-denied-code" id="modDeniedSql"></pre>
-            <div class="mod-denied-actions">
-                <button type="button" class="mod-btn" id="modCopyBootstrapBtn">Copy bootstrap SQL</button>
-                <a class="mod-btn primary" id="modOpenSqlBtn" href="#" target="_blank" rel="noopener">Open Supabase SQL Editor</a>
-                <button type="button" class="mod-btn" id="modRecheckBtn">Check again</button>
-                <a class="mod-btn" href="moderation-dashboard.html?tab=users">← Users</a>
-            </div>
-            <p class="mod-denied-meta">Your user ID: <code id="modDeniedUid"></code></p>
-        </div>
+        <p class="mod-detail-empty"><a href="moderation-dashboard.html">Staff access required</a></p>
     </div>
-
     <div class="hidden" id="modContent">
-        <nav class="mod-nav" aria-label="Moderation">
-            <a class="mod-btn" href="moderation-dashboard.html">Reports</a>
-            <a class="mod-btn is-active" href="moderation-dashboard.html?tab=users">Users &amp; usage</a>
-        </nav>
-
         <div class="mod-status hidden" id="modStatus"></div>
-
-        <div id="modUserRoot">
-            <p class="mod-detail-empty">Loading user…</p>
-        </div>
+        <div id="modUserRoot"></div>
     </div>
 </div>
 
 <script type="module">
     import { bootModerationPage } from "./js/moderation-access.js";
-    import { reportReasonLabel, reportStatusLabel, setBookVisibility } from "./js/library-reports-api.js";
-    import {
-        staffGetUserDetail,
-        staffListUserBooks,
-        staffGetUserSafety,
-        staffGetUserEngagement,
-    } from "./js/staff-users-api.js";
+    import { mountUserDetail } from "./js/moderation-user-detail.js";
 
     const modStatus = document.getElementById("modStatus");
     const modUserRoot = document.getElementById("modUserRoot");
-
     const userId = new URLSearchParams(window.location.search).get("user");
 
     function showStatus(msg, type = "ok") {
@@ -75,388 +43,17 @@
         if (type === "ok") setTimeout(() => modStatus.classList.add("hidden"), 4000);
     }
 
-    function escapeHtml(str) {
-        return String(str ?? "")
-            .replaceAll("&", "&amp;")
-            .replaceAll("<", "&lt;")
-            .replaceAll(">", "&gt;")
-            .replaceAll('"', "&quot;");
-    }
-
-    function formatDate(iso) {
-        if (!iso) return "—";
-        const n = Number(iso);
-        if (!Number.isNaN(n) && n > 1e11) return new Date(n).toLocaleString();
-        return new Date(iso).toLocaleString();
-    }
-
-    function flag(label, kind = "muted") {
-        return `<span class="mod-flag ${kind}">${escapeHtml(label)}</span>`;
-    }
-
-    function renderJson(data) {
-        return `<pre class="mod-json">${escapeHtml(JSON.stringify(data, null, 2))}</pre>`;
-    }
-
-    function publishMetaSummary(meta) {
-        if (!meta || typeof meta !== "object") return "—";
-        const parts = [];
-        if (meta.rating) parts.push(`Rating: ${meta.rating}`);
-        if (meta.genres?.length) parts.push(`Genres: ${meta.genres.join(", ")}`);
-        if (meta.anonymous) parts.push("Anonymous");
-        return parts.length ? parts.join(" · ") : "—";
-    }
-
-    function renderBooks(books) {
-        if (!books.length) {
-            return '<p class="mod-detail-empty">No books.</p>';
-        }
-        return `
-            <div class="mod-table-wrap">
-                <table class="mod-table">
-                    <thead>
-                        <tr>
-                            <th>Title</th>
-                            <th>Status</th>
-                            <th>Stats</th>
-                            <th>Moderation</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${books.map((b) => {
-                            const vis = b.visibility || (b.is_published ? "public" : "draft");
-                            const visClass = vis === "removed" || vis === "hidden" ? "danger" : vis === "draft" ? "muted" : "ok";
-                            return `
-                                <tr data-book-id="${escapeHtml(b.id)}">
-                                    <td>
-                                        <strong>${escapeHtml(b.title || "Untitled")}</strong>
-                                        <div class="mod-queue-meta"><code>${escapeHtml(b.id)}</code></div>
-                                        <div class="mod-queue-meta">${escapeHtml(publishMetaSummary(b.publish_meta))}</div>
-                                    </td>
-                                    <td>
-                                        ${b.is_published ? flag("Published", "ok") : flag("Draft", "muted")}
-                                        ${b.library_type ? `<div class="mod-queue-meta">${escapeHtml(b.library_type)}</div>` : ""}
-                                        <div class="mod-queue-meta">Updated ${escapeHtml(formatDate(b.updated))}</div>
-                                    </td>
-                                    <td>
-                                        ${Number(b.words || 0).toLocaleString()} words
-                                        <div class="mod-queue-meta">${b.comment_count || 0} comments · ${b.like_count || 0} likes</div>
-                                        ${b.library_views ? `<div class="mod-queue-meta">${b.library_views} views</div>` : ""}
-                                        ${Number(b.report_count) > 0 ? `<div class="mod-queue-meta">${b.report_count} report(s)</div>` : ""}
-                                    </td>
-                                    <td>
-                                        ${flag(vis, visClass)}
-                                        ${b.moderation_reason ? `<div class="mod-queue-meta">${escapeHtml(b.moderation_reason)}</div>` : ""}
-                                    </td>
-                                    <td>
-                                        <div class="mod-actions" style="margin-top:0">
-                                            ${b.is_published ? `<a class="mod-btn" href="read.html?book=${encodeURIComponent(b.id)}" target="_blank" rel="noopener">Read</a>` : ""}
-                                            <button type="button" class="mod-btn" data-vis="public" data-book="${escapeHtml(b.id)}">Public</button>
-                                            <button type="button" class="mod-btn" data-vis="hidden" data-book="${escapeHtml(b.id)}">Hide</button>
-                                            <button type="button" class="mod-btn danger" data-vis="removed" data-book="${escapeHtml(b.id)}">Remove</button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            `;
-                        }).join("")}
-                    </tbody>
-                </table>
-            </div>
-        `;
-    }
-
-    function renderReports(reports, emptyLabel) {
-        if (!reports?.length) return `<p class="mod-detail-empty">${escapeHtml(emptyLabel)}</p>`;
-        return `
-            <div class="mod-table-wrap">
-                <table class="mod-table">
-                    <thead>
-                        <tr><th>Book</th><th>Reason</th><th>Status</th><th>Date</th></tr>
-                    </thead>
-                    <tbody>
-                        ${reports.map((r) => `
-                            <tr>
-                                <td><code>${escapeHtml(r.book_id)}</code></td>
-                                <td>${escapeHtml(reportReasonLabel(r.reason))}</td>
-                                <td>${escapeHtml(reportStatusLabel(r.status))}</td>
-                                <td>${escapeHtml(formatDate(r.created_at))}</td>
-                            </tr>
-                        `).join("")}
-                    </tbody>
-                </table>
-            </div>
-        `;
-    }
-
-    function renderStrikes(strikes) {
-        if (!strikes?.length) return '<p class="mod-detail-empty">No strikes on record.</p>';
-        return strikes.map((s) => `
-            <div class="mod-detail-block">
-                <p>
-                    <strong>Strike ${s.strike_number}</strong> (${escapeHtml(s.strike_type)})
-                    ${s.is_severe ? flag("Severe", "danger") : ""}
-                </p>
-                <p class="mod-queue-meta">${escapeHtml(s.reason || "—")}</p>
-                <p class="mod-queue-meta">Expires ${escapeHtml(formatDate(s.expires_at))} · ${escapeHtml(formatDate(s.created_at))}</p>
-            </div>
-        `).join("");
-    }
-
-    function renderViolations(violations) {
-        if (!violations?.length) return '<p class="mod-detail-empty">No violations.</p>';
-        return violations.map((v) => `
-            <div class="mod-detail-block">
-                <p><strong>${escapeHtml(v.policy_violated)}</strong> · ${escapeHtml(v.status)}</p>
-                <p class="mod-queue-meta">Book <code>${escapeHtml(v.book_id)}</code> · Strike tier ${v.strike_number}</p>
-                <p class="mod-queue-meta">Deadline ${escapeHtml(formatDate(v.deadline))}</p>
-                ${v.correction_requirements ? `<pre>${escapeHtml(v.correction_requirements)}</pre>` : ""}
-            </div>
-        `).join("");
-    }
-
-    function renderComments(comments) {
-        if (!comments?.length) return '<p class="mod-detail-empty">No comments.</p>';
-        return comments.map((c) => `
-            <div class="mod-detail-block">
-                <p class="mod-queue-meta">Book <code>${escapeHtml(c.book_id)}</code> · ${escapeHtml(formatDate(c.created_at))}</p>
-                <p>${escapeHtml(c.text)}</p>
-            </div>
-        `).join("");
-    }
-
-    function renderBetaShares(shares) {
-        if (!shares?.length) return '<p class="mod-detail-empty">No beta shares.</p>';
-        return `
-            <div class="mod-table-wrap">
-                <table class="mod-table">
-                    <thead>
-                        <tr><th>Book</th><th>Role</th><th>Status</th><th>Invite</th><th>Created</th></tr>
-                    </thead>
-                    <tbody>
-                        ${shares.map((s) => `
-                            <tr>
-                                <td><code>${escapeHtml(s.book_id)}</code></td>
-                                <td>${s.author_id === userId ? "Author" : "Reader"}</td>
-                                <td>${escapeHtml(s.status)}</td>
-                                <td>${escapeHtml(s.invited_email || "—")}</td>
-                                <td>${escapeHtml(formatDate(s.created_at))}</td>
-                            </tr>
-                        `).join("")}
-                    </tbody>
-                </table>
-            </div>
-        `;
-    }
-
-    function renderUser(detail, books, safety, engagement) {
-        const p = detail.profile || {};
-        const auth = detail.auth || {};
-        const counts = detail.counts || {};
-        const mod = detail.moderation_status;
-        const reporter = detail.reporter_score;
-        const avatar = p.profile_image_url
-            ? `<img class="mod-user-avatar" src="${escapeHtml(p.profile_image_url)}" alt="" />`
-            : `<div class="mod-user-avatar mod-user-avatar-placeholder">${escapeHtml((p.username || "?")[0]?.toUpperCase())}</div>`;
-
-        const flags = [];
-        if (mod?.account_terminated) flags.push(flag("Account terminated", "danger"));
-        else if (mod?.account_suspended) flags.push(flag("Account suspended", "danger"));
-        if (mod?.publishing_revoked) flags.push(flag("Publishing revoked", "warn"));
-        if (mod?.publishing_suspended_until) {
-            flags.push(flag(`Publishing suspended until ${formatDate(mod.publishing_suspended_until)}`, "warn"));
-        }
-        if (Number(counts.active_strikes) > 0) flags.push(flag(`${counts.active_strikes} active strike(s)`, "warn"));
-        if (!flags.length) flags.push(flag("No moderation flags", "ok"));
-
-        modUserRoot.innerHTML = `
-            <header class="mod-user-header">
-                ${avatar}
-                <div>
-                    <h1 class="mod-user-title">@${escapeHtml(p.username)}</h1>
-                    <p class="mod-user-sub">
-                        ${escapeHtml(p.display_name)}
-                        · ${escapeHtml(p.account_type || "—")}
-                        · User ID <code>${escapeHtml(p.id)}</code>
-                    </p>
-                    <p class="mod-user-sub">
-                        ${escapeHtml(p.email || auth.auth_email || "No email")}
-                        ${auth.email_confirmed_at ? " · email confirmed" : ""}
-                    </p>
-                    <div>${flags.join("")}</div>
-                </div>
-            </header>
-
-            <div class="mod-stats">
-                <div class="mod-stat"><div class="mod-stat-label">Books</div><div class="mod-stat-value">${counts.books || 0}</div></div>
-                <div class="mod-stat"><div class="mod-stat-label">Published</div><div class="mod-stat-value">${counts.published_books || 0}</div></div>
-                <div class="mod-stat"><div class="mod-stat-label">Words (manuscripts)</div><div class="mod-stat-value">${Number(counts.book_words_total ?? p.words ?? 0).toLocaleString()}</div></div>
-                <div class="mod-stat"><div class="mod-stat-label">Streak</div><div class="mod-stat-value">${p.streak || 0}</div></div>
-                <div class="mod-stat"><div class="mod-stat-label">Comments</div><div class="mod-stat-value">${counts.comments || 0}</div></div>
-                <div class="mod-stat"><div class="mod-stat-label">Reports against</div><div class="mod-stat-value">${counts.reports_against || 0}</div></div>
-                <div class="mod-stat"><div class="mod-stat-label">Reports filed</div><div class="mod-stat-value">${counts.reports_filed || 0}</div></div>
-                <div class="mod-stat"><div class="mod-stat-label">Library views</div><div class="mod-stat-value">${Number(counts.reads_on_books || 0).toLocaleString()}</div></div>
-            </div>
-
-            <div class="mod-sections">
-                <section class="mod-panel">
-                    <h2>Account</h2>
-                    <div class="mod-detail-block">
-                        <p>Joined ${escapeHtml(formatDate(p.created_at))} · Profile updated ${escapeHtml(formatDate(p.updated_at))}</p>
-                        <p>Last login (profile): ${escapeHtml(p.last_login || "—")}</p>
-                        <p>Auth created: ${escapeHtml(formatDate(auth.auth_created_at))}</p>
-                        <p>Last sign-in: ${escapeHtml(formatDate(auth.last_sign_in_at))}</p>
-                        <p>Last seen (live): ${escapeHtml(formatDate(p.last_seen_at))}</p>
-                        <p>Daily word goal: ${Number(p.daily_word_goal || 0).toLocaleString()}</p>
-                        <p>Providers: ${escapeHtml((auth.providers || []).join(", ") || "—")}</p>
-                        ${reporter ? `<p>Reporter weight: <strong>${reporter.weight}</strong> — ${escapeHtml(reporter.notes || "")}</p>` : ""}
-                    </div>
-                </section>
-
-                <section class="mod-panel">
-                    <h2>Books (${books.length})</h2>
-                    ${renderBooks(books)}
-                </section>
-
-                <section class="mod-panel">
-                    <h2>Strikes & violations</h2>
-                    <h3 class="mod-detail-block" style="font-size:12px;text-transform:uppercase;color:var(--mod-muted)">Strikes</h3>
-                    ${renderStrikes(safety.strikes)}
-                    <h3 class="mod-detail-block" style="font-size:12px;text-transform:uppercase;color:var(--mod-muted);margin-top:16px">Violations</h3>
-                    ${renderViolations(safety.violations)}
-                </section>
-
-                <section class="mod-panel">
-                    <h2>Reports</h2>
-                    <h3 class="mod-detail-block" style="font-size:12px;text-transform:uppercase;color:var(--mod-muted)">Against this author</h3>
-                    ${renderReports(safety.reports_as_author, "No reports against this user.")}
-                    <h3 class="mod-detail-block" style="font-size:12px;text-transform:uppercase;color:var(--mod-muted);margin-top:16px">Filed by this user</h3>
-                    ${renderReports(safety.reports_as_reporter, "No reports filed.")}
-                </section>
-
-                <section class="mod-panel">
-                    <h2>Reader activity</h2>
-                    <div class="mod-detail-block">
-                        <h3>Current read</h3>
-                        ${engagement.current_read?.book_id
-                            ? `<p><strong>${escapeHtml(engagement.current_read.story_title || "Unknown")}</strong> by ${escapeHtml(engagement.current_read.author || "—")}</p>
-                               <p class="mod-queue-meta">Book ${escapeHtml(engagement.current_read.book_id)} · ch. ${engagement.current_read.chapter_index ?? "—"} ${engagement.current_read.chapter_title ? `— ${escapeHtml(engagement.current_read.chapter_title)}` : ""}</p>`
-                            : '<p class="mod-detail-empty">Not reading anything.</p>'}
-                    </div>
-                    <div class="mod-detail-block">
-                        <h3>Recent comments</h3>
-                        ${renderComments(engagement.recent_comments)}
-                    </div>
-                    <div class="mod-detail-block">
-                        <h3>Beta shelf</h3>
-                        ${renderJson(engagement.beta_shelf || {})}
-                    </div>
-                    <div class="mod-detail-block">
-                        <h3>Beta read notes</h3>
-                        ${renderJson(engagement.beta_read_notes_by_book || {})}
-                    </div>
-                </section>
-
-                <section class="mod-panel">
-                    <h2>Beta shares</h2>
-                    ${renderBetaShares(engagement.beta_shares)}
-                </section>
-
-                <section class="mod-panel">
-                    <h2>Blocks & beta reports</h2>
-                    <div class="mod-detail-block">
-                        <h3>Blocks made (${(engagement.blocks_made || []).length})</h3>
-                        ${(engagement.blocks_made || []).length
-                            ? renderJson(engagement.blocks_made)
-                            : '<p class="mod-detail-empty">None.</p>'}
-                    </div>
-                    <div class="mod-detail-block">
-                        <h3>Blocks received (${(engagement.blocks_received || []).length})</h3>
-                        ${(engagement.blocks_received || []).length
-                            ? renderJson(engagement.blocks_received)
-                            : '<p class="mod-detail-empty">None.</p>'}
-                    </div>
-                    <div class="mod-detail-block">
-                        <h3>Beta message reports</h3>
-                        ${(engagement.beta_message_reports || []).length
-                            ? renderJson(engagement.beta_message_reports)
-                            : '<p class="mod-detail-empty">None.</p>'}
-                    </div>
-                </section>
-
-                <section class="mod-panel">
-                    <h2>Appeals & audit</h2>
-                    <div class="mod-detail-block">
-                        <h3>Appeals</h3>
-                        ${(safety.appeals || []).length ? renderJson(safety.appeals) : '<p class="mod-detail-empty">No appeals.</p>'}
-                    </div>
-                    <div class="mod-detail-block">
-                        <h3>Moderation audit log</h3>
-                        ${(safety.audit_log || []).length ? renderJson(safety.audit_log) : '<p class="mod-detail-empty">No audit entries.</p>'}
-                    </div>
-                </section>
-
-                <section class="mod-panel">
-                    <h2>Writing day totals</h2>
-                    ${renderJson(p.writing_day_totals || {})}
-                </section>
-            </div>
-        `;
-    }
-
-    function wireBookActions() {
-        modUserRoot.querySelectorAll("[data-vis]").forEach((btn) => {
-            if (btn.dataset.bound) return;
-            btn.dataset.bound = "1";
-            btn.addEventListener("click", async () => {
-                const vis = btn.dataset.vis;
-                const bookId = btn.dataset.book;
-                const reason = window.prompt(`Reason for setting "${bookId}" visibility to "${vis}":`) || "";
-                try {
-                    await setBookVisibility(bookId, vis, reason);
-                    showStatus(`Book visibility set to ${vis}.`);
-                    const updated = await staffListUserBooks(userId);
-                    const panels = modUserRoot.querySelectorAll(".mod-panel");
-                    for (const panel of panels) {
-                        if (panel.querySelector("h2")?.textContent?.startsWith("Books")) {
-                            panel.innerHTML = `<h2>Books (${updated.length})</h2>${renderBooks(updated)}`;
-                            wireBookActions();
-                            break;
-                        }
-                    }
-                } catch (err) {
-                    showStatus(err.message || "Action failed.", "error");
-                }
-            });
-        });
-    }
-
-    async function loadUser() {
-        if (!userId) {
-            modUserRoot.innerHTML = '<p class="mod-detail-empty">Missing <code>?user=</code> parameter. <a href="moderation-dashboard.html?tab=users">Back to users</a></p>';
-            return;
-        }
-
-        const [detail, books, safety, engagement] = await Promise.all([
-            staffGetUserDetail(userId),
-            staffListUserBooks(userId),
-            staffGetUserSafety(userId),
-            staffGetUserEngagement(userId),
-        ]);
-
-        document.title = `@${detail.profile?.username || "user"} — Staff — Alysum`;
-        renderUser(detail, books, safety, engagement);
-        wireBookActions();
-    }
-
-    const access = await bootModerationPage({
-        returnPath: window.location.pathname + window.location.search,
-    });
+    const access = await bootModerationPage({ returnPath: window.location.pathname + window.location.search });
     if (access) {
-        try {
-            await loadUser();
-        } catch (err) {
-            modUserRoot.innerHTML = `<p class="mod-detail-empty">Could not load user: ${escapeHtml(err.message)}. Run supabase-staff-users.sql first.</p>`;
+        if (!userId) {
+            modUserRoot.innerHTML = '<p class="mod-detail-empty">Missing user ID. <a href="moderation-dashboard.html?view=people">Back to People</a></p>';
+        } else {
+            try {
+                const data = await mountUserDetail(userId, modUserRoot, { showStatus });
+                document.title = `@${data.detail.profile?.username || "user"} — Moderation`;
+            } catch (err) {
+                modUserRoot.innerHTML = `<p class="mod-detail-empty">Could not load user: ${err.message}</p>`;
+            }
         }
     }
 </script>

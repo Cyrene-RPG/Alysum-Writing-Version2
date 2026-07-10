@@ -2,15 +2,15 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="refresh" content="0;url=moderation-dashboard.html?tab=users">
+    <meta http-equiv="refresh" content="0;url=moderation-dashboard.html?view=people">
     <title>Redirecting…</title>
     <script>
         const q = new URLSearchParams(location.search);
-        q.set("tab", "users");
+        q.set("view", "people");
         location.replace("moderation-dashboard.html?" + q.toString());
     </script>
 </head>
 <body>
-    <p><a href="moderation-dashboard.html?tab=users">Continue to Moderation</a></p>
+    <p><a href="moderation-dashboard.html?view=people">Continue to Moderation</a></p>
 </body>
 </html>

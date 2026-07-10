@@ -6,11 +6,11 @@
     <title>Moderation — Alysum</title>
     <link rel="stylesheet" href="css/site-responsive.css?v=1">
     <link rel="stylesheet" href="css/gradient-themes.css?v=5">
-    <link rel="stylesheet" href="css/library-reports.css?v=4">
+    <link rel="stylesheet" href="css/library-reports.css?v=5">
     <script src="js/gradient-theme-sync.js" defer></script>
     <script src="js/alysum-appearance-boot.js"></script>
 </head>
-<body class="mod-page">
+<body class="mod-page mod-console-page">
 <header class="mod-topbar">
     <div class="mod-topbar-inner">
         <a class="mod-brand" href="writer-dashboard.html">Alysum <span>Support</span></a>
@@ -18,122 +18,119 @@
     </div>
 </header>
 
-<div class="mod-shell" id="modApp">
+<div class="mod-shell mod-shell-console" id="modApp">
     <div class="mod-denied hidden" id="modDenied">
         <div class="mod-denied-card">
             <h1>Staff setup required</h1>
             <p id="modDeniedHint">You need database setup before moderation tools will open.</p>
             <ol class="mod-setup-steps">
-                <li id="modStepReports"><strong>supabase-library-reports.sql</strong> — reports, strikes, staff table</li>
-                <li id="modStepStaffUsers"><strong>supabase-staff-users.sql</strong> — user browser + online presence</li>
-                <li id="modStepBootstrap"><strong>Bootstrap SQL</strong> — add your account to <code>moderation_staff</code></li>
+                <li id="modStepReports"><strong>supabase-library-reports.sql</strong></li>
+                <li id="modStepStaffUsers"><strong>supabase-staff-users.sql</strong></li>
+                <li id="modStepBootstrap"><strong>Bootstrap SQL</strong></li>
             </ol>
             <pre class="mod-denied-code" id="modDeniedSql"></pre>
             <div class="mod-denied-actions">
                 <button type="button" class="mod-btn" id="modCopyBootstrapBtn">Copy bootstrap SQL</button>
-                <a class="mod-btn primary" id="modOpenSqlBtn" href="#" target="_blank" rel="noopener">Open Supabase SQL Editor</a>
+                <a class="mod-btn primary" id="modOpenSqlBtn" href="#" target="_blank" rel="noopener">Open SQL Editor</a>
                 <button type="button" class="mod-btn" id="modRecheckBtn">Check again</button>
-                <a class="mod-btn" href="settings.html#libraryPanel">← Settings</a>
             </div>
             <p class="mod-denied-meta">Your user ID: <code id="modDeniedUid"></code></p>
         </div>
     </div>
 
-    <div class="hidden" id="modContent">
-        <header class="mod-header">
-            <h1>Moderation</h1>
-            <p>Library reports, user accounts, and live site usage — one place.</p>
-        </header>
-
-        <nav class="mod-nav" aria-label="Moderation sections">
-            <button type="button" class="mod-btn" data-mod-tab="reports">Reports</button>
-            <button type="button" class="mod-btn" data-mod-tab="users">Users &amp; usage</button>
-        </nav>
-
-        <div class="mod-status hidden" id="modStatus"></div>
-
-        <!-- Reports tab -->
-        <div id="modTabReports" data-mod-panel="reports">
-            <div class="mod-stats" id="modReportStats"></div>
-            <div class="mod-toolbar">
-                <button type="button" class="mod-btn primary" id="modRefreshBtn">Refresh queue</button>
-                <button type="button" class="mod-btn" id="modCheckDeadlinesBtn">Check missed deadlines</button>
+    <div class="mod-console hidden" id="modContent">
+        <aside class="mod-sidebar">
+            <div class="mod-sidebar-title">Moderation</div>
+            <nav class="mod-sidebar-nav">
+                <button type="button" class="mod-sidebar-btn is-active" data-mod-view="inbox">
+                    Inbox <span class="mod-sidebar-badge" id="modInboxBadge">0</span>
+                </button>
+                <button type="button" class="mod-sidebar-btn" data-mod-view="people">
+                    People <span class="mod-sidebar-badge" id="modPeopleBadge">0</span>
+                </button>
+            </nav>
+            <div class="mod-sidebar-foot">
+                <div class="mod-sidebar-stat"><span>Online</span><strong id="modSidebarOnline">—</strong></div>
+                <div class="mod-sidebar-stat"><span>Pending reports</span><strong id="modSidebarPending">—</strong></div>
             </div>
-            <div class="mod-layout">
-                <section class="mod-panel">
-                    <h2>Report queue</h2>
-                    <div class="mod-queue" id="modQueue">
-                        <div class="mod-detail-empty">Loading reports…</div>
+        </aside>
+
+        <main class="mod-main">
+            <div class="mod-status hidden" id="modStatus"></div>
+
+            <!-- INBOX -->
+            <div class="mod-view" id="modViewInbox" data-mod-view-panel="inbox">
+                <header class="mod-view-header">
+                    <div>
+                        <h1>Inbox</h1>
+                        <p>Library reports and appeals that need staff action.</p>
                     </div>
-                </section>
-                <section class="mod-panel">
-                    <h2>Review</h2>
-                    <div id="modDetail">
-                        <p class="mod-detail-empty">Select a report from the queue to review it.</p>
+                    <div class="mod-toolbar">
+                        <button type="button" class="mod-btn primary" id="modRefreshBtn">Refresh</button>
+                        <button type="button" class="mod-btn" id="modCheckDeadlinesBtn">Check deadlines</button>
                     </div>
-                </section>
+                </header>
+                <div class="mod-stats" id="modReportStats"></div>
+                <div class="mod-split">
+                    <div class="mod-split-list">
+                        <nav class="mod-subnav">
+                            <button type="button" class="mod-btn is-active" data-inbox-tab="reports">Reports</button>
+                            <button type="button" class="mod-btn" data-inbox-tab="appeals">Appeals</button>
+                        </nav>
+                        <div id="modInboxReportsPanel">
+                            <div class="mod-queue" id="modQueue"><div class="mod-detail-empty">Loading…</div></div>
+                        </div>
+                        <div id="modInboxAppealsPanel" class="hidden">
+                            <div class="mod-queue" id="modAppeals"></div>
+                        </div>
+                    </div>
+                    <div class="mod-split-detail">
+                        <h2 class="mod-split-detail-title">Review</h2>
+                        <div id="modDetail"><p class="mod-detail-empty">Select a report to review.</p></div>
+                    </div>
+                </div>
             </div>
-            <section class="mod-panel mod-panel-spaced">
-                <h2>Pending appeals</h2>
-                <div id="modAppeals" class="mod-queue"></div>
-            </section>
-        </div>
 
-        <!-- Users tab -->
-        <div id="modTabUsers" class="hidden" data-mod-panel="users">
-            <div class="mod-stats" id="modUsageStats"></div>
-
-            <section class="mod-panel mod-panel-spaced">
-                <div class="mod-panel-head">
-                    <h2>Online now</h2>
+            <!-- PEOPLE -->
+            <div class="mod-view hidden" id="modViewPeople" data-mod-view-panel="people">
+                <header class="mod-view-header">
+                    <div>
+                        <h1>People</h1>
+                        <p>Account standing, pending items, books, and activity per user.</p>
+                    </div>
                     <button type="button" class="mod-btn" id="modRefreshUsersBtn">Refresh</button>
-                </div>
-                <p class="mod-detail-empty mod-panel-intro">Users active in the last 5 minutes (heartbeat while browsing while signed in).</p>
-                <div class="mod-online-list" id="modOnlineList">
-                    <p class="mod-detail-empty">Loading…</p>
-                </div>
-            </section>
+                </header>
 
-            <div class="mod-search-row">
-                <input class="mod-input" id="modSearch" type="search" placeholder="Username, display name, email, or user ID…" autocomplete="off" />
-                <button type="button" class="mod-btn primary" id="modSearchBtn">Search</button>
-                <button type="button" class="mod-btn" id="modClearBtn">Clear</button>
+                <div class="mod-online-strip" id="modOnlineList"></div>
+
+                <div class="mod-split mod-split-people">
+                    <div class="mod-split-list">
+                        <div class="mod-search-row">
+                            <input class="mod-input" id="modSearch" type="search" placeholder="Search users…" autocomplete="off" />
+                            <button type="button" class="mod-btn primary" id="modSearchBtn">Go</button>
+                        </div>
+                        <div class="mod-filter-row">
+                            <button type="button" class="mod-btn is-active" data-user-filter="all">All</button>
+                            <button type="button" class="mod-btn" data-user-filter="attention">Needs attention</button>
+                            <button type="button" class="mod-btn" data-user-filter="online">Online</button>
+                            <button type="button" class="mod-btn" data-user-filter="today">Active today</button>
+                        </div>
+                        <div class="mod-user-list" id="modUserList"></div>
+                        <div class="mod-pagination hidden" id="modPagination">
+                            <button type="button" class="mod-btn" id="modPrevBtn">←</button>
+                            <span id="modPageInfo"></span>
+                            <button type="button" class="mod-btn" id="modNextBtn">→</button>
+                        </div>
+                    </div>
+                    <div class="mod-split-detail mod-split-detail-user" id="modUserDetailPane">
+                        <div class="mod-detail-empty mod-pick-user-hint">
+                            <h2>Select a user</h2>
+                            <p>Pick someone from the list to see account standing, pending reports, appeals, violations, and books.</p>
+                        </div>
+                    </div>
+                </div>
             </div>
-
-            <div class="mod-filter-row">
-                <button type="button" class="mod-btn is-active" data-user-filter="all">All users</button>
-                <button type="button" class="mod-btn" data-user-filter="online">Online now</button>
-                <button type="button" class="mod-btn" data-user-filter="today">Active today</button>
-            </div>
-
-            <section class="mod-panel">
-                <h2 id="modResultsTitle">All users</h2>
-                <div class="mod-table-wrap">
-                    <table class="mod-table" id="modUsersTable">
-                        <thead>
-                            <tr>
-                                <th>Status</th>
-                                <th>User</th>
-                                <th>Account</th>
-                                <th>Books</th>
-                                <th>Writing</th>
-                                <th>Flags</th>
-                                <th>Joined</th>
-                                <th>Last seen</th>
-                            </tr>
-                        </thead>
-                        <tbody id="modUsersBody">
-                            <tr><td colspan="8" class="mod-detail-empty">Loading…</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-                <div class="mod-pagination hidden" id="modPagination">
-                    <button type="button" class="mod-btn" id="modPrevBtn">← Prev</button>
-                    <span id="modPageInfo"></span>
-                    <button type="button" class="mod-btn" id="modNextBtn">Next →</button>
-                </div>
-            </section>
-        </div>
+        </main>
     </div>
 </div>
 
@@ -141,11 +138,13 @@
     import { bootModerationPage } from "./js/moderation-access.js";
     import { initReportsPanel } from "./js/moderation-reports-panel.js";
     import { initUsersPanel } from "./js/moderation-users-panel.js";
+    import { staffUsersOverviewStats } from "./js/staff-users-api.js";
+    import { getDashboardStats as getReportStats } from "./js/library-reports-api.js";
 
     const modStatus = document.getElementById("modStatus");
     let reportsApi = null;
     let usersApi = null;
-    let activeTab = "reports";
+    let activeView = "inbox";
 
     function showStatus(msg, type = "ok") {
         modStatus.textContent = msg;
@@ -154,44 +153,81 @@
         if (type === "ok") setTimeout(() => modStatus.classList.add("hidden"), 4000);
     }
 
-    function showTab(tab) {
-        activeTab = tab === "users" ? "users" : "reports";
-        document.querySelectorAll("[data-mod-tab]").forEach((btn) => {
-            btn.classList.toggle("is-active", btn.dataset.modTab === activeTab);
+    function showView(view) {
+        activeView = view === "people" ? "people" : "inbox";
+        document.querySelectorAll("[data-mod-view]").forEach((btn) => {
+            btn.classList.toggle("is-active", btn.dataset.modView === activeView);
         });
-        document.querySelectorAll("[data-mod-panel]").forEach((panel) => {
-            panel.classList.toggle("hidden", panel.dataset.modPanel !== activeTab);
+        document.querySelectorAll("[data-mod-view-panel]").forEach((panel) => {
+            panel.classList.toggle("hidden", panel.dataset.modViewPanel !== activeView);
         });
         const url = new URL(window.location.href);
-        if (activeTab === "users") url.searchParams.set("tab", "users");
-        else url.searchParams.delete("tab");
+        url.searchParams.set("view", activeView);
+        if (activeView !== "people") url.searchParams.delete("user");
         window.history.replaceState({}, "", url.pathname + url.search);
     }
 
-    document.querySelectorAll("[data-mod-tab]").forEach((btn) => {
+    function onUserSelect(userId) {
+        const url = new URL(window.location.href);
+        url.searchParams.set("view", "people");
+        url.searchParams.set("user", userId);
+        window.history.replaceState({}, "", url.pathname + url.search);
+    }
+
+    document.querySelectorAll("[data-mod-view]").forEach((btn) => {
         btn.addEventListener("click", () => {
-            const tab = btn.dataset.modTab;
-            showTab(tab);
-            if (tab === "users" && usersApi) {
+            showView(btn.dataset.modView);
+            if (btn.dataset.modView === "people" && usersApi) {
                 usersApi.loadAll().catch((e) => showStatus(e.message, "error"));
-            } else if (tab === "reports" && reportsApi) {
+            } else if (btn.dataset.modView === "inbox" && reportsApi) {
                 reportsApi.loadAll().catch((e) => showStatus(e.message, "error"));
             }
         });
     });
 
+    document.querySelectorAll("[data-inbox-tab]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+            const tab = btn.dataset.inboxTab;
+            document.querySelectorAll("[data-inbox-tab]").forEach((b) => b.classList.toggle("is-active", b.dataset.inboxTab === tab));
+            document.getElementById("modInboxReportsPanel")?.classList.toggle("hidden", tab !== "reports");
+            document.getElementById("modInboxAppealsPanel")?.classList.toggle("hidden", tab !== "appeals");
+        });
+    });
+
+    async function refreshSidebarStats() {
+        try {
+            const [reports, usage] = await Promise.all([
+                getReportStats(),
+                staffUsersOverviewStats(),
+            ]);
+            const inboxTotal = Number(reports.pendingReports || 0) + Number(reports.pendingAppeals || 0);
+            const inboxBadge = document.getElementById("modInboxBadge");
+            const peopleBadge = document.getElementById("modPeopleBadge");
+            if (inboxBadge) inboxBadge.textContent = String(inboxTotal);
+            if (peopleBadge) peopleBadge.textContent = String(usage.usersNeedingAttention || 0);
+            const onlineEl = document.getElementById("modSidebarOnline");
+            const pendingEl = document.getElementById("modSidebarPending");
+            if (onlineEl) onlineEl.textContent = String(usage.onlineNow || 0);
+            if (pendingEl) pendingEl.textContent = String(reports.pendingReports || 0);
+        } catch { /* ignore */ }
+    }
+
     const params = new URLSearchParams(window.location.search);
-    const initialTab = params.get("tab") === "users" ? "users" : "reports";
+    const initialView = params.get("view") === "people" || params.get("user") || params.get("tab") === "users"
+        ? "people"
+        : "inbox";
 
     const access = await bootModerationPage({ returnPath: "moderation-dashboard.html" });
     if (access) {
         reportsApi = initReportsPanel({ showStatus });
-        usersApi = initUsersPanel({ showStatus });
-        showTab(initialTab);
+        usersApi = initUsersPanel({ showStatus, onUserSelect, getSelectedUserId: () => new URLSearchParams(window.location.search).get("user") });
+        showView(initialView);
 
         try {
-            if (initialTab === "users") {
+            await refreshSidebarStats();
+            if (initialView === "people") {
                 await usersApi.loadAll();
+                if (params.get("user")) await usersApi.pickUser(params.get("user"));
             } else {
                 await reportsApi.loadAll();
             }
@@ -200,10 +236,10 @@
         }
 
         window.setInterval(() => {
-            if (activeTab === "users" && document.visibilityState === "visible") {
-                usersApi.loadAll().catch(() => {});
-            }
-        }, 60_000);
+            if (document.visibilityState !== "visible") return;
+            refreshSidebarStats().catch(() => {});
+            if (activeView === "people") usersApi.loadAll().catch(() => {});
+        }, 90_000);
     }
 </script>
 </body>
