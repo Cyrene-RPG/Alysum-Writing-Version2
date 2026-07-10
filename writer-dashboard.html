@@ -991,6 +991,7 @@
             <a href="leaderboard.html">Leaderboards</a>
             <span class="wd-nav-divider" aria-hidden="true"></span>
             <a href="settings.html">Settings</a>
+            <a href="moderation-dashboard.html?view=people" class="is-hidden" id="navModeration">Moderation</a>
             <a href="reader-home.html" class="is-hidden" id="navReading">Reading</a>
             <button type="button" class="wd-nav-logout" data-logout-btn>Log out</button>
             <a href="index.html">Home</a>
@@ -1156,6 +1157,7 @@
     const navContinue = document.getElementById("navContinue");
     const navStoryBible = document.getElementById("navStoryBible");
     const navReading = document.getElementById("navReading");
+    const navModeration = document.getElementById("navModeration");
     const navDashBadge = document.getElementById("navDashBadge");
     const statWords = document.getElementById("statWords");
     const statBooks = document.getElementById("statBooks");
@@ -2068,6 +2070,14 @@
         }
 
         applyStoryBibleNav();
+
+        if (!isLocalStudio) {
+            void import("./js/moderation-access.js").then(({ isModerationStaffReliable }) => {
+                return isModerationStaffReliable();
+            }).then((staff) => {
+                if (staff) navModeration?.classList.remove("is-hidden");
+            });
+        }
 
         try {
             const { streak, lastLogin } = await ensureUserStreak(profile);
