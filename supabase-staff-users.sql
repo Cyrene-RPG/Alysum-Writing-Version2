@@ -383,7 +383,7 @@ BEGIN
         b.published_chapter_ids,
         b.publish_meta,
         lbm.visibility,
-        lbm.reason AS moderation_reason,
+        lbm.hidden_reason AS moderation_reason,
         lbm.updated_at AS moderation_updated_at,
         lib.data ->> 'views' AS library_views,
         (SELECT COUNT(*)::integer FROM public.library_reports r WHERE r.book_id = b.id) AS report_count,
