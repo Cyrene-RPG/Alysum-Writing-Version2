@@ -83,10 +83,12 @@
   });
 
   window.addEventListener('load', () => {
-    const swScript = new URL('sw.js', window.location.href);
+    const swScript = new URL('sw.js?v=1.0.71', window.location.href);
     const swScope = new URL('./', swScript).pathname;
-    navigator.serviceWorker.register(swScript.href, { scope: swScope })
+    navigator.serviceWorker.register(swScript.href, { scope: swScope, updateViaCache: 'none' })
       .then((reg) => {
+        reg.update().catch(() => {});
+
         if (reg.waiting) showUpdateToast(reg);
 
         reg.addEventListener('updatefound', () => {

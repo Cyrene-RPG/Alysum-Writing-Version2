@@ -8,7 +8,7 @@
  * Bump SW_VERSION when shipping breaking shell changes to force a refresh.
  */
 
-const SW_VERSION = 'v1.0.70';
+const SW_VERSION = 'v1.0.71';
 const SHELL_CACHE = `alysum-shell-${SW_VERSION}`;
 const ASSET_CACHE = `alysum-assets-${SW_VERSION}`;
 
@@ -49,6 +49,16 @@ const APP_SHELL = [
   'character-profile.html',
   'worldbuilding.html',
   'settings.html',
+  'moderation-dashboard.html',
+  'moderation-users.html',
+  'moderation-user.html',
+  'css/library-reports.css',
+  'js/moderation-access.js',
+  'js/moderation-users-panel.js',
+  'js/moderation-reports-panel.js',
+  'js/moderation-user-detail.js',
+  'js/staff-users-api.js',
+  'js/library-reports-api.js',
   'badges.html',
   'author-dashboard.html',
   'scratch.html',
@@ -159,7 +169,7 @@ async function networkFirstHtml(event) {
   const cache = await caches.open(SHELL_CACHE);
   try {
     const preload = event.preloadResponse ? await event.preloadResponse : null;
-    const fresh = preload || await fetch(event.request);
+    const fresh = preload || await fetch(event.request, { cache: 'no-store' });
     if (fresh && fresh.ok) cache.put(event.request, fresh.clone());
     return fresh;
   } catch (_) {
