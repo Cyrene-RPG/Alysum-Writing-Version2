@@ -68,16 +68,21 @@ export function initUsersPanel(opts) {
             return;
         }
         const max = Math.max(1, ...rows.map((d) => Number(d.count || 0)));
+        const trackHeight = 96;
         modJoinsChart.innerHTML = `
             <div class="mod-joins-bars" role="img" aria-label="Daily new accounts">
                 ${rows.map((d) => {
                     const count = Number(d.count || 0);
-                    const pct = Math.max(count > 0 ? 8 : 2, Math.round((count / max) * 100));
+                    const barHeight = count > 0
+                        ? Math.max(6, Math.round((count / max) * trackHeight))
+                        : 3;
                     const day = String(d.day || "").slice(5, 10) || "—";
                     return `
                         <div class="mod-joins-bar-wrap" title="${escapeHtml(String(d.day || ""))}: ${count} joined">
-                            <div class="mod-joins-bar" style="height:${pct}%"></div>
                             <span class="mod-joins-count">${count}</span>
+                            <div class="mod-joins-bar-track">
+                                <div class="mod-joins-bar" style="height:${barHeight}px"></div>
+                            </div>
                             <span class="mod-joins-day">${escapeHtml(day)}</span>
                         </div>
                     `;
@@ -155,6 +160,19 @@ export function initUsersPanel(opts) {
         });
     }
 
+    function syncSearchUrl() {
+        const url = new URL(window.location.href);
+        if (query) url.searchParams.set("q", query);
+        else url.searchParams.delete("q");
+        window.history.replaceState({}, "", url.pathname + url.search);
+    }
+
+    function scrollSelectedIntoView() {
+        if (!selectedUserId || !modUserList) return;
+        modUserList.querySelector(`[data-pick-user="${CSS.escape(selectedUserId)}"]`)
+            ?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
+
     async function pickUser(userId) {
         if (!userId) return;
         selectedUserId = userId;
@@ -162,6 +180,7 @@ export function initUsersPanel(opts) {
         modUserList?.querySelectorAll("[data-pick-user]").forEach((btn) => {
             btn.classList.toggle("is-selected", btn.dataset.pickUser === userId);
         });
+        scrollSelectedIntoView();
         if (!modUserDetailPane) return;
         try {
             await mountUserDetail(userId, modUserDetailPane, { showStatus });
@@ -209,6 +228,7 @@ export function initUsersPanel(opts) {
             total = Number(result.total || 0);
             renderUserList(result.users || []);
             updatePagination();
+            scrollSelectedIntoView();
         } catch (err) {
             if (modUserList) {
                 modUserList.innerHTML = `<p class="mod-detail-empty mod-load-error">Could not load users: ${escapeHtml(err.message || String(err))}</p>`;
@@ -238,6 +258,7 @@ export function initUsersPanel(opts) {
     document.getElementById("modSearchBtn")?.addEventListener("click", () => {
         query = modSearch?.value.trim() || "";
         offset = 0;
+        syncSearchUrl();
         loadUsers().catch((e) => showStatus(e.message, "error"));
     });
 
@@ -245,6 +266,7 @@ export function initUsersPanel(opts) {
         if (modSearch) modSearch.value = "";
         query = "";
         offset = 0;
+        syncSearchUrl();
         loadUsers().catch((e) => showStatus(e.message, "error"));
     });
 
@@ -252,6 +274,7 @@ export function initUsersPanel(opts) {
         if (e.key === "Enter") {
             query = modSearch.value.trim();
             offset = 0;
+            syncSearchUrl();
             loadUsers().catch((err) => showStatus(err.message, "error"));
         }
     });

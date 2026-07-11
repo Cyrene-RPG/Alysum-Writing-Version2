@@ -6,7 +6,7 @@
     <title>Moderation — Alysum</title>
     <link rel="stylesheet" href="css/site-responsive.css?v=1">
     <link rel="stylesheet" href="css/gradient-themes.css?v=5">
-    <link rel="stylesheet" href="css/library-reports.css?v=8">
+    <link rel="stylesheet" href="css/library-reports.css?v=9">
     <script src="js/gradient-theme-sync.js" defer></script>
     <script src="js/alysum-appearance-boot.js"></script>
 </head>
@@ -71,7 +71,7 @@
                     </div>
                 </header>
                 <div class="mod-stats" id="modReportStats"></div>
-                <div class="mod-split">
+                <div class="mod-split" id="modInboxSplit">
                     <div class="mod-split-list">
                         <nav class="mod-subnav">
                             <button type="button" class="mod-btn is-active" data-inbox-tab="reports">Reports</button>
@@ -113,7 +113,10 @@
                     </div>
                 </div>
 
-                <div class="mod-online-strip" id="modOnlineList"></div>
+                <div class="mod-online-strip" id="modOnlineStrip">
+                    <span class="mod-online-strip-label">Online now</span>
+                    <div class="mod-online-chips" id="modOnlineList"></div>
+                </div>
 
                 <div class="mod-split mod-split-people">
                     <div class="mod-split-list">
@@ -147,11 +150,11 @@
 </div>
 
 <script type="module">
-    import { bootModerationPage } from "./js/moderation-access.js?v=8";
-    import { initReportsPanel } from "./js/moderation-reports-panel.js?v=8";
-    import { initUsersPanel } from "./js/moderation-users-panel.js?v=8";
-    import { staffUsersOverviewStats } from "./js/staff-users-api.js?v=8";
-    import { getDashboardStats as getReportStats } from "./js/library-reports-api.js?v=8";
+    import { bootModerationPage } from "./js/moderation-access.js?v=9";
+    import { initReportsPanel } from "./js/moderation-reports-panel.js?v=9";
+    import { initUsersPanel } from "./js/moderation-users-panel.js?v=9";
+    import { staffUsersOverviewStats } from "./js/staff-users-api.js?v=9";
+    import { getDashboardStats as getReportStats } from "./js/library-reports-api.js?v=9";
 
     const modStatus = document.getElementById("modStatus");
     let reportsApi = null;
@@ -203,6 +206,7 @@
             document.querySelectorAll("[data-inbox-tab]").forEach((b) => b.classList.toggle("is-active", b.dataset.inboxTab === tab));
             document.getElementById("modInboxReportsPanel")?.classList.toggle("hidden", tab !== "reports");
             document.getElementById("modInboxAppealsPanel")?.classList.toggle("hidden", tab !== "appeals");
+            document.getElementById("modInboxSplit")?.classList.toggle("is-single-pane", tab === "appeals");
         });
     });
 
@@ -234,10 +238,6 @@
         reportsApi = initReportsPanel({ showStatus });
         usersApi = initUsersPanel({ showStatus, onUserSelect, getSelectedUserId: () => new URLSearchParams(window.location.search).get("user") });
         showView(initialView);
-        if (initialView === "people") {
-            document.querySelector('[data-mod-view="people"]')?.classList.add("is-active");
-            document.querySelector('[data-mod-view="inbox"]')?.classList.remove("is-active");
-        }
 
         try {
             await refreshSidebarStats();
