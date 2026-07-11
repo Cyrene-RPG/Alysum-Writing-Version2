@@ -412,7 +412,9 @@ export async function mountUserDetail(userId, container, opts) {
     container.innerHTML = '<p class="mod-detail-empty">Loading user…</p>';
 
     try {
-        const [detail, booksRaw, safetyRaw, engagementRaw] = await Promise.all([
+        // Detail + safety are required; books/engagement fail soft so one bad RPC
+        // cannot blank the whole dossier.
+        const [detailResult, booksResult, safetyResult, engagementResult] = await Promise.allSettled([
             staffGetUserDetail(userId),
             staffListUserBooks(userId),
             staffGetUserSafety(userId),
@@ -421,8 +423,16 @@ export async function mountUserDetail(userId, container, opts) {
 
         if (loadGen !== userDetailLoadGen) return null;
 
-        const books = asArray(booksRaw);
-        const safety = safetyRaw && typeof safetyRaw === "object" ? safetyRaw : {};
+        if (detailResult.status !== "fulfilled") {
+            throw detailResult.reason || new Error("Could not load user detail.");
+        }
+        if (safetyResult.status !== "fulfilled") {
+            throw safetyResult.reason || new Error("Could not load user safety.");
+        }
+
+        const detail = detailResult.value;
+        const books = asArray(booksResult.status === "fulfilled" ? booksResult.value : []);
+        const safety = safetyResult.value && typeof safetyResult.value === "object" ? safetyResult.value : {};
         safety.strikes = asArray(safety.strikes);
         safety.violations = asArray(safety.violations);
         safety.reports_as_author = asArray(safety.reports_as_author);
@@ -430,6 +440,7 @@ export async function mountUserDetail(userId, container, opts) {
         safety.appeals = asArray(safety.appeals);
         safety.audit_log = asArray(safety.audit_log);
 
+        const engagementRaw = engagementResult.status === "fulfilled" ? engagementResult.value : {};
         const engagement = engagementRaw && typeof engagementRaw === "object" ? engagementRaw : {};
         engagement.recent_comments = asArray(engagement.recent_comments);
         engagement.beta_shares = asArray(engagement.beta_shares);

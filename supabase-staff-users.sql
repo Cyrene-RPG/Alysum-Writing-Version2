@@ -1,12 +1,26 @@
 -- Staff user browser: search users, inspect profiles, books, moderation & activity.
 -- Run AFTER supabase-library-reports.sql (requires is_moderation_staff()).
 -- Safe to re-run.
+--
+-- Supabase SQL Editor may warn about:
+--   1) DROP FUNCTION — only removes old helper/overload functions, not tables or user rows
+--   2) RLS — comments/likes are created with RLS enabled below
+-- You can proceed / run the query.
 
 -- ---------------------------------------------------------------------------
 -- 0. Presence — last_seen_at for "who's online" in staff tools
 -- ---------------------------------------------------------------------------
 
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS last_seen_at timestamptz;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS last_login text;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS beta_read_shelf jsonb NOT NULL DEFAULT '{}'::jsonb;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS beta_read_notes_by_book jsonb NOT NULL DEFAULT '{}'::jsonb;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS current_read_book_id text;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS current_read_chapter_index integer;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS current_read_chapter_title text;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS current_read_story_title text;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS current_read_author text;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS current_read_updated_at timestamptz;
 
 CREATE OR REPLACE FUNCTION public.touch_user_presence()
 RETURNS timestamptz
@@ -34,6 +48,105 @@ BEGIN
   RETURN v_seen;
 END;
 $$;
+
+-- ---------------------------------------------------------------------------
+-- 0b. Ensure engagement tables exist (same shapes as sibling-tables stubs)
+-- Creates empty comments/likes if missing so staff RPCs never fail.
+-- Enables RLS + policies (Supabase warns if tables are created without RLS).
+-- ---------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS public.comments (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  book_id text NOT NULL,
+  user_id uuid NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE,
+  username text NOT NULL DEFAULT '',
+  display_name text NOT NULL DEFAULT '',
+  text text NOT NULL DEFAULT '',
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz
+);
+
+CREATE INDEX IF NOT EXISTS comments_book_id_idx ON public.comments (book_id);
+CREATE INDEX IF NOT EXISTS comments_user_id_idx ON public.comments (user_id);
+
+CREATE TABLE IF NOT EXISTS public.likes (
+  id text PRIMARY KEY,
+  book_id text NOT NULL,
+  user_id uuid NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS likes_book_id_idx ON public.likes (book_id);
+CREATE INDEX IF NOT EXISTS likes_user_id_idx ON public.likes (user_id);
+
+ALTER TABLE public.comments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.likes ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "comments_select_public" ON public.comments;
+CREATE POLICY "comments_select_public" ON public.comments
+  FOR SELECT TO anon, authenticated
+  USING (true);
+
+DROP POLICY IF EXISTS "comments_insert_own" ON public.comments;
+CREATE POLICY "comments_insert_own" ON public.comments
+  FOR INSERT TO authenticated
+  WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "comments_update_own" ON public.comments;
+CREATE POLICY "comments_update_own" ON public.comments
+  FOR UPDATE TO authenticated
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "comments_delete_own" ON public.comments;
+CREATE POLICY "comments_delete_own" ON public.comments
+  FOR DELETE TO authenticated
+  USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "comments_delete_as_library_owner" ON public.comments;
+CREATE POLICY "comments_delete_as_library_owner" ON public.comments
+  FOR DELETE TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.library lib
+      WHERE lib.id::text = comments.book_id
+        AND lib.user_id::text = (auth.uid())::text
+    )
+  );
+
+DROP POLICY IF EXISTS "likes_select_public" ON public.likes;
+CREATE POLICY "likes_select_public" ON public.likes
+  FOR SELECT TO anon, authenticated
+  USING (true);
+
+DROP POLICY IF EXISTS "likes_insert_own" ON public.likes;
+CREATE POLICY "likes_insert_own" ON public.likes
+  FOR INSERT TO authenticated
+  WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "likes_update_own" ON public.likes;
+CREATE POLICY "likes_update_own" ON public.likes
+  FOR UPDATE TO authenticated
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+GRANT SELECT ON public.comments TO anon, authenticated;
+GRANT INSERT, UPDATE, DELETE ON public.comments TO authenticated;
+GRANT SELECT ON public.likes TO anon, authenticated;
+GRANT INSERT, UPDATE, DELETE ON public.likes TO authenticated;
+
+-- Drop previous experimental helpers if a prior broken migration created them.
+-- (Supabase may warn about DROP — these only remove unused helper functions, not user data.)
+DROP FUNCTION IF EXISTS public.staff_table_exists(text);
+DROP FUNCTION IF EXISTS public.staff_safe_count_by_user(text, uuid);
+DROP FUNCTION IF EXISTS public.staff_safe_count_by_uuid_col(text, text, uuid);
+DROP FUNCTION IF EXISTS public.staff_safe_count_likes_on_user_books(uuid);
+DROP FUNCTION IF EXISTS public.staff_safe_count_by_book_id(text, text);
+DROP FUNCTION IF EXISTS public.staff_safe_recent_comments(uuid, integer);
+DROP FUNCTION IF EXISTS public.staff_safe_beta_shares(uuid, integer);
+DROP FUNCTION IF EXISTS public.staff_safe_blocks_made(uuid);
+DROP FUNCTION IF EXISTS public.staff_safe_blocks_received(uuid);
+DROP FUNCTION IF EXISTS public.staff_safe_beta_message_reports(uuid, integer);
 
 -- ---------------------------------------------------------------------------
 -- 1. Search / list users
@@ -263,6 +376,10 @@ DECLARE
   v_mod public.author_moderation_status%ROWTYPE;
   v_reporter public.reporter_scores%ROWTYPE;
   v_counts jsonb;
+  v_beta_owned bigint := 0;
+  v_beta_part bigint := 0;
+  v_blocks_made bigint := 0;
+  v_blocks_recv bigint := 0;
 BEGIN
   IF NOT public.is_moderation_staff() THEN
     RAISE EXCEPTION 'Moderation staff only.';
@@ -293,6 +410,16 @@ BEGIN
   FROM public.reporter_scores rs
   WHERE rs.user_id = p_user_id;
 
+  IF to_regclass('public.manuscript_shares') IS NOT NULL THEN
+    SELECT COUNT(*) INTO v_beta_owned FROM public.manuscript_shares ms WHERE ms.author_id = p_user_id;
+    SELECT COUNT(*) INTO v_beta_part FROM public.manuscript_shares ms WHERE ms.reader_id = p_user_id;
+  END IF;
+
+  IF to_regclass('public.user_blocks') IS NOT NULL THEN
+    SELECT COUNT(*) INTO v_blocks_made FROM public.user_blocks ub WHERE ub.blocker_id = p_user_id;
+    SELECT COUNT(*) INTO v_blocks_recv FROM public.user_blocks ub WHERE ub.blocked_id = p_user_id;
+  END IF;
+
   SELECT jsonb_build_object(
     'books', (SELECT COUNT(*) FROM public.books b WHERE b.user_id = p_user_id),
     'published_books', (SELECT COUNT(*) FROM public.books b WHERE b.user_id = p_user_id AND b.is_published),
@@ -310,7 +437,12 @@ BEGIN
       WHERE b.user_id = p_user_id
     ),
     'reads_on_books', (
-      SELECT COALESCE(SUM((l.data ->> 'views')::bigint), 0)
+      SELECT COALESCE(SUM(
+        CASE
+          WHEN (l.data ->> 'views') ~ '^[0-9]+$' THEN (l.data ->> 'views')::bigint
+          ELSE 0
+        END
+      ), 0)
       FROM public.library l
       JOIN public.books b ON b.id = l.id
       WHERE b.user_id = p_user_id
@@ -334,14 +466,10 @@ BEGIN
       SELECT COUNT(*) FROM public.moderation_strikes ms
       WHERE ms.user_id = p_user_id AND ms.expires_at > now()
     ),
-    'beta_shares_owned', (
-      SELECT COUNT(*) FROM public.manuscript_shares ms WHERE ms.author_id = p_user_id
-    ),
-    'beta_shares_participant', (
-      SELECT COUNT(*) FROM public.manuscript_shares ms WHERE ms.reader_id = p_user_id
-    ),
-    'blocks_made', (SELECT COUNT(*) FROM public.user_blocks ub WHERE ub.blocker_id = p_user_id),
-    'blocks_received', (SELECT COUNT(*) FROM public.user_blocks ub WHERE ub.blocked_id = p_user_id)
+    'beta_shares_owned', v_beta_owned,
+    'beta_shares_participant', v_beta_part,
+    'blocks_made', v_blocks_made,
+    'blocks_received', v_blocks_recv
   ) INTO v_counts;
 
   RETURN jsonb_build_object(
@@ -473,83 +601,103 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
-  v_profile public.users%ROWTYPE;
+  v_profile jsonb;
+  v_comments jsonb := '[]'::jsonb;
+  v_beta_shares jsonb := '[]'::jsonb;
+  v_blocks_made jsonb := '[]'::jsonb;
+  v_blocks_recv jsonb := '[]'::jsonb;
+  v_beta_reports jsonb := '[]'::jsonb;
 BEGIN
   IF NOT public.is_moderation_staff() THEN
     RAISE EXCEPTION 'Moderation staff only.';
   END IF;
 
-  SELECT * INTO v_profile FROM public.users u WHERE u.id = p_user_id;
-  IF NOT FOUND THEN
+  SELECT to_jsonb(u) INTO v_profile FROM public.users u WHERE u.id = p_user_id;
+  IF v_profile IS NULL THEN
     RAISE EXCEPTION 'User not found.';
   END IF;
 
-  RETURN jsonb_build_object(
-    'recent_comments', COALESCE((
-      SELECT jsonb_agg(row_to_json(t)::jsonb ORDER BY t.created_at DESC)
-      FROM (
-        SELECT c.id, c.book_id, c.text, c.created_at, c.updated_at
-        FROM public.comments c
-        WHERE c.user_id = p_user_id
-        ORDER BY c.created_at DESC
-        LIMIT 30
-      ) t
-    ), '[]'::jsonb),
-    'beta_shelf', v_profile.beta_read_shelf,
-    'beta_read_notes_by_book', v_profile.beta_read_notes_by_book,
-    'current_read', jsonb_build_object(
-      'book_id', v_profile.current_read_book_id,
-      'chapter_index', v_profile.current_read_chapter_index,
-      'chapter_title', v_profile.current_read_chapter_title,
-      'story_title', v_profile.current_read_story_title,
-      'author', v_profile.current_read_author,
-      'updated_at', v_profile.current_read_updated_at
-    ),
-    'beta_shares', COALESCE((
-      SELECT jsonb_agg(row_to_json(t)::jsonb ORDER BY t.created_at DESC)
-      FROM (
-        SELECT
-          ms.id,
-          ms.book_id,
-          ms.author_id,
-          ms.reader_id,
-          ms.status,
-          ms.invited_email,
-          ms.permissions,
-          ms.expires_at,
-          ms.created_at,
-          ms.accepted_at
-        FROM public.manuscript_shares ms
-        WHERE ms.author_id = p_user_id
-           OR ms.reader_id = p_user_id
-        ORDER BY ms.created_at DESC
-        LIMIT 30
-      ) t
-    ), '[]'::jsonb),
-    'blocks_made', COALESCE((
-      SELECT jsonb_agg(row_to_json(t)::jsonb ORDER BY t.created_at DESC)
-      FROM (
-        SELECT ub.*, u.username AS blocked_username
-        FROM public.user_blocks ub
-        LEFT JOIN public.users u ON u.id = ub.blocked_id
-        WHERE ub.blocker_id = p_user_id
-      ) t
-    ), '[]'::jsonb),
-    'blocks_received', COALESCE((
-      SELECT jsonb_agg(row_to_json(t)::jsonb ORDER BY t.created_at DESC)
-      FROM (
-        SELECT ub.*, u.username AS blocker_username
-        FROM public.user_blocks ub
-        LEFT JOIN public.users u ON u.id = ub.blocker_id
-        WHERE ub.blocked_id = p_user_id
-      ) t
-    ), '[]'::jsonb),
-    'beta_message_reports', COALESCE((
-      SELECT jsonb_agg(to_jsonb(bmr) ORDER BY bmr.created_at DESC)
+  SELECT COALESCE(jsonb_agg(row_to_json(t)::jsonb ORDER BY t.created_at DESC), '[]'::jsonb)
+  INTO v_comments
+  FROM (
+    SELECT c.id, c.book_id, c.text, c.created_at, c.updated_at
+    FROM public.comments c
+    WHERE c.user_id = p_user_id
+    ORDER BY c.created_at DESC
+    LIMIT 30
+  ) t;
+
+  IF to_regclass('public.manuscript_shares') IS NOT NULL THEN
+    SELECT COALESCE(jsonb_agg(row_to_json(t)::jsonb ORDER BY t.created_at DESC), '[]'::jsonb)
+    INTO v_beta_shares
+    FROM (
+      SELECT
+        ms.id,
+        ms.book_id,
+        ms.author_id,
+        ms.reader_id,
+        ms.status,
+        ms.invited_email,
+        ms.permissions,
+        ms.expires_at,
+        ms.created_at,
+        ms.accepted_at
+      FROM public.manuscript_shares ms
+      WHERE ms.author_id = p_user_id
+         OR ms.reader_id = p_user_id
+      ORDER BY ms.created_at DESC
+      LIMIT 30
+    ) t;
+  END IF;
+
+  IF to_regclass('public.user_blocks') IS NOT NULL THEN
+    SELECT COALESCE(jsonb_agg(row_to_json(t)::jsonb ORDER BY t.created_at DESC), '[]'::jsonb)
+    INTO v_blocks_made
+    FROM (
+      SELECT ub.*, u.username AS blocked_username
+      FROM public.user_blocks ub
+      LEFT JOIN public.users u ON u.id = ub.blocked_id
+      WHERE ub.blocker_id = p_user_id
+    ) t;
+
+    SELECT COALESCE(jsonb_agg(row_to_json(t)::jsonb ORDER BY t.created_at DESC), '[]'::jsonb)
+    INTO v_blocks_recv
+    FROM (
+      SELECT ub.*, u.username AS blocker_username
+      FROM public.user_blocks ub
+      LEFT JOIN public.users u ON u.id = ub.blocker_id
+      WHERE ub.blocked_id = p_user_id
+    ) t;
+  END IF;
+
+  IF to_regclass('public.beta_message_reports') IS NOT NULL THEN
+    SELECT COALESCE(jsonb_agg(to_jsonb(bmr) ORDER BY bmr.created_at DESC), '[]'::jsonb)
+    INTO v_beta_reports
+    FROM (
+      SELECT bmr.*
       FROM public.beta_message_reports bmr
       WHERE bmr.reporter_id = p_user_id OR bmr.reported_user_id = p_user_id
+      ORDER BY bmr.created_at DESC
       LIMIT 30
-    ), '[]'::jsonb)
+    ) bmr;
+  END IF;
+
+  RETURN jsonb_build_object(
+    'recent_comments', COALESCE(v_comments, '[]'::jsonb),
+    'beta_shelf', v_profile -> 'beta_read_shelf',
+    'beta_read_notes_by_book', v_profile -> 'beta_read_notes_by_book',
+    'current_read', jsonb_build_object(
+      'book_id', v_profile ->> 'current_read_book_id',
+      'chapter_index', v_profile -> 'current_read_chapter_index',
+      'chapter_title', v_profile ->> 'current_read_chapter_title',
+      'story_title', v_profile ->> 'current_read_story_title',
+      'author', v_profile ->> 'current_read_author',
+      'updated_at', v_profile -> 'current_read_updated_at'
+    ),
+    'beta_shares', COALESCE(v_beta_shares, '[]'::jsonb),
+    'blocks_made', COALESCE(v_blocks_made, '[]'::jsonb),
+    'blocks_received', COALESCE(v_blocks_recv, '[]'::jsonb),
+    'beta_message_reports', COALESCE(v_beta_reports, '[]'::jsonb)
   );
 END;
 $$;
@@ -564,10 +712,47 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public, auth
 AS $$
+DECLARE
+  v_joins jsonb := '[]'::jsonb;
+  v_recent jsonb := '[]'::jsonb;
 BEGIN
   IF NOT public.is_moderation_staff() THEN
     RAISE EXCEPTION 'Moderation staff only.';
   END IF;
+
+  SELECT COALESCE(jsonb_agg(row_to_json(t)::jsonb ORDER BY t.day ASC), '[]'::jsonb)
+  INTO v_joins
+  FROM (
+    SELECT
+      d::date AS day,
+      COALESCE(c.cnt, 0)::integer AS count
+    FROM generate_series(
+      (timezone('utc', now()))::date - 13,
+      (timezone('utc', now()))::date,
+      interval '1 day'
+    ) AS d
+    LEFT JOIN (
+      SELECT date_trunc('day', u.created_at AT TIME ZONE 'utc')::date AS day, COUNT(*)::integer AS cnt
+      FROM public.users u
+      WHERE u.created_at >= (timezone('utc', now()))::date - 13
+      GROUP BY 1
+    ) c ON c.day = d::date
+  ) t;
+
+  SELECT COALESCE(jsonb_agg(row_to_json(t)::jsonb ORDER BY t.created_at DESC), '[]'::jsonb)
+  INTO v_recent
+  FROM (
+    SELECT
+      u.id,
+      u.username,
+      u.display_name,
+      u.account_type,
+      u.created_at,
+      u.last_seen_at
+    FROM public.users u
+    ORDER BY u.created_at DESC NULLS LAST
+    LIMIT 12
+  ) t;
 
   RETURN jsonb_build_object(
     'totalUsers', (SELECT COUNT(*) FROM public.users),
@@ -593,6 +778,8 @@ BEGIN
       SELECT COUNT(*) FROM public.users
       WHERE created_at >= date_trunc('day', now())
     ),
+    'joinsByDay', v_joins,
+    'recentJoins', v_recent,
     'suspendedAccounts', (
       SELECT COUNT(*) FROM public.author_moderation_status
       WHERE account_suspended OR account_terminated

@@ -6,7 +6,7 @@
     <title>Moderation — Alysum</title>
     <link rel="stylesheet" href="css/site-responsive.css?v=1">
     <link rel="stylesheet" href="css/gradient-themes.css?v=5">
-    <link rel="stylesheet" href="css/library-reports.css?v=6">
+    <link rel="stylesheet" href="css/library-reports.css?v=8">
     <script src="js/gradient-theme-sync.js" defer></script>
     <script src="js/alysum-appearance-boot.js"></script>
 </head>
@@ -101,6 +101,18 @@
                     <button type="button" class="mod-btn" id="modRefreshUsersBtn">Refresh</button>
                 </header>
 
+                <div class="mod-people-usage" id="modPeopleUsage">
+                    <div class="mod-stats mod-stats-compact" id="modUserStats"></div>
+                    <div class="mod-joins-panel">
+                        <div class="mod-joins-head">
+                            <h2>Just joined</h2>
+                            <p>New accounts over the last 14 days</p>
+                        </div>
+                        <div class="mod-joins-chart" id="modJoinsChart" aria-label="New signups chart"></div>
+                        <div class="mod-recent-joins" id="modRecentJoins"></div>
+                    </div>
+                </div>
+
                 <div class="mod-online-strip" id="modOnlineList"></div>
 
                 <div class="mod-split mod-split-people">
@@ -135,11 +147,11 @@
 </div>
 
 <script type="module">
-    import { bootModerationPage } from "./js/moderation-access.js";
-    import { initReportsPanel } from "./js/moderation-reports-panel.js";
-    import { initUsersPanel } from "./js/moderation-users-panel.js";
-    import { staffUsersOverviewStats } from "./js/staff-users-api.js";
-    import { getDashboardStats as getReportStats } from "./js/library-reports-api.js";
+    import { bootModerationPage } from "./js/moderation-access.js?v=8";
+    import { initReportsPanel } from "./js/moderation-reports-panel.js?v=8";
+    import { initUsersPanel } from "./js/moderation-users-panel.js?v=8";
+    import { staffUsersOverviewStats } from "./js/staff-users-api.js?v=8";
+    import { getDashboardStats as getReportStats } from "./js/library-reports-api.js?v=8";
 
     const modStatus = document.getElementById("modStatus");
     let reportsApi = null;

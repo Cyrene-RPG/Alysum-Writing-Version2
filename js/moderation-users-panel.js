@@ -26,6 +26,9 @@ export function initUsersPanel(opts) {
     const modPagination = document.getElementById("modPagination");
     const modPageInfo = document.getElementById("modPageInfo");
     const modOnlineList = document.getElementById("modOnlineList");
+    const modUserStats = document.getElementById("modUserStats");
+    const modJoinsChart = document.getElementById("modJoinsChart");
+    const modRecentJoins = document.getElementById("modRecentJoins");
 
     const PAGE_SIZE = 40;
     let offset = 0;
@@ -37,6 +40,68 @@ export function initUsersPanel(opts) {
     function setSidebarBadges(stats) {
         const el = document.getElementById("modPeopleBadge");
         if (el) el.textContent = String(stats.usersNeedingAttention || 0);
+    }
+
+    function renderUsageStats(stats) {
+        if (!modUserStats) return;
+        const cards = [
+            { label: "Online now", value: stats.onlineNow || 0, className: "is-online-stat" },
+            { label: "Active today", value: stats.activeToday || 0 },
+            { label: "Joined today", value: stats.newToday || 0 },
+            { label: "Joined this week", value: stats.newThisWeek || 0 },
+            { label: "Total users", value: stats.totalUsers || 0 },
+            { label: "Needs attention", value: stats.usersNeedingAttention || 0, className: Number(stats.usersNeedingAttention) > 0 ? "is-critical" : "" },
+        ];
+        modUserStats.innerHTML = cards.map((c) => `
+            <div class="mod-stat ${c.className || ""}">
+                <div class="mod-stat-label">${escapeHtml(c.label)}</div>
+                <div class="mod-stat-value">${Number(c.value).toLocaleString()}</div>
+            </div>
+        `).join("");
+    }
+
+    function renderJoinsChart(days) {
+        if (!modJoinsChart) return;
+        const rows = Array.isArray(days) ? days : [];
+        if (!rows.length) {
+            modJoinsChart.innerHTML = '<p class="mod-detail-empty">No join data yet.</p>';
+            return;
+        }
+        const max = Math.max(1, ...rows.map((d) => Number(d.count || 0)));
+        modJoinsChart.innerHTML = `
+            <div class="mod-joins-bars" role="img" aria-label="Daily new accounts">
+                ${rows.map((d) => {
+                    const count = Number(d.count || 0);
+                    const pct = Math.max(count > 0 ? 8 : 2, Math.round((count / max) * 100));
+                    const day = String(d.day || "").slice(5, 10) || "—";
+                    return `
+                        <div class="mod-joins-bar-wrap" title="${escapeHtml(String(d.day || ""))}: ${count} joined">
+                            <div class="mod-joins-bar" style="height:${pct}%"></div>
+                            <span class="mod-joins-count">${count}</span>
+                            <span class="mod-joins-day">${escapeHtml(day)}</span>
+                        </div>
+                    `;
+                }).join("")}
+            </div>
+        `;
+    }
+
+    function renderRecentJoins(users) {
+        if (!modRecentJoins) return;
+        const rows = Array.isArray(users) ? users : [];
+        if (!rows.length) {
+            modRecentJoins.innerHTML = '<p class="mod-detail-empty">No recent signups.</p>';
+            return;
+        }
+        modRecentJoins.innerHTML = rows.map((u) => `
+            <button type="button" class="mod-recent-join" data-pick-user="${escapeHtml(u.id)}">
+                <span class="mod-recent-join-name">@${escapeHtml(u.username || "unknown")}</span>
+                <span class="mod-recent-join-meta">${escapeHtml(formatRelative(u.created_at))}</span>
+            </button>
+        `).join("");
+        modRecentJoins.querySelectorAll("[data-pick-user]").forEach((btn) => {
+            btn.addEventListener("click", () => pickUser(btn.dataset.pickUser));
+        });
     }
 
     function renderOnlineNow(users) {
@@ -160,6 +225,9 @@ export function initUsersPanel(opts) {
             loadUsers(),
         ]);
         setSidebarBadges(stats);
+        renderUsageStats(stats);
+        renderJoinsChart(stats.joinsByDay);
+        renderRecentJoins(stats.recentJoins);
         renderOnlineNow(online);
         if (remountUser && selectedUserId && modUserDetailPane) {
             await pickUser(selectedUserId);

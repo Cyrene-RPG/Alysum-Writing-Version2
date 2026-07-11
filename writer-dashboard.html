@@ -507,64 +507,6 @@
         color: var(--gold, #fbbf24);
     }
 
-    .wd-staff-card {
-        border-color: rgba(251, 191, 36, 0.35);
-        background: linear-gradient(165deg, rgba(76, 29, 149, 0.42) 0%, rgba(15, 23, 40, 0.98) 52%);
-        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-    }
-
-    .wd-staff-card.is-hidden { display: none; }
-
-    .wd-staff-kicker {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        margin-top: 4px;
-        font-size: 11px;
-        font-weight: 900;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        color: #fde68a;
-    }
-
-    .wd-staff-actions {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 10px;
-        margin-top: 14px;
-    }
-
-    .wd-staff-btn {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 44px;
-        padding: 10px 12px;
-        border-radius: 12px;
-        border: 1px solid rgba(255, 255, 255, 0.14);
-        background: rgba(0, 0, 0, 0.22);
-        color: #f9fafb;
-        font-size: 13px;
-        font-weight: 900;
-        text-decoration: none;
-        text-align: center;
-        transition: background 0.12s ease, border-color 0.12s ease, transform 0.1s ease;
-    }
-
-    .wd-staff-btn:hover {
-        background: rgba(255, 255, 255, 0.1);
-        border-color: rgba(251, 191, 36, 0.45);
-    }
-
-    .wd-staff-btn.is-primary {
-        background: linear-gradient(135deg, rgba(109, 40, 217, 0.95), rgba(236, 72, 153, 0.88));
-        border-color: rgba(255, 255, 255, 0.22);
-    }
-
-    .wd-staff-btn.is-primary:hover {
-        border-color: rgba(251, 191, 36, 0.55);
-    }
-
     .wd-rail-sub {
         margin-top: 6px;
         font-size: 13px;
@@ -1116,16 +1058,6 @@
             </section>
 
             <aside class="wd-rail" aria-label="Writing tools">
-                <section class="wd-rail-card wd-staff-card is-hidden" id="wdStaffCard" aria-label="Staff tools">
-                    <span class="wd-staff-kicker">Alysum Support</span>
-                    <h3>Moderation</h3>
-                    <p class="wd-rail-sub">Review reports and browse users.</p>
-                    <div class="wd-staff-actions">
-                        <a class="wd-staff-btn" href="moderation-dashboard.html?view=inbox">Inbox</a>
-                        <a class="wd-staff-btn is-primary" href="moderation-dashboard.html?view=people">Users</a>
-                    </div>
-                </section>
-
                 <section class="wd-rail-card" id="promptsCard">
                     <h3>Weekly prompts</h3>
                     <p class="wd-rail-sub">Weekly prompt plus daily character and worldbuilding questions.</p>
@@ -1225,7 +1157,6 @@
     const navContinue = document.getElementById("navContinue");
     const navStoryBible = document.getElementById("navStoryBible");
     const navReading = document.getElementById("navReading");
-    const wdStaffCard = document.getElementById("wdStaffCard");
     const navDashBadge = document.getElementById("navDashBadge");
     const statWords = document.getElementById("statWords");
     const statBooks = document.getElementById("statBooks");
@@ -2138,14 +2069,6 @@
         }
 
         applyStoryBibleNav();
-
-        if (!isLocalStudio) {
-            void import("./js/moderation-access.js").then(({ isModerationStaffReliable }) => {
-                return isModerationStaffReliable();
-            }).then((staff) => {
-                if (staff) wdStaffCard?.classList.remove("is-hidden");
-            });
-        }
 
         try {
             const { streak, lastLogin } = await ensureUserStreak(profile);
