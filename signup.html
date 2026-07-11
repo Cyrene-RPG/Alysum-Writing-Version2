@@ -779,12 +779,16 @@
 import { supabase } from "./firebase.js";
 import {
     authRedirectUrl,
+    buildOAuthSignInOptions,
     clearAuthCallbackFromUrl,
     clearLegacyOAuthPending,
     clearOAuthPending,
     hasOAuthPending,
     isEmailSignupCallback,
     isOAuthCallbackLanding,
+    isProfileSetupLanding,
+    oauthAuthMessage,
+    oauthCallbackErrorFromUrl,
     OAUTH_PENDING_SIGNUP_KEY,
     setOAuthPending,
     shouldAutoContinueSignup,
@@ -793,7 +797,7 @@ import {
     resolveAuthReturnNext,
     isBetaRoomReturnUrl,
     SIGNUP_RETURN_NEXT_KEY,
-} from "./js/auth-redirect.js?v=4";
+} from "./js/auth-redirect.js?v=5";
 import { wireSupabaseSession } from "./js/supabase-session.js?v=1";
 import {
     ACCOUNT_AUTHOR,
@@ -817,6 +821,7 @@ import {
 
 let oauthSignupHandled = false;
 let emailSignupResumeHandled = false;
+let profileSetupHandled = false;
 let pendingConfirmEmail = "";
 
 const SIGNUP_ACCOUNT_TYPE_KEY = "alysum-signup-account-type";
@@ -1400,17 +1405,12 @@ async function startOAuth(provider) {
 
     const { error } = await supabase.auth.signInWithOAuth({
         provider,
-        options: {
-            redirectTo: authRedirectUrl("signup.html"),
-            data: {
-                accountType
-            }
-        }
+        options: buildOAuthSignInOptions("signup.html", provider, { accountType })
     });
 
     if (error) {
         clearOAuthPending(OAUTH_PENDING_SIGNUP_KEY);
-        showError(error.message);
+        showError(oauthAuthMessage(error.message, provider));
         setOAuthButtonsDisabled(false);
         signupBtn.disabled = false;
     }
@@ -1551,8 +1551,26 @@ async function resumeSignupAfterEmailConfirm(session, event) {
     await resumeSignupOnboarding(session.user);
 }
 
+async function resumeProfileSetupLanding() {
+    if (profileSetupHandled || oauthSignupHandled || onboardingUser) return;
+    if (!isProfileSetupLanding()) return;
+
+    const { data: userData } = await supabase.auth.getUser();
+    const user = userData?.user;
+    if (!user) return;
+
+    profileSetupHandled = true;
+    await resumeSignupOnboarding(user);
+}
+
 clearLegacyOAuthPending();
 applySignupReturnContext();
+
+const oauthCallbackError = oauthCallbackErrorFromUrl();
+if (oauthCallbackError) {
+    showError(oauthAuthMessage(oauthCallbackError));
+    clearAuthCallbackFromUrl();
+}
 
 if (!isOAuthCallbackLanding()) {
     clearOAuthPending(OAUTH_PENDING_SIGNUP_KEY);
@@ -1575,6 +1593,11 @@ wireSupabaseSession(async (session, event) => {
         return;
     }
 
+    if (authReturnEvent && isProfileSetupLanding()) {
+        await resumeProfileSetupLanding();
+        return;
+    }
+
     await resumeSignupAfterEmailConfirm(session, event);
 });
 
@@ -1593,6 +1616,8 @@ if (isOAuthCallbackLanding()) {
             showError("Sign-up did not finish. Try again.");
         }
     })();
+} else {
+    void resumeProfileSetupLanding();
 }
 
 resendConfirmBtn.addEventListener("click", async () => {

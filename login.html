@@ -312,19 +312,23 @@ import { supabase } from "./firebase.js?v=jrfxg";
 import { homeUrlForUserData, WRITER_HOME_URL } from "./js/account-mode.js?v=1";
 import {
     authRedirectUrl,
+    buildOAuthSignInOptions,
     clearAuthCallbackFromUrl,
     clearLegacyOAuthPending,
     clearOAuthPending,
     hasOAuthPending,
     isOAuthCallbackLanding,
+    oauthAuthMessage,
+    oauthCallbackErrorFromUrl,
     OAUTH_PENDING_LOGIN_KEY,
+    profileSetupSignupUrl,
     setOAuthPending,
     shouldAutoContinueOAuth,
     resolveInternalRedirect,
     persistAuthReturnNext,
     isBetaRoomReturnUrl,
     LOGIN_RETURN_NEXT_KEY,
-} from "./js/auth-redirect.js?v=4";
+} from "./js/auth-redirect.js?v=5";
 import { wireSupabaseSession } from "./js/supabase-session.js?v=1";
 import { ensureLoginStreakCloud } from "./js/ensure-login-streak.js?v=3";
 
@@ -525,7 +529,8 @@ async function redirectAfterLogin() {
             .single();
 
         if (error || !data) {
-            window.location.href = WRITER_HOME_URL;
+            const params = new URLSearchParams(window.location.search);
+            window.location.href = profileSetupSignupUrl(params.get("next"));
             return;
         }
 
@@ -603,14 +608,12 @@ async function startOAuth(provider) {
 
     const { error } = await supabase.auth.signInWithOAuth({
         provider,
-        options: {
-            redirectTo: authRedirectUrl("login.html")
-        }
+        options: buildOAuthSignInOptions("login.html", provider)
     });
 
     if (error) {
         clearOAuthPending(OAUTH_PENDING_LOGIN_KEY);
-        showError(error.message);
+        showError(oauthAuthMessage(error.message, provider));
         setOAuthButtonsDisabled(false);
         loginBtn.disabled = false;
     }
@@ -651,6 +654,12 @@ if (resetParams.get("reset") === "success") {
 
 clearLegacyOAuthPending();
 applyLoginReturnContext();
+
+const oauthCallbackError = oauthCallbackErrorFromUrl();
+if (oauthCallbackError) {
+    showError(oauthAuthMessage(oauthCallbackError));
+    clearAuthCallbackFromUrl();
+}
 
 if (!isRecoveryLanding) {
     if (!isOAuthCallbackLanding()) {

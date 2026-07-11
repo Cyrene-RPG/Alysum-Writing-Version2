@@ -206,3 +206,106 @@ export function isBetaRoomReturnUrl(url) {
         return false;
     }
 }
+
+/** Query flag when login OAuth succeeded but public.users profile is still missing. */
+export const PROFILE_SETUP_QUERY = "setup";
+export const PROFILE_SETUP_VALUE = "profile";
+
+export function isProfileSetupLanding() {
+    if (typeof location === "undefined") return false;
+    return new URLSearchParams(location.search || "").get(PROFILE_SETUP_QUERY) === PROFILE_SETUP_VALUE;
+}
+
+export function profileSetupSignupUrl(next) {
+    const url = new URL("signup.html", typeof location !== "undefined" ? location.href : `${PRODUCTION_ORIGIN}/`);
+    url.searchParams.set(PROFILE_SETUP_QUERY, PROFILE_SETUP_VALUE);
+    const safe = resolveInternalRedirect(next);
+    if (safe) url.searchParams.set("next", safe);
+    return url.pathname + url.search;
+}
+
+export function oauthProviderLabel(provider) {
+    const key = String(provider || "").toLowerCase();
+    if (key === "discord") return "Discord";
+    if (key === "google") return "Google";
+    return key ? key.charAt(0).toUpperCase() + key.slice(1) : "OAuth";
+}
+
+function decodeOAuthErrorParam(value) {
+    if (!value) return "";
+    try {
+        return decodeURIComponent(String(value).replace(/\+/g, " "));
+    } catch {
+        return String(value);
+    }
+}
+
+/** Read OAuth failure returned in the address bar before tokens are cleared. */
+export function oauthCallbackErrorFromUrl() {
+    if (typeof location === "undefined") return null;
+
+    const search = new URLSearchParams(location.search || "");
+    const fromSearch =
+        decodeOAuthErrorParam(search.get("error_description")) ||
+        decodeOAuthErrorParam(search.get("error"));
+    if (fromSearch) return fromSearch;
+
+    const hashParams = hashAuthParams();
+    if (!hashParams) return null;
+
+    return (
+        decodeOAuthErrorParam(hashParams.get("error_description")) ||
+        decodeOAuthErrorParam(hashParams.get("error")) ||
+        null
+    );
+}
+
+/** Friendly copy for Supabase / provider OAuth failures. */
+export function oauthAuthMessage(message, provider = "OAuth") {
+    const label = oauthProviderLabel(provider);
+    const text = String(message || "").trim();
+    const lower = text.toLowerCase();
+
+    if (
+        lower.includes("provider is not enabled") ||
+        lower.includes("unsupported provider") ||
+        lower.includes("oauth_provider_not_supported") ||
+        lower.includes("provider_disabled")
+    ) {
+        return `${label} sign-in is not enabled on Alysum yet. Use email or Google, or email alysum.support@gmail.com if you need help.`;
+    }
+
+    if (lower.includes("redirect") && lower.includes("invalid")) {
+        return `${label} redirect URL is not allowed. Check Supabase Authentication URL Configuration, or email alysum.support@gmail.com.`;
+    }
+
+    if (lower.includes("access_denied") || lower.includes("user cancelled")) {
+        return `${label} sign-in was cancelled. Try again when you're ready.`;
+    }
+
+    if (lower.includes("network") || lower.includes("failed to fetch")) {
+        return "Cannot reach Alysum servers. Check your connection and try again.";
+    }
+
+    return text || `${label} sign-in failed.`;
+}
+
+/**
+ * Options for supabase.auth.signInWithOAuth.
+ * Discord needs the email scope so restored accounts can link by email.
+ */
+export function buildOAuthSignInOptions(relativePath, provider, userData) {
+    const options = {
+        redirectTo: authRedirectUrl(relativePath)
+    };
+
+    if (provider === "discord") {
+        options.scopes = "identify email";
+    }
+
+    if (userData && typeof userData === "object" && Object.keys(userData).length) {
+        options.data = userData;
+    }
+
+    return options;
+}
