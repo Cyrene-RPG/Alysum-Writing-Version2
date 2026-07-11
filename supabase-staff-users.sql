@@ -715,10 +715,21 @@ AS $$
 DECLARE
   v_joins jsonb := '[]'::jsonb;
   v_recent jsonb := '[]'::jsonb;
+  v_today_start timestamptz;
+  v_week_start timestamptz;
+  v_chart_start timestamptz;
+  v_local_today date;
 BEGIN
   IF NOT public.is_moderation_staff() THEN
     RAISE EXCEPTION 'Moderation staff only.';
   END IF;
+
+  -- Calendar days in Pacific time (site owner TZ); signup time from auth.users.
+  v_local_today := (timezone('America/Los_Angeles', now()))::date;
+  v_today_start := v_local_today::timestamp AT TIME ZONE 'America/Los_Angeles';
+  v_week_start := (date_trunc('week', timezone('America/Los_Angeles', now())))::timestamp
+    AT TIME ZONE 'America/Los_Angeles';
+  v_chart_start := (v_local_today - 13)::timestamp AT TIME ZONE 'America/Los_Angeles';
 
   SELECT COALESCE(jsonb_agg(row_to_json(t)::jsonb ORDER BY t.day ASC), '[]'::jsonb)
   INTO v_joins
@@ -727,14 +738,18 @@ BEGIN
       d::date AS day,
       COALESCE(c.cnt, 0)::integer AS count
     FROM generate_series(
-      (timezone('utc', now()))::date - 13,
-      (timezone('utc', now()))::date,
+      v_local_today - 13,
+      v_local_today,
       interval '1 day'
     ) AS d
     LEFT JOIN (
-      SELECT date_trunc('day', u.created_at AT TIME ZONE 'utc')::date AS day, COUNT(*)::integer AS cnt
-      FROM public.users u
-      WHERE u.created_at >= (timezone('utc', now()))::date - 13
+      SELECT
+        (timezone('America/Los_Angeles', au.created_at))::date AS day,
+        COUNT(*)::integer AS cnt
+      FROM auth.users au
+      WHERE au.created_at >= v_chart_start
+        AND au.deleted_at IS NULL
+        AND COALESCE(au.is_anonymous, false) = false
       GROUP BY 1
     ) c ON c.day = d::date
   ) t;
@@ -743,14 +758,17 @@ BEGIN
   INTO v_recent
   FROM (
     SELECT
-      u.id,
-      u.username,
-      u.display_name,
-      u.account_type,
-      u.created_at,
+      au.id,
+      COALESCE(u.username, split_part(COALESCE(au.email, ''), '@', 1), 'user') AS username,
+      COALESCE(u.display_name, '') AS display_name,
+      COALESCE(u.account_type, '') AS account_type,
+      au.created_at,
       u.last_seen_at
-    FROM public.users u
-    ORDER BY u.created_at DESC NULLS LAST
+    FROM auth.users au
+    LEFT JOIN public.users u ON u.id = au.id
+    WHERE au.deleted_at IS NULL
+      AND COALESCE(au.is_anonymous, false) = false
+    ORDER BY au.created_at DESC
     LIMIT 12
   ) t;
 
@@ -768,18 +786,25 @@ BEGIN
     ),
     'activeWeek', (
       SELECT COUNT(*) FROM public.users
-      WHERE last_seen_at >= date_trunc('week', now())
+      WHERE last_seen_at >= now() - interval '7 days'
     ),
     'newThisWeek', (
-      SELECT COUNT(*) FROM public.users
-      WHERE created_at >= date_trunc('week', now())
+      SELECT COUNT(*)
+      FROM auth.users au
+      WHERE au.created_at >= v_week_start
+        AND au.deleted_at IS NULL
+        AND COALESCE(au.is_anonymous, false) = false
     ),
     'newToday', (
-      SELECT COUNT(*) FROM public.users
-      WHERE created_at >= date_trunc('day', now())
+      SELECT COUNT(*)
+      FROM auth.users au
+      WHERE au.created_at >= v_today_start
+        AND au.deleted_at IS NULL
+        AND COALESCE(au.is_anonymous, false) = false
     ),
     'joinsByDay', v_joins,
     'recentJoins', v_recent,
+    'timezone', 'America/Los_Angeles',
     'suspendedAccounts', (
       SELECT COUNT(*) FROM public.author_moderation_status
       WHERE account_suspended OR account_terminated
