@@ -57,7 +57,7 @@ export function renderOverview(mount, ctx) {
         nextSteps.push({
             icon: "✓",
             title: "Bible looks solid",
-            desc: "Keep writing — Plot Doctor flags new contradictions as you draft.",
+            desc: "Keep writing — use Story Board to track scenes and revisions.",
             action: "story",
             label: "View timeline"
         });
@@ -73,7 +73,7 @@ export function renderOverview(mount, ctx) {
                 isEmpty
                     ? `<div class="sb-home-hero">
                 <h2>Welcome to your Story Bible</h2>
-                <p>This is the reference book for your novel — who's who, where things happen, and what stays true. Everything syncs to the cloud and powers Plot Doctor while you write.</p>
+                <p>This is the reference book for your novel — who's who, where things happen, and what stays true. Everything syncs to the cloud and pairs with your Story Board.</p>
             </div>`
                     : `<div class="sb-home-hero">
                 <h2>${escapeHtml(characters.length ? `${characters.length} character${characters.length === 1 ? "" : "s"}` : "Your bible")}${places.length ? ` · ${places.length} place${places.length === 1 ? "" : "s"}` : ""}</h2>
@@ -131,7 +131,7 @@ export function renderOverview(mount, ctx) {
                 <ol class="sb-help-steps">
                     <li><strong>Cast & World</strong> — roster on the left, full profile sheet on the right. No pop-ups, no cramped panels.</li>
                     <li><strong>Import while writing</strong> — highlight text in the Editor, open Story Bible, save discovered details.</li>
-                    <li><strong>Stay consistent</strong> — Plot Doctor reads this bible and warns you about contradictions.</li>
+                    <li><strong>Stay organized</strong> — Story Board keeps your scenes, beats, and revision tasks in one place.</li>
                 </ol>
             </section>
         </div>`;

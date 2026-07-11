@@ -68,7 +68,7 @@
                     <div class="sb-appbar-end">
                         <button type="button" class="sb-appbar-btn" id="sbSearchBtn" title="Search (Ctrl+K)">⌕ Search</button>
                         <a class="sb-appbar-btn" id="sbOpenEditor" href="#">Editor</a>
-                        <a class="sb-appbar-btn sb-appbar-btn-accent" id="sbOpenPlotDoctor" href="#">Plot Doctor</a>
+                        <a class="sb-appbar-btn sb-appbar-btn-accent" id="sbOpenStoryBoard" href="#">Story Board</a>
                     </div>
                 </header>
 
@@ -316,7 +316,7 @@
                                     <div id="sbFormDeceasedField" class="sb-field sb-field-full hidden">
                                         <label for="sbDeceased">Died in chapter</label>
                                         <select id="sbDeceased"></select>
-                                        <p class="sb-field-hint">Plot Doctor uses this so deceased characters aren't flagged in later chapters.</p>
+                                        <p class="sb-field-hint">Track when a character dies so you keep continuity as you draft.</p>
                                     </div>
                                 </div>
                             </div>
@@ -412,7 +412,7 @@
                     saveCharBtn: document.getElementById("sbSaveChar"),
                     deleteCharBtn: document.getElementById("sbDeleteChar"),
                     openEditorLink: document.getElementById("sbOpenEditor"),
-                    openPlotDoctorLink: document.getElementById("sbOpenPlotDoctor"),
+                    openStoryBoardLink: document.getElementById("sbOpenStoryBoard"),
                     importEditorLink: document.getElementById("sbImportEditorLink"),
                     bookTitleEl: document.getElementById("sbBookTitle"),
                     sidebarMetaEl: document.getElementById("sbSidebarMeta"),

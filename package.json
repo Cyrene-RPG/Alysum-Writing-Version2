@@ -3,10 +3,18 @@
   "private": true,
   "scripts": {
     "dev": "serve . -l 3000",
-    "dev:plot-doctor": "npm run dev --prefix plot-studio",
-    "build:plot-doctor": "npm run build --prefix plot-studio",
+    "dev:story-board": "npm run dev --prefix plot-studio",
+    "build:story-board": "npm run build --prefix plot-studio",
+    "restore:auth": "node restore-auth-from-firebase.mjs",
+    "restore:auth:dry": "node restore-auth-from-firebase.mjs --dry-run",
+    "migrate:firestore": "node migrate-firestore.js",
+    "migrate:firestore:dry": "node migrate-firestore.js --dry-run",
+    "migrate:library": "node import-library.js",
+    "migrate:engagement": "node migrate-library-engagement.js",
+    "migrate:engagement:dry": "node migrate-library-engagement.js --dry-run",
     "migrate:beta-notes": "node migrate-firestore-beta-notes.mjs",
-    "migrate:beta-notes:dry": "node migrate-firestore-beta-notes.mjs --dry-run"
+    "migrate:beta-notes:dry": "node migrate-firestore-beta-notes.mjs --dry-run",
+    "apply:leaderboard": "node recovery-audit/apply-leaderboard.mjs"
   },
   "devDependencies": {
     "serve": "^14.2.4"

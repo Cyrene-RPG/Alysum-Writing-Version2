@@ -1,106 +1,54 @@
-export type StructureTemplate =
-  | "three-act"
-  | "heros-journey"
-  | "save-the-cat"
-  | "romance"
-  | "mystery";
-
-export type Severity = "low" | "medium" | "high";
-
-export type NavPage = "dashboard" | "timeline" | "diagnosis" | "scorecard" | "report";
-
-export interface Character {
-  id: string;
-  name: string;
-  role: "protagonist" | "antagonist" | "supporting" | "other";
-  motivation: string;
-  flaw: string;
-  arcStart: string;
-  arcEnd: string;
-}
-
-export interface Plotline {
+export interface BoardLabel {
   id: string;
   name: string;
   color: string;
 }
 
-export interface Scene {
+export interface ChecklistItem {
   id: string;
-  actId: string;
-  order: number;
-  title: string;
-  povCharacter: string;
-  location: string;
-  goal: string;
-  conflict: string;
-  outcome: string;
-  emotionalShift: string;
-  plotlineId: string;
-  beatTag: string;
-  notes: string;
+  text: string;
+  done: boolean;
 }
 
-export interface Act {
+export interface BoardCard {
   id: string;
-  name: string;
-  order: number;
+  title: string;
   description: string;
+  labelIds: string[];
+  checklist: ChecklistItem[];
 }
 
-export interface Story {
+export interface BoardList {
   id: string;
   title: string;
-  genre: string;
-  targetAudience: string;
-  logline: string;
-  theme: string;
-  mainCharacter: string;
-  antagonist: string;
-  storyWorld: string;
-  endingSummary: string;
-  structureTemplate: StructureTemplate;
+  cardIds: string[];
+  color: string;
+}
+
+export interface BoardState {
+  title: string;
+  lists: BoardList[];
+  cards: Record<string, BoardCard>;
+  labels: BoardLabel[];
   updatedAt: string;
 }
 
-export interface Diagnosis {
-  id: string;
-  category: string;
-  title: string;
-  diagnosis: string;
-  whyItMatters: string;
-  specificFix: string;
-  exampleRewrite: string;
-  severity: Severity;
-  relatedSceneIds: string[];
-}
+export const BOARD_LABELS: BoardLabel[] = [
+  { id: "lbl-green", name: "Plot", color: "#22c55e" },
+  { id: "lbl-yellow", name: "Character", color: "#eab308" },
+  { id: "lbl-orange", name: "World", color: "#f97316" },
+  { id: "lbl-red", name: "Urgent", color: "#ef4444" },
+  { id: "lbl-purple", name: "Research", color: "#a855f7" },
+  { id: "lbl-blue", name: "Revision", color: "#3b82f6" },
+];
 
-export interface Scorecard {
-  structure: number;
-  characterMotivation: number;
-  stakes: number;
-  conflict: number;
-  pacing: number;
-  emotionalArc: number;
-  themeIntegration: number;
-  endingPayoff: number;
-  overall: number;
-}
-
-export interface PlotStudioState {
-  story: Story;
-  characters: Character[];
-  plotlines: Plotline[];
-  acts: Act[];
-  scenes: Scene[];
-}
-
-export const DEFAULT_PLOTLINES: Plotline[] = [
-  { id: "pl-a", name: "A-plot", color: "#8b5cf6" },
-  { id: "pl-b", name: "B-plot", color: "#06b6d4" },
-  { id: "pl-c", name: "C-plot", color: "#f59e0b" },
-  { id: "pl-rom", name: "Romance", color: "#ec4899" },
-  { id: "pl-theme", name: "Theme", color: "#84cc16" },
+export const LIST_COLORS = [
+  "#7c3aed",
+  "#ec4899",
+  "#06b6d4",
+  "#f59e0b",
+  "#22c55e",
+  "#6366f1",
 ];
 
 export function createId(prefix: string): string {

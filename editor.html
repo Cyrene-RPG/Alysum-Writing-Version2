@@ -464,7 +464,7 @@
             <span class="topbar-tip" data-tip="Share unpublished draft with beta readers" id="betaShareTopLinkWrap"><a class="icon-btn" id="betaShareTopLink" href="beta-room-manage.html" aria-label="Beta share">✉</a></span>
             <span class="topbar-tip" data-tip="Export / print"><button class="icon-btn purple" id="exportBtn" type="button" aria-label="Export">📄</button></span>
             <span class="topbar-tip" data-tip="Story Bible" id="storyBibleTopLinkWrap"><a class="icon-btn" id="storyBibleTopLink" href="Story-Bible-New.html" aria-label="Story Bible">📖</a></span>
-            <span class="topbar-tip" data-tip="Plot Doctor (Alt+P)"><a class="pd-toggle" id="plotDoctorLink" href="plot-doctor/">Plot Doctor</a></span>
+            <span class="topbar-tip" data-tip="Story Board (Alt+P)"><a class="pd-toggle" id="storyBoardLink" href="story-board/">Story Board</a></span>
             <span class="topbar-tip" data-tip="Notes"><button class="icon-btn" id="nbBtn" type="button" aria-label="Notes">⌘</button></span>
             <span class="topbar-tip" data-tip="Rename chapter"><button class="icon-btn" id="renameChapterBtn" type="button" aria-label="Rename chapter">⋯</button></span>
             <span class="topbar-tip" data-tip="Light / dark"><button class="icon-btn" id="themeTopBtn" type="button" aria-label="Toggle theme">◐</button></span>
@@ -590,18 +590,18 @@ let bookId =
     sessionStorage.getItem("alysum-current-book-id") ||
     "";
 
-function plotDoctorHref(id) {
+function storyBoardHref(id) {
     const bid = (id || bookId || "").trim();
-    return bid ? `plot-doctor/?book=${encodeURIComponent(bid)}` : "plot-doctor/";
+    return bid ? `story-board/?book=${encodeURIComponent(bid)}` : "story-board/";
 }
 
-function syncPlotDoctorLink() {
-    const link = document.getElementById("plotDoctorLink");
-    if (link) link.href = plotDoctorHref(bookId);
+function syncStoryBoardLink() {
+    const link = document.getElementById("storyBoardLink");
+    if (link) link.href = storyBoardHref(bookId);
 }
 
-if (params.get("plotDoctor") === "1" && bookId) {
-    window.location.replace(plotDoctorHref(bookId));
+if ((params.get("storyBoard") === "1" || params.get("plotDoctor") === "1") && bookId) {
+    window.location.replace(storyBoardHref(bookId));
 }
 
 function rememberBookId(id) {
@@ -609,7 +609,7 @@ function rememberBookId(id) {
     bookId = String(id);
     localStorage.setItem("alysum-current-book-id", bookId);
     sessionStorage.setItem("alysum-current-book-id", bookId);
-    syncPlotDoctorLink();
+    syncStoryBoardLink();
     applyEditorStoryBibleLinks();
     const url = new URL(window.location.href);
     url.searchParams.set("book", bookId);
@@ -2420,12 +2420,12 @@ async function loadBook() {
     }
 
     await loadBook();
-    syncPlotDoctorLink();
+    syncStoryBoardLink();
 
     document.addEventListener("keydown", e => {
         if (e.altKey && (e.key === "p" || e.key === "P")) {
             e.preventDefault();
-            window.location.href = plotDoctorHref(bookId);
+            window.location.href = storyBoardHref(bookId);
         }
         const mod = e.ctrlKey || e.metaKey;
         const tag = (e.target && e.target.tagName) || "";

@@ -110,7 +110,7 @@ function emptyPlace() {
  * @param {HTMLElement} [opts.healthBarEl]
  * @param {HTMLElement} [opts.healthSummaryEl]
  * @param {HTMLElement} [opts.healthWarnEl]
- * @param {HTMLAnchorElement} [opts.openPlotDoctorLink]
+ * @param {HTMLAnchorElement} [opts.openStoryBoardLink]
  * @param {HTMLElement} [opts.labelAliasesEl]
  * @param {HTMLButtonElement} opts.saveCharBtn
  * @param {HTMLButtonElement} opts.deleteCharBtn
@@ -175,7 +175,7 @@ export async function mountStoryBiblePage(opts) {
         saveCharBtn,
         deleteCharBtn,
         openEditorLink,
-        openPlotDoctorLink,
+        openStoryBoardLink,
         bookTitleEl,
         fields,
         scanBtn,
@@ -450,8 +450,8 @@ export async function mountStoryBiblePage(opts) {
     const editorHref = `editor.html?book=${encodeURIComponent(bookId)}`;
     openEditorLink.href = editorHref;
     if (importEditorLink) importEditorLink.href = editorHref;
-    if (openPlotDoctorLink) {
-        openPlotDoctorLink.href = `plot-doctor/?book=${encodeURIComponent(bookId)}`;
+    if (openStoryBoardLink) {
+        openStoryBoardLink.href = `story-board/?book=${encodeURIComponent(bookId)}`;
     }
     populateAppearanceDatalists();
     updateHealthPanel();

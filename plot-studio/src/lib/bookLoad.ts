@@ -1,6 +1,3 @@
-import type { Act, Scene } from "../types";
-import { createId } from "../types";
-
 export interface AlysumBookPayload {
   title: string;
   sections: {
@@ -51,27 +48,4 @@ export function flattenBookChapters(sections: AlysumBookPayload["sections"]) {
     });
   }
   return out;
-}
-
-export function scenesFromBookChapters(chapters: ReturnType<typeof flattenBookChapters>, acts: Act[]): Scene[] {
-  const actIds = [...acts].sort((a, b) => a.order - b.order).map(a => a.id);
-  if (!actIds.length) return [];
-  return chapters.map((ch, i) => {
-    const actId = actIds[Math.min(actIds.length - 1, Math.floor((i / Math.max(chapters.length, 1)) * actIds.length))]!;
-    return {
-      id: createId("scene"),
-      actId,
-      order: i * 10,
-      title: ch.title,
-      povCharacter: "",
-      location: "",
-      goal: "",
-      conflict: "",
-      outcome: "",
-      emotionalShift: "",
-      plotlineId: "pl-a",
-      beatTag: ch.section === "body" && i === 0 ? "opening" : "",
-      notes: `Imported from Alysum chapter (${ch.section}). Fill goal, conflict, and outcome for Plot Doctor analysis.`,
-    };
-  });
 }
