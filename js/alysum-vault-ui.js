@@ -342,11 +342,14 @@ function renderTree(treeEl, state, opts) {
  * @param {(msg: string) => void} [config.setStatus]
  * @param {import("@supabase/supabase-js").SupabaseClient} [config.supabase]
  * @param {string} [config.supabaseUserId] — when both set, vault syncs to Supabase notebook_vault
+ * @param {string} [config.supabaseTable] — Supabase table name (default notebook_vault)
+ * @param {() => void} [config.onStateChange] — after save, move, delete, or note edit
  */
 export function bindVaultUI(elements, config = {}) {
     const storageKey = config.storageKey || DEFAULT_VAULT_KEY;
     const compact = !!config.compact;
     const setStatus = config.setStatus || (() => {});
+    const onStateChange = config.onStateChange || (() => {});
 
     if (!elements?.tree || !elements.body) {
         console.warn("bindVaultUI: missing tree or body element");
@@ -403,6 +406,7 @@ export function bindVaultUI(elements, config = {}) {
     function persist() {
         saveVault(state, storageKey);
         remoteDriver?.pushDebounced();
+        onStateChange();
     }
 
     function schedulePersist() {
@@ -671,6 +675,7 @@ export function bindVaultUI(elements, config = {}) {
             supabase: config.supabase,
             userId: config.supabaseUserId,
             storageKey,
+            tableName: config.supabaseTable || "notebook_vault",
             getState: () => state,
             setState: next => {
                 state = next;
@@ -688,6 +693,13 @@ export function bindVaultUI(elements, config = {}) {
     return {
         refresh,
         getState: () => state,
+        selectItem(id) {
+            if (!id || !state.items.some(i => i.id === id)) return;
+            cancelArmSilent();
+            state.lastActiveId = id;
+            persist();
+            refresh();
+        },
         destroy: () => {
             clearWikiDebounce();
             remoteDriver?.dispose();

@@ -10,7 +10,7 @@ export { LOCAL_VAULT_STORAGE_KEY };
 /**
  * @param {import("@supabase/supabase-js").SupabaseClient} supabase
  * @param {object} elements — bindVaultUI tree/find/title/body/newNote/newFolder/deleteItem
- * @param {{ compact?: boolean, nextPath: string, setStatus: (msg: string) => void }} opts
+ * @param {{ compact?: boolean, nextPath: string, setStatus: (msg: string) => void, onStateChange?: () => void }} opts
  */
 export async function bootVaultScratchPage(supabase, elements, opts) {
   const session = await requireStudioSession(supabase, opts.nextPath);
@@ -21,6 +21,7 @@ export async function bootVaultScratchPage(supabase, elements, opts) {
       storageKey: LOCAL_VAULT_STORAGE_KEY,
       compact: !!opts.compact,
       setStatus: opts.setStatus,
+      onStateChange: opts.onStateChange,
     });
   }
 
@@ -30,5 +31,6 @@ export async function bootVaultScratchPage(supabase, elements, opts) {
     supabase,
     supabaseUserId: session.user.id,
     setStatus: opts.setStatus,
+    onStateChange: opts.onStateChange,
   });
 }

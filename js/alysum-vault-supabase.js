@@ -1,12 +1,12 @@
 import { saveVault, normalizeVaultFromObject, DEFAULT_VAULT_KEY } from "./alysum-vault.js";
 
-/** Supabase: notebook_vault — one row per user (same shape as localStorage JSON). */
+/** Supabase JSON blob tables — one row per user (same shape as localStorage JSON). */
 
-function describeVaultLoadError(error) {
+function describeLoadError(error, tableName) {
     const code = String(error?.code || "");
     const msg = String(error?.message || error?.details || "").toLowerCase();
-    if (code === "PGRST205" || code === "42P01" || (msg.includes("schema cache") && msg.includes("notebook_vault"))) {
-        return "Cloud vault unavailable: notebook_vault is missing. Run supabase-sibling-tables.sql in Supabase, then refresh.";
+    if (code === "PGRST205" || code === "42P01" || (msg.includes("schema cache") && msg.includes(tableName))) {
+        return `Cloud sync unavailable: ${tableName} is missing. Run the Supabase SQL migration, then refresh.`;
     }
     if (
         code === "42501" ||
@@ -15,9 +15,9 @@ function describeVaultLoadError(error) {
         msg.includes("jwt expired") ||
         msg.includes("invalid jwt")
     ) {
-        return "Cloud vault unavailable: permission or session issue. Try signing out and back in.";
+        return "Cloud sync unavailable: permission or session issue. Try signing out and back in.";
     }
-    return `Cloud vault unavailable (${code || "error"}). Using this device only.`;
+    return `Cloud sync unavailable (${code || "error"}). Using this device only.`;
 }
 
 function packState(state) {
@@ -35,13 +35,27 @@ function packState(state) {
  * @param {import("@supabase/supabase-js").SupabaseClient} opts.supabase
  * @param {string} opts.userId
  * @param {string} [opts.storageKey]
+ * @param {string} [opts.tableName] — Supabase table (default notebook_vault)
  * @param {() => object} opts.getState
  * @param {(next: object) => void} opts.setState
  * @param {() => void} opts.refresh
  * @param {(msg: string) => void} [opts.setStatus]
+ * @param {string} [opts.loadedMessage]
+ * @param {string} [opts.savedMessage]
  */
 export function createVaultSupabaseDriver(opts) {
-    const { supabase, userId, storageKey = DEFAULT_VAULT_KEY, getState, setState, refresh, setStatus } = opts;
+    const {
+        supabase,
+        userId,
+        storageKey = DEFAULT_VAULT_KEY,
+        tableName = "notebook_vault",
+        getState,
+        setState,
+        refresh,
+        setStatus,
+        loadedMessage = "Loaded from cloud",
+        savedMessage = "Saved to cloud"
+    } = opts;
     let pushTimer = null;
 
     async function pullOnce() {
@@ -52,23 +66,23 @@ export function createVaultSupabaseDriver(opts) {
         }
 
         const { data, error } = await supabase
-            .from("notebook_vault")
+            .from(tableName)
             .select("data")
             .eq("user_id", userId)
             .maybeSingle();
 
         if (error) {
-            console.error("notebook_vault pull:", error);
-            setStatus?.(describeVaultLoadError(error));
+            console.error(`${tableName} pull:`, error);
+            setStatus?.(describeLoadError(error, tableName));
             return;
         }
 
         if (!data?.data) {
-            await supabase.from("notebook_vault").upsert(
+            await supabase.from(tableName).upsert(
                 { user_id: userId, data: packState(getState()), updated_at: new Date().toISOString() },
                 { onConflict: "user_id" }
             );
-            setStatus?.("Vault saved to cloud");
+            setStatus?.(savedMessage);
             return;
         }
 
@@ -80,17 +94,17 @@ export function createVaultSupabaseDriver(opts) {
         const localCount = Array.isArray(local.items) ? local.items.length : 0;
 
         if (cloudCount === 0) {
-            await supabase.from("notebook_vault").upsert(
+            await supabase.from(tableName).upsert(
                 { user_id: userId, data: packState(local), updated_at: new Date().toISOString() },
                 { onConflict: "user_id" }
             );
-            setStatus?.("Cloud had no note list — kept this device and updated the cloud");
+            setStatus?.("Cloud was empty — kept this device and updated the cloud");
             return;
         }
 
         const next = normalizeVaultFromObject(raw);
         if (next == null || !next.items?.length) {
-            await supabase.from("notebook_vault").upsert(
+            await supabase.from(tableName).upsert(
                 { user_id: userId, data: packState(local), updated_at: new Date().toISOString() },
                 { onConflict: "user_id" }
             );
@@ -99,18 +113,18 @@ export function createVaultSupabaseDriver(opts) {
         }
 
         if (localCount > next.items.length) {
-            await supabase.from("notebook_vault").upsert(
+            await supabase.from(tableName).upsert(
                 { user_id: userId, data: packState(local), updated_at: new Date().toISOString() },
                 { onConflict: "user_id" }
             );
-            setStatus?.("This device had more notes than the cloud — kept this copy and updated the cloud");
+            setStatus?.("This device had more notes — kept this copy and updated the cloud");
             refresh();
             return;
         }
 
         setState(next);
         saveVault(next, storageKey);
-        setStatus?.("Loaded vault from cloud");
+        setStatus?.(loadedMessage);
         refresh();
     }
 
@@ -119,12 +133,12 @@ export function createVaultSupabaseDriver(opts) {
         pushTimer = setTimeout(async () => {
             pushTimer = null;
             try {
-                await supabase.from("notebook_vault").upsert(
+                await supabase.from(tableName).upsert(
                     { user_id: userId, data: packState(getState()), updated_at: new Date().toISOString() },
                     { onConflict: "user_id" }
                 );
             } catch (e) {
-                console.error("Vault cloud save:", e);
+                console.error(`${tableName} cloud save:`, e);
                 setStatus?.("Cloud save failed (still on this device)");
             }
         }, 900);

@@ -126,6 +126,14 @@ CREATE TABLE IF NOT EXISTS public.notebook_vault (
   PRIMARY KEY (user_id)
 );
 
+-- Note Graph — separate linked-notes workspace (not Alysum Vault / Notes)
+CREATE TABLE IF NOT EXISTS public.note_graph (
+  user_id uuid NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE,
+  data jsonb NOT NULL DEFAULT '{}'::jsonb,
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (user_id)
+);
+
 ALTER TABLE public.story_bible_characters ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.story_bible_places ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.story_bible_facts ENABLE ROW LEVEL SECURITY;
@@ -135,6 +143,7 @@ ALTER TABLE public.worldbuilding_encyclopedia ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.worldbuilding_workbooks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.character_profile_sheets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notebook_vault ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.note_graph ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "story_bible_characters_own" ON public.story_bible_characters;
 CREATE POLICY "story_bible_characters_own" ON public.story_bible_characters
@@ -172,7 +181,12 @@ DROP POLICY IF EXISTS "notebook_vault_own" ON public.notebook_vault;
 CREATE POLICY "notebook_vault_own" ON public.notebook_vault
     FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "note_graph_own" ON public.note_graph;
+CREATE POLICY "note_graph_own" ON public.note_graph
+    FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.notebook_vault TO anon, authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.note_graph TO anon, authenticated;
 
 -- Prompt notebook entries (was users/{uid}/promptEntries/{id})
 CREATE TABLE IF NOT EXISTS public.prompt_entries (

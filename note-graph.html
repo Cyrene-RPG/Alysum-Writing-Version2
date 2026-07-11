@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- ALYSUM:PWA:START -->
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta name="theme-color" content="#7c3aed" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#020b18" media="(prefers-color-scheme: dark)">
+    <meta name="color-scheme" content="dark light">
+    <meta name="application-name" content="Alysum">
+    <meta name="msapplication-TileColor" content="#7c3aed">
+    <meta name="msapplication-TileImage" content="Alysum-3.png">
+    <link rel="icon" type="image/png" sizes="any" href="Alysum-3.png">
+    <link rel="apple-touch-icon" href="Alysum-3.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="Alysum-3.png">
+    <script src="js/pwa-register.js" defer></script>
+    <!-- ALYSUM:PWA:END -->
+    <!-- ALYSUM:ANALYTICS:START -->
+    <script type="module" src="js/vercel-analytics.js"></script>
+    <!-- ALYSUM:ANALYTICS:END -->
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Note Graph — Alysum</title>
+    <script src="js/alysum-appearance-boot.js"></script>
+    <link rel="stylesheet" href="css/site-responsive.css?v=1" />
+    <link rel="stylesheet" href="css/gradient-themes.css?v=7" />
+    <link rel="stylesheet" href="css/notebook.css?v=9" />
+    <link rel="stylesheet" href="css/note-graph.css?v=2" />
+    <script src="js/gradient-theme-sync.js" defer></script>
+</head>
+<body class="nb-app">
+    <div class="ng-app" id="ngApp">
+        <header class="ng-toolbar" role="toolbar" aria-label="Note Graph tools">
+            <div class="ng-toolbar-left">
+                <a class="ng-brand" href="writer-dashboard.html" title="Back to Studio">
+                    <img src="Alysum-3.png" alt="" />
+                    <span>Note Graph</span>
+                </a>
+                <span class="ng-sep" aria-hidden="true"></span>
+                <span class="ng-status" id="ngStatus">Loading…</span>
+            </div>
+
+            <div class="ng-toolbar-center">
+                <input
+                    class="ng-filter"
+                    id="ngGraphFilter"
+                    type="search"
+                    placeholder="Filter graph…"
+                    autocomplete="off"
+                    aria-label="Filter graph"
+                />
+            </div>
+
+            <div class="ng-toolbar-right">
+                <button type="button" class="ng-btn ng-btn-primary" id="ngNewNote" title="New graph note">＋ Note</button>
+                <a class="ng-btn ng-btn-ghost" href="writer-dashboard.html">Studio</a>
+            </div>
+        </header>
+
+        <div class="ng-workspace">
+            <aside class="ng-side ng-side-left" aria-label="Graph notes">
+                <div class="ng-side-head">
+                    <h2>Notes</h2>
+                </div>
+                <div class="ng-side-tools">
+                    <button type="button" class="ng-tool-btn" id="ngNewFolder" title="New folder">Folder</button>
+                    <button type="button" class="ng-tool-btn ng-tool-btn-danger" id="ngDelete" title="Delete selected" aria-label="Delete selected">⌫</button>
+                </div>
+                <div class="ng-side-search">
+                    <input id="ngFind" class="nb-quick-open" type="search" placeholder="Search notes…" autocomplete="off" />
+                </div>
+                <div id="ngTree" class="ng-tree nb-tree"></div>
+                <div class="ng-side-foot">
+                    <div class="ng-stat-inline">
+                        <span><strong id="ngStatNotes">0</strong> notes</span>
+                        <span><strong id="ngStatLinks">0</strong> links</span>
+                    </div>
+                </div>
+            </aside>
+
+            <div class="ng-stage-wrap">
+                <div class="ng-empty" id="ngEmpty">
+                    <div class="ng-empty-card">
+                        <h3>Start your graph</h3>
+                        <p>Create a note on the left, write with [[links]] in the editor, and watch your knowledge web grow in the center.</p>
+                    </div>
+                </div>
+                <div class="ng-graph-host" id="ngGraphHost"></div>
+            </div>
+
+            <aside class="ng-side ng-side-right" aria-label="Note editor">
+                <div class="ng-side-head">
+                    <h2>Editor</h2>
+                </div>
+                <div class="ng-editor">
+                    <input id="ngTitle" class="ng-title-input" type="text" placeholder="Untitled" />
+                    <div
+                        id="ngBody"
+                        class="ng-body nb-body-ce"
+                        contenteditable="false"
+                        spellcheck="true"
+                        data-placeholder="Write here. Use [[Note title]] to link graph notes together."
+                    ></div>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <script type="module">
+        import { supabase } from "./firebase.js";
+        import { createNoteGraphApp } from "./js/note-graph-app.js?v=1";
+
+        await createNoteGraphApp(
+            supabase,
+            {
+                tree: document.getElementById("ngTree"),
+                find: document.getElementById("ngFind"),
+                title: document.getElementById("ngTitle"),
+                body: document.getElementById("ngBody"),
+                newNote: document.getElementById("ngNewNote"),
+                newFolder: document.getElementById("ngNewFolder"),
+                deleteItem: document.getElementById("ngDelete"),
+                graphHost: document.getElementById("ngGraphHost"),
+                graphFilter: document.getElementById("ngGraphFilter"),
+                empty: document.getElementById("ngEmpty"),
+                statNotes: document.getElementById("ngStatNotes"),
+                statLinks: document.getElementById("ngStatLinks")
+            },
+            {
+                nextPath: "note-graph.html",
+                setStatus: msg => {
+                    const el = document.getElementById("ngStatus");
+                    if (el) el.textContent = msg;
+                }
+            }
+        );
+    </script>
+</body>
+</html>

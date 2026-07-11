@@ -443,6 +443,7 @@
             <a href="world-encyclopedia.html">Encyclopedia</a>
             <span class="vault-nav-divider" aria-hidden="true"></span>
             <a href="vault.html" class="is-active" aria-current="page">Notes</a>
+            <a href="note-graph.html">Note Graph</a>
             <a href="Story-Bible-New.html">Story Bible</a>
             <a href="story-board/">Story Board</a>
             <a href="plotweave.html">Plotweave</a>
@@ -513,6 +514,14 @@
 
         let vaultHandle = null;
 
+        function noteIdFromHash() {
+            const raw = location.hash.replace(/^#/, "");
+            if (!raw) return null;
+            const params = new URLSearchParams(raw.includes("=") ? raw : `note=${raw}`);
+            const id = params.get("note");
+            return id ? decodeURIComponent(id) : null;
+        }
+
         (async () => {
             vaultHandle?.destroy();
             vaultHandle = await bootVaultScratchPage(
@@ -535,6 +544,11 @@
                     }
                 }
             );
+
+            const noteId = noteIdFromHash();
+            if (noteId && vaultHandle?.selectItem) {
+                vaultHandle.selectItem(noteId);
+            }
         })();
     </script>
 </body>
