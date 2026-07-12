@@ -2,17 +2,10 @@
  * Alysum Plotweave — canvas engine (SVG flowchart / process map).
  */
 
-import { CYRENE_SALVAGE_STORE } from "./plotweave-salvage-data.js?v=1";
-import {
-    createPlotweaveSupabaseDriver,
-    isSampleDiagram,
-    isSampleOnlyStore,
-    storeHasRealMaps,
-} from "./plotweave-supabase.js?v=5";
+import { createPlotweaveSupabaseDriver } from "./plotweave-supabase.js?v=1";
 
 export const PLOTWEAVE_STORAGE_KEY = "alysum-plotweave-v1";
 const STORAGE_KEY = PLOTWEAVE_STORAGE_KEY;
-const BACKUP_STORAGE_KEY = "alysum-plotweave-v1-backup";
 const LEGACY_STORAGE_KEY = "alysum-flow-mapper-v1";
 const MAX_HISTORY = 60;
 
@@ -98,35 +91,6 @@ function deepClone(obj) {
     return JSON.parse(JSON.stringify(obj));
 }
 
-function parseStore(raw) {
-    if (!raw) return null;
-    try {
-        const parsed = JSON.parse(raw);
-        if (!parsed || !Array.isArray(parsed.diagrams)) return null;
-        for (const d of parsed.diagrams) {
-            if (d.view && !d.camera) {
-                d.camera = {
-                    x: Number(d.view.x) || 0,
-                    y: Number(d.view.y) || 0,
-                    zoom: Number(d.view.scale ?? d.view.zoom) || 1,
-                };
-            }
-            if (!d.camera) d.camera = { x: 0, y: 0, zoom: 1 };
-        }
-        return parsed;
-    } catch {
-        return null;
-    }
-}
-
-function loadBackupStore() {
-    for (const key of [BACKUP_STORAGE_KEY, `${STORAGE_KEY}-prev`, LEGACY_STORAGE_KEY]) {
-        const parsed = parseStore(localStorage.getItem(key));
-        if (parsed?.diagrams?.length) return parsed;
-    }
-    return null;
-}
-
 function loadStore() {
     try {
         let raw = localStorage.getItem(STORAGE_KEY);
@@ -137,59 +101,17 @@ function loadStore() {
                 localStorage.removeItem(LEGACY_STORAGE_KEY);
             }
         }
-        let store = parseStore(raw);
-        if (!store) {
-            store = loadBackupStore();
-            if (store) {
-                saveStore(store);
-                return store;
-            }
-            return { diagrams: [], activeId: null };
-        }
-        if (store.diagrams.length === 0) {
-            const backup = loadBackupStore();
-            if (backup) {
-                saveStore(backup);
-                return backup;
-            }
-        }
-        return store;
+        if (!raw) return { diagrams: [], activeId: null };
+        const parsed = JSON.parse(raw);
+        if (!parsed || !Array.isArray(parsed.diagrams)) return { diagrams: [], activeId: null };
+        return parsed;
     } catch {
-        const backup = loadBackupStore();
-        return backup || { diagrams: [], activeId: null };
+        return { diagrams: [], activeId: null };
     }
 }
 
 function saveStore(store) {
-    const json = JSON.stringify(store);
-    try {
-        const prev = localStorage.getItem(STORAGE_KEY);
-        if (prev) localStorage.setItem(BACKUP_STORAGE_KEY, prev);
-    } catch {
-        /* ignore quota */
-    }
-    localStorage.setItem(STORAGE_KEY, json);
-}
-
-function pruneEmptyDiagrams(store) {
-    const diagrams = (store.diagrams || []).filter(
-        (d) => (d.nodes?.length || 0) > 0 && !isSampleDiagram(d)
-    );
-    let activeId = store.activeId;
-    if (!diagrams.some((d) => d.id === activeId)) {
-        activeId = diagrams[0]?.id ?? null;
-    }
-    return { diagrams, activeId };
-}
-
-function embeddedSalvageStore() {
-    return parseStore(JSON.stringify(CYRENE_SALVAGE_STORE));
-}
-
-function applySalvageStore() {
-    const salvage = embeddedSalvageStore();
-    if (!storeHasRealMaps(salvage)) return null;
-    return pruneEmptyDiagrams(salvage);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
 }
 
 function emptyDiagram(title = "Untitled map") {
@@ -359,27 +281,6 @@ function shapePath(type, w, h) {
  */
 export async function createPlotweave(ui, config = {}) {
     let store = loadStore();
-    if (isSampleOnlyStore(store)) {
-        store = { diagrams: [], activeId: null };
-    }
-    store = pruneEmptyDiagrams(store);
-
-    let recoveredFromSalvage = false;
-    if (!storeHasRealMaps(store)) {
-        const backup = loadBackupStore();
-        if (storeHasRealMaps(backup)) {
-            store = pruneEmptyDiagrams(backup);
-        }
-    }
-    if (!storeHasRealMaps(store)) {
-        const salvage = applySalvageStore();
-        if (salvage) {
-            store = salvage;
-            saveStore(store);
-            recoveredFromSalvage = true;
-        }
-    }
-
     let remoteDriver = null;
 
     let diagram;
@@ -411,90 +312,21 @@ export async function createPlotweave(ui, config = {}) {
                 store = next;
             },
             saveStore,
-            loadBackup: loadBackupStore,
             refresh: () => {},
             setStatus: ui.setStatus,
         });
         await remoteDriver.pullOnce();
-        store = pruneEmptyDiagrams(store);
-        if (!storeHasRealMaps(store)) {
-            const salvage = applySalvageStore();
-            if (salvage) {
-                store = salvage;
-                saveStore(store);
-                recoveredFromSalvage = true;
-                try {
-                    await remoteDriver.pushNow();
-                } catch (e) {
-                    console.error("Salvage cloud save:", e);
-                }
-            }
-        }
     }
 
     if (!store.diagrams.length) {
-        const salvage = applySalvageStore();
-        if (salvage) {
-            store = salvage;
-            saveStore(store);
-            recoveredFromSalvage = true;
-        }
-    }
-
-    if (!store.diagrams.length) {
-        const d = emptyDiagram("Untitled map");
-        store.diagrams = [d];
-        store.activeId = d.id;
-        saveStore(store);
+        const sample = samplePlotMap();
+        store.diagrams = [sample];
+        store.activeId = sample.id;
+        writeStore();
     }
 
     diagram = store.diagrams.find((d) => d.id === store.activeId) || store.diagrams[0];
     store.activeId = diagram.id;
-
-    async function forceRestoreSalvage() {
-        const salvage = applySalvageStore();
-        if (!salvage) return false;
-        store = mergeSalvageWithStore(store, salvage);
-        saveStore(store);
-        diagram = store.diagrams.find((d) => d.id === salvage.activeId) || store.diagrams[0];
-        store.activeId = diagram.id;
-        selectedIds.clear();
-        selectedEdgeId = null;
-        history = [];
-        future = [];
-        dirty = false;
-        ui.titleInput.value = diagram.title || "";
-        updateUndoButtons();
-        renderDiagramList();
-        applyCamera();
-        fitView();
-        scheduleRender();
-        refreshProps();
-        if (remoteDriver) {
-            try {
-                await remoteDriver.pushNow();
-            } catch (e) {
-                console.error("Salvage cloud save:", e);
-            }
-        }
-        ui.setStatus?.("Restored Cyrene RPG map", "saved");
-        return true;
-    }
-
-    function mergeSalvageWithStore(current, salvage) {
-        const byId = new Map();
-        for (const d of current.diagrams || []) {
-            if ((d.nodes?.length || 0) > 0 && !isSampleDiagram(d)) byId.set(d.id, d);
-        }
-        for (const d of salvage.diagrams || []) {
-            byId.set(d.id, d);
-        }
-        const diagrams = [...byId.values()];
-        return {
-            diagrams,
-            activeId: salvage.activeId || diagrams[0]?.id || null,
-        };
-    }
 
     const svg = ui.stage;
     const world = svg.querySelector(".fm-world");
@@ -1356,9 +1188,6 @@ export async function createPlotweave(ui, config = {}) {
     ui.btnUndo.addEventListener("click", undo);
     ui.btnRedo.addEventListener("click", redo);
     ui.btnSave.addEventListener("click", () => persist());
-    ui.btnRestoreSalvage?.addEventListener("click", () => {
-        void forceRestoreSalvage();
-    });
     ui.btnSelect?.addEventListener("click", () => setTool("select"));
     ui.btnPan?.addEventListener("click", () => setTool("pan"));
     ui.btnConnect?.addEventListener("click", () => setTool("connect"));
@@ -1409,12 +1238,7 @@ export async function createPlotweave(ui, config = {}) {
     applyCamera();
     scheduleRender();
     refreshProps();
-    if (recoveredFromSalvage && diagram.nodes?.length) {
-        fitView();
-        ui.setStatus?.("Recovered your Cyrene RPG map", "saved");
-    } else {
-        ui.setStatus?.("Ready", "saved");
-    }
+    ui.setStatus?.("Ready", "saved");
 
     return {
         persist,

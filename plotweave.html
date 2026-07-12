@@ -59,9 +59,7 @@
             <div class="fm-toolbar-right">
                 <button type="button" class="fm-btn" id="fmBtnNew" title="New map">New</button>
                 <button type="button" class="fm-btn" id="fmBtnDuplicate" title="Duplicate map">Duplicate</button>
-                <button type="button" class="fm-btn fm-btn-primary" id="fmBtnRestoreSalvage" title="Restore Cyrene RPG map">Restore map</button>
                 <button type="button" class="fm-btn fm-btn-primary" id="fmBtnSave" title="Save (Ctrl+S)">Save</button>
-                <a class="fm-btn fm-btn-ghost" href="plotweave-recover.html">Recover maps</a>
                 <a class="fm-btn fm-btn-ghost" href="writer-dashboard.html">Studio</a>
             </div>
         </header>
@@ -183,7 +181,7 @@
     <script type="module">
         import { supabase } from "./firebase.js";
         import { requireStudioSession } from "./js/studio-session.js?v=1";
-        import { createPlotweave } from "./js/plotweave.js?v=22";
+        import { createPlotweave } from "./js/plotweave.js?v=1";
 
         const session = await requireStudioSession(supabase, "plotweave.html");
         if (!session) {
@@ -203,7 +201,6 @@
                 btnUndo: document.getElementById("fmBtnUndo"),
                 btnRedo: document.getElementById("fmBtnRedo"),
                 btnSave: document.getElementById("fmBtnSave"),
-                btnRestoreSalvage: document.getElementById("fmBtnRestoreSalvage"),
                 btnSelect: document.getElementById("fmBtnSelect"),
                 btnPan: document.getElementById("fmBtnPan"),
                 btnConnect: document.getElementById("fmBtnConnect"),
