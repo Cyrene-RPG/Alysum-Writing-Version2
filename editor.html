@@ -694,6 +694,7 @@
         restoreEditorViewport,
         getCaretTextOffset,
     } from "./js/writer-resume.js?v=1";
+    import { repairArchangelPrologueIfNeeded } from "./js/book-prologue-repair.js?v=1";
 
 const params = new URLSearchParams(window.location.search);
 let bookId =
@@ -824,6 +825,7 @@ function rememberBookId(id) {
     let suppressResumeSave = false;
     let resumeSaveTimer = null;
     let pendingResumeRestore = null;
+    let editorLoadedChapterKey = "";
     let frMatches = [];
     let frActiveIndex = -1;
     let dailyGoalBadgeTimer = null;
@@ -1421,6 +1423,12 @@ function rememberBookId(id) {
         currentChapter().content = editor.innerHTML;
     }
 
+    function chapterLoadKey(section, index) {
+        const list = currentBook?.sections?.[section];
+        const ch = Array.isArray(list) ? list[index] : null;
+        return ch ? `${section}:${index}:${ch.id}` : "";
+    }
+
     function cleanAndStoreCurrentChapterFromEditor() {
         const cleaned = cleanEditorHtml(editor.innerHTML);
         currentChapter().content = cleaned;
@@ -1674,8 +1682,12 @@ function rememberBookId(id) {
 
     function loadChapter(section, index, rerender = true) {
         if (!suppressResumeSave) flushWriterResumeSave();
-        if (isCurrentBookComic()) syncCurrentComicPageFromUI();
-        else syncCurrentChapterFromEditor();
+        const activeChapterKey = chapterLoadKey(currentSection, currentChapterIndex);
+        const canSyncFromEditor = !!editorLoadedChapterKey && editorLoadedChapterKey === activeChapterKey;
+        if (canSyncFromEditor) {
+            if (isCurrentBookComic()) syncCurrentComicPageFromUI();
+            else syncCurrentChapterFromEditor();
+        }
         currentSection = section;
         currentChapterIndex = index;
         const ch = currentChapter();
@@ -1684,11 +1696,13 @@ function rememberBookId(id) {
             chapterTitle.textContent = ch.title || `Page ${index + 1}`;
             syncComicPageView(ch);
             if (comicUploadStatus) comicUploadStatus.textContent = "";
+            editorLoadedChapterKey = chapterLoadKey(section, index);
         } else {
             chapterNumber.textContent = section === "body" ? index + 1 : "";
             chapterTitle.textContent = ch.title || "Untitled";
             editor.innerHTML = cleanEditorHtml(ch.content || "");
             applyEditorStyle();
+            editorLoadedChapterKey = chapterLoadKey(section, index);
         }
         if (rerender) renderAllSections();
         syncStats();
@@ -2065,7 +2079,7 @@ function rememberBookId(id) {
         if (!currentUser || !bookId || !currentBook) return;
         setSaveStatus("Saving...");
         if (isCurrentBookComic()) syncCurrentComicPageFromUI();
-        else if (document.activeElement === editor) cleanAndStoreCurrentChapterFromEditor();
+        else if (document.activeElement === editor && editorLoadedChapterKey) cleanAndStoreCurrentChapterFromEditor();
         const nextWords = totalWords();
         const prevPersisted = persistedBookWordCount;
         const patch = toDbBookPatch(currentBook);
@@ -2595,6 +2609,16 @@ async function loadBook() {
             if (!data) { setSaveStatus("Book not found"); topBookTitle.textContent = "Book not found"; sidebarBookTitle.textContent = "Book not found"; return; }
             currentBook = normalizeBookData(data);
             await migrateBookIfNeeded();
+            editorLoadedChapterKey = "";
+            const prologueRepaired = await repairArchangelPrologueIfNeeded({
+                bookId,
+                book: currentBook,
+                supabase,
+                isLocalStudio,
+            });
+            if (prologueRepaired) {
+                await saveBook("Restored prologue");
+            }
             renderTitles();
             renderAllSections();
             applyComicModeUI();
