@@ -8,15 +8,15 @@ const MAX_HISTORY = 50;
 const GRID = 12;
 const MIN_NODE = 48;
 
-/** Standard flowchart palette (iGrafx / Visio style). */
+/** Alysum flowchart palette — readable on the dark studio canvas. */
 const SHAPES = {
-    start: { label: "Terminator", w: 120, h: 48, text: "Start", fill: "#e8f5e9", stroke: "#2e7d32" },
-    process: { label: "Process", w: 140, h: 64, text: "Process", fill: "#ffffff", stroke: "#374151" },
-    box: { label: "Activity", w: 132, h: 60, text: "Activity", fill: "#ffffff", stroke: "#4b5563" },
-    decision: { label: "Decision", w: 120, h: 88, text: "Decision?", fill: "#fff8e1", stroke: "#d97706" },
-    data: { label: "Document", w: 132, h: 72, text: "Document", fill: "#e3f2fd", stroke: "#1d4ed8" },
-    note: { label: "Annotation", w: 128, h: 72, text: "Note", fill: "#fffde7", stroke: "#9ca3af" },
-    end: { label: "Terminator", w: 120, h: 48, text: "End", fill: "#ffebee", stroke: "#c62828" },
+    start: { label: "Start", w: 140, h: 56, text: "Start", fill: "#14532d", stroke: "#4ade80" },
+    process: { label: "Process", w: 168, h: 72, text: "Process", fill: "#1e1b4b", stroke: "#a78bfa" },
+    box: { label: "Activity", w: 160, h: 72, text: "Activity", fill: "#1e293b", stroke: "#cbd5e1" },
+    decision: { label: "Decision", w: 150, h: 100, text: "Decision?", fill: "#422006", stroke: "#fbbf24" },
+    data: { label: "Document", w: 160, h: 72, text: "Document", fill: "#0c4a6e", stroke: "#38bdf8" },
+    note: { label: "Note", w: 160, h: 80, text: "Note", fill: "#1e293b", stroke: "#94a3b8" },
+    end: { label: "End", w: 140, h: 56, text: "End", fill: "#4c0519", stroke: "#fb7185" },
 };
 
 const uid = (p) => `${p}_${Math.random().toString(36).slice(2, 10)}`;
@@ -482,13 +482,13 @@ export function createPlotweave(ui) {
                 ? (() => {
                     const lw = Math.max(36, e.label.length * 7 + 12);
                     return `<g class="pw-edge-label">
-                    <rect class="pw-edge-label-bg" x="${mid.x - lw / 2}" y="${mid.y - 16}" width="${lw}" height="16" rx="2"/>
+                    <rect class="pw-edge-label-bg" x="${mid.x - lw / 2}" y="${mid.y - 16}" width="${lw}" height="16" rx="4"/>
                     <text class="pw-edge-label-text" x="${mid.x}" y="${mid.y - 6}" text-anchor="middle">${esc(e.label)}</text>
                    </g>`;
                 })()
                 : "";
             return `<g class="pw-edge${sel ? " is-selected" : ""}" data-id="${e.id}">
-                <path d="${d}" fill="none" stroke="${sel ? "#0078d4" : "#4a5568"}" stroke-width="${sel ? 2.5 : 1.75}" marker-end="url(#pwArrow)"/>
+                <path d="${d}" fill="none" stroke="${sel ? "#fbbf24" : "rgba(196,181,253,0.85)"}" stroke-width="${sel ? 2.5 : 1.75}" marker-end="url(#pwArrow)"/>
                 ${label}
             </g>`;
         }).join("");
@@ -497,12 +497,12 @@ export function createPlotweave(ui) {
             const { w, h } = nodeSize(n);
             const sel = selectedNodeIds.has(n.id);
             const path = shapePath(n.type, w, h);
-            const stroke = sel ? "#0078d4" : n.stroke;
-            const sw = sel ? 2.5 : 1.5;
+            const stroke = sel ? "#fbbf24" : n.stroke;
+            const sw = sel ? 2.5 : 1.75;
             const rel = { ...n, x: 0, y: 0 };
             const ports = ["n", "e", "s", "w"].map((port) => {
                 const p = portPoint(rel, port);
-                return `<rect class="pw-port" data-node="${n.id}" data-port="${port}" x="${p.x - 4}" y="${p.y - 4}" width="8" height="8"/>`;
+                return `<circle class="pw-port" data-node="${n.id}" data-port="${port}" cx="${p.x}" cy="${p.y}" r="5"/>`;
             }).join("");
             const handles = sel ? `
                 <rect class="pw-handle" data-handle="nw" x="-4" y="-4" width="8" height="8"/>
@@ -522,7 +522,7 @@ export function createPlotweave(ui) {
 
         if (connect) {
             const segs = [{ x: connect.x1, y: connect.y1 }, { x: connect.x2, y: connect.y2 }];
-            gOverlay.innerHTML = `<path d="${edgePathD(segs)}" fill="none" stroke="#0078d4" stroke-width="1.5" stroke-dasharray="5 4"/>`;
+            gOverlay.innerHTML = `<path d="${edgePathD(segs)}" fill="none" stroke="#c4b5fd" stroke-width="1.5" stroke-dasharray="5 4"/>`;
         } else {
             gOverlay.innerHTML = "";
         }

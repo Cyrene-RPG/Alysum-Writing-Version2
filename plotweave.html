@@ -3,11 +3,11 @@
 <head>
     <!-- ALYSUM:PWA:START -->
     <link rel="manifest" href="manifest.webmanifest">
-    <meta name="theme-color" content="#eceef1" media="(prefers-color-scheme: light)">
-    <meta name="theme-color" content="#eceef1" media="(prefers-color-scheme: dark)">
-    <meta name="color-scheme" content="light">
+    <meta name="theme-color" content="#7c3aed" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#020b18" media="(prefers-color-scheme: dark)">
+    <meta name="color-scheme" content="dark light">
     <meta name="application-name" content="Alysum">
-    <meta name="msapplication-TileColor" content="#0078d4">
+    <meta name="msapplication-TileColor" content="#7c3aed">
     <meta name="msapplication-TileImage" content="Alysum-3.png">
     <link rel="icon" type="image/png" sizes="any" href="Alysum-3.png">
     <link rel="apple-touch-icon" href="Alysum-3.png">
@@ -21,8 +21,11 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Plotweave — Alysum</title>
+    <script src="js/alysum-appearance-boot.js"></script>
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
-    <link rel="stylesheet" href="css/plotweave.css?v=8" />
+    <link rel="stylesheet" href="css/gradient-themes.css?v=7" />
+    <link rel="stylesheet" href="css/plotweave.css?v=9" />
+    <script src="js/gradient-theme-sync.js" defer></script>
 </head>
 <body>
     <div class="pw-app">
@@ -55,47 +58,47 @@
         </header>
 
         <div class="pw-workspace">
-            <aside class="pw-side" aria-label="Stencil and maps">
+            <aside class="pw-side pw-side-left" aria-label="Stencil and maps">
                 <div class="pw-side-head"><h2>Stencil</h2></div>
                 <div class="pw-side-body">
                     <div class="pw-side-section">
                         <h3>Flowchart shapes</h3>
                         <div class="pw-stencil" id="pwPalette">
-                            <button type="button" class="pw-stencil-item" data-type="start" title="Terminator — Start">
-                                <span class="pw-stencil-glyph"><svg viewBox="0 0 44 28"><rect x="2" y="6" width="40" height="16" rx="8" fill="#e8f5e9" stroke="#2e7d32" stroke-width="1.5"/></svg></span>
+                            <button type="button" class="pw-stencil-item" data-type="start" title="Start">
+                                <span class="pw-stencil-glyph"><svg viewBox="0 0 44 28"><rect x="2" y="6" width="40" height="16" rx="8" fill="#14532d" stroke="#4ade80" stroke-width="1.5"/></svg></span>
                                 Start
                             </button>
                             <button type="button" class="pw-stencil-item" data-type="process" title="Process">
-                                <span class="pw-stencil-glyph"><svg viewBox="0 0 44 28"><rect x="2" y="4" width="40" height="20" rx="4" fill="#fff" stroke="#374151" stroke-width="1.5"/></svg></span>
+                                <span class="pw-stencil-glyph"><svg viewBox="0 0 44 28"><rect x="2" y="4" width="40" height="20" rx="4" fill="#1e1b4b" stroke="#a78bfa" stroke-width="1.5"/></svg></span>
                                 Process
                             </button>
                             <button type="button" class="pw-stencil-item" data-type="decision" title="Decision">
-                                <span class="pw-stencil-glyph"><svg viewBox="0 0 44 28"><path d="M22 2 L40 14 L22 26 L4 14 Z" fill="#fff8e1" stroke="#d97706" stroke-width="1.5"/></svg></span>
+                                <span class="pw-stencil-glyph"><svg viewBox="0 0 44 28"><path d="M22 2 L40 14 L22 26 L4 14 Z" fill="#422006" stroke="#fbbf24" stroke-width="1.5"/></svg></span>
                                 Decision
                             </button>
                             <button type="button" class="pw-stencil-item" data-type="data" title="Document">
-                                <span class="pw-stencil-glyph"><svg viewBox="0 0 44 28"><path d="M4 2 H40 V18 Q30 24 20 18 Q10 12 4 18 Z" fill="#e3f2fd" stroke="#1d4ed8" stroke-width="1.5"/></svg></span>
+                                <span class="pw-stencil-glyph"><svg viewBox="0 0 44 28"><path d="M4 2 H40 V18 Q30 24 20 18 Q10 12 4 18 Z" fill="#0c4a6e" stroke="#38bdf8" stroke-width="1.5"/></svg></span>
                                 Document
                             </button>
                             <button type="button" class="pw-stencil-item" data-type="box" title="Activity">
-                                <span class="pw-stencil-glyph"><svg viewBox="0 0 44 28"><rect x="2" y="4" width="40" height="20" fill="#fff" stroke="#4b5563" stroke-width="1.5"/></svg></span>
+                                <span class="pw-stencil-glyph"><svg viewBox="0 0 44 28"><rect x="2" y="4" width="40" height="20" fill="#1e293b" stroke="#cbd5e1" stroke-width="1.5"/></svg></span>
                                 Activity
                             </button>
-                            <button type="button" class="pw-stencil-item" data-type="note" title="Annotation">
-                                <span class="pw-stencil-glyph"><svg viewBox="0 0 44 28"><path d="M4 2 H30 L38 10 V26 H4 Z" fill="#fffde7" stroke="#9ca3af" stroke-width="1.5"/></svg></span>
+                            <button type="button" class="pw-stencil-item" data-type="note" title="Note">
+                                <span class="pw-stencil-glyph"><svg viewBox="0 0 44 28"><path d="M4 2 H30 L38 10 V26 H4 Z" fill="#1e293b" stroke="#94a3b8" stroke-width="1.5"/></svg></span>
                                 Note
                             </button>
-                            <button type="button" class="pw-stencil-item" data-type="end" title="Terminator — End">
-                                <span class="pw-stencil-glyph"><svg viewBox="0 0 44 28"><rect x="2" y="6" width="40" height="16" rx="8" fill="#ffebee" stroke="#c62828" stroke-width="1.5"/></svg></span>
+                            <button type="button" class="pw-stencil-item" data-type="end" title="End">
+                                <span class="pw-stencil-glyph"><svg viewBox="0 0 44 28"><rect x="2" y="6" width="40" height="16" rx="8" fill="#4c0519" stroke="#fb7185" stroke-width="1.5"/></svg></span>
                                 End
                             </button>
                         </div>
-                        <p class="pw-hint" style="margin-top:8px">Select a shape, click the canvas to place. Drag square ports to draw orthogonal connectors.</p>
+                        <p class="pw-hint" style="margin-top:8px">Pick a shape, click the canvas. Drag ports to draw flow lines — label Yes / No in Properties.</p>
                     </div>
                     <div class="pw-side-section">
-                        <h3>Maps</h3>
+                        <h3>Your maps</h3>
                         <div class="pw-map-list" id="pwMapList"></div>
-                        <button type="button" class="pw-btn pw-btn-danger" id="pwBtnDeleteMap" style="margin-top:6px;width:100%">Delete map</button>
+                        <button type="button" class="pw-btn pw-btn-danger" id="pwBtnDeleteMap" style="margin-top:8px;width:100%">Delete map</button>
                     </div>
                 </div>
             </aside>
@@ -103,27 +106,26 @@
             <div class="pw-stage-wrap">
                 <div class="pw-empty" id="pwEmpty">
                     <div class="pw-empty-card">
-                        <h3>New process map</h3>
-                        <p>Select a shape from the stencil and click the white canvas — or press <strong>New</strong> to start a blank diagram.</p>
+                        <h3>Weave your story flow</h3>
+                        <p>Plot beats, quests, and systems like a process map. Pick a shape from the stencil or press <strong>New</strong> to start.</p>
                     </div>
                 </div>
                 <svg class="pw-stage" id="pwStage" tabindex="0" role="img" aria-label="Plotweave canvas">
                     <defs>
                         <pattern id="pwGridMinor" width="12" height="12" patternUnits="userSpaceOnUse">
-                            <path d="M 12 0 L 0 0 0 12" fill="none" stroke="rgba(0,90,158,0.07)" stroke-width="0.5"/>
+                            <path d="M 12 0 L 0 0 0 12" fill="none" stroke="rgba(255,255,255,0.035)" stroke-width="0.5"/>
                         </pattern>
                         <pattern id="pwGridMajor" width="48" height="48" patternUnits="userSpaceOnUse">
                             <rect width="48" height="48" fill="url(#pwGridMinor)"/>
-                            <path d="M 48 0 L 0 0 0 48" fill="none" stroke="rgba(0,90,158,0.14)" stroke-width="1"/>
+                            <path d="M 48 0 L 0 0 0 48" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>
                         </pattern>
                         <filter id="pwShadow" x="-20%" y="-20%" width="140%" height="140%">
-                            <feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-color="rgba(0,0,0,0.12)"/>
+                            <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="rgba(0,0,0,0.35)"/>
                         </filter>
-                        <marker id="pwArrow" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
-                            <path d="M0,0 L7,3 L0,6 Z" fill="#4a5568"/>
+                        <marker id="pwArrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+                            <path d="M0,0 L8,3 L0,6 Z" fill="rgba(196,181,253,0.85)"/>
                         </marker>
                     </defs>
-                    <rect width="100%" height="100%" fill="#ffffff"/>
                     <rect width="100%" height="100%" fill="url(#pwGridMajor)" pointer-events="none"/>
                     <g class="pw-world">
                         <g class="pw-edges"></g>
@@ -147,7 +149,7 @@
                     </div>
                     <div class="pw-shortcuts">
                         <p class="pw-hint">
-                            <strong>Shortcuts</strong><br />
+                            <strong style="color:#c4b5fd">Shortcuts</strong><br />
                             V select · H pan · C connect · Space pan<br />
                             Scroll zoom · Right-drag pan · Del delete<br />
                             Ctrl+Z / Ctrl+Y undo · Ctrl+S save
@@ -161,7 +163,7 @@
     <script type="module">
         import { supabase } from "./firebase.js";
         import { requireStudioSession } from "./js/studio-session.js?v=1";
-        import { createPlotweave } from "./js/plotweave.js?v=6";
+        import { createPlotweave } from "./js/plotweave.js?v=7";
         import { createPlotweaveSupabaseDriver } from "./js/plotweave-supabase.js?v=3";
 
         const session = await requireStudioSession(supabase, "plotweave.html");
