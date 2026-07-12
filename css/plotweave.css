@@ -428,8 +428,11 @@ html, body {
 
 .pw-color-swatches {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 6px;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 5px;
+    max-height: 168px;
+    overflow-y: auto;
+    padding-right: 2px;
 }
 
 .pw-color-swatch {
