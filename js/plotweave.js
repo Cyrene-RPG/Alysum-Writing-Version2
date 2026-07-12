@@ -2,7 +2,12 @@
  * Alysum Plotweave — canvas engine (SVG flowchart / process map).
  */
 
-import { createPlotweaveSupabaseDriver, isSampleOnlyStore } from "./plotweave-supabase.js?v=3";
+import {
+    createPlotweaveSupabaseDriver,
+    isSampleOnlyStore,
+    PLOTWEAVE_SALVAGE_URL,
+    storeHasRealMaps,
+} from "./plotweave-supabase.js?v=4";
 
 export const PLOTWEAVE_STORAGE_KEY = "alysum-plotweave-v1";
 const STORAGE_KEY = PLOTWEAVE_STORAGE_KEY;
@@ -163,6 +168,25 @@ function saveStore(store) {
         /* ignore quota */
     }
     localStorage.setItem(STORAGE_KEY, json);
+}
+
+function pruneEmptyDiagrams(store) {
+    const diagrams = (store.diagrams || []).filter((d) => (d.nodes?.length || 0) > 0);
+    let activeId = store.activeId;
+    if (!diagrams.some((d) => d.id === activeId)) {
+        activeId = diagrams[0]?.id ?? null;
+    }
+    return { diagrams, activeId };
+}
+
+async function fetchSalvageStore() {
+    try {
+        const res = await fetch(PLOTWEAVE_SALVAGE_URL, { cache: "no-store" });
+        if (!res.ok) return null;
+        return parseStore(await res.text());
+    } catch {
+        return null;
+    }
 }
 
 function emptyDiagram(title = "Untitled map") {
@@ -373,18 +397,37 @@ export async function createPlotweave(ui, config = {}) {
         await remoteDriver.pullOnce();
     }
 
-    if (!store.diagrams.length) {
+    store = pruneEmptyDiagrams(store);
+
+    if (!storeHasRealMaps(store)) {
         const backup = loadBackupStore();
-        if (backup?.diagrams?.length) {
-            store = backup;
+        if (storeHasRealMaps(backup)) {
+            store = pruneEmptyDiagrams(backup);
             saveStore(store);
         }
     }
 
+    let recoveredFromSalvage = false;
+    if (!storeHasRealMaps(store)) {
+        const salvage = await fetchSalvageStore();
+        if (storeHasRealMaps(salvage)) {
+            store = pruneEmptyDiagrams(salvage);
+            saveStore(store);
+            recoveredFromSalvage = true;
+            if (remoteDriver) {
+                try {
+                    await remoteDriver.pushNow();
+                } catch (e) {
+                    console.error("Salvage cloud save:", e);
+                }
+            }
+        }
+    }
+
     if (!store.diagrams.length) {
-        const sample = samplePlotMap();
-        store.diagrams = [sample];
-        store.activeId = sample.id;
+        const d = emptyDiagram("Untitled map");
+        store.diagrams = [d];
+        store.activeId = d.id;
         writeStore();
     }
 
@@ -1301,7 +1344,12 @@ export async function createPlotweave(ui, config = {}) {
     applyCamera();
     scheduleRender();
     refreshProps();
-    ui.setStatus?.("Ready", "saved");
+    if (recoveredFromSalvage && diagram.nodes?.length) {
+        fitView();
+        ui.setStatus?.("Recovered your Cyrene RPG map", "saved");
+    } else {
+        ui.setStatus?.("Ready", "saved");
+    }
 
     return {
         persist,

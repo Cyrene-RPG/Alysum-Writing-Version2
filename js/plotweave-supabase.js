@@ -4,6 +4,25 @@
  */
 
 export const PLOTWEAVE_TABLE = "plotweave";
+export const PLOTWEAVE_SALVAGE_URL = "plotweave-imports/cyrene-rpg-recovered.json";
+
+export function diagramShapeCount(diagram) {
+    return Array.isArray(diagram?.nodes) ? diagram.nodes.length : 0;
+}
+
+export function storeHasRealMaps(store) {
+    return (store?.diagrams || []).some((d) => diagramShapeCount(d) > 0);
+}
+
+function pickRicherDiagram(a, b) {
+    const aNodes = diagramShapeCount(a);
+    const bNodes = diagramShapeCount(b);
+    if (aNodes === 0 && bNodes > 0) return b;
+    if (bNodes === 0 && aNodes > 0) return a;
+    const aAt = Number(a.updatedAt) || 0;
+    const bAt = Number(b.updatedAt) || 0;
+    return aAt >= bAt ? a : b;
+}
 
 function describeLoadError(error, tableName) {
     const code = String(error?.code || "");
@@ -51,20 +70,18 @@ export function mergePlotweaveStores(local, cloud) {
             byId.set(d.id, d);
             continue;
         }
-        const localAt = Number(d.updatedAt) || 0;
-        const cloudAt = Number(existing.updatedAt) || 0;
-        if (localAt >= cloudAt) byId.set(d.id, d);
+        byId.set(d.id, pickRicherDiagram(d, existing));
     }
 
-    const diagrams = [...byId.values()].sort(
-        (a, b) => (Number(b.updatedAt) || 0) - (Number(a.updatedAt) || 0)
-    );
+    const diagrams = [...byId.values()]
+        .filter((d) => diagramShapeCount(d) > 0)
+        .sort((a, b) => (Number(b.updatedAt) || 0) - (Number(a.updatedAt) || 0));
 
     let activeId = local.activeId;
-    if (!activeId || !byId.has(activeId)) {
+    if (!activeId || !diagrams.some((d) => d.id === activeId)) {
         activeId = cloud.activeId;
     }
-    if (!activeId || !byId.has(activeId)) {
+    if (!activeId || !diagrams.some((d) => d.id === activeId)) {
         activeId = diagrams[0]?.id ?? null;
     }
 
@@ -198,6 +215,13 @@ export function createPlotweaveSupabaseDriver(opts) {
         }
     }
 
+    async function pushNow() {
+        const local = normalizePlotweaveStore(getStore());
+        if (!storeHasRealMaps(local)) return;
+        if (isSampleOnlyStore(local)) return;
+        await upsertStore(local);
+    }
+
     function pushDebounced() {
         if (pushTimer) clearTimeout(pushTimer);
         pushTimer = setTimeout(async () => {
@@ -223,5 +247,5 @@ export function createPlotweaveSupabaseDriver(opts) {
         pushTimer = null;
     }
 
-    return { pullOnce, pushDebounced, dispose };
+    return { pullOnce, pushDebounced, pushNow, dispose };
 }
