@@ -24,149 +24,124 @@
     <script src="js/alysum-appearance-boot.js"></script>
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
     <link rel="stylesheet" href="css/gradient-themes.css?v=6" />
-    <link rel="stylesheet" href="css/plotweave.css?v=6" />
+    <link rel="stylesheet" href="css/plotweave.css?v=7" />
     <script src="js/gradient-theme-sync.js" defer></script>
 </head>
 <body>
-    <div class="fm-app" id="fmApp">
-        <header class="fm-toolbar" role="toolbar" aria-label="Plotweave tools">
-            <div class="fm-toolbar-left">
-                <a class="fm-brand" href="writer-dashboard.html" title="Back to Studio">
+    <div class="pw-app">
+        <header class="pw-toolbar" role="toolbar" aria-label="Plotweave tools">
+            <div class="pw-toolbar-left">
+                <a class="pw-brand" href="writer-dashboard.html" title="Back to Studio">
                     <img src="Alysum-3.png" alt="" />
                     <span>Plotweave</span>
                 </a>
-                <span class="fm-sep" aria-hidden="true"></span>
-                <input
-                    class="fm-title-input"
-                    id="fmTitle"
-                    type="text"
-                    maxlength="80"
-                    aria-label="Map title"
-                    placeholder="Untitled map"
-                />
-                <span class="fm-status" id="fmStatus">Syncing…</span>
+                <span class="pw-sep" aria-hidden="true"></span>
+                <input class="pw-title-input" id="pwTitle" type="text" maxlength="80" aria-label="Map title" placeholder="Untitled map" />
+                <span class="pw-status" id="pwStatus">Syncing…</span>
             </div>
 
-            <div class="fm-toolbar-center">
-                <button type="button" class="fm-btn is-active" id="fmBtnSelect" title="Select (V)">Select</button>
-                <button type="button" class="fm-btn" id="fmBtnPan" title="Pan (H) · hold Space">Pan</button>
-                <button type="button" class="fm-btn" id="fmBtnConnect" title="Connect (C)">Connect</button>
-                <span class="fm-sep" aria-hidden="true"></span>
-                <button type="button" class="fm-btn" id="fmBtnUndo" title="Undo (Ctrl+Z)" disabled>Undo</button>
-                <button type="button" class="fm-btn" id="fmBtnRedo" title="Redo (Ctrl+Y)" disabled>Redo</button>
+            <div class="pw-toolbar-center">
+                <button type="button" class="pw-btn is-active" id="pwBtnSelect" title="Select (V)">Select</button>
+                <button type="button" class="pw-btn" id="pwBtnPan" title="Pan (H) · hold Space">Pan</button>
+                <button type="button" class="pw-btn" id="pwBtnConnect" title="Connect (C)">Connect</button>
+                <span class="pw-sep" aria-hidden="true"></span>
+                <button type="button" class="pw-btn" id="pwBtnUndo" title="Undo (Ctrl+Z)" disabled>Undo</button>
+                <button type="button" class="pw-btn" id="pwBtnRedo" title="Redo (Ctrl+Y)" disabled>Redo</button>
             </div>
 
-            <div class="fm-toolbar-right">
-                <button type="button" class="fm-btn" id="fmBtnNew" title="New map">New</button>
-                <button type="button" class="fm-btn" id="fmBtnDuplicate" title="Duplicate map">Duplicate</button>
-                <button type="button" class="fm-btn fm-btn-primary" id="fmBtnSave" title="Save (Ctrl+S)">Save</button>
-                <a class="fm-btn fm-btn-ghost" href="writer-dashboard.html">Studio</a>
+            <div class="pw-toolbar-right">
+                <button type="button" class="pw-btn" id="pwBtnNew" title="New map">New</button>
+                <button type="button" class="pw-btn" id="pwBtnDuplicate" title="Duplicate map">Duplicate</button>
+                <button type="button" class="pw-btn pw-btn-primary" id="pwBtnSave" title="Save (Ctrl+S)">Save</button>
+                <a class="pw-btn pw-btn-ghost" href="writer-dashboard.html">Studio</a>
             </div>
         </header>
 
-        <div class="fm-workspace" id="fmWorkspace">
-            <aside class="fm-side" aria-label="Maps and shapes">
-                <div class="fm-side-head">
-                    <h2>Library</h2>
-                </div>
-                <div class="fm-side-body">
-                    <div class="fm-side-section">
+        <div class="pw-workspace">
+            <aside class="pw-side" aria-label="Maps and shapes">
+                <div class="pw-side-head"><h2>Library</h2></div>
+                <div class="pw-side-body">
+                    <div class="pw-side-section">
                         <h3>Your maps</h3>
-                        <div class="fm-diagram-list" id="fmDiagramList"></div>
-                        <button type="button" class="fm-btn fm-danger-btn" id="fmBtnDeleteMap" style="margin-top:8px">Delete map</button>
+                        <div class="pw-map-list" id="pwMapList"></div>
+                        <button type="button" class="pw-btn pw-btn-danger" id="pwBtnDeleteMap" style="margin-top:8px">Delete map</button>
                     </div>
-                    <div class="fm-side-section">
+                    <div class="pw-side-section">
                         <h3>Shapes</h3>
-                        <div class="fm-palette" id="fmPalette">
-                            <button type="button" class="fm-palette-item" data-type="start" title="Start / terminator">
-                                <svg class="fm-palette-glyph" viewBox="0 0 44 28" aria-hidden="true">
-                                    <rect x="2" y="4" width="40" height="20" rx="10" fill="#14532d" stroke="#4ade80" stroke-width="2"/>
-                                </svg>
+                        <div class="pw-palette" id="pwPalette">
+                            <button type="button" class="pw-palette-item" data-type="start" title="Start">
+                                <svg class="pw-palette-glyph" viewBox="0 0 44 28"><rect x="2" y="4" width="40" height="20" rx="10" fill="#14532d" stroke="#4ade80" stroke-width="2"/></svg>
                                 Start
                             </button>
-                            <button type="button" class="fm-palette-item" data-type="process" title="Process / scene">
-                                <svg class="fm-palette-glyph" viewBox="0 0 44 28" aria-hidden="true">
-                                    <rect x="2" y="4" width="40" height="20" rx="4" fill="#1e1b4b" stroke="#a78bfa" stroke-width="2"/>
-                                </svg>
+                            <button type="button" class="pw-palette-item" data-type="process" title="Process">
+                                <svg class="pw-palette-glyph" viewBox="0 0 44 28"><rect x="2" y="4" width="40" height="20" rx="4" fill="#1e1b4b" stroke="#a78bfa" stroke-width="2"/></svg>
                                 Process
                             </button>
-                            <button type="button" class="fm-palette-item" data-type="box" title="Generic box">
-                                <svg class="fm-palette-glyph" viewBox="0 0 44 28" aria-hidden="true">
-                                    <rect x="2" y="4" width="40" height="20" fill="#1e293b" stroke="#cbd5e1" stroke-width="2"/>
-                                </svg>
+                            <button type="button" class="pw-palette-item" data-type="box" title="Box">
+                                <svg class="pw-palette-glyph" viewBox="0 0 44 28"><rect x="2" y="4" width="40" height="20" fill="#1e293b" stroke="#cbd5e1" stroke-width="2"/></svg>
                                 Box
                             </button>
-                            <button type="button" class="fm-palette-item" data-type="decision" title="Decision">
-                                <svg class="fm-palette-glyph" viewBox="0 0 44 28" aria-hidden="true">
-                                    <path d="M22 2 L42 14 L22 26 L2 14 Z" fill="#422006" stroke="#fbbf24" stroke-width="2"/>
-                                </svg>
+                            <button type="button" class="pw-palette-item" data-type="decision" title="Decision">
+                                <svg class="pw-palette-glyph" viewBox="0 0 44 28"><path d="M22 2 L42 14 L22 26 L2 14 Z" fill="#422006" stroke="#fbbf24" stroke-width="2"/></svg>
                                 Decision
                             </button>
-                            <button type="button" class="fm-palette-item" data-type="data" title="Data / beat">
-                                <svg class="fm-palette-glyph" viewBox="0 0 44 28" aria-hidden="true">
-                                    <path d="M8 4 H42 L36 24 H2 Z" fill="#0c4a6e" stroke="#38bdf8" stroke-width="2"/>
-                                </svg>
+                            <button type="button" class="pw-palette-item" data-type="data" title="Data">
+                                <svg class="pw-palette-glyph" viewBox="0 0 44 28"><path d="M8 4 H42 L36 24 H2 Z" fill="#0c4a6e" stroke="#38bdf8" stroke-width="2"/></svg>
                                 Data
                             </button>
-                            <button type="button" class="fm-palette-item" data-type="note" title="Note">
-                                <svg class="fm-palette-glyph" viewBox="0 0 44 28" aria-hidden="true">
-                                    <path d="M4 2 H32 L40 10 V26 H4 Z" fill="#1e293b" stroke="#94a3b8" stroke-width="2"/>
-                                </svg>
+                            <button type="button" class="pw-palette-item" data-type="note" title="Note">
+                                <svg class="pw-palette-glyph" viewBox="0 0 44 28"><path d="M4 2 H32 L40 10 V26 H4 Z" fill="#1e293b" stroke="#94a3b8" stroke-width="2"/></svg>
                                 Note
                             </button>
-                            <button type="button" class="fm-palette-item" data-type="end" title="End">
-                                <svg class="fm-palette-glyph" viewBox="0 0 44 28" aria-hidden="true">
-                                    <rect x="2" y="4" width="40" height="20" rx="10" fill="#4c0519" stroke="#fb7185" stroke-width="2"/>
-                                </svg>
+                            <button type="button" class="pw-palette-item" data-type="end" title="End">
+                                <svg class="pw-palette-glyph" viewBox="0 0 44 28"><rect x="2" y="4" width="40" height="20" rx="10" fill="#4c0519" stroke="#fb7185" stroke-width="2"/></svg>
                                 End
                             </button>
                         </div>
-                        <p class="fm-hint" style="margin-top:10px">Click a shape, then click the canvas to place it. Drag ports (dots) to connect — select a line to label it Yes / No.</p>
+                        <p class="pw-hint" style="margin-top:10px">Pick a shape, click the canvas to place it. Drag from a port dot to connect. Label connectors Yes / No in Properties.</p>
                     </div>
                 </div>
             </aside>
 
-            <div class="fm-stage-wrap">
-                <div class="fm-empty" id="fmEmpty">
-                    <div class="fm-empty-card">
-                        <h3>Weave your story flow</h3>
-                        <p>Pick a shape from the library, place it on the canvas, then connect beats like a process map — for plots, quests, or world systems.</p>
+            <div class="pw-stage-wrap">
+                <div class="pw-empty" id="pwEmpty">
+                    <div class="pw-empty-card">
+                        <h3>Start weaving</h3>
+                        <p>Click <strong>New</strong> to create a map, or pick a shape and click the canvas. Maps sync to your account automatically.</p>
                     </div>
                 </div>
-                <svg class="fm-stage" id="fmStage" tabindex="0" role="img" aria-label="Plotweave canvas">
+                <svg class="pw-stage" id="pwStage" tabindex="0" role="img" aria-label="Plotweave canvas">
                     <defs>
-                        <pattern id="fmGrid" width="24" height="24" patternUnits="userSpaceOnUse">
+                        <pattern id="pwGrid" width="24" height="24" patternUnits="userSpaceOnUse">
                             <path d="M 24 0 L 0 0 0 24" fill="none" stroke="rgba(255,255,255,0.045)" stroke-width="1"/>
                         </pattern>
-                        <marker id="fmArrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+                        <marker id="pwArrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
                             <path d="M0,0 L8,3 L0,6 Z" fill="rgba(196,181,253,0.85)"/>
                         </marker>
                     </defs>
-                    <rect width="100%" height="100%" fill="url(#fmGrid)" pointer-events="none"/>
-                    <g class="fm-world">
-                        <g class="fm-edges"></g>
-                        <g class="fm-nodes"></g>
-                        <g class="fm-overlay"></g>
+                    <rect width="100%" height="100%" fill="url(#pwGrid)" pointer-events="none"/>
+                    <g class="pw-world">
+                        <g class="pw-edges"></g>
+                        <g class="pw-nodes"></g>
+                        <g class="pw-overlay"></g>
                     </g>
                 </svg>
-                <div class="fm-viewbar" aria-label="View controls">
-                    <button type="button" class="fm-btn" id="fmBtnZoomOut" title="Zoom out">−</button>
-                    <span class="fm-zoom-label" id="fmZoomLabel">100%</span>
-                    <button type="button" class="fm-btn" id="fmBtnZoomIn" title="Zoom in">+</button>
-                    <button type="button" class="fm-btn" id="fmBtnFit" title="Fit to view">Fit</button>
+                <div class="pw-viewbar" aria-label="View controls">
+                    <button type="button" class="pw-btn" id="pwBtnZoomOut" title="Zoom out">−</button>
+                    <span class="pw-zoom-label" id="pwZoomLabel">100%</span>
+                    <button type="button" class="pw-btn" id="pwBtnZoomIn" title="Zoom in">+</button>
+                    <button type="button" class="pw-btn" id="pwBtnFit" title="Fit to view">Fit</button>
                 </div>
             </div>
 
-            <aside class="fm-side fm-side-right" aria-label="Properties">
-                <div class="fm-side-head">
-                    <h2>Properties</h2>
-                </div>
-                <div class="fm-side-body fm-props-panel">
-                    <div id="fmPropsBody">
-                        <p class="fm-props-empty">Select a shape or connector to edit its properties.</p>
+            <aside class="pw-side pw-side-right" aria-label="Properties">
+                <div class="pw-side-head"><h2>Properties</h2></div>
+                <div class="pw-side-body">
+                    <div id="pwPropsBody">
+                        <p class="pw-props-empty">Create a map or place a shape to begin.</p>
                     </div>
-                    <div class="fm-shortcuts">
-                        <p class="fm-hint">
+                    <div class="pw-shortcuts">
+                        <p class="pw-hint">
                             <strong style="color:#c4b5fd">Shortcuts</strong><br />
                             V select · H pan · C connect · Space pan<br />
                             Scroll zoom · Right-drag pan · Del delete<br />
@@ -181,15 +156,13 @@
     <script type="module">
         import { supabase } from "./firebase.js";
         import { requireStudioSession } from "./js/studio-session.js?v=1";
-        import { createPlotweave } from "./js/plotweave.js?v=4";
-        import { createPlotweaveSupabaseDriver } from "./js/plotweave-supabase.js?v=2";
+        import { createPlotweave } from "./js/plotweave.js?v=5";
+        import { createPlotweaveSupabaseDriver } from "./js/plotweave-supabase.js?v=3";
 
         const session = await requireStudioSession(supabase, "plotweave.html");
-        if (!session) {
-            /* requireStudioSession redirects when unauthenticated */
-        } else {
-            const statusEl = document.getElementById("fmStatus");
-            const stageEl = document.getElementById("fmStage");
+        if (session) {
+            const statusEl = document.getElementById("pwStatus");
+            const stageEl = document.getElementById("pwStage");
 
             const setStatus = (text, kind) => {
                 statusEl.textContent = text;
@@ -201,24 +174,24 @@
 
             const app = createPlotweave({
                 stage: stageEl,
-                empty: document.getElementById("fmEmpty"),
-                titleInput: document.getElementById("fmTitle"),
-                diagramList: document.getElementById("fmDiagramList"),
-                propsBody: document.getElementById("fmPropsBody"),
-                palette: document.getElementById("fmPalette"),
-                zoomLabel: document.getElementById("fmZoomLabel"),
-                btnUndo: document.getElementById("fmBtnUndo"),
-                btnRedo: document.getElementById("fmBtnRedo"),
-                btnSave: document.getElementById("fmBtnSave"),
-                btnSelect: document.getElementById("fmBtnSelect"),
-                btnPan: document.getElementById("fmBtnPan"),
-                btnConnect: document.getElementById("fmBtnConnect"),
-                btnZoomIn: document.getElementById("fmBtnZoomIn"),
-                btnZoomOut: document.getElementById("fmBtnZoomOut"),
-                btnFit: document.getElementById("fmBtnFit"),
-                btnNew: document.getElementById("fmBtnNew"),
-                btnDuplicate: document.getElementById("fmBtnDuplicate"),
-                btnDeleteMap: document.getElementById("fmBtnDeleteMap"),
+                empty: document.getElementById("pwEmpty"),
+                titleInput: document.getElementById("pwTitle"),
+                mapList: document.getElementById("pwMapList"),
+                propsBody: document.getElementById("pwPropsBody"),
+                palette: document.getElementById("pwPalette"),
+                zoomLabel: document.getElementById("pwZoomLabel"),
+                btnUndo: document.getElementById("pwBtnUndo"),
+                btnRedo: document.getElementById("pwBtnRedo"),
+                btnSave: document.getElementById("pwBtnSave"),
+                btnSelect: document.getElementById("pwBtnSelect"),
+                btnPan: document.getElementById("pwBtnPan"),
+                btnConnect: document.getElementById("pwBtnConnect"),
+                btnZoomIn: document.getElementById("pwBtnZoomIn"),
+                btnZoomOut: document.getElementById("pwBtnZoomOut"),
+                btnFit: document.getElementById("pwBtnFit"),
+                btnNew: document.getElementById("pwBtnNew"),
+                btnDuplicate: document.getElementById("pwBtnDuplicate"),
+                btnDeleteMap: document.getElementById("pwBtnDeleteMap"),
                 setStatus,
                 onPersist() {
                     sync?.pushDebounced();
@@ -239,11 +212,10 @@
 
             try {
                 await sync.pullOnce();
-                app.seedIfEmpty();
+                if (!app.getStore().diagrams.length) setStatus("Ready", "saved");
             } catch (err) {
                 console.error("Plotweave sync:", err);
                 setStatus("Ready (offline)", "saved");
-                app.seedIfEmpty();
             } finally {
                 stageEl.style.pointerEvents = "";
             }

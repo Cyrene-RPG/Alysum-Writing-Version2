@@ -71,8 +71,7 @@ const DEVICE_PREFERENCE_KEYS = [
   "alysum-writer-last-session",
   "alysum-vault-v1",
   "alysum-vault-v1-prev",
-  "alysum-plotweave-v1",
-  "alysum-plotweave-v1-backup",
+  "alysum-plotweave-v2",
 ];
 
 const EXCLUDED_LS_PREFIXES = ["sb-", "alysum-writer-dashboard-sync", "alysum-reset-email-until:"];
