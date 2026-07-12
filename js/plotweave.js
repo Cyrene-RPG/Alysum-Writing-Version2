@@ -480,13 +480,6 @@ export async function createPlotweave(ui, config = {}) {
     const AUTO_SAVE_MS = 1500;
     let palettePlace = null;
 
-    function isOverCanvas(clientX, clientY) {
-        const wrap = svg.closest(".fm-stage-wrap");
-        if (!wrap) return false;
-        const r = wrap.getBoundingClientRect();
-        return clientX >= r.left && clientX <= r.right && clientY >= r.top && clientY <= r.bottom;
-    }
-
     function commitDiagram() {
         const idx = store.diagrams.findIndex((d) => d.id === diagram.id);
         if (idx >= 0) store.diagrams[idx] = diagram;
@@ -548,6 +541,60 @@ export async function createPlotweave(ui, config = {}) {
     const gEdges = svg.querySelector(".fm-edges");
     const gNodes = svg.querySelector(".fm-nodes");
     const gOverlay = svg.querySelector(".fm-overlay");
+
+    const stageWrap = svg.closest(".fm-stage-wrap");
+    const dragGhost = document.createElement("div");
+    dragGhost.className = "fm-drag-ghost";
+    dragGhost.hidden = true;
+    stageWrap?.appendChild(dragGhost);
+
+    function isOverCanvas(clientX, clientY) {
+        const rect = svg.getBoundingClientRect();
+        return clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom;
+    }
+
+    function hideDragGhost() {
+        dragGhost.hidden = true;
+    }
+
+    function updateDragGhost(clientX, clientY, type) {
+        const def = SHAPE_DEFS[type] || SHAPE_DEFS.process;
+        dragGhost.textContent = def.label || type;
+        dragGhost.hidden = false;
+        dragGhost.style.transform = `translate(${clientX + 12}px, ${clientY + 12}px)`;
+    }
+
+    function finishPaletteDrop(clientX, clientY) {
+        if (!palettePlace?.armed || palettePlace.placed) return false;
+        if (!isOverCanvas(clientX, clientY)) return false;
+        const worldPt = screenToWorld(clientX, clientY);
+        addNodeAt(palettePlace.type, worldPt.x, worldPt.y);
+        palettePlace.placed = true;
+        return true;
+    }
+
+    function clearPaletteDrag() {
+        palettePlace = null;
+        hideDragGhost();
+    }
+
+    function onWindowPointerMove(ev) {
+        if (!palettePlace?.armed || palettePlace.placed) return;
+        if (ev.pointerId !== palettePlace.pointerId) return;
+        if (isOverCanvas(ev.clientX, ev.clientY)) {
+            updateDragGhost(ev.clientX, ev.clientY, palettePlace.type);
+        } else {
+            hideDragGhost();
+        }
+    }
+
+    function onWindowPointerUp(ev) {
+        if (!palettePlace?.armed || ev.pointerId !== palettePlace.pointerId) return;
+        if (!palettePlace.placed) {
+            finishPaletteDrop(ev.clientX, ev.clientY);
+        }
+        clearPaletteDrag();
+    }
 
     function pushHistory() {
         history.push(deepClone({ nodes: diagram.nodes, edges: diagram.edges }));
@@ -1417,12 +1464,6 @@ export async function createPlotweave(ui, config = {}) {
     }
 
     function onPointerUp(ev) {
-        if (palettePlace?.armed && !palettePlace.placed && isOverCanvas(ev.clientX, ev.clientY)) {
-            const worldPt = screenToWorld(ev.clientX, ev.clientY);
-            addNodeAt(palettePlace.type, worldPt.x, worldPt.y);
-        }
-        palettePlace = null;
-
         if (!drag) return;
         if (drag.mode === "lasso" && lasso) {
             const x1 = Math.min(lasso.x0, lasso.x1);
@@ -1547,6 +1588,9 @@ export async function createPlotweave(ui, config = {}) {
     svg.addEventListener("contextmenu", (e) => e.preventDefault());
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("keyup", onKeyUp);
+    window.addEventListener("pointermove", onWindowPointerMove);
+    window.addEventListener("pointerup", onWindowPointerUp);
+    window.addEventListener("pointercancel", onWindowPointerUp);
 
     ui.btnUndo.addEventListener("click", undo);
     ui.btnRedo.addEventListener("click", redo);
@@ -1576,7 +1620,12 @@ export async function createPlotweave(ui, config = {}) {
         const type = item.dataset.type;
         if (!type) return;
         setTool("place", type);
-        palettePlace = { type, armed: true, placed: false };
+        palettePlace = { type, armed: true, placed: false, pointerId: ev.pointerId };
+        try {
+            item.setPointerCapture(ev.pointerId);
+        } catch {
+            /* ignore */
+        }
         ev.preventDefault();
     });
 
@@ -1610,6 +1659,10 @@ export async function createPlotweave(ui, config = {}) {
         getDiagram: () => diagram,
         destroy() {
             if (autoSaveTimer) clearTimeout(autoSaveTimer);
+            window.removeEventListener("pointermove", onWindowPointerMove);
+            window.removeEventListener("pointerup", onWindowPointerUp);
+            window.removeEventListener("pointercancel", onWindowPointerUp);
+            dragGhost.remove();
             remoteDriver?.dispose();
         },
     };
