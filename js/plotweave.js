@@ -94,6 +94,12 @@ const FILL_SWATCHES = [
     "#3f3f46",
     "#27272a",
     "#1c1917",
+    "#831843",
+    "#44403c",
+    "#2d1b00",
+    "#1a1a2e",
+    "#0f3d3e",
+    "#78350f",
 ];
 
 const STROKE_SWATCHES = [
@@ -115,6 +121,12 @@ const STROKE_SWATCHES = [
     "#cbd5e1",
     "#94a3b8",
     "#e2e8f0",
+    "#e879f9",
+    "#86efac",
+    "#67e8f9",
+    "#fcd34d",
+    "#d8b4fe",
+    "#ffffff",
 ];
 
 function normalizeHex(color) {
