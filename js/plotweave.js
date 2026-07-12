@@ -9,6 +9,12 @@ export const STORAGE_KEY = "alysum-plotweave-v2";
 const MAX_HISTORY = 50;
 const GRID = 12;
 const MIN_NODE = 48;
+const TEXT_PAD_X = 12;
+const TEXT_PAD_Y = 10;
+const TEXT_LINE_H = 14;
+const TEXT_CHAR_W = 7.1;
+const TEXT_FONT_BASE = 12;
+const TEXT_FONT_MIN = 8;
 
 /** Alysum flowchart palette — readable on the dark studio canvas. */
 const SHAPES = {
@@ -216,21 +222,77 @@ function esc(s) {
         .replace(/"/g, "&quot;");
 }
 
-function wrapText(text, maxChars = 18) {
-    const words = String(text || "").split(/\s+/);
+function wrapLines(text, maxChars) {
+    const raw = String(text ?? "");
+    if (!raw) return [""];
+
     const lines = [];
-    let line = "";
-    for (const w of words) {
-        const next = line ? `${line} ${w}` : w;
-        if (next.length > maxChars && line) {
-            lines.push(line);
-            line = w;
-        } else {
-            line = next;
+    for (const para of raw.split(/\n/)) {
+        const words = para.split(/\s+/).filter(Boolean);
+        if (!words.length) {
+            lines.push("");
+            continue;
+        }
+        let line = "";
+        for (const word of words) {
+            let chunk = word;
+            while (chunk.length > maxChars) {
+                if (line) {
+                    lines.push(line);
+                    line = "";
+                }
+                lines.push(chunk.slice(0, maxChars));
+                chunk = chunk.slice(maxChars);
+            }
+            const next = line ? `${line} ${chunk}` : chunk;
+            if (next.length > maxChars && line) {
+                lines.push(line);
+                line = chunk;
+            } else {
+                line = next;
+            }
+        }
+        if (line) lines.push(line);
+    }
+    return lines.length ? lines : [""];
+}
+
+function shapeTextInsets(type, w, h) {
+    if (type === "decision") {
+        return { padX: Math.max(14, w * 0.22), padY: Math.max(12, h * 0.2) };
+    }
+    return { padX: TEXT_PAD_X, padY: TEXT_PAD_Y };
+}
+
+/** Lay out label lines inside the shape bounds; shrink font if needed. */
+function shapeTextLayout(text, w, h, type) {
+    const { padX, padY } = shapeTextInsets(type, w, h);
+    const innerW = Math.max(20, w - padX * 2);
+    const innerH = Math.max(20, h - padY * 2);
+    const maxChars = Math.max(4, Math.floor(innerW / TEXT_CHAR_W));
+    const allLines = wrapLines(text, maxChars);
+
+    let fontSize = TEXT_FONT_BASE;
+    let lineH = TEXT_LINE_H;
+    while (allLines.length * lineH > innerH && fontSize > TEXT_FONT_MIN) {
+        fontSize -= 0.5;
+        lineH = (TEXT_LINE_H / TEXT_FONT_BASE) * fontSize;
+    }
+
+    const maxLines = Math.max(1, Math.floor(innerH / lineH));
+    let lines = allLines;
+    let truncated = false;
+    if (allLines.length > maxLines) {
+        lines = allLines.slice(0, maxLines);
+        truncated = true;
+        const last = lines[maxLines - 1] || "";
+        if (last.length > 1) {
+            const room = Math.max(1, maxChars - 1);
+            lines[maxLines - 1] = `${last.slice(0, room)}…`;
         }
     }
-    if (line) lines.push(line);
-    return lines.slice(0, 3);
+
+    return { lines, fontSize, lineH, padX, padY, innerW, innerH, truncated };
 }
 
 /**
@@ -513,12 +575,16 @@ export function createPlotweave(ui) {
     }
 
     function nodeTextSvg(n, w, h) {
-        const lines = wrapText(n.text, Math.floor(w / 8));
-        const lineH = 14;
-        const startY = h / 2 - ((lines.length - 1) * lineH) / 2;
-        return lines.map((line, i) =>
-            `<text class="pw-node-text" x="${w / 2}" y="${startY + i * lineH}" text-anchor="middle" dominant-baseline="middle">${esc(line)}</text>`
+        const layout = shapeTextLayout(n.text, w, h, n.type);
+        const blockH = layout.lines.length * layout.lineH;
+        const startY = (h - blockH) / 2 + layout.lineH / 2;
+        const clipId = `pw-clip-${n.id}`;
+        const text = layout.lines.map((line, i) =>
+            `<text class="pw-node-text" font-size="${layout.fontSize}" x="${w / 2}" y="${startY + i * layout.lineH}" text-anchor="middle" dominant-baseline="middle">${esc(line)}</text>`
         ).join("");
+        return `
+            <clipPath id="${clipId}"><rect x="${layout.padX}" y="${layout.padY}" width="${layout.innerW}" height="${layout.innerH}" rx="2"/></clipPath>
+            <g clip-path="url(#${clipId})">${text}</g>`;
     }
 
     function render() {
@@ -636,6 +702,7 @@ export function createPlotweave(ui) {
                     <div class="pw-field"><label>Width</label><input type="number" id="pwPropW" min="${MIN_NODE}" value="${nodeSize(n).w}"/></div>
                     <div class="pw-field"><label>Height</label><input type="number" id="pwPropH" min="${MIN_NODE}" value="${nodeSize(n).h}"/></div>
                 </div>
+                <p class="pw-hint" style="margin:-4px 0 8px">Drag corner handles or change size — text reflows to fit inside the shape.</p>
                 <div class="pw-field"><label>Color presets</label>
                 <div class="pw-color-swatches" id="pwColorSwatches">${renderColorSwatches(n.fill, n.stroke)}</div></div>
                 <div class="pw-field-row">
