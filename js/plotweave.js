@@ -10,6 +10,7 @@ const LEGACY_STORAGE_KEY = "alysum-flow-mapper-v1";
 const MAX_HISTORY = 60;
 const MIN_ZOOM = 0.001;
 const MAX_ZOOM = 2.5;
+const MIN_EDIT_ZOOM = 0.35;
 
 export const SHAPE_DEFS = {
     start: {
@@ -232,18 +233,14 @@ function samplePlotMap() {
     return d;
 }
 
+function nodeSize(node) {
+    const def = SHAPE_DEFS[node.type] || SHAPE_DEFS.process;
+    return { w: node.w || def.w, h: node.h || def.h };
+}
+
 function defaultShapeSize(type) {
     const def = SHAPE_DEFS[type] || SHAPE_DEFS.process;
     return { w: def.w, h: def.h };
-}
-
-function nodeSize(node) {
-    const def = SHAPE_DEFS[node.type] || SHAPE_DEFS.process;
-    let w = Number(node.w);
-    let h = Number(node.h);
-    if (!Number.isFinite(w) || w <= 0) w = def.w;
-    if (!Number.isFinite(h) || h <= 0) h = def.h;
-    return { w, h };
 }
 
 const RESIZE_MIN_W = 48;
@@ -593,6 +590,19 @@ export async function createPlotweave(ui, config = {}) {
         ui.zoomLabel.textContent = formatZoomLabel(zoom);
     }
 
+    function ensurePlacedNodeVisible(node) {
+        const { w, h } = nodeSize(node);
+        const cx = node.x + w / 2;
+        const cy = node.y + h / 2;
+        const rect = svg.getBoundingClientRect();
+        let zoom = diagram.camera.zoom;
+        if (zoom < MIN_EDIT_ZOOM) zoom = MIN_EDIT_ZOOM;
+        diagram.camera.zoom = zoom;
+        diagram.camera.x = rect.width / 2 - cx * zoom;
+        diagram.camera.y = rect.height / 2 - cy * zoom;
+        applyCamera();
+    }
+
     function setZoom(next, centerClient) {
         const z0 = diagram.camera.zoom;
         const z1 = clamp(next, MIN_ZOOM, MAX_ZOOM);
@@ -930,9 +940,8 @@ export async function createPlotweave(ui, config = {}) {
                 const t = ev.target.value;
                 n.type = t;
                 const d = SHAPE_DEFS[t];
-                const size = defaultShapeSize(t);
-                n.w = size.w;
-                n.h = size.h;
+                n.w = d.w;
+                n.h = d.h;
                 if (!n.fill) n.fill = d.fill;
                 n.stroke = d.stroke;
                 markDirty({ refreshProps: true });
@@ -1012,6 +1021,7 @@ export async function createPlotweave(ui, config = {}) {
     function addNodeAt(type, wx, wy) {
         const def = SHAPE_DEFS[type] || SHAPE_DEFS.process;
         const { w, h } = defaultShapeSize(type);
+        if (!Array.isArray(diagram.nodes)) diagram.nodes = [];
         pushHistory();
         const node = {
             id: uid("n"),
@@ -1027,10 +1037,10 @@ export async function createPlotweave(ui, config = {}) {
         diagram.nodes.push(node);
         selectedIds = new Set([node.id]);
         selectedEdgeId = null;
-        placeType = null;
-        tool = "select";
-        updateToolUi();
-        markDirty({ refreshProps: true });
+        ensurePlacedNodeVisible(node);
+        render();
+        refreshProps();
+        persist(true);
     }
 
     function setTool(next, type = null) {

@@ -182,12 +182,10 @@
     <script type="module">
         import { supabase } from "./firebase.js";
         import { requireStudioSession } from "./js/studio-session.js?v=1";
-        import { createPlotweave } from "./js/plotweave.js?v=14";
+        import { createPlotweave } from "./js/plotweave.js?v=15";
 
         const session = await requireStudioSession(supabase, "plotweave.html");
-        if (!session) {
-            // requireStudioSession redirects when unauthenticated
-        }
+        if (!session) return;
 
         const statusEl = document.getElementById("fmStatus");
 
