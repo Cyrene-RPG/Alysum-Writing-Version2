@@ -6,6 +6,7 @@ import { createPlotweaveSupabaseDriver } from "./plotweave-supabase.js?v=2";
 
 export const PLOTWEAVE_STORAGE_KEY = "alysum-plotweave-v1";
 const STORAGE_KEY = PLOTWEAVE_STORAGE_KEY;
+const BACKUP_STORAGE_KEY = "alysum-plotweave-v1-backup";
 const LEGACY_STORAGE_KEY = "alysum-flow-mapper-v1";
 const MAX_HISTORY = 60;
 
@@ -91,6 +92,35 @@ function deepClone(obj) {
     return JSON.parse(JSON.stringify(obj));
 }
 
+function parseStore(raw) {
+    if (!raw) return null;
+    try {
+        const parsed = JSON.parse(raw);
+        if (!parsed || !Array.isArray(parsed.diagrams)) return null;
+        for (const d of parsed.diagrams) {
+            if (d.view && !d.camera) {
+                d.camera = {
+                    x: Number(d.view.x) || 0,
+                    y: Number(d.view.y) || 0,
+                    zoom: Number(d.view.scale ?? d.view.zoom) || 1,
+                };
+            }
+            if (!d.camera) d.camera = { x: 0, y: 0, zoom: 1 };
+        }
+        return parsed;
+    } catch {
+        return null;
+    }
+}
+
+function loadBackupStore() {
+    for (const key of [BACKUP_STORAGE_KEY, `${STORAGE_KEY}-prev`, LEGACY_STORAGE_KEY]) {
+        const parsed = parseStore(localStorage.getItem(key));
+        if (parsed?.diagrams?.length) return parsed;
+    }
+    return null;
+}
+
 function loadStore() {
     try {
         let raw = localStorage.getItem(STORAGE_KEY);
@@ -101,17 +131,38 @@ function loadStore() {
                 localStorage.removeItem(LEGACY_STORAGE_KEY);
             }
         }
-        if (!raw) return { diagrams: [], activeId: null };
-        const parsed = JSON.parse(raw);
-        if (!parsed || !Array.isArray(parsed.diagrams)) return { diagrams: [], activeId: null };
-        return parsed;
+        let store = parseStore(raw);
+        if (!store) {
+            store = loadBackupStore();
+            if (store) {
+                saveStore(store);
+                return store;
+            }
+            return { diagrams: [], activeId: null };
+        }
+        if (store.diagrams.length === 0) {
+            const backup = loadBackupStore();
+            if (backup) {
+                saveStore(backup);
+                return backup;
+            }
+        }
+        return store;
     } catch {
-        return { diagrams: [], activeId: null };
+        const backup = loadBackupStore();
+        return backup || { diagrams: [], activeId: null };
     }
 }
 
 function saveStore(store) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+    const json = JSON.stringify(store);
+    try {
+        const prev = localStorage.getItem(STORAGE_KEY);
+        if (prev) localStorage.setItem(BACKUP_STORAGE_KEY, prev);
+    } catch {
+        /* ignore quota */
+    }
+    localStorage.setItem(STORAGE_KEY, json);
 }
 
 function emptyDiagram(title = "Untitled map") {
@@ -312,10 +363,19 @@ export async function createPlotweave(ui, config = {}) {
                 store = next;
             },
             saveStore,
+            loadBackup: loadBackupStore,
             refresh: () => {},
             setStatus: ui.setStatus,
         });
         await remoteDriver.pullOnce();
+    }
+
+    if (!store.diagrams.length) {
+        const backup = loadBackupStore();
+        if (backup?.diagrams?.length) {
+            store = backup;
+            saveStore(store);
+        }
     }
 
     if (!store.diagrams.length) {

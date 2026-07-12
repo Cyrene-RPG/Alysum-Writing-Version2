@@ -57,8 +57,16 @@
         <h1>Recover Plotweave maps</h1>
         <p class="lead">
             This page searches <strong>this browser only</strong> for saved Plotweave data.
-            Open it on your tablet, phone, or any device where you used Plotweave before — your maps may still be there.
+            Your PC will not see maps that only exist on your tablet — open this page <strong>on the tablet</strong>
+            (or import a JSON backup below).
         </p>
+        <div class="card">
+            <h2>Import a backup file</h2>
+            <p>If you exported Plotweave JSON or have a recovery file, import it here.</p>
+            <input type="file" id="importFile" accept=".json,application/json" />
+            <button type="button" class="btn btn-primary" id="btnImport" disabled>Import file</button>
+            <button type="button" class="btn" id="btnImportCloud" disabled>Import &amp; save to cloud</button>
+        </div>
         <div id="results"></div>
         <p class="status" id="status">Scanning…</p>
         <p style="margin-top: 20px;">
@@ -69,9 +77,10 @@
 
     <script type="module">
         import { supabase } from "./firebase.js";
-        import { mergePlotweaveStores, normalizePlotweaveStore, PLOTWEAVE_TABLE } from "./js/plotweave-supabase.js?v=2";
+        import { mergePlotweaveStores, normalizePlotweaveStore, PLOTWEAVE_TABLE } from "./js/plotweave-supabase.js?v=3";
 
         const MAIN_KEY = "alysum-plotweave-v1";
+        const BACKUP_KEY = "alysum-plotweave-v1-backup";
         const SCAN_KEYS = [
             "alysum-plotweave-v1",
             "alysum-plotweave-v1-backup",
@@ -163,35 +172,41 @@
             document.getElementById("btnCloudSync")?.addEventListener("click", () => restoreAll(found, true));
         }
 
+        function writeLocal(store) {
+            localStorage.setItem(MAIN_KEY, JSON.stringify(store));
+            localStorage.setItem(BACKUP_KEY, JSON.stringify(store));
+        }
+
+        async function pushCloud(store) {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session?.user?.id) {
+                throw new Error("Sign in first");
+            }
+            await supabase.from(PLOTWEAVE_TABLE).upsert(
+                { user_id: session.user.id, data: normalizePlotweaveStore(store), updated_at: new Date().toISOString() },
+                { onConflict: "user_id" }
+            );
+        }
+
         function restoreOne(key) {
             const store = parseStore(localStorage.getItem(key));
             if (!store?.diagrams?.length) {
                 setStatus("That copy is empty or unreadable.", "warn");
                 return;
             }
-            localStorage.setItem(MAIN_KEY, JSON.stringify(store));
-            localStorage.setItem("alysum-plotweave-v1-backup", JSON.stringify(store));
+            writeLocal(store);
             setStatus(`Restored ${store.diagrams.length} map(s) from ${key}. Opening Plotweave…`, "ok");
             setTimeout(() => { location.href = "plotweave.html"; }, 800);
         }
 
-        async function restoreAll(found, pushCloud) {
+        async function restoreAll(found, pushCloudAfter) {
             const merged = bestStore(found);
-            localStorage.setItem(MAIN_KEY, JSON.stringify(merged));
-            localStorage.setItem("alysum-plotweave-v1-backup", JSON.stringify(merged));
-            setStatus(`Restored ${merged.diagrams.length} map(s).${pushCloud ? " Saving to cloud…" : " Opening Plotweave…"}`, "ok");
+            writeLocal(merged);
+            setStatus(`Restored ${merged.diagrams.length} map(s).${pushCloudAfter ? " Saving to cloud…" : " Opening Plotweave…"}`, "ok");
 
-            if (pushCloud) {
+            if (pushCloudAfter) {
                 try {
-                    const { data: { session } } = await supabase.auth.getSession();
-                    if (!session?.user?.id) {
-                        setStatus("Restored locally. Sign in, then click “Also save to cloud” again.", "warn");
-                        return;
-                    }
-                    await supabase.from(PLOTWEAVE_TABLE).upsert(
-                        { user_id: session.user.id, data: merged, updated_at: new Date().toISOString() },
-                        { onConflict: "user_id" }
-                    );
+                    await pushCloud(merged);
                     setStatus(`Restored ${merged.diagrams.length} map(s) and saved to cloud.`, "ok");
                 } catch (e) {
                     console.error(e);
@@ -199,8 +214,51 @@
                 }
             }
 
-            setTimeout(() => { location.href = "plotweave.html"; }, pushCloud ? 1200 : 800);
+            setTimeout(() => { location.href = "plotweave.html"; }, pushCloudAfter ? 1200 : 800);
         }
+
+        let pendingImport = null;
+        const importFile = document.getElementById("importFile");
+        const btnImport = document.getElementById("btnImport");
+        const btnImportCloud = document.getElementById("btnImportCloud");
+
+        importFile?.addEventListener("change", async () => {
+            const file = importFile.files?.[0];
+            if (!file) return;
+            try {
+                const text = await file.text();
+                pendingImport = normalizePlotweaveStore(JSON.parse(text));
+                const count = pendingImport.diagrams.length;
+                const shapes = pendingImport.diagrams.reduce((n, d) => n + (d.nodes?.length || 0), 0);
+                setStatus(`Ready to import: ${count} map(s), ${shapes} shapes.`, "ok");
+                btnImport.disabled = count === 0;
+                btnImportCloud.disabled = count === 0;
+            } catch (e) {
+                pendingImport = null;
+                btnImport.disabled = true;
+                btnImportCloud.disabled = true;
+                setStatus(`Could not read file: ${e.message}`, "warn");
+            }
+        });
+
+        btnImport?.addEventListener("click", () => {
+            if (!pendingImport?.diagrams?.length) return;
+            writeLocal(pendingImport);
+            setStatus(`Imported ${pendingImport.diagrams.length} map(s). Opening Plotweave…`, "ok");
+            setTimeout(() => { location.href = "plotweave.html"; }, 800);
+        });
+
+        btnImportCloud?.addEventListener("click", async () => {
+            if (!pendingImport?.diagrams?.length) return;
+            writeLocal(pendingImport);
+            try {
+                await pushCloud(pendingImport);
+                setStatus(`Imported ${pendingImport.diagrams.length} map(s) and saved to cloud.`, "ok");
+            } catch (e) {
+                setStatus(`Imported locally but cloud save failed: ${e.message}`, "warn");
+            }
+            setTimeout(() => { location.href = "plotweave.html"; }, 1200);
+        });
 
         renderFound(scanAll());
     </script>
