@@ -1,6 +1,6 @@
 /**
  * Plotweave — Supabase sync driver (one jsonb row per user).
- * Merges local and cloud diagrams by id so no maps are lost on first sync.
+ * Always unions local and cloud diagrams — never drops maps on sync.
  */
 
 export const PLOTWEAVE_TABLE = "plotweave";
@@ -71,11 +71,10 @@ export function mergePlotweaveStores(local, cloud) {
     return { diagrams, activeId };
 }
 
-function storeFingerprint(store) {
-    return {
-        count: store.diagrams.length,
-        maxUpdated: store.diagrams.reduce((m, d) => Math.max(m, Number(d.updatedAt) || 0), 0),
-    };
+function isSampleOnlyStore(store) {
+    if (store.diagrams.length !== 1) return false;
+    const title = String(store.diagrams[0]?.title || "");
+    return title.includes("Hero's journey") || title.includes("Sample:");
 }
 
 /**
@@ -86,6 +85,7 @@ function storeFingerprint(store) {
  * @param {() => { diagrams: object[]; activeId: string | null }} opts.getStore
  * @param {(next: { diagrams: object[]; activeId: string | null }) => void} opts.setStore
  * @param {(store: { diagrams: object[]; activeId: string | null }) => void} opts.saveStore
+ * @param {() => object | null} [opts.loadBackup]
  * @param {() => void} opts.refresh
  * @param {(msg: string, kind?: string) => void} [opts.setStatus]
  */
@@ -97,14 +97,29 @@ export function createPlotweaveSupabaseDriver(opts) {
         getStore,
         setStore,
         saveStore,
+        loadBackup,
         refresh,
         setStatus,
     } = opts;
     let pushTimer = null;
 
-    async function upsertStore(store) {
+    async function fetchCloudStore() {
+        const { data, error } = await supabase
+            .from(PLOTWEAVE_TABLE)
+            .select("data")
+            .eq("user_id", userId)
+            .maybeSingle();
+        if (error) throw error;
+        return normalizePlotweaveStore(data?.data);
+    }
+
+    async function upsertStore(store, { allowEmpty = false } = {}) {
+        const normalized = normalizePlotweaveStore(store);
+        if (!allowEmpty && normalized.diagrams.length === 0) {
+            return;
+        }
         await supabase.from(PLOTWEAVE_TABLE).upsert(
-            { user_id: userId, data: store, updated_at: new Date().toISOString() },
+            { user_id: userId, data: normalized, updated_at: new Date().toISOString() },
             { onConflict: "user_id" }
         );
     }
@@ -116,36 +131,35 @@ export function createPlotweaveSupabaseDriver(opts) {
             /* ignore */
         }
 
-        const { data, error } = await supabase
-            .from(PLOTWEAVE_TABLE)
-            .select("data")
-            .eq("user_id", userId)
-            .maybeSingle();
+        let local = normalizePlotweaveStore(getStore());
+        const backup = loadBackup?.();
+        if (backup?.diagrams?.length) {
+            local = mergePlotweaveStores(local, normalizePlotweaveStore(backup));
+        }
 
-        if (error) {
+        let cloud;
+        try {
+            cloud = await fetchCloudStore();
+        } catch (error) {
             console.error(`${PLOTWEAVE_TABLE} pull:`, error);
             setStatus?.(describeLoadError(error, PLOTWEAVE_TABLE), "dirty");
             return;
         }
 
-        const local = normalizePlotweaveStore(getStore());
-        const cloud = normalizePlotweaveStore(data?.data);
-
-        const localFp = storeFingerprint(local);
-        const cloudFp = storeFingerprint(cloud);
-
-        if (cloudFp.count === 0 && localFp.count === 0) {
+        if (cloud.diagrams.length === 0 && local.diagrams.length === 0) {
             setStatus?.("Ready", "saved");
             return;
         }
 
-        if (cloudFp.count === 0 && localFp.count > 0) {
+        if (cloud.diagrams.length === 0 && local.diagrams.length > 0) {
+            setStore(local);
+            saveStore(local);
             await upsertStore(local);
             setStatus?.("Saved to cloud", "saved");
             return;
         }
 
-        if (localFp.count === 0 && cloudFp.count > 0) {
+        if (local.diagrams.length === 0 && cloud.diagrams.length > 0) {
             setStore(cloud);
             saveStore(cloud);
             refresh();
@@ -154,41 +168,28 @@ export function createPlotweaveSupabaseDriver(opts) {
         }
 
         const merged = mergePlotweaveStores(local, cloud);
-        const mergedFp = storeFingerprint(merged);
-        const sameAsLocal =
-            mergedFp.count === localFp.count &&
-            mergedFp.maxUpdated === localFp.maxUpdated &&
-            merged.diagrams.every((d, i) => d.id === local.diagrams[i]?.id);
-        const sameAsCloud =
-            mergedFp.count === cloudFp.count &&
-            mergedFp.maxUpdated === cloudFp.maxUpdated &&
-            merged.diagrams.every((d, i) => d.id === cloud.diagrams[i]?.id);
 
-        if (sameAsLocal && !sameAsCloud) {
-            setStore(cloud);
-            saveStore(cloud);
-            refresh();
-            setStatus?.("Loaded from cloud", "saved");
-            return;
+        if (merged.diagrams.length < Math.max(local.diagrams.length, cloud.diagrams.length)) {
+            console.error("Plotweave merge would lose maps — keeping union from local + cloud");
         }
 
         setStore(merged);
         saveStore(merged);
         refresh();
 
-        if (sameAsCloud && !sameAsLocal) {
-            await upsertStore(merged);
-            setStatus?.("This device had newer maps — synced to cloud", "saved");
-            return;
-        }
+        const localCount = local.diagrams.length;
+        const cloudCount = cloud.diagrams.length;
+        const mergedCount = merged.diagrams.length;
 
-        if (!sameAsLocal || !sameAsCloud) {
-            await upsertStore(merged);
-            setStatus?.("Merged local and cloud maps", "saved");
-            return;
-        }
+        await upsertStore(merged);
 
-        setStatus?.("Synced", "saved");
+        if (mergedCount > cloudCount && mergedCount >= localCount) {
+            setStatus?.("Synced — kept all your maps", "saved");
+        } else if (mergedCount > localCount) {
+            setStatus?.("Loaded maps from cloud", "saved");
+        } else {
+            setStatus?.("Synced", "saved");
+        }
     }
 
     function pushDebounced() {
@@ -196,7 +197,14 @@ export function createPlotweaveSupabaseDriver(opts) {
         pushTimer = setTimeout(async () => {
             pushTimer = null;
             try {
-                await upsertStore(normalizePlotweaveStore(getStore()));
+                const local = normalizePlotweaveStore(getStore());
+                if (local.diagrams.length === 0) return;
+                if (isSampleOnlyStore(local)) return;
+                const cloud = await fetchCloudStore();
+                const merged = mergePlotweaveStores(local, cloud);
+                setStore(merged);
+                saveStore(merged);
+                await upsertStore(merged);
             } catch (e) {
                 console.error(`${PLOTWEAVE_TABLE} cloud save:`, e);
                 setStatus?.("Cloud save failed (still on this device)", "dirty");
