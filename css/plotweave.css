@@ -426,6 +426,40 @@ html, body {
     background: rgba(124, 58, 237, 0.22);
 }
 
+.pw-color-swatches {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+}
+
+.pw-color-swatch {
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    background: transparent;
+    min-height: 32px;
+}
+
+.pw-color-swatch:hover { border-color: rgba(167, 139, 250, 0.45); }
+.pw-color-swatch.is-active { border-color: var(--pw-select); box-shadow: 0 0 0 1px var(--pw-select); }
+
+.pw-color-swatch-fill,
+.pw-color-swatch-stroke {
+    display: block;
+    height: 14px;
+    width: 100%;
+}
+
+.pw-field input[type="color"] {
+    height: 36px;
+    padding: 2px;
+    cursor: pointer;
+}
+
 /* SVG elements */
 .pw-node-text {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;

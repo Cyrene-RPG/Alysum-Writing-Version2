@@ -21,10 +21,44 @@ const SHAPES = {
     end: { label: "End", w: 140, h: 56, text: "End", fill: "#4c0519", stroke: "#fb7185" },
 };
 
+/** Quick fill + border combos for the Properties panel. */
+const COLOR_PRESETS = [
+    { label: "Purple", fill: "#1e1b4b", stroke: "#a78bfa" },
+    { label: "Green", fill: "#14532d", stroke: "#4ade80" },
+    { label: "Gold", fill: "#422006", stroke: "#fbbf24" },
+    { label: "Blue", fill: "#0c4a6e", stroke: "#38bdf8" },
+    { label: "Rose", fill: "#4c0519", stroke: "#fb7185" },
+    { label: "Slate", fill: "#1e293b", stroke: "#cbd5e1" },
+    { label: "Indigo", fill: "#312e81", stroke: "#c4b5fd" },
+    { label: "Neutral", fill: "#334155", stroke: "#94a3b8" },
+    { label: "Light", fill: "#f8fafc", stroke: "#475569" },
+    { label: "Dark", fill: "#0f172a", stroke: "#e2e8f0" },
+];
+
 const uid = (p) => `${p}_${Math.random().toString(36).slice(2, 10)}`;
 const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
 const clone = (v) => JSON.parse(JSON.stringify(v));
 const snap = (n) => Math.round(n / GRID) * GRID;
+
+function colorInputValue(hex) {
+    const h = String(hex || "").trim();
+    if (/^#[0-9a-fA-F]{6}$/.test(h)) return h.toLowerCase();
+    if (/^#[0-9a-fA-F]{3}$/.test(h)) {
+        const [, a, b, c] = h;
+        return `#${a}${a}${b}${b}${c}${c}`.toLowerCase();
+    }
+    return "#1e293b";
+}
+
+function renderColorSwatches(activeFill, activeStroke) {
+    return COLOR_PRESETS.map((p) => {
+        const on = p.fill === activeFill && p.stroke === activeStroke;
+        return `<button type="button" class="pw-color-swatch${on ? " is-active" : ""}" data-fill="${p.fill}" data-stroke="${p.stroke}" title="${esc(p.label)}">
+            <span class="pw-color-swatch-fill" style="background:${p.fill}"></span>
+            <span class="pw-color-swatch-stroke" style="background:${p.stroke}"></span>
+        </button>`;
+    }).join("");
+}
 
 export function loadStore() {
     try {
@@ -574,6 +608,7 @@ export function createPlotweave(ui) {
             const id = [...selectedNodeIds][0];
             const n = map.nodes.find((x) => x.id === id);
             if (!n) return;
+            const def = SHAPES[n.type] || SHAPES.box;
             ui.propsBody.innerHTML = `
                 <div class="pw-field"><label>Name</label>
                 <textarea id="pwPropText">${esc(n.text)}</textarea></div>
@@ -581,11 +616,28 @@ export function createPlotweave(ui) {
                     <div class="pw-field"><label>Width</label><input type="number" id="pwPropW" min="${MIN_NODE}" value="${nodeSize(n).w}"/></div>
                     <div class="pw-field"><label>Height</label><input type="number" id="pwPropH" min="${MIN_NODE}" value="${nodeSize(n).h}"/></div>
                 </div>
+                <div class="pw-field"><label>Color presets</label>
+                <div class="pw-color-swatches" id="pwColorSwatches">${renderColorSwatches(n.fill, n.stroke)}</div></div>
                 <div class="pw-field-row">
-                    <div class="pw-field"><label>Fill</label><input type="color" id="pwPropFill" value="${n.fill}"/></div>
-                    <div class="pw-field"><label>Border</label><input type="color" id="pwPropStroke" value="${n.stroke}"/></div>
+                    <div class="pw-field"><label>Fill</label><input type="color" id="pwPropFill" value="${colorInputValue(n.fill)}"/></div>
+                    <div class="pw-field"><label>Border</label><input type="color" id="pwPropStroke" value="${colorInputValue(n.stroke)}"/></div>
                 </div>
+                <button type="button" class="pw-btn" id="pwPropResetColors" style="width:100%;margin-bottom:8px">Reset ${esc(def.label)} colors</button>
                 <button type="button" class="pw-btn pw-btn-danger" id="pwPropDelete">Delete shape</button>`;
+
+            const applyColors = (fill, stroke) => {
+                n.fill = fill;
+                n.stroke = stroke;
+                markDirty();
+                const fillEl = ui.propsBody.querySelector("#pwPropFill");
+                const strokeEl = ui.propsBody.querySelector("#pwPropStroke");
+                if (fillEl) fillEl.value = colorInputValue(fill);
+                if (strokeEl) strokeEl.value = colorInputValue(stroke);
+                ui.propsBody.querySelectorAll(".pw-color-swatch").forEach((btn) => {
+                    btn.classList.toggle("is-active", btn.dataset.fill === fill && btn.dataset.stroke === stroke);
+                });
+            };
+
             ui.propsBody.querySelector("#pwPropText")?.addEventListener("input", (ev) => {
                 n.text = ev.target.value;
                 markDirty();
@@ -598,12 +650,18 @@ export function createPlotweave(ui) {
             ui.propsBody.querySelector("#pwPropW")?.addEventListener("change", resize);
             ui.propsBody.querySelector("#pwPropH")?.addEventListener("change", resize);
             ui.propsBody.querySelector("#pwPropFill")?.addEventListener("input", (ev) => {
-                n.fill = ev.target.value;
-                markDirty();
+                applyColors(ev.target.value, n.stroke);
             });
             ui.propsBody.querySelector("#pwPropStroke")?.addEventListener("input", (ev) => {
-                n.stroke = ev.target.value;
-                markDirty();
+                applyColors(n.fill, ev.target.value);
+            });
+            ui.propsBody.querySelectorAll(".pw-color-swatch").forEach((btn) => {
+                btn.addEventListener("click", () => {
+                    applyColors(btn.dataset.fill, btn.dataset.stroke);
+                });
+            });
+            ui.propsBody.querySelector("#pwPropResetColors")?.addEventListener("click", () => {
+                applyColors(def.fill, def.stroke);
             });
             ui.propsBody.querySelector("#pwPropDelete")?.addEventListener("click", deleteSelection);
             return;
