@@ -8,6 +8,8 @@ export const PLOTWEAVE_STORAGE_KEY = "alysum-plotweave-v1";
 const STORAGE_KEY = PLOTWEAVE_STORAGE_KEY;
 const LEGACY_STORAGE_KEY = "alysum-flow-mapper-v1";
 const MAX_HISTORY = 60;
+const MIN_ZOOM = 0.001;
+const MAX_ZOOM = 2.5;
 
 export const SHAPE_DEFS = {
     start: {
@@ -152,8 +154,11 @@ function clamp(n, a, b) {
     return Math.max(a, Math.min(b, n));
 }
 
-function deepClone(obj) {
-    return JSON.parse(JSON.stringify(obj));
+function formatZoomLabel(zoom) {
+    const pct = zoom * 100;
+    if (pct < 1) return `${pct.toFixed(2)}%`;
+    if (pct < 10) return `${pct.toFixed(1)}%`;
+    return `${Math.round(pct)}%`;
 }
 
 function loadStore() {
@@ -564,12 +569,12 @@ export async function createPlotweave(ui, config = {}) {
     function applyCamera() {
         const { x, y, zoom } = diagram.camera;
         world.setAttribute("transform", `translate(${x} ${y}) scale(${zoom})`);
-        ui.zoomLabel.textContent = `${Math.round(zoom * 100)}%`;
+        ui.zoomLabel.textContent = formatZoomLabel(zoom);
     }
 
     function setZoom(next, centerClient) {
         const z0 = diagram.camera.zoom;
-        const z1 = clamp(next, 0.25, 2.5);
+        const z1 = clamp(next, MIN_ZOOM, MAX_ZOOM);
         if (centerClient) {
             const rect = svg.getBoundingClientRect();
             const sx = centerClient.x - rect.left;
@@ -607,7 +612,7 @@ export async function createPlotweave(ui, config = {}) {
         const rect = svg.getBoundingClientRect();
         const bw = maxX - minX + pad * 2;
         const bh = maxY - minY + pad * 2;
-        const zoom = clamp(Math.min(rect.width / bw, rect.height / bh), 0.35, 1.4);
+        const zoom = clamp(Math.min(rect.width / bw, rect.height / bh), MIN_ZOOM, MAX_ZOOM);
         diagram.camera.zoom = zoom;
         diagram.camera.x = (rect.width - bw * zoom) / 2 - (minX - pad) * zoom;
         diagram.camera.y = (rect.height - bh * zoom) / 2 - (minY - pad) * zoom;
