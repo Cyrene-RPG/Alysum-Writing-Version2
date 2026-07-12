@@ -9,12 +9,6 @@ export const STORAGE_KEY = "alysum-plotweave-v2";
 const MAX_HISTORY = 50;
 const GRID = 12;
 const MIN_NODE = 48;
-const MAX_NODE_W = 960;
-const MAX_NODE_H = 720;
-const TEXT_PAD_X = 14;
-const TEXT_PAD_Y = 10;
-const TEXT_LINE_H = 14;
-const TEXT_CHAR_W = 7.1;
 
 /** Alysum flowchart palette — readable on the dark studio canvas. */
 const SHAPES = {
@@ -222,80 +216,21 @@ function esc(s) {
         .replace(/"/g, "&quot;");
 }
 
-function maxCharsForWidth(widthPx) {
-    const inner = Math.max(24, widthPx - TEXT_PAD_X * 2);
-    return Math.max(4, Math.floor(inner / TEXT_CHAR_W));
-}
-
-function wrapNodeText(text, widthPx) {
-    const maxChars = maxCharsForWidth(widthPx);
-    const raw = String(text ?? "");
-    if (!raw) return [""];
-
+function wrapText(text, maxChars = 18) {
+    const words = String(text || "").split(/\s+/);
     const lines = [];
-    for (const para of raw.split(/\n/)) {
-        const words = para.split(/\s+/).filter(Boolean);
-        if (!words.length) {
-            lines.push("");
-            continue;
+    let line = "";
+    for (const w of words) {
+        const next = line ? `${line} ${w}` : w;
+        if (next.length > maxChars && line) {
+            lines.push(line);
+            line = w;
+        } else {
+            line = next;
         }
-        let line = "";
-        for (const word of words) {
-            let chunk = word;
-            while (chunk.length > maxChars) {
-                if (line) {
-                    lines.push(line);
-                    line = "";
-                }
-                lines.push(chunk.slice(0, maxChars));
-                chunk = chunk.slice(maxChars);
-            }
-            const next = line ? `${line} ${chunk}` : chunk;
-            if (next.length > maxChars && line) {
-                lines.push(line);
-                line = chunk;
-            } else {
-                line = next;
-            }
-        }
-        if (line) lines.push(line);
     }
-    return lines.length ? lines : [""];
-}
-
-function textHeightForLines(lineCount) {
-    return snap(Math.max(MIN_NODE, lineCount * TEXT_LINE_H + TEXT_PAD_Y * 2));
-}
-
-function fitNodeToText(n) {
-    const paragraphs = String(n.text ?? "").split(/\n/);
-    const longestToken = Math.max(
-        4,
-        ...paragraphs.flatMap((p) => {
-            const words = p.split(/\s+/).filter(Boolean);
-            return [p.length, ...words.map((w) => w.length)];
-        }),
-    );
-    let w = snap(Math.max(MIN_NODE, longestToken * TEXT_CHAR_W + TEXT_PAD_X * 2));
-    w = clamp(w, MIN_NODE, MAX_NODE_W);
-
-    const lines = wrapNodeText(n.text, w);
-    let h = textHeightForLines(lines.length);
-    if (n.type === "decision") {
-        w = clamp(snap(w * 1.12), MIN_NODE, MAX_NODE_W);
-        h = clamp(snap(h * 1.18), MIN_NODE, MAX_NODE_H);
-    }
-    n.w = w;
-    n.h = clamp(h, MIN_NODE, MAX_NODE_H);
-}
-
-function ensureTextFits(n) {
-    const { w, h } = nodeSize(n);
-    const lines = wrapNodeText(n.text, w);
-    const neededH = textHeightForLines(lines.length);
-    if (neededH > h) {
-        n.h = clamp(neededH, MIN_NODE, MAX_NODE_H);
-    }
+    if (line) lines.push(line);
+    return lines.slice(0, 3);
 }
 
 /**
@@ -578,24 +513,12 @@ export function createPlotweave(ui) {
     }
 
     function nodeTextSvg(n, w, h) {
-        const lines = wrapNodeText(n.text, w);
-        const blockH = lines.length * TEXT_LINE_H;
-        const startY = (h - blockH) / 2 + TEXT_LINE_H / 2;
+        const lines = wrapText(n.text, Math.floor(w / 8));
+        const lineH = 14;
+        const startY = h / 2 - ((lines.length - 1) * lineH) / 2;
         return lines.map((line, i) =>
-            `<text class="pw-node-text" x="${w / 2}" y="${startY + i * TEXT_LINE_H}" text-anchor="middle" dominant-baseline="middle">${esc(line)}</text>`
+            `<text class="pw-node-text" x="${w / 2}" y="${startY + i * lineH}" text-anchor="middle" dominant-baseline="middle">${esc(line)}</text>`
         ).join("");
-    }
-
-    function syncPropSizeInputs() {
-        if (selectedNodeIds.size !== 1) return;
-        const id = [...selectedNodeIds][0];
-        const n = map?.nodes.find((x) => x.id === id);
-        if (!n) return;
-        const wEl = ui.propsBody.querySelector("#pwPropW");
-        const hEl = ui.propsBody.querySelector("#pwPropH");
-        const { w, h } = nodeSize(n);
-        if (wEl) wEl.value = String(w);
-        if (hEl) hEl.value = String(h);
     }
 
     function render() {
@@ -646,14 +569,10 @@ export function createPlotweave(ui) {
                 return `<circle class="pw-port" data-node="${n.id}" data-port="${port}" cx="${p.x}" cy="${p.y}" r="5"/>`;
             }).join("");
             const handles = sel ? `
-                <rect class="pw-handle" data-handle="nw" x="-5" y="-5" width="10" height="10"/>
-                <rect class="pw-handle" data-handle="n" x="${w / 2 - 5}" y="-5" width="10" height="10"/>
-                <rect class="pw-handle" data-handle="ne" x="${w - 5}" y="-5" width="10" height="10"/>
-                <rect class="pw-handle" data-handle="e" x="${w - 5}" y="${h / 2 - 5}" width="10" height="10"/>
-                <rect class="pw-handle" data-handle="se" x="${w - 5}" y="${h - 5}" width="10" height="10"/>
-                <rect class="pw-handle" data-handle="s" x="${w / 2 - 5}" y="${h - 5}" width="10" height="10"/>
-                <rect class="pw-handle" data-handle="sw" x="-5" y="${h - 5}" width="10" height="10"/>
-                <rect class="pw-handle" data-handle="w" x="-5" y="${h / 2 - 5}" width="10" height="10"/>
+                <rect class="pw-handle" data-handle="nw" x="-4" y="-4" width="8" height="8"/>
+                <rect class="pw-handle" data-handle="ne" x="${w - 4}" y="-4" width="8" height="8"/>
+                <rect class="pw-handle" data-handle="se" x="${w - 4}" y="${h - 4}" width="8" height="8"/>
+                <rect class="pw-handle" data-handle="sw" x="-4" y="${h - 4}" width="8" height="8"/>
             ` : "";
             return `<g class="pw-node${sel ? " is-selected" : ""}" data-id="${n.id}" transform="translate(${n.x} ${n.y})">
                 <g filter="url(#pwShadow)">
@@ -714,11 +633,9 @@ export function createPlotweave(ui) {
                 <div class="pw-field"><label>Name</label>
                 <textarea id="pwPropText">${esc(n.text)}</textarea></div>
                 <div class="pw-field-row">
-                    <div class="pw-field"><label>Width</label><input type="number" id="pwPropW" min="${MIN_NODE}" max="${MAX_NODE_W}" value="${nodeSize(n).w}"/></div>
-                    <div class="pw-field"><label>Height</label><input type="number" id="pwPropH" min="${MIN_NODE}" max="${MAX_NODE_H}" value="${nodeSize(n).h}"/></div>
+                    <div class="pw-field"><label>Width</label><input type="number" id="pwPropW" min="${MIN_NODE}" value="${nodeSize(n).w}"/></div>
+                    <div class="pw-field"><label>Height</label><input type="number" id="pwPropH" min="${MIN_NODE}" value="${nodeSize(n).h}"/></div>
                 </div>
-                <button type="button" class="pw-btn" id="pwPropFitText" style="width:100%;margin-bottom:8px">Fit box to text</button>
-                <p class="pw-hint" style="margin:-4px 0 8px">Drag corner or edge handles on the canvas to resize manually.</p>
                 <div class="pw-field"><label>Color presets</label>
                 <div class="pw-color-swatches" id="pwColorSwatches">${renderColorSwatches(n.fill, n.stroke)}</div></div>
                 <div class="pw-field-row">
@@ -743,23 +660,15 @@ export function createPlotweave(ui) {
 
             ui.propsBody.querySelector("#pwPropText")?.addEventListener("input", (ev) => {
                 n.text = ev.target.value;
-                ensureTextFits(n);
-                syncPropSizeInputs();
                 markDirty();
             });
             const resize = () => {
-                n.w = clamp(Number(ui.propsBody.querySelector("#pwPropW").value) || n.w, MIN_NODE, MAX_NODE_W);
-                n.h = clamp(Number(ui.propsBody.querySelector("#pwPropH").value) || n.h, MIN_NODE, MAX_NODE_H);
+                n.w = clamp(Number(ui.propsBody.querySelector("#pwPropW").value) || n.w, MIN_NODE, 480);
+                n.h = clamp(Number(ui.propsBody.querySelector("#pwPropH").value) || n.h, MIN_NODE, 320);
                 markDirty();
             };
-            ui.propsBody.querySelector("#pwPropW")?.addEventListener("input", resize);
-            ui.propsBody.querySelector("#pwPropH")?.addEventListener("input", resize);
-            ui.propsBody.querySelector("#pwPropFitText")?.addEventListener("click", () => {
-                pushHistory();
-                fitNodeToText(n);
-                syncPropSizeInputs();
-                markDirty();
-            });
+            ui.propsBody.querySelector("#pwPropW")?.addEventListener("change", resize);
+            ui.propsBody.querySelector("#pwPropH")?.addEventListener("change", resize);
             ui.propsBody.querySelector("#pwPropFill")?.addEventListener("input", (ev) => {
                 applyColors(ev.target.value, n.stroke);
             });
@@ -1017,24 +926,11 @@ export function createPlotweave(ui) {
             render();
             return;
         }
+
         selectedNodeIds.clear();
         selectedEdgeId = null;
         refreshProps();
         render();
-    });
-
-    svg.addEventListener("dblclick", (ev) => {
-        if (!map) return;
-        const w = toWorld(ev.clientX, ev.clientY);
-        const node = hitNode(w.x, w.y);
-        if (!node) return;
-        selectedNodeIds = new Set([node.id]);
-        selectedEdgeId = null;
-        refreshProps();
-        render();
-        const textEl = ui.propsBody.querySelector("#pwPropText");
-        textEl?.focus();
-        textEl?.select();
     });
 
     svg.addEventListener("pointermove", (ev) => {
@@ -1070,8 +966,7 @@ export function createPlotweave(ui) {
                 nh = Math.max(MIN_NODE, snap(o.y + o.h - w.y));
                 ny = snap(o.y + o.h - nh);
             }
-            n.x = nx; n.y = ny; n.w = clamp(nw, MIN_NODE, MAX_NODE_W); n.h = clamp(nh, MIN_NODE, MAX_NODE_H);
-            syncPropSizeInputs();
+            n.x = nx; n.y = ny; n.w = nw; n.h = nh;
             markDirty();
             return;
         }

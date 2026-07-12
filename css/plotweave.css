@@ -490,15 +490,6 @@ html, body {
     cursor: nwse-resize;
 }
 
-.pw-handle[data-handle="n"],
-.pw-handle[data-handle="s"] { cursor: ns-resize; }
-
-.pw-handle[data-handle="e"],
-.pw-handle[data-handle="w"] { cursor: ew-resize; }
-
-.pw-handle[data-handle="ne"],
-.pw-handle[data-handle="sw"] { cursor: nesw-resize; }
-
 .pw-edge-label-bg {
     fill: rgba(15, 23, 42, 0.92);
     stroke: var(--pw-border);
