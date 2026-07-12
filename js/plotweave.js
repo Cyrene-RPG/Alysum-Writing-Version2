@@ -2,7 +2,10 @@
  * Alysum Plotweave — canvas engine (SVG flowchart / process map).
  */
 
-const STORAGE_KEY = "alysum-plotweave-v1";
+import { createPlotweaveSupabaseDriver } from "./plotweave-supabase.js?v=1";
+
+export const PLOTWEAVE_STORAGE_KEY = "alysum-plotweave-v1";
+const STORAGE_KEY = PLOTWEAVE_STORAGE_KEY;
 const LEGACY_STORAGE_KEY = "alysum-flow-mapper-v1";
 const MAX_HISTORY = 60;
 
@@ -272,19 +275,15 @@ function shapePath(type, w, h) {
 
 /**
  * @param {object} ui — DOM refs + callbacks
+ * @param {object} [config]
+ * @param {import("@supabase/supabase-js").SupabaseClient} [config.supabase]
+ * @param {string} [config.supabaseUserId]
  */
-export function createPlotweave(ui) {
+export async function createPlotweave(ui, config = {}) {
     let store = loadStore();
-    if (!store.diagrams.length) {
-        const sample = samplePlotMap();
-        store.diagrams = [sample];
-        store.activeId = sample.id;
-        saveStore(store);
-    }
+    let remoteDriver = null;
 
-    let diagram = store.diagrams.find((d) => d.id === store.activeId) || store.diagrams[0];
-    store.activeId = diagram.id;
-
+    let diagram;
     let selectedIds = new Set();
     let selectedEdgeId = null;
     let tool = "select"; // select | pan | connect | place
@@ -297,6 +296,37 @@ export function createPlotweave(ui) {
     let lasso = null;
     let spaceDown = false;
     let raf = 0;
+
+    function writeStore() {
+        saveStore(store);
+        remoteDriver?.pushDebounced();
+    }
+
+    if (config.supabase && config.supabaseUserId) {
+        remoteDriver = createPlotweaveSupabaseDriver({
+            supabase: config.supabase,
+            userId: config.supabaseUserId,
+            storageKey: STORAGE_KEY,
+            getStore: () => store,
+            setStore: (next) => {
+                store = next;
+            },
+            saveStore,
+            refresh: () => {},
+            setStatus: ui.setStatus,
+        });
+        await remoteDriver.pullOnce();
+    }
+
+    if (!store.diagrams.length) {
+        const sample = samplePlotMap();
+        store.diagrams = [sample];
+        store.activeId = sample.id;
+        writeStore();
+    }
+
+    diagram = store.diagrams.find((d) => d.id === store.activeId) || store.diagrams[0];
+    store.activeId = diagram.id;
 
     const svg = ui.stage;
     const world = svg.querySelector(".fm-world");
@@ -324,9 +354,9 @@ export function createPlotweave(ui) {
         if (idx >= 0) store.diagrams[idx] = diagram;
         else store.diagrams.push(diagram);
         store.activeId = diagram.id;
-        saveStore(store);
+        writeStore();
         dirty = false;
-        if (!silent) ui.setStatus?.("Saved locally", "saved");
+        if (!silent) ui.setStatus?.(remoteDriver ? "Saved" : "Saved locally", "saved");
         renderDiagramList();
     }
 
@@ -777,7 +807,7 @@ export function createPlotweave(ui) {
         if (!next) return;
         diagram = next;
         store.activeId = id;
-        saveStore(store);
+        writeStore();
         selectedIds.clear();
         selectedEdgeId = null;
         history = [];
@@ -798,7 +828,7 @@ export function createPlotweave(ui) {
         store.diagrams.unshift(d);
         store.activeId = d.id;
         diagram = d;
-        saveStore(store);
+        writeStore();
         selectedIds.clear();
         selectedEdgeId = null;
         history = [];
@@ -822,7 +852,7 @@ export function createPlotweave(ui) {
         store.diagrams.unshift(copy);
         store.activeId = copy.id;
         diagram = copy;
-        saveStore(store);
+        writeStore();
         ui.titleInput.value = copy.title;
         history = [];
         future = [];
@@ -845,7 +875,7 @@ export function createPlotweave(ui) {
         store.diagrams = store.diagrams.filter((d) => d.id !== diagram.id);
         diagram = store.diagrams[0];
         store.activeId = diagram.id;
-        saveStore(store);
+        writeStore();
         selectedIds.clear();
         selectedEdgeId = null;
         history = [];
@@ -1214,6 +1244,9 @@ export function createPlotweave(ui) {
         persist,
         fitView,
         getDiagram: () => diagram,
+        destroy() {
+            remoteDriver?.dispose();
+        },
     };
 }
 

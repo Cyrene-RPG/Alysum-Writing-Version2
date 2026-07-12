@@ -39,6 +39,7 @@ const CLOUD_TABLES = [
   { table: "encyclopedia_blobs", eq: "user_id" },
   { table: "character_profile_sheets", eq: "user_id" },
   { table: "notebook_vault", eq: "user_id", single: true },
+  { table: "plotweave", eq: "user_id", single: true },
   { table: "prompt_entries", eq: "user_id" },
   { table: "beta_shares_index", eq: "reader_id" },
   { table: "comments", eq: "user_id" },
@@ -70,6 +71,7 @@ const DEVICE_PREFERENCE_KEYS = [
   "alysum-writer-last-session",
   "alysum-vault-v1",
   "alysum-vault-v1-prev",
+  "alysum-plotweave-v1",
 ];
 
 const EXCLUDED_LS_PREFIXES = ["sb-", "alysum-writer-dashboard-sync", "alysum-reset-email-until:"];
@@ -88,6 +90,7 @@ const RESTORE_TABLES = [
   { table: "encyclopedia_blobs", onConflict: "user_id,storage_key", userField: "user_id" },
   { table: "character_profile_sheets", onConflict: "user_id,id", userField: "user_id" },
   { table: "notebook_vault", onConflict: "user_id", userField: "user_id", single: true },
+  { table: "plotweave", onConflict: "user_id", userField: "user_id", single: true },
   { table: "prompt_entries", onConflict: "user_id,id", userField: "user_id" },
   { table: "beta_shares_index", onConflict: "reader_id,share_key", userField: "reader_id" },
   { table: "comments", onConflict: "id", userField: "user_id" },

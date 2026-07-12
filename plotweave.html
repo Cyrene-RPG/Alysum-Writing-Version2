@@ -181,7 +181,7 @@
     <script type="module">
         import { supabase } from "./firebase.js";
         import { requireStudioSession } from "./js/studio-session.js?v=1";
-        import { createPlotweave } from "./js/plotweave.js?v=3";
+        import { createPlotweave } from "./js/plotweave.js?v=4";
 
         const session = await requireStudioSession(supabase, "plotweave.html");
         if (!session) {
@@ -190,32 +190,38 @@
 
         const statusEl = document.getElementById("fmStatus");
 
-        createPlotweave({
-            stage: document.getElementById("fmStage"),
-            empty: document.getElementById("fmEmpty"),
-            titleInput: document.getElementById("fmTitle"),
-            diagramList: document.getElementById("fmDiagramList"),
-            propsBody: document.getElementById("fmPropsBody"),
-            palette: document.getElementById("fmPalette"),
-            zoomLabel: document.getElementById("fmZoomLabel"),
-            btnUndo: document.getElementById("fmBtnUndo"),
-            btnRedo: document.getElementById("fmBtnRedo"),
-            btnSave: document.getElementById("fmBtnSave"),
-            btnSelect: document.getElementById("fmBtnSelect"),
-            btnPan: document.getElementById("fmBtnPan"),
-            btnConnect: document.getElementById("fmBtnConnect"),
-            btnZoomIn: document.getElementById("fmBtnZoomIn"),
-            btnZoomOut: document.getElementById("fmBtnZoomOut"),
-            btnFit: document.getElementById("fmBtnFit"),
-            btnNew: document.getElementById("fmBtnNew"),
-            btnDuplicate: document.getElementById("fmBtnDuplicate"),
-            btnDeleteMap: document.getElementById("fmBtnDeleteMap"),
-            setStatus(text, kind) {
-                statusEl.textContent = text;
-                statusEl.classList.toggle("is-saved", kind === "saved");
-                statusEl.classList.toggle("is-dirty", kind === "dirty");
+        await createPlotweave(
+            {
+                stage: document.getElementById("fmStage"),
+                empty: document.getElementById("fmEmpty"),
+                titleInput: document.getElementById("fmTitle"),
+                diagramList: document.getElementById("fmDiagramList"),
+                propsBody: document.getElementById("fmPropsBody"),
+                palette: document.getElementById("fmPalette"),
+                zoomLabel: document.getElementById("fmZoomLabel"),
+                btnUndo: document.getElementById("fmBtnUndo"),
+                btnRedo: document.getElementById("fmBtnRedo"),
+                btnSave: document.getElementById("fmBtnSave"),
+                btnSelect: document.getElementById("fmBtnSelect"),
+                btnPan: document.getElementById("fmBtnPan"),
+                btnConnect: document.getElementById("fmBtnConnect"),
+                btnZoomIn: document.getElementById("fmBtnZoomIn"),
+                btnZoomOut: document.getElementById("fmBtnZoomOut"),
+                btnFit: document.getElementById("fmBtnFit"),
+                btnNew: document.getElementById("fmBtnNew"),
+                btnDuplicate: document.getElementById("fmBtnDuplicate"),
+                btnDeleteMap: document.getElementById("fmBtnDeleteMap"),
+                setStatus(text, kind) {
+                    statusEl.textContent = text;
+                    statusEl.classList.toggle("is-saved", kind === "saved");
+                    statusEl.classList.toggle("is-dirty", kind === "dirty");
+                },
             },
-        });
+            {
+                supabase: session.mode === "local" ? undefined : supabase,
+                supabaseUserId: session.mode === "local" ? undefined : session.user.id,
+            }
+        );
     </script>
 </body>
 </html>
