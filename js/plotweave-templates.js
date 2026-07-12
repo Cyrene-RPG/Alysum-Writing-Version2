@@ -9,8 +9,8 @@
 /** @type {Record<string, TemplateSpec>} */
 const SPECS = {
     blank: {
-        title: "Blank map",
-        description: "Empty canvas — build your own flow from scratch.",
+        title: "Untitled map",
+        description: "Empty canvas — pick a shape from the stencil and click to place.",
         category: "Basic",
         nodes: [],
         edges: [],

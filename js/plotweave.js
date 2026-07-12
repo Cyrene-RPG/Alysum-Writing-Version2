@@ -415,7 +415,7 @@ export function createPlotweave(ui) {
         selectedEdgeId = null;
         markDirty();
         refreshProps();
-        ui.empty?.classList.add("is-hidden");
+        ui.stage.focus();
     }
 
     function deleteSelection() {
@@ -432,7 +432,15 @@ export function createPlotweave(ui) {
         }
         markDirty();
         refreshProps();
-        if (!map.nodes.length) ui.empty?.classList.remove("is-hidden");
+    }
+
+    function updateEmptyOverlay() {
+        if (!ui.empty) return;
+        if (map) {
+            ui.empty.classList.add("is-hidden");
+            return;
+        }
+        ui.empty.classList.remove("is-hidden");
     }
 
     function renderMapList() {
@@ -464,12 +472,12 @@ export function createPlotweave(ui) {
             gNodes.innerHTML = "";
             gEdges.innerHTML = "";
             gOverlay.innerHTML = "";
-            ui.empty?.classList.remove("is-hidden");
             ui.titleInput.value = "";
+            updateEmptyOverlay();
             return;
         }
 
-        ui.empty?.classList.toggle("is-hidden", map.nodes.length > 0);
+        updateEmptyOverlay();
         ui.titleInput.value = map.title || "";
 
         gEdges.innerHTML = map.edges.map((e) => {
@@ -601,6 +609,11 @@ export function createPlotweave(ui) {
             return;
         }
         ui.propsBody.innerHTML = `<p class="pw-props-empty">Select a shape or connector to edit.</p>`;
+        if (!map.nodes.length && !selectedNodeIds.size && !selectedEdgeId) {
+            ui.propsBody.innerHTML = `
+                <p class="pw-props-empty">Your canvas is ready.</p>
+                <p class="pw-hint" style="margin-top:8px">Choose a shape in the <strong>Stencil</strong> panel, then click anywhere on the grid to place it.</p>`;
+        }
     }
 
     function switchMap(id) {
@@ -647,13 +660,19 @@ export function createPlotweave(ui) {
         applyCamera();
         render();
         refreshProps();
+        updateEmptyOverlay();
         if (map.nodes.length) {
-            ui.empty?.classList.add("is-hidden");
             requestAnimationFrame(() => fitView());
         } else {
-            ui.empty?.classList.remove("is-hidden");
+            ui.stage.focus();
+            setTool("select");
         }
-        setStatus(templateId === "blank" ? "New map" : "Template added", "saved");
+        setStatus(
+            templateId === "blank"
+                ? "Blank map — pick a shape, click the canvas"
+                : "Template added",
+            "saved"
+        );
         ui.onPersist?.();
         closeNewMapModal();
     }
@@ -678,7 +697,7 @@ export function createPlotweave(ui) {
                 <div class="pw-template-cards">
                 ${items.map((t) => `
                     <button type="button" class="pw-template-card${t.id === "blank" ? " is-blank" : ""}" data-template="${t.id}">
-                        <strong>${esc(t.title)}</strong>
+                        <strong>${esc(t.id === "blank" ? "Blank map" : t.title)}</strong>
                         <span>${esc(t.description)}</span>
                         ${t.nodeCount ? `<em>${t.nodeCount} shapes</em>` : `<em>Empty</em>`}
                     </button>
