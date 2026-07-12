@@ -183,11 +183,12 @@
     <script type="module">
         import { supabase } from "./firebase.js";
         import { requireStudioSession } from "./js/studio-session.js?v=1";
-        import { createPlotweave } from "./js/plotweave.js?v=21";
+        import { createPlotweave } from "./js/plotweave.js?v=22";
 
         const session = await requireStudioSession(supabase, "plotweave.html");
-        if (!session) return;
-
+        if (!session) {
+            // requireStudioSession redirects when unauthenticated
+        } else {
         const statusEl = document.getElementById("fmStatus");
 
         await createPlotweave(
@@ -223,6 +224,7 @@
                 supabaseUserId: session.mode === "local" ? undefined : session.user.id,
             }
         );
+        }
     </script>
 </body>
 </html>
