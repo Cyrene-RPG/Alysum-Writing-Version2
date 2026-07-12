@@ -24,7 +24,7 @@
     <script src="js/alysum-appearance-boot.js"></script>
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
     <link rel="stylesheet" href="css/gradient-themes.css?v=7" />
-    <link rel="stylesheet" href="css/plotweave.css?v=13" />
+    <link rel="stylesheet" href="css/plotweave.css?v=14" />
     <script src="js/gradient-theme-sync.js" defer></script>
 </head>
 <body>
@@ -140,6 +140,16 @@
                     <button type="button" class="pw-btn" id="pwBtnZoomIn" title="Zoom in">+</button>
                     <button type="button" class="pw-btn" id="pwBtnFit" title="Fit to view">Fit</button>
                 </div>
+                <aside class="pw-text-drawer" id="pwTextDrawer" hidden aria-hidden="true" aria-label="Shape text editor">
+                    <header class="pw-text-drawer-head">
+                        <div>
+                            <h3 id="pwTextDrawerTitle">Shape label</h3>
+                            <p class="pw-hint">Full text — the shape shows a short preview.</p>
+                        </div>
+                        <button type="button" class="pw-btn pw-btn-ghost" id="pwTextDrawerClose" aria-label="Close">✕</button>
+                    </header>
+                    <textarea class="pw-text-drawer-input" id="pwTextDrawerInput" rows="14" placeholder="Type the full label for this shape…"></textarea>
+                </aside>
             </div>
 
             <aside class="pw-side pw-side-right" aria-label="Properties">
@@ -178,7 +188,7 @@
     <script type="module">
         import { supabase } from "./firebase.js";
         import { requireStudioSession } from "./js/studio-session.js?v=1";
-        import { createPlotweave } from "./js/plotweave.js?v=12";
+        import { createPlotweave } from "./js/plotweave.js?v=13";
         import { createPlotweaveSupabaseDriver } from "./js/plotweave-supabase.js?v=3";
 
         const session = await requireStudioSession(supabase, "plotweave.html");
@@ -200,6 +210,10 @@
                 titleInput: document.getElementById("pwTitle"),
                 mapList: document.getElementById("pwMapList"),
                 propsBody: document.getElementById("pwPropsBody"),
+                textDrawer: document.getElementById("pwTextDrawer"),
+                textDrawerTitle: document.getElementById("pwTextDrawerTitle"),
+                textDrawerInput: document.getElementById("pwTextDrawerInput"),
+                textDrawerClose: document.getElementById("pwTextDrawerClose"),
                 palette: document.getElementById("pwPalette"),
                 zoomLabel: document.getElementById("pwZoomLabel"),
                 btnUndo: document.getElementById("pwBtnUndo"),

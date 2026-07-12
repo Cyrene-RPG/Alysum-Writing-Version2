@@ -10,11 +10,8 @@ const MAX_HISTORY = 50;
 const GRID = 12;
 const MIN_NODE = 48;
 const TEXT_PAD_X = 12;
-const TEXT_PAD_Y = 10;
 const TEXT_LINE_H = 14;
 const TEXT_CHAR_W = 7.1;
-const TEXT_FONT_BASE = 12;
-const TEXT_FONT_MIN = 8;
 
 /** Alysum flowchart palette — readable on the dark studio canvas. */
 const SHAPES = {
@@ -257,42 +254,16 @@ function wrapLines(text, maxChars) {
     return lines.length ? lines : [""];
 }
 
-function shapeTextInsets(type, w, h) {
-    if (type === "decision") {
-        return { padX: Math.max(14, w * 0.22), padY: Math.max(12, h * 0.2) };
-    }
-    return { padX: TEXT_PAD_X, padY: TEXT_PAD_Y };
-}
-
-/** Lay out label lines inside the shape bounds; shrink font if needed. */
-function shapeTextLayout(text, w, h, type) {
-    const { padX, padY } = shapeTextInsets(type, w, h);
-    const innerW = Math.max(20, w - padX * 2);
-    const innerH = Math.max(20, h - padY * 2);
-    const maxChars = Math.max(4, Math.floor(innerW / TEXT_CHAR_W));
-    const allLines = wrapLines(text, maxChars);
-
-    let fontSize = TEXT_FONT_BASE;
-    let lineH = TEXT_LINE_H;
-    while (allLines.length * lineH > innerH && fontSize > TEXT_FONT_MIN) {
-        fontSize -= 0.5;
-        lineH = (TEXT_LINE_H / TEXT_FONT_BASE) * fontSize;
-    }
-
-    const maxLines = Math.max(1, Math.floor(innerH / lineH));
-    let lines = allLines;
-    let truncated = false;
-    if (allLines.length > maxLines) {
-        lines = allLines.slice(0, maxLines);
-        truncated = true;
-        const last = lines[maxLines - 1] || "";
-        if (last.length > 1) {
-            const room = Math.max(1, maxChars - 1);
-            lines[maxLines - 1] = `${last.slice(0, room)}…`;
-        }
-    }
-
-    return { lines, fontSize, lineH, padX, padY, innerW, innerH, truncated };
+function nodePreviewLines(text, widthPx) {
+    const maxChars = Math.max(8, Math.floor((widthPx - TEXT_PAD_X * 2) / TEXT_CHAR_W));
+    const lines = wrapLines(text, maxChars);
+    if (lines.length <= 2) return lines;
+    const preview = lines.slice(0, 2);
+    const last = preview[1] || "";
+    preview[1] = last.length > maxChars - 2
+        ? `${last.slice(0, maxChars - 2)}…`
+        : `${last} …`;
+    return preview;
 }
 
 /**
@@ -575,16 +546,52 @@ export function createPlotweave(ui) {
     }
 
     function nodeTextSvg(n, w, h) {
-        const layout = shapeTextLayout(n.text, w, h, n.type);
-        const blockH = layout.lines.length * layout.lineH;
-        const startY = (h - blockH) / 2 + layout.lineH / 2;
-        const clipId = `pw-clip-${n.id}`;
-        const text = layout.lines.map((line, i) =>
-            `<text class="pw-node-text" font-size="${layout.fontSize}" x="${w / 2}" y="${startY + i * layout.lineH}" text-anchor="middle" dominant-baseline="middle">${esc(line)}</text>`
+        const lines = nodePreviewLines(n.text, w);
+        const startY = h / 2 - ((lines.length - 1) * TEXT_LINE_H) / 2;
+        return lines.map((line, i) =>
+            `<text class="pw-node-text" x="${w / 2}" y="${startY + i * TEXT_LINE_H}" text-anchor="middle" dominant-baseline="middle">${esc(line)}</text>`
         ).join("");
-        return `
-            <clipPath id="${clipId}"><rect x="${layout.padX}" y="${layout.padY}" width="${layout.innerW}" height="${layout.innerH}" rx="2"/></clipPath>
-            <g clip-path="url(#${clipId})">${text}</g>`;
+    }
+
+    function openTextEditor(n) {
+        if (!ui.textDrawer || !ui.textDrawerInput || !n) return;
+        const def = SHAPES[n.type] || SHAPES.box;
+        ui.textDrawer.hidden = false;
+        ui.textDrawer.setAttribute("aria-hidden", "false");
+        ui.textDrawer.classList.add("is-open");
+        if (ui.textDrawerTitle) ui.textDrawerTitle.textContent = def.label;
+        ui.textDrawerInput.value = n.text ?? "";
+        ui.textDrawerInput.dataset.nodeId = n.id;
+        requestAnimationFrame(() => ui.textDrawerInput.focus());
+    }
+
+    function closeTextEditor() {
+        if (!ui.textDrawer) return;
+        ui.textDrawer.classList.remove("is-open");
+        ui.textDrawer.hidden = true;
+        ui.textDrawer.setAttribute("aria-hidden", "true");
+        if (ui.textDrawerInput) ui.textDrawerInput.dataset.nodeId = "";
+    }
+
+    function syncTextEditor() {
+        if (!ui.textDrawer) return;
+        if (selectedNodeIds.size !== 1 || selectedEdgeId) {
+            closeTextEditor();
+            return;
+        }
+        const id = [...selectedNodeIds][0];
+        const n = map?.nodes.find((x) => x.id === id);
+        if (!n) {
+            closeTextEditor();
+            return;
+        }
+        if (ui.textDrawerInput?.dataset.nodeId === n.id && ui.textDrawer.classList.contains("is-open")) {
+            if (ui.textDrawerTitle) {
+                ui.textDrawerTitle.textContent = (SHAPES[n.type] || SHAPES.box).label;
+            }
+            return;
+        }
+        openTextEditor(n);
     }
 
     function render() {
@@ -688,6 +695,7 @@ export function createPlotweave(ui) {
                 });
             });
             ui.propsBody.querySelector("#pwPropDelete")?.addEventListener("click", deleteSelection);
+            closeTextEditor();
             return;
         }
         if (selectedNodeIds.size === 1) {
@@ -696,13 +704,10 @@ export function createPlotweave(ui) {
             if (!n) return;
             const def = SHAPES[n.type] || SHAPES.box;
             ui.propsBody.innerHTML = `
-                <div class="pw-field"><label>Name</label>
-                <textarea id="pwPropText">${esc(n.text)}</textarea></div>
                 <div class="pw-field-row">
                     <div class="pw-field"><label>Width</label><input type="number" id="pwPropW" min="${MIN_NODE}" value="${nodeSize(n).w}"/></div>
                     <div class="pw-field"><label>Height</label><input type="number" id="pwPropH" min="${MIN_NODE}" value="${nodeSize(n).h}"/></div>
                 </div>
-                <p class="pw-hint" style="margin:-4px 0 8px">Drag corner handles or change size — text reflows to fit inside the shape.</p>
                 <div class="pw-field"><label>Color presets</label>
                 <div class="pw-color-swatches" id="pwColorSwatches">${renderColorSwatches(n.fill, n.stroke)}</div></div>
                 <div class="pw-field-row">
@@ -725,15 +730,12 @@ export function createPlotweave(ui) {
                 });
             };
 
-            ui.propsBody.querySelector("#pwPropText")?.addEventListener("input", (ev) => {
-                n.text = ev.target.value;
-                markDirty();
-            });
             const resize = () => {
                 n.w = clamp(Number(ui.propsBody.querySelector("#pwPropW").value) || n.w, MIN_NODE, 480);
                 n.h = clamp(Number(ui.propsBody.querySelector("#pwPropH").value) || n.h, MIN_NODE, 320);
                 markDirty();
             };
+
             ui.propsBody.querySelector("#pwPropW")?.addEventListener("change", resize);
             ui.propsBody.querySelector("#pwPropH")?.addEventListener("change", resize);
             ui.propsBody.querySelector("#pwPropFill")?.addEventListener("input", (ev) => {
@@ -751,6 +753,7 @@ export function createPlotweave(ui) {
                 applyColors(def.fill, def.stroke);
             });
             ui.propsBody.querySelector("#pwPropDelete")?.addEventListener("click", deleteSelection);
+            syncTextEditor();
             return;
         }
         ui.propsBody.innerHTML = `<p class="pw-props-empty">Select a shape or connector to edit.</p>`;
@@ -759,6 +762,7 @@ export function createPlotweave(ui) {
                 <p class="pw-props-empty">Your canvas is ready.</p>
                 <p class="pw-hint" style="margin-top:8px">Choose a shape in the <strong>Stencil</strong> panel, then click anywhere on the grid to place it.</p>`;
         }
+        syncTextEditor();
     }
 
     function switchMap(id) {
@@ -1076,7 +1080,16 @@ export function createPlotweave(ui) {
     svg.addEventListener("contextmenu", (ev) => ev.preventDefault());
 
     window.addEventListener("keydown", (ev) => {
-        if (ev.target.matches("input, textarea, select")) return;
+        if (ev.target.matches("input, textarea, select")) {
+            if (ev.key === "Escape" && ui.textDrawer?.classList.contains("is-open")) {
+                closeTextEditor();
+            }
+            return;
+        }
+        if (ev.key === "Escape" && ui.textDrawer?.classList.contains("is-open")) {
+            closeTextEditor();
+            return;
+        }
         if (ev.code === "Space") spaceDown = true;
         if (ev.key === "v" || ev.key === "V") setTool("select");
         if (ev.key === "h" || ev.key === "H") setTool("pan");
@@ -1127,6 +1140,15 @@ export function createPlotweave(ui) {
         if (!item) return;
         setTool("place", item.dataset.type);
     });
+
+    ui.textDrawerInput?.addEventListener("input", (ev) => {
+        const id = ev.target.dataset.nodeId;
+        const n = map?.nodes.find((x) => x.id === id);
+        if (!n) return;
+        n.text = ev.target.value;
+        markDirty();
+    });
+    ui.textDrawerClose?.addEventListener("click", () => closeTextEditor());
 
     ui.mapList.addEventListener("click", (ev) => {
         const item = ev.target.closest(".pw-map-item");
