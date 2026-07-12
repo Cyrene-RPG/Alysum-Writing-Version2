@@ -313,6 +313,7 @@ html, body {
     background: rgba(15, 23, 42, 0.92);
     box-shadow: var(--pw-shadow);
     text-align: center;
+    pointer-events: auto;
 }
 
 .pw-empty-card h3 { margin: 0 0 8px; }
