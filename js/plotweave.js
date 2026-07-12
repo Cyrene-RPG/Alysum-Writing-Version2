@@ -2,12 +2,13 @@
  * Alysum Plotweave — canvas engine (SVG flowchart / process map).
  */
 
+import { CYRENE_SALVAGE_STORE } from "./plotweave-salvage-data.js?v=1";
 import {
     createPlotweaveSupabaseDriver,
+    isSampleDiagram,
     isSampleOnlyStore,
-    PLOTWEAVE_SALVAGE_URL,
     storeHasRealMaps,
-} from "./plotweave-supabase.js?v=4";
+} from "./plotweave-supabase.js?v=5";
 
 export const PLOTWEAVE_STORAGE_KEY = "alysum-plotweave-v1";
 const STORAGE_KEY = PLOTWEAVE_STORAGE_KEY;
@@ -171,7 +172,9 @@ function saveStore(store) {
 }
 
 function pruneEmptyDiagrams(store) {
-    const diagrams = (store.diagrams || []).filter((d) => (d.nodes?.length || 0) > 0);
+    const diagrams = (store.diagrams || []).filter(
+        (d) => (d.nodes?.length || 0) > 0 && !isSampleDiagram(d)
+    );
     let activeId = store.activeId;
     if (!diagrams.some((d) => d.id === activeId)) {
         activeId = diagrams[0]?.id ?? null;
@@ -179,14 +182,14 @@ function pruneEmptyDiagrams(store) {
     return { diagrams, activeId };
 }
 
-async function fetchSalvageStore() {
-    try {
-        const res = await fetch(PLOTWEAVE_SALVAGE_URL, { cache: "no-store" });
-        if (!res.ok) return null;
-        return parseStore(await res.text());
-    } catch {
-        return null;
-    }
+function embeddedSalvageStore() {
+    return parseStore(JSON.stringify(CYRENE_SALVAGE_STORE));
+}
+
+function applySalvageStore() {
+    const salvage = embeddedSalvageStore();
+    if (!storeHasRealMaps(salvage)) return null;
+    return pruneEmptyDiagrams(salvage);
 }
 
 function emptyDiagram(title = "Untitled map") {
@@ -359,6 +362,24 @@ export async function createPlotweave(ui, config = {}) {
     if (isSampleOnlyStore(store)) {
         store = { diagrams: [], activeId: null };
     }
+    store = pruneEmptyDiagrams(store);
+
+    let recoveredFromSalvage = false;
+    if (!storeHasRealMaps(store)) {
+        const backup = loadBackupStore();
+        if (storeHasRealMaps(backup)) {
+            store = pruneEmptyDiagrams(backup);
+        }
+    }
+    if (!storeHasRealMaps(store)) {
+        const salvage = applySalvageStore();
+        if (salvage) {
+            store = salvage;
+            saveStore(store);
+            recoveredFromSalvage = true;
+        }
+    }
+
     let remoteDriver = null;
 
     let diagram;
@@ -395,26 +416,13 @@ export async function createPlotweave(ui, config = {}) {
             setStatus: ui.setStatus,
         });
         await remoteDriver.pullOnce();
-    }
-
-    store = pruneEmptyDiagrams(store);
-
-    if (!storeHasRealMaps(store)) {
-        const backup = loadBackupStore();
-        if (storeHasRealMaps(backup)) {
-            store = pruneEmptyDiagrams(backup);
-            saveStore(store);
-        }
-    }
-
-    let recoveredFromSalvage = false;
-    if (!storeHasRealMaps(store)) {
-        const salvage = await fetchSalvageStore();
-        if (storeHasRealMaps(salvage)) {
-            store = pruneEmptyDiagrams(salvage);
-            saveStore(store);
-            recoveredFromSalvage = true;
-            if (remoteDriver) {
+        store = pruneEmptyDiagrams(store);
+        if (!storeHasRealMaps(store)) {
+            const salvage = applySalvageStore();
+            if (salvage) {
+                store = salvage;
+                saveStore(store);
+                recoveredFromSalvage = true;
                 try {
                     await remoteDriver.pushNow();
                 } catch (e) {
@@ -425,14 +433,68 @@ export async function createPlotweave(ui, config = {}) {
     }
 
     if (!store.diagrams.length) {
+        const salvage = applySalvageStore();
+        if (salvage) {
+            store = salvage;
+            saveStore(store);
+            recoveredFromSalvage = true;
+        }
+    }
+
+    if (!store.diagrams.length) {
         const d = emptyDiagram("Untitled map");
         store.diagrams = [d];
         store.activeId = d.id;
-        writeStore();
+        saveStore(store);
     }
 
     diagram = store.diagrams.find((d) => d.id === store.activeId) || store.diagrams[0];
     store.activeId = diagram.id;
+
+    async function forceRestoreSalvage() {
+        const salvage = applySalvageStore();
+        if (!salvage) return false;
+        store = mergeSalvageWithStore(store, salvage);
+        saveStore(store);
+        diagram = store.diagrams.find((d) => d.id === salvage.activeId) || store.diagrams[0];
+        store.activeId = diagram.id;
+        selectedIds.clear();
+        selectedEdgeId = null;
+        history = [];
+        future = [];
+        dirty = false;
+        ui.titleInput.value = diagram.title || "";
+        updateUndoButtons();
+        renderDiagramList();
+        applyCamera();
+        fitView();
+        scheduleRender();
+        refreshProps();
+        if (remoteDriver) {
+            try {
+                await remoteDriver.pushNow();
+            } catch (e) {
+                console.error("Salvage cloud save:", e);
+            }
+        }
+        ui.setStatus?.("Restored Cyrene RPG map", "saved");
+        return true;
+    }
+
+    function mergeSalvageWithStore(current, salvage) {
+        const byId = new Map();
+        for (const d of current.diagrams || []) {
+            if ((d.nodes?.length || 0) > 0 && !isSampleDiagram(d)) byId.set(d.id, d);
+        }
+        for (const d of salvage.diagrams || []) {
+            byId.set(d.id, d);
+        }
+        const diagrams = [...byId.values()];
+        return {
+            diagrams,
+            activeId: salvage.activeId || diagrams[0]?.id || null,
+        };
+    }
 
     const svg = ui.stage;
     const world = svg.querySelector(".fm-world");
@@ -1294,6 +1356,9 @@ export async function createPlotweave(ui, config = {}) {
     ui.btnUndo.addEventListener("click", undo);
     ui.btnRedo.addEventListener("click", redo);
     ui.btnSave.addEventListener("click", () => persist());
+    ui.btnRestoreSalvage?.addEventListener("click", () => {
+        void forceRestoreSalvage();
+    });
     ui.btnSelect?.addEventListener("click", () => setTool("select"));
     ui.btnPan?.addEventListener("click", () => setTool("pan"));
     ui.btnConnect?.addEventListener("click", () => setTool("connect"));

@@ -10,8 +10,13 @@ export function diagramShapeCount(diagram) {
     return Array.isArray(diagram?.nodes) ? diagram.nodes.length : 0;
 }
 
+export function isSampleDiagram(diagram) {
+    const title = String(diagram?.title || "");
+    return title.includes("Hero's journey") || title.includes("Sample:");
+}
+
 export function storeHasRealMaps(store) {
-    return (store?.diagrams || []).some((d) => diagramShapeCount(d) > 0);
+    return (store?.diagrams || []).some((d) => diagramShapeCount(d) > 0 && !isSampleDiagram(d));
 }
 
 function pickRicherDiagram(a, b) {
@@ -74,7 +79,7 @@ export function mergePlotweaveStores(local, cloud) {
     }
 
     const diagrams = [...byId.values()]
-        .filter((d) => diagramShapeCount(d) > 0)
+        .filter((d) => diagramShapeCount(d) > 0 && !isSampleDiagram(d))
         .sort((a, b) => (Number(b.updatedAt) || 0) - (Number(a.updatedAt) || 0));
 
     let activeId = local.activeId;
@@ -90,8 +95,7 @@ export function mergePlotweaveStores(local, cloud) {
 
 function isSampleOnlyStore(store) {
     if (store.diagrams.length !== 1) return false;
-    const title = String(store.diagrams[0]?.title || "");
-    return title.includes("Hero's journey") || title.includes("Sample:");
+    return isSampleDiagram(store.diagrams[0]);
 }
 
 export { isSampleOnlyStore };

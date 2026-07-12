@@ -83,7 +83,8 @@
 
     <script type="module">
         import { supabase } from "./firebase.js";
-        import { mergePlotweaveStores, normalizePlotweaveStore, PLOTWEAVE_TABLE } from "./js/plotweave-supabase.js?v=3";
+        import { mergePlotweaveStores, normalizePlotweaveStore, PLOTWEAVE_TABLE } from "./js/plotweave-supabase.js?v=5";
+        import { CYRENE_SALVAGE_STORE } from "./js/plotweave-salvage-data.js?v=1";
 
         const MAIN_KEY = "alysum-plotweave-v1";
         const BACKUP_KEY = "alysum-plotweave-v1-backup";
@@ -266,14 +267,10 @@
             setTimeout(() => { location.href = "plotweave.html"; }, 1200);
         });
 
-        const SALVAGE_URL = "plotweave-imports/cyrene-rpg-recovered.json";
-
         async function restoreSalvage(pushCloudAfter) {
             setStatus("Loading recovered map…", "");
             try {
-                const res = await fetch(SALVAGE_URL, { cache: "no-store" });
-                if (!res.ok) throw new Error(`Could not load recovery file (${res.status})`);
-                const store = normalizePlotweaveStore(await res.json());
+                const store = normalizePlotweaveStore(CYRENE_SALVAGE_STORE);
                 if (!store.diagrams.length) throw new Error("Recovery file is empty");
                 writeLocal(store);
                 if (pushCloudAfter) {

@@ -8,7 +8,7 @@
  * Bump SW_VERSION when shipping breaking shell changes to force a refresh.
  */
 
-const SW_VERSION = 'v1.0.94';
+const SW_VERSION = 'v1.0.95';
 const SHELL_CACHE = `alysum-shell-${SW_VERSION}`;
 const ASSET_CACHE = `alysum-assets-${SW_VERSION}`;
 
@@ -68,6 +68,7 @@ const APP_SHELL = [
   'css/plotweave.css',
   'js/plotweave.js',
   'js/plotweave-supabase.js',
+  'js/plotweave-salvage-data.js',
   'note-graph.html',
   'css/note-graph.css',
   'js/note-graph-app.js',

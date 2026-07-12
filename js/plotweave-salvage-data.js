@@ -1,4 +1,4 @@
-{
+export const CYRENE_SALVAGE_STORE = {
   "activeId": "map_x3obawu_mrhdr9d1",
   "diagrams": [
     {
@@ -313,4 +313,4 @@
       }
     }
   ]
-}
+};
