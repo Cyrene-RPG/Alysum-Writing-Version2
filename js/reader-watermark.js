@@ -4,7 +4,7 @@
  */
 
 const STYLE_ID = "alysum-reader-watermark-style";
-const STYLE_VERSION = 2;
+const STYLE_VERSION = 3;
 const LS_GUEST = "alysum-reader-guest-mark";
 
 function injectStyles() {
@@ -30,20 +30,20 @@ function injectStyles() {
   pointer-events: none;
   user-select: none;
   display: grid;
-  grid-template-columns: repeat(2, minmax(360px, 1fr));
-  grid-auto-rows: minmax(320px, auto);
-  opacity: 0.11;
+  grid-template-columns: repeat(3, minmax(260px, 1fr));
+  grid-auto-rows: minmax(180px, auto);
+  opacity: 0.08;
 }
 body.light .alysum-rw-sheet {
-  opacity: 0.14;
+  opacity: 0.1;
 }
 .alysum-rw-cell {
   display: flex;
   align-items: center;
   justify-content: center;
   transform: rotate(-19deg);
-  font-size: clamp(42px, 8vw, 84px);
-  font-weight: 900;
+  font-size: clamp(24px, 4.5vw, 40px);
+  font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   white-space: nowrap;
@@ -54,7 +54,7 @@ body.light .alysum-rw-sheet {
   z-index: 1;
   margin-top: 4px;
   padding: 8px 24px 18px;
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1.45;
   font-weight: 600;
   letter-spacing: 0.02em;
@@ -129,11 +129,11 @@ export function buildReaderWatermarkLines(opts) {
   return { footer, grid };
 }
 
-export function renderWatermarkCells(sheetEl, gridPhrase, cellCount = 12) {
+export function renderWatermarkCells(sheetEl, gridPhrase, cellCount = 16) {
   if (!sheetEl) return;
   sheetEl.innerHTML = "";
   if (!gridPhrase) return;
-  const n = Math.max(4, Math.min(16, cellCount));
+  const n = Math.max(6, Math.min(20, cellCount));
   for (let i = 0; i < n; i++) {
     const span = document.createElement("span");
     span.className = "alysum-rw-cell";

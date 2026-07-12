@@ -119,9 +119,12 @@
         .nav-current { margin-top: 3px; font-size: 18px; font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .reader-card { max-width: var(--reader-max); margin: 0 auto; background: var(--panel); border: 1px solid var(--border); border-radius: 26px; box-shadow: var(--shadow); overflow: hidden; }
         .reader-head { padding: 24px 24px 0; text-align: center; }
-        .chapter-title { margin: 0; font-size: 32px; line-height: 1.1; font-weight: 900; }
+        .chapter-title { margin: 0; font-size: 32px; line-height: 1.1; font-weight: 900; scroll-margin-top: calc(var(--reader-nav-offset) + 70px); }
         .chapter-meta { margin-top: 8px; color: var(--muted); font-size: 14px; }
         .reader-body { padding: 24px; }
+        .reader-next-chapter-wrap { padding: 8px 24px 28px; display: flex; justify-content: center; border-top: 1px solid var(--border); background: var(--panel-2); }
+        .reader-next-chapter-btn { min-width: min(100%, 340px); padding: 14px 22px; font-size: 15px; }
+        .reader-next-chapter-btn:disabled { opacity: 0.45; cursor: not-allowed; }
         .content { font-family: Georgia, "Times New Roman", serif; font-size: var(--font-size); line-height: var(--line-height); word-wrap: break-word; }
         .content p { margin: 0 0 1.15em; }
         .content h1, .content h2, .content h3, .content h4 { line-height: 1.24; margin: 1.35em 0 0.7em; }
@@ -229,7 +232,7 @@
                 <div class="chip-block hidden"><div class="chip-label">Tags</div><div class="chip-row" id="tagList"></div></div><div class="chip-block hidden"><div class="chip-label">Warnings</div><div class="chip-row" id="warningList"></div></div>
             </div>
             <div class="nav-row"><button class="btn" id="prevBtn">← Prev</button><div class="nav-center"><div class="nav-label">Current Chapter</div><div class="nav-current" id="chapterIndicator">Loading…</div></div><button class="btn" id="nextBtn">Next →</button></div>
-            <div class="reader-card"><div class="reader-head"><h2 class="chapter-title" id="chapterTitle">Loading…</h2><div class="chapter-meta" id="chapterMeta"></div></div><div class="reader-chapter-wrap alysum-rw-wrap"><div class="alysum-rw-sheet" id="readerWatermarkSheet" aria-hidden="true"></div><div class="reader-body alysum-rw-body"><div class="content" id="content"></div></div><div class="alysum-rw-footer" id="readerWatermarkFooter"></div></div></div>
+            <div class="reader-card"><div class="reader-head"><h2 class="chapter-title" id="chapterTitle">Loading…</h2><div class="chapter-meta" id="chapterMeta"></div></div><div class="reader-chapter-wrap alysum-rw-wrap"><div class="alysum-rw-sheet" id="readerWatermarkSheet" aria-hidden="true"></div><div class="reader-body alysum-rw-body"><div class="content" id="content"></div></div><div class="alysum-rw-footer" id="readerWatermarkFooter"></div></div><div class="reader-next-chapter-wrap"><button class="btn primary reader-next-chapter-btn" id="nextChapterBottomBtn" type="button">Next Chapter →</button></div></div>
             <div class="reader-tools"><button class="btn primary" id="bookmarkBtn">Bookmark This Chapter</button><button class="btn" id="resumeBtn">Resume Where I Left Off</button><button class="btn btn-report hidden" id="reportBookBtn" type="button">Report Book</button></div>
             <div class="likes-card"><div class="likes-title">Kudos</div><div class="likes-row"><button class="btn primary" id="likeBtn">❤️ Leave Kudos</button><div class="kudos-note">One Per User.</div></div><div class="kudos-count" id="likeCount">0 kudos</div></div>
             <div class="comments-card"><div class="comments-title">Comments</div><div class="comment-list" id="commentList"></div><div class="comment-form"><textarea class="comment-input" id="commentInput" placeholder="Write a comment…"></textarea><button class="btn primary" id="postCommentBtn">Post Comment</button></div></div>
@@ -243,7 +246,7 @@
     import { writeBetaShelfEntryLocal } from "./js/beta-shelf-local.js?v=1";
     import { READER_HOME_URL } from "./js/account-mode.js";
     import { installReaderCopyGuards } from "./js/reader-copy-guards.js?v=1";
-    import { applyReaderWatermark } from "./js/reader-watermark.js?v=5";
+    import { applyReaderWatermark } from "./js/reader-watermark.js?v=6";
     import { openLibraryReportModal } from "./js/library-report-modal.js?v=1";
     import { isBookReadable } from "./js/library-reports-api.js?v=1";
     import {
@@ -263,7 +266,7 @@
         localStorage.getItem("alysum-last-book") ||
         "";
 
-    const readerNavToggle = document.getElementById("readerNavToggle"), backBtn = document.getElementById("backBtn"), themeBtn = document.getElementById("themeBtn"), fontMinusBtn = document.getElementById("fontMinusBtn"), fontPlusBtn = document.getElementById("fontPlusBtn"), menuBtn = document.getElementById("menuBtn"), mobileDrawer = document.getElementById("mobileDrawer"), drawerBackdrop = document.getElementById("drawerBackdrop"), closeDrawerBtn = document.getElementById("closeDrawerBtn"), topbarTitle = document.getElementById("topbarTitle"), topbarSubtitle = document.getElementById("topbarSubtitle"), betaReadTopBtn = document.getElementById("betaReadTopBtn"), readerProfileTopBtn = document.getElementById("readerProfileTopBtn"), allNotesTopBtn = document.getElementById("allNotesTopBtn"), statusBox = document.getElementById("statusBox"), errorBox = document.getElementById("errorBox"), bookTitle = document.getElementById("bookTitle"), bookAuthor = document.getElementById("bookAuthor"), bookSummary = document.getElementById("bookSummary"), statChapters = document.getElementById("statChapters"), statWords = document.getElementById("statWords"), statReads = document.getElementById("statReads"), statType = document.getElementById("statType"), statRating = document.getElementById("statRating"), tagList = document.getElementById("tagList"), warningList = document.getElementById("warningList"), sideBookTitle = document.getElementById("sideBookTitle"), sideBookAuthor = document.getElementById("sideBookAuthor"), sideBookSummary = document.getElementById("sideBookSummary"), sideTagList = document.getElementById("sideTagList"), sideWarningList = document.getElementById("sideWarningList"), drawerBookTitle = document.getElementById("drawerBookTitle"), drawerBookAuthor = document.getElementById("drawerBookAuthor"), drawerBookSummary = document.getElementById("drawerBookSummary"), drawerTagList = document.getElementById("drawerTagList"), drawerWarningList = document.getElementById("drawerWarningList"), prevBtn = document.getElementById("prevBtn"), nextBtn = document.getElementById("nextBtn"), chapterIndicator = document.getElementById("chapterIndicator"), chapterTitle = document.getElementById("chapterTitle"), chapterMeta = document.getElementById("chapterMeta"), content = document.getElementById("content"), bookmarkBtn = document.getElementById("bookmarkBtn"), resumeBtn = document.getElementById("resumeBtn"), reportBookBtn = document.getElementById("reportBookBtn"), likeBtn = document.getElementById("likeBtn"), likeCount = document.getElementById("likeCount"), commentList = document.getElementById("commentList"), commentInput = document.getElementById("commentInput"), postCommentBtn = document.getElementById("postCommentBtn");
+    const readerNavToggle = document.getElementById("readerNavToggle"), backBtn = document.getElementById("backBtn"), themeBtn = document.getElementById("themeBtn"), fontMinusBtn = document.getElementById("fontMinusBtn"), fontPlusBtn = document.getElementById("fontPlusBtn"), menuBtn = document.getElementById("menuBtn"), mobileDrawer = document.getElementById("mobileDrawer"), drawerBackdrop = document.getElementById("drawerBackdrop"), closeDrawerBtn = document.getElementById("closeDrawerBtn"), topbarTitle = document.getElementById("topbarTitle"), topbarSubtitle = document.getElementById("topbarSubtitle"), betaReadTopBtn = document.getElementById("betaReadTopBtn"), readerProfileTopBtn = document.getElementById("readerProfileTopBtn"), allNotesTopBtn = document.getElementById("allNotesTopBtn"), statusBox = document.getElementById("statusBox"), errorBox = document.getElementById("errorBox"), bookTitle = document.getElementById("bookTitle"), bookAuthor = document.getElementById("bookAuthor"), bookSummary = document.getElementById("bookSummary"), statChapters = document.getElementById("statChapters"), statWords = document.getElementById("statWords"), statReads = document.getElementById("statReads"), statType = document.getElementById("statType"), statRating = document.getElementById("statRating"), tagList = document.getElementById("tagList"), warningList = document.getElementById("warningList"), sideBookTitle = document.getElementById("sideBookTitle"), sideBookAuthor = document.getElementById("sideBookAuthor"), sideBookSummary = document.getElementById("sideBookSummary"), sideTagList = document.getElementById("sideTagList"), sideWarningList = document.getElementById("sideWarningList"), drawerBookTitle = document.getElementById("drawerBookTitle"), drawerBookAuthor = document.getElementById("drawerBookAuthor"), drawerBookSummary = document.getElementById("drawerBookSummary"), drawerTagList = document.getElementById("drawerTagList"), drawerWarningList = document.getElementById("drawerWarningList"), prevBtn = document.getElementById("prevBtn"), nextBtn = document.getElementById("nextBtn"), nextChapterBottomBtn = document.getElementById("nextChapterBottomBtn"), chapterIndicator = document.getElementById("chapterIndicator"), chapterTitle = document.getElementById("chapterTitle"), chapterMeta = document.getElementById("chapterMeta"), content = document.getElementById("content"), bookmarkBtn = document.getElementById("bookmarkBtn"), resumeBtn = document.getElementById("resumeBtn"), reportBookBtn = document.getElementById("reportBookBtn"), likeBtn = document.getElementById("likeBtn"), likeCount = document.getElementById("likeCount"), commentList = document.getElementById("commentList"), commentInput = document.getElementById("commentInput"), postCommentBtn = document.getElementById("postCommentBtn");
 
     let currentUser = null, currentBook = null, librarySourceRow = null, currentChapterIndex = 0, isLoaded = false, currentFontSize = 22, hasLikedThisBook = false, readerWatermarkProfileUser = null, bookOwnerHandle = null;
 
@@ -432,6 +435,11 @@
     function applyFontSize(size) { const next = Math.max(16, Math.min(32, size)); document.documentElement.style.setProperty("--font-size", `${next}px`); localStorage.setItem("alysum-reader-font-size", String(next)); }
     function renderChipList(target, values, emptyText) { target.innerHTML = ""; if (values.length) values.forEach(value => { const chip = document.createElement("div"); chip.className = "chip"; chip.textContent = value; target.appendChild(chip); }); else target.innerHTML = `<div class="chip">${emptyText}</div>`; }
     function renderMeta() { if (!currentBook) return; const comic = isComicFormat(currentBook.mediaFormat); bookTitle.textContent = currentBook.title; bookAuthor.textContent = "@" + currentBook.author; bookSummary.textContent = currentBook.summary || "No summary yet."; sideBookTitle.textContent = currentBook.title; sideBookAuthor.textContent = "@" + currentBook.author; sideBookSummary.textContent = currentBook.summary || "No summary yet."; drawerBookTitle.textContent = currentBook.title; drawerBookAuthor.textContent = "@" + currentBook.author; drawerBookSummary.textContent = currentBook.summary || "No summary yet."; topbarTitle.textContent = currentBook.title; statChapters.textContent = formatNumber(currentBook.chapterCount || currentBook.chapters.length); statWords.textContent = comic ? mediaFormatLabel(currentBook.mediaFormat) : formatNumber(currentBook.words); statReads.textContent = formatNumber(currentBook.views); statType.textContent = comic ? mediaFormatLabel(currentBook.mediaFormat) : (currentBook.type || "—"); statRating.textContent = currentBook.rating || "—"; renderChipList(tagList, currentBook.tags, "No tags listed"); renderChipList(warningList, currentBook.warnings, "No warnings listed"); renderChipList(sideTagList, currentBook.tags, "No tags listed"); renderChipList(sideWarningList, currentBook.warnings, "No warnings listed"); renderChipList(drawerTagList, currentBook.tags, "No tags listed"); renderChipList(drawerWarningList, currentBook.warnings, "No warnings listed"); }
+    function goToNextChapter() {
+        if (!currentBook || currentChapterIndex >= currentBook.chapters.length - 1) return;
+        currentChapterIndex++;
+        renderChapter();
+    }
     function renderChapter() {
         if (!currentBook) return;
         const chapter = currentChapter();
@@ -461,8 +469,17 @@
         }
         prevBtn.disabled = currentChapterIndex === 0;
         nextBtn.disabled = currentChapterIndex === currentBook.chapters.length - 1;
+        const isLastChapter = currentChapterIndex >= currentBook.chapters.length - 1;
+        if (nextChapterBottomBtn) {
+            nextChapterBottomBtn.disabled = isLastChapter;
+            const nextChapter = !isLastChapter ? currentBook.chapters[currentChapterIndex + 1] : null;
+            const nextLabel = comic ? "Next Page" : "Next Chapter";
+            nextChapterBottomBtn.textContent = nextChapter
+                ? `${nextLabel}: ${nextChapter.title} →`
+                : `${nextLabel} →`;
+        }
         saveResumePosition();
-        window.scrollTo({ top: 0, behavior: "smooth" });
+        chapterTitle.scrollIntoView({ behavior: "smooth", block: "start" });
         loadComments();
     }
 
@@ -653,7 +670,8 @@
     backBtn.addEventListener("click", () => { window.location.href = "library.html"; });
     readerProfileTopBtn?.addEventListener("click", async () => { if (!bookId) return; if (!currentBook) { showStatus("Wait until this story finishes loading."); setTimeout(hideStatus, 2200); return; } if (!currentUser) { window.location.href = "login.html?next=" + encodeURIComponent(READER_HOME_URL); return; } readerProfileTopBtn.disabled = true; try { await ensureBetaReadShelved(); } finally { readerProfileTopBtn.disabled = false; } window.location.href = READER_HOME_URL; });
     prevBtn.addEventListener("click", () => { if (!currentBook) return; if (currentChapterIndex > 0) { currentChapterIndex--; renderChapter(); } });
-    nextBtn.addEventListener("click", () => { if (!currentBook) return; if (currentChapterIndex < currentBook.chapters.length - 1) { currentChapterIndex++; renderChapter(); } });
+    nextBtn.addEventListener("click", goToNextChapter);
+    nextChapterBottomBtn?.addEventListener("click", goToNextChapter);
     bookmarkBtn.addEventListener("click", () => { if (!currentBook) return; saveBookmark(); showStatus(`Bookmarked: ${currentChapter().title}`); setTimeout(hideStatus, 1400); });
     resumeBtn.addEventListener("click", () => { if (!currentBook) return; const bookmark = loadBookmark(); const resumeIndex = loadResumePosition(); if (bookmark && Number.isFinite(bookmark.chapterIndex) && bookmark.chapterIndex < currentBook.chapters.length) { currentChapterIndex = bookmark.chapterIndex; renderChapter(); showStatus(`Jumped to bookmark: ${bookmark.chapterTitle || "Saved chapter"}`); setTimeout(hideStatus, 1600); return; } if (resumeIndex !== null && resumeIndex >= 0 && resumeIndex < currentBook.chapters.length) { currentChapterIndex = resumeIndex; renderChapter(); showStatus("Resumed where you left off."); setTimeout(hideStatus, 1400); return; } showStatus("No bookmark or resume point yet."); setTimeout(hideStatus, 1400); });
     themeBtn.addEventListener("click", () => applyTheme(document.body.classList.contains("light") ? "dark" : "light"));
