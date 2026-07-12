@@ -1,11 +1,8 @@
-/**
- * Alysum Plotweave — canvas engine (SVG flowchart / process map).
+﻿/**
+ * Alysum Plotweave ΓÇö canvas engine (SVG flowchart / process map).
  */
 
-import { createPlotweaveSupabaseDriver } from "./plotweave-supabase.js?v=1";
-
-export const PLOTWEAVE_STORAGE_KEY = "alysum-plotweave-v1";
-const STORAGE_KEY = PLOTWEAVE_STORAGE_KEY;
+export const STORAGE_KEY = "alysum-plotweave-v1";
 const LEGACY_STORAGE_KEY = "alysum-flow-mapper-v1";
 const MAX_HISTORY = 60;
 
@@ -91,7 +88,7 @@ function deepClone(obj) {
     return JSON.parse(JSON.stringify(obj));
 }
 
-function loadStore() {
+export function loadStore() {
     try {
         let raw = localStorage.getItem(STORAGE_KEY);
         if (!raw) {
@@ -110,7 +107,7 @@ function loadStore() {
     }
 }
 
-function saveStore(store) {
+export function saveStore(store) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
 }
 
@@ -274,16 +271,24 @@ function shapePath(type, w, h) {
 }
 
 /**
- * @param {object} ui — DOM refs + callbacks
- * @param {object} [config]
- * @param {import("@supabase/supabase-js").SupabaseClient} [config.supabase]
- * @param {string} [config.supabaseUserId]
+ * @param {object} ui ΓÇö DOM refs + callbacks
  */
-export async function createPlotweave(ui, config = {}) {
+export function createPlotweave(ui) {
     let store = loadStore();
-    let remoteDriver = null;
-
+    /** @type {ReturnType<typeof emptyDiagram>} */
     let diagram;
+
+    function attachActiveDiagram() {
+        if (store.diagrams.length) {
+            diagram = store.diagrams.find((d) => d.id === store.activeId) || store.diagrams[0];
+            store.activeId = diagram.id;
+            return;
+        }
+        diagram = emptyDiagram();
+    }
+
+    attachActiveDiagram();
+
     let selectedIds = new Set();
     let selectedEdgeId = null;
     let tool = "select"; // select | pan | connect | place
@@ -296,37 +301,6 @@ export async function createPlotweave(ui, config = {}) {
     let lasso = null;
     let spaceDown = false;
     let raf = 0;
-
-    function writeStore() {
-        saveStore(store);
-        remoteDriver?.pushDebounced();
-    }
-
-    if (config.supabase && config.supabaseUserId) {
-        remoteDriver = createPlotweaveSupabaseDriver({
-            supabase: config.supabase,
-            userId: config.supabaseUserId,
-            storageKey: STORAGE_KEY,
-            getStore: () => store,
-            setStore: (next) => {
-                store = next;
-            },
-            saveStore,
-            refresh: () => {},
-            setStatus: ui.setStatus,
-        });
-        await remoteDriver.pullOnce();
-    }
-
-    if (!store.diagrams.length) {
-        const sample = samplePlotMap();
-        store.diagrams = [sample];
-        store.activeId = sample.id;
-        writeStore();
-    }
-
-    diagram = store.diagrams.find((d) => d.id === store.activeId) || store.diagrams[0];
-    store.activeId = diagram.id;
 
     const svg = ui.stage;
     const world = svg.querySelector(".fm-world");
@@ -354,10 +328,50 @@ export async function createPlotweave(ui, config = {}) {
         if (idx >= 0) store.diagrams[idx] = diagram;
         else store.diagrams.push(diagram);
         store.activeId = diagram.id;
-        writeStore();
+        saveStore(store);
         dirty = false;
-        if (!silent) ui.setStatus?.(remoteDriver ? "Saved" : "Saved locally", "saved");
+        if (!silent) ui.setStatus?.("Saved locally", "saved");
         renderDiagramList();
+        ui.onPersist?.(store);
+    }
+
+    function reloadFromStore(nextStore) {
+        store = nextStore;
+        attachActiveDiagram();
+        selectedIds.clear();
+        selectedEdgeId = null;
+        history = [];
+        future = [];
+        updateUndoButtons();
+        ui.titleInput.value = diagram.title || "";
+        dirty = false;
+        renderDiagramList();
+        applyCamera();
+        scheduleRender();
+        refreshProps();
+    }
+
+    function seedIfEmpty() {
+        if (store.diagrams.length) {
+            attachActiveDiagram();
+            ui.titleInput.value = diagram.title || "";
+            renderDiagramList();
+            scheduleRender();
+            refreshProps();
+            return;
+        }
+        const sample = samplePlotMap();
+        store.diagrams = [sample];
+        store.activeId = sample.id;
+        diagram = sample;
+        saveStore(store);
+        ui.titleInput.value = diagram.title;
+        renderDiagramList();
+        applyCamera();
+        scheduleRender();
+        refreshProps();
+        fitView();
+        ui.onPersist?.(store);
     }
 
     function updateUndoButtons() {
@@ -807,7 +821,7 @@ export async function createPlotweave(ui, config = {}) {
         if (!next) return;
         diagram = next;
         store.activeId = id;
-        writeStore();
+        saveStore(store);
         selectedIds.clear();
         selectedEdgeId = null;
         history = [];
@@ -828,7 +842,7 @@ export async function createPlotweave(ui, config = {}) {
         store.diagrams.unshift(d);
         store.activeId = d.id;
         diagram = d;
-        writeStore();
+        saveStore(store);
         selectedIds.clear();
         selectedEdgeId = null;
         history = [];
@@ -852,7 +866,7 @@ export async function createPlotweave(ui, config = {}) {
         store.diagrams.unshift(copy);
         store.activeId = copy.id;
         diagram = copy;
-        writeStore();
+        saveStore(store);
         ui.titleInput.value = copy.title;
         history = [];
         future = [];
@@ -875,7 +889,7 @@ export async function createPlotweave(ui, config = {}) {
         store.diagrams = store.diagrams.filter((d) => d.id !== diagram.id);
         diagram = store.diagrams[0];
         store.activeId = diagram.id;
-        writeStore();
+        saveStore(store);
         selectedIds.clear();
         selectedEdgeId = null;
         history = [];
@@ -887,7 +901,7 @@ export async function createPlotweave(ui, config = {}) {
         ui.setStatus?.("Map deleted", "saved");
     }
 
-    // —— Pointer interactions ——
+    // ΓÇöΓÇö Pointer interactions ΓÇöΓÇö
     function onPointerDown(ev) {
         if (ev.button === 2 || (ev.button === 0 && (tool === "pan" || spaceDown || ev.button === 1))) {
             // pan
@@ -1175,7 +1189,7 @@ export async function createPlotweave(ui, config = {}) {
         }
     }
 
-    // —— Wire UI ——
+    // ΓÇöΓÇö Wire UI ΓÇöΓÇö
     svg.addEventListener("pointerdown", onPointerDown);
     svg.addEventListener("pointermove", onPointerMove);
     svg.addEventListener("pointerup", onPointerUp);
@@ -1238,15 +1252,19 @@ export async function createPlotweave(ui, config = {}) {
     applyCamera();
     scheduleRender();
     refreshProps();
-    ui.setStatus?.("Ready", "saved");
+    /* status set by host page after cloud sync */
 
     return {
         persist,
         fitView,
         getDiagram: () => diagram,
-        destroy() {
-            remoteDriver?.dispose();
+        getStore: () => store,
+        setStore: (next) => {
+            store = next;
         },
+        saveStore: (next) => saveStore(next ?? store),
+        reloadFromStore,
+        seedIfEmpty,
     };
 }
 

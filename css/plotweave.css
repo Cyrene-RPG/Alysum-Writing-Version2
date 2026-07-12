@@ -1,4 +1,4 @@
-/* Alysum Plotweave — iGrafx-style process / plot mapping */
+﻿/* Alysum Plotweave ΓÇö iGrafx-style process / plot mapping */
 
 :root {
     --fm-bg: #0b1220;
@@ -41,7 +41,7 @@ html, body {
     min-height: 0;
 }
 
-/* —— Top toolbar —— */
+/* ΓÇöΓÇö Top toolbar ΓÇöΓÇö */
 .fm-toolbar {
     display: flex;
     align-items: center;
@@ -167,7 +167,7 @@ html, body {
 .fm-status.is-saved { color: #a7f3d0; }
 .fm-status.is-dirty { color: #fde68a; }
 
-/* —— Workspace —— */
+/* ΓÇöΓÇö Workspace ΓÇöΓÇö */
 .fm-workspace {
     display: grid;
     grid-template-columns: 240px 1fr 280px;

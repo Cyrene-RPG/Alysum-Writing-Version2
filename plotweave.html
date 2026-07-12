@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <!-- ALYSUM:PWA:START -->
@@ -24,7 +24,7 @@
     <script src="js/alysum-appearance-boot.js"></script>
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
     <link rel="stylesheet" href="css/gradient-themes.css?v=6" />
-    <link rel="stylesheet" href="css/plotweave.css?v=5" />
+    <link rel="stylesheet" href="css/plotweave.css?v=6" />
     <script src="js/gradient-theme-sync.js" defer></script>
 </head>
 <body>
@@ -44,7 +44,7 @@
                     aria-label="Map title"
                     placeholder="Untitled map"
                 />
-                <span class="fm-status" id="fmStatus">Ready</span>
+                <span class="fm-status" id="fmStatus">Syncing…</span>
             </div>
 
             <div class="fm-toolbar-center">
@@ -181,17 +181,26 @@
     <script type="module">
         import { supabase } from "./firebase.js";
         import { requireStudioSession } from "./js/studio-session.js?v=1";
-        import { createPlotweave } from "./js/plotweave.js?v=1";
+        import { createPlotweave } from "./js/plotweave.js?v=4";
+        import { createPlotweaveSupabaseDriver } from "./js/plotweave-supabase.js?v=2";
 
         const session = await requireStudioSession(supabase, "plotweave.html");
         if (!session) {
-            // requireStudioSession redirects when unauthenticated
+            /* requireStudioSession redirects when unauthenticated */
         } else {
-        const statusEl = document.getElementById("fmStatus");
+            const statusEl = document.getElementById("fmStatus");
+            const stageEl = document.getElementById("fmStage");
 
-        await createPlotweave(
-            {
-                stage: document.getElementById("fmStage"),
+            const setStatus = (text, kind) => {
+                statusEl.textContent = text;
+                statusEl.classList.toggle("is-saved", kind === "saved");
+                statusEl.classList.toggle("is-dirty", kind === "dirty");
+            };
+
+            let sync = null;
+
+            const app = createPlotweave({
+                stage: stageEl,
                 empty: document.getElementById("fmEmpty"),
                 titleInput: document.getElementById("fmTitle"),
                 diagramList: document.getElementById("fmDiagramList"),
@@ -210,17 +219,34 @@
                 btnNew: document.getElementById("fmBtnNew"),
                 btnDuplicate: document.getElementById("fmBtnDuplicate"),
                 btnDeleteMap: document.getElementById("fmBtnDeleteMap"),
-                setStatus(text, kind) {
-                    statusEl.textContent = text;
-                    statusEl.classList.toggle("is-saved", kind === "saved");
-                    statusEl.classList.toggle("is-dirty", kind === "dirty");
+                setStatus,
+                onPersist() {
+                    sync?.pushDebounced();
                 },
-            },
-            {
-                supabase: session.mode === "local" ? undefined : supabase,
-                supabaseUserId: session.mode === "local" ? undefined : session.user.id,
+            });
+
+            stageEl.style.pointerEvents = "none";
+
+            sync = createPlotweaveSupabaseDriver({
+                supabase,
+                userId: session.user.id,
+                getStore: () => app.getStore(),
+                setStore: (next) => app.setStore(next),
+                saveStore: (next) => app.saveStore(next),
+                refresh: () => app.reloadFromStore(app.getStore()),
+                setStatus,
+            });
+
+            try {
+                await sync.pullOnce();
+                app.seedIfEmpty();
+            } catch (err) {
+                console.error("Plotweave sync:", err);
+                setStatus("Ready (offline)", "saved");
+                app.seedIfEmpty();
+            } finally {
+                stageEl.style.pointerEvents = "";
             }
-        );
         }
     </script>
 </body>
