@@ -10,6 +10,7 @@ const LEGACY_STORAGE_KEY = "alysum-flow-mapper-v1";
 const MAX_HISTORY = 60;
 const MIN_ZOOM = 0.001;
 const MAX_ZOOM = 2.5;
+const MIN_EDIT_ZOOM = 0.35;
 
 export const SHAPE_DEFS = {
     start: {
@@ -572,6 +573,19 @@ export async function createPlotweave(ui, config = {}) {
         ui.zoomLabel.textContent = formatZoomLabel(zoom);
     }
 
+    function ensurePlacedNodeVisible(node) {
+        const { w, h } = nodeSize(node);
+        const cx = node.x + w / 2;
+        const cy = node.y + h / 2;
+        const rect = svg.getBoundingClientRect();
+        let zoom = diagram.camera.zoom;
+        if (zoom < MIN_EDIT_ZOOM) zoom = MIN_EDIT_ZOOM;
+        diagram.camera.zoom = zoom;
+        diagram.camera.x = rect.width / 2 - cx * zoom;
+        diagram.camera.y = rect.height / 2 - cy * zoom;
+        applyCamera();
+    }
+
     function setZoom(next, centerClient) {
         const z0 = diagram.camera.zoom;
         const z1 = clamp(next, MIN_ZOOM, MAX_ZOOM);
@@ -1007,6 +1021,7 @@ export async function createPlotweave(ui, config = {}) {
         placeType = null;
         tool = "select";
         updateToolUi();
+        ensurePlacedNodeVisible(node);
         markDirty({ refreshProps: true });
     }
 
@@ -1161,6 +1176,7 @@ export async function createPlotweave(ui, config = {}) {
 
         if (tool === "place" && placeType) {
             addNodeAt(placeType, worldPt.x, worldPt.y);
+            ev.preventDefault();
             return;
         }
 

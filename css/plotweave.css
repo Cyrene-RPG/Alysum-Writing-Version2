@@ -549,6 +549,11 @@ html, body {
     background: rgba(248, 113, 113, 0.15);
 }
 
+.fm-canvas-hit {
+    pointer-events: all;
+    cursor: inherit;
+}
+
 /* SVG node styles (applied via classes on SVG) */
 .fm-node-label {
     fill: #f8fafc;
