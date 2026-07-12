@@ -24,7 +24,7 @@
     <script src="js/alysum-appearance-boot.js"></script>
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
     <link rel="stylesheet" href="css/gradient-themes.css?v=7" />
-    <link rel="stylesheet" href="css/plotweave.css?v=9" />
+    <link rel="stylesheet" href="css/plotweave.css?v=10" />
     <script src="js/gradient-theme-sync.js" defer></script>
 </head>
 <body>
@@ -107,7 +107,8 @@
                 <div class="pw-empty" id="pwEmpty">
                     <div class="pw-empty-card">
                         <h3>Weave your story flow</h3>
-                        <p>Plot beats, quests, and systems like a process map. Pick a shape from the stencil or press <strong>New</strong> to start.</p>
+                        <p>Plot beats, quests, and systems like a process map. Start from a template or a blank canvas.</p>
+                        <button type="button" class="pw-btn pw-btn-primary" id="pwBtnBrowseTemplates" style="margin-top:14px">Choose a template</button>
                     </div>
                 </div>
                 <svg class="pw-stage" id="pwStage" tabindex="0" role="img" aria-label="Plotweave canvas">
@@ -160,10 +161,24 @@
         </div>
     </div>
 
+    <div class="pw-modal" id="pwNewMapModal" hidden aria-hidden="true" role="dialog" aria-labelledby="pwNewMapTitle" aria-modal="true">
+        <div class="pw-modal-backdrop" id="pwModalBackdrop"></div>
+        <div class="pw-modal-panel">
+            <header class="pw-modal-head">
+                <div>
+                    <h2 id="pwNewMapTitle">New map</h2>
+                    <p class="pw-hint">Pick a starter template or begin with a blank canvas.</p>
+                </div>
+                <button type="button" class="pw-btn pw-btn-ghost" id="pwModalClose" aria-label="Close">✕</button>
+            </header>
+            <div class="pw-modal-body" id="pwTemplateGrid"></div>
+        </div>
+    </div>
+
     <script type="module">
         import { supabase } from "./firebase.js";
         import { requireStudioSession } from "./js/studio-session.js?v=1";
-        import { createPlotweave } from "./js/plotweave.js?v=7";
+        import { createPlotweave } from "./js/plotweave.js?v=8";
         import { createPlotweaveSupabaseDriver } from "./js/plotweave-supabase.js?v=3";
 
         const session = await requireStudioSession(supabase, "plotweave.html");
@@ -199,6 +214,11 @@
                 btnNew: document.getElementById("pwBtnNew"),
                 btnDuplicate: document.getElementById("pwBtnDuplicate"),
                 btnDeleteMap: document.getElementById("pwBtnDeleteMap"),
+                btnBrowseTemplates: document.getElementById("pwBtnBrowseTemplates"),
+                newMapModal: document.getElementById("pwNewMapModal"),
+                templateBackdrop: document.getElementById("pwModalBackdrop"),
+                templateClose: document.getElementById("pwModalClose"),
+                templateGrid: document.getElementById("pwTemplateGrid"),
                 setStatus,
                 onPersist() {
                     sync?.pushDebounced();
@@ -219,7 +239,10 @@
 
             try {
                 await sync.pullOnce();
-                if (!app.getStore().diagrams.length) setStatus("Ready", "saved");
+                if (!app.getStore().diagrams.length) {
+                    setStatus("Ready", "saved");
+                    app.openNewMapModal();
+                }
             } catch (err) {
                 console.error("Plotweave sync:", err);
                 setStatus("Ready (offline)", "saved");

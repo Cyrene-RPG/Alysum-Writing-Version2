@@ -2,6 +2,8 @@
  * Plotweave — iGrafx-style SVG flowchart editor.
  */
 
+import { PLOTWEAVE_TEMPLATES, buildDiagramFromTemplate } from "./plotweave-templates.js";
+
 export const STORAGE_KEY = "alysum-plotweave-v2";
 
 const MAX_HISTORY = 50;
@@ -623,8 +625,13 @@ export function createPlotweave(ui) {
     }
 
     function createMap(title) {
+        createMapFromTemplate("blank", title);
+    }
+
+    function createMapFromTemplate(templateId, titleOverride) {
         if (dirty) persist(true);
-        const d = newDiagram(title);
+        const d = buildDiagramFromTemplate(templateId, uid, SHAPES);
+        if (titleOverride) d.title = titleOverride;
         store.diagrams.unshift(d);
         store.activeId = d.id;
         map = d;
@@ -634,12 +641,70 @@ export function createPlotweave(ui) {
         history = [];
         future = [];
         dirty = false;
+        ui.btnUndo.disabled = true;
+        ui.btnRedo.disabled = true;
         renderMapList();
         applyCamera();
         render();
         refreshProps();
-        setStatus("New map", "saved");
+        if (map.nodes.length) {
+            ui.empty?.classList.add("is-hidden");
+            requestAnimationFrame(() => fitView());
+        } else {
+            ui.empty?.classList.remove("is-hidden");
+        }
+        setStatus(templateId === "blank" ? "New map" : "Template added", "saved");
         ui.onPersist?.();
+        closeNewMapModal();
+    }
+
+    function renderTemplatePicker() {
+        if (!ui.templateGrid) return;
+        const byCategory = new Map();
+        for (const t of PLOTWEAVE_TEMPLATES) {
+            if (!byCategory.has(t.category)) byCategory.set(t.category, []);
+            byCategory.get(t.category).push(t);
+        }
+        const order = ["Basic", "Story", "Chapter", "Scene", "Character", "World"];
+        const cats = [...byCategory.keys()].sort((a, b) => {
+            const ia = order.indexOf(a);
+            const ib = order.indexOf(b);
+            return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
+        });
+        ui.templateGrid.innerHTML = cats.map((cat) => {
+            const items = byCategory.get(cat) || [];
+            return `<div class="pw-template-group">
+                <h4 class="pw-template-cat">${esc(cat)}</h4>
+                <div class="pw-template-cards">
+                ${items.map((t) => `
+                    <button type="button" class="pw-template-card${t.id === "blank" ? " is-blank" : ""}" data-template="${t.id}">
+                        <strong>${esc(t.title)}</strong>
+                        <span>${esc(t.description)}</span>
+                        ${t.nodeCount ? `<em>${t.nodeCount} shapes</em>` : `<em>Empty</em>`}
+                    </button>
+                `).join("")}
+                </div>
+            </div>`;
+        }).join("");
+    }
+
+    function openNewMapModal() {
+        if (!ui.newMapModal) {
+            createMapFromTemplate("blank", "Untitled map");
+            return;
+        }
+        renderTemplatePicker();
+        ui.newMapModal.hidden = false;
+        ui.newMapModal.setAttribute("aria-hidden", "false");
+        document.body.classList.add("pw-modal-open");
+        ui.templateGrid?.querySelector(".pw-template-card")?.focus();
+    }
+
+    function closeNewMapModal() {
+        if (!ui.newMapModal) return;
+        ui.newMapModal.hidden = true;
+        ui.newMapModal.setAttribute("aria-hidden", "true");
+        document.body.classList.remove("pw-modal-open");
     }
 
     function duplicateMap() {
@@ -877,9 +942,21 @@ export function createPlotweave(ui) {
     ui.btnZoomIn.addEventListener("click", () => setZoom((map?.camera.zoom || 1) * 1.15));
     ui.btnZoomOut.addEventListener("click", () => setZoom((map?.camera.zoom || 1) / 1.15));
     ui.btnFit.addEventListener("click", fitView);
-    ui.btnNew.addEventListener("click", () => createMap("Untitled map"));
+    ui.btnNew.addEventListener("click", () => openNewMapModal());
     ui.btnDuplicate.addEventListener("click", duplicateMap);
     ui.btnDeleteMap.addEventListener("click", deleteMap);
+
+    ui.btnBrowseTemplates?.addEventListener("click", () => openNewMapModal());
+    ui.templateClose?.addEventListener("click", () => closeNewMapModal());
+    ui.templateBackdrop?.addEventListener("click", () => closeNewMapModal());
+    ui.templateGrid?.addEventListener("click", (ev) => {
+        const card = ev.target.closest(".pw-template-card");
+        if (!card) return;
+        createMapFromTemplate(card.dataset.template);
+    });
+    ui.newMapModal?.addEventListener("keydown", (ev) => {
+        if (ev.key === "Escape") closeNewMapModal();
+    });
 
     ui.palette.addEventListener("click", (ev) => {
         const item = ev.target.closest(".pw-stencil-item");
@@ -908,5 +985,7 @@ export function createPlotweave(ui) {
         saveStore: (next) => saveStore(next ?? store),
         reloadFromStore,
         persist,
+        openNewMapModal,
+        createMapFromTemplate,
     };
 }
