@@ -121,7 +121,7 @@
                                 End
                             </button>
                         </div>
-                        <p class="fm-hint" style="margin-top:10px">Click a shape, then click the canvas to place it. Drag ports (dots) to connect — select a line to label it Yes / No. Drag corner handles to resize.</p>
+                        <p class="fm-hint" style="margin-top:10px">Click or drag a shape onto the canvas to place it. Drag ports (dots) to connect — select a line to label it Yes / No.</p>
                     </div>
                 </div>
             </aside>
@@ -182,7 +182,7 @@
     <script type="module">
         import { supabase } from "./firebase.js";
         import { requireStudioSession } from "./js/studio-session.js?v=1";
-        import { createPlotweave } from "./js/plotweave.js?v=10";
+        import { createPlotweave } from "./js/plotweave.js?v=11";
 
         const session = await requireStudioSession(supabase, "plotweave.html");
         if (!session) {

@@ -173,11 +173,31 @@ function loadStore() {
         }
         if (!raw) return { diagrams: [], activeId: null };
         const parsed = JSON.parse(raw);
-        if (!parsed || !Array.isArray(parsed.diagrams)) return { diagrams: [], activeId: null };
-        return parsed;
+        return normalizeStore(parsed);
     } catch {
         return { diagrams: [], activeId: null };
     }
+}
+
+function normalizeDiagram(d) {
+    if (!d || typeof d !== "object") return emptyDiagram();
+    if (!Array.isArray(d.nodes)) d.nodes = [];
+    if (!Array.isArray(d.edges)) d.edges = [];
+    if (!d.camera || typeof d.camera !== "object") d.camera = { x: 0, y: 0, zoom: 1 };
+    if (typeof d.camera.x !== "number" || !Number.isFinite(d.camera.x)) d.camera.x = 0;
+    if (typeof d.camera.y !== "number" || !Number.isFinite(d.camera.y)) d.camera.y = 0;
+    if (typeof d.camera.zoom !== "number" || !Number.isFinite(d.camera.zoom) || d.camera.zoom <= 0) {
+        d.camera.zoom = 1;
+    }
+    return d;
+}
+
+function normalizeStore(store) {
+    if (!store || !Array.isArray(store.diagrams)) return { diagrams: [], activeId: null };
+    return {
+        activeId: typeof store.activeId === "string" ? store.activeId : null,
+        diagrams: store.diagrams.map((d) => normalizeDiagram(d)),
+    };
 }
 
 function saveStore(store) {
@@ -446,6 +466,21 @@ export async function createPlotweave(ui, config = {}) {
     let raf = 0;
     let autoSaveTimer = null;
     const AUTO_SAVE_MS = 1500;
+    let palettePlace = null;
+
+    function isOverCanvas(clientX, clientY) {
+        const wrap = svg.closest(".fm-stage-wrap");
+        if (!wrap) return false;
+        const r = wrap.getBoundingClientRect();
+        return clientX >= r.left && clientX <= r.right && clientY >= r.top && clientY <= r.bottom;
+    }
+
+    function commitDiagram() {
+        const idx = store.diagrams.findIndex((d) => d.id === diagram.id);
+        if (idx >= 0) store.diagrams[idx] = diagram;
+        else store.diagrams.push(diagram);
+        store.activeId = diagram.id;
+    }
 
     function scheduleAutoSave() {
         if (autoSaveTimer) clearTimeout(autoSaveTimer);
@@ -475,7 +510,7 @@ export async function createPlotweave(ui, config = {}) {
             storageKey: STORAGE_KEY,
             getStore: () => store,
             setStore: (next) => {
-                store = next;
+                store = normalizeStore(next);
             },
             saveStore,
             refresh: () => {},
@@ -483,6 +518,8 @@ export async function createPlotweave(ui, config = {}) {
         });
         await remoteDriver.pullOnce();
     }
+
+    store = normalizeStore(store);
 
     if (!store.diagrams.length) {
         const sample = samplePlotMap();
@@ -521,10 +558,7 @@ export async function createPlotweave(ui, config = {}) {
             autoSaveTimer = null;
         }
         diagram.updatedAt = Date.now();
-        const idx = store.diagrams.findIndex((d) => d.id === diagram.id);
-        if (idx >= 0) store.diagrams[idx] = diagram;
-        else store.diagrams.push(diagram);
-        store.activeId = diagram.id;
+        commitDiagram();
         writeStore();
         dirty = false;
         if (mode === "auto") {
@@ -1000,6 +1034,7 @@ export async function createPlotweave(ui, config = {}) {
     function addNodeAt(type, wx, wy) {
         const def = SHAPE_DEFS[type] || SHAPE_DEFS.process;
         const { w, h } = defaultShapeSize(type);
+        if (!Array.isArray(diagram.nodes)) diagram.nodes = [];
         pushHistory();
         const node = {
             id: uid("n"),
@@ -1013,19 +1048,25 @@ export async function createPlotweave(ui, config = {}) {
             h,
         };
         diagram.nodes.push(node);
+        commitDiagram();
         selectedIds = new Set([node.id]);
         selectedEdgeId = null;
-        placeType = null;
-        tool = "select";
         updateToolUi();
         markDirty({ refreshProps: true });
+        render();
+        ui.setStatus?.(`Placed ${def.label} — click again or pick another shape`, "saved");
     }
 
     function setTool(next, type = null) {
         tool = next;
         placeType = type;
         connecting = null;
+        palettePlace = null;
         updateToolUi();
+        if (tool === "place" && placeType) {
+            const label = SHAPE_DEFS[placeType]?.label || placeType;
+            ui.setStatus?.(`Click or drag ${label} onto the canvas`, "saved");
+        }
         scheduleRender();
     }
 
@@ -1172,6 +1213,7 @@ export async function createPlotweave(ui, config = {}) {
 
         if (tool === "place" && placeType) {
             addNodeAt(placeType, worldPt.x, worldPt.y);
+            if (palettePlace) palettePlace.placed = true;
             ev.preventDefault();
             return;
         }
@@ -1363,6 +1405,12 @@ export async function createPlotweave(ui, config = {}) {
     }
 
     function onPointerUp(ev) {
+        if (palettePlace?.armed && !palettePlace.placed && isOverCanvas(ev.clientX, ev.clientY)) {
+            const worldPt = screenToWorld(ev.clientX, ev.clientY);
+            addNodeAt(palettePlace.type, worldPt.x, worldPt.y);
+        }
+        palettePlace = null;
+
         if (!drag) return;
         if (drag.mode === "lasso" && lasso) {
             const x1 = Math.min(lasso.x0, lasso.x1);
@@ -1457,6 +1505,7 @@ export async function createPlotweave(ui, config = {}) {
         if (ev.key === "Escape") {
             connecting = null;
             placeType = null;
+            palettePlace = null;
             tool = "select";
             selectedIds.clear();
             selectedEdgeId = null;
@@ -1509,10 +1558,14 @@ export async function createPlotweave(ui, config = {}) {
         markDirty();
     });
 
-    ui.palette?.addEventListener("click", (ev) => {
+    ui.palette?.addEventListener("pointerdown", (ev) => {
         const item = ev.target.closest(".fm-palette-item");
-        if (!item) return;
-        setTool("place", item.dataset.type);
+        if (!item || ev.button !== 0) return;
+        const type = item.dataset.type;
+        if (!type) return;
+        setTool("place", type);
+        palettePlace = { type, armed: true, placed: false };
+        ev.preventDefault();
     });
 
     ui.diagramList.addEventListener("click", (ev) => {
