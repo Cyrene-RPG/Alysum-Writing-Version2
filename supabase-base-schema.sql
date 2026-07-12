@@ -68,6 +68,7 @@ CREATE TABLE IF NOT EXISTS public.books (
   sections jsonb NOT NULL DEFAULT '{}'::jsonb,
   is_published boolean NOT NULL DEFAULT false,
   library_type text,
+  media_format text NOT NULL DEFAULT 'novel',
   published_chapter_ids jsonb NOT NULL DEFAULT '[]'::jsonb,
   publish_meta jsonb NOT NULL DEFAULT '{}'::jsonb
 );

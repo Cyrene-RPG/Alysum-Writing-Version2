@@ -208,6 +208,96 @@
         color: rgba(255, 255, 255, 0.78);
         border-left-color: rgba(255, 255, 255, 0.58);
     }
+    .comic-workspace { display: none; }
+    body.comic-mode .comic-workspace { display: block; }
+    body.comic-mode .editor,
+    body.comic-mode #toolbar,
+    body.comic-mode .bg-bar,
+    body.comic-mode .fr-bar { display: none !important; }
+    body.comic-mode .chapter-title { margin-bottom: 18px; }
+    body.comic-mode .bottom-meta { margin-top: 18px; }
+    .comic-toolbar {
+        display: none;
+        min-height: 54px;
+        background: var(--toolbar-bg);
+        border-bottom: 1px solid var(--border);
+        align-items: center;
+        gap: 10px;
+        padding: 8px 12px;
+        flex-wrap: wrap;
+    }
+    body.comic-mode .comic-toolbar { display: flex; }
+    .comic-upload-btn, .comic-action-btn {
+        height: 36px;
+        border: 1px solid var(--border);
+        background: var(--topbar-bg);
+        border-radius: 10px;
+        color: var(--page-text);
+        font-size: 14px;
+        font-weight: 700;
+        padding: 0 14px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .comic-upload-btn input { display: none; }
+    .comic-action-btn.danger { background: var(--danger); border-color: var(--danger); color: #fff; }
+    .comic-page-panel { max-width: 720px; margin: 0 auto; }
+    .comic-page-preview {
+        position: relative;
+        min-height: 280px;
+        border: 1px dashed var(--border);
+        border-radius: 14px;
+        background: rgba(0, 0, 0, 0.03);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+    body.dark .comic-page-preview { background: rgba(255, 255, 255, 0.04); }
+    .comic-page-preview img {
+        width: 100%;
+        height: auto;
+        display: block;
+        border-radius: 12px;
+    }
+    .comic-page-preview img.hidden { display: none; }
+    .comic-page-empty {
+        padding: 28px 20px;
+        text-align: center;
+        color: var(--page-subtle);
+        font-size: 15px;
+        line-height: 1.5;
+    }
+    .comic-page-empty.hidden { display: none; }
+    .comic-caption-wrap { margin-top: 16px; }
+    .comic-caption-label {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--page-subtle);
+    }
+    .comic-caption-input {
+        width: 100%;
+        box-sizing: border-box;
+        min-height: 84px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: var(--page-bg);
+        color: var(--page-text);
+        font-size: 15px;
+        line-height: 1.5;
+        padding: 12px 14px;
+        resize: vertical;
+        font-family: inherit;
+    }
+    .comic-upload-status {
+        font-size: 13px;
+        color: var(--page-subtle);
+        font-weight: 700;
+    }
     .chapter-number { display: none; text-align: center; font-family: Georgia, serif; color: var(--page-subtle); font-size: 18px; margin-bottom: 22px; }
     .chapter-title { text-align: center; font-family: Georgia, "Times New Roman", serif; color: var(--page-text); font-size: 28px; font-weight: 700; margin-bottom: 40px; outline: none; }
     .editor { min-height: 440px; outline: none; font-family: Georgia, "Times New Roman", serif; font-size: 20px; line-height: 1.7; letter-spacing: 0.2px; color: var(--page-text); white-space: normal; word-break: break-word; }
@@ -432,8 +522,8 @@
         </div>
         <div class="sidebar-book-title" id="sidebarBookTitle">Loading...</div>
         <div class="sidebar-meta">
-            <div><span id="totalWords">0</span> words</div>
-            <div><span id="chapterCount">0</span> chapters</div>
+            <div><span id="totalWords">0</span> <span id="sidebarMetaPrimaryLabel">words</span></div>
+            <div><span id="chapterCount">0</span> <span id="sidebarMetaSecondaryLabel">chapters</span></div>
         </div>
         <div class="sidebar-actions">
             <button class="pill-btn primary" id="addChapterBtn" type="button" data-tip="Add a new body chapter">Add Chapter</button>
@@ -446,9 +536,9 @@
         </div>
     </div>
     <div class="manuscript">
-        <div class="group"><div class="group-header" data-group="front" data-tip="Collapse or expand front matter"><div class="left"><span class="caret" id="caret-front">▼</span>Front matter</div><div>edit</div></div><div class="group-body" id="group-front"></div></div>
-        <div class="group"><div class="group-header" data-group="body" data-tip="Collapse or expand body chapters"><div class="left"><span class="caret" id="caret-body">▼</span>Body</div><div>edit</div></div><div class="group-body" id="group-body"></div></div>
-        <div class="group"><div class="group-header" data-group="back" data-tip="Collapse or expand back matter"><div class="left"><span class="caret" id="caret-back">▼</span>Back matter</div><div>edit</div></div><div class="group-body" id="group-back"></div></div>
+        <div class="group" data-group-section="front"><div class="group-header" data-group="front" data-tip="Collapse or expand front matter"><div class="left"><span class="caret" id="caret-front">▼</span>Front matter</div><div>edit</div></div><div class="group-body" id="group-front"></div></div>
+        <div class="group" data-group-section="body"><div class="group-header" data-group="body" data-tip="Collapse or expand body chapters"><div class="left"><span class="caret" id="caret-body">▼</span>Body</div><div>edit</div></div><div class="group-body" id="group-body"></div></div>
+        <div class="group" data-group-section="back"><div class="group-header" data-group="back" data-tip="Collapse or expand back matter"><div class="left"><span class="caret" id="caret-back">▼</span>Back matter</div><div>edit</div></div><div class="group-body" id="group-back"></div></div>
     </div>
     <div class="side-footer"><span id="footerWords">0</span> words</div>
 </div><div class="overlay hidden" id="overlay"></div><div class="main">
@@ -471,7 +561,7 @@
             <span class="topbar-tip" data-tip="Delete entire book"><button class="icon-btn danger" id="deleteBookTopBtn" type="button" aria-label="Delete book">🗑</button></span>
             <div class="save-status" id="saveStatus" data-tip="Save status" aria-live="polite">Loading...</div>
         </div>
-    </div><div class="toolbar">
+    </div><div class="toolbar" id="toolbar">
     <button class="tool-btn" type="button" data-cmd="bold" data-tip="Bold">B</button>
     <button class="tool-btn" type="button" data-cmd="italic" data-tip="Italic"><em>I</em></button>
     <button class="tool-btn" type="button" data-cmd="underline" data-tip="Underline"><u>U</u></button>
@@ -485,6 +575,11 @@
     <button class="tool-btn" type="button" id="backgroundBtn" data-tip="Set editor background image">Background</button>
     <div class="toolbar-spacer"></div>
     <span class="sprint-anchor" id="sprintAnchor"><button class="sprint-btn" id="sprintToolbarBtn" type="button" data-tip="Writing sprint timer" aria-label="Sprint timer">⏱ Sprint</button></span>
+</div>
+<div class="comic-toolbar" id="comicToolbar" aria-label="Comic page tools">
+    <label class="comic-upload-btn" for="comicPageUploadInput">Upload page image<input id="comicPageUploadInput" type="file" accept="image/png,image/jpeg,image/webp,image/gif" /></label>
+    <button type="button" class="comic-action-btn danger" id="comicRemoveImageBtn">Remove image</button>
+    <span class="comic-upload-status" id="comicUploadStatus" aria-live="polite"></span>
 </div>
 <div class="bg-bar" id="backgroundBar" aria-label="Editor background image">
     <label class="bg-field" style="flex:0 1 180px;"><span class="bg-label">Fit</span><select class="bg-input" id="backgroundFitSelect" aria-label="Background image fit"><option value="cover">Cover</option><option value="contain">Contain</option><option value="original">Original</option><option value="tile">Tile</option></select></label>
@@ -518,7 +613,19 @@
             <div class="chapter-number" id="chapterNumber">1</div>
             <div class="chapter-title" id="chapterTitle" contenteditable="true">Chapter 1</div>
             <div class="editor" id="editor" contenteditable="true" data-placeholder="Begin writing here..."></div>
-            <div class="bottom-meta"><span id="chapterWords">0</span> chapter words • <span id="bottomTotalWords">0</span> total words</div>
+            <div class="comic-workspace" id="comicWorkspace">
+                <div class="comic-page-panel">
+                    <div class="comic-page-preview" id="comicPagePreview">
+                        <img id="comicPageImage" class="hidden" alt="Comic page" />
+                        <div class="comic-page-empty" id="comicPageEmpty">Upload a page image using the toolbar above.</div>
+                    </div>
+                    <div class="comic-caption-wrap">
+                        <label class="comic-caption-label" for="comicCaptionInput">Caption / notes (optional)</label>
+                        <textarea id="comicCaptionInput" class="comic-caption-input" rows="3" placeholder="Optional caption for this page..."></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="bottom-meta"><span id="chapterWords">0</span> <span id="bottomMetaLabel">chapter words</span> • <span id="bottomTotalWords">0</span> <span id="bottomTotalLabel">total words</span></div>
         </div>
     </div>
 </div>
@@ -550,6 +657,13 @@
     import { supabase } from "./firebase.js";
     import { isDesktopLocalHost, goToLogin } from "./js/desktop-auth.js?v=1";
     import { alysumPrompt } from "./js/alysum-prompt.js?v=1";
+    import {
+        isComicFormat,
+        mediaFormatLabel,
+        normalizeMediaFormat,
+        countComicPages,
+        countComicPagesWithImages,
+    } from "./js/book-media-format.js?v=1";
     import {
         LOCAL_GUEST_USER,
         LOCAL_VAULT_STORAGE_KEY,
@@ -686,6 +800,16 @@ function rememberBookId(id) {
     const backgroundClearBtn = document.getElementById("backgroundClearBtn");
     const backgroundCloseBtn = document.getElementById("backgroundCloseBtn");
     const backgroundStatus = document.getElementById("backgroundStatus");
+    const comicPageUploadInput = document.getElementById("comicPageUploadInput");
+    const comicRemoveImageBtn = document.getElementById("comicRemoveImageBtn");
+    const comicPageImage = document.getElementById("comicPageImage");
+    const comicPageEmpty = document.getElementById("comicPageEmpty");
+    const comicCaptionInput = document.getElementById("comicCaptionInput");
+    const comicUploadStatus = document.getElementById("comicUploadStatus");
+    const bottomMetaLabel = document.getElementById("bottomMetaLabel");
+    const bottomTotalLabel = document.getElementById("bottomTotalLabel");
+    const sidebarMetaPrimaryLabel = document.getElementById("sidebarMetaPrimaryLabel");
+    const sidebarMetaSecondaryLabel = document.getElementById("sidebarMetaSecondaryLabel");
 
     let currentUser = null;
     let currentBook = null;
@@ -744,7 +868,90 @@ function rememberBookId(id) {
 
     function normalizeChapter(raw, fallbackTitle = "Untitled") {
         const chapter = safeObject(raw, {});
-        return { id: safeString(chapter.id, generateId()), title: safeString(chapter.title, fallbackTitle), content: safeString(chapter.content, "") };
+        return {
+            id: safeString(chapter.id, generateId()),
+            title: safeString(chapter.title, fallbackTitle),
+            content: safeString(chapter.content, ""),
+            imageUrl: safeString(chapter.imageUrl ?? chapter.image_url, ""),
+        };
+    }
+
+    function isCurrentBookComic() {
+        return isComicFormat(currentBook?.mediaFormat);
+    }
+
+    function applyComicModeUI() {
+        const comic = isCurrentBookComic();
+        document.body.classList.toggle("comic-mode", comic);
+        if (addChapterBtn) addChapterBtn.textContent = comic ? "Add Page" : "Add Chapter";
+        if (deleteChapterBtn) deleteChapterBtn.textContent = comic ? "Delete Page" : "Delete Chapter";
+        document.querySelectorAll(".group[data-group-section]").forEach((group) => {
+            const section = group.dataset.groupSection;
+            group.classList.toggle("hidden", comic && section !== "body");
+        });
+        const bodyHeader = document.querySelector('.group-header[data-group="body"] .left');
+        if (bodyHeader) {
+            const caret = bodyHeader.querySelector(".caret");
+            bodyHeader.innerHTML = "";
+            if (caret) bodyHeader.appendChild(caret);
+            bodyHeader.append(comic ? "Pages" : "Body");
+        }
+        const footer = document.querySelector(".side-footer");
+        if (footer && !footer.dataset.baseText) footer.dataset.baseText = footer.innerHTML;
+        if (footer) {
+            const uploaded = countComicPagesWithImages(currentBook?.sections);
+            const pageCount = countComicPages(currentBook?.sections);
+            footer.innerHTML = comic
+                ? `${uploaded} of ${pageCount} pages uploaded`
+                : (footer.dataset.baseText || `<span id="footerWords">0</span> words`);
+        }
+        if (sidebarMetaPrimaryLabel) sidebarMetaPrimaryLabel.textContent = comic ? "pages uploaded" : "words";
+        if (sidebarMetaSecondaryLabel) sidebarMetaSecondaryLabel.textContent = comic ? "pages" : "chapters";
+    }
+
+    function syncComicPageView(ch) {
+        const page = safeObject(ch, {});
+        const imageUrl = safeString(page.imageUrl, "").trim();
+        if (comicPageImage) {
+            if (imageUrl) {
+                comicPageImage.src = imageUrl;
+                comicPageImage.classList.remove("hidden");
+            } else {
+                comicPageImage.removeAttribute("src");
+                comicPageImage.classList.add("hidden");
+            }
+        }
+        if (comicPageEmpty) comicPageEmpty.classList.toggle("hidden", !!imageUrl);
+        if (comicCaptionInput) comicCaptionInput.value = safeString(page.content, "").replace(/<[^>]+>/g, "").trim();
+    }
+
+    function syncCurrentComicPageFromUI() {
+        if (!isCurrentBookComic()) return;
+        const ch = currentChapter();
+        if (comicCaptionInput) ch.content = comicCaptionInput.value.trim();
+    }
+
+    async function uploadComicPageImage(file) {
+        if (!file || !file.type.startsWith("image/")) throw new Error("Please upload an image file.");
+        if (isLocalStudio) {
+            return await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = () => reject(reader.error || new Error("Could not read image."));
+                reader.readAsDataURL(file);
+            });
+        }
+        if (!currentUser?.id) throw new Error("You must be signed in to upload pages.");
+        const pageId = currentChapter()?.id || generateId();
+        const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
+        const path = `${currentUser.id}/${bookId}/${pageId}-${Date.now()}.${ext}`;
+        const { error: uploadError } = await supabase.storage.from("comic-pages").upload(path, file, {
+            upsert: true,
+            contentType: file.type,
+        });
+        if (uploadError) throw uploadError;
+        const { data: publicData } = supabase.storage.from("comic-pages").getPublicUrl(path);
+        return publicData?.publicUrl || "";
     }
 
     function normalizeSections(rawSections) {
@@ -793,6 +1000,7 @@ function rememberBookId(id) {
             updated: safeNumber(data.updated, Date.now()),
             isPublished: !!(data.isPublished ?? data.is_published),
             libraryType: safeString(data.libraryType ?? data.library_type, ""),
+            mediaFormat: normalizeMediaFormat(data.mediaFormat ?? data.media_format),
             publishedChapterIds: safeArray(data.publishedChapterIds ?? data.published_chapter_ids, []).filter(item => typeof item === "string"),
             publishMeta: normalizePublishMetaForBook(data.publishMeta ?? data.publish_meta)
         };
@@ -806,6 +1014,7 @@ function rememberBookId(id) {
             updated: Date.now(),
             is_published: !!book.isPublished,
             library_type: book.libraryType || null,
+            media_format: book.mediaFormat || "novel",
             published_chapter_ids: book.publishedChapterIds || [],
             publish_meta: book.publishMeta || {}
         };
@@ -1153,15 +1362,30 @@ function rememberBookId(id) {
         return list[currentChapterIndex];
     }
     function syncStats() {
-        if (document.activeElement === editor) syncCurrentChapterFromEditor();
+        if (isCurrentBookComic()) syncCurrentComicPageFromUI();
+        else if (document.activeElement === editor) syncCurrentChapterFromEditor();
         const ch = currentChapter();
-        const chWords = countWords(ch.content || "");
         const total = totalWords();
-        chapterWordsEl.textContent = chWords;
-        totalWordsEl.textContent = total;
-        bottomTotalWordsEl.textContent = total;
-        footerWordsEl.textContent = total;
-        chapterCountEl.textContent = allChaptersFlat().length;
+        if (isCurrentBookComic()) {
+            const pageCount = countComicPages(currentBook?.sections);
+            const uploaded = countComicPagesWithImages(currentBook?.sections);
+            chapterWordsEl.textContent = ch.imageUrl ? "1" : "0";
+            if (bottomMetaLabel) bottomMetaLabel.textContent = "page image";
+            totalWordsEl.textContent = uploaded;
+            chapterCountEl.textContent = pageCount;
+            footerWordsEl.textContent = uploaded;
+            bottomTotalWordsEl.textContent = uploaded;
+            if (bottomTotalLabel) bottomTotalLabel.textContent = `of ${pageCount} pages uploaded`;
+        } else {
+            const chWords = countWords(ch.content || "");
+            chapterWordsEl.textContent = chWords;
+            if (bottomMetaLabel) bottomMetaLabel.textContent = "chapter words";
+            totalWordsEl.textContent = total;
+            bottomTotalWordsEl.textContent = total;
+            footerWordsEl.textContent = total;
+            if (bottomTotalLabel) bottomTotalLabel.textContent = "total words";
+            chapterCountEl.textContent = allChaptersFlat().length;
+        }
     }
     function renderTitles() { const title = currentBook.title || "Untitled Book"; topBookTitle.textContent = title; sidebarBookTitle.textContent = title; }
     function escapeHtml(str) { return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
@@ -1339,7 +1563,7 @@ function rememberBookId(id) {
         if (!list.length) {
             const empty = document.createElement("div");
             empty.className = "empty-slot";
-            empty.textContent = "Drag chapters here";
+            empty.textContent = isCurrentBookComic() ? "Add pages here" : "Drag chapters here";
             mount.appendChild(empty);
             wireEmptySectionDrop(empty, section);
             return;
@@ -1350,7 +1574,8 @@ function rememberBookId(id) {
             item.dataset.section = section;
             item.dataset.index = String(index);
             const visibleNumber = section === "body" ? index + 1 : "";
-            item.innerHTML = `<div class="chapter-num">${visibleNumber}</div><div class="chapter-name">${escapeHtml(ch.title || "Untitled")}</div><div class="chapter-drag" draggable="true" data-tip="Drag to reorder chapter" aria-label="Drag to reorder">⋮⋮</div>`;
+            const pageMark = isCurrentBookComic() && ch.imageUrl ? " 🖼" : "";
+            item.innerHTML = `<div class="chapter-num">${visibleNumber}</div><div class="chapter-name">${escapeHtml(ch.title || "Untitled")}${pageMark}</div><div class="chapter-drag" draggable="true" data-tip="Drag to reorder chapter" aria-label="Drag to reorder">⋮⋮</div>`;
             const handle = item.querySelector(".chapter-drag");
 
             item.addEventListener("click", () => {
@@ -1449,15 +1674,25 @@ function rememberBookId(id) {
 
     function loadChapter(section, index, rerender = true) {
         if (!suppressResumeSave) flushWriterResumeSave();
+        if (isCurrentBookComic()) syncCurrentComicPageFromUI();
+        else syncCurrentChapterFromEditor();
         currentSection = section;
         currentChapterIndex = index;
         const ch = currentChapter();
-        chapterNumber.textContent = section === "body" ? index + 1 : "";
-        chapterTitle.textContent = ch.title || "Untitled";
-        editor.innerHTML = cleanEditorHtml(ch.content || "");
-        applyEditorStyle();
+        if (isCurrentBookComic()) {
+            chapterNumber.textContent = section === "body" ? index + 1 : "";
+            chapterTitle.textContent = ch.title || `Page ${index + 1}`;
+            syncComicPageView(ch);
+            if (comicUploadStatus) comicUploadStatus.textContent = "";
+        } else {
+            chapterNumber.textContent = section === "body" ? index + 1 : "";
+            chapterTitle.textContent = ch.title || "Untitled";
+            editor.innerHTML = cleanEditorHtml(ch.content || "");
+            applyEditorStyle();
+        }
         if (rerender) renderAllSections();
         syncStats();
+        applyComicModeUI();
         applyPendingResumeViewport();
         frOnChapterChanged();
     }
@@ -1664,14 +1899,15 @@ function rememberBookId(id) {
         if (!bodyChapters.length) {
             const empty = document.createElement("div");
             empty.className = "empty-slot";
-            empty.textContent = "No body chapters available.";
+            empty.textContent = isCurrentBookComic() ? "No pages available." : "No body chapters available.";
             publishList.appendChild(empty);
             return;
         }
         bodyChapters.forEach((ch, index) => {
             const row = document.createElement("div");
             row.className = "publish-row";
-            row.innerHTML = `<input type="checkbox" id="publish-ch-${index}" data-id="${ch.id}" checked><label for="publish-ch-${index}">${escapeHtml(ch.title || "Untitled")}</label>`;
+            const suffix = isCurrentBookComic() && ch.imageUrl ? " (has image)" : isCurrentBookComic() ? " (no image)" : "";
+            row.innerHTML = `<input type="checkbox" id="publish-ch-${index}" data-id="${ch.id}" checked><label for="publish-ch-${index}">${escapeHtml(ch.title || "Untitled")}${suffix}</label>`;
             publishList.appendChild(row);
         });
     }
@@ -1741,13 +1977,21 @@ function rememberBookId(id) {
                     author: libraryAuthor,
                     isAnonymous: !!publishMeta.isAnonymous,
                     type: currentBook.libraryType,
+                    mediaFormat: currentBook.mediaFormat || "novel",
                     genres: publishMeta.genres,
                     rating: publishMeta.rating,
                     warnings: publishMeta.warnings,
                     summary: publishMeta.summary,
                     extraTags: publishMeta.extraTags,
                     coverUrl: publishMeta.coverUrl || safeString(existingLibrary?.data?.coverUrl || existingLibrary?.data?.cover_url || existingLibrary?.coverUrl, ""),
-                    chapters: selectedChapterObjects.map((ch, index) => ({ id: ch.id, order: index + 1, title: ch.title || `Chapter ${index + 1}`, content: ch.content || "", words: countWords(ch.content || "") })),
+                    chapters: selectedChapterObjects.map((ch, index) => ({
+                        id: ch.id,
+                        order: index + 1,
+                        title: ch.title || (isCurrentBookComic() ? `Page ${index + 1}` : `Chapter ${index + 1}`),
+                        content: ch.content || "",
+                        imageUrl: ch.imageUrl || "",
+                        words: countWords(ch.content || ""),
+                    })),
                     publishedChapterIds: chapterIds,
                     chapterCount: selectedChapterObjects.length,
                     words: wordCount,
@@ -1820,7 +2064,8 @@ function rememberBookId(id) {
     async function saveBook(doneText = "Saved") {
         if (!currentUser || !bookId || !currentBook) return;
         setSaveStatus("Saving...");
-        if (document.activeElement === editor) cleanAndStoreCurrentChapterFromEditor();
+        if (isCurrentBookComic()) syncCurrentComicPageFromUI();
+        else if (document.activeElement === editor) cleanAndStoreCurrentChapterFromEditor();
         const nextWords = totalWords();
         const prevPersisted = persistedBookWordCount;
         const patch = toDbBookPatch(currentBook);
@@ -1874,10 +2119,23 @@ function rememberBookId(id) {
     }
 
     async function addChapterTo(section) {
+        if (isCurrentBookComic() && section === "body") {
+            const nextIndex = currentBook.sections.body.length + 1;
+            currentBook.sections[section].push({
+                id: generateId(),
+                title: `Page ${nextIndex}`,
+                content: "",
+                imageUrl: "",
+            });
+            renderAllSections();
+            loadChapter(section, currentBook.sections[section].length - 1, false);
+            scheduleSave();
+            return;
+        }
         const label = section === "body" ? "Chapter name?" : "Section name?";
         const name = await alysumPrompt(label);
         if (!name) return;
-        currentBook.sections[section].push({ id: generateId(), title: name, content: "" });
+        currentBook.sections[section].push({ id: generateId(), title: name, content: "", imageUrl: "" });
         renderAllSections();
         loadChapter(section, currentBook.sections[section].length - 1, false);
         scheduleSave();
@@ -1994,6 +2252,49 @@ function rememberBookId(id) {
     populateEditorFontSelect();
 
     addChapterBtn.addEventListener("click", () => addChapterTo("body"));
+
+    comicCaptionInput?.addEventListener("input", () => {
+        if (!isCurrentBookComic()) return;
+        syncCurrentComicPageFromUI();
+        scheduleSave();
+    });
+
+    comicPageUploadInput?.addEventListener("change", async () => {
+        const file = comicPageUploadInput.files?.[0];
+        comicPageUploadInput.value = "";
+        if (!file || !isCurrentBookComic()) return;
+        if (comicUploadStatus) comicUploadStatus.textContent = "Uploading…";
+        try {
+            syncCurrentComicPageFromUI();
+            const imageUrl = await uploadComicPageImage(file);
+            currentChapter().imageUrl = imageUrl;
+            syncComicPageView(currentChapter());
+            renderAllSections();
+            await saveBook("Page saved");
+            if (comicUploadStatus) comicUploadStatus.textContent = "Page uploaded.";
+        } catch (err) {
+            console.error(err);
+            if (comicUploadStatus) comicUploadStatus.textContent = err?.message || "Upload failed.";
+            setSaveStatus("Upload failed");
+        }
+    });
+
+    comicRemoveImageBtn?.addEventListener("click", async () => {
+        if (!isCurrentBookComic()) return;
+        if (!currentChapter()?.imageUrl) return;
+        if (!confirm("Remove the image from this page?")) return;
+        syncCurrentComicPageFromUI();
+        currentChapter().imageUrl = "";
+        syncComicPageView(currentChapter());
+        renderAllSections();
+        try {
+            await saveBook("Page saved");
+            if (comicUploadStatus) comicUploadStatus.textContent = "Image removed.";
+        } catch (err) {
+            console.error(err);
+            setSaveStatus("Save failed");
+        }
+    });
     quickAddBtn.addEventListener("click", () => addChapterTo("body"));
     deleteBookBtn.addEventListener("click", deleteBook);
     deleteBookTopBtn.addEventListener("click", deleteBook);
@@ -2296,6 +2597,7 @@ async function loadBook() {
             await migrateBookIfNeeded();
             renderTitles();
             renderAllSections();
+            applyComicModeUI();
             suppressResumeSave = true;
             openInitialChapterFromResume(readWriterResume(bookId));
             suppressResumeSave = false;

@@ -171,6 +171,7 @@
                 <button class="nav-btn" data-filter="fiction" type="button">Fiction</button>
                 <button class="nav-btn" data-filter="fanfiction" type="button">Fanfiction</button>
                 <button class="nav-btn" data-filter="nonfiction" type="button">Nonfiction</button>
+                <button class="nav-btn" data-filter="comics" type="button">Comics</button>
             </div>
             <div class="search-wrap">
                 <input class="search-input" id="searchInput" type="text" placeholder="Search by title, author, summary, genre, tag, or warning...">
@@ -191,6 +192,11 @@
     import { publicDisplayNameFromUserData } from "./js/profile-display.js?v=1";
     import { wireLogoutButtons } from "./js/auth-logout.js?v=2";
     import { openLibraryReportModal } from "./js/library-report-modal.js?v=1";
+    import {
+        isComicFormat,
+        mediaFormatLabel,
+        normalizeMediaFormat,
+    } from "./js/book-media-format.js?v=1";
 
     const navButtons = document.querySelectorAll(".nav-btn");
     const searchInput = document.getElementById("searchInput");
@@ -320,6 +326,7 @@
             title: safeString(data.title, "Untitled"),
             author: safeString(data.author, "unknown"),
             type: safeString(data.type, "fiction"),
+            mediaFormat: normalizeMediaFormat(data.mediaFormat ?? data.media_format),
             rating: safeString(data.rating, ""),
             summary: safeString(data.summary, ""),
             coverUrl: safeString(data.coverUrl || data.cover_url, ""),
@@ -381,21 +388,31 @@
 
     function matchesSearch(book, q) {
         if (!q) return true;
-        const haystack = [book.title, book.author, book.summary, ...book.genres, ...book.tags, ...book.warnings, book.rating, book.type].join(" ").toLowerCase();
+        const haystack = [book.title, book.author, book.summary, mediaFormatLabel(book.mediaFormat), ...book.genres, ...book.tags, ...book.warnings, book.rating, book.type].join(" ").toLowerCase();
         return haystack.includes(q);
+    }
+
+    function matchesShelfFilter(book) {
+        if (currentFilter === "all") return true;
+        if (currentFilter === "comics") return isComicFormat(book.mediaFormat);
+        return book.type === currentFilter;
     }
 
     function filteredBooks() {
         const q = searchInput.value.trim().toLowerCase();
         return allBooks
             .filter(book => book.isPublished === true)
-            .filter(book => currentFilter === "all" ? true : book.type === currentFilter)
+            .filter(book => matchesShelfFilter(book))
             .filter(book => matchesSearch(book, q))
             .sort((a, b) => (b.updated || 0) - (a.updated || 0));
     }
 
     function setResultsText(count) {
-        const filterLabel = currentFilter === "all" ? "all shelves" : currentFilter.charAt(0).toUpperCase() + currentFilter.slice(1);
+        const filterLabel = currentFilter === "all"
+            ? "all shelves"
+            : currentFilter === "comics"
+                ? "Comics"
+                : currentFilter.charAt(0).toUpperCase() + currentFilter.slice(1);
         if (searchInput.value.trim()) resultsText.textContent = `${count} result${count === 1 ? "" : "s"} in ${filterLabel}`;
         else resultsText.textContent = `${count} stor${count === 1 ? "y" : "ies"} in ${filterLabel}`;
     }
@@ -416,6 +433,11 @@
             const phHue = placeholderHue(book.id + "\0" + book.title);
             const trimmedCover = book.coverUrl.trim();
             const hasCover = !!trimmedCover;
+            const comic = isComicFormat(book.mediaFormat);
+            const formatChip = comic ? mediaFormatLabel(book.mediaFormat) : book.type;
+            const countChip = comic
+                ? `${book.chapterCount} page${book.chapterCount === 1 ? "" : "s"}`
+                : `${book.chapterCount} chapter${book.chapterCount === 1 ? "" : "s"}`;
             const coverInner = hasCover
                 ? `${coverPlaceholderMarkup(book, phHue)}
                     <img class="cover-img" src="${escapeAttribute(trimmedCover)}" alt="${escapeAttribute(book.title)} cover" loading="lazy" onerror="this.style.display='none'">`
@@ -433,9 +455,9 @@
                     <div class="rating-badge">${escapeHtml(rating)}</div>
                 </div>
                 <div class="meta-row">
-                    <div class="chip">${escapeHtml(book.type)}</div>
-                    <div class="chip soft">${book.chapterCount} chapter${book.chapterCount === 1 ? "" : "s"}</div>
-                    <div class="chip soft">${formatNumber(book.words)} words</div>
+                    <div class="chip">${escapeHtml(formatChip)}</div>
+                    <div class="chip soft">${countChip}</div>
+                    ${comic ? "" : `<div class="chip soft">${formatNumber(book.words)} words</div>`}
                     <div class="chip soft">${formatNumber(realReadCount(book))} reads</div>
                 </div>
                 <div class="summary">${escapeHtml(book.summary || "No summary yet.")}</div>
