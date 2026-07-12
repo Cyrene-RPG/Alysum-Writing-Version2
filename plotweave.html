@@ -170,7 +170,7 @@
                             <strong style="color:#c4b5fd">Shortcuts</strong><br />
                             V select · H pan · C connect · Space pan<br />
                             Scroll zoom · Right-drag pan · Del delete<br />
-                            Ctrl+Z / Ctrl+Y undo · Ctrl+S save · Drag corners to resize
+                            Ctrl+Z / Ctrl+Y undo · Ctrl+S save · Auto-saves after edits
                         </p>
                     </div>
                 </div>
@@ -181,7 +181,7 @@
     <script type="module">
         import { supabase } from "./firebase.js";
         import { requireStudioSession } from "./js/studio-session.js?v=1";
-        import { createPlotweave } from "./js/plotweave.js?v=6";
+        import { createPlotweave } from "./js/plotweave.js?v=7";
 
         const session = await requireStudioSession(supabase, "plotweave.html");
         if (!session) {

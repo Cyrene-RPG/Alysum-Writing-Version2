@@ -430,6 +430,24 @@ export async function createPlotweave(ui, config = {}) {
     let lasso = null;
     let spaceDown = false;
     let raf = 0;
+    let autoSaveTimer = null;
+    const AUTO_SAVE_MS = 1500;
+
+    function scheduleAutoSave() {
+        if (autoSaveTimer) clearTimeout(autoSaveTimer);
+        autoSaveTimer = setTimeout(() => {
+            autoSaveTimer = null;
+            if (dirty) persist("auto");
+        }, AUTO_SAVE_MS);
+    }
+
+    function flushAutoSave() {
+        if (autoSaveTimer) {
+            clearTimeout(autoSaveTimer);
+            autoSaveTimer = null;
+        }
+        if (dirty) persist("auto");
+    }
 
     function writeStore() {
         saveStore(store);
@@ -478,11 +496,16 @@ export async function createPlotweave(ui, config = {}) {
     function markDirty(opts = {}) {
         dirty = true;
         ui.setStatus?.("Unsaved changes", "dirty");
+        scheduleAutoSave();
         scheduleRender();
         if (opts.refreshProps) refreshProps();
     }
 
-    function persist(silent = false) {
+    function persist(mode = false) {
+        if (autoSaveTimer) {
+            clearTimeout(autoSaveTimer);
+            autoSaveTimer = null;
+        }
         diagram.updatedAt = Date.now();
         const idx = store.diagrams.findIndex((d) => d.id === diagram.id);
         if (idx >= 0) store.diagrams[idx] = diagram;
@@ -490,7 +513,11 @@ export async function createPlotweave(ui, config = {}) {
         store.activeId = diagram.id;
         writeStore();
         dirty = false;
-        if (!silent) ui.setStatus?.(remoteDriver ? "Saved" : "Saved locally", "saved");
+        if (mode === "auto") {
+            ui.setStatus?.(remoteDriver ? "Auto-saved" : "Auto-saved locally", "saved");
+        } else if (mode !== true) {
+            ui.setStatus?.(remoteDriver ? "Saved" : "Saved locally", "saved");
+        }
         renderDiagramList();
     }
 
@@ -556,7 +583,7 @@ export async function createPlotweave(ui, config = {}) {
             diagram.camera.zoom = z1;
         }
         applyCamera();
-        persist(true);
+        markDirty();
     }
 
     function fitView() {
@@ -585,7 +612,7 @@ export async function createPlotweave(ui, config = {}) {
         diagram.camera.x = (rect.width - bw * zoom) / 2 - (minX - pad) * zoom;
         diagram.camera.y = (rect.height - bh * zoom) / 2 - (minY - pad) * zoom;
         applyCamera();
-        persist(true);
+        markDirty();
     }
 
     function hitNode(wx, wy) {
@@ -1020,7 +1047,7 @@ export async function createPlotweave(ui, config = {}) {
     }
 
     function switchDiagram(id) {
-        if (dirty) persist(true);
+        if (dirty) flushAutoSave();
         const next = store.diagrams.find((d) => d.id === id);
         if (!next) return;
         diagram = next;
@@ -1041,7 +1068,7 @@ export async function createPlotweave(ui, config = {}) {
     }
 
     function newDiagram() {
-        if (dirty) persist(true);
+        if (dirty) flushAutoSave();
         const d = emptyDiagram("Untitled map");
         store.diagrams.unshift(d);
         store.activeId = d.id;
@@ -1061,7 +1088,7 @@ export async function createPlotweave(ui, config = {}) {
     }
 
     function duplicateDiagram() {
-        if (dirty) persist(true);
+        if (dirty) flushAutoSave();
         const copy = deepClone(diagram);
         copy.id = uid("map");
         copy.title = `${diagram.title || "Untitled"} (copy)`;
@@ -1359,12 +1386,12 @@ export async function createPlotweave(ui, config = {}) {
             updateToolUi();
         }
         if (drag.mode === "pan") {
-            persist(true);
+            markDirty();
             svg.classList.toggle("is-panning", tool === "pan" || spaceDown);
         }
-        if (drag.mode === "move" && drag.moved) persist(true);
+        if (drag.mode === "move" && drag.moved) persist("auto");
         if (drag.mode === "resize" && drag.moved) {
-            persist(true);
+            persist("auto");
             refreshProps();
         }
         drag = null;
@@ -1461,11 +1488,9 @@ export async function createPlotweave(ui, config = {}) {
     ui.titleInput.value = diagram.title || "";
     ui.titleInput.addEventListener("input", () => {
         diagram.title = ui.titleInput.value || "Untitled map";
-        dirty = true;
-        ui.setStatus?.("Unsaved changes", "dirty");
         renderDiagramList();
+        markDirty();
     });
-    ui.titleInput.addEventListener("change", () => persist());
 
     ui.palette?.addEventListener("click", (ev) => {
         const item = ev.target.closest(".fm-palette-item");
@@ -1480,13 +1505,12 @@ export async function createPlotweave(ui, config = {}) {
         switchDiagram(item.dataset.id);
     });
 
-    // auto-save
-    setInterval(() => {
-        if (dirty) persist(true);
-    }, 8000);
-
     window.addEventListener("beforeunload", () => {
-        if (dirty) persist(true);
+        flushAutoSave();
+    });
+
+    document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "hidden") flushAutoSave();
     });
 
     // boot
@@ -1503,6 +1527,7 @@ export async function createPlotweave(ui, config = {}) {
         fitView,
         getDiagram: () => diagram,
         destroy() {
+            if (autoSaveTimer) clearTimeout(autoSaveTimer);
             remoteDriver?.dispose();
         },
     };
