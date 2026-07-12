@@ -155,6 +155,75 @@ function nodeSize(node) {
     return { w: node.w || def.w, h: node.h || def.h };
 }
 
+const RESIZE_MIN_W = 48;
+const RESIZE_MIN_H = 36;
+const RESIZE_MAX_W = 800;
+const RESIZE_MAX_H = 600;
+
+function clampNodeSize(w, h) {
+    return {
+        w: clamp(Math.round(w), RESIZE_MIN_W, RESIZE_MAX_W),
+        h: clamp(Math.round(h), RESIZE_MIN_H, RESIZE_MAX_H),
+    };
+}
+
+function resizeHandlesForNode(n) {
+    const { w, h } = nodeSize(n);
+    return [
+        { id: "nw", x: n.x, y: n.y },
+        { id: "ne", x: n.x + w, y: n.y },
+        { id: "se", x: n.x + w, y: n.y + h },
+        { id: "sw", x: n.x, y: n.y + h },
+    ];
+}
+
+function applyNodeResize(node, handle, orig, dx, dy) {
+    let x = orig.x;
+    let y = orig.y;
+    let w = orig.w;
+    let h = orig.h;
+
+    if (handle === "se") {
+        w += dx;
+        h += dy;
+    } else if (handle === "sw") {
+        x += dx;
+        w -= dx;
+        h += dy;
+    } else if (handle === "ne") {
+        y += dy;
+        w += dx;
+        h -= dy;
+    } else if (handle === "nw") {
+        x += dx;
+        y += dy;
+        w -= dx;
+        h -= dy;
+    }
+
+    if (w < RESIZE_MIN_W) {
+        if (handle === "sw" || handle === "nw") x -= RESIZE_MIN_W - w;
+        w = RESIZE_MIN_W;
+    }
+    if (h < RESIZE_MIN_H) {
+        if (handle === "nw" || handle === "ne") y -= RESIZE_MIN_H - h;
+        h = RESIZE_MIN_H;
+    }
+    if (w > RESIZE_MAX_W) {
+        if (handle === "sw" || handle === "nw") x -= w - RESIZE_MAX_W;
+        w = RESIZE_MAX_W;
+    }
+    if (h > RESIZE_MAX_H) {
+        if (handle === "nw" || handle === "ne") y -= h - RESIZE_MAX_H;
+        h = RESIZE_MAX_H;
+    }
+
+    node.x = x;
+    node.y = y;
+    node.w = w;
+    node.h = h;
+}
+
 function portPoint(node, port) {
     const { w, h } = nodeSize(node);
     const cx = node.x + w / 2;
@@ -584,6 +653,17 @@ export async function createPlotweave(ui, config = {}) {
             const h = Math.abs(lasso.y1 - lasso.y0);
             overlay += `<rect class="fm-lasso" x="${x}" y="${y}" width="${w}" height="${h}"/>`;
         }
+        if (selectedIds.size === 1 && tool === "select" && !connecting) {
+            const id = [...selectedIds][0];
+            const n = nodeById.get(id);
+            if (n) {
+                const { w, h } = nodeSize(n);
+                overlay += `<rect class="fm-selection-box" x="${n.x}" y="${n.y}" width="${w}" height="${h}"/>`;
+                for (const handle of resizeHandlesForNode(n)) {
+                    overlay += `<rect class="fm-resize-handle" data-handle="${handle.id}" x="${handle.x - 5}" y="${handle.y - 5}" width="10" height="10" rx="2"/>`;
+                }
+            }
+        }
         gOverlay.innerHTML = overlay;
     }
 
@@ -647,10 +727,21 @@ export async function createPlotweave(ui, config = {}) {
                 return;
             }
             const def = SHAPE_DEFS[n.type] || SHAPE_DEFS.process;
+            const { w, h } = nodeSize(n);
             panel.innerHTML = `
                 <div class="fm-field">
                     <label>Text</label>
                     <textarea id="fmPropText">${escapeXml(n.text || "")}</textarea>
+                </div>
+                <div class="fm-field-row">
+                    <div class="fm-field">
+                        <label>Width</label>
+                        <input type="number" id="fmPropW" min="${RESIZE_MIN_W}" max="${RESIZE_MAX_W}" value="${w}" />
+                    </div>
+                    <div class="fm-field">
+                        <label>Height</label>
+                        <input type="number" id="fmPropH" min="${RESIZE_MIN_H}" max="${RESIZE_MAX_H}" value="${h}" />
+                    </div>
                 </div>
                 <div class="fm-field">
                     <label>Shape</label>
@@ -687,6 +778,30 @@ export async function createPlotweave(ui, config = {}) {
                 n.text = ev.target.value;
                 markDirty();
             });
+            const applySizeFromInputs = () => {
+                const next = clampNodeSize(
+                    Number(panel.querySelector("#fmPropW").value) || w,
+                    Number(panel.querySelector("#fmPropH").value) || h
+                );
+                n.w = next.w;
+                n.h = next.h;
+                panel.querySelector("#fmPropW").value = String(next.w);
+                panel.querySelector("#fmPropH").value = String(next.h);
+                markDirty();
+            };
+            let sizeHist = false;
+            for (const el of [panel.querySelector("#fmPropW"), panel.querySelector("#fmPropH")]) {
+                el.addEventListener("focus", () => {
+                    sizeHist = false;
+                });
+                el.addEventListener("input", () => {
+                    if (!sizeHist) {
+                        pushHistory();
+                        sizeHist = true;
+                    }
+                    applySizeFromInputs();
+                });
+            }
             panel.querySelector("#fmPropType").addEventListener("change", (ev) => {
                 pushHistory();
                 const t = ev.target.value;
@@ -914,6 +1029,28 @@ export async function createPlotweave(ui, config = {}) {
             return;
         }
 
+        const resizeEl = target.closest?.(".fm-resize-handle");
+        if (resizeEl && selectedIds.size === 1 && tool === "select") {
+            const id = [...selectedIds][0];
+            const n = diagram.nodes.find((x) => x.id === id);
+            if (n) {
+                const size = nodeSize(n);
+                drag = {
+                    mode: "resize",
+                    pointerId: ev.pointerId,
+                    handle: resizeEl.dataset.handle,
+                    nodeId: id,
+                    sx: worldPt.x,
+                    sy: worldPt.y,
+                    orig: { x: n.x, y: n.y, w: size.w, h: size.h },
+                    moved: false,
+                };
+                svg.setPointerCapture(ev.pointerId);
+                ev.preventDefault();
+                return;
+            }
+        }
+
         // port connect start
         const portEl = target.closest?.(".fm-port");
         if (portEl) {
@@ -1057,6 +1194,20 @@ export async function createPlotweave(ui, config = {}) {
             else scheduleRender();
             return;
         }
+        if (drag.mode === "resize") {
+            const n = diagram.nodes.find((x) => x.id === drag.nodeId);
+            if (!n) return;
+            const dx = worldPt.x - drag.sx;
+            const dy = worldPt.y - drag.sy;
+            if (!drag.moved && (Math.abs(dx) > 2 || Math.abs(dy) > 2)) {
+                pushHistory();
+                drag.moved = true;
+            }
+            applyNodeResize(n, drag.handle, drag.orig, dx, dy);
+            if (drag.moved) markDirty();
+            else scheduleRender();
+            return;
+        }
         if (drag.mode === "lasso" && lasso) {
             lasso.x1 = worldPt.x;
             lasso.y1 = worldPt.y;
@@ -1109,6 +1260,10 @@ export async function createPlotweave(ui, config = {}) {
             svg.classList.toggle("is-panning", tool === "pan" || spaceDown);
         }
         if (drag.mode === "move" && drag.moved) persist(true);
+        if (drag.mode === "resize" && drag.moved) {
+            persist(true);
+            refreshProps();
+        }
         drag = null;
         scheduleRender();
     }

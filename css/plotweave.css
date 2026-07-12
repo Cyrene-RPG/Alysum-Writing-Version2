@@ -440,6 +440,17 @@ html, body {
     margin-bottom: 12px;
 }
 
+.fm-field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.fm-field-row .fm-field {
+    margin-bottom: 0;
+}
+
 .fm-field label {
     font-size: 11px;
     font-weight: 800;
@@ -558,6 +569,31 @@ html, body {
     stroke-dasharray: 6 4;
     fill: none;
     pointer-events: none;
+}
+
+.fm-selection-box {
+    fill: none;
+    stroke: rgba(251, 191, 36, 0.55);
+    stroke-width: 1;
+    stroke-dasharray: 5 4;
+    pointer-events: none;
+}
+
+.fm-resize-handle {
+    fill: #fbbf24;
+    stroke: #1e1b4b;
+    stroke-width: 1.5;
+    pointer-events: all;
+}
+
+.fm-resize-handle[data-handle="nw"],
+.fm-resize-handle[data-handle="se"] {
+    cursor: nwse-resize;
+}
+
+.fm-resize-handle[data-handle="ne"],
+.fm-resize-handle[data-handle="sw"] {
+    cursor: nesw-resize;
 }
 
 @media (max-width: 960px) {
