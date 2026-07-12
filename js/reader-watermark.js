@@ -22,21 +22,21 @@ function injectStyles() {
   pointer-events: none;
   user-select: none;
   display: grid;
-  grid-template-columns: repeat(4, minmax(220px, 1fr));
-  grid-auto-rows: minmax(100px, auto);
-  opacity: 0.038;
+  grid-template-columns: repeat(3, minmax(280px, 1fr));
+  grid-auto-rows: minmax(150px, auto);
+  opacity: 0.06;
 }
 body.light .alysum-rw-sheet {
-  opacity: 0.052;
+  opacity: 0.075;
 }
 .alysum-rw-cell {
   display: flex;
   align-items: center;
   justify-content: center;
   transform: rotate(-19deg);
-  font-size: 10px;
+  font-size: clamp(15px, 2.4vw, 20px);
   font-weight: 800;
-  letter-spacing: 0.11em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   white-space: nowrap;
   color: inherit;
@@ -46,7 +46,7 @@ body.light .alysum-rw-sheet {
   z-index: 1;
   margin-top: 4px;
   padding: 8px 24px 18px;
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.45;
   font-weight: 600;
   letter-spacing: 0.02em;
