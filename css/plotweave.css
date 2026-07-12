@@ -499,12 +499,38 @@ html, body {
 }
 
 .fm-swatch {
-    width: 28px;
-    height: 28px;
-    border-radius: 8px;
+    width: 24px;
+    height: 24px;
+    border-radius: 7px;
     border: 2px solid transparent;
     cursor: pointer;
     padding: 0;
+    flex: 0 0 auto;
+}
+
+.fm-color-custom {
+    width: 32px;
+    height: 24px;
+    padding: 0;
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    border-radius: 7px;
+    background: transparent;
+    cursor: pointer;
+    flex: 0 0 auto;
+}
+
+.fm-color-custom.is-active {
+    border-color: #fff;
+    box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.6);
+}
+
+.fm-color-custom::-webkit-color-swatch-wrapper {
+    padding: 2px;
+}
+
+.fm-color-custom::-webkit-color-swatch {
+    border: none;
+    border-radius: 4px;
 }
 
 .fm-swatch.is-active {

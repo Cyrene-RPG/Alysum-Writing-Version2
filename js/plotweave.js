@@ -68,16 +68,81 @@ export const SHAPE_DEFS = {
     },
 };
 
-const SWATCHES = [
+const FILL_SWATCHES = [
     "#1e1b4b",
-    "#14532d",
-    "#422006",
-    "#4c0519",
-    "#0c4a6e",
-    "#1e293b",
     "#312e81",
     "#3b0764",
+    "#581c87",
+    "#4a044e",
+    "#172554",
+    "#1e3a5f",
+    "#0c4a6e",
+    "#134e4a",
+    "#064e3b",
+    "#14532d",
+    "#365314",
+    "#422006",
+    "#713f12",
+    "#431407",
+    "#4c0519",
+    "#7f1d1d",
+    "#881337",
+    "#1e293b",
+    "#374151",
+    "#3f3f46",
+    "#27272a",
+    "#1c1917",
 ];
+
+const STROKE_SWATCHES = [
+    "#a78bfa",
+    "#c4b5fd",
+    "#818cf8",
+    "#60a5fa",
+    "#38bdf8",
+    "#2dd4bf",
+    "#34d399",
+    "#4ade80",
+    "#a3e635",
+    "#fde047",
+    "#fbbf24",
+    "#f97316",
+    "#fb7185",
+    "#f87171",
+    "#f472b6",
+    "#cbd5e1",
+    "#94a3b8",
+    "#e2e8f0",
+];
+
+function normalizeHex(color) {
+    return String(color || "").trim().toLowerCase();
+}
+
+function colorInputValue(color, fallback) {
+    const c = String(color || fallback || "#1e1b4b").trim();
+    if (/^#[0-9a-f]{6}$/i.test(c)) return c.toLowerCase();
+    if (/^#[0-9a-f]{3}$/i.test(c)) {
+        const r = c[1];
+        const g = c[2];
+        const b = c[3];
+        return `#${r}${r}${g}${g}${b}${b}`.toLowerCase();
+    }
+    return colorInputValue(fallback, "#1e1b4b");
+}
+
+function isPresetColor(color, presets) {
+    return presets.some((c) => normalizeHex(c) === normalizeHex(color));
+}
+
+function renderSwatches(presets, current) {
+    return presets
+        .map(
+            (c) =>
+                `<button type="button" class="fm-swatch${normalizeHex(current) === normalizeHex(c) ? " is-active" : ""}" data-color="${c}" style="background:${c}" aria-label="Color ${c}"></button>`
+        )
+        .join("");
+}
 
 function uid(prefix = "n") {
     return `${prefix}_${Math.random().toString(36).slice(2, 9)}_${Date.now().toString(36)}`;
@@ -757,10 +822,15 @@ export async function createPlotweave(ui, config = {}) {
                 <div class="fm-field">
                     <label>Fill</label>
                     <div class="fm-color-row" id="fmPropFill">
-                        ${SWATCHES.map(
-                            (c) =>
-                                `<button type="button" class="fm-swatch${(n.fill || def.fill) === c ? " is-active" : ""}" data-color="${c}" style="background:${c}" aria-label="Color ${c}"></button>`
-                        ).join("")}
+                        ${renderSwatches(FILL_SWATCHES, n.fill || def.fill)}
+                        <input type="color" class="fm-color-custom${!isPresetColor(n.fill || def.fill, FILL_SWATCHES) ? " is-active" : ""}" id="fmPropFillCustom" value="${colorInputValue(n.fill, def.fill)}" title="Custom fill color" aria-label="Custom fill color" />
+                    </div>
+                </div>
+                <div class="fm-field">
+                    <label>Border</label>
+                    <div class="fm-color-row" id="fmPropStroke">
+                        ${renderSwatches(STROKE_SWATCHES, n.stroke || def.stroke)}
+                        <input type="color" class="fm-color-custom${!isPresetColor(n.stroke || def.stroke, STROKE_SWATCHES) ? " is-active" : ""}" id="fmPropStrokeCustom" value="${colorInputValue(n.stroke, def.stroke)}" title="Custom border color" aria-label="Custom border color" />
                     </div>
                 </div>
                 <button type="button" class="fm-btn fm-danger-btn" id="fmPropDelete">Delete shape</button>
@@ -818,6 +888,39 @@ export async function createPlotweave(ui, config = {}) {
                 if (!btn) return;
                 pushHistory();
                 n.fill = btn.dataset.color;
+                panel.querySelector("#fmPropFillCustom").value = n.fill;
+                markDirty({ refreshProps: true });
+            });
+            panel.querySelector("#fmPropStroke").addEventListener("click", (ev) => {
+                const btn = ev.target.closest(".fm-swatch");
+                if (!btn) return;
+                pushHistory();
+                n.stroke = btn.dataset.color;
+                panel.querySelector("#fmPropStrokeCustom").value = n.stroke;
+                markDirty({ refreshProps: true });
+            });
+            let fillCustomHist = false;
+            let strokeCustomHist = false;
+            panel.querySelector("#fmPropFillCustom").addEventListener("focus", () => {
+                fillCustomHist = false;
+            });
+            panel.querySelector("#fmPropFillCustom").addEventListener("input", (ev) => {
+                if (!fillCustomHist) {
+                    pushHistory();
+                    fillCustomHist = true;
+                }
+                n.fill = ev.target.value;
+                markDirty({ refreshProps: true });
+            });
+            panel.querySelector("#fmPropStrokeCustom").addEventListener("focus", () => {
+                strokeCustomHist = false;
+            });
+            panel.querySelector("#fmPropStrokeCustom").addEventListener("input", (ev) => {
+                if (!strokeCustomHist) {
+                    pushHistory();
+                    strokeCustomHist = true;
+                }
+                n.stroke = ev.target.value;
                 markDirty({ refreshProps: true });
             });
             panel.querySelector("#fmPropDelete").addEventListener("click", () => {
@@ -1405,4 +1508,4 @@ export async function createPlotweave(ui, config = {}) {
     };
 }
 
-export { SWATCHES };
+export { FILL_SWATCHES as SWATCHES, FILL_SWATCHES, STROKE_SWATCHES };
