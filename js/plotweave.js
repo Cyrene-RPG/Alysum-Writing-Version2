@@ -6,12 +6,8 @@ import { createPlotweaveSupabaseDriver } from "./plotweave-supabase.js?v=2";
 
 export const PLOTWEAVE_STORAGE_KEY = "alysum-plotweave-v1";
 const STORAGE_KEY = PLOTWEAVE_STORAGE_KEY;
-const BACKUP_STORAGE_KEY = "alysum-plotweave-v1-backup";
 const LEGACY_STORAGE_KEY = "alysum-flow-mapper-v1";
 const MAX_HISTORY = 60;
-const MIN_ZOOM = 0.001;
-const MAX_ZOOM = 2.5;
-const MIN_EDIT_ZOOM = 0.35;
 
 export const SHAPE_DEFS = {
     start: {
@@ -72,93 +68,16 @@ export const SHAPE_DEFS = {
     },
 };
 
-const FILL_SWATCHES = [
+const SWATCHES = [
     "#1e1b4b",
+    "#14532d",
+    "#422006",
+    "#4c0519",
+    "#0c4a6e",
+    "#1e293b",
     "#312e81",
     "#3b0764",
-    "#581c87",
-    "#4a044e",
-    "#172554",
-    "#1e3a5f",
-    "#0c4a6e",
-    "#134e4a",
-    "#064e3b",
-    "#14532d",
-    "#365314",
-    "#422006",
-    "#713f12",
-    "#431407",
-    "#4c0519",
-    "#7f1d1d",
-    "#881337",
-    "#1e293b",
-    "#374151",
-    "#3f3f46",
-    "#27272a",
-    "#1c1917",
-    "#831843",
-    "#44403c",
-    "#2d1b00",
-    "#1a1a2e",
-    "#0f3d3e",
-    "#78350f",
 ];
-
-const STROKE_SWATCHES = [
-    "#a78bfa",
-    "#c4b5fd",
-    "#818cf8",
-    "#60a5fa",
-    "#38bdf8",
-    "#2dd4bf",
-    "#34d399",
-    "#4ade80",
-    "#a3e635",
-    "#fde047",
-    "#fbbf24",
-    "#f97316",
-    "#fb7185",
-    "#f87171",
-    "#f472b6",
-    "#cbd5e1",
-    "#94a3b8",
-    "#e2e8f0",
-    "#e879f9",
-    "#86efac",
-    "#67e8f9",
-    "#fcd34d",
-    "#d8b4fe",
-    "#ffffff",
-];
-
-function normalizeHex(color) {
-    return String(color || "").trim().toLowerCase();
-}
-
-function colorInputValue(color, fallback) {
-    const c = String(color || fallback || "#1e1b4b").trim();
-    if (/^#[0-9a-f]{6}$/i.test(c)) return c.toLowerCase();
-    if (/^#[0-9a-f]{3}$/i.test(c)) {
-        const r = c[1];
-        const g = c[2];
-        const b = c[3];
-        return `#${r}${r}${g}${g}${b}${b}`.toLowerCase();
-    }
-    return colorInputValue(fallback, "#1e1b4b");
-}
-
-function isPresetColor(color, presets) {
-    return presets.some((c) => normalizeHex(c) === normalizeHex(color));
-}
-
-function renderSwatches(presets, current) {
-    return presets
-        .map(
-            (c) =>
-                `<button type="button" class="fm-swatch${normalizeHex(current) === normalizeHex(c) ? " is-active" : ""}" data-color="${c}" style="background:${c}" aria-label="Color ${c}"></button>`
-        )
-        .join("");
-}
 
 function uid(prefix = "n") {
     return `${prefix}_${Math.random().toString(36).slice(2, 9)}_${Date.now().toString(36)}`;
@@ -168,30 +87,8 @@ function clamp(n, a, b) {
     return Math.max(a, Math.min(b, n));
 }
 
-function formatZoomLabel(zoom) {
-    const pct = zoom * 100;
-    if (pct < 1) return `${pct.toFixed(2)}%`;
-    if (pct < 10) return `${pct.toFixed(1)}%`;
-    return `${Math.round(pct)}%`;
-}
-
-function parseStore(raw) {
-    if (!raw) return null;
-    try {
-        const parsed = JSON.parse(raw);
-        if (!parsed || !Array.isArray(parsed.diagrams)) return null;
-        return parsed;
-    } catch {
-        return null;
-    }
-}
-
-function loadBackupStore() {
-    for (const key of [BACKUP_STORAGE_KEY, `${STORAGE_KEY}-prev`, LEGACY_STORAGE_KEY]) {
-        const parsed = parseStore(localStorage.getItem(key));
-        if (parsed?.diagrams?.length) return parsed;
-    }
-    return null;
+function deepClone(obj) {
+    return JSON.parse(JSON.stringify(obj));
 }
 
 function loadStore() {
@@ -204,38 +101,17 @@ function loadStore() {
                 localStorage.removeItem(LEGACY_STORAGE_KEY);
             }
         }
-        let store = parseStore(raw);
-        if (!store) {
-            store = loadBackupStore();
-            if (store) {
-                saveStore(store);
-                return store;
-            }
-            return { diagrams: [], activeId: null };
-        }
-        if (store.diagrams.length === 0) {
-            const backup = loadBackupStore();
-            if (backup) {
-                saveStore(backup);
-                return backup;
-            }
-        }
-        return store;
+        if (!raw) return { diagrams: [], activeId: null };
+        const parsed = JSON.parse(raw);
+        if (!parsed || !Array.isArray(parsed.diagrams)) return { diagrams: [], activeId: null };
+        return parsed;
     } catch {
-        const backup = loadBackupStore();
-        return backup || { diagrams: [], activeId: null };
+        return { diagrams: [], activeId: null };
     }
 }
 
 function saveStore(store) {
-    const json = JSON.stringify(store);
-    try {
-        const prev = localStorage.getItem(STORAGE_KEY);
-        if (prev) localStorage.setItem(BACKUP_STORAGE_KEY, prev);
-    } catch {
-        /* ignore quota */
-    }
-    localStorage.setItem(STORAGE_KEY, json);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
 }
 
 function emptyDiagram(title = "Untitled map") {
@@ -277,80 +153,6 @@ function samplePlotMap() {
 function nodeSize(node) {
     const def = SHAPE_DEFS[node.type] || SHAPE_DEFS.process;
     return { w: node.w || def.w, h: node.h || def.h };
-}
-
-function defaultShapeSize(type) {
-    const def = SHAPE_DEFS[type] || SHAPE_DEFS.process;
-    return { w: def.w, h: def.h };
-}
-
-const RESIZE_MIN_W = 48;
-const RESIZE_MIN_H = 36;
-const RESIZE_MAX_W = 800;
-const RESIZE_MAX_H = 600;
-
-function clampNodeSize(w, h) {
-    return {
-        w: clamp(Math.round(w), RESIZE_MIN_W, RESIZE_MAX_W),
-        h: clamp(Math.round(h), RESIZE_MIN_H, RESIZE_MAX_H),
-    };
-}
-
-function resizeHandlesForNode(n) {
-    const { w, h } = nodeSize(n);
-    return [
-        { id: "nw", x: n.x, y: n.y },
-        { id: "ne", x: n.x + w, y: n.y },
-        { id: "se", x: n.x + w, y: n.y + h },
-        { id: "sw", x: n.x, y: n.y + h },
-    ];
-}
-
-function applyNodeResize(node, handle, orig, dx, dy) {
-    let x = orig.x;
-    let y = orig.y;
-    let w = orig.w;
-    let h = orig.h;
-
-    if (handle === "se") {
-        w += dx;
-        h += dy;
-    } else if (handle === "sw") {
-        x += dx;
-        w -= dx;
-        h += dy;
-    } else if (handle === "ne") {
-        y += dy;
-        w += dx;
-        h -= dy;
-    } else if (handle === "nw") {
-        x += dx;
-        y += dy;
-        w -= dx;
-        h -= dy;
-    }
-
-    if (w < RESIZE_MIN_W) {
-        if (handle === "sw" || handle === "nw") x -= RESIZE_MIN_W - w;
-        w = RESIZE_MIN_W;
-    }
-    if (h < RESIZE_MIN_H) {
-        if (handle === "nw" || handle === "ne") y -= RESIZE_MIN_H - h;
-        h = RESIZE_MIN_H;
-    }
-    if (w > RESIZE_MAX_W) {
-        if (handle === "sw" || handle === "nw") x -= w - RESIZE_MAX_W;
-        w = RESIZE_MAX_W;
-    }
-    if (h > RESIZE_MAX_H) {
-        if (handle === "nw" || handle === "ne") y -= h - RESIZE_MAX_H;
-        h = RESIZE_MAX_H;
-    }
-
-    node.x = x;
-    node.y = y;
-    node.w = w;
-    node.h = h;
 }
 
 function portPoint(node, port) {
@@ -494,24 +296,6 @@ export async function createPlotweave(ui, config = {}) {
     let lasso = null;
     let spaceDown = false;
     let raf = 0;
-    let autoSaveTimer = null;
-    const AUTO_SAVE_MS = 1500;
-
-    function scheduleAutoSave() {
-        if (autoSaveTimer) clearTimeout(autoSaveTimer);
-        autoSaveTimer = setTimeout(() => {
-            autoSaveTimer = null;
-            if (dirty) persist("auto");
-        }, AUTO_SAVE_MS);
-    }
-
-    function flushAutoSave() {
-        if (autoSaveTimer) {
-            clearTimeout(autoSaveTimer);
-            autoSaveTimer = null;
-        }
-        if (dirty) persist("auto");
-    }
 
     function writeStore() {
         saveStore(store);
@@ -528,7 +312,6 @@ export async function createPlotweave(ui, config = {}) {
                 store = next;
             },
             saveStore,
-            loadBackup: loadBackupStore,
             refresh: () => {},
             setStatus: ui.setStatus,
         });
@@ -536,18 +319,10 @@ export async function createPlotweave(ui, config = {}) {
     }
 
     if (!store.diagrams.length) {
-        const backup = loadBackupStore();
-        if (backup?.diagrams?.length) {
-            store = backup;
-            saveStore(store);
-        }
-    }
-
-    if (!store.diagrams.length) {
         const sample = samplePlotMap();
         store.diagrams = [sample];
         store.activeId = sample.id;
-        saveStore(store);
+        writeStore();
     }
 
     diagram = store.diagrams.find((d) => d.id === store.activeId) || store.diagrams[0];
@@ -569,16 +344,11 @@ export async function createPlotweave(ui, config = {}) {
     function markDirty(opts = {}) {
         dirty = true;
         ui.setStatus?.("Unsaved changes", "dirty");
-        scheduleAutoSave();
         scheduleRender();
         if (opts.refreshProps) refreshProps();
     }
 
-    function persist(mode = false) {
-        if (autoSaveTimer) {
-            clearTimeout(autoSaveTimer);
-            autoSaveTimer = null;
-        }
+    function persist(silent = false) {
         diagram.updatedAt = Date.now();
         const idx = store.diagrams.findIndex((d) => d.id === diagram.id);
         if (idx >= 0) store.diagrams[idx] = diagram;
@@ -586,11 +356,7 @@ export async function createPlotweave(ui, config = {}) {
         store.activeId = diagram.id;
         writeStore();
         dirty = false;
-        if (mode === "auto") {
-            ui.setStatus?.(remoteDriver ? "Auto-saved" : "Auto-saved locally", "saved");
-        } else if (mode !== true) {
-            ui.setStatus?.(remoteDriver ? "Saved" : "Saved locally", "saved");
-        }
+        if (!silent) ui.setStatus?.(remoteDriver ? "Saved" : "Saved locally", "saved");
         renderDiagramList();
     }
 
@@ -637,25 +403,12 @@ export async function createPlotweave(ui, config = {}) {
     function applyCamera() {
         const { x, y, zoom } = diagram.camera;
         world.setAttribute("transform", `translate(${x} ${y}) scale(${zoom})`);
-        ui.zoomLabel.textContent = formatZoomLabel(zoom);
-    }
-
-    function ensurePlacedNodeVisible(node) {
-        const { w, h } = nodeSize(node);
-        const cx = node.x + w / 2;
-        const cy = node.y + h / 2;
-        const rect = svg.getBoundingClientRect();
-        let zoom = diagram.camera.zoom;
-        if (zoom < MIN_EDIT_ZOOM) zoom = MIN_EDIT_ZOOM;
-        diagram.camera.zoom = zoom;
-        diagram.camera.x = rect.width / 2 - cx * zoom;
-        diagram.camera.y = rect.height / 2 - cy * zoom;
-        applyCamera();
+        ui.zoomLabel.textContent = `${Math.round(zoom * 100)}%`;
     }
 
     function setZoom(next, centerClient) {
         const z0 = diagram.camera.zoom;
-        const z1 = clamp(next, MIN_ZOOM, MAX_ZOOM);
+        const z1 = clamp(next, 0.25, 2.5);
         if (centerClient) {
             const rect = svg.getBoundingClientRect();
             const sx = centerClient.x - rect.left;
@@ -669,7 +422,7 @@ export async function createPlotweave(ui, config = {}) {
             diagram.camera.zoom = z1;
         }
         applyCamera();
-        markDirty();
+        persist(true);
     }
 
     function fitView() {
@@ -693,12 +446,12 @@ export async function createPlotweave(ui, config = {}) {
         const rect = svg.getBoundingClientRect();
         const bw = maxX - minX + pad * 2;
         const bh = maxY - minY + pad * 2;
-        const zoom = clamp(Math.min(rect.width / bw, rect.height / bh), MIN_ZOOM, MAX_ZOOM);
+        const zoom = clamp(Math.min(rect.width / bw, rect.height / bh), 0.35, 1.4);
         diagram.camera.zoom = zoom;
         diagram.camera.x = (rect.width - bw * zoom) / 2 - (minX - pad) * zoom;
         diagram.camera.y = (rect.height - bh * zoom) / 2 - (minY - pad) * zoom;
         applyCamera();
-        markDirty();
+        persist(true);
     }
 
     function hitNode(wx, wy) {
@@ -831,17 +584,6 @@ export async function createPlotweave(ui, config = {}) {
             const h = Math.abs(lasso.y1 - lasso.y0);
             overlay += `<rect class="fm-lasso" x="${x}" y="${y}" width="${w}" height="${h}"/>`;
         }
-        if (selectedIds.size === 1 && tool === "select" && !connecting) {
-            const id = [...selectedIds][0];
-            const n = nodeById.get(id);
-            if (n) {
-                const { w, h } = nodeSize(n);
-                overlay += `<rect class="fm-selection-box" x="${n.x}" y="${n.y}" width="${w}" height="${h}"/>`;
-                for (const handle of resizeHandlesForNode(n)) {
-                    overlay += `<rect class="fm-resize-handle" data-handle="${handle.id}" x="${handle.x - 5}" y="${handle.y - 5}" width="10" height="10" rx="2"/>`;
-                }
-            }
-        }
         gOverlay.innerHTML = overlay;
     }
 
@@ -905,21 +647,10 @@ export async function createPlotweave(ui, config = {}) {
                 return;
             }
             const def = SHAPE_DEFS[n.type] || SHAPE_DEFS.process;
-            const { w, h } = nodeSize(n);
             panel.innerHTML = `
                 <div class="fm-field">
                     <label>Text</label>
                     <textarea id="fmPropText">${escapeXml(n.text || "")}</textarea>
-                </div>
-                <div class="fm-field-row">
-                    <div class="fm-field">
-                        <label>Width</label>
-                        <input type="number" id="fmPropW" min="${RESIZE_MIN_W}" max="${RESIZE_MAX_W}" value="${w}" />
-                    </div>
-                    <div class="fm-field">
-                        <label>Height</label>
-                        <input type="number" id="fmPropH" min="${RESIZE_MIN_H}" max="${RESIZE_MAX_H}" value="${h}" />
-                    </div>
                 </div>
                 <div class="fm-field">
                     <label>Shape</label>
@@ -935,15 +666,10 @@ export async function createPlotweave(ui, config = {}) {
                 <div class="fm-field">
                     <label>Fill</label>
                     <div class="fm-color-row" id="fmPropFill">
-                        ${renderSwatches(FILL_SWATCHES, n.fill || def.fill)}
-                        <input type="color" class="fm-color-custom${!isPresetColor(n.fill || def.fill, FILL_SWATCHES) ? " is-active" : ""}" id="fmPropFillCustom" value="${colorInputValue(n.fill, def.fill)}" title="Custom fill color" aria-label="Custom fill color" />
-                    </div>
-                </div>
-                <div class="fm-field">
-                    <label>Border</label>
-                    <div class="fm-color-row" id="fmPropStroke">
-                        ${renderSwatches(STROKE_SWATCHES, n.stroke || def.stroke)}
-                        <input type="color" class="fm-color-custom${!isPresetColor(n.stroke || def.stroke, STROKE_SWATCHES) ? " is-active" : ""}" id="fmPropStrokeCustom" value="${colorInputValue(n.stroke, def.stroke)}" title="Custom border color" aria-label="Custom border color" />
+                        ${SWATCHES.map(
+                            (c) =>
+                                `<button type="button" class="fm-swatch${(n.fill || def.fill) === c ? " is-active" : ""}" data-color="${c}" style="background:${c}" aria-label="Color ${c}"></button>`
+                        ).join("")}
                     </div>
                 </div>
                 <button type="button" class="fm-btn fm-danger-btn" id="fmPropDelete">Delete shape</button>
@@ -961,30 +687,6 @@ export async function createPlotweave(ui, config = {}) {
                 n.text = ev.target.value;
                 markDirty();
             });
-            const applySizeFromInputs = () => {
-                const next = clampNodeSize(
-                    Number(panel.querySelector("#fmPropW").value) || w,
-                    Number(panel.querySelector("#fmPropH").value) || h
-                );
-                n.w = next.w;
-                n.h = next.h;
-                panel.querySelector("#fmPropW").value = String(next.w);
-                panel.querySelector("#fmPropH").value = String(next.h);
-                markDirty();
-            };
-            let sizeHist = false;
-            for (const el of [panel.querySelector("#fmPropW"), panel.querySelector("#fmPropH")]) {
-                el.addEventListener("focus", () => {
-                    sizeHist = false;
-                });
-                el.addEventListener("input", () => {
-                    if (!sizeHist) {
-                        pushHistory();
-                        sizeHist = true;
-                    }
-                    applySizeFromInputs();
-                });
-            }
             panel.querySelector("#fmPropType").addEventListener("change", (ev) => {
                 pushHistory();
                 const t = ev.target.value;
@@ -1001,39 +703,6 @@ export async function createPlotweave(ui, config = {}) {
                 if (!btn) return;
                 pushHistory();
                 n.fill = btn.dataset.color;
-                panel.querySelector("#fmPropFillCustom").value = n.fill;
-                markDirty({ refreshProps: true });
-            });
-            panel.querySelector("#fmPropStroke").addEventListener("click", (ev) => {
-                const btn = ev.target.closest(".fm-swatch");
-                if (!btn) return;
-                pushHistory();
-                n.stroke = btn.dataset.color;
-                panel.querySelector("#fmPropStrokeCustom").value = n.stroke;
-                markDirty({ refreshProps: true });
-            });
-            let fillCustomHist = false;
-            let strokeCustomHist = false;
-            panel.querySelector("#fmPropFillCustom").addEventListener("focus", () => {
-                fillCustomHist = false;
-            });
-            panel.querySelector("#fmPropFillCustom").addEventListener("input", (ev) => {
-                if (!fillCustomHist) {
-                    pushHistory();
-                    fillCustomHist = true;
-                }
-                n.fill = ev.target.value;
-                markDirty({ refreshProps: true });
-            });
-            panel.querySelector("#fmPropStrokeCustom").addEventListener("focus", () => {
-                strokeCustomHist = false;
-            });
-            panel.querySelector("#fmPropStrokeCustom").addEventListener("input", (ev) => {
-                if (!strokeCustomHist) {
-                    pushHistory();
-                    strokeCustomHist = true;
-                }
-                n.stroke = ev.target.value;
                 markDirty({ refreshProps: true });
             });
             panel.querySelector("#fmPropDelete").addEventListener("click", () => {
@@ -1070,27 +739,25 @@ export async function createPlotweave(ui, config = {}) {
 
     function addNodeAt(type, wx, wy) {
         const def = SHAPE_DEFS[type] || SHAPE_DEFS.process;
-        const { w, h } = defaultShapeSize(type);
-        if (!Array.isArray(diagram.nodes)) diagram.nodes = [];
         pushHistory();
         const node = {
             id: uid("n"),
             type,
-            x: wx - w / 2,
-            y: wy - h / 2,
+            x: wx - def.w / 2,
+            y: wy - def.h / 2,
             text: def.defaultText,
             fill: def.fill,
             stroke: def.stroke,
-            w,
-            h,
+            w: def.w,
+            h: def.h,
         };
         diagram.nodes.push(node);
         selectedIds = new Set([node.id]);
         selectedEdgeId = null;
-        ensurePlacedNodeVisible(node);
-        render();
-        refreshProps();
-        persist(true);
+        placeType = null;
+        tool = "select";
+        updateToolUi();
+        markDirty({ refreshProps: true });
     }
 
     function setTool(next, type = null) {
@@ -1135,7 +802,7 @@ export async function createPlotweave(ui, config = {}) {
     }
 
     function switchDiagram(id) {
-        if (dirty) flushAutoSave();
+        if (dirty) persist(true);
         const next = store.diagrams.find((d) => d.id === id);
         if (!next) return;
         diagram = next;
@@ -1156,7 +823,7 @@ export async function createPlotweave(ui, config = {}) {
     }
 
     function newDiagram() {
-        if (dirty) flushAutoSave();
+        if (dirty) persist(true);
         const d = emptyDiagram("Untitled map");
         store.diagrams.unshift(d);
         store.activeId = d.id;
@@ -1176,7 +843,7 @@ export async function createPlotweave(ui, config = {}) {
     }
 
     function duplicateDiagram() {
-        if (dirty) flushAutoSave();
+        if (dirty) persist(true);
         const copy = deepClone(diagram);
         copy.id = uid("map");
         copy.title = `${diagram.title || "Untitled"} (copy)`;
@@ -1244,30 +911,7 @@ export async function createPlotweave(ui, config = {}) {
 
         if (tool === "place" && placeType) {
             addNodeAt(placeType, worldPt.x, worldPt.y);
-            ev.preventDefault();
             return;
-        }
-
-        const resizeEl = target.closest?.(".fm-resize-handle");
-        if (resizeEl && selectedIds.size === 1 && tool === "select") {
-            const id = [...selectedIds][0];
-            const n = diagram.nodes.find((x) => x.id === id);
-            if (n) {
-                const size = nodeSize(n);
-                drag = {
-                    mode: "resize",
-                    pointerId: ev.pointerId,
-                    handle: resizeEl.dataset.handle,
-                    nodeId: id,
-                    sx: worldPt.x,
-                    sy: worldPt.y,
-                    orig: { x: n.x, y: n.y, w: size.w, h: size.h },
-                    moved: false,
-                };
-                svg.setPointerCapture(ev.pointerId);
-                ev.preventDefault();
-                return;
-            }
         }
 
         // port connect start
@@ -1413,20 +1057,6 @@ export async function createPlotweave(ui, config = {}) {
             else scheduleRender();
             return;
         }
-        if (drag.mode === "resize") {
-            const n = diagram.nodes.find((x) => x.id === drag.nodeId);
-            if (!n) return;
-            const dx = worldPt.x - drag.sx;
-            const dy = worldPt.y - drag.sy;
-            if (!drag.moved && (Math.abs(dx) > 2 || Math.abs(dy) > 2)) {
-                pushHistory();
-                drag.moved = true;
-            }
-            applyNodeResize(n, drag.handle, drag.orig, dx, dy);
-            if (drag.moved) markDirty();
-            else scheduleRender();
-            return;
-        }
         if (drag.mode === "lasso" && lasso) {
             lasso.x1 = worldPt.x;
             lasso.y1 = worldPt.y;
@@ -1475,14 +1105,10 @@ export async function createPlotweave(ui, config = {}) {
             updateToolUi();
         }
         if (drag.mode === "pan") {
-            markDirty();
+            persist(true);
             svg.classList.toggle("is-panning", tool === "pan" || spaceDown);
         }
-        if (drag.mode === "move" && drag.moved) persist("auto");
-        if (drag.mode === "resize" && drag.moved) {
-            persist("auto");
-            refreshProps();
-        }
+        if (drag.mode === "move" && drag.moved) persist(true);
         drag = null;
         scheduleRender();
     }
@@ -1577,9 +1203,11 @@ export async function createPlotweave(ui, config = {}) {
     ui.titleInput.value = diagram.title || "";
     ui.titleInput.addEventListener("input", () => {
         diagram.title = ui.titleInput.value || "Untitled map";
+        dirty = true;
+        ui.setStatus?.("Unsaved changes", "dirty");
         renderDiagramList();
-        markDirty();
     });
+    ui.titleInput.addEventListener("change", () => persist());
 
     ui.palette?.addEventListener("click", (ev) => {
         const item = ev.target.closest(".fm-palette-item");
@@ -1594,12 +1222,13 @@ export async function createPlotweave(ui, config = {}) {
         switchDiagram(item.dataset.id);
     });
 
-    window.addEventListener("beforeunload", () => {
-        flushAutoSave();
-    });
+    // auto-save
+    setInterval(() => {
+        if (dirty) persist(true);
+    }, 8000);
 
-    document.addEventListener("visibilitychange", () => {
-        if (document.visibilityState === "hidden") flushAutoSave();
+    window.addEventListener("beforeunload", () => {
+        if (dirty) persist(true);
     });
 
     // boot
@@ -1616,10 +1245,9 @@ export async function createPlotweave(ui, config = {}) {
         fitView,
         getDiagram: () => diagram,
         destroy() {
-            if (autoSaveTimer) clearTimeout(autoSaveTimer);
             remoteDriver?.dispose();
         },
     };
 }
 
-export { FILL_SWATCHES as SWATCHES, FILL_SWATCHES, STROKE_SWATCHES };
+export { SWATCHES };

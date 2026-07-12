@@ -24,7 +24,7 @@
     <script src="js/alysum-appearance-boot.js"></script>
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
     <link rel="stylesheet" href="css/gradient-themes.css?v=6" />
-    <link rel="stylesheet" href="css/plotweave.css?v=7" />
+    <link rel="stylesheet" href="css/plotweave.css?v=5" />
     <script src="js/gradient-theme-sync.js" defer></script>
 </head>
 <body>
@@ -121,7 +121,7 @@
                                 End
                             </button>
                         </div>
-                        <p class="fm-hint" style="margin-top:10px">Click a shape, then click the canvas to place it. Drag ports (dots) to connect — select a line to label it Yes / No. Drag corner handles to resize.</p>
+                        <p class="fm-hint" style="margin-top:10px">Click a shape, then click the canvas to place it. Drag ports (dots) to connect — select a line to label it Yes / No.</p>
                     </div>
                 </div>
             </aside>
@@ -144,7 +144,6 @@
                     </defs>
                     <rect width="100%" height="100%" fill="url(#fmGrid)" pointer-events="none"/>
                     <g class="fm-world">
-                        <rect class="fm-canvas-hit" x="-100000" y="-100000" width="200000" height="200000" fill="transparent"/>
                         <g class="fm-edges"></g>
                         <g class="fm-nodes"></g>
                         <g class="fm-overlay"></g>
@@ -171,7 +170,7 @@
                             <strong style="color:#c4b5fd">Shortcuts</strong><br />
                             V select · H pan · C connect · Space pan<br />
                             Scroll zoom · Right-drag pan · Del delete<br />
-                            Ctrl+Z / Ctrl+Y undo · Ctrl+S save · Auto-saves after edits
+                            Ctrl+Z / Ctrl+Y undo · Ctrl+S save
                         </p>
                     </div>
                 </div>
@@ -182,7 +181,7 @@
     <script type="module">
         import { supabase } from "./firebase.js";
         import { requireStudioSession } from "./js/studio-session.js?v=1";
-        import { createPlotweave } from "./js/plotweave.js?v=16";
+        import { createPlotweave } from "./js/plotweave.js?v=17";
 
         const session = await requireStudioSession(supabase, "plotweave.html");
         if (!session) return;
