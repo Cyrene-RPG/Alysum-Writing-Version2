@@ -4,12 +4,20 @@
  */
 
 const STYLE_ID = "alysum-reader-watermark-style";
+const STYLE_VERSION = 2;
 const LS_GUEST = "alysum-reader-guest-mark";
 
 function injectStyles() {
-  if (document.getElementById(STYLE_ID)) return;
-  const el = document.createElement("style");
-  el.id = STYLE_ID;
+  const existing = document.getElementById(STYLE_ID);
+  if (existing && existing.dataset.version === String(STYLE_VERSION)) return;
+
+  let el = existing;
+  if (!el) {
+    el = document.createElement("style");
+    el.id = STYLE_ID;
+    document.head.appendChild(el);
+  }
+  el.dataset.version = String(STYLE_VERSION);
   el.textContent = `
 .alysum-rw-wrap {
   position: relative;
@@ -22,21 +30,21 @@ function injectStyles() {
   pointer-events: none;
   user-select: none;
   display: grid;
-  grid-template-columns: repeat(3, minmax(280px, 1fr));
-  grid-auto-rows: minmax(150px, auto);
-  opacity: 0.06;
+  grid-template-columns: repeat(2, minmax(360px, 1fr));
+  grid-auto-rows: minmax(320px, auto);
+  opacity: 0.11;
 }
 body.light .alysum-rw-sheet {
-  opacity: 0.075;
+  opacity: 0.14;
 }
 .alysum-rw-cell {
   display: flex;
   align-items: center;
   justify-content: center;
   transform: rotate(-19deg);
-  font-size: clamp(15px, 2.4vw, 20px);
-  font-weight: 800;
-  letter-spacing: 0.1em;
+  font-size: clamp(42px, 8vw, 84px);
+  font-weight: 900;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   white-space: nowrap;
   color: inherit;
@@ -46,7 +54,7 @@ body.light .alysum-rw-sheet {
   z-index: 1;
   margin-top: 4px;
   padding: 8px 24px 18px;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.45;
   font-weight: 600;
   letter-spacing: 0.02em;
@@ -62,7 +70,7 @@ body.light .alysum-rw-footer {
   z-index: 1;
 }
 `;
-  document.head.appendChild(el);
+  if (!existing) document.head.appendChild(el);
 }
 
 export function getGuestReaderMark() {
@@ -121,11 +129,11 @@ export function buildReaderWatermarkLines(opts) {
   return { footer, grid };
 }
 
-export function renderWatermarkCells(sheetEl, gridPhrase, cellCount = 20) {
+export function renderWatermarkCells(sheetEl, gridPhrase, cellCount = 12) {
   if (!sheetEl) return;
   sheetEl.innerHTML = "";
   if (!gridPhrase) return;
-  const n = Math.max(6, Math.min(28, cellCount));
+  const n = Math.max(4, Math.min(16, cellCount));
   for (let i = 0; i < n; i++) {
     const span = document.createElement("span");
     span.className = "alysum-rw-cell";
