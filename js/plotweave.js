@@ -185,31 +185,11 @@ function loadStore() {
         }
         if (!raw) return { diagrams: [], activeId: null };
         const parsed = JSON.parse(raw);
-        return normalizeStore(parsed);
+        if (!parsed || !Array.isArray(parsed.diagrams)) return { diagrams: [], activeId: null };
+        return parsed;
     } catch {
         return { diagrams: [], activeId: null };
     }
-}
-
-function normalizeDiagram(d) {
-    if (!d || typeof d !== "object") return emptyDiagram();
-    if (!Array.isArray(d.nodes)) d.nodes = [];
-    if (!Array.isArray(d.edges)) d.edges = [];
-    if (!d.camera || typeof d.camera !== "object") d.camera = { x: 0, y: 0, zoom: 1 };
-    if (typeof d.camera.x !== "number" || !Number.isFinite(d.camera.x)) d.camera.x = 0;
-    if (typeof d.camera.y !== "number" || !Number.isFinite(d.camera.y)) d.camera.y = 0;
-    if (typeof d.camera.zoom !== "number" || !Number.isFinite(d.camera.zoom) || d.camera.zoom <= 0) {
-        d.camera.zoom = 1;
-    }
-    return d;
-}
-
-function normalizeStore(store) {
-    if (!store || !Array.isArray(store.diagrams)) return { diagrams: [], activeId: null };
-    return {
-        activeId: typeof store.activeId === "string" ? store.activeId : null,
-        diagrams: store.diagrams.map((d) => normalizeDiagram(d)),
-    };
 }
 
 function saveStore(store) {
@@ -478,14 +458,6 @@ export async function createPlotweave(ui, config = {}) {
     let raf = 0;
     let autoSaveTimer = null;
     const AUTO_SAVE_MS = 1500;
-    let palettePlace = null;
-
-    function commitDiagram() {
-        const idx = store.diagrams.findIndex((d) => d.id === diagram.id);
-        if (idx >= 0) store.diagrams[idx] = diagram;
-        else store.diagrams.push(diagram);
-        store.activeId = diagram.id;
-    }
 
     function scheduleAutoSave() {
         if (autoSaveTimer) clearTimeout(autoSaveTimer);
@@ -515,7 +487,7 @@ export async function createPlotweave(ui, config = {}) {
             storageKey: STORAGE_KEY,
             getStore: () => store,
             setStore: (next) => {
-                store = normalizeStore(next);
+                store = next;
             },
             saveStore,
             refresh: () => {},
@@ -523,8 +495,6 @@ export async function createPlotweave(ui, config = {}) {
         });
         await remoteDriver.pullOnce();
     }
-
-    store = normalizeStore(store);
 
     if (!store.diagrams.length) {
         const sample = samplePlotMap();
@@ -541,60 +511,6 @@ export async function createPlotweave(ui, config = {}) {
     const gEdges = svg.querySelector(".fm-edges");
     const gNodes = svg.querySelector(".fm-nodes");
     const gOverlay = svg.querySelector(".fm-overlay");
-
-    const stageWrap = svg.closest(".fm-stage-wrap");
-    const dragGhost = document.createElement("div");
-    dragGhost.className = "fm-drag-ghost";
-    dragGhost.hidden = true;
-    stageWrap?.appendChild(dragGhost);
-
-    function isOverCanvas(clientX, clientY) {
-        const rect = svg.getBoundingClientRect();
-        return clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom;
-    }
-
-    function hideDragGhost() {
-        dragGhost.hidden = true;
-    }
-
-    function updateDragGhost(clientX, clientY, type) {
-        const def = SHAPE_DEFS[type] || SHAPE_DEFS.process;
-        dragGhost.textContent = def.label || type;
-        dragGhost.hidden = false;
-        dragGhost.style.transform = `translate(${clientX + 12}px, ${clientY + 12}px)`;
-    }
-
-    function finishPaletteDrop(clientX, clientY) {
-        if (!palettePlace?.armed || palettePlace.placed) return false;
-        if (!isOverCanvas(clientX, clientY)) return false;
-        const worldPt = screenToWorld(clientX, clientY);
-        addNodeAt(palettePlace.type, worldPt.x, worldPt.y);
-        palettePlace.placed = true;
-        return true;
-    }
-
-    function clearPaletteDrag() {
-        palettePlace = null;
-        hideDragGhost();
-    }
-
-    function onWindowPointerMove(ev) {
-        if (!palettePlace?.armed || palettePlace.placed) return;
-        if (ev.pointerId !== palettePlace.pointerId) return;
-        if (isOverCanvas(ev.clientX, ev.clientY)) {
-            updateDragGhost(ev.clientX, ev.clientY, palettePlace.type);
-        } else {
-            hideDragGhost();
-        }
-    }
-
-    function onWindowPointerUp(ev) {
-        if (!palettePlace?.armed || ev.pointerId !== palettePlace.pointerId) return;
-        if (!palettePlace.placed) {
-            finishPaletteDrop(ev.clientX, ev.clientY);
-        }
-        clearPaletteDrag();
-    }
 
     function pushHistory() {
         history.push(deepClone({ nodes: diagram.nodes, edges: diagram.edges }));
@@ -617,7 +533,10 @@ export async function createPlotweave(ui, config = {}) {
             autoSaveTimer = null;
         }
         diagram.updatedAt = Date.now();
-        commitDiagram();
+        const idx = store.diagrams.findIndex((d) => d.id === diagram.id);
+        if (idx >= 0) store.diagrams[idx] = diagram;
+        else store.diagrams.push(diagram);
+        store.activeId = diagram.id;
         writeStore();
         dirty = false;
         if (mode === "auto") {
@@ -1093,7 +1012,6 @@ export async function createPlotweave(ui, config = {}) {
     function addNodeAt(type, wx, wy) {
         const def = SHAPE_DEFS[type] || SHAPE_DEFS.process;
         const { w, h } = defaultShapeSize(type);
-        if (!Array.isArray(diagram.nodes)) diagram.nodes = [];
         pushHistory();
         const node = {
             id: uid("n"),
@@ -1107,25 +1025,19 @@ export async function createPlotweave(ui, config = {}) {
             h,
         };
         diagram.nodes.push(node);
-        commitDiagram();
         selectedIds = new Set([node.id]);
         selectedEdgeId = null;
+        placeType = null;
+        tool = "select";
         updateToolUi();
         markDirty({ refreshProps: true });
-        render();
-        ui.setStatus?.(`Placed ${def.label} — click again or pick another shape`, "saved");
     }
 
     function setTool(next, type = null) {
         tool = next;
         placeType = type;
         connecting = null;
-        palettePlace = null;
         updateToolUi();
-        if (tool === "place" && placeType) {
-            const label = SHAPE_DEFS[placeType]?.label || placeType;
-            ui.setStatus?.(`Click or drag ${label} onto the canvas`, "saved");
-        }
         scheduleRender();
     }
 
@@ -1272,7 +1184,6 @@ export async function createPlotweave(ui, config = {}) {
 
         if (tool === "place" && placeType) {
             addNodeAt(placeType, worldPt.x, worldPt.y);
-            if (palettePlace) palettePlace.placed = true;
             ev.preventDefault();
             return;
         }
@@ -1558,7 +1469,6 @@ export async function createPlotweave(ui, config = {}) {
         if (ev.key === "Escape") {
             connecting = null;
             placeType = null;
-            palettePlace = null;
             tool = "select";
             selectedIds.clear();
             selectedEdgeId = null;
@@ -1588,9 +1498,6 @@ export async function createPlotweave(ui, config = {}) {
     svg.addEventListener("contextmenu", (e) => e.preventDefault());
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("keyup", onKeyUp);
-    window.addEventListener("pointermove", onWindowPointerMove);
-    window.addEventListener("pointerup", onWindowPointerUp);
-    window.addEventListener("pointercancel", onWindowPointerUp);
 
     ui.btnUndo.addEventListener("click", undo);
     ui.btnRedo.addEventListener("click", redo);
@@ -1614,19 +1521,10 @@ export async function createPlotweave(ui, config = {}) {
         markDirty();
     });
 
-    ui.palette?.addEventListener("pointerdown", (ev) => {
+    ui.palette?.addEventListener("click", (ev) => {
         const item = ev.target.closest(".fm-palette-item");
-        if (!item || ev.button !== 0) return;
-        const type = item.dataset.type;
-        if (!type) return;
-        setTool("place", type);
-        palettePlace = { type, armed: true, placed: false, pointerId: ev.pointerId };
-        try {
-            item.setPointerCapture(ev.pointerId);
-        } catch {
-            /* ignore */
-        }
-        ev.preventDefault();
+        if (!item) return;
+        setTool("place", item.dataset.type);
     });
 
     ui.diagramList.addEventListener("click", (ev) => {
@@ -1659,10 +1557,6 @@ export async function createPlotweave(ui, config = {}) {
         getDiagram: () => diagram,
         destroy() {
             if (autoSaveTimer) clearTimeout(autoSaveTimer);
-            window.removeEventListener("pointermove", onWindowPointerMove);
-            window.removeEventListener("pointerup", onWindowPointerUp);
-            window.removeEventListener("pointercancel", onWindowPointerUp);
-            dragGhost.remove();
             remoteDriver?.dispose();
         },
     };

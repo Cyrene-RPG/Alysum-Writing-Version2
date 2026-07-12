@@ -24,7 +24,7 @@
     <script src="js/alysum-appearance-boot.js"></script>
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
     <link rel="stylesheet" href="css/gradient-themes.css?v=6" />
-    <link rel="stylesheet" href="css/plotweave.css?v=8" />
+    <link rel="stylesheet" href="css/plotweave.css?v=7" />
     <script src="js/gradient-theme-sync.js" defer></script>
 </head>
 <body>
@@ -121,7 +121,7 @@
                                 End
                             </button>
                         </div>
-                        <p class="fm-hint" style="margin-top:10px">Click or drag a shape onto the canvas to place it. Drag ports (dots) to connect — select a line to label it Yes / No.</p>
+                        <p class="fm-hint" style="margin-top:10px">Click a shape, then click the canvas to place it. Drag ports (dots) to connect — select a line to label it Yes / No. Drag corner handles to resize.</p>
                     </div>
                 </div>
             </aside>
@@ -182,7 +182,7 @@
     <script type="module">
         import { supabase } from "./firebase.js";
         import { requireStudioSession } from "./js/studio-session.js?v=1";
-        import { createPlotweave } from "./js/plotweave.js?v=13";
+        import { createPlotweave } from "./js/plotweave.js?v=14";
 
         const session = await requireStudioSession(supabase, "plotweave.html");
         if (!session) {

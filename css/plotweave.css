@@ -369,23 +369,6 @@ html, body {
 .fm-stage.is-connecting { cursor: crosshair; }
 .fm-stage.is-placing { cursor: copy; }
 
-.fm-drag-ghost {
-    position: fixed;
-    left: 0;
-    top: 0;
-    z-index: 30;
-    pointer-events: none;
-    padding: 6px 10px;
-    border-radius: 8px;
-    background: rgba(30, 27, 75, 0.92);
-    border: 1px solid rgba(251, 191, 36, 0.7);
-    color: #fef3c7;
-    font-size: 12px;
-    font-weight: 800;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
-    white-space: nowrap;
-}
-
 .fm-viewbar {
     position: absolute;
     right: 14px;
