@@ -77,6 +77,8 @@ function isSampleOnlyStore(store) {
     return title.includes("Hero's journey") || title.includes("Sample:");
 }
 
+export { isSampleOnlyStore };
+
 /**
  * @param {object} opts
  * @param {import("@supabase/supabase-js").SupabaseClient} opts.supabase
@@ -152,6 +154,10 @@ export function createPlotweaveSupabaseDriver(opts) {
         }
 
         if (cloud.diagrams.length === 0 && local.diagrams.length > 0) {
+            if (isSampleOnlyStore(local)) {
+                setStatus?.("Ready — no cloud copy yet", "saved");
+                return;
+            }
             setStore(local);
             saveStore(local);
             await upsertStore(local);

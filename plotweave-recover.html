@@ -60,6 +60,12 @@
             Your PC will not see maps that only exist on your tablet — open this page <strong>on the tablet</strong>
             (or import a JSON backup below).
         </p>
+        <div class="card" style="border-color: rgba(74, 222, 128, 0.45);">
+            <h2>Restore your Cyrene RPG map (recovered from your PC browser)</h2>
+            <p>We salvaged <strong>16 shapes</strong> from your browser storage dump — "Cyrene RPG Storyline camera".</p>
+            <button type="button" class="btn btn-primary" id="btnSalvageRestore">Restore Cyrene RPG map</button>
+            <button type="button" class="btn" id="btnSalvageCloud">Restore &amp; save to cloud</button>
+        </div>
         <div class="card">
             <h2>Import a backup file</h2>
             <p>If you exported Plotweave JSON or have a recovery file, import it here.</p>
@@ -259,6 +265,32 @@
             }
             setTimeout(() => { location.href = "plotweave.html"; }, 1200);
         });
+
+        const SALVAGE_URL = "plotweave-imports/cyrene-rpg-recovered.json";
+
+        async function restoreSalvage(pushCloudAfter) {
+            setStatus("Loading recovered map…", "");
+            try {
+                const res = await fetch(SALVAGE_URL, { cache: "no-store" });
+                if (!res.ok) throw new Error(`Could not load recovery file (${res.status})`);
+                const store = normalizePlotweaveStore(await res.json());
+                if (!store.diagrams.length) throw new Error("Recovery file is empty");
+                writeLocal(store);
+                if (pushCloudAfter) {
+                    await pushCloud(store);
+                    setStatus(`Restored "${store.diagrams[0].title}" (${store.diagrams[0].nodes?.length || 0} shapes) and saved to cloud.`, "ok");
+                } else {
+                    setStatus(`Restored "${store.diagrams[0].title}" (${store.diagrams[0].nodes?.length || 0} shapes).`, "ok");
+                }
+                setTimeout(() => { location.href = "plotweave.html"; }, 1200);
+            } catch (e) {
+                console.error(e);
+                setStatus(`Recovery failed: ${e.message}`, "warn");
+            }
+        }
+
+        document.getElementById("btnSalvageRestore")?.addEventListener("click", () => restoreSalvage(false));
+        document.getElementById("btnSalvageCloud")?.addEventListener("click", () => restoreSalvage(true));
 
         renderFound(scanAll());
     </script>

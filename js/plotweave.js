@@ -2,7 +2,7 @@
  * Alysum Plotweave — canvas engine (SVG flowchart / process map).
  */
 
-import { createPlotweaveSupabaseDriver } from "./plotweave-supabase.js?v=2";
+import { createPlotweaveSupabaseDriver, isSampleOnlyStore } from "./plotweave-supabase.js?v=3";
 
 export const PLOTWEAVE_STORAGE_KEY = "alysum-plotweave-v1";
 const STORAGE_KEY = PLOTWEAVE_STORAGE_KEY;
@@ -332,6 +332,9 @@ function shapePath(type, w, h) {
  */
 export async function createPlotweave(ui, config = {}) {
     let store = loadStore();
+    if (isSampleOnlyStore(store)) {
+        store = { diagrams: [], activeId: null };
+    }
     let remoteDriver = null;
 
     let diagram;
