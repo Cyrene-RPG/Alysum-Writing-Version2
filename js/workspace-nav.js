@@ -1,8 +1,5 @@
 /**
  * Shared Studio-style workspace navigation for writer-facing pages.
- *
- * Do not mount on full-viewport tools (editor, plotweave, note-graph, story board,
- * story bible, publish flow, prompt notebook, exporter) — they use their own chrome.
  */
 import { supabase } from "../firebase.js";
 import { wireLogoutButtons } from "./auth-logout.js?v=3";

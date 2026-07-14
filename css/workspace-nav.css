@@ -222,3 +222,52 @@
     .wd-welcome-sub { display: none; }
     .wd-nav { justify-content: flex-start; }
 }
+
+/* Full-viewport tools: workspace nav stacks above the tool UI */
+body.alysum-with-workspace-nav {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+}
+
+body.alysum-with-workspace-nav > .wd-welcome-bar,
+body.alysum-with-workspace-nav > .wd-nav-wrap {
+    flex-shrink: 0;
+}
+
+body.alysum-with-workspace-nav > .alysum-tool-root,
+body.alysum-with-workspace-nav > .pw-app,
+body.alysum-with-workspace-nav > .ng-app,
+body.alysum-with-workspace-nav > .shell,
+body.alysum-with-workspace-nav > #root {
+    flex: 1;
+    min-height: 0;
+    height: auto !important;
+    overflow: hidden;
+}
+
+body.alysum-with-workspace-nav.alysum-tool-editor > .alysum-tool-root {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+
+body.alysum-with-workspace-nav.alysum-tool-editor .sidebar,
+body.alysum-with-workspace-nav.alysum-tool-editor .main {
+    height: 100% !important;
+}
+
+/* Scrollable tool pages (publish, exporter, story bible) */
+body.alysum-with-workspace-nav.alysum-tool-scroll {
+    display: block;
+    height: auto;
+    min-height: 100vh;
+    overflow: auto;
+}
+
+body.alysum-with-workspace-nav.alysum-tool-scroll > .wd-nav-wrap {
+    position: sticky;
+    top: 0;
+}

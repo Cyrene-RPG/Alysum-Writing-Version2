@@ -22,6 +22,7 @@
     <link rel="stylesheet" href="css/notebook.css?v=9" />
 <link rel="stylesheet" href="css/site-responsive.css?v=1" />
 <link rel="stylesheet" href="css/gradient-themes.css?v=7" />
+    <link rel="stylesheet" href="css/workspace-nav.css?v=4" />
 <link rel="stylesheet" href="css/plot-doctor.css?v=4" />
     <script src="js/gradient-theme-sync.js" defer></script>
 <title>Alysum Editor</title>
@@ -465,7 +466,49 @@
     @media (max-width: 900px) { .page { padding: 52px 56px 70px; } .chapter-title { font-size: 24px; } .editor { font-size: 18px; } .top-title { max-width: 28vw; } }
     @media (max-width: 760px) { .sidebar { position: fixed; left: 0; top: 0; width: 300px; } .overlay { display: block; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 20; } .overlay.hidden { display: none; } .top-title { max-width: 40vw; } .page { padding: 42px 24px 60px; } .chapter-title { font-size: 22px; margin-bottom: 32px; } .editor { font-size: 17px; line-height: 1.7; } .topbar { height: auto; min-height: 56px; flex-wrap: wrap; row-gap: 8px; } .topbar-left, .topbar-right { flex-wrap: wrap; } .topbar-right { justify-content: flex-end; } }
     @media (max-width: 480px) { .workspace { padding: 16px 10px 40px; } .page { padding: 32px 16px 48px; } .sidebar { width: min(300px, 100vw); } }
-</style></head><body>
+</style></head><body class="alysum-with-workspace-nav alysum-tool-editor">
+    <header class="wd-welcome-bar" aria-label="Welcome">
+            <div class="wd-welcome-inner">
+                <div class="wd-pfp" id="welcomePfp">
+                    <img id="welcomePfpImg" alt="" hidden />
+                    <span class="wd-pfp-initial" id="welcomePfpInitial" aria-hidden="true"></span>
+                </div>
+                <div class="wd-welcome-copy">
+                    <h1 class="wd-welcome-title" id="welcomeTitle">Welcome back.</h1>
+                    <p class="wd-welcome-sub is-hidden" id="welcomeSubtitle"></p>
+                </div>
+            </div>
+        </header>
+        <nav class="wd-nav-wrap" aria-label="Workspace" data-active="continue">
+            <div class="wd-nav">
+                <button type="button" class="is-active" id="navContinue">Continue writing</button>
+                <span class="wd-nav-divider" aria-hidden="true"></span>
+                <a href="writer-dashboard.html">Studio</a>
+                <a href="library.html">Library</a>
+                <a href="beta-rooms.html">Beta rooms</a>
+                <a href="author-dashboard.html" id="navAuthorStats">
+                    Author stats
+                    <span class="wd-nav-badge is-hidden" id="navDashBadge" aria-hidden="true">0</span>
+                </a>
+                <a href="world-encyclopedia.html">Encyclopedia</a>
+                <span class="wd-nav-divider" aria-hidden="true"></span>
+                <a href="vault.html">Notes</a>
+                <a href="note-graph.html">Note Graph</a>
+                <a href="Story-Bible-New.html" id="navStoryBible">Story Bible</a>
+                <a href="story-board/">Story Board</a>
+                <a href="plotweave.html">Plotweave</a>
+                <a href="Novel_Exporter.html">Exporter</a>
+                <a href="badges.html">Achievements</a>
+                <a href="leaderboard.html">Leaderboards</a>
+                <span class="wd-nav-divider" aria-hidden="true"></span>
+                <a href="settings.html">Settings</a>
+                <a href="reader-home.html" class="is-hidden" id="navReading">Reading</a>
+                <button type="button" class="wd-nav-logout" data-logout-btn>Log out</button>
+                <a href="index.html">Home</a>
+            </div>
+        </nav>
+        <script type="module" src="js/workspace-nav.js?v=4"></script>
+
     <div id="editorTooltip" class="editor-tooltip" role="tooltip" aria-hidden="true"></div>
     <div id="dailyGoalBadge" class="daily-goal-badge" role="status" aria-live="polite" aria-hidden="true">
         <span class="daily-goal-badge-icon" aria-hidden="true">🎯</span>
@@ -514,7 +557,7 @@
                 </div>
             </div>
         </div>
-    </div><div class="sidebar mobile-hidden" id="sidebar">
+    </div><div class="alysum-tool-root"><div class="sidebar mobile-hidden" id="sidebar">
     <div class="sidebar-top">
         <div class="sidebar-title-row">
             <div class="sidebar-mini">Manuscript</div>
@@ -628,9 +671,7 @@
             <div class="bottom-meta"><span id="chapterWords">0</span> <span id="bottomMetaLabel">chapter words</span> • <span id="bottomTotalWords">0</span> <span id="bottomTotalLabel">total words</span></div>
         </div>
     </div>
-</div>
-
-</div><div class="publish-modal" id="publishModal">
+</div></div><div class="publish-modal" id="publishModal">
     <div class="publish-modal-box">
         <h2 class="publish-modal-title">Choose Chapters to Publish</h2>
         <p class="publish-modal-text">Select the chapters you want to publish now.</p>
