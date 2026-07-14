@@ -5,24 +5,24 @@
  * story bible, publish flow, prompt notebook, exporter) — they use their own chrome.
  */
 import { supabase } from "../firebase.js";
-import { wireLogoutButtons } from "./auth-logout.js?v=2";
+import { wireLogoutButtons } from "./auth-logout.js?v=3";
 import {
     accountSupportsModeToggle,
     normalizeAccountType,
     READER_HOME_URL,
     WRITER_HOME_URL,
-} from "./account-mode.js?v=1";
+} from "./account-mode.js?v=3";
 import {
     cosmeticDisplayNameFromUserData,
     permanentHandleFromUserData,
-} from "./profile-display.js?v=1";
-import { isStoryBibleUiEnabled, STORY_BIBLE_PREF_KEY, STORY_BIBLE_PREF_EVENT } from "./story-bible-prefs.js?v=1";
+} from "./profile-display.js?v=3";
+import { isStoryBibleUiEnabled, STORY_BIBLE_PREF_KEY, STORY_BIBLE_PREF_EVENT } from "./story-bible-prefs.js?v=3";
 import {
     buildEditorContinueUrl,
     pickContinueWritingBookId,
     readLastWriterSession,
-} from "./writer-resume.js?v=1";
-import { goToLogin, isDesktopLocalHost } from "./desktop-auth.js?v=1";
+} from "./writer-resume.js?v=3";
+import { goToLogin, isDesktopLocalHost } from "./desktop-auth.js?v=3";
 
 const PROFILE_SELECT = "id, username, display_name, account_type, profile_image_url";
 
@@ -334,11 +334,25 @@ export function mountWorkspaceNav(options = {}) {
             ? document.querySelector(options.mount)
             : options.mount || document.getElementById("alysum-workspace-nav");
 
-    if (!mountEl) return null;
+    if (!mountEl) return initWorkspaceNav(options);
 
     const active = options.active || mountEl.dataset.active || detectActivePage();
     mountEl.insertAdjacentHTML("beforebegin", renderNavHtml(active));
     mountEl.remove();
+
+    return initWorkspaceNav({ ...options, active });
+}
+
+/** Wire behavior on pre-rendered or freshly mounted workspace nav. */
+export function initWorkspaceNav(options = {}) {
+    const navWrap = document.querySelector(".wd-nav-wrap");
+    if (!navWrap) return null;
+
+    const active =
+        options.active ||
+        navWrap.dataset.active ||
+        document.getElementById("alysum-workspace-nav")?.dataset.active ||
+        detectActivePage();
 
     wireLogoutButtons(document);
     wireContinueButton();
@@ -352,10 +366,20 @@ export function mountWorkspaceNav(options = {}) {
         hydrateWelcomeBar({ ...options, active }).catch(console.warn);
     }
 
-    return document.querySelector(".wd-nav-wrap");
+    return navWrap;
 }
 
-const autoMount = document.getElementById("alysum-workspace-nav");
-if (autoMount) {
-    mountWorkspaceNav({ mount: autoMount });
+function bootWorkspaceNav() {
+    if (document.querySelector(".wd-nav-wrap")) {
+        initWorkspaceNav();
+        return;
+    }
+    const mountEl = document.getElementById("alysum-workspace-nav");
+    if (mountEl) mountWorkspaceNav({ mount: mountEl });
+}
+
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bootWorkspaceNav);
+} else {
+    bootWorkspaceNav();
 }

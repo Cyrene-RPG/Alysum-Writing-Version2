@@ -549,12 +549,52 @@
         }
     </style>
     <link rel="stylesheet" href="css/gradient-themes.css?v=4" />
-    <link rel="stylesheet" href="css/workspace-nav.css?v=2" />
+    <link rel="stylesheet" href="css/workspace-nav.css?v=3" />
     <script src="js/gradient-theme-sync.js" defer></script>
 </head>
 <body>
-    <div id="alysum-workspace-nav" data-active="encyclopedia"></div>
-    <script type="module" src="js/workspace-nav.js?v=2"></script>
+    <header class="wd-welcome-bar" aria-label="Welcome">
+            <div class="wd-welcome-inner">
+                <div class="wd-pfp" id="welcomePfp">
+                    <img id="welcomePfpImg" alt="" hidden />
+                    <span class="wd-pfp-initial" id="welcomePfpInitial" aria-hidden="true"></span>
+                </div>
+                <div class="wd-welcome-copy">
+                    <h1 class="wd-welcome-title" id="welcomeTitle">Welcome back.</h1>
+                    <p class="wd-welcome-sub is-hidden" id="welcomeSubtitle"></p>
+                </div>
+            </div>
+        </header>
+        <nav class="wd-nav-wrap" aria-label="Workspace" data-active="encyclopedia">
+            <div class="wd-nav">
+                <button type="button" id="navContinue">Continue writing</button>
+                <span class="wd-nav-divider" aria-hidden="true"></span>
+                <a href="writer-dashboard.html">Studio</a>
+                <a href="library.html">Library</a>
+                <a href="beta-rooms.html">Beta rooms</a>
+                <a href="author-dashboard.html" id="navAuthorStats">
+                    Author stats
+                    <span class="wd-nav-badge is-hidden" id="navDashBadge" aria-hidden="true">0</span>
+                </a>
+                <a href="world-encyclopedia.html" class="is-active">Encyclopedia</a>
+                <span class="wd-nav-divider" aria-hidden="true"></span>
+                <a href="vault.html">Notes</a>
+                <a href="note-graph.html">Note Graph</a>
+                <a href="Story-Bible-New.html" id="navStoryBible">Story Bible</a>
+                <a href="story-board/">Story Board</a>
+                <a href="plotweave.html">Plotweave</a>
+                <a href="Novel_Exporter.html">Exporter</a>
+                <a href="badges.html">Achievements</a>
+                <a href="leaderboard.html">Leaderboards</a>
+                <span class="wd-nav-divider" aria-hidden="true"></span>
+                <a href="settings.html">Settings</a>
+                <a href="reader-home.html" class="is-hidden" id="navReading">Reading</a>
+                <button type="button" class="wd-nav-logout" data-logout-btn>Log out</button>
+                <a href="index.html">Home</a>
+            </div>
+        </nav>
+        <script type="module" src="js/workspace-nav.js?v=3"></script>
+
     <p class="wb-loading" id="wbLoading">Checking sign-in…</p>
 
     <main class="wb-wrap hidden" id="wbMain">
