@@ -4,8 +4,13 @@
     --alysum-nav-sticky-offset: 45px;
 }
 
+.is-hidden {
+    display: none !important;
+}
+
 .wd-welcome-bar {
     position: relative;
+    flex-shrink: 0;
     padding: 0 clamp(16px, 3vw, 32px);
     min-height: 88px;
     display: flex;
@@ -124,6 +129,7 @@
     position: sticky;
     top: 0;
     z-index: 40;
+    flex-shrink: 0;
     background: rgba(11, 18, 32, 0.92);
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     backdrop-filter: blur(10px);

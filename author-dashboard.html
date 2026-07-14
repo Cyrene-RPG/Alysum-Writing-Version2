@@ -24,7 +24,7 @@
 
 <link rel="stylesheet" href="css/site-responsive.css?v=1" />
 <link rel="stylesheet" href="css/gradient-themes.css?v=7" />
-    <link rel="stylesheet" href="css/workspace-nav.css?v=1" />
+    <link rel="stylesheet" href="css/workspace-nav.css?v=2" />
     <script src="js/gradient-theme-sync.js" defer></script>
 
 <style>
@@ -440,7 +440,7 @@
 </head>
 <body>
     <div id="alysum-workspace-nav" data-active="author-stats"></div>
-    <script type="module" src="js/workspace-nav.js?v=1"></script>
+    <script type="module" src="js/workspace-nav.js?v=2"></script>
     <main class="shell">
     <section class="summary-grid" aria-label="Author totals">
         <div class="summary-card">
@@ -601,9 +601,6 @@
         const initial = (label[0] || "A").toUpperCase();
         const imageUrl = String(normalized.profileImageUrl || "").trim();
 
-        if (welcomeTitle) {
-            welcomeTitle.textContent = "Welcome to Author Stats.";
-        }
         if (!welcomePfpImg || !welcomePfpInitial) return;
 
         welcomePfpInitial.textContent = initial;

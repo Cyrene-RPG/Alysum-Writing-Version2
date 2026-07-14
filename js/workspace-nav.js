@@ -269,11 +269,11 @@ async function hydrateWelcomeBar(options) {
 
     const active = options.active || detectActivePage();
     const defaults = WELCOME_DEFAULTS[active];
-    const staticTitle = options.welcomeTitle || defaults?.title;
-    const staticSubtitle = options.welcomeSubtitle ?? defaults?.subtitle;
+    const pageSubtitle = options.welcomeSubtitle ?? defaults?.subtitle;
+    const signedOutTitle = options.welcomeTitle || defaults?.title;
 
-    if (staticSubtitle && welcomeSubtitle) {
-        welcomeSubtitle.textContent = staticSubtitle;
+    if (pageSubtitle && welcomeSubtitle) {
+        welcomeSubtitle.textContent = pageSubtitle;
         welcomeSubtitle.classList.remove("is-hidden");
     } else if (welcomeSubtitle) {
         welcomeSubtitle.classList.add("is-hidden");
@@ -290,7 +290,7 @@ async function hydrateWelcomeBar(options) {
     const { data: auth } = await supabase.auth.getUser();
     const user = auth?.user;
     if (!user) {
-        if (staticTitle) welcomeTitle.textContent = staticTitle;
+        if (signedOutTitle) welcomeTitle.textContent = signedOutTitle;
         else welcomeTitle.textContent = "Welcome back.";
         applyStoryBibleNav();
         return;
@@ -307,11 +307,7 @@ async function hydrateWelcomeBar(options) {
     const handle = permanentHandleFromUserData(profile);
     const label = displayName || handle || "writer";
 
-    if (staticTitle) {
-        welcomeTitle.textContent = staticTitle;
-    } else {
-        welcomeTitle.innerHTML = `Welcome back, <span class="wd-name">${escapeHtml(label)}</span>.`;
-    }
+    welcomeTitle.innerHTML = `Welcome back, <span class="wd-name">${escapeHtml(label)}</span>.`;
 
     renderWelcomeProfile(profile, label);
 
