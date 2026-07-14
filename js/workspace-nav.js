@@ -338,10 +338,10 @@ export function mountWorkspaceNav(options = {}) {
     if (!mountEl) return null;
 
     const active = options.active || mountEl.dataset.active || detectActivePage();
-    mountEl.innerHTML = renderNavHtml(active);
-    mountEl.dataset.active = active;
+    mountEl.insertAdjacentHTML("beforebegin", renderNavHtml(active));
+    mountEl.remove();
 
-    wireLogoutButtons(mountEl);
+    wireLogoutButtons(document);
     wireContinueButton();
 
     window.addEventListener("storage", (e) => {
@@ -353,7 +353,7 @@ export function mountWorkspaceNav(options = {}) {
         hydrateWelcomeBar({ ...options, active }).catch(console.warn);
     }
 
-    return mountEl;
+    return document.querySelector(".wd-nav-wrap");
 }
 
 const autoMount = document.getElementById("alysum-workspace-nav");

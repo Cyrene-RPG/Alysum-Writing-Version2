@@ -1,5 +1,9 @@
 /* Shared Studio-style workspace navigation (welcome bar + pill nav) */
 
+:root {
+    --alysum-nav-sticky-offset: 45px;
+}
+
 .wd-welcome-bar {
     position: relative;
     padding: 0 clamp(16px, 3vw, 32px);
