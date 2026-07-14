@@ -41,40 +41,6 @@
         background: radial-gradient(circle at top, var(--theme-body-spot-strong) 0%, transparent 42%), var(--bg);
         color: var(--text);
     }
-    .header {
-        position: sticky;
-        top: 0;
-        z-index: 20;
-        flex-shrink: 0;
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        padding: 14px clamp(16px, 2.5vw, 28px);
-        background: var(
-            --alysum-chrome-gradient,
-            linear-gradient(135deg, var(--purple-dark, #5b21b6), var(--theme-header-mid, #7c3aed), var(--theme-header-end, #ec4899))
-        );
-        background-size: cover;
-        background-position: center;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-        box-shadow: 0 6px 28px rgba(0, 0, 0, 0.35);
-    }
-    .back-btn {
-        width: 44px;
-        height: 44px;
-        border-radius: 12px;
-        border: none;
-        background: rgba(0,0,0,0.22);
-        color: white;
-        font-size: 20px;
-        cursor: pointer;
-    }
-    .header-title {
-        font-size: 20px;
-        font-weight: 900;
-        color: #fff;
-        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
-    }
     .wrap {
         flex: 1;
         width: 100%;
@@ -1275,15 +1241,15 @@
 
 </style>
 <link rel="stylesheet" href="css/gradient-themes.css?v=7" />
+    <link rel="stylesheet" href="css/workspace-nav.css?v=1" />
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <script src="js/gradient-theme-sync.js" defer></script>
 
 </head>
 <body>
-    <header class="header">
-        <button type="button" class="back-btn" id="backBtn" aria-label="Back">←</button>
-        <div class="header-title">Account settings</div>
-    </header><div class="wrap">
+    <div id="alysum-workspace-nav" data-active="settings"></div>
+    <script type="module" src="js/workspace-nav.js?v=1"></script>
+    <div class="wrap">
     <div class="panel" id="loadingPanel">
         <p class="hint" style="margin:0">Loading your account…</p>
     </div>
@@ -1680,7 +1646,6 @@
         formatBackupDateTime
     } from "./js/user-backup.js?v=4";
 
-    const backBtn = document.getElementById("backBtn");
     const loadingPanel = document.getElementById("loadingPanel");
     const profilePanel = document.getElementById("profilePanel");
     const securityPanel = document.getElementById("securityPanel");
@@ -2014,10 +1979,6 @@
     initDisplayTextStyleOnPage();
     initDisplayTextColorOnPage();
     initAppearancePickers();
-
-    backBtn.addEventListener("click", () => {
-        window.location.href = settingsHomeUrl;
-    });
 
     function showMsg(el, text, ok) {
         if (!el) return;

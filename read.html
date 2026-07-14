@@ -23,6 +23,7 @@
     <title>Alysum Reader</title>
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
     <link rel="stylesheet" href="css/gradient-themes.css?v=4" />
+    <link rel="stylesheet" href="css/workspace-nav.css?v=1" />
     <link rel="stylesheet" href="css/library-reports.css?v=1" />
     <script src="js/gradient-theme-sync.js" defer></script>
 
@@ -45,9 +46,8 @@
             --page-max: 1320px;
             --font-size: 22px;
             --line-height: 1.95;
-            --reader-nav-offset: 82px;
+            --reader-nav-offset: 45px;
         }
-        body.reader-nav-collapsed { --reader-nav-offset: 34px; }
         body.light {
             --bg: #f4f6fb;
             --bg-soft: #eef2f8;
@@ -61,16 +61,6 @@
         html { scroll-behavior: smooth; }
         body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
         .hidden { display: none !important; }
-        .reader-nav-shell { position: sticky; top: 0; z-index: 70; background: color-mix(in srgb, var(--bg) 92%, transparent); border-bottom: 1px solid var(--border); backdrop-filter: blur(12px); }
-        .reader-nav-toggle { width: 100%; min-height: 34px; border: 0; border-bottom: 1px solid var(--border); background: rgba(255,255,255,0.025); color: var(--muted); font: inherit; font-size: 12px; font-weight: 900; letter-spacing: 0.04em; text-transform: uppercase; cursor: pointer; }
-        .reader-nav-toggle:hover { color: var(--text); background: rgba(255,255,255,0.05); }
-        .reader-workspace-nav { width: 100%; padding: 10px clamp(12px, 2vw, 24px); display: flex; align-items: center; justify-content: space-between; gap: 6px; overflow-x: auto; scrollbar-width: none; }
-        .reader-workspace-nav::-webkit-scrollbar { display: none; }
-        .reader-workspace-nav a { flex-shrink: 0; display: inline-flex; align-items: center; padding: 8px clamp(8px, 0.8vw, 14px); border-radius: 999px; border: 1px solid transparent; color: var(--muted); font-size: clamp(11px, 0.72vw, 13px); font-weight: 700; text-decoration: none; white-space: nowrap; transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease; }
-        .reader-workspace-nav a:hover { color: var(--text); background: rgba(255,255,255,0.06); }
-        .reader-workspace-nav a.is-active { color: var(--text); background: rgba(124,58,237,0.28); border-color: rgba(167,139,250,0.35); }
-        .reader-nav-divider { flex-shrink: 0; width: 1px; height: 22px; margin: 0 2px; background: var(--border); }
-        body.reader-nav-collapsed .reader-workspace-nav { display: none; }
         .topbar { position: sticky; top: var(--reader-nav-offset); z-index: 50; display: grid; grid-template-columns: minmax(0, 1fr) minmax(180px, auto) minmax(0, 1fr); align-items: center; gap: 12px; padding: 12px 14px; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
         .topbar-left, .topbar-right { display: flex; align-items: center; gap: 8px; min-width: 0; }
         .topbar-left { justify-self: start; }
@@ -165,13 +155,14 @@
         .footer-space { height: 40px; }
         @media (min-width: 1080px) { .hero { display: none; } .page-main { min-width: 0; } .reader-card, .nav-row, .reader-tools, .likes-card, .comments-card, .status, .error-box { max-width: none; } }
         @media (max-width: 1079px) { .reader-layout { grid-template-columns: 1fr; } }
-        @media (max-width: 1000px) { .reader-workspace-nav { justify-content: flex-start; } }
-        @media (max-width: 760px) { :root { --reader-nav-offset: 78px; } body.reader-nav-collapsed { --reader-nav-offset: 34px; } .topbar { grid-template-columns: auto minmax(0, 1fr) auto; } .topbar-center { max-width: none; } .hero-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } .book-title { font-size: 28px; } .chapter-title { font-size: 26px; } .content { font-size: calc(var(--font-size) - 2px); } .likes-row { align-items: stretch; } }
+        @media (max-width: 760px) { .topbar { grid-template-columns: auto minmax(0, 1fr) auto; } .topbar-center { max-width: none; } .hero-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } .book-title { font-size: 28px; } .chapter-title { font-size: 26px; } .content { font-size: calc(var(--font-size) - 2px); } .likes-row { align-items: stretch; } }
         @media (max-width: 520px) { #betaReadTopBtn, #readerProfileTopBtn, #allNotesTopBtn { padding: 8px 10px; font-size: 12px; } }
         @media (max-width: 420px) { #readerProfileTopBtn .reader-profile-label-long, #allNotesTopBtn .all-notes-label-long { display: none; } #readerProfileTopBtn .reader-profile-label-short, #allNotesTopBtn .all-notes-label-short { display: inline; } }
     </style>
 </head>
 <body>
+    <div id="alysum-workspace-nav" data-active="reading"></div>
+    <script type="module" src="js/workspace-nav.js?v=1"></script>
 <div class="mobile-drawer-backdrop hidden" id="drawerBackdrop"></div>
 <aside class="mobile-drawer" id="mobileDrawer" aria-label="Story details">
     <div class="mobile-drawer-top"><strong>Story Details</strong><button class="btn drawer-close" id="closeDrawerBtn">✕</button></div>
@@ -181,28 +172,6 @@
     <div class="sidebar-block"><div class="chip-label">Tags</div><div class="chip-row" id="drawerTagList"></div></div>
     <div class="sidebar-block"><div class="chip-label">Warnings</div><div class="chip-row" id="drawerWarningList"></div></div>
 </aside>
-
-<div class="reader-nav-shell" id="readerNavShell">
-    <button type="button" class="reader-nav-toggle" id="readerNavToggle" aria-expanded="true" aria-controls="readerWorkspaceNav">↑ Hide navigation</button>
-    <nav class="reader-workspace-nav" id="readerWorkspaceNav" aria-label="Workspace">
-        <a href="writer-dashboard.html">Studio</a>
-        <span class="reader-nav-divider" aria-hidden="true"></span>
-        <a href="library.html">Library</a>
-        <a href="author-dashboard.html">Author stats</a>
-        <a href="world-encyclopedia.html">Encyclopedia</a>
-        <span class="reader-nav-divider" aria-hidden="true"></span>
-        <a href="vault.html">Notes</a>
-        <a href="Story-Bible-New.html">Story Bible</a>
-        <a href="story-board/">Story Board</a>
-        <a href="Novel_Exporter.html">Exporter</a>
-        <a href="badges.html">Achievements</a>
-        <a href="leaderboard.html">Leaderboards</a>
-        <span class="reader-nav-divider" aria-hidden="true"></span>
-        <a href="settings.html">Settings</a>
-        <a href="reader-home.html" class="is-active">Reading</a>
-        <a href="index.html">Home</a>
-    </nav>
-</div>
 
 <div class="topbar">
     <div class="topbar-left"><button class="btn menu-toggle" id="menuBtn" aria-label="Story details" title="Story details" aria-controls="mobileDrawer" aria-expanded="false">☰</button><button class="btn" id="backBtn">←</button></div>
@@ -266,20 +235,11 @@
         localStorage.getItem("alysum-last-book") ||
         "";
 
-    const readerNavToggle = document.getElementById("readerNavToggle"), backBtn = document.getElementById("backBtn"), themeBtn = document.getElementById("themeBtn"), fontMinusBtn = document.getElementById("fontMinusBtn"), fontPlusBtn = document.getElementById("fontPlusBtn"), menuBtn = document.getElementById("menuBtn"), mobileDrawer = document.getElementById("mobileDrawer"), drawerBackdrop = document.getElementById("drawerBackdrop"), closeDrawerBtn = document.getElementById("closeDrawerBtn"), topbarTitle = document.getElementById("topbarTitle"), topbarSubtitle = document.getElementById("topbarSubtitle"), betaReadTopBtn = document.getElementById("betaReadTopBtn"), readerProfileTopBtn = document.getElementById("readerProfileTopBtn"), allNotesTopBtn = document.getElementById("allNotesTopBtn"), statusBox = document.getElementById("statusBox"), errorBox = document.getElementById("errorBox"), bookTitle = document.getElementById("bookTitle"), bookAuthor = document.getElementById("bookAuthor"), bookSummary = document.getElementById("bookSummary"), statChapters = document.getElementById("statChapters"), statWords = document.getElementById("statWords"), statReads = document.getElementById("statReads"), statType = document.getElementById("statType"), statRating = document.getElementById("statRating"), tagList = document.getElementById("tagList"), warningList = document.getElementById("warningList"), sideBookTitle = document.getElementById("sideBookTitle"), sideBookAuthor = document.getElementById("sideBookAuthor"), sideBookSummary = document.getElementById("sideBookSummary"), sideTagList = document.getElementById("sideTagList"), sideWarningList = document.getElementById("sideWarningList"), drawerBookTitle = document.getElementById("drawerBookTitle"), drawerBookAuthor = document.getElementById("drawerBookAuthor"), drawerBookSummary = document.getElementById("drawerBookSummary"), drawerTagList = document.getElementById("drawerTagList"), drawerWarningList = document.getElementById("drawerWarningList"), prevBtn = document.getElementById("prevBtn"), nextBtn = document.getElementById("nextBtn"), nextChapterBottomBtn = document.getElementById("nextChapterBottomBtn"), chapterIndicator = document.getElementById("chapterIndicator"), chapterTitle = document.getElementById("chapterTitle"), chapterMeta = document.getElementById("chapterMeta"), content = document.getElementById("content"), bookmarkBtn = document.getElementById("bookmarkBtn"), resumeBtn = document.getElementById("resumeBtn"), reportBookBtn = document.getElementById("reportBookBtn"), likeBtn = document.getElementById("likeBtn"), likeCount = document.getElementById("likeCount"), commentList = document.getElementById("commentList"), commentInput = document.getElementById("commentInput"), postCommentBtn = document.getElementById("postCommentBtn");
+    const backBtn = document.getElementById("backBtn"), themeBtn = document.getElementById("themeBtn"), fontMinusBtn = document.getElementById("fontMinusBtn"), fontPlusBtn = document.getElementById("fontPlusBtn"), menuBtn = document.getElementById("menuBtn"), mobileDrawer = document.getElementById("mobileDrawer"), drawerBackdrop = document.getElementById("drawerBackdrop"), closeDrawerBtn = document.getElementById("closeDrawerBtn"), topbarTitle = document.getElementById("topbarTitle"), topbarSubtitle = document.getElementById("topbarSubtitle"), betaReadTopBtn = document.getElementById("betaReadTopBtn"), readerProfileTopBtn = document.getElementById("readerProfileTopBtn"), allNotesTopBtn = document.getElementById("allNotesTopBtn"), statusBox = document.getElementById("statusBox"), errorBox = document.getElementById("errorBox"), bookTitle = document.getElementById("bookTitle"), bookAuthor = document.getElementById("bookAuthor"), bookSummary = document.getElementById("bookSummary"), statChapters = document.getElementById("statChapters"), statWords = document.getElementById("statWords"), statReads = document.getElementById("statReads"), statType = document.getElementById("statType"), statRating = document.getElementById("statRating"), tagList = document.getElementById("tagList"), warningList = document.getElementById("warningList"), sideBookTitle = document.getElementById("sideBookTitle"), sideBookAuthor = document.getElementById("sideBookAuthor"), sideBookSummary = document.getElementById("sideBookSummary"), sideTagList = document.getElementById("sideTagList"), sideWarningList = document.getElementById("sideWarningList"), drawerBookTitle = document.getElementById("drawerBookTitle"), drawerBookAuthor = document.getElementById("drawerBookAuthor"), drawerBookSummary = document.getElementById("drawerBookSummary"), drawerTagList = document.getElementById("drawerTagList"), drawerWarningList = document.getElementById("drawerWarningList"), prevBtn = document.getElementById("prevBtn"), nextBtn = document.getElementById("nextBtn"), nextChapterBottomBtn = document.getElementById("nextChapterBottomBtn"), chapterIndicator = document.getElementById("chapterIndicator"), chapterTitle = document.getElementById("chapterTitle"), chapterMeta = document.getElementById("chapterMeta"), content = document.getElementById("content"), bookmarkBtn = document.getElementById("bookmarkBtn"), resumeBtn = document.getElementById("resumeBtn"), reportBookBtn = document.getElementById("reportBookBtn"), likeBtn = document.getElementById("likeBtn"), likeCount = document.getElementById("likeCount"), commentList = document.getElementById("commentList"), commentInput = document.getElementById("commentInput"), postCommentBtn = document.getElementById("postCommentBtn");
 
     let currentUser = null, currentBook = null, librarySourceRow = null, currentChapterIndex = 0, isLoaded = false, currentFontSize = 22, hasLikedThisBook = false, readerWatermarkProfileUser = null, bookOwnerHandle = null;
 
     installReaderCopyGuards(content, { isActive: () => isLoaded && !!currentBook });
-
-    function setReaderNavCollapsed(collapsed) {
-        document.body.classList.toggle("reader-nav-collapsed", collapsed);
-        readerNavToggle.textContent = collapsed ? "↓ Show navigation" : "↑ Hide navigation";
-        readerNavToggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
-        localStorage.setItem("alysum-reader-nav-collapsed", collapsed ? "1" : "0");
-    }
-
-    setReaderNavCollapsed(localStorage.getItem("alysum-reader-nav-collapsed") === "1");
 
     function safeString(value, fallback = "") { return typeof value === "string" ? value : fallback; }
     function escapeHtml(str) { return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
@@ -666,7 +626,6 @@
     }
     async function postComment() { const text = commentInput.value.trim(); if (!text) { showStatus("Write a comment first."); setTimeout(hideStatus, 1400); return; } if (!currentUser) { showStatus("Log in to post comments."); setTimeout(hideStatus, 1800); return; } try { const { data: profile } = await supabase.from("users").select("username, display_name, email").eq("id", currentUser.id).maybeSingle(); const handle = String(profile?.username || "").trim() || currentUser.email?.split("@")[0] || "reader"; const displayName = String(profile?.display_name || "").trim() || handle; const { error } = await supabase.from("comments").insert({ book_id: bookId, user_id: currentUser.id, username: handle, display_name: displayName, text, created_at: new Date().toISOString() }); if (error) throw error; commentInput.value = ""; showStatus("Comment posted."); setTimeout(hideStatus, 1200); await loadComments(); } catch (error) { console.error(error); showError("Failed to post comment."); } }
 
-    readerNavToggle.addEventListener("click", () => setReaderNavCollapsed(!document.body.classList.contains("reader-nav-collapsed")));
     backBtn.addEventListener("click", () => { window.location.href = "library.html"; });
     readerProfileTopBtn?.addEventListener("click", async () => { if (!bookId) return; if (!currentBook) { showStatus("Wait until this story finishes loading."); setTimeout(hideStatus, 2200); return; } if (!currentUser) { window.location.href = "login.html?next=" + encodeURIComponent(READER_HOME_URL); return; } readerProfileTopBtn.disabled = true; try { await ensureBetaReadShelved(); } finally { readerProfileTopBtn.disabled = false; } window.location.href = READER_HOME_URL; });
     prevBtn.addEventListener("click", () => { if (!currentBook) return; if (currentChapterIndex > 0) { currentChapterIndex--; renderChapter(); } });

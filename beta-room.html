@@ -9,6 +9,7 @@
     <title>Beta room — Alysum</title>
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
     <link rel="stylesheet" href="css/gradient-themes.css?v=5" />
+    <link rel="stylesheet" href="css/workspace-nav.css?v=1" />
     <script src="js/gradient-theme-sync.js" defer></script>
     <script src="js/alysum-appearance-boot.js"></script>
     <style>
@@ -819,30 +820,8 @@
     </style>
 </head>
 <body>
-    <header class="beta-welcome-bar" aria-label="Beta room">
-        <div class="beta-welcome-inner">
-            <div class="beta-badge" aria-hidden="true">🔒</div>
-            <div class="beta-welcome-copy">
-                <h1 class="beta-welcome-title">Private beta room</h1>
-                <p class="beta-welcome-sub" id="welcomeSub">Unpublished snapshot · monitored feedback · not in the Library</p>
-            </div>
-        </div>
-    </header>
-
-    <nav class="wd-nav-wrap" aria-label="Workspace">
-        <div class="wd-nav">
-            <a href="writer-dashboard.html">Studio</a>
-            <span class="wd-nav-divider" aria-hidden="true"></span>
-            <a href="library.html">Library</a>
-            <a href="reader-home.html">Reading</a>
-            <span class="wd-nav-divider" aria-hidden="true"></span>
-            <a href="beta-rooms.html" class="is-active">Beta rooms</a>
-            <span class="wd-nav-divider" aria-hidden="true"></span>
-            <a href="settings.html">Settings</a>
-            <a href="index.html">Home</a>
-        </div>
-    </nav>
-
+    <div id="alysum-workspace-nav" data-active="beta-rooms"></div>
+    <script type="module" src="js/workspace-nav.js?v=1"></script>
     <div class="topbar">
         <div class="topbar-left">
             <a class="btn" id="backBtn" href="beta-rooms.html">← Beta rooms</a>

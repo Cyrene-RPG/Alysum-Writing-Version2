@@ -24,17 +24,20 @@
     <script src="js/alysum-appearance-boot.js"></script>
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
     <link rel="stylesheet" href="css/gradient-themes.css?v=7" />
+    <link rel="stylesheet" href="css/workspace-nav.css?v=1" />
     <link rel="stylesheet" href="css/plotweave.css?v=14" />
     <script src="js/gradient-theme-sync.js" defer></script>
 </head>
 <body>
+    <div id="alysum-workspace-nav" data-active="plotweave"></div>
+    <script type="module" src="js/workspace-nav.js?v=1"></script>
     <div class="pw-app">
         <header class="pw-toolbar" role="toolbar" aria-label="Plotweave tools">
             <div class="pw-toolbar-left">
-                <a class="pw-brand" href="writer-dashboard.html" title="Back to Studio">
+                <span class="pw-brand">
                     <img src="Alysum-3.png" alt="" />
                     <span>Plotweave</span>
-                </a>
+                </span>
                 <span class="pw-sep" aria-hidden="true"></span>
                 <input class="pw-title-input" id="pwTitle" type="text" maxlength="80" aria-label="Map title" placeholder="Untitled map" />
                 <span class="pw-status" id="pwStatus">Syncing…</span>
@@ -53,7 +56,6 @@
                 <button type="button" class="pw-btn" id="pwBtnNew" title="New map">New</button>
                 <button type="button" class="pw-btn" id="pwBtnDuplicate" title="Duplicate map">Duplicate</button>
                 <button type="button" class="pw-btn pw-btn-primary" id="pwBtnSave" title="Save (Ctrl+S)">Save</button>
-                <a class="pw-btn pw-btn-ghost" href="writer-dashboard.html">Studio</a>
             </div>
         </header>
 

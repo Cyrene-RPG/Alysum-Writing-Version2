@@ -26,6 +26,7 @@
     <script src="js/alysum-appearance-boot.js"></script>
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
     <link rel="stylesheet" href="css/gradient-themes.css?v=4" />
+    <link rel="stylesheet" href="css/workspace-nav.css?v=1" />
     <script src="js/gradient-theme-sync.js" defer></script>
 
 <style>
@@ -53,39 +54,6 @@ body {
         var(--bg);
     color: var(--text);
     min-height: 100vh;
-}
-
-.header {
-    position: sticky;
-    top: 0;
-    z-index: 50;
-    height: 72px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(3,7,18,0.82);
-    backdrop-filter: blur(18px);
-    border-bottom: 1px solid rgba(255,255,255,0.1);
-    box-shadow: 0 16px 36px rgba(0,0,0,0.35);
-}
-
-.header-title {
-    font-size: 24px;
-    font-weight: 950;
-    letter-spacing: -0.03em;
-}
-
-.back-btn {
-    position: absolute;
-    left: 16px;
-    width: 44px;
-    height: 44px;
-    border-radius: 999px;
-    border: 1px solid rgba(255,255,255,0.18);
-    background: rgba(255,255,255,0.08);
-    color: white;
-    font-size: 22px;
-    cursor: pointer;
 }
 
 .container {
@@ -387,11 +355,8 @@ body {
 </head>
 
 <body>
-
-<div class="header">
-    <button class="back-btn" id="backBtn">←</button>
-    <div class="header-title">🏆 Achievements</div>
-</div>
+    <div id="alysum-workspace-nav" data-active="achievements"></div>
+    <script type="module" src="js/workspace-nav.js?v=1"></script>
 
 <div class="container">
 
@@ -707,9 +672,6 @@ wireSupabaseSession((session) => {
             renderAchievementsFromCache();
         });
 
-    document.getElementById("backBtn").onclick = () => {
-        window.location.href = "writer-dashboard.html";
-    };
 });
 </script>
 

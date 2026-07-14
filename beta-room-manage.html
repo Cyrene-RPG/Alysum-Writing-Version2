@@ -7,6 +7,7 @@
     <script src="js/alysum-appearance-boot.js"></script>
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
     <link rel="stylesheet" href="css/gradient-themes.css?v=5" />
+    <link rel="stylesheet" href="css/workspace-nav.css?v=1" />
     <script src="js/gradient-theme-sync.js" defer></script>
     <title>Beta share — Alysum</title>
     <style>
@@ -47,109 +48,6 @@
         }
         .hidden { display: none !important; }
 
-        .beta-welcome-bar {
-            position: relative;
-            min-height: 84px;
-            padding: 0 clamp(16px, 3vw, 32px);
-            display: flex;
-            align-items: center;
-            overflow: hidden;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            background: var(
-                --theme-welcome-bar,
-                var(
-                    --alysum-chrome-gradient,
-                    linear-gradient(
-                        135deg,
-                        rgba(76, 29, 149, 0.95) 0%,
-                        var(--theme-header-mid, #6d28d9) 38%,
-                        var(--theme-header-end, #db2777) 100%
-                    )
-                )
-            );
-            background-size: cover;
-            background-position: center;
-            box-shadow: 0 4px 32px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.12);
-        }
-        .beta-welcome-bar::before {
-            content: "";
-            position: absolute;
-            inset: 0;
-            background:
-                radial-gradient(circle at 12% 50%, rgba(255,255,255,0.14) 0%, transparent 42%),
-                radial-gradient(circle at 88% 20%, rgba(251,191,36,0.12) 0%, transparent 40%);
-            pointer-events: none;
-        }
-        .beta-welcome-inner {
-            position: relative;
-            z-index: 1;
-            width: 100%;
-            max-width: var(--page-max);
-            margin: 0 auto;
-            display: flex;
-            align-items: center;
-            gap: 14px;
-        }
-        .beta-badge {
-            width: 52px;
-            height: 52px;
-            border-radius: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 22px;
-            background: rgba(0,0,0,0.28);
-            border: 2px solid rgba(255,255,255,0.22);
-            box-shadow: 0 8px 24px rgba(0,0,0,0.25);
-            flex-shrink: 0;
-        }
-        .beta-welcome-title {
-            margin: 0;
-            font-size: clamp(20px, 3.6vw, 26px);
-            font-weight: 900;
-            color: #fff;
-            text-shadow: 0 2px 12px rgba(0,0,0,0.25);
-        }
-        .beta-welcome-sub {
-            margin: 4px 0 0;
-            font-size: 13px;
-            font-weight: 700;
-            color: rgba(255,255,255,0.82);
-        }
-
-        .wd-nav-wrap {
-            position: sticky;
-            top: 0;
-            z-index: 50;
-            background: rgba(11,18,32,0.92);
-            border-bottom: 1px solid var(--border);
-            backdrop-filter: blur(10px);
-        }
-        body.light .wd-nav-wrap { background: rgba(244,246,251,0.92); }
-        .wd-nav {
-            max-width: var(--page-max);
-            margin: 0 auto;
-            padding: 10px clamp(12px, 2vw, 24px);
-            display: flex;
-            gap: 6px;
-            overflow-x: auto;
-            scrollbar-width: none;
-        }
-        .wd-nav::-webkit-scrollbar { display: none; }
-        .wd-nav a {
-            flex-shrink: 0;
-            padding: 8px clamp(8px, 0.8vw, 14px);
-            border-radius: 999px;
-            border: 1px solid transparent;
-            background: transparent;
-            color: #d1d5db;
-            font: inherit;
-            font-size: clamp(11px, 0.72vw, 13px);
-            font-weight: 700;
-            text-decoration: none;
-            white-space: nowrap;
-        }
-        body.light .wd-nav a { color: var(--muted); }
         .wd-nav a:hover { color: #fff; background: rgba(255,255,255,0.06); }
         body.light .wd-nav a:hover { color: var(--text); background: rgba(0,0,0,0.04); }
         .wd-nav a.is-active {
@@ -494,30 +392,8 @@
     </style>
 </head>
 <body>
-    <header class="beta-welcome-bar">
-        <div class="beta-welcome-inner">
-            <div class="beta-badge" aria-hidden="true">✉</div>
-            <div>
-                <h1 class="beta-welcome-title">Beta share</h1>
-                <p class="beta-welcome-sub">Freeze a draft snapshot and invite trusted readers — they never see your live manuscript.</p>
-            </div>
-        </div>
-    </header>
-
-    <nav class="wd-nav-wrap" aria-label="Workspace">
-        <div class="wd-nav">
-            <a href="writer-dashboard.html">Studio</a>
-            <span class="wd-nav-divider"></span>
-            <a href="library.html">Library</a>
-            <a href="author-dashboard.html">Author stats</a>
-            <a href="beta-rooms.html" class="is-active">Beta rooms</a>
-            <span class="wd-nav-divider"></span>
-            <a href="reader-home.html">Reading</a>
-            <a href="settings.html">Settings</a>
-            <a href="index.html">Home</a>
-        </div>
-    </nav>
-
+    <div id="alysum-workspace-nav" data-active="beta-rooms"></div>
+    <script type="module" src="js/workspace-nav.js?v=1"></script>
     <main class="page">
         <div class="page-head">
             <div class="page-head-main">

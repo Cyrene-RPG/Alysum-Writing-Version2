@@ -30,6 +30,7 @@
 
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
     <link rel="stylesheet" href="css/gradient-themes.css?v=4" />
+    <link rel="stylesheet" href="css/workspace-nav.css?v=1" />
     <script src="js/gradient-theme-sync.js" defer></script>
 
     <style>
@@ -555,21 +556,8 @@
     </style>
 </head>
 <body>
-
-<header class="we-header">
-    <div class="we-header-left">
-        <div class="we-brand">A</div>
-        <div>
-            <div class="we-kicker">Alysum</div>
-            <div class="we-header-title">World Encyclopedia</div>
-        </div>
-    </div>
-    <div class="we-header-actions">
-        <a class="link-btn" href="writer-dashboard.html">← Studio</a>
-        <a class="link-btn" href="library.html">Library</a>
-        <a class="link-btn" href="settings.html">⚙️ Theme</a>
-    </div>
-</header>
+    <div id="alysum-workspace-nav" data-active="encyclopedia"></div>
+    <script type="module" src="js/workspace-nav.js?v=1"></script>
 
 <main class="layout">
     <section class="we-hero" aria-labelledby="weDisplayTitle">

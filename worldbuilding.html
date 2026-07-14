@@ -549,17 +549,12 @@
         }
     </style>
     <link rel="stylesheet" href="css/gradient-themes.css?v=4" />
+    <link rel="stylesheet" href="css/workspace-nav.css?v=1" />
     <script src="js/gradient-theme-sync.js" defer></script>
 </head>
 <body>
-    <header class="wb-header">
-        <div class="wb-header-title">World building</div>
-        <div class="wb-header-actions">
-            <a class="wb-btn" href="world-encyclopedia.html" data-enc-back>← World Encyclopedia</a>
-            <a class="wb-btn" href="writer-dashboard.html">Studio</a>
-        </div>
-    </header>
-
+    <div id="alysum-workspace-nav" data-active="encyclopedia"></div>
+    <script type="module" src="js/workspace-nav.js?v=1"></script>
     <p class="wb-loading" id="wbLoading">Checking sign-in…</p>
 
     <main class="wb-wrap hidden" id="wbMain">

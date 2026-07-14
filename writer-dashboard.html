@@ -15,6 +15,7 @@
     <script src="js/alysum-appearance-boot.js"></script>
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
     <link rel="stylesheet" href="css/gradient-themes.css?v=6" />
+    <link rel="stylesheet" href="css/workspace-nav.css?v=1" />
     <script src="js/gradient-theme-sync.js" defer></script>
     <style>
         * { box-sizing: border-box; }html, body {
@@ -32,436 +33,6 @@
         display: flex;
         flex-direction: column;
     }
-
-    .wd-welcome-bar {
-        position: relative;
-        padding: 0 clamp(16px, 3vw, 32px);
-        min-height: 88px;
-        display: flex;
-        align-items: center;
-        overflow: hidden;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        background: var(
-            --theme-welcome-bar,
-            var(
-                --alysum-chrome-gradient,
-                linear-gradient(
-                    135deg,
-                    rgba(76, 29, 149, 0.95) 0%,
-                    var(--theme-header-mid, #6d28d9) 38%,
-                    var(--theme-header-end, #db2777) 100%
-                )
-            )
-        );
-        background-size: cover;
-        background-position: center;
-        box-shadow:
-            0 4px 32px rgba(0, 0, 0, 0.35),
-            inset 0 1px 0 rgba(255, 255, 255, 0.12);
-    }
-
-    .wd-welcome-bar::before {
-        content: "";
-        position: absolute;
-        inset: 0;
-        background:
-            radial-gradient(circle at 12% 50%, rgba(255, 255, 255, 0.14) 0%, transparent 42%),
-            radial-gradient(circle at 88% 20%, rgba(251, 191, 36, 0.12) 0%, transparent 40%);
-        pointer-events: none;
-    }
-
-    .wd-welcome-bar::after {
-        content: "";
-        position: absolute;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        height: 1px;
-        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
-        pointer-events: none;
-    }
-
-    .wd-welcome-inner {
-        position: relative;
-        z-index: 1;
-        width: 100%;
-        max-width: 1280px;
-        margin: 0 auto;
-        display: flex;
-        align-items: center;
-        gap: clamp(14px, 2.5vw, 20px);
-    }
-
-    .wd-pfp {
-        flex-shrink: 0;
-        width: 56px;
-        height: 56px;
-        border-radius: 50%;
-        overflow: hidden;
-        background: rgba(0, 0, 0, 0.28);
-        border: 2px solid rgba(255, 255, 255, 0.22);
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
-    }
-
-    .wd-pfp img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        display: block;
-    }
-
-    .wd-pfp-initial {
-        width: 100%;
-        height: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 22px;
-        font-weight: 900;
-        color: #fff;
-    }
-
-    .wd-pfp-initial.is-hidden { display: none; }
-
-    .wd-welcome-title {
-        margin: 0;
-        font-size: clamp(22px, 4vw, 28px);
-        font-weight: 900;
-        line-height: 1.15;
-        color: #fff7ed;
-        text-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
-    }
-
-    .wd-welcome-title .wd-name {
-        background: linear-gradient(90deg, #fff 0%, #fde68a 55%, #fbcfe8 100%);
-        -webkit-background-clip: text;
-        background-clip: text;
-        color: transparent;
-    }
-
-    .wd-main {
-        flex: 1;
-        max-width: 1280px;
-        width: 100%;
-        margin: 0 auto;
-        padding: 20px clamp(16px, 3vw, 32px) 48px;
-    }
-
-    .wd-stats-block {
-        border-radius: 18px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01));
-        overflow: hidden;
-    }
-
-    .wd-stats {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 0;
-        margin: 0;
-        padding: 0;
-        list-style: none;
-    }
-
-    .wd-stat {
-        margin: 0;
-        padding: 20px 12px;
-        min-height: 92px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-        border-right: 1px solid rgba(255, 255, 255, 0.06);
-    }
-
-    .wd-stat:last-child { border-right: none; }
-
-    .wd-stat strong {
-        display: block;
-        font-size: clamp(22px, 4vw, 26px);
-        font-weight: 900;
-        line-height: 1.1;
-        color: #fbbf24;
-    }
-
-    .wd-stat-label {
-        display: block;
-        margin-top: 8px;
-        font-size: 12px;
-        font-weight: 600;
-        color: #6b7280;
-        letter-spacing: 0.02em;
-    }
-
-    .wd-stats-foot {
-        display: grid;
-        grid-template-columns: auto 1fr;
-        align-items: center;
-        gap: 10px 14px;
-        padding: 12px 16px;
-        border-top: 1px solid rgba(255, 255, 255, 0.08);
-        font-size: 12px;
-        font-weight: 600;
-        color: #6b7280;
-    }
-
-    .wd-stats-foot-label {
-        border: none;
-        background: transparent;
-        color: inherit;
-        padding: 0;
-        font: inherit;
-        cursor: pointer;
-        white-space: nowrap;
-        text-align: left;
-    }
-
-    .wd-stats-foot-label:hover {
-        color: #cbd5e1;
-    }
-
-    .wd-stats-foot-count,
-    .wd-goal-edit-btn {
-        justify-self: end;
-        color: #d1d5db;
-        font-weight: 700;
-        white-space: nowrap;
-    }
-
-    .wd-goal-edit-btn {
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 999px;
-        background: rgba(255, 255, 255, 0.04);
-        padding: 7px 11px;
-        font: inherit;
-        cursor: pointer;
-        transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
-    }
-
-    .wd-goal-edit-btn:hover,
-    .wd-goal-edit-btn[aria-expanded="true"] {
-        color: #fff;
-        border-color: rgba(167, 139, 250, 0.38);
-        background: rgba(124, 58, 237, 0.18);
-    }
-
-    .wd-goal-picker {
-        grid-column: 1 / -1;
-        display: none;
-        padding: 14px;
-        border: 1px solid rgba(167, 139, 250, 0.2);
-        border-radius: 16px;
-        background: rgba(2, 6, 23, 0.62);
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
-    }
-
-    .wd-goal-picker.is-open { display: block; }
-
-    .wd-goal-picker-title {
-        margin: 0;
-        color: #f8fafc;
-        font-size: 13px;
-        font-weight: 900;
-    }
-
-    .wd-goal-picker-hint {
-        margin: 4px 0 12px;
-        color: #94a3b8;
-        font-size: 12px;
-        line-height: 1.4;
-    }
-
-    .wd-goal-presets {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-    }
-
-    .wd-goal-preset {
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 999px;
-        background: rgba(255, 255, 255, 0.05);
-        color: #e5e7eb;
-        padding: 8px 11px;
-        font: inherit;
-        font-size: 12px;
-        font-weight: 800;
-        cursor: pointer;
-    }
-
-    .wd-goal-preset:hover,
-    .wd-goal-preset.is-active {
-        border-color: rgba(251, 191, 36, 0.42);
-        background: rgba(251, 191, 36, 0.14);
-        color: #fef3c7;
-    }
-
-    .wd-goal-custom {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        align-items: center;
-        margin-top: 12px;
-    }
-
-    .wd-goal-custom input {
-        flex: 1 1 160px;
-        min-width: 0;
-        height: 38px;
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        border-radius: 12px;
-        background: rgba(15, 23, 42, 0.92);
-        color: #f8fafc;
-        padding: 0 11px;
-        font: inherit;
-        font-weight: 800;
-        outline: none;
-    }
-
-    .wd-goal-custom input:focus {
-        border-color: rgba(167, 139, 250, 0.55);
-        box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2);
-    }
-
-    .wd-goal-save,
-    .wd-goal-cancel {
-        height: 38px;
-        border-radius: 12px;
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        padding: 0 12px;
-        font: inherit;
-        font-size: 12px;
-        font-weight: 900;
-        cursor: pointer;
-    }
-
-    .wd-goal-save {
-        border-color: transparent;
-        background: #7c3aed;
-        color: #fff;
-    }
-
-    .wd-goal-cancel {
-        background: transparent;
-        color: #cbd5e1;
-    }
-
-    .wd-goal-picker-status {
-        min-height: 1.2em;
-        margin-top: 10px;
-        color: #94a3b8;
-        font-size: 12px;
-        font-weight: 700;
-    }
-
-    .wd-goal-bar {
-        grid-column: 1 / -1;
-        height: 6px;
-        border-radius: 999px;
-        background: rgba(255, 255, 255, 0.08);
-        overflow: hidden;
-    }
-
-    .wd-goal-fill {
-        height: 100%;
-        width: 0%;
-        border-radius: 999px;
-        background: #a78bfa;
-        transition: width 0.3s ease;
-    }
-
-    .wd-goal-fill.is-met { background: #4ade80; }
-
-    .wd-nav-wrap {
-        position: sticky;
-        top: 0;
-        z-index: 40;
-        background: rgba(11, 18, 32, 0.92);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-        backdrop-filter: blur(10px);
-    }
-
-    .wd-nav {
-        width: 100%;
-        max-width: none;
-        margin: 0;
-        padding: 10px clamp(12px, 2vw, 24px);
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 6px;
-        overflow-x: auto;
-        scrollbar-width: none;
-    }
-
-    .wd-nav::-webkit-scrollbar { display: none; }
-
-    .wd-nav a,
-    .wd-nav button {
-        flex-shrink: 0;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 8px clamp(8px, 0.8vw, 14px);
-        border-radius: 999px;
-        border: 1px solid transparent;
-        background: transparent;
-        color: #d1d5db;
-        font-family: inherit;
-        font-size: clamp(11px, 0.72vw, 13px);
-        font-weight: 700;
-        text-decoration: none;
-        cursor: pointer;
-        white-space: nowrap;
-        transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
-    }
-
-    .wd-nav a:hover,
-    .wd-nav button:hover {
-        color: #fff;
-        background: rgba(255, 255, 255, 0.06);
-    }
-
-    .wd-nav a.is-active,
-    .wd-nav button.is-active {
-        color: #fff;
-        background: rgba(124, 58, 237, 0.28);
-        border-color: rgba(167, 139, 250, 0.35);
-    }
-
-    .wd-nav a.is-hidden,
-    .wd-nav button.is-hidden { display: none; }
-
-    .wd-nav-logout { color: #fca5a5; }
-
-    .wd-nav-logout:hover {
-        color: #fecaca;
-        background: rgba(248, 113, 113, 0.12);
-    }
-
-    .wd-nav-divider {
-        flex-shrink: 0;
-        width: 1px;
-        height: 22px;
-        margin: 0 2px;
-        background: rgba(255, 255, 255, 0.12);
-    }
-
-    .wd-nav-badge {
-        min-width: 18px;
-        height: 18px;
-        padding: 0 5px;
-        border-radius: 999px;
-        background: #ef4444;
-        color: #fff;
-        font-size: 10px;
-        font-weight: 900;
-        line-height: 18px;
-        text-align: center;
-    }
-
-    .wd-nav-badge.is-hidden { display: none; }
 
     .wd-books-section {
         margin-top: 0;
@@ -979,44 +550,10 @@
 
 </head>
 <body>
+    <div id="alysum-workspace-nav" data-active="studio"></div>
+    <script type="module" src="js/workspace-nav.js?v=1"></script>
     <div class="wd-page">
-        <header class="wd-welcome-bar" aria-label="Welcome">
-            <div class="wd-welcome-inner">
-                <div class="wd-pfp" id="welcomePfp">
-                    <img id="welcomePfpImg" alt="" hidden />
-                    <span class="wd-pfp-initial" id="welcomePfpInitial" aria-hidden="true"></span>
-                </div>
-                <h1 class="wd-welcome-title" id="welcomeTitle">Welcome back.</h1>
-            </div>
-        </header><nav class="wd-nav-wrap" aria-label="Workspace">
-        <div class="wd-nav">
-            <button type="button" class="is-active" id="navContinue">Continue writing</button>
-            <span class="wd-nav-divider" aria-hidden="true"></span>
-            <a href="library.html">Library</a>
-            <a href="beta-rooms.html">Beta rooms</a>
-            <a href="author-dashboard.html" id="navAuthorStats">
-                Author stats
-                <span class="wd-nav-badge is-hidden" id="navDashBadge" aria-hidden="true">0</span>
-            </a>
-            <a href="world-encyclopedia.html">Encyclopedia</a>
-            <span class="wd-nav-divider" aria-hidden="true"></span>
-            <a href="vault.html">Notes</a>
-            <a href="note-graph.html">Note Graph</a>
-            <a href="Story-Bible-New.html" id="navStoryBible">Story Bible</a>
-            <a href="story-board/">Story Board</a>
-            <a href="plotweave.html">Plotweave</a>
-            <a href="Novel_Exporter.html">Exporter</a>
-            <a href="badges.html">Achievements</a>
-            <a href="leaderboard.html">Leaderboards</a>
-            <span class="wd-nav-divider" aria-hidden="true"></span>
-            <a href="settings.html">Settings</a>
-            <a href="reader-home.html" class="is-hidden" id="navReading">Reading</a>
-            <button type="button" class="wd-nav-logout" data-logout-btn>Log out</button>
-            <a href="index.html">Home</a>
-        </div>
-    </nav>
-
-    <main class="wd-main">
+        <main class="wd-main">
         <section class="wd-stats-block" aria-label="Your stats">
             <ul class="wd-stats">
                 <li class="wd-stat">
@@ -1131,7 +668,7 @@
         WRITER_HOME_URL,
         ACCOUNT_BOTH,
     } from "./js/account-mode.js?v=1";
-    import { wireLogoutButtons } from "./js/auth-logout.js?v=2";
+    import { setContinueWritingHandler } from "./js/workspace-nav.js?v=1";
     import { goToLogin, isDesktopLocalHost, DESKTOP_LOGIN_PATH } from "./js/desktop-auth.js?v=1";
     import {
         LOCAL_GUEST_USER,
@@ -1173,12 +710,9 @@
         normalizeMediaFormat,
     } from "./js/book-media-format.js?v=1";
 
-    wireLogoutButtons();
-
     const welcomeTitle = document.getElementById("welcomeTitle");
     const welcomePfpImg = document.getElementById("welcomePfpImg");
     const welcomePfpInitial = document.getElementById("welcomePfpInitial");
-    const navContinue = document.getElementById("navContinue");
     const navStoryBible = document.getElementById("navStoryBible");
     const navReading = document.getElementById("navReading");
     const navDashBadge = document.getElementById("navDashBadge");
@@ -1955,7 +1489,7 @@
         navDashBadge.classList.toggle("is-hidden", n <= 0);
     }
 
-    navContinue.addEventListener("click", () => {
+    setContinueWritingHandler(() => {
         const lastSession = readLastWriterSession();
         const continueBookId = pickContinueWritingBookId({
             lastSessionBookId: lastSession?.bookId,
@@ -2124,7 +1658,6 @@
         if (isDesktopLocalHost()) {
             isLocalStudio = true;
             mountLocalStudioBanner();
-            wireLogoutButtons();
             currentUser = LOCAL_GUEST_USER;
             let row;
             try {
@@ -2181,7 +1714,6 @@
         if (notificationsChannel) supabase.removeChannel(notificationsChannel);
     });
 
-    wireLogoutButtons();
     load().catch(console.error);
 </script>
 
