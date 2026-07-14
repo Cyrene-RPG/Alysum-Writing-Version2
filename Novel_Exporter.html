@@ -32,12 +32,9 @@
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
     <link rel="stylesheet" href="css/Novel_Exporter.css?v=5" />
     <link rel="stylesheet" href="css/gradient-themes.css?v=4" />
-    <link rel="stylesheet" href="css/workspace-nav.css?v=1" />
     <script src="js/gradient-theme-sync.js" defer></script>
 </head>
 <body class="ne-body">
-    <div id="alysum-workspace-nav" data-active="exporter"></div>
-    <script type="module" src="js/workspace-nav.js?v=1"></script>
     <header class="ne-header">
         <div class="ne-user-row">
             <div class="ne-user-left">
@@ -54,6 +51,7 @@
             </div>
         </div>
         <div class="ne-toolbar" role="navigation" aria-label="Novel exporter">
+            <a class="ne-bar-btn ne-bar-btn-back" id="neBackLink" href="writer-dashboard.html">Back</a>
             <span class="ne-toolbar-kicker">Export workspace</span>
             <button type="button" class="ne-bar-btn ne-bar-btn-export" id="neExportPdfBtn" aria-label="Export PDF">
                 Export PDF

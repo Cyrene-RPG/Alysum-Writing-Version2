@@ -24,21 +24,18 @@
     <script src="js/alysum-appearance-boot.js"></script>
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
     <link rel="stylesheet" href="css/gradient-themes.css?v=7" />
-    <link rel="stylesheet" href="css/workspace-nav.css?v=1" />
     <link rel="stylesheet" href="css/notebook.css?v=9" />
     <link rel="stylesheet" href="css/note-graph.css?v=2" />
     <script src="js/gradient-theme-sync.js" defer></script>
 </head>
 <body class="nb-app">
-    <div id="alysum-workspace-nav" data-active="note-graph"></div>
-    <script type="module" src="js/workspace-nav.js?v=1"></script>
     <div class="ng-app" id="ngApp">
         <header class="ng-toolbar" role="toolbar" aria-label="Note Graph tools">
             <div class="ng-toolbar-left">
-                <span class="ng-brand">
+                <a class="ng-brand" href="writer-dashboard.html" title="Back to Studio">
                     <img src="Alysum-3.png" alt="" />
                     <span>Note Graph</span>
-                </span>
+                </a>
                 <span class="ng-sep" aria-hidden="true"></span>
                 <span class="ng-status" id="ngStatus">Loading…</span>
             </div>
@@ -56,6 +53,7 @@
 
             <div class="ng-toolbar-right">
                 <button type="button" class="ng-btn ng-btn-primary" id="ngNewNote" title="New graph note">＋ Note</button>
+                <a class="ng-btn ng-btn-ghost" href="writer-dashboard.html">Studio</a>
             </div>
         </header>
 
