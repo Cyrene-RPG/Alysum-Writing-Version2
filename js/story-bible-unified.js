@@ -2,7 +2,7 @@
  * Unified Story Bible — codex + overview + atlas + timeline + graph + extraction.
  */
 
-import { mountStoryBiblePage } from "./story-bible-page.js?v=29";
+import { mountStoryBiblePage } from "./story-bible-page.js?v=30";
 import { generateBibleCharacterId, saveBibleCharacter, normalizeBibleCharacter } from "./story-bible-api.js?v=12";
 import {
     listBibleFacts,
@@ -23,7 +23,16 @@ import {
 } from "./story-bible-continuity.js?v=1";
 import { extractCandidateFactsFromSelection, detectNameCandidates } from "./story-bible-fact-rules.js?v=4";
 import { escapeHtml, normalizeText } from "./story-bible-utils.js?v=1";
-import { renderOverview } from "./story-bible-overview.js?v=2";
+import { renderOverview } from "./story-bible-overview.js?v=3";
+import {
+    publishBookLoreWiki,
+    unpublishBookLoreWiki,
+    getBookLorePublishState
+} from "./lore-wiki-api.js?v=1";
+import {
+    cosmeticDisplayNameFromUserData,
+    permanentHandleFromUserData
+} from "./profile-display.js?v=1";
 import { renderWorldAtlas } from "./story-bible-atlas.js?v=1";
 import { mountRelationshipGraph } from "./story-bible-graph.js?v=1";
 import { mountCommandPalette } from "./story-bible-command-palette.js?v=1";
@@ -274,11 +283,90 @@ function mountUnifiedExtras(ctx) {
             </div>`;
     }
 
+    let loreWikiPublished = false;
+    let lorePublishBusy = false;
+
+    async function refreshLorePublishState() {
+        try {
+            const state = await getBookLorePublishState(supabase, uid, bookId);
+            loreWikiPublished = !!state.published;
+        } catch (_) {
+            loreWikiPublished = false;
+        }
+    }
+
+    async function handleLorePublish() {
+        if (lorePublishBusy || !characters.length && !places.length) return;
+        lorePublishBusy = true;
+        setStatus("Publishing to Lore Wiki…");
+        try {
+            const { data: userRow } = await supabase
+                .from("users")
+                .select("display_name, username")
+                .eq("id", uid)
+                .maybeSingle();
+            const authorName =
+                cosmeticDisplayNameFromUserData(userRow) ||
+                permanentHandleFromUserData(userRow) ||
+                "Author";
+            const { data: bookRow } = await supabase
+                .from("books")
+                .select("title")
+                .eq("id", bookId)
+                .eq("user_id", uid)
+                .maybeSingle();
+            await publishBookLoreWiki(supabase, uid, bookId, {
+                bookTitle: bookRow?.title || "Untitled",
+                authorName,
+                characters,
+                places
+            });
+            loreWikiPublished = true;
+            setStatus("Published to Lore Wiki — readers can explore your lore.", false);
+            renderOverviewPanel();
+        } catch (e) {
+            console.error("[story-wiki] lore publish failed:", e);
+            setStatus(e?.message?.includes("lore_wiki") ? "Run supabase-sibling-tables.sql in Supabase first (Lore Wiki tables)." : "Could not publish to Lore Wiki.", true);
+        } finally {
+            lorePublishBusy = false;
+        }
+    }
+
+    async function handleLoreUnpublish() {
+        if (lorePublishBusy) return;
+        if (!confirm("Remove this book from public Lore Wiki?")) return;
+        lorePublishBusy = true;
+        setStatus("Unpublishing Lore Wiki…");
+        try {
+            await unpublishBookLoreWiki(supabase, uid, bookId);
+            loreWikiPublished = false;
+            setStatus("Removed from Lore Wiki.", false);
+            renderOverviewPanel();
+        } catch (e) {
+            console.error("[story-wiki] lore unpublish failed:", e);
+            setStatus("Could not unpublish Lore Wiki.", true);
+        } finally {
+            lorePublishBusy = false;
+        }
+    }
+
     function renderOverviewPanel() {
         const mount = byId("sbOverviewMount");
         if (!mount) return;
         const { conflicts, mismatches } = getConflicts();
-        renderOverview(mount, { characters, places, facts, chapterOptions, conflicts, mismatches });
+        renderOverview(mount, {
+            characters,
+            places,
+            facts,
+            chapterOptions,
+            conflicts,
+            mismatches,
+            loreWiki: {
+                published: loreWikiPublished,
+                canPublish: characters.length + places.length > 0,
+                bookId
+            }
+        });
     }
 
     function renderAtlas() {
@@ -600,6 +688,11 @@ function mountUnifiedExtras(ctx) {
     } catch (_) {}
 
     const gotHandoff = consumeSelectionHandoff(bookId);
+
+    window.addEventListener("alysum-lore-wiki-publish", () => void handleLorePublish());
+    window.addEventListener("alysum-lore-wiki-unpublish", () => void handleLoreUnpublish());
+
+    void refreshLorePublishState().then(() => renderOverviewPanel());
     if (gotHandoff) {
         workspaceView = "import";
         setWorkspaceView("import");

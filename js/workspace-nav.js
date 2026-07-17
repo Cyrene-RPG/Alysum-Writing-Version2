@@ -28,7 +28,8 @@ const PATH_TO_ACTIVE = new Map([
     ["writer-dashboard.html", "studio"],
     ["studio.html", "studio"],
     ["library.html", "library"],
-    ["beta-rooms.html", "beta-rooms"],
+    ["lore-wiki.html", "lore-wiki"],
+    ["library-violations.html", "library"],
     ["beta-room.html", "beta-rooms"],
     ["beta-room-manage.html", "beta-rooms"],
     ["author-dashboard.html", "author-stats"],
@@ -72,6 +73,10 @@ const WELCOME_DEFAULTS = {
     library: {
         title: "Welcome to the Library.",
         subtitle: "Browse the shelves, find your next read, and keep your place across Alysum.",
+    },
+    "lore-wiki": {
+        title: "Lore Wiki",
+        subtitle: "Explore read-only lore encyclopedias published by authors — editing stays private in Story Wiki.",
     },
     notes: {
         title: "Alysum Vault",
@@ -151,6 +156,7 @@ function renderNavHtml(active) {
                 <span class="wd-nav-divider" aria-hidden="true"></span>
                 <a href="${navHref("writer-dashboard.html")}"${activeClass("studio", active)}>Studio</a>
                 <a href="${navHref("library.html")}"${activeClass("library", active)}>Library</a>
+                <a href="${navHref("lore-wiki.html")}"${activeClass("lore-wiki", active)}>Lore Wiki</a>
                 <a href="${navHref("beta-rooms.html")}"${activeClass("beta-rooms", active)}>Beta rooms</a>
                 <a href="${navHref("author-dashboard.html")}" id="navAuthorStats"${activeClass("author-stats", active)}>
                     Author stats

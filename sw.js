@@ -8,7 +8,7 @@
  * Bump SW_VERSION when shipping breaking shell changes to force a refresh.
  */
 
-const SW_VERSION = 'v2.2.3';
+const SW_VERSION = 'v2.2.4';
 const SHELL_CACHE = `alysum-shell-${SW_VERSION}`;
 const ASSET_CACHE = `alysum-assets-${SW_VERSION}`;
 
@@ -18,6 +18,7 @@ const APP_SHELL = [
   'reset-password.html',
   'signup.html',
   'library.html',
+  'lore-wiki.html',
   'editor.html',
   'studio.html',
   'writer-dashboard.html',
@@ -102,7 +103,10 @@ const APP_SHELL = [
   'js/story-wiki-boot.js',
   'js/story-wiki-hub.js',
   'js/story-wiki-article.js',
-  'js/story-wiki-wikilinks.js',
+  'js/story-wiki-read.js',
+  'js/lore-wiki-api.js',
+  'js/lore-wiki-page.js',
+  'css/lore-wiki.css',
   'js/studio-session.js',
   'story-bible.html',
   'story-bible-legacy.html',

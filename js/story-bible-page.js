@@ -42,7 +42,7 @@ import {
     normalizeText
 } from "./story-bible-utils.js?v=1";
 import { renderCharacterCards, renderPlaceCards } from "./story-bible-cards.js?v=2";
-import { mountStoryWikiArticle } from "./story-wiki-article.js?v=2";
+import { mountStoryWikiArticle } from "./story-wiki-article.js?v=3";
 import { findWikiEntryByTitle, buildStoryWikiIndex } from "./story-wiki-wikilinks.js?v=1";
 import { loadStoryWikiHub } from "./story-wiki-hub.js?v=3";
 
@@ -546,7 +546,8 @@ export async function mountStoryBiblePage(opts) {
             onNavigate: payload => {
                 void navigateWikiLink(payload);
             },
-            onDirty: markDirty
+            onDirty: markDirty,
+            getBookTitle: () => bookTitleEl?.textContent?.trim() || ""
         });
     } catch (wikiErr) {
         console.error("[story-wiki] mount failed:", wikiErr);

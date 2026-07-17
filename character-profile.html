@@ -445,6 +445,7 @@
                 <span class="wd-nav-divider" aria-hidden="true"></span>
                 <a href="writer-dashboard.html">Studio</a>
                 <a href="library.html">Library</a>
+                <a href="lore-wiki.html">Lore Wiki</a>
                 <a href="beta-rooms.html">Beta rooms</a>
                 <a href="author-dashboard.html" id="navAuthorStats">
                     Author stats
@@ -906,7 +907,8 @@
             const tags = val("cpTags");
             const lines = ["Character profile (full worksheet)", ""];
 
-            if (name) lines.push(`Name: ${name}`);
+            if (name) lines.push(
+ame: ${name}`);
             if (aliases) lines.push(`Aliases: ${aliases}`);
             if (tags) lines.push(`Tags: ${tags}`);
             if (name || aliases || tags) lines.push("");

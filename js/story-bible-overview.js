@@ -11,7 +11,7 @@ import { scoreBibleHealth, scoreCharacter } from "./story-bible-health.js?v=1";
  */
 export function renderOverview(mount, ctx) {
     if (!mount) return;
-    const { characters = [], places = [], facts = [], conflicts = [], mismatches = [] } = ctx;
+    const { characters = [], places = [], facts = [], conflicts = [], mismatches = [], loreWiki = null } = ctx;
     const health = scoreBibleHealth(characters, places);
     const issueCount = conflicts.length + mismatches.length;
     const isEmpty = !characters.length && !places.length;
@@ -126,6 +126,20 @@ export function renderOverview(mount, ctx) {
                     : ""
             }
 
+            <section class="sb-home-section sb-lore-publish">
+                <h3 class="sb-home-heading">Share to Lore Wiki</h3>
+                <p class="sb-lore-publish-lead">Your Story Wiki stays private — only you can edit. Publish a read-only snapshot for readers on <a class="sb-link" href="lore-wiki.html" target="_blank" rel="noopener">Lore Wiki</a>.</p>
+                <div class="sb-lore-publish-box">
+                    <p id="sbLorePublishStatus" class="sb-lore-publish-status">${loreWiki?.published ? "Published — readers can browse your lore encyclopedia." : "Not published yet."}</p>
+                    <div class="sb-lore-publish-actions">
+                        <button type="button" class="sb-btn sb-btn-primary" id="sbLorePublishBtn" ${!loreWiki?.canPublish ? "disabled" : ""}>${loreWiki?.published ? "Update Lore Wiki" : "Publish to Lore Wiki"}</button>
+                        ${loreWiki?.published ? `<button type="button" class="sb-btn sb-btn-ghost" id="sbLoreUnpublishBtn">Unpublish</button>` : ""}
+                        ${loreWiki?.published ? `<a class="sb-btn sb-btn-ghost" href="lore-wiki.html?book=${encodeURIComponent(loreWiki.bookId || "")}" target="_blank" rel="noopener">View public wiki</a>` : ""}
+                    </div>
+                    <p class="sb-lore-publish-hint">Tip: use <code>== Section ==</code> in article bodies for Wikipedia-style sections and a table of contents.</p>
+                </div>
+            </section>
+
             <section class="sb-home-section">
                 <h3 class="sb-home-heading">How it works</h3>
                 <ol class="sb-help-steps">
@@ -152,6 +166,13 @@ export function renderOverview(mount, ctx) {
                 })
             );
         });
+    });
+
+    mount.querySelector("#sbLorePublishBtn")?.addEventListener("click", () => {
+        window.dispatchEvent(new CustomEvent("alysum-lore-wiki-publish"));
+    });
+    mount.querySelector("#sbLoreUnpublishBtn")?.addEventListener("click", () => {
+        window.dispatchEvent(new CustomEvent("alysum-lore-wiki-unpublish"));
     });
 }
 

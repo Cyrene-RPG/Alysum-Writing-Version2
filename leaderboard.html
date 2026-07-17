@@ -715,6 +715,7 @@
                 <span class="wd-nav-divider" aria-hidden="true"></span>
                 <a href="writer-dashboard.html">Studio</a>
                 <a href="library.html">Library</a>
+                <a href="lore-wiki.html">Lore Wiki</a>
                 <a href="beta-rooms.html">Beta rooms</a>
                 <a href="author-dashboard.html" id="navAuthorStats">
                     Author stats
@@ -964,7 +965,8 @@
       const handle = String(writer.username || "").trim().toLowerCase();
       if (handle && handle !== "user") return `handle:${handle}`;
       const name = String(writer.display_name || "").trim().toLowerCase();
-      if (name) return `name:${name}`;
+      if (name) return 
+ame:${name}`;
       return `id:${String(writer.user_id || "").trim()}`;
     }
 

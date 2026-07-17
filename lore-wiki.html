@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lore Wiki — Alysum</title>
+    <script src="js/alysum-appearance-boot.js"></script>
+    <link rel="stylesheet" href="css/site-responsive.css?v=1" />
+    <link rel="stylesheet" href="css/gradient-themes.css?v=4" />
+    <link rel="stylesheet" href="css/workspace-nav.css?v=4" />
+    <link rel="stylesheet" href="css/story-wiki.css?v=3" />
+    <link rel="stylesheet" href="css/lore-wiki.css?v=1" />
+    <script src="js/gradient-theme-sync.js" defer></script>
+    <script type="module" src="js/vercel-analytics.js"></script>
+</head>
+<body class="alysum-with-workspace-nav lw-page">
+    <div id="alysum-workspace-nav" data-active="lore-wiki"></div>
+    <script type="module" src="js/workspace-nav.js?v=5"></script>
+
+    <header class="lw-topbar">
+        <div class="lw-topbar-inner">
+            <div class="lw-topbar-copy">
+                <p class="lw-topbar-brand">Lore Wiki</p>
+                <h1 class="lw-topbar-title">Explore published story lore</h1>
+                <p class="lw-topbar-sub">Read-only encyclopedias shared by authors. Private Story Wiki stays yours — only snapshots you publish appear here.</p>
+            </div>
+            <div class="lw-search-wrap">
+                <input type="search" id="lwSearch" class="lw-search" placeholder="Search lore wikis and articles…" autocomplete="off" />
+            </div>
+        </div>
+    </header>
+
+    <main class="lw-main">
+        <div id="lwBrowseView">
+            <div class="lw-results-bar">
+                <span id="lwResultsCount" class="lw-results-count">Loading…</span>
+            </div>
+            <div id="lwGrid" class="lw-grid" aria-busy="true">
+                <p class="lw-loading">Loading Lore Wiki…</p>
+            </div>
+        </div>
+        <div id="lwBookView" class="hidden">
+            <div id="lwMain"></div>
+        </div>
+    </main>
+
+    <script type="module">
+        import { bootLoreWikiPage } from "./js/lore-wiki-page.js?v=1";
+        bootLoreWikiPage().catch(console.error);
+    </script>
+</body>
+</html>
