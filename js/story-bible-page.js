@@ -420,6 +420,10 @@ export async function mountStoryBiblePage(opts) {
                 : `${total} article${total === 1 ? "" : "s"}`;
     }
 
+    function rosterQuery() {
+        return (rosterSearch?.value || "").trim().toLowerCase();
+    }
+
     function renderCardGrids() {
         const q = rosterSearch?.value || "";
         const placeQ = placeSearch?.value || rosterSearch?.value || "";
