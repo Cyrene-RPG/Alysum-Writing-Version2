@@ -122,7 +122,7 @@ export function mountStoryWikiArticle(opts) {
         const rows = [
             ["Type", record.kind],
             ["Located in", record.parentPlace],
-            ...(record.tags || []).map(t => ["Tag", `#${t}`)
+            ...(record.tags || []).map(t => ["Tag", `#${t}`])
         ].filter(([, v]) => normalizeText(v));
         return rows
             .map(

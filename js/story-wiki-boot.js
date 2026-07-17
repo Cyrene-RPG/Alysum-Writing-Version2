@@ -3,7 +3,7 @@
  */
 import { supabase } from "../firebase.js";
 import { requireStudioSession } from "./studio-session.js?v=3";
-import { loadStoryWikiHub } from "./story-wiki-hub.js?v=2";
+import { loadStoryWikiHub } from "./story-wiki-hub.js?v=3";
 import { isStoryBibleUiEnabled, STORY_BIBLE_PREF_KEY, STORY_BIBLE_PREF_EVENT } from "./story-bible-prefs.js?v=1";
 
 function byId(id) {
@@ -163,7 +163,7 @@ export async function bootStoryWikiPage() {
     byId("sbBookView")?.classList.remove("hidden");
 
     try {
-        const { mountUnifiedStoryBible } = await import("./story-bible-unified.js?v=10");
+        const { mountUnifiedStoryBible } = await import("./story-bible-unified.js?v=11");
         await mountUnifiedStoryBible(collectMountOpts(session.user.id));
     } catch (e) {
         console.error("[story-wiki-boot] workspace failed:", e);

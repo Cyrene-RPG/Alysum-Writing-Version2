@@ -1,15 +1,16 @@
 /**
- * Story Wiki hub — load book picker without waiting on the full page mount.
+ * Story Wiki hub — book picker with rich cards.
  */
 import { listUserBooksWithBibleCounts } from "./story-bible-api.js?v=13";
-import { bookCoverGradient, escapeHtml } from "./story-bible-utils.js?v=1";
+import { bookCoverGradient, escapeHtml, getInitials } from "./story-bible-utils.js?v=1";
 
 function formatUpdated(ms) {
     if (!ms) return "—";
     try {
-        return new Date(ms).toLocaleString(undefined, {
-            dateStyle: "medium",
-            timeStyle: "short"
+        return new Date(ms).toLocaleDateString(undefined, {
+            month: "short",
+            day: "numeric",
+            year: "numeric"
         });
     } catch {
         return "—";
@@ -25,15 +26,72 @@ function withTimeout(promise, ms, label) {
     ]);
 }
 
+function renderLoadingState(bookGrid) {
+    if (!bookGrid) return;
+    bookGrid.setAttribute("aria-busy", "true");
+    bookGrid.innerHTML = `
+        <div class="sw-hub-loading" id="sbHubLoading">
+            <div class="sw-hub-skeleton" aria-hidden="true"></div>
+            <div class="sw-hub-skeleton" aria-hidden="true"></div>
+            <div class="sw-hub-skeleton" aria-hidden="true"></div>
+            <p class="sw-hub-loading-text">Loading your wikis…</p>
+        </div>`;
+}
+
+function renderHubStats(statsEl, rows) {
+    if (!statsEl) return;
+    if (!rows.length) {
+        statsEl.hidden = true;
+        statsEl.textContent = "";
+        return;
+    }
+    const books = rows.length;
+    const entries = rows.reduce((n, r) => n + r.characterCount + (r.placeCount ?? 0), 0);
+    statsEl.hidden = false;
+    statsEl.innerHTML =
+        `<span><strong>${books}</strong> ${books === 1 ? "wiki" : "wikis"}</span>` +
+        `<span class="sw-hub-stats-dot" aria-hidden="true">·</span>` +
+        `<span><strong>${entries}</strong> ${entries === 1 ? "article" : "articles"} total</span>`;
+}
+
+function renderBookCard(r, hubLinkPath) {
+    const open = `${hubLinkPath}?book=${encodeURIComponent(r.bookId)}`;
+    const ed = `editor.html?book=${encodeURIComponent(r.bookId)}`;
+    const title = escapeHtml(r.title);
+    const initials = escapeHtml(getInitials(r.title));
+    const entries = r.characterCount + (r.placeCount ?? 0);
+    const card = document.createElement("article");
+    card.className = "sw-hub-card";
+    card.innerHTML = `
+        <a class="sw-hub-card-cover" href="${open}" style="background:${bookCoverGradient(r.title)}">
+            <span class="sw-hub-card-watermark" aria-hidden="true">${initials}</span>
+            <h2 class="sw-hub-card-title">${title}</h2>
+        </a>
+        <div class="sw-hub-card-body">
+            <div class="sw-hub-card-chips">
+                <span class="sw-hub-chip">${r.characterCount} character${r.characterCount === 1 ? "" : "s"}</span>
+                <span class="sw-hub-chip">${r.placeCount ?? 0} place${(r.placeCount ?? 0) === 1 ? "" : "s"}</span>
+                <span class="sw-hub-chip is-accent">${entries} entr${entries === 1 ? "y" : "ies"}</span>
+            </div>
+            <p class="sw-hub-card-meta">Updated ${formatUpdated(r.updated)}</p>
+            <div class="sw-hub-card-actions">
+                <a class="sw-hub-btn sw-hub-btn-primary" href="${open}">Open wiki home</a>
+                <a class="sw-hub-btn sw-hub-btn-ghost" href="${ed}">Editor</a>
+            </div>
+        </div>`;
+    return card;
+}
+
 /** @type {Promise<object[]> | null} */
 let activeHubLoad = null;
 /** @type {string} */
 let activeHubLoadKey = "";
 
 async function fetchStoryWikiHub(supabase, uid, bookGrid, statusEl, hubLinkPath) {
+    const statsEl = document.getElementById("sbHubStats");
     if (!bookGrid) return [];
-    bookGrid.innerHTML = `<p class="sb-empty" id="sbHubLoading">Loading your books…</p>`;
-    if (statusEl) statusEl.textContent = "Loading your books…";
+    renderLoadingState(bookGrid);
+    if (statusEl) statusEl.textContent = "Loading your wikis…";
 
     try {
         const rows = await withTimeout(
@@ -42,45 +100,45 @@ async function fetchStoryWikiHub(supabase, uid, bookGrid, statusEl, hubLinkPath)
             "Loading books"
         );
         bookGrid.innerHTML = "";
+        bookGrid.setAttribute("aria-busy", "false");
+        renderHubStats(statsEl, rows);
+
         if (!rows.length) {
-            bookGrid.innerHTML =
-                `<div class="sb-empty">No books yet. <a class="sb-link" href="writer-dashboard.html">Create a book in Studio</a>, then return here — each book gets its own wiki.</div>`;
+            bookGrid.innerHTML = `
+                <div class="sw-hub-empty">
+                    <div class="sw-hub-empty-icon" aria-hidden="true">📚</div>
+                    <h2>No wikis yet</h2>
+                    <p>Create a book in Studio first — each manuscript gets its own linked encyclopedia here.</p>
+                    <a class="sw-hub-btn sw-hub-btn-primary" href="writer-dashboard.html">Create a book in Studio</a>
+                </div>`;
         } else {
+            const frag = document.createDocumentFragment();
             for (const r of rows) {
-                const open = `${hubLinkPath}?book=${encodeURIComponent(r.bookId)}`;
-                const ed = `editor.html?book=${encodeURIComponent(r.bookId)}`;
-                const card = document.createElement("article");
-                card.className = "sb-book-card";
-                card.innerHTML = `
-                    <div class="sb-book-card-cover" style="background:${bookCoverGradient(r.title)}">
-                        <h3>${escapeHtml(r.title)}</h3>
-                    </div>
-                    <div class="sb-book-card-body">
-                        <div class="sb-book-card-metrics">
-                            <div class="sb-book-metric"><strong>${r.characterCount}</strong><span>Characters</span></div>
-                            <div class="sb-book-metric"><strong>${r.placeCount ?? 0}</strong><span>Places</span></div>
-                            <div class="sb-book-metric"><strong>${r.characterCount + (r.placeCount ?? 0)}</strong><span>Entries</span></div>
-                        </div>
-                        <div class="sb-book-stats sb-muted">Updated ${formatUpdated(r.updated)}</div>
-                        <div class="sb-book-actions">
-                            <a class="sb-btn sb-btn-ghost" href="${ed}">Editor</a>
-                            <a class="sb-btn sb-btn-primary" href="${open}">Open wiki home</a>
-                        </div>
-                    </div>`;
-                bookGrid.appendChild(card);
+                frag.appendChild(renderBookCard(r, hubLinkPath));
             }
+            bookGrid.appendChild(frag);
         }
+
         if (statusEl) {
-            statusEl.textContent = rows.length ? `${rows.length} book wiki(s).` : "";
+            statusEl.textContent = rows.length ? `${rows.length} book wiki(s) ready.` : "";
             statusEl.classList.remove("is-error");
         }
         return rows;
     } catch (e) {
         console.error("[story-wiki-hub]", e);
-        bookGrid.innerHTML =
-            `<div class="sb-empty">Could not load your books. <a class="sb-link" href="login.html?next=${encodeURIComponent("story-bible.html")}">Sign in again</a> or refresh.<br><small>${escapeHtml(e?.message || "Unknown error")}</small></div>`;
+        bookGrid.setAttribute("aria-busy", "false");
+        if (statsEl) statsEl.hidden = true;
+        bookGrid.innerHTML = `
+            <div class="sw-hub-empty is-error">
+                <h2>Could not load your wikis</h2>
+                <p>${escapeHtml(e?.message || "Check your connection and try again.")}</p>
+                <div class="sw-hub-card-actions">
+                    <a class="sw-hub-btn sw-hub-btn-primary" href="login.html?next=${encodeURIComponent("story-bible.html")}">Sign in again</a>
+                    <button type="button" class="sw-hub-btn sw-hub-btn-ghost" onclick="location.reload()">Refresh</button>
+                </div>
+            </div>`;
         if (statusEl) {
-            statusEl.textContent = "Could not load books.";
+            statusEl.textContent = "Could not load wikis.";
             statusEl.classList.add("is-error");
         }
         return [];

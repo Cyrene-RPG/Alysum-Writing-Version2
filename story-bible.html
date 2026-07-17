@@ -22,7 +22,7 @@
     <link rel="stylesheet" href="css/magic-codex.css?v=7" />
     <link rel="stylesheet" href="css/story-bible.css?v=9" />
     <link rel="stylesheet" href="css/story-bible-v10.css?v=2" />
-    <link rel="stylesheet" href="css/story-wiki.css?v=1" />
+    <link rel="stylesheet" href="css/story-wiki.css?v=2" />
     <script src="js/gradient-theme-sync.js" defer></script>
 </head>
 <body class="mc-page mc-bible alysum-with-workspace-nav alysum-tool-scroll">
@@ -72,18 +72,26 @@
 
     <div class="sb-app">
         <!-- Hub: pick a book -->
-        <section id="sbHubView" class="sb-hub-page">
-            <header class="sb-hub-hero">
-                <p class="sb-hero-brand">Story Wiki</p>
-                <h1 class="sb-hub-title">Your story encyclopedia</h1>
-                <p class="sb-hub-lead">One wiki per book — linked articles for characters, places, and lore that stay in sync while you write.</p>
-            </header>
-            <div id="sbBookGrid" class="sb-book-grid">
-                <p class="sb-empty" id="sbHubLoading">Loading your books…</p>
+        <section id="sbHubView" class="sw-hub-page">
+            <div class="sw-hub-shell">
+                <header class="sw-hub-hero">
+                    <p class="sw-hub-brand">Story Wiki</p>
+                    <h1 class="sw-hub-title">Your story encyclopedia</h1>
+                    <p class="sw-hub-lead">Each book gets its own wiki — linked articles for characters, places, and lore that stay in sync while you write.</p>
+                </header>
+                <div id="sbHubStats" class="sw-hub-stats" hidden aria-live="polite"></div>
+                <div id="sbBookGrid" class="sw-hub-grid" aria-busy="true">
+                    <div class="sw-hub-loading" id="sbHubLoading">
+                        <div class="sw-hub-skeleton" aria-hidden="true"></div>
+                        <div class="sw-hub-skeleton" aria-hidden="true"></div>
+                        <div class="sw-hub-skeleton" aria-hidden="true"></div>
+                        <p class="sw-hub-loading-text">Loading your wikis…</p>
+                    </div>
+                </div>
+                <footer class="sw-hub-foot">
+                    <a class="sw-hub-foot-link" href="writer-dashboard.html">← Back to Studio</a>
+                </footer>
             </div>
-            <nav class="sb-hub-nav">
-                <a href="writer-dashboard.html">← Back to Studio</a>
-            </nav>
         </section>
 
         <div id="sbDisabled" class="sb-panel-muted hidden">
@@ -412,14 +420,21 @@
         (function () {
             window.setTimeout(function () {
                 var el = document.getElementById("sbHubLoading");
+                var grid = document.getElementById("sbBookGrid");
                 if (!el || !document.body.contains(el)) return;
-                el.innerHTML =
-                    'Still loading your books… Hard refresh (Ctrl+Shift+R), or open <a class="sb-link" href="writer-dashboard.html">Studio</a> to create a book first.';
+                var msg = document.createElement("p");
+                msg.className = "sw-hub-error";
+                msg.innerHTML =
+                    'Still loading… Hard refresh (Ctrl+Shift+R), or open <a class="sb-link" href="writer-dashboard.html">Studio</a> first.';
+                if (grid) {
+                    grid.innerHTML = "";
+                    grid.appendChild(msg);
+                }
             }, 16000);
         })();
     </script>
     <script type="module">
-        import { bootStoryWikiPage } from "./js/story-wiki-boot.js?v=1";
+        import { bootStoryWikiPage } from "./js/story-wiki-boot.js?v=2";
         bootStoryWikiPage().catch(function (e) {
             console.error("[story-wiki]", e);
             var el = document.getElementById("sbHubLoading");
