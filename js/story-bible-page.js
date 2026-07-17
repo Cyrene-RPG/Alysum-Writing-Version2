@@ -300,9 +300,7 @@ export async function mountStoryBiblePage(opts) {
 
     async function flushAutoSave() {
         const name = (fields.name?.value || "").trim();
-        if (!name) return;
-        if (bibleTab === "characters" && !selectedCharId) return;
-        if ((bibleTab === "places" || bibleTab === "objects") && !selectedPlaceId) return;
+        if (!name || !formLoadedFor?.id) return;
         setSaveStatus("saving");
         const result = await persistCurrentEntryFromForm({ silent: true, showSavedStatus: true });
         if (result?.ok === false) setSaveStatus("unsaved");
@@ -548,12 +546,15 @@ export async function mountStoryBiblePage(opts) {
     let characters = [];
     /** @type {ReturnType<typeof normalizeBiblePlace>[]} */
     let places = [];
-    /** @type {"characters"|"places"} */
+    /** @type {"characters"|"places"|"objects"} */
     let bibleTab = "characters";
     /** @type {string | null} */
     let selectedCharId = null;
     /** @type {string | null} */
     let selectedPlaceId = null;
+    /** Which record the shared form currently displays — save always targets this, not bibleTab alone. */
+    /** @type {{ kind: "character"|"place"|"object", id: string } | null} */
+    let formLoadedFor = null;
     /** @type {{ section: string, id: string, title: string, label: string }[]} */
     let chapterOptions = [];
     /** @type {ReturnType<typeof mountStoryWikiArticle> | null} */
@@ -574,14 +575,15 @@ export async function mountStoryBiblePage(opts) {
     }
 
     function getCurrentWikiRecord() {
-        if (bibleTab === "characters") {
-            return characters.find(c => c.id === selectedCharId) || null;
+        if (!formLoadedFor?.id) return null;
+        if (formLoadedFor.kind === "character") {
+            return characters.find(c => c.id === formLoadedFor.id) || null;
         }
-        return places.find(p => p.id === selectedPlaceId) || null;
+        return places.find(p => p.id === formLoadedFor.id) || null;
     }
 
     function getCurrentWikiEntryId() {
-        return bibleTab === "characters" ? selectedCharId : selectedPlaceId;
+        return formLoadedFor?.id || null;
     }
 
     async function createWikiArticleForTitle(title, preferredKind = "character", opts = {}) {
@@ -618,10 +620,8 @@ export async function mountStoryBiblePage(opts) {
             if (open) {
                 const view = kind === "object" ? "objects" : "places";
                 onViewRequest?.(view);
-                bibleTab = view;
-                updateBibleTabChrome();
-                persistBibleTab();
                 await selectPlace(stub.id);
+                persistBibleTab();
                 wikiHandle?.setMode(editMode ? "edit" : "read");
             }
             return { type: kind, id: stub.id, canonical: wanted };
@@ -641,10 +641,8 @@ export async function mountStoryBiblePage(opts) {
         notifyDataReload();
         if (open) {
             onViewRequest?.("characters");
-            bibleTab = "characters";
-            updateBibleTabChrome();
-            persistBibleTab();
             await selectCharacter(stub.id);
+            persistBibleTab();
             wikiHandle?.setMode(editMode ? "edit" : "read");
         }
         return { type: "character", id: stub.id, canonical: wanted };
@@ -710,11 +708,7 @@ export async function mountStoryBiblePage(opts) {
             editFormWrap: document.getElementById("sbWikiEditForm"),
             getData: () => ({ characters, places }),
             getCurrentEntryId: getCurrentWikiEntryId,
-            getCurrentKind: () => {
-                if (bibleTab === "characters") return "character";
-                if (bibleTab === "objects") return "object";
-                return "place";
-            },
+            getCurrentKind: () => formLoadedFor?.kind || "character",
             getDefaultLinkKind: () => defaultLinkKindForTab(),
             getCurrentRecord: getCurrentWikiRecord,
             onNotesChange: plain => {
@@ -1006,6 +1000,8 @@ export async function mountStoryBiblePage(opts) {
         const section = parts[0] || "";
         const chapterId = parts[1] || "";
         const kind = (fields.placeKind?.value || "").trim().toLowerCase();
+        const preservedKind =
+            !kind && String(base?.kind || "").trim().toLowerCase() === "object" ? "object" : kind;
 
         return normalizeBiblePlace(
             {
@@ -1014,7 +1010,7 @@ export async function mountStoryBiblePage(opts) {
                 aliases,
                 tags,
                 notes: getNotesValue(),
-                kind,
+                kind: preservedKind,
                 parentPlace: fields.placeParent?.value || "",
                 introducedSection: chapterId ? section : "",
                 introducedChapterId: chapterId || ""
@@ -1029,15 +1025,16 @@ export async function mountStoryBiblePage(opts) {
      */
     async function persistCurrentEntryFromForm(opts = {}) {
         const { silent = false, requireName = false, showSavedStatus = false } = opts;
-        if (bibleTab === "characters") {
-            if (!selectedCharId) {
-                if (requireName) {
-                    setStatus("Select or create a character first.", true);
-                    return { ok: false };
-                }
-                return { ok: true, skipped: true };
+        if (!formLoadedFor?.id) {
+            if (requireName) {
+                setStatus("Select or create an article first.", true);
+                return { ok: false };
             }
-            const base = characters.find(x => x.id === selectedCharId);
+            return { ok: true, skipped: true };
+        }
+
+        if (formLoadedFor.kind === "character") {
+            const base = characters.find(x => x.id === formLoadedFor.id);
             if (!base) return { ok: true, skipped: true };
             const next = readFormIntoCharacter(base);
             if (!next.name.trim()) {
@@ -1073,18 +1070,18 @@ export async function mountStoryBiblePage(opts) {
             }
         }
 
-        if (!selectedPlaceId) {
-            if (requireName) {
-                setStatus("Select or create a place first.", true);
-                return { ok: false };
-            }
-            return { ok: true, skipped: true };
-        }
-        const base = places.find(x => x.id === selectedPlaceId);
+        const base = places.find(x => x.id === formLoadedFor.id);
         if (!base) return { ok: true, skipped: true };
         const next = readFormIntoPlace(base);
         if (!next.name.trim()) {
-            if (requireName) setStatus("Place name is required before saving.", true);
+            if (requireName) {
+                setStatus(
+                    formLoadedFor.kind === "object"
+                        ? "Object name is required before saving."
+                        : "Place name is required before saving.",
+                    true
+                );
+            }
             return { ok: false, skipped: !requireName };
         }
         if (!silent) setStatus("Saving…");
@@ -1139,9 +1136,38 @@ export async function mountStoryBiblePage(opts) {
         fields.introduced.value = "|";
         fields.placeKind.value = "";
         fields.placeParent.value = "";
+        formLoadedFor = null;
+    }
+
+    function reloadFormForBibleTab() {
+        if (bibleTab === "characters") {
+            const c = characters.find(x => x.id === selectedCharId);
+            if (c) fillCharacterForm(c);
+            else {
+                formLoadedFor = null;
+                closeDrawer();
+            }
+            return;
+        }
+        if (bibleTab === "objects") {
+            const p = places.find(x => x.id === selectedPlaceId && isObjectRecord(x));
+            if (p) fillPlaceForm(p);
+            else {
+                formLoadedFor = null;
+                closeDrawer();
+            }
+            return;
+        }
+        const p = places.find(x => x.id === selectedPlaceId && !isObjectRecord(x));
+        if (p) fillPlaceForm(p);
+        else {
+            formLoadedFor = null;
+            closeDrawer();
+        }
     }
 
     function fillCharacterForm(c) {
+        formLoadedFor = { kind: "character", id: c.id };
         bibleTab = "characters";
         updateBibleTabChrome();
         clearSharedForm();
@@ -1184,7 +1210,9 @@ export async function mountStoryBiblePage(opts) {
     }
 
     function fillPlaceForm(p) {
-        bibleTab = isObjectRecord(p) ? "objects" : "places";
+        const placeKind = isObjectRecord(p) ? "object" : "place";
+        formLoadedFor = { kind: placeKind, id: p.id };
+        bibleTab = placeKind === "object" ? "objects" : "places";
         updateBibleTabChrome();
         clearSharedForm();
         clearCharacterFields();
@@ -2044,6 +2072,7 @@ export async function mountStoryBiblePage(opts) {
         void persistCurrentEntryFromForm({ silent: true });
         if (bibleTab === "characters") selectedCharId = null;
         else selectedPlaceId = null;
+        formLoadedFor = null;
         closeDrawer();
         renderCharList();
         renderPlaceList();
@@ -2079,19 +2108,19 @@ export async function mountStoryBiblePage(opts) {
     }
     fields.name?.addEventListener("input", () => {
         const nextName = fields.name.value;
-        if (formTitleEl && bibleTab === "characters") {
+        if (formTitleEl && formLoadedFor?.kind === "character") {
             formTitleEl.textContent = nextName.trim() || "New character";
-            const c = characters.find(x => x.id === selectedCharId);
+            const c = characters.find(x => x.id === formLoadedFor.id);
             if (c) {
                 c.name = nextName;
                 updateEntryHero("character", { ...c, name: nextName });
                 renderCardGrids();
             }
         }
-        if (formTitleEl && (bibleTab === "places" || bibleTab === "objects")) {
-            const isObj = bibleTab === "objects";
+        if (formTitleEl && (formLoadedFor?.kind === "place" || formLoadedFor?.kind === "object")) {
+            const isObj = formLoadedFor.kind === "object";
             formTitleEl.textContent = nextName.trim() || (isObj ? "New object" : "New place");
-            const p = places.find(x => x.id === selectedPlaceId);
+            const p = places.find(x => x.id === formLoadedFor.id);
             if (p) {
                 p.name = nextName;
                 updateEntryHero(isObj ? "object" : "place", { ...p, name: nextName });
@@ -2133,11 +2162,14 @@ export async function mountStoryBiblePage(opts) {
 
     window.addEventListener("alysum-bible-set-view", async ev => {
         const view = ev.detail?.view;
-        if (!view || !["characters", "places", "objects"].includes(view) || bibleTab === view) return;
+        if (!view || !["characters", "places", "objects"].includes(view)) return;
         await persistCurrentEntryFromForm({ silent: true });
-        bibleTab = view;
-        updateBibleTabChrome();
-        persistBibleTab();
+        if (bibleTab !== view) {
+            bibleTab = view;
+            updateBibleTabChrome();
+            persistBibleTab();
+        }
+        reloadFormForBibleTab();
         renderCharList();
         renderPlaceList();
     });
