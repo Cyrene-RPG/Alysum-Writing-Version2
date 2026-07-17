@@ -1380,6 +1380,33 @@ a.sw-wiki-link.is-missing:hover {
 
 .sw-wp-sheet-actions {
     gap: 12px;
+    align-items: center;
+}
+
+.sw-wp-save-status {
+    font-family: var(--sb-ui, system-ui, sans-serif);
+    font-size: 12px;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.55);
+    opacity: 0;
+    transition: opacity 0.15s;
+    white-space: nowrap;
+}
+
+.sw-wp-save-status.is-visible {
+    opacity: 1;
+}
+
+.sw-wp-save-status.is-unsaved {
+    color: #fbbf24;
+}
+
+.sw-wp-save-status.is-saving {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.sw-wp-save-status.is-saved {
+    color: #86efac;
 }
 
 .sw-wp-tool-link {

@@ -2,7 +2,7 @@
  * Unified Story Bible — codex + overview + atlas + timeline + graph + extraction.
  */
 
-import { mountStoryBiblePage } from "./story-bible-page.js?v=33";
+import { mountStoryBiblePage } from "./story-bible-page.js?v=34";
 import { generateBibleCharacterId, saveBibleCharacter, normalizeBibleCharacter } from "./story-bible-api.js?v=12";
 import {
     listBibleFacts,
@@ -230,6 +230,7 @@ function mountUnifiedExtras(ctx) {
     }
 
     function setWorkspaceView(view) {
+        window.dispatchEvent(new CustomEvent("alysum-bible-flush-save"));
         view = normalizeView(view);
         if (!VALID_VIEWS.includes(view)) view = "home";
         workspaceView = view;

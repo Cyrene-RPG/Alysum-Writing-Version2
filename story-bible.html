@@ -22,7 +22,7 @@
     <link rel="stylesheet" href="css/magic-codex.css?v=7" />
     <link rel="stylesheet" href="css/story-bible.css?v=9" />
     <link rel="stylesheet" href="css/story-bible-v10.css?v=2" />
-    <link rel="stylesheet" href="css/story-wiki.css?v=9" />
+    <link rel="stylesheet" href="css/story-wiki.css?v=10" />
     <script src="js/gradient-theme-sync.js" defer></script>
 </head>
 <body class="mc-page mc-bible alysum-with-workspace-nav alysum-tool-scroll">
@@ -267,11 +267,10 @@
                 <div id="sbEditorDrawer" class="sb-sheet-editor hidden" aria-label="Edit entry">
                     <header class="sb-sheet-toolbar sw-wp-sheet-toolbar">
                         <button type="button" class="sb-sheet-back sw-wp-link-btn" id="sbDrawerClose" aria-label="Back to list">← Article list</button>
-                        <span id="sbFormTitle" class="visually-hidden">Character</span>
-                        <span id="sbDirty" class="sb-dirty">Unsaved changes</span>
                         <div class="sb-sheet-toolbar-actions sw-wp-sheet-actions">
+                            <span id="sbDirty" class="sb-dirty sw-wp-save-status" aria-live="polite"></span>
                             <button type="button" class="sw-wp-tool-link sb-del" id="sbDeleteChar">Delete</button>
-                            <button type="button" class="sw-wp-tool-link sw-wp-tool-link-accent sb-save" id="sbSaveChar">Publish changes</button>
+                            <button type="button" class="sw-wp-tool-link sw-wp-tool-link-accent sb-save" id="sbSaveChar">Save article</button>
                         </div>
                     </header>
                     <div id="sbEntryHero" class="sb-entry-hero hidden" aria-hidden="true"></div>

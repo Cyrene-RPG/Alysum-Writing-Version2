@@ -242,12 +242,58 @@ export async function mountStoryBiblePage(opts) {
         /* Appearance fields use placeholders; datalists removed (render glitch in some browsers). */
     }
 
+    function setSaveStatus(mode) {
+        if (!dirtyEl) return;
+        dirtyEl.classList.remove("is-saving", "is-saved", "is-unsaved");
+        if (mode === "idle") {
+            dirtyEl.textContent = "";
+            dirtyEl.classList.remove("is-visible");
+            return;
+        }
+        dirtyEl.classList.add("is-visible");
+        if (mode === "unsaved") {
+            dirtyEl.textContent = "Unsaved changes";
+            dirtyEl.classList.add("is-unsaved");
+        } else if (mode === "saving") {
+            dirtyEl.textContent = "Saving…";
+            dirtyEl.classList.add("is-saving");
+        } else if (mode === "saved") {
+            dirtyEl.textContent = "Saved to your wiki";
+            dirtyEl.classList.add("is-saved");
+            clearTimeout(savedFlashTimer);
+            savedFlashTimer = setTimeout(() => {
+                if (dirtyEl.classList.contains("is-saved")) setSaveStatus("idle");
+            }, 2500);
+        }
+    }
+
+    let autoSaveTimer = null;
+    let savedFlashTimer = null;
+
     function markDirty() {
-        dirtyEl?.classList.add("is-visible");
+        clearTimeout(autoSaveTimer);
+        setSaveStatus("unsaved");
+        autoSaveTimer = setTimeout(() => {
+            autoSaveTimer = null;
+            void flushAutoSave();
+        }, 2000);
     }
 
     function clearDirty() {
-        dirtyEl?.classList.remove("is-visible");
+        clearTimeout(autoSaveTimer);
+        autoSaveTimer = null;
+        setSaveStatus("idle");
+    }
+
+    async function flushAutoSave() {
+        const name = (fields.name?.value || "").trim();
+        if (!name) return;
+        if (bibleTab === "characters" && !selectedCharId) return;
+        if (bibleTab === "places" && !selectedPlaceId) return;
+        setSaveStatus("saving");
+        const result = await persistCurrentEntryFromForm({ silent: true, showSavedStatus: true });
+        if (result?.ok === false) setSaveStatus("unsaved");
+        else if (result?.skipped) setSaveStatus("idle");
     }
 
     function updateHealthPanel() {
@@ -693,7 +739,7 @@ export async function mountStoryBiblePage(opts) {
      * @param {{ silent?: boolean, requireName?: boolean }} opts
      */
     async function persistCurrentEntryFromForm(opts = {}) {
-        const { silent = false, requireName = false } = opts;
+        const { silent = false, requireName = false, showSavedStatus = false } = opts;
         if (bibleTab === "characters") {
             if (!selectedCharId) {
                 if (requireName) {
@@ -721,14 +767,19 @@ export async function mountStoryBiblePage(opts) {
                 refreshScanFromCache();
                 if (!silent) {
                     setStatus("Saved.");
-                    clearDirty();
+                    setSaveStatus("saved");
                     setTimeout(() => setStatus(""), 2000);
+                } else if (showSavedStatus) {
+                    setSaveStatus("saved");
+                } else {
+                    clearDirty();
                 }
                 updateHealthPanel();
                 return { ok: true };
             } catch (e) {
                 console.error(e);
                 setStatus(formatFirestoreErr(e, "Save"), true);
+                if (showSavedStatus || !silent) setSaveStatus("unsaved");
                 return { ok: false };
             }
         }
@@ -759,14 +810,19 @@ export async function mountStoryBiblePage(opts) {
             refreshScanFromCache();
             if (!silent) {
                 setStatus("Saved.");
-                clearDirty();
+                setSaveStatus("saved");
                 setTimeout(() => setStatus(""), 2000);
+            } else if (showSavedStatus) {
+                setSaveStatus("saved");
+            } else {
+                clearDirty();
             }
             updateHealthPanel();
             return { ok: true };
         } catch (e) {
             console.error(e);
             setStatus(formatFirestoreErr(e, "Save"), true);
+            if (showSavedStatus || !silent) setSaveStatus("unsaved");
             return { ok: false };
         }
     }
@@ -1738,8 +1794,16 @@ export async function mountStoryBiblePage(opts) {
 
     document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "hidden") {
+            clearTimeout(autoSaveTimer);
+            autoSaveTimer = null;
             void persistCurrentEntryFromForm({ silent: true });
         }
+    });
+
+    window.addEventListener("alysum-bible-flush-save", () => {
+        clearTimeout(autoSaveTimer);
+        autoSaveTimer = null;
+        void persistCurrentEntryFromForm({ silent: true });
     });
 
     window.addEventListener("alysum-bible-characters-changed", () => {
