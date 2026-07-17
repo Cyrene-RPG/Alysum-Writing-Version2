@@ -9,7 +9,7 @@ import {
     normalizeStoryWikiPlain,
     plainToStoryWikiHtml,
     serializeStoryWikiBody
-} from "./story-wiki-wikilinks.js?v=2";
+} from "./story-wiki-wikilinks.js?v=3";
 import { renderStoryWikiArticleHtml } from "./story-wiki-read.js?v=1";
 
 /**
@@ -35,21 +35,29 @@ export function mountStoryWikiArticle(opts) {
 
     let mode = "read";
     const linkBtn = document.getElementById("sbWikiLinkBtn");
+    const formatButtons = Array.from(document.querySelectorAll("[data-wiki-format]"));
+
+    function getEditorSelectionRange() {
+        if (!editEl?.isContentEditable) return null;
+        const sel = window.getSelection();
+        if (!sel || sel.rangeCount === 0) return null;
+        const range = sel.getRangeAt(0);
+        if (!editEl.contains(range.commonAncestorContainer)) return null;
+        if (range.collapsed) return null;
+        return range;
+    }
 
     function getEditorSelectionText() {
         if (!editEl) return "";
         if (editEl.isContentEditable) {
-            const sel = window.getSelection();
-            if (!sel || sel.rangeCount === 0) return "";
-            const range = sel.getRangeAt(0);
-            if (!editEl.contains(range.commonAncestorContainer)) return "";
-            if (range.collapsed) return "";
+            const range = getEditorSelectionRange();
+            if (!range) return "";
             const anchor =
                 range.commonAncestorContainer.nodeType === Node.ELEMENT_NODE
                     ? range.commonAncestorContainer
                     : range.commonAncestorContainer.parentElement;
             if (anchor?.closest?.(".sw-wiki-link")) return "";
-            return sel.toString().trim();
+            return range.toString().trim();
         }
         const start = editEl.selectionStart ?? 0;
         const end = editEl.selectionEnd ?? start;
@@ -59,16 +67,21 @@ export function mountStoryWikiArticle(opts) {
             .trim();
     }
 
-    function updateLinkBtnState() {
-        if (!linkBtn) return;
+    function updateFormatToolbarState() {
         const enabled = mode === "edit" && getEditorSelectionText().length > 0;
-        linkBtn.disabled = !enabled;
-        linkBtn.setAttribute("aria-disabled", enabled ? "false" : "true");
+        if (linkBtn) {
+            linkBtn.disabled = !enabled;
+            linkBtn.setAttribute("aria-disabled", enabled ? "false" : "true");
+        }
+        for (const btn of formatButtons) {
+            btn.disabled = !enabled;
+            btn.setAttribute("aria-disabled", enabled ? "false" : "true");
+        }
     }
 
     function onSelectionChange() {
         if (mode !== "edit") return;
-        updateLinkBtnState();
+        updateFormatToolbarState();
     }
 
     function getIndex() {
@@ -85,8 +98,7 @@ export function mountStoryWikiArticle(opts) {
         readMount?.classList.toggle("hidden", mode !== "read");
         editFormWrap?.classList.toggle("hidden", mode !== "edit");
         document.getElementById("sbEntryHero")?.classList.toggle("hidden", mode === "read");
-        document.getElementById("sbWikiLinkBtn")?.classList.toggle("hidden", mode !== "edit");
-        updateLinkBtnState();
+        updateFormatToolbarState();
         if (mode === "read") renderArticle();
         else syncEditFromPlain();
     }
@@ -162,6 +174,84 @@ export function mountStoryWikiArticle(opts) {
         return link;
     }
 
+    function insertBlockHeading(selected, level) {
+        const marker = level === 3 ? "===" : "==";
+        const line = `${marker} ${selected} ${marker}`;
+
+        if (editEl.isContentEditable) {
+            const range = getEditorSelectionRange();
+            if (!range) return;
+            range.deleteContents();
+            const frag = document.createDocumentFragment();
+            frag.appendChild(document.createTextNode(`\n${line}\n`));
+            range.insertNode(frag);
+            const sel = window.getSelection();
+            if (sel) {
+                const after = document.createRange();
+                after.selectNodeContents(editEl);
+                after.collapse(false);
+                sel.removeAllRanges();
+                sel.addRange(after);
+            }
+            editEl.focus();
+        } else {
+            const start = editEl.selectionStart ?? 0;
+            const end = editEl.selectionEnd ?? start;
+            const val = editEl.value || "";
+            const wrapped = `\n${line}\n`;
+            editEl.value = val.slice(0, start) + wrapped + val.slice(end);
+            const caret = start + wrapped.length;
+            editEl.selectionStart = editEl.selectionEnd = caret;
+            editEl.focus();
+        }
+    }
+
+    function insertInlineFormat(selected, tagName, markers) {
+        if (editEl.isContentEditable) {
+            const range = getEditorSelectionRange();
+            if (!range) return;
+            range.deleteContents();
+            const el = document.createElement(tagName);
+            el.textContent = selected;
+            range.insertNode(el);
+            const spacer = document.createTextNode("\u00A0");
+            el.after(spacer);
+            const sel = window.getSelection();
+            if (sel) {
+                const after = document.createRange();
+                after.setStartAfter(spacer);
+                after.collapse(true);
+                sel.removeAllRanges();
+                sel.addRange(after);
+            }
+            editEl.focus();
+        } else {
+            const start = editEl.selectionStart ?? 0;
+            const end = editEl.selectionEnd ?? start;
+            const val = editEl.value || "";
+            const wrapped = `${markers}${selected}${markers}`;
+            editEl.value = val.slice(0, start) + wrapped + val.slice(end);
+            const caret = start + wrapped.length;
+            editEl.selectionStart = editEl.selectionEnd = caret;
+            editEl.focus();
+        }
+    }
+
+    function applyWikiFormat(format) {
+        if (!editEl) return;
+        const selected = getEditorSelectionText();
+        if (!selected) return;
+
+        if (format === "heading") insertBlockHeading(selected, 2);
+        else if (format === "subheading") insertBlockHeading(selected, 3);
+        else if (format === "bold") insertInlineFormat(selected, "strong", "'''");
+        else if (format === "italic") insertInlineFormat(selected, "em", "''");
+
+        onNotesChange(getNotesPlain());
+        onDirty?.();
+        updateFormatToolbarState();
+    }
+
     function insertWikiLinkForSelection() {
         if (!editEl) return;
         const selected = getEditorSelectionText();
@@ -202,7 +292,7 @@ export function mountStoryWikiArticle(opts) {
 
         onNotesChange(getNotesPlain());
         onDirty?.();
-        updateLinkBtnState();
+        updateFormatToolbarState();
 
         void (async () => {
             if (!onEnsureMissingArticles) return;
@@ -268,12 +358,15 @@ export function mountStoryWikiArticle(opts) {
 
     readMount?.addEventListener("click", handleWikiNavClick);
 
-    editEl?.addEventListener("mouseup", updateLinkBtnState);
-    editEl?.addEventListener("keyup", updateLinkBtnState);
+    editEl?.addEventListener("mouseup", updateFormatToolbarState);
+    editEl?.addEventListener("keyup", updateFormatToolbarState);
 
     document.addEventListener("selectionchange", onSelectionChange);
 
     document.getElementById("sbWikiLinkBtn")?.addEventListener("click", insertWikiLinkForSelection);
+    for (const btn of formatButtons) {
+        btn.addEventListener("click", () => applyWikiFormat(btn.getAttribute("data-wiki-format") || ""));
+    }
 
     setMode("read");
 

@@ -156,6 +156,18 @@ export function serializeStoryWikiBody(root) {
             out += `[[${safe}]]`;
             return;
         }
+        if (el.tagName === "STRONG" || el.tagName === "B") {
+            out += "'''";
+            for (const c of el.childNodes) walk(c);
+            out += "'''";
+            return;
+        }
+        if (el.tagName === "EM" || el.tagName === "I") {
+            out += "''";
+            for (const c of el.childNodes) walk(c);
+            out += "''";
+            return;
+        }
         if (el.tagName === "BR") {
             out += "\n";
             return;
@@ -180,39 +192,100 @@ export function serializeStoryWikiBody(root) {
     return out.replace(/\n+$/, "");
 }
 
+function renderBoldItalicEscaped(text) {
+    let result = "";
+    let i = 0;
+    const src = String(text || "");
+    while (i < src.length) {
+        if (src.startsWith("'''", i)) {
+            const end = src.indexOf("'''", i + 3);
+            if (end > i) {
+                result += `<strong>${escapeHtml(src.slice(i + 3, end))}</strong>`;
+                i = end + 3;
+                continue;
+            }
+        }
+        if (src.startsWith("''", i)) {
+            const end = src.indexOf("''", i + 2);
+            if (end > i) {
+                result += `<em>${escapeHtml(src.slice(i + 2, end))}</em>`;
+                i = end + 2;
+                continue;
+            }
+        }
+        const nextBold = src.indexOf("'''", i);
+        const nextItalic = src.indexOf("''", i);
+        let next = -1;
+        if (nextBold >= 0 && nextItalic >= 0) next = Math.min(nextBold, nextItalic);
+        else next = Math.max(nextBold, nextItalic);
+        const end = next >= 0 ? next : src.length;
+        result += escapeHtml(src.slice(i, end));
+        i = end;
+    }
+    return result;
+}
+
+function renderWikiLinkPart(part, index, opts) {
+    const inner = part.slice(2, -2).trim();
+    const entry = findWikiEntryByTitle(index, inner);
+    if (entry) {
+        return (
+            `<a href="#" class="sw-wiki-link" ` +
+            `data-wiki-type="${escapeHtml(entry.type)}" ` +
+            `data-wiki-id="${escapeHtml(entry.id)}" ` +
+            `data-wiki-title="${escapeHtml(entry.canonical)}" ` +
+            `${opts.forRead ? "" : 'contenteditable="false" '}` +
+            `>${escapeHtml(entry.canonical)}</a>`
+        );
+    }
+    return (
+        `<a href="#" class="sw-wiki-link is-missing" ` +
+        `data-wiki-title="${escapeHtml(inner)}" ` +
+        `${opts.forRead ? "" : 'contenteditable="false" '}` +
+        `>${escapeHtml(inner)}</a>`
+    );
+}
+
+function renderLineInline(line, index, opts) {
+    const parts = String(line || "").split(/(\[\[[^\]]+\]\])/g);
+    let html = "";
+    for (const part of parts) {
+        if (/^\[\[[^\]]+\]\]$/.test(part)) html += renderWikiLinkPart(part, index, opts);
+        else html += renderBoldItalicEscaped(part);
+    }
+    return html;
+}
+
 /**
  * @param {string} plain
  * @param {WikiEntry[]} index
  * @param {{ forRead?: boolean }} [opts]
  */
 export function plainToStoryWikiHtml(plain, index, opts = {}) {
-    const parts = String(plain || "").split(/(\[\[[^\]]+\]\])/g);
-    let html = "";
-    for (const part of parts) {
-        const m = part.match(/^\[\[([^\]]+)\]\]$/);
-        if (m) {
-            const inner = m[1].trim();
-            const entry = findWikiEntryByTitle(index, inner);
-            if (entry) {
-                html +=
-                    `<a href="#" class="sw-wiki-link" ` +
-                    `data-wiki-type="${escapeHtml(entry.type)}" ` +
-                    `data-wiki-id="${escapeHtml(entry.id)}" ` +
-                    `data-wiki-title="${escapeHtml(entry.canonical)}" ` +
-                    `${opts.forRead ? "" : 'contenteditable="false" '}` +
-                    `>${escapeHtml(entry.canonical)}</a>`;
-            } else {
-                html +=
-                    `<a href="#" class="sw-wiki-link is-missing" ` +
-                    `data-wiki-title="${escapeHtml(inner)}" ` +
-                    `${opts.forRead ? "" : 'contenteditable="false" '}` +
-                    `>${escapeHtml(inner)}</a>`;
-            }
-        } else {
-            html += escapeHtml(part).replace(/\n/g, "<br>");
-        }
+    const raw = String(plain || "");
+    if (!raw.trim()) {
+        return opts.forRead
+            ? '<p class="sw-wiki-empty">This article has no body yet. Switch to Edit to write it — use [[Name]] to link other entries.</p>'
+            : "<br>";
     }
-    return html || (opts.forRead ? '<p class="sw-wiki-empty">This article has no body yet. Switch to Edit to write it — use [[Name]] to link other entries.</p>' : "<br>");
+
+    const lines = raw.split("\n");
+    let html = "";
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        const subM = line.match(/^===\s*(.+?)\s*===$/);
+        if (subM) {
+            html += `<h3 class="sw-wp-h3">${escapeHtml(subM[1].trim())}</h3>`;
+            continue;
+        }
+        if (!line && i < lines.length - 1) {
+            html += "<br>";
+            continue;
+        }
+        html += renderLineInline(line, index, opts);
+        if (i < lines.length - 1) html += "<br>";
+    }
+    return html || (opts.forRead ? '<p class="sw-wiki-empty">This article has no body yet.</p>' : "<br>");
 }
 
 /** Plain with [[markers]] → readable text */

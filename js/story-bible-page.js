@@ -42,8 +42,8 @@ import {
     normalizeText
 } from "./story-bible-utils.js?v=1";
 import { renderCharacterCards, renderPlaceCards } from "./story-bible-cards.js?v=3";
-import { mountStoryWikiArticle } from "./story-wiki-article.js?v=6";
-import { findWikiEntryByTitle, buildStoryWikiIndex, extractWikiLinkTitles } from "./story-wiki-wikilinks.js?v=2";
+import { mountStoryWikiArticle } from "./story-wiki-article.js?v=7";
+import { findWikiEntryByTitle, buildStoryWikiIndex, extractWikiLinkTitles } from "./story-wiki-wikilinks.js?v=3";
 import { loadStoryWikiHub } from "./story-wiki-hub.js?v=3";
 
 const SB_TAB_STORAGE_KEY = "alysum-story-bible-tab";

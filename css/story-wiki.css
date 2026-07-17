@@ -3,10 +3,28 @@
 .sw-wiki-toolbar {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-start;
     gap: 12px;
     flex-wrap: wrap;
     margin-bottom: 16px;
+}
+
+.sw-wiki-body-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    margin-bottom: 10px;
+    padding: 6px 0 8px;
+    background: linear-gradient(#0a0f1a 70%, rgba(10, 15, 26, 0));
+}
+
+.sw-wiki-body-toolbar .sb-block-title {
+    margin: 0;
 }
 
 .sw-wiki-mode-tabs {
@@ -46,6 +64,18 @@
     color: #e2e8f0;
 }
 
+.sw-wiki-body-toolbar .sb-block-title {
+    margin: 0;
+}
+
+.sw-wiki-format-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.sw-wiki-format-btn,
 .sw-wiki-link-btn {
     border: 1px solid var(--sb-border, rgba(255, 255, 255, 0.07));
     border-radius: 8px;
@@ -56,14 +86,23 @@
     padding: 7px 12px;
     cursor: pointer;
     font-family: var(--sb-ui, system-ui, sans-serif);
+    line-height: 1.2;
 }
 
+.sw-wiki-format-btn strong,
+.sw-wiki-format-btn em {
+    font: inherit;
+    color: inherit;
+}
+
+.sw-wiki-format-btn:disabled,
 .sw-wiki-link-btn:disabled {
     opacity: 0.4;
     cursor: not-allowed;
 }
 
-.sw-wiki-link-btn:hover {
+.sw-wiki-format-btn:hover:not(:disabled),
+.sw-wiki-link-btn:hover:not(:disabled) {
     border-color: var(--sb-border-strong);
     background: rgba(124, 58, 237, 0.15);
 }
@@ -176,6 +215,25 @@
     font-size: 1.35rem;
     font-weight: 600;
     color: #f1f5f9;
+}
+
+.sw-wp-h3 {
+    margin: 1em 0 0.35em;
+    font-family: var(--sb-ui, system-ui, sans-serif);
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #e2e8f0;
+}
+
+.sw-wp-content strong,
+.sb-wiki-body-ce strong {
+    font-weight: 700;
+    color: #f8fafc;
+}
+
+.sw-wp-content em,
+.sb-wiki-body-ce em {
+    font-style: italic;
 }
 
 .sw-wp-section-body {
@@ -1347,6 +1405,14 @@ a.sw-wiki-link.is-missing:hover {
     min-height: 0;
     overflow-y: auto;
     padding: 20px 32px 32px;
+}
+
+.sw-wp-skin .sw-wp-article-body-block {
+    margin-top: 4px;
+}
+
+.sw-wp-skin .sw-wp-article-body-block .sw-wiki-format-actions {
+    flex-shrink: 0;
 }
 
 .sw-wp-skin .sw-wp-article-body-block .sb-wiki-body-ce {

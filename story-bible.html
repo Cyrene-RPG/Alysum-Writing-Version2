@@ -22,7 +22,7 @@
     <link rel="stylesheet" href="css/magic-codex.css?v=7" />
     <link rel="stylesheet" href="css/story-bible.css?v=9" />
     <link rel="stylesheet" href="css/story-bible-v10.css?v=2" />
-    <link rel="stylesheet" href="css/story-wiki.css?v=11" />
+    <link rel="stylesheet" href="css/story-wiki.css?v=13" />
     <script src="js/gradient-theme-sync.js" defer></script>
 </head>
 <body class="mc-page mc-bible alysum-with-workspace-nav alysum-tool-scroll">
@@ -282,7 +282,6 @@
                                         <button type="button" class="sw-wiki-mode-btn is-active" id="sbWikiModeRead" role="tab" aria-selected="true">Read</button>
                                         <button type="button" class="sw-wiki-mode-btn" id="sbWikiModeEdit" role="tab" aria-selected="false">Edit</button>
                                     </div>
-                                    <button type="button" class="sw-wiki-link-btn" id="sbWikiLinkBtn" title="Select text in the article, then create a wiki link to it" disabled aria-disabled="true">Make hyperlink</button>
                                 </div>
                                 <div id="sbWikiRead" class="sw-wiki-read" aria-live="polite"></div>
                             </div>
@@ -292,6 +291,22 @@
                                 <label for="sbName" id="sbLabelName">Article title</label>
                                 <input id="sbName" type="text" autocomplete="off" placeholder="Character or place name" class="sw-wp-title-input" />
                             </div>
+
+                            <div class="sb-block sb-sheet-col-12 sw-wp-article-body-block">
+                                <div class="sw-wiki-body-toolbar">
+                                    <h3 class="sb-block-title">Article text</h3>
+                                    <div class="sw-wiki-format-actions" role="toolbar" aria-label="Article formatting">
+                                        <button type="button" class="sw-wiki-format-btn" data-wiki-format="heading" title="Turn selection into a section heading" disabled aria-disabled="true">Heading</button>
+                                        <button type="button" class="sw-wiki-format-btn" data-wiki-format="subheading" title="Turn selection into a subheading" disabled aria-disabled="true">Subheading</button>
+                                        <button type="button" class="sw-wiki-format-btn" data-wiki-format="bold" title="Bold" disabled aria-disabled="true"><strong>B</strong></button>
+                                        <button type="button" class="sw-wiki-format-btn" data-wiki-format="italic" title="Italic" disabled aria-disabled="true"><em>I</em></button>
+                                        <button type="button" class="sw-wiki-link-btn" id="sbWikiLinkBtn" title="Link selection to another wiki article" disabled aria-disabled="true">Make hyperlink</button>
+                                    </div>
+                                </div>
+                                <div id="sbNotes" class="sb-wiki-body-ce" contenteditable="true" role="textbox" aria-multiline="true" spellcheck="true" data-placeholder="Write the article. Highlight text, then use the formatting buttons above."></div>
+                                <p class="sw-wiki-hint">Highlight text, then choose <strong>Heading</strong>, <strong>Subheading</strong>, <strong>B</strong>, <strong>I</strong>, or <strong>Make hyperlink</strong>.</p>
+                            </div>
+
                             <details class="sw-wp-advanced-fields">
                             <summary>Infobox &amp; metadata</summary>
                             <div class="sb-block sb-sheet-col-12">
@@ -383,12 +398,6 @@
                                 </div>
                             </div>
                             </details>
-
-                            <div class="sb-block sb-sheet-col-12 sw-wp-article-body-block">
-                                <h3 class="sb-block-title">Article text</h3>
-                                <div id="sbNotes" class="sb-wiki-body-ce" contenteditable="true" role="textbox" aria-multiline="true" spellcheck="true" data-placeholder="Write the article. Highlight a name and click Make hyperlink to link another entry."></div>
-                                <p class="sw-wiki-hint">Wikipedia-style: use <code>== Section ==</code> for headings and a table of contents. Link entries with <code>[[Name]]</code> — blue links exist, red links can be created.</p>
-                            </div>
                             </div>
                         </div>
                     </div>
