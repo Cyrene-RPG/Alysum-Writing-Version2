@@ -8,7 +8,7 @@ import {
     normalizeStoryWikiPlain,
     plainToStoryWikiHtml,
     serializeStoryWikiBody
-} from "./story-wiki-wikilinks.js?v=1";
+} from "./story-wiki-wikilinks.js?v=2";
 import { renderStoryWikiArticleHtml } from "./story-wiki-read.js?v=1";
 
 /**
@@ -28,6 +28,7 @@ export function mountStoryWikiArticle(opts) {
         onNotesChange,
         onNavigate,
         onDirty,
+        onEnsureMissingArticles,
         getBookTitle
     } = opts;
 
@@ -67,11 +68,12 @@ export function mountStoryWikiArticle(opts) {
         editEl.innerHTML = plainToStoryWikiHtml(normalized, index);
     }
 
-    /** Normalize wikilinks and refresh chips without disturbing the caret while typing. */
-    function commitEditNormalization() {
+    /** Normalize wikilinks, create missing articles, and refresh chips without disturbing the caret while typing. */
+    async function commitEditNormalization() {
         if (!editEl?.isContentEditable) return;
-        const index = getIndex();
         const raw = serializeStoryWikiBody(editEl);
+        if (onEnsureMissingArticles) await onEnsureMissingArticles(raw);
+        const index = getIndex();
         const next = normalizeStoryWikiPlain(raw, index, getCurrentEntryId());
         onNotesChange(next);
         const html = plainToStoryWikiHtml(next, index);
@@ -125,8 +127,10 @@ export function mountStoryWikiArticle(opts) {
     }
 
     modeReadBtn?.addEventListener("click", () => {
-        if (editEl?.isContentEditable) commitEditNormalization();
-        setMode("read");
+        void (async () => {
+            if (editEl?.isContentEditable) await commitEditNormalization();
+            setMode("read");
+        })();
     });
     modeEditBtn?.addEventListener("click", () => setMode("edit"));
 
@@ -142,7 +146,7 @@ export function mountStoryWikiArticle(opts) {
 
     editEl?.addEventListener("blur", () => {
         if (mode !== "edit" || !editEl?.isContentEditable) return;
-        commitEditNormalization();
+        void commitEditNormalization();
     });
 
     editEl?.addEventListener("click", e => {

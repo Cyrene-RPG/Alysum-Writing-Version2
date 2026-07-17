@@ -42,8 +42,8 @@ import {
     normalizeText
 } from "./story-bible-utils.js?v=1";
 import { renderCharacterCards, renderPlaceCards } from "./story-bible-cards.js?v=3";
-import { mountStoryWikiArticle } from "./story-wiki-article.js?v=4";
-import { findWikiEntryByTitle, buildStoryWikiIndex } from "./story-wiki-wikilinks.js?v=1";
+import { mountStoryWikiArticle } from "./story-wiki-article.js?v=5";
+import { findWikiEntryByTitle, buildStoryWikiIndex, extractWikiLinkTitles } from "./story-wiki-wikilinks.js?v=2";
 import { loadStoryWikiHub } from "./story-wiki-hub.js?v=3";
 
 const SB_TAB_STORAGE_KEY = "alysum-story-bible-tab";
@@ -520,6 +520,89 @@ export async function mountStoryBiblePage(opts) {
         return bibleTab === "characters" ? selectedCharId : selectedPlaceId;
     }
 
+    async function createWikiArticleForTitle(title, preferredKind = "character", opts = {}) {
+        const { open = true, skipPersist = false, editMode = true } = opts;
+        const wanted = normalizeText(title);
+        if (!wanted) return null;
+
+        const index = buildStoryWikiIndex(characters, places);
+        const existing = findWikiEntryByTitle(index, wanted);
+        if (existing) {
+            if (open) await navigateWikiLink({ type: existing.type, id: existing.id });
+            return existing;
+        }
+
+        if (open && !skipPersist) await persistCurrentEntryFromForm({ silent: true });
+
+        const kind = preferredKind === "place" ? "place" : "character";
+
+        if (kind === "place") {
+            const stub = emptyPlace();
+            stub.name = wanted;
+            places = [stub, ...places];
+            try {
+                await saveBiblePlace(supabase, uid, bookId, stub);
+            } catch (e) {
+                places = places.filter(x => x.id !== stub.id);
+                setStatus(formatFirestoreErr(e, "Create place"), true);
+                return null;
+            }
+            renderPlaceList();
+            notifyDataReload();
+            if (open) {
+                onViewRequest?.("places");
+                bibleTab = "places";
+                updateBibleTabChrome();
+                persistBibleTab();
+                await selectPlace(stub.id);
+                wikiHandle?.setMode(editMode ? "edit" : "read");
+            }
+            return { type: "place", id: stub.id, canonical: wanted };
+        }
+
+        const stub = emptyCharacter();
+        stub.name = wanted;
+        characters = [stub, ...characters];
+        try {
+            await saveBibleCharacter(supabase, uid, bookId, stub);
+        } catch (e) {
+            characters = characters.filter(x => x.id !== stub.id);
+            setStatus(formatFirestoreErr(e, "Create character"), true);
+            return null;
+        }
+        renderCharList();
+        notifyDataReload();
+        if (open) {
+            onViewRequest?.("characters");
+            bibleTab = "characters";
+            updateBibleTabChrome();
+            persistBibleTab();
+            await selectCharacter(stub.id);
+            wikiHandle?.setMode(editMode ? "edit" : "read");
+        }
+        return { type: "character", id: stub.id, canonical: wanted };
+    }
+
+    async function ensureMissingWikiArticlesFromPlain(plain) {
+        const titles = extractWikiLinkTitles(plain);
+        if (!titles.length) return 0;
+
+        const preferredKind = bibleTab === "places" ? "place" : "character";
+        const missing = titles.filter(t => !findWikiEntryByTitle(buildStoryWikiIndex(characters, places), t));
+        if (!missing.length) return 0;
+
+        await persistCurrentEntryFromForm({ silent: true });
+        let created = 0;
+        for (const title of missing) {
+            const result = await createWikiArticleForTitle(title, preferredKind, {
+                open: false,
+                skipPersist: true
+            });
+            if (result) created++;
+        }
+        return created;
+    }
+
     async function navigateWikiLink(payload) {
         const { type, id, title } = payload || {};
         if (type === "character" && id) {
@@ -546,35 +629,8 @@ export async function mountStoryBiblePage(opts) {
             await navigateWikiLink({ type: entry.type, id: entry.id });
             return;
         }
-        const createChar = window.confirm(`No article for "${wanted}" yet. Create a new character?`);
-        if (createChar) {
-            onViewRequest?.("characters");
-            bibleTab = "characters";
-            updateBibleTabChrome();
-            persistBibleTab();
-            const c = emptyCharacter();
-            c.name = wanted;
-            characters = [c, ...characters];
-            await selectCharacter(c.id);
-            fields.name.value = wanted;
-            wikiHandle?.setMode("edit");
-            markDirty();
-            return;
-        }
-        const createPlace = window.confirm(`Create "${wanted}" as a place instead?`);
-        if (createPlace) {
-            onViewRequest?.("places");
-            bibleTab = "places";
-            updateBibleTabChrome();
-            persistBibleTab();
-            const p = emptyPlace();
-            p.name = wanted;
-            places = [p, ...places];
-            await selectPlace(p.id);
-            fields.name.value = wanted;
-            wikiHandle?.setMode("edit");
-            markDirty();
-        }
+        const preferredKind = bibleTab === "places" ? "place" : "character";
+        await createWikiArticleForTitle(wanted, preferredKind, { open: true, editMode: true });
     }
 
     wikiHandle = null;
@@ -596,6 +652,7 @@ export async function mountStoryBiblePage(opts) {
             onNavigate: payload => {
                 void navigateWikiLink(payload);
             },
+            onEnsureMissingArticles: plain => ensureMissingWikiArticlesFromPlain(plain),
             onDirty: markDirty,
             getBookTitle: () => bookTitleEl?.textContent?.trim() || ""
         });

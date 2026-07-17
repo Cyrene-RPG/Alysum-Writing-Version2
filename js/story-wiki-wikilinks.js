@@ -65,6 +65,24 @@ function makeBarePhraseRegex(phrase) {
     return new RegExp(`(^|[^\\p{L}\\p{N}_])(${e})(?![\\p{L}\\p{N}_])`, "giu");
 }
 
+/** @param {string} plain */
+export function extractWikiLinkTitles(plain) {
+    /** @type {string[]} */
+    const titles = [];
+    const seen = new Set();
+    const re = /\[\[([^\]]+)\]\]/g;
+    let m;
+    while ((m = re.exec(String(plain || "")))) {
+        const t = String(m[1] || "").trim();
+        const key = t.toLowerCase();
+        if (t && !seen.has(key)) {
+            seen.add(key);
+            titles.push(t);
+        }
+    }
+    return titles;
+}
+
 /**
  * Canonicalize [[links]] and auto-wrap bare entry titles (longest first).
  * @param {string} text
