@@ -42,7 +42,7 @@ import {
     normalizeText
 } from "./story-bible-utils.js?v=1";
 import { renderCharacterCards, renderPlaceCards } from "./story-bible-cards.js?v=3";
-import { mountStoryWikiArticle } from "./story-wiki-article.js?v=3";
+import { mountStoryWikiArticle } from "./story-wiki-article.js?v=4";
 import { findWikiEntryByTitle, buildStoryWikiIndex } from "./story-wiki-wikilinks.js?v=1";
 import { loadStoryWikiHub } from "./story-wiki-hub.js?v=3";
 

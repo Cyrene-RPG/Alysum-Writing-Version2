@@ -32,16 +32,10 @@ export function mountStoryWikiArticle(opts) {
     } = opts;
 
     let mode = "read";
-    let wikiDebounce = null;
 
     function getIndex() {
         const { characters = [], places = [] } = getData();
         return buildStoryWikiIndex(characters, places);
-    }
-
-    function clearWikiDebounce() {
-        if (wikiDebounce) clearTimeout(wikiDebounce);
-        wikiDebounce = null;
     }
 
     function setMode(next) {
@@ -73,18 +67,15 @@ export function mountStoryWikiArticle(opts) {
         editEl.innerHTML = plainToStoryWikiHtml(normalized, index);
     }
 
-    function scheduleWikiNormalize() {
-        clearWikiDebounce();
-        wikiDebounce = setTimeout(() => {
-            wikiDebounce = null;
-            if (!editEl?.isContentEditable) return;
-            const index = getIndex();
-            const raw = serializeStoryWikiBody(editEl);
-            const next = normalizeStoryWikiPlain(raw, index, getCurrentEntryId());
-            onNotesChange(next);
-            editEl.innerHTML = plainToStoryWikiHtml(next, index);
-            onDirty?.();
-        }, 450);
+    /** Normalize wikilinks and refresh chips without disturbing the caret while typing. */
+    function commitEditNormalization() {
+        if (!editEl?.isContentEditable) return;
+        const index = getIndex();
+        const raw = serializeStoryWikiBody(editEl);
+        const next = normalizeStoryWikiPlain(raw, index, getCurrentEntryId());
+        onNotesChange(next);
+        const html = plainToStoryWikiHtml(next, index);
+        if (editEl.innerHTML !== html) editEl.innerHTML = html;
     }
 
     function renderArticle() {
@@ -134,9 +125,7 @@ export function mountStoryWikiArticle(opts) {
     }
 
     modeReadBtn?.addEventListener("click", () => {
-        if (editEl?.isContentEditable) {
-            onNotesChange(serializeStoryWikiBody(editEl));
-        }
+        if (editEl?.isContentEditable) commitEditNormalization();
         setMode("read");
     });
     modeEditBtn?.addEventListener("click", () => setMode("edit"));
@@ -147,7 +136,13 @@ export function mountStoryWikiArticle(opts) {
             onDirty?.();
             return;
         }
-        scheduleWikiNormalize();
+        onNotesChange(serializeStoryWikiBody(editEl));
+        onDirty?.();
+    });
+
+    editEl?.addEventListener("blur", () => {
+        if (mode !== "edit" || !editEl?.isContentEditable) return;
+        commitEditNormalization();
     });
 
     editEl?.addEventListener("click", e => {
@@ -169,9 +164,7 @@ export function mountStoryWikiArticle(opts) {
         renderArticle,
         getNotesPlain,
         setMode,
-        destroy() {
-            clearWikiDebounce();
-        }
+        destroy() {}
     };
 }
 
