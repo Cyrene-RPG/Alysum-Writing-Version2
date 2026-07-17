@@ -23,7 +23,7 @@ import {
 } from "./story-bible-continuity.js?v=1";
 import { extractCandidateFactsFromSelection, detectNameCandidates } from "./story-bible-fact-rules.js?v=4";
 import { escapeHtml, normalizeText } from "./story-bible-utils.js?v=1";
-import { renderOverview } from "./story-bible-overview.js?v=4";
+import { renderOverview } from "./story-bible-overview.js?v=5";
 import {
     publishBookLoreWiki,
     unpublishBookLoreWiki,

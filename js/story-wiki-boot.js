@@ -146,6 +146,7 @@ export async function bootStoryWikiPage() {
     if (applyStoryBiblePageGate()) return;
 
     if (!explicitBookId) {
+        document.body.classList.remove("sw-wp-book-open");
         byId("sbHubView")?.classList.remove("hidden");
         byId("sbBookView")?.classList.add("hidden");
         try {
@@ -159,11 +160,12 @@ export async function bootStoryWikiPage() {
         return;
     }
 
+    document.body.classList.add("sw-wp-book-open");
     byId("sbHubView")?.classList.add("hidden");
     byId("sbBookView")?.classList.remove("hidden");
 
     try {
-        const { mountUnifiedStoryBible } = await import("./story-bible-unified.js?v=14");
+        const { mountUnifiedStoryBible } = await import("./story-bible-unified.js?v=15");
         await mountUnifiedStoryBible(collectMountOpts(session.user.id));
     } catch (e) {
         console.error("[story-wiki-boot] workspace failed:", e);

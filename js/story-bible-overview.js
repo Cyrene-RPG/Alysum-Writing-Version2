@@ -33,65 +33,52 @@ export function renderOverview(mount, ctx) {
         ? `<div class="sw-wp-portal-box sw-wp-featured">
             <h2>Featured article</h2>
             <p class="sw-wp-featured-title"><a href="#" data-sb-wiki-entry="${escapeHtml(featured.id)}" data-sb-wiki-kind="${featured.kind}">${escapeHtml(featured.name)}</a></p>
-            <p class="sw-wp-featured-excerpt">${escapeHtml(truncatePlain(featured.notes, 220))}</p>
-            <p class="sw-wp-featured-more"><a href="#" data-sb-wiki-entry="${escapeHtml(featured.id)}" data-sb-wiki-kind="${featured.kind}">Read full article →</a></p>
+            <p class="sw-wp-featured-excerpt">${escapeHtml(truncatePlain(featured.notes, 120))}</p>
         </div>`
         : `<div class="sw-wp-portal-box sw-wp-featured">
             <h2>Featured article</h2>
-            <p class="sw-wp-muted">No articles yet. <a href="#" data-sb-goto="characters">Create a character article</a> or <a href="#" data-sb-goto="places">a place article</a>.</p>
+            <p class="sw-wp-muted">No articles yet.</p>
         </div>`;
 
     mount.innerHTML = `
         <div class="sw-wp-main-page">
-            <div class="sw-wp-main-lede">
+            <header class="sw-wp-main-lede">
                 <p class="sw-wp-namespace">Story Wiki · ${escapeHtml(bookTitle)}</p>
                 <h1 class="sw-wp-main-title">Main Page</h1>
-                <p class="sw-wp-main-tagline">From the encyclopedia of <strong>${escapeHtml(bookTitle)}</strong></p>
-                <p class="sw-wp-main-intro">Welcome. This wiki documents the people, places, and lore of your story. Articles link together with <code>[[wikilinks]]</code> — like Wikipedia, blue links lead to existing pages and red links mark pages waiting to be written.</p>
-                <p class="sw-wp-statline"><strong>${articleCount}</strong> article${articleCount === 1 ? "" : "s"} in this wiki · ${namedChars.length} character${namedChars.length === 1 ? "" : "s"} · ${namedPlaces.length} place${namedPlaces.length === 1 ? "" : "s"}</p>
-            </div>
+                <p class="sw-wp-main-byline">From the encyclopedia of <strong>${escapeHtml(bookTitle)}</strong> · <strong>${articleCount}</strong> article${articleCount === 1 ? "" : "s"} · link with <code>[[wikilinks]]</code></p>
+            </header>
 
             <div class="sw-wp-portal-grid">
-                <div class="sw-wp-portal-main">
-                    <div class="sw-wp-portal-box">
-                        <h2>Characters</h2>
-                        ${renderIndexList(sortedChars, "character", "No character articles yet.", "characters")}
-                    </div>
-                    <div class="sw-wp-portal-box">
-                        <h2>Places</h2>
-                        ${renderIndexList(sortedPlaces, "place", "No place articles yet.", "places")}
-                    </div>
-                    <div class="sw-wp-portal-box sw-wp-tips">
-                        <h2>Editing help</h2>
-                        <ul>
-                            <li>Open any article from the lists above, then use <strong>Read</strong> / <strong>Edit</strong>.</li>
-                            <li>Use <code>== Section title ==</code> on its own line to build a table of contents.</li>
-                            <li>Type <code>[[Character Name]]</code> to link to another article.</li>
-                            <li><a href="#" data-sb-goto="import">Import from manuscript</a> to pull names and details from your draft.</li>
-                        </ul>
-                    </div>
+                <div class="sw-wp-portal-box">
+                    <h2>Characters</h2>
+                    ${renderIndexList(sortedChars, "character", "No character articles yet.", "characters")}
+                </div>
+                <div class="sw-wp-portal-box">
+                    <h2>Places</h2>
+                    ${renderIndexList(sortedPlaces, "place", "No place articles yet.", "places")}
                 </div>
                 <aside class="sw-wp-portal-side">
                     ${featuredHtml}
-                    <div class="sw-wp-portal-box">
+                    <div class="sw-wp-portal-box sw-wp-portal-box-compact">
                         <h2>Start a new article</h2>
-                        <ul class="sw-wp-start-list">
-                            <li><a href="#" data-sb-goto="characters" data-sb-new="character">New character article</a></li>
-                            <li><a href="#" data-sb-goto="places" data-sb-new="place">New place article</a></li>
-                        </ul>
+                        <p class="sw-wp-inline-actions">
+                            <a href="#" data-sb-goto="characters" data-sb-new="character">Character</a>
+                            ·
+                            <a href="#" data-sb-goto="places" data-sb-new="place">Place</a>
+                        </p>
                     </div>
-                    <div class="sw-wp-portal-box sw-wp-author-box">
-                        <h2>Publish to Lore Wiki</h2>
-                        <p class="sw-wp-muted">Only you can edit here. Readers see a read-only copy on <a class="sw-wp-link" href="lore-wiki.html" target="_blank" rel="noopener">Lore Wiki</a>.</p>
-                        <p id="sbLorePublishStatus" class="sw-wp-publish-status">${loreWiki?.published ? "Published." : "Not published."}</p>
+                    <div class="sw-wp-portal-box sw-wp-portal-box-compact sw-wp-author-box">
+                        <h2>Lore Wiki</h2>
+                        <p id="sbLorePublishStatus" class="sw-wp-publish-status">${loreWiki?.published ? "Published for readers." : "Not published."}</p>
                         <div class="sw-wp-publish-actions">
-                            <button type="button" class="sw-wp-btn" id="sbLorePublishBtn" ${!loreWiki?.canPublish ? "disabled" : ""}>${loreWiki?.published ? "Update snapshot" : "Publish snapshot"}</button>
-                            ${loreWiki?.published ? `<button type="button" class="sw-wp-btn sw-wp-btn-quiet" id="sbLoreUnpublishBtn">Unpublish</button>` : ""}
-                            ${loreWiki?.published ? `<a class="sw-wp-btn sw-wp-btn-quiet" href="lore-wiki.html?book=${encodeURIComponent(loreWiki.bookId || "")}" target="_blank" rel="noopener">View public wiki</a>` : ""}
+                            <button type="button" class="sw-wp-btn" id="sbLorePublishBtn" ${!loreWiki?.canPublish ? "disabled" : ""}>${loreWiki?.published ? "Update" : "Publish"}</button>
+                            ${loreWiki?.published ? `<a class="sw-wp-btn sw-wp-btn-quiet" href="lore-wiki.html?book=${encodeURIComponent(loreWiki.bookId || "")}" target="_blank" rel="noopener">View</a>` : ""}
                         </div>
                     </div>
                 </aside>
             </div>
+
+            <p class="sw-wp-main-foot">Open any article → <strong>Read</strong> / <strong>Edit</strong> · <code>== Section ==</code> builds a table of contents · <a href="#" data-sb-goto="import">Import from manuscript</a></p>
         </div>`;
 
     mount.querySelectorAll("[data-sb-goto]").forEach(btn => {
