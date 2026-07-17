@@ -806,6 +806,13 @@ a.sw-wiki-link.is-missing:hover {
 }
 
 .sw-wp-skin .sb-view {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+}
+
+.sw-wp-skin #sbViewHome {
     max-width: 1060px;
     margin: 0 auto;
     padding: 20px 24px 48px;
@@ -1308,16 +1315,53 @@ a.sw-wiki-link.is-missing:hover {
     background: #0a0f1a;
 }
 
+.sw-wp-skin .sb-sheet-grid {
+    width: 100%;
+    max-width: none;
+    gap: 20px;
+}
+
+.sw-wp-skin .sb-wiki-edit-wrap,
+.sw-wp-skin #sbWikiEditForm {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-width: 0;
+}
+
+.sw-wp-skin .sb-block.sb-sheet-col-12,
+.sw-wp-skin .sb-block.sb-sheet-col-6 {
+    grid-column: 1 / -1;
+}
+
+.sw-wp-skin .sb-field-full {
+    grid-column: 1 / -1;
+}
+
 .sw-wp-skin .sb-sheet-body {
     flex: 1;
     min-height: 0;
     overflow-y: auto;
-    padding: 16px 28px 28px;
+    padding: 20px 32px 32px;
 }
 
-.sw-wp-skin .sb-sheet-grid {
-    max-width: 920px;
-    gap: 16px;
+.sw-wp-skin .sw-wp-article-body-block .sb-wiki-body-ce {
+    min-height: min(420px, 50vh);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.sw-wp-skin .sw-wp-title-input {
+    max-width: none;
+}
+
+.sw-wp-skin .sw-wiki-read,
+.sw-wp-skin .sw-wp-article {
+    max-width: none;
+    width: 100%;
+}
+
+.sw-wp-skin .sw-wp-content {
+    max-width: none;
 }
 
 .sw-wp-skin #sbEntryHero {
@@ -1423,6 +1467,8 @@ a.sw-wiki-link.is-missing:hover {
     border-radius: 2px;
     font-size: 15px;
     line-height: 1.65;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .sw-wp-skin .sb-save,
