@@ -48,7 +48,7 @@ export function renderOverview(mount, ctx) {
         nextSteps.push({
             icon: "⚠",
             title: `${issueCount} story mismatch${issueCount === 1 ? "" : "es"}`,
-            desc: "Two details in your bible disagree. Open the character and pick which version is canon.",
+            desc: "Two details in your wiki disagree. Open the character and pick which version is canon.",
             action: "characters",
             label: "Review cast"
         });
@@ -56,7 +56,7 @@ export function renderOverview(mount, ctx) {
     if (!nextSteps.length) {
         nextSteps.push({
             icon: "✓",
-            title: "Bible looks solid",
+            title: "Wiki looks solid",
             desc: "Keep writing — use Story Board to track scenes and revisions.",
             action: "story",
             label: "View timeline"
@@ -72,11 +72,11 @@ export function renderOverview(mount, ctx) {
             ${
                 isEmpty
                     ? `<div class="sb-home-hero">
-                <h2>Welcome to your Story Bible</h2>
-                <p>This is the reference book for your novel — who's who, where things happen, and what stays true. Everything syncs to the cloud and pairs with your Story Board.</p>
+                <h2>Welcome to your Story Wiki</h2>
+                <p>This is the linked encyclopedia for your novel — who's who, where things happen, and what stays true. Write articles with [[links]] between entries. Everything syncs to the cloud and pairs with your Story Board.</p>
             </div>`
                     : `<div class="sb-home-hero">
-                <h2>${escapeHtml(characters.length ? `${characters.length} character${characters.length === 1 ? "" : "s"}` : "Your bible")}${places.length ? ` · ${places.length} place${places.length === 1 ? "" : "s"}` : ""}</h2>
+                <h2>${escapeHtml(characters.length ? `${characters.length} character${characters.length === 1 ? "" : "s"}` : "Your wiki")}${places.length ? ` · ${places.length} place${places.length === 1 ? "" : "s"}` : ""}</h2>
                 <p>${escapeHtml(plainHealthSummary(health))}</p>
             </div>
             <div class="sb-home-metrics">
@@ -130,7 +130,7 @@ export function renderOverview(mount, ctx) {
                 <h3 class="sb-home-heading">How it works</h3>
                 <ol class="sb-help-steps">
                     <li><strong>Cast & World</strong> — roster on the left, full profile sheet on the right. No pop-ups, no cramped panels.</li>
-                    <li><strong>Import while writing</strong> — highlight text in the Editor, open Story Bible, save discovered details.</li>
+                    <li><strong>Import while writing</strong> — highlight text in the Editor, open Story Wiki, save discovered details.</li>
                     <li><strong>Stay organized</strong> — Story Board keeps your scenes, beats, and revision tasks in one place.</li>
                 </ol>
             </section>

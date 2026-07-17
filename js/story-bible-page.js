@@ -13,7 +13,6 @@ import {
     listBiblePlaces,
     saveBiblePlace,
     deleteBiblePlace,
-    listUserBooksWithBibleCounts,
     loadBookChapterOptions,
     getBookTitle,
     loadBookPlainTextForScan,
@@ -38,14 +37,37 @@ import {
     escapeHtml,
     avatarGradient,
     getInitials,
-    bookCoverGradient,
     placeKindIcon,
     statusLabel,
     normalizeText
 } from "./story-bible-utils.js?v=1";
 import { renderCharacterCards, renderPlaceCards } from "./story-bible-cards.js?v=2";
+import { mountStoryWikiArticle } from "./story-wiki-article.js?v=1";
+import { findWikiEntryByTitle, buildStoryWikiIndex } from "./story-wiki-wikilinks.js?v=1";
+import { loadStoryWikiHub } from "./story-wiki-hub.js?v=1";
 
 const SB_TAB_STORAGE_KEY = "alysum-story-bible-tab";
+
+function resolveBookIdFromContext() {
+    const fromQuery = (new URLSearchParams(window.location.search).get("book") || "").trim();
+    if (fromQuery) return fromQuery;
+    try {
+        const fromSession = (sessionStorage.getItem("alysum-current-book-id") || "").trim();
+        if (fromSession) return fromSession;
+        return (localStorage.getItem("alysum-current-book-id") || "").trim();
+    } catch {
+        return "";
+    }
+}
+
+function rememberBookId(bookId) {
+    const id = String(bookId || "").trim();
+    if (!id) return;
+    try {
+        sessionStorage.setItem("alysum-current-book-id", id);
+        localStorage.setItem("alysum-current-book-id", id);
+    } catch (_) {}
+}
 
 function emptyCharacter() {
     const id = generateBibleCharacterId();
@@ -207,7 +229,8 @@ export async function mountStoryBiblePage(opts) {
     const charCodex = document.getElementById("sbViewCharacters");
     const placeCodex = document.getElementById("sbViewPlaces");
 
-    const bookId = (new URLSearchParams(window.location.search).get("book") || "").trim();
+    const bookId = resolveBookIdFromContext();
+    if (bookId) rememberBookId(bookId);
 
     function setStatus(msg, isError = false) {
         statusEl.textContent = msg;
@@ -389,59 +412,10 @@ export async function mountStoryBiblePage(opts) {
         detailPanel?.classList.remove("has-hero");
     }
 
-    function formatUpdated(ms) {
-        if (!ms) return "—";
-        try {
-            return new Date(ms).toLocaleString(undefined, {
-                dateStyle: "medium",
-                timeStyle: "short"
-            });
-        } catch {
-            return "—";
-        }
-    }
-
     if (!bookId) {
         hubView.classList.remove("hidden");
         bookView.classList.add("hidden");
-        setStatus("Loading your books…");
-        try {
-            const rows = await listUserBooksWithBibleCounts(supabase, uid);
-            if (bookGrid) bookGrid.innerHTML = "";
-            if (!rows.length) {
-                if (bookGrid) {
-                    bookGrid.innerHTML = `<div class="sb-empty">No books yet. Create one in Studio, then build your bible here.</div>`;
-                }
-            } else {
-                for (const r of rows) {
-                    const open = `${hubLinkPath}?book=${encodeURIComponent(r.bookId)}`;
-                    const ed = `editor.html?book=${encodeURIComponent(r.bookId)}`;
-                    const card = document.createElement("article");
-                    card.className = "sb-book-card";
-                    card.innerHTML = `
-                        <div class="sb-book-card-cover" style="background:${bookCoverGradient(r.title)}">
-                            <h3>${escapeHtml(r.title)}</h3>
-                        </div>
-                        <div class="sb-book-card-body">
-                            <div class="sb-book-card-metrics">
-                                <div class="sb-book-metric"><strong>${r.characterCount}</strong><span>Characters</span></div>
-                                <div class="sb-book-metric"><strong>${r.placeCount ?? 0}</strong><span>Places</span></div>
-                                <div class="sb-book-metric"><strong>${r.characterCount + (r.placeCount ?? 0)}</strong><span>Entries</span></div>
-                            </div>
-                            <div class="sb-book-stats sb-muted">Updated ${formatUpdated(r.updated)}</div>
-                            <div class="sb-book-actions">
-                                <a class="sb-btn sb-btn-ghost" href="${ed}">Editor</a>
-                                <a class="sb-btn sb-btn-primary" href="${open}">Open bible</a>
-                            </div>
-                        </div>`;
-                    bookGrid?.appendChild(card);
-                }
-            }
-            setStatus(rows.length ? `${rows.length} book bible(s).` : "");
-        } catch (e) {
-            console.error(e);
-            setStatus("Could not load books. Check your connection and try again.", true);
-        }
+        await loadStoryWikiHub(supabase, uid, bookGrid, statusEl, hubLinkPath);
         return;
     }
 
@@ -468,6 +442,116 @@ export async function mountStoryBiblePage(opts) {
     let selectedPlaceId = null;
     /** @type {{ section: string, id: string, title: string, label: string }[]} */
     let chapterOptions = [];
+    /** @type {ReturnType<typeof mountStoryWikiArticle> | null} */
+    let wikiHandle = null;
+
+    function getNotesValue() {
+        if (wikiHandle) return wikiHandle.getNotesPlain();
+        return fields.notes?.value || "";
+    }
+
+    function setNotesValue(plain) {
+        if (fields.notes?.isContentEditable) {
+            if (wikiHandle) wikiHandle.loadNotesIntoEditor(plain);
+            else fields.notes.textContent = plain || "";
+        } else if (fields.notes) {
+            fields.notes.value = plain || "";
+        }
+    }
+
+    function getCurrentWikiRecord() {
+        if (bibleTab === "characters") {
+            return characters.find(c => c.id === selectedCharId) || null;
+        }
+        return places.find(p => p.id === selectedPlaceId) || null;
+    }
+
+    function getCurrentWikiEntryId() {
+        return bibleTab === "characters" ? selectedCharId : selectedPlaceId;
+    }
+
+    async function navigateWikiLink(payload) {
+        const { type, id, title } = payload || {};
+        if (type === "character" && id) {
+            onViewRequest?.("characters");
+            bibleTab = "characters";
+            updateBibleTabChrome();
+            await selectCharacter(id);
+            wikiHandle?.setMode("read");
+            return;
+        }
+        if (type === "place" && id) {
+            onViewRequest?.("places");
+            bibleTab = "places";
+            updateBibleTabChrome();
+            await selectPlace(id);
+            wikiHandle?.setMode("read");
+            return;
+        }
+        const wanted = normalizeText(title);
+        if (!wanted) return;
+        const index = buildStoryWikiIndex(characters, places);
+        const entry = findWikiEntryByTitle(index, wanted);
+        if (entry) {
+            await navigateWikiLink({ type: entry.type, id: entry.id });
+            return;
+        }
+        const createChar = window.confirm(`No article for "${wanted}" yet. Create a new character?`);
+        if (createChar) {
+            onViewRequest?.("characters");
+            bibleTab = "characters";
+            updateBibleTabChrome();
+            persistBibleTab();
+            const c = emptyCharacter();
+            c.name = wanted;
+            characters = [c, ...characters];
+            await selectCharacter(c.id);
+            fields.name.value = wanted;
+            wikiHandle?.setMode("edit");
+            markDirty();
+            return;
+        }
+        const createPlace = window.confirm(`Create "${wanted}" as a place instead?`);
+        if (createPlace) {
+            onViewRequest?.("places");
+            bibleTab = "places";
+            updateBibleTabChrome();
+            persistBibleTab();
+            const p = emptyPlace();
+            p.name = wanted;
+            places = [p, ...places];
+            await selectPlace(p.id);
+            fields.name.value = wanted;
+            wikiHandle?.setMode("edit");
+            markDirty();
+        }
+    }
+
+    wikiHandle = null;
+    try {
+        wikiHandle = mountStoryWikiArticle({
+            readMount: document.getElementById("sbWikiRead"),
+            editEl: fields.notes,
+            modeReadBtn: document.getElementById("sbWikiModeRead"),
+            modeEditBtn: document.getElementById("sbWikiModeEdit"),
+            editFormWrap: document.getElementById("sbWikiEditForm"),
+            getData: () => ({ characters, places }),
+            getCurrentEntryId: getCurrentWikiEntryId,
+            getCurrentKind: () => (bibleTab === "characters" ? "character" : "place"),
+            getCurrentRecord: getCurrentWikiRecord,
+            onNotesChange: plain => {
+                const record = getCurrentWikiRecord();
+                if (record) record.notes = plain;
+            },
+            onNavigate: payload => {
+                void navigateWikiLink(payload);
+            },
+            onDirty: markDirty
+        });
+    } catch (wikiErr) {
+        console.error("[story-wiki] mount failed:", wikiErr);
+        setStatus("Wiki article view failed to load; character data should still work.", true);
+    }
 
     function notifyDataReload() {
         updateSidebarMeta();
@@ -550,7 +634,7 @@ export async function mountStoryBiblePage(opts) {
                 deceasedChapterId: status === "deceased" ? deceasedChapterId : "",
                 deceasedSection: status === "deceased" && deceasedChapterId ? deceasedSection : "",
                 tags,
-                notes: fields.notes?.value || "",
+                notes: getNotesValue(),
                 appearance: {
                     age: fields.age?.value || "",
                     eyes: fields.eyes?.value || "",
@@ -589,7 +673,7 @@ export async function mountStoryBiblePage(opts) {
                 name,
                 aliases,
                 tags,
-                notes: fields.notes?.value || "",
+                notes: getNotesValue(),
                 kind,
                 parentPlace: fields.placeParent?.value || "",
                 introducedSection: chapterId ? section : "",
@@ -701,7 +785,7 @@ export async function mountStoryBiblePage(opts) {
         fields.name.value = "";
         fields.aliases.value = "";
         fields.tags.value = "";
-        fields.notes.value = "";
+        setNotesValue("");
         fields.introduced.value = "|";
         fields.placeKind.value = "";
         fields.placeParent.value = "";
@@ -716,7 +800,8 @@ export async function mountStoryBiblePage(opts) {
         fields.name.value = c.name || "";
         fields.aliases.value = (c.aliases || []).join(", ");
         fields.tags.value = (c.tags || []).join(", ");
-        fields.notes.value = c.notes || "";
+        setNotesValue(c.notes || "");
+        wikiHandle?.renderArticle();
         fields.age.value = c.appearance?.age || "";
         fields.eyes.value = c.appearance?.eyes || "";
         fields.hair.value = c.appearance?.hair || "";
@@ -757,7 +842,8 @@ export async function mountStoryBiblePage(opts) {
         fields.name.value = p.name || "";
         fields.aliases.value = (p.aliases || []).join(", ");
         fields.tags.value = (p.tags || []).join(", ");
-        fields.notes.value = p.notes || "";
+        setNotesValue(p.notes || "");
+        wikiHandle?.renderArticle();
         fields.placeKind.value = p.kind || "";
         fields.placeParent.value = p.parentPlace || "";
 
@@ -977,11 +1063,11 @@ export async function mountStoryBiblePage(opts) {
             console.error(e);
             if (isStoryBibleTableMissing(e)) {
                 setStatus(
-                    "Story Bible tables are missing in Supabase. Run recovery-audit/create-story-bible-tables.sql in the SQL editor, then hard-refresh.",
+                    "Story Wiki tables are missing in Supabase. Run recovery-audit/create-story-bible-tables.sql in the SQL editor, then hard-refresh.",
                     true
                 );
             } else {
-                setStatus("Could not load Story Bible for this book.", true);
+                setStatus("Could not load Story Wiki for this book.", true);
             }
             updateHealthPanel();
             syncFormEmptyState();
@@ -1067,7 +1153,7 @@ export async function mountStoryBiblePage(opts) {
     deleteCharBtn.addEventListener("click", async () => {
         if (bibleTab === "characters") {
             if (!selectedCharId) return;
-            if (!confirm("Delete this character from your Story Bible? This cannot be undone.")) return;
+            if (!confirm("Delete this character from your Story Wiki? This cannot be undone.")) return;
             setStatus("Deleting…");
             deleteCharBtn.disabled = true;
             try {
@@ -1095,7 +1181,7 @@ export async function mountStoryBiblePage(opts) {
         }
 
         if (!selectedPlaceId) return;
-        if (!confirm("Delete this place from your Story Bible? This cannot be undone.")) return;
+        if (!confirm("Delete this place from your Story Wiki? This cannot be undone.")) return;
         setStatus("Deleting…");
         deleteCharBtn.disabled = true;
         try {

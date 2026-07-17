@@ -2,7 +2,7 @@
  * Unified Story Bible — codex + overview + atlas + timeline + graph + extraction.
  */
 
-import { mountStoryBiblePage } from "./story-bible-page.js?v=26";
+import { mountStoryBiblePage } from "./story-bible-page.js?v=28";
 import { generateBibleCharacterId, saveBibleCharacter, normalizeBibleCharacter } from "./story-bible-api.js?v=12";
 import {
     listBibleFacts,
@@ -233,7 +233,7 @@ function mountUnifiedExtras(ctx) {
         for (const [key, el] of Object.entries(viewPanels)) {
             el?.classList.toggle("hidden", key !== view);
         }
-        if (viewHeadingEl) viewHeadingEl.textContent = VIEW_HEADINGS[view] || "Story Bible";
+        if (viewHeadingEl) viewHeadingEl.textContent = VIEW_HEADINGS[view] || "Story Wiki";
         if (view === "story") {
             ensureStoryChrome();
             if (storyTab === "connections") renderRelationships();
@@ -612,30 +612,46 @@ function mountUnifiedExtras(ctx) {
     return { syncCtx, reloadFacts, setWorkspaceView };
 }
 
+function resolveBookIdFromUrlOrStorage() {
+    const fromQuery = (new URLSearchParams(window.location.search).get("book") || "").trim();
+    if (fromQuery) return fromQuery;
+    try {
+        const fromSession = (sessionStorage.getItem("alysum-current-book-id") || "").trim();
+        if (fromSession) return fromSession;
+        return (localStorage.getItem("alysum-current-book-id") || "").trim();
+    } catch {
+        return "";
+    }
+}
+
 /**
- * Mount the full unified Story Bible page.
+ * Mount the full unified Story Wiki page.
  */
 export async function mountUnifiedStoryBible(opts) {
-    const bookId = (new URLSearchParams(window.location.search).get("book") || "").trim();
+    const bookId = resolveBookIdFromUrlOrStorage();
     /** @type {ReturnType<typeof mountUnifiedExtras> | null} */
     let extras = null;
+    /** @type {{ characters: object[], places: object[], chapterOptions: object[], selectedCharId: string|null } | null} */
+    let latestPageData = null;
 
     if (bookId) {
-        try {
-            const migrated = await migrateLocalFactsToCloud(opts.supabase, opts.uid, bookId);
-            if (migrated > 0 && opts.statusEl) {
-                opts.statusEl.textContent = `Migrated ${migrated} local fact(s) to cloud.`;
-                opts.statusEl.classList.add("is-ok");
-            }
-        } catch (e) {
-            console.warn("[story-bible-unified] migration skipped:", e);
-        }
+        void migrateLocalFactsToCloud(opts.supabase, opts.uid, bookId)
+            .then(migrated => {
+                if (migrated > 0 && opts.statusEl) {
+                    opts.statusEl.textContent = `Migrated ${migrated} local fact(s) to cloud.`;
+                    opts.statusEl.classList.add("is-ok");
+                }
+            })
+            .catch(e => {
+                console.warn("[story-bible-unified] migration skipped:", e);
+            });
     }
 
     await mountStoryBiblePage({
         ...opts,
         hubLinkPath: "story-bible.html",
         onDataReload: data => {
+            latestPageData = data;
             extras?.syncCtx({
                 characters: data.characters,
                 places: data.places,
@@ -656,9 +672,9 @@ export async function mountUnifiedStoryBible(opts) {
             supabase: opts.supabase,
             uid: opts.uid,
             bookId,
-            characters: [],
-            places: [],
-            chapterOptions: [],
+            characters: latestPageData?.characters || [],
+            places: latestPageData?.places || [],
+            chapterOptions: latestPageData?.chapterOptions || [],
             setStatus: (msg, isError) => {
                 if (!opts.statusEl) return;
                 opts.statusEl.textContent = msg || "";
@@ -666,6 +682,9 @@ export async function mountUnifiedStoryBible(opts) {
                 opts.statusEl.classList.toggle("is-ok", !isError && !!msg);
             }
         });
+        if (latestPageData) {
+            extras.syncCtx(latestPageData);
+        }
         await extras.reloadFacts();
     }
 }

@@ -1,4 +1,4 @@
-ï»¿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <!-- ALYSUM:PWA:START -->
@@ -20,7 +20,7 @@
 
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Plotweave â€” Alysum</title>
+    <title>Plotweave — Alysum</title>
     <script src="js/alysum-appearance-boot.js"></script>
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
     <link rel="stylesheet" href="css/gradient-themes.css?v=7" />
@@ -56,7 +56,7 @@
                 <span class="wd-nav-divider" aria-hidden="true"></span>
                 <a href="vault.html">Notes</a>
                 <a href="note-graph.html">Note Graph</a>
-                <a href="Story-Bible-New.html" id="navStoryBible">Story Bible</a>
+                <a href="story-bible.html" id="navStoryBible">Story Wiki</a>
                 <a href="story-board/">Story Board</a>
                 <a href="plotweave.html" class="is-active">Plotweave</a>
                 <a href="Novel_Exporter.html">Exporter</a>
@@ -80,12 +80,12 @@
                 </a>
                 <span class="pw-sep" aria-hidden="true"></span>
                 <input class="pw-title-input" id="pwTitle" type="text" maxlength="80" aria-label="Map title" placeholder="Untitled map" />
-                <span class="pw-status" id="pwStatus">Syncingâ€¦</span>
+                <span class="pw-status" id="pwStatus">Syncing…</span>
             </div>
 
             <div class="pw-toolbar-center">
                 <button type="button" class="pw-btn is-active" id="pwBtnSelect" title="Select (V)">Select</button>
-                <button type="button" class="pw-btn" id="pwBtnPan" title="Pan (H) Â· Space">Pan</button>
+                <button type="button" class="pw-btn" id="pwBtnPan" title="Pan (H) · Space">Pan</button>
                 <button type="button" class="pw-btn" id="pwBtnConnect" title="Connect (C)">Connect</button>
                 <span class="pw-sep" aria-hidden="true"></span>
                 <button type="button" class="pw-btn" id="pwBtnUndo" title="Undo (Ctrl+Z)" disabled>Undo</button>
@@ -136,7 +136,7 @@
                                 End
                             </button>
                         </div>
-                        <p class="pw-hint" style="margin-top:8px">Pick a shape, click the canvas. Drag ports to draw flow lines â€” label Yes / No in Properties.</p>
+                        <p class="pw-hint" style="margin-top:8px">Pick a shape, click the canvas. Drag ports to draw flow lines — label Yes / No in Properties.</p>
                     </div>
                     <div class="pw-side-section">
                         <h3>Your maps</h3>
@@ -178,7 +178,7 @@
                     </g>
                 </svg>
                 <div class="pw-viewbar" aria-label="View controls">
-                    <button type="button" class="pw-btn" id="pwBtnZoomOut" title="Zoom out">âˆ’</button>
+                    <button type="button" class="pw-btn" id="pwBtnZoomOut" title="Zoom out">-</button>
                     <span class="pw-zoom-label" id="pwZoomLabel">100%</span>
                     <button type="button" class="pw-btn" id="pwBtnZoomIn" title="Zoom in">+</button>
                     <button type="button" class="pw-btn" id="pwBtnFit" title="Fit to view">Fit</button>
@@ -187,11 +187,11 @@
                     <header class="pw-text-drawer-head">
                         <div>
                             <h3 id="pwTextDrawerTitle">Shape label</h3>
-                            <p class="pw-hint">Full text â€” the shape shows a short preview.</p>
+                            <p class="pw-hint">Full text — the shape shows a short preview.</p>
                         </div>
-                        <button type="button" class="pw-btn pw-btn-ghost" id="pwTextDrawerClose" aria-label="Close">âœ•</button>
+                        <button type="button" class="pw-btn pw-btn-ghost" id="pwTextDrawerClose" aria-label="Close">?</button>
                     </header>
-                    <textarea class="pw-text-drawer-input" id="pwTextDrawerInput" rows="14" placeholder="Type the full label for this shapeâ€¦"></textarea>
+                    <textarea class="pw-text-drawer-input" id="pwTextDrawerInput" rows="14" placeholder="Type the full label for this shape…"></textarea>
                 </aside>
             </div>
 
@@ -204,9 +204,9 @@
                     <div class="pw-shortcuts">
                         <p class="pw-hint">
                             <strong style="color:#c4b5fd">Shortcuts</strong><br />
-                            V select Â· H pan Â· C connect Â· Space pan<br />
-                            Scroll zoom Â· Right-drag pan Â· Del delete<br />
-                            Ctrl+Z / Ctrl+Y undo Â· Ctrl+S save
+                            V select · H pan · C connect · Space pan<br />
+                            Scroll zoom · Right-drag pan · Del delete<br />
+                            Ctrl+Z / Ctrl+Y undo · Ctrl+S save
                         </p>
                     </div>
                 </div>
@@ -222,7 +222,7 @@
                     <h2 id="pwNewMapTitle">New map</h2>
                     <p class="pw-hint">Pick a starter template or begin with a blank canvas.</p>
                 </div>
-                <button type="button" class="pw-btn pw-btn-ghost" id="pwModalClose" aria-label="Close">âœ•</button>
+                <button type="button" class="pw-btn pw-btn-ghost" id="pwModalClose" aria-label="Close">?</button>
             </header>
             <div class="pw-modal-body" id="pwTemplateGrid"></div>
         </div>

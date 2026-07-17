@@ -36,8 +36,8 @@ const PATH_TO_ACTIVE = new Map([
     ["encyclopedia.html", "encyclopedia"],
     ["vault.html", "notes"],
     ["note-graph.html", "note-graph"],
-    ["Story-Bible-New.html", "story-bible"],
-    ["story-bible.html", "story-bible"],
+    ["Story-Bible-New.html", "story-wiki"],
+    ["story-bible.html", "story-wiki"],
     ["plotweave.html", "plotweave"],
     ["Novel_Exporter.html", "exporter"],
     ["badges.html", "achievements"],
@@ -84,7 +84,8 @@ const WELCOME_DEFAULTS = {
     encyclopedia: { title: "World encyclopedia", subtitle: "Build and browse your story worlds." },
     "note-graph": { title: "Note Graph", subtitle: "Visualize connections between your notes." },
     plotweave: { title: "Plotweave", subtitle: "Map story structure and plot threads." },
-    "story-bible": { title: "Story Bible", subtitle: "Characters, world, and story reference." },
+    "story-bible": { title: "Story Wiki", subtitle: "Linked encyclopedia for characters, places, and lore." },
+    "story-wiki": { title: "Story Wiki", subtitle: "Linked encyclopedia for characters, places, and lore." },
     "story-board": { title: "Story Board", subtitle: "Organize scenes and story beats." },
     exporter: { title: "Novel Exporter", subtitle: "Export manuscripts for print and sharing." },
     "author-stats": { title: "Author stats", subtitle: "Insights into your writing and readership." },
@@ -159,7 +160,7 @@ function renderNavHtml(active) {
                 <span class="wd-nav-divider" aria-hidden="true"></span>
                 <a href="${navHref("vault.html")}"${activeClass("notes", active)}>Notes</a>
                 <a href="${navHref("note-graph.html")}"${activeClass("note-graph", active)}>Note Graph</a>
-                <a href="${navHref("Story-Bible-New.html")}" id="navStoryBible"${activeClass("story-bible", active)}>Story Bible</a>
+                <a href="${navHref("story-bible.html")}" id="navStoryBible"${activeClass("story-wiki", active)}>Story Wiki</a>
                 <a href="${navHref("story-board/")}"${activeClass("story-board", active)}>Story Board</a>
                 <a href="${navHref("plotweave.html")}"${activeClass("plotweave", active)}>Plotweave</a>
                 <a href="${navHref("Novel_Exporter.html")}"${activeClass("exporter", active)}>Exporter</a>

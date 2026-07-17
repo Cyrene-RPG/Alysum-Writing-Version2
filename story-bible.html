@@ -11,7 +11,7 @@
     <script type="module" src="js/vercel-analytics.js"></script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Story Bible — Alysum</title>
+    <title>Story Wiki — Alysum</title>
     <script src="js/alysum-appearance-boot.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -22,6 +22,7 @@
     <link rel="stylesheet" href="css/magic-codex.css?v=7" />
     <link rel="stylesheet" href="css/story-bible.css?v=9" />
     <link rel="stylesheet" href="css/story-bible-v10.css?v=2" />
+    <link rel="stylesheet" href="css/story-wiki.css?v=1" />
     <script src="js/gradient-theme-sync.js" defer></script>
 </head>
 <body class="mc-page mc-bible alysum-with-workspace-nav alysum-tool-scroll">
@@ -37,7 +38,7 @@
                 </div>
             </div>
         </header>
-        <nav class="wd-nav-wrap" aria-label="Workspace" data-active="story-bible">
+        <nav class="wd-nav-wrap" aria-label="Workspace" data-active="story-wiki">
             <div class="wd-nav">
                 <button type="button" id="navContinue">Continue writing</button>
                 <span class="wd-nav-divider" aria-hidden="true"></span>
@@ -52,7 +53,7 @@
                 <span class="wd-nav-divider" aria-hidden="true"></span>
                 <a href="vault.html">Notes</a>
                 <a href="note-graph.html">Note Graph</a>
-                <a href="Story-Bible-New.html" id="navStoryBible" class="is-active">Story Bible</a>
+                <a href="story-bible.html" id="navStoryBible" class="is-active">Story Wiki</a>
                 <a href="story-board/">Story Board</a>
                 <a href="plotweave.html">Plotweave</a>
                 <a href="Novel_Exporter.html">Exporter</a>
@@ -71,20 +72,22 @@
 
     <div class="sb-app">
         <!-- Hub: pick a book -->
-        <section id="sbHubView" class="sb-hub-page hidden">
+        <section id="sbHubView" class="sb-hub-page">
             <header class="sb-hub-hero">
-                <p class="sb-hero-brand">Story Bible</p>
-                <h1 class="sb-hub-title">Your worlds, organized</h1>
-                <p class="sb-hub-lead">One bible per book — characters, places, and story details that stay in sync while you write.</p>
+                <p class="sb-hero-brand">Story Wiki</p>
+                <h1 class="sb-hub-title">Your story encyclopedia</h1>
+                <p class="sb-hub-lead">One wiki per book — linked articles for characters, places, and lore that stay in sync while you write.</p>
             </header>
-            <div id="sbBookGrid" class="sb-book-grid"></div>
+            <div id="sbBookGrid" class="sb-book-grid">
+                <p class="sb-empty" id="sbHubLoading">Loading your books…</p>
+            </div>
             <nav class="sb-hub-nav">
                 <a href="writer-dashboard.html">← Back to Studio</a>
             </nav>
         </section>
 
         <div id="sbDisabled" class="sb-panel-muted hidden">
-            <p>Story Bible is turned off for this browser.</p>
+            <p>Story Wiki is turned off for this browser.</p>
             <p style="margin-top: 10px">Turn it back on under <a class="sb-link" href="settings.html">Account settings</a>.</p>
         </div>
 
@@ -101,7 +104,7 @@
                             <span id="sbSidebarMeta">Loading…</span>
                         </div>
                     </div>
-                    <nav class="sb-appnav" aria-label="Story Bible sections">
+                    <nav class="sb-appnav" aria-label="Story Wiki sections">
                         <button type="button" class="sb-appnav-item is-active" data-sb-view="home">Home</button>
                         <button type="button" class="sb-appnav-item" data-sb-view="characters">Cast</button>
                         <button type="button" class="sb-appnav-item" data-sb-view="places">World</button>
@@ -175,13 +178,13 @@
                         <div class="sb-import-page">
                             <header class="sb-page-intro">
                                 <h2 class="sb-page-title">Import from your manuscript</h2>
-                                <p class="sb-page-lead">Three ways to fill your bible without retyping — pick what fits where you are in the draft.</p>
+                                <p class="sb-page-lead">Three ways to fill your wiki without retyping — pick what fits where you are in the draft.</p>
                             </header>
 
                             <div class="sb-import-cards">
                                 <article class="sb-import-card sb-import-card-featured">
                                     <h3>① Highlight in the Editor</h3>
-                                    <p>Select a paragraph while writing → click <strong>Story Bible</strong> in the toolbar. Details like eye color and relationships appear here ready to save.</p>
+                                    <p>Select a paragraph while writing → click <strong>Story Wiki</strong> in the toolbar. Details like eye color and relationships appear here ready to save.</p>
                                     <a class="sb-btn sb-btn-gold" id="sbImportEditorLink" href="#">Open Editor</a>
                                 </article>
                                 <article class="sb-import-card">
@@ -270,6 +273,18 @@
                     <div id="sbEntryHero" class="sb-entry-hero hidden"></div>
                     <div class="sb-sheet-body">
                         <div class="sb-sheet-grid">
+                            <div class="sb-block sb-sheet-col-12">
+                                <div class="sw-wiki-toolbar">
+                                    <div class="sw-wiki-mode-tabs" role="tablist" aria-label="Article mode">
+                                        <button type="button" class="sw-wiki-mode-btn is-active" id="sbWikiModeRead" role="tab" aria-selected="true">Read</button>
+                                        <button type="button" class="sw-wiki-mode-btn" id="sbWikiModeEdit" role="tab" aria-selected="false">Edit</button>
+                                    </div>
+                                    <button type="button" class="sw-wiki-link-btn" id="sbWikiLinkBtn" title="Insert [[wikilink]]">[[link]]</button>
+                                </div>
+                                <div id="sbWikiRead" class="sw-wiki-read" aria-live="polite"></div>
+                            </div>
+
+                            <div id="sbWikiEditForm" class="sb-wiki-edit-wrap hidden">
                             <div class="sb-block sb-sheet-col-12">
                                 <h3 class="sb-block-title">Identity</h3>
                                 <div class="sb-field-grid">
@@ -365,10 +380,10 @@
                             </div>
 
                             <div class="sb-block sb-sheet-col-12">
-                                <h3 class="sb-block-title">Backstory & notes</h3>
-                                <div class="sb-field">
-                                    <textarea id="sbNotes" rows="6" placeholder="Secrets, motivation, voice, arc…"></textarea>
-                                </div>
+                                <h3 class="sb-block-title">Article body</h3>
+                                <div id="sbNotes" class="sb-wiki-body-ce" contenteditable="true" role="textbox" aria-multiline="true" spellcheck="true" data-placeholder="Write the article. Link other entries with [[Character Name]] or [[Place Name]]."></div>
+                                <p class="sw-wiki-hint">Like Wikipedia: blue links go to existing articles, red links are pages you can create. Matching names auto-link as you type.</p>
+                            </div>
                             </div>
                         </div>
                     </div>
@@ -395,17 +410,30 @@
 
     <script type="module">
         import { supabase } from "./firebase.js";
-        import { mountUnifiedStoryBible } from "./js/story-bible-unified.js?v=6";
-        import { requireStudioSession } from "./js/studio-session.js?v=1";
+        import { mountUnifiedStoryBible } from "./js/story-bible-unified.js?v=9";
+        import { requireStudioSession } from "./js/studio-session.js?v=2";
+        import { loadStoryWikiHub } from "./js/story-wiki-hub.js?v=1";
         import { isStoryBibleUiEnabled, STORY_BIBLE_PREF_KEY, STORY_BIBLE_PREF_EVENT } from "./js/story-bible-prefs.js?v=1";
+
+        function hasBookContext() {
+            const fromQuery = (new URLSearchParams(window.location.search).get("book") || "").trim();
+            if (fromQuery) return true;
+            try {
+                return !!(sessionStorage.getItem("alysum-current-book-id") || localStorage.getItem("alysum-current-book-id"));
+            } catch {
+                return false;
+            }
+        }
 
         function applyStoryBiblePageGate() {
             const disabled = document.getElementById("sbDisabled");
             const root = document.getElementById("sbEnabledRoot");
+            const hub = document.getElementById("sbHubView");
             if (!disabled || !root) return !isStoryBibleUiEnabled();
             const off = !isStoryBibleUiEnabled();
             disabled.classList.toggle("hidden", !off);
             root.classList.toggle("hidden", off);
+            hub?.classList.toggle("hidden", off);
             return off;
         }
 
@@ -413,18 +441,29 @@
         window.addEventListener(STORY_BIBLE_PREF_EVENT, () => location.reload());
 
         (async () => {
+            const hubLoading = document.getElementById("sbHubLoading");
             const session = await requireStudioSession(supabase, "story-bible.html" + window.location.search);
-            if (!session) return;
+            if (!session) {
+                if (hubLoading) hubLoading.textContent = "Redirecting to sign in…";
+                return;
+            }
             if (applyStoryBiblePageGate()) return;
+
+            const statusEl = document.getElementById("sbStatusLine");
+            const bookGrid = document.getElementById("sbBookGrid");
+            let hubPromise = null;
+            if (!hasBookContext()) {
+                hubPromise = loadStoryWikiHub(supabase, session.user.id, bookGrid, statusEl);
+            }
 
             try {
                 await mountUnifiedStoryBible({
                     supabase,
                     uid: session.user.id,
-                    statusEl: document.getElementById("sbStatusLine"),
+                    statusEl,
                     hubView: document.getElementById("sbHubView"),
                     bookView: document.getElementById("sbBookView"),
-                    bookGrid: document.getElementById("sbBookGrid"),
+                    bookGrid,
                     charList: document.getElementById("sbCharList"),
                     placeList: document.getElementById("sbPlaceList"),
                     charGrid: document.getElementById("sbCharGrid"),
@@ -488,10 +527,18 @@
                     scanDrawerClose: document.getElementById("sbScanDrawerClose"),
                     scanDrawerSummary: document.getElementById("sbScanDrawerSummary")
                 });
+                if (hubPromise) await hubPromise;
             } catch (e) {
-                console.error("[story-bible]", e);
+                console.error("[story-wiki]", e);
                 const status = document.getElementById("sbStatusLine");
-                if (status) { status.textContent = "Story Bible failed to load."; status.classList.add("is-error"); }
+                if (status) {
+                    status.textContent = "Story Wiki failed to load. Hard refresh (Ctrl+Shift+R) and try again.";
+                    status.classList.add("is-error");
+                }
+                if (hubLoading) {
+                    hubLoading.textContent =
+                        "Story Wiki failed to load. Hard refresh (Ctrl+Shift+R) or open Studio, pick a book, then use Story Wiki from the nav.";
+                }
             }
         })();
     </script>
