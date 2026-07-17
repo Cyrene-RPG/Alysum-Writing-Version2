@@ -63,6 +63,7 @@ function collectMountOpts(uid) {
         labelAliasesEl: byId("sbLabelAliases"),
         saveCharBtn: byId("sbSaveChar"),
         deleteCharBtn: byId("sbDeleteChar"),
+        moveEntryBtn: byId("sbMoveEntry"),
         openEditorLink: byId("sbOpenEditor"),
         openStoryBoardLink: byId("sbOpenStoryBoard"),
         importEditorLink: byId("sbImportEditorLink"),

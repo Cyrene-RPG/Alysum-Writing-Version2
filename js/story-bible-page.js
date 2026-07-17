@@ -13,12 +13,15 @@ import {
     listBiblePlaces,
     saveBiblePlace,
     deleteBiblePlace,
+    characterToPlace,
+    placeToCharacter,
     loadBookChapterOptions,
     getBookTitle,
     loadBookPlainTextForScan,
     loadBookChaptersPlainForScan,
     isStoryBibleTableMissing
-} from "./story-bible-api.js?v=9";
+} from "./story-bible-api.js?v=10";
+import { deleteBibleFactsForCharacter } from "./story-bible-facts-api.js?v=1";
 import {
     extractCharacterNameCandidates,
     subtractBibleNames,
@@ -136,6 +139,7 @@ function emptyPlace() {
  * @param {HTMLElement} [opts.labelAliasesEl]
  * @param {HTMLButtonElement} opts.saveCharBtn
  * @param {HTMLButtonElement} opts.deleteCharBtn
+ * @param {HTMLButtonElement} [opts.moveEntryBtn]
  * @param {HTMLAnchorElement} opts.openEditorLink
  * @param {HTMLElement} opts.bookTitleEl
  * @param {Record<string, HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>} opts.fields
@@ -196,6 +200,7 @@ export async function mountStoryBiblePage(opts) {
         labelAliasesEl,
         saveCharBtn,
         deleteCharBtn,
+        moveEntryBtn,
         openEditorLink,
         openStoryBoardLink,
         bookTitleEl,
@@ -675,6 +680,143 @@ export async function mountStoryBiblePage(opts) {
         return [...characters, ...places];
     }
 
+    function entryTitleTaken(entries, title, aliases = []) {
+        const keys = new Set(
+            [title, ...aliases].map(v => normalizeText(v).toLowerCase()).filter(Boolean)
+        );
+        if (!keys.size) return false;
+        return entries.some(entry => {
+            const names = [entry.name, ...(entry.aliases || [])]
+                .map(v => normalizeText(v).toLowerCase())
+                .filter(Boolean);
+            return names.some(n => keys.has(n));
+        });
+    }
+
+    async function moveCurrentEntry() {
+        const persistResult = await persistCurrentEntryFromForm({ silent: false, requireName: true });
+        if (!persistResult?.ok || persistResult.skipped) return;
+
+        if (bibleTab === "characters") {
+            if (!selectedCharId) return;
+            const base = characters.find(x => x.id === selectedCharId);
+            if (!base) return;
+            const next = readFormIntoCharacter(base);
+            if (!next.name.trim()) {
+                setStatus("Name is required before moving.", true);
+                return;
+            }
+            if (entryTitleTaken(places, next.name, next.aliases)) {
+                setStatus("A place with this name or alias already exists.", true);
+                return;
+            }
+            if (
+                !confirm(
+                    `Move "${next.name}" from Characters to Places?\n\nAppearance, status, and extracted writing facts will be removed. Article text and wikilinks are kept.`
+                )
+            ) {
+                return;
+            }
+
+            setStatus("Moving to Places…");
+            moveEntryBtn && (moveEntryBtn.disabled = true);
+            deleteCharBtn.disabled = true;
+            try {
+                const place = characterToPlace(next);
+                await saveBiblePlace(supabase, uid, bookId, place);
+                await deleteBibleFactsForCharacter(supabase, uid, bookId, next.id);
+                await deleteBibleCharacter(supabase, uid, bookId, next.id);
+                characters = characters.filter(x => x.id !== next.id);
+                places = [place, ...places].sort((a, b) =>
+                    (a.sortKey || "").localeCompare(b.sortKey || "", undefined, { sensitivity: "base" })
+                );
+                selectedCharId = null;
+                selectedPlaceId = place.id;
+                bibleTab = "places";
+                updateBibleTabChrome();
+                persistBibleTab();
+                onViewRequest?.("places");
+                fillPlaceForm(place);
+                openDrawer();
+                wikiHandle?.renderArticle();
+                renderCharList();
+                renderPlaceList();
+                updateHealthPanel();
+                refreshScanFromCache();
+                notifyDataReload();
+                clearDirty();
+                setStatus("Moved to Places.");
+                setTimeout(() => setStatus(""), 2500);
+                window.dispatchEvent(new CustomEvent("alysum-bible-characters-changed"));
+            } catch (e) {
+                console.error(e);
+                setStatus(formatFirestoreErr(e, "Move"), true);
+            } finally {
+                moveEntryBtn && (moveEntryBtn.disabled = false);
+                deleteCharBtn.disabled = false;
+            }
+            return;
+        }
+
+        if (!selectedPlaceId) return;
+        const base = places.find(x => x.id === selectedPlaceId);
+        if (!base) return;
+        const next = readFormIntoPlace(base);
+        if (!next.name.trim()) {
+            setStatus("Name is required before moving.", true);
+            return;
+        }
+        if (entryTitleTaken(characters, next.name, next.aliases)) {
+            setStatus("A character with this name or alias already exists.", true);
+            return;
+        }
+        if (
+            !confirm(
+                `Move "${next.name}" from Places to Characters?\n\nPlace type and location fields will be removed. Article text and wikilinks are kept.`
+            )
+        ) {
+            return;
+        }
+
+        setStatus("Moving to Characters…");
+        moveEntryBtn && (moveEntryBtn.disabled = true);
+        deleteCharBtn.disabled = true;
+        try {
+            const character = placeToCharacter(next);
+            await saveBibleCharacter(supabase, uid, bookId, character);
+            await deleteBiblePlace(supabase, uid, bookId, next.id);
+            places = places.filter(x => x.id !== next.id);
+            characters = [character, ...characters].sort((a, b) =>
+                (a.sortKey || "").localeCompare(b.sortKey || "", undefined, { sensitivity: "base" })
+            );
+            selectedPlaceId = null;
+            selectedCharId = character.id;
+            bibleTab = "characters";
+            updateBibleTabChrome();
+            persistBibleTab();
+            onViewRequest?.("characters");
+            fillCharacterForm(character);
+            openDrawer();
+            wikiHandle?.renderArticle();
+            renderCharList();
+            renderPlaceList();
+            updateHealthPanel();
+            refreshScanFromCache();
+            notifyDataReload();
+            onCharacterSelect?.(character.id);
+            clearDirty();
+            setStatus("Moved to Characters.");
+            setTimeout(() => setStatus(""), 2500);
+            window.dispatchEvent(new CustomEvent("alysum-bible-characters-changed"));
+        } catch (e) {
+            console.error(e);
+            setStatus(formatFirestoreErr(e, "Move"), true);
+        } finally {
+            moveEntryBtn && (moveEntryBtn.disabled = false);
+            deleteCharBtn.disabled = false;
+        }
+    }
+
     function updateBibleTabChrome() {
         const isChar = bibleTab === "characters";
         tabCharsBtn?.classList.toggle("is-active", isChar);
@@ -696,6 +838,11 @@ export async function mountStoryBiblePage(opts) {
         fields.name.placeholder = isChar ? "Character name" : "e.g. Chicago, The Old Mill";
         fields.aliases.placeholder = isChar ? "Nicknames, titles…" : "NYC, Second City…";
         saveCharBtn.textContent = isChar ? "Save character" : "Save place";
+        if (moveEntryBtn) {
+            moveEntryBtn.textContent = isChar ? "Move to Places" : "Move to Characters";
+            const hasEntry = isChar ? !!selectedCharId : !!selectedPlaceId;
+            moveEntryBtn.disabled = !hasEntry;
+        }
         syncFormEmptyState();
     }
 
@@ -1275,6 +1422,8 @@ export async function mountStoryBiblePage(opts) {
             fields.deceased.value = "|";
         }
     });
+
+    moveEntryBtn?.addEventListener("click", () => void moveCurrentEntry());
 
     deleteCharBtn.addEventListener("click", async () => {
         if (bibleTab === "characters") {

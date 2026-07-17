@@ -312,6 +312,46 @@ export async function deleteBiblePlace(supabase, uid, bookId, placeId) {
 }
 
 /**
+ * @param {ReturnType<typeof normalizeBibleCharacter>} character
+ * @param {string} [id]
+ */
+export function characterToPlace(character, id = generateBiblePlaceId()) {
+    return normalizeBiblePlace(
+        {
+            name: character.name,
+            aliases: character.aliases,
+            notes: character.notes,
+            tags: character.tags,
+            introducedSection: character.introducedSection,
+            introducedChapterId: character.introducedChapterId,
+            createdAt: character.createdAt,
+            updatedAt: character.updatedAt
+        },
+        id
+    );
+}
+
+/**
+ * @param {ReturnType<typeof normalizeBiblePlace>} place
+ * @param {string} [id]
+ */
+export function placeToCharacter(place, id = generateBibleCharacterId()) {
+    return normalizeBibleCharacter(
+        {
+            name: place.name,
+            aliases: place.aliases,
+            notes: place.notes,
+            tags: place.tags,
+            introducedSection: place.introducedSection,
+            introducedChapterId: place.introducedChapterId,
+            createdAt: place.createdAt,
+            updatedAt: place.updatedAt
+        },
+        id
+    );
+}
+
+/**
  * @param {import("@supabase/supabase-js").SupabaseClient} supabase
  * @param {string} uid
  * @param {string} bookId
