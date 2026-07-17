@@ -44,9 +44,9 @@ import {
     statusLabel,
     normalizeText
 } from "./story-bible-utils.js?v=1";
-import { renderCharacterCards, renderPlaceCards } from "./story-bible-cards.js?v=3";
-import { mountStoryWikiArticle } from "./story-wiki-article.js?v=7";
-import { findWikiEntryByTitle, buildStoryWikiIndex, extractWikiLinkTitles } from "./story-wiki-wikilinks.js?v=3";
+import { renderCharacterCards, renderPlaceCards, renderObjectCards } from "./story-bible-cards.js?v=4";
+import { mountStoryWikiArticle } from "./story-wiki-article.js?v=8";
+import { findWikiEntryByTitle, buildStoryWikiIndex, extractWikiLinks } from "./story-wiki-wikilinks.js?v=4";
 import { loadStoryWikiHub } from "./story-wiki-hub.js?v=3";
 
 const SB_TAB_STORAGE_KEY = "alysum-story-bible-tab";
@@ -178,14 +178,19 @@ export async function mountStoryBiblePage(opts) {
         placeList,
         charGrid,
         placeGrid,
+        objectGrid,
         placeSearch,
+        objectSearch,
         rosterSearch,
         newCharBtn,
         newPlaceBtn,
+        newObjectBtn,
         tabCharsBtn,
         tabPlacesBtn,
+        tabObjectsBtn,
         asideCharsEl,
         asidePlacesEl,
+        asideObjectsEl,
         charFieldsEl,
         placeFieldsEl,
         placeParentEl,
@@ -233,6 +238,9 @@ export async function mountStoryBiblePage(opts) {
     const placeDetailEmpty = document.getElementById("sbPlaceDetailEmpty");
     const charCodex = document.getElementById("sbViewCharacters");
     const placeCodex = document.getElementById("sbViewPlaces");
+    const objectCodex = document.getElementById("sbViewObjects");
+    const objectSheet = document.getElementById("sbObjectSheet");
+    const objectDetailEmpty = document.getElementById("sbObjectDetailEmpty");
 
     const bookId = resolveBookIdFromContext();
     if (bookId) rememberBookId(bookId);
@@ -294,7 +302,7 @@ export async function mountStoryBiblePage(opts) {
         const name = (fields.name?.value || "").trim();
         if (!name) return;
         if (bibleTab === "characters" && !selectedCharId) return;
-        if (bibleTab === "places" && !selectedPlaceId) return;
+        if ((bibleTab === "places" || bibleTab === "objects") && !selectedPlaceId) return;
         setSaveStatus("saving");
         const result = await persistCurrentEntryFromForm({ silent: true, showSavedStatus: true });
         if (result?.ok === false) setSaveStatus("unsaved");
@@ -331,15 +339,21 @@ export async function mountStoryBiblePage(opts) {
     }
 
     function activeSheet() {
-        return bibleTab === "characters" ? charSheet : placeSheet;
+        if (bibleTab === "characters") return charSheet;
+        if (bibleTab === "objects") return objectSheet;
+        return placeSheet;
     }
 
     function activeEmpty() {
-        return bibleTab === "characters" ? charDetailEmpty : placeDetailEmpty;
+        if (bibleTab === "characters") return charDetailEmpty;
+        if (bibleTab === "objects") return objectDetailEmpty;
+        return placeDetailEmpty;
     }
 
     function activeCodex() {
-        return bibleTab === "characters" ? charCodex : placeCodex;
+        if (bibleTab === "characters") return charCodex;
+        if (bibleTab === "objects") return objectCodex;
+        return placeCodex;
     }
 
     function mountEditorInSheet() {
@@ -360,6 +374,8 @@ export async function mountStoryBiblePage(opts) {
         editorDrawer?.classList.add("hidden");
         if (bibleTab === "characters") {
             charDetailEmpty?.classList.remove("hidden");
+        } else if (bibleTab === "objects") {
+            objectDetailEmpty?.classList.remove("hidden");
         } else if (!placeCodex?.classList.contains("is-map-mode")) {
             placeDetailEmpty?.classList.remove("hidden");
         }
@@ -375,7 +391,7 @@ export async function mountStoryBiblePage(opts) {
         }
         if (formTitleEl && !hasSelection) {
             formTitleEl.textContent =
-                bibleTab === "characters" ? "Character" : "Place";
+                bibleTab === "characters" ? "Character" : bibleTab === "objects" ? "Object" : "Place";
         }
     }
 
@@ -388,8 +404,13 @@ export async function mountStoryBiblePage(opts) {
             return;
         }
         if (bibleTab === "places") {
-            const n = places.length;
+            const n = placesOnly().length;
             sidebarMetaEl.textContent = n === 0 ? "No place articles yet" : `${n} place article${n === 1 ? "" : "s"}`;
+            return;
+        }
+        if (bibleTab === "objects") {
+            const n = objectsOnly().length;
+            sidebarMetaEl.textContent = n === 0 ? "No object articles yet" : `${n} object article${n === 1 ? "" : "s"}`;
             return;
         }
         const total = characters.length + places.length;
@@ -400,12 +421,34 @@ export async function mountStoryBiblePage(opts) {
     }
 
     function renderCardGrids() {
-        renderCharacterCards(charGrid, characters, selectedCharId, rosterSearch?.value || "");
-        renderPlaceCards(placeGrid, places, selectedPlaceId, placeSearch?.value || rosterSearch?.value || "");
+        const q = rosterSearch?.value || "";
+        const placeQ = placeSearch?.value || rosterSearch?.value || "";
+        renderCharacterCards(charGrid, characters, bibleTab === "characters" ? selectedCharId : null, q);
+        renderPlaceCards(placeGrid, placesOnly(), bibleTab === "places" ? selectedPlaceId : null, placeQ);
+        renderObjectCards(
+            objectGrid,
+            objectsOnly(),
+            bibleTab === "objects" ? selectedPlaceId : null,
+            objectSearch?.value || rosterSearch?.value || ""
+        );
     }
 
-    function rosterQuery() {
-        return (rosterSearch?.value || "").trim().toLowerCase();
+    function isObjectRecord(record) {
+        return String(record?.kind || "").trim().toLowerCase() === "object";
+    }
+
+    function placesOnly() {
+        return places.filter(p => !isObjectRecord(p));
+    }
+
+    function objectsOnly() {
+        return places.filter(p => isObjectRecord(p));
+    }
+
+    function defaultLinkKindForTab() {
+        if (bibleTab === "places") return "place";
+        if (bibleTab === "objects") return "object";
+        return "character";
     }
 
     function formatFirestoreErr(e, label = "Save") {
@@ -454,9 +497,10 @@ export async function mountStoryBiblePage(opts) {
                 </div>`;
         } else {
             const placeKind = record.kind || "";
-            entryHeroEl.className = "sb-entry-hero is-place";
+            const isObject = String(placeKind).toLowerCase() === "object";
+            entryHeroEl.className = "sb-entry-hero is-place" + (isObject ? " is-object" : "");
             entryHeroEl.innerHTML = `
-                <div class="sb-hero-avatar is-place">${placeKindIcon(placeKind)}</div>
+                <div class="sb-hero-avatar is-place">${isObject ? "◆" : placeKindIcon(placeKind)}</div>
                 <div class="sb-hero-meta">
                     <h4>${escapeHtml(name)}</h4>
                     <div class="sb-hero-badges">
@@ -542,7 +586,7 @@ export async function mountStoryBiblePage(opts) {
         if (!wanted) return null;
 
         const index = buildStoryWikiIndex(characters, places);
-        const existing = findWikiEntryByTitle(index, wanted);
+        const existing = findWikiEntryByTitle(index, wanted, preferredKind);
         if (existing) {
             if (open) await navigateWikiLink({ type: existing.type, id: existing.id });
             return existing;
@@ -550,30 +594,33 @@ export async function mountStoryBiblePage(opts) {
 
         if (open && !skipPersist) await persistCurrentEntryFromForm({ silent: true });
 
-        const kind = preferredKind === "place" ? "place" : "character";
+        const kind =
+            preferredKind === "object" ? "object" : preferredKind === "place" ? "place" : "character";
 
-        if (kind === "place") {
+        if (kind === "place" || kind === "object") {
             const stub = emptyPlace();
             stub.name = wanted;
+            if (kind === "object") stub.kind = "object";
             places = [stub, ...places];
             try {
                 await saveBiblePlace(supabase, uid, bookId, stub);
             } catch (e) {
                 places = places.filter(x => x.id !== stub.id);
-                setStatus(formatFirestoreErr(e, "Create place"), true);
+                setStatus(formatFirestoreErr(e, "Create article"), true);
                 return null;
             }
             renderPlaceList();
             notifyDataReload();
             if (open) {
-                onViewRequest?.("places");
-                bibleTab = "places";
+                const view = kind === "object" ? "objects" : "places";
+                onViewRequest?.(view);
+                bibleTab = view;
                 updateBibleTabChrome();
                 persistBibleTab();
                 await selectPlace(stub.id);
                 wikiHandle?.setMode(editMode ? "edit" : "read");
             }
-            return { type: "place", id: stub.id, canonical: wanted };
+            return { type: kind, id: stub.id, canonical: wanted };
         }
 
         const stub = emptyCharacter();
@@ -600,17 +647,18 @@ export async function mountStoryBiblePage(opts) {
     }
 
     async function ensureMissingWikiArticlesFromPlain(plain) {
-        const titles = extractWikiLinkTitles(plain);
-        if (!titles.length) return 0;
+        const links = extractWikiLinks(plain);
+        if (!links.length) return 0;
 
-        const preferredKind = bibleTab === "places" ? "place" : "character";
-        const missing = titles.filter(t => !findWikiEntryByTitle(buildStoryWikiIndex(characters, places), t));
+        const index = buildStoryWikiIndex(characters, places);
+        const missing = links.filter(link => !findWikiEntryByTitle(index, link.title, link.kind));
         if (!missing.length) return 0;
 
         await persistCurrentEntryFromForm({ silent: true });
         let created = 0;
-        for (const title of missing) {
-            const result = await createWikiArticleForTitle(title, preferredKind, {
+        for (const link of missing) {
+            const preferredKind = link.kind || defaultLinkKindForTab();
+            const result = await createWikiArticleForTitle(link.title, preferredKind, {
                 open: false,
                 skipPersist: true
             });
@@ -620,7 +668,7 @@ export async function mountStoryBiblePage(opts) {
     }
 
     async function navigateWikiLink(payload) {
-        const { type, id, title } = payload || {};
+        const { type, id, title, kind } = payload || {};
         if (type === "character" && id) {
             onViewRequest?.("characters");
             bibleTab = "characters";
@@ -629,9 +677,9 @@ export async function mountStoryBiblePage(opts) {
             wikiHandle?.setMode("read");
             return;
         }
-        if (type === "place" && id) {
-            onViewRequest?.("places");
-            bibleTab = "places";
+        if ((type === "place" || type === "object") && id) {
+            onViewRequest?.(type === "object" ? "objects" : "places");
+            bibleTab = type === "object" ? "objects" : "places";
             updateBibleTabChrome();
             await selectPlace(id);
             wikiHandle?.setMode("read");
@@ -640,13 +688,12 @@ export async function mountStoryBiblePage(opts) {
         const wanted = normalizeText(title);
         if (!wanted) return;
         const index = buildStoryWikiIndex(characters, places);
-        const entry = findWikiEntryByTitle(index, wanted);
+        const entry = findWikiEntryByTitle(index, wanted, kind || null);
         if (entry) {
             await navigateWikiLink({ type: entry.type, id: entry.id });
             return;
         }
-        const preferredKind = bibleTab === "places" ? "place" : "character";
-        await createWikiArticleForTitle(wanted, preferredKind, { open: true, editMode: true });
+        await createWikiArticleForTitle(wanted, kind || defaultLinkKindForTab(), { open: true, editMode: true });
     }
 
     wikiHandle = null;
@@ -659,7 +706,12 @@ export async function mountStoryBiblePage(opts) {
             editFormWrap: document.getElementById("sbWikiEditForm"),
             getData: () => ({ characters, places }),
             getCurrentEntryId: getCurrentWikiEntryId,
-            getCurrentKind: () => (bibleTab === "characters" ? "character" : "place"),
+            getCurrentKind: () => {
+                if (bibleTab === "characters") return "character";
+                if (bibleTab === "objects") return "object";
+                return "place";
+            },
+            getDefaultLinkKind: () => defaultLinkKindForTab(),
             getCurrentRecord: getCurrentWikiRecord,
             onNotesChange: plain => {
                 const record = getCurrentWikiRecord();
@@ -830,30 +882,44 @@ export async function mountStoryBiblePage(opts) {
 
     function updateBibleTabChrome() {
         const isChar = bibleTab === "characters";
+        const isPlace = bibleTab === "places";
+        const isObject = bibleTab === "objects";
         tabCharsBtn?.classList.toggle("is-active", isChar);
-        tabPlacesBtn?.classList.toggle("is-active", !isChar);
+        tabPlacesBtn?.classList.toggle("is-active", isPlace);
+        tabObjectsBtn?.classList.toggle("is-active", isObject);
         tabCharsBtn?.setAttribute("aria-selected", isChar ? "true" : "false");
-        tabPlacesBtn?.setAttribute("aria-selected", isChar ? "false" : "true");
+        tabPlacesBtn?.setAttribute("aria-selected", isPlace ? "true" : "false");
+        tabObjectsBtn?.setAttribute("aria-selected", isObject ? "true" : "false");
         asideCharsEl?.classList.toggle("hidden", !isChar);
-        asidePlacesEl?.classList.toggle("hidden", isChar);
+        asidePlacesEl?.classList.toggle("hidden", !isPlace);
+        asideObjectsEl?.classList.toggle("hidden", !isObject);
         charFieldsEl?.classList.toggle("hidden", !isChar);
         document.getElementById("sbCharFactsSection")?.classList.toggle("hidden", !isChar);
         charIdentityEl?.classList.toggle("hidden", !isChar);
-        placeFieldsEl?.classList.toggle("hidden", isChar);
-        placeParentEl?.classList.toggle("hidden", isChar);
+        placeFieldsEl?.classList.toggle("hidden", !isPlace);
+        placeParentEl?.classList.toggle("hidden", !isPlace);
         syncDeceasedFieldVisibility();
         mountEditorInSheet();
-        if (labelNameEl) labelNameEl.textContent = isChar ? "Name" : "Place name";
-        if (labelAliasesEl)
-            labelAliasesEl.textContent = isChar ? "Also known as (comma-separated)" : "Alternate names (comma-separated)";
-        fields.name.placeholder = isChar ? "Character name" : "e.g. Chicago, The Old Mill";
+        if (labelNameEl) {
+            labelNameEl.textContent = isChar ? "Name" : isObject ? "Object name" : "Place name";
+        }
+        if (labelAliasesEl) {
+            labelAliasesEl.textContent = isChar
+                ? "Also known as (comma-separated)"
+                : "Alternate names (comma-separated)";
+        }
+        fields.name.placeholder = isChar
+            ? "Character name"
+            : isObject
+              ? "e.g. Excalibur, The Black Key"
+              : "e.g. Chicago, The Old Mill";
         fields.aliases.placeholder = isChar ? "Nicknames, titles…" : "NYC, Second City…";
-        saveCharBtn.textContent = isChar ? "Save character" : "Save place";
+        saveCharBtn.textContent = isChar ? "Save character" : isObject ? "Save object" : "Save place";
         if (moveEntryBtn) {
-            moveEntryBtn.textContent = isChar ? "→ Places" : "→ Characters";
+            moveEntryBtn.textContent = isChar ? "→ Places" : isObject ? "→ Characters" : "→ Characters";
             moveEntryBtn.title = isChar
                 ? "Move this article from Characters to Places"
-                : "Move this article from Places to Characters";
+                : "Move this article to Characters";
             const hasEntry = isChar ? !!selectedCharId : !!selectedPlaceId;
             moveEntryBtn.disabled = !hasEntry;
         }
@@ -1114,11 +1180,13 @@ export async function mountStoryBiblePage(opts) {
     }
 
     function fillPlaceForm(p) {
-        bibleTab = "places";
+        bibleTab = isObjectRecord(p) ? "objects" : "places";
         updateBibleTabChrome();
         clearSharedForm();
         clearCharacterFields();
-        if (formTitleEl) formTitleEl.textContent = p.name?.trim() || "New place";
+        if (formTitleEl) {
+            formTitleEl.textContent = p.name?.trim() || (isObjectRecord(p) ? "New object" : "New place");
+        }
         fields.name.value = p.name || "";
         fields.aliases.value = (p.aliases || []).join(", ");
         fields.tags.value = (p.tags || []).join(", ");
@@ -1253,13 +1321,13 @@ export async function mountStoryBiblePage(opts) {
         const p = places.find(x => x.id === id);
         if (!p) return;
         fillPlaceForm(p);
-        updateEntryHero("place", p);
+        updateEntryHero(isObjectRecord(p) ? "object" : "place", p);
         openDrawer();
         if (!normalizeText(p.name)) {
             wikiHandle?.setMode("edit");
             fields.name?.focus();
         }
-        onViewRequest?.("places");
+        onViewRequest?.(isObjectRecord(p) ? "objects" : "places");
         renderCharList();
         renderPlaceList();
         deleteCharBtn.disabled = false;
@@ -1295,7 +1363,7 @@ export async function mountStoryBiblePage(opts) {
             let savedTab = "characters";
             try {
                 const t = sessionStorage.getItem(SB_TAB_STORAGE_KEY);
-                if (t === "places") savedTab = "places";
+                if (t === "places" || t === "objects") savedTab = t;
             } catch (_) {}
 
             const introducedSel = fields.introduced;
@@ -1317,12 +1385,25 @@ export async function mountStoryBiblePage(opts) {
                 }
             });
 
-            bibleTab = savedTab === "places" ? "places" : "characters";
+            bibleTab = savedTab;
             updateBibleTabChrome();
 
             if (bibleTab === "places") {
                 selectedCharId = characters[0]?.id ?? null;
-                if (places.length) await selectPlace(places[0].id);
+                const first = placesOnly()[0];
+                if (first) await selectPlace(first.id);
+                else {
+                    selectedPlaceId = null;
+                    clearSharedForm();
+                    clearCharacterFields();
+                    deleteCharBtn.disabled = true;
+                    renderCharList();
+                    renderPlaceList();
+                }
+            } else if (bibleTab === "objects") {
+                selectedCharId = characters[0]?.id ?? null;
+                const first = objectsOnly()[0];
+                if (first) await selectPlace(first.id);
                 else {
                     selectedPlaceId = null;
                     clearSharedForm();
@@ -1385,9 +1466,10 @@ export async function mountStoryBiblePage(opts) {
         bibleTab = "places";
         updateBibleTabChrome();
         persistBibleTab();
-        const p = places.find(x => x.id === selectedPlaceId);
+        onViewRequest?.("places");
+        const p = places.find(x => x.id === selectedPlaceId && !isObjectRecord(x));
         if (p) fillPlaceForm(p);
-        else if (places.length) await selectPlace(places[0].id);
+        else if (placesOnly().length) await selectPlace(placesOnly()[0].id);
         else {
             selectedPlaceId = null;
             clearSharedForm();
@@ -1396,6 +1478,38 @@ export async function mountStoryBiblePage(opts) {
             renderCharList();
             renderPlaceList();
         }
+    });
+
+    tabObjectsBtn?.addEventListener("click", async () => {
+        await persistCurrentEntryFromForm({ silent: true });
+        bibleTab = "objects";
+        updateBibleTabChrome();
+        persistBibleTab();
+        onViewRequest?.("objects");
+        const p = places.find(x => x.id === selectedPlaceId && isObjectRecord(x));
+        if (p) fillPlaceForm(p);
+        else if (objectsOnly().length) await selectPlace(objectsOnly()[0].id);
+        else {
+            selectedPlaceId = null;
+            clearSharedForm();
+            clearCharacterFields();
+            deleteCharBtn.disabled = true;
+            renderCharList();
+            renderPlaceList();
+        }
+    });
+
+    newObjectBtn?.addEventListener("click", async () => {
+        await persistCurrentEntryFromForm({ silent: true });
+        onViewRequest?.("objects");
+        bibleTab = "objects";
+        updateBibleTabChrome();
+        persistBibleTab();
+        const p = emptyPlace();
+        p.kind = "object";
+        places = [p, ...places];
+        await selectPlace(p.id);
+        saveCharBtn.focus();
     });
 
     newCharBtn.addEventListener("click", async () => {
@@ -1918,6 +2032,9 @@ export async function mountStoryBiblePage(opts) {
     placeSearch?.addEventListener("input", () => {
         renderPlaceList();
     });
+    objectSearch?.addEventListener("input", () => {
+        renderPlaceList();
+    });
 
     drawerClose?.addEventListener("click", () => {
         void persistCurrentEntryFromForm({ silent: true });
@@ -1967,12 +2084,13 @@ export async function mountStoryBiblePage(opts) {
                 renderCardGrids();
             }
         }
-        if (formTitleEl && bibleTab === "places") {
-            formTitleEl.textContent = nextName.trim() || "New place";
+        if (formTitleEl && (bibleTab === "places" || bibleTab === "objects")) {
+            const isObj = bibleTab === "objects";
+            formTitleEl.textContent = nextName.trim() || (isObj ? "New object" : "New place");
             const p = places.find(x => x.id === selectedPlaceId);
             if (p) {
                 p.name = nextName;
-                updateEntryHero("place", { ...p, name: nextName });
+                updateEntryHero(isObj ? "object" : "place", { ...p, name: nextName });
                 renderCardGrids();
             }
         }
@@ -1984,6 +2102,9 @@ export async function mountStoryBiblePage(opts) {
         if (targetView) onViewRequest?.(targetView);
         if (tab === "places" || targetView === "places") {
             bibleTab = "places";
+            updateBibleTabChrome();
+        } else if (tab === "objects" || targetView === "objects") {
+            bibleTab = "objects";
             updateBibleTabChrome();
         } else if (tab === "characters" || targetView === "characters") {
             bibleTab = "characters";
@@ -2006,6 +2127,17 @@ export async function mountStoryBiblePage(opts) {
         }
     });
 
+    window.addEventListener("alysum-bible-set-view", async ev => {
+        const view = ev.detail?.view;
+        if (!view || !["characters", "places", "objects"].includes(view) || bibleTab === view) return;
+        await persistCurrentEntryFromForm({ silent: true });
+        bibleTab = view;
+        updateBibleTabChrome();
+        persistBibleTab();
+        renderCharList();
+        renderPlaceList();
+    });
+
     window.addEventListener("alysum-bible-open-entry", async ev => {
         const { kind, id } = ev.detail || {};
         if (kind === "character" && id) {
@@ -2017,6 +2149,12 @@ export async function mountStoryBiblePage(opts) {
         if (kind === "place" && id) {
             onViewRequest?.("places");
             bibleTab = "places";
+            updateBibleTabChrome();
+            await selectPlace(id);
+        }
+        if (kind === "object" && id) {
+            onViewRequest?.("objects");
+            bibleTab = "objects";
             updateBibleTabChrome();
             await selectPlace(id);
         }

@@ -93,6 +93,7 @@ export function renderOverview(mount, ctx) {
                 setTimeout(() => {
                     const kind = btn.getAttribute("data-sb-new");
                     if (kind === "place") document.getElementById("sbNewPlace")?.click();
+                    else if (kind === "object") document.getElementById("sbNewObject")?.click();
                     else document.getElementById("sbNewChar")?.click();
                 }, 80);
             }
@@ -104,9 +105,9 @@ export function renderOverview(mount, ctx) {
             e.preventDefault();
             const id = link.getAttribute("data-sb-wiki-entry");
             const kind = link.getAttribute("data-sb-wiki-kind");
-            const view = kind === "place" ? "places" : "characters";
+            const view = kind === "place" ? "places" : kind === "object" ? "objects" : "characters";
             const detail =
-                kind === "place"
+                kind === "place" || kind === "object"
                     ? { view, placeId: id }
                     : { view, charId: id };
             window.dispatchEvent(new CustomEvent("alysum-bible-navigate", { detail }));

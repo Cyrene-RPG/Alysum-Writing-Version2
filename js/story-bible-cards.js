@@ -92,11 +92,58 @@ export function renderPlaceCards(mount, places, selectedId, query = "") {
     });
 }
 
+/**
+ * @param {HTMLElement} mount
+ * @param {object[]} objects
+ * @param {string|null} selectedId
+ * @param {string} query
+ */
+export function renderObjectCards(mount, objects, selectedId, query = "") {
+    if (!mount) return;
+    const q = normalizeText(query).toLowerCase();
+    const list = (objects || []).filter(p => {
+        const name = normalizeText(p.name);
+        if (!name && p.id !== selectedId) return false;
+        if (!q) return true;
+        const hay = [name, ...(p.aliases || []), p.notes].join(" ").toLowerCase();
+        return hay.includes(q);
+    });
+
+    if (!list.length) {
+        mount.innerHTML = `
+            <p class="sw-wp-roster-empty">${q ? "No matching articles." : "No objects yet."}
+            ${q ? "" : ` <button type="button" class="sw-wp-link-btn" data-sb-action="new-object">Create one</button>`}</p>`;
+        wireEmptyActions(mount);
+        return;
+    }
+
+    mount.innerHTML = `<ul class="sw-wp-roster-list">${list
+        .map(p => {
+            const name = normalizeText(p.name) || "Untitled";
+            const isDraft = !normalizeText(p.name);
+            return `<li><button type="button" class="sw-wp-roster-link${p.id === selectedId ? " is-active" : ""}${isDraft ? " is-draft" : ""}" data-place-id="${escapeHtml(p.id)}">${escapeHtml(name)}</button></li>`;
+        })
+        .join("")}</ul>`;
+
+    mount.querySelectorAll("[data-place-id]").forEach(btn => {
+        btn.addEventListener("click", () => {
+            window.dispatchEvent(
+                new CustomEvent("alysum-bible-open-entry", {
+                    detail: { kind: "object", id: btn.getAttribute("data-place-id") }
+                })
+            );
+        });
+    });
+}
+
 function wireEmptyActions(mount) {
     mount.querySelectorAll("[data-sb-action='new-char']").forEach(btn => {
         btn.addEventListener("click", () => document.getElementById("sbNewChar")?.click());
     });
     mount.querySelectorAll("[data-sb-action='new-place']").forEach(btn => {
         btn.addEventListener("click", () => document.getElementById("sbNewPlace")?.click());
+    });
+    mount.querySelectorAll("[data-sb-action='new-object']").forEach(btn => {
+        btn.addEventListener("click", () => document.getElementById("sbNewObject")?.click());
     });
 }

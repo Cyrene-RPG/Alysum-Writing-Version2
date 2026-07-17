@@ -197,6 +197,7 @@ const BIBLE_PLACE_KINDS = new Set([
     "country",
     "building",
     "landmark",
+    "object",
     "fictional",
     "world",
     "other"

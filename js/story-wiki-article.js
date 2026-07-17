@@ -6,10 +6,12 @@ import { normalizeText } from "./story-bible-utils.js?v=1";
 import {
     buildStoryWikiIndex,
     findWikiEntryByTitle,
+    formatWikiLinkMarker,
     normalizeStoryWikiPlain,
     plainToStoryWikiHtml,
     serializeStoryWikiBody
-} from "./story-wiki-wikilinks.js?v=3";
+} from "./story-wiki-wikilinks.js?v=4";
+import { mountWikiLinkKindPicker } from "./story-wiki-link-picker.js?v=1";
 import { renderStoryWikiArticleHtml } from "./story-wiki-read.js?v=1";
 
 /**
@@ -30,12 +32,25 @@ export function mountStoryWikiArticle(opts) {
         onNavigate,
         onDirty,
         onEnsureMissingArticles,
+        getDefaultLinkKind,
         getBookTitle
     } = opts;
 
     let mode = "read";
+    let pendingLinkSelection = "";
+    /** @type {Range|null} */
+    let savedLinkRange = null;
     const linkBtn = document.getElementById("sbWikiLinkBtn");
     const formatButtons = Array.from(document.querySelectorAll("[data-wiki-format]"));
+    const linkPicker = mountWikiLinkKindPicker({
+        root: document.getElementById("sbWikiLinkPicker"),
+        nameEl: document.getElementById("sbWikiLinkPickerName"),
+        getDefaultKind: () => getDefaultLinkKind?.() || "character",
+        onPick: kind => {
+            if (pendingLinkSelection) insertWikiLinkForSelection(pendingLinkSelection, kind);
+            pendingLinkSelection = "";
+        }
+    });
 
     function getEditorSelectionRange() {
         if (!editEl?.isContentEditable) return null;
@@ -158,20 +173,118 @@ export function mountStoryWikiArticle(opts) {
         if (mode === "read") renderArticle();
     }
 
-    function createWikiLinkElement(title, index) {
-        const entry = findWikiEntryByTitle(index, title);
+    function createWikiLinkElement(title, index, kindIntent = null) {
+        const entry = findWikiEntryByTitle(index, title, kindIntent);
         const canonical = entry?.canonical || title;
         const link = document.createElement("a");
         link.href = "#";
-        link.className = "sw-wiki-link" + (entry ? "" : " is-missing");
+        const typeClass = entry?.type || kindIntent || "";
+        link.className =
+            "sw-wiki-link" +
+            (entry ? ` sw-wiki-link-${typeClass}` : " is-missing") +
+            (kindIntent && !entry ? ` sw-wiki-link-intent-${kindIntent}` : "");
         link.contentEditable = "false";
         link.setAttribute("data-wiki-title", canonical);
         if (entry) {
             link.setAttribute("data-wiki-type", entry.type);
             link.setAttribute("data-wiki-id", entry.id);
+        } else if (kindIntent) {
+            link.setAttribute("data-wiki-link-kind", kindIntent);
         }
         link.textContent = canonical;
         return link;
+    }
+
+    async function refreshInsertedWikiLinks() {
+        if (!onEnsureMissingArticles) return;
+        const plain = getNotesPlain();
+        await onEnsureMissingArticles(plain);
+        if (!editEl?.isContentEditable) return;
+        const refreshed = getIndex();
+        editEl.querySelectorAll("a.sw-wiki-link").forEach(a => {
+            const title = (a.getAttribute("data-wiki-title") || a.textContent || "").trim();
+            const kind =
+                a.getAttribute("data-wiki-link-kind") ||
+                a.getAttribute("data-wiki-type") ||
+                null;
+            const entry = findWikiEntryByTitle(refreshed, title, kind);
+            if (!entry) return;
+            a.classList.remove("is-missing");
+            a.classList.add(`sw-wiki-link-${entry.type}`);
+            a.setAttribute("data-wiki-type", entry.type);
+            a.setAttribute("data-wiki-id", entry.id);
+            a.setAttribute("data-wiki-title", entry.canonical);
+            a.removeAttribute("data-wiki-link-kind");
+            a.textContent = entry.canonical;
+        });
+        onNotesChange(serializeStoryWikiBody(editEl));
+    }
+
+    function captureLinkSelectionRange() {
+        if (!editEl?.isContentEditable) return null;
+        const range = getEditorSelectionRange();
+        return range ? range.cloneRange() : null;
+    }
+
+    function insertWikiLinkForSelection(selected, kindIntent = null) {
+        if (!editEl || !selected) return;
+
+        const index = getIndex();
+        const existing = findWikiEntryByTitle(index, selected, kindIntent);
+        const resolvedKind = existing?.type || kindIntent;
+
+        if (editEl.isContentEditable) {
+            let range = savedLinkRange;
+            savedLinkRange = null;
+            if (!range) range = getEditorSelectionRange();
+            if (!range || !editEl.contains(range.commonAncestorContainer)) return;
+
+            range.deleteContents();
+            const link = createWikiLinkElement(selected, index, resolvedKind);
+            range.insertNode(link);
+            const spacer = document.createTextNode("\u00A0");
+            link.after(spacer);
+
+            const after = document.createRange();
+            after.setStartAfter(spacer);
+            after.collapse(true);
+            const sel = window.getSelection();
+            sel?.removeAllRanges();
+            sel?.addRange(after);
+            editEl.focus();
+        } else {
+            const start = editEl.selectionStart ?? 0;
+            const end = editEl.selectionEnd ?? start;
+            const val = editEl.value || "";
+            const entry = findWikiEntryByTitle(index, selected, resolvedKind);
+            const title = entry?.canonical || selected;
+            const marker = formatWikiLinkMarker(title, entry?.type || resolvedKind);
+            editEl.value = val.slice(0, start) + marker + val.slice(end);
+            const caret = start + marker.length;
+            editEl.selectionStart = editEl.selectionEnd = caret;
+            editEl.focus();
+        }
+
+        onNotesChange(getNotesPlain());
+        onDirty?.();
+        updateFormatToolbarState();
+        void refreshInsertedWikiLinks();
+    }
+
+    function beginWikiLinkForSelection() {
+        if (!editEl) return;
+        const selected = getEditorSelectionText();
+        if (!selected) return;
+
+        const index = getIndex();
+        if (findWikiEntryByTitle(index, selected)) {
+            insertWikiLinkForSelection(selected);
+            return;
+        }
+
+        pendingLinkSelection = selected;
+        savedLinkRange = captureLinkSelectionRange();
+        linkPicker.open(selected);
     }
 
     function insertBlockHeading(selected, level) {
@@ -252,68 +365,6 @@ export function mountStoryWikiArticle(opts) {
         updateFormatToolbarState();
     }
 
-    function insertWikiLinkForSelection() {
-        if (!editEl) return;
-        const selected = getEditorSelectionText();
-        if (!selected) return;
-
-        const index = getIndex();
-
-        if (editEl.isContentEditable) {
-            const sel = window.getSelection();
-            if (!sel || sel.rangeCount === 0) return;
-            const range = sel.getRangeAt(0);
-            if (!editEl.contains(range.commonAncestorContainer)) return;
-
-            range.deleteContents();
-            const link = createWikiLinkElement(selected, index);
-            range.insertNode(link);
-            const spacer = document.createTextNode("\u00A0");
-            link.after(spacer);
-
-            const after = document.createRange();
-            after.setStartAfter(spacer);
-            after.collapse(true);
-            sel.removeAllRanges();
-            sel.addRange(after);
-            editEl.focus();
-        } else {
-            const start = editEl.selectionStart ?? 0;
-            const end = editEl.selectionEnd ?? start;
-            const val = editEl.value || "";
-            const entry = findWikiEntryByTitle(index, selected);
-            const title = entry?.canonical || selected;
-            const marker = `[[${title}]]`;
-            editEl.value = val.slice(0, start) + marker + val.slice(end);
-            const caret = start + marker.length;
-            editEl.selectionStart = editEl.selectionEnd = caret;
-            editEl.focus();
-        }
-
-        onNotesChange(getNotesPlain());
-        onDirty?.();
-        updateFormatToolbarState();
-
-        void (async () => {
-            if (!onEnsureMissingArticles) return;
-            const plain = getNotesPlain();
-            await onEnsureMissingArticles(plain);
-            if (!editEl?.isContentEditable) return;
-            const refreshed = getIndex();
-            editEl.querySelectorAll("a.sw-wiki-link").forEach(a => {
-                const title = (a.getAttribute("data-wiki-title") || a.textContent || "").trim();
-                const entry = findWikiEntryByTitle(refreshed, title);
-                if (!entry) return;
-                a.classList.remove("is-missing");
-                a.setAttribute("data-wiki-type", entry.type);
-                a.setAttribute("data-wiki-id", entry.id);
-                a.setAttribute("data-wiki-title", entry.canonical);
-                a.textContent = entry.canonical;
-            });
-            onNotesChange(serializeStoryWikiBody(editEl));
-        })();
-    }
-
     function handleWikiNavClick(e) {
         const a = e.target.closest("a.sw-wiki-link, a.sw-wp-cat");
         if (!a) return;
@@ -321,8 +372,9 @@ export function mountStoryWikiArticle(opts) {
         const type = a.getAttribute("data-wiki-type");
         const id = a.getAttribute("data-wiki-id");
         const title = a.getAttribute("data-wiki-title") || a.textContent || "";
+        const kind = a.getAttribute("data-wiki-link-kind") || "";
         if (type && id) onNavigate({ type, id });
-        else onNavigate({ title: title.trim() });
+        else onNavigate({ title: title.trim(), kind: kind || undefined });
     }
 
     modeReadBtn?.addEventListener("click", () => {
@@ -363,7 +415,11 @@ export function mountStoryWikiArticle(opts) {
 
     document.addEventListener("selectionchange", onSelectionChange);
 
-    document.getElementById("sbWikiLinkBtn")?.addEventListener("click", insertWikiLinkForSelection);
+    document.getElementById("sbWikiLinkBtn")?.addEventListener("mousedown", e => {
+        e.preventDefault();
+        savedLinkRange = captureLinkSelectionRange();
+    });
+    document.getElementById("sbWikiLinkBtn")?.addEventListener("click", beginWikiLinkForSelection);
     for (const btn of formatButtons) {
         btn.addEventListener("click", () => applyWikiFormat(btn.getAttribute("data-wiki-format") || ""));
     }
@@ -377,6 +433,7 @@ export function mountStoryWikiArticle(opts) {
         setMode,
         destroy() {
             document.removeEventListener("selectionchange", onSelectionChange);
+            linkPicker.destroy();
         }
     };
 }

@@ -38,14 +38,19 @@ function collectMountOpts(uid) {
         placeList: byId("sbPlaceList"),
         charGrid: byId("sbCharGrid"),
         placeGrid: byId("sbPlaceGrid"),
+        objectGrid: byId("sbObjectGrid"),
         placeSearch: byId("sbPlaceSearch"),
+        objectSearch: byId("sbObjectSearch"),
         rosterSearch: byId("sbRosterSearch"),
         newCharBtn: byId("sbNewChar"),
         newPlaceBtn: byId("sbNewPlace"),
+        newObjectBtn: byId("sbNewObject"),
         tabCharsBtn: byId("sbTabChars"),
         tabPlacesBtn: byId("sbTabPlaces"),
+        tabObjectsBtn: byId("sbTabObjects"),
         asideCharsEl: byId("sbAsideChars"),
         asidePlacesEl: byId("sbAsidePlaces"),
+        asideObjectsEl: byId("sbAsideObjects"),
         charFieldsEl: byId("sbFormCharFields"),
         placeFieldsEl: byId("sbFormPlaceFields"),
         placeParentEl: byId("sbFormPlaceParent"),
@@ -166,7 +171,7 @@ export async function bootStoryWikiPage() {
     byId("sbBookView")?.classList.remove("hidden");
 
     try {
-        const { mountUnifiedStoryBible } = await import("./story-bible-unified.js?v=16");
+        const { mountUnifiedStoryBible } = await import("./story-bible-unified.js?v=17");
         await mountUnifiedStoryBible(collectMountOpts(session.user.id));
     } catch (e) {
         console.error("[story-wiki-boot] workspace failed:", e);

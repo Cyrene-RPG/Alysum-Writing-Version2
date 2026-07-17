@@ -88,7 +88,7 @@ function renderInfoboxRows(record, kind, index) {
 /**
  * @param {object} opts
  * @param {object} opts.record
- * @param {"character"|"place"} opts.kind
+ * @param {"character"|"place"|"object"} opts.kind
  * @param {object[]} [opts.characters]
  * @param {object[]} [opts.places]
  * @param {string} [opts.bookTitle]
@@ -113,7 +113,10 @@ export function renderStoryWikiArticleHtml(opts) {
     const name = normalizeText(record.name) || "(unnamed)";
     const index = buildStoryWikiIndex(characters, places);
     const aliases = (record.aliases || []).filter(Boolean);
-    const infoboxRows = renderInfoboxRows(record, kind, index);
+    const infoboxLabel =
+        kind === "character" ? "Character" : kind === "object" ? "Object" : "Place";
+    const showPlaceIcon = kind === "place" || kind === "object";
+    const infoboxRows = renderInfoboxRows(record, kind === "object" ? "place" : kind, index);
     const { lede, sections } = parseWikiSections(record.notes || "");
     const tags = (record.tags || []).filter(Boolean);
 
@@ -168,11 +171,11 @@ export function renderStoryWikiArticleHtml(opts) {
                 ${
                     infoboxRows
                         ? `<aside class="sw-infobox sw-wp-infobox" aria-label="Quick facts">
-                    <div class="sw-infobox-title">${kind === "character" ? "Character" : "Place"}</div>
+                    <div class="sw-infobox-title">${infoboxLabel}</div>
                     ${
                         kind === "character"
                             ? `<div class="sw-infobox-avatar" style="background:${avatarGradient(name)}">${escapeHtml(getInitials(name))}</div>`
-                            : `<div class="sw-infobox-avatar is-place">${placeKindIcon(record.kind)}</div>`
+                            : `<div class="sw-infobox-avatar is-place">${placeKindIcon(showPlaceIcon ? record.kind || "object" : record.kind)}</div>`
                     }
                     <table class="sw-infobox-table">${infoboxRows}</table>
                 </aside>`

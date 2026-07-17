@@ -1,6 +1,8 @@
 /**
- * Story Wiki wikilinks — [[Title]] links between characters and places in a book.
+ * Story Wiki wikilinks — [[Title]] and [[Title|kind]] links between encyclopedia entries.
  */
+
+import { formatWikiLinkMarker, parseWikiLinkInner, WIKI_LINK_KINDS } from "./story-wiki-link-picker.js?v=1";
 
 function escapeHtml(s) {
     return String(s)
@@ -10,7 +12,14 @@ function escapeHtml(s) {
         .replace(/"/g, "&quot;");
 }
 
-/** @typedef {{ type: "character"|"place", id: string, canonical: string, titles: string[] }} WikiEntry */
+/** @typedef {{ type: "character"|"place"|"object", id: string, canonical: string, titles: string[] }} WikiEntry */
+
+/**
+ * @param {object} p
+ */
+export function placeWikiType(p) {
+    return String(p?.kind || "").trim().toLowerCase() === "object" ? "object" : "place";
+}
 
 /**
  * @param {object[]} characters
@@ -40,7 +49,7 @@ export function buildStoryWikiIndex(characters = [], places = []) {
             .map(a => String(a || "").trim())
             .filter(Boolean);
         entries.push({
-            type: "place",
+            type: placeWikiType(p),
             id: p.id,
             canonical: name,
             titles: [name, ...aliases]
@@ -52,12 +61,19 @@ export function buildStoryWikiIndex(characters = [], places = []) {
 /**
  * @param {WikiEntry[]} index
  * @param {string} title
+ * @param {"character"|"place"|"object"|null} [preferredKind]
  * @returns {WikiEntry|null}
  */
-export function findWikiEntryByTitle(index, title) {
+export function findWikiEntryByTitle(index, title, preferredKind = null) {
     const lower = String(title || "").trim().toLowerCase();
     if (!lower) return null;
-    return index.find(e => e.titles.some(t => t.toLowerCase() === lower)) || null;
+    const matches = index.filter(e => e.titles.some(t => t.toLowerCase() === lower));
+    if (!matches.length) return null;
+    if (preferredKind) {
+        const typed = matches.find(e => e.type === preferredKind);
+        if (typed) return typed;
+    }
+    return matches[0];
 }
 
 function makeBarePhraseRegex(phrase) {
@@ -67,20 +83,33 @@ function makeBarePhraseRegex(phrase) {
 
 /** @param {string} plain */
 export function extractWikiLinkTitles(plain) {
-    /** @type {string[]} */
-    const titles = [];
+    return extractWikiLinks(plain).map(link => link.title);
+}
+
+/** @param {string} plain */
+export function extractWikiLinks(plain) {
+    /** @type {{ title: string, kind: import("./story-wiki-link-picker.js").WikiLinkKind|null }[]} */
+    const links = [];
     const seen = new Set();
     const re = /\[\[([^\]]+)\]\]/g;
     let m;
     while ((m = re.exec(String(plain || "")))) {
-        const t = String(m[1] || "").trim();
-        const key = t.toLowerCase();
-        if (t && !seen.has(key)) {
-            seen.add(key);
-            titles.push(t);
-        }
+        const { title, kind } = parseWikiLinkInner(m[1]);
+        if (!title) continue;
+        const key = `${title.toLowerCase()}|${kind || ""}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        links.push({ title, kind });
     }
-    return titles;
+    return links;
+}
+
+function normalizeWikiLinkInner(inner, index) {
+    const { title, kind } = parseWikiLinkInner(inner);
+    const entry = findWikiEntryByTitle(index, title, kind);
+    if (entry) return formatWikiLinkMarker(entry.canonical, entry.type);
+    if (kind) return formatWikiLinkMarker(title, kind);
+    return formatWikiLinkMarker(title, null);
 }
 
 /**
@@ -98,10 +127,7 @@ export function normalizeStoryWikiPlain(text, index, currentEntryId = null) {
     let guard = 0;
     while (prev !== t && guard++ < 8) {
         prev = t;
-        t = t.replace(/\[\[([^\]]+)\]\]/g, (_, inner) => {
-            const entry = findWikiEntryByTitle(index, inner);
-            return entry ? `[[${entry.canonical}]]` : `[[${String(inner).trim()}]]`;
-        });
+        t = t.replace(/\[\[([^\]]+)\]\]/g, (_, inner) => normalizeWikiLinkInner(inner, index));
     }
 
     const wikiChunks = [];
@@ -122,7 +148,7 @@ export function normalizeStoryWikiPlain(text, index, currentEntryId = null) {
         const entry = findWikiEntryByTitle(index, phrase);
         if (!entry) continue;
         const re = makeBarePhraseRegex(phrase);
-        masked = masked.replace(re, (full, before) => `${before}[[${entry.canonical}]]`);
+        masked = masked.replace(re, (full, before) => `${before}${formatWikiLinkMarker(entry.canonical, entry.type)}`);
     }
 
     let out = masked.replace(/\uE000(\d+)\uE001/g, (_, i) => wikiChunks[Number(i)] ?? "");
@@ -131,10 +157,7 @@ export function normalizeStoryWikiPlain(text, index, currentEntryId = null) {
     guard = 0;
     while (prev !== out && guard++ < 4) {
         prev = out;
-        out = out.replace(/\[\[([^\]]+)\]\]/g, (_, inner) => {
-            const entry = findWikiEntryByTitle(index, inner);
-            return entry ? `[[${entry.canonical}]]` : `[[${String(inner).trim()}]]`;
-        });
+        out = out.replace(/\[\[([^\]]+)\]\]/g, (_, inner) => normalizeWikiLinkInner(inner, index));
     }
 
     return out;
@@ -153,7 +176,15 @@ export function serializeStoryWikiBody(root) {
         if (el.classList?.contains("sw-wiki-link")) {
             const title = (el.getAttribute("data-wiki-title") || el.textContent || "").trim();
             const safe = title.replace(/\]\]/g, "");
-            out += `[[${safe}]]`;
+            const kind = el.getAttribute("data-wiki-link-kind") || el.getAttribute("data-wiki-type") || "";
+            const normalizedKind = WIKI_LINK_KINDS.has(kind) ? kind : null;
+            const entryType = el.getAttribute("data-wiki-type");
+            const kindForMarker =
+                normalizedKind ||
+                (entryType && WIKI_LINK_KINDS.has(entryType) && !el.classList.contains("is-missing")
+                    ? entryType
+                    : null);
+            out += formatWikiLinkMarker(safe, kindForMarker);
             return;
         }
         if (el.tagName === "STRONG" || el.tagName === "B") {
@@ -173,14 +204,7 @@ export function serializeStoryWikiBody(root) {
             return;
         }
         if (el.tagName === "DIV" || el.tagName === "P") {
-            let first = true;
-            for (const c of el.childNodes) {
-                if (!first) {
-                    /* noop */
-                }
-                first = false;
-                walk(c);
-            }
+            for (const c of el.childNodes) walk(c);
             if (el !== root && (el.tagName === "DIV" || el.tagName === "P")) {
                 out += "\n";
             }
@@ -226,11 +250,12 @@ function renderBoldItalicEscaped(text) {
 }
 
 function renderWikiLinkPart(part, index, opts) {
-    const inner = part.slice(2, -2).trim();
-    const entry = findWikiEntryByTitle(index, inner);
+    const { title, kind } = parseWikiLinkInner(part.slice(2, -2));
+    const entry = findWikiEntryByTitle(index, title, kind);
+    const display = entry?.canonical || title;
     if (entry) {
         return (
-            `<a href="#" class="sw-wiki-link" ` +
+            `<a href="#" class="sw-wiki-link sw-wiki-link-${escapeHtml(entry.type)}" ` +
             `data-wiki-type="${escapeHtml(entry.type)}" ` +
             `data-wiki-id="${escapeHtml(entry.id)}" ` +
             `data-wiki-title="${escapeHtml(entry.canonical)}" ` +
@@ -238,11 +263,13 @@ function renderWikiLinkPart(part, index, opts) {
             `>${escapeHtml(entry.canonical)}</a>`
         );
     }
+    const kindAttr = kind ? ` data-wiki-link-kind="${escapeHtml(kind)}"` : "";
+    const kindClass = kind ? ` sw-wiki-link-intent-${escapeHtml(kind)}` : "";
     return (
-        `<a href="#" class="sw-wiki-link is-missing" ` +
-        `data-wiki-title="${escapeHtml(inner)}" ` +
+        `<a href="#" class="sw-wiki-link is-missing${kindClass}" ` +
+        `data-wiki-title="${escapeHtml(display)}"${kindAttr} ` +
         `${opts.forRead ? "" : 'contenteditable="false" '}` +
-        `>${escapeHtml(inner)}</a>`
+        `>${escapeHtml(display)}</a>`
     );
 }
 
@@ -290,5 +317,7 @@ export function plainToStoryWikiHtml(plain, index, opts = {}) {
 
 /** Plain with [[markers]] → readable text */
 export function plainToDisplayText(plain) {
-    return String(plain || "").replace(/\[\[([^\]]+)\]\]/g, "$1");
+    return String(plain || "").replace(/\[\[([^\]]+)\]\]/g, (_, inner) => parseWikiLinkInner(inner).title);
 }
+
+export { formatWikiLinkMarker, parseWikiLinkInner, WIKI_LINK_KINDS };

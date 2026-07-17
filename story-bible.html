@@ -22,7 +22,7 @@
     <link rel="stylesheet" href="css/magic-codex.css?v=7" />
     <link rel="stylesheet" href="css/story-bible.css?v=9" />
     <link rel="stylesheet" href="css/story-bible-v10.css?v=2" />
-    <link rel="stylesheet" href="css/story-wiki.css?v=14" />
+    <link rel="stylesheet" href="css/story-wiki.css?v=15" />
     <script src="js/gradient-theme-sync.js" defer></script>
 </head>
 <body class="mc-page mc-bible alysum-with-workspace-nav alysum-tool-scroll">
@@ -117,6 +117,7 @@
                         <button type="button" class="sb-appnav-item is-active" data-sb-view="home">Main Page</button>
                         <button type="button" class="sb-appnav-item" data-sb-view="characters">Characters</button>
                         <button type="button" class="sb-appnav-item" data-sb-view="places">Places</button>
+                        <button type="button" class="sb-appnav-item" data-sb-view="objects">Objects</button>
                         <button type="button" class="sb-appnav-item" data-sb-view="story">Timeline</button>
                         <button type="button" class="sb-appnav-item" data-sb-view="import">Contribute</button>
                     </nav>
@@ -171,6 +172,22 @@
                                 <p>Choose a place from the list, or <button type="button" class="sw-wp-link-btn" id="sbNewPlaceEmpty">create a new article</button>.</p>
                             </div>
                             <div id="sbAtlasMount" class="sb-atlas-full hidden"></div>
+                        </section>
+                    </div>
+
+                    <div id="sbViewObjects" class="sb-view sb-codex hidden">
+                        <aside class="sb-roster sb-roster-objects" aria-label="Object roster">
+                            <header class="sb-roster-toolbar">
+                                <input type="search" id="sbObjectSearch" placeholder="Filter articles…" autocomplete="off" />
+                                <button type="button" class="sb-roster-add" id="sbNewObject">New article</button>
+                            </header>
+                            <div id="sbObjectGrid" class="sb-roster-list"></div>
+                        </aside>
+                        <section class="sb-sheet" id="sbObjectSheet">
+                            <div id="sbObjectDetailEmpty" class="sb-sheet-empty sw-wp-empty-article">
+                                <h2>No article selected</h2>
+                                <p>Choose an object from the list, or create a new article.</p>
+                            </div>
                         </section>
                     </div>
 
@@ -303,9 +320,18 @@
                                         <button type="button" class="sw-wiki-format-btn" data-wiki-format="italic" title="Italic" disabled aria-disabled="true"><em>I</em></button>
                                         <button type="button" class="sw-wiki-link-btn" id="sbWikiLinkBtn" title="Link selection to another wiki article" disabled aria-disabled="true">Make hyperlink</button>
                                     </div>
+                                    <div id="sbWikiLinkPicker" class="sw-wiki-link-picker hidden" role="dialog" aria-label="Choose link category">
+                                        <p class="sw-wiki-link-picker-title">Create link as…</p>
+                                        <p class="sw-wiki-link-picker-name" id="sbWikiLinkPickerName"></p>
+                                        <div class="sw-wiki-link-picker-actions">
+                                            <button type="button" class="sw-wiki-link-kind-btn" data-link-kind="character">Character</button>
+                                            <button type="button" class="sw-wiki-link-kind-btn" data-link-kind="place">Place</button>
+                                            <button type="button" class="sw-wiki-link-kind-btn" data-link-kind="object">Object</button>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div id="sbNotes" class="sb-wiki-body-ce" contenteditable="true" role="textbox" aria-multiline="true" spellcheck="true" data-placeholder="Write the article. Highlight text, then use the formatting buttons above."></div>
-                                <p class="sw-wiki-hint">Highlight text, then choose <strong>Heading</strong>, <strong>Subheading</strong>, <strong>B</strong>, <strong>I</strong>, or <strong>Make hyperlink</strong>.</p>
+                                <p class="sw-wiki-hint">Highlight text, then choose formatting or <strong>Make hyperlink</strong> — pick Character, Place, or Object for new links.</p>
                             </div>
 
                             <details class="sw-wp-advanced-fields">
@@ -410,8 +436,10 @@
     <!-- Hidden tab buttons for legacy page.js -->
     <button type="button" id="sbTabChars" class="hidden" aria-hidden="true"></button>
     <button type="button" id="sbTabPlaces" class="hidden" aria-hidden="true"></button>
+    <button type="button" id="sbTabObjects" class="hidden" aria-hidden="true"></button>
     <div id="sbAsideChars" class="hidden"></div>
     <div id="sbAsidePlaces" class="hidden"></div>
+    <div id="sbAsideObjects" class="hidden"></div>
 
     <div id="sbCommandPalette" class="sb-cmd hidden" role="dialog" aria-modal="true" aria-label="Search">
         <div class="sb-cmd-dialog">
@@ -441,7 +469,7 @@
         })();
     </script>
     <script type="module">
-        import { bootStoryWikiPage } from "./js/story-wiki-boot.js?v=6";
+        import { bootStoryWikiPage } from "./js/story-wiki-boot.js?v=7";
         bootStoryWikiPage().catch(function (e) {
             console.error("[story-wiki]", e);
             var el = document.getElementById("sbHubLoading");

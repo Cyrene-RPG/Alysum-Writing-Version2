@@ -2,7 +2,7 @@
  * Unified Story Bible — codex + overview + atlas + timeline + graph + extraction.
  */
 
-import { mountStoryBiblePage } from "./story-bible-page.js?v=40";
+import { mountStoryBiblePage } from "./story-bible-page.js?v=41";
 import { generateBibleCharacterId, saveBibleCharacter, normalizeBibleCharacter } from "./story-bible-api.js?v=12";
 import {
     listBibleFacts,
@@ -42,11 +42,12 @@ import { scoreBibleHealth } from "./story-bible-health.js?v=1";
 const HANDOFF_KEY = "alysum-story-bible-selection-v1";
 const HANDOFF_BACKUP_KEY = "alysum-story-bible-selection-backup-v1";
 const VIEW_STORAGE_KEY = "alysum-story-bible-view";
-const VALID_VIEWS = ["home", "characters", "places", "story", "import"];
+const VALID_VIEWS = ["home", "characters", "places", "objects", "story", "import"];
 const VIEW_HEADINGS = {
     home: "Main Page",
     characters: "Characters",
     places: "Places",
+    objects: "Objects",
     story: "Timeline",
     import: "Import"
 };
@@ -57,6 +58,7 @@ const LEGACY_VIEW_MAP = {
     characters: "characters",
     atlas: "places",
     places: "places",
+    objects: "objects",
     timeline: "story",
     relationships: "story",
     story: "story",
@@ -149,6 +151,7 @@ function mountUnifiedExtras(ctx) {
         home: byId("sbViewHome"),
         characters: byId("sbViewCharacters"),
         places: byId("sbViewPlaces"),
+        objects: byId("sbViewObjects"),
         story: byId("sbViewStory"),
         import: byId("sbViewImport")
     };
