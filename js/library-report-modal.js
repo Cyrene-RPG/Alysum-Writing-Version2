@@ -20,8 +20,8 @@ function ensureModalRoot() {
                 <button type="button" class="lr-modal-close" data-lr-close aria-label="Close">✕</button>
             </div>
             <p class="lr-modal-intro">
-                Reports are reviewed manually by Alysum Support. Knowingly false or malicious reports
-                may result in account restrictions.
+                Help keep the Alysum library safe and accurately rated. Reports are reviewed by Support staff.
+                Knowingly false reports may result in account restrictions.
             </p>
             <div class="lr-book-preview hidden" id="lrBookPreview"></div>
             <form id="lrReportForm" class="lr-form">

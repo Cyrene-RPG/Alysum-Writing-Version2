@@ -10,6 +10,7 @@ import {
     staffGetUserSafety,
     staffGetUserEngagement,
 } from "./staff-users-api.js";
+import { showModDialog } from "./moderation-dialog.js";
 
 export function escapeHtml(str) {
     return String(str ?? "")
@@ -173,7 +174,7 @@ function renderPendingInbox(detail, safety) {
     );
     const items = pendingReports.length + openViolations.length + pendingAppeals.length;
     if (!items) {
-        return `<p class="mod-detail-empty">No pending moderation items for this user.</p>`;
+        return `<p class="mod-empty mod-empty-inline">No pending items.</p>`;
     }
 
     let html = '<div class="mod-pending-list">';
@@ -220,24 +221,8 @@ function renderPendingInbox(detail, safety) {
     return html;
 }
 
-function renderStandingCard(standing, mod, counts) {
-    return `
-        <section class="mod-standing-card is-${standing.level}">
-            <div class="mod-standing-main">
-                <div class="mod-standing-label">Account standing</div>
-                <h2 class="mod-standing-title">${escapeHtml(standing.title)}</h2>
-                <p class="mod-standing-summary">${escapeHtml(standing.summary)}</p>
-            </div>
-            <div class="mod-standing-facts">
-                ${mod?.publishing_revoked ? flag("Publishing revoked", "danger") : ""}
-                ${mod?.account_suspended ? flag("Suspended", "danger") : ""}
-                ${mod?.account_terminated ? flag("Terminated", "danger") : ""}
-                ${Number(counts.active_strikes) > 0 ? flag(`${counts.active_strikes} strike(s)`, "warn") : ""}
-                ${Number(counts.open_violations) > 0 ? flag(`${counts.open_violations} violation(s)`, "warn") : ""}
-                ${Number(counts.reports_against) > 0 ? flag(`${counts.reports_against} total reports`, "muted") : ""}
-            </div>
-        </section>
-    `;
+function renderStandingInline(standing) {
+    return `<span class="mod-user-standing mod-user-standing-${standing.level}">${escapeHtml(standing.title)}</span>`;
 }
 
 function renderUserHtml(userId, detail, books, safety, engagement) {
@@ -246,105 +231,123 @@ function renderUserHtml(userId, detail, books, safety, engagement) {
     const counts = detail.counts || {};
     const mod = detail.moderation_status;
     const standing = deriveAccountStanding(detail, safety);
+    const pendingReports = (safety.reports_as_author || []).filter((r) => ["pending", "reviewing"].includes(r.status)).length;
+    const openViolations = (safety.violations || []).filter((v) => ["open", "deadline_missed", "appealed"].includes(v.status)).length;
+    const pendingAppeals = (safety.appeals || []).filter((a) => ["pending", "reviewing"].includes(a.status)).length;
     const avatar = p.profile_image_url
-        ? `<img class="mod-user-avatar" src="${escapeHtml(p.profile_image_url)}" alt="" />`
-        : `<div class="mod-user-avatar mod-user-avatar-placeholder">${escapeHtml((p.username || "?")[0]?.toUpperCase())}</div>`;
+        ? `<img class="mod-profile-avatar" src="${escapeHtml(p.profile_image_url)}" alt="" />`
+        : `<div class="mod-profile-avatar mod-profile-avatar-ph">${escapeHtml((p.username || "?")[0]?.toUpperCase())}</div>`;
 
     return `
         <div class="mod-user-detail" data-user-id="${escapeHtml(userId)}">
-            <header class="mod-user-header">
+            <header class="mod-profile-header">
                 ${avatar}
-                <div class="mod-user-header-copy">
-                    <h1 class="mod-user-title">@${escapeHtml(p.username)}</h1>
-                    <p class="mod-user-sub">${escapeHtml(p.display_name)} · ${escapeHtml(p.account_type || "—")}</p>
-                    <p class="mod-user-sub">${escapeHtml(p.email || auth.auth_email || "No email")} · <code>${escapeHtml(p.id)}</code></p>
-                    <p class="mod-user-sub">
+                <div class="mod-profile-main">
+                    <div class="mod-profile-title-row">
+                        <h2 class="mod-profile-name">@${escapeHtml(p.username)}</h2>
+                        ${renderStandingInline(standing)}
+                    </div>
+                    <p class="mod-profile-meta">${escapeHtml(p.display_name || "—")} · ${escapeHtml(p.email || auth.auth_email || "No email")}</p>
+                    <p class="mod-profile-meta">
                         ${p.is_online || (p.last_seen_at && Date.now() - new Date(p.last_seen_at).getTime() < 300000)
-                            ? flag("Online", "ok")
-                            : flag(`Last seen ${formatRelative(p.last_seen_at || auth.last_sign_in_at)}`, "muted")}
+                            ? "Online"
+                            : `Last seen ${formatRelative(p.last_seen_at || auth.last_sign_in_at)}`}
                         · Joined ${escapeHtml(formatDate(p.created_at))}
+                        · <code>${escapeHtml(p.id)}</code>
                     </p>
                 </div>
+                <dl class="mod-profile-stats">
+                    <div><dt>Books</dt><dd>${counts.books || 0}</dd></div>
+                    <div><dt>Published</dt><dd>${counts.published_books || 0}</dd></div>
+                    <div><dt>Words</dt><dd>${Number(counts.book_words_total ?? p.words ?? 0).toLocaleString()}</dd></div>
+                    <div><dt>Pending</dt><dd>${pendingReports + openViolations + pendingAppeals}</dd></div>
+                </dl>
             </header>
 
-            ${renderStandingCard(standing, mod, counts)}
+            ${standing.summary && standing.level !== "ok" ? `<p class="mod-profile-standing-note">${escapeHtml(standing.summary)}</p>` : ""}
 
-            <div class="mod-stats mod-stats-compact">
-                <div class="mod-stat"><div class="mod-stat-label">Books</div><div class="mod-stat-value">${counts.books || 0}</div></div>
-                <div class="mod-stat"><div class="mod-stat-label">Published</div><div class="mod-stat-value">${counts.published_books || 0}</div></div>
-                <div class="mod-stat"><div class="mod-stat-label">Words</div><div class="mod-stat-value">${Number(counts.book_words_total ?? p.words ?? 0).toLocaleString()}</div></div>
-                <div class="mod-stat"><div class="mod-stat-label">Streak</div><div class="mod-stat-value">${p.streak || 0}</div></div>
-                <div class="mod-stat"><div class="mod-stat-label">Pending reports</div><div class="mod-stat-value">${(safety.reports_as_author || []).filter((r) => ["pending","reviewing"].includes(r.status)).length}</div></div>
-                <div class="mod-stat"><div class="mod-stat-label">Open violations</div><div class="mod-stat-value">${(safety.violations || []).filter((v) => ["open","deadline_missed","appealed"].includes(v.status)).length}</div></div>
-                <div class="mod-stat"><div class="mod-stat-label">Pending appeals</div><div class="mod-stat-value">${(safety.appeals || []).filter((a) => ["pending","reviewing"].includes(a.status)).length}</div></div>
-            </div>
-
-            <nav class="mod-subnav" aria-label="User sections">
-                <button type="button" class="mod-btn is-active" data-user-tab="pending">Pending</button>
-                <button type="button" class="mod-btn" data-user-tab="books">Books</button>
-                <button type="button" class="mod-btn" data-user-tab="safety">Safety history</button>
-                <button type="button" class="mod-btn" data-user-tab="activity">Activity</button>
-                <button type="button" class="mod-btn" data-user-tab="account">Account</button>
+            <nav class="mod-tabs mod-profile-tabs" role="tablist">
+                <button type="button" class="mod-tab is-active" data-user-tab="pending" role="tab">Pending</button>
+                <button type="button" class="mod-tab" data-user-tab="books" role="tab">Books</button>
+                <button type="button" class="mod-tab" data-user-tab="safety" role="tab">Safety</button>
+                <button type="button" class="mod-tab" data-user-tab="activity" role="tab">Activity</button>
+                <button type="button" class="mod-tab" data-user-tab="account" role="tab">Account</button>
             </nav>
 
-            <div class="mod-user-panels">
-                <section class="mod-panel" data-user-panel="pending">
-                    <h2>Pending &amp; open items</h2>
+            <div class="mod-profile-body">
+                <section class="mod-profile-panel" data-user-panel="pending">
                     ${renderPendingInbox(detail, safety)}
                 </section>
-                <section class="mod-panel hidden" data-user-panel="books">
-                    <h2>Books (${books.length})</h2>
+                <section class="mod-profile-panel hidden" data-user-panel="books">
                     ${renderBooks(books, userId)}
                 </section>
-                <section class="mod-panel hidden" data-user-panel="safety">
-                    <h2>Strikes</h2>
+                <section class="mod-profile-panel hidden" data-user-panel="safety">
+                    <h3 class="mod-profile-section-title">Strikes</h3>
                     ${(safety.strikes || []).length
                         ? (safety.strikes || []).map((s) => `
-                            <div class="mod-detail-block">
-                                <p><strong>Strike ${s.strike_number}</strong> (${escapeHtml(s.strike_type)})</p>
-                                <p class="mod-queue-meta">${escapeHtml(s.reason || "—")} · expires ${escapeHtml(formatDate(s.expires_at))}</p>
+                            <div class="mod-profile-item">
+                                <strong>Strike ${s.strike_number}</strong> (${escapeHtml(s.strike_type)})
+                                <span class="mod-queue-row-sub">${escapeHtml(s.reason || "—")} · expires ${escapeHtml(formatDate(s.expires_at))}</span>
                             </div>`).join("")
-                        : '<p class="mod-detail-empty">No strikes.</p>'}
-                    <h2 style="margin-top:18px">Violations</h2>
+                        : '<p class="mod-empty mod-empty-inline">No strikes.</p>'}
+                    <h3 class="mod-profile-section-title">Violations</h3>
                     ${(safety.violations || []).length
                         ? (safety.violations || []).map((v) => `
-                            <div class="mod-detail-block">
-                                <p><strong>${escapeHtml(v.policy_violated)}</strong> · ${escapeHtml(v.status)}</p>
-                                <p class="mod-queue-meta">Book <code>${escapeHtml(v.book_id)}</code> · deadline ${escapeHtml(formatDate(v.deadline))}</p>
+                            <div class="mod-profile-item">
+                                <strong>${escapeHtml(v.policy_violated)}</strong> · ${escapeHtml(v.status)}
+                                <span class="mod-queue-row-sub">Book <code>${escapeHtml(v.book_id)}</code> · ${escapeHtml(formatDate(v.deadline))}</span>
                             </div>`).join("")
-                        : '<p class="mod-detail-empty">No violations.</p>'}
-                    <h2 style="margin-top:18px">All reports against author</h2>
+                        : '<p class="mod-empty mod-empty-inline">No violations.</p>'}
+                    <h3 class="mod-profile-section-title">Reports against author</h3>
                     ${renderReportsTable(safety.reports_as_author, "No reports.")}
-                    <h2 style="margin-top:18px">Reports filed by user</h2>
+                    <h3 class="mod-profile-section-title">Reports filed by user</h3>
                     ${renderReportsTable(safety.reports_as_reporter, "No reports filed.")}
                 </section>
-                <section class="mod-panel hidden" data-user-panel="activity">
-                    <h2>Recent comments</h2>
+                <section class="mod-profile-panel hidden" data-user-panel="activity">
+                    <h3 class="mod-profile-section-title">Recent comments</h3>
                     ${(engagement.recent_comments || []).length
                         ? (engagement.recent_comments || []).map((c) => `
-                            <div class="mod-detail-block">
-                                <p class="mod-queue-meta"><code>${escapeHtml(c.book_id)}</code> · ${escapeHtml(formatDate(c.created_at))}</p>
+                            <div class="mod-profile-item">
+                                <span class="mod-queue-row-sub"><code>${escapeHtml(c.book_id)}</code> · ${escapeHtml(formatDate(c.created_at))}</span>
                                 <p>${escapeHtml(c.text)}</p>
                             </div>`).join("")
-                        : '<p class="mod-detail-empty">No comments.</p>'}
-                    <h2 style="margin-top:18px">Beta shares</h2>
-                    ${(engagement.beta_shares || []).length
-                        ? `<div class="mod-table-wrap"><table class="mod-table"><tbody>
-                            ${(engagement.beta_shares || []).map((s) => `
-                                <tr><td><code>${escapeHtml(s.book_id)}</code></td><td>${escapeHtml(s.status)}</td><td>${escapeHtml(formatDate(s.created_at))}</td></tr>
-                            `).join("")}
+                        : '<p class="mod-empty mod-empty-inline">No comments.</p>'}
+                    <h3 class="mod-profile-section-title">Blocks</h3>
+                    ${(engagement.blocks_made || []).length || (engagement.blocks_received || []).length
+                        ? `<div class="mod-table-wrap"><table class="mod-table"><thead><tr><th>Type</th><th>User</th><th>Date</th></tr></thead><tbody>
+                            ${(engagement.blocks_made || []).map((b) => `<tr><td>Made</td><td><code>${escapeHtml(b.blocked_id || b.user_id || "—")}</code></td><td>${escapeHtml(formatDate(b.created_at))}</td></tr>`).join("")}
+                            ${(engagement.blocks_received || []).map((b) => `<tr><td>Received</td><td><code>${escapeHtml(b.blocker_id || b.user_id || "—")}</code></td><td>${escapeHtml(formatDate(b.created_at))}</td></tr>`).join("")}
                            </tbody></table></div>`
-                        : '<p class="mod-detail-empty">No beta shares.</p>'}
+                        : '<p class="mod-empty mod-empty-inline">No blocks.</p>'}
+                    <h3 class="mod-profile-section-title">Beta activity</h3>
+                    ${(engagement.beta_shares || []).length || (engagement.beta_message_reports || []).length
+                        ? `<div class="mod-table-wrap"><table class="mod-table"><tbody>
+                            ${(engagement.beta_shares || []).map((s) => `<tr><td>Share</td><td><code>${escapeHtml(s.book_id)}</code></td><td>${escapeHtml(s.status)}</td><td>${escapeHtml(formatDate(s.created_at))}</td></tr>`).join("")}
+                            ${(engagement.beta_message_reports || []).map((r) => `<tr><td>Report</td><td>${escapeHtml(r.reason || r.report_reason || "—")}</td><td>${escapeHtml(r.status || "—")}</td><td>${escapeHtml(formatDate(r.created_at))}</td></tr>`).join("")}
+                           </tbody></table></div>`
+                        : '<p class="mod-empty mod-empty-inline">No beta activity.</p>'}
                 </section>
-                <section class="mod-panel hidden" data-user-panel="account">
-                    <h2>Account details</h2>
-                    <div class="mod-detail-block">
-                        <p>Last sign-in: ${escapeHtml(formatDate(auth.last_sign_in_at))}</p>
-                        <p>Last seen: ${escapeHtml(formatDate(p.last_seen_at))}</p>
-                        <p>Daily word goal: ${Number(p.daily_word_goal || 0).toLocaleString()}</p>
-                        <p>Providers: ${escapeHtml((Array.isArray(auth.providers) ? auth.providers : []).join(", ") || "—")}</p>
-                        ${detail.reporter_score ? `<p>Reporter weight: <strong>${detail.reporter_score.weight}</strong></p>` : ""}
-                    </div>
+                <section class="mod-profile-panel hidden" data-user-panel="account">
+                    <dl class="mod-fact-grid">
+                        <div><dt>Last sign-in</dt><dd>${escapeHtml(formatDate(auth.last_sign_in_at))}</dd></div>
+                        <div><dt>Last seen</dt><dd>${escapeHtml(formatDate(p.last_seen_at))}</dd></div>
+                        <div><dt>Word goal</dt><dd>${Number(p.daily_word_goal || 0).toLocaleString()}</dd></div>
+                        <div><dt>Providers</dt><dd>${escapeHtml((Array.isArray(auth.providers) ? auth.providers : []).join(", ") || "—")}</dd></div>
+                        ${detail.reporter_score ? `<div><dt>Reporter weight</dt><dd>${detail.reporter_score.weight}</dd></div>` : ""}
+                        ${mod?.publishing_revoked ? `<div><dt>Publishing</dt><dd>Revoked</dd></div>` : ""}
+                        ${mod?.account_suspended ? `<div><dt>Account</dt><dd>Suspended</dd></div>` : ""}
+                    </dl>
+                    <h3 class="mod-profile-section-title">Audit log</h3>
+                    ${(safety.audit_log || []).length
+                        ? `<div class="mod-audit-log">${(safety.audit_log || []).map((entry) => `
+                            <div class="mod-audit-entry">
+                                <div class="mod-audit-head">
+                                    <strong>${escapeHtml(entry.action || entry.event_type || "Action")}</strong>
+                                    <span class="mod-queue-row-time">${escapeHtml(formatDate(entry.created_at))}</span>
+                                </div>
+                                ${entry.details || entry.notes ? `<p class="mod-audit-body">${escapeHtml(entry.details || entry.notes)}</p>` : ""}
+                            </div>`).join("")}</div>`
+                        : '<p class="mod-empty mod-empty-inline">No audit entries.</p>'}
                 </section>
             </div>
         </div>
@@ -355,7 +358,10 @@ function wireUserTabs(root) {
     root.querySelectorAll("[data-user-tab]").forEach((btn) => {
         btn.addEventListener("click", () => {
             const tab = btn.dataset.userTab;
-            root.querySelectorAll("[data-user-tab]").forEach((b) => b.classList.toggle("is-active", b.dataset.userTab === tab));
+            root.querySelectorAll("[data-user-tab]").forEach((b) => {
+                b.classList.toggle("is-active", b.dataset.userTab === tab);
+                b.setAttribute("aria-selected", b.dataset.userTab === tab ? "true" : "false");
+            });
             root.querySelectorAll("[data-user-panel]").forEach((p) => {
                 p.classList.toggle("hidden", p.dataset.userPanel !== tab);
             });
@@ -368,7 +374,16 @@ function wireBookActions(root, userId, showStatus, reload) {
         btn.addEventListener("click", async () => {
             const vis = btn.dataset.vis;
             const bookId = btn.dataset.book;
-            const reason = window.prompt(`Reason for setting "${bookId}" visibility to "${vis}":`) || "";
+            const labels = { public: "Restore public", hidden: "Temporarily hide", removed: "Remove from library" };
+            const { confirmed, value: reason } = await showModDialog({
+                title: labels[vis] || "Change visibility",
+                message: `Set visibility for book ${bookId} to ${vis}.`,
+                confirmLabel: "Apply",
+                variant: vis === "removed" ? "danger" : "default",
+                inputLabel: "Reason (optional)",
+                inputPlaceholder: "Note for the audit trail…",
+            });
+            if (!confirmed) return;
             try {
                 await setBookVisibility(bookId, vis, reason);
                 showStatus(`Book visibility set to ${vis}.`);
@@ -383,9 +398,19 @@ function wireBookActions(root, userId, showStatus, reload) {
 function wireAppealActions(root, showStatus, reload) {
     root.querySelectorAll("[data-appeal-outcome]").forEach((btn) => {
         btn.addEventListener("click", async () => {
-            const notes = window.prompt("Resolution notes (optional):") || "";
+            const outcome = btn.dataset.appealOutcome;
+            const labels = { overturned: "Overturn appeal", partial: "Partial resolution", upheld: "Uphold decision" };
+            const { confirmed, value: notes } = await showModDialog({
+                title: labels[outcome] + "?",
+                message: "The author will be notified of this appeal outcome.",
+                confirmLabel: "Resolve appeal",
+                variant: outcome === "upheld" ? "danger" : outcome === "overturned" ? "success" : "default",
+                inputLabel: "Notes (optional)",
+                inputPlaceholder: "Resolution notes for the audit trail…",
+            });
+            if (!confirmed) return;
             try {
-                await resolveAppeal(btn.dataset.appealId, btn.dataset.appealOutcome, notes);
+                await resolveAppeal(btn.dataset.appealId, outcome, notes);
                 showStatus("Appeal resolved.");
                 await reload();
             } catch (err) {
@@ -409,7 +434,7 @@ function asArray(value) {
 export async function mountUserDetail(userId, container, opts) {
     const { showStatus } = opts;
     const loadGen = ++userDetailLoadGen;
-    container.innerHTML = '<p class="mod-detail-empty">Loading user…</p>';
+    container.innerHTML = '<p class="mod-empty">Loading user…</p>';
 
     try {
         // Detail + safety are required; books/engagement fail soft so one bad RPC

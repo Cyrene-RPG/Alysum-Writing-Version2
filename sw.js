@@ -57,6 +57,7 @@ const APP_SHELL = [
   'js/moderation-users-panel.js',
   'js/moderation-reports-panel.js',
   'js/moderation-user-detail.js',
+  'js/moderation-dialog.js',
   'js/staff-users-api.js',
   'js/library-reports-api.js',
   'badges.html',

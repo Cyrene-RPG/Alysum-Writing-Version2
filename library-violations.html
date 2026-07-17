@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Library violations & appeals — Alysum</title>
-    <link rel="stylesheet" href="css/library-reports.css?v=1">
+    <link rel="stylesheet" href="css/library-reports.css?v=11">
     <script src="js/alysum-appearance-boot.js"></script>
     <link rel="stylesheet" href="css/workspace-nav.css?v=3" />
 </head>
@@ -55,7 +55,7 @@
 <div class="mod-shell">
     <header class="mod-header">
         <h1>Library violations & appeals</h1>
-        <p>When Alysum Support confirms a policy issue, you will see the required corrections and deadline here. You may appeal a decision you believe was made in error.</p>
+        <p>When Alysum Support confirms a policy issue, you'll see the required corrections and deadline here. You may appeal a decision you believe was made in error.</p>
     </header>
 
     <div class="mod-status hidden" id="violStatus"></div>
@@ -66,14 +66,14 @@
         <a class="mod-btn" href="library.html">Library</a>
     </div>
 
-    <div id="violList" class="mod-panel">
+    <div id="violList" class="mod-violations-grid">
         <p class="mod-detail-empty">Loading…</p>
     </div>
 </div>
 
 <script type="module">
     import { supabase } from "./firebase.js";
-    import { listMyViolations, submitAppeal } from "./js/library-reports-api.js?v=1";
+    import { listMyViolations, submitAppeal } from "./js/library-reports-api.js?v=10";
 
     const violList = document.getElementById("violList");
     const violStatus = document.getElementById("violStatus");
@@ -98,52 +98,83 @@
         return new Date(iso).toLocaleString();
     }
 
+    function daysUntil(iso) {
+        if (!iso) return null;
+        const ms = new Date(iso).getTime() - Date.now();
+        return Math.ceil(ms / 86_400_000);
+    }
+
     function statusLabel(status) {
         const map = {
-            open: "Open — correction required",
+            open: "Correction required",
             corrected: "Corrected",
             deadline_missed: "Deadline missed",
-            appealed: "Appeal pending",
+            appealed: "Appeal pending review",
             overturned: "Overturned",
             closed: "Closed",
         };
         return map[status] || status;
     }
 
+    function statusClass(status) {
+        if (status === "open") return "is-open";
+        if (status === "deadline_missed") return "is-severe";
+        if (status === "appealed") return "is-open";
+        return "";
+    }
+
     function renderViolations(violations) {
         if (!violations.length) {
-            violList.innerHTML = '<p class="mod-detail-empty">No library violations on your account.</p>';
+            violList.innerHTML = `
+                <div class="mod-violations-empty mod-panel">
+                    <h2 style="margin:0 0 8px;font-size:18px;font-weight:600">No violations</h2>
+                    <p class="mod-empty" style="padding:0">Your account has no library policy violations.</p>
+                </div>`;
             return;
         }
 
-        violList.innerHTML = violations.map((v) => `
-            <article class="mod-queue-item" style="margin-bottom:12px;cursor:default" data-violation-id="${v.id}">
-                <div class="mod-queue-title">Book: ${escapeHtml(v.book_id)}</div>
-                <div class="mod-queue-meta">
-                    <span class="mod-badge ${v.is_severe ? "critical" : ""}">Strike ${v.strike_number}${v.is_severe ? " · Severe" : ""}</span>
-                    <span>${escapeHtml(statusLabel(v.status))}</span>
-                    <span>Deadline: ${escapeHtml(formatDate(v.deadline))}</span>
+        violList.innerHTML = violations.map((v) => {
+            const days = daysUntil(v.deadline);
+            const overdue = days !== null && days < 0 && ["open", "deadline_missed"].includes(v.status);
+            const deadlineText = v.deadline
+                ? overdue
+                    ? `Overdue by ${Math.abs(days)} day(s)`
+                    : days === 0
+                        ? "Due today"
+                        : days > 0
+                            ? `${days} day(s) remaining`
+                            : formatDate(v.deadline)
+                : "—";
+
+            return `
+            <article class="mod-violation-card ${statusClass(v.status)}${v.is_severe ? " is-severe" : ""}" data-violation-id="${v.id}">
+                <div class="mod-violation-card-head">
+                    <div>
+                        <span class="mod-badge ${v.is_severe ? "critical" : ""}">Strike ${v.strike_number}${v.is_severe ? " · Severe" : ""}</span>
+                        <span class="mod-violation-status">${escapeHtml(statusLabel(v.status))}</span>
+                    </div>
+                    <div class="mod-violation-deadline${overdue ? " is-overdue" : ""}">
+                        ${escapeHtml(deadlineText)}
+                    </div>
                 </div>
-                <div class="mod-detail-block" style="margin-top:12px">
-                    <h3>Policy violated</h3>
-                    <p>${escapeHtml(v.policy_violated)}</p>
-                </div>
+                <p class="mod-violation-policy">${escapeHtml(v.policy_violated)}</p>
+                <p class="mod-queue-meta" style="margin-bottom:12px">Book: <code>${escapeHtml(v.book_id)}</code></p>
                 ${v.correction_requirements ? `
-                <div class="mod-detail-block">
+                <div class="mod-violation-corrections">
                     <h3>Corrections required</h3>
-                    <pre>${escapeHtml(v.correction_requirements)}</pre>
+                    <p>${escapeHtml(v.correction_requirements)}</p>
                 </div>` : ""}
                 ${["open", "deadline_missed"].includes(v.status) ? `
                 <div class="mod-form appeal-form">
-                    <h3>Request appeal</h3>
-                    <p class="mod-detail-empty" style="margin-bottom:8px">Appeals are reviewed by a moderator who was not involved in the original decision when possible.</p>
+                    <h3 class="mod-review-section-title" style="margin-bottom:8px">Request an appeal</h3>
+                    <p class="mod-detail-empty" style="margin-bottom:10px">Appeals are reviewed by a moderator who was not involved in the original decision when possible.</p>
                     <textarea class="mod-textarea appeal-text" rows="4" placeholder="Explain why you believe this decision was made in error…"></textarea>
                     <div class="mod-actions">
                         <button type="button" class="mod-btn primary submit-appeal-btn">Submit appeal</button>
                     </div>
                 </div>` : ""}
             </article>
-        `).join("");
+        `}).join("");
 
         violList.querySelectorAll(".submit-appeal-btn").forEach((btn) => {
             btn.addEventListener("click", async () => {

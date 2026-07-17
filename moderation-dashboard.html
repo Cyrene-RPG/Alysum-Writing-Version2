@@ -6,7 +6,7 @@
     <title>Moderation — Alysum</title>
     <link rel="stylesheet" href="css/site-responsive.css?v=1">
     <link rel="stylesheet" href="css/gradient-themes.css?v=5">
-    <link rel="stylesheet" href="css/library-reports.css?v=9">
+    <link rel="stylesheet" href="css/library-reports.css?v=12">
     <script src="js/gradient-theme-sync.js" defer></script>
     <script src="js/alysum-appearance-boot.js"></script>
 </head>
@@ -70,78 +70,88 @@
                         <button type="button" class="mod-btn" id="modCheckDeadlinesBtn">Check deadlines</button>
                     </div>
                 </header>
-                <div class="mod-stats" id="modReportStats"></div>
+                <div class="mod-metrics" id="modReportStats"></div>
                 <div class="mod-split" id="modInboxSplit">
                     <div class="mod-split-list">
-                        <nav class="mod-subnav">
-                            <button type="button" class="mod-btn is-active" data-inbox-tab="reports">Reports</button>
-                            <button type="button" class="mod-btn" data-inbox-tab="appeals">Appeals</button>
+                        <nav class="mod-tabs" role="tablist">
+                            <button type="button" class="mod-tab is-active" data-inbox-tab="reports" role="tab">Reports</button>
+                            <button type="button" class="mod-tab" data-inbox-tab="appeals" role="tab">Appeals</button>
                         </nav>
                         <div id="modInboxReportsPanel">
+                            <div class="mod-list-toolbar">
+                                <input class="mod-input" id="modQueueSearch" type="search" placeholder="Filter queue…" autocomplete="off" />
+                                <div class="mod-filter-chips">
+                                    <button type="button" class="mod-chip is-active" data-queue-filter="all">All</button>
+                                    <button type="button" class="mod-chip" data-queue-filter="critical">Critical</button>
+                                    <button type="button" class="mod-chip" data-queue-filter="high">High+</button>
+                                </div>
+                            </div>
                             <div class="mod-queue" id="modQueue"><div class="mod-detail-empty">Loading…</div></div>
                         </div>
                         <div id="modInboxAppealsPanel" class="hidden">
                             <div class="mod-queue" id="modAppeals"></div>
                         </div>
                     </div>
-                    <div class="mod-split-detail">
-                        <h2 class="mod-split-detail-title">Review</h2>
+                    <div class="mod-split-detail" id="modReportsDetailPane">
                         <div id="modDetail"><p class="mod-detail-empty">Select a report to review.</p></div>
+                    </div>
+                    <div class="mod-split-detail hidden" id="modAppealsDetailPane">
+                        <div id="modAppealDetail"><p class="mod-detail-empty">Select an appeal to review.</p></div>
                     </div>
                 </div>
             </div>
 
             <!-- PEOPLE -->
-            <div class="mod-view hidden" id="modViewPeople" data-mod-view-panel="people">
-                <header class="mod-view-header">
-                    <div>
+            <div class="mod-view mod-view-people hidden" id="modViewPeople" data-mod-view-panel="people">
+                <header class="mod-view-header mod-people-header">
+                    <div class="mod-people-header-main">
                         <h1>People</h1>
-                        <p>Account standing, pending items, books, and activity per user.</p>
+                        <div class="mod-metrics mod-metrics-inline" id="modUserStats"></div>
                     </div>
-                    <button type="button" class="mod-btn" id="modRefreshUsersBtn">Refresh</button>
+                    <div class="mod-toolbar">
+                        <button type="button" class="mod-btn mod-btn-ghost" id="modPeopleOverviewBtn" aria-expanded="false">Overview</button>
+                        <button type="button" class="mod-btn" id="modRefreshUsersBtn">Refresh</button>
+                    </div>
                 </header>
 
-                <div class="mod-people-usage" id="modPeopleUsage">
-                    <div class="mod-stats mod-stats-compact" id="modUserStats"></div>
-                    <div class="mod-joins-panel">
-                        <div class="mod-joins-head">
-                            <h2>Just joined</h2>
-                            <p>New accounts over the last 14 days</p>
-                        </div>
-                        <div class="mod-joins-chart" id="modJoinsChart" aria-label="New signups chart"></div>
-                        <div class="mod-recent-joins" id="modRecentJoins"></div>
+                <div class="mod-people-overview hidden" id="modPeopleOverview">
+                    <div class="mod-people-overview-grid">
+                        <section class="mod-people-overview-section">
+                            <span class="mod-kicker">Online now</span>
+                            <div class="mod-online-chips" id="modOnlineList"></div>
+                        </section>
+                        <section class="mod-people-overview-section mod-people-overview-signups">
+                            <span class="mod-kicker">Signups · last 14 days</span>
+                            <div class="mod-joins-chart" id="modJoinsChart" aria-label="New signups chart"></div>
+                            <div class="mod-recent-joins" id="modRecentJoins"></div>
+                        </section>
                     </div>
-                </div>
-
-                <div class="mod-online-strip" id="modOnlineStrip">
-                    <span class="mod-online-strip-label">Online now</span>
-                    <div class="mod-online-chips" id="modOnlineList"></div>
                 </div>
 
                 <div class="mod-split mod-split-people">
-                    <div class="mod-split-list">
-                        <div class="mod-search-row">
-                            <input class="mod-input" id="modSearch" type="search" placeholder="Search users…" autocomplete="off" />
-                            <button type="button" class="mod-btn primary" id="modSearchBtn">Go</button>
-                        </div>
-                        <div class="mod-filter-row">
-                            <button type="button" class="mod-btn is-active" data-user-filter="all">All</button>
-                            <button type="button" class="mod-btn" data-user-filter="attention">Needs attention</button>
-                            <button type="button" class="mod-btn" data-user-filter="online">Online</button>
-                            <button type="button" class="mod-btn" data-user-filter="today">Active today</button>
+                    <div class="mod-split-list mod-people-list-pane">
+                        <div class="mod-list-toolbar mod-people-toolbar">
+                            <input class="mod-input" id="modSearch" type="search" placeholder="Search by username or email…" autocomplete="off" />
+                            <div class="mod-people-toolbar-actions">
+                                <button type="button" class="mod-btn primary" id="modSearchBtn">Search</button>
+                                <button type="button" class="mod-btn mod-btn-ghost" id="modClearBtn" title="Clear">Clear</button>
+                            </div>
+                            <div class="mod-filter-chips">
+                                <button type="button" class="mod-chip is-active" data-user-filter="all">All</button>
+                                <button type="button" class="mod-chip" data-user-filter="attention">Attention</button>
+                                <button type="button" class="mod-chip" data-user-filter="online">Online</button>
+                                <button type="button" class="mod-chip" data-user-filter="today">Today</button>
+                            </div>
                         </div>
                         <div class="mod-user-list" id="modUserList"></div>
-                        <div class="mod-pagination hidden" id="modPagination">
-                            <button type="button" class="mod-btn" id="modPrevBtn">←</button>
+                        <div class="mod-people-pagination hidden" id="modPagination">
+                            <button type="button" class="mod-btn mod-btn-ghost" id="modPrevBtn">Previous</button>
                             <span id="modPageInfo"></span>
-                            <button type="button" class="mod-btn" id="modNextBtn">→</button>
+                            <button type="button" class="mod-btn mod-btn-ghost" id="modNextBtn">Next</button>
                         </div>
                     </div>
-                    <div class="mod-split-detail mod-split-detail-user" id="modUserDetailPane">
-                        <div class="mod-detail-empty mod-pick-user-hint">
-                            <h2>Select a user</h2>
-                            <p>Pick someone from the list to see account standing, pending reports, appeals, violations, and books.</p>
-                        </div>
+                    <div class="mod-split-detail mod-people-detail-pane" id="modUserDetailPane">
+                        <p class="mod-empty">Select a user from the directory.</p>
                     </div>
                 </div>
             </div>
@@ -150,11 +160,11 @@
 </div>
 
 <script type="module">
-    import { bootModerationPage } from "./js/moderation-access.js?v=9";
-    import { initReportsPanel } from "./js/moderation-reports-panel.js?v=9";
-    import { initUsersPanel } from "./js/moderation-users-panel.js?v=9";
-    import { staffUsersOverviewStats } from "./js/staff-users-api.js?v=9";
-    import { getDashboardStats as getReportStats } from "./js/library-reports-api.js?v=9";
+    import { bootModerationPage } from "./js/moderation-access.js?v=12";
+    import { initReportsPanel } from "./js/moderation-reports-panel.js?v=12";
+    import { initUsersPanel } from "./js/moderation-users-panel.js?v=12";
+    import { staffUsersOverviewStats } from "./js/staff-users-api.js?v=12";
+    import { getDashboardStats as getReportStats } from "./js/library-reports-api.js?v=12";
 
     const modStatus = document.getElementById("modStatus");
     let reportsApi = null;
@@ -203,10 +213,14 @@
     document.querySelectorAll("[data-inbox-tab]").forEach((btn) => {
         btn.addEventListener("click", () => {
             const tab = btn.dataset.inboxTab;
-            document.querySelectorAll("[data-inbox-tab]").forEach((b) => b.classList.toggle("is-active", b.dataset.inboxTab === tab));
+            document.querySelectorAll("[data-inbox-tab]").forEach((b) => {
+                b.classList.toggle("is-active", b.dataset.inboxTab === tab);
+                b.setAttribute("aria-selected", b.dataset.inboxTab === tab ? "true" : "false");
+            });
             document.getElementById("modInboxReportsPanel")?.classList.toggle("hidden", tab !== "reports");
             document.getElementById("modInboxAppealsPanel")?.classList.toggle("hidden", tab !== "appeals");
-            document.getElementById("modInboxSplit")?.classList.toggle("is-single-pane", tab === "appeals");
+            document.getElementById("modReportsDetailPane")?.classList.toggle("hidden", tab !== "reports");
+            document.getElementById("modAppealsDetailPane")?.classList.toggle("hidden", tab !== "appeals");
         });
     });
 
