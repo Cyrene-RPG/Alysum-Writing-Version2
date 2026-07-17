@@ -2,7 +2,7 @@
  * Unified Story Bible — codex + overview + atlas + timeline + graph + extraction.
  */
 
-import { mountStoryBiblePage } from "./story-bible-page.js?v=44";
+import { mountStoryBiblePage } from "./story-bible-page.js?v=45";
 import { generateBibleCharacterId, saveBibleCharacter, normalizeBibleCharacter } from "./story-bible-api.js?v=12";
 import {
     listBibleFacts,
@@ -235,11 +235,8 @@ function mountUnifiedExtras(ctx) {
     function setWorkspaceView(view) {
         view = normalizeView(view);
         if (!VALID_VIEWS.includes(view)) view = "home";
-        if (["characters", "places", "objects"].includes(view)) {
-            window.dispatchEvent(new CustomEvent("alysum-bible-set-view", { detail: { view } }));
-        } else {
-            window.dispatchEvent(new CustomEvent("alysum-bible-flush-save"));
-        }
+        const isCodex = ["characters", "places", "objects"].includes(view);
+        const changed = workspaceView !== view;
         workspaceView = view;
         try {
             sessionStorage.setItem(VIEW_STORAGE_KEY, view);
@@ -255,6 +252,11 @@ function mountUnifiedExtras(ctx) {
             ensureStoryChrome();
             if (storyTab === "connections") renderRelationships();
             else renderTimeline();
+        }
+        if (isCodex) {
+            window.dispatchEvent(new CustomEvent("alysum-bible-sync-codex-tab", { detail: { view } }));
+        } else if (changed) {
+            window.dispatchEvent(new CustomEvent("alysum-bible-flush-save"));
         }
     }
 
@@ -629,7 +631,7 @@ function mountUnifiedExtras(ctx) {
 
     window.addEventListener("alysum-bible-set-view", ev => {
         const view = normalizeView(ev.detail?.view);
-        if (view) setWorkspaceView(view);
+        if (view && view !== workspaceView) setWorkspaceView(view);
     });
 
     window.addEventListener("alysum-bible-render-atlas", () => renderAtlas());

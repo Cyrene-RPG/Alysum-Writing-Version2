@@ -1345,9 +1345,12 @@ export async function mountStoryBiblePage(opts) {
     }
 
     async function selectCharacter(id) {
-        if (id === selectedCharId) return;
-        await persistCurrentEntryFromForm({ silent: true });
-        selectedCharId = id;
+        const sameSelection = id === selectedCharId;
+        if (sameSelection && formLoadedFor?.kind === "character" && formLoadedFor.id === id) return;
+        if (!sameSelection) {
+            await persistCurrentEntryFromForm({ silent: true });
+            selectedCharId = id;
+        }
         const c = characters.find(x => x.id === id);
         if (!c) return;
         fillCharacterForm(c);
@@ -1367,9 +1370,14 @@ export async function mountStoryBiblePage(opts) {
     }
 
     async function selectPlace(id) {
-        if (id === selectedPlaceId) return;
-        await persistCurrentEntryFromForm({ silent: true });
-        selectedPlaceId = id;
+        const sameSelection = id === selectedPlaceId;
+        const placeKind = isObjectRecord(places.find(x => x.id === id));
+        const expectedKind = placeKind ? "object" : "place";
+        if (sameSelection && formLoadedFor?.kind === expectedKind && formLoadedFor.id === id) return;
+        if (!sameSelection) {
+            await persistCurrentEntryFromForm({ silent: true });
+            selectedPlaceId = id;
+        }
         const p = places.find(x => x.id === id);
         if (!p) return;
         fillPlaceForm(p);
@@ -2180,16 +2188,29 @@ export async function mountStoryBiblePage(opts) {
         }
     });
 
-    window.addEventListener("alysum-bible-set-view", async ev => {
+    function codexTabAlreadySynced(view) {
+        if (bibleTab !== view) return false;
+        if (view === "characters") {
+            return formLoadedFor?.kind === "character" && formLoadedFor.id === selectedCharId;
+        }
+        if (view === "objects") {
+            return formLoadedFor?.kind === "object" && formLoadedFor.id === selectedPlaceId;
+        }
+        return formLoadedFor?.kind === "place" && formLoadedFor.id === selectedPlaceId;
+    }
+
+    window.addEventListener("alysum-bible-sync-codex-tab", async ev => {
         const view = ev.detail?.view;
         if (!view || !["characters", "places", "objects"].includes(view)) return;
-        await persistCurrentEntryFromForm({ silent: true });
-        if (bibleTab !== view) {
-            bibleTab = view;
-            updateBibleTabChrome();
-            persistBibleTab();
+        if (!codexTabAlreadySynced(view)) {
+            await persistCurrentEntryFromForm({ silent: true });
+            if (bibleTab !== view) {
+                bibleTab = view;
+                updateBibleTabChrome();
+                persistBibleTab();
+            }
+            reloadFormForBibleTab();
         }
-        reloadFormForBibleTab();
         renderCharList();
         renderPlaceList();
     });
@@ -2197,22 +2218,22 @@ export async function mountStoryBiblePage(opts) {
     window.addEventListener("alysum-bible-open-entry", async ev => {
         const { kind, id } = ev.detail || {};
         if (kind === "character" && id) {
-            onViewRequest?.("characters");
             bibleTab = "characters";
             updateBibleTabChrome();
             await selectCharacter(id);
+            onViewRequest?.("characters");
         }
         if (kind === "place" && id) {
-            onViewRequest?.("places");
             bibleTab = "places";
             updateBibleTabChrome();
             await selectPlace(id);
+            onViewRequest?.("places");
         }
         if (kind === "object" && id) {
-            onViewRequest?.("objects");
             bibleTab = "objects";
             updateBibleTabChrome();
             await selectPlace(id);
+            onViewRequest?.("objects");
         }
     });
 
