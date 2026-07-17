@@ -1,9 +1,9 @@
 /**
- * Story Bible home — dashboard with clear next steps.
+ * Story Wiki Main Page — Wikipedia-style portal (dark Alysum theme).
  */
 
-import { escapeHtml, normalizeText, avatarGradient, getInitials } from "./story-bible-utils.js?v=1";
-import { scoreBibleHealth, scoreCharacter } from "./story-bible-health.js?v=1";
+import { escapeHtml, normalizeText } from "./story-bible-utils.js?v=1";
+import { plainToDisplayText } from "./story-wiki-wikilinks.js?v=1";
 
 /**
  * @param {HTMLElement} mount
@@ -11,160 +11,118 @@ import { scoreBibleHealth, scoreCharacter } from "./story-bible-health.js?v=1";
  */
 export function renderOverview(mount, ctx) {
     if (!mount) return;
-    const { characters = [], places = [], facts = [], conflicts = [], mismatches = [], loreWiki = null } = ctx;
-    const health = scoreBibleHealth(characters, places);
-    const issueCount = conflicts.length + mismatches.length;
-    const isEmpty = !characters.length && !places.length;
+    const {
+        characters = [],
+        places = [],
+        bookTitle = "This wiki",
+        loreWiki = null
+    } = ctx;
 
-    const nextSteps = [];
-    if (!characters.length) {
-        nextSteps.push({
-            icon: "👤",
-            title: "Build your cast",
-            desc: "Add protagonists, antagonists, and side characters. Each gets a full profile sheet.",
-            action: "characters",
-            label: "Open Cast"
-        });
-    }
-    if (!places.length && characters.length) {
-        nextSteps.push({
-            icon: "🗺",
-            title: "Map your world",
-            desc: "Catalogue cities, buildings, and regions. Link places together on the world map.",
-            action: "places",
-            label: "Open World"
-        });
-    }
-    if (characters.length && facts.length < characters.length) {
-        nextSteps.push({
-            icon: "✍",
-            title: "Pull details from your draft",
-            desc: "Highlight a paragraph in the Editor — eye color, relationships, and more appear here ready to save.",
-            action: "import",
-            label: "Import from manuscript"
-        });
-    }
-    if (issueCount > 0) {
-        nextSteps.push({
-            icon: "⚠",
-            title: `${issueCount} story mismatch${issueCount === 1 ? "" : "es"}`,
-            desc: "Two details in your wiki disagree. Open the character and pick which version is canon.",
-            action: "characters",
-            label: "Review cast"
-        });
-    }
-    if (!nextSteps.length) {
-        nextSteps.push({
-            icon: "✓",
-            title: "Wiki looks solid",
-            desc: "Keep writing — use Story Board to track scenes and revisions.",
-            action: "story",
-            label: "View timeline"
-        });
-    }
+    const namedChars = characters.filter(c => normalizeText(c.name));
+    const namedPlaces = places.filter(p => normalizeText(p.name));
+    const articleCount = namedChars.length + namedPlaces.length;
+    const sortedChars = [...namedChars].sort((a, b) =>
+        normalizeText(a.name).localeCompare(normalizeText(b.name))
+    );
+    const sortedPlaces = [...namedPlaces].sort((a, b) =>
+        normalizeText(a.name).localeCompare(normalizeText(b.name))
+    );
 
-    const recentChars = [...characters]
-        .filter(c => normalizeText(c.name))
-        .slice(0, 8);
+    const featured = pickFeatured(namedChars, namedPlaces);
+    const featuredHtml = featured
+        ? `<div class="sw-wp-portal-box sw-wp-featured">
+            <h2>Featured article</h2>
+            <p class="sw-wp-featured-title"><a href="#" data-sb-wiki-entry="${escapeHtml(featured.id)}" data-sb-wiki-kind="${featured.kind}">${escapeHtml(featured.name)}</a></p>
+            <p class="sw-wp-featured-excerpt">${escapeHtml(truncatePlain(featured.notes, 220))}</p>
+            <p class="sw-wp-featured-more"><a href="#" data-sb-wiki-entry="${escapeHtml(featured.id)}" data-sb-wiki-kind="${featured.kind}">Read full article →</a></p>
+        </div>`
+        : `<div class="sw-wp-portal-box sw-wp-featured">
+            <h2>Featured article</h2>
+            <p class="sw-wp-muted">No articles yet. <a href="#" data-sb-goto="characters">Create a character article</a> or <a href="#" data-sb-goto="places">a place article</a>.</p>
+        </div>`;
 
     mount.innerHTML = `
-        <div class="sb-home-page">
-            ${
-                isEmpty
-                    ? `<div class="sb-home-hero">
-                <h2>Welcome to your Story Wiki</h2>
-                <p>This is the linked encyclopedia for your novel — who's who, where things happen, and what stays true. Write articles with [[links]] between entries. Everything syncs to the cloud and pairs with your Story Board.</p>
-            </div>`
-                    : `<div class="sb-home-hero">
-                <h2>${escapeHtml(characters.length ? `${characters.length} character${characters.length === 1 ? "" : "s"}` : "Your wiki")}${places.length ? ` · ${places.length} place${places.length === 1 ? "" : "s"}` : ""}</h2>
-                <p>${escapeHtml(plainHealthSummary(health))}</p>
+        <div class="sw-wp-main-page">
+            <div class="sw-wp-main-lede">
+                <p class="sw-wp-namespace">Story Wiki · ${escapeHtml(bookTitle)}</p>
+                <h1 class="sw-wp-main-title">Main Page</h1>
+                <p class="sw-wp-main-tagline">From the encyclopedia of <strong>${escapeHtml(bookTitle)}</strong></p>
+                <p class="sw-wp-main-intro">Welcome. This wiki documents the people, places, and lore of your story. Articles link together with <code>[[wikilinks]]</code> — like Wikipedia, blue links lead to existing pages and red links mark pages waiting to be written.</p>
+                <p class="sw-wp-statline"><strong>${articleCount}</strong> article${articleCount === 1 ? "" : "s"} in this wiki · ${namedChars.length} character${namedChars.length === 1 ? "" : "s"} · ${namedPlaces.length} place${namedPlaces.length === 1 ? "" : "s"}</p>
             </div>
-            <div class="sb-home-metrics">
-                <div class="sb-home-metric"><strong>${characters.length}</strong><span>Characters</span></div>
-                <div class="sb-home-metric"><strong>${places.length}</strong><span>Places</span></div>
-                <div class="sb-home-metric"><strong>${facts.length}</strong><span>Canon facts</span></div>
-                <div class="sb-home-metric is-accent"><strong>${health.readinessPct}%</strong><span>Complete</span></div>
-            </div>`
-            }
 
-            <section class="sb-home-section">
-                <h3 class="sb-home-heading">Suggested next steps</h3>
-                <div class="sb-next-grid">${nextSteps
-                    .slice(0, 3)
-                    .map(
-                        step => `<button type="button" class="sb-next-card" data-sb-goto="${escapeHtml(step.action)}">
-                    <span class="sb-next-icon" aria-hidden="true">${step.icon}</span>
-                    <span class="sb-next-body">
-                        <strong>${escapeHtml(step.title)}</strong>
-                        <span>${escapeHtml(step.desc)}</span>
-                    </span>
-                    <span class="sb-next-arrow">→</span>
-                </button>`
-                    )
-                    .join("")}</div>
-            </section>
-
-            ${
-                recentChars.length
-                    ? `<section class="sb-home-section">
-                <div class="sb-home-section-head" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-                    <h3 class="sb-home-heading" style="margin:0">Quick access</h3>
-                    <button type="button" class="sb-text-link" data-sb-goto="characters">All characters →</button>
-                </div>
-                <div class="sb-home-char-grid">${recentChars
-                    .map(c => {
-                        const name = normalizeText(c.name);
-                        const sc = scoreCharacter(c);
-                        return `<button type="button" class="sb-home-char-chip" data-sb-char="${escapeHtml(c.id)}">
-                        <span class="sb-home-char-av" style="background:${avatarGradient(name)}">${escapeHtml(getInitials(name))}</span>
-                        <span>${escapeHtml(name)}</span>
-                        ${!sc.ready ? `<em class="sb-home-char-warn">Draft</em>` : ""}
-                    </button>`;
-                    })
-                    .join("")}</div>
-            </section>`
-                    : ""
-            }
-
-            <section class="sb-home-section sb-lore-publish">
-                <h3 class="sb-home-heading">Share to Lore Wiki</h3>
-                <p class="sb-lore-publish-lead">Your Story Wiki stays private — only you can edit. Publish a read-only snapshot for readers on <a class="sb-link" href="lore-wiki.html" target="_blank" rel="noopener">Lore Wiki</a>.</p>
-                <div class="sb-lore-publish-box">
-                    <p id="sbLorePublishStatus" class="sb-lore-publish-status">${loreWiki?.published ? "Published — readers can browse your lore encyclopedia." : "Not published yet."}</p>
-                    <div class="sb-lore-publish-actions">
-                        <button type="button" class="sb-btn sb-btn-primary" id="sbLorePublishBtn" ${!loreWiki?.canPublish ? "disabled" : ""}>${loreWiki?.published ? "Update Lore Wiki" : "Publish to Lore Wiki"}</button>
-                        ${loreWiki?.published ? `<button type="button" class="sb-btn sb-btn-ghost" id="sbLoreUnpublishBtn">Unpublish</button>` : ""}
-                        ${loreWiki?.published ? `<a class="sb-btn sb-btn-ghost" href="lore-wiki.html?book=${encodeURIComponent(loreWiki.bookId || "")}" target="_blank" rel="noopener">View public wiki</a>` : ""}
+            <div class="sw-wp-portal-grid">
+                <div class="sw-wp-portal-main">
+                    <div class="sw-wp-portal-box">
+                        <h2>Characters</h2>
+                        ${renderIndexList(sortedChars, "character", "No character articles yet.", "characters")}
                     </div>
-                    <p class="sb-lore-publish-hint">Tip: use <code>== Section ==</code> in article bodies for Wikipedia-style sections and a table of contents.</p>
+                    <div class="sw-wp-portal-box">
+                        <h2>Places</h2>
+                        ${renderIndexList(sortedPlaces, "place", "No place articles yet.", "places")}
+                    </div>
+                    <div class="sw-wp-portal-box sw-wp-tips">
+                        <h2>Editing help</h2>
+                        <ul>
+                            <li>Open any article from the lists above, then use <strong>Read</strong> / <strong>Edit</strong>.</li>
+                            <li>Use <code>== Section title ==</code> on its own line to build a table of contents.</li>
+                            <li>Type <code>[[Character Name]]</code> to link to another article.</li>
+                            <li><a href="#" data-sb-goto="import">Import from manuscript</a> to pull names and details from your draft.</li>
+                        </ul>
+                    </div>
                 </div>
-            </section>
-
-            <section class="sb-home-section">
-                <h3 class="sb-home-heading">How it works</h3>
-                <ol class="sb-help-steps">
-                    <li><strong>Cast & World</strong> — roster on the left, full profile sheet on the right. No pop-ups, no cramped panels.</li>
-                    <li><strong>Import while writing</strong> — highlight text in the Editor, open Story Wiki, save discovered details.</li>
-                    <li><strong>Stay organized</strong> — Story Board keeps your scenes, beats, and revision tasks in one place.</li>
-                </ol>
-            </section>
+                <aside class="sw-wp-portal-side">
+                    ${featuredHtml}
+                    <div class="sw-wp-portal-box">
+                        <h2>Start a new article</h2>
+                        <ul class="sw-wp-start-list">
+                            <li><a href="#" data-sb-goto="characters" data-sb-new="character">New character article</a></li>
+                            <li><a href="#" data-sb-goto="places" data-sb-new="place">New place article</a></li>
+                        </ul>
+                    </div>
+                    <div class="sw-wp-portal-box sw-wp-author-box">
+                        <h2>Publish to Lore Wiki</h2>
+                        <p class="sw-wp-muted">Only you can edit here. Readers see a read-only copy on <a class="sw-wp-link" href="lore-wiki.html" target="_blank" rel="noopener">Lore Wiki</a>.</p>
+                        <p id="sbLorePublishStatus" class="sw-wp-publish-status">${loreWiki?.published ? "Published." : "Not published."}</p>
+                        <div class="sw-wp-publish-actions">
+                            <button type="button" class="sw-wp-btn" id="sbLorePublishBtn" ${!loreWiki?.canPublish ? "disabled" : ""}>${loreWiki?.published ? "Update snapshot" : "Publish snapshot"}</button>
+                            ${loreWiki?.published ? `<button type="button" class="sw-wp-btn sw-wp-btn-quiet" id="sbLoreUnpublishBtn">Unpublish</button>` : ""}
+                            ${loreWiki?.published ? `<a class="sw-wp-btn sw-wp-btn-quiet" href="lore-wiki.html?book=${encodeURIComponent(loreWiki.bookId || "")}" target="_blank" rel="noopener">View public wiki</a>` : ""}
+                        </div>
+                    </div>
+                </aside>
+            </div>
         </div>`;
 
     mount.querySelectorAll("[data-sb-goto]").forEach(btn => {
-        btn.addEventListener("click", () => {
+        btn.addEventListener("click", e => {
+            e.preventDefault();
+            const view = btn.getAttribute("data-sb-goto");
+            const isNew = btn.hasAttribute("data-sb-new");
             window.dispatchEvent(
-                new CustomEvent("alysum-bible-set-view", { detail: { view: btn.getAttribute("data-sb-goto") } })
+                new CustomEvent("alysum-bible-set-view", { detail: { view } })
             );
+            if (isNew) {
+                setTimeout(() => {
+                    const kind = btn.getAttribute("data-sb-new");
+                    if (kind === "place") document.getElementById("sbNewPlace")?.click();
+                    else document.getElementById("sbNewChar")?.click();
+                }, 80);
+            }
         });
     });
 
-    mount.querySelectorAll("[data-sb-char]").forEach(btn => {
-        btn.addEventListener("click", () => {
-            window.dispatchEvent(
-                new CustomEvent("alysum-bible-navigate", {
-                    detail: { view: "characters", charId: btn.getAttribute("data-sb-char") }
-                })
-            );
+    mount.querySelectorAll("[data-sb-wiki-entry]").forEach(link => {
+        link.addEventListener("click", e => {
+            e.preventDefault();
+            const id = link.getAttribute("data-sb-wiki-entry");
+            const kind = link.getAttribute("data-sb-wiki-kind");
+            const view = kind === "place" ? "places" : "characters";
+            const detail =
+                kind === "place"
+                    ? { view, placeId: id }
+                    : { view, charId: id };
+            window.dispatchEvent(new CustomEvent("alysum-bible-navigate", { detail }));
         });
     });
 
@@ -176,10 +134,38 @@ export function renderOverview(mount, ctx) {
     });
 }
 
-function plainHealthSummary(health) {
-    if (!health.characterCount) return "Start by adding characters to your cast.";
-    if (health.readyCount === health.characterCount) {
-        return "All characters have enough detail for consistency checks.";
+function renderIndexList(items, kind, emptyMsg, gotoView) {
+    if (!items.length) {
+        return `<p class="sw-wp-muted">${emptyMsg} <a href="#" data-sb-goto="${gotoView}">Create one</a>.</p>`;
     }
-    return `${health.readyCount} of ${health.characterCount} characters are fully filled in.`;
+    return `<ul class="sw-wp-index-list">${items
+        .map(item => {
+            const name = normalizeText(item.name);
+            const id = item.id;
+            return `<li><a href="#" class="sw-wiki-link" data-sb-wiki-entry="${escapeHtml(id)}" data-sb-wiki-kind="${kind}">${escapeHtml(name)}</a></li>`;
+        })
+        .join("")}</ul>`;
+}
+
+function pickFeatured(characters, places) {
+    const pool = [
+        ...characters.map(c => ({ ...c, kind: "character" })),
+        ...places.map(p => ({ ...p, kind: "place" }))
+    ].filter(r => normalizeText(r.name) && normalizeText(r.notes));
+    if (!pool.length) {
+        const any = [
+            ...characters.map(c => ({ ...c, kind: "character" })),
+            ...places.map(p => ({ ...p, kind: "place" }))
+        ].filter(r => normalizeText(r.name));
+        return any[0] || null;
+    }
+    pool.sort((a, b) => String(b.notes || "").length - String(a.notes || "").length);
+    return pool[0];
+}
+
+function truncatePlain(notes, max) {
+    const text = plainToDisplayText(notes || "").replace(/\s+/g, " ").trim();
+    if (!text) return "This article has no body text yet.";
+    if (text.length <= max) return text;
+    return text.slice(0, max).trim() + "…";
 }

@@ -22,7 +22,7 @@
     <link rel="stylesheet" href="css/magic-codex.css?v=7" />
     <link rel="stylesheet" href="css/story-bible.css?v=9" />
     <link rel="stylesheet" href="css/story-bible-v10.css?v=2" />
-    <link rel="stylesheet" href="css/story-wiki.css?v=3" />
+    <link rel="stylesheet" href="css/story-wiki.css?v=5" />
     <script src="js/gradient-theme-sync.js" defer></script>
 </head>
 <body class="mc-page mc-bible alysum-with-workspace-nav alysum-tool-scroll">
@@ -104,33 +104,32 @@
             <div id="sbStatusLine" class="sb-status-line" role="status" aria-live="polite"></div>
 
             <!-- Book workspace: top nav + codex -->
-            <section id="sbBookView" class="sb-v10 hidden">
-                <header class="sb-appbar">
+            <section id="sbBookView" class="sb-v10 sw-wp-skin hidden">
+                <header class="sb-appbar sw-wp-appbar">
                     <div class="sb-appbar-start">
-                        <a class="sb-appbar-back" href="story-bible.html">← All books</a>
+                        <a class="sb-appbar-back sw-wp-back" href="story-bible.html">← All wikis</a>
                         <div class="sb-appbar-book">
                             <h2 id="sbBookTitle">…</h2>
-                            <span id="sbSidebarMeta">Loading…</span>
+                            <span id="sbSidebarMeta" class="sw-wp-book-tagline">Story encyclopedia</span>
                         </div>
                     </div>
-                    <nav class="sb-appnav" aria-label="Story Wiki sections">
-                        <button type="button" class="sb-appnav-item is-active" data-sb-view="home">Home</button>
-                        <button type="button" class="sb-appnav-item" data-sb-view="characters">Cast</button>
-                        <button type="button" class="sb-appnav-item" data-sb-view="places">World</button>
-                        <button type="button" class="sb-appnav-item" data-sb-view="story">Story</button>
-                        <button type="button" class="sb-appnav-item" data-sb-view="import">Import</button>
+                    <nav class="sb-appnav sw-wp-tabs" aria-label="Wiki sections">
+                        <button type="button" class="sb-appnav-item is-active" data-sb-view="home">Main Page</button>
+                        <button type="button" class="sb-appnav-item" data-sb-view="characters">Characters</button>
+                        <button type="button" class="sb-appnav-item" data-sb-view="places">Places</button>
+                        <button type="button" class="sb-appnav-item" data-sb-view="story">Timeline</button>
+                        <button type="button" class="sb-appnav-item" data-sb-view="import">Contribute</button>
                     </nav>
-                    <div class="sb-appbar-end">
-                        <button type="button" class="sb-appbar-btn" id="sbSearchBtn" title="Search (Ctrl+K)">⌕ Search</button>
-                        <a class="sb-appbar-btn" id="sbOpenEditor" href="#">Editor</a>
-                        <a class="sb-appbar-btn sb-appbar-btn-accent" id="sbOpenStoryBoard" href="#">Story Board</a>
+                    <div class="sb-appbar-end sw-wp-tools">
+                        <button type="button" class="sb-appbar-btn sw-wp-tool" id="sbSearchBtn" title="Search (Ctrl+K)">Search</button>
+                        <a class="sb-appbar-btn sw-wp-tool" id="sbOpenEditor" href="#">Editor</a>
                     </div>
                 </header>
 
                 <div id="sbConflictsBanner" class="sb-conflicts-banner hidden" role="alert"></div>
 
-                <main class="sb-stage">
-                    <h1 id="sbViewHeading" class="visually-hidden">Home</h1>
+                <main class="sb-stage sw-wp-stage">
+                    <h1 id="sbViewHeading" class="visually-hidden">Main Page</h1>
 
                     <div id="sbViewHome" class="sb-view">
                         <div id="sbOverviewMount"></div>
@@ -139,18 +138,16 @@
                     <div id="sbViewCharacters" class="sb-view sb-codex hidden">
                         <aside class="sb-roster" aria-label="Character roster">
                             <header class="sb-roster-toolbar">
-                                <input type="search" id="sbRosterSearch" placeholder="Search cast…" autocomplete="off" />
-                                <button type="button" class="sb-roster-add" id="sbNewChar">+ New</button>
+                                <input type="search" id="sbRosterSearch" placeholder="Filter articles…" autocomplete="off" />
+                                <button type="button" class="sb-roster-add" id="sbNewChar">New article</button>
                             </header>
                             <div id="sbCharGrid" class="sb-roster-list"></div>
                             <ul id="sbCharList" class="visually-hidden" aria-hidden="true"></ul>
                         </aside>
                         <section class="sb-sheet" id="sbCharSheet">
-                            <div id="sbCharDetailEmpty" class="sb-sheet-empty">
-                                <span class="sb-sheet-empty-icon" aria-hidden="true">👤</span>
-                                <h2>Your cast lives here</h2>
-                                <p>Select a character from the list, or create someone new. Their profile opens full-width — name, look, backstory, all in one place.</p>
-                                <button type="button" class="sb-btn sb-btn-primary" id="sbNewCharEmpty">+ Create character</button>
+                            <div id="sbCharDetailEmpty" class="sb-sheet-empty sw-wp-empty-article">
+                                <h2>No article selected</h2>
+                                <p>Choose a character from the list, or <button type="button" class="sw-wp-link-btn" id="sbNewCharEmpty">create a new article</button>.</p>
                             </div>
                         </section>
                     </div>
@@ -158,22 +155,20 @@
                     <div id="sbViewPlaces" class="sb-view sb-codex hidden">
                         <aside class="sb-roster sb-roster-places" aria-label="Place roster">
                             <header class="sb-roster-toolbar">
-                                <input type="search" id="sbPlaceSearch" placeholder="Search places…" autocomplete="off" />
+                                <input type="search" id="sbPlaceSearch" placeholder="Filter articles…" autocomplete="off" />
                                 <div class="sb-place-toggle" role="tablist">
                                     <button type="button" class="sb-place-toggle-btn is-active" data-place-mode="cards" role="tab">List</button>
                                     <button type="button" class="sb-place-toggle-btn" data-place-mode="map" role="tab">Map</button>
                                 </div>
-                                <button type="button" class="sb-roster-add" id="sbNewPlace">+ New</button>
+                                <button type="button" class="sb-roster-add" id="sbNewPlace">New article</button>
                             </header>
                             <div id="sbPlaceGrid" class="sb-roster-list"></div>
                             <ul id="sbPlaceList" class="visually-hidden" aria-hidden="true"></ul>
                         </aside>
                         <section class="sb-sheet" id="sbPlaceSheet">
-                            <div id="sbPlaceDetailEmpty" class="sb-sheet-empty">
-                                <span class="sb-sheet-empty-icon" aria-hidden="true">🗺</span>
-                                <h2>Build your world</h2>
-                                <p>Cities, buildings, regions — pick a place from the list or add a new location. Switch to Map view to see how places connect.</p>
-                                <button type="button" class="sb-btn sb-btn-primary" id="sbNewPlaceEmpty">+ Create place</button>
+                            <div id="sbPlaceDetailEmpty" class="sb-sheet-empty sw-wp-empty-article">
+                                <h2>No article selected</h2>
+                                <p>Choose a place from the list, or <button type="button" class="sw-wp-link-btn" id="sbNewPlaceEmpty">create a new article</button>.</p>
                             </div>
                             <div id="sbAtlasMount" class="sb-atlas-full hidden"></div>
                         </section>
@@ -435,7 +430,7 @@
         })();
     </script>
     <script type="module">
-        import { bootStoryWikiPage } from "./js/story-wiki-boot.js?v=2";
+        import { bootStoryWikiPage } from "./js/story-wiki-boot.js?v=3";
         bootStoryWikiPage().catch(function (e) {
             console.error("[story-wiki]", e);
             var el = document.getElementById("sbHubLoading");

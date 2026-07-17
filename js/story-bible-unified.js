@@ -2,7 +2,7 @@
  * Unified Story Bible — codex + overview + atlas + timeline + graph + extraction.
  */
 
-import { mountStoryBiblePage } from "./story-bible-page.js?v=30";
+import { mountStoryBiblePage } from "./story-bible-page.js?v=32";
 import { generateBibleCharacterId, saveBibleCharacter, normalizeBibleCharacter } from "./story-bible-api.js?v=12";
 import {
     listBibleFacts,
@@ -23,7 +23,7 @@ import {
 } from "./story-bible-continuity.js?v=1";
 import { extractCandidateFactsFromSelection, detectNameCandidates } from "./story-bible-fact-rules.js?v=4";
 import { escapeHtml, normalizeText } from "./story-bible-utils.js?v=1";
-import { renderOverview } from "./story-bible-overview.js?v=3";
+import { renderOverview } from "./story-bible-overview.js?v=4";
 import {
     publishBookLoreWiki,
     unpublishBookLoreWiki,
@@ -44,10 +44,10 @@ const HANDOFF_BACKUP_KEY = "alysum-story-bible-selection-backup-v1";
 const VIEW_STORAGE_KEY = "alysum-story-bible-view";
 const VALID_VIEWS = ["home", "characters", "places", "story", "import"];
 const VIEW_HEADINGS = {
-    home: "Home",
-    characters: "Cast",
-    places: "World",
-    story: "Story",
+    home: "Main Page",
+    characters: "Characters",
+    places: "Places",
+    story: "Timeline",
     import: "Import"
 };
 const LEGACY_VIEW_MAP = {
@@ -361,6 +361,7 @@ function mountUnifiedExtras(ctx) {
             chapterOptions,
             conflicts,
             mismatches,
+            bookTitle: byId("sbBookTitle")?.textContent?.trim() || "This wiki",
             loreWiki: {
                 published: loreWikiPublished,
                 canPublish: characters.length + places.length > 0,

@@ -330,7 +330,11 @@ export async function mountStoryBiblePage(opts) {
 
     function updateSidebarMeta() {
         if (!sidebarMetaEl) return;
-        sidebarMetaEl.textContent = `${characters.length} character${characters.length === 1 ? "" : "s"} · ${places.length} place${places.length === 1 ? "" : "s"}`;
+        const total = characters.length + places.length;
+        sidebarMetaEl.textContent =
+            total === 0
+                ? "Story encyclopedia"
+                : `${total} article${total === 1 ? "" : "s"}`;
     }
 
     function renderCardGrids() {
