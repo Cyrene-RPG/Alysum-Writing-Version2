@@ -300,7 +300,7 @@ export async function mountStoryBiblePage(opts) {
 
     async function flushAutoSave() {
         const name = (fields.name?.value || "").trim();
-        if (!name || !formLoadedFor?.id) return;
+        if (!name || !resolveFormLoadedFor()?.id) return;
         setSaveStatus("saving");
         const result = await persistCurrentEntryFromForm({ silent: true, showSavedStatus: true });
         if (result?.ok === false) setSaveStatus("unsaved");
@@ -1025,13 +1025,15 @@ export async function mountStoryBiblePage(opts) {
      */
     async function persistCurrentEntryFromForm(opts = {}) {
         const { silent = false, requireName = false, showSavedStatus = false } = opts;
-        if (!formLoadedFor?.id) {
+        const loaded = resolveFormLoadedFor();
+        if (!loaded?.id) {
             if (requireName) {
                 setStatus("Select or create an article first.", true);
                 return { ok: false };
             }
             return { ok: true, skipped: true };
         }
+        formLoadedFor = loaded;
 
         if (formLoadedFor.kind === "character") {
             const base = characters.find(x => x.id === formLoadedFor.id);
@@ -1136,7 +1138,25 @@ export async function mountStoryBiblePage(opts) {
         fields.introduced.value = "|";
         fields.placeKind.value = "";
         fields.placeParent.value = "";
+    }
+
+    function resetFormBinding() {
         formLoadedFor = null;
+    }
+
+    /** Recover binding when the form has content but formLoadedFor was cleared. */
+    function resolveFormLoadedFor() {
+        if (formLoadedFor?.id) return formLoadedFor;
+        if (bibleTab === "characters" && selectedCharId) {
+            return { kind: "character", id: selectedCharId };
+        }
+        if (selectedPlaceId) {
+            const p = places.find(x => x.id === selectedPlaceId);
+            if (p) {
+                return { kind: isObjectRecord(p) ? "object" : "place", id: selectedPlaceId };
+            }
+        }
+        return null;
     }
 
     function reloadFormForBibleTab() {
@@ -1144,7 +1164,7 @@ export async function mountStoryBiblePage(opts) {
             const c = characters.find(x => x.id === selectedCharId);
             if (c) fillCharacterForm(c);
             else {
-                formLoadedFor = null;
+                resetFormBinding();
                 closeDrawer();
             }
             return;
@@ -1153,7 +1173,7 @@ export async function mountStoryBiblePage(opts) {
             const p = places.find(x => x.id === selectedPlaceId && isObjectRecord(x));
             if (p) fillPlaceForm(p);
             else {
-                formLoadedFor = null;
+                resetFormBinding();
                 closeDrawer();
             }
             return;
@@ -1161,13 +1181,12 @@ export async function mountStoryBiblePage(opts) {
         const p = places.find(x => x.id === selectedPlaceId && !isObjectRecord(x));
         if (p) fillPlaceForm(p);
         else {
-            formLoadedFor = null;
+            resetFormBinding();
             closeDrawer();
         }
     }
 
     function fillCharacterForm(c) {
-        formLoadedFor = { kind: "character", id: c.id };
         bibleTab = "characters";
         updateBibleTabChrome();
         clearSharedForm();
@@ -1207,11 +1226,11 @@ export async function mountStoryBiblePage(opts) {
         else sel.value = "|";
         syncFormEmptyState();
         updateEntryHero("character", c);
+        formLoadedFor = { kind: "character", id: c.id };
     }
 
     function fillPlaceForm(p) {
         const placeKind = isObjectRecord(p) ? "object" : "place";
-        formLoadedFor = { kind: placeKind, id: p.id };
         bibleTab = placeKind === "object" ? "objects" : "places";
         updateBibleTabChrome();
         clearSharedForm();
@@ -1233,6 +1252,7 @@ export async function mountStoryBiblePage(opts) {
         else sel.value = "|";
         syncFormEmptyState();
         updateEntryHero("place", p);
+        formLoadedFor = { kind: placeKind, id: p.id };
     }
 
     function renderCharList() {
@@ -2072,7 +2092,7 @@ export async function mountStoryBiblePage(opts) {
         void persistCurrentEntryFromForm({ silent: true });
         if (bibleTab === "characters") selectedCharId = null;
         else selectedPlaceId = null;
-        formLoadedFor = null;
+        resetFormBinding();
         closeDrawer();
         renderCharList();
         renderPlaceList();
