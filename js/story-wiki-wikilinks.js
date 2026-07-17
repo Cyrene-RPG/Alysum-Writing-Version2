@@ -94,18 +94,19 @@ export function extractWikiLinks(plain) {
     const re = /\[\[([^\]]+)\]\]/g;
     let m;
     while ((m = re.exec(String(plain || "")))) {
-        const { title, kind } = parseWikiLinkInner(m[1]);
-        if (!title) continue;
-        const key = `${title.toLowerCase()}|${kind || ""}`;
+        const parsed = parseWikiLinkInner(m[1]);
+        if (!parsed.title) continue;
+        const key = `${parsed.title.toLowerCase()}|${parsed.kind || ""}|${parsed.bookId || ""}`;
         if (seen.has(key)) continue;
         seen.add(key);
-        links.push({ title, kind });
+        links.push({ title: parsed.title, kind: parsed.kind, bookId: parsed.bookId });
     }
     return links;
 }
 
 function normalizeWikiLinkInner(inner, index) {
-    const { title, kind } = parseWikiLinkInner(inner);
+    const { title, kind, bookId } = parseWikiLinkInner(inner);
+    if (bookId) return formatWikiLinkMarker(title, kind, bookId);
     const entry = findWikiEntryByTitle(index, title, kind);
     if (entry) return formatWikiLinkMarker(entry.canonical, entry.type);
     if (kind) return formatWikiLinkMarker(title, kind);
@@ -130,7 +131,8 @@ export function rerouteWikiLinksInPlain(plain, move, index) {
     if (!titleSet.size || move.fromKind === move.toKind) return String(plain || "");
 
     return String(plain || "").replace(/\[\[([^\]]+)\]\]/g, (full, inner) => {
-        const { title, kind } = parseWikiLinkInner(inner);
+        const { title, kind, bookId } = parseWikiLinkInner(inner);
+        if (bookId) return full;
         const lower = title.trim().toLowerCase();
         if (!titleSet.has(lower)) return full;
 
@@ -142,6 +144,40 @@ export function rerouteWikiLinksInPlain(plain, move, index) {
         if (!shouldUpdate) return full;
 
         return formatWikiLinkMarker(move.canonical || title, move.toKind);
+    });
+}
+
+/**
+ * Point wikilinks at an article that now lives in another book's wiki.
+ * @param {string} plain
+ * @param {object} move
+ * @param {string[]} move.titles
+ * @param {import("./story-wiki-link-picker.js").WikiLinkKind} move.fromKind
+ * @param {string} move.targetBookId
+ * @param {string} move.canonical
+ * @param {string} move.movedId
+ * @param {WikiEntry[]} index
+ */
+export function rerouteWikiLinksToExternalBook(plain, move, index) {
+    const titleSet = new Set(
+        (move.titles || []).map(t => String(t || "").trim().toLowerCase()).filter(Boolean)
+    );
+    if (!titleSet.size || !move.targetBookId) return String(plain || "");
+
+    return String(plain || "").replace(/\[\[([^\]]+)\]\]/g, (full, inner) => {
+        const { title, kind, bookId } = parseWikiLinkInner(inner);
+        if (bookId) return full;
+        const lower = title.trim().toLowerCase();
+        if (!titleSet.has(lower)) return full;
+
+        let shouldUpdate = kind === move.fromKind;
+        if (!shouldUpdate && !kind) {
+            const entry = findWikiEntryByTitle(index, title, null);
+            shouldUpdate = entry?.id === move.movedId;
+        }
+        if (!shouldUpdate) return full;
+
+        return formatWikiLinkMarker(move.canonical || title, move.fromKind, move.targetBookId);
     });
 }
 
@@ -217,7 +253,8 @@ export function serializeStoryWikiBody(root) {
                 (entryType && WIKI_LINK_KINDS.has(entryType) && !el.classList.contains("is-missing")
                     ? entryType
                     : null);
-            out += formatWikiLinkMarker(safe, kindForMarker);
+            const bookRef = el.getAttribute("data-wiki-book") || "";
+            out += formatWikiLinkMarker(safe, kindForMarker, bookRef || null);
             return;
         }
         if (el.tagName === "STRONG" || el.tagName === "B") {
@@ -283,9 +320,21 @@ function renderBoldItalicEscaped(text) {
 }
 
 function renderWikiLinkPart(part, index, opts) {
-    const { title, kind } = parseWikiLinkInner(part.slice(2, -2));
+    const { title, kind, bookId } = parseWikiLinkInner(part.slice(2, -2));
+    const display = title;
+    if (bookId && bookId !== opts.currentBookId) {
+        const type = kind || "character";
+        return (
+            `<a href="#" class="sw-wiki-link sw-wiki-link-external sw-wiki-link-${escapeHtml(type)}" ` +
+            `data-wiki-book="${escapeHtml(bookId)}" ` +
+            `data-wiki-type="${escapeHtml(type)}" ` +
+            `data-wiki-title="${escapeHtml(display)}" ` +
+            `${opts.forRead ? "" : 'contenteditable="false" '}` +
+            `title="Open in another book wiki">${escapeHtml(display)}<span class="sw-wiki-ext-mark" aria-hidden="true">↗</span></a>`
+        );
+    }
     const entry = findWikiEntryByTitle(index, title, kind);
-    const display = entry?.canonical || title;
+    const canonical = entry?.canonical || title;
     if (entry) {
         return (
             `<a href="#" class="sw-wiki-link sw-wiki-link-${escapeHtml(entry.type)}" ` +
@@ -319,9 +368,10 @@ function renderLineInline(line, index, opts) {
 /**
  * @param {string} plain
  * @param {WikiEntry[]} index
- * @param {{ forRead?: boolean }} [opts]
+ * @param {{ forRead?: boolean, currentBookId?: string|null }} [opts]
  */
 export function plainToStoryWikiHtml(plain, index, opts = {}) {
+    if (!opts.currentBookId) opts = { ...opts, currentBookId: null };
     const raw = String(plain || "");
     if (!raw.trim()) {
         return opts.forRead

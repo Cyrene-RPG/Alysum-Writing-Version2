@@ -1,5 +1,5 @@
 /**
- * Pick destination category when moving a wiki article.
+ * Pick destination when moving a wiki article (section or another book).
  */
 
 /** @typedef {"character"|"place"|"object"} WikiMoveKind */
@@ -16,12 +16,15 @@ export const WIKI_MOVE_LABELS = {
  * @param {object} opts
  * @param {HTMLElement} opts.root
  * @param {HTMLElement} [opts.nameEl]
+ * @param {HTMLElement} [opts.booksEl]
+ * @param {HTMLElement} [opts.booksEmptyEl]
  * @param {() => WikiMoveKind|null} opts.getCurrentKind
  * @param {(kind: WikiMoveKind) => void} opts.onPick
+ * @param {(book: { bookId: string, title: string }) => void} [opts.onPickBook]
  */
 export function mountWikiMovePicker(opts) {
-    const { root, nameEl, getCurrentKind, onPick } = opts;
-    if (!root) return { open() {}, close() {}, destroy() {} };
+    const { root, nameEl, booksEl, booksEmptyEl, getCurrentKind, onPick, onPickBook } = opts;
+    if (!root) return { open() {}, close() {}, destroy() {}, setBookOptions() {} };
 
     /** @type {(() => void) | null} */
     let onOutside = null;
@@ -51,6 +54,31 @@ export function mountWikiMovePicker(opts) {
         setTimeout(() => document.addEventListener("mousedown", onOutside), 0);
     }
 
+    /**
+     * @param {{ bookId: string, title: string }[]} books
+     */
+    function setBookOptions(books) {
+        if (!booksEl) return;
+        booksEl.innerHTML = "";
+        if (!books.length) {
+            booksEmptyEl?.classList.remove("hidden");
+            return;
+        }
+        booksEmptyEl?.classList.add("hidden");
+        for (const book of books) {
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "sw-wiki-move-book-btn";
+            btn.setAttribute("data-move-book", book.bookId);
+            btn.textContent = book.title || "Untitled book";
+            btn.addEventListener("click", () => {
+                close();
+                onPickBook?.({ bookId: book.bookId, title: book.title || "Untitled book" });
+            });
+            booksEl.appendChild(btn);
+        }
+    }
+
     root.querySelectorAll("[data-move-kind]").forEach(btn => {
         btn.addEventListener("click", () => {
             if (btn.disabled) return;
@@ -61,5 +89,5 @@ export function mountWikiMovePicker(opts) {
         });
     });
 
-    return { open, close, destroy: close };
+    return { open, close, destroy: close, setBookOptions };
 }

@@ -20,6 +20,7 @@ import {
     objectToPlace,
     loadBookChapterOptions,
     getBookTitle,
+    listUserBooksWithBibleCounts,
     loadBookPlainTextForScan,
     loadBookChaptersPlainForScan,
     isStoryBibleTableMissing
@@ -48,9 +49,9 @@ import {
     normalizeText
 } from "./story-bible-utils.js?v=1";
 import { renderCharacterCards, renderPlaceCards, renderObjectCards } from "./story-bible-cards.js?v=4";
-import { mountStoryWikiArticle } from "./story-wiki-article.js?v=8";
-import { findWikiEntryByTitle, buildStoryWikiIndex, extractWikiLinks, rerouteWikiLinksInPlain } from "./story-wiki-wikilinks.js?v=5";
-import { mountWikiMovePicker, WIKI_MOVE_LABELS } from "./story-wiki-move-picker.js?v=1";
+import { mountStoryWikiArticle } from "./story-wiki-article.js?v=9";
+import { findWikiEntryByTitle, buildStoryWikiIndex, extractWikiLinks, rerouteWikiLinksInPlain, rerouteWikiLinksToExternalBook } from "./story-wiki-wikilinks.js?v=6";
+import { mountWikiMovePicker, WIKI_MOVE_LABELS } from "./story-wiki-move-picker.js?v=2";
 import { loadStoryWikiHub } from "./story-wiki-hub.js?v=3";
 
 const SB_TAB_STORAGE_KEY = "alysum-story-bible-tab";
@@ -674,7 +675,20 @@ export async function mountStoryBiblePage(opts) {
     }
 
     async function navigateWikiLink(payload) {
-        const { type, id, title, kind } = payload || {};
+        const { type, id, title, kind, bookId: targetBook } = payload || {};
+        if (targetBook && targetBook !== bookId) {
+            const q = new URLSearchParams();
+            q.set("book", targetBook);
+            if (id) {
+                if (type === "character") q.set("char", id);
+                else q.set("place", id);
+            } else if (title) {
+                q.set("wiki", title);
+                if (kind || type) q.set("kind", kind || type);
+            }
+            window.location.href = `story-bible.html?${q}`;
+            return;
+        }
         if (type === "character" && id) {
             onViewRequest?.("characters");
             bibleTab = "characters";
@@ -724,7 +738,8 @@ export async function mountStoryBiblePage(opts) {
             },
             onEnsureMissingArticles: plain => ensureMissingWikiArticlesFromPlain(plain),
             onDirty: markDirty,
-            getBookTitle: () => bookTitleEl?.textContent?.trim() || ""
+            getBookTitle: () => bookTitleEl?.textContent?.trim() || "",
+            getBookId: () => bookId
         });
     } catch (wikiErr) {
         console.error("[story-wiki] mount failed:", wikiErr);
@@ -923,11 +938,145 @@ export async function mountStoryBiblePage(opts) {
         }
     }
 
+    async function moveArticleToBook(targetBookId, targetBookTitle) {
+        if (!targetBookId || targetBookId === bookId) return;
+
+        const fromKind = currentEntryKind();
+        const persistResult = await persistCurrentEntryFromForm({ silent: false, requireName: true });
+        if (!persistResult?.ok || persistResult.skipped) return;
+
+        let record =
+            fromKind === "character"
+                ? characters.find(x => x.id === (formLoadedFor?.id || selectedCharId))
+                : places.find(x => x.id === (formLoadedFor?.id || selectedPlaceId));
+        if (!record) return;
+
+        const name = normalizeText(record.name);
+        if (!name) {
+            setStatus("Name is required before moving.", true);
+            return;
+        }
+
+        setStatus("Checking destination wiki…");
+        let targetChars;
+        let targetPlaces;
+        try {
+            [targetChars, targetPlaces] = await Promise.all([
+                listBibleCharacters(supabase, uid, targetBookId),
+                listBiblePlaces(supabase, uid, targetBookId)
+            ]);
+        } catch (e) {
+            console.error(e);
+            setStatus(formatFirestoreErr(e, "Load destination wiki"), true);
+            return;
+        }
+
+        if (entryTitleTaken([...targetChars, ...targetPlaces], name, record.aliases || [])) {
+            setStatus(`"${targetBookTitle}" already has an article with this name or alias.`, true);
+            return;
+        }
+
+        const sourceBookTitle = bookTitleEl?.textContent?.trim() || "this book";
+        if (
+            !confirm(
+                `Move "${name}" to the "${targetBookTitle}" wiki?\n\n` +
+                    `It will be removed from ${sourceBookTitle}. ` +
+                    `Links in ${sourceBookTitle} that pointed here will open ${targetBookTitle} instead (↗).`
+            )
+        ) {
+            return;
+        }
+
+        const titles = [name, ...(record.aliases || [])].filter(Boolean);
+        const linkIndex = buildStoryWikiIndex(characters, places);
+        const movedId = record.id;
+        const externalMove = {
+            titles,
+            fromKind,
+            targetBookId,
+            canonical: name,
+            movedId
+        };
+
+        setStatus(`Moving to ${targetBookTitle}…`);
+        moveEntryBtn && (moveEntryBtn.disabled = true);
+        deleteCharBtn.disabled = true;
+
+        try {
+            if (fromKind === "character") {
+                const next = readFormIntoCharacter(record);
+                await saveBibleCharacter(supabase, uid, targetBookId, next);
+                await deleteBibleFactsForCharacter(supabase, uid, bookId, next.id);
+                await deleteBibleCharacter(supabase, uid, bookId, next.id);
+                characters = characters.filter(x => x.id !== next.id);
+            } else {
+                const next = readFormIntoPlace(record);
+                await saveBiblePlace(supabase, uid, targetBookId, next);
+                await deleteBiblePlace(supabase, uid, bookId, next.id);
+                places = places.filter(x => x.id !== next.id);
+            }
+
+            let linkUpdates = 0;
+            for (const c of characters) {
+                const nextNotes = rerouteWikiLinksToExternalBook(c.notes || "", externalMove, linkIndex);
+                if (nextNotes !== (c.notes || "")) {
+                    c.notes = nextNotes;
+                    await saveBibleCharacter(supabase, uid, bookId, c);
+                    linkUpdates++;
+                }
+            }
+            for (const p of places) {
+                const nextNotes = rerouteWikiLinksToExternalBook(p.notes || "", externalMove, linkIndex);
+                if (nextNotes !== (p.notes || "")) {
+                    p.notes = nextNotes;
+                    await saveBiblePlace(supabase, uid, bookId, p);
+                    linkUpdates++;
+                }
+            }
+
+            resetFormBinding();
+            selectedCharId = null;
+            selectedPlaceId = null;
+            closeDrawer();
+            renderCharList();
+            renderPlaceList();
+            updateHealthPanel();
+            refreshScanFromCache();
+            notifyDataReload();
+            clearDirty();
+
+            const linkMsg =
+                linkUpdates > 0
+                    ? ` Updated ${linkUpdates} link${linkUpdates === 1 ? "" : "s"} to point at ${targetBookTitle}.`
+                    : "";
+            setStatus(`Moved to "${targetBookTitle}".${linkMsg}`);
+            setTimeout(() => setStatus(""), 4000);
+            window.dispatchEvent(new CustomEvent("alysum-bible-characters-changed"));
+
+            if (confirm(`Open the "${targetBookTitle}" wiki to view this article?`)) {
+                const q = new URLSearchParams();
+                q.set("book", targetBookId);
+                if (fromKind === "character") q.set("char", movedId);
+                else q.set("place", movedId);
+                window.location.href = `story-bible.html?${q}`;
+            }
+        } catch (e) {
+            console.error(e);
+            setStatus(formatFirestoreErr(e, "Move"), true);
+        } finally {
+            moveEntryBtn && (moveEntryBtn.disabled = false);
+            deleteCharBtn.disabled = false;
+        }
+    }
+
     const movePicker = mountWikiMovePicker({
         root: document.getElementById("sbWikiMovePicker"),
         nameEl: document.getElementById("sbWikiMovePickerName"),
+        booksEl: document.getElementById("sbWikiMoveBooks"),
+        booksEmptyEl: document.getElementById("sbWikiMoveBooksEmpty"),
         getCurrentKind: () => currentEntryKind(),
-        onPick: kind => void moveEntryToKind(kind)
+        onPick: kind => void moveEntryToKind(kind),
+        onPickBook: target => void moveArticleToBook(target.bookId, target.title)
     });
 
     function updateBibleTabChrome() {
@@ -967,7 +1116,7 @@ export async function mountStoryBiblePage(opts) {
         saveCharBtn.textContent = isChar ? "Save character" : isObject ? "Save object" : "Save place";
         if (moveEntryBtn) {
             moveEntryBtn.textContent = "Move to…";
-            moveEntryBtn.title = "Move this article to Characters, Places, or Objects";
+            moveEntryBtn.title = "Move to Characters, Places, Objects, or another book's wiki";
             const hasEntry = !!formLoadedFor?.id || (bibleTab === "characters" ? !!selectedCharId : !!selectedPlaceId);
             moveEntryBtn.disabled = !hasEntry;
         }
@@ -1662,9 +1811,16 @@ export async function mountStoryBiblePage(opts) {
         }
     });
 
-    moveEntryBtn?.addEventListener("click", () => {
+    moveEntryBtn?.addEventListener("click", async () => {
         const record = getCurrentWikiRecord();
         movePicker.open(normalizeText(record?.name) || "Untitled");
+        try {
+            const books = await listUserBooksWithBibleCounts(supabase, uid);
+            movePicker.setBookOptions(books.filter(b => b.bookId !== bookId));
+        } catch (e) {
+            console.error(e);
+            movePicker.setBookOptions([]);
+        }
     });
 
     deleteCharBtn.addEventListener("click", async () => {
@@ -2293,6 +2449,28 @@ export async function mountStoryBiblePage(opts) {
         void reloadFromServer();
     });
 
+    async function openEntryFromUrlParams() {
+        const params = new URLSearchParams(window.location.search);
+        const openChar = params.get("char");
+        const openPlace = params.get("place");
+        const wikiTitle = params.get("wiki");
+        const wikiKind = params.get("kind");
+        if (openChar) {
+            await selectCharacter(openChar);
+            return;
+        }
+        if (openPlace) {
+            await selectPlace(openPlace);
+            return;
+        }
+        if (wikiTitle) {
+            const index = buildStoryWikiIndex(characters, places);
+            const entry = findWikiEntryByTitle(index, wikiTitle, wikiKind || null);
+            if (entry) await navigateWikiLink({ type: entry.type, id: entry.id });
+        }
+    }
+
     updateBibleTabChrome();
     await reloadFromServer();
+    await openEntryFromUrlParams();
 }

@@ -8,23 +8,27 @@ export const WIKI_LINK_KINDS = new Set(["character", "place", "object"]);
 
 /**
  * @param {string} inner Raw text inside [[...]]
+ * @returns {{ title: string, kind: WikiLinkKind|null, bookId: string|null }}
  */
 export function parseWikiLinkInner(inner) {
     const raw = String(inner || "").trim();
-    const pipe = raw.indexOf("|");
-    if (pipe === -1) return { title: raw, kind: null };
-    const title = raw.slice(0, pipe).trim();
-    const kind = raw.slice(pipe + 1).trim().toLowerCase();
-    return { title, kind: WIKI_LINK_KINDS.has(kind) ? /** @type {WikiLinkKind} */ (kind) : null };
+    const parts = raw.split("|").map(p => p.trim());
+    const title = parts[0] || "";
+    const kindToken = (parts[1] || "").toLowerCase();
+    const kind = WIKI_LINK_KINDS.has(kindToken) ? /** @type {WikiLinkKind} */ (kindToken) : null;
+    const bookId = parts[2] || null;
+    return { title, kind, bookId };
 }
 
 /**
  * @param {string} title
  * @param {WikiLinkKind|null|undefined} kind
+ * @param {string|null|undefined} bookId
  */
-export function formatWikiLinkMarker(title, kind) {
+export function formatWikiLinkMarker(title, kind, bookId = null) {
     const t = String(title || "").trim();
     if (!t) return "";
+    if (bookId && kind && WIKI_LINK_KINDS.has(kind)) return `[[${t}|${kind}|${bookId}]]`;
     if (kind && WIKI_LINK_KINDS.has(kind)) return `[[${t}|${kind}]]`;
     return `[[${t}]]`;
 }

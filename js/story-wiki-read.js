@@ -92,6 +92,7 @@ function renderInfoboxRows(record, kind, index) {
  * @param {object[]} [opts.characters]
  * @param {object[]} [opts.places]
  * @param {string} [opts.bookTitle]
+ * @param {string} [opts.bookId]
  * @param {string} [opts.sourceLabel]
  * @param {number|string} [opts.updatedAt]
  */
@@ -102,6 +103,7 @@ export function renderStoryWikiArticleHtml(opts) {
         characters = [],
         places = [],
         bookTitle = "",
+        bookId = "",
         sourceLabel = "Story Wiki",
         updatedAt = 0
     } = opts;
@@ -113,6 +115,7 @@ export function renderStoryWikiArticleHtml(opts) {
     const name = normalizeText(record.name) || "(unnamed)";
     const index = buildStoryWikiIndex(characters, places);
     const aliases = (record.aliases || []).filter(Boolean);
+    const readOpts = { forRead: true, currentBookId: bookId || null };
     const infoboxLabel =
         kind === "character" ? "Character" : kind === "object" ? "Object" : "Place";
     const showPlaceIcon = kind === "place" || kind === "object";
@@ -128,13 +131,13 @@ export function renderStoryWikiArticleHtml(opts) {
         .join("");
 
     const ledeHtml = lede
-        ? `<div class="sw-wp-lede">${plainToStoryWikiHtml(lede, index, { forRead: true })}</div>`
+        ? `<div class="sw-wp-lede">${plainToStoryWikiHtml(lede, index, readOpts)}</div>`
         : "";
 
     const sectionHtml = sections
         .map((s, i) => {
             const id = `sw-sec-${i}`;
-            const body = plainToStoryWikiHtml(s.body.trim(), index, { forRead: true });
+            const body = plainToStoryWikiHtml(s.body.trim(), index, readOpts);
             return `<section class="sw-wp-section" id="${id}">
                 <h2 class="sw-wp-h2">${escapeHtml(s.title)}</h2>
                 <div class="sw-wp-section-body">${body || '<p class="sw-wiki-empty">(No content yet.)</p>'}</div>
@@ -182,7 +185,7 @@ export function renderStoryWikiArticleHtml(opts) {
                         : ""
                 }
                 <div class="sw-wp-content">
-                    ${ledeHtml || plainToStoryWikiHtml("", index, { forRead: true })}
+                    ${ledeHtml || plainToStoryWikiHtml("", index, readOpts)}
                     ${sectionHtml}
                 </div>
             </div>

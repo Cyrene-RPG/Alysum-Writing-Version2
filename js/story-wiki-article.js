@@ -33,7 +33,8 @@ export function mountStoryWikiArticle(opts) {
         onDirty,
         onEnsureMissingArticles,
         getDefaultLinkKind,
-        getBookTitle
+        getBookTitle,
+        getBookId
     } = opts;
 
     let mode = "read";
@@ -124,13 +125,17 @@ export function mountStoryWikiArticle(opts) {
         return editEl.value || "";
     }
 
+    function wikiHtmlOpts(forRead = false) {
+        return { forRead, currentBookId: getBookId?.() || null };
+    }
+
     function syncEditFromPlain() {
         if (!editEl?.isContentEditable) return;
         const record = getCurrentRecord();
         const plain = record?.notes || "";
         const index = getIndex();
         const normalized = normalizeStoryWikiPlain(plain, index, getCurrentEntryId());
-        editEl.innerHTML = plainToStoryWikiHtml(normalized, index);
+        editEl.innerHTML = plainToStoryWikiHtml(normalized, index, wikiHtmlOpts());
     }
 
     /** Normalize wikilinks, create missing articles, and refresh chips without disturbing the caret while typing. */
@@ -141,7 +146,7 @@ export function mountStoryWikiArticle(opts) {
         const index = getIndex();
         const next = normalizeStoryWikiPlain(raw, index, getCurrentEntryId());
         onNotesChange(next);
-        const html = plainToStoryWikiHtml(next, index);
+        const html = plainToStoryWikiHtml(next, index, wikiHtmlOpts());
         if (editEl.innerHTML !== html) editEl.innerHTML = html;
     }
 
@@ -156,6 +161,7 @@ export function mountStoryWikiArticle(opts) {
             characters,
             places,
             bookTitle: getBookTitle?.() || "",
+            bookId: getBookId?.() || "",
             sourceLabel: "Story Wiki",
             updatedAt: record?.updated || 0
         });
@@ -166,7 +172,7 @@ export function mountStoryWikiArticle(opts) {
         const index = getIndex();
         const normalized = normalizeStoryWikiPlain(plain || "", index, getCurrentEntryId());
         if (editEl.isContentEditable) {
-            editEl.innerHTML = plainToStoryWikiHtml(normalized, index);
+            editEl.innerHTML = plainToStoryWikiHtml(normalized, index, wikiHtmlOpts());
         } else {
             editEl.value = normalized;
         }
@@ -371,8 +377,13 @@ export function mountStoryWikiArticle(opts) {
         e.preventDefault();
         const type = a.getAttribute("data-wiki-type");
         const id = a.getAttribute("data-wiki-id");
+        const extBook = a.getAttribute("data-wiki-book") || "";
         const title = a.getAttribute("data-wiki-title") || a.textContent || "";
-        const kind = a.getAttribute("data-wiki-link-kind") || "";
+        const kind = a.getAttribute("data-wiki-link-kind") || a.getAttribute("data-wiki-type") || "";
+        if (extBook) {
+            onNavigate({ type: kind || "character", id: id || "", title: title.trim(), kind, bookId: extBook });
+            return;
+        }
         if (type && id) onNavigate({ type, id });
         else onNavigate({ title: title.trim(), kind: kind || undefined });
     }

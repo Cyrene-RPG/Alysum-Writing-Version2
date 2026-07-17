@@ -22,7 +22,7 @@
     <link rel="stylesheet" href="css/magic-codex.css?v=7" />
     <link rel="stylesheet" href="css/story-bible.css?v=9" />
     <link rel="stylesheet" href="css/story-bible-v10.css?v=2" />
-    <link rel="stylesheet" href="css/story-wiki.css?v=16" />
+    <link rel="stylesheet" href="css/story-wiki.css?v=17" />
     <script src="js/gradient-theme-sync.js" defer></script>
 </head>
 <body class="mc-page mc-bible alysum-with-workspace-nav alysum-tool-scroll">
@@ -296,7 +296,10 @@
                                         <button type="button" class="sw-wiki-link-kind-btn" data-move-kind="place">Places</button>
                                         <button type="button" class="sw-wiki-link-kind-btn" data-move-kind="object">Objects</button>
                                     </div>
-                                    <p class="sw-wiki-move-note">Wikilinks in other articles will point to the new section.</p>
+                                    <p class="sw-wiki-move-note">Same book: wikilinks update to the new section. Another book: links here open that wiki.</p>
+                                    <p class="sw-wiki-link-picker-title sw-wiki-move-books-title">Another book's wiki</p>
+                                    <p class="sw-wiki-move-books-empty hidden" id="sbWikiMoveBooksEmpty">No other books yet.</p>
+                                    <div id="sbWikiMoveBooks" class="sw-wiki-move-books"></div>
                                 </div>
                             </div>
                             <button type="button" class="sw-wp-tool-link sb-del" id="sbDeleteChar">Delete</button>
