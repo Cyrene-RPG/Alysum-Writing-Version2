@@ -1440,18 +1440,31 @@ a.sw-wiki-link.is-missing:hover {
 }
 
 .sw-wp-sheet-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     background: #111827;
     padding: 8px 16px;
 }
 
-.sw-wp-skin .sb-sheet-back {
-    display: none;
+.sw-wp-skin .sb-sheet-toolbar.sw-wp-sheet-toolbar {
+    overflow: visible;
 }
 
 .sw-wp-sheet-actions {
-    gap: 12px;
+    display: flex;
+    flex-wrap: wrap;
     align-items: center;
+    justify-content: flex-end;
+    gap: 8px 14px;
+    margin-left: auto;
+    max-width: 100%;
+}
+
+.sw-wp-skin .sb-sheet-back {
+    display: none;
 }
 
 .sw-wp-save-status {
@@ -1491,6 +1504,8 @@ a.sw-wiki-link.is-missing:hover {
     cursor: pointer;
     text-decoration: none;
     border-radius: 0;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .sw-wp-tool-link:hover {

@@ -381,6 +381,17 @@ export async function mountStoryBiblePage(opts) {
 
     function updateSidebarMeta() {
         if (!sidebarMetaEl) return;
+        if (bibleTab === "characters") {
+            const n = characters.length;
+            sidebarMetaEl.textContent =
+                n === 0 ? "No character articles yet" : `${n} character article${n === 1 ? "" : "s"}`;
+            return;
+        }
+        if (bibleTab === "places") {
+            const n = places.length;
+            sidebarMetaEl.textContent = n === 0 ? "No place articles yet" : `${n} place article${n === 1 ? "" : "s"}`;
+            return;
+        }
         const total = characters.length + places.length;
         sidebarMetaEl.textContent =
             total === 0
@@ -839,10 +850,14 @@ export async function mountStoryBiblePage(opts) {
         fields.aliases.placeholder = isChar ? "Nicknames, titles…" : "NYC, Second City…";
         saveCharBtn.textContent = isChar ? "Save character" : "Save place";
         if (moveEntryBtn) {
-            moveEntryBtn.textContent = isChar ? "Move to Places" : "Move to Characters";
+            moveEntryBtn.textContent = isChar ? "→ Places" : "→ Characters";
+            moveEntryBtn.title = isChar
+                ? "Move this article from Characters to Places"
+                : "Move this article from Places to Characters";
             const hasEntry = isChar ? !!selectedCharId : !!selectedPlaceId;
             moveEntryBtn.disabled = !hasEntry;
         }
+        updateSidebarMeta();
         syncFormEmptyState();
     }
 
@@ -1942,15 +1957,24 @@ export async function mountStoryBiblePage(opts) {
         el?.addEventListener("change", markDirty);
     }
     fields.name?.addEventListener("input", () => {
+        const nextName = fields.name.value;
         if (formTitleEl && bibleTab === "characters") {
-            formTitleEl.textContent = fields.name.value.trim() || "New character";
+            formTitleEl.textContent = nextName.trim() || "New character";
             const c = characters.find(x => x.id === selectedCharId);
-            if (c) updateEntryHero("character", { ...c, name: fields.name.value });
+            if (c) {
+                c.name = nextName;
+                updateEntryHero("character", { ...c, name: nextName });
+                renderCardGrids();
+            }
         }
         if (formTitleEl && bibleTab === "places") {
-            formTitleEl.textContent = fields.name.value.trim() || "New place";
+            formTitleEl.textContent = nextName.trim() || "New place";
             const p = places.find(x => x.id === selectedPlaceId);
-            if (p) updateEntryHero("place", { ...p, name: fields.name.value });
+            if (p) {
+                p.name = nextName;
+                updateEntryHero("place", { ...p, name: nextName });
+                renderCardGrids();
+            }
         }
     });
 
