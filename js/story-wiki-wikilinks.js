@@ -113,6 +113,39 @@ function normalizeWikiLinkInner(inner, index) {
 }
 
 /**
+ * Update [[wikilinks]] across the wiki when an article moves between Character / Place / Object.
+ * @param {string} plain
+ * @param {object} move
+ * @param {string[]} move.titles Names and aliases for the moved article
+ * @param {import("./story-wiki-link-picker.js").WikiLinkKind} move.fromKind
+ * @param {import("./story-wiki-link-picker.js").WikiLinkKind} move.toKind
+ * @param {string} move.canonical Preferred link display title
+ * @param {string} move.movedId Entry id before the move
+ * @param {WikiEntry[]} index Wiki index built before the move
+ */
+export function rerouteWikiLinksInPlain(plain, move, index) {
+    const titleSet = new Set(
+        (move.titles || []).map(t => String(t || "").trim().toLowerCase()).filter(Boolean)
+    );
+    if (!titleSet.size || move.fromKind === move.toKind) return String(plain || "");
+
+    return String(plain || "").replace(/\[\[([^\]]+)\]\]/g, (full, inner) => {
+        const { title, kind } = parseWikiLinkInner(inner);
+        const lower = title.trim().toLowerCase();
+        if (!titleSet.has(lower)) return full;
+
+        let shouldUpdate = kind === move.fromKind;
+        if (!shouldUpdate && !kind) {
+            const entry = findWikiEntryByTitle(index, title, null);
+            shouldUpdate = entry?.id === move.movedId;
+        }
+        if (!shouldUpdate) return full;
+
+        return formatWikiLinkMarker(move.canonical || title, move.toKind);
+    });
+}
+
+/**
  * Canonicalize [[links]] and auto-wrap bare entry titles (longest first).
  * @param {string} text
  * @param {WikiEntry[]} index

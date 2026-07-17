@@ -22,7 +22,7 @@
     <link rel="stylesheet" href="css/magic-codex.css?v=7" />
     <link rel="stylesheet" href="css/story-bible.css?v=9" />
     <link rel="stylesheet" href="css/story-bible-v10.css?v=2" />
-    <link rel="stylesheet" href="css/story-wiki.css?v=15" />
+    <link rel="stylesheet" href="css/story-wiki.css?v=16" />
     <script src="js/gradient-theme-sync.js" defer></script>
 </head>
 <body class="mc-page mc-bible alysum-with-workspace-nav alysum-tool-scroll">
@@ -286,7 +286,19 @@
                         <button type="button" class="sb-sheet-back sw-wp-link-btn" id="sbDrawerClose" aria-label="Back to list">← Article list</button>
                         <div class="sb-sheet-toolbar-actions sw-wp-sheet-actions">
                             <span id="sbDirty" class="sb-dirty sw-wp-save-status" aria-live="polite"></span>
-                            <button type="button" class="sw-wp-tool-link" id="sbMoveEntry" disabled title="Move this article to the other wiki section">→ Characters</button>
+                            <div class="sw-wiki-move-wrap">
+                                <button type="button" class="sw-wp-tool-link" id="sbMoveEntry" disabled title="Move this article to another wiki section">Move to…</button>
+                                <div id="sbWikiMovePicker" class="sw-wiki-link-picker sw-wiki-move-picker hidden" role="dialog" aria-label="Move article">
+                                    <p class="sw-wiki-link-picker-title">Move article to…</p>
+                                    <p class="sw-wiki-link-picker-name" id="sbWikiMovePickerName"></p>
+                                    <div class="sw-wiki-link-picker-actions">
+                                        <button type="button" class="sw-wiki-link-kind-btn" data-move-kind="character">Characters</button>
+                                        <button type="button" class="sw-wiki-link-kind-btn" data-move-kind="place">Places</button>
+                                        <button type="button" class="sw-wiki-link-kind-btn" data-move-kind="object">Objects</button>
+                                    </div>
+                                    <p class="sw-wiki-move-note">Wikilinks in other articles will point to the new section.</p>
+                                </div>
+                            </div>
                             <button type="button" class="sw-wp-tool-link sb-del" id="sbDeleteChar">Delete</button>
                             <button type="button" class="sw-wp-tool-link sw-wp-tool-link-accent sb-save" id="sbSaveChar">Save article</button>
                         </div>

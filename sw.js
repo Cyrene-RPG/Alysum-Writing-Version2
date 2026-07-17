@@ -8,7 +8,7 @@
  * Bump SW_VERSION when shipping breaking shell changes to force a refresh.
  */
 
-const SW_VERSION = 'v2.4.2';
+const SW_VERSION = 'v2.4.3';
 const SHELL_CACHE = `alysum-shell-${SW_VERSION}`;
 const ASSET_CACHE = `alysum-assets-${SW_VERSION}`;
 
@@ -106,6 +106,7 @@ const APP_SHELL = [
   'js/story-wiki-read.js',
   'js/story-wiki-wikilinks.js',
   'js/story-wiki-link-picker.js',
+  'js/story-wiki-move-picker.js',
   'js/lore-wiki-api.js',
   'js/lore-wiki-page.js',
   'css/lore-wiki.css',

@@ -165,9 +165,27 @@
     color: #ddd6fe;
 }
 
-.sw-wiki-link-kind-btn:hover {
-    border-color: var(--sb-border-strong);
-    background: rgba(124, 58, 237, 0.15);
+.sw-wiki-move-wrap {
+    position: relative;
+}
+
+.sw-wiki-move-picker {
+    right: 0;
+    left: auto;
+    min-width: 240px;
+}
+
+.sw-wiki-move-note {
+    margin: 10px 0 0;
+    font-size: 11px;
+    line-height: 1.45;
+    color: var(--sb-muted, #94a3b8);
+}
+
+.sw-wiki-link-kind-btn.is-current,
+.sw-wiki-link-kind-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
 }
 
 a.sw-wiki-link-intent-character {

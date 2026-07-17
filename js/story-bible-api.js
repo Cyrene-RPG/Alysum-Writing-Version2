@@ -333,6 +333,41 @@ export function characterToPlace(character, id = generateBiblePlaceId()) {
 }
 
 /**
+ * @param {ReturnType<typeof normalizeBibleCharacter>} character
+ * @param {string} [id]
+ */
+export function characterToObject(character, id = generateBiblePlaceId()) {
+    const place = characterToPlace(character, id);
+    place.kind = "object";
+    return place;
+}
+
+/**
+ * @param {ReturnType<typeof normalizeBiblePlace>} place
+ * @param {string} kind
+ * @param {string} [id]
+ */
+export function placeWithKind(place, kind, id = place.id) {
+    return normalizeBiblePlace({ ...place, kind: kind || "" }, id);
+}
+
+/**
+ * @param {ReturnType<typeof normalizeBiblePlace>} place
+ * @param {string} [id]
+ */
+export function placeToObject(place, id = place.id) {
+    return placeWithKind(place, "object", id);
+}
+
+/**
+ * @param {ReturnType<typeof normalizeBiblePlace>} place
+ * @param {string} [id]
+ */
+export function objectToPlace(place, id = place.id) {
+    return placeWithKind(place, "", id);
+}
+
+/**
  * @param {ReturnType<typeof normalizeBiblePlace>} place
  * @param {string} [id]
  */

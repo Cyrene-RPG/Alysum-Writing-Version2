@@ -171,7 +171,7 @@ export async function bootStoryWikiPage() {
     byId("sbBookView")?.classList.remove("hidden");
 
     try {
-        const { mountUnifiedStoryBible } = await import("./story-bible-unified.js?v=20");
+        const { mountUnifiedStoryBible } = await import("./story-bible-unified.js?v=21");
         await mountUnifiedStoryBible(collectMountOpts(session.user.id));
     } catch (e) {
         console.error("[story-wiki-boot] workspace failed:", e);
