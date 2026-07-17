@@ -957,8 +957,8 @@ a.sw-wiki-link.is-missing:hover {
 
 .sw-wp-portal-grid {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(200px, 28%);
-    gap: 10px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(240px, 32%);
+    gap: 14px;
     align-items: stretch;
     min-height: 0;
 }
@@ -970,35 +970,39 @@ a.sw-wiki-link.is-missing:hover {
 .sw-wp-portal-side {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 10px;
     min-height: 0;
 }
 
 .sw-wp-portal-box {
     border: 1px solid rgba(167, 139, 250, 0.22);
     background: rgba(8, 12, 24, 0.55);
-    padding: 10px 12px;
+    padding: 14px 16px;
     min-height: 0;
     display: flex;
     flex-direction: column;
 }
 
+.sw-wp-portal-grid > .sw-wp-portal-box {
+    min-height: 148px;
+}
+
 .sw-wp-portal-box-compact {
-    padding: 8px 10px;
+    padding: 12px 14px;
 }
 
 .sw-wp-portal-box h2 {
-    margin: 0 0 6px;
-    padding-bottom: 4px;
+    margin: 0 0 8px;
+    padding-bottom: 6px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     color: #ede9fe;
 }
 
 .sw-wp-inline-actions {
     margin: 0;
-    font-size: 13px;
+    font-size: 14px;
 }
 
 .sw-wp-inline-actions a {
@@ -1020,14 +1024,14 @@ a.sw-wiki-link.is-missing:hover {
 }
 
 .sw-wp-index-list li {
-    margin: 0 0 6px;
+    margin: 0 0 8px;
     break-inside: avoid;
 }
 
 .sw-wp-index-list a {
     color: #93c5fd;
     text-decoration: none;
-    font-size: 14px;
+    font-size: 15px;
 }
 
 .sw-wp-index-list a:hover {
@@ -1036,7 +1040,7 @@ a.sw-wiki-link.is-missing:hover {
 
 .sw-wp-muted {
     margin: 0;
-    font-size: 14px;
+    font-size: 15px;
     line-height: 1.55;
     color: #94a3b8;
 }
@@ -1188,17 +1192,72 @@ a.sw-wiki-link.is-missing:hover {
     }
 }
 
-/* Codex views — Wikipedia “all pages” sidebar */
+/* Codex views — Wikipedia “all pages” sidebar + article pane */
 .sw-wp-skin .sb-codex {
     gap: 0;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
+    flex: 1;
+    min-height: 0;
 }
 
 .sw-wp-skin .sb-roster {
     border-right: 1px solid rgba(255, 255, 255, 0.1);
     background: #0d1320;
-    min-width: 220px;
+    min-width: 200px;
+    width: 240px;
     max-width: 280px;
+    flex-shrink: 0;
+}
+
+.sw-wp-skin .sb-roster-list {
+    padding: 0;
+}
+
+.sw-wp-roster-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.sw-wp-roster-link {
+    display: block;
+    width: 100%;
+    border: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    background: transparent;
+    padding: 9px 14px;
+    text-align: left;
+    font-family: var(--sb-ui, system-ui, sans-serif);
+    font-size: 14px;
+    font-weight: 400;
+    color: #93c5fd;
+    cursor: pointer;
+    border-radius: 0;
+}
+
+.sw-wp-roster-link:hover {
+    background: rgba(255, 255, 255, 0.04);
+    text-decoration: underline;
+}
+
+.sw-wp-roster-link.is-active {
+    background: rgba(59, 130, 246, 0.12);
+    color: #f8fafc;
+    box-shadow: inset 3px 0 0 #93c5fd;
+    text-decoration: none;
+}
+
+.sw-wp-roster-link.is-draft {
+    color: #94a3b8;
+    font-style: italic;
+}
+
+.sw-wp-roster-empty {
+    margin: 0;
+    padding: 12px 14px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #94a3b8;
 }
 
 .sw-wp-skin .sb-roster-toolbar {
@@ -1210,6 +1269,8 @@ a.sw-wiki-link.is-missing:hover {
 .sw-wp-skin .sb-roster-toolbar input[type="search"] {
     border-radius: 2px;
     font-size: 13px;
+    border-color: rgba(255, 255, 255, 0.12);
+    background: rgba(0, 0, 0, 0.25);
 }
 
 .sw-wp-skin .sb-roster-add {
@@ -1219,42 +1280,161 @@ a.sw-wiki-link.is-missing:hover {
     background: transparent;
     border-color: rgba(147, 197, 253, 0.35);
     color: #93c5fd;
-}
-
-.sw-wp-skin .sb-roster-item {
-    border-radius: 0;
-    border: none;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-    background: transparent;
-    padding: 8px 12px;
-    font-size: 14px;
-}
-
-.sw-wp-skin .sb-roster-item:hover {
-    background: rgba(255, 255, 255, 0.04);
-}
-
-.sw-wp-skin .sb-roster-item.is-active {
-    background: rgba(59, 130, 246, 0.12);
-    box-shadow: inset 3px 0 0 #93c5fd;
-}
-
-.sw-wp-skin .sb-roster-name {
-    color: #93c5fd;
-    font-weight: 400;
-}
-
-.sw-wp-skin .sb-roster-item.is-active .sb-roster-name {
-    color: #f8fafc;
-}
-
-.sw-wp-skin .sb-roster-avatar {
-    display: none;
+    white-space: nowrap;
 }
 
 .sw-wp-skin .sb-sheet {
     background: #0a0f1a;
-    padding: 0 24px 32px;
+    padding: 0;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.sw-wp-skin .sb-sheet-empty {
+    align-items: flex-start;
+    justify-content: flex-start;
+    text-align: left;
+    padding: 28px 32px;
+}
+
+.sw-wp-skin .sb-sheet-editor {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    background: #0a0f1a;
+}
+
+.sw-wp-skin .sb-sheet-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 16px 28px 28px;
+}
+
+.sw-wp-skin .sb-sheet-grid {
+    max-width: 920px;
+    gap: 16px;
+}
+
+.sw-wp-skin #sbEntryHero {
+    display: none !important;
+}
+
+.sw-wp-sheet-toolbar {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background: #111827;
+    padding: 8px 16px;
+}
+
+.sw-wp-skin .sb-sheet-back {
+    display: none;
+}
+
+.sw-wp-sheet-actions {
+    gap: 12px;
+}
+
+.sw-wp-tool-link {
+    border: none;
+    background: transparent;
+    padding: 4px 0;
+    font-family: var(--sb-ui, system-ui, sans-serif);
+    font-size: 13px;
+    font-weight: 400;
+    color: #93c5fd;
+    cursor: pointer;
+    text-decoration: none;
+    border-radius: 0;
+}
+
+.sw-wp-tool-link:hover {
+    text-decoration: underline;
+}
+
+.sw-wp-tool-link.sb-del {
+    color: #fca5a5;
+    background: transparent;
+    border: none;
+    padding: 4px 0;
+}
+
+.sw-wp-tool-link.sb-save,
+.sw-wp-tool-link-accent {
+    color: #dbeafe;
+    background: transparent;
+    border: none;
+    padding: 4px 0;
+}
+
+.sw-wp-skin .sb-block-title {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: none;
+    color: #cbd5e1;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+}
+
+.sw-wp-title-block label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 12px;
+    color: #64748b;
+}
+
+.sw-wp-title-input {
+    width: 100%;
+    font-family: "Linux Libertine", "Cormorant Garamond", Georgia, serif;
+    font-size: clamp(1.35rem, 2.5vw, 1.75rem);
+    padding: 8px 10px;
+    border-radius: 2px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(0, 0, 0, 0.25);
+    color: #fff7ed;
+}
+
+.sw-wp-advanced-fields {
+    margin-bottom: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(0, 0, 0, 0.15);
+    padding: 0 12px 12px;
+}
+
+.sw-wp-advanced-fields summary {
+    cursor: pointer;
+    padding: 10px 0;
+    font-size: 13px;
+    color: #93c5fd;
+    list-style: none;
+}
+
+.sw-wp-advanced-fields summary::-webkit-details-marker {
+    display: none;
+}
+
+.sw-wp-article-body-block .sb-wiki-body-ce {
+    min-height: 220px;
+    border-radius: 2px;
+    font-size: 15px;
+    line-height: 1.65;
+}
+
+.sw-wp-skin .sb-save,
+.sw-wp-skin .sb-del {
+    all: unset;
+}
+
+.sw-wp-skin .sb-field input,
+.sw-wp-skin .sb-field select,
+.sw-wp-skin .sb-field textarea {
+    border-radius: 2px;
+    font-size: 14px;
 }
 
 .sw-wp-skin .sb-book-tagline,
@@ -1262,6 +1442,13 @@ a.sw-wiki-link.is-missing:hover {
     font-size: 12px;
     color: #64748b;
     font-weight: 400;
+}
+
+body.sw-wp-book-open #sbViewCharacters,
+body.sw-wp-book-open #sbViewPlaces {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
 }
 
 /* Book workspace — fill viewport, no page scroll, no codex glow dots */
@@ -1330,8 +1517,8 @@ body.sw-wp-book-open .sw-wp-main-page {
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    padding: 10px 16px 8px;
+    gap: 10px;
+    padding: 14px 22px 10px;
     overflow: hidden;
 }
 

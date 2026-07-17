@@ -22,7 +22,7 @@
     <link rel="stylesheet" href="css/magic-codex.css?v=7" />
     <link rel="stylesheet" href="css/story-bible.css?v=9" />
     <link rel="stylesheet" href="css/story-bible-v10.css?v=2" />
-    <link rel="stylesheet" href="css/story-wiki.css?v=6" />
+    <link rel="stylesheet" href="css/story-wiki.css?v=8" />
     <script src="js/gradient-theme-sync.js" defer></script>
 </head>
 <body class="mc-page mc-bible alysum-with-workspace-nav alysum-tool-scroll">
@@ -265,16 +265,16 @@
 
                 <!-- Shared character/place sheet editor -->
                 <div id="sbEditorDrawer" class="sb-sheet-editor hidden" aria-label="Edit entry">
-                    <header class="sb-sheet-toolbar">
-                        <button type="button" class="sb-sheet-back" id="sbDrawerClose" aria-label="Back to list">← List</button>
+                    <header class="sb-sheet-toolbar sw-wp-sheet-toolbar">
+                        <button type="button" class="sb-sheet-back sw-wp-link-btn" id="sbDrawerClose" aria-label="Back to list">← Article list</button>
                         <span id="sbFormTitle" class="visually-hidden">Character</span>
                         <span id="sbDirty" class="sb-dirty">Unsaved changes</span>
-                        <div class="sb-sheet-toolbar-actions">
-                            <button type="button" class="sb-del" id="sbDeleteChar">Delete</button>
-                            <button type="button" class="sb-save" id="sbSaveChar">Save</button>
+                        <div class="sb-sheet-toolbar-actions sw-wp-sheet-actions">
+                            <button type="button" class="sw-wp-tool-link sb-del" id="sbDeleteChar">Delete</button>
+                            <button type="button" class="sw-wp-tool-link sw-wp-tool-link-accent sb-save" id="sbSaveChar">Publish changes</button>
                         </div>
                     </header>
-                    <div id="sbEntryHero" class="sb-entry-hero hidden"></div>
+                    <div id="sbEntryHero" class="sb-entry-hero hidden" aria-hidden="true"></div>
                     <div class="sb-sheet-body">
                         <div class="sb-sheet-grid">
                             <div class="sb-block sb-sheet-col-12">
@@ -289,16 +289,17 @@
                             </div>
 
                             <div id="sbWikiEditForm" class="sb-wiki-edit-wrap hidden">
+                            <div class="sb-block sb-sheet-col-12 sw-wp-title-block">
+                                <label for="sbName" id="sbLabelName">Article title</label>
+                                <input id="sbName" type="text" autocomplete="off" placeholder="Character or place name" class="sw-wp-title-input" />
+                            </div>
+                            <details class="sw-wp-advanced-fields">
+                            <summary>Infobox &amp; metadata</summary>
                             <div class="sb-block sb-sheet-col-12">
-                                <h3 class="sb-block-title">Identity</h3>
                                 <div class="sb-field-grid">
                                     <div class="sb-field sb-field-full">
-                                        <label for="sbName" id="sbLabelName">Name</label>
-                                        <input id="sbName" type="text" autocomplete="off" placeholder="Full name" />
-                                    </div>
-                                    <div class="sb-field sb-field-full">
                                         <label for="sbAliases" id="sbLabelAliases">Also known as</label>
-                                        <input id="sbAliases" type="text" autocomplete="off" placeholder="Nicknames, titles — comma separated" />
+                                        <input id="sbAliases" type="text" autocomplete="off" placeholder="Comma-separated aliases" />
                                     </div>
                                     <div id="sbFormCharIdentity" class="sb-field-full">
                                         <div class="sb-field-grid">
@@ -345,8 +346,8 @@
                                 </div>
                             </div>
 
-                            <div id="sbFormCharFields" class="sb-block sb-sheet-col-12">
-                                <h3 class="sb-block-title">Appearance</h3>
+                            <div id="sbFormCharFields" class="sb-block sb-sheet-col-12 sw-wp-advanced-block">
+                                <h3 class="sb-block-title">Appearance (infobox)</h3>
                                 <p class="sb-field-hint">Short words work best — e.g. <em>blue eyes</em>, <em>tall</em>, <em>dark brown hair</em></p>
                                 <div class="sb-field-grid sb-field-grid-3">
                                     <div class="sb-field"><label for="sbAge">Age</label><input id="sbAge" type="text" placeholder="32" autocomplete="off" /></div>
@@ -359,13 +360,13 @@
                                 </div>
                             </div>
 
-                            <div id="sbCharFactsSection" class="sb-block sb-sheet-col-6">
+                            <div id="sbCharFactsSection" class="sb-block sb-sheet-col-6 sw-wp-advanced-block">
                                 <h3 class="sb-block-title">From your writing</h3>
                                 <div id="sbCharFactsMount"></div>
                             </div>
 
-                            <div class="sb-block sb-sheet-col-6">
-                                <h3 class="sb-block-title">Story presence</h3>
+                            <div class="sb-block sb-sheet-col-6 sw-wp-advanced-block">
+                                <h3 class="sb-block-title">Story metadata</h3>
                                 <div class="sb-field-grid">
                                     <div class="sb-field sb-field-full">
                                         <label for="sbTags">Groups & tags</label>
@@ -382,9 +383,10 @@
                                     </div>
                                 </div>
                             </div>
+                            </details>
 
-                            <div class="sb-block sb-sheet-col-12">
-                                <h3 class="sb-block-title">Article body</h3>
+                            <div class="sb-block sb-sheet-col-12 sw-wp-article-body-block">
+                                <h3 class="sb-block-title">Article text</h3>
                                 <div id="sbNotes" class="sb-wiki-body-ce" contenteditable="true" role="textbox" aria-multiline="true" spellcheck="true" data-placeholder="Write the article. Link other entries with [[Character Name]] or [[Place Name]]."></div>
                                 <p class="sw-wiki-hint">Wikipedia-style: use <code>== Section ==</code> for headings and a table of contents. Link entries with <code>[[Name]]</code> — blue links exist, red links can be created.</p>
                             </div>
@@ -430,7 +432,7 @@
         })();
     </script>
     <script type="module">
-        import { bootStoryWikiPage } from "./js/story-wiki-boot.js?v=4";
+        import { bootStoryWikiPage } from "./js/story-wiki-boot.js?v=5";
         bootStoryWikiPage().catch(function (e) {
             console.error("[story-wiki]", e);
             var el = document.getElementById("sbHubLoading");
