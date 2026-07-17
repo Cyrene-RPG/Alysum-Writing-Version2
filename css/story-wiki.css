@@ -52,10 +52,15 @@
     background: rgba(0, 0, 0, 0.22);
     color: #c4b5fd;
     font-size: 12px;
-    font-weight: 800;
+    font-weight: 700;
     padding: 7px 12px;
     cursor: pointer;
-    font-family: ui-monospace, monospace;
+    font-family: var(--sb-ui, system-ui, sans-serif);
+}
+
+.sw-wiki-link-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
 }
 
 .sw-wiki-link-btn:hover {

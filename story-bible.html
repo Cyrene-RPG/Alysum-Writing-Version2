@@ -22,7 +22,7 @@
     <link rel="stylesheet" href="css/magic-codex.css?v=7" />
     <link rel="stylesheet" href="css/story-bible.css?v=9" />
     <link rel="stylesheet" href="css/story-bible-v10.css?v=2" />
-    <link rel="stylesheet" href="css/story-wiki.css?v=10" />
+    <link rel="stylesheet" href="css/story-wiki.css?v=11" />
     <script src="js/gradient-theme-sync.js" defer></script>
 </head>
 <body class="mc-page mc-bible alysum-with-workspace-nav alysum-tool-scroll">
@@ -282,7 +282,7 @@
                                         <button type="button" class="sw-wiki-mode-btn is-active" id="sbWikiModeRead" role="tab" aria-selected="true">Read</button>
                                         <button type="button" class="sw-wiki-mode-btn" id="sbWikiModeEdit" role="tab" aria-selected="false">Edit</button>
                                     </div>
-                                    <button type="button" class="sw-wiki-link-btn" id="sbWikiLinkBtn" title="Insert [[wikilink]]">[[link]]</button>
+                                    <button type="button" class="sw-wiki-link-btn" id="sbWikiLinkBtn" title="Select text in the article, then create a wiki link to it" disabled aria-disabled="true">Make hyperlink</button>
                                 </div>
                                 <div id="sbWikiRead" class="sw-wiki-read" aria-live="polite"></div>
                             </div>
@@ -386,7 +386,7 @@
 
                             <div class="sb-block sb-sheet-col-12 sw-wp-article-body-block">
                                 <h3 class="sb-block-title">Article text</h3>
-                                <div id="sbNotes" class="sb-wiki-body-ce" contenteditable="true" role="textbox" aria-multiline="true" spellcheck="true" data-placeholder="Write the article. Link other entries with [[Character Name]] or [[Place Name]]."></div>
+                                <div id="sbNotes" class="sb-wiki-body-ce" contenteditable="true" role="textbox" aria-multiline="true" spellcheck="true" data-placeholder="Write the article. Highlight a name and click Make hyperlink to link another entry."></div>
                                 <p class="sw-wiki-hint">Wikipedia-style: use <code>== Section ==</code> for headings and a table of contents. Link entries with <code>[[Name]]</code> — blue links exist, red links can be created.</p>
                             </div>
                             </div>
