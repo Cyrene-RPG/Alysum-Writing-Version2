@@ -408,139 +408,27 @@
         </div>
     </div>
 
-    <script type="module">
-        import { supabase } from "./firebase.js";
-        import { mountUnifiedStoryBible } from "./js/story-bible-unified.js?v=9";
-        import { requireStudioSession } from "./js/studio-session.js?v=2";
-        import { loadStoryWikiHub } from "./js/story-wiki-hub.js?v=1";
-        import { isStoryBibleUiEnabled, STORY_BIBLE_PREF_KEY, STORY_BIBLE_PREF_EVENT } from "./js/story-bible-prefs.js?v=1";
-
-        function hasBookContext() {
-            const fromQuery = (new URLSearchParams(window.location.search).get("book") || "").trim();
-            if (fromQuery) return true;
-            try {
-                return !!(sessionStorage.getItem("alysum-current-book-id") || localStorage.getItem("alysum-current-book-id"));
-            } catch {
-                return false;
-            }
-        }
-
-        function applyStoryBiblePageGate() {
-            const disabled = document.getElementById("sbDisabled");
-            const root = document.getElementById("sbEnabledRoot");
-            const hub = document.getElementById("sbHubView");
-            if (!disabled || !root) return !isStoryBibleUiEnabled();
-            const off = !isStoryBibleUiEnabled();
-            disabled.classList.toggle("hidden", !off);
-            root.classList.toggle("hidden", off);
-            hub?.classList.toggle("hidden", off);
-            return off;
-        }
-
-        window.addEventListener("storage", e => { if (e.key === STORY_BIBLE_PREF_KEY) location.reload(); });
-        window.addEventListener(STORY_BIBLE_PREF_EVENT, () => location.reload());
-
-        (async () => {
-            const hubLoading = document.getElementById("sbHubLoading");
-            const session = await requireStudioSession(supabase, "story-bible.html" + window.location.search);
-            if (!session) {
-                if (hubLoading) hubLoading.textContent = "Redirecting to sign in…";
-                return;
-            }
-            if (applyStoryBiblePageGate()) return;
-
-            const statusEl = document.getElementById("sbStatusLine");
-            const bookGrid = document.getElementById("sbBookGrid");
-            let hubPromise = null;
-            if (!hasBookContext()) {
-                hubPromise = loadStoryWikiHub(supabase, session.user.id, bookGrid, statusEl);
-            }
-
-            try {
-                await mountUnifiedStoryBible({
-                    supabase,
-                    uid: session.user.id,
-                    statusEl,
-                    hubView: document.getElementById("sbHubView"),
-                    bookView: document.getElementById("sbBookView"),
-                    bookGrid,
-                    charList: document.getElementById("sbCharList"),
-                    placeList: document.getElementById("sbPlaceList"),
-                    charGrid: document.getElementById("sbCharGrid"),
-                    placeGrid: document.getElementById("sbPlaceGrid"),
-                    placeSearch: document.getElementById("sbPlaceSearch"),
-                    rosterSearch: document.getElementById("sbRosterSearch"),
-                    newCharBtn: document.getElementById("sbNewChar"),
-                    newPlaceBtn: document.getElementById("sbNewPlace"),
-                    tabCharsBtn: document.getElementById("sbTabChars"),
-                    tabPlacesBtn: document.getElementById("sbTabPlaces"),
-                    asideCharsEl: document.getElementById("sbAsideChars"),
-                    asidePlacesEl: document.getElementById("sbAsidePlaces"),
-                    charFieldsEl: document.getElementById("sbFormCharFields"),
-                    placeFieldsEl: document.getElementById("sbFormPlaceFields"),
-                    placeParentEl: document.getElementById("sbFormPlaceParent"),
-                    charIdentityEl: document.getElementById("sbFormCharIdentity"),
-                    deceasedFieldEl: document.getElementById("sbFormDeceasedField"),
-                    entryHeroEl: document.getElementById("sbEntryHero"),
-                    editorDrawer: document.getElementById("sbEditorDrawer"),
-                    drawerClose: document.getElementById("sbDrawerClose"),
-                    formTitleEl: document.getElementById("sbFormTitle"),
-                    dirtyEl: document.getElementById("sbDirty"),
-                    healthBarEl: document.getElementById("sbHealthBar"),
-                    healthSummaryEl: document.getElementById("sbHealthSummary"),
-                    healthWarnEl: document.getElementById("sbHealthWarn"),
-                    labelNameEl: document.getElementById("sbLabelName"),
-                    labelAliasesEl: document.getElementById("sbLabelAliases"),
-                    saveCharBtn: document.getElementById("sbSaveChar"),
-                    deleteCharBtn: document.getElementById("sbDeleteChar"),
-                    openEditorLink: document.getElementById("sbOpenEditor"),
-                    openStoryBoardLink: document.getElementById("sbOpenStoryBoard"),
-                    importEditorLink: document.getElementById("sbImportEditorLink"),
-                    bookTitleEl: document.getElementById("sbBookTitle"),
-                    sidebarMetaEl: document.getElementById("sbSidebarMeta"),
-                    viewHeadingEl: document.getElementById("sbViewHeading"),
-                    fields: {
-                        name: document.getElementById("sbName"),
-                        aliases: document.getElementById("sbAliases"),
-                        pronouns: document.getElementById("sbPronouns"),
-                        status: document.getElementById("sbCharStatus"),
-                        deceased: document.getElementById("sbDeceased"),
-                        placeKind: document.getElementById("sbPlaceKind"),
-                        placeParent: document.getElementById("sbPlaceParent"),
-                        age: document.getElementById("sbAge"),
-                        eyes: document.getElementById("sbEyes"),
-                        hair: document.getElementById("sbHair"),
-                        height: document.getElementById("sbHeight"),
-                        skin: document.getElementById("sbSkin"),
-                        build: document.getElementById("sbBuild"),
-                        distinctive: document.getElementById("sbDistinctive"),
-                        tags: document.getElementById("sbTags"),
-                        introduced: document.getElementById("sbIntroduced"),
-                        notes: document.getElementById("sbNotes")
-                    },
-                    scanBtn: document.getElementById("sbScanBtn"),
-                    scanResultsEl: document.getElementById("sbScanResults"),
-                    scanLooseCheck: document.getElementById("sbScanLoose"),
-                    enrichBtn: document.getElementById("sbEnrichBtn"),
-                    enrichResultsEl: document.getElementById("sbEnrichResults"),
-                    scanDrawerEl: document.getElementById("sbScanDrawer"),
-                    scanDrawerClose: document.getElementById("sbScanDrawerClose"),
-                    scanDrawerSummary: document.getElementById("sbScanDrawerSummary")
-                });
-                if (hubPromise) await hubPromise;
-            } catch (e) {
-                console.error("[story-wiki]", e);
-                const status = document.getElementById("sbStatusLine");
-                if (status) {
-                    status.textContent = "Story Wiki failed to load. Hard refresh (Ctrl+Shift+R) and try again.";
-                    status.classList.add("is-error");
-                }
-                if (hubLoading) {
-                    hubLoading.textContent =
-                        "Story Wiki failed to load. Hard refresh (Ctrl+Shift+R) or open Studio, pick a book, then use Story Wiki from the nav.";
-                }
-            }
+    <script>
+        (function () {
+            window.setTimeout(function () {
+                var el = document.getElementById("sbHubLoading");
+                if (!el || !document.body.contains(el)) return;
+                el.innerHTML =
+                    'Still loading your books… Hard refresh (Ctrl+Shift+R), or open <a class="sb-link" href="writer-dashboard.html">Studio</a> to create a book first.';
+            }, 16000);
         })();
+    </script>
+    <script type="module">
+        import { bootStoryWikiPage } from "./js/story-wiki-boot.js?v=1";
+        bootStoryWikiPage().catch(function (e) {
+            console.error("[story-wiki]", e);
+            var el = document.getElementById("sbHubLoading");
+            var grid = document.getElementById("sbBookGrid");
+            var msg =
+                '<div class="sb-empty">Story Wiki failed to start. Hard refresh (Ctrl+Shift+R) and try again.</div>';
+            if (grid) grid.innerHTML = msg;
+            else if (el) el.outerHTML = msg;
+        });
     </script>
 </body>
 </html>

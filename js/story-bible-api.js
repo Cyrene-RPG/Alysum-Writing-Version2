@@ -353,18 +353,29 @@ export async function listUserBooksWithBibleCounts(supabase, uid) {
     const { data: bookRows, error } = await supabase
         .from("books")
         .select("id, title, updated")
-        .eq("user_id", uid);
+        .eq("user_id", uid)
+        .order("updated", { ascending: false });
     if (error) throw error;
 
-    const { data: charRows } = await supabase.from("story_bible_characters").select("book_id").eq("user_id", uid);
-    const { data: placeRows } = await supabase.from("story_bible_places").select("book_id").eq("user_id", uid);
+    let charRows = [];
+    let placeRows = [];
+    try {
+        const [charResult, placeResult] = await Promise.all([
+            supabase.from("story_bible_characters").select("book_id").eq("user_id", uid),
+            supabase.from("story_bible_places").select("book_id").eq("user_id", uid)
+        ]);
+        if (!charResult.error) charRows = charResult.data || [];
+        if (!placeResult.error) placeRows = placeResult.data || [];
+    } catch (e) {
+        console.warn("[story-bible-api] bible counts skipped:", e);
+    }
 
     const charCount = new Map();
     const placeCount = new Map();
-    (charRows || []).forEach(r => {
+    charRows.forEach(r => {
         charCount.set(r.book_id, (charCount.get(r.book_id) || 0) + 1);
     });
-    (placeRows || []).forEach(r => {
+    placeRows.forEach(r => {
         placeCount.set(r.book_id, (placeCount.get(r.book_id) || 0) + 1);
     });
 

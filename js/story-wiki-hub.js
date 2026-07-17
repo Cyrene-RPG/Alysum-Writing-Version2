@@ -1,7 +1,7 @@
 /**
  * Story Wiki hub — load book picker without waiting on the full page mount.
  */
-import { listUserBooksWithBibleCounts } from "./story-bible-api.js?v=12";
+import { listUserBooksWithBibleCounts } from "./story-bible-api.js?v=13";
 import { bookCoverGradient, escapeHtml } from "./story-bible-utils.js?v=1";
 
 function formatUpdated(ms) {
@@ -38,13 +38,13 @@ async function fetchStoryWikiHub(supabase, uid, bookGrid, statusEl, hubLinkPath)
     try {
         const rows = await withTimeout(
             listUserBooksWithBibleCounts(supabase, uid),
-            20_000,
+            15_000,
             "Loading books"
         );
         bookGrid.innerHTML = "";
         if (!rows.length) {
             bookGrid.innerHTML =
-                `<div class="sb-empty">No books yet. <a class="sb-link" href="writer-dashboard.html">Create one in Studio</a>, then open its Story Wiki here.</div>`;
+                `<div class="sb-empty">No books yet. <a class="sb-link" href="writer-dashboard.html">Create a book in Studio</a>, then return here — each book gets its own wiki.</div>`;
         } else {
             for (const r of rows) {
                 const open = `${hubLinkPath}?book=${encodeURIComponent(r.bookId)}`;
@@ -64,7 +64,7 @@ async function fetchStoryWikiHub(supabase, uid, bookGrid, statusEl, hubLinkPath)
                         <div class="sb-book-stats sb-muted">Updated ${formatUpdated(r.updated)}</div>
                         <div class="sb-book-actions">
                             <a class="sb-btn sb-btn-ghost" href="${ed}">Editor</a>
-                            <a class="sb-btn sb-btn-primary" href="${open}">Open wiki</a>
+                            <a class="sb-btn sb-btn-primary" href="${open}">Open wiki home</a>
                         </div>
                     </div>`;
                 bookGrid.appendChild(card);
