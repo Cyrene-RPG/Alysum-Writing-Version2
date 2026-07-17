@@ -132,7 +132,7 @@
 
     .summary-grid {
         display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
+        grid-template-columns: repeat(5, minmax(0, 1fr));
         gap: 14px;
         margin-top: 18px;
     }
@@ -244,7 +244,7 @@
 
     .book-stats {
         display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
+        grid-template-columns: repeat(5, minmax(0, 1fr));
         gap: 10px;
         margin-top: 14px;
     }
@@ -276,6 +276,139 @@
         margin-top: 14px;
         display: grid;
         gap: 8px;
+    }
+
+    .reaction-analytics {
+        margin-top: 18px;
+        padding-top: 18px;
+        border-top: 1px solid rgba(255,255,255,0.08);
+        display: grid;
+        gap: 18px;
+    }
+
+    .reaction-analytics-block h4 {
+        margin: 0 0 12px;
+        font-size: 15px;
+        font-weight: 900;
+    }
+
+    .reaction-totals-grid {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 12px 8px;
+    }
+
+    .reaction-total-cell {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        min-width: 0;
+    }
+
+    .reaction-total-pill {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        width: 100%;
+        padding: 8px 10px;
+        border-radius: 999px;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .reaction-total-emoji { font-size: 18px; line-height: 1; }
+    .reaction-total-count { font-size: 13px; font-weight: 900; color: var(--gold); }
+    .reaction-total-label {
+        font-size: 11px;
+        font-weight: 800;
+        color: var(--muted);
+        text-align: center;
+        line-height: 1.25;
+    }
+
+    .reaction-chart-wrap { display: grid; gap: 12px; }
+    .reaction-chart-bars {
+        display: flex;
+        align-items: flex-end;
+        gap: 6px;
+        overflow-x: auto;
+        padding-bottom: 4px;
+    }
+
+    .reaction-chart-bar-wrap {
+        flex: 1 0 28px;
+        min-width: 28px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .reaction-chart-bar-track {
+        width: 100%;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+    }
+
+    .reaction-chart-stack {
+        width: 100%;
+        max-width: 34px;
+        display: flex;
+        flex-direction: column-reverse;
+        justify-content: flex-start;
+        border-radius: 6px 6px 2px 2px;
+        overflow: hidden;
+        background: rgba(255,255,255,0.04);
+    }
+
+    .reaction-chart-stack.is-empty { background: rgba(255,255,255,0.06); }
+    .reaction-chart-segment { width: 100%; }
+    .reaction-chart-segment.is-empty { height: 100%; background: rgba(255,255,255,0.08); }
+
+    .reaction-chart-bar-label {
+        font-size: 10px;
+        font-weight: 800;
+        color: var(--muted);
+        min-height: 14px;
+    }
+
+    .reaction-chart-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 12px;
+    }
+
+    .reaction-chart-legend-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--muted);
+    }
+
+    .reaction-chart-legend-swatch {
+        width: 10px;
+        height: 10px;
+        border-radius: 2px;
+        flex-shrink: 0;
+    }
+
+    .reaction-chart-empty {
+        margin: 0;
+        color: var(--muted);
+        font-size: 13px;
+    }
+
+    @media (max-width: 900px) {
+        .reaction-totals-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 560px) {
+        .reaction-totals-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     }
 
     .comment-item {
@@ -496,6 +629,10 @@
             <div class="summary-label">Kudos</div>
         </div>
         <div class="summary-card">
+            <div class="summary-value" id="totalReactions">0</div>
+            <div class="summary-label">Reactions</div>
+        </div>
+        <div class="summary-card">
             <div class="summary-value" id="totalComments">0</div>
             <div class="summary-label">Comments</div>
         </div>
@@ -518,7 +655,7 @@
         <div class="panel-head">
             <div>
                 <h2>Your published books</h2>
-                <p>Stats use library reads and real kudos/comment counts from Supabase.</p>
+                <p>Stats use library reads and real kudos, reactions, and comment counts from Supabase.</p>
             </div>
             <button class="btn" id="refreshBtn" type="button">Refresh</button>
         </div>
@@ -541,6 +678,11 @@
         STORY_BIBLE_PREF_KEY,
         STORY_BIBLE_PREF_EVENT,
     } from "./js/story-bible-prefs.js?v=1";
+    import { aggregateChapterReactions } from "./js/chapter-reactions.js?v=2";
+    import {
+        renderChapterReactionChart,
+        renderReactionTotalsRow,
+    } from "./js/chapter-reactions-ui.js?v=1";
 
     const navStoryBible = document.getElementById("navStoryBible");
     const navReading = document.getElementById("navReading");
@@ -551,6 +693,7 @@
     const totalBooks = document.getElementById("totalBooks");
     const totalReads = document.getElementById("totalReads");
     const totalKudos = document.getElementById("totalKudos");
+    const totalReactions = document.getElementById("totalReactions");
     const totalComments = document.getElementById("totalComments");
     const loadingState = document.getElementById("loadingState");
     const errorState = document.getElementById("errorState");
@@ -567,6 +710,7 @@
     let libraryChannel = null;
     let readsChannel = null;
     let likesChannel = null;
+    let reactionsChannel = null;
     let commentsChannel = null;
     let refreshTimer = null;
 
@@ -682,7 +826,18 @@
 
     function normalizeBook(id, raw) {
         const data = raw && typeof raw === "object" ? raw : {};
-        const chapters = safeArray(data.chapters);
+        const rawChapters = safeArray(data.chapters);
+        const publishedIds = safeArray(data.publishedChapterIds);
+        let chapters = rawChapters.map((chapter, index) => {
+            const item = safeObject(chapter, {});
+            return {
+                id: safeString(item.id, `chapter-${index + 1}`),
+                title: safeString(item.title, `Chapter ${index + 1}`),
+                order: typeof item.order === "number" ? item.order : index + 1,
+            };
+        });
+        if (publishedIds.length) chapters = chapters.filter((ch) => publishedIds.includes(ch.id));
+        chapters.sort((a, b) => a.order - b.order);
         return {
             id,
             title: safeString(data.title, "Untitled"),
@@ -692,6 +847,7 @@
             views: safeNumber(data.views, 0),
             words: safeNumber(data.words, 0),
             chapterCount: safeNumber(data.chapterCount, chapters.length),
+            chapters,
             updated: data.updated || data.publishedAt || data.createdAt || 0,
             isPublished: data.isPublished !== false
         };
@@ -747,8 +903,12 @@
         return [...byId.values()];
     }
 
+    async function getChapterReactionRows(bookIds) {
+        return queryRowsByBookIds("chapter_reactions", bookIds, "id, chapter_id, reaction_type");
+    }
+
     async function getSubcollectionCount(bookIds, table) {
-        if (!["reads", "likes", "comments"].includes(table)) return 0;
+        if (!["reads", "likes", "comments", "chapter_reactions"].includes(table)) return 0;
         const rows = await queryRowsByBookIds(table, bookIds, "id");
         return rows.length;
     }
@@ -795,13 +955,15 @@
         const totals = books.reduce((acc, book) => {
             acc.reads += safeNumber(book.views);
             acc.kudos += safeNumber(book.kudos);
+            acc.reactions += safeNumber(book.reactions);
             acc.comments += safeNumber(book.comments);
             return acc;
-        }, { reads: 0, kudos: 0, comments: 0 });
+        }, { reads: 0, kudos: 0, reactions: 0, comments: 0 });
 
         totalBooks.textContent = formatNumber(books.length);
         totalReads.textContent = formatNumber(totals.reads);
         totalKudos.textContent = formatNumber(totals.kudos);
+        totalReactions.textContent = formatNumber(totals.reactions);
         totalComments.textContent = formatNumber(totals.comments);
 
         bookGrid.innerHTML = "";
@@ -812,8 +974,8 @@
         }
 
         books.sort((a, b) =>
-            (safeNumber(b.views) + safeNumber(b.kudos) * 3 + safeNumber(b.comments) * 2) -
-            (safeNumber(a.views) + safeNumber(a.kudos) * 3 + safeNumber(a.comments) * 2)
+            (safeNumber(b.views) + safeNumber(b.kudos) * 3 + safeNumber(b.reactions) + safeNumber(b.comments) * 2) -
+            (safeNumber(a.views) + safeNumber(a.kudos) * 3 + safeNumber(a.reactions) + safeNumber(a.comments) * 2)
         );
 
         books.forEach(book => {
@@ -847,13 +1009,26 @@
                 <div class="book-stats">
                     <div class="book-stat"><strong>${formatNumber(book.views)}</strong><span>Reads</span></div>
                     <div class="book-stat"><strong>${formatNumber(book.kudos)}</strong><span>Kudos</span></div>
+                    <div class="book-stat"><strong>${formatNumber(book.reactions)}</strong><span>Reactions</span></div>
                     <div class="book-stat"><strong>${formatNumber(book.comments)}</strong><span>Comments</span></div>
                     <div class="book-stat"><strong>${formatNumber(book.words)}</strong><span>Words</span></div>
+                </div>
+                <div class="reaction-analytics">
+                    <div class="reaction-analytics-block">
+                        <h4>Chapter Reactions Total</h4>
+                        <div class="reaction-totals-grid" data-reaction-totals></div>
+                    </div>
+                    <div class="reaction-analytics-block">
+                        <h4>Chapter Reactions by Chapter</h4>
+                        <div data-reaction-chart></div>
+                    </div>
                 </div>
                 <div class="comments">${commentsHtml}</div>
             `;
 
             bookGrid.appendChild(card);
+            renderReactionTotalsRow(card.querySelector("[data-reaction-totals]"), book.reactionTotalsByType || new Map());
+            renderChapterReactionChart(card.querySelector("[data-reaction-chart]"), book.chapters || [], book.reactionByChapter || new Map());
         });
 
         showState("grid");
@@ -995,6 +1170,7 @@
         if (libraryChannel) supabase.removeChannel(libraryChannel);
         if (readsChannel) supabase.removeChannel(readsChannel);
         if (likesChannel) supabase.removeChannel(likesChannel);
+        if (reactionsChannel) supabase.removeChannel(reactionsChannel);
         if (commentsChannel) supabase.removeChannel(commentsChannel);
 
         notifChannel = supabase
@@ -1015,6 +1191,11 @@
         likesChannel = supabase
             .channel("author_dash_likes_" + uid)
             .on("postgres_changes", { event: "*", schema: "public", table: "likes" }, scheduleDashboardRefresh)
+            .subscribe();
+
+        reactionsChannel = supabase
+            .channel("author_dash_reactions_" + uid)
+            .on("postgres_changes", { event: "*", schema: "public", table: "chapter_reactions" }, scheduleDashboardRefresh)
             .subscribe();
 
         commentsChannel = supabase
@@ -1050,6 +1231,10 @@
                 updated: typeof b.updated === "number" ? b.updated : 0,
                 views: 0,
                 kudos: 0,
+                reactions: 0,
+                reactionTotalsByType: new Map(),
+                reactionByChapter: new Map(),
+                chapters: [],
                 comments: 0,
                 words: typeof b.words === "number" ? b.words : 0,
                 recentComments: [],
@@ -1085,17 +1270,22 @@
             const ownedBooks = await loadPublishedBooks(currentUser.id);
             const enriched = await Promise.all(ownedBooks.map(async book => {
                 const ids = book.engagementBookIds || [book.id];
-                const [reads, kudos, comments, recentComments] = await Promise.all([
+                const [reads, kudos, reactionRows, comments, recentComments] = await Promise.all([
                     getSubcollectionCount(ids, "reads"),
                     getSubcollectionCount(ids, "likes"),
+                    getChapterReactionRows(ids),
                     getSubcollectionCount(ids, "comments"),
                     getRecentComments(ids)
                 ]);
+                const { totalsByType, byChapter } = aggregateChapterReactions(reactionRows);
 
                 return {
                     ...book,
                     views: Math.max(safeNumber(book.views), reads),
                     kudos,
+                    reactions: reactionRows.length,
+                    reactionTotalsByType: totalsByType,
+                    reactionByChapter: byChapter,
                     comments,
                     recentComments
                 };
@@ -1199,6 +1389,7 @@
         if (libraryChannel) supabase.removeChannel(libraryChannel);
         if (readsChannel) supabase.removeChannel(readsChannel);
         if (likesChannel) supabase.removeChannel(likesChannel);
+        if (reactionsChannel) supabase.removeChannel(reactionsChannel);
         if (commentsChannel) supabase.removeChannel(commentsChannel);
     });
 

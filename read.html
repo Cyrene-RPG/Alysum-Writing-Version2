@@ -140,6 +140,19 @@
         .likes-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
         .kudos-note, .kudos-count { color: var(--muted); font-size: 14px; line-height: 1.5; }
         .kudos-count { margin-top: 10px; font-weight: 800; }
+        .chapter-reactions { margin-top: 22px; padding-top: 22px; border-top: 1px solid var(--border); }
+        .chapter-reactions-title { font-size: 16px; font-weight: 800; margin-bottom: 14px; line-height: 1.45; text-align: center; }
+        .chapter-reactions-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px 10px; }
+        .chapter-reaction-cell { display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 0; }
+        .chapter-reaction-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 10px 12px; border-radius: 999px; border: 1px solid var(--border); background: var(--panel-2); cursor: pointer; font: inherit; transition: transform 0.12s ease, border-color 0.12s ease, background 0.12s ease; }
+        .chapter-reaction-btn:hover:not(:disabled) { transform: translateY(-1px); border-color: rgba(255, 255, 255, 0.28); }
+        body.light .chapter-reaction-btn:hover:not(:disabled) { border-color: rgba(0, 0, 0, 0.18); }
+        .chapter-reaction-btn.active { border-color: #e879a0; background: rgba(232, 121, 160, 0.14); }
+        .chapter-reaction-btn:disabled { cursor: default; opacity: 0.72; }
+        .chapter-reaction-emoji { font-size: 22px; line-height: 1; flex-shrink: 0; }
+        .chapter-reaction-count { font-size: 14px; font-weight: 800; color: var(--text); min-width: 1ch; }
+        .chapter-reaction-label { font-size: 12px; font-weight: 700; color: var(--muted); text-align: center; line-height: 1.3; }
+        @media (max-width: 760px) { .chapter-reactions-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
         .comment-list { display: grid; gap: 10px; margin-bottom: 12px; }
         .comment-item { border: 1px solid var(--border); background: var(--panel-2); border-radius: 16px; padding: 12px; }
         .comment-user { font-size: 13px; font-weight: 900; margin-bottom: 6px; }
@@ -241,7 +254,7 @@
                 <div class="chip-block hidden"><div class="chip-label">Tags</div><div class="chip-row" id="tagList"></div></div><div class="chip-block hidden"><div class="chip-label">Warnings</div><div class="chip-row" id="warningList"></div></div>
             </div>
             <div class="nav-row"><button class="btn" id="prevBtn">← Prev</button><div class="nav-center"><div class="nav-label">Current Chapter</div><div class="nav-current" id="chapterIndicator">Loading…</div></div><button class="btn" id="nextBtn">Next →</button></div>
-            <div class="reader-card"><div class="reader-head"><h2 class="chapter-title" id="chapterTitle">Loading…</h2><div class="chapter-meta" id="chapterMeta"></div></div><div class="reader-chapter-wrap alysum-rw-wrap"><div class="alysum-rw-sheet" id="readerWatermarkSheet" aria-hidden="true"></div><div class="reader-body alysum-rw-body"><div class="content" id="content"></div></div><div class="alysum-rw-footer" id="readerWatermarkFooter"></div></div><div class="reader-next-chapter-wrap"><button class="btn primary reader-next-chapter-btn" id="nextChapterBottomBtn" type="button">Next Chapter →</button></div></div>
+            <div class="reader-card"><div class="reader-head"><h2 class="chapter-title" id="chapterTitle">Loading…</h2><div class="chapter-meta" id="chapterMeta"></div></div><div class="reader-chapter-wrap alysum-rw-wrap"><div class="alysum-rw-sheet" id="readerWatermarkSheet" aria-hidden="true"></div><div class="reader-body alysum-rw-body"><div class="content" id="content"></div></div><div class="alysum-rw-footer" id="readerWatermarkFooter"></div></div><div class="reader-next-chapter-wrap"><button class="btn primary reader-next-chapter-btn" id="nextChapterBottomBtn" type="button">Next Chapter →</button></div><div class="chapter-reactions" id="chapterReactions"><div class="chapter-reactions-title" id="chapterReactionsTitle">Let the author know what you thought about this chapter!</div><div class="chapter-reactions-grid" id="chapterReactionsGrid"></div></div></div>
             <div class="reader-tools"><button class="btn primary" id="bookmarkBtn">Bookmark This Chapter</button><button class="btn" id="resumeBtn">Resume Where I Left Off</button><button class="btn btn-report hidden" id="reportBookBtn" type="button">Report Book</button></div>
             <div class="likes-card"><div class="likes-title">Kudos</div><div class="likes-row"><button class="btn primary" id="likeBtn">❤️ Leave Kudos</button><div class="kudos-note">One Per User.</div></div><div class="kudos-count" id="likeCount">0 kudos</div></div>
             <div class="comments-card"><div class="comments-title">Comments</div><div class="comment-list" id="commentList"></div><div class="comment-form"><textarea class="comment-input" id="commentInput" placeholder="Write a comment…"></textarea><button class="btn primary" id="postCommentBtn">Post Comment</button></div></div>
@@ -263,6 +276,12 @@
         mediaFormatLabel,
         normalizeMediaFormat,
     } from "./js/book-media-format.js?v=1";
+    import {
+        CHAPTER_REACTIONS,
+        chapterReactionId,
+        isValidReactionType,
+    } from "./js/chapter-reactions.js?v=2";
+    import { readerReactionAuthorPrompt } from "./js/chapter-reactions-ui.js?v=1";
 
     const params = new URLSearchParams(window.location.search);
     let bookId =
@@ -275,9 +294,9 @@
         localStorage.getItem("alysum-last-book") ||
         "";
 
-    const backBtn = document.getElementById("backBtn"), themeBtn = document.getElementById("themeBtn"), fontMinusBtn = document.getElementById("fontMinusBtn"), fontPlusBtn = document.getElementById("fontPlusBtn"), menuBtn = document.getElementById("menuBtn"), mobileDrawer = document.getElementById("mobileDrawer"), drawerBackdrop = document.getElementById("drawerBackdrop"), closeDrawerBtn = document.getElementById("closeDrawerBtn"), topbarTitle = document.getElementById("topbarTitle"), topbarSubtitle = document.getElementById("topbarSubtitle"), betaReadTopBtn = document.getElementById("betaReadTopBtn"), readerProfileTopBtn = document.getElementById("readerProfileTopBtn"), allNotesTopBtn = document.getElementById("allNotesTopBtn"), statusBox = document.getElementById("statusBox"), errorBox = document.getElementById("errorBox"), bookTitle = document.getElementById("bookTitle"), bookAuthor = document.getElementById("bookAuthor"), bookSummary = document.getElementById("bookSummary"), statChapters = document.getElementById("statChapters"), statWords = document.getElementById("statWords"), statReads = document.getElementById("statReads"), statType = document.getElementById("statType"), statRating = document.getElementById("statRating"), tagList = document.getElementById("tagList"), warningList = document.getElementById("warningList"), sideBookTitle = document.getElementById("sideBookTitle"), sideBookAuthor = document.getElementById("sideBookAuthor"), sideBookSummary = document.getElementById("sideBookSummary"), sideTagList = document.getElementById("sideTagList"), sideWarningList = document.getElementById("sideWarningList"), drawerBookTitle = document.getElementById("drawerBookTitle"), drawerBookAuthor = document.getElementById("drawerBookAuthor"), drawerBookSummary = document.getElementById("drawerBookSummary"), drawerTagList = document.getElementById("drawerTagList"), drawerWarningList = document.getElementById("drawerWarningList"), prevBtn = document.getElementById("prevBtn"), nextBtn = document.getElementById("nextBtn"), nextChapterBottomBtn = document.getElementById("nextChapterBottomBtn"), chapterIndicator = document.getElementById("chapterIndicator"), chapterTitle = document.getElementById("chapterTitle"), chapterMeta = document.getElementById("chapterMeta"), content = document.getElementById("content"), bookmarkBtn = document.getElementById("bookmarkBtn"), resumeBtn = document.getElementById("resumeBtn"), reportBookBtn = document.getElementById("reportBookBtn"), likeBtn = document.getElementById("likeBtn"), likeCount = document.getElementById("likeCount"), commentList = document.getElementById("commentList"), commentInput = document.getElementById("commentInput"), postCommentBtn = document.getElementById("postCommentBtn");
+    const backBtn = document.getElementById("backBtn"), themeBtn = document.getElementById("themeBtn"), fontMinusBtn = document.getElementById("fontMinusBtn"), fontPlusBtn = document.getElementById("fontPlusBtn"), menuBtn = document.getElementById("menuBtn"), mobileDrawer = document.getElementById("mobileDrawer"), drawerBackdrop = document.getElementById("drawerBackdrop"), closeDrawerBtn = document.getElementById("closeDrawerBtn"), topbarTitle = document.getElementById("topbarTitle"), topbarSubtitle = document.getElementById("topbarSubtitle"), betaReadTopBtn = document.getElementById("betaReadTopBtn"), readerProfileTopBtn = document.getElementById("readerProfileTopBtn"), allNotesTopBtn = document.getElementById("allNotesTopBtn"), statusBox = document.getElementById("statusBox"), errorBox = document.getElementById("errorBox"), bookTitle = document.getElementById("bookTitle"), bookAuthor = document.getElementById("bookAuthor"), bookSummary = document.getElementById("bookSummary"), statChapters = document.getElementById("statChapters"), statWords = document.getElementById("statWords"), statReads = document.getElementById("statReads"), statType = document.getElementById("statType"), statRating = document.getElementById("statRating"), tagList = document.getElementById("tagList"), warningList = document.getElementById("warningList"), sideBookTitle = document.getElementById("sideBookTitle"), sideBookAuthor = document.getElementById("sideBookAuthor"), sideBookSummary = document.getElementById("sideBookSummary"), sideTagList = document.getElementById("sideTagList"), sideWarningList = document.getElementById("sideWarningList"), drawerBookTitle = document.getElementById("drawerBookTitle"), drawerBookAuthor = document.getElementById("drawerBookAuthor"), drawerBookSummary = document.getElementById("drawerBookSummary"), drawerTagList = document.getElementById("drawerTagList"), drawerWarningList = document.getElementById("drawerWarningList"), prevBtn = document.getElementById("prevBtn"), nextBtn = document.getElementById("nextBtn"), nextChapterBottomBtn = document.getElementById("nextChapterBottomBtn"), chapterIndicator = document.getElementById("chapterIndicator"), chapterTitle = document.getElementById("chapterTitle"), chapterMeta = document.getElementById("chapterMeta"), content = document.getElementById("content"), bookmarkBtn = document.getElementById("bookmarkBtn"), resumeBtn = document.getElementById("resumeBtn"), reportBookBtn = document.getElementById("reportBookBtn"), likeBtn = document.getElementById("likeBtn"), likeCount = document.getElementById("likeCount"), chapterReactionsTitle = document.getElementById("chapterReactionsTitle"), chapterReactionsGrid = document.getElementById("chapterReactionsGrid"), commentList = document.getElementById("commentList"), commentInput = document.getElementById("commentInput"), postCommentBtn = document.getElementById("postCommentBtn");
 
-    let currentUser = null, currentBook = null, librarySourceRow = null, currentChapterIndex = 0, isLoaded = false, currentFontSize = 22, hasLikedThisBook = false, readerWatermarkProfileUser = null, bookOwnerHandle = null;
+    let currentUser = null, currentBook = null, librarySourceRow = null, currentChapterIndex = 0, isLoaded = false, currentFontSize = 22, hasLikedThisBook = false, readerWatermarkProfileUser = null, bookOwnerHandle = null, chapterReactionBusy = false, userChapterReactionTypes = new Set();
 
     installReaderCopyGuards(content, { isActive: () => isLoaded && !!currentBook });
 
@@ -481,6 +500,123 @@
         saveResumePosition();
         chapterTitle.scrollIntoView({ behavior: "smooth", block: "start" });
         loadComments();
+        void loadChapterReactions();
+    }
+
+    function updateChapterReactionsTitle() {
+        if (!chapterReactionsTitle) return;
+        const author = currentBook?.isAnonymous
+            ? "Anonymous"
+            : (bookOwnerHandle || currentBook?.author || "");
+        chapterReactionsTitle.textContent = readerReactionAuthorPrompt(author);
+    }
+
+    function renderChapterReactionButtons(countsByType) {
+        if (!chapterReactionsGrid) return;
+        updateChapterReactionsTitle();
+        chapterReactionsGrid.innerHTML = "";
+        for (const reaction of CHAPTER_REACTIONS) {
+            const count = countsByType.get(reaction.type) || 0;
+            const active = userChapterReactionTypes.has(reaction.type);
+            const cell = document.createElement("div");
+            cell.className = "chapter-reaction-cell";
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "chapter-reaction-btn" + (active ? " active" : "");
+            btn.dataset.reactionType = reaction.type;
+            btn.setAttribute("aria-label", `${reaction.label}, ${formatNumber(count)}${active ? ", selected" : ""}`);
+            btn.disabled = chapterReactionBusy;
+            btn.innerHTML = `<span class="chapter-reaction-emoji" aria-hidden="true">${reaction.emoji}</span><span class="chapter-reaction-count">${formatNumber(count)}</span>`;
+            btn.addEventListener("click", () => toggleChapterReaction(reaction.type));
+            cell.appendChild(btn);
+            const label = document.createElement("div");
+            label.className = "chapter-reaction-label";
+            label.textContent = reaction.label;
+            cell.appendChild(label);
+            chapterReactionsGrid.appendChild(cell);
+        }
+    }
+
+    async function loadChapterReactions() {
+        if (!bookId || !currentBook?.chapters?.length || !chapterReactionsGrid) {
+            userChapterReactionTypes = new Set();
+            renderChapterReactionButtons(new Map());
+            return;
+        }
+        const chapter = currentChapter();
+        const chapterId = safeString(chapter?.id, "");
+        if (!chapterId) {
+            userChapterReactionTypes = new Set();
+            renderChapterReactionButtons(new Map());
+            return;
+        }
+        try {
+            const eids = [...new Set(engagementBookIdsForReader())];
+            const rowsById = new Map();
+            for (const bid of eids) {
+                const { data, error } = await supabase
+                    .from("chapter_reactions")
+                    .select("id, user_id, reaction_type")
+                    .eq("book_id", bid)
+                    .eq("chapter_id", chapterId);
+                if (error) continue;
+                for (const row of data || []) {
+                    if (row?.id && !rowsById.has(row.id)) rowsById.set(row.id, row);
+                }
+            }
+            const countsByType = new Map();
+            userChapterReactionTypes = new Set();
+            for (const row of rowsById.values()) {
+                const type = safeString(row.reaction_type, "");
+                if (!isValidReactionType(type)) continue;
+                countsByType.set(type, (countsByType.get(type) || 0) + 1);
+                if (currentUser && row.user_id === currentUser.id) userChapterReactionTypes.add(type);
+            }
+            renderChapterReactionButtons(countsByType);
+        } catch (error) {
+            console.error(error);
+            userChapterReactionTypes = new Set();
+            renderChapterReactionButtons(new Map());
+            if (chapterReactionsTitle) chapterReactionsTitle.textContent = "Couldn’t load reactions.";
+        }
+    }
+
+    async function toggleChapterReaction(reactionType) {
+        if (!isValidReactionType(reactionType)) return;
+        if (!currentUser) {
+            showStatus("Log in to react to chapters.");
+            setTimeout(hideStatus, 1600);
+            return;
+        }
+        if (!bookId || !currentBook?.chapters?.length || chapterReactionBusy) return;
+        const chapterId = safeString(currentChapter()?.id, "");
+        if (!chapterId) return;
+        chapterReactionBusy = true;
+        chapterReactionsGrid?.querySelectorAll(".chapter-reaction-btn").forEach((btn) => { btn.disabled = true; });
+        try {
+            const reactionRowId = chapterReactionId(bookId, chapterId, currentUser.id, reactionType);
+            if (userChapterReactionTypes.has(reactionType)) {
+                const { error } = await supabase.from("chapter_reactions").delete().eq("id", reactionRowId);
+                if (error) throw error;
+            } else {
+                const { error } = await supabase.from("chapter_reactions").insert({
+                    id: reactionRowId,
+                    book_id: bookId,
+                    chapter_id: chapterId,
+                    user_id: currentUser.id,
+                    reaction_type: reactionType,
+                    created_at: new Date().toISOString(),
+                });
+                if (error) throw error;
+            }
+            await loadChapterReactions();
+        } catch (error) {
+            console.error(error);
+            showError("Failed to save reaction.");
+            await loadChapterReactions();
+        } finally {
+            chapterReactionBusy = false;
+        }
     }
 
     async function loadLikeState() {
@@ -526,7 +662,7 @@
 
     function updateReaderWatermark() { const sheet = document.getElementById("readerWatermarkSheet"); const footer = document.getElementById("readerWatermarkFooter"); if (!sheet || !footer) return; if (!bookId || !currentBook) { sheet.innerHTML = ""; footer.textContent = ""; return; } const ownerName = bookOwnerHandle || currentBook.author || null; applyReaderWatermark(sheet, footer, { bookId, currentUser, profileUsername: readerWatermarkProfileUser, bookOwnerUsername: ownerName }); }
     async function syncReaderWatermarkProfile() { const u = currentUser; if (!u?.id) { readerWatermarkProfileUser = null; updateReaderWatermark(); return; } try { const { data } = await supabase.from("users").select("username").eq("id", u.id).maybeSingle(); readerWatermarkProfileUser = String(data?.username || "").trim() || null; } catch { readerWatermarkProfileUser = null; } updateReaderWatermark(); }
-    async function syncBookOwnerHandle() { if (currentBook?.isAnonymous) { bookOwnerHandle = "Anonymous"; updateReaderWatermark(); return; } const ownerUid = currentBook?.ownerUid; if (!ownerUid) { bookOwnerHandle = null; updateReaderWatermark(); return; } try { const { data } = await supabase.from("users").select("username").eq("id", ownerUid).maybeSingle(); bookOwnerHandle = String(data?.username || "").trim() || null; } catch { bookOwnerHandle = null; } updateReaderWatermark(); }
+    async function syncBookOwnerHandle() { if (currentBook?.isAnonymous) { bookOwnerHandle = "Anonymous"; updateReaderWatermark(); updateChapterReactionsTitle(); return; } const ownerUid = currentBook?.ownerUid; if (!ownerUid) { bookOwnerHandle = null; updateReaderWatermark(); updateChapterReactionsTitle(); return; } try { const { data } = await supabase.from("users").select("username").eq("id", ownerUid).maybeSingle(); bookOwnerHandle = String(data?.username || "").trim() || null; } catch { bookOwnerHandle = null; } updateReaderWatermark(); updateChapterReactionsTitle(); }
 
     async function loadBook() {
         if (!bookId) bookId = await findFallbackBookId();
@@ -678,7 +814,7 @@
     fontPlusBtn.addEventListener("click", () => { currentFontSize = Math.min(32, currentFontSize + 2); applyFontSize(currentFontSize); });
     postCommentBtn.addEventListener("click", postComment); likeBtn.addEventListener("click", leaveKudos); menuBtn.addEventListener("click", openDrawer); closeDrawerBtn.addEventListener("click", closeDrawer); drawerBackdrop.addEventListener("click", closeDrawer);
 
-    async function initAuth() { const { data } = await supabase.auth.getUser(); currentUser = data?.user || null; if (currentUser) { hideStatus(); void syncReaderWatermarkProfile(); } else { readerWatermarkProfileUser = null; showStatus("Read-only mode. Log in to leave comments or kudos."); updateReaderWatermark(); } }
+    async function initAuth() { const { data } = await supabase.auth.getUser(); currentUser = data?.user || null; if (currentUser) { hideStatus(); void syncReaderWatermarkProfile(); } else { readerWatermarkProfileUser = null; showStatus("Read-only mode. Log in to leave comments, kudos, or reactions."); updateReaderWatermark(); } if (currentBook?.chapters?.length) void loadChapterReactions(); }
     const savedTheme = localStorage.getItem("alysum-reader-theme") || "dark"; const savedFont = parseInt(localStorage.getItem("alysum-reader-font-size") || "22", 10); applyTheme(savedTheme); if (Number.isFinite(savedFont)) { currentFontSize = savedFont; applyFontSize(savedFont); }
     await initAuth();
     await loadBook();

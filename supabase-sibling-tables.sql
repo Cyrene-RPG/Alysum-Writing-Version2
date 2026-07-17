@@ -287,6 +287,19 @@ CREATE TABLE IF NOT EXISTS public.likes (
 
 CREATE INDEX IF NOT EXISTS likes_book_id_idx ON public.likes (book_id);
 
+CREATE TABLE IF NOT EXISTS public.chapter_reactions (
+  id text PRIMARY KEY,
+  book_id text NOT NULL,
+  chapter_id text NOT NULL,
+  user_id uuid NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE,
+  reaction_type text NOT NULL CHECK (reaction_type IN ('love', 'funny', 'spicy', 'suspenseful', 'emotional', 'profound', 'heartwarming', 'shocking', 'good_writing', 'compelling_plot', 'great_character', 'strong_dialog')),
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS chapter_reactions_book_id_idx ON public.chapter_reactions (book_id);
+CREATE INDEX IF NOT EXISTS chapter_reactions_book_chapter_idx ON public.chapter_reactions (book_id, chapter_id);
+CREATE INDEX IF NOT EXISTS chapter_reactions_user_id_idx ON public.chapter_reactions (user_id);
+
 CREATE TABLE IF NOT EXISTS public.reads (
   id text PRIMARY KEY,
   book_id text NOT NULL,
@@ -299,6 +312,7 @@ CREATE INDEX IF NOT EXISTS reads_book_id_idx ON public.reads (book_id);
 
 ALTER TABLE public.comments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.likes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.chapter_reactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.reads ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "comments_select_public" ON public.comments;
@@ -349,6 +363,21 @@ CREATE POLICY "likes_update_own" ON public.likes
   USING (auth.uid() = user_id)
   WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "chapter_reactions_select_public" ON public.chapter_reactions;
+CREATE POLICY "chapter_reactions_select_public" ON public.chapter_reactions
+  FOR SELECT TO anon, authenticated
+  USING (true);
+
+DROP POLICY IF EXISTS "chapter_reactions_insert_own" ON public.chapter_reactions;
+CREATE POLICY "chapter_reactions_insert_own" ON public.chapter_reactions
+  FOR INSERT TO authenticated
+  WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "chapter_reactions_delete_own" ON public.chapter_reactions;
+CREATE POLICY "chapter_reactions_delete_own" ON public.chapter_reactions
+  FOR DELETE TO authenticated
+  USING (auth.uid() = user_id);
+
 DROP POLICY IF EXISTS "reads_select_public" ON public.reads;
 CREATE POLICY "reads_select_public" ON public.reads
   FOR SELECT TO anon, authenticated
@@ -370,6 +399,14 @@ GRANT INSERT, UPDATE, DELETE ON public.comments TO authenticated;
 
 GRANT SELECT ON public.likes TO anon, authenticated;
 GRANT INSERT, UPDATE, DELETE ON public.likes TO authenticated;
+
+GRANT SELECT ON public.chapter_reactions TO anon, authenticated;
+GRANT INSERT, DELETE ON public.chapter_reactions TO authenticated;
+
+-- Expand Inkitt-style reaction types if an earlier migration created the table.
+ALTER TABLE public.chapter_reactions DROP CONSTRAINT IF EXISTS chapter_reactions_reaction_type_check;
+ALTER TABLE public.chapter_reactions ADD CONSTRAINT chapter_reactions_reaction_type_check
+  CHECK (reaction_type IN ('love', 'funny', 'spicy', 'suspenseful', 'emotional', 'profound', 'heartwarming', 'shocking', 'good_writing', 'compelling_plot', 'great_character', 'strong_dialog'));
 
 GRANT SELECT, INSERT, UPDATE ON public.reads TO anon, authenticated;
 
