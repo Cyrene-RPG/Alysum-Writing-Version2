@@ -2,7 +2,7 @@
  * Story Wiki wikilinks — [[Title]] and [[Title|kind]] links between encyclopedia entries.
  */
 
-import { formatWikiLinkMarker, parseWikiLinkInner, WIKI_LINK_KINDS } from "./story-wiki-link-picker.js?v=2";
+import { formatWikiLinkMarker, parseWikiLinkInner, WIKI_LINK_KINDS } from "./story-wiki-link-picker.js?v=1";
 
 function escapeHtml(s) {
     return String(s)
@@ -79,57 +79,6 @@ export function findWikiEntryByTitle(index, title, preferredKind = null) {
 function makeBarePhraseRegex(phrase) {
     const e = phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     return new RegExp(`(^|[^\\p{L}\\p{N}_])(${e})(?![\\p{L}\\p{N}_])`, "giu");
-}
-
-function escapeRegex(s) {
-    return String(s || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-/**
- * True when phrase is the full title or a whole word inside one of this entry's names/aliases.
- * Stops bare auto-link from turning "Ryder Vesper…" into [[Ryder]] Vesper… on the subject's own article.
- * @param {string} phrase
- * @param {WikiEntry|null} selfEntry
- */
-function isPhrasePartOfOwnName(phrase, selfEntry) {
-    if (!selfEntry || !phrase) return false;
-    const p = phrase.trim().toLowerCase();
-    if (!p) return false;
-    for (const title of selfEntry.titles) {
-        const t = title.trim().toLowerCase();
-        if (!t) continue;
-        if (t === p) return true;
-        const re = new RegExp(`(^|[\\s\\p{P}])${escapeRegex(p)}($|[\\s\\p{P}])`, "iu");
-        if (re.test(t)) return true;
-    }
-    return false;
-}
-
-/**
- * Strip a mistaken leading [[Title]] when Title is the article subject's own first word
- * but resolves to a different entry (leftover from bare auto-link).
- */
-function unwrapMislinkedOwnNamePrefix(text, index, selfEntry) {
-    if (!selfEntry?.canonical) return text;
-    const firstWord = selfEntry.canonical.trim().split(/\s+/)[0];
-    if (!firstWord) return text;
-    const re = new RegExp(`^\\[\\[([^\\]|]+)(?:\\|[^\\]]*)?\\]\\]\\s*`, "iu");
-    let out = String(text || "");
-    const m = out.match(re);
-    if (!m) return out;
-    const linkedTitle = m[1].trim();
-    const entry = findWikiEntryByTitle(index, linkedTitle, null);
-    if (!entry || entry.id === selfEntry.id) return out;
-    // Wrong link immediately before rest of subject name
-    const rest = out.slice(m[0].length);
-    // [[Ryder]] Vesper Talia Darkstar… — drop stray link before own title
-    if (rest.toLowerCase().startsWith(selfEntry.canonical.trim().toLowerCase())) {
-        return rest;
-    }
-    if (linkedTitle.toLowerCase() === firstWord.toLowerCase()) {
-        return firstWord + rest;
-    }
-    return out;
 }
 
 /** @param {string} plain */
@@ -241,11 +190,7 @@ export function rerouteWikiLinksToExternalBook(plain, move, index) {
 export function normalizeStoryWikiPlain(text, index, currentEntryId = null) {
     let t = text == null ? "" : String(text);
     const selfEntry = currentEntryId ? index.find(e => e.id === currentEntryId) : null;
-    const selfTitleSet = selfEntry
-        ? new Set(selfEntry.titles.map(title => title.trim().toLowerCase()).filter(Boolean))
-        : new Set();
-
-    t = unwrapMislinkedOwnNamePrefix(t, index, selfEntry);
+    const selfLower = selfEntry?.canonical?.toLowerCase() || "";
 
     let prev = null;
     let guard = 0;
@@ -264,16 +209,7 @@ export function normalizeStoryWikiPlain(text, index, currentEntryId = null) {
         ...new Set(
             index
                 .flatMap(e => e.titles)
-                .filter(n => {
-                    const lower = n.trim().toLowerCase();
-                    if (!lower) return false;
-                    if (selfTitleSet.has(lower)) return false;
-                    if (isPhrasePartOfOwnName(n, selfEntry)) return false;
-                    // Multi-word titles only — single-word bare auto-link causes false positives
-                    // (e.g. "Ryder" linked before "Vesper Talia Darkstar", or brother names everywhere).
-                    if (!/\s/.test(n.trim())) return false;
-                    return true;
-                })
+                .filter(n => n.toLowerCase() !== selfLower)
         )
     ].sort((a, b) => b.length - a.length);
 
@@ -389,7 +325,7 @@ function renderWikiLinkPart(part, index, opts) {
     if (bookId && bookId !== opts.currentBookId) {
         const type = kind || "character";
         return (
-            `<a href="javascript:void(0)" class="sw-wiki-link sw-wiki-link-external sw-wiki-link-${escapeHtml(type)}" ` +
+            `<a href="#" class="sw-wiki-link sw-wiki-link-external sw-wiki-link-${escapeHtml(type)}" ` +
             `data-wiki-book="${escapeHtml(bookId)}" ` +
             `data-wiki-type="${escapeHtml(type)}" ` +
             `data-wiki-title="${escapeHtml(display)}" ` +
@@ -401,7 +337,7 @@ function renderWikiLinkPart(part, index, opts) {
     const canonical = entry?.canonical || title;
     if (entry) {
         return (
-            `<a href="javascript:void(0)" class="sw-wiki-link sw-wiki-link-${escapeHtml(entry.type)}" ` +
+            `<a href="#" class="sw-wiki-link sw-wiki-link-${escapeHtml(entry.type)}" ` +
             `data-wiki-type="${escapeHtml(entry.type)}" ` +
             `data-wiki-id="${escapeHtml(entry.id)}" ` +
             `data-wiki-title="${escapeHtml(entry.canonical)}" ` +
@@ -412,7 +348,7 @@ function renderWikiLinkPart(part, index, opts) {
     const kindAttr = kind ? ` data-wiki-link-kind="${escapeHtml(kind)}"` : "";
     const kindClass = kind ? ` sw-wiki-link-intent-${escapeHtml(kind)}` : "";
     return (
-        `<a href="javascript:void(0)" class="sw-wiki-link is-missing${kindClass}" ` +
+        `<a href="#" class="sw-wiki-link is-missing${kindClass}" ` +
         `data-wiki-title="${escapeHtml(display)}"${kindAttr} ` +
         `${opts.forRead ? "" : 'contenteditable="false" '}` +
         `>${escapeHtml(display)}</a>`

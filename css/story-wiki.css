@@ -596,27 +596,6 @@ a.sw-wiki-link.is-missing:hover {
     display: none !important;
 }
 
-/* Read mode: keep infobox/metadata field boxes visible below the article */
-.sb-wiki-edit-wrap.is-read-metadata {
-    margin-top: 12px;
-}
-
-.sb-wiki-edit-wrap.is-read-metadata .sw-wp-title-block,
-.sb-wiki-edit-wrap.is-read-metadata .sw-wp-article-body-block {
-    display: none !important;
-}
-
-.sb-wiki-edit-wrap.is-read-metadata .sw-wp-advanced-fields {
-    border-color: rgba(167, 139, 250, 0.28);
-}
-
-.sb-wiki-edit-wrap.is-read-metadata .sb-field input[readonly],
-.sb-wiki-edit-wrap.is-read-metadata .sb-field select:disabled,
-.sb-wiki-edit-wrap.is-read-metadata .sb-field textarea[readonly] {
-    cursor: default;
-    opacity: 0.96;
-}
-
 @media (max-width: 720px) {
     .sw-infobox {
         float: none;
@@ -1187,7 +1166,7 @@ a.sw-wiki-link.is-missing:hover {
 
 .sw-wp-portal-grid {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(220px, 28%);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(240px, 32%);
     gap: 14px;
     align-items: stretch;
     min-height: 0;
@@ -1858,54 +1837,4 @@ body.sw-wp-book-open .sw-wp-skin .sb-view {
 
 body.sw-wp-book-open #sbEnabledRoot > .sb-status-line:empty {
     display: none;
-}
-
-.sb-wiki-debug-panel {
-    position: fixed;
-    right: 0.75rem;
-    bottom: 0.75rem;
-    z-index: 99999;
-    width: min(460px, calc(100vw - 1.5rem));
-    max-height: 52vh;
-    overflow: auto;
-    margin: 0;
-    padding: 0;
-    font: 11px/1.35 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    color: #e8f4ff;
-    background: rgba(8, 16, 28, 0.94);
-    border: 1px solid rgba(120, 180, 255, 0.35);
-    border-radius: 8px;
-    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
-    pointer-events: auto;
-}
-
-.sb-wiki-debug-head {
-    padding: 0.5rem 0.65rem;
-    border-bottom: 1px solid rgba(120, 180, 255, 0.2);
-    font-weight: 700;
-}
-
-.sb-wiki-debug-head button {
-    font: inherit;
-    color: #93c5fd;
-    background: transparent;
-    border: 1px solid rgba(147, 197, 253, 0.35);
-    border-radius: 4px;
-    padding: 0 6px;
-    cursor: pointer;
-}
-
-.sb-wiki-debug-state,
-.sb-wiki-debug-log {
-    margin: 0;
-    padding: 0.55rem 0.65rem;
-    white-space: pre-wrap;
-    word-break: break-word;
-}
-
-.sb-wiki-debug-log {
-    border-top: 1px solid rgba(120, 180, 255, 0.15);
-    color: #bae6fd;
-    max-height: 18vh;
-    overflow: auto;
 }

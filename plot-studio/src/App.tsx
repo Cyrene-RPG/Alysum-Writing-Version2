@@ -43,7 +43,7 @@ export default function App() {
   const [listDraft, setListDraft] = useState("");
 
   const editorHref = bookId ? `../editor.html?book=${encodeURIComponent(bookId)}` : "../writer-dashboard.html";
-  const bibleHref = bookId ? `../story-bible.html?book=${encodeURIComponent(bookId)}` : "../story-bible.html";
+  const bibleHref = bookId ? `../Story-Bible-New.html?book=${encodeURIComponent(bookId)}` : "../Story-Bible-New.html";
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { delay: 140, tolerance: 6 } })

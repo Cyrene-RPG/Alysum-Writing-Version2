@@ -112,7 +112,6 @@ function normalizeLoreWikiRow(row) {
         entryCount: Number(data.entryCount) || 0,
         characterCount: Number(data.characterCount) || 0,
         placeCount: Number(data.placeCount) || 0,
-        objectCount: Number(data.objectCount) || 0,
         isPublished: data.isPublished !== false,
         isAnonymous: !!data.isAnonymous,
         publishedAt: Number(data.publishedAt) || 0,
@@ -126,21 +125,6 @@ function slugify(name) {
         .toLowerCase()
         .replace(/[^\p{L}\p{N}]+/gu, "-")
         .replace(/^-+|-+$/g, "");
-}
-
-function isObjectBody(body) {
-    return String(body?.kind || "").trim().toLowerCase() === "object";
-}
-
-function splitPlacesAndObjects(places) {
-    const realPlaces = [];
-    const objects = [];
-    for (const p of places || []) {
-        if (!String(p?.name || "").trim()) continue;
-        if (isObjectBody(p)) objects.push(p);
-        else realPlaces.push(p);
-    }
-    return { realPlaces, objects };
 }
 
 /**
@@ -159,18 +143,11 @@ function splitPlacesAndObjects(places) {
 export async function publishBookLoreWiki(supabase, uid, bookId, opts) {
     const now = Date.now();
     const characters = opts.characters || [];
-    const allPlaces = opts.places || [];
-    const { realPlaces, objects } = splitPlacesAndObjects(allPlaces);
+    const places = opts.places || [];
     const author = opts.isAnonymous ? "Anonymous" : (opts.authorName || "Author");
-    const parts = [];
-    if (characters.length) parts.push(`${characters.length} character${characters.length === 1 ? "" : "s"}`);
-    if (realPlaces.length) parts.push(`${realPlaces.length} place${realPlaces.length === 1 ? "" : "s"}`);
-    if (objects.length) parts.push(`${objects.length} object${objects.length === 1 ? "" : "s"}`);
     const summary =
         opts.summary ||
-        (parts.length
-            ? `Explore ${parts.join(", ")} from ${opts.bookTitle || "this story"}.`
-            : `Explore lore from ${opts.bookTitle || "this story"}.`);
+        `Explore ${characters.length} characters and ${places.length} places from ${opts.bookTitle || "this story"}.`;
 
     const articleRows = [];
     for (const c of characters) {
@@ -187,7 +164,7 @@ export async function publishBookLoreWiki(supabase, uid, bookId, opts) {
             updated: now
         });
     }
-    for (const p of allPlaces) {
+    for (const p of places) {
         if (!p?.id || !String(p.name || "").trim()) continue;
         const body = normalizeBiblePlace(p, p.id);
         articleRows.push({
@@ -211,8 +188,7 @@ export async function publishBookLoreWiki(supabase, uid, bookId, opts) {
         isAnonymous: !!opts.isAnonymous,
         entryCount: articleRows.length,
         characterCount: characters.filter(c => String(c?.name || "").trim()).length,
-        placeCount: realPlaces.length,
-        objectCount: objects.length,
+        placeCount: places.filter(p => String(p?.name || "").trim()).length,
         publishedAt: now,
         updated: now
     };

@@ -6,7 +6,7 @@ import {
     buildStoryWikiIndex,
     findWikiEntryByTitle,
     plainToStoryWikiHtml
-} from "./story-wiki-wikilinks.js?v=9";
+} from "./story-wiki-wikilinks.js?v=3";
 
 const SECTION_RE = /^==\s*(.+?)\s*==$/;
 
@@ -50,7 +50,7 @@ function linkifyPlainValue(value, index, forRead) {
     const entry = index.find(e => e.titles.some(t => t.toLowerCase() === value.trim().toLowerCase()));
     if (!entry) return escapeHtml(value);
     return (
-        `<a href="javascript:void(0)" class="sw-wiki-link" data-wiki-type="${escapeHtml(entry.type)}" ` +
+        `<a href="#" class="sw-wiki-link" data-wiki-type="${escapeHtml(entry.type)}" ` +
         `data-wiki-id="${escapeHtml(entry.id)}" data-wiki-title="${escapeHtml(entry.canonical)}">` +
         `${escapeHtml(entry.canonical)}</a>`
     );
