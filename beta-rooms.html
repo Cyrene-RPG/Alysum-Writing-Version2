@@ -167,7 +167,7 @@
 
     <script type="module">
         import { supabase } from "./firebase.js";
-        import { wireSupabaseSession } from "./js/supabase-session.js?v=1";
+        import { requireStudioSession } from "./js/studio-session.js?v=3";
         import { publicDisplayNameFromUserData } from "./js/profile-display.js?v=1";
         import { listMyBetaRooms, betaRoomShareUrl, isBetaRoomsSchemaMissing } from "./js/beta-rooms-api.js?v=2";
         import { mergeBetaRoomShelf, betaRoomShelfRows } from "./js/beta-room-shelf.js?v=1";
@@ -191,6 +191,15 @@
             pageStatus.textContent = msg;
             pageStatus.className = "status" + (isError ? " error" : "");
             pageStatus.classList.remove("hidden");
+        }
+
+        function withTimeout(promise, ms, label) {
+            return Promise.race([
+                promise,
+                new Promise((_, reject) => {
+                    setTimeout(() => reject(new Error(`${label} timed out. Check your connection and refresh.`)), ms);
+                })
+            ]);
         }
 
         function mergeShelfWithShares(shelfRows, shareRows, uid) {
@@ -256,11 +265,11 @@
             emptyState.classList.add("hidden");
             roomGrid.classList.add("hidden");
             try {
-                const shelf = await mergeBetaRoomShelf(uid);
+                const shelf = await withTimeout(mergeBetaRoomShelf(uid), 15000, "Loading beta rooms");
                 const shelfRows = betaRoomShelfRows(shelf);
                 let shareRows = [];
                 try {
-                    shareRows = await listMyBetaRooms();
+                    shareRows = await withTimeout(listMyBetaRooms(), 15000, "Loading beta rooms");
                 } catch (err) {
                     if (!isBetaRoomsSchemaMissing(err)) console.warn(err);
                 }
@@ -299,13 +308,18 @@
             }
         }
 
-        wireSupabaseSession(async (session) => {
+        async function bootBetaRoomsHub() {
+            const nextPath = window.location.pathname + window.location.search;
+            const session = await requireStudioSession(supabase, nextPath);
             const uid = session?.user?.id;
-            if (!uid) {
-                window.location.href = "login.html?next=" + encodeURIComponent(window.location.pathname);
-                return;
-            }
+            if (!uid) return;
             await loadHub(uid);
+        }
+
+        bootBetaRoomsHub().catch((err) => {
+            console.error(err);
+            loadingState.classList.add("hidden");
+            setStatus(err?.message || "Could not load beta rooms.", true);
         });
     </script>
 </body>

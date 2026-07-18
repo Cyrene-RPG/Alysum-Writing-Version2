@@ -30,6 +30,7 @@ const PATH_TO_ACTIVE = new Map([
     ["library.html", "library"],
     ["lore-wiki.html", "lore-wiki"],
     ["library-violations.html", "library"],
+    ["beta-rooms.html", "beta-rooms"],
     ["beta-room.html", "beta-rooms"],
     ["beta-room-manage.html", "beta-rooms"],
     ["author-dashboard.html", "author-stats"],

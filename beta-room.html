@@ -917,7 +917,7 @@
 
     <script type="module">
         import { supabase } from "./firebase.js";
-        import { wireSupabaseSession } from "./js/supabase-session.js?v=1";
+        import { resolveStudioSession } from "./js/studio-session.js?v=3";
         import { publicDisplayNameFromUserData } from "./js/profile-display.js?v=1";
         import { installReaderCopyGuards } from "./js/reader-copy-guards.js?v=1";
         import {
@@ -1772,8 +1772,9 @@
         prevBtn.addEventListener("click", () => { if (chapterIndex > 0) { chapterIndex--; renderChapter(); } });
         nextBtn.addEventListener("click", () => { if (chapterIndex < chapters.length - 1) { chapterIndex++; renderChapter(); } });
 
-        wireSupabaseSession(async (session) => {
-            currentUser = session?.user ?? null;
+        async function bootBetaRoom() {
+            const session = await resolveStudioSession(supabase);
+            currentUser = session.user;
             if (!currentUser) {
                 showAuthGate();
                 return;
@@ -1804,6 +1805,11 @@
                     showFatal(friendlyInviteError(err));
                 }
             }
+        }
+
+        bootBetaRoom().catch((err) => {
+            console.error(err);
+            showFatal(err?.message || "Could not open beta room.");
         });
     </script>
 </body>

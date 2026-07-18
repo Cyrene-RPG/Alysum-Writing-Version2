@@ -480,7 +480,7 @@
 
     <script type="module">
         import { supabase } from "./firebase.js";
-        import { wireSupabaseSession } from "./js/supabase-session.js?v=1";
+        import { requireStudioSession } from "./js/studio-session.js?v=3";
         import {
             createBetaSnapshot,
             createManuscriptInvite,
@@ -733,6 +733,11 @@
             schemaWarn.classList.remove("hidden");
         }
 
+        function clearSharePanels(msg = "—") {
+            snapshotsList.innerHTML = `<p class="hint">${escapeHtml(msg)}</p>`;
+            sharesList.innerHTML = `<p class="hint">${escapeHtml(msg)}</p>`;
+        }
+
         async function loadBook() {
             const { data, error } = await supabase.from("books").select("id, title, sections").eq("id", bookId).eq("user_id", currentUser.id).maybeSingle();
             if (error) throw error;
@@ -774,14 +779,14 @@
             }
         });
 
-        wireSupabaseSession(async (session) => {
+        async function bootBetaRoomManage() {
+            const nextPath = window.location.pathname + window.location.search;
+            const session = await requireStudioSession(supabase, nextPath);
             currentUser = session?.user ?? null;
-            if (!currentUser) {
-                window.location.href = "login.html?next=" + encodeURIComponent(window.location.pathname + window.location.search);
-                return;
-            }
+            if (!currentUser) return;
             if (!bookId) {
                 setStatus("No book specified. Open this page from the editor.", "error");
+                clearSharePanels("Open Beta share from Studio with a book selected.");
                 return;
             }
             try {
@@ -791,7 +796,14 @@
             } catch (err) {
                 console.error(err);
                 setStatus(err?.message || "Could not load book.", "error");
+                clearSharePanels("Could not load snapshots.");
             }
+        }
+
+        bootBetaRoomManage().catch((err) => {
+            console.error(err);
+            setStatus(err?.message || "Could not load beta share page.", "error");
+            clearSharePanels("Could not load snapshots.");
         });
     </script>
 </body>
