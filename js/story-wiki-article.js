@@ -10,8 +10,8 @@ import {
     normalizeStoryWikiPlain,
     plainToStoryWikiHtml,
     serializeStoryWikiBody
-} from "./story-wiki-wikilinks.js?v=9";
-import { mountWikiLinkKindPicker } from "./story-wiki-link-picker.js?v=2";
+} from "./story-wiki-wikilinks.js?v=10";
+import { mountWikiLinkKindPicker } from "./story-wiki-link-picker.js?v=3";
 import { renderStoryWikiArticleHtml } from "./story-wiki-read.js?v=2";
 import { wikiDebug } from "./story-wiki-debug.js?v=1";
 
@@ -213,6 +213,7 @@ export function mountStoryWikiArticle(opts) {
     function createWikiLinkElement(title, index, kindIntent = null) {
         const entry = findWikiEntryByTitle(index, title, kindIntent);
         const canonical = entry?.canonical || title;
+        const visible = String(title || "").trim() || canonical;
         const link = document.createElement("a");
         link.href = "javascript:void(0)";
         const typeClass = entry?.type || kindIntent || "";
@@ -228,7 +229,7 @@ export function mountStoryWikiArticle(opts) {
         } else if (kindIntent) {
             link.setAttribute("data-wiki-link-kind", kindIntent);
         }
-        link.textContent = canonical;
+        link.textContent = visible;
         return link;
     }
 
@@ -253,7 +254,6 @@ export function mountStoryWikiArticle(opts) {
             a.setAttribute("data-wiki-id", entry.id);
             a.setAttribute("data-wiki-title", entry.canonical);
             a.removeAttribute("data-wiki-link-kind");
-            a.textContent = entry.canonical;
         });
         onNotesChange(serializeStoryWikiBody(editEl));
     }
@@ -296,7 +296,7 @@ export function mountStoryWikiArticle(opts) {
             const val = editEl.value || "";
             const entry = findWikiEntryByTitle(index, selected, resolvedKind);
             const title = entry?.canonical || selected;
-            const marker = formatWikiLinkMarker(title, entry?.type || resolvedKind);
+            const marker = formatWikiLinkMarker(title, entry?.type || resolvedKind, null, selected);
             editEl.value = val.slice(0, start) + marker + val.slice(end);
             const caret = start + marker.length;
             editEl.selectionStart = editEl.selectionEnd = caret;

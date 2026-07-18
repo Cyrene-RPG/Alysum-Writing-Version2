@@ -6,7 +6,7 @@ import {
     buildStoryWikiIndex,
     findWikiEntryByTitle,
     plainToStoryWikiHtml
-} from "./story-wiki-wikilinks.js?v=9";
+} from "./story-wiki-wikilinks.js?v=10";
 
 const SECTION_RE = /^==\s*(.+?)\s*==$/;
 

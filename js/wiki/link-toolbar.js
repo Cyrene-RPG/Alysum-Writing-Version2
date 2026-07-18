@@ -14,12 +14,15 @@ export function insertWikilink(textarea, targetTitle, label) {
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
     const text = textarea.value;
-    const selected = text.slice(start, end).trim();
+    const selectedRaw = text.slice(start, end);
+    const selected = selectedRaw.trim();
     const displayLabel = String(label ?? selected).trim();
-    const wiki =
-        displayLabel && displayLabel.toLowerCase() !== target.toLowerCase()
-            ? `[[${target}|${displayLabel}]]`
-            : `[[${target}]]`;
+    const hadSelection = start !== end && !!displayLabel;
+    const wiki = hadSelection
+        ? `[[${target}|${displayLabel}]]`
+        : displayLabel && displayLabel.toLowerCase() !== target.toLowerCase()
+          ? `[[${target}|${displayLabel}]]`
+          : `[[${target}]]`;
 
     textarea.value = text.slice(0, start) + wiki + text.slice(end);
     const cursor = start + wiki.length;

@@ -8,29 +8,51 @@ export const WIKI_LINK_KINDS = new Set(["character", "place", "object"]);
 
 /**
  * @param {string} inner Raw text inside [[...]]
- * @returns {{ title: string, kind: WikiLinkKind|null, bookId: string|null }}
+ * @returns {{ title: string, display: string|null, kind: WikiLinkKind|null, bookId: string|null }}
  */
 export function parseWikiLinkInner(inner) {
     const raw = String(inner || "").trim();
     const parts = raw.split("|").map(p => p.trim());
     const title = parts[0] || "";
-    const kindToken = (parts[1] || "").toLowerCase();
-    const kind = WIKI_LINK_KINDS.has(kindToken) ? /** @type {WikiLinkKind} */ (kindToken) : null;
-    const bookId = parts[2] || null;
-    return { title, kind, bookId };
+    let display = null;
+    let kind = null;
+    let bookId = null;
+
+    if (parts.length >= 2) {
+        if (WIKI_LINK_KINDS.has(parts[1].toLowerCase())) {
+            kind = /** @type {WikiLinkKind} */ (parts[1].toLowerCase());
+            bookId = parts[2] || null;
+        } else {
+            display = parts[1];
+            if (parts[2] && WIKI_LINK_KINDS.has(parts[2].toLowerCase())) {
+                kind = /** @type {WikiLinkKind} */ (parts[2].toLowerCase());
+                bookId = parts[3] || null;
+            }
+        }
+    }
+
+    return { title, display, kind, bookId };
 }
 
 /**
- * @param {string} title
+ * @param {string} title Link target article title
  * @param {WikiLinkKind|null|undefined} kind
  * @param {string|null|undefined} bookId
+ * @param {string|null|undefined} display Visible label when it differs from target
  */
-export function formatWikiLinkMarker(title, kind, bookId = null) {
+export function formatWikiLinkMarker(title, kind, bookId = null, display = null) {
     const t = String(title || "").trim();
     if (!t) return "";
-    if (bookId && kind && WIKI_LINK_KINDS.has(kind)) return `[[${t}|${kind}|${bookId}]]`;
-    if (kind && WIKI_LINK_KINDS.has(kind)) return `[[${t}|${kind}]]`;
-    return `[[${t}]]`;
+    const d = display != null ? String(display).trim() : "";
+    const useDisplay = d && d.toLowerCase() !== t.toLowerCase();
+
+    if (bookId && kind && WIKI_LINK_KINDS.has(kind)) {
+        return useDisplay ? `[[${t}|${d}|${kind}|${bookId}]]` : `[[${t}|${kind}|${bookId}]]`;
+    }
+    if (kind && WIKI_LINK_KINDS.has(kind)) {
+        return useDisplay ? `[[${t}|${d}|${kind}]]` : `[[${t}|${kind}]]`;
+    }
+    return useDisplay ? `[[${t}|${d}]]` : `[[${t}]]`;
 }
 
 /**

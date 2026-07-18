@@ -2,7 +2,7 @@
  * Story Wiki wikilinks — [[Title]] and [[Title|kind]] links between encyclopedia entries.
  */
 
-import { formatWikiLinkMarker, parseWikiLinkInner, WIKI_LINK_KINDS } from "./story-wiki-link-picker.js?v=2";
+import { formatWikiLinkMarker, parseWikiLinkInner, WIKI_LINK_KINDS } from "./story-wiki-link-picker.js?v=3";
 
 function escapeHtml(s) {
     return String(s)
@@ -156,12 +156,12 @@ export function extractWikiLinks(plain) {
 }
 
 function normalizeWikiLinkInner(inner, index) {
-    const { title, kind, bookId } = parseWikiLinkInner(inner);
-    if (bookId) return formatWikiLinkMarker(title, kind, bookId);
+    const { title, display, kind, bookId } = parseWikiLinkInner(inner);
+    if (bookId) return formatWikiLinkMarker(title, kind, bookId, display);
     const entry = findWikiEntryByTitle(index, title, kind);
-    if (entry) return formatWikiLinkMarker(entry.canonical, entry.type);
-    if (kind) return formatWikiLinkMarker(title, kind);
-    return formatWikiLinkMarker(title, null);
+    if (entry) return formatWikiLinkMarker(entry.canonical, entry.type, null, display);
+    if (kind) return formatWikiLinkMarker(title, kind, null, display);
+    return formatWikiLinkMarker(title, null, null, display);
 }
 
 /**
@@ -182,7 +182,7 @@ export function rerouteWikiLinksInPlain(plain, move, index) {
     if (!titleSet.size || move.fromKind === move.toKind) return String(plain || "");
 
     return String(plain || "").replace(/\[\[([^\]]+)\]\]/g, (full, inner) => {
-        const { title, kind, bookId } = parseWikiLinkInner(inner);
+        const { title, display, kind, bookId } = parseWikiLinkInner(inner);
         if (bookId) return full;
         const lower = title.trim().toLowerCase();
         if (!titleSet.has(lower)) return full;
@@ -194,7 +194,7 @@ export function rerouteWikiLinksInPlain(plain, move, index) {
         }
         if (!shouldUpdate) return full;
 
-        return formatWikiLinkMarker(move.canonical || title, move.toKind);
+        return formatWikiLinkMarker(move.canonical || title, move.toKind, null, display);
     });
 }
 
@@ -216,7 +216,7 @@ export function rerouteWikiLinksToExternalBook(plain, move, index) {
     if (!titleSet.size || !move.targetBookId) return String(plain || "");
 
     return String(plain || "").replace(/\[\[([^\]]+)\]\]/g, (full, inner) => {
-        const { title, kind, bookId } = parseWikiLinkInner(inner);
+        const { title, display, kind, bookId } = parseWikiLinkInner(inner);
         if (bookId) return full;
         const lower = title.trim().toLowerCase();
         if (!titleSet.has(lower)) return full;
@@ -228,7 +228,7 @@ export function rerouteWikiLinksToExternalBook(plain, move, index) {
         }
         if (!shouldUpdate) return full;
 
-        return formatWikiLinkMarker(move.canonical || title, move.fromKind, move.targetBookId);
+        return formatWikiLinkMarker(move.canonical || title, move.fromKind, move.targetBookId, display);
     });
 }
 
@@ -249,12 +249,12 @@ export function rerouteWikiLinksOnRename(plain, rename) {
     if (!oldTitles.size || !newCanonical) return String(plain || "");
 
     return String(plain || "").replace(/\[\[([^\]]+)\]\]/g, (full, inner) => {
-        const { title, kind: linkKind, bookId } = parseWikiLinkInner(inner);
+        const { title, display, kind: linkKind, bookId } = parseWikiLinkInner(inner);
         if (bookId) return full;
         const lower = title.trim().toLowerCase();
         if (!oldTitles.has(lower)) return full;
         const useKind = linkKind || kind || null;
-        return formatWikiLinkMarker(newCanonical, useKind);
+        return formatWikiLinkMarker(newCanonical, useKind, null, display);
     });
 }
 
@@ -333,8 +333,9 @@ export function serializeStoryWikiBody(root) {
         if (node.nodeType !== Node.ELEMENT_NODE) return;
         const el = node;
         if (el.classList?.contains("sw-wiki-link")) {
-            const title = (el.getAttribute("data-wiki-title") || el.textContent || "").trim();
-            const safe = title.replace(/\]\]/g, "");
+            const target = (el.getAttribute("data-wiki-title") || "").trim();
+            const visible = (el.textContent || "").replace(/\s*↗\s*$/, "").trim();
+            const safeTarget = target.replace(/\]\]/g, "");
             const kind = el.getAttribute("data-wiki-link-kind") || el.getAttribute("data-wiki-type") || "";
             const normalizedKind = WIKI_LINK_KINDS.has(kind) ? kind : null;
             const entryType = el.getAttribute("data-wiki-type");
@@ -344,7 +345,7 @@ export function serializeStoryWikiBody(root) {
                     ? entryType
                     : null);
             const bookRef = el.getAttribute("data-wiki-book") || "";
-            out += formatWikiLinkMarker(safe, kindForMarker, bookRef || null);
+            out += formatWikiLinkMarker(safeTarget, kindForMarker, bookRef || null, visible);
             return;
         }
         if (el.tagName === "STRONG" || el.tagName === "B") {
@@ -410,17 +411,17 @@ function renderBoldItalicEscaped(text) {
 }
 
 function renderWikiLinkPart(part, index, opts) {
-    const { title, kind, bookId } = parseWikiLinkInner(part.slice(2, -2));
-    const display = title;
+    const { title, display, kind, bookId } = parseWikiLinkInner(part.slice(2, -2));
+    const visible = display || title;
     if (bookId && bookId !== opts.currentBookId) {
         const type = kind || "character";
         return (
             `<a href="javascript:void(0)" class="sw-wiki-link sw-wiki-link-external sw-wiki-link-${escapeHtml(type)}" ` +
             `data-wiki-book="${escapeHtml(bookId)}" ` +
             `data-wiki-type="${escapeHtml(type)}" ` +
-            `data-wiki-title="${escapeHtml(display)}" ` +
+            `data-wiki-title="${escapeHtml(title)}" ` +
             `${opts.forRead ? "" : 'contenteditable="false" '}` +
-            `title="Open in another book wiki">${escapeHtml(display)}<span class="sw-wiki-ext-mark" aria-hidden="true">↗</span></a>`
+            `title="Open in another book wiki">${escapeHtml(visible)}<span class="sw-wiki-ext-mark" aria-hidden="true">↗</span></a>`
         );
     }
     const entry = findWikiEntryByTitle(index, title, kind);
@@ -432,16 +433,16 @@ function renderWikiLinkPart(part, index, opts) {
             `data-wiki-id="${escapeHtml(entry.id)}" ` +
             `data-wiki-title="${escapeHtml(entry.canonical)}" ` +
             `${opts.forRead ? "" : 'contenteditable="false" '}` +
-            `>${escapeHtml(entry.canonical)}</a>`
+            `>${escapeHtml(visible)}</a>`
         );
     }
     const kindAttr = kind ? ` data-wiki-link-kind="${escapeHtml(kind)}"` : "";
     const kindClass = kind ? ` sw-wiki-link-intent-${escapeHtml(kind)}` : "";
     return (
         `<a href="javascript:void(0)" class="sw-wiki-link is-missing${kindClass}" ` +
-        `data-wiki-title="${escapeHtml(display)}"${kindAttr} ` +
+        `data-wiki-title="${escapeHtml(title)}"${kindAttr} ` +
         `${opts.forRead ? "" : 'contenteditable="false" '}` +
-        `>${escapeHtml(display)}</a>`
+        `>${escapeHtml(visible)}</a>`
     );
 }
 

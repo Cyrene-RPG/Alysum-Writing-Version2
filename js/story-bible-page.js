@@ -49,8 +49,8 @@ import {
     normalizeText
 } from "./story-bible-utils.js?v=1";
 import { renderCharacterCards, renderPlaceCards, renderObjectCards } from "./story-bible-cards.js?v=4";
-import { mountStoryWikiArticle } from "./story-wiki-article.js?v=14";
-import { findWikiEntryByTitle, buildStoryWikiIndex, extractWikiLinks, rerouteWikiLinksInPlain, rerouteWikiLinksToExternalBook, rerouteWikiLinksOnRename } from "./story-wiki-wikilinks.js?v=9";
+import { mountStoryWikiArticle } from "./story-wiki-article.js?v=15";
+import { findWikiEntryByTitle, buildStoryWikiIndex, extractWikiLinks, rerouteWikiLinksInPlain, rerouteWikiLinksToExternalBook, rerouteWikiLinksOnRename } from "./story-wiki-wikilinks.js?v=10";
 import { mountWikiMovePicker, WIKI_MOVE_LABELS } from "./story-wiki-move-picker.js?v=3";
 import { loadStoryWikiHub } from "./story-wiki-hub.js?v=3";
 import { mountWikiDebugPanel, wikiDebug } from "./story-wiki-debug.js?v=1";
