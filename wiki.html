@@ -1,14 +1,29 @@
 <!DOCTYPE html>
-<html lang="en" class="client-js vector-feature-language-in-header-enabled vector-feature-language-in-main-page-header-disabled vector-feature-page-tools-pinned-disabled vector-feature-toc-pinned-clientpref-1 vector-feature-main-menu-pinned-disabled vector-feature-limited-width-clientpref-1 vector-feature-limited-width-content-enabled vector-feature-custom-font-size-clientpref-1 vector-feature-appearance-pinned-clientpref-1 vector-feature-night-mode-disabled skin-vector-action-view">
+<html lang="en">
 <head>
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta name="theme-color" content="#7c3aed" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#020b18" media="(prefers-color-scheme: dark)">
+    <meta name="color-scheme" content="dark light">
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Wikipedia</title>
+    <title>Story Wiki — Alysum</title>
     <link rel="icon" type="image/png" href="Alysum-3.png" />
-    <link rel="stylesheet" href="css/wiki-vector.css?v=1" />
+    <script src="js/alysum-appearance-boot.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Cormorant+Garamond:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="css/site-responsive.css?v=1" />
+    <link rel="stylesheet" href="css/gradient-themes.css?v=4" />
+    <link rel="stylesheet" href="css/workspace-nav.css?v=4" />
+    <link rel="stylesheet" href="css/wiki-vector.css?v=2" />
+    <script src="js/gradient-theme-sync.js" defer></script>
     <script type="module" src="js/vercel-analytics.js"></script>
 </head>
-<body class="skin-vector skin-vector-search-vue mediawiki ltr sitedir-ltr mw-hide-empty-elt">
+<body class="alysum-with-workspace-nav alysum-tool-scroll wiki-page skin-vector mediawiki ltr sitedir-ltr mw-hide-empty-elt">
+    <div id="alysum-workspace-nav" data-active="story-wiki"></div>
+    <script type="module" src="js/workspace-nav.js?v=4"></script>
+
     <div class="mw-page-container">
         <header class="mw-header vector-header">
             <div class="vector-header-start">
@@ -41,17 +56,17 @@
                     </div>
                 </nav>
                 <a href="wiki.html" class="mw-logo" id="wikiLogoLink">
-                    <span class="mw-logo-icon" aria-hidden="true">W</span>
+                    <span class="mw-logo-icon" aria-hidden="true">📖</span>
                     <span class="mw-logo-container">
-                        <span class="mw-logo-wordmark">Wikipedia</span>
-                        <span class="mw-logo-tagline">The Free Encyclopedia</span>
+                        <span class="mw-logo-wordmark">Story Wiki</span>
+                        <span class="mw-logo-tagline">Your story encyclopedia</span>
                     </span>
                 </a>
             </div>
             <div class="vector-header-search">
                 <form id="wikiSearchForm" class="vector-search-box" role="search">
                     <div class="cdx-search-input">
-                        <input type="search" id="wikiSearchInput" class="cdx-text-input__input" placeholder="Search Wikipedia" autocomplete="off" aria-label="Search Wikipedia" />
+                        <input type="search" id="wikiSearchInput" class="cdx-text-input__input" placeholder="Search Story Wiki" autocomplete="off" aria-label="Search Story Wiki" />
                         <button type="submit" class="cdx-button cdx-button--action-progressive" id="wikiSearchBtn">Search</button>
                     </div>
                 </form>
@@ -60,7 +75,7 @@
                 <nav class="vector-user-links" aria-label="Personal tools">
                     <ul>
                         <li><a href="settings.html">Preferences</a></li>
-                        <li><button type="button" class="wiki-plain-btn" id="wikiLogoutBtn">Log out</button></li>
+                        <li><button type="button" class="wiki-plain-btn" data-logout-btn>Log out</button></li>
                     </ul>
                 </nav>
             </div>
@@ -126,7 +141,7 @@
             <ul id="wikiFooterInfo">
                 <li id="wikiLastModified"></li>
             </ul>
-            <div class="mw-footer-powered">Story Wiki powered by Alysum</div>
+            <div class="mw-footer-powered">Story Wiki on Alysum</div>
         </footer>
     </div>
 
@@ -142,11 +157,11 @@
     </div>
 
     <script type="module">
-        import { bootWiki } from "./js/wiki/boot.js?v=1";
+        import { bootWiki } from "./js/wiki/boot.js?v=2";
         bootWiki().catch((e) => {
             console.error("[wiki]", e);
             document.getElementById("wikiParserOutput").innerHTML =
-                '<div class="error">Wiki failed to start. <a href="login.html">Sign in</a> and refresh.</div>';
+                '<div class="error">Story Wiki failed to start. <a href="login.html">Sign in</a> and refresh.</div>';
         });
     </script>
 </body>

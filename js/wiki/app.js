@@ -193,7 +193,7 @@ export class WikiApp {
     }
 
     async renderGlobalHub() {
-        document.title = "Wikipedia — Main Page";
+        document.title = "Story Wiki — Main Page";
         this.els.pageToolbar.hidden = true;
         this.els.contentSub.textContent = "";
         this.els.lastModified.textContent = "";
@@ -277,17 +277,17 @@ export class WikiApp {
     renderBookMain() {
         document.title = `${this.bookTitle} — Main Page`;
         this.els.pageToolbar.hidden = true;
-        this.els.contentSub.innerHTML = `From Wikipedia, the free encyclopedia · <a href="wiki.html?book=${encodeURIComponent(this.bookId)}">${escapeHtml(this.bookTitle)}</a>`;
+        this.els.contentSub.innerHTML = `From <a href="wiki.html?book=${encodeURIComponent(this.bookId)}">${escapeHtml(this.bookTitle)}</a> · Story Wiki on Alysum`;
         this.els.parserOutput.innerHTML = renderBookMainPage(this.bookTitle, this.bookId, this.entries);
         this.els.lastModified.textContent = "";
     }
 
     renderArticleView(entry) {
         this.currentEntry = entry;
-        document.title = `${entry.name} — Wikipedia`;
+        document.title = `${entry.name} — Story Wiki`;
         this.els.pageToolbar.hidden = false;
         this.els.pageTitle.textContent = entry.name;
-        this.els.contentSub.innerHTML = `From Wikipedia, the free encyclopedia · <a href="wiki.html?book=${encodeURIComponent(this.bookId)}">${escapeHtml(this.bookTitle)}</a>`;
+        this.els.contentSub.innerHTML = `From <a href="wiki.html?book=${encodeURIComponent(this.bookId)}">${escapeHtml(this.bookTitle)}</a> · Story Wiki on Alysum`;
         mountArticle(this.els.parserOutput, entry, this.bookId, this.entries);
         this.setViewTabs("read");
         const date = new Date(entry.updatedAt || Date.now());

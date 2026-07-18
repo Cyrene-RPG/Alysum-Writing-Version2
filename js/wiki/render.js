@@ -177,8 +177,8 @@ export function mountArticle(container, entry, bookId, allEntries) {
  */
 export function renderGlobalMainPage(books) {
     let html = `<div class="wiki-main-page">`;
-    html += `<div class="mp-box"><h2>Welcome to Wikipedia</h2>`;
-    html += `<p>Wikipedia is a free encyclopedia for your stories. Select a book wiki below, or <a href="writer-dashboard.html">return to Studio</a>.</p></div>`;
+    html += `<div class="mp-box"><h2>Welcome to Story Wiki</h2>`;
+    html += `<p>Your linked encyclopedia for characters, places, and lore. Select a book wiki below, or <a href="writer-dashboard.html">return to Studio</a>.</p></div>`;
 
     html += `<div class="mp-box"><h2>Book wikis</h2>`;
     if (!books.length) {
