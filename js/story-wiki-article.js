@@ -108,23 +108,14 @@ export function mountStoryWikiArticle(opts) {
 
     function syncMetadataPanelMode() {
         if (!editFormWrap) return;
-        const isRead = mode === "read";
-        editFormWrap.classList.toggle("is-read-metadata", isRead);
-        editFormWrap.querySelector(".sw-wp-title-block")?.classList.toggle("hidden", isRead);
-        editFormWrap.querySelector(".sw-wp-article-body-block")?.classList.toggle("hidden", isRead);
         const details = editFormWrap.querySelector(".sw-wp-advanced-fields");
-        if (details instanceof HTMLDetailsElement && isRead) details.open = true;
+        if (details instanceof HTMLDetailsElement) details.open = mode === "edit";
         for (const el of editFormWrap.querySelectorAll("input, select, textarea")) {
             if (!(el instanceof HTMLInputElement || el instanceof HTMLSelectElement || el instanceof HTMLTextAreaElement)) {
                 continue;
             }
-            if (isRead) {
-                el.setAttribute("readonly", "readonly");
-                if (el instanceof HTMLSelectElement) el.disabled = true;
-            } else {
-                el.removeAttribute("readonly");
-                if (el instanceof HTMLSelectElement) el.disabled = false;
-            }
+            el.removeAttribute("readonly");
+            if (el instanceof HTMLSelectElement) el.disabled = false;
         }
     }
 
@@ -135,7 +126,7 @@ export function mountStoryWikiArticle(opts) {
         modeReadBtn?.setAttribute("aria-selected", mode === "read" ? "true" : "false");
         modeEditBtn?.setAttribute("aria-selected", mode === "edit" ? "true" : "false");
         readMount?.classList.toggle("hidden", mode !== "read");
-        editFormWrap?.classList.remove("hidden");
+        editFormWrap?.classList.toggle("hidden", mode !== "edit");
         syncMetadataPanelMode();
         document.getElementById("sbEntryHero")?.classList.toggle("hidden", mode === "read");
         updateFormatToolbarState();
