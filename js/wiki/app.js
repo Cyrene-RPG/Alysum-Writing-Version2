@@ -1,46 +1,30 @@
 /**
- * Wikipedia clone — main application controller.
+ * Story Wiki — creator-only: write lore articles, optionally publish to Lore Wiki.
  */
-import {
-    listBooks,
-    listEntries,
-    getBookTitle,
-    supabase,
-} from "./api.js";
-import {
-    mountArticle,
-    renderGlobalMainPage,
-    renderBookMainPage,
-    renderBacklinks,
-    renderHistory,
-    renderTalkStub,
-    renderContentsPage,
-} from "./render.js";
-import { findEntryByTitle, randomEntry, renderSearchPage } from "./search.js";
+import { listBooks, listEntries, getBookTitle, deleteEntry } from "./api.js";
+import { renderCreatorBookHub, renderCreatorArticleList, escapeHtml } from "./creator-render.js";
 import { mountEditor } from "./editor.js";
-import { findBacklinks } from "./links.js";
+import {
+    listPublishedEntryIds,
+    getAuthorDisplayName,
+    publishEntryToLore,
+    unpublishEntryFromLore,
+} from "./publish.js";
 import { wireLogoutButtons } from "../auth-logout.js?v=3";
-
-/** @typedef {"read"|"edit"|"history"|"talk"|"search"|"backlinks"|"contents"} WikiView */
+import { isLocalStudioUid } from "../studio-session.js?v=1";
 
 export class WikiApp {
     /** @param {string} uid */
     constructor(uid) {
         this.uid = uid;
-        /** @type {string|null} */
         this.bookId = null;
-        /** @type {string|null} */
         this.bookTitle = null;
-        /** @type {Array} */
         this.entries = [];
-        /** @type {WikiView} */
-        this.view = "read";
-        /** @type {object|null} */
-        this.currentEntry = null;
-        /** @type {string} */
+        this.publishedIds = new Set();
+        this.authorName = "Author";
         this.searchQuery = "";
 
-        this els = {
+        this.els = {
             pageToolbar: document.getElementById("wikiPageToolbar"),
             pageTitle: document.getElementById("wikiPageTitle"),
             contentSub: document.getElementById("wikiContentSub"),
@@ -48,28 +32,20 @@ export class WikiApp {
             lastModified: document.getElementById("wikiLastModified"),
             searchForm: document.getElementById("wikiSearchForm"),
             searchInput: document.getElementById("wikiSearchInput"),
-            viewRead: document.getElementById("wikiViewRead"),
-            viewEdit: document.getElementById("wikiViewEdit"),
-            tabRead: document.getElementById("wikiTabRead"),
-            tabEdit: document.getElementById("wikiTabEdit"),
-            tabHistory: document.getElementById("wikiTabHistory"),
-            tabTalk: document.getElementById("wikiTabTalk"),
-            tabArticle: document.getElementById("wikiTabArticle"),
-            toolWhatLinks: document.getElementById("wikiToolWhatLinks"),
-            toolNew: document.getElementById("wikiToolNew"),
             navEditor: document.getElementById("wikiNavEditor"),
         };
     }
 
     async init() {
         window.__wikiUid = this.uid;
+        this.authorName = await getAuthorDisplayName(this.uid);
         this.parseUrl();
         this.wireUi();
 
         if (this.bookId) {
             await this.loadBook(this.bookId);
         } else {
-            await this.renderGlobalHub();
+            await this.renderBookHub();
         }
     }
 
@@ -77,94 +53,18 @@ export class WikiApp {
         const params = new URLSearchParams(window.location.search);
         this.bookId = params.get("book") || null;
         this.searchQuery = params.get("search") || "";
-        const action = params.get("action") || "view";
-        let title = params.get("title") || params.get("wiki") || "";
-
-        // Legacy Story Bible deep links (?char= / ?place=) resolve after entries load.
-        this.legacyEntryId = params.get("char") || params.get("place") || null;
-
-        if (action === "edit") this.view = "edit";
-        else if (action === "history") this.view = "history";
-        else if (params.get("talk") === "1") this.view = "talk";
-        else if (params.get("backlinks") === "1") this.view = "backlinks";
-        else if (params.get("contents") === "1") this.view = "contents";
-        else if (this.searchQuery) this.view = "search";
-
-        this.pendingTitle = title;
+        this.action = params.get("action") || "";
+        this.entryId = params.get("entry") || params.get("char") || params.get("place") || "";
+        this.pendingTitle = params.get("title") || params.get("wiki") || "";
     }
 
     wireUi() {
         this.els.searchForm?.addEventListener("submit", (e) => {
             e.preventDefault();
             const q = this.els.searchInput?.value?.trim();
-            if (!q) return;
-            if (this.bookId) {
-                this.navigate({ book: this.bookId, search: q });
-            } else {
-                this.navigate({ search: q });
-            }
+            if (!q || !this.bookId) return;
+            this.filterArticles(q);
         });
-
-        this.els.tabRead?.addEventListener("click", (e) => {
-            e.preventDefault();
-            if (this.currentEntry) this.navigate({ book: this.bookId, title: this.currentEntry.name });
-        });
-        this.els.tabEdit?.addEventListener("click", (e) => {
-            e.preventDefault();
-            const title = this.currentEntry?.name || this.pendingTitle || "";
-            this.navigate({ book: this.bookId, title, action: "edit" });
-        });
-        this.els.tabHistory?.addEventListener("click", (e) => {
-            e.preventDefault();
-            if (!this.currentEntry) return;
-            this.navigate({ book: this.bookId, title: this.currentEntry.name, action: "history" });
-        });
-        this.els.tabTalk?.addEventListener("click", (e) => {
-            e.preventDefault();
-            if (!this.currentEntry) return;
-            this.navigate({ book: this.bookId, title: this.currentEntry.name, talk: "1" });
-        });
-        this.els.tabArticle?.addEventListener("click", (e) => {
-            e.preventDefault();
-            if (this.currentEntry) this.navigate({ book: this.bookId, title: this.currentEntry.name });
-        });
-
-        this.els.toolWhatLinks?.addEventListener("click", (e) => {
-            e.preventDefault();
-            if (!this.currentEntry) return;
-            this.navigate({ book: this.bookId, title: this.currentEntry.name, backlinks: "1" });
-        });
-
-        this.els.toolNew?.addEventListener("click", (e) => {
-            e.preventDefault();
-            if (!this.bookId) return;
-            this.navigate({ book: this.bookId, action: "edit" });
-        });
-
-        for (const id of ["wikiNavMain", "wikiSideMain", "wikiLogoLink"]) {
-            document.getElementById(id)?.addEventListener("click", (e) => {
-                if (!this.bookId) return;
-                e.preventDefault();
-                this.navigate({ book: this.bookId });
-            });
-        }
-
-        for (const id of ["wikiNavContents", "wikiSideContents"]) {
-            document.getElementById(id)?.addEventListener("click", (e) => {
-                e.preventDefault();
-                if (!this.bookId) return;
-                this.navigate({ book: this.bookId, contents: "1" });
-            });
-        }
-
-        for (const id of ["wikiNavRandom", "wikiSideRandom"]) {
-            document.getElementById(id)?.addEventListener("click", (e) => {
-                e.preventDefault();
-                if (!this.bookId || !this.entries.length) return;
-                const pick = randomEntry(this.entries);
-                if (pick) this.navigate({ book: this.bookId, title: pick.name });
-            });
-        }
 
         document.getElementById("wikiMainMenuBtn")?.addEventListener("click", () => {
             const panel = document.getElementById("wikiMainMenuPanel");
@@ -180,9 +80,17 @@ export class WikiApp {
         });
     }
 
-    /**
-     * @param {Record<string, string>} params
-     */
+    filterArticles(query) {
+        const q = query.toLowerCase();
+        const filtered = this.entries.filter(
+            (e) =>
+                e.name.toLowerCase().includes(q) ||
+                (e.body || "").toLowerCase().includes(q) ||
+                (e.aliases || []).some((a) => a.toLowerCase().includes(q))
+        );
+        this.renderArticleList(filtered, query);
+    }
+
     navigate(params) {
         const url = new URL(window.location.href);
         url.search = "";
@@ -192,198 +100,119 @@ export class WikiApp {
         window.location.href = url.pathname + url.search;
     }
 
-    async renderGlobalHub() {
-        document.title = "Story Wiki — Main Page";
+    async renderBookHub() {
+        document.title = "Story Wiki — Create lore";
         this.els.pageToolbar.hidden = true;
         this.els.contentSub.textContent = "";
         this.els.lastModified.textContent = "";
-
         const books = await listBooks(this.uid);
-        if (this.searchQuery) {
-            this.els.pageToolbar.hidden = false;
-            this.els.pageTitle.textContent = `Search: ${this.searchQuery}`;
-            const allEntries = [];
-            for (const book of books) {
-                const entries = await listEntries(this.uid, book.id);
-                for (const e of entries) allEntries.push({ ...e, bookId: book.id, bookTitle: book.title });
-            }
-            const q = this.searchQuery.toLowerCase();
-            const hits = allEntries.filter((e) =>
-                e.name.toLowerCase().includes(q) ||
-                (e.body || "").toLowerCase().includes(q)
-            );
-            let html = `<p>Global search for <strong>${escapeHtml(this.searchQuery)}</strong> (${hits.length} results)</p>`;
-            for (const hit of hits.slice(0, 50)) {
-                html += `<div class="wiki-search-hit"><a href="wiki.html?book=${encodeURIComponent(hit.bookId)}&title=${encodeURIComponent(hit.name)}"><em>${escapeHtml(hit.name)}</em></a> — ${escapeHtml(hit.bookTitle)}</div>`;
-            }
-            this.els.parserOutput.innerHTML = html || "<p>No results.</p>";
-            return;
-        }
-
-        this.els.parserOutput.innerHTML = renderGlobalMainPage(books);
+        this.els.parserOutput.innerHTML = renderCreatorBookHub(books);
     }
 
     async loadBook(bookId) {
         this.bookId = bookId;
         this.bookTitle = await getBookTitle(this.uid, bookId);
         this.entries = await listEntries(this.uid, bookId);
-
-        if (this.legacyEntryId && !this.pendingTitle) {
-            const legacy = this.entries.find((e) => e.id === this.legacyEntryId);
-            if (legacy) this.pendingTitle = legacy.name;
-        }
+        this.publishedIds = await listPublishedEntryIds(this.uid, bookId);
 
         if (this.els.navEditor) {
             this.els.navEditor.href = `editor.html?book=${encodeURIComponent(bookId)}`;
         }
 
-        for (const id of ["wikiNavMain", "wikiSideMain"]) {
-            const el = document.getElementById(id);
-            if (el) el.href = `wiki.html?book=${encodeURIComponent(bookId)}`;
-        }
         document.getElementById("wikiLogoLink")?.setAttribute("href", `wiki.html?book=${encodeURIComponent(bookId)}`);
 
-        if (this.view === "search" && this.searchQuery) {
-            return this.renderSearch();
+        let entry = null;
+        if (this.entryId) {
+            entry = this.entries.find((e) => e.id === this.entryId) || null;
+        } else if (this.pendingTitle) {
+            const norm = this.pendingTitle.trim().toLowerCase();
+            entry = this.entries.find((e) => e.name.toLowerCase() === norm) || null;
         }
 
-        if (this.pendingTitle) {
-            this.currentEntry = findEntryByTitle(this.pendingTitle, this.entries);
-            if (this.view === "edit") return this.renderEdit(this.currentEntry, this.pendingTitle);
-            if (!this.currentEntry && this.view !== "edit") {
-                if (new URLSearchParams(window.location.search).get("action") === "edit") {
-                    return this.renderEdit(null, this.pendingTitle);
-                }
-            }
-            if (this.currentEntry) {
-                if (this.view === "history") return this.renderHistoryView();
-                if (this.view === "talk") return this.renderTalkView();
-                if (this.view === "backlinks") return this.renderBacklinksView();
-                return this.renderArticleView(this.currentEntry);
-            }
+        if (this.action === "edit" || entry) {
+            return this.renderEdit(entry, this.pendingTitle);
         }
 
-        if (this.view === "edit" && !this.pendingTitle) {
-            return this.renderEdit(null, "");
-        }
-
-        if (this.view === "contents") {
-            return this.renderContentsView();
-        }
-
-        return this.renderBookMain();
+        return this.renderArticleList(this.entries);
     }
 
-    renderBookMain() {
-        document.title = `${this.bookTitle} — Main Page`;
+    renderArticleList(entries, searchQuery = "") {
+        document.title = `${this.bookTitle} — Story Wiki`;
         this.els.pageToolbar.hidden = true;
-        this.els.contentSub.innerHTML = `From <a href="wiki.html?book=${encodeURIComponent(this.bookId)}">${escapeHtml(this.bookTitle)}</a> · Story Wiki on Alysum`;
-        this.els.parserOutput.innerHTML = renderBookMainPage(this.bookTitle, this.bookId, this.entries);
+        this.els.contentSub.innerHTML = `<a href="wiki.html">All books</a> · ${escapeHtml(this.bookTitle)}`;
         this.els.lastModified.textContent = "";
+
+        if (searchQuery) {
+            this.els.contentSub.innerHTML += ` · Filter: “${escapeHtml(searchQuery)}”`;
+        }
+
+        this.els.parserOutput.innerHTML = renderCreatorArticleList(
+            this.bookTitle,
+            this.bookId,
+            entries,
+            this.publishedIds
+        );
+
+        this.els.parserOutput.querySelectorAll("[data-wiki-delete]").forEach((btn) => {
+            btn.addEventListener("click", () => void this.handleDelete(btn.dataset.wikiDelete, btn.dataset.wikiKind));
+        });
     }
 
-    renderArticleView(entry) {
-        this.currentEntry = entry;
-        document.title = `${entry.name} — Story Wiki`;
-        this.els.pageToolbar.hidden = false;
-        this.els.pageTitle.textContent = entry.name;
-        this.els.contentSub.innerHTML = `From <a href="wiki.html?book=${encodeURIComponent(this.bookId)}">${escapeHtml(this.bookTitle)}</a> · Story Wiki on Alysum`;
-        mountArticle(this.els.parserOutput, entry, this.bookId, this.entries);
-        this.setViewTabs("read");
-        const date = new Date(entry.updatedAt || Date.now());
-        this.els.lastModified.textContent = `This page was last edited on ${date.toLocaleString()}.`;
+    async handleDelete(entryId, kind) {
+        if (!confirm("Delete this article? This cannot be undone.")) return;
+        await deleteEntry(this.uid, this.bookId, entryId, kind);
+        if (this.publishedIds.has(entryId)) {
+            await unpublishEntryFromLore(this.uid, this.bookId, entryId, {
+                bookTitle: this.bookTitle,
+                authorName: this.authorName,
+            });
+        }
+        this.navigate({ book: this.bookId });
     }
 
     renderEdit(entry, defaultTitle) {
-        document.title = entry ? `Editing ${entry.name}` : "Creating article";
+        const isPublished = entry ? this.publishedIds.has(entry.id) : false;
+
+        document.title = entry ? `Edit: ${entry.name}` : "New lore article";
         this.els.pageToolbar.hidden = false;
-        this.els.pageTitle.textContent = entry ? `Editing ${entry.name}` : "Create article";
-        this.els.contentSub.textContent = "";
-        this.setViewTabs("edit");
+        this.els.pageTitle.textContent = entry ? `Edit: ${entry.name}` : "New lore article";
+        this.els.contentSub.innerHTML = `<a href="wiki.html?book=${encodeURIComponent(this.bookId)}">← Back to articles</a>`;
+        this.els.lastModified.textContent = "";
 
         mountEditor(
             this.els.parserOutput,
             entry,
             this.bookId,
             defaultTitle,
-            (saved) => {
-                this.navigate({ book: this.bookId, title: saved.name });
+            isPublished,
+            !isLocalStudioUid(this.uid),
+            async (saved, publishAfterSave) => {
+                if (publishAfterSave) {
+                    await publishEntryToLore(this.uid, this.bookId, saved, {
+                        bookTitle: this.bookTitle,
+                        authorName: this.authorName,
+                    });
+                } else if (isPublished && entry) {
+                    await publishEntryToLore(this.uid, this.bookId, saved, {
+                        bookTitle: this.bookTitle,
+                        authorName: this.authorName,
+                    });
+                }
+                this.navigate({ book: this.bookId, entry: saved.id, action: "edit" });
             },
-            () => {
-                if (entry) this.navigate({ book: this.bookId, title: entry.name });
-                else this.navigate({ book: this.bookId });
-            }
+            async (saved) => {
+                if (isPublished) {
+                    await unpublishEntryFromLore(this.uid, this.bookId, saved.id, {
+                        bookTitle: this.bookTitle,
+                        authorName: this.authorName,
+                    });
+                    this.publishedIds.delete(saved.id);
+                }
+                await this.loadBook(this.bookId);
+            },
+            () => this.navigate({ book: this.bookId })
         );
-        this.els.lastModified.textContent = "";
     }
-
-    renderSearch() {
-        document.title = `Search: ${this.searchQuery}`;
-        this.els.pageToolbar.hidden = false;
-        this.els.pageTitle.textContent = `Search: ${this.searchQuery}`;
-        this.els.contentSub.textContent = "";
-        this.els.parserOutput.innerHTML = renderSearchPage(this.searchQuery, this.entries, this.bookId);
-        this.els.pageToolbar.hidden = false;
-        this.setViewTabs("read");
-        this.els.lastModified.textContent = "";
-    }
-
-    renderHistoryView() {
-        if (!this.currentEntry) return;
-        document.title = `History: ${this.currentEntry.name}`;
-        this.els.pageToolbar.hidden = false;
-        this.els.pageTitle.textContent = this.currentEntry.name;
-        this.els.parserOutput.innerHTML = renderHistory(this.currentEntry);
-        this.setViewTabs("history");
-    }
-
-    renderTalkView() {
-        if (!this.currentEntry) return;
-        document.title = `Talk: ${this.currentEntry.name}`;
-        this.els.pageToolbar.hidden = false;
-        this.els.pageTitle.textContent = `Talk:${this.currentEntry.name}`;
-        this.els.parserOutput.innerHTML = renderTalkStub();
-        this.setViewTabs("talk");
-    }
-
-    renderBacklinksView() {
-        if (!this.currentEntry) return;
-        const links = findBacklinks(this.currentEntry.name, this.entries);
-        document.title = `Links: ${this.currentEntry.name}`;
-        this.els.pageToolbar.hidden = false;
-        this.els.pageTitle.textContent = this.currentEntry.name;
-        this.els.parserOutput.innerHTML = renderBacklinks(this.currentEntry.name, links, this.bookId);
-        this.setViewTabs("read");
-    }
-
-    renderContentsView() {
-        document.title = `Contents — ${this.bookTitle}`;
-        this.els.pageToolbar.hidden = false;
-        this.els.pageTitle.textContent = "Contents";
-        this.els.parserOutput.innerHTML = renderContentsPage(this.entries, this.bookId);
-        this.setViewTabs("read");
-    }
-
-    /** @param {"read"|"edit"|"history"|"talk"} mode */
-    setViewTabs(mode) {
-        this.els.viewRead?.classList.toggle("selected", mode === "read");
-        this.els.viewEdit?.classList.toggle("selected", mode === "edit");
-        document.getElementById("wikiViewHistory")?.classList.toggle("selected", mode === "history");
-        document.querySelector(".vector-article-tabs li.selected")?.classList.remove("selected");
-        if (mode === "talk") {
-            document.getElementById("wikiTabTalk")?.parentElement?.classList.add("selected");
-        } else {
-            document.getElementById("wikiTabArticle")?.parentElement?.classList.add("selected");
-        }
-    }
-}
-
-function escapeHtml(value) {
-    return String(value || "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;");
 }
 
 export async function startWiki(uid) {

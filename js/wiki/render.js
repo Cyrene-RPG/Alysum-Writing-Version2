@@ -28,13 +28,19 @@ function gradientFor(name) {
 
 /**
  * @param {string} bookId
- * @param {Array} index
+ * @param {"private"|"lore"} [mode]
  */
-function articleHref(bookId, entry, title) {
-    if (entry) {
-        return `wiki.html?book=${encodeURIComponent(bookId)}&title=${encodeURIComponent(entry.name)}`;
+function articleHref(bookId, entry, title, mode = "private") {
+    if (mode === "lore") {
+        if (entry) {
+            return `lore-wiki.html?book=${encodeURIComponent(bookId)}&entry=${encodeURIComponent(entry.id)}`;
+        }
+        return `lore-wiki.html?book=${encodeURIComponent(bookId)}&title=${encodeURIComponent(title)}`;
     }
-    return `wiki.html?book=${encodeURIComponent(bookId)}&title=${encodeURIComponent(title)}&action=edit`;
+    if (entry) {
+        return `wiki.html?book=${encodeURIComponent(bookId)}&action=edit&entry=${encodeURIComponent(entry.id)}`;
+    }
+    return `wiki.html?book=${encodeURIComponent(bookId)}&action=edit&title=${encodeURIComponent(title)}`;
 }
 
 /**
@@ -80,8 +86,9 @@ export function renderInfobox(entry, bookId, allEntries) {
  * @param {string} body
  * @param {string} bookId
  * @param {Array} allEntries
+ * @param {"private"|"lore"} [mode]
  */
-export function renderBody(body, bookId, allEntries) {
+export function renderBody(body, bookId, allEntries, mode = "private") {
     const index = buildIndex(allEntries);
     const raw = String(body || "").trim();
 
@@ -97,9 +104,9 @@ export function renderBody(body, bookId, allEntries) {
                 document.createRange().createContextualFragment(
                     replaceWikiLinksInText(node.textContent, index, (entry, title, label) => {
                         if (entry) {
-                            return `<a href="${articleHref(bookId, entry, title)}" title="${escapeHtml(entry.name)}">${escapeHtml(label)}</a>`;
+                            return `<a href="${articleHref(bookId, entry, title, mode)}" title="${escapeHtml(entry.name)}">${escapeHtml(label)}</a>`;
                         }
-                        return `<a href="${articleHref(bookId, null, title)}" class="new" title="${escapeHtml(title)} (page does not exist)">${escapeHtml(label)}</a>`;
+                        return `<a href="${articleHref(bookId, null, title, mode)}" class="new" title="${escapeHtml(title)} (page does not exist)">${escapeHtml(label)}</a>`;
                     })
                 )
             );
@@ -128,9 +135,9 @@ export function renderBody(body, bookId, allEntries) {
             }
             const paragraph = replaceWikiLinksInText(escapeHtml(trimmed), index, (entry, title, label) => {
                 if (entry) {
-                    return `<a href="${articleHref(bookId, entry, title)}" title="${escapeHtml(entry.name)}">${escapeHtml(label)}</a>`;
+                    return `<a href="${articleHref(bookId, entry, title, mode)}" title="${escapeHtml(entry.name)}">${escapeHtml(label)}</a>`;
                 }
-                return `<a href="${articleHref(bookId, null, title)}" class="new" title="${escapeHtml(title)} (page does not exist)">${escapeHtml(label)}</a>`;
+                return `<a href="${articleHref(bookId, null, title, mode)}" class="new" title="${escapeHtml(title)} (page does not exist)">${escapeHtml(label)}</a>`;
             });
             return `<p>${paragraph}</p>`;
         })
@@ -150,10 +157,11 @@ function walkTextNodes(root, fn) {
  * @param {object} entry
  * @param {string} bookId
  * @param {Array} allEntries
+ * @param {"private"|"lore"} [mode]
  */
-export function renderArticle(entry, bookId, allEntries) {
+export function renderArticle(entry, bookId, allEntries, mode = "private") {
     const infobox = renderInfobox(entry, bookId, allEntries);
-    const body = renderBody(entry.body, bookId, allEntries);
+    const body = renderBody(entry.body, bookId, allEntries, mode);
     const categories = (entry.tags || []).length
         ? `<div class="catlinks"><strong>Categories:</strong> <ul>${entry.tags.map((t) => `<li><a href="#">${escapeHtml(t)}</a></li>`).join("")}</ul></div>`
         : `<div class="catlinks"><strong>Categories:</strong> <ul><li><a href="#">${escapeHtml(entry.kind === "character" ? "Characters" : entry.kind === "object" ? "Objects" : "Places")}</a></li></ul></div>`;
@@ -166,9 +174,10 @@ export function renderArticle(entry, bookId, allEntries) {
  * @param {object} entry
  * @param {string} bookId
  * @param {Array} allEntries
+ * @param {"private"|"lore"} [mode]
  */
-export function mountArticle(container, entry, bookId, allEntries) {
-    container.innerHTML = renderArticle(entry, bookId, allEntries);
+export function mountArticle(container, entry, bookId, allEntries, mode = "private") {
+    container.innerHTML = renderArticle(entry, bookId, allEntries, mode);
     injectToc(container);
 }
 
@@ -296,5 +305,87 @@ export function renderContentsPage(entries, bookId) {
         html += `<li><a href="wiki.html?book=${encodeURIComponent(bookId)}&title=${encodeURIComponent(e.name)}">${escapeHtml(e.name)}</a> <span style="color:#54595d">(${escapeHtml(e.kind)})</span></li>`;
     }
     html += `</ul>`;
+    return html;
+}
+
+/**
+ * Wikipedia-style Lore Wiki homepage.
+ * @param {Array} wikis
+ * @param {string} [query]
+ */
+export function renderLoreHomePage(wikis, query = "") {
+    const q = query.trim().toLowerCase();
+    const filtered = wikis.filter((w) => {
+        if (!q) return true;
+        return `${w.title} ${w.author} ${w.summary}`.toLowerCase().includes(q);
+    });
+
+    let html = `<div class="wiki-lore-home">`;
+    html += `<div class="wiki-lore-home-search-hint">Search encyclopedias and articles published by Alysum authors.</div>`;
+
+    if (q) {
+        html += `<div class="mp-box"><h2>Results for “${escapeHtml(query)}”</h2>`;
+        if (!filtered.length) {
+            html += `<p>No encyclopedias matched your search.</p>`;
+        }
+        html += `</div>`;
+    }
+
+    html += `<div class="wiki-lore-home-grid">`;
+    html += `<section class="mp-box wiki-lore-featured">
+        <h2>Featured encyclopedias</h2>`;
+
+    if (!filtered.length) {
+        html += `<p>No published lore yet. Authors publish individual articles from private Story Wiki.</p>`;
+    } else {
+        html += `<ul class="wiki-book-grid">`;
+        for (const w of filtered.slice(0, 12)) {
+            html += `<li class="wiki-book-card">
+                <a href="lore-wiki.html?book=${encodeURIComponent(w.bookId)}">${escapeHtml(w.title)}</a>
+                <p>by ${escapeHtml(w.author)} · ${w.entryCount} article${w.entryCount === 1 ? "" : "s"}</p>
+            </li>`;
+        }
+        html += `</ul>`;
+    }
+    html += `</section>`;
+
+    html += `<section class="mp-box">
+        <h2>About Lore Wiki</h2>
+        <p>Read-only lore shared by authors. Editing happens privately in Story Wiki — only articles authors choose to publish appear here.</p>
+        <p><a href="wiki.html">Create lore in Story Wiki</a></p>
+    </section>`;
+
+    html += `</div></div>`;
+    return html;
+}
+
+/**
+ * @param {object} wiki
+ * @param {Array} entries - normalized { id, name, kind, body, ... }
+ * @param {string} bookId
+ */
+export function renderLoreBookMainPage(wiki, entries, bookId) {
+    const featured = entries[0];
+    let html = `<div class="wiki-main-page">`;
+    html += `<nav class="wiki-lore-crumb"><a href="lore-wiki.html">Lore Wiki</a> / ${escapeHtml(wiki.title)}</nav>`;
+    html += `<div class="mp-box"><h2>Main Page</h2>`;
+    html += `<p><strong>${escapeHtml(wiki.title)}</strong> by ${escapeHtml(wiki.author)} — ${entries.length} published article${entries.length === 1 ? "" : "s"}.</p>`;
+    if (wiki.summary) html += `<p>${escapeHtml(wiki.summary)}</p>`;
+    if (featured) {
+        html += `<p><strong>Featured article:</strong> <a href="${articleHref(bookId, featured, featured.name, "lore")}">${escapeHtml(featured.name)}</a></p>`;
+    }
+    html += `</div>`;
+
+    html += `<div class="mp-box"><h2>All articles</h2>`;
+    if (!entries.length) {
+        html += `<p>No articles published yet.</p>`;
+    } else {
+        html += `<ul class="wiki-alpha-list">`;
+        for (const e of entries) {
+            html += `<li><a href="${articleHref(bookId, e, e.name, "lore")}">${escapeHtml(e.name)}</a></li>`;
+        }
+        html += `</ul>`;
+    }
+    html += `</div></div>`;
     return html;
 }

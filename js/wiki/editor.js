@@ -1,5 +1,5 @@
 /**
- * Wikipedia-style article editor.
+ * Lore article editor with optional Lore Wiki publishing.
  */
 import { newCharacterId, newPlaceId, saveEntry, normalizeEntry } from "./api.js";
 
@@ -16,16 +16,29 @@ function escapeHtml(value) {
  * @param {object|null} entry
  * @param {string} bookId
  * @param {string} [defaultTitle]
- * @param {(saved: object) => void} onSave
+ * @param {boolean} isPublished
+ * @param {boolean} canPublish
+ * @param {(saved: object, publishAfterSave: boolean) => void | Promise<void>} onSave
+ * @param {(saved: object) => void | Promise<void>} onUnpublish
  * @param {() => void} onCancel
  */
-export function mountEditor(container, entry, bookId, defaultTitle, onSave, onCancel) {
+export function mountEditor(
+    container,
+    entry,
+    bookId,
+    defaultTitle,
+    isPublished,
+    canPublish,
+    onSave,
+    onUnpublish,
+    onCancel
+) {
     const isNew = !entry;
     const draft = entry || normalizeEntry({ name: defaultTitle || "" }, newCharacterId(), "character");
 
     container.innerHTML = `
         <form class="wiki-edit-form" id="wikiEditForm">
-            <div class="mw-message-box">You are editing a page. Use <code>[[Article Title]]</code> for wikilinks and <code>== Section ==</code> for headings in plain text mode.</div>
+            <div class="mw-message-box">Write lore for your story. Use <code>[[Article Title]]</code> for links and <code>== Section ==</code> for headings. Publish to <strong>Lore Wiki</strong> when you want readers to see an article.</div>
             <div class="wiki-edit-meta">
                 <div>
                     <label for="wikiEditTitle">Article title</label>
@@ -68,28 +81,55 @@ export function mountEditor(container, entry, bookId, defaultTitle, onSave, onCa
             </div>
             <h2>Article body</h2>
             <textarea id="wikiEditBody" spellcheck="true">${escapeHtml(draft.body)}</textarea>
+            ${
+                canPublish
+                    ? `<div class="wiki-publish-panel">
+                <h2>Lore Wiki</h2>
+                ${
+                    isPublished
+                        ? `<p class="wiki-publish-status"><span class="wiki-badge wiki-badge-live">Published</span> Readers can view this on Lore Wiki.</p>
+                <div class="wiki-edit-actions">
+                    <button type="submit" class="cdx-button cdx-button--action-progressive">Save changes</button>
+                    <button type="button" class="cdx-button" id="wikiUnpublishBtn">Unpublish from Lore Wiki</button>
+                    <button type="button" class="cdx-button" id="wikiEditCancel">Cancel</button>
+                </div>`
+                        : `<label class="wiki-publish-check"><input type="checkbox" id="wikiPublishCheck" /> Publish to Lore Wiki when I save</label>
+                <div class="wiki-edit-actions">
+                    <button type="submit" class="cdx-button cdx-button--action-progressive">Save article</button>
+                    <button type="button" class="cdx-button" id="wikiEditCancel">Cancel</button>
+                </div>`
+                }
+            </div>`
+                    : `<div class="mw-message-box mw-message-box-warning">Publishing requires a cloud Alysum account.</div>
             <div class="wiki-edit-actions">
-                <button type="submit" class="cdx-button cdx-button--action-progressive">Save page</button>
+                <button type="submit" class="cdx-button cdx-button--action-progressive">Save article</button>
                 <button type="button" class="cdx-button" id="wikiEditCancel">Cancel</button>
-            </div>
+            </div>`
+            }
         </form>
     `;
 
     const form = container.querySelector("#wikiEditForm");
     form.addEventListener("submit", (e) => {
         e.preventDefault();
-        void submitEditor(form, draft, isNew, bookId, onSave);
+        const publishAfterSave = !!form.querySelector("#wikiPublishCheck")?.checked;
+        void submitEditor(form, draft, isNew, bookId, (saved) => onSave(saved, publishAfterSave));
     });
+
     container.querySelector("#wikiEditCancel")?.addEventListener("click", onCancel);
+
+    container.querySelector("#wikiUnpublishBtn")?.addEventListener("click", () => {
+        void buildFromForm(form, draft, isNew, bookId).then((saved) => onUnpublish(saved));
+    });
 }
 
 function appearanceField(label, id, value) {
     return `<div><label for="${id}">${label}</label><input type="text" id="${id}" value="${escapeHtml(value || "")}" /></div>`;
 }
 
-async function submitEditor(form, draft, isNew, bookId, onSave) {
+async function buildFromForm(form, draft, isNew, bookId) {
     const title = form.querySelector("#wikiEditTitle")?.value?.trim();
-    if (!title) return;
+    if (!title) throw new Error("Title required");
 
     const kind = form.querySelector("#wikiEditKind")?.value || "character";
     let id = draft.id;
@@ -102,7 +142,7 @@ async function submitEditor(form, draft, isNew, bookId, onSave) {
         .map((s) => s.trim())
         .filter(Boolean);
 
-    const updated = normalizeEntry(
+    return normalizeEntry(
         {
             name: title,
             aliases,
@@ -124,11 +164,14 @@ async function submitEditor(form, draft, isNew, bookId, onSave) {
         id,
         kind
     );
+}
 
+async function submitEditor(form, draft, isNew, bookId, onSave) {
+    const updated = await buildFromForm(form, draft, isNew, bookId);
     const uid = window.__wikiUid;
     if (!uid) throw new Error("Not signed in");
     await saveEntry(uid, bookId, updated);
-    onSave(updated);
+    await onSave(updated);
 }
 
 export { saveEntry };

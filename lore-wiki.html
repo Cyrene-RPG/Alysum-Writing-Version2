@@ -2,51 +2,88 @@
 <html lang="en">
 <head>
     <link rel="manifest" href="manifest.webmanifest">
+    <meta name="theme-color" content="#020b18">
+    <meta name="color-scheme" content="dark light">
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Lore Wiki — Alysum</title>
+    <link rel="icon" type="image/png" href="Alysum-3.png" />
     <script src="js/alysum-appearance-boot.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Cormorant+Garamond:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
     <link rel="stylesheet" href="css/gradient-themes.css?v=4" />
     <link rel="stylesheet" href="css/workspace-nav.css?v=4" />
-    <link rel="stylesheet" href="css/story-wiki.css?v=3" />
-    <link rel="stylesheet" href="css/lore-wiki.css?v=1" />
+    <link rel="stylesheet" href="css/wiki-vector.css?v=3" />
     <script src="js/gradient-theme-sync.js" defer></script>
     <script type="module" src="js/vercel-analytics.js"></script>
 </head>
-<body class="alysum-with-workspace-nav lw-page">
+<body class="alysum-with-workspace-nav alysum-tool-scroll wiki-page wiki-lore">
     <div id="alysum-workspace-nav" data-active="lore-wiki"></div>
-    <script type="module" src="js/workspace-nav.js?v=5"></script>
+    <script type="module" src="js/workspace-nav.js?v=4"></script>
 
-    <header class="lw-topbar">
-        <div class="lw-topbar-inner">
-            <div class="lw-topbar-copy">
-                <p class="lw-topbar-brand">Lore Wiki</p>
-                <h1 class="lw-topbar-title">Explore published story lore</h1>
-                <p class="lw-topbar-sub">Read-only encyclopedias shared by authors. Private Story Wiki stays yours — only snapshots you publish appear here.</p>
+    <div class="mw-page-container">
+        <header class="mw-header vector-header">
+            <div class="vector-header-start">
+                <a href="lore-wiki.html" class="mw-logo">
+                    <span class="mw-logo-icon" aria-hidden="true">🌐</span>
+                    <span class="mw-logo-container">
+                        <span class="mw-logo-wordmark">Lore Wiki</span>
+                        <span class="mw-logo-tagline">Published story encyclopedias</span>
+                    </span>
+                </a>
             </div>
-            <div class="lw-search-wrap">
-                <input type="search" id="lwSearch" class="lw-search" placeholder="Search lore wikis and articles…" autocomplete="off" />
+            <div class="vector-header-search">
+                <form id="wikiSearchForm" class="vector-search-box" role="search">
+                    <div class="cdx-search-input">
+                        <input type="search" id="wikiSearchInput" class="cdx-text-input__input" placeholder="Search Lore Wiki" autocomplete="off" aria-label="Search Lore Wiki" />
+                        <button type="submit" class="cdx-button cdx-button--action-progressive">Search</button>
+                    </div>
+                </form>
             </div>
-        </div>
-    </header>
+            <div class="vector-header-end">
+                <nav class="vector-user-links" aria-label="Personal tools">
+                    <ul>
+                        <li><a href="wiki.html">Story Wiki</a></li>
+                        <li><a href="writer-dashboard.html">Studio</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </header>
 
-    <main class="lw-main">
-        <div id="lwBrowseView">
-            <div class="lw-results-bar">
-                <span id="lwResultsCount" class="lw-results-count">Loading…</span>
-            </div>
-            <div id="lwGrid" class="lw-grid" aria-busy="true">
-                <p class="lw-loading">Loading Lore Wiki…</p>
-            </div>
+        <div class="mw-body" id="wikiBody">
+            <main class="mw-content-container" id="wikiMain">
+                <div class="wiki-lore-home-hero" id="wikiLoreHomeHero" hidden>
+                    <div class="wiki-lore-home-logo">🌐</div>
+                    <h1>Lore Wiki</h1>
+                    <p class="wiki-lore-home-tagline">The free encyclopedia of published story lore</p>
+                </div>
+
+                <div class="vector-page-toolbar" id="wikiPageToolbar" hidden>
+                    <div class="vector-page-titlebar">
+                        <h1 class="firstHeading mw-first-heading" id="wikiPageTitle"></h1>
+                    </div>
+                </div>
+
+                <div class="mw-body-content" id="wikiContent">
+                    <div id="wikiContentSub" class="mw-content-sub"></div>
+                    <div id="wikiBodyContent" class="mw-body-content-inner">
+                        <div class="mw-parser-output" id="wikiParserOutput">
+                            <p>Loading…</p>
+                        </div>
+                    </div>
+                </div>
+            </main>
         </div>
-        <div id="lwBookView" class="hidden">
-            <div id="lwMain"></div>
-        </div>
-    </main>
+
+        <footer class="mw-footer">
+            <div class="mw-footer-powered">Lore Wiki on Alysum · read-only published articles</div>
+        </footer>
+    </div>
 
     <script type="module">
-        import { bootLoreWikiPage } from "./js/lore-wiki-page.js?v=1";
+        import { bootLoreWikiPage } from "./js/lore-wiki-page.js?v=2";
         bootLoreWikiPage().catch(console.error);
     </script>
 </body>

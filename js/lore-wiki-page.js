@@ -1,5 +1,5 @@
 /**
- * Lore Wiki — public browse + read-only Wikipedia-style articles.
+ * Lore Wiki — public Wikipedia-style reading experience.
  */
 import { supabase } from "../firebase.js";
 import { initWorkspaceNav } from "./workspace-nav.js?v=5";
@@ -7,10 +7,11 @@ import {
     listPublicLoreWikis,
     getPublicLoreWiki,
     listPublicLoreArticles,
-    getPublicLoreArticle
-} from "./lore-wiki-api.js?v=1";
-import { renderStoryWikiArticleHtml } from "./story-wiki-read.js?v=1";
-import { bookCoverGradient, escapeHtml, normalizeText } from "./story-bible-utils.js?v=1";
+    getPublicLoreArticle,
+} from "./lore-wiki-api.js?v=2";
+import { mountArticle, renderLoreHomePage, renderLoreBookMainPage } from "./wiki/render.js";
+import { normalizeEntry } from "./wiki/api.js";
+import { renderSearchPage } from "./wiki/search.js";
 
 function byId(id) {
     return document.getElementById(id);
@@ -20,205 +21,35 @@ function qs(name) {
     return (new URLSearchParams(window.location.search).get(name) || "").trim();
 }
 
-function articleUrl(bookId, entryId) {
-    return `lore-wiki.html?book=${encodeURIComponent(bookId)}&entry=${encodeURIComponent(entryId)}`;
-}
-
-function bookUrl(bookId) {
-    return `lore-wiki.html?book=${encodeURIComponent(bookId)}`;
-}
-
-function normalizeArticleRecord(row) {
+function loreArticleFromRow(row) {
     const body = row.body || {};
-    return {
-        id: row.entryId,
-        name: body.name || "",
-        aliases: body.aliases || [],
-        notes: body.notes || "",
-        tags: body.tags || [],
-        kind: row.kind,
-        appearance: body.appearance,
-        status: body.status,
-        pronouns: body.pronouns,
-        parentPlace: body.parentPlace,
-        updated: row.updated
-    };
+    const kind = row.kind === "place" ? (body.kind === "object" ? "object" : "place") : "character";
+    return normalizeEntry(body, row.entryId, kind);
 }
 
-function allRecordsFromArticles(articles) {
-    const characters = [];
-    const places = [];
-    for (const a of articles) {
-        const rec = normalizeArticleRecord(a);
-        if (a.kind === "place") places.push({ ...rec, id: a.entryId });
-        else characters.push({ ...rec, id: a.entryId });
-    }
-    return { characters, places };
-}
-
-function renderBrowseGrid(wikis, query) {
-    const grid = byId("lwGrid");
-    const countEl = byId("lwResultsCount");
-    if (!grid) return;
-
-    const q = query.trim().toLowerCase();
-    const filtered = wikis.filter(w => {
-        if (!q) return true;
-        const hay = `${w.title} ${w.author} ${w.summary}`.toLowerCase();
-        return hay.includes(q);
-    });
-
-    if (countEl) countEl.textContent = `${filtered.length} lore wiki${filtered.length === 1 ? "" : "s"}`;
-
-    if (!filtered.length) {
-        grid.innerHTML = `<div class="lw-empty">
-            <h2>No published lore yet</h2>
-            <p>Authors can share their private Story Wiki to Lore Wiki for readers to explore — editing stays private; only published snapshots appear here.</p>
-        </div>`;
-        return;
-    }
-
-    grid.innerHTML = "";
-    for (const w of filtered) {
-        const card = document.createElement("article");
-        card.className = "lw-card";
-        card.innerHTML = `
-            <a class="lw-card-cover" href="${bookUrl(w.bookId)}" style="background:${bookCoverGradient(w.title)}">
-                <h2>${escapeHtml(w.title)}</h2>
-                <span class="lw-card-by">by ${escapeHtml(w.author)}</span>
-            </a>
-            <div class="lw-card-body">
-                <p class="lw-card-summary">${escapeHtml(w.summary || "Explore characters, places, and lore from this story.")}</p>
-                <div class="lw-card-chips">
-                    <span>${w.characterCount} characters</span>
-                    <span>${w.placeCount} places</span>
-                    <span>${w.entryCount} articles</span>
-                </div>
-                <a class="lw-btn lw-btn-primary" href="${bookUrl(w.bookId)}">Browse wiki</a>
-            </div>`;
-        grid.appendChild(card);
-    }
-}
-
-function renderBookMainPage(wiki, articles, query) {
-    const root = byId("lwMain");
-    if (!root) return;
-
-    const q = query.trim().toLowerCase();
-    const sorted = [...articles].sort((a, b) =>
-        normalizeText(a.body?.name).localeCompare(normalizeText(b.body?.name))
-    );
-    const filtered = sorted.filter(a => {
-        if (!q) return true;
-        const name = normalizeText(a.body?.name).toLowerCase();
-        return name.includes(q);
-    });
-
-    const chars = filtered.filter(a => a.kind === "character");
-    const places = filtered.filter(a => a.kind === "place");
-
-    root.innerHTML = `
-        <nav class="lw-breadcrumb">
-            <a href="lore-wiki.html">Lore Wiki</a>
-            <span aria-hidden="true"> / </span>
-            <span>${escapeHtml(wiki.title)}</span>
-        </nav>
-        <header class="lw-book-hero">
-            <p class="lw-book-brand">Lore Wiki · Main Page</p>
-            <h1>${escapeHtml(wiki.title)}</h1>
-            <p class="lw-book-lead">${escapeHtml(wiki.summary || "")}</p>
-            <p class="lw-book-meta">by ${escapeHtml(wiki.author)} · ${wiki.entryCount} article${wiki.entryCount === 1 ? "" : "s"}</p>
-        </header>
-        <div class="lw-index-grid">
-            <section class="lw-index-col">
-                <h2>Characters</h2>
-                <ul class="lw-index-list">
-                    ${
-                        chars.length
-                            ? chars
-                                  .map(a => {
-                                      const name = escapeHtml(a.body?.name || "Untitled");
-                                      return `<li><a href="${articleUrl(wiki.bookId, a.entryId)}">${name}</a></li>`;
-                                  })
-                                  .join("")
-                            : "<li class='lw-muted'>No characters published.</li>"
-                    }
-                </ul>
-            </section>
-            <section class="lw-index-col">
-                <h2>Places</h2>
-                <ul class="lw-index-list">
-                    ${
-                        places.length
-                            ? places
-                                  .map(a => {
-                                      const name = escapeHtml(a.body?.name || "Untitled");
-                                      return `<li><a href="${articleUrl(wiki.bookId, a.entryId)}">${name}</a></li>`;
-                                  })
-                                  .join("")
-                            : "<li class='lw-muted'>No places published.</li>"
-                    }
-                </ul>
-            </section>
-        </div>
-        <p class="sw-wp-hint">This is a read-only snapshot. Only the author can edit in private Story Wiki; republishing updates what you see here.</p>`;
-}
-
-function renderArticlePage(wiki, article, allArticles) {
-    const root = byId("lwMain");
-    if (!root) return;
-
-    const { characters, places } = allRecordsFromArticles(allArticles);
-    const record = normalizeArticleRecord(article);
-    const name = normalizeText(record.name) || "Article";
-
-    root.innerHTML = `
-        <nav class="lw-breadcrumb">
-            <a href="lore-wiki.html">Lore Wiki</a>
-            <span aria-hidden="true"> / </span>
-            <a href="${bookUrl(wiki.bookId)}">${escapeHtml(wiki.title)}</a>
-            <span aria-hidden="true"> / </span>
-            <span>${escapeHtml(name)}</span>
-        </nav>
-        <div class="lw-article-shell sw-wp-readonly" id="lwArticleMount"></div>`;
-
-    const mount = byId("lwArticleMount");
-    if (!mount) return;
-
-    mount.innerHTML = renderStoryWikiArticleHtml({
-        record,
-        kind: article.kind === "place" ? "place" : "character",
-        characters,
-        places,
-        bookTitle: wiki.title,
-        sourceLabel: "Lore Wiki",
-        updatedAt: article.updated
-    });
-
-    mount.addEventListener("click", e => {
-        const a = e.target.closest("a.sw-wiki-link, a.sw-wp-cat");
-        if (!a) return;
-        e.preventDefault();
-        const id = a.getAttribute("data-wiki-id");
-        const title = a.getAttribute("data-wiki-title") || a.textContent || "";
-        if (id) {
-            location.href = articleUrl(wiki.bookId, id);
-            return;
-        }
-        const { characters: cs, places: ps } = allRecordsFromArticles(allArticles);
-        const lower = title.trim().toLowerCase();
-        const hit =
-            cs.find(c => normalizeText(c.name).toLowerCase() === lower) ||
-            ps.find(p => normalizeText(p.name).toLowerCase() === lower);
-        if (hit) location.href = articleUrl(wiki.bookId, hit.id);
-    });
+function allEntriesFromArticles(articles) {
+    return articles.map(loreArticleFromRow).sort((a, b) => a.sortKey.localeCompare(b.sortKey, undefined, { sensitivity: "base" }));
 }
 
 function showError(msg) {
-    const root = byId("lwMain") || byId("lwGrid");
+    const root = byId("wikiParserOutput");
     if (root) {
-        root.innerHTML = `<div class="lw-empty is-error"><h2>Could not load Lore Wiki</h2><p>${escapeHtml(msg)}</p></div>`;
+        root.innerHTML = `<div class="error">${escapeHtml(msg)}</div>`;
     }
+}
+
+function escapeHtml(value) {
+    return String(value || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+}
+
+function setPageMode(mode) {
+    byId("wikiPageToolbar")?.toggleAttribute("hidden", mode === "home");
+    byId("wikiLoreHomeHero")?.toggleAttribute("hidden", mode !== "home");
+    byId("wikiBodyContent")?.classList.toggle("wiki-lore-home-shell", mode === "home");
 }
 
 export async function bootLoreWikiPage() {
@@ -226,50 +57,116 @@ export async function bootLoreWikiPage() {
 
     const bookId = qs("book");
     const entryId = qs("entry");
-    const searchInput = byId("lwSearch");
-    const query = searchInput?.value || "";
+    const title = qs("title");
+    const searchInput = byId("wikiSearchInput");
+    const query = searchInput?.value?.trim() || qs("search");
 
     if (!bootLoreWikiPage._searchWired && searchInput) {
         bootLoreWikiPage._searchWired = true;
-        searchInput.addEventListener("input", () => void bootLoreWikiPage());
+        byId("wikiSearchForm")?.addEventListener("submit", (e) => {
+            e.preventDefault();
+            const q = searchInput.value.trim();
+            const url = new URL(window.location.href);
+            url.search = "";
+            if (bookId) url.searchParams.set("book", bookId);
+            if (q) url.searchParams.set("search", q);
+            window.location.href = url.pathname + url.search;
+        });
     }
 
     try {
-        if (bookId && entryId) {
-            byId("lwBrowseView")?.classList.add("hidden");
-            byId("lwBookView")?.classList.remove("hidden");
-            const [wiki, article, articles] = await Promise.all([
-                getPublicLoreWiki(supabase, bookId),
-                getPublicLoreArticle(supabase, bookId, entryId),
-                listPublicLoreArticles(supabase, bookId)
-            ]);
+        if (bookId && (entryId || title)) {
+            setPageMode("article");
+            let article = entryId ? await getPublicLoreArticle(supabase, bookId, entryId) : null;
+            const articles = await listPublicLoreArticles(supabase, bookId);
+            const [wiki] = await Promise.all([getPublicLoreWiki(supabase, bookId)]);
+
+            if (!article && title) {
+                const norm = title.toLowerCase();
+                const row = articles.find((a) => String(a.body?.name || "").toLowerCase() === norm);
+                if (row) article = row;
+            }
+
             if (!wiki || !article) {
                 showError("This lore article is not available.");
                 return;
             }
-            renderArticlePage(wiki, article, articles);
+
+            const entries = allEntriesFromArticles(articles);
+            const entry = loreArticleFromRow(article);
+
+            document.title = `${entry.name} — Lore Wiki`;
+            byId("wikiPageTitle").textContent = entry.name;
+            byId("wikiContentSub").innerHTML = `<a href="lore-wiki.html">Lore Wiki</a> · <a href="lore-wiki.html?book=${encodeURIComponent(bookId)}">${escapeHtml(wiki.title)}</a>`;
+
+            mountArticle(byId("wikiParserOutput"), entry, bookId, entries, "lore");
+            byId("wikiLastModified").textContent = `Published snapshot · read only`;
             return;
         }
 
         if (bookId) {
-            byId("lwBrowseView")?.classList.add("hidden");
-            byId("lwBookView")?.classList.remove("hidden");
+            setPageMode("book");
             const [wiki, articles] = await Promise.all([
                 getPublicLoreWiki(supabase, bookId),
-                listPublicLoreArticles(supabase, bookId)
+                listPublicLoreArticles(supabase, bookId),
             ]);
             if (!wiki) {
                 showError("This lore wiki is not published.");
                 return;
             }
-            renderBookMainPage(wiki, articles, query);
+
+            const entries = allEntriesFromArticles(articles);
+
+            if (query) {
+                document.title = `Search: ${query} — ${wiki.title}`;
+                byId("wikiPageTitle").textContent = `Search: ${query}`;
+                byId("wikiContentSub").innerHTML = `<a href="lore-wiki.html?book=${encodeURIComponent(bookId)}">${escapeHtml(wiki.title)}</a>`;
+                byId("wikiParserOutput").innerHTML = renderSearchPage(query, entries, bookId, "lore");
+                return;
+            }
+
+            document.title = `${wiki.title} — Lore Wiki`;
+            byId("wikiPageTitle").textContent = wiki.title;
+            byId("wikiContentSub").innerHTML = `<a href="lore-wiki.html">Lore Wiki</a> · by ${escapeHtml(wiki.author)}`;
+            byId("wikiParserOutput").innerHTML = renderLoreBookMainPage(wiki, entries, bookId);
             return;
         }
 
-        byId("lwBrowseView")?.classList.remove("hidden");
-        byId("lwBookView")?.classList.add("hidden");
+        setPageMode("home");
+        document.title = "Lore Wiki — Alysum";
+        byId("wikiPageTitle").textContent = "";
+        byId("wikiContentSub").textContent = "";
+        byId("wikiLoreHomeHero")?.removeAttribute("hidden");
+        byId("wikiBodyContent")?.classList.add("wiki-lore-home-shell");
+
         const wikis = await listPublicLoreWikis(supabase);
-        renderBrowseGrid(wikis, query);
+
+        if (query) {
+            const allHits = [];
+            for (const w of wikis) {
+                const articles = await listPublicLoreArticles(supabase, w.bookId);
+                for (const a of articles) {
+                    const entry = loreArticleFromRow(a);
+                    const hay = `${entry.name} ${entry.body} ${w.title}`.toLowerCase();
+                    if (hay.includes(query.toLowerCase())) {
+                        allHits.push({ entry, wiki: w });
+                    }
+                }
+            }
+
+            let html = renderLoreHomePage(wikis, query);
+            if (allHits.length) {
+                html += `<div class="mp-box"><h2>Matching articles</h2>`;
+                for (const hit of allHits.slice(0, 40)) {
+                    html += `<div class="wiki-search-hit"><a href="lore-wiki.html?book=${encodeURIComponent(hit.wiki.bookId)}&entry=${encodeURIComponent(hit.entry.id)}"><em>${escapeHtml(hit.entry.name)}</em></a> — ${escapeHtml(hit.wiki.title)}</div>`;
+                }
+                html += `</div>`;
+            }
+            byId("wikiParserOutput").innerHTML = html;
+            return;
+        }
+
+        byId("wikiParserOutput").innerHTML = renderLoreHomePage(wikis);
     } catch (e) {
         console.error("[lore-wiki]", e);
         showError(e?.message || "Check your connection and try again.");

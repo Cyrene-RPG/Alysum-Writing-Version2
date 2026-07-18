@@ -983,3 +983,199 @@ body.wiki-page h6 {
         box-shadow: none;
     }
 }
+
+/* ——— Story Wiki creator ——— */
+body.wiki-creator .wiki-creator-body {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0 clamp(1rem, 3vw, 1.5rem);
+}
+
+body.wiki-creator .wiki-creator-main {
+    max-width: 100%;
+    padding-top: 1.25rem;
+}
+
+.wiki-creator-hero h1 {
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    margin-bottom: 0.35rem;
+}
+
+.wiki-creator-hero p,
+.wiki-creator-sub,
+.wiki-creator-foot {
+    color: var(--wiki-text-subtle);
+    font-family: var(--wiki-font-sans);
+    font-size: 0.9rem;
+}
+
+.wiki-creator-kicker {
+    margin: 0 0 0.25rem;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--wiki-gold);
+}
+
+.wiki-creator-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1.25rem;
+}
+
+.wiki-creator-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.wiki-creator-actions .cdx-button {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.55rem 0.95rem;
+    border-radius: var(--wiki-radius-sm);
+    border: 1px solid var(--wiki-border);
+    text-decoration: none;
+    color: var(--wiki-text);
+    font-weight: 600;
+}
+
+.wiki-creator-actions .cdx-button--action-progressive {
+    background: var(--wiki-accent);
+    border-color: transparent;
+    color: #fff;
+}
+
+.wiki-article-table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--wiki-border);
+    border-radius: var(--wiki-radius-sm);
+}
+
+.wiki-article-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--wiki-font-sans);
+    font-size: 0.875rem;
+}
+
+.wiki-article-table th,
+.wiki-article-table td {
+    padding: 0.65rem 0.85rem;
+    border-bottom: 1px solid var(--wiki-border-subtle);
+    text-align: left;
+}
+
+.wiki-article-table th {
+    color: var(--wiki-gold);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.wiki-article-row-actions {
+    display: flex;
+    gap: 0.75rem;
+    white-space: nowrap;
+}
+
+.wiki-badge {
+    display: inline-block;
+    padding: 0.15rem 0.45rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--wiki-text-subtle);
+}
+
+.wiki-badge-live {
+    background: rgba(52, 211, 153, 0.18);
+    color: #6ee7b7;
+}
+
+.wiki-publish-panel {
+    margin-top: 1.25rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--wiki-border-subtle);
+}
+
+.wiki-publish-panel h2 {
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+}
+
+.wiki-publish-check {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--wiki-font-sans);
+    margin-bottom: 0.75rem;
+}
+
+.wiki-publish-status {
+    font-family: var(--wiki-font-sans);
+    margin-bottom: 0.75rem;
+}
+
+/* ——— Lore Wiki homepage ——— */
+body.wiki-lore .wiki-lore-home-hero {
+    text-align: center;
+    padding: 2rem 1rem 1rem;
+}
+
+body.wiki-lore .wiki-lore-home-hero[hidden] {
+    display: none;
+}
+
+.wiki-lore-home-logo {
+    font-size: 3rem;
+    margin-bottom: 0.5rem;
+}
+
+.wiki-lore-home-hero h1,
+.wiki-lore-home .wiki-lore-home-hero h1 {
+    font-size: clamp(2rem, 5vw, 2.75rem);
+    margin-bottom: 0.35rem;
+}
+
+.wiki-lore-home-tagline {
+    color: var(--wiki-text-subtle);
+    font-family: var(--wiki-font-sans);
+    font-size: 1rem;
+}
+
+.wiki-lore-home-search-hint {
+    text-align: center;
+    color: var(--wiki-text-subtle);
+    font-family: var(--wiki-font-sans);
+    font-size: 0.875rem;
+    margin-bottom: 1rem;
+}
+
+.wiki-lore-home-grid {
+    display: grid;
+    gap: 1rem;
+}
+
+.wiki-lore-crumb {
+    font-family: var(--wiki-font-sans);
+    font-size: 0.8125rem;
+    color: var(--wiki-text-subtle);
+    margin-bottom: 0.75rem;
+}
+
+.wiki-lore-crumb a {
+    color: var(--wiki-gold);
+}
+
+body.wiki-lore .wiki-lore-home-shell .mw-body-content-inner {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    padding-top: 0;
+}
