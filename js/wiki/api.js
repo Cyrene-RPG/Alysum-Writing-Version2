@@ -143,9 +143,9 @@ export async function listBooks(uid) {
 
     const { data: books, error } = await supabase
         .from("books")
-        .select("id, title, updated_at")
+        .select("id, title, updated")
         .eq("user_id", uid)
-        .order("updated_at", { ascending: false });
+        .order("updated", { ascending: false });
 
     if (error) throw error;
 
