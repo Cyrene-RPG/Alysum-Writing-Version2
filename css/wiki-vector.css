@@ -250,6 +250,28 @@ body.wiki-page h6 {
     padding: 0.2rem 0.45rem;
 }
 
+.wiki-save-status {
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.62);
+    white-space: nowrap;
+}
+
+.wiki-save-status.is-unsaved {
+    color: #fcd34d;
+}
+
+.wiki-save-status.is-saving {
+    color: rgba(255, 255, 255, 0.82);
+}
+
+.wiki-save-status.is-saved {
+    color: #86efac;
+}
+
+.wiki-save-status.is-error {
+    color: #fca5a5;
+}
+
 @media (max-width: 720px) {
     .mw-header.vector-header {
         grid-template-columns: 1fr auto;
@@ -936,6 +958,43 @@ body.wiki-page h6 {
 .wiki-edit-mode-btn:hover:not(.is-active) {
     background: rgba(109, 40, 217, 0.18);
     color: var(--wiki-text);
+}
+
+.wiki-edit-save-btn {
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    background: rgba(255, 255, 255, 0.14);
+    color: #fff;
+    border-radius: var(--wiki-radius-sm);
+    font: inherit;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.32rem 0.75rem;
+    cursor: pointer;
+    line-height: 1.2;
+}
+
+.wiki-edit-save-btn:hover {
+    background: rgba(255, 255, 255, 0.24);
+    border-color: rgba(255, 255, 255, 0.32);
+}
+
+.wiki-edit-sidebar-save {
+    width: 100%;
+    padding: 0.55rem 0.85rem;
+    font-size: 0.82rem;
+}
+
+.wiki-edit-save-hint {
+    margin: 0.55rem 0 0;
+    font-size: 0.72rem;
+    line-height: 1.45;
+    color: var(--wiki-text-subtle);
+}
+
+.wiki-edit-actions-card {
+    position: sticky;
+    top: 0;
+    z-index: 2;
 }
 
 .wiki-edit-preview-pane {

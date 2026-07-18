@@ -38,7 +38,10 @@ export class WikiApp {
             headerArticles: document.getElementById("wikiHeaderArticles"),
             headerEditBadge: document.getElementById("wikiHeaderEditBadge"),
             headerSave: document.getElementById("wikiHeaderSave"),
+            saveStatus: document.getElementById("wikiSaveStatus"),
         };
+        this._saveStatusFlashTimer = null;
+        this._cloudSave = !isLocalStudioUid(uid);
     }
 
     async init() {
@@ -103,6 +106,59 @@ export class WikiApp {
             if (v) url.searchParams.set(k, v);
         }
         window.location.href = url.pathname + url.search;
+    }
+
+    setSaveStatus(status) {
+        const el = this.els.saveStatus;
+        if (!el) return;
+
+        clearTimeout(this._saveStatusFlashTimer);
+        el.classList.remove("is-unsaved", "is-saving", "is-saved", "is-error");
+
+        if (status === "unsaved") {
+            el.textContent = "Unsaved changes";
+            el.classList.add("is-unsaved");
+        } else if (status === "saving") {
+            el.textContent = "Saving…";
+            el.classList.add("is-saving");
+        } else if (status === "saved") {
+            el.textContent = this._cloudSave ? "Saved to your account" : "Saved locally";
+            el.classList.add("is-saved");
+            this._saveStatusFlashTimer = setTimeout(() => {
+                if (el.classList.contains("is-saved")) this.setSaveStatus("idle");
+            }, 2500);
+        } else if (status === "error") {
+            el.textContent = "Save failed — will retry";
+            el.classList.add("is-error");
+        } else {
+            el.textContent = this._cloudSave ? "Auto-saves every 5s" : "Auto-saves locally every 5s";
+        }
+    }
+
+    upsertEntryInCache(saved) {
+        const idx = this.entries.findIndex((e) => e.id === saved.id);
+        if (idx >= 0) this.entries[idx] = saved;
+        else this.entries.push(saved);
+        this.entries.sort((a, b) => a.sortKey.localeCompare(b.sortKey, undefined, { sensitivity: "base" }));
+    }
+
+    onFirstArticleSave(saved) {
+        this.entryId = saved.id;
+        this.upsertEntryInCache(saved);
+        this.setHeaderEditMode({
+            bookId: this.bookId,
+            isNew: false,
+            isPublished: this.publishedIds.has(saved.id),
+        });
+
+        const url = new URL(window.location.href);
+        url.searchParams.set("book", this.bookId);
+        url.searchParams.set("action", "edit");
+        url.searchParams.set("entry", saved.id);
+        url.searchParams.delete("title");
+        url.searchParams.delete("char");
+        url.searchParams.delete("place");
+        history.replaceState(null, "", url.pathname + url.search);
     }
 
     setEditViewportLock(on) {
@@ -247,6 +303,7 @@ export class WikiApp {
         this.els.pageToolbar.hidden = true;
         this.els.contentSub.textContent = "";
         this.els.lastModified.textContent = "";
+        this.setSaveStatus("idle");
         this.els.parserOutput.closest(".mw-body-content-inner")?.classList.add("wiki-edit-shell");
 
         mountEditor(
@@ -287,6 +344,10 @@ export class WikiApp {
             {
                 bookEntries: this.entries,
                 allBooks,
+                cloudSave: this._cloudSave,
+                onSaveStatus: (status) => this.setSaveStatus(status),
+                onAutoSave: (saved) => this.upsertEntryInCache(saved),
+                onFirstSave: (saved) => this.onFirstArticleSave(saved),
                 onMove: entry
                     ? (targetBookId, saved) => this.handleMove(targetBookId, saved, isPublished)
                     : undefined,

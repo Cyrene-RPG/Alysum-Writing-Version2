@@ -16,7 +16,7 @@
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
     <link rel="stylesheet" href="css/gradient-themes.css?v=4" />
     <link rel="stylesheet" href="css/workspace-nav.css?v=4" />
-    <link rel="stylesheet" href="css/wiki-vector.css?v=10" />
+    <link rel="stylesheet" href="css/wiki-vector.css?v=12" />
     <script src="js/gradient-theme-sync.js" defer></script>
     <script type="module" src="js/vercel-analytics.js"></script>
 </head>
@@ -55,6 +55,7 @@
                     <ul>
                         <li><a class="wiki-header-articles" id="wikiHeaderArticles" href="wiki.html">← Articles</a></li>
                         <li><span class="wiki-badge wiki-badge-live" id="wikiHeaderEditBadge" hidden>On Lore Wiki</span></li>
+                        <li><span class="wiki-save-status" id="wikiSaveStatus" aria-live="polite"></span></li>
                         <li><button type="button" class="wiki-header-btn" id="wikiHeaderCancel">Cancel</button></li>
                         <li><button type="submit" class="wiki-header-btn wiki-header-btn-primary" id="wikiHeaderSave" form="wikiEditForm">Save</button></li>
                     </ul>
@@ -90,7 +91,7 @@
     </div>
 
     <script type="module">
-        import { bootWiki } from "./js/wiki/boot.js?v=9";
+        import { bootWiki } from "./js/wiki/boot.js?v=10";
         bootWiki().catch((e) => {
             console.error("[wiki]", e);
             document.getElementById("wikiParserOutput").innerHTML =

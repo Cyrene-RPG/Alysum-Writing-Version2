@@ -1,7 +1,7 @@
 /**
  * Lore article editor — writing-first layout with sidebar metadata.
  */
-import { newCharacterId, newPlaceId, saveEntry, normalizeEntry } from "./api.js";
+import { newCharacterId, saveEntry, normalizeEntry } from "./api.js";
 import { wireLinkToolbar } from "./link-toolbar.js";
 import { renderArticle } from "./render.js";
 import { injectToc } from "./toc.js";
@@ -25,7 +25,7 @@ function escapeHtml(value) {
  * @param {(saved: object) => void | Promise<void>} onUnpublish
  * @param {() => void} onCancel
  * @param {(() => void) | null} [onDelete]
- * @param {{ bookEntries?: Array, allBooks?: Array, onMove?: (targetBookId: string, entry: object) => void | Promise<void> } | null} [extras]
+ * @param {{ bookEntries?: Array, allBooks?: Array, onMove?: (targetBookId: string, entry: object) => void | Promise<void>, onSaveStatus?: (status: string) => void, onAutoSave?: (saved: object) => void, onFirstSave?: (saved: object) => void, cloudSave?: boolean } | null} [extras]
  */
 export function mountEditor(
     container,
@@ -41,6 +41,7 @@ export function mountEditor(
     extras
 ) {
     const isNew = !entry;
+    let articleIsNew = isNew;
     const draft = entry || normalizeEntry({ name: defaultTitle || "" }, newCharacterId(), "character");
     const isCharacter = draft.kind === "character";
     const bookEntries = extras?.bookEntries || [];
@@ -62,11 +63,12 @@ export function mountEditor(
                                 <button type="button" class="wiki-edit-mode-btn" id="wikiEditModePreview" role="tab" aria-selected="false">Preview</button>
                             </div>
                             <button type="button" class="wiki-link-btn" id="wikiLinkBtn" title="Link selected text">🔗 Link</button>
+                            <button type="submit" class="wiki-edit-save-btn wiki-edit-toolbar-save" data-save-compact>${isNew ? "Create" : "Save"}</button>
                         </div>
                     </div>
                     <textarea id="wikiEditBody" class="wiki-edit-body-input" spellcheck="true" placeholder="Write the article here… Highlight text and click Link, or use [[Article Title]] manually.">${escapeHtml(draft.body)}</textarea>
                     <div class="wiki-edit-preview-pane" id="wikiEditPreview" hidden aria-live="polite">
-                        <p class="wiki-edit-preview-banner">Reader preview — wikilinks are clickable. Save before following a link to keep your edits.</p>
+                        <p class="wiki-edit-preview-banner">Reader preview — wikilinks are clickable. Edits auto-save every few seconds.</p>
                         <div class="wiki-edit-preview-article" id="wikiEditPreviewArticle"></div>
                     </div>
                     <p class="wiki-edit-hint">Highlight text → <strong>Link</strong> · or type <code>[[Article Title]]</code> · <code>== Heading ==</code> · switch to <strong>Preview</strong> to test links</p>
@@ -95,6 +97,10 @@ export function mountEditor(
                 </div>
 
                 <aside class="wiki-edit-sidebar">
+                    <section class="wiki-edit-card wiki-edit-actions-card">
+                        <button type="submit" class="cdx-button cdx-button--action-progressive wiki-edit-save-btn wiki-edit-sidebar-save">${isNew ? "Create article" : "Save now"}</button>
+                        <p class="wiki-edit-save-hint">Auto-saves every 5 seconds · Save to publish or finish editing</p>
+                    </section>
                     <section class="wiki-edit-card">
                         <h3>Details</h3>
                         <div class="wiki-edit-field">
@@ -266,7 +272,7 @@ export function mountEditor(
             target?.scrollIntoView({ behavior: "smooth", block: "start" });
             return;
         }
-        if (!confirm("Follow this link? Unsaved changes on this article will be lost unless you save first.")) {
+        if (!confirm("Follow this link? Your latest edits may still be saving.")) {
             e.preventDefault();
         }
     });
@@ -287,10 +293,128 @@ export function mountEditor(
         });
     });
 
+    const AUTOSAVE_MS = 5000;
+    let lastSavedFingerprint = "";
+    let autosaveTimer = null;
+    let saveInFlight = false;
+
+    function entryFingerprint(entry) {
+        return JSON.stringify({
+            id: entry.id,
+            kind: entry.kind,
+            name: entry.name,
+            aliases: entry.aliases,
+            pronouns: entry.pronouns,
+            status: entry.status,
+            appearance: entry.appearance,
+            body: entry.body,
+            tags: entry.tags,
+        });
+    }
+
+    function setSaveStatus(status) {
+        extras?.onSaveStatus?.(status);
+    }
+
+    function updateSaveLabels(createMode) {
+        const label = createMode ? "Create article" : "Save";
+        form.querySelectorAll(".wiki-edit-save-btn").forEach((btn) => {
+            btn.textContent = btn.hasAttribute("data-save-compact")
+                ? createMode
+                    ? "Create"
+                    : "Save"
+                : createMode
+                  ? "Create article"
+                  : "Save now";
+        });
+        const headerSave = document.getElementById("wikiHeaderSave");
+        if (headerSave) headerSave.textContent = label;
+    }
+
+    function markDirty() {
+        setSaveStatus("unsaved");
+    }
+
+    async function persistDraft({ force = false } = {}) {
+        const uid = window.__wikiUid;
+        if (!uid) return null;
+
+        const title = form.querySelector("#wikiEditTitle")?.value?.trim();
+        if (!title && !bodyInput?.value?.trim()) return null;
+
+        let updated;
+        try {
+            updated = await buildFromForm(form, draft, articleIsNew, bookId, { allowUntitled: true });
+        } catch {
+            return null;
+        }
+
+        const fingerprint = entryFingerprint(updated);
+        if (!force && fingerprint === lastSavedFingerprint) return { skipped: true, entry: updated };
+
+        while (saveInFlight) {
+            await new Promise((resolve) => setTimeout(resolve, 50));
+        }
+
+        if (!force) {
+            try {
+                updated = await buildFromForm(form, draft, articleIsNew, bookId, { allowUntitled: true });
+            } catch {
+                return null;
+            }
+            const latestFingerprint = entryFingerprint(updated);
+            if (latestFingerprint === lastSavedFingerprint) return { skipped: true, entry: updated };
+        } else {
+            try {
+                updated = await buildFromForm(form, draft, articleIsNew, bookId);
+            } catch {
+                return null;
+            }
+        }
+
+        saveInFlight = true;
+        setSaveStatus("saving");
+
+        try {
+            await saveEntry(uid, bookId, updated);
+            Object.assign(draft, updated);
+            lastSavedFingerprint = entryFingerprint(updated);
+
+            if (articleIsNew) {
+                articleIsNew = false;
+                form.querySelector("#wikiEditTitle")?.setAttribute("readonly", "");
+                updateSaveLabels(false);
+                extras?.onFirstSave?.(updated);
+            }
+
+            extras?.onAutoSave?.(updated);
+            setSaveStatus("saved");
+            return { entry: updated };
+        } catch (err) {
+            console.error("[wiki] autosave failed:", err);
+            setSaveStatus("error");
+            return null;
+        } finally {
+            saveInFlight = false;
+        }
+    }
+
+    lastSavedFingerprint = entryFingerprint(readDraftFromForm());
+    setSaveStatus("idle");
+
+    form.addEventListener("input", markDirty);
+    form.addEventListener("change", markDirty);
+
+    autosaveTimer = window.setInterval(() => {
+        void persistDraft();
+    }, AUTOSAVE_MS);
+
     form.addEventListener("submit", (e) => {
         e.preventDefault();
         const publishAfterSave = !!form.querySelector("#wikiPublishCheck")?.checked;
-        void submitEditor(form, draft, isNew, bookId, (saved) => onSave(saved, publishAfterSave));
+        void submitEditor(form, draft, articleIsNew, bookId, persistDraft, (saved) =>
+            onSave(saved, publishAfterSave)
+        );
     });
 
     const headerCancel = document.getElementById("wikiHeaderCancel");
@@ -301,7 +425,7 @@ export function mountEditor(
     }
 
     form.querySelector("#wikiUnpublishBtn")?.addEventListener("click", () => {
-        void buildFromForm(form, draft, isNew, bookId).then((saved) => onUnpublish(saved));
+        void buildFromForm(form, draft, articleIsNew, bookId).then((saved) => onUnpublish(saved));
     });
 
     form.querySelector("#wikiDeleteBtn")?.addEventListener("click", () => {
@@ -310,20 +434,24 @@ export function mountEditor(
 
     form.querySelector("#wikiMoveBtn")?.addEventListener("click", () => {
         const targetBookId = form.querySelector("#wikiMoveBook")?.value?.trim();
-        if (!targetBookId || !extras?.onMove || isNew) return;
-        void buildFromForm(form, draft, isNew, bookId).then((saved) => extras.onMove(targetBookId, saved));
+        if (!targetBookId || !extras?.onMove || articleIsNew) return;
+        void buildFromForm(form, draft, articleIsNew, bookId).then((saved) => extras.onMove(targetBookId, saved));
     });
+
+    return () => {
+        if (autosaveTimer) window.clearInterval(autosaveTimer);
+    };
 }
 
-async function buildFromForm(form, draft, isNew, bookId) {
-    const title = form.querySelector("#wikiEditTitle")?.value?.trim();
-    if (!title) throw new Error("Title required");
+async function buildFromForm(form, draft, isNew, bookId, { allowUntitled = false } = {}) {
+    let title = form.querySelector("#wikiEditTitle")?.value?.trim();
+    if (!title) {
+        if (!allowUntitled) throw new Error("Title required");
+        title = "Untitled";
+    }
 
     const kind = form.querySelector("#wikiEditKind")?.value || "character";
-    let id = draft.id;
-    if (isNew) {
-        id = kind === "character" ? newCharacterId() : newPlaceId();
-    }
+    const id = draft.id;
 
     const aliases = String(form.querySelector("#wikiEditAliases")?.value || "")
         .split(",")
@@ -358,12 +486,10 @@ async function buildFromForm(form, draft, isNew, bookId) {
     );
 }
 
-async function submitEditor(form, draft, isNew, bookId, onSave) {
-    const updated = await buildFromForm(form, draft, isNew, bookId);
-    const uid = window.__wikiUid;
-    if (!uid) throw new Error("Not signed in");
-    await saveEntry(uid, bookId, updated);
-    await onSave(updated);
+async function submitEditor(form, draft, isNew, bookId, persistDraft, onSave) {
+    const result = await persistDraft({ force: true });
+    if (!result?.entry) throw new Error("Could not save article");
+    await onSave(result.entry);
 }
 
 export { saveEntry };
