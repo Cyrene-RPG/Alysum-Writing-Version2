@@ -1,7 +1,7 @@
 /**
  * Story Wiki — creator-only: write lore articles, optionally publish to Lore Wiki.
  */
-import { listBooks, listEntries, getBookTitle, deleteEntry } from "./api.js";
+import { listBooks, listEntries, getBookTitle, deleteEntry, moveEntryToBook } from "./api.js";
 import { renderCreatorBookHub, renderCreatorArticleList, escapeHtml } from "./creator-render.js";
 import { mountEditor } from "./editor.js";
 import {
@@ -130,7 +130,7 @@ export class WikiApp {
         }
 
         if (this.action === "edit" || entry) {
-            return this.renderEdit(entry, this.pendingTitle);
+            return await this.renderEdit(entry, this.pendingTitle);
         }
 
         return this.renderArticleList(this.entries);
@@ -175,8 +175,36 @@ export class WikiApp {
         this.navigate({ book: this.bookId });
     }
 
-    renderEdit(entry, defaultTitle) {
+    async handleMove(targetBookId, entry, wasPublished) {
+        const targetTitle = await getBookTitle(this.uid, targetBookId);
+        const msg = wasPublished
+            ? `Move “${entry.name}” to “${targetTitle}”? It will be removed from this book’s Lore Wiki and republished under the new book.`
+            : `Move “${entry.name}” to “${targetTitle}”?`;
+        if (!confirm(msg)) return;
+
+        try {
+            if (wasPublished) {
+                await unpublishEntryFromLore(this.uid, this.bookId, entry.id, {
+                    bookTitle: this.bookTitle,
+                    authorName: this.authorName,
+                });
+            }
+            await moveEntryToBook(this.uid, this.bookId, targetBookId, entry);
+            if (wasPublished) {
+                await publishEntryToLore(this.uid, targetBookId, entry, {
+                    bookTitle: targetTitle,
+                    authorName: this.authorName,
+                });
+            }
+            window.location.href = `wiki.html?book=${encodeURIComponent(targetBookId)}&action=edit&entry=${encodeURIComponent(entry.id)}`;
+        } catch (e) {
+            alert(e?.message || "Could not move article.");
+        }
+    }
+
+    async renderEdit(entry, defaultTitle) {
         const isPublished = entry ? this.publishedIds.has(entry.id) : false;
+        const allBooks = await listBooks(this.uid);
 
         document.title = entry ? `Edit: ${entry.name}` : "New lore article";
         this.els.pageToolbar.hidden = true;
@@ -218,7 +246,14 @@ export class WikiApp {
             () => this.navigate({ book: this.bookId }),
             entry
                 ? () => void this.handleDelete(entry.id, entry.kind)
-                : null
+                : null,
+            {
+                bookEntries: this.entries,
+                allBooks,
+                onMove: entry
+                    ? (targetBookId, saved) => this.handleMove(targetBookId, saved, isPublished)
+                    : undefined,
+            }
         );
     }
 }

@@ -2,6 +2,7 @@
  * Lore article editor — writing-first layout with sidebar metadata.
  */
 import { newCharacterId, newPlaceId, saveEntry, normalizeEntry } from "./api.js";
+import { wireLinkToolbar } from "./link-toolbar.js";
 
 function escapeHtml(value) {
     return String(value || "")
@@ -22,6 +23,7 @@ function escapeHtml(value) {
  * @param {(saved: object) => void | Promise<void>} onUnpublish
  * @param {() => void} onCancel
  * @param {(() => void) | null} [onDelete]
+ * @param {{ bookEntries?: Array, allBooks?: Array, onMove?: (targetBookId: string, entry: object) => void | Promise<void> } | null} [extras]
  */
 export function mountEditor(
     container,
@@ -33,11 +35,15 @@ export function mountEditor(
     onSave,
     onUnpublish,
     onCancel,
-    onDelete
+    onDelete,
+    extras
 ) {
     const isNew = !entry;
     const draft = entry || normalizeEntry({ name: defaultTitle || "" }, newCharacterId(), "character");
     const isCharacter = draft.kind === "character";
+    const bookEntries = extras?.bookEntries || [];
+    const allBooks = (extras?.allBooks || []).filter((b) => b.id !== bookId);
+    const linkEntries = bookEntries.filter((e) => e.id !== draft.id);
 
     container.innerHTML = `
         <form class="wiki-edit-form" id="wikiEditForm">
@@ -55,9 +61,34 @@ export function mountEditor(
                     <label class="wiki-edit-title-label" for="wikiEditTitle">Article title</label>
                     <input type="text" id="wikiEditTitle" class="wiki-edit-title-input" value="${escapeHtml(draft.name)}" placeholder="Character, place, or concept name" required ${isNew ? "" : "readonly"} />
 
-                    <label class="wiki-edit-body-label" for="wikiEditBody">Lore</label>
-                    <textarea id="wikiEditBody" class="wiki-edit-body-input" spellcheck="true" placeholder="Write the article here… Use [[Article Title]] for links and == Section == for headings.">${escapeHtml(draft.body)}</textarea>
-                    <p class="wiki-edit-hint"><code>[[Article Title]]</code> links · <code>== Heading ==</code> sections</p>
+                    <div class="wiki-edit-body-toolbar">
+                        <label class="wiki-edit-body-label" for="wikiEditBody">Lore</label>
+                        <button type="button" class="wiki-link-btn" id="wikiLinkBtn" title="Link selected text">🔗 Link</button>
+                    </div>
+                    <textarea id="wikiEditBody" class="wiki-edit-body-input" spellcheck="true" placeholder="Write the article here… Highlight text and click Link, or use [[Article Title]] manually.">${escapeHtml(draft.body)}</textarea>
+                    <p class="wiki-edit-hint">Highlight text → <strong>Link</strong> · or type <code>[[Article Title]]</code> · <code>== Heading ==</code></p>
+
+                    <div class="wiki-link-popover" id="wikiLinkPopover" hidden>
+                        <div class="wiki-link-popover-inner">
+                            <h4>Create link</h4>
+                            <div class="wiki-edit-field">
+                                <label for="wikiLinkTarget">Link to article</label>
+                                <input type="text" id="wikiLinkTarget" placeholder="Article title" />
+                            </div>
+                            <div class="wiki-edit-field">
+                                <label for="wikiLinkLabel">Display text (optional)</label>
+                                <input type="text" id="wikiLinkLabel" placeholder="Same as selection if empty" />
+                            </div>
+                            <div class="wiki-link-pick-wrap">
+                                <p class="wiki-link-pick-label">Articles in this book</p>
+                                <div class="wiki-link-pick-list" id="wikiLinkPickList"></div>
+                            </div>
+                            <div class="wiki-link-popover-actions">
+                                <button type="button" class="cdx-button" id="wikiLinkCancel" data-wiki-link-close>Cancel</button>
+                                <button type="button" class="cdx-button cdx-button--action-progressive" id="wikiLinkApply">Insert link</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <aside class="wiki-edit-sidebar">
@@ -100,6 +131,23 @@ export function mountEditor(
                         <div class="wiki-edit-field"><label for="wikiEditDistinctive">Distinctive</label><input type="text" id="wikiEditDistinctive" value="${escapeHtml(draft.appearance?.distinctive || "")}" /></div>
                     </section>
 
+                    ${
+                        !isNew && allBooks.length && extras?.onMove
+                            ? `<section class="wiki-edit-card">
+                        <h3>Move to book</h3>
+                        <p class="wiki-publish-copy">Transfer this article to another book’s wiki.${isPublished ? " It will be republished under the new book on Lore Wiki." : ""}</p>
+                        <div class="wiki-edit-field">
+                            <label for="wikiMoveBook">Destination book</label>
+                            <select id="wikiMoveBook">
+                                <option value="">Choose a book…</option>
+                                ${allBooks.map((b) => `<option value="${escapeHtml(b.id)}">${escapeHtml(b.title)}</option>`).join("")}
+                            </select>
+                        </div>
+                        <button type="button" class="cdx-button wiki-edit-move" id="wikiMoveBtn">Move article</button>
+                    </section>`
+                            : ""
+                    }
+
                     <section class="wiki-edit-card wiki-edit-publish-card">
                         <h3>Lore Wiki</h3>
                         ${
@@ -128,6 +176,18 @@ export function mountEditor(
 
     const form = container.querySelector("#wikiEditForm");
     const kindSelect = form.querySelector("#wikiEditKind");
+    const bodyInput = form.querySelector("#wikiEditBody");
+    const linkPopover = form.querySelector("#wikiLinkPopover");
+    const linkApi = bodyInput && linkPopover ? wireLinkToolbar(bodyInput, linkEntries, linkPopover) : null;
+
+    form.querySelector("#wikiLinkBtn")?.addEventListener("click", () => {
+        if (!bodyInput) return;
+        const sel = bodyInput.value.slice(bodyInput.selectionStart, bodyInput.selectionEnd).trim();
+        if (!sel && bodyInput.selectionStart === bodyInput.selectionEnd) {
+            bodyInput.focus();
+        }
+        linkApi?.openPopover();
+    });
 
     kindSelect?.addEventListener("change", () => {
         const isChar = kindSelect.value === "character";
@@ -150,6 +210,12 @@ export function mountEditor(
 
     form.querySelector("#wikiDeleteBtn")?.addEventListener("click", () => {
         if (onDelete) onDelete();
+    });
+
+    form.querySelector("#wikiMoveBtn")?.addEventListener("click", () => {
+        const targetBookId = form.querySelector("#wikiMoveBook")?.value?.trim();
+        if (!targetBookId || !extras?.onMove || isNew) return;
+        void buildFromForm(form, draft, isNew, bookId).then((saved) => extras.onMove(targetBookId, saved));
     });
 }
 

@@ -255,4 +255,27 @@ export async function deleteEntry(uid, bookId, entryId, kind) {
     if (error) throw error;
 }
 
+/**
+ * Move an article to another book wiki (same user).
+ * @param {string} uid
+ * @param {string} fromBookId
+ * @param {string} toBookId
+ * @param {ReturnType<typeof normalizeEntry>} entry
+ */
+export async function moveEntryToBook(uid, fromBookId, toBookId, entry) {
+    if (fromBookId === toBookId) return entry.id;
+
+    const targetEntries = await listEntries(uid, toBookId);
+    const conflict = targetEntries.find(
+        (e) => e.id !== entry.id && e.name.toLowerCase() === entry.name.toLowerCase()
+    );
+    if (conflict) {
+        throw new Error(`“${entry.name}” already exists in that book’s wiki.`);
+    }
+
+    await saveEntry(uid, toBookId, entry);
+    await deleteEntry(uid, fromBookId, entry.id, entry.kind);
+    return entry.id;
+}
+
 export { supabase };
