@@ -961,7 +961,7 @@
         const authGateLoginBtn = document.getElementById("authGateLoginBtn");
         const authGateSignupBtn = document.getElementById("authGateSignupBtn");
         const mainLayout = document.getElementById("mainLayout");
-        const welcomeSub = document.getElementById("welcomeSub");
+        const welcomeSub = document.getElementById("welcomeSubtitle");
         const topTitle = document.getElementById("topTitle");
         const topSub = document.getElementById("topSub");
         const backBtn = document.getElementById("backBtn");
@@ -1552,6 +1552,7 @@
                 welcomeSub.textContent = isInvite
                     ? "Private beta invite — sign in or create an account to continue"
                     : "Private beta room — sign in or create an account to continue";
+                welcomeSub.classList.remove("is-hidden");
             }
 
             authGatePanel.classList.remove("hidden");
@@ -1626,9 +1627,12 @@
             heroAuthor.textContent = isAuthor ? "You are the author reviewing this invite" : `by @${authorName}`;
             topTitle.textContent = title;
             topSub.textContent = isAuthor ? "Your private beta room" : `@${authorName} · private beta`;
-            welcomeSub.textContent = isAuthor
-                ? "Manage invites from Studio · this snapshot is not in the Library"
-                : `Shared by @${authorName} · unpublished · not in the Library`;
+            if (welcomeSub) {
+                welcomeSub.textContent = isAuthor
+                    ? "Manage invites from Studio · this snapshot is not in the Library"
+                    : `Shared by @${authorName} · unpublished · not in the Library`;
+                welcomeSub.classList.remove("is-hidden");
+            }
 
             statChapters.textContent = String(chapters.length);
             statWords.textContent = formatNumber(wordCount);
