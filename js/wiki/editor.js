@@ -106,29 +106,33 @@ export function mountEditor(
                             <label for="wikiEditAliases">Also known as</label>
                             <input type="text" id="wikiEditAliases" value="${escapeHtml((draft.aliases || []).join(", "))}" placeholder="Comma-separated" />
                         </div>
-                        <div class="wiki-edit-field wiki-edit-character-only" ${isCharacter ? "" : "hidden"}>
-                            <label for="wikiEditPronouns">Pronouns</label>
-                            <input type="text" id="wikiEditPronouns" value="${escapeHtml(draft.pronouns)}" />
-                        </div>
-                        <div class="wiki-edit-field wiki-edit-character-only" ${isCharacter ? "" : "hidden"}>
-                            <label for="wikiEditStatus">Status</label>
-                            <select id="wikiEditStatus">
-                                <option value="alive" ${draft.status === "alive" ? "selected" : ""}>Alive</option>
-                                <option value="deceased" ${draft.status === "deceased" ? "selected" : ""}>Deceased</option>
-                                <option value="unknown" ${draft.status === "unknown" ? "selected" : ""}>Unknown</option>
-                            </select>
+                        <div class="wiki-edit-field-grid wiki-edit-character-only" ${isCharacter ? "" : "hidden"}>
+                            <div class="wiki-edit-field">
+                                <label for="wikiEditPronouns">Pronouns</label>
+                                <input type="text" id="wikiEditPronouns" value="${escapeHtml(draft.pronouns)}" />
+                            </div>
+                            <div class="wiki-edit-field">
+                                <label for="wikiEditStatus">Status</label>
+                                <select id="wikiEditStatus">
+                                    <option value="alive" ${draft.status === "alive" ? "selected" : ""}>Alive</option>
+                                    <option value="deceased" ${draft.status === "deceased" ? "selected" : ""}>Deceased</option>
+                                    <option value="unknown" ${draft.status === "unknown" ? "selected" : ""}>Unknown</option>
+                                </select>
+                            </div>
                         </div>
                     </section>
 
                     <section class="wiki-edit-card wiki-edit-appearance-card wiki-edit-character-only" ${isCharacter ? "" : "hidden"}>
                         <h3>Appearance</h3>
-                        <div class="wiki-edit-field"><label for="wikiEditAge">Age</label><input type="text" id="wikiEditAge" value="${escapeHtml(draft.appearance?.age || "")}" /></div>
-                        <div class="wiki-edit-field"><label for="wikiEditEyes">Eyes</label><input type="text" id="wikiEditEyes" value="${escapeHtml(draft.appearance?.eyes || "")}" /></div>
-                        <div class="wiki-edit-field"><label for="wikiEditHair">Hair</label><input type="text" id="wikiEditHair" value="${escapeHtml(draft.appearance?.hair || "")}" /></div>
-                        <div class="wiki-edit-field"><label for="wikiEditHeight">Height</label><input type="text" id="wikiEditHeight" value="${escapeHtml(draft.appearance?.height || "")}" /></div>
-                        <div class="wiki-edit-field"><label for="wikiEditSkin">Skin</label><input type="text" id="wikiEditSkin" value="${escapeHtml(draft.appearance?.skin || "")}" /></div>
-                        <div class="wiki-edit-field"><label for="wikiEditBuild">Build</label><input type="text" id="wikiEditBuild" value="${escapeHtml(draft.appearance?.build || "")}" /></div>
-                        <div class="wiki-edit-field"><label for="wikiEditDistinctive">Distinctive</label><input type="text" id="wikiEditDistinctive" value="${escapeHtml(draft.appearance?.distinctive || "")}" /></div>
+                        <div class="wiki-edit-field-grid">
+                            <div class="wiki-edit-field"><label for="wikiEditAge">Age</label><input type="text" id="wikiEditAge" value="${escapeHtml(draft.appearance?.age || "")}" /></div>
+                            <div class="wiki-edit-field"><label for="wikiEditEyes">Eyes</label><input type="text" id="wikiEditEyes" value="${escapeHtml(draft.appearance?.eyes || "")}" /></div>
+                            <div class="wiki-edit-field"><label for="wikiEditHair">Hair</label><input type="text" id="wikiEditHair" value="${escapeHtml(draft.appearance?.hair || "")}" /></div>
+                            <div class="wiki-edit-field"><label for="wikiEditHeight">Height</label><input type="text" id="wikiEditHeight" value="${escapeHtml(draft.appearance?.height || "")}" /></div>
+                            <div class="wiki-edit-field"><label for="wikiEditSkin">Skin</label><input type="text" id="wikiEditSkin" value="${escapeHtml(draft.appearance?.skin || "")}" /></div>
+                            <div class="wiki-edit-field"><label for="wikiEditBuild">Build</label><input type="text" id="wikiEditBuild" value="${escapeHtml(draft.appearance?.build || "")}" /></div>
+                            <div class="wiki-edit-field wiki-edit-field-span"><label for="wikiEditDistinctive">Distinctive</label><input type="text" id="wikiEditDistinctive" value="${escapeHtml(draft.appearance?.distinctive || "")}" /></div>
+                        </div>
                     </section>
 
                     ${

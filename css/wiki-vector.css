@@ -1082,6 +1082,204 @@ body.wiki-page h6 {
     }
 }
 
+/* Editor fills viewport — no page scroll */
+body.wiki-creator.wiki-editing {
+    overflow: hidden;
+    height: 100vh;
+    min-height: 0;
+}
+
+body.wiki-creator.wiki-editing .mw-page-container {
+    height: calc(100vh - var(--alysum-nav-sticky-offset, 45px));
+    min-height: 0;
+    overflow: hidden;
+}
+
+body.wiki-creator.wiki-editing .mw-footer {
+    display: none;
+}
+
+body.wiki-creator.wiki-editing .wiki-creator-body {
+    max-width: 1280px;
+    height: 100%;
+    min-height: 0;
+    padding: 0 clamp(0.75rem, 2vw, 1.25rem);
+    display: flex;
+    flex-direction: column;
+}
+
+body.wiki-creator.wiki-editing .wiki-creator-main,
+body.wiki-creator.wiki-editing .mw-body-content,
+body.wiki-creator.wiki-editing .wiki-edit-shell,
+body.wiki-creator.wiki-editing .mw-parser-output {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+
+body.wiki-creator.wiki-editing .wiki-creator-main {
+    padding: 0.45rem 0 0.35rem;
+}
+
+body.wiki-creator.wiki-editing .wiki-edit-form {
+    flex: 1;
+    min-height: 0;
+    gap: 0.45rem;
+    overflow: hidden;
+}
+
+body.wiki-creator.wiki-editing .wiki-edit-topbar {
+    flex-shrink: 0;
+    padding: 0.45rem 0.75rem;
+}
+
+body.wiki-creator.wiki-editing .wiki-edit-layout {
+    flex: 1;
+    min-height: 0;
+    grid-template-columns: minmax(0, 1fr) minmax(240px, 300px);
+    align-items: stretch;
+    gap: 0.65rem;
+    overflow: hidden;
+}
+
+body.wiki-creator.wiki-editing .wiki-edit-main {
+    min-height: 0;
+    height: auto;
+    padding: 0.65rem 0.85rem;
+    overflow: hidden;
+    position: relative;
+}
+
+body.wiki-creator.wiki-editing .wiki-edit-title-input {
+    flex-shrink: 0;
+    font-size: clamp(1.15rem, 2vw, 1.45rem);
+    padding: 0.2rem 0 0.4rem;
+    margin-bottom: 0.15rem;
+}
+
+body.wiki-creator.wiki-editing .wiki-edit-body-toolbar {
+    flex-shrink: 0;
+}
+
+body.wiki-creator.wiki-editing .wiki-edit-body-input {
+    flex: 1;
+    min-height: 0;
+    resize: none;
+    overflow-y: auto;
+    font-size: 1rem;
+    line-height: 1.55;
+    padding: 0.25rem 0;
+}
+
+body.wiki-creator.wiki-editing .wiki-edit-hint {
+    flex-shrink: 0;
+    font-size: 0.7rem;
+    line-height: 1.3;
+}
+
+body.wiki-creator.wiki-editing .wiki-link-popover {
+    position: absolute;
+    left: 0.85rem;
+    right: 0.85rem;
+    bottom: 1.75rem;
+    z-index: 30;
+    margin-top: 0;
+    max-height: min(14rem, 45%);
+    overflow-y: auto;
+    box-shadow: var(--wiki-shadow);
+}
+
+body.wiki-creator.wiki-editing .wiki-edit-sidebar {
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    position: static;
+    gap: 0.45rem;
+    scrollbar-width: thin;
+}
+
+body.wiki-creator.wiki-editing .wiki-edit-card {
+    padding: 0.55rem 0.65rem;
+    flex-shrink: 0;
+}
+
+body.wiki-creator.wiki-editing .wiki-edit-card h3 {
+    margin-bottom: 0.45rem;
+    padding-bottom: 0.25rem;
+}
+
+body.wiki-creator.wiki-editing .wiki-edit-field {
+    margin-bottom: 0.4rem;
+}
+
+body.wiki-creator.wiki-editing .wiki-edit-field label {
+    margin-bottom: 0.15rem;
+    font-size: 0.68rem;
+}
+
+body.wiki-creator.wiki-editing .wiki-edit-field input,
+body.wiki-creator.wiki-editing .wiki-edit-field select {
+    padding: 0.32rem 0.45rem;
+    font-size: 0.8125rem;
+}
+
+body.wiki-creator.wiki-editing .wiki-edit-field-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.35rem 0.5rem;
+}
+
+body.wiki-creator.wiki-editing .wiki-edit-field-grid .wiki-edit-field {
+    margin-bottom: 0;
+}
+
+body.wiki-creator.wiki-editing .wiki-edit-field-span {
+    grid-column: 1 / -1;
+}
+
+body.wiki-creator.wiki-editing .wiki-edit-publish-card .wiki-publish-copy {
+    margin-bottom: 0.45rem;
+    font-size: 0.75rem;
+    line-height: 1.35;
+}
+
+@media (max-width: 900px) {
+    body.wiki-creator.wiki-editing {
+        overflow: auto;
+        height: auto;
+    }
+
+    body.wiki-creator.wiki-editing .mw-page-container {
+        height: auto;
+        overflow: visible;
+    }
+
+    body.wiki-creator.wiki-editing .mw-footer {
+        display: block;
+    }
+
+    body.wiki-creator.wiki-editing .wiki-edit-layout {
+        overflow: visible;
+    }
+
+    body.wiki-creator.wiki-editing .wiki-edit-main,
+    body.wiki-creator.wiki-editing .wiki-edit-sidebar {
+        overflow: visible;
+        min-height: auto;
+    }
+
+    body.wiki-creator.wiki-editing .wiki-edit-body-input {
+        min-height: 14rem;
+    }
+
+    body.wiki-creator.wiki-editing .wiki-link-popover {
+        position: static;
+        max-height: none;
+    }
+}
+
 /* History */
 .wiki-history-list {
     list-style: none;

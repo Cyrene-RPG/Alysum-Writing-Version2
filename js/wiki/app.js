@@ -100,11 +100,17 @@ export class WikiApp {
         window.location.href = url.pathname + url.search;
     }
 
+    setEditViewportLock(on) {
+        document.body.classList.toggle("wiki-editing", on);
+    }
+
     async renderBookHub() {
         document.title = "Story Wiki — Create lore";
+        this.setEditViewportLock(false);
         this.els.pageToolbar.hidden = true;
         this.els.contentSub.textContent = "";
         this.els.lastModified.textContent = "";
+        this.els.parserOutput.closest(".mw-body-content-inner")?.classList.remove("wiki-edit-shell");
         const books = await listBooks(this.uid);
         this.els.parserOutput.innerHTML = renderCreatorBookHub(books);
     }
@@ -138,6 +144,7 @@ export class WikiApp {
 
     renderArticleList(entries, searchQuery = "") {
         document.title = `${this.bookTitle} — Story Wiki`;
+        this.setEditViewportLock(false);
         this.els.pageToolbar.hidden = true;
         this.els.parserOutput.closest(".mw-body-content-inner")?.classList.remove("wiki-edit-shell");
         this.els.contentSub.innerHTML = `<a href="wiki.html">All books</a> · ${escapeHtml(this.bookTitle)}`;
@@ -207,6 +214,7 @@ export class WikiApp {
         const allBooks = await listBooks(this.uid);
 
         document.title = entry ? `Edit: ${entry.name}` : "New lore article";
+        this.setEditViewportLock(true);
         this.els.pageToolbar.hidden = true;
         this.els.contentSub.textContent = "";
         this.els.lastModified.textContent = "";
