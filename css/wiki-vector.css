@@ -1249,6 +1249,43 @@ body.wiki-creator .wiki-creator-main {
     display: flex;
     gap: 0.75rem;
     white-space: nowrap;
+    align-items: center;
+}
+
+.wiki-delete-btn,
+.wiki-article-row-actions .wiki-delete-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    font-size: 0.875rem;
+    color: #fb7185;
+    cursor: pointer;
+}
+
+.wiki-delete-btn:hover {
+    color: #fecaca;
+    text-decoration: underline;
+}
+
+.wiki-edit-delete {
+    width: 100%;
+    padding: 0.45rem 0.65rem;
+    border-radius: var(--wiki-radius-sm);
+    border: 1px solid rgba(251, 113, 133, 0.35);
+    background: rgba(159, 18, 57, 0.18);
+    color: #fecaca;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.wiki-edit-delete:hover {
+    background: rgba(159, 18, 57, 0.28);
+}
+
+.wiki-edit-danger-card h3 {
+    color: #fb7185;
 }
 
 .wiki-badge {

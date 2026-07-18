@@ -21,6 +21,7 @@ function escapeHtml(value) {
  * @param {(saved: object, publishAfterSave: boolean) => void | Promise<void>} onSave
  * @param {(saved: object) => void | Promise<void>} onUnpublish
  * @param {() => void} onCancel
+ * @param {(() => void) | null} [onDelete]
  */
 export function mountEditor(
     container,
@@ -31,7 +32,8 @@ export function mountEditor(
     canPublish,
     onSave,
     onUnpublish,
-    onCancel
+    onCancel,
+    onDelete
 ) {
     const isNew = !entry;
     const draft = entry || normalizeEntry({ name: defaultTitle || "" }, newCharacterId(), "character");
@@ -110,6 +112,15 @@ export function mountEditor(
                                 : `<p class="wiki-publish-copy">Sign in with a cloud account to publish to Lore Wiki.</p>`
                         }
                     </section>
+                    ${
+                        !isNew && onDelete
+                            ? `<section class="wiki-edit-card wiki-edit-danger-card">
+                        <h3>Danger zone</h3>
+                        <p class="wiki-publish-copy">Permanently remove this article from Story Wiki${isPublished ? " and Lore Wiki" : ""}.</p>
+                        <button type="button" class="wiki-edit-delete" id="wikiDeleteBtn">Delete article</button>
+                    </section>`
+                            : ""
+                    }
                 </aside>
             </div>
         </form>
@@ -135,6 +146,10 @@ export function mountEditor(
 
     form.querySelector("#wikiUnpublishBtn")?.addEventListener("click", () => {
         void buildFromForm(form, draft, isNew, bookId).then((saved) => onUnpublish(saved));
+    });
+
+    form.querySelector("#wikiDeleteBtn")?.addEventListener("click", () => {
+        if (onDelete) onDelete();
     });
 }
 

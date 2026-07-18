@@ -84,6 +84,7 @@ export function renderCreatorArticleList(bookTitle, bookId, entries, publishedId
                 <td class="wiki-article-row-actions">
                     <a href="wiki.html?book=${encodeURIComponent(bookId)}&action=edit&entry=${encodeURIComponent(entry.id)}">Edit</a>
                     ${published ? `<a href="lore-wiki.html?book=${encodeURIComponent(bookId)}&entry=${encodeURIComponent(entry.id)}" target="_blank" rel="noopener">View public</a>` : ""}
+                    <button type="button" class="wiki-delete-btn" data-wiki-delete="${escapeHtml(entry.id)}" data-wiki-kind="${escapeHtml(entry.kind)}">Delete</button>
                 </td>
             </tr>`;
         }

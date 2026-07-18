@@ -160,7 +160,11 @@ export class WikiApp {
     }
 
     async handleDelete(entryId, kind) {
-        if (!confirm("Delete this article? This cannot be undone.")) return;
+        const published = this.publishedIds.has(entryId);
+        const msg = published
+            ? "Delete this article? It will be removed from Story Wiki and Lore Wiki. This cannot be undone."
+            : "Delete this article? This cannot be undone.";
+        if (!confirm(msg)) return;
         await deleteEntry(this.uid, this.bookId, entryId, kind);
         if (this.publishedIds.has(entryId)) {
             await unpublishEntryFromLore(this.uid, this.bookId, entryId, {
@@ -211,7 +215,10 @@ export class WikiApp {
                 }
                 await this.loadBook(this.bookId);
             },
-            () => this.navigate({ book: this.bookId })
+            () => this.navigate({ book: this.bookId }),
+            entry
+                ? () => void this.handleDelete(entry.id, entry.kind)
+                : null
         );
     }
 }
