@@ -10,9 +10,10 @@ import {
     normalizeStoryWikiPlain,
     plainToStoryWikiHtml,
     serializeStoryWikiBody
-} from "./story-wiki-wikilinks.js?v=4";
-import { mountWikiLinkKindPicker } from "./story-wiki-link-picker.js?v=1";
-import { renderStoryWikiArticleHtml } from "./story-wiki-read.js?v=1";
+} from "./story-wiki-wikilinks.js?v=9";
+import { mountWikiLinkKindPicker } from "./story-wiki-link-picker.js?v=2";
+import { renderStoryWikiArticleHtml } from "./story-wiki-read.js?v=2";
+import { wikiDebug } from "./story-wiki-debug.js?v=1";
 
 /**
  * @param {object} opts
@@ -105,6 +106,28 @@ export function mountStoryWikiArticle(opts) {
         return buildStoryWikiIndex(characters, places);
     }
 
+    function syncMetadataPanelMode() {
+        if (!editFormWrap) return;
+        const isRead = mode === "read";
+        editFormWrap.classList.toggle("is-read-metadata", isRead);
+        editFormWrap.querySelector(".sw-wp-title-block")?.classList.toggle("hidden", isRead);
+        editFormWrap.querySelector(".sw-wp-article-body-block")?.classList.toggle("hidden", isRead);
+        const details = editFormWrap.querySelector(".sw-wp-advanced-fields");
+        if (details instanceof HTMLDetailsElement && isRead) details.open = true;
+        for (const el of editFormWrap.querySelectorAll("input, select, textarea")) {
+            if (!(el instanceof HTMLInputElement || el instanceof HTMLSelectElement || el instanceof HTMLTextAreaElement)) {
+                continue;
+            }
+            if (isRead) {
+                el.setAttribute("readonly", "readonly");
+                if (el instanceof HTMLSelectElement) el.disabled = true;
+            } else {
+                el.removeAttribute("readonly");
+                if (el instanceof HTMLSelectElement) el.disabled = false;
+            }
+        }
+    }
+
     function setMode(next) {
         mode = next === "edit" ? "edit" : "read";
         modeReadBtn?.classList.toggle("is-active", mode === "read");
@@ -112,7 +135,8 @@ export function mountStoryWikiArticle(opts) {
         modeReadBtn?.setAttribute("aria-selected", mode === "read" ? "true" : "false");
         modeEditBtn?.setAttribute("aria-selected", mode === "edit" ? "true" : "false");
         readMount?.classList.toggle("hidden", mode !== "read");
-        editFormWrap?.classList.toggle("hidden", mode !== "edit");
+        editFormWrap?.classList.remove("hidden");
+        syncMetadataPanelMode();
         document.getElementById("sbEntryHero")?.classList.toggle("hidden", mode === "read");
         updateFormatToolbarState();
         if (mode === "read") renderArticle();
@@ -138,11 +162,10 @@ export function mountStoryWikiArticle(opts) {
         editEl.innerHTML = plainToStoryWikiHtml(normalized, index, wikiHtmlOpts());
     }
 
-    /** Normalize wikilinks, create missing articles, and refresh chips without disturbing the caret while typing. */
+    /** Normalize wikilinks in the editor without auto-creating new articles. */
     async function commitEditNormalization() {
         if (!editEl?.isContentEditable) return;
         const raw = serializeStoryWikiBody(editEl);
-        if (onEnsureMissingArticles) await onEnsureMissingArticles(raw);
         const index = getIndex();
         const next = normalizeStoryWikiPlain(raw, index, getCurrentEntryId());
         onNotesChange(next);
@@ -155,8 +178,25 @@ export function mountStoryWikiArticle(opts) {
         const record = getCurrentRecord();
         const kind = getCurrentKind();
         const { characters = [], places = [] } = getData();
+        const index = getIndex();
+        let notes = record?.notes || "";
+        if (record) {
+            const normalized = normalizeStoryWikiPlain(notes, index, getCurrentEntryId());
+            if (normalized !== notes) {
+                const before = notes;
+                notes = normalized;
+                record.notes = normalized;
+                onNotesChange(normalized);
+                wikiDebug("normalize.repair", {
+                    entryId: getCurrentEntryId(),
+                    before: before.slice(0, 120),
+                    after: normalized.slice(0, 120)
+                });
+                onDirty?.();
+            }
+        }
         readMount.innerHTML = renderStoryWikiArticleHtml({
-            record,
+            record: record ? { ...record, notes } : record,
             kind,
             characters,
             places,
@@ -183,7 +223,7 @@ export function mountStoryWikiArticle(opts) {
         const entry = findWikiEntryByTitle(index, title, kindIntent);
         const canonical = entry?.canonical || title;
         const link = document.createElement("a");
-        link.href = "#";
+        link.href = "javascript:void(0)";
         const typeClass = entry?.type || kindIntent || "";
         link.className =
             "sw-wiki-link" +
@@ -202,13 +242,14 @@ export function mountStoryWikiArticle(opts) {
     }
 
     async function refreshInsertedWikiLinks() {
-        if (!onEnsureMissingArticles) return;
-        const plain = getNotesPlain();
-        await onEnsureMissingArticles(plain);
         if (!editEl?.isContentEditable) return;
         const refreshed = getIndex();
         editEl.querySelectorAll("a.sw-wiki-link").forEach(a => {
-            const title = (a.getAttribute("data-wiki-title") || a.textContent || "").trim();
+            const extBook = a.getAttribute("data-wiki-book") || "";
+            const currentBookId = getBookId?.() || "";
+            if (extBook && extBook !== currentBookId) return;
+
+            const title = (a.getAttribute("data-wiki-title") || a.textContent || "").replace(/\s*↗\s*$/, "").trim();
             const kind =
                 a.getAttribute("data-wiki-link-kind") ||
                 a.getAttribute("data-wiki-type") ||
@@ -371,21 +412,69 @@ export function mountStoryWikiArticle(opts) {
         updateFormatToolbarState();
     }
 
-    function handleWikiNavClick(e) {
-        const a = e.target.closest("a.sw-wiki-link, a.sw-wp-cat");
-        if (!a) return;
+    function wikiNavAnchor(target) {
+        if (!(target instanceof Element)) return null;
+        return target.closest("a.sw-wiki-link, a.sw-wp-cat, .sw-wp-toc a");
+    }
+
+    function wikiNavContext(anchor) {
+        if (!anchor) return null;
+        if (readMount?.contains(anchor)) return readMount;
+        if (editEl?.contains(anchor)) return editEl;
+        return null;
+    }
+
+    /** Block # default action (page scroll + contenteditable caret jump) before click. */
+    function onWikiNavMouseDown(e) {
+        const a = wikiNavAnchor(e.target);
+        if (!wikiNavContext(a)) return;
         e.preventDefault();
+    }
+
+    function scrollWikiSection(scroller, target) {
+        if (!scroller || !target) return;
+        const scrollerRect = scroller.getBoundingClientRect();
+        const targetRect = target.getBoundingClientRect();
+        const nextTop = scroller.scrollTop + (targetRect.top - scrollerRect.top) - 12;
+        wikiDebug("toc scroll", { before: scroller.scrollTop, nextTop, id: target.id });
+        scroller.scrollTo({ top: Math.max(0, nextTop), behavior: "smooth" });
+    }
+
+    function handleWikiNavClick(e) {
+        const a = wikiNavAnchor(e.target);
+        if (!wikiNavContext(a)) return;
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (a.closest(".sw-wp-toc")) {
+            const href = a.getAttribute("href") || "";
+            const id = href.startsWith("#") ? href.slice(1) : "";
+            const target = id && readMount ? readMount.querySelector(`#${CSS.escape(id)}`) : null;
+            const scroller = readMount?.closest(".sb-sheet-body");
+            scrollWikiSection(scroller, target);
+            return;
+        }
+
         const type = a.getAttribute("data-wiki-type");
         const id = a.getAttribute("data-wiki-id");
         const extBook = a.getAttribute("data-wiki-book") || "";
-        const title = a.getAttribute("data-wiki-title") || a.textContent || "";
+        const title = (a.getAttribute("data-wiki-title") || a.textContent || "").replace(/\s*↗\s*$/, "").trim();
         const kind = a.getAttribute("data-wiki-link-kind") || a.getAttribute("data-wiki-type") || "";
+        const scroller = readMount?.closest(".sb-sheet-body") || editEl?.closest(".sb-sheet-body");
+        wikiDebug("wikilink click", {
+            type,
+            id,
+            title,
+            kind,
+            extBook: extBook || null,
+            scrollTop: scroller?.scrollTop ?? null
+        });
         if (extBook) {
-            onNavigate({ type: kind || "character", id: id || "", title: title.trim(), kind, bookId: extBook });
+            onNavigate({ type: kind || "character", id: id || "", title, kind, bookId: extBook });
             return;
         }
         if (type && id) onNavigate({ type, id });
-        else onNavigate({ title: title.trim(), kind: kind || undefined });
+        else onNavigate({ title, kind: kind || undefined });
     }
 
     modeReadBtn?.addEventListener("click", () => {
@@ -411,15 +500,10 @@ export function mountStoryWikiArticle(opts) {
         void commitEditNormalization();
     });
 
-    editEl?.addEventListener("click", e => {
-        const a = e.target.closest("a.sw-wiki-link");
-        if (!a || !editEl.contains(a)) return;
-        e.preventDefault();
-        e.stopPropagation();
-        handleWikiNavClick(e);
-    });
-
+    readMount?.addEventListener("mousedown", onWikiNavMouseDown, true);
+    editEl?.addEventListener("mousedown", onWikiNavMouseDown, true);
     readMount?.addEventListener("click", handleWikiNavClick);
+    editEl?.addEventListener("click", handleWikiNavClick);
 
     editEl?.addEventListener("mouseup", updateFormatToolbarState);
     editEl?.addEventListener("keyup", updateFormatToolbarState);
@@ -449,4 +533,4 @@ export function mountStoryWikiArticle(opts) {
     };
 }
 
-export { renderStoryWikiArticleHtml, parseWikiSections } from "./story-wiki-read.js?v=1";
+export { renderStoryWikiArticleHtml, parseWikiSections } from "./story-wiki-read.js?v=2";
