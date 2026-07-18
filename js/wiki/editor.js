@@ -47,15 +47,6 @@ export function mountEditor(
 
     container.innerHTML = `
         <form class="wiki-edit-form" id="wikiEditForm">
-            <header class="wiki-edit-topbar">
-                <a class="wiki-edit-back" href="wiki.html?book=${encodeURIComponent(bookId)}">← Articles</a>
-                <div class="wiki-edit-topbar-actions">
-                    ${isPublished ? '<span class="wiki-badge wiki-badge-live">On Lore Wiki</span>' : ""}
-                    <button type="button" class="cdx-button" id="wikiEditCancel">Cancel</button>
-                    <button type="submit" class="cdx-button cdx-button--action-progressive">${isNew ? "Create article" : "Save"}</button>
-                </div>
-            </header>
-
             <div class="wiki-edit-layout">
                 <div class="wiki-edit-main">
                     <label class="wiki-edit-title-label" for="wikiEditTitle">Article title</label>
@@ -206,7 +197,12 @@ export function mountEditor(
         void submitEditor(form, draft, isNew, bookId, (saved) => onSave(saved, publishAfterSave));
     });
 
-    form.querySelector("#wikiEditCancel")?.addEventListener("click", onCancel);
+    const headerCancel = document.getElementById("wikiHeaderCancel");
+    if (headerCancel) {
+        const freshCancel = headerCancel.cloneNode(true);
+        headerCancel.replaceWith(freshCancel);
+        freshCancel.addEventListener("click", onCancel);
+    }
 
     form.querySelector("#wikiUnpublishBtn")?.addEventListener("click", () => {
         void buildFromForm(form, draft, isNew, bookId).then((saved) => onUnpublish(saved));

@@ -33,6 +33,11 @@ export class WikiApp {
             searchForm: document.getElementById("wikiSearchForm"),
             searchInput: document.getElementById("wikiSearchInput"),
             navEditor: document.getElementById("wikiNavEditor"),
+            headerBrowseNav: document.getElementById("wikiHeaderBrowseNav"),
+            headerEditNav: document.getElementById("wikiHeaderEditNav"),
+            headerArticles: document.getElementById("wikiHeaderArticles"),
+            headerEditBadge: document.getElementById("wikiHeaderEditBadge"),
+            headerSave: document.getElementById("wikiHeaderSave"),
         };
     }
 
@@ -104,9 +109,31 @@ export class WikiApp {
         document.body.classList.toggle("wiki-editing", on);
     }
 
+    setHeaderBrowseMode() {
+        document.body.classList.remove("wiki-header-edit-mode");
+        if (this.els.headerBrowseNav) this.els.headerBrowseNav.hidden = false;
+        if (this.els.headerEditNav) this.els.headerEditNav.hidden = true;
+    }
+
+    setHeaderEditMode({ bookId, isNew, isPublished }) {
+        document.body.classList.add("wiki-header-edit-mode");
+        if (this.els.headerBrowseNav) this.els.headerBrowseNav.hidden = true;
+        if (this.els.headerEditNav) this.els.headerEditNav.hidden = false;
+        if (this.els.headerArticles) {
+            this.els.headerArticles.href = `wiki.html?book=${encodeURIComponent(bookId)}`;
+        }
+        if (this.els.headerEditBadge) {
+            this.els.headerEditBadge.hidden = !isPublished;
+        }
+        if (this.els.headerSave) {
+            this.els.headerSave.textContent = isNew ? "Create article" : "Save";
+        }
+    }
+
     async renderBookHub() {
         document.title = "Story Wiki — Create lore";
         this.setEditViewportLock(false);
+        this.setHeaderBrowseMode();
         this.els.pageToolbar.hidden = true;
         this.els.contentSub.textContent = "";
         this.els.lastModified.textContent = "";
@@ -145,6 +172,7 @@ export class WikiApp {
     renderArticleList(entries, searchQuery = "") {
         document.title = `${this.bookTitle} — Story Wiki`;
         this.setEditViewportLock(false);
+        this.setHeaderBrowseMode();
         this.els.pageToolbar.hidden = true;
         this.els.parserOutput.closest(".mw-body-content-inner")?.classList.remove("wiki-edit-shell");
         this.els.contentSub.innerHTML = `<a href="wiki.html">All books</a> · ${escapeHtml(this.bookTitle)}`;
@@ -215,6 +243,7 @@ export class WikiApp {
 
         document.title = entry ? `Edit: ${entry.name}` : "New lore article";
         this.setEditViewportLock(true);
+        this.setHeaderEditMode({ bookId: this.bookId, isNew: !entry, isPublished });
         this.els.pageToolbar.hidden = true;
         this.els.contentSub.textContent = "";
         this.els.lastModified.textContent = "";

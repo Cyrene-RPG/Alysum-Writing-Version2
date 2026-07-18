@@ -99,7 +99,7 @@ const APP_SHELL = [
   'js/story-bible-command-palette.js',
   'js/story-bible-page.js',
   'js/story-bible-unified.js',
-  'css/wiki-vector.css?v=6',
+  'css/wiki-vector.css?v=7',
   'js/wiki/boot.js',
   'js/wiki/app.js',
   'js/wiki/api.js',

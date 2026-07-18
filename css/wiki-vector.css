@@ -109,7 +109,8 @@ body.wiki-page h6 {
 
 /* Header */
 .mw-header.vector-header {
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(220px, 36rem) minmax(0, 1fr);
     align-items: center;
     gap: 1rem;
     padding: 0.65rem clamp(1rem, 3vw, 1.5rem);
@@ -118,7 +119,6 @@ body.wiki-page h6 {
     position: sticky;
     top: var(--alysum-nav-sticky-offset, 45px);
     z-index: 40;
-    flex-wrap: wrap;
     box-shadow:
         0 4px 24px rgba(0, 0, 0, 0.35),
         inset 0 1px 0 rgba(255, 255, 255, 0.1);
@@ -146,6 +146,7 @@ body.wiki-page h6 {
     align-items: center;
     gap: 0.5rem;
     flex-shrink: 0;
+    justify-self: start;
 }
 
 .mw-logo {
@@ -190,9 +191,90 @@ body.wiki-page h6 {
 }
 
 .vector-header-search {
-    flex: 1;
-    min-width: 200px;
+    width: 100%;
     max-width: 36rem;
+    justify-self: center;
+}
+
+body.wiki-header-edit-mode .vector-header-search {
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.vector-header-end {
+    justify-self: end;
+    min-width: 0;
+}
+
+.wiki-header-edit-nav ul {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.55rem 0.75rem;
+}
+
+.wiki-header-articles {
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.92);
+    text-decoration: none;
+}
+
+.wiki-header-articles:hover {
+    color: #fff;
+    text-decoration: underline;
+}
+
+.wiki-header-btn {
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    background: rgba(0, 0, 0, 0.22);
+    color: #f9fafb;
+    border-radius: var(--wiki-radius-sm);
+    padding: 0.42rem 0.85rem;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    line-height: 1.2;
+}
+
+.wiki-header-btn:hover {
+    background: rgba(0, 0, 0, 0.34);
+    border-color: rgba(255, 255, 255, 0.35);
+}
+
+.wiki-header-btn-primary {
+    background: rgba(255, 255, 255, 0.18);
+    border-color: rgba(255, 255, 255, 0.28);
+    color: #fff;
+}
+
+.wiki-header-btn-primary:hover {
+    background: rgba(255, 255, 255, 0.28);
+}
+
+.wiki-header-edit-nav .wiki-badge-live {
+    font-size: 0.68rem;
+    padding: 0.2rem 0.45rem;
+}
+
+@media (max-width: 720px) {
+    .mw-header.vector-header {
+        grid-template-columns: 1fr auto;
+        grid-template-areas:
+            "logo actions"
+            "search search";
+    }
+
+    .vector-header-start {
+        grid-area: logo;
+    }
+
+    .vector-header-search {
+        grid-area: search;
+        max-width: none;
+    }
+
+    .vector-header-end {
+        grid-area: actions;
+    }
 }
 
 .cdx-search-input {
@@ -1126,13 +1208,8 @@ body.wiki-creator.wiki-editing .wiki-creator-main {
 body.wiki-creator.wiki-editing .wiki-edit-form {
     flex: 1;
     min-height: 0;
-    gap: 0.45rem;
+    gap: 0;
     overflow: hidden;
-}
-
-body.wiki-creator.wiki-editing .wiki-edit-topbar {
-    flex-shrink: 0;
-    padding: 0.45rem 0.75rem;
 }
 
 body.wiki-creator.wiki-editing .wiki-edit-layout {

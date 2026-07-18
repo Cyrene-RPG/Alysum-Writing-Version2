@@ -16,7 +16,7 @@
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
     <link rel="stylesheet" href="css/gradient-themes.css?v=4" />
     <link rel="stylesheet" href="css/workspace-nav.css?v=4" />
-    <link rel="stylesheet" href="css/wiki-vector.css?v=6" />
+    <link rel="stylesheet" href="css/wiki-vector.css?v=7" />
     <script src="js/gradient-theme-sync.js" defer></script>
     <script type="module" src="js/vercel-analytics.js"></script>
 </head>
@@ -44,11 +44,19 @@
                 </form>
             </div>
             <div class="vector-header-end">
-                <nav class="vector-user-links" aria-label="Personal tools">
+                <nav class="vector-user-links" id="wikiHeaderBrowseNav" aria-label="Personal tools">
                     <ul>
                         <li><a href="lore-wiki.html">Lore Wiki</a></li>
                         <li><a href="settings.html">Settings</a></li>
                         <li><button type="button" class="wiki-plain-btn" data-logout-btn>Log out</button></li>
+                    </ul>
+                </nav>
+                <nav class="vector-user-links wiki-header-edit-nav" id="wikiHeaderEditNav" aria-label="Editor actions" hidden>
+                    <ul>
+                        <li><a class="wiki-header-articles" id="wikiHeaderArticles" href="wiki.html">← Articles</a></li>
+                        <li><span class="wiki-badge wiki-badge-live" id="wikiHeaderEditBadge" hidden>On Lore Wiki</span></li>
+                        <li><button type="button" class="wiki-header-btn" id="wikiHeaderCancel">Cancel</button></li>
+                        <li><button type="submit" class="wiki-header-btn wiki-header-btn-primary" id="wikiHeaderSave" form="wikiEditForm">Save</button></li>
                     </ul>
                 </nav>
             </div>
@@ -82,7 +90,7 @@
     </div>
 
     <script type="module">
-        import { bootWiki } from "./js/wiki/boot.js?v=6";
+        import { bootWiki } from "./js/wiki/boot.js?v=7";
         bootWiki().catch((e) => {
             console.error("[wiki]", e);
             document.getElementById("wikiParserOutput").innerHTML =
