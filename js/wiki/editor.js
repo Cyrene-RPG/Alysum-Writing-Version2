@@ -1,5 +1,5 @@
 /**
- * Lore article editor with optional Lore Wiki publishing.
+ * Lore article editor — writing-first layout with sidebar metadata.
  */
 import { newCharacterId, newPlaceId, saveEntry, normalizeEntry } from "./api.js";
 
@@ -35,96 +35,107 @@ export function mountEditor(
 ) {
     const isNew = !entry;
     const draft = entry || normalizeEntry({ name: defaultTitle || "" }, newCharacterId(), "character");
+    const isCharacter = draft.kind === "character";
 
     container.innerHTML = `
         <form class="wiki-edit-form" id="wikiEditForm">
-            <div class="mw-message-box">Write lore for your story. Use <code>[[Article Title]]</code> for links and <code>== Section ==</code> for headings. Publish to <strong>Lore Wiki</strong> when you want readers to see an article.</div>
-            <div class="wiki-edit-meta">
-                <div>
-                    <label for="wikiEditTitle">Article title</label>
-                    <input type="text" id="wikiEditTitle" value="${escapeHtml(draft.name)}" required ${isNew ? "" : "readonly"} />
-                </div>
-                <div>
-                    <label for="wikiEditKind">Type</label>
-                    <select id="wikiEditKind">
-                        <option value="character" ${draft.kind === "character" ? "selected" : ""}>Character</option>
-                        <option value="place" ${draft.kind === "place" ? "selected" : ""}>Place</option>
-                        <option value="object" ${draft.kind === "object" ? "selected" : ""}>Object</option>
-                    </select>
-                </div>
-                <div>
-                    <label for="wikiEditAliases">Also known as (comma-separated)</label>
-                    <input type="text" id="wikiEditAliases" value="${escapeHtml((draft.aliases || []).join(", "))}" />
-                </div>
-                <div>
-                    <label for="wikiEditPronouns">Pronouns</label>
-                    <input type="text" id="wikiEditPronouns" value="${escapeHtml(draft.pronouns)}" />
-                </div>
-                <div>
-                    <label for="wikiEditStatus">Status</label>
-                    <select id="wikiEditStatus">
-                        <option value="alive" ${draft.status === "alive" ? "selected" : ""}>Alive</option>
-                        <option value="deceased" ${draft.status === "deceased" ? "selected" : ""}>Deceased</option>
-                        <option value="unknown" ${draft.status === "unknown" ? "selected" : ""}>Unknown</option>
-                    </select>
-                </div>
-            </div>
-            <h2>Appearance</h2>
-            <div class="wiki-edit-meta">
-                ${appearanceField("Age", "wikiEditAge", draft.appearance?.age)}
-                ${appearanceField("Eyes", "wikiEditEyes", draft.appearance?.eyes)}
-                ${appearanceField("Hair", "wikiEditHair", draft.appearance?.hair)}
-                ${appearanceField("Height", "wikiEditHeight", draft.appearance?.height)}
-                ${appearanceField("Skin", "wikiEditSkin", draft.appearance?.skin)}
-                ${appearanceField("Build", "wikiEditBuild", draft.appearance?.build)}
-                ${appearanceField("Distinctive", "wikiEditDistinctive", draft.appearance?.distinctive)}
-            </div>
-            <h2>Article body</h2>
-            <textarea id="wikiEditBody" spellcheck="true">${escapeHtml(draft.body)}</textarea>
-            ${
-                canPublish
-                    ? `<div class="wiki-publish-panel">
-                <h2>Lore Wiki</h2>
-                ${
-                    isPublished
-                        ? `<p class="wiki-publish-status"><span class="wiki-badge wiki-badge-live">Published</span> Readers can view this on Lore Wiki.</p>
-                <div class="wiki-edit-actions">
-                    <button type="submit" class="cdx-button cdx-button--action-progressive">Save changes</button>
-                    <button type="button" class="cdx-button" id="wikiUnpublishBtn">Unpublish from Lore Wiki</button>
+            <header class="wiki-edit-topbar">
+                <a class="wiki-edit-back" href="wiki.html?book=${encodeURIComponent(bookId)}">← Articles</a>
+                <div class="wiki-edit-topbar-actions">
+                    ${isPublished ? '<span class="wiki-badge wiki-badge-live">On Lore Wiki</span>' : ""}
                     <button type="button" class="cdx-button" id="wikiEditCancel">Cancel</button>
-                </div>`
-                        : `<label class="wiki-publish-check"><input type="checkbox" id="wikiPublishCheck" /> Publish to Lore Wiki when I save</label>
-                <div class="wiki-edit-actions">
-                    <button type="submit" class="cdx-button cdx-button--action-progressive">Save article</button>
-                    <button type="button" class="cdx-button" id="wikiEditCancel">Cancel</button>
-                </div>`
-                }
-            </div>`
-                    : `<div class="mw-message-box mw-message-box-warning">Publishing requires a cloud Alysum account.</div>
-            <div class="wiki-edit-actions">
-                <button type="submit" class="cdx-button cdx-button--action-progressive">Save article</button>
-                <button type="button" class="cdx-button" id="wikiEditCancel">Cancel</button>
-            </div>`
-            }
+                    <button type="submit" class="cdx-button cdx-button--action-progressive">${isNew ? "Create article" : "Save"}</button>
+                </div>
+            </header>
+
+            <div class="wiki-edit-layout">
+                <div class="wiki-edit-main">
+                    <label class="wiki-edit-title-label" for="wikiEditTitle">Article title</label>
+                    <input type="text" id="wikiEditTitle" class="wiki-edit-title-input" value="${escapeHtml(draft.name)}" placeholder="Character, place, or concept name" required ${isNew ? "" : "readonly"} />
+
+                    <label class="wiki-edit-body-label" for="wikiEditBody">Lore</label>
+                    <textarea id="wikiEditBody" class="wiki-edit-body-input" spellcheck="true" placeholder="Write the article here… Use [[Article Title]] for links and == Section == for headings.">${escapeHtml(draft.body)}</textarea>
+                    <p class="wiki-edit-hint"><code>[[Article Title]]</code> links · <code>== Heading ==</code> sections</p>
+                </div>
+
+                <aside class="wiki-edit-sidebar">
+                    <section class="wiki-edit-card">
+                        <h3>Details</h3>
+                        <div class="wiki-edit-field">
+                            <label for="wikiEditKind">Type</label>
+                            <select id="wikiEditKind">
+                                <option value="character" ${draft.kind === "character" ? "selected" : ""}>Character</option>
+                                <option value="place" ${draft.kind === "place" ? "selected" : ""}>Place</option>
+                                <option value="object" ${draft.kind === "object" ? "selected" : ""}>Object</option>
+                            </select>
+                        </div>
+                        <div class="wiki-edit-field">
+                            <label for="wikiEditAliases">Also known as</label>
+                            <input type="text" id="wikiEditAliases" value="${escapeHtml((draft.aliases || []).join(", "))}" placeholder="Comma-separated" />
+                        </div>
+                        <div class="wiki-edit-field wiki-edit-character-only" ${isCharacter ? "" : "hidden"}>
+                            <label for="wikiEditPronouns">Pronouns</label>
+                            <input type="text" id="wikiEditPronouns" value="${escapeHtml(draft.pronouns)}" />
+                        </div>
+                        <div class="wiki-edit-field wiki-edit-character-only" ${isCharacter ? "" : "hidden"}>
+                            <label for="wikiEditStatus">Status</label>
+                            <select id="wikiEditStatus">
+                                <option value="alive" ${draft.status === "alive" ? "selected" : ""}>Alive</option>
+                                <option value="deceased" ${draft.status === "deceased" ? "selected" : ""}>Deceased</option>
+                                <option value="unknown" ${draft.status === "unknown" ? "selected" : ""}>Unknown</option>
+                            </select>
+                        </div>
+                    </section>
+
+                    <section class="wiki-edit-card wiki-edit-appearance-card wiki-edit-character-only" ${isCharacter ? "" : "hidden"}>
+                        <h3>Appearance</h3>
+                        <div class="wiki-edit-field"><label for="wikiEditAge">Age</label><input type="text" id="wikiEditAge" value="${escapeHtml(draft.appearance?.age || "")}" /></div>
+                        <div class="wiki-edit-field"><label for="wikiEditEyes">Eyes</label><input type="text" id="wikiEditEyes" value="${escapeHtml(draft.appearance?.eyes || "")}" /></div>
+                        <div class="wiki-edit-field"><label for="wikiEditHair">Hair</label><input type="text" id="wikiEditHair" value="${escapeHtml(draft.appearance?.hair || "")}" /></div>
+                        <div class="wiki-edit-field"><label for="wikiEditHeight">Height</label><input type="text" id="wikiEditHeight" value="${escapeHtml(draft.appearance?.height || "")}" /></div>
+                        <div class="wiki-edit-field"><label for="wikiEditSkin">Skin</label><input type="text" id="wikiEditSkin" value="${escapeHtml(draft.appearance?.skin || "")}" /></div>
+                        <div class="wiki-edit-field"><label for="wikiEditBuild">Build</label><input type="text" id="wikiEditBuild" value="${escapeHtml(draft.appearance?.build || "")}" /></div>
+                        <div class="wiki-edit-field"><label for="wikiEditDistinctive">Distinctive</label><input type="text" id="wikiEditDistinctive" value="${escapeHtml(draft.appearance?.distinctive || "")}" /></div>
+                    </section>
+
+                    <section class="wiki-edit-card wiki-edit-publish-card">
+                        <h3>Lore Wiki</h3>
+                        ${
+                            canPublish
+                                ? isPublished
+                                    ? `<p class="wiki-publish-copy">Readers can view this article on Lore Wiki. Saving updates the public version.</p>
+                                       <button type="button" class="cdx-button wiki-edit-unpublish" id="wikiUnpublishBtn">Unpublish</button>`
+                                    : `<label class="wiki-publish-check"><input type="checkbox" id="wikiPublishCheck" /> Publish when I save</label>
+                                       <p class="wiki-publish-copy">Optional — share this article publicly. Drafts stay private until you publish.</p>`
+                                : `<p class="wiki-publish-copy">Sign in with a cloud account to publish to Lore Wiki.</p>`
+                        }
+                    </section>
+                </aside>
+            </div>
         </form>
     `;
 
     const form = container.querySelector("#wikiEditForm");
+    const kindSelect = form.querySelector("#wikiEditKind");
+
+    kindSelect?.addEventListener("change", () => {
+        const isChar = kindSelect.value === "character";
+        form.querySelectorAll(".wiki-edit-character-only").forEach((el) => {
+            el.hidden = !isChar;
+        });
+    });
+
     form.addEventListener("submit", (e) => {
         e.preventDefault();
         const publishAfterSave = !!form.querySelector("#wikiPublishCheck")?.checked;
         void submitEditor(form, draft, isNew, bookId, (saved) => onSave(saved, publishAfterSave));
     });
 
-    container.querySelector("#wikiEditCancel")?.addEventListener("click", onCancel);
+    form.querySelector("#wikiEditCancel")?.addEventListener("click", onCancel);
 
-    container.querySelector("#wikiUnpublishBtn")?.addEventListener("click", () => {
+    form.querySelector("#wikiUnpublishBtn")?.addEventListener("click", () => {
         void buildFromForm(form, draft, isNew, bookId).then((saved) => onUnpublish(saved));
     });
-}
-
-function appearanceField(label, id, value) {
-    return `<div><label for="${id}">${label}</label><input type="text" id="${id}" value="${escapeHtml(value || "")}" /></div>`;
 }
 
 async function buildFromForm(form, draft, isNew, bookId) {
@@ -142,22 +153,26 @@ async function buildFromForm(form, draft, isNew, bookId) {
         .map((s) => s.trim())
         .filter(Boolean);
 
+    const isCharacter = kind === "character";
+
     return normalizeEntry(
         {
             name: title,
             aliases,
-            pronouns: form.querySelector("#wikiEditPronouns")?.value || "",
-            status: form.querySelector("#wikiEditStatus")?.value || "alive",
+            pronouns: isCharacter ? form.querySelector("#wikiEditPronouns")?.value || "" : "",
+            status: isCharacter ? form.querySelector("#wikiEditStatus")?.value || "alive" : "unknown",
             notes: form.querySelector("#wikiEditBody")?.value || "",
-            appearance: {
-                age: form.querySelector("#wikiEditAge")?.value || "",
-                eyes: form.querySelector("#wikiEditEyes")?.value || "",
-                hair: form.querySelector("#wikiEditHair")?.value || "",
-                height: form.querySelector("#wikiEditHeight")?.value || "",
-                skin: form.querySelector("#wikiEditSkin")?.value || "",
-                build: form.querySelector("#wikiEditBuild")?.value || "",
-                distinctive: form.querySelector("#wikiEditDistinctive")?.value || "",
-            },
+            appearance: isCharacter
+                ? {
+                      age: form.querySelector("#wikiEditAge")?.value || "",
+                      eyes: form.querySelector("#wikiEditEyes")?.value || "",
+                      hair: form.querySelector("#wikiEditHair")?.value || "",
+                      height: form.querySelector("#wikiEditHeight")?.value || "",
+                      skin: form.querySelector("#wikiEditSkin")?.value || "",
+                      build: form.querySelector("#wikiEditBuild")?.value || "",
+                      distinctive: form.querySelector("#wikiEditDistinctive")?.value || "",
+                  }
+                : {},
             tags: draft.tags || [],
             createdAt: draft.createdAt,
         },

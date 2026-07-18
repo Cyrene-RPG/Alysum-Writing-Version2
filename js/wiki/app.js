@@ -139,6 +139,7 @@ export class WikiApp {
     renderArticleList(entries, searchQuery = "") {
         document.title = `${this.bookTitle} — Story Wiki`;
         this.els.pageToolbar.hidden = true;
+        this.els.parserOutput.closest(".mw-body-content-inner")?.classList.remove("wiki-edit-shell");
         this.els.contentSub.innerHTML = `<a href="wiki.html">All books</a> · ${escapeHtml(this.bookTitle)}`;
         this.els.lastModified.textContent = "";
 
@@ -174,10 +175,10 @@ export class WikiApp {
         const isPublished = entry ? this.publishedIds.has(entry.id) : false;
 
         document.title = entry ? `Edit: ${entry.name}` : "New lore article";
-        this.els.pageToolbar.hidden = false;
-        this.els.pageTitle.textContent = entry ? `Edit: ${entry.name}` : "New lore article";
-        this.els.contentSub.innerHTML = `<a href="wiki.html?book=${encodeURIComponent(this.bookId)}">← Back to articles</a>`;
+        this.els.pageToolbar.hidden = true;
+        this.els.contentSub.textContent = "";
         this.els.lastModified.textContent = "";
+        this.els.parserOutput.closest(".mw-body-content-inner")?.classList.add("wiki-edit-shell");
 
         mountEditor(
             this.els.parserOutput,
