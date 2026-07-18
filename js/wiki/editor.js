@@ -3,6 +3,8 @@
  */
 import { newCharacterId, newPlaceId, saveEntry, normalizeEntry } from "./api.js";
 import { wireLinkToolbar } from "./link-toolbar.js";
+import { renderArticle } from "./render.js";
+import { injectToc } from "./toc.js";
 
 function escapeHtml(value) {
     return String(value || "")
@@ -54,10 +56,20 @@ export function mountEditor(
 
                     <div class="wiki-edit-body-toolbar">
                         <label class="wiki-edit-body-label" for="wikiEditBody">Lore</label>
-                        <button type="button" class="wiki-link-btn" id="wikiLinkBtn" title="Link selected text">🔗 Link</button>
+                        <div class="wiki-edit-body-actions">
+                            <div class="wiki-edit-mode-switch" role="tablist" aria-label="Editor mode">
+                                <button type="button" class="wiki-edit-mode-btn is-active" id="wikiEditModeWrite" role="tab" aria-selected="true">Write</button>
+                                <button type="button" class="wiki-edit-mode-btn" id="wikiEditModePreview" role="tab" aria-selected="false">Preview</button>
+                            </div>
+                            <button type="button" class="wiki-link-btn" id="wikiLinkBtn" title="Link selected text">🔗 Link</button>
+                        </div>
                     </div>
                     <textarea id="wikiEditBody" class="wiki-edit-body-input" spellcheck="true" placeholder="Write the article here… Highlight text and click Link, or use [[Article Title]] manually.">${escapeHtml(draft.body)}</textarea>
-                    <p class="wiki-edit-hint">Highlight text → <strong>Link</strong> · or type <code>[[Article Title]]</code> · <code>== Heading ==</code></p>
+                    <div class="wiki-edit-preview-pane" id="wikiEditPreview" hidden aria-live="polite">
+                        <p class="wiki-edit-preview-banner">Reader preview — wikilinks are clickable. Save before following a link to keep your edits.</p>
+                        <div class="wiki-edit-preview-article" id="wikiEditPreviewArticle"></div>
+                    </div>
+                    <p class="wiki-edit-hint">Highlight text → <strong>Link</strong> · or type <code>[[Article Title]]</code> · <code>== Heading ==</code> · switch to <strong>Preview</strong> to test links</p>
 
                     <div class="wiki-link-popover" id="wikiLinkPopover" hidden>
                         <div class="wiki-link-popover-inner">
@@ -173,7 +185,91 @@ export function mountEditor(
     const kindSelect = form.querySelector("#wikiEditKind");
     const bodyInput = form.querySelector("#wikiEditBody");
     const linkPopover = form.querySelector("#wikiLinkPopover");
+    const previewWrap = form.querySelector("#wikiEditPreview");
+    const previewArticle = form.querySelector("#wikiEditPreviewArticle");
+    const writeModeBtn = form.querySelector("#wikiEditModeWrite");
+    const previewModeBtn = form.querySelector("#wikiEditModePreview");
+    const linkBtn = form.querySelector("#wikiLinkBtn");
     const linkApi = bodyInput && linkPopover ? wireLinkToolbar(bodyInput, linkEntries, linkPopover) : null;
+    let editorMode = "write";
+
+    function readDraftFromForm() {
+        const title = form.querySelector("#wikiEditTitle")?.value?.trim() || draft.name || "Untitled";
+        const kind = form.querySelector("#wikiEditKind")?.value || draft.kind || "character";
+        const aliases = String(form.querySelector("#wikiEditAliases")?.value || "")
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean);
+        const isCharacter = kind === "character";
+        return normalizeEntry(
+            {
+                name: title,
+                aliases,
+                pronouns: isCharacter ? form.querySelector("#wikiEditPronouns")?.value || "" : "",
+                status: isCharacter ? form.querySelector("#wikiEditStatus")?.value || "alive" : "unknown",
+                notes: bodyInput?.value || "",
+                appearance: isCharacter
+                    ? {
+                          age: form.querySelector("#wikiEditAge")?.value || "",
+                          eyes: form.querySelector("#wikiEditEyes")?.value || "",
+                          hair: form.querySelector("#wikiEditHair")?.value || "",
+                          height: form.querySelector("#wikiEditHeight")?.value || "",
+                          skin: form.querySelector("#wikiEditSkin")?.value || "",
+                          build: form.querySelector("#wikiEditBuild")?.value || "",
+                          distinctive: form.querySelector("#wikiEditDistinctive")?.value || "",
+                      }
+                    : {},
+                tags: draft.tags || [],
+                createdAt: draft.createdAt,
+            },
+            draft.id,
+            kind
+        );
+    }
+
+    function previewEntryList(current) {
+        const others = bookEntries.filter((e) => e.id !== current.id);
+        return [...others, current];
+    }
+
+    function refreshPreview() {
+        if (!previewArticle) return;
+        const current = readDraftFromForm();
+        previewArticle.innerHTML = renderArticle(current, bookId, previewEntryList(current), "private");
+        injectToc(previewArticle);
+    }
+
+    function setEditorMode(next) {
+        editorMode = next === "preview" ? "preview" : "write";
+        form.classList.toggle("is-preview", editorMode === "preview");
+        writeModeBtn?.classList.toggle("is-active", editorMode === "write");
+        previewModeBtn?.classList.toggle("is-active", editorMode === "preview");
+        writeModeBtn?.setAttribute("aria-selected", editorMode === "write" ? "true" : "false");
+        previewModeBtn?.setAttribute("aria-selected", editorMode === "preview" ? "true" : "false");
+        if (previewWrap) previewWrap.hidden = editorMode !== "preview";
+        if (linkBtn) linkBtn.disabled = editorMode === "preview";
+        if (linkPopover instanceof HTMLElement) linkPopover.hidden = true;
+        if (editorMode === "preview") refreshPreview();
+    }
+
+    writeModeBtn?.addEventListener("click", () => setEditorMode("write"));
+    previewModeBtn?.addEventListener("click", () => setEditorMode("preview"));
+
+    previewArticle?.addEventListener("click", (e) => {
+        const a = e.target instanceof Element ? e.target.closest("a[href]") : null;
+        if (!a || !previewArticle.contains(a)) return;
+        const href = a.getAttribute("href") || "";
+        if (href.startsWith("#")) {
+            e.preventDefault();
+            const id = href.slice(1);
+            const target = previewArticle.querySelector(`#${CSS.escape(id)}`);
+            target?.scrollIntoView({ behavior: "smooth", block: "start" });
+            return;
+        }
+        if (!confirm("Follow this link? Unsaved changes on this article will be lost unless you save first.")) {
+            e.preventDefault();
+        }
+    });
 
     form.querySelector("#wikiLinkBtn")?.addEventListener("click", () => {
         if (!bodyInput) return;

@@ -114,7 +114,7 @@ export function renderBody(body, bookId, allEntries, mode = "private") {
         return container.innerHTML;
     }
 
-    return linked
+    return raw
         .split(/\n{2,}/)
         .map((block) => {
             const trimmed = block.trim();
