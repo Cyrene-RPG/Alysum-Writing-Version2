@@ -1016,7 +1016,7 @@ ame: ${name}`);
         cpBook.addEventListener("change", () => {
             fillChapterOptions(cpBook.value);
             cpOpenBibleLink.href = cpBook.value
-                ? `Story-Bible-New.html?book=${encodeURIComponent(cpBook.value)}`
+                ? `story-bible.html?book=${encodeURIComponent(cpBook.value)}`
                 : "#";
             cpOpenBibleLink.classList.toggle("hidden", !cpBook.value);
             updateSaveEnabled();
@@ -1062,7 +1062,7 @@ ame: ${name}`);
             try {
                 await saveBibleCharacter(supabase, window.__cpUid, bookId, character);
                 setStatus("Saved as a new character. Open the bible to edit or merge details.", "ok");
-                cpOpenBibleLink.href = `Story-Bible-New.html?book=${encodeURIComponent(bookId)}`;
+                cpOpenBibleLink.href = `story-bible.html?book=${encodeURIComponent(bookId)}`;
                 cpOpenBibleLink.classList.remove("hidden");
             } catch (e) {
                 const msg = e && typeof e.message === "string" ? e.message : String(e);

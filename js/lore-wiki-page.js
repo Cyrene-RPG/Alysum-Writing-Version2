@@ -8,8 +8,8 @@ import {
     getPublicLoreWiki,
     listPublicLoreArticles,
     getPublicLoreArticle
-} from "./lore-wiki-api.js?v=1";
-import { renderStoryWikiArticleHtml } from "./story-wiki-read.js?v=1";
+} from "./lore-wiki-api.js?v=2";
+import { renderStoryWikiArticleHtml } from "./story-wiki-read.js?v=2";
 import { bookCoverGradient, escapeHtml, normalizeText } from "./story-bible-utils.js?v=1";
 
 function byId(id) {
@@ -30,13 +30,20 @@ function bookUrl(bookId) {
 
 function normalizeArticleRecord(row) {
     const body = row.body || {};
+    const bodyKind = String(body.kind || "").trim().toLowerCase();
+    const articleKind =
+        row.kind === "character"
+            ? "character"
+            : bodyKind === "object"
+              ? "object"
+              : "place";
     return {
         id: row.entryId,
         name: body.name || "",
         aliases: body.aliases || [],
         notes: body.notes || "",
         tags: body.tags || [],
-        kind: row.kind,
+        kind: articleKind,
         appearance: body.appearance,
         status: body.status,
         pronouns: body.pronouns,
@@ -50,10 +57,14 @@ function allRecordsFromArticles(articles) {
     const places = [];
     for (const a of articles) {
         const rec = normalizeArticleRecord(a);
-        if (a.kind === "place") places.push({ ...rec, id: a.entryId });
-        else characters.push({ ...rec, id: a.entryId });
+        if (rec.kind === "character") characters.push({ ...rec, id: a.entryId });
+        else places.push({ ...rec, id: a.entryId });
     }
     return { characters, places };
+}
+
+function isObjectArticle(a) {
+    return String(a.body?.kind || "").trim().toLowerCase() === "object";
 }
 
 function renderBrowseGrid(wikis, query) {
@@ -92,6 +103,7 @@ function renderBrowseGrid(wikis, query) {
                 <div class="lw-card-chips">
                     <span>${w.characterCount} characters</span>
                     <span>${w.placeCount} places</span>
+                    ${w.objectCount ? `<span>${w.objectCount} objects</span>` : ""}
                     <span>${w.entryCount} articles</span>
                 </div>
                 <a class="lw-btn lw-btn-primary" href="${bookUrl(w.bookId)}">Browse wiki</a>
@@ -115,7 +127,8 @@ function renderBookMainPage(wiki, articles, query) {
     });
 
     const chars = filtered.filter(a => a.kind === "character");
-    const places = filtered.filter(a => a.kind === "place");
+    const realPlaces = filtered.filter(a => a.kind === "place" && !isObjectArticle(a));
+    const objects = filtered.filter(a => a.kind === "place" && isObjectArticle(a));
 
     root.innerHTML = `
         <nav class="lw-breadcrumb">
@@ -149,14 +162,29 @@ function renderBookMainPage(wiki, articles, query) {
                 <h2>Places</h2>
                 <ul class="lw-index-list">
                     ${
-                        places.length
-                            ? places
+                        realPlaces.length
+                            ? realPlaces
                                   .map(a => {
                                       const name = escapeHtml(a.body?.name || "Untitled");
                                       return `<li><a href="${articleUrl(wiki.bookId, a.entryId)}">${name}</a></li>`;
                                   })
                                   .join("")
                             : "<li class='lw-muted'>No places published.</li>"
+                    }
+                </ul>
+            </section>
+            <section class="lw-index-col">
+                <h2>Objects</h2>
+                <ul class="lw-index-list">
+                    ${
+                        objects.length
+                            ? objects
+                                  .map(a => {
+                                      const name = escapeHtml(a.body?.name || "Untitled");
+                                      return `<li><a href="${articleUrl(wiki.bookId, a.entryId)}">${name}</a></li>`;
+                                  })
+                                  .join("")
+                            : "<li class='lw-muted'>No objects published.</li>"
                     }
                 </ul>
             </section>
@@ -187,7 +215,7 @@ function renderArticlePage(wiki, article, allArticles) {
 
     mount.innerHTML = renderStoryWikiArticleHtml({
         record,
-        kind: article.kind === "place" ? "place" : "character",
+        kind: record.kind,
         characters,
         places,
         bookTitle: wiki.title,

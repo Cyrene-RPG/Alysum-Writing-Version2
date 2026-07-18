@@ -258,7 +258,7 @@ export function mountPlotDoctorSidebar(opts) {
             healthSummaryEl.textContent = s.bibleHealth?.summary || "Add characters in Story Wiki for better checks.";
         }
         if (bibleLinkEl && s.bookId) {
-            bibleLinkEl.href = `Story-Bible-New.html?book=${encodeURIComponent(s.bookId)}`;
+            bibleLinkEl.href = `story-bible.html?book=${encodeURIComponent(s.bookId)}`;
         }
 
         if (s.scanning) statusEl.textContent = "Scanning manuscript against bible…";
@@ -316,7 +316,7 @@ export function mountPlotDoctorSidebar(opts) {
         if (action === "bible") {
             const bookId = orchestrator.getState().bookId;
             if (bookId) {
-                window.open(`Story-Bible-New.html?book=${encodeURIComponent(bookId)}`, "_blank");
+                window.open(`story-bible.html?book=${encodeURIComponent(bookId)}`, "_blank");
             }
             return;
         }

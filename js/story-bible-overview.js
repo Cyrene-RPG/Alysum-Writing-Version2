@@ -3,7 +3,19 @@
  */
 
 import { escapeHtml, normalizeText } from "./story-bible-utils.js?v=1";
-import { plainToDisplayText } from "./story-wiki-wikilinks.js?v=1";
+import { plainToDisplayText } from "./story-wiki-wikilinks.js?v=9";
+
+function isObjectRecord(record) {
+    return String(record?.kind || "").trim().toLowerCase() === "object";
+}
+
+function placesOnly(places) {
+    return places.filter(p => !isObjectRecord(p));
+}
+
+function objectsOnly(places) {
+    return places.filter(p => isObjectRecord(p));
+}
 
 /**
  * @param {HTMLElement} mount
@@ -19,16 +31,20 @@ export function renderOverview(mount, ctx) {
     } = ctx;
 
     const namedChars = characters.filter(c => normalizeText(c.name));
-    const namedPlaces = places.filter(p => normalizeText(p.name));
-    const articleCount = namedChars.length + namedPlaces.length;
+    const namedPlaces = placesOnly(places).filter(p => normalizeText(p.name));
+    const namedObjects = objectsOnly(places).filter(p => normalizeText(p.name));
+    const articleCount = namedChars.length + namedPlaces.length + namedObjects.length;
     const sortedChars = [...namedChars].sort((a, b) =>
         normalizeText(a.name).localeCompare(normalizeText(b.name))
     );
     const sortedPlaces = [...namedPlaces].sort((a, b) =>
         normalizeText(a.name).localeCompare(normalizeText(b.name))
     );
+    const sortedObjects = [...namedObjects].sort((a, b) =>
+        normalizeText(a.name).localeCompare(normalizeText(b.name))
+    );
 
-    const featured = pickFeatured(namedChars, namedPlaces);
+    const featured = pickFeatured(namedChars, namedPlaces, namedObjects);
     const featuredHtml = featured
         ? `<div class="sw-wp-portal-box sw-wp-featured">
             <h2>Featured article</h2>
@@ -57,6 +73,10 @@ export function renderOverview(mount, ctx) {
                     <h2>Places</h2>
                     ${renderIndexList(sortedPlaces, "place", "No place articles yet.", "places")}
                 </div>
+                <div class="sw-wp-portal-box">
+                    <h2>Objects</h2>
+                    ${renderIndexList(sortedObjects, "object", "No object articles yet.", "objects")}
+                </div>
                 <aside class="sw-wp-portal-side">
                     ${featuredHtml}
                     <div class="sw-wp-portal-box sw-wp-portal-box-compact">
@@ -65,6 +85,8 @@ export function renderOverview(mount, ctx) {
                             <a href="#" data-sb-goto="characters" data-sb-new="character">Character</a>
                             ·
                             <a href="#" data-sb-goto="places" data-sb-new="place">Place</a>
+                            ·
+                            <a href="#" data-sb-goto="objects" data-sb-new="object">Object</a>
                         </p>
                     </div>
                     <div class="sw-wp-portal-box sw-wp-portal-box-compact sw-wp-author-box">
@@ -73,6 +95,7 @@ export function renderOverview(mount, ctx) {
                         <div class="sw-wp-publish-actions">
                             <button type="button" class="sw-wp-btn" id="sbLorePublishBtn" ${!loreWiki?.canPublish ? "disabled" : ""}>${loreWiki?.published ? "Update" : "Publish"}</button>
                             ${loreWiki?.published ? `<a class="sw-wp-btn sw-wp-btn-quiet" href="lore-wiki.html?book=${encodeURIComponent(loreWiki.bookId || "")}" target="_blank" rel="noopener">View</a>` : ""}
+                            ${loreWiki?.published ? `<button type="button" class="sw-wp-btn sw-wp-btn-quiet" id="sbLoreUnpublishBtn">Unpublish</button>` : ""}
                         </div>
                     </div>
                 </aside>
@@ -135,15 +158,17 @@ function renderIndexList(items, kind, emptyMsg, gotoView) {
         .join("")}</ul>`;
 }
 
-function pickFeatured(characters, places) {
+function pickFeatured(characters, places, objects = []) {
     const pool = [
         ...characters.map(c => ({ ...c, kind: "character" })),
-        ...places.map(p => ({ ...p, kind: "place" }))
+        ...places.map(p => ({ ...p, kind: "place" })),
+        ...objects.map(o => ({ ...o, kind: "object" }))
     ].filter(r => normalizeText(r.name) && normalizeText(r.notes));
     if (!pool.length) {
         const any = [
             ...characters.map(c => ({ ...c, kind: "character" })),
-            ...places.map(p => ({ ...p, kind: "place" }))
+            ...places.map(p => ({ ...p, kind: "place" })),
+            ...objects.map(o => ({ ...o, kind: "object" }))
         ].filter(r => normalizeText(r.name));
         return any[0] || null;
     }

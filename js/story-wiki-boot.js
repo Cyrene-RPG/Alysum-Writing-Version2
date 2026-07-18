@@ -1,6 +1,7 @@
 /**
  * Story Wiki page boot — hub loads with minimal imports; full workspace loads only for ?book=.
  */
+window.__ALYSUM_SW_VERSION = "v2.5.5";
 import { supabase } from "../firebase.js";
 import { requireStudioSession } from "./studio-session.js?v=3";
 import { loadStoryWikiHub } from "./story-wiki-hub.js?v=3";
@@ -171,7 +172,7 @@ export async function bootStoryWikiPage() {
     byId("sbBookView")?.classList.remove("hidden");
 
     try {
-        const { mountUnifiedStoryBible } = await import("./story-bible-unified.js?v=22");
+        const { mountUnifiedStoryBible } = await import("./story-bible-unified.js?v=27");
         await mountUnifiedStoryBible(collectMountOpts(session.user.id));
     } catch (e) {
         console.error("[story-wiki-boot] workspace failed:", e);
