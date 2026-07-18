@@ -16,7 +16,7 @@
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
     <link rel="stylesheet" href="css/gradient-themes.css?v=4" />
     <link rel="stylesheet" href="css/workspace-nav.css?v=4" />
-    <link rel="stylesheet" href="css/wiki-vector.css?v=7" />
+    <link rel="stylesheet" href="css/wiki-vector.css?v=8" />
     <script src="js/gradient-theme-sync.js" defer></script>
     <script type="module" src="js/vercel-analytics.js"></script>
 </head>
@@ -90,7 +90,7 @@
     </div>
 
     <script type="module">
-        import { bootWiki } from "./js/wiki/boot.js?v=7";
+        import { bootWiki } from "./js/wiki/boot.js?v=8";
         bootWiki().catch((e) => {
             console.error("[wiki]", e);
             document.getElementById("wikiParserOutput").innerHTML =
