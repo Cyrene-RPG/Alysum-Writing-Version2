@@ -1426,8 +1426,8 @@ body.wiki-creator.wiki-editing .wiki-edit-body-toolbar {
 }
 
 body.wiki-creator.wiki-editing .wiki-edit-body-input {
-    flex: 1 1 0;
-    min-height: 0;
+    flex: 1 1 auto;
+    min-height: 8rem;
     height: auto;
     resize: none;
     overflow-y: auto;
@@ -1435,6 +1435,13 @@ body.wiki-creator.wiki-editing .wiki-edit-body-input {
     line-height: 1.55;
     padding: 0.25rem 0;
     -webkit-overflow-scrolling: touch;
+    position: relative;
+    z-index: 1;
+}
+
+body.wiki-creator.wiki-editing .wiki-edit-form:not(.is-preview) .wiki-edit-preview-pane {
+    display: none !important;
+    pointer-events: none;
 }
 
 body.wiki-creator.wiki-editing .wiki-edit-hint {

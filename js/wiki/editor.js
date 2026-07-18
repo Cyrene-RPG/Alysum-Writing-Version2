@@ -53,7 +53,7 @@ export function mountEditor(
             <div class="wiki-edit-layout">
                 <div class="wiki-edit-main">
                     <label class="wiki-edit-title-label" for="wikiEditTitle">Article title</label>
-                    <input type="text" id="wikiEditTitle" class="wiki-edit-title-input" value="${escapeHtml(draft.name)}" placeholder="Character, place, or concept name" required ${isNew ? "" : "readonly"} />
+                    <input type="text" id="wikiEditTitle" class="wiki-edit-title-input" value="${escapeHtml(draft.name)}" placeholder="Character, place, or concept name" required />
 
                     <div class="wiki-edit-body-toolbar">
                         <label class="wiki-edit-body-label" for="wikiEditBody">Lore</label>
@@ -258,7 +258,10 @@ export function mountEditor(
         if (editorMode === "preview") refreshPreview();
     }
 
-    writeModeBtn?.addEventListener("click", () => setEditorMode("write"));
+    writeModeBtn?.addEventListener("click", () => {
+        setEditorMode("write");
+        bodyInput?.focus();
+    });
     previewModeBtn?.addEventListener("click", () => setEditorMode("preview"));
 
     previewArticle?.addEventListener("click", (e) => {
@@ -382,7 +385,6 @@ export function mountEditor(
 
             if (articleIsNew) {
                 articleIsNew = false;
-                form.querySelector("#wikiEditTitle")?.setAttribute("readonly", "");
                 updateSaveLabels(false);
                 extras?.onFirstSave?.(updated);
             }
@@ -401,6 +403,8 @@ export function mountEditor(
 
     lastSavedFingerprint = entryFingerprint(readDraftFromForm());
     setSaveStatus("idle");
+    setEditorMode("write");
+    bodyInput?.focus();
 
     form.addEventListener("input", markDirty);
     form.addEventListener("change", markDirty);
