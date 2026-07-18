@@ -495,7 +495,7 @@
                 <span class="wd-nav-divider" aria-hidden="true"></span>
                 <a href="vault.html">Notes</a>
                 <a href="note-graph.html">Note Graph</a>
-                <a href="story-bible.html" id="navStoryBible">Story Wiki</a>
+                <a href="wiki.html" id="navStoryBible">Story Wiki</a>
                 <a href="story-board/">Story Board</a>
                 <a href="plotweave.html">Plotweave</a>
                 <a href="Novel_Exporter.html">Exporter</a>
@@ -575,7 +575,7 @@
             <button class="pill-btn secondary" id="themeToggleBtn" type="button" data-tip="Toggle light / dark mode">Dark Mode</button>
             <button class="pill-btn secondary" id="publishBtn" type="button" data-tip="Publish chapters to the web">Publish</button>
             <a class="pill-btn secondary" id="betaShareLink" href="beta-room-manage.html" data-tip="Share an unpublished snapshot with beta readers">Beta share</a>
-            <a class="pill-btn secondary" id="storyBibleLink" href="story-bible.html" data-tip="Open Story Wiki for this book">Story Wiki</a>
+            <a class="pill-btn secondary" id="storyBibleLink" href="wiki.html" data-tip="Open Story Wiki for this book">Story Wiki</a>
             <button class="pill-btn danger" id="deleteBookBtn" type="button" data-tip="Permanently delete this book">Delete Book</button>
         </div>
     </div>
@@ -597,7 +597,7 @@
             <span class="topbar-tip" data-tip="Publish to web"><button class="icon-btn purple" id="publishTopBtn" type="button" aria-label="Publish">🚀</button></span>
             <span class="topbar-tip" data-tip="Share unpublished draft with beta readers" id="betaShareTopLinkWrap"><a class="icon-btn" id="betaShareTopLink" href="beta-room-manage.html" aria-label="Beta share">✉</a></span>
             <span class="topbar-tip" data-tip="Export / print"><button class="icon-btn purple" id="exportBtn" type="button" aria-label="Export">📄</button></span>
-            <span class="topbar-tip" data-tip="Story Wiki" id="storyBibleTopLinkWrap"><a class="icon-btn" id="storyBibleTopLink" href="story-bible.html" aria-label="Story Wiki">📖</a></span>
+            <span class="topbar-tip" data-tip="Story Wiki" id="storyBibleTopLinkWrap"><a class="icon-btn" id="storyBibleTopLink" href="wiki.html" aria-label="Story Wiki">📖</a></span>
             <span class="topbar-tip" data-tip="Story Board (Alt+P)"><a class="pd-toggle" id="storyBoardLink" href="story-board/">Story Board</a></span>
             <span class="topbar-tip" data-tip="Notes"><button class="icon-btn" id="nbBtn" type="button" aria-label="Notes">⌘</button></span>
             <span class="topbar-tip" data-tip="Rename chapter"><button class="icon-btn" id="renameChapterBtn" type="button" aria-label="Rename chapter">⋯</button></span>
@@ -1082,9 +1082,9 @@ function rememberBookId(id) {
         const prefOn = isStoryBibleUiEnabled();
         const hasBook = !!bookId;
         const show = prefOn && hasBook;
-        if (storyBibleLink) { storyBibleLink.style.display = show ? "" : "none"; if (hasBook) storyBibleLink.href = `story-bible.html?book=${encodeURIComponent(bookId)}`; }
+        if (storyBibleLink) { storyBibleLink.style.display = show ? "" : "none"; if (hasBook) storyBibleLink.href = `wiki.html?book=${encodeURIComponent(bookId)}`; }
         if (storyBibleTopLinkWrap) storyBibleTopLinkWrap.classList.toggle("hidden", !show);
-        if (storyBibleTopLink && hasBook) storyBibleTopLink.href = `story-bible.html?book=${encodeURIComponent(bookId)}`;
+        if (storyBibleTopLink && hasBook) storyBibleTopLink.href = `wiki.html?book=${encodeURIComponent(bookId)}`;
         if (betaShareLink) {
             const showBeta = hasBook && !isLocalStudio;
             betaShareLink.style.display = showBeta ? "" : "none";

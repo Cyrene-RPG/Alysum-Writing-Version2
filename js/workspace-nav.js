@@ -40,6 +40,7 @@ const PATH_TO_ACTIVE = new Map([
     ["note-graph.html", "note-graph"],
     ["Story-Bible-New.html", "story-wiki"],
     ["story-bible.html", "story-wiki"],
+    ["wiki.html", "story-wiki"],
     ["plotweave.html", "plotweave"],
     ["Novel_Exporter.html", "exporter"],
     ["badges.html", "achievements"],
@@ -167,7 +168,7 @@ function renderNavHtml(active) {
                 <span class="wd-nav-divider" aria-hidden="true"></span>
                 <a href="${navHref("vault.html")}"${activeClass("notes", active)}>Notes</a>
                 <a href="${navHref("note-graph.html")}"${activeClass("note-graph", active)}>Note Graph</a>
-                <a href="${navHref("story-bible.html")}" id="navStoryBible"${activeClass("story-wiki", active)}>Story Wiki</a>
+                <a href="${navHref("wiki.html")}" id="navStoryBible"${activeClass("story-wiki", active)}>Story Wiki</a>
                 <a href="${navHref("story-board/")}"${activeClass("story-board", active)}>Story Board</a>
                 <a href="${navHref("plotweave.html")}"${activeClass("plotweave", active)}>Plotweave</a>
                 <a href="${navHref("Novel_Exporter.html")}"${activeClass("exporter", active)}>Exporter</a>

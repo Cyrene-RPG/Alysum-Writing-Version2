@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en" class="client-js vector-feature-language-in-header-enabled vector-feature-language-in-main-page-header-disabled vector-feature-page-tools-pinned-disabled vector-feature-toc-pinned-clientpref-1 vector-feature-main-menu-pinned-disabled vector-feature-limited-width-clientpref-1 vector-feature-limited-width-content-enabled vector-feature-custom-font-size-clientpref-1 vector-feature-appearance-pinned-clientpref-1 vector-feature-night-mode-disabled skin-vector-action-view">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Wikipedia</title>
+    <link rel="icon" type="image/png" href="Alysum-3.png" />
+    <link rel="stylesheet" href="css/wiki-vector.css?v=1" />
+    <script type="module" src="js/vercel-analytics.js"></script>
+</head>
+<body class="skin-vector skin-vector-search-vue mediawiki ltr sitedir-ltr mw-hide-empty-elt">
+    <div class="mw-page-container">
+        <header class="mw-header vector-header">
+            <div class="vector-header-start">
+                <nav class="vector-main-menu-landmark" aria-label="Site">
+                    <div class="vector-dropdown vector-main-menu-dropdown">
+                        <button type="button" class="vector-dropdown-label cdx-button cdx-button--fake-button cdx-button--fake-button--enabled cdx-button--weight-quiet" id="wikiMainMenuBtn" aria-expanded="false" aria-controls="wikiMainMenuPanel">
+                            <span class="vector-icon mw-ui-icon-menu"></span>
+                            <span>Main menu</span>
+                        </button>
+                        <div class="vector-dropdown-content" id="wikiMainMenuPanel" hidden>
+                            <div class="vector-main-menu">
+                                <div class="vector-main-menu-group">
+                                    <h3>Navigation</h3>
+                                    <ul>
+                                        <li><a href="wiki.html" id="wikiNavMain">Main page</a></li>
+                                        <li><a href="#" id="wikiNavContents">Contents</a></li>
+                                        <li><a href="#" id="wikiNavRandom">Random article</a></li>
+                                    </ul>
+                                </div>
+                                <div class="vector-main-menu-group">
+                                    <h3>Alysum</h3>
+                                    <ul>
+                                        <li><a href="writer-dashboard.html">Studio</a></li>
+                                        <li><a href="editor.html" id="wikiNavEditor">Continue writing</a></li>
+                                        <li><a href="lore-wiki.html">Lore Wiki</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </nav>
+                <a href="wiki.html" class="mw-logo" id="wikiLogoLink">
+                    <span class="mw-logo-icon" aria-hidden="true">W</span>
+                    <span class="mw-logo-container">
+                        <span class="mw-logo-wordmark">Wikipedia</span>
+                        <span class="mw-logo-tagline">The Free Encyclopedia</span>
+                    </span>
+                </a>
+            </div>
+            <div class="vector-header-search">
+                <form id="wikiSearchForm" class="vector-search-box" role="search">
+                    <div class="cdx-search-input">
+                        <input type="search" id="wikiSearchInput" class="cdx-text-input__input" placeholder="Search Wikipedia" autocomplete="off" aria-label="Search Wikipedia" />
+                        <button type="submit" class="cdx-button cdx-button--action-progressive" id="wikiSearchBtn">Search</button>
+                    </div>
+                </form>
+            </div>
+            <div class="vector-header-end">
+                <nav class="vector-user-links" aria-label="Personal tools">
+                    <ul>
+                        <li><a href="settings.html">Preferences</a></li>
+                        <li><button type="button" class="wiki-plain-btn" id="wikiLogoutBtn">Log out</button></li>
+                    </ul>
+                </nav>
+            </div>
+        </header>
+
+        <div class="mw-body" id="wikiBody">
+            <aside class="mw-sidebar vector-column-start" id="wikiSidebar">
+                <nav class="vector-toc-landmark" aria-label="Contents">
+                    <div id="wikiSidebarNav">
+                        <div class="vector-main-menu-group">
+                            <h3>Navigation</h3>
+                            <ul>
+                                <li><a href="wiki.html" id="wikiSideMain">Main page</a></li>
+                                <li><a href="#" id="wikiSideContents">Contents</a></li>
+                                <li><a href="#" id="wikiSideRandom">Random article</a></li>
+                            </ul>
+                        </div>
+                        <div class="vector-main-menu-group">
+                            <h3>Tools</h3>
+                            <ul id="wikiToolsList">
+                                <li><a href="#" id="wikiToolWhatLinks">What links here</a></li>
+                                <li><a href="#" id="wikiToolNew">Create article</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </nav>
+            </aside>
+
+            <main class="mw-content-container" id="wikiMain">
+                <div class="vector-page-toolbar" id="wikiPageToolbar" hidden>
+                    <div class="vector-page-titlebar">
+                        <h1 class="firstHeading mw-first-heading" id="wikiPageTitle"></h1>
+                    </div>
+                    <div class="vector-page-toolbar-container">
+                        <nav class="vector-article-tabs" aria-label="Namespaces">
+                            <ul>
+                                <li class="selected"><a href="#" id="wikiTabArticle">Article</a></li>
+                                <li><a href="#" id="wikiTabTalk">Talk</a></li>
+                            </ul>
+                        </nav>
+                        <nav class="vector-views" aria-label="Views">
+                            <ul>
+                                <li class="selected" id="wikiViewRead"><a href="#" id="wikiTabRead">Read</a></li>
+                                <li id="wikiViewEdit"><a href="#" id="wikiTabEdit">Edit</a></li>
+                                <li id="wikiViewHistory"><a href="#" id="wikiTabHistory">View history</a></li>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+
+                <div class="mw-body-content" id="wikiContent">
+                    <div id="wikiContentSub" class="mw-content-sub"></div>
+                    <div id="wikiBodyContent" class="mw-body-content-inner">
+                        <div class="mw-parser-output" id="wikiParserOutput">
+                            <p>Loading…</p>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <footer class="mw-footer" id="wikiFooter">
+            <ul id="wikiFooterInfo">
+                <li id="wikiLastModified"></li>
+            </ul>
+            <div class="mw-footer-powered">Story Wiki powered by Alysum</div>
+        </footer>
+    </div>
+
+    <div id="wikiModal" class="wiki-modal" hidden aria-hidden="true">
+        <div class="wiki-modal-backdrop" data-wiki-modal-close></div>
+        <div class="wiki-modal-panel" role="dialog" aria-modal="true" aria-labelledby="wikiModalTitle">
+            <header class="wiki-modal-header">
+                <h2 id="wikiModalTitle"></h2>
+                <button type="button" class="wiki-modal-close" data-wiki-modal-close aria-label="Close">&times;</button>
+            </header>
+            <div class="wiki-modal-body" id="wikiModalBody"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { bootWiki } from "./js/wiki/boot.js?v=1";
+        bootWiki().catch((e) => {
+            console.error("[wiki]", e);
+            document.getElementById("wikiParserOutput").innerHTML =
+                '<div class="error">Wiki failed to start. <a href="login.html">Sign in</a> and refresh.</div>';
+        });
+    </script>
+</body>
+</html>
