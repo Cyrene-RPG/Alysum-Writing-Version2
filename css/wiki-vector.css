@@ -1162,22 +1162,37 @@ body.wiki-page h6 {
 }
 
 /* Editor fills viewport — page locked, panels scroll inside */
-body.wiki-creator.wiki-editing {
+body.wiki-creator.wiki-editing,
+body.alysum-with-workspace-nav.alysum-tool-scroll.wiki-creator.wiki-editing {
+    display: flex;
+    flex-direction: column;
     overflow: hidden;
     height: 100vh;
+    height: 100dvh;
     min-height: 0;
+}
+
+body.alysum-with-workspace-nav.alysum-tool-scroll.wiki-creator.wiki-editing > .wd-nav-wrap {
+    flex-shrink: 0;
+}
+
+body.wiki-creator.wiki-editing > .mw-page-container,
+body.alysum-with-workspace-nav.alysum-tool-scroll.wiki-creator.wiki-editing > .mw-page-container {
+    flex: 1;
+    min-height: 0;
+    height: auto;
 }
 
 body.wiki-creator.wiki-editing .mw-page-container {
     display: flex;
     flex-direction: column;
-    height: calc(100vh - var(--alysum-nav-sticky-offset, 45px));
-    min-height: 0;
     overflow: hidden;
 }
 
 body.wiki-creator.wiki-editing .mw-header.vector-header {
     flex-shrink: 0;
+    position: relative;
+    top: auto;
 }
 
 body.wiki-creator.wiki-editing .mw-footer {
@@ -1198,6 +1213,7 @@ body.wiki-creator.wiki-editing .wiki-creator-body {
 
 body.wiki-creator.wiki-editing .wiki-creator-main,
 body.wiki-creator.wiki-editing .mw-body-content,
+body.wiki-creator.wiki-editing .mw-body-content-inner,
 body.wiki-creator.wiki-editing .wiki-edit-shell,
 body.wiki-creator.wiki-editing .mw-parser-output {
     display: flex;
@@ -1205,6 +1221,10 @@ body.wiki-creator.wiki-editing .mw-parser-output {
     flex: 1;
     min-height: 0;
     overflow: hidden;
+}
+
+body.wiki-creator.wiki-editing .mw-body-content-inner {
+    min-height: 0;
 }
 
 body.wiki-creator.wiki-editing .wiki-creator-main {
@@ -1237,6 +1257,8 @@ body.wiki-creator.wiki-editing .wiki-edit-layout {
 }
 
 body.wiki-creator.wiki-editing .wiki-edit-main {
+    display: flex;
+    flex-direction: column;
     min-height: 0;
     height: 100%;
     max-height: 100%;
@@ -1346,9 +1368,18 @@ body.wiki-creator.wiki-editing .wiki-edit-publish-card .wiki-publish-copy {
 }
 
 @media (max-width: 900px) {
-    body.wiki-creator.wiki-editing {
+    body.wiki-creator.wiki-editing,
+    body.alysum-with-workspace-nav.alysum-tool-scroll.wiki-creator.wiki-editing {
+        display: block;
         overflow: auto;
         height: auto;
+    }
+
+    body.wiki-creator.wiki-editing > .mw-page-container,
+    body.alysum-with-workspace-nav.alysum-tool-scroll.wiki-creator.wiki-editing > .mw-page-container {
+        flex: none;
+        height: auto;
+        overflow: visible;
     }
 
     body.wiki-creator.wiki-editing .mw-page-container {
