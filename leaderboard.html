@@ -965,8 +965,7 @@
       const handle = String(writer.username || "").trim().toLowerCase();
       if (handle && handle !== "user") return `handle:${handle}`;
       const name = String(writer.display_name || "").trim().toLowerCase();
-      if (name) return 
-ame:${name}`;
+      if (name) return `name:${name}`;
       return `id:${String(writer.user_id || "").trim()}`;
     }
 

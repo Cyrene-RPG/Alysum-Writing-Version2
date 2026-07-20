@@ -907,8 +907,7 @@
             const tags = val("cpTags");
             const lines = ["Character profile (full worksheet)", ""];
 
-            if (name) lines.push(
-ame: ${name}`);
+            if (name) lines.push(`Name: ${name}`);
             if (aliases) lines.push(`Aliases: ${aliases}`);
             if (tags) lines.push(`Tags: ${tags}`);
             if (name || aliases || tags) lines.push("");
