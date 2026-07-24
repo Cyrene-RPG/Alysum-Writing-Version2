@@ -16,6 +16,7 @@ import {
   readManifestFromZip,
   getBooksFromBackup,
 } from "./backup-zip.js?v=1";
+import { LOCAL_VERSIONS_KEY, exportLocalVersionStore, importLocalVersionStore } from "./book-version-api.js?v=2";
 
 export const BACKUP_VERSION = 1;
 export const BACKUP_FILENAME_PREFIX = "alysum-backup";
@@ -48,6 +49,7 @@ const CLOUD_TABLES = [
   { table: "reads", eq: "user_id" },
   { table: "reader_beta_notes", eq: "user_id" },
   { table: "plot_issues", eq: "user_id" },
+  { table: "book_versions", eq: "user_id" },
 ];
 
 /** @type {readonly string[]} */
@@ -100,6 +102,7 @@ const RESTORE_TABLES = [
   { table: "reads", onConflict: "id", userField: "user_id" },
   { table: "reader_beta_notes", onConflict: "user_id,book_id", userField: "user_id" },
   { table: "plot_issues", onConflict: "id", userField: "user_id" },
+  { table: "book_versions", onConflict: "id", userField: "user_id" },
   { table: "notifications", onConflict: "id", userField: "user_id", skipRestore: true },
 ];
 
@@ -231,6 +234,10 @@ export async function exportUserBackup({ supabase, userId, mode, email = "" }) {
   } catch {
     /* ignore */
   }
+  const bookVersions = exportLocalVersionStore();
+  if (bookVersions && Object.keys(bookVersions).length) {
+    localData.bookVersions = bookVersions;
+  }
 
   const devicePreferences = collectDevicePreferences(userId);
   const exportedAt = new Date().toISOString();
@@ -334,6 +341,11 @@ export async function restoreUserBackup({ supabase, userId, mode, backup }) {
   if (backup.localData?.localVault) {
     localStorage.setItem(LOCAL_VAULT_STORAGE_KEY, JSON.stringify(backup.localData.localVault));
     restored.push("local vault");
+  }
+
+  if (backup.localData?.bookVersions) {
+    importLocalVersionStore(backup.localData.bookVersions);
+    restored.push("book version history");
   }
 
   applyDevicePreferences(backup.devicePreferences);

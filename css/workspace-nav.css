@@ -252,6 +252,18 @@ body.alysum-with-workspace-nav.alysum-tool-editor > .alysum-tool-root {
     flex: 1;
     min-height: 0;
     overflow: hidden;
+    position: relative;
+}
+
+@media (max-width: 760px) {
+    body.alysum-with-workspace-nav.alysum-tool-editor > .alysum-tool-root {
+        isolation: isolate;
+    }
+
+    body.alysum-with-workspace-nav.alysum-tool-editor .sidebar {
+        height: 100% !important;
+        max-height: none;
+    }
 }
 
 body.alysum-with-workspace-nav.alysum-tool-editor .sidebar,
