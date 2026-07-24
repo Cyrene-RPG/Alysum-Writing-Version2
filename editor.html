@@ -507,6 +507,47 @@
     }
     @media (max-width: 900px) { .page { padding: 52px 56px 70px; } .chapter-title { font-size: 24px; } .editor { font-size: 18px; } .top-title { max-width: 28vw; } }
     @media (max-width: 760px) { .sidebar { position: fixed; left: 0; top: 0; width: 300px; } .overlay { display: block; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 20; } .overlay.hidden { display: none; } .top-title { max-width: 40vw; } .page { padding: 42px 24px 60px; } .chapter-title { font-size: 22px; margin-bottom: 32px; } .editor { font-size: 17px; line-height: 1.7; } .topbar { height: auto; min-height: 56px; flex-wrap: wrap; row-gap: 8px; } .topbar-left, .topbar-right { flex-wrap: wrap; } .topbar-right { justify-content: flex-end; } }
+    .toolbar-mobile-toggle-wrap { display: none; }
+    @media (max-width: 600px) {
+        .toolbar-mobile-toggle-wrap { display: inline-flex; }
+        .toolbar-mobile-toggle { font-size: 15px; font-weight: 900; letter-spacing: -0.02em; }
+        .toolbar-mobile-toggle.is-active { background: var(--alysum-purple); border-color: var(--alysum-purple); color: #fff; }
+        body:not(.toolbar-mobile-open) #toolbar { display: none !important; }
+        body:not(.toolbar-mobile-open).comic-mode .comic-toolbar { display: none !important; }
+        body.toolbar-mobile-open #toolbar {
+            display: grid !important;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 6px;
+            padding: 8px 10px;
+            min-height: 0;
+            overflow: visible;
+            align-items: stretch;
+        }
+        body.toolbar-mobile-open #toolbar .tool-btn,
+        body.toolbar-mobile-open #toolbar .tool-select {
+            width: 100%;
+            min-width: 0;
+            max-width: none;
+            padding: 0 6px;
+            font-size: 12px;
+            height: 34px;
+        }
+        body.toolbar-mobile-open #toolbar #fontSelect { min-width: 0; }
+        body.toolbar-mobile-open #toolbar .toolbar-spacer { display: none; }
+        body.toolbar-mobile-open #toolbar .sprint-anchor { grid-column: 1 / -1; }
+        body.toolbar-mobile-open #toolbar .sprint-btn { width: 100%; }
+        body.toolbar-mobile-open.comic-mode .comic-toolbar {
+            display: flex !important;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 8px;
+            min-height: 0;
+            padding: 8px 10px;
+        }
+        body.toolbar-mobile-open.comic-mode .comic-upload-btn,
+        body.toolbar-mobile-open.comic-mode .comic-action-btn { width: 100%; justify-content: center; }
+        body:not(.toolbar-mobile-open) .sprint-float { top: 72px; }
+    }
     @media (max-width: 480px) { .workspace { padding: 16px 10px 40px; } .page { padding: 32px 16px 48px; } .sidebar { width: min(300px, 100vw); } }
 </style></head><body class="alysum-with-workspace-nav alysum-tool-editor">
     <header class="wd-welcome-bar" aria-label="Welcome">
@@ -632,6 +673,7 @@
         <div class="topbar-left">
             <span class="topbar-tip" data-tip="Sidebar on / off"><button class="icon-btn" id="toggleSidebarBtn" type="button" aria-label="Toggle sidebar">☰</button></span>
             <span class="topbar-tip" data-tip="Studio — your books"><button class="icon-btn" id="homeBtn" type="button" aria-label="Back to Studio">🏠</button></span>
+            <span class="topbar-tip toolbar-mobile-toggle-wrap" data-tip="Show formatting tools"><button class="icon-btn toolbar-mobile-toggle" id="toggleToolbarBtn" type="button" aria-label="Show formatting tools" aria-expanded="false" aria-controls="toolbar">Aa</button></span>
             <div class="top-title" id="topBookTitle">Loading...</div>
         </div>
         <div class="topbar-right">
@@ -829,6 +871,9 @@ function rememberBookId(id) {
     const sidebar = document.getElementById("sidebar");
     const overlay = document.getElementById("overlay");
     const toggleSidebarBtn = document.getElementById("toggleSidebarBtn");
+    const toggleToolbarBtn = document.getElementById("toggleToolbarBtn");
+    const TOOLBAR_MOBILE_OPEN_KEY = "alysum-editor-toolbar-open";
+    const PHONE_MAX_WIDTH = 600;
     const homeBtn = document.getElementById("homeBtn");
     const addChapterBtn = document.getElementById("addChapterBtn");
     const deleteChapterBtn = document.getElementById("deleteChapterBtn");
@@ -1521,6 +1566,48 @@ function rememberBookId(id) {
         else { sidebar.classList.remove("mobile-hidden"); overlay.classList.add("hidden"); }
     }
     window.addEventListener("resize", applyResponsiveSidebar);
+
+    function isPhoneLayout() {
+        return window.innerWidth <= PHONE_MAX_WIDTH;
+    }
+    function syncMobileToolbarUi() {
+        if (!toggleToolbarBtn) return;
+        const open = document.body.classList.contains("toolbar-mobile-open");
+        toggleToolbarBtn.setAttribute("aria-expanded", open ? "true" : "false");
+        toggleToolbarBtn.classList.toggle("is-active", open);
+        toggleToolbarBtn.setAttribute("aria-label", open ? "Hide formatting tools" : "Show formatting tools");
+        const tip = toggleToolbarBtn.closest(".topbar-tip");
+        if (tip) tip.dataset.tip = open ? "Hide formatting tools" : "Show formatting tools";
+    }
+    function setMobileToolbarOpen(open, persist = true) {
+        if (!isPhoneLayout()) {
+            document.body.classList.remove("toolbar-mobile-open");
+            syncMobileToolbarUi();
+            return;
+        }
+        document.body.classList.toggle("toolbar-mobile-open", open);
+        if (persist) {
+            try { sessionStorage.setItem(TOOLBAR_MOBILE_OPEN_KEY, open ? "1" : "0"); } catch (_) {}
+        }
+        syncMobileToolbarUi();
+    }
+    function toggleMobileToolbar() {
+        if (!isPhoneLayout()) return;
+        setMobileToolbarOpen(!document.body.classList.contains("toolbar-mobile-open"));
+    }
+    function applyResponsiveMobileToolbar() {
+        if (!isPhoneLayout()) {
+            document.body.classList.remove("toolbar-mobile-open");
+            syncMobileToolbarUi();
+            return;
+        }
+        let open = false;
+        try { open = sessionStorage.getItem(TOOLBAR_MOBILE_OPEN_KEY) === "1"; } catch (_) {}
+        setMobileToolbarOpen(open, false);
+    }
+    toggleToolbarBtn?.addEventListener("click", toggleMobileToolbar);
+    window.addEventListener("resize", applyResponsiveMobileToolbar);
+    applyResponsiveMobileToolbar();
 
     function stripHtmlToText(html) {
         return safeString(html, "").replace(/<br\s*\/?>/gi, " ").replace(/<\/(div|p|h1|h2|h3|li|blockquote|ul|ol)>/gi, " ").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
