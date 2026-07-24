@@ -488,7 +488,7 @@
         scroll-padding-inline: 4px;
         -webkit-overflow-scrolling: touch;
         overscroll-behavior-inline: contain;
-        touch-action: pan-x pan-y;
+        touch-action: pan-x;
         scrollbar-width: none;
         -ms-overflow-style: none;
     }
@@ -548,17 +548,22 @@
         aspect-ratio: 3 / 4;
         border-radius: 18px;
         padding: 0;
-        box-shadow: 0 16px 32px rgba(0, 0, 0, 0.4), inset 6px 0 0 rgba(0, 0, 0, 0.16);
-        transform: perspective(900px) rotateY(-4deg);
-        transition: transform 0.22s ease, box-shadow 0.22s ease;
+        box-shadow: 0 10px 22px rgba(0, 0, 0, 0.32), inset 5px 0 0 rgba(0, 0, 0, 0.18);
         cursor: pointer;
         isolation: isolate;
+        contain: layout paint;
         scroll-snap-align: start;
     }
 
-    .wd-book:hover {
-        transform: perspective(900px) rotateY(-2deg) translateY(-4px);
-        box-shadow: 0 20px 36px rgba(0, 0, 0, 0.48), inset 6px 0 0 rgba(0, 0, 0, 0.16);
+    @media (hover: hover) and (pointer: fine) {
+        .wd-book {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .wd-book:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 14px 28px rgba(0, 0, 0, 0.4), inset 5px 0 0 rgba(0, 0, 0, 0.18);
+        }
     }
 
     .wd-book-format-badge {
@@ -567,7 +572,7 @@
         top: 8px;
         z-index: 3;
         border: 1px solid rgba(255, 255, 255, 0.22);
-        background: rgba(15, 23, 42, 0.82);
+        background: rgba(15, 23, 42, 0.92);
         color: #c4b5fd;
         border-radius: 999px;
         padding: 5px 10px;
@@ -575,7 +580,6 @@
         font-weight: 800;
         letter-spacing: 0.04em;
         text-transform: uppercase;
-        backdrop-filter: blur(8px);
         box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
     }
 
@@ -585,7 +589,7 @@
         bottom: 8px;
         z-index: 3;
         border: 1px solid rgba(255, 255, 255, 0.22);
-        background: rgba(15, 23, 42, 0.82);
+        background: rgba(15, 23, 42, 0.92);
         color: #e9d5ff;
         border-radius: 999px;
         padding: 5px 10px;
@@ -594,7 +598,6 @@
         letter-spacing: 0.04em;
         text-transform: uppercase;
         text-decoration: none;
-        backdrop-filter: blur(8px);
         box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
     }
 
@@ -745,6 +748,17 @@
             padding-right: 0;
         }
         .wd-rail { position: static; }
+    }
+
+    /* Phones: native horizontal scroll only — dual scrollbar sync + snap fight momentum */
+    @media (pointer: coarse) {
+        .wd-books-viewport {
+            scroll-snap-type: none;
+        }
+
+        .wd-books-scroll {
+            display: none;
+        }
     }
 
     @media (max-width: 560px) {
@@ -1034,13 +1048,51 @@
     let lockedBookWidth = null;
     let bookWidthRaf = 0;
     let booksScrollSyncing = false;
+    let booksScrollSyncRaf = 0;
+    let booksScrollSyncSource = null;
+    let booksWheelRaf = 0;
+    let booksWheelDelta = 0;
+    let booksMaxScroll = 0;
+    const booksCoarsePointer = window.matchMedia?.("(pointer: coarse)");
+    const booksFinePointer = window.matchMedia?.("(pointer: fine)");
+
+    function booksUseFakeScrollbar() {
+        return Boolean(
+            bookListScroll &&
+            !(booksCoarsePointer?.matches) &&
+            getComputedStyle(bookListScroll).display !== "none"
+        );
+    }
+
+    function refreshBooksMaxScroll() {
+        if (!bookListViewport) {
+            booksMaxScroll = 0;
+            return;
+        }
+        booksMaxScroll = Math.max(0, bookListViewport.scrollWidth - bookListViewport.clientWidth);
+    }
 
     function syncBooksScrollbars() {
-        if (!bookListViewport || !bookListScroll || !bookListScrollInner) return;
+        if (!bookListViewport || !booksUseFakeScrollbar()) return;
         bookListScrollInner.style.width = `${bookListViewport.scrollWidth}px`;
+        refreshBooksMaxScroll();
         if (bookListScroll.scrollLeft !== bookListViewport.scrollLeft) {
             bookListScroll.scrollLeft = bookListViewport.scrollLeft;
         }
+    }
+
+    function scheduleBooksScrollSync(source, target) {
+        booksScrollSyncSource = { source, target };
+        if (booksScrollSyncRaf) return;
+        booksScrollSyncRaf = requestAnimationFrame(() => {
+            booksScrollSyncRaf = 0;
+            const pending = booksScrollSyncSource;
+            booksScrollSyncSource = null;
+            if (!pending || !booksUseFakeScrollbar() || booksScrollSyncing) return;
+            booksScrollSyncing = true;
+            pending.target.scrollLeft = pending.source.scrollLeft;
+            booksScrollSyncing = false;
+        });
     }
 
     function linkBooksScroll(source, target) {
@@ -1048,10 +1100,8 @@
         source.addEventListener(
             "scroll",
             () => {
-                if (booksScrollSyncing) return;
-                booksScrollSyncing = true;
-                target.scrollLeft = source.scrollLeft;
-                booksScrollSyncing = false;
+                if (booksScrollSyncing || !booksUseFakeScrollbar()) return;
+                scheduleBooksScrollSync(source, target);
             },
             { passive: true }
         );
@@ -1062,24 +1112,35 @@
 
     function bindBookWheelScroll() {
         if (!bookListViewport) return;
-        const canUseWheel = window.matchMedia?.("(pointer: fine)").matches ?? true;
-        if (!canUseWheel) return;
+        if (!(booksFinePointer?.matches ?? true)) return;
 
         bookListViewport.addEventListener(
             "wheel",
             (e) => {
-                const maxScroll = bookListViewport.scrollWidth - bookListViewport.clientWidth;
-                if (maxScroll <= 1) return;
+                if (booksMaxScroll <= 1) {
+                    refreshBooksMaxScroll();
+                    if (booksMaxScroll <= 1) return;
+                }
 
                 const delta = Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
                 if (!delta) return;
 
-                const next = Math.max(0, Math.min(maxScroll, bookListViewport.scrollLeft + delta));
-                if (next === bookListViewport.scrollLeft) return;
+                const projected = bookListViewport.scrollLeft + booksWheelDelta + delta;
+                const next = Math.max(0, Math.min(booksMaxScroll, projected));
+                if (next === bookListViewport.scrollLeft && booksWheelDelta === 0) return;
 
                 e.preventDefault();
-                bookListViewport.scrollLeft = next;
-                syncBooksScrollbars();
+                booksWheelDelta += delta;
+                if (booksWheelRaf) return;
+                booksWheelRaf = requestAnimationFrame(() => {
+                    booksWheelRaf = 0;
+                    const applied = Math.max(
+                        0,
+                        Math.min(booksMaxScroll, bookListViewport.scrollLeft + booksWheelDelta)
+                    );
+                    booksWheelDelta = 0;
+                    bookListViewport.scrollLeft = applied;
+                });
             },
             { passive: false }
         );
