@@ -5,7 +5,7 @@ import {
   MEDIA_FORMAT_NOVEL,
   MEDIA_FORMAT_OPTIONS,
   isComicFormat,
-} from "./book-media-format.js?v=1";
+} from "./book-media-format.js?v=2";
 
 let styleInjected = false;
 
@@ -221,7 +221,7 @@ export function showBookCreateModal() {
     const comicNote = document.createElement("p");
     comicNote.className = "book-create-comic-note";
     comicNote.textContent =
-      "After creating your book, you can upload page images in the editor — one page per chapter slot.";
+      "After creating, upload one or more strip images per chapter in the editor. Readers scroll them vertically like a webtoon.";
 
     const actions = document.createElement("div");
     actions.className = "book-create-actions";

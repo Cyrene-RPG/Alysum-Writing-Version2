@@ -245,25 +245,67 @@
     .comic-upload-btn input { display: none; }
     .comic-action-btn.danger { background: var(--danger); border-color: var(--danger); color: #fff; }
     .comic-page-panel { max-width: 720px; margin: 0 auto; }
+    .comic-strip-hint {
+        margin: 0 0 12px;
+        font-size: 13px;
+        line-height: 1.45;
+        color: var(--page-subtle);
+        font-weight: 600;
+        text-align: center;
+    }
     .comic-page-preview {
         position: relative;
         min-height: 280px;
         border: 1px dashed var(--border);
         border-radius: 14px;
         background: rgba(0, 0, 0, 0.03);
-        display: flex;
-        align-items: center;
-        justify-content: center;
         overflow: hidden;
     }
     body.dark .comic-page-preview { background: rgba(255, 255, 255, 0.04); }
-    .comic-page-preview img {
+    .comic-strip-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+        width: 100%;
+    }
+    .comic-strip-item {
+        position: relative;
+        width: 100%;
+        background: #111;
+    }
+    .comic-strip-item img {
         width: 100%;
         height: auto;
         display: block;
-        border-radius: 12px;
     }
-    .comic-page-preview img.hidden { display: none; }
+    .comic-strip-controls {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        display: flex;
+        gap: 6px;
+        opacity: 0;
+        transition: opacity 0.15s ease;
+    }
+    .comic-strip-item:hover .comic-strip-controls,
+    .comic-strip-item:focus-within .comic-strip-controls {
+        opacity: 1;
+    }
+    .comic-strip-ctrl {
+        height: 30px;
+        min-width: 30px;
+        padding: 0 8px;
+        border: 1px solid rgba(255, 255, 255, 0.35);
+        border-radius: 8px;
+        background: rgba(0, 0, 0, 0.72);
+        color: #fff;
+        font-size: 13px;
+        font-weight: 800;
+        cursor: pointer;
+        line-height: 1;
+    }
+    .comic-strip-ctrl:disabled { opacity: 0.35; cursor: not-allowed; }
+    .comic-strip-ctrl.danger { background: rgba(160, 30, 40, 0.92); }
     .comic-page-empty {
         padding: 28px 20px;
         text-align: center;
@@ -621,8 +663,8 @@
     <span class="sprint-anchor" id="sprintAnchor"><button class="sprint-btn" id="sprintToolbarBtn" type="button" data-tip="Writing sprint timer" aria-label="Sprint timer">⏱ Sprint</button></span>
 </div>
 <div class="comic-toolbar" id="comicToolbar" aria-label="Comic page tools">
-    <label class="comic-upload-btn" for="comicPageUploadInput">Upload page image<input id="comicPageUploadInput" type="file" accept="image/png,image/jpeg,image/webp,image/gif" /></label>
-    <button type="button" class="comic-action-btn danger" id="comicRemoveImageBtn">Remove image</button>
+    <label class="comic-upload-btn" for="comicPageUploadInput">Add images<input id="comicPageUploadInput" type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple /></label>
+    <button type="button" class="comic-action-btn danger" id="comicRemoveImageBtn">Clear all images</button>
     <span class="comic-upload-status" id="comicUploadStatus" aria-live="polite"></span>
 </div>
 <div class="bg-bar" id="backgroundBar" aria-label="Editor background image">
@@ -659,13 +701,14 @@
             <div class="editor" id="editor" contenteditable="true" data-placeholder="Begin writing here..."></div>
             <div class="comic-workspace" id="comicWorkspace">
                 <div class="comic-page-panel">
+                    <p class="comic-strip-hint">Add multiple images to this chapter — they stack and scroll vertically for readers (webtoon-style).</p>
                     <div class="comic-page-preview" id="comicPagePreview">
-                        <img id="comicPageImage" class="hidden" alt="Comic page" />
-                        <div class="comic-page-empty" id="comicPageEmpty">Upload a page image using the toolbar above.</div>
+                        <div class="comic-strip-list" id="comicStripList"></div>
+                        <div class="comic-page-empty" id="comicPageEmpty">Upload one or more strip images using the toolbar above.</div>
                     </div>
                     <div class="comic-caption-wrap">
                         <label class="comic-caption-label" for="comicCaptionInput">Caption / notes (optional)</label>
-                        <textarea id="comicCaptionInput" class="comic-caption-input" rows="3" placeholder="Optional caption for this page..."></textarea>
+                        <textarea id="comicCaptionInput" class="comic-caption-input" rows="3" placeholder="Optional caption for this chapter..."></textarea>
                     </div>
                 </div>
             </div>
@@ -703,9 +746,13 @@
         isComicFormat,
         mediaFormatLabel,
         normalizeMediaFormat,
+        normalizeComicImageUrls,
+        comicPrimaryImageUrl,
+        chapterHasComicImage,
         countComicPages,
         countComicPagesWithImages,
-    } from "./js/book-media-format.js?v=1";
+        countComicStripImages,
+    } from "./js/book-media-format.js?v=2";
     import {
         LOCAL_GUEST_USER,
         LOCAL_VAULT_STORAGE_KEY,
@@ -845,7 +892,7 @@ function rememberBookId(id) {
     const backgroundStatus = document.getElementById("backgroundStatus");
     const comicPageUploadInput = document.getElementById("comicPageUploadInput");
     const comicRemoveImageBtn = document.getElementById("comicRemoveImageBtn");
-    const comicPageImage = document.getElementById("comicPageImage");
+    const comicStripList = document.getElementById("comicStripList");
     const comicPageEmpty = document.getElementById("comicPageEmpty");
     const comicCaptionInput = document.getElementById("comicCaptionInput");
     const comicUploadStatus = document.getElementById("comicUploadStatus");
@@ -912,12 +959,22 @@ function rememberBookId(id) {
 
     function normalizeChapter(raw, fallbackTitle = "Untitled") {
         const chapter = safeObject(raw, {});
+        const imageUrls = normalizeComicImageUrls(chapter);
         return {
             id: safeString(chapter.id, generateId()),
             title: safeString(chapter.title, fallbackTitle),
             content: safeString(chapter.content, ""),
-            imageUrl: safeString(chapter.imageUrl ?? chapter.image_url, ""),
+            imageUrl: imageUrls[0] || "",
+            imageUrls,
         };
+    }
+
+    function setChapterImageUrls(ch, urls) {
+        const next = (Array.isArray(urls) ? urls : [])
+            .map((url) => (typeof url === "string" ? url.trim() : ""))
+            .filter(Boolean);
+        ch.imageUrls = next;
+        ch.imageUrl = next[0] || "";
     }
 
     function isCurrentBookComic() {
@@ -945,8 +1002,9 @@ function rememberBookId(id) {
         if (footer) {
             const uploaded = countComicPagesWithImages(currentBook?.sections);
             const pageCount = countComicPages(currentBook?.sections);
+            const strips = countComicStripImages(currentBook?.sections);
             footer.innerHTML = comic
-                ? `${uploaded} of ${pageCount} pages uploaded`
+                ? `${uploaded} of ${pageCount} pages · ${strips} image${strips === 1 ? "" : "s"}`
                 : (footer.dataset.baseText || `<span id="footerWords">0</span> words`);
         }
         if (sidebarMetaPrimaryLabel) sidebarMetaPrimaryLabel.textContent = comic ? "pages uploaded" : "words";
@@ -955,17 +1013,54 @@ function rememberBookId(id) {
 
     function syncComicPageView(ch) {
         const page = safeObject(ch, {});
-        const imageUrl = safeString(page.imageUrl, "").trim();
-        if (comicPageImage) {
-            if (imageUrl) {
-                comicPageImage.src = imageUrl;
-                comicPageImage.classList.remove("hidden");
-            } else {
-                comicPageImage.removeAttribute("src");
-                comicPageImage.classList.add("hidden");
-            }
+        const imageUrls = normalizeComicImageUrls(page);
+        if (comicStripList) {
+            comicStripList.innerHTML = "";
+            imageUrls.forEach((url, index) => {
+                const item = document.createElement("div");
+                item.className = "comic-strip-item";
+                item.dataset.index = String(index);
+                const img = document.createElement("img");
+                img.src = url;
+                img.alt = `Strip image ${index + 1}`;
+                img.loading = "lazy";
+                const controls = document.createElement("div");
+                controls.className = "comic-strip-controls";
+                const upBtn = document.createElement("button");
+                upBtn.type = "button";
+                upBtn.className = "comic-strip-ctrl";
+                upBtn.textContent = "↑";
+                upBtn.title = "Move up";
+                upBtn.disabled = index === 0;
+                upBtn.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    moveComicStripImage(index, -1);
+                });
+                const downBtn = document.createElement("button");
+                downBtn.type = "button";
+                downBtn.className = "comic-strip-ctrl";
+                downBtn.textContent = "↓";
+                downBtn.title = "Move down";
+                downBtn.disabled = index === imageUrls.length - 1;
+                downBtn.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    moveComicStripImage(index, 1);
+                });
+                const removeBtn = document.createElement("button");
+                removeBtn.type = "button";
+                removeBtn.className = "comic-strip-ctrl danger";
+                removeBtn.textContent = "×";
+                removeBtn.title = "Remove image";
+                removeBtn.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    removeComicStripImage(index);
+                });
+                controls.append(upBtn, downBtn, removeBtn);
+                item.append(img, controls);
+                comicStripList.appendChild(item);
+            });
         }
-        if (comicPageEmpty) comicPageEmpty.classList.toggle("hidden", !!imageUrl);
+        if (comicPageEmpty) comicPageEmpty.classList.toggle("hidden", imageUrls.length > 0);
         if (comicCaptionInput) comicCaptionInput.value = safeString(page.content, "").replace(/<[^>]+>/g, "").trim();
     }
 
@@ -973,6 +1068,41 @@ function rememberBookId(id) {
         if (!isCurrentBookComic()) return;
         const ch = currentChapter();
         if (comicCaptionInput) ch.content = comicCaptionInput.value.trim();
+        setChapterImageUrls(ch, normalizeComicImageUrls(ch));
+    }
+
+    async function moveComicStripImage(index, delta) {
+        const ch = currentChapter();
+        if (!ch || !isCurrentBookComic()) return;
+        const urls = normalizeComicImageUrls(ch);
+        const nextIndex = index + delta;
+        if (nextIndex < 0 || nextIndex >= urls.length) return;
+        const swapped = [...urls];
+        const tmp = swapped[index];
+        swapped[index] = swapped[nextIndex];
+        swapped[nextIndex] = tmp;
+        setChapterImageUrls(ch, swapped);
+        syncComicPageView(ch);
+        renderAllSections();
+        scheduleSave();
+    }
+
+    async function removeComicStripImage(index) {
+        const ch = currentChapter();
+        if (!ch || !isCurrentBookComic()) return;
+        const urls = normalizeComicImageUrls(ch);
+        if (index < 0 || index >= urls.length) return;
+        urls.splice(index, 1);
+        setChapterImageUrls(ch, urls);
+        syncComicPageView(ch);
+        renderAllSections();
+        try {
+            await saveBook("Page saved");
+            if (comicUploadStatus) comicUploadStatus.textContent = "Image removed.";
+        } catch (err) {
+            console.error(err);
+            setSaveStatus("Save failed");
+        }
     }
 
     async function uploadComicPageImage(file) {
@@ -988,7 +1118,7 @@ function rememberBookId(id) {
         if (!currentUser?.id) throw new Error("You must be signed in to upload pages.");
         const pageId = currentChapter()?.id || generateId();
         const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
-        const path = `${currentUser.id}/${bookId}/${pageId}-${Date.now()}.${ext}`;
+        const path = `${currentUser.id}/${bookId}/${pageId}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${ext}`;
         const { error: uploadError } = await supabase.storage.from("comic-pages").upload(path, file, {
             upsert: true,
             contentType: file.type,
@@ -1413,8 +1543,9 @@ function rememberBookId(id) {
         if (isCurrentBookComic()) {
             const pageCount = countComicPages(currentBook?.sections);
             const uploaded = countComicPagesWithImages(currentBook?.sections);
-            chapterWordsEl.textContent = ch.imageUrl ? "1" : "0";
-            if (bottomMetaLabel) bottomMetaLabel.textContent = "page image";
+            const stripCount = normalizeComicImageUrls(ch).length;
+            chapterWordsEl.textContent = String(stripCount);
+            if (bottomMetaLabel) bottomMetaLabel.textContent = stripCount === 1 ? "strip image" : "strip images";
             totalWordsEl.textContent = uploaded;
             chapterCountEl.textContent = pageCount;
             footerWordsEl.textContent = uploaded;
@@ -1624,7 +1755,9 @@ function rememberBookId(id) {
             item.dataset.section = section;
             item.dataset.index = String(index);
             const visibleNumber = section === "body" ? index + 1 : "";
-            const pageMark = isCurrentBookComic() && ch.imageUrl ? " 🖼" : "";
+            const pageMark = isCurrentBookComic() && chapterHasComicImage(ch)
+                ? ` 🖼${normalizeComicImageUrls(ch).length > 1 ? `×${normalizeComicImageUrls(ch).length}` : ""}`
+                : "";
             item.innerHTML = `<div class="chapter-num">${visibleNumber}</div><div class="chapter-name">${escapeHtml(ch.title || "Untitled")}${pageMark}</div><div class="chapter-drag" draggable="true" data-tip="Drag to reorder chapter" aria-label="Drag to reorder">⋮⋮</div>`;
             const handle = item.querySelector(".chapter-drag");
 
@@ -1962,7 +2095,10 @@ function rememberBookId(id) {
         bodyChapters.forEach((ch, index) => {
             const row = document.createElement("div");
             row.className = "publish-row";
-            const suffix = isCurrentBookComic() && ch.imageUrl ? " (has image)" : isCurrentBookComic() ? " (no image)" : "";
+            const imgCount = normalizeComicImageUrls(ch).length;
+            const suffix = isCurrentBookComic()
+                ? (imgCount ? ` (${imgCount} image${imgCount === 1 ? "" : "s"})` : " (no image)")
+                : "";
             row.innerHTML = `<input type="checkbox" id="publish-ch-${index}" data-id="${ch.id}" checked><label for="publish-ch-${index}">${escapeHtml(ch.title || "Untitled")}${suffix}</label>`;
             publishList.appendChild(row);
         });
@@ -2045,7 +2181,8 @@ function rememberBookId(id) {
                         order: index + 1,
                         title: ch.title || (isCurrentBookComic() ? `Page ${index + 1}` : `Chapter ${index + 1}`),
                         content: ch.content || "",
-                        imageUrl: ch.imageUrl || "",
+                        imageUrl: comicPrimaryImageUrl(ch),
+                        imageUrls: normalizeComicImageUrls(ch),
                         words: countWords(ch.content || ""),
                     })),
                     publishedChapterIds: chapterIds,
@@ -2182,6 +2319,7 @@ function rememberBookId(id) {
                 title: `Page ${nextIndex}`,
                 content: "",
                 imageUrl: "",
+                imageUrls: [],
             });
             renderAllSections();
             loadChapter(section, currentBook.sections[section].length - 1, false);
@@ -2191,7 +2329,7 @@ function rememberBookId(id) {
         const label = section === "body" ? "Chapter name?" : "Section name?";
         const name = await alysumPrompt(label);
         if (!name) return;
-        currentBook.sections[section].push({ id: generateId(), title: name, content: "", imageUrl: "" });
+        currentBook.sections[section].push({ id: generateId(), title: name, content: "", imageUrl: "", imageUrls: [] });
         renderAllSections();
         loadChapter(section, currentBook.sections[section].length - 1, false);
         scheduleSave();
@@ -2316,18 +2454,30 @@ function rememberBookId(id) {
     });
 
     comicPageUploadInput?.addEventListener("change", async () => {
-        const file = comicPageUploadInput.files?.[0];
+        const files = [...(comicPageUploadInput.files || [])];
         comicPageUploadInput.value = "";
-        if (!file || !isCurrentBookComic()) return;
-        if (comicUploadStatus) comicUploadStatus.textContent = "Uploading…";
+        if (!files.length || !isCurrentBookComic()) return;
+        if (comicUploadStatus) comicUploadStatus.textContent = files.length > 1 ? `Uploading ${files.length} images…` : "Uploading…";
         try {
             syncCurrentComicPageFromUI();
-            const imageUrl = await uploadComicPageImage(file);
-            currentChapter().imageUrl = imageUrl;
-            syncComicPageView(currentChapter());
+            const ch = currentChapter();
+            const urls = normalizeComicImageUrls(ch);
+            for (let i = 0; i < files.length; i++) {
+                if (comicUploadStatus && files.length > 1) {
+                    comicUploadStatus.textContent = `Uploading ${i + 1} of ${files.length}…`;
+                }
+                const imageUrl = await uploadComicPageImage(files[i]);
+                if (imageUrl) urls.push(imageUrl);
+            }
+            setChapterImageUrls(ch, urls);
+            syncComicPageView(ch);
             renderAllSections();
             await saveBook("Page saved");
-            if (comicUploadStatus) comicUploadStatus.textContent = "Page uploaded.";
+            if (comicUploadStatus) {
+                comicUploadStatus.textContent = files.length > 1
+                    ? `${files.length} images added.`
+                    : "Image added.";
+            }
         } catch (err) {
             console.error(err);
             if (comicUploadStatus) comicUploadStatus.textContent = err?.message || "Upload failed.";
@@ -2337,15 +2487,16 @@ function rememberBookId(id) {
 
     comicRemoveImageBtn?.addEventListener("click", async () => {
         if (!isCurrentBookComic()) return;
-        if (!currentChapter()?.imageUrl) return;
-        if (!confirm("Remove the image from this page?")) return;
+        const ch = currentChapter();
+        if (!chapterHasComicImage(ch)) return;
+        if (!confirm("Remove all images from this page?")) return;
         syncCurrentComicPageFromUI();
-        currentChapter().imageUrl = "";
-        syncComicPageView(currentChapter());
+        setChapterImageUrls(ch, []);
+        syncComicPageView(ch);
         renderAllSections();
         try {
             await saveBook("Page saved");
-            if (comicUploadStatus) comicUploadStatus.textContent = "Image removed.";
+            if (comicUploadStatus) comicUploadStatus.textContent = "All images removed.";
         } catch (err) {
             console.error(err);
             setSaveStatus("Save failed");

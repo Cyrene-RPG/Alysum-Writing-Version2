@@ -213,10 +213,11 @@
     import { publicDisplayNameFromUserData } from "./js/profile-display.js?v=1";
     import {
         isComicFormat,
-        mediaFormatLabel,
         normalizeMediaFormat,
+        normalizeComicImageUrls,
+        comicPrimaryImageUrl,
         countComicPagesWithImages,
-    } from "./js/book-media-format.js?v=1";
+    } from "./js/book-media-format.js?v=2";
 
     const GENRES = {
         "Fantasy": ["High Fantasy","Low Fantasy","Dark Fantasy","Epic Fantasy","Sword and Sorcery","Urban Fantasy","Mythic Fantasy","Fairy Tale / Retelling","Grimdark","Gaslamp Fantasy","Portal Fantasy","Historical Fantasy","Contemporary Fantasy"],
@@ -292,7 +293,17 @@
     function safeArray(value, fallback = []) { return Array.isArray(value) ? value : fallback; }
     function safeObject(value, fallback = {}) { return value && typeof value === "object" && !Array.isArray(value) ? value : fallback; }
     function generateId() { return "ch_" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36); }
-    function normalizeChapter(raw, fallbackTitle = "Untitled") { const chapter = safeObject(raw, {}); return { id: safeString(chapter.id, generateId()), title: safeString(chapter.title, fallbackTitle), content: safeString(chapter.content, ""), imageUrl: safeString(chapter.imageUrl ?? chapter.image_url, "") }; }
+    function normalizeChapter(raw, fallbackTitle = "Untitled") {
+        const chapter = safeObject(raw, {});
+        const imageUrls = normalizeComicImageUrls(chapter);
+        return {
+            id: safeString(chapter.id, generateId()),
+            title: safeString(chapter.title, fallbackTitle),
+            content: safeString(chapter.content, ""),
+            imageUrl: imageUrls[0] || "",
+            imageUrls,
+        };
+    }
     function normalizeSections(rawSections) { const sections = safeObject(rawSections, {}); const frontRaw = safeArray(sections.front, []); const bodyRaw = safeArray(sections.body, []); const backRaw = safeArray(sections.back, []); return { front: frontRaw.length ? frontRaw.map((ch, index) => normalizeChapter(ch, index === 0 ? "Copyright" : "Table of Contents")) : [{ id: generateId(), title: "Copyright", content: "" }, { id: generateId(), title: "Table of Contents", content: "" }], body: bodyRaw.length ? bodyRaw.map((ch, index) => normalizeChapter(ch, `Chapter ${index + 1}`)) : [{ id: generateId(), title: "Chapter 1", content: "" }], back: backRaw.map((ch, index) => normalizeChapter(ch, `Back Matter ${index + 1}`)) }; }
     function normalizeWarningData(rawWarnings) { const source = safeObject(rawWarnings, {}); const out = {}; WARNING_GROUPS.forEach(group => { out[group.key] = safeArray(source[group.key], []).filter(item => typeof item === "string"); }); return out; }
     function normalizeCoverUrl(raw) {
@@ -331,7 +342,7 @@
         coverPreviewImg.onerror = () => { if (coverPreviewStatus) { coverPreviewStatus.textContent = "Could not load this image URL. Use a direct link ending in .jpg, .png, or .webp if possible."; coverPreviewStatus.classList.add("error"); } };
         if (coverPreviewImg.src !== url) coverPreviewImg.src = url;
     }
-    function renderSidebar() { sidebarBookTitle.textContent = currentBook?.title || "Untitled Book"; const unit = isComicFormat(currentBook?.mediaFormat) ? "page" : "chapter"; selectedChapterCount.textContent = `${selectedChapterObjects.length} ${unit}${selectedChapterObjects.length === 1 ? "" : "s"}`; selectedChaptersList.innerHTML = ""; if (!selectedChapterObjects.length) { const item = document.createElement("div"); item.className = "chapter-pill"; item.textContent = `No ${unit}s selected yet.`; selectedChaptersList.appendChild(item); return; } selectedChapterObjects.forEach((chapter, index) => { const item = document.createElement("div"); item.className = "chapter-pill"; const suffix = isComicFormat(currentBook?.mediaFormat) && chapter.imageUrl ? " 🖼" : ""; item.textContent = `${index + 1}. ${chapter.title || "Untitled"}${suffix}`; selectedChaptersList.appendChild(item); }); }
+    function renderSidebar() { sidebarBookTitle.textContent = currentBook?.title || "Untitled Book"; const unit = isComicFormat(currentBook?.mediaFormat) ? "page" : "chapter"; selectedChapterCount.textContent = `${selectedChapterObjects.length} ${unit}${selectedChapterObjects.length === 1 ? "" : "s"}`; selectedChaptersList.innerHTML = ""; if (!selectedChapterObjects.length) { const item = document.createElement("div"); item.className = "chapter-pill"; item.textContent = `No ${unit}s selected yet.`; selectedChaptersList.appendChild(item); return; } selectedChapterObjects.forEach((chapter, index) => { const item = document.createElement("div"); item.className = "chapter-pill"; const imgCount = normalizeComicImageUrls(chapter).length; const suffix = isComicFormat(currentBook?.mediaFormat) && imgCount ? ` 🖼×${imgCount}` : ""; item.textContent = `${index + 1}. ${chapter.title || "Untitled"}${suffix}`; selectedChaptersList.appendChild(item); }); }
     function renderHero() { const title = currentBook?.title || "Untitled Book"; const comic = isComicFormat(currentBook?.mediaFormat); heroTitle.textContent = `Publish “${title}”`; heroChapterCount.textContent = String(selectedChapterObjects.length); heroWordCount.textContent = comic ? String(countComicPagesWithImages({ body: selectedChapterObjects })) : String(chapterWordTotal(selectedChapterObjects)); heroBookId.textContent = bookId || "—"; heroStatus.textContent = isPublished ? "Published" : "Draft"; chapterSummaryBox.textContent = selectedChapterObjects.length ? selectedChapterObjects.map((ch, i) => `${i + 1}. ${ch.title || "Untitled"}`).join(" • ") : (comic ? "No pages selected" : "No chapters selected"); authorDisplay.textContent = libraryAuthorName(); publishHint.textContent = isPublished ? "This story already has a live library entry. Publishing again updates it." : "This story is not live yet."; }
     function renderBasicInfo() { const liveTitle = bookTitleInput.value.trim() || currentBook?.title || "Untitled Book"; sidebarBookTitle.textContent = liveTitle; heroTitle.textContent = `Publish “${liveTitle}”`; }
     function toggleGenreSelection(genre) { if (selectedGenres.has(genre)) selectedGenres.delete(genre); else selectedGenres.add(genre); renderGenres(); renderChecklist(); }
@@ -422,7 +433,8 @@
                     order: index + 1,
                     title: ch.title || (isComicFormat(currentBook.mediaFormat) ? `Page ${index + 1}` : `Chapter ${index + 1}`),
                     content: ch.content || "",
-                    imageUrl: ch.imageUrl || "",
+                    imageUrl: comicPrimaryImageUrl(ch),
+                    imageUrls: normalizeComicImageUrls(ch),
                     words: countWords(ch.content || ""),
                 })),
                 publishedChapterIds: chapterIds,

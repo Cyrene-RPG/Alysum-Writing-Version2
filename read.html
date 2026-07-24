@@ -120,12 +120,23 @@
         .content h1, .content h2, .content h3, .content h4 { line-height: 1.24; margin: 1.35em 0 0.7em; }
         .content img { max-width: 100%; border-radius: 16px; }
         .content.comic-reader { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-        .content.comic-reader .comic-page-figure { margin: 0; }
+        .content.comic-reader .comic-strip {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            width: min(100%, 720px);
+            margin: 0 auto;
+            background: #0a0a0a;
+        }
+        body.light .content.comic-reader .comic-strip { background: #111; }
+        .content.comic-reader .comic-page-figure { margin: 0; line-height: 0; }
         .content.comic-reader .comic-page-figure img {
             width: 100%;
             max-width: 100%;
-            border-radius: 18px;
-            box-shadow: 0 18px 40px rgba(0,0,0,0.28);
+            height: auto;
+            display: block;
+            border-radius: 0;
+            box-shadow: none;
         }
         .content.comic-reader .comic-page-caption {
             margin-top: 16px;
@@ -133,6 +144,11 @@
             font-size: 15px;
             line-height: 1.6;
             text-align: center;
+        }
+        .content.comic-reader .comic-strip-empty {
+            text-align: center;
+            color: var(--muted);
+            padding: 24px 12px;
         }
         .reader-tools { max-width: var(--reader-max); margin: 18px auto 0; display: flex; gap: 10px; flex-wrap: wrap; }
         .likes-card, .comments-card { max-width: var(--reader-max); margin: 18px auto 0; background: var(--panel); border: 1px solid var(--border); border-radius: 24px; box-shadow: var(--shadow); padding: 18px; }
@@ -276,7 +292,8 @@
         isComicFormat,
         mediaFormatLabel,
         normalizeMediaFormat,
-    } from "./js/book-media-format.js?v=1";
+        normalizeComicImageUrls,
+    } from "./js/book-media-format.js?v=2";
     import {
         CHAPTER_REACTIONS,
         chapterReactionId,
@@ -384,7 +401,19 @@
         const rawChapters = safeArray(data.chapters, []);
         const publishedIds = safeArray(data.publishedChapterIds, []);
         const rawTags = safeArray(data.tags).length ? safeArray(data.tags) : safeArray(data.extraTags);
-        let chapters = rawChapters.map((chapter, index) => { const item = safeObject(chapter, {}); return { id: safeString(item.id, `chapter-${index + 1}`), title: safeString(item.title, `Chapter ${index + 1}`), content: safeString(item.content, ""), imageUrl: safeString(item.imageUrl ?? item.image_url, ""), order: typeof item.order === "number" ? item.order : index + 1, words: safeNumber(item.words, countWordsFromHtml(item.content || "")) }; });
+        let chapters = rawChapters.map((chapter, index) => {
+            const item = safeObject(chapter, {});
+            const imageUrls = normalizeComicImageUrls(item);
+            return {
+                id: safeString(item.id, `chapter-${index + 1}`),
+                title: safeString(item.title, `Chapter ${index + 1}`),
+                content: safeString(item.content, ""),
+                imageUrl: imageUrls[0] || "",
+                imageUrls,
+                order: typeof item.order === "number" ? item.order : index + 1,
+                words: safeNumber(item.words, countWordsFromHtml(item.content || "")),
+            };
+        });
         if (publishedIds.length) chapters = chapters.filter(ch => publishedIds.includes(ch.id));
         chapters.sort((a, b) => a.order - b.order);
         const totalWords = safeNumber(data.words, chapters.reduce((sum, ch) => sum + safeNumber(ch.words, 0), 0));
@@ -472,13 +501,17 @@
         chapterIndicator.textContent = chapter.title;
         topbarSubtitle.textContent = `${unit} ${currentChapterIndex + 1} of ${currentBook.chapters.length}`;
         if (comic) {
-            const imageUrl = safeString(chapter.imageUrl, "").trim();
+            const imageUrls = normalizeComicImageUrls(chapter);
             const caption = safeString(chapter.content, "").trim();
             let html = "";
-            if (imageUrl) {
-                html += `<figure class="comic-page-figure"><img src="${escapeAttribute(imageUrl)}" alt="${escapeAttribute(chapter.title || "Comic page")}" loading="lazy" /></figure>`;
+            if (imageUrls.length) {
+                html += `<div class="comic-strip">`;
+                imageUrls.forEach((imageUrl, index) => {
+                    html += `<figure class="comic-page-figure"><img src="${escapeAttribute(imageUrl)}" alt="${escapeAttribute((chapter.title || "Comic page") + ` — panel ${index + 1}`)}" loading="${index === 0 ? "eager" : "lazy"}" /></figure>`;
+                });
+                html += `</div>`;
             } else {
-                html += `<p>No page image uploaded for this chapter yet.</p>`;
+                html += `<p class="comic-strip-empty">No page images uploaded for this chapter yet.</p>`;
             }
             if (caption) html += `<p class="comic-page-caption">${escapeHtml(caption)}</p>`;
             content.innerHTML = html;
