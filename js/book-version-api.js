@@ -377,6 +377,9 @@ export function friendlyVersionError(err) {
     if (/chapter_not_in_version/i.test(msg)) return "This chapter did not exist in that version.";
     if (/chapter_not_in_current/i.test(msg)) return "That chapter is not in your current manuscript.";
     if (/media_format_mismatch/i.test(msg)) return "Cannot restore — media format does not match.";
+    if (/digest\(text|pgcrypto/i.test(msg)) {
+        return "Version save failed on the server. Run supabase-book-versions-fix-digest.sql in Supabase SQL Editor.";
+    }
     if (/create_book_version|book_versions/i.test(msg) && /does not exist|42883/i.test(msg)) {
         return "Version history is not set up yet. Run supabase-book-versions.sql in Supabase.";
     }

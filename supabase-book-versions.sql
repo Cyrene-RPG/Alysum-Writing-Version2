@@ -1,8 +1,8 @@
 -- Run once in Supabase → SQL Editor (safe to re-run).
 -- Book version history: save, list, compare, restore manuscript snapshots.
 -- Versions are never auto-deleted — only removed when the parent book row is deleted.
-
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
+--
+-- Uses md5() (built-in) for content_hash — no pgcrypto / extensions schema required.
 
 -- ---------------------------------------------------------------------------
 -- 1. Table
@@ -107,7 +107,7 @@ BEGIN
   v_sections := COALESCE(v_book.sections, '{}'::jsonb);
   v_words := COALESCE(v_book.words, 0);
 
-  v_hash := encode(digest(v_sections::text, 'sha256'), 'hex');
+  v_hash := md5(v_sections::text);
 
   INSERT INTO public.book_versions (
     book_id,
