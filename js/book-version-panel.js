@@ -13,7 +13,7 @@ import {
     sourceLabel,
     formatVersionWhen,
     friendlyVersionError,
-} from "./book-version-api.js?v=2";
+} from "./book-version-api.js?v=3";
 import {
     summarizeChapterChanges,
     compareChapters,
@@ -21,9 +21,7 @@ import {
     statusLabel,
     escapeHtml,
     flattenChapters,
-    renderUnifiedDiffHtml,
-    renderSideBySideDiffHtml,
-} from "./book-version-diff.js?v=2";
+} from "./book-version-diff.js?v=3";
 import { isComicFormat } from "./book-media-format.js?v=2";
 
 const PAGE_SIZE = 50;
@@ -49,6 +47,9 @@ export function mountBookVersionPanel(opts) {
         setStatus,
         isDirty,
         onRestored,
+        cleanEditorHtml,
+        onCompareChapterEdit,
+        applyCompareEditorStyle,
     } = opts;
 
     const root = document.createElement("div");
@@ -107,7 +108,6 @@ export function mountBookVersionPanel(opts) {
                     <select id="bvCompareRightSelect" aria-label="Newer version">
                         <option value="current">Current draft</option>
                     </select>
-                    <button type="button" class="bv-btn" id="bvDiffModeBtn" data-mode="unified">Side by side</button>
                     <button type="button" class="bv-btn" id="bvCompareSwapBtn">Swap</button>
                 </div>
                 <div class="bv-compare-toolbar bv-compare-toolbar-second">
@@ -117,7 +117,32 @@ export function mountBookVersionPanel(opts) {
                 </div>
                 <div class="bv-compare-body">
                     <nav class="bv-chapter-nav" id="bvChapterNav" aria-label="Chapters"></nav>
-                    <div class="bv-diff-pane" id="bvDiffPane"></div>
+                    <div class="bv-compare-editors-wrap">
+                        <div class="bv-compare-editors" id="bvCompareEditors">
+                            <section class="bv-editor-pane bv-editor-pane-left" aria-label="Older version">
+                                <div class="bv-editor-pane-head">
+                                    <span class="bv-editor-pane-badge">Left</span>
+                                    <span class="bv-editor-pane-version" id="bvLeftVersionLabel"></span>
+                                </div>
+                                <div class="bv-editor-page">
+                                    <div class="bv-compare-chapter-title" id="bvCompareLeftTitle"></div>
+                                    <div class="bv-compare-editor" id="bvCompareLeftEditor" contenteditable="false" spellcheck="true"></div>
+                                </div>
+                            </section>
+                            <section class="bv-editor-pane bv-editor-pane-right" aria-label="Newer version">
+                                <div class="bv-editor-pane-head">
+                                    <span class="bv-editor-pane-badge">Right</span>
+                                    <span class="bv-editor-pane-version" id="bvRightVersionLabel"></span>
+                                    <span class="bv-editable-hint hidden" id="bvEditableHint">Edits save to your draft</span>
+                                </div>
+                                <div class="bv-editor-page">
+                                    <div class="bv-compare-chapter-title" id="bvCompareRightTitle"></div>
+                                    <div class="bv-compare-editor" id="bvCompareRightEditor" spellcheck="true"></div>
+                                </div>
+                            </section>
+                        </div>
+                        <p class="bv-compare-diff-note" id="bvCompareDiffNote" aria-live="polite"></p>
+                    </div>
                 </div>
                 <div class="bv-compare-foot">
                     <button type="button" class="bv-btn" id="bvCompareCloseBtn">Close</button>
@@ -140,8 +165,15 @@ export function mountBookVersionPanel(opts) {
     const compareRightSelect = root.querySelector("#bvCompareRightSelect");
     const compareChapterSelect = root.querySelector("#bvCompareChapterSelect");
     const chapterNav = root.querySelector("#bvChapterNav");
-    const diffPane = root.querySelector("#bvDiffPane");
-    const diffModeBtn = root.querySelector("#bvDiffModeBtn");
+    const compareEditorsEl = root.querySelector("#bvCompareEditors");
+    const compareLeftEditor = root.querySelector("#bvCompareLeftEditor");
+    const compareRightEditor = root.querySelector("#bvCompareRightEditor");
+    const compareLeftTitle = root.querySelector("#bvCompareLeftTitle");
+    const compareRightTitle = root.querySelector("#bvCompareRightTitle");
+    const leftVersionLabel = root.querySelector("#bvLeftVersionLabel");
+    const rightVersionLabel = root.querySelector("#bvRightVersionLabel");
+    const editableHint = root.querySelector("#bvEditableHint");
+    const compareDiffNote = root.querySelector("#bvCompareDiffNote");
     const loadMoreWrap = root.querySelector("#bvLoadMoreWrap");
     const loadMoreBtn = root.querySelector("#bvLoadMoreBtn");
     const changedOnlyCb = root.querySelector("#bvChangedOnly");
@@ -158,7 +190,7 @@ export function mountBookVersionPanel(opts) {
     let compareRightIsCurrent = true;
     let compareChapterRows = [];
     let compareActiveChapterId = "";
-    let diffMode = "unified";
+    let compareInputBound = false;
 
     function setPanelStatus(msg, isError = false) {
         statusEl.textContent = msg || "";
@@ -382,61 +414,139 @@ export function mountBookVersionPanel(opts) {
         return { left, right };
     }
 
-    function renderDiffForChapter(chapterId) {
-        const { left, right } = getCompareSnapshots();
-        const leftCh = flattenChapters(left).find(c => c.id === chapterId);
-        const rightCh = flattenChapters(right).find(c => c.id === chapterId);
-        const comic = isComicFormat(getCurrentBook()?.mediaFormat);
-
-        if (!leftCh && !rightCh) {
-            diffPane.innerHTML = `<p>No chapter selected.</p>`;
-            return;
-        }
-
-        const row = compareChapterRows.find(r => r.id === chapterId);
-        if (row?.status === "moved" && row.moveDetail) {
-            diffPane.innerHTML = `<p class="bv-moved-note"><strong>Moved</strong> — ${escapeHtml(row.moveDetail)}. Content unchanged.</p>`;
-            return;
-        }
-
-        const result = compareChapters(leftCh || { content: "", title: "", imageUrls: [] }, rightCh || { content: "", title: "", imageUrls: [] }, {
-            stripHtml: stripHtmlToText,
-            comic,
-        });
-
-        if (result.kind === "comic") {
-            let html = `<div class="bv-comic-diff">`;
-            if (result.titleChanged) html += `<p><strong>Title:</strong> “${escapeHtml(result.leftTitle)}” → “${escapeHtml(result.rightTitle)}”</p>`;
-            html += `<p><strong>Images:</strong> ${result.leftCount} → ${result.rightCount}</p>`;
-            if (result.addedUrls.length) html += `<p><strong>Added</strong></p><ul>${result.addedUrls.map(u => `<li>${escapeHtml(u)}</li>`).join("")}</ul>`;
-            if (result.removedUrls.length) html += `<p><strong>Removed</strong></p><ul>${result.removedUrls.map(u => `<li>${escapeHtml(u)}</li>`).join("")}</ul>`;
-            if (result.captionDiff.some(l => l.type !== "same")) {
-                html += `<p><strong>Caption</strong></p>${renderDiffHtml(result.captionDiff)}`;
-            } else if (!result.addedUrls.length && !result.removedUrls.length && !result.titleChanged) {
-                html += `<p>No changes.</p>`;
-            }
-            html += `</div>`;
-            diffPane.innerHTML = html;
-            return;
-        }
-
-        let header = "";
-        if (result.titleChanged) {
-            header = `<p><strong>Title:</strong> “${escapeHtml(result.leftTitle)}” → “${escapeHtml(result.rightTitle)}”</p>`;
-        }
-        if (!result.lines.some(l => l.type !== "same")) {
-            diffPane.innerHTML = `${header}<p>No text changes in this chapter.</p>`;
-            return;
-        }
-        const stats = countDiffStats(result.lines);
-        diffPane.innerHTML = `${header}<p class="bv-diff-stats">${stats.added} additions · ${stats.removed} deletions</p>${renderDiffHtml(result.lines)}`;
+    function chapterFromSnapshot(sections, chapterId) {
+        const ch = flattenChapters(sections).find(c => c.id === chapterId);
+        return ch || { id: chapterId, title: "Untitled", content: "", imageUrls: [] };
     }
 
-    function renderDiffHtml(lines) {
-        return diffMode === "split" ? renderSideBySideDiffHtml(lines) : renderUnifiedDiffHtml(lines);
+    function prepareEditorHtml(html) {
+        if (typeof cleanEditorHtml === "function") return cleanEditorHtml(html || "");
+        return html || "";
+    }
+
+    function applyCompareTypography() {
+        if (typeof applyCompareEditorStyle !== "function") return;
+        applyCompareEditorStyle(compareLeftEditor);
+        applyCompareEditorStyle(compareRightEditor);
+        applyCompareEditorStyle(compareLeftTitle);
+        applyCompareEditorStyle(compareRightTitle);
+    }
+
+    function flushCompareEditorToDraft() {
+        if (!compareActiveChapterId || !compareRightIsCurrent || typeof onCompareChapterEdit !== "function") return;
+        const comic = isComicFormat(getCurrentBook()?.mediaFormat);
+        let content;
+        if (comic) {
+            const caption = compareRightEditor.querySelector(".bv-comic-caption-input");
+            content = caption ? caption.value.trim() : "";
+        } else {
+            content = prepareEditorHtml(compareRightEditor.innerHTML);
+        }
+        onCompareChapterEdit(compareActiveChapterId, content);
+    }
+
+    function onCompareRightInput() {
+        flushCompareEditorToDraft();
+    }
+
+    function bindCompareEditorInput() {
+        if (compareInputBound) return;
+        compareInputBound = true;
+        compareRightEditor.addEventListener("input", onCompareRightInput);
+    }
+
+    function renderComicComparePane(container, chapter, editable) {
+        const urls = chapter.imageUrls || [];
+        const caption = String(chapter.content || "").replace(/<[^>]+>/g, "").trim();
+        const imagesHtml = urls.length
+            ? `<div class="bv-comic-images">${urls.map(u => `<img src="${escapeHtml(u)}" alt="" loading="lazy" />`).join("")}</div>`
+            : `<p class="bv-comic-empty">No images on this page.</p>`;
+        const captionHtml = editable
+            ? `<label class="bv-comic-caption-label">Caption / notes</label><textarea class="bv-comic-caption-input" rows="4" placeholder="Optional caption…">${escapeHtml(caption)}</textarea>`
+            : `<div class="bv-comic-caption-readonly">${caption ? escapeHtml(caption) : "No caption"}</div>`;
+        container.innerHTML = imagesHtml + captionHtml;
+        if (editable) {
+            container.querySelector(".bv-comic-caption-input")?.addEventListener("input", onCompareRightInput);
+        }
+    }
+
+    function buildCompareDiffNote(leftCh, rightCh, chapterId) {
+        const row = compareChapterRows.find(r => r.id === chapterId);
+        if (row?.status === "moved" && row.moveDetail) {
+            return `Moved — ${row.moveDetail}. Full text shown below.`;
+        }
+        const comic = isComicFormat(getCurrentBook()?.mediaFormat);
+        const result = compareChapters(leftCh, rightCh, { stripHtml: stripHtmlToText, comic });
+        if (comic) {
+            const parts = [];
+            if (result.titleChanged) parts.push("Title changed");
+            if (result.leftCount !== result.rightCount) parts.push(`Images: ${result.leftCount} → ${result.rightCount}`);
+            if (result.addedUrls.length) parts.push(`${result.addedUrls.length} image(s) added`);
+            if (result.removedUrls.length) parts.push(`${result.removedUrls.length} image(s) removed`);
+            if (result.captionDiff.some(l => l.type !== "same")) parts.push("Caption changed");
+            return parts.length ? parts.join(" · ") : "No changes in this chapter.";
+        }
+        if (result.titleChanged) {
+            const stats = countDiffStats(result.lines);
+            const bodyNote = result.lines.some(l => l.type !== "same")
+                ? `${stats.added} additions · ${stats.removed} deletions`
+                : "Title changed · body unchanged";
+            return bodyNote;
+        }
+        if (!result.lines.some(l => l.type !== "same")) return "No changes in this chapter.";
+        const stats = countDiffStats(result.lines);
+        return `${stats.added} additions · ${stats.removed} deletions`;
+    }
+
+    function renderCompareChapter(chapterId) {
+        if (!chapterId) {
+            compareLeftEditor.innerHTML = "";
+            compareRightEditor.innerHTML = "";
+            compareDiffNote.textContent = "Select a chapter.";
+            return;
+        }
+
+        const { left, right } = getCompareSnapshots();
+        const leftCh = chapterFromSnapshot(left, chapterId);
+        const rightCh = chapterFromSnapshot(right, chapterId);
+        const comic = isComicFormat(getCurrentBook()?.mediaFormat);
+
+        leftVersionLabel.textContent = compareLeftVersion ? versionDisplayLabel(compareLeftVersion) : "—";
+        rightVersionLabel.textContent = compareRightIsCurrent ? "Current draft" : versionDisplayLabel(compareRightVersion);
+        editableHint.classList.toggle("hidden", !compareRightIsCurrent);
+
+        compareLeftTitle.textContent = leftCh.title || "Untitled";
+        compareRightTitle.textContent = rightCh.title || "Untitled";
+
+        compareEditorsEl.classList.toggle("is-comic", comic);
+
+        if (comic) {
+            renderComicComparePane(compareLeftEditor, leftCh, false);
+            renderComicComparePane(compareRightEditor, rightCh, compareRightIsCurrent);
+            compareRightEditor.contentEditable = "false";
+        } else {
+            compareLeftEditor.innerHTML = prepareEditorHtml(leftCh.content);
+            compareRightEditor.innerHTML = prepareEditorHtml(rightCh.content);
+            compareRightEditor.contentEditable = compareRightIsCurrent ? "true" : "false";
+            compareRightEditor.classList.toggle("is-editable", compareRightIsCurrent);
+            if (compareRightIsCurrent) {
+                bindCompareEditorInput();
+                compareRightEditor.focus();
+            }
+        }
+
+        applyCompareTypography();
+        compareDiffNote.textContent = buildCompareDiffNote(leftCh, rightCh, chapterId);
+    }
+
+    function switchCompareChapter(chapterId) {
+        flushCompareEditorToDraft();
+        compareActiveChapterId = chapterId;
+        renderCompareChapter(chapterId);
     }
 
     function populateCompareChapterUi() {
+        flushCompareEditorToDraft();
         const { left, right } = getCompareSnapshots();
         compareChapterRows = summarizeChapterChanges(left, right);
         if (changedOnlyCb.checked) {
@@ -467,8 +577,12 @@ export function mountBookVersionPanel(opts) {
             .join("");
 
         updateCompareSub();
-        if (compareActiveChapterId) renderDiffForChapter(compareActiveChapterId);
-        else diffPane.innerHTML = `<p>Select a chapter.</p>`;
+        if (compareActiveChapterId) renderCompareChapter(compareActiveChapterId);
+        else {
+            compareLeftEditor.innerHTML = "";
+            compareRightEditor.innerHTML = "";
+            compareDiffNote.textContent = "Select a chapter.";
+        }
     }
 
     function updateCompareSub() {
@@ -520,6 +634,7 @@ export function mountBookVersionPanel(opts) {
     }
 
     function closeCompare() {
+        flushCompareEditorToDraft();
         compareOverlay.classList.remove("open");
         compareOverlay.setAttribute("aria-hidden", "true");
     }
@@ -581,11 +696,13 @@ export function mountBookVersionPanel(opts) {
     compareOverlay.addEventListener("click", e => { if (e.target === compareOverlay) closeCompare(); });
 
     compareLeftSelect.addEventListener("change", () => void (async () => {
+        flushCompareEditorToDraft();
         await loadCompareSide("left", compareLeftSelect.value);
         populateCompareChapterUi();
     })());
 
     compareRightSelect.addEventListener("change", () => void (async () => {
+        flushCompareEditorToDraft();
         const val = compareRightSelect.value;
         if (val === "current") {
             compareRightIsCurrent = true;
@@ -596,13 +713,8 @@ export function mountBookVersionPanel(opts) {
         populateCompareChapterUi();
     })());
 
-    diffModeBtn.addEventListener("click", () => {
-        diffMode = diffMode === "unified" ? "split" : "unified";
-        diffModeBtn.textContent = diffMode === "unified" ? "Side by side" : "Unified";
-        if (compareActiveChapterId) renderDiffForChapter(compareActiveChapterId);
-    });
-
     root.querySelector("#bvCompareSwapBtn").addEventListener("click", () => {
+        flushCompareEditorToDraft();
         const leftVal = compareLeftSelect.value;
         const rightVal = compareRightSelect.value;
         compareLeftSelect.value = rightVal === "current" ? leftVal : rightVal;
@@ -620,22 +732,24 @@ export function mountBookVersionPanel(opts) {
     });
 
     compareChapterSelect.addEventListener("change", () => {
-        compareActiveChapterId = compareChapterSelect.value;
+        switchCompareChapter(compareChapterSelect.value);
         chapterNav.querySelectorAll("button[data-ch-id]").forEach(btn => {
             btn.classList.toggle("is-active", btn.getAttribute("data-ch-id") === compareActiveChapterId);
         });
-        renderDiffForChapter(compareActiveChapterId);
     });
 
-    changedOnlyCb.addEventListener("change", populateCompareChapterUi);
+    changedOnlyCb.addEventListener("change", () => {
+        flushCompareEditorToDraft();
+        populateCompareChapterUi();
+    });
 
     chapterNav.addEventListener("click", e => {
         const btn = e.target.closest("button[data-ch-id]");
         if (!btn) return;
-        compareActiveChapterId = btn.getAttribute("data-ch-id") || "";
-        compareChapterSelect.value = compareActiveChapterId;
+        const chId = btn.getAttribute("data-ch-id") || "";
+        compareChapterSelect.value = chId;
         chapterNav.querySelectorAll("button[data-ch-id]").forEach(b => b.classList.toggle("is-active", b === btn));
-        renderDiffForChapter(compareActiveChapterId);
+        switchCompareChapter(chId);
     });
 
     root.querySelector("#bvCompareRestoreBookBtn").addEventListener("click", () => {

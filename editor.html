@@ -24,7 +24,7 @@
 <link rel="stylesheet" href="css/gradient-themes.css?v=7" />
     <link rel="stylesheet" href="css/workspace-nav.css?v=5" />
 <link rel="stylesheet" href="css/plot-doctor.css?v=4" />
-<link rel="stylesheet" href="css/book-version.css?v=2" />
+<link rel="stylesheet" href="css/book-version.css?v=3" />
     <script src="js/gradient-theme-sync.js" defer></script>
 <title>Alysum Editor</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"><script src="js/alysum-appearance-boot.js"></script><style>
@@ -875,8 +875,8 @@
         getCaretTextOffset,
     } from "./js/writer-resume.js?v=1";
     import { repairArchangelPrologueIfNeeded } from "./js/book-prologue-repair.js?v=1";
-    import { mountBookVersionPanel } from "./js/book-version-panel.js?v=2";
-    import { hashSnapshot, buildManuscriptSnapshot } from "./js/book-version-api.js?v=2";
+    import { mountBookVersionPanel } from "./js/book-version-panel.js?v=3";
+    import { hashSnapshot, buildManuscriptSnapshot } from "./js/book-version-api.js?v=3";
 
 const params = new URLSearchParams(window.location.search);
 let bookId =
@@ -945,6 +945,34 @@ function rememberBookId(id) {
         void hashSnapshot(buildManuscriptSnapshot(currentBook)).then(h => { lastSavedContentHash = h; }).catch(() => {});
     }
 
+    function applyCompareEditorStyle(el) {
+        if (!el) return;
+        const fontId = normalizeStoredEditorFont(localStorage.getItem("alysum-font") || "Georgia");
+        const size = localStorage.getItem("alysum-fontSize") || "20";
+        const stack = editorFontStack(fontId);
+        el.style.fontFamily = stack;
+        el.style.fontSize = size + "px";
+        el.style.lineHeight = "1.7";
+    }
+
+    function applyCompareChapterEdit(chapterId, content) {
+        const loc = findChapterLocation(chapterId);
+        if (!loc) return;
+        const ch = currentBook.sections[loc.section][loc.index];
+        ch.content = content;
+        const activeKey = chapterLoadKey(currentSection, currentChapterIndex);
+        const editedKey = chapterLoadKey(loc.section, loc.index);
+        if (activeKey === editedKey) {
+            if (isCurrentBookComic()) {
+                if (comicCaptionInput) comicCaptionInput.value = String(content || "").replace(/<[^>]+>/g, "").trim();
+            } else if (editorLoadedChapterKey === editedKey) {
+                editor.innerHTML = cleanEditorHtml(content);
+            }
+        }
+        syncStats();
+        scheduleSave();
+    }
+
     function initVersionPanel() {
         if (versionPanel || !bookId) return;
         versionPanel = mountBookVersionPanel({
@@ -963,6 +991,9 @@ function rememberBookId(id) {
             getCurrentChapterId: () => currentChapter()?.id || "",
             setStatus: setSaveStatus,
             isDirty: isEditorDirty,
+            cleanEditorHtml,
+            onCompareChapterEdit: applyCompareChapterEdit,
+            applyCompareEditorStyle,
         });
         document.getElementById("historyBookBtn")?.addEventListener("click", () => versionPanel.open());
         document.getElementById("historyTopBtn")?.addEventListener("click", () => versionPanel.open());

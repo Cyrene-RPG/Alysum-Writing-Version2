@@ -210,8 +210,8 @@ body.dark .bv-version-item {
 }
 
 .bv-compare-box {
-    width: min(1100px, 100%);
-    max-height: min(90vh, 900px);
+    width: min(96vw, 1600px);
+    max-height: min(95vh, 960px);
     background: var(--page-bg, #fff);
     color: var(--page-text, #111);
     border-radius: 18px;
@@ -264,21 +264,204 @@ body.dark .bv-compare-box {
 
 .bv-compare-body {
     display: grid;
-    grid-template-columns: 220px 1fr;
+    grid-template-columns: 200px minmax(0, 1fr);
     min-height: 0;
     flex: 1;
 }
 
-@media (max-width: 760px) {
+@media (max-width: 900px) {
     .bv-compare-body {
         grid-template-columns: 1fr;
     }
+}
+
+.bv-compare-editors-wrap {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    min-width: 0;
+}
+
+.bv-compare-editors {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    min-height: 0;
+    flex: 1;
+    border-left: 1px solid var(--border, rgba(0, 0, 0, 0.08));
+}
+
+@media (max-width: 900px) {
+    .bv-compare-editors {
+        grid-template-columns: 1fr;
+    }
+}
+
+.bv-editor-pane {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    min-width: 0;
+}
+
+.bv-editor-pane-left {
+    border-right: 1px solid var(--border, rgba(0, 0, 0, 0.08));
+}
+
+.bv-editor-pane-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border, rgba(0, 0, 0, 0.06));
+    background: rgba(0, 0, 0, 0.02);
+}
+
+body.dark .bv-editor-pane-head {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.bv-editor-pane-badge {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: rgba(124, 58, 237, 0.12);
+    color: var(--alysum-purple, #7c3aed);
+}
+
+.bv-editor-pane-version {
+    font-size: 12px;
+    font-weight: 700;
+    opacity: 0.85;
+}
+
+.bv-editable-hint {
+    margin-left: auto;
+    font-size: 11px;
+    font-weight: 600;
+    color: #16a34a;
+}
+
+.bv-editable-hint.hidden {
+    display: none;
+}
+
+.bv-editor-page {
+    flex: 1;
+    overflow: auto;
+    padding: 20px 24px 28px;
+    min-height: 280px;
+}
+
+.bv-compare-chapter-title {
+    text-align: center;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 28px;
+    outline: none;
+    color: inherit;
+}
+
+.bv-compare-editor {
+    outline: none;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 18px;
+    line-height: 1.7;
+    letter-spacing: 0.2px;
+    color: inherit;
+    white-space: normal;
+    word-break: break-word;
+    min-height: 200px;
+}
+
+.bv-compare-editor.is-editable {
+    cursor: text;
+}
+
+.bv-compare-editor:not(.is-editable) {
+    opacity: 0.92;
+}
+
+.bv-compare-editor:focus {
+    outline: none;
+}
+
+.bv-compare-editor p {
+    margin: 0 0 1em;
+}
+
+.bv-compare-diff-note {
+    margin: 0;
+    padding: 8px 16px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--page-subtle, #6b7280);
+    border-top: 1px solid var(--border, rgba(0, 0, 0, 0.06));
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.bv-comic-images {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.bv-comic-images img {
+    width: 100%;
+    max-height: 320px;
+    object-fit: contain;
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.04);
+}
+
+.bv-comic-empty {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 13px;
+    opacity: 0.7;
+    margin: 0 0 12px;
+}
+
+.bv-comic-caption-label {
+    display: block;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    opacity: 0.75;
+}
+
+.bv-comic-caption-input {
+    width: 100%;
+    border: 1px solid var(--border, rgba(0, 0, 0, 0.12));
+    border-radius: 12px;
+    padding: 10px 12px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    background: transparent;
+    color: inherit;
+    resize: vertical;
+}
+
+.bv-comic-caption-readonly {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    opacity: 0.9;
+    white-space: pre-wrap;
 }
 
 .bv-chapter-nav {
     border-right: 1px solid var(--border, rgba(0, 0, 0, 0.08));
     overflow: auto;
     padding: 10px;
+    max-height: 100%;
 }
 
 .bv-chapter-nav button {
