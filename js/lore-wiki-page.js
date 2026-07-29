@@ -2,7 +2,7 @@
  * Lore Wiki — public Wikipedia-style reading experience.
  */
 import { supabase } from "../firebase.js";
-import { initWorkspaceNav } from "./workspace-nav.js?v=5";
+import { initWorkspaceNav } from "./workspace-nav.js?v=9";
 import {
     listPublicLoreWikis,
     getPublicLoreWiki,

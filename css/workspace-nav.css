@@ -130,45 +130,50 @@
     top: 0;
     z-index: 40;
     flex-shrink: 0;
-    min-width: 0;
+    width: 100%;
     max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    touch-action: pan-x;
+    scrollbar-width: none;
     background: rgba(11, 18, 32, 0.92);
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     backdrop-filter: blur(10px);
 }
 
+.wd-nav-wrap::-webkit-scrollbar { display: none; }
+
 .wd-nav {
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 6px;
+    width: max-content;
+    min-width: 100%;
+    max-width: none;
     margin: 0;
     padding: 10px clamp(12px, 2vw, 24px);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 6px;
-    overflow-x: auto;
-    overflow-y: hidden;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
+    box-sizing: border-box;
 }
-
-.wd-nav::-webkit-scrollbar { display: none; }
 
 .wd-nav a,
 .wd-nav button {
-    flex-shrink: 0;
+    flex: none;
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 8px clamp(8px, 0.8vw, 14px);
+    padding: 8px clamp(10px, 0.9vw, 14px);
     border-radius: 999px;
     border: 1px solid transparent;
     background: transparent;
     color: #d1d5db;
     font-family: inherit;
-    font-size: clamp(11px, 0.72vw, 13px);
+    font-size: clamp(12px, 0.85vw, 13px);
     font-weight: 700;
+    line-height: 1.2;
     text-decoration: none;
     cursor: pointer;
     white-space: nowrap;
@@ -458,11 +463,22 @@ button.fh-has-new-badge .fh-target-new,
 
 .fh-spotlight-dismiss:hover { filter: brightness(1.06); }
 
-@media (max-width: 700px) {
+@media (max-width: 900px) {
     .wd-welcome-bar { min-height: 76px; }
     .wd-pfp { width: 48px; height: 48px; }
     .wd-welcome-sub { display: none; }
-    .wd-nav { justify-content: flex-start; }
+
+    .wd-nav {
+        padding: 8px 12px;
+        gap: 8px;
+    }
+
+    .wd-nav a,
+    .wd-nav button {
+        font-size: 12px;
+        padding: 10px 14px;
+        min-height: 40px;
+    }
 }
 
 /* Full-viewport tools: workspace nav stacks above the tool UI */
@@ -476,7 +492,6 @@ body.alysum-with-workspace-nav {
 body.alysum-with-workspace-nav > .wd-welcome-bar,
 body.alysum-with-workspace-nav > .wd-nav-wrap {
     flex-shrink: 0;
-    min-width: 0;
     width: 100%;
     max-width: 100%;
 }
