@@ -24,8 +24,7 @@
 <link rel="stylesheet" href="css/gradient-themes.css?v=7" />
     <link rel="stylesheet" href="css/workspace-nav.css?v=5" />
 <link rel="stylesheet" href="css/plot-doctor.css?v=4" />
-    <link rel="stylesheet" href="css/book-version.css?v=8" />
-    <link rel="stylesheet" href="css/editor-pages.css?v=1" />
+<link rel="stylesheet" href="css/book-version.css?v=8" />
     <script src="js/gradient-theme-sync.js" defer></script>
 <title>Alysum Editor</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"><script src="js/alysum-appearance-boot.js"></script><style>
@@ -831,7 +830,6 @@
     <select class="tool-select" id="formatSelect" data-tip="Paragraph style" aria-label="Paragraph style"><option value="p">Body</option><option value="h2">Heading</option></select>
     <select class="tool-select" id="fontSelect" data-tip="Editor font" aria-label="Font"></select>
     <select class="tool-select" id="fontSizeSelect" data-tip="Editor text size" aria-label="Text size"><option value="18">Compact</option><option value="20">Book</option><option value="22">Comfort</option><option value="26">Large</option></select>
-    <button class="tool-btn" type="button" id="pagesModeBtn" data-tip="Show pages with natural page breaks (like Google Docs)" aria-pressed="false">Pages</button>
     <button class="tool-btn" type="button" id="backgroundBtn" data-tip="Set editor background image">Background</button>
     <div class="toolbar-spacer"></div>
     <span class="sprint-anchor" id="sprintAnchor"><button class="sprint-btn" id="sprintToolbarBtn" type="button" data-tip="Writing sprint timer" aria-label="Sprint timer">⏱ Sprint</button></span>
@@ -868,11 +866,8 @@
 <div class="sprint-float" id="sprintFloat" aria-live="polite"><div class="sprint-float-box"><div class="sprint-float-top"><div class="sprint-float-label">Sprint</div><button class="sprint-mini-btn danger" id="sprintStopBtn" type="button" data-tip="Stop sprint early">Stop</button></div><div class="sprint-float-time" id="sprintFloatTime">00:00</div></div></div>
 
 <div class="workspace" id="editorWorkspace">
-    <div class="page-wrap" id="editorPageWrap">
-        <div class="page" id="editorPage">
-            <div class="editor-pages-host" id="editorPagesHost">
-                <div class="editor-page-backgrounds" id="editorPageBackgrounds" aria-hidden="true"></div>
-                <div class="editor-pages-flow">
+    <div class="page-wrap">
+        <div class="page">
             <div class="chapter-number" id="chapterNumber">1</div>
             <div class="chapter-title" id="chapterTitle" contenteditable="true">Chapter 1</div>
             <div class="editor" id="editor" contenteditable="true" data-placeholder="Begin writing here..."></div>
@@ -890,8 +885,6 @@
                 </div>
             </div>
             <div class="bottom-meta"><span id="chapterWords">0</span> <span id="bottomMetaLabel">chapter words</span> • <span id="bottomTotalWords">0</span> <span id="bottomTotalLabel">total words</span></div>
-                </div>
-            </div>
         </div>
     </div>
 </div></div><div class="publish-modal" id="publishModal">
@@ -974,7 +967,6 @@
         isNetworkError,
         pickNewerBookRow,
     } from "./js/book-offline-store.js?v=1";
-    import { createEditorPagesController } from "./js/editor-pages.js?v=1";
 
 const params = new URLSearchParams(window.location.search);
 let bookId =
@@ -1197,10 +1189,6 @@ function rememberBookId(id) {
     const frCloseBtn = document.getElementById("frCloseBtn");
     const frStatus = document.getElementById("frStatus");
     const backgroundBtn = document.getElementById("backgroundBtn");
-    const pagesModeBtn = document.getElementById("pagesModeBtn");
-    const editorPageWrap = document.getElementById("editorPageWrap");
-    const editorPage = document.getElementById("editorPage");
-    const editorPageBackgrounds = document.getElementById("editorPageBackgrounds");
     const backgroundBar = document.getElementById("backgroundBar");
     const backgroundFitSelect = document.getElementById("backgroundFitSelect");
     const backgroundUploadInput = document.getElementById("backgroundUploadInput");
@@ -1387,7 +1375,6 @@ function rememberBookId(id) {
     function applyComicModeUI() {
         const comic = isCurrentBookComic();
         document.body.classList.toggle("comic-mode", comic);
-        editorPagesController?.onComicModeChange(comic);
         if (addChapterBtn) addChapterBtn.textContent = comic ? "Add Page" : "Add Chapter";
         if (deleteChapterBtn) deleteChapterBtn.textContent = comic ? "Delete Page" : "Delete Chapter";
         document.querySelectorAll(".group[data-group-section]").forEach((group) => {
@@ -2016,16 +2003,6 @@ function rememberBookId(id) {
         holder.innerHTML = safeString(html, "");
 
         holder.querySelectorAll("script, style, meta, link, iframe, object, embed").forEach(el => el.remove());
-        holder.querySelectorAll("[data-editor-page-break]").forEach(el => el.remove());
-        holder.querySelectorAll("[data-editor-para-cont]").forEach(cont => {
-            const prev = cont.previousElementSibling;
-            if (prev && prev.tagName === "P") {
-                const a = (prev.textContent || "").replace(/\s+$/, "");
-                const b = (cont.textContent || "").replace(/^\s+/, "");
-                prev.textContent = a && b ? `${a} ${b}` : a || b;
-            }
-            cont.remove();
-        });
         holder.querySelectorAll("*").forEach(el => {
             [...el.attributes].forEach(attr => {
                 if (/^on/i.test(attr.name) || attr.name === "style" || attr.name === "class") el.removeAttribute(attr.name);
@@ -2338,7 +2315,6 @@ function rememberBookId(id) {
         if (rerender) renderAllSections();
         syncStats();
         applyComicModeUI();
-        editorPagesController?.onChapterLoaded();
         applyPendingResumeViewport();
         frOnChapterChanged();
     }
@@ -2976,24 +2952,7 @@ function rememberBookId(id) {
         editor.style.fontSize = size + "px";
         editor.style.lineHeight = "1.7";
         if (fontSelect) fontSelect.value = fontId;
-        editorPagesController?.scheduleReflow();
     }
-
-    const editorPagesController = createEditorPagesController({
-        editor,
-        chapterTitle,
-        pageWrap: editorPageWrap,
-        pageEl: editorPage,
-        pageBackgroundsHost: editorPageBackgrounds,
-        pagesToggleBtn: pagesModeBtn,
-        getEditorStyle: () => ({
-            fontFamily: editor.style.fontFamily || 'Georgia, "Times New Roman", serif',
-            fontSize: editor.style.fontSize || "20px",
-            lineHeight: editor.style.lineHeight || "1.7",
-        }),
-    });
-    editorPagesController.init();
-    window.addEventListener("resize", () => editorPagesController.scheduleReflow(), { passive: true });
 
     populateEditorFontSelect();
 
@@ -3068,9 +3027,6 @@ function rememberBookId(id) {
     backgroundBtn?.addEventListener("click", () => {
         backgroundBar?.classList.toggle("open");
         if (backgroundBar?.classList.contains("open")) backgroundUploadInput?.focus();
-    });
-    pagesModeBtn?.addEventListener("click", () => {
-        editorPagesController.setEnabled(!editorPagesController.isEnabled());
     });
     backgroundUploadInput?.addEventListener("change", () => {
         const file = backgroundUploadInput.files?.[0];
@@ -3159,14 +3115,12 @@ function rememberBookId(id) {
         currentChapter().title = chapterTitle.textContent.trim() || "Untitled";
         renderAllSections();
         scheduleSave();
-        editorPagesController?.scheduleReflow();
     });
     editor.addEventListener("input", () => {
         syncCurrentChapterFromEditor();
         syncStats();
         scheduleSave();
         scheduleWriterResumeSave();
-        editorPagesController?.scheduleReflow();
     });
     editor.addEventListener("keyup", () => scheduleWriterResumeSave());
     editor.addEventListener("click", () => scheduleWriterResumeSave());
@@ -3180,7 +3134,7 @@ function rememberBookId(id) {
         if (document.visibilityState === "hidden") flushWriterResumeSave();
     });
     editor.addEventListener("keydown", e => {
-        if (e.key === "Enter") setTimeout(() => { syncCurrentChapterFromEditor(); syncStats(); scheduleSave(); editorPagesController?.scheduleReflow(); }, 0);
+        if (e.key === "Enter") setTimeout(() => { syncCurrentChapterFromEditor(); syncStats(); scheduleSave(); }, 0);
     });
     editor.addEventListener("paste", e => {
         e.preventDefault();
@@ -3202,7 +3156,6 @@ function rememberBookId(id) {
         syncCurrentChapterFromEditor();
         syncStats();
         scheduleSave();
-        editorPagesController?.scheduleReflow();
     });
     editor.addEventListener("copy", e => {
         const selection = window.getSelection();
@@ -3234,11 +3187,10 @@ function rememberBookId(id) {
             syncCurrentChapterFromEditor();
             syncStats();
             scheduleSave();
-            editorPagesController?.scheduleReflow();
         });
     });
-    formatSelect.addEventListener("change", () => { document.execCommand("formatBlock", false, formatSelect.value === "h2" ? "h2" : "p"); editor.focus(); syncCurrentChapterFromEditor(); syncStats(); scheduleSave(); editorPagesController?.scheduleReflow(); });
-    quoteBtn.addEventListener("click", () => { document.execCommand("formatBlock", false, "blockquote"); editor.focus(); syncCurrentChapterFromEditor(); syncStats(); scheduleSave(); editorPagesController?.scheduleReflow(); });
+    formatSelect.addEventListener("change", () => { document.execCommand("formatBlock", false, formatSelect.value === "h2" ? "h2" : "p"); editor.focus(); syncCurrentChapterFromEditor(); syncStats(); scheduleSave(); });
+    quoteBtn.addEventListener("click", () => { document.execCommand("formatBlock", false, "blockquote"); editor.focus(); syncCurrentChapterFromEditor(); syncStats(); scheduleSave(); });
     fontSelect.addEventListener("change", () => { localStorage.setItem("alysum-font", fontSelect.value); applyEditorStyle(); });
     fontSizeSelect.addEventListener("change", () => { localStorage.setItem("alysum-fontSize", fontSizeSelect.value); applyEditorStyle(); });
 
