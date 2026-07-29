@@ -139,37 +139,38 @@
 }
 
 .wd-nav {
+    --wd-nav-font: 11px;
     width: 100%;
     max-width: 100%;
     min-width: 0;
     margin: 0;
-    padding: 8px clamp(8px, 1.5vw, 20px);
+    padding: 0.45rem clamp(6px, 1vw, 16px);
     display: flex;
     align-items: center;
-    justify-content: flex-start;
+    justify-content: space-between;
     flex-wrap: nowrap;
-    gap: 2px;
-    overflow-x: auto;
-    overflow-y: hidden;
+    gap: 0;
+    overflow: hidden;
+    font-size: var(--wd-nav-font);
     scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
 }
 
 .wd-nav::-webkit-scrollbar { display: none; }
 
 .wd-nav a,
 .wd-nav button {
-    flex-shrink: 0;
+    flex: 0 1 auto;
+    min-width: 0;
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-    padding: 6px clamp(5px, 0.5vw, 10px);
+    gap: 0.3em;
+    padding: 0.42em 0.5em;
     border-radius: 999px;
     border: 1px solid transparent;
     background: transparent;
     color: #d1d5db;
     font-family: inherit;
-    font-size: clamp(9px, 0.52vw + 0.2rem, 11px);
+    font-size: 1em;
     font-weight: 700;
     text-decoration: none;
     cursor: pointer;
@@ -203,21 +204,21 @@
 .wd-nav-divider {
     flex: 0 0 auto;
     width: 1px;
-    height: 20px;
-    margin: 0 1px;
+    height: 1.5em;
+    margin: 0;
     background: rgba(255, 255, 255, 0.12);
 }
 
 .wd-nav-badge {
-    min-width: 18px;
-    height: 18px;
-    padding: 0 5px;
+    min-width: 1.5em;
+    height: 1.5em;
+    padding: 0 0.35em;
     border-radius: 999px;
     background: #ef4444;
     color: #fff;
-    font-size: 10px;
+    font-size: 0.82em;
     font-weight: 900;
-    line-height: 18px;
+    line-height: 1.5em;
     text-align: center;
 }
 
@@ -230,12 +231,12 @@
     flex-shrink: 0;
     display: inline-flex;
     align-items: center;
-    padding: 1px 6px;
-    margin-left: 2px;
+    padding: 0.08em 0.45em;
+    margin-left: 0.15em;
     border-radius: 999px;
     background: linear-gradient(135deg, #f59e0b, #f97316);
     color: #1c1917;
-    font-size: 9px;
+    font-size: 0.68em;
     font-weight: 950;
     letter-spacing: 0.04em;
     line-height: 1.35;

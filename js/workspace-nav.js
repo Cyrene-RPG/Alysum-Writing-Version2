@@ -102,6 +102,45 @@ const WELCOME_DEFAULTS = {
 
 let continueWritingHandler = null;
 
+const NAV_FIT_MAX_PX = 11;
+const NAV_FIT_MIN_PX = 7;
+let navFitFrame = 0;
+
+function fitWorkspaceNav() {
+    cancelAnimationFrame(navFitFrame);
+    navFitFrame = requestAnimationFrame(() => {
+        const nav = document.querySelector(".wd-nav");
+        if (!nav) return;
+
+        nav.style.setProperty("--wd-nav-font", `${NAV_FIT_MAX_PX}px`);
+        nav.style.justifyContent = "flex-start";
+
+        let size = NAV_FIT_MAX_PX;
+        let guard = 0;
+        while (nav.scrollWidth > nav.clientWidth + 1 && size > NAV_FIT_MIN_PX && guard++ < 48) {
+            size -= 0.25;
+            nav.style.setProperty("--wd-nav-font", `${size}px`);
+        }
+
+        nav.style.justifyContent = "space-between";
+    });
+}
+
+function wireNavFit() {
+    const nav = document.querySelector(".wd-nav");
+    if (!nav || nav.dataset.fitWired === "1") return;
+    nav.dataset.fitWired = "1";
+
+    fitWorkspaceNav();
+
+    if (typeof ResizeObserver !== "undefined") {
+        const observer = new ResizeObserver(() => fitWorkspaceNav());
+        observer.observe(nav);
+    }
+
+    window.addEventListener("resize", fitWorkspaceNav, { passive: true });
+}
+
 function navBase() {
     const path = window.location.pathname.replace(/\\/g, "/");
     if (path.includes("/story-board/")) return "../";
@@ -216,6 +255,7 @@ function applyStoryBibleNav() {
     const navStoryBible = document.getElementById("navStoryBible");
     if (!navStoryBible) return;
     navStoryBible.classList.toggle("is-hidden", !isStoryBibleUiEnabled());
+    fitWorkspaceNav();
 }
 
 async function loadDashboardBadge(uid) {
@@ -229,6 +269,7 @@ async function loadDashboardBadge(uid) {
     const n = (data || []).filter((row) => row.read !== true).length;
     navDashBadge.textContent = n > 99 ? "99+" : String(n);
     navDashBadge.classList.toggle("is-hidden", n <= 0);
+    fitWorkspaceNav();
 }
 
 function defaultContinueWriting() {
@@ -323,6 +364,7 @@ async function hydrateWelcomeBar(options) {
     }
 
     applyStoryBibleNav();
+    fitWorkspaceNav();
     void loadDashboardBadge(user.id);
 }
 
@@ -363,6 +405,7 @@ export function initWorkspaceNav(options = {}) {
 
     wireLogoutButtons(document);
     wireContinueButton();
+    wireNavFit();
 
     window.addEventListener("storage", (e) => {
         if (e.key === STORY_BIBLE_PREF_KEY) applyStoryBibleNav();
@@ -374,6 +417,7 @@ export function initWorkspaceNav(options = {}) {
     }
 
     bootFeatureHighlights({ showSpotlight: options.showFeatureSpotlight !== false });
+    fitWorkspaceNav();
 
     return navWrap;
 }
