@@ -85,6 +85,7 @@ const APP_SHELL = [
   'css/gradient-themes.css',
   'css/workspace-nav.css',
   'js/workspace-nav.js',
+  'js/feature-highlights.js',
   'js/gradient-theme-sync.js',
   'js/alysum-appearance-boot.js',
   'js/display-text-style.js',
