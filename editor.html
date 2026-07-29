@@ -138,6 +138,10 @@
     .icon-btn.danger { background: var(--danger); border-color: var(--danger); color: white; }
     .top-title { font-size: 18px; font-weight: 700; color: var(--page-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 36vw; }
     .save-status { font-size: 13px; color: var(--page-subtle); font-weight: 700; }
+    .save-status.is-offline { color: #b45309; }
+    .save-status.is-pending-sync { color: #0369a1; }
+    body.dark .save-status.is-offline { color: #fbbf24; }
+    body.dark .save-status.is-pending-sync { color: #38bdf8; }
     .topbar .topbar-tip { position: relative; display: inline-flex; align-items: center; vertical-align: middle; }
     .editor-tooltip {
         position: fixed;
@@ -877,6 +881,15 @@
     import { repairArchangelPrologueIfNeeded } from "./js/book-prologue-repair.js?v=1";
     import { mountBookVersionPanel } from "./js/book-version-panel.js?v=8";
     import { hashSnapshot, buildManuscriptSnapshot } from "./js/book-version-api.js?v=3";
+    import {
+        saveBookShadow,
+        getBookShadow,
+        markBookSynced,
+        isBookPendingSync,
+        isLikelyOffline,
+        isNetworkError,
+        pickNewerBookRow,
+    } from "./js/book-offline-store.js?v=1";
 
 const params = new URLSearchParams(window.location.search);
 let bookId =
@@ -1158,8 +1171,24 @@ function rememberBookId(id) {
     const STORY_BIBLE_SELECTION_KEY = "alysum-story-bible-selection-v1";
     const STORY_BIBLE_SELECTION_BACKUP_KEY = "alysum-story-bible-selection-backup-v1";
     let lastStoryBibleSelection = null;
+    let offlinePendingSync = false;
+    let syncInFlight = false;
 
-    function setSaveStatus(text) { saveStatus.textContent = text; }
+    function updateOfflineUi() {
+        const offline = isLikelyOffline();
+        saveStatus.classList.toggle("is-offline", offline);
+        saveStatus.classList.toggle("is-pending-sync", offlinePendingSync && !offline);
+        saveStatus.dataset.tip = offline
+            ? "You are offline. Changes save on this device and sync when you reconnect."
+            : offlinePendingSync
+              ? "Changes saved locally and waiting to sync to the cloud."
+              : "Save status";
+    }
+
+    function setSaveStatus(text) {
+        saveStatus.textContent = text;
+        updateOfflineUi();
+    }
     function generateId() { return "ch_" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36); }
     function safeString(value, fallback = "") { return typeof value === "string" ? value : fallback; }
     function safeNumber(value, fallback = 0) { return typeof value === "number" && Number.isFinite(value) ? value : fallback; }
@@ -2515,23 +2544,96 @@ function rememberBookId(id) {
         const nextWords = totalWords();
         const prevPersisted = persistedBookWordCount;
         const patch = toDbBookPatch(currentBook);
+        let statusText = isLocalStudio ? "Saved locally" : doneText;
         if (isLocalStudio) {
             updateBook(bookId, patch);
         } else {
-        const { error } = await supabase.from("books").update(patch)
-        .eq("id", bookId);
-        if (error) throw error;
+            const shadowRow = { id: bookId, user_id: currentUser.id, ...patch };
+            try {
+                await saveBookShadow(currentUser.id, bookId, shadowRow, { pendingSync: true });
+            } catch (e) {
+                console.error("Offline shadow save failed:", e);
+            }
+            if (isLikelyOffline()) {
+                offlinePendingSync = true;
+                statusText = "Saved offline";
+            } else {
+                try {
+                    const { error } = await supabase.from("books").update(patch).eq("id", bookId);
+                    if (error) throw error;
+                    await markBookSynced(currentUser.id, bookId, shadowRow);
+                    offlinePendingSync = false;
+                } catch (e) {
+                    if (isNetworkError(e)) {
+                        offlinePendingSync = true;
+                        statusText = "Saved offline";
+                    } else {
+                        throw e;
+                    }
+                }
+            }
         }
         if (typeof prevPersisted === "number" && Number.isFinite(prevPersisted)) {
             const delta = Math.max(0, nextWords - prevPersisted);
-            if (delta > 0) await recordTypedWordsToUserProfile(delta);
+            if (delta > 0 && !offlinePendingSync) await recordTypedWordsToUserProfile(delta);
         }
         persistedBookWordCount = nextWords;
-        setSaveStatus(isLocalStudio ? "Saved locally" : doneText);
+        setSaveStatus(statusText);
         notifyWriterDashboardSync();
         if (isLocalStudio) notifyLocalStudioSync();
         void hashSnapshot(buildManuscriptSnapshot(currentBook)).then(h => { lastSavedContentHash = h; }).catch(() => {});
         void versionPanel?.maybeAutoVersionAfterSave();
+    }
+
+    async function flushPendingBookSync() {
+        if (isLocalStudio || !currentUser || !bookId || !currentBook) return;
+        if (syncInFlight || isLikelyOffline()) return;
+        const pending = await isBookPendingSync(currentUser.id, bookId);
+        if (!pending) {
+            offlinePendingSync = false;
+            updateOfflineUi();
+            return;
+        }
+        syncInFlight = true;
+        setSaveStatus("Syncing...");
+        try {
+            if (isCurrentBookComic()) syncCurrentComicPageFromUI();
+            else if (document.activeElement === editor && editorLoadedChapterKey) cleanAndStoreCurrentChapterFromEditor();
+            const nextWords = totalWords();
+            const prevPersisted = persistedBookWordCount;
+            const patch = toDbBookPatch(currentBook);
+            const { error } = await supabase.from("books").update(patch).eq("id", bookId);
+            if (error) throw error;
+            const shadowRow = { id: bookId, user_id: currentUser.id, ...patch };
+            await markBookSynced(currentUser.id, bookId, shadowRow);
+            offlinePendingSync = false;
+            if (typeof prevPersisted === "number" && Number.isFinite(prevPersisted)) {
+                const delta = Math.max(0, nextWords - prevPersisted);
+                if (delta > 0) await recordTypedWordsToUserProfile(delta);
+            }
+            persistedBookWordCount = nextWords;
+            setSaveStatus("Synced");
+            notifyWriterDashboardSync();
+            void hashSnapshot(buildManuscriptSnapshot(currentBook)).then(h => { lastSavedContentHash = h; }).catch(() => {});
+        } catch (e) {
+            console.error("Pending sync failed:", e);
+            setSaveStatus(isNetworkError(e) ? "Saved offline" : "Sync failed");
+        } finally {
+            syncInFlight = false;
+        }
+    }
+
+    function setupOfflineSyncListeners() {
+        window.addEventListener("online", () => {
+            updateOfflineUi();
+            void flushPendingBookSync();
+        });
+        window.addEventListener("offline", () => {
+            updateOfflineUi();
+        });
+        document.addEventListener("visibilitychange", () => {
+            if (!document.hidden) void flushPendingBookSync();
+        });
     }
 
     function notifyWriterDashboardSync() {
@@ -3050,9 +3152,28 @@ async function loadBook() {
         if (isLocalStudio) {
             data = getBook(bookId);
         } else {
-            const result = await supabase.from("books").select("*").eq("id", bookId).maybeSingle();
-            if (result.error) throw result.error;
-            data = result.data;
+            let cloudData = null;
+            let shadowEntry = null;
+            try {
+                shadowEntry = await getBookShadow(currentUser.id, bookId);
+            } catch (e) {
+                console.warn("Offline shadow read failed:", e);
+            }
+            if (!isLikelyOffline()) {
+                try {
+                    const result = await supabase.from("books").select("*").eq("id", bookId).maybeSingle();
+                    if (result.error) throw result.error;
+                    cloudData = result.data;
+                } catch (e) {
+                    console.warn("Cloud book load failed (may be offline):", e);
+                }
+            }
+            const picked = pickNewerBookRow(cloudData, shadowEntry);
+            data = picked.row;
+            offlinePendingSync = picked.localPending;
+            if (data && picked.source === "cloud" && !picked.localPending) {
+                void saveBookShadow(currentUser.id, bookId, data, { pendingSync: false }).catch(() => {});
+            }
         }
             if (!data) { setSaveStatus("Book not found"); topBookTitle.textContent = "Book not found"; sidebarBookTitle.textContent = "Book not found"; return; }
             currentBook = normalizeBookData(data);
@@ -3075,7 +3196,9 @@ async function loadBook() {
             suppressResumeSave = false;
             syncStats();
             persistedBookWordCount = totalWords();
-            setSaveStatus("Ready");
+            if (offlinePendingSync) setSaveStatus("Saved offline");
+            else if (isLikelyOffline()) setSaveStatus("Ready (offline)");
+            else setSaveStatus("Ready");
             scheduleWriterResumeSave();
             applyEditorStoryBibleLinks();
             initVersionPanel();
@@ -3162,8 +3285,12 @@ async function loadBook() {
             isLocalStudio = true;
             currentUser = LOCAL_GUEST_USER;
         } else {
-            const { data: authData } = await supabase.auth.getUser();
-            const user = authData?.user;
+            const { data: sessionData } = await supabase.auth.getSession();
+            let user = sessionData?.session?.user || null;
+            if (!user && navigator.onLine) {
+                const { data: authData } = await supabase.auth.getUser();
+                user = authData?.user || null;
+            }
             if (!user) {
                 goToLogin("editor.html");
                 return;
@@ -3171,6 +3298,7 @@ async function loadBook() {
             isLocalStudio = false;
             currentUser = user;
         }
+        setupOfflineSyncListeners();
         applyResponsiveSidebar();
         applyTheme(localStorage.getItem("alysum-theme") || "light");
         fontSizeSelect.value = localStorage.getItem("alysum-fontSize") || "20";
@@ -3196,6 +3324,7 @@ async function loadBook() {
     }
 
     await loadBook();
+    void flushPendingBookSync();
     syncStoryBoardLink();
 
     document.addEventListener("keydown", e => {
