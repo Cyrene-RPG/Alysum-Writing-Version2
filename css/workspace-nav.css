@@ -130,6 +130,9 @@
     top: 0;
     z-index: 40;
     flex-shrink: 0;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
     background: rgba(11, 18, 32, 0.92);
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     backdrop-filter: blur(10px);
@@ -137,15 +140,19 @@
 
 .wd-nav {
     width: 100%;
-    max-width: none;
+    max-width: 100%;
+    min-width: 0;
     margin: 0;
-    padding: 10px clamp(12px, 2vw, 24px);
+    padding: 8px clamp(8px, 1.5vw, 20px);
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 6px;
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+    gap: 2px;
     overflow-x: auto;
+    overflow-y: hidden;
     scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
 }
 
 .wd-nav::-webkit-scrollbar { display: none; }
@@ -155,14 +162,14 @@
     flex-shrink: 0;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 8px clamp(8px, 0.8vw, 14px);
+    gap: 4px;
+    padding: 6px clamp(5px, 0.5vw, 10px);
     border-radius: 999px;
     border: 1px solid transparent;
     background: transparent;
     color: #d1d5db;
     font-family: inherit;
-    font-size: clamp(11px, 0.72vw, 13px);
+    font-size: clamp(9px, 0.52vw + 0.2rem, 11px);
     font-weight: 700;
     text-decoration: none;
     cursor: pointer;
@@ -194,10 +201,10 @@
 }
 
 .wd-nav-divider {
-    flex-shrink: 0;
+    flex: 0 0 auto;
     width: 1px;
-    height: 22px;
-    margin: 0 2px;
+    height: 20px;
+    margin: 0 1px;
     background: rgba(255, 255, 255, 0.12);
 }
 
@@ -457,7 +464,6 @@ button.fh-has-new-badge .fh-target-new,
     .wd-welcome-bar { min-height: 76px; }
     .wd-pfp { width: 48px; height: 48px; }
     .wd-welcome-sub { display: none; }
-    .wd-nav { justify-content: flex-start; }
 }
 
 /* Full-viewport tools: workspace nav stacks above the tool UI */
@@ -471,6 +477,9 @@ body.alysum-with-workspace-nav {
 body.alysum-with-workspace-nav > .wd-welcome-bar,
 body.alysum-with-workspace-nav > .wd-nav-wrap {
     flex-shrink: 0;
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
 }
 
 body.alysum-with-workspace-nav > .alysum-tool-root,
