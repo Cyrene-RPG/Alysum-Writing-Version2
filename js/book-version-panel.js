@@ -98,6 +98,10 @@ export function mountBookVersionPanel(opts) {
         </div>
         <div class="bv-compare-overlay" id="bvCompareOverlay" aria-hidden="true">
             <div class="bv-compare-box" role="dialog" aria-labelledby="bvCompareTitle">
+                <div class="bv-compare-wip-banner" role="status">
+                    <strong>WIP feature</strong>
+                    <span>Version compare is early — layout and behavior may change, and you might hit bugs. Save a manual version before big restores.</span>
+                </div>
                 <div class="bv-compare-head">
                     <div class="bv-compare-head-main">
                         <h2 id="bvCompareTitle">Compare versions</h2>
