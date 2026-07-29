@@ -142,6 +142,76 @@
     .save-status.is-pending-sync { color: #0369a1; }
     body.dark .save-status.is-offline { color: #fbbf24; }
     body.dark .save-status.is-pending-sync { color: #38bdf8; }
+    .offline-banner {
+        display: none;
+        align-items: center;
+        gap: 12px;
+        padding: 11px 16px;
+        border-bottom: 1px solid transparent;
+        font-size: 14px;
+        line-height: 1.35;
+    }
+    .offline-banner.is-visible { display: flex; }
+    .offline-banner.is-offline {
+        background: #fef3c7;
+        color: #78350f;
+        border-bottom-color: #fcd34d;
+    }
+    .offline-banner.is-pending,
+    .offline-banner.is-syncing {
+        background: #e0f2fe;
+        color: #0c4a6e;
+        border-bottom-color: #7dd3fc;
+    }
+    .offline-banner.is-synced {
+        background: #dcfce7;
+        color: #14532d;
+        border-bottom-color: #86efac;
+    }
+    body.dark .offline-banner.is-offline {
+        background: #422006;
+        color: #fde68a;
+        border-bottom-color: #92400e;
+    }
+    body.dark .offline-banner.is-pending,
+    body.dark .offline-banner.is-syncing {
+        background: #082f49;
+        color: #bae6fd;
+        border-bottom-color: #0369a1;
+    }
+    body.dark .offline-banner.is-synced {
+        background: #052e16;
+        color: #bbf7d0;
+        border-bottom-color: #166534;
+    }
+    .offline-banner-icon {
+        flex: 0 0 auto;
+        width: 28px;
+        height: 28px;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 15px;
+        font-weight: 900;
+        background: rgba(255, 255, 255, 0.55);
+    }
+    body.dark .offline-banner-icon { background: rgba(15, 23, 42, 0.45); }
+    .offline-banner-icon.has-spinner {
+        font-size: 0;
+        border: 2px solid currentColor;
+        border-top-color: transparent;
+        animation: offline-banner-spin 0.75s linear infinite;
+    }
+    @keyframes offline-banner-spin { to { transform: rotate(360deg); } }
+    .offline-banner-copy { min-width: 0; flex: 1; }
+    .offline-banner-title { font-weight: 900; }
+    .offline-banner-sub {
+        margin-top: 2px;
+        font-size: 12px;
+        font-weight: 600;
+        opacity: 0.92;
+    }
     .topbar .topbar-tip { position: relative; display: inline-flex; align-items: center; vertical-align: middle; }
     .editor-tooltip {
         position: fixed;
@@ -742,6 +812,13 @@
             <span class="topbar-tip" data-tip="Delete entire book"><button class="icon-btn danger" id="deleteBookTopBtn" type="button" aria-label="Delete book">🗑</button></span>
             <div class="save-status" id="saveStatus" data-tip="Save status" aria-live="polite">Loading...</div>
         </div>
+    </div>
+    <div class="offline-banner hidden" id="offlineBanner" role="status" aria-live="polite" aria-atomic="true">
+        <span class="offline-banner-icon" id="offlineBannerIcon" aria-hidden="true">📡</span>
+        <div class="offline-banner-copy">
+            <div class="offline-banner-title" id="offlineBannerTitle">Offline mode</div>
+            <div class="offline-banner-sub" id="offlineBannerSub">Your writing is saved on this device.</div>
+        </div>
     </div><div class="toolbar" id="toolbar">
     <button class="tool-btn" type="button" data-cmd="bold" data-tip="Bold">B</button>
     <button class="tool-btn" type="button" data-cmd="italic" data-tip="Italic"><em>I</em></button>
@@ -1068,6 +1145,10 @@ function rememberBookId(id) {
     const topBookTitle = document.getElementById("topBookTitle");
     const sidebarBookTitle = document.getElementById("sidebarBookTitle");
     const saveStatus = document.getElementById("saveStatus");
+    const offlineBanner = document.getElementById("offlineBanner");
+    const offlineBannerIcon = document.getElementById("offlineBannerIcon");
+    const offlineBannerTitle = document.getElementById("offlineBannerTitle");
+    const offlineBannerSub = document.getElementById("offlineBannerSub");
     const chapterNumber = document.getElementById("chapterNumber");
     const chapterTitle = document.getElementById("chapterTitle");
     const editor = document.getElementById("editor");
@@ -1173,6 +1254,75 @@ function rememberBookId(id) {
     let lastStoryBibleSelection = null;
     let offlinePendingSync = false;
     let syncInFlight = false;
+    let syncedFlashTimer = null;
+    let offlineBannerFlash = null;
+
+    const OFFLINE_BANNER_COPY = {
+        offline: {
+            icon: "📡",
+            title: "Offline mode",
+            sub: "Your writing is saved on this device. Alysum will sync when you're back online.",
+        },
+        pending: {
+            icon: "💾",
+            title: "Saved locally — waiting to sync",
+            sub: "Your changes are safe on this device and will upload when Alysum can reach the cloud.",
+        },
+        syncing: {
+            icon: "",
+            title: "Syncing to Alysum cloud…",
+            sub: "Uploading your latest changes. Keep this tab open until sync finishes.",
+        },
+        synced: {
+            icon: "✓",
+            title: "Synced",
+            sub: "Your book is saved to the cloud.",
+        },
+    };
+
+    function renderOfflineBanner(mode) {
+        if (!offlineBanner || isLocalStudio) {
+            offlineBanner?.classList.remove("is-visible");
+            document.body.classList.remove("has-offline-banner");
+            return;
+        }
+        ["offline", "pending", "syncing", "synced"].forEach((name) => {
+            offlineBanner.classList.toggle(`is-${name}`, mode === name);
+        });
+        if (!mode) {
+            offlineBanner.classList.remove("is-visible");
+            document.body.classList.remove("has-offline-banner");
+            return;
+        }
+        offlineBanner.classList.add("is-visible");
+        document.body.classList.add("has-offline-banner");
+        const copy = OFFLINE_BANNER_COPY[mode];
+        if (offlineBannerIcon) {
+            offlineBannerIcon.textContent = copy.icon;
+            offlineBannerIcon.classList.toggle("has-spinner", mode === "syncing");
+        }
+        if (offlineBannerTitle) offlineBannerTitle.textContent = copy.title;
+        if (offlineBannerSub) offlineBannerSub.textContent = copy.sub;
+    }
+
+    function resolveOfflineBannerMode() {
+        if (offlineBannerFlash) return offlineBannerFlash;
+        if (syncInFlight) return "syncing";
+        if (isLikelyOffline()) return "offline";
+        if (offlinePendingSync) return "pending";
+        return null;
+    }
+
+    function showSyncedBanner() {
+        if (isLocalStudio) return;
+        clearTimeout(syncedFlashTimer);
+        offlineBannerFlash = "synced";
+        renderOfflineBanner("synced");
+        syncedFlashTimer = setTimeout(() => {
+            offlineBannerFlash = null;
+            renderOfflineBanner(resolveOfflineBannerMode());
+        }, 4500);
+    }
 
     function updateOfflineUi() {
         const offline = isLikelyOffline();
@@ -1183,6 +1333,7 @@ function rememberBookId(id) {
             : offlinePendingSync
               ? "Changes saved locally and waiting to sync to the cloud."
               : "Save status";
+        renderOfflineBanner(resolveOfflineBannerMode());
     }
 
     function setSaveStatus(text) {
@@ -2595,6 +2746,7 @@ function rememberBookId(id) {
             return;
         }
         syncInFlight = true;
+        updateOfflineUi();
         setSaveStatus("Syncing...");
         try {
             if (isCurrentBookComic()) syncCurrentComicPageFromUI();
@@ -2613,6 +2765,7 @@ function rememberBookId(id) {
             }
             persistedBookWordCount = nextWords;
             setSaveStatus("Synced");
+            showSyncedBanner();
             notifyWriterDashboardSync();
             void hashSnapshot(buildManuscriptSnapshot(currentBook)).then(h => { lastSavedContentHash = h; }).catch(() => {});
         } catch (e) {
@@ -2620,6 +2773,7 @@ function rememberBookId(id) {
             setSaveStatus(isNetworkError(e) ? "Saved offline" : "Sync failed");
         } finally {
             syncInFlight = false;
+            updateOfflineUi();
         }
     }
 
