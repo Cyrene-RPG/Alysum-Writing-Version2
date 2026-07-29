@@ -992,12 +992,13 @@
         buildEditorContinueUrl,
     } from "./js/writer-resume.js?v=1";
     import { alysumPrompt } from "./js/alysum-prompt.js?v=1";
-    import { showBookCreateModal } from "./js/book-create-modal.js?v=1";
+    import { showBookCreateModal } from "./js/book-create-modal.js?v=2";
     import {
         defaultSectionsForFormat,
         mediaFormatLabel,
         normalizeMediaFormat,
-    } from "./js/book-media-format.js?v=1";
+    } from "./js/book-media-format.js?v=2";
+    import { countBookWords } from "./js/book-word-count.js?v=1";
 
     const welcomeTitle = document.getElementById("welcomeTitle");
     const welcomePfpImg = document.getElementById("welcomePfpImg");
@@ -1760,29 +1761,44 @@
         const created = await showBookCreateModal();
         if (!created) return;
 
-        const { title, mediaFormat } = created;
+        const { title, mediaFormat, sections: importedSections, imported } = created;
         const format = normalizeMediaFormat(mediaFormat);
 
         const now = Date.now();
+        const sections = imported && importedSections
+            ? importedSections
+            : defaultSectionsForFormat(format);
+        const wordCount = imported && typeof created.words === "number"
+            ? created.words
+            : 0;
+
         const payload = {
             id: crypto.randomUUID(),
             user_id: currentUser.id,
             title,
             created: now,
             updated: now,
-            words: 0,
+            words: wordCount || countBookWords({ sections }),
             media_format: format,
-            sections: defaultSectionsForFormat(format),
+            sections,
         };
 
         if (isLocalStudio) {
             insertBook(payload);
             notifyLocalStudioSync();
+            if (imported) {
+                window.location.href = "editor.html?book=" + encodeURIComponent(payload.id);
+                return;
+            }
             return refreshBooksAndStats();
         }
 
         const { error } = await supabase.from("books").insert(payload);
         if (error) throw error;
+        if (imported) {
+            window.location.href = "editor.html?book=" + encodeURIComponent(payload.id);
+            return;
+        }
         return refreshBooksAndStats();
     }
 
