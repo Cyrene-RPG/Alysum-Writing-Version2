@@ -24,7 +24,7 @@
 <link rel="stylesheet" href="css/gradient-themes.css?v=7" />
     <link rel="stylesheet" href="css/workspace-nav.css?v=5" />
 <link rel="stylesheet" href="css/plot-doctor.css?v=4" />
-<link rel="stylesheet" href="css/book-version.css?v=3" />
+<link rel="stylesheet" href="css/book-version.css?v=5" />
     <script src="js/gradient-theme-sync.js" defer></script>
 <title>Alysum Editor</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"><script src="js/alysum-appearance-boot.js"></script><style>
@@ -875,7 +875,7 @@
         getCaretTextOffset,
     } from "./js/writer-resume.js?v=1";
     import { repairArchangelPrologueIfNeeded } from "./js/book-prologue-repair.js?v=1";
-    import { mountBookVersionPanel } from "./js/book-version-panel.js?v=3";
+    import { mountBookVersionPanel } from "./js/book-version-panel.js?v=5";
     import { hashSnapshot, buildManuscriptSnapshot } from "./js/book-version-api.js?v=3";
 
 const params = new URLSearchParams(window.location.search);
@@ -973,6 +973,30 @@ function rememberBookId(id) {
         scheduleSave();
     }
 
+    function applyCompareChapterKeep(chapterId, chapterData) {
+        const loc = findChapterLocation(chapterId);
+        if (!loc) return;
+        const ch = currentBook.sections[loc.section][loc.index];
+        if (chapterData.title != null) ch.title = chapterData.title;
+        if (chapterData.content != null) ch.content = chapterData.content;
+        if (Array.isArray(chapterData.imageUrls)) setChapterImageUrls(ch, chapterData.imageUrls);
+        const activeKey = chapterLoadKey(currentSection, currentChapterIndex);
+        const editedKey = chapterLoadKey(loc.section, loc.index);
+        if (activeKey === editedKey) {
+            chapterNumber.textContent = loc.section === "body" ? loc.index + 1 : "";
+            chapterTitle.textContent = ch.title || (isCurrentBookComic() ? `Page ${loc.index + 1}` : "Untitled");
+            if (isCurrentBookComic()) {
+                syncComicPageView(ch);
+                if (comicCaptionInput) comicCaptionInput.value = String(ch.content || "").replace(/<[^>]+>/g, "").trim();
+            } else if (editorLoadedChapterKey === editedKey) {
+                editor.innerHTML = cleanEditorHtml(ch.content || "");
+            }
+        }
+        renderAllSections();
+        syncStats();
+        scheduleSave();
+    }
+
     function initVersionPanel() {
         if (versionPanel || !bookId) return;
         versionPanel = mountBookVersionPanel({
@@ -993,6 +1017,7 @@ function rememberBookId(id) {
             isDirty: isEditorDirty,
             cleanEditorHtml,
             onCompareChapterEdit: applyCompareChapterEdit,
+            onCompareChapterKeep: applyCompareChapterKeep,
             applyCompareEditorStyle,
         });
         document.getElementById("historyBookBtn")?.addEventListener("click", () => versionPanel.open());
