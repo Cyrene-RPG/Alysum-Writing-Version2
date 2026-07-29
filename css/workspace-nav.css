@@ -218,7 +218,8 @@
 
 /* "New!" feature badges — distinct from red notification counts */
 .wd-nav-new,
-.fh-target-new {
+.fh-target-new,
+.fh-page-new {
     flex-shrink: 0;
     display: inline-flex;
     align-items: center;
@@ -236,7 +237,54 @@
 }
 
 .wd-nav-new.is-hidden,
-.fh-target-new.is-hidden { display: none; }
+.fh-target-new.is-hidden,
+.fh-page-new.is-hidden { display: none; }
+
+#tab-profile.fh-has-new-badge,
+.settings-nav button.fh-has-new-badge {
+    position: relative;
+}
+
+.settings-nav button.fh-has-new-badge .fh-page-new {
+    position: absolute;
+    top: 4px;
+    right: 6px;
+    margin-left: 0;
+    z-index: 1;
+}
+
+#author-bio.fh-section-spotlight,
+.fh-section-spotlight {
+    outline: 2px solid rgba(251, 191, 36, 0.85);
+    outline-offset: 4px;
+    border-radius: 16px;
+    animation: fhSectionPulse 1.4s ease-in-out 2;
+}
+
+@keyframes fhSectionPulse {
+    0%, 100% { outline-color: rgba(251, 191, 36, 0.85); }
+    50% { outline-color: rgba(249, 115, 22, 0.95); }
+}
+
+.fh-spotlight-where {
+    margin: 8px 0 0;
+    padding: 8px 10px;
+    border-radius: 10px;
+    background: rgba(251, 191, 36, 0.1);
+    border: 1px solid rgba(251, 191, 36, 0.22);
+    color: #fde68a;
+    font-size: 13px;
+    line-height: 1.45;
+}
+
+.fh-spotlight-where-label {
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 10px;
+    color: #fcd34d;
+    margin-right: 6px;
+}
 
 .fh-has-new-badge { position: relative; }
 

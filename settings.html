@@ -1779,6 +1779,9 @@
     let selectedRestoreFile = null;
 
     const TAB_PANEL_IDS = ["appearancePanel", "accountModePanel", "profilePanel", "libraryPanel", "securityPanel", "backupPanel"];
+    const SETTINGS_SECTION_ANCHORS = {
+        "author-bio": { panel: "profilePanel", scrollTo: "#author-bio", hash: "author-bio" },
+    };
     const PASSWORD_BLOCKED_OAUTH = new Set(["google", "discord"]);
 
     /** Only Google- or Discord-only sign-in cannot change password here (uses linked identities). */
@@ -1791,8 +1794,30 @@
         return providers.every((p) => PASSWORD_BLOCKED_OAUTH.has(p));
     }
 
-    function showSettingsTab(panelId) {
+    function resolveSettingsRoute(rawHash) {
+        const hash = rawHash === "staffPanel" ? "libraryPanel" : rawHash;
+        if (TAB_PANEL_IDS.includes(hash)) {
+            return { panel: hash, scrollTo: null, hash: hash };
+        }
+        const anchor = SETTINGS_SECTION_ANCHORS[hash];
+        if (anchor) return anchor;
+        return { panel: "appearancePanel", scrollTo: null, hash: "appearancePanel" };
+    }
+
+    function spotlightSettingsSection(selector) {
+        const el = document.querySelector(selector);
+        if (!el) return;
+        window.setTimeout(() => {
+            el.scrollIntoView({ behavior: "smooth", block: "start" });
+            el.classList.add("fh-section-spotlight");
+            window.setTimeout(() => el.classList.remove("fh-section-spotlight"), 3500);
+        }, 100);
+    }
+
+    function showSettingsTab(panelId, routeExtras = null) {
         const id = TAB_PANEL_IDS.includes(panelId) ? panelId : "appearancePanel";
+        const scrollTo = routeExtras?.scrollTo || null;
+        const urlHash = routeExtras?.hash || id;
         const tabs = settingsNav ? [...settingsNav.querySelectorAll("button[data-section]")] : [];
         const panels = TAB_PANEL_IDS.map((pid) => document.getElementById(pid)).filter(Boolean);
 
@@ -1809,8 +1834,10 @@
         });
 
         try {
-            history.replaceState(null, "", "#" + id);
+            history.replaceState(null, "", "#" + urlHash);
         } catch (_) {}
+
+        if (scrollTo) spotlightSettingsSection(scrollTo);
     }
 
     function initSettingsNav() {
@@ -1821,14 +1848,12 @@
             tab.addEventListener("click", () => showSettingsTab(tab.dataset.section));
         });
 
-        const rawHash = (location.hash || "").replace(/^#/, "");
-        const hash = rawHash === "staffPanel" ? "libraryPanel" : rawHash;
-        showSettingsTab(TAB_PANEL_IDS.includes(hash) ? hash : "appearancePanel");
+        const route = resolveSettingsRoute((location.hash || "").replace(/^#/, ""));
+        showSettingsTab(route.panel, route);
 
         window.addEventListener("hashchange", () => {
-            const h = (location.hash || "").replace(/^#/, "");
-            const next = h === "staffPanel" ? "libraryPanel" : h;
-            if (TAB_PANEL_IDS.includes(next)) showSettingsTab(next);
+            const route = resolveSettingsRoute((location.hash || "").replace(/^#/, ""));
+            showSettingsTab(route.panel, route);
         });
     }
 
@@ -2123,6 +2148,7 @@
         applyChromeGradient(getThemePreview(getStoredGradientThemeId()));
         initAppearancePickers();
         initSettingsNav();
+        import("./js/feature-highlights.js?v=2").then((m) => m.applyFeatureNewBadges()).catch(() => {});
 
         const storyBibleUiToggle = document.getElementById("storyBibleUiToggle");
         if (storyBibleUiToggle && storyBibleUiToggle.dataset.bound !== "1") {

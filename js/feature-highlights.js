@@ -21,8 +21,10 @@ const RETURNING_MIN_AWAY_MS = 24 * 60 * 60 * 1000;
  *   releasedAt: string,
  *   navSelectors?: string[],
  *   targetSelectors?: string[],
+ *   pageTargetSelectors?: string[],
  *   ctaHref?: string,
  *   ctaLabel?: string,
+ *   where?: string,
  * }>}
  */
 export const FEATURE_CATALOG = [
@@ -30,7 +32,8 @@ export const FEATURE_CATALOG = [
         id: "book-version-history",
         title: "Version history",
         description:
-            "Save manuscript snapshots, compare drafts side by side, and restore earlier versions from History in the editor (Ctrl+Shift+H).",
+            "Save manuscript snapshots, compare drafts side by side, and restore earlier versions.",
+        where: "Editor → History (sidebar button or 🕘 in the top bar). Shortcut: Ctrl+Shift+H.",
         releasedAt: "2026-07-21T12:00:00.000Z",
         targetSelectors: ["#historyBookBtn", "#historyTopBtn"],
     },
@@ -38,29 +41,33 @@ export const FEATURE_CATALOG = [
         id: "author-bio",
         title: "Author biography",
         description:
-            "Add a public bio on your author page — readers see it from the Library and on your published stories.",
+            "Tell readers about yourself — your bio appears on your public author page and with published books in the Library.",
+        where: "Settings → Profile tab → Author biography section",
         releasedAt: "2026-07-28T12:00:00.000Z",
         navSelectors: ['a[href*="settings.html"]'],
+        pageTargetSelectors: ["#tab-profile", "#author-bio"],
         ctaHref: "settings.html#author-bio",
-        ctaLabel: "Set up your bio",
+        ctaLabel: "Go to Author biography",
     },
     {
         id: "lore-wiki",
         title: "Lore Wiki",
         description:
             "Publish read-only lore encyclopedias for readers. Draft in Story Wiki, then publish articles to Lore Wiki.",
+        where: "Workspace nav → Lore Wiki",
         releasedAt: "2026-07-14T12:00:00.000Z",
         navSelectors: ['a[href*="lore-wiki.html"]'],
         ctaHref: "lore-wiki.html",
-        ctaLabel: "Browse Lore Wiki",
+        ctaLabel: "Open Lore Wiki",
     },
     {
         id: "story-wiki",
         title: "Story Wiki",
         description:
             "A Wikipedia-style wiki for characters, places, and lore — linked to your manuscript while you write.",
+        where: "Workspace nav → Story Wiki",
         releasedAt: "2026-07-07T12:00:00.000Z",
-        navSelectors: ['#navStoryBible', 'a[href*="wiki.html"]'],
+        navSelectors: ['#navStoryBible', 'a[href*="wiki.html"]', 'a[href*="story-bible.html"]'],
         ctaHref: "wiki.html",
         ctaLabel: "Open Story Wiki",
     },
@@ -181,6 +188,14 @@ export function applyFeatureNewBadges(now = Date.now()) {
 
     for (const feature of FEATURE_CATALOG) {
         const show = activeIds.has(feature.id);
+        if (show && feature.ctaHref && feature.navSelectors?.length) {
+            const href = resolveHref(feature.ctaHref);
+            for (const selector of feature.navSelectors) {
+                document.querySelectorAll(selector).forEach((el) => {
+                    if (el.tagName === "A") el.setAttribute("href", href);
+                });
+            }
+        }
         for (const selector of feature.navSelectors || []) {
             document.querySelectorAll(selector).forEach((el) => {
                 setBadgeVisible(ensureNewBadgeEl(el, "wd-nav-new"), show);
@@ -191,7 +206,23 @@ export function applyFeatureNewBadges(now = Date.now()) {
                 setBadgeVisible(ensureNewBadgeEl(el, "fh-target-new"), show);
             });
         }
+        for (const selector of feature.pageTargetSelectors || []) {
+            document.querySelectorAll(selector).forEach((el) => {
+                setBadgeVisible(ensureNewBadgeEl(el, "fh-page-new"), show);
+            });
+        }
     }
+}
+
+/** Pulse-highlight a specific section (e.g. after deep-link navigation). */
+export function spotlightFeatureSection(selector) {
+    const el = document.querySelector(selector);
+    if (!el) return;
+    window.setTimeout(() => {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+        el.classList.add("fh-section-spotlight");
+        window.setTimeout(() => el.classList.remove("fh-section-spotlight"), 3500);
+    }, 120);
 }
 
 function dismissSpotlightFeatures(features) {
@@ -213,6 +244,9 @@ function renderSpotlightModal(features) {
 
     const itemsHtml = features
         .map((feature) => {
+            const where = feature.where
+                ? `<p class="fh-spotlight-where"><span class="fh-spotlight-where-label">Where:</span> ${escapeHtml(feature.where)}</p>`
+                : "";
             const cta =
                 feature.ctaHref && feature.ctaLabel
                     ? `<a class="fh-spotlight-cta" href="${escapeHtml(resolveHref(feature.ctaHref))}">${escapeHtml(feature.ctaLabel)}</a>`
@@ -224,6 +258,7 @@ function renderSpotlightModal(features) {
                         <strong>${escapeHtml(feature.title)}</strong>
                     </div>
                     <p>${escapeHtml(feature.description)}</p>
+                    ${where}
                     ${cta}
                 </li>
             `;
