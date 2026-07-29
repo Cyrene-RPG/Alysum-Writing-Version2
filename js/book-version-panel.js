@@ -127,7 +127,7 @@ export function mountBookVersionPanel(opts) {
                                 <div class="bv-editor-pane-head">
                                     <span class="bv-editor-pane-badge">Left</span>
                                     <span class="bv-editor-pane-version" id="bvLeftVersionLabel"></span>
-                                    <button type="button" class="bv-keep-btn" id="bvKeepLeftChapterBtn">Keep this chapter</button>
+                                    <button type="button" class="bv-keep-btn" id="bvKeepLeftChapterBtn" aria-pressed="false">Use this version</button>
                                 </div>
                                 <div class="bv-editor-page">
                                     <div class="bv-compare-chapter-title" id="bvCompareLeftTitle"></div>
@@ -138,8 +138,7 @@ export function mountBookVersionPanel(opts) {
                                 <div class="bv-editor-pane-head">
                                     <span class="bv-editor-pane-badge">Right</span>
                                     <span class="bv-editor-pane-version" id="bvRightVersionLabel"></span>
-                                    <span class="bv-editable-hint hidden" id="bvEditableHint">Edits save to your draft</span>
-                                    <button type="button" class="bv-keep-btn" id="bvKeepRightChapterBtn">Keep this chapter</button>
+                                    <button type="button" class="bv-keep-btn" id="bvKeepRightChapterBtn" aria-pressed="false">Use this version</button>
                                 </div>
                                 <div class="bv-editor-page">
                                     <div class="bv-compare-chapter-title" id="bvCompareRightTitle"></div>
@@ -151,9 +150,12 @@ export function mountBookVersionPanel(opts) {
                     </div>
                 </div>
                 <div class="bv-compare-foot">
-                    <button type="button" class="bv-btn" id="bvCompareCloseBtn">Close</button>
-                    <button type="button" class="bv-btn primary" id="bvKeepLeftBookBtn">Keep left version</button>
-                    <button type="button" class="bv-btn primary" id="bvKeepRightBookBtn">Keep right version</button>
+                    <p class="bv-compare-status" id="bvCompareStatus" aria-live="polite"></p>
+                    <div class="bv-compare-foot-actions">
+                        <button type="button" class="bv-btn" id="bvCompareCloseBtn">Close</button>
+                        <button type="button" class="bv-btn primary" id="bvKeepLeftBookBtn">Use left version</button>
+                        <button type="button" class="bv-btn primary" id="bvKeepRightBookBtn">Use right version</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -178,12 +180,14 @@ export function mountBookVersionPanel(opts) {
     const compareRightTitle = root.querySelector("#bvCompareRightTitle");
     const leftVersionLabel = root.querySelector("#bvLeftVersionLabel");
     const rightVersionLabel = root.querySelector("#bvRightVersionLabel");
-    const editableHint = root.querySelector("#bvEditableHint");
     const compareDiffNote = root.querySelector("#bvCompareDiffNote");
+    const compareStatusEl = root.querySelector("#bvCompareStatus");
     const keepLeftChapterBtn = root.querySelector("#bvKeepLeftChapterBtn");
     const keepRightChapterBtn = root.querySelector("#bvKeepRightChapterBtn");
     const keepLeftBookBtn = root.querySelector("#bvKeepLeftBookBtn");
     const keepRightBookBtn = root.querySelector("#bvKeepRightBookBtn");
+    const leftEditorPane = root.querySelector(".bv-editor-pane-left");
+    const rightEditorPane = root.querySelector(".bv-editor-pane-right");
     const loadMoreWrap = root.querySelector("#bvLoadMoreWrap");
     const loadMoreBtn = root.querySelector("#bvLoadMoreBtn");
     const changedOnlyCb = root.querySelector("#bvChangedOnly");
@@ -197,10 +201,14 @@ export function mountBookVersionPanel(opts) {
     let selectedVersionId = "";
     let compareLeftVersion = null;
     let compareRightVersion = null;
+    let compareLeftIsCurrent = false;
     let compareRightIsCurrent = true;
     let compareChapterRows = [];
     let compareActiveChapterId = "";
     let compareInputBound = false;
+    /** @type {Record<string, 'left' | 'right'>} */
+    let compareKeptSideByChapter = {};
+    let compareStatusTimer = 0;
 
     function setPanelStatus(msg, isError = false) {
         statusEl.textContent = msg || "";
@@ -307,12 +315,42 @@ export function mountBookVersionPanel(opts) {
     }
 
     function populateCompareVersionSelects() {
-        compareLeftSelect.innerHTML = allVersions
+        const versionOptions = allVersions
             .map(v => `<option value="${escapeHtml(v.id)}">${escapeHtml(versionDisplayLabel(v))}</option>`)
             .join("");
-        compareRightSelect.innerHTML =
-            `<option value="current">Current draft</option>` +
-            allVersions.map(v => `<option value="${escapeHtml(v.id)}">${escapeHtml(versionDisplayLabel(v))}</option>`).join("");
+        compareLeftSelect.innerHTML = `<option value="current">Current draft</option>${versionOptions}`;
+        compareRightSelect.innerHTML = `<option value="current">Current draft</option>${versionOptions}`;
+    }
+
+    function draftSide() {
+        if (compareRightIsCurrent && !compareLeftIsCurrent) return "right";
+        if (compareLeftIsCurrent && !compareRightIsCurrent) return "left";
+        return null;
+    }
+
+    function resetKeptSides() {
+        compareKeptSideByChapter = {};
+    }
+
+    function normalizeCompareVersionSelects(changedSide) {
+        if (compareLeftSelect.value !== "current" || compareRightSelect.value !== "current") return;
+        const fallback = allVersions.find(v => v.id !== compareLeftSelect.value)?.id || allVersions[0]?.id || "";
+        if (!fallback) return;
+        if (changedSide === "left") compareRightSelect.value = fallback;
+        else compareLeftSelect.value = fallback;
+    }
+
+    function setCompareStatus(msg, isError = false) {
+        clearTimeout(compareStatusTimer);
+        if (!compareStatusEl) return;
+        compareStatusEl.textContent = msg || "";
+        compareStatusEl.classList.toggle("is-error", !!isError);
+        if (msg && typeof setStatus === "function") setStatus(msg);
+        if (msg) {
+            compareStatusTimer = window.setTimeout(() => {
+                if (compareStatusEl.textContent === msg) compareStatusEl.textContent = "";
+            }, 4500);
+        }
     }
 
     function openPanel() {
@@ -414,13 +452,13 @@ export function mountBookVersionPanel(opts) {
     }
 
     function getCompareSnapshots() {
-        const left = compareLeftVersion?.sections || { front: [], body: [], back: [] };
-        let right;
-        if (compareRightIsCurrent) {
-            right = buildManuscriptSnapshot(getCurrentBook()).sections;
-        } else {
-            right = compareRightVersion?.sections || { front: [], body: [], back: [] };
-        }
+        const empty = { front: [], body: [], back: [] };
+        const left = compareLeftIsCurrent
+            ? buildManuscriptSnapshot(getCurrentBook()).sections
+            : compareLeftVersion?.sections || empty;
+        const right = compareRightIsCurrent
+            ? buildManuscriptSnapshot(getCurrentBook()).sections
+            : compareRightVersion?.sections || empty;
         return { left, right };
     }
 
@@ -429,9 +467,36 @@ export function mountBookVersionPanel(opts) {
     }
 
     function compareSideLabel(side) {
-        if (side === "left") return compareLeftVersion ? versionDisplayLabel(compareLeftVersion) : "Left";
+        if (side === "left") {
+            if (compareLeftIsCurrent) return "Current draft";
+            return compareLeftVersion ? versionDisplayLabel(compareLeftVersion) : "Left";
+        }
         if (compareRightIsCurrent) return "Current draft";
         return compareRightVersion ? versionDisplayLabel(compareRightVersion) : "Right";
+    }
+
+    function chapterContentKey(chapter, comic) {
+        const title = String(chapter?.title || "");
+        const content = comic ? String(chapter?.content || "").trim() : prepareEditorHtml(chapter?.content || "");
+        const images = (chapter?.imageUrls || []).join("\n");
+        return `${title}\n${content}\n${images}`;
+    }
+
+    function inferKeptSideFromDraft() {
+        if (!compareActiveChapterId || draftSide()) return draftSide();
+        const comic = isComicFormat(getCurrentBook()?.mediaFormat);
+        const draft = chapterFromSnapshot(buildManuscriptSnapshot(getCurrentBook()).sections, compareActiveChapterId);
+        const { left, right } = getCompareSnapshots();
+        const leftCh = chapterFromSnapshot(left, compareActiveChapterId);
+        const rightCh = chapterFromSnapshot(right, compareActiveChapterId);
+        const draftKey = chapterContentKey(draft, comic);
+        const leftMatch = chapterContentKey(leftCh, comic) === draftKey;
+        const rightMatch = chapterContentKey(rightCh, comic) === draftKey;
+        if (leftMatch && !rightMatch) return "left";
+        if (rightMatch && !leftMatch) return "right";
+        if (rightMatch) return "right";
+        if (leftMatch) return "left";
+        return null;
     }
 
     async function saveKeepCheckpoint(sideLabel) {
@@ -448,35 +513,114 @@ export function mountBookVersionPanel(opts) {
         });
     }
 
+    function defaultKeptSide() {
+        return draftSide() || inferKeptSideFromDraft();
+    }
+
+    function getKeptSide() {
+        if (!compareActiveChapterId) return null;
+        return compareKeptSideByChapter[compareActiveChapterId] ?? defaultKeptSide();
+    }
+
+    function setKeptSide(side) {
+        if (!compareActiveChapterId || !side) return;
+        compareKeptSideByChapter[compareActiveChapterId] = side;
+        updateKeepButtonsState();
+    }
+
+    function styleKeepButton(btn, { active, disabled, activeLabel, idleLabel, title }) {
+        btn.textContent = active ? activeLabel : idleLabel;
+        btn.classList.toggle("is-active", !!active);
+        btn.disabled = !!disabled;
+        btn.title = title || "";
+        btn.setAttribute("aria-pressed", active ? "true" : "false");
+    }
+
     function updateKeepButtonsState() {
-        const currentSections = buildManuscriptSnapshot(getCurrentBook()).sections;
-        const inCurrent = compareActiveChapterId ? chapterInSnapshot(currentSections, compareActiveChapterId) : false;
         const inLeft = compareActiveChapterId ? chapterInSnapshot(getCompareSnapshots().left, compareActiveChapterId) : false;
+        const inRight = compareActiveChapterId ? chapterInSnapshot(getCompareSnapshots().right, compareActiveChapterId) : false;
+        const keptSide = getKeptSide();
+        const draft = draftSide();
 
-        keepLeftChapterBtn.disabled = !compareActiveChapterId || !inLeft;
-        keepLeftChapterBtn.title = inLeft ? "Replace your draft chapter with the left version" : "Chapter not in left version";
+        leftEditorPane?.classList.toggle("is-kept", keptSide === "left");
+        rightEditorPane?.classList.toggle("is-kept", keptSide === "right");
+        leftEditorPane?.classList.toggle("is-draft-side", draft === "left");
+        rightEditorPane?.classList.toggle("is-draft-side", draft === "right");
 
-        if (compareRightIsCurrent) {
-            keepRightChapterBtn.disabled = true;
-            keepRightChapterBtn.textContent = "Current draft";
-            keepRightChapterBtn.title = "This side is already your manuscript";
+        styleKeepButton(keepLeftChapterBtn, {
+            active: keptSide === "left",
+            disabled: !compareActiveChapterId || !inLeft,
+            activeLabel: "✓ Using this version",
+            idleLabel: "Use this version",
+            title:
+                keptSide === "left"
+                    ? "This version is in your draft for this chapter"
+                    : inLeft
+                      ? "Replace your draft chapter with the left version"
+                      : "Chapter not in left version",
+        });
+
+        styleKeepButton(keepRightChapterBtn, {
+            active: keptSide === "right",
+            disabled: !compareActiveChapterId || !inRight,
+            activeLabel: "✓ Using this version",
+            idleLabel: "Use this version",
+            title:
+                keptSide === "right"
+                    ? draft === "right"
+                        ? "Your draft matches this side — edits save automatically"
+                        : "This version is in your draft for this chapter"
+                    : inRight
+                      ? "Replace your draft chapter with the right version"
+                      : "Chapter not in right version",
+        });
+
+        if (compareLeftIsCurrent) {
+            keepLeftBookBtn.textContent = "✓ Using current draft";
+            keepLeftBookBtn.classList.add("is-active");
+            keepLeftBookBtn.disabled = false;
+            keepLeftBookBtn.title = "Your manuscript is the left version";
+            keepRightBookBtn.textContent = `Use right — ${compareSideLabel("right")}`;
+            keepRightBookBtn.classList.remove("is-active");
+            keepRightBookBtn.disabled = !compareRightVersion?.id;
+            keepRightBookBtn.title = "Replace your entire manuscript with the right version";
+        } else if (compareRightIsCurrent) {
+            keepLeftBookBtn.textContent = `Use left — ${compareSideLabel("left")}`;
+            keepLeftBookBtn.classList.remove("is-active");
+            keepLeftBookBtn.disabled = !compareLeftVersion?.id;
+            keepLeftBookBtn.title = "Replace your entire manuscript with the left version";
+            keepRightBookBtn.textContent = "✓ Using current draft";
+            keepRightBookBtn.classList.add("is-active");
+            keepRightBookBtn.disabled = false;
+            keepRightBookBtn.title = "Your manuscript is the right version";
         } else {
-            keepRightChapterBtn.disabled = !compareActiveChapterId;
-            keepRightChapterBtn.textContent = "Keep this chapter";
-            keepRightChapterBtn.title = "Replace your draft chapter with the right version";
+            keepLeftBookBtn.textContent = `Use left — ${compareSideLabel("left")}`;
+            keepLeftBookBtn.classList.remove("is-active");
+            keepLeftBookBtn.disabled = !compareLeftVersion?.id;
+            keepLeftBookBtn.title = "Replace your entire manuscript with the left version";
+            keepRightBookBtn.textContent = `Use right — ${compareSideLabel("right")}`;
+            keepRightBookBtn.classList.remove("is-active");
+            keepRightBookBtn.disabled = !compareRightVersion?.id;
+            keepRightBookBtn.title = "Replace your entire manuscript with the right version";
         }
-
-        keepLeftBookBtn.textContent = `Keep left — ${compareSideLabel("left")}`;
-        keepRightBookBtn.textContent = compareRightIsCurrent ? "Keep right — current draft" : `Keep right — ${compareSideLabel("right")}`;
-        keepRightBookBtn.disabled = compareRightIsCurrent;
-        keepLeftBookBtn.disabled = !compareLeftVersion?.id;
     }
 
     async function keepCompareChapter(side) {
         if (!compareActiveChapterId) return;
         flushCompareEditorToDraft();
 
-        if (side === "right" && compareRightIsCurrent) return;
+        const keptSide = getKeptSide();
+        if (side === keptSide) {
+            if (side === draftSide()) flushCompareEditorToDraft();
+            return;
+        }
+
+        if (side === draftSide()) {
+            flushCompareEditorToDraft();
+            setKeptSide(side);
+            setCompareStatus(`Using your current draft on the ${side}.`);
+            return;
+        }
 
         const { left, right } = getCompareSnapshots();
         const leftCh = chapterFromSnapshot(left, compareActiveChapterId);
@@ -488,6 +632,7 @@ export function mountBookVersionPanel(opts) {
 
         if (side === "left" && !inCurrent && compareLeftVersion?.id) {
             await runRestore(compareLeftVersion.id, "chapter", compareActiveChapterId);
+            setKeptSide("left");
             populateCompareChapterUi();
             return;
         }
@@ -498,11 +643,11 @@ export function mountBookVersionPanel(opts) {
         }
 
         const ok = window.confirm(
-            `Keep the ${side} version for this chapter?\n\n“${sideLabel}” will replace the chapter in your draft. A checkpoint will be saved first.`,
+            `Use the ${side} version for this chapter?\n\n“${sideLabel}” will replace the chapter in your draft. A checkpoint will be saved first.`,
         );
         if (!ok) return;
 
-        setPanelStatus("Applying chapter…");
+        setCompareStatus("Applying chapter…");
         try {
             await saveKeepCheckpoint(sideLabel);
             if (typeof onCompareChapterKeep === "function") {
@@ -512,18 +657,19 @@ export function mountBookVersionPanel(opts) {
                     imageUrls: pick.imageUrls || [],
                 });
             }
-            if (typeof setStatus === "function") setStatus("Chapter kept");
-            setPanelStatus(`Kept ${side} version for this chapter.`);
+            if (typeof setStatus === "function") setStatus("Chapter updated");
+            setCompareStatus(`Now using the ${side} version for this chapter.`);
+            setKeptSide(side);
             populateCompareChapterUi();
         } catch (err) {
             console.error(err);
-            setPanelStatus(friendlyVersionError(err), true);
+            setCompareStatus(friendlyVersionError(err), true);
         }
     }
 
     async function keepCompareBook(side) {
         flushCompareEditorToDraft();
-        if (side === "right" && compareRightIsCurrent) return;
+        if (side === draftSide()) return;
         const versionId = side === "left" ? compareLeftVersion?.id : compareRightVersion?.id;
         if (!versionId) return;
         await runRestore(versionId, "full");
@@ -547,27 +693,33 @@ export function mountBookVersionPanel(opts) {
         applyCompareEditorStyle(compareRightTitle);
     }
 
-    function flushCompareEditorToDraft() {
-        if (!compareActiveChapterId || !compareRightIsCurrent || typeof onCompareChapterEdit !== "function") return;
+    function readDraftContentFromEditor(editorEl) {
         const comic = isComicFormat(getCurrentBook()?.mediaFormat);
-        let content;
         if (comic) {
-            const caption = compareRightEditor.querySelector(".bv-comic-caption-input");
-            content = caption ? caption.value.trim() : "";
-        } else {
-            content = prepareEditorHtml(compareRightEditor.innerHTML);
+            const caption = editorEl.querySelector(".bv-comic-caption-input");
+            return caption ? caption.value.trim() : "";
         }
-        onCompareChapterEdit(compareActiveChapterId, content);
+        return prepareEditorHtml(editorEl.innerHTML);
     }
 
-    function onCompareRightInput() {
+    function flushCompareEditorToDraft() {
+        if (!compareActiveChapterId || typeof onCompareChapterEdit !== "function") return;
+        const side = draftSide();
+        if (side === "right") onCompareChapterEdit(compareActiveChapterId, readDraftContentFromEditor(compareRightEditor));
+        else if (side === "left") onCompareChapterEdit(compareActiveChapterId, readDraftContentFromEditor(compareLeftEditor));
+    }
+
+    function onCompareDraftInput(e) {
         flushCompareEditorToDraft();
+        const side = e.currentTarget === compareLeftEditor ? "left" : "right";
+        if (side === draftSide()) setKeptSide(side);
     }
 
     function bindCompareEditorInput() {
         if (compareInputBound) return;
         compareInputBound = true;
-        compareRightEditor.addEventListener("input", onCompareRightInput);
+        compareLeftEditor.addEventListener("input", onCompareDraftInput);
+        compareRightEditor.addEventListener("input", onCompareDraftInput);
     }
 
     function renderComicComparePane(container, chapter, editable) {
@@ -581,7 +733,7 @@ export function mountBookVersionPanel(opts) {
             : `<div class="bv-comic-caption-readonly">${caption ? escapeHtml(caption) : "No caption"}</div>`;
         container.innerHTML = imagesHtml + captionHtml;
         if (editable) {
-            container.querySelector(".bv-comic-caption-input")?.addEventListener("input", onCompareRightInput);
+            container.querySelector(".bv-comic-caption-input")?.addEventListener("input", onCompareDraftInput);
         }
     }
 
@@ -618,6 +770,7 @@ export function mountBookVersionPanel(opts) {
             compareLeftEditor.innerHTML = "";
             compareRightEditor.innerHTML = "";
             compareDiffNote.textContent = "Select a chapter.";
+            updateKeepButtonsState();
             return;
         }
 
@@ -625,10 +778,12 @@ export function mountBookVersionPanel(opts) {
         const leftCh = chapterFromSnapshot(left, chapterId);
         const rightCh = chapterFromSnapshot(right, chapterId);
         const comic = isComicFormat(getCurrentBook()?.mediaFormat);
+        const draft = draftSide();
+        const leftEditable = draft === "left";
+        const rightEditable = draft === "right";
 
-        leftVersionLabel.textContent = compareLeftVersion ? versionDisplayLabel(compareLeftVersion) : "—";
-        rightVersionLabel.textContent = compareRightIsCurrent ? "Current draft" : versionDisplayLabel(compareRightVersion);
-        editableHint.classList.toggle("hidden", !compareRightIsCurrent);
+        leftVersionLabel.textContent = compareSideLabel("left");
+        rightVersionLabel.textContent = compareSideLabel("right");
 
         compareLeftTitle.textContent = leftCh.title || "Untitled";
         compareRightTitle.textContent = rightCh.title || "Untitled";
@@ -636,22 +791,28 @@ export function mountBookVersionPanel(opts) {
         compareEditorsEl.classList.toggle("is-comic", comic);
 
         if (comic) {
-            renderComicComparePane(compareLeftEditor, leftCh, false);
-            renderComicComparePane(compareRightEditor, rightCh, compareRightIsCurrent);
+            renderComicComparePane(compareLeftEditor, leftCh, leftEditable);
+            renderComicComparePane(compareRightEditor, rightCh, rightEditable);
+            compareLeftEditor.contentEditable = "false";
             compareRightEditor.contentEditable = "false";
         } else {
             compareLeftEditor.innerHTML = prepareEditorHtml(leftCh.content);
             compareRightEditor.innerHTML = prepareEditorHtml(rightCh.content);
-            compareRightEditor.contentEditable = compareRightIsCurrent ? "true" : "false";
-            compareRightEditor.classList.toggle("is-editable", compareRightIsCurrent);
-            if (compareRightIsCurrent) {
-                bindCompareEditorInput();
-                compareRightEditor.focus();
-            }
+            compareLeftEditor.contentEditable = leftEditable ? "true" : "false";
+            compareRightEditor.contentEditable = rightEditable ? "true" : "false";
+            compareLeftEditor.classList.toggle("is-editable", leftEditable);
+            compareRightEditor.classList.toggle("is-editable", rightEditable);
+            if (draft) bindCompareEditorInput();
         }
 
         applyCompareTypography();
-        compareDiffNote.textContent = buildCompareDiffNote(leftCh, rightCh, chapterId);
+        let diffNote = buildCompareDiffNote(leftCh, rightCh, chapterId);
+        const keptSide = getKeptSide();
+        if (keptSide === "right" && compareRightIsCurrent) diffNote = `${diffNote} · Your draft is on the right`;
+        if (keptSide === "left" && compareLeftIsCurrent) diffNote = `${diffNote} · Your draft is on the left`;
+        compareDiffNote.textContent = diffNote;
+        const activeKept = getKeptSide();
+        if (activeKept) compareKeptSideByChapter[chapterId] = activeKept;
         updateKeepButtonsState();
     }
 
@@ -683,7 +844,15 @@ export function mountBookVersionPanel(opts) {
                   .map(row => {
                       const active = row.id === compareActiveChapterId ? " is-active" : "";
                       const tag = row.status !== "unchanged" ? `<span class="tag">${escapeHtml(statusLabel(row.status))}</span>` : "";
-                      return `<button type="button" class="${active.trim()}" data-ch-id="${escapeHtml(row.id)}">${escapeHtml(row.title)}${tag}</button>`;
+                      const keptSide =
+                          compareKeptSideByChapter[row.id] || (row.id === compareActiveChapterId ? getKeptSide() : null);
+                      const kept =
+                          keptSide === "left"
+                              ? `<span class="tag kept">Using left</span>`
+                              : keptSide === "right"
+                                ? `<span class="tag kept">Using right</span>`
+                                : "";
+                      return `<button type="button" class="${active.trim()}" data-ch-id="${escapeHtml(row.id)}">${escapeHtml(row.title)}${tag}${kept}</button>`;
                   })
                   .join("")
             : `<p class="bv-empty" style="padding:8px;">No chapters to show.</p>`;
@@ -702,36 +871,54 @@ export function mountBookVersionPanel(opts) {
     }
 
     function updateCompareSub() {
-        const leftLabel = compareLeftVersion ? versionDisplayLabel(compareLeftVersion) : "—";
-        const rightLabel = compareRightIsCurrent ? "Current draft" : versionDisplayLabel(compareRightVersion);
-        const lw = compareLeftVersion?.word_count || 0;
+        const leftLabel = compareSideLabel("left");
+        const rightLabel = compareSideLabel("right");
+        const lw = compareLeftIsCurrent ? currentWordCount() : compareLeftVersion?.word_count || 0;
         const rw = compareRightIsCurrent ? currentWordCount() : compareRightVersion?.word_count || 0;
-        compareSub.textContent = `${leftLabel} → ${rightLabel} · ${Number(lw).toLocaleString()} vs ${Number(rw).toLocaleString()} words`;
+        compareSub.textContent = `${leftLabel} ↔ ${rightLabel} · ${Number(lw).toLocaleString()} vs ${Number(rw).toLocaleString()} words`;
     }
 
     async function loadCompareSide(which, versionId) {
         const bookId = getBookId();
         if (versionId === "current") {
-            if (which === "right") {
+            if (which === "left") {
+                compareLeftIsCurrent = true;
+                compareLeftVersion = null;
+            } else {
                 compareRightIsCurrent = true;
                 compareRightVersion = null;
             }
             return;
         }
         const full = await getBookVersion({ supabase, isLocalStudio, bookId, versionId });
-        if (which === "left") compareLeftVersion = full;
-        else {
+        if (which === "left") {
+            compareLeftVersion = full;
+            compareLeftIsCurrent = false;
+        } else {
             compareRightVersion = full;
             compareRightIsCurrent = false;
         }
     }
 
+    async function reloadCompareSides() {
+        const leftVal = compareLeftSelect.value;
+        const rightVal = compareRightSelect.value;
+        compareLeftIsCurrent = leftVal === "current";
+        compareRightIsCurrent = rightVal === "current";
+        compareLeftVersion = null;
+        compareRightVersion = null;
+        if (!compareLeftIsCurrent) await loadCompareSide("left", leftVal);
+        if (!compareRightIsCurrent) await loadCompareSide("right", rightVal);
+    }
+
     async function openCompare(versionId) {
         if (!(await guardUnsaved("comparing"))) return;
         await ensureFlushedBook();
+        resetKeptSides();
         populateCompareVersionSelects();
         compareLeftSelect.value = versionId;
         compareRightSelect.value = "current";
+        compareLeftIsCurrent = false;
         compareRightIsCurrent = true;
         compareRightVersion = null;
         selectedVersionId = versionId;
@@ -741,7 +928,9 @@ export function mountBookVersionPanel(opts) {
             populateCompareChapterUi();
             compareOverlay.classList.add("open");
             compareOverlay.setAttribute("aria-hidden", "false");
+            document.body.classList.add("bv-compare-open");
             setPanelStatus("");
+            setCompareStatus("");
             renderList();
         } catch (err) {
             console.error(err);
@@ -753,6 +942,8 @@ export function mountBookVersionPanel(opts) {
         flushCompareEditorToDraft();
         compareOverlay.classList.remove("open");
         compareOverlay.setAttribute("aria-hidden", "true");
+        document.body.classList.remove("bv-compare-open");
+        setCompareStatus("");
     }
 
     async function maybeAutoVersionAfterSave() {
@@ -818,36 +1009,30 @@ export function mountBookVersionPanel(opts) {
 
     compareLeftSelect.addEventListener("change", () => void (async () => {
         flushCompareEditorToDraft();
-        await loadCompareSide("left", compareLeftSelect.value);
+        normalizeCompareVersionSelects("left");
+        resetKeptSides();
+        await reloadCompareSides();
         populateCompareChapterUi();
     })());
 
     compareRightSelect.addEventListener("change", () => void (async () => {
         flushCompareEditorToDraft();
-        const val = compareRightSelect.value;
-        if (val === "current") {
-            compareRightIsCurrent = true;
-            compareRightVersion = null;
-        } else {
-            await loadCompareSide("right", val);
-        }
+        normalizeCompareVersionSelects("right");
+        resetKeptSides();
+        await reloadCompareSides();
         populateCompareChapterUi();
     })());
 
     root.querySelector("#bvCompareSwapBtn").addEventListener("click", () => {
         flushCompareEditorToDraft();
-        const leftVal = compareLeftSelect.value;
-        const rightVal = compareRightSelect.value;
-        compareLeftSelect.value = rightVal === "current" ? leftVal : rightVal;
-        compareRightSelect.value = leftVal === compareRightSelect.value ? "current" : leftVal;
+        const newLeft = compareRightSelect.value;
+        const newRight = compareLeftSelect.value;
+        compareLeftSelect.value = newLeft;
+        compareRightSelect.value = newRight;
+        normalizeCompareVersionSelects("left");
+        resetKeptSides();
         void (async () => {
-            await loadCompareSide("left", compareLeftSelect.value);
-            if (compareRightSelect.value === "current") {
-                compareRightIsCurrent = true;
-                compareRightVersion = null;
-            } else {
-                await loadCompareSide("right", compareRightSelect.value);
-            }
+            await reloadCompareSides();
             populateCompareChapterUi();
         })();
     });
