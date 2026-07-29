@@ -94,6 +94,8 @@
         .eyebrow { font-size: 12px; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase; color: #c4b5fd; margin-bottom: 8px; }
         .book-title { margin: 0; font-size: 34px; line-height: 1.08; font-weight: 900; }
         .book-author { margin-top: 8px; color: var(--muted); font-size: 15px; font-weight: 700; }
+        .book-author-link, .sidebar-author-link { color: inherit; text-decoration: none; }
+        .book-author-link:hover, .sidebar-author-link:hover { color: #c4b5fd; text-decoration: underline; }
         .book-summary { margin-top: 14px; color: var(--muted); font-size: 15px; line-height: 1.65; white-space: pre-wrap; }
         .hero-stats { margin-top: 18px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
         .stat { background: var(--panel-2); border: 1px solid var(--border); border-radius: 16px; padding: 14px; }
@@ -151,7 +153,23 @@
             padding: 24px 12px;
         }
         .reader-tools { max-width: var(--reader-max); margin: 18px auto 0; display: flex; gap: 10px; flex-wrap: wrap; }
-        .likes-card, .comments-card { max-width: var(--reader-max); margin: 18px auto 0; background: var(--panel); border: 1px solid var(--border); border-radius: 24px; box-shadow: var(--shadow); padding: 18px; }
+        .likes-card, .comments-card, .author-end-card { max-width: var(--reader-max); margin: 18px auto 0; background: var(--panel); border: 1px solid var(--border); border-radius: 24px; box-shadow: var(--shadow); padding: 18px; }
+        .author-end-header { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; margin-bottom: 14px; }
+        .author-end-avatar { width: 72px; height: 72px; border-radius: 999px; overflow: hidden; flex-shrink: 0; border: 1px solid var(--border); background: linear-gradient(135deg, rgba(109,40,217,0.28), rgba(255,255,255,0.06)); display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 900; color: #ede9fe; }
+        .author-end-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .author-end-title { margin: 0; font-size: 22px; font-weight: 900; }
+        .author-end-name { margin-top: 6px; font-size: 14px; font-weight: 700; color: var(--muted); }
+        .author-end-bio { font-size: 15px; line-height: 1.7; color: var(--text); white-space: pre-wrap; }
+        .author-end-bio.empty { color: var(--muted); font-style: italic; }
+        .author-end-works { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--border); }
+        .author-end-works-title { margin: 0 0 12px; font-size: 17px; font-weight: 900; }
+        .author-works-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+        .author-work-card { border: 1px solid var(--border); background: var(--panel-2); border-radius: 16px; padding: 12px; cursor: pointer; transition: border-color 0.12s ease, transform 0.12s ease; }
+        .author-work-card:hover { border-color: rgba(167,139,250,0.32); transform: translateY(-1px); }
+        .author-work-title { font-size: 15px; font-weight: 900; line-height: 1.25; word-break: break-word; }
+        .author-work-meta { margin-top: 6px; font-size: 12px; font-weight: 700; color: var(--muted); }
+        .author-end-actions { margin-top: 16px; }
+        @media (max-width: 760px) { .author-works-grid { grid-template-columns: 1fr; } }
         .likes-title, .comments-title { font-size: 18px; font-weight: 900; margin-bottom: 12px; }
         .likes-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
         .kudos-note, .kudos-count { color: var(--muted); font-size: 14px; line-height: 1.5; }
@@ -182,7 +200,7 @@
         .comment-form { display: grid; gap: 10px; }
         .comment-input { width: 100%; min-height: 110px; resize: vertical; border-radius: 16px; border: 1px solid var(--border); background: var(--panel-2); color: var(--text); padding: 12px; outline: none; font-family: inherit; font-size: 15px; line-height: 1.6; }
         .footer-space { height: 40px; }
-        @media (min-width: 1080px) { .hero { display: none; } .page-main { min-width: 0; } .reader-card, .nav-row, .reader-tools, .likes-card, .comments-card, .status, .error-box { max-width: none; } }
+        @media (min-width: 1080px) { .hero { display: none; } .page-main { min-width: 0; } .reader-card, .nav-row, .reader-tools, .likes-card, .comments-card, .author-end-card, .status, .error-box { max-width: none; } }
         @media (max-width: 1079px) { .reader-layout { grid-template-columns: 1fr; } }
         @media (max-width: 760px) { .topbar { grid-template-columns: auto minmax(0, 1fr) auto; } .topbar-center { max-width: none; } .hero-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } .book-title { font-size: 28px; } .chapter-title { font-size: 26px; } .content { font-size: calc(var(--font-size) - 2px); } .likes-row { align-items: stretch; } }
         @media (max-width: 520px) { #betaReadTopBtn, #readerProfileTopBtn, #allNotesTopBtn { padding: 8px 10px; font-size: 12px; } }
@@ -275,6 +293,26 @@
             <div class="reader-tools"><button class="btn primary" id="bookmarkBtn">Bookmark This Chapter</button><button class="btn" id="resumeBtn">Resume Where I Left Off</button><button class="btn btn-report hidden" id="reportBookBtn" type="button">Report Book</button></div>
             <div class="likes-card"><div class="likes-title">Kudos</div><div class="likes-row"><button class="btn primary" id="likeBtn">❤️ Leave Kudos</button><div class="kudos-note">One Per User.</div></div><div class="kudos-count" id="likeCount">0 kudos</div></div>
             <div class="comments-card"><div class="comments-title">Comments</div><div class="comment-list" id="commentList"></div><div class="comment-form"><textarea class="comment-input" id="commentInput" placeholder="Write a comment…"></textarea><button class="btn primary" id="postCommentBtn">Post Comment</button></div></div>
+            <div class="author-end-card hidden" id="authorEndCard" aria-labelledby="authorEndTitle">
+                <div class="author-end-header">
+                    <div class="author-end-avatar" id="authorEndAvatar" aria-hidden="true">
+                        <span id="authorEndAvatarInitial">A</span>
+                        <img id="authorEndAvatarImg" alt="" hidden />
+                    </div>
+                    <div>
+                        <h2 class="author-end-title" id="authorEndTitle">About the Author</h2>
+                        <div class="author-end-name" id="authorEndName"></div>
+                    </div>
+                </div>
+                <div class="author-end-bio" id="authorEndBio"></div>
+                <div class="author-end-works hidden" id="authorEndWorks">
+                    <h3 class="author-end-works-title" id="authorEndWorksTitle">Other works by this author</h3>
+                    <div class="author-works-grid" id="authorWorksGrid"></div>
+                </div>
+                <div class="author-end-actions">
+                    <a class="btn primary" id="authorEndProfileLink" href="#">View author page</a>
+                </div>
+            </div>
             <div class="footer-space"></div>
         </main>
     </div>
@@ -300,6 +338,14 @@
         isValidReactionType,
     } from "./js/chapter-reactions.js?v=2";
     import { readerReactionAuthorPrompt } from "./js/chapter-reactions-ui.js?v=1";
+    import {
+        authorInitial,
+        authorLinkHtml,
+        authorPageUrl,
+        escapeHtml,
+        fetchPublishedWorksForAuthor,
+        normalizeAuthorProfile,
+    } from "./js/author-profile.js?v=1";
 
     const params = new URLSearchParams(window.location.search);
     let bookId =
@@ -312,15 +358,14 @@
         localStorage.getItem("alysum-last-book") ||
         "";
 
-    const backBtn = document.getElementById("backBtn"), themeBtn = document.getElementById("themeBtn"), fontMinusBtn = document.getElementById("fontMinusBtn"), fontPlusBtn = document.getElementById("fontPlusBtn"), menuBtn = document.getElementById("menuBtn"), mobileDrawer = document.getElementById("mobileDrawer"), drawerBackdrop = document.getElementById("drawerBackdrop"), closeDrawerBtn = document.getElementById("closeDrawerBtn"), topbarTitle = document.getElementById("topbarTitle"), topbarSubtitle = document.getElementById("topbarSubtitle"), betaReadTopBtn = document.getElementById("betaReadTopBtn"), readerProfileTopBtn = document.getElementById("readerProfileTopBtn"), allNotesTopBtn = document.getElementById("allNotesTopBtn"), statusBox = document.getElementById("statusBox"), errorBox = document.getElementById("errorBox"), bookTitle = document.getElementById("bookTitle"), bookAuthor = document.getElementById("bookAuthor"), bookSummary = document.getElementById("bookSummary"), statChapters = document.getElementById("statChapters"), statWords = document.getElementById("statWords"), statReads = document.getElementById("statReads"), statType = document.getElementById("statType"), statRating = document.getElementById("statRating"), tagList = document.getElementById("tagList"), warningList = document.getElementById("warningList"), sideBookTitle = document.getElementById("sideBookTitle"), sideBookAuthor = document.getElementById("sideBookAuthor"), sideBookSummary = document.getElementById("sideBookSummary"), sideTagList = document.getElementById("sideTagList"), sideWarningList = document.getElementById("sideWarningList"), drawerBookTitle = document.getElementById("drawerBookTitle"), drawerBookAuthor = document.getElementById("drawerBookAuthor"), drawerBookSummary = document.getElementById("drawerBookSummary"), drawerTagList = document.getElementById("drawerTagList"), drawerWarningList = document.getElementById("drawerWarningList"), prevBtn = document.getElementById("prevBtn"), nextBtn = document.getElementById("nextBtn"), nextChapterBottomBtn = document.getElementById("nextChapterBottomBtn"), chapterIndicator = document.getElementById("chapterIndicator"), chapterTitle = document.getElementById("chapterTitle"), chapterMeta = document.getElementById("chapterMeta"), content = document.getElementById("content"), bookmarkBtn = document.getElementById("bookmarkBtn"), resumeBtn = document.getElementById("resumeBtn"), reportBookBtn = document.getElementById("reportBookBtn"), likeBtn = document.getElementById("likeBtn"), likeCount = document.getElementById("likeCount"), chapterReactionsTitle = document.getElementById("chapterReactionsTitle"), chapterReactionsGrid = document.getElementById("chapterReactionsGrid"), commentList = document.getElementById("commentList"), commentInput = document.getElementById("commentInput"), postCommentBtn = document.getElementById("postCommentBtn");
+    const backBtn = document.getElementById("backBtn"), themeBtn = document.getElementById("themeBtn"), fontMinusBtn = document.getElementById("fontMinusBtn"), fontPlusBtn = document.getElementById("fontPlusBtn"), menuBtn = document.getElementById("menuBtn"), mobileDrawer = document.getElementById("mobileDrawer"), drawerBackdrop = document.getElementById("drawerBackdrop"), closeDrawerBtn = document.getElementById("closeDrawerBtn"), topbarTitle = document.getElementById("topbarTitle"), topbarSubtitle = document.getElementById("topbarSubtitle"), betaReadTopBtn = document.getElementById("betaReadTopBtn"), readerProfileTopBtn = document.getElementById("readerProfileTopBtn"), allNotesTopBtn = document.getElementById("allNotesTopBtn"), statusBox = document.getElementById("statusBox"), errorBox = document.getElementById("errorBox"), bookTitle = document.getElementById("bookTitle"), bookAuthor = document.getElementById("bookAuthor"), bookSummary = document.getElementById("bookSummary"), statChapters = document.getElementById("statChapters"), statWords = document.getElementById("statWords"), statReads = document.getElementById("statReads"), statType = document.getElementById("statType"), statRating = document.getElementById("statRating"), tagList = document.getElementById("tagList"), warningList = document.getElementById("warningList"), sideBookTitle = document.getElementById("sideBookTitle"), sideBookAuthor = document.getElementById("sideBookAuthor"), sideBookSummary = document.getElementById("sideBookSummary"), sideTagList = document.getElementById("sideTagList"), sideWarningList = document.getElementById("sideWarningList"), drawerBookTitle = document.getElementById("drawerBookTitle"), drawerBookAuthor = document.getElementById("drawerBookAuthor"), drawerBookSummary = document.getElementById("drawerBookSummary"), drawerTagList = document.getElementById("drawerTagList"), drawerWarningList = document.getElementById("drawerWarningList"), prevBtn = document.getElementById("prevBtn"), nextBtn = document.getElementById("nextBtn"), nextChapterBottomBtn = document.getElementById("nextChapterBottomBtn"), chapterIndicator = document.getElementById("chapterIndicator"), chapterTitle = document.getElementById("chapterTitle"), chapterMeta = document.getElementById("chapterMeta"), content = document.getElementById("content"), bookmarkBtn = document.getElementById("bookmarkBtn"), resumeBtn = document.getElementById("resumeBtn"), reportBookBtn = document.getElementById("reportBookBtn"), likeBtn = document.getElementById("likeBtn"), likeCount = document.getElementById("likeCount"), chapterReactionsTitle = document.getElementById("chapterReactionsTitle"), chapterReactionsGrid = document.getElementById("chapterReactionsGrid"), commentList = document.getElementById("commentList"), commentInput = document.getElementById("commentInput"), postCommentBtn = document.getElementById("postCommentBtn"), authorEndCard = document.getElementById("authorEndCard"), authorEndAvatarInitial = document.getElementById("authorEndAvatarInitial"), authorEndAvatarImg = document.getElementById("authorEndAvatarImg"), authorEndName = document.getElementById("authorEndName"), authorEndBio = document.getElementById("authorEndBio"), authorEndWorks = document.getElementById("authorEndWorks"), authorEndWorksTitle = document.getElementById("authorEndWorksTitle"), authorWorksGrid = document.getElementById("authorWorksGrid"), authorEndProfileLink = document.getElementById("authorEndProfileLink");
 
-    let currentUser = null, currentBook = null, librarySourceRow = null, currentChapterIndex = 0, isLoaded = false, currentFontSize = 22, hasLikedThisBook = false, readerWatermarkProfileUser = null, bookOwnerHandle = null, chapterReactionBusy = false, userChapterReactionTypes = new Set();
+    let currentUser = null, currentBook = null, librarySourceRow = null, currentChapterIndex = 0, isLoaded = false, currentFontSize = 22, hasLikedThisBook = false, readerWatermarkProfileUser = null, bookOwnerHandle = null, authorOwnerProfile = null, chapterReactionBusy = false, userChapterReactionTypes = new Set();
 
     installReaderCopyGuards(content, { isActive: () => isLoaded && !!currentBook });
 
     function safeString(value, fallback = "") { return typeof value === "string" ? value : fallback; }
-    function escapeHtml(str) { return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
-    function escapeAttribute(str) { return escapeHtml(str).replace(/"/g, "&quot;"); }
+    function escapeAttribute(str) { return escapeHtml(str).replace(/"/g, "&quot;").replace(/`/g, "&#096;"); }
     function safeNumber(value, fallback = 0) { return typeof value === "number" && Number.isFinite(value) ? value : fallback; }
     function safeArray(value, fallback = []) { return Array.isArray(value) ? value : fallback; }
     function safeObject(value, fallback = {}) { return value && typeof value === "object" && !Array.isArray(value) ? value : fallback; }
@@ -483,7 +528,108 @@
     function applyTheme(theme) { document.body.classList.toggle("light", theme === "light"); localStorage.setItem("alysum-reader-theme", theme); themeBtn.textContent = theme === "light" ? "Dark" : "Light"; }
     function applyFontSize(size) { const next = Math.max(16, Math.min(32, size)); document.documentElement.style.setProperty("--font-size", `${next}px`); localStorage.setItem("alysum-reader-font-size", String(next)); }
     function renderChipList(target, values, emptyText) { target.innerHTML = ""; if (values.length) values.forEach(value => { const chip = document.createElement("div"); chip.className = "chip"; chip.textContent = value; target.appendChild(chip); }); else target.innerHTML = `<div class="chip">${emptyText}</div>`; }
-    function renderMeta() { if (!currentBook) return; const comic = isComicFormat(currentBook.mediaFormat); bookTitle.textContent = currentBook.title; bookAuthor.textContent = "@" + currentBook.author; bookSummary.textContent = currentBook.summary || "No summary yet."; sideBookTitle.textContent = currentBook.title; sideBookAuthor.textContent = "@" + currentBook.author; sideBookSummary.textContent = currentBook.summary || "No summary yet."; drawerBookTitle.textContent = currentBook.title; drawerBookAuthor.textContent = "@" + currentBook.author; drawerBookSummary.textContent = currentBook.summary || "No summary yet."; topbarTitle.textContent = currentBook.title; statChapters.textContent = formatNumber(currentBook.chapterCount || currentBook.chapters.length); statWords.textContent = comic ? mediaFormatLabel(currentBook.mediaFormat) : formatNumber(currentBook.words); statReads.textContent = formatNumber(currentBook.views); statType.textContent = comic ? mediaFormatLabel(currentBook.mediaFormat) : (currentBook.type || "—"); statRating.textContent = currentBook.rating || "—"; renderChipList(tagList, currentBook.tags, "No tags listed"); renderChipList(warningList, currentBook.warnings, "No warnings listed"); renderChipList(sideTagList, currentBook.tags, "No tags listed"); renderChipList(sideWarningList, currentBook.warnings, "No warnings listed"); renderChipList(drawerTagList, currentBook.tags, "No tags listed"); renderChipList(drawerWarningList, currentBook.warnings, "No warnings listed"); }
+    function renderAuthorLinks() {
+        const label = currentBook?.author || bookOwnerHandle || "unknown";
+        const username = bookOwnerHandle;
+        const isAnon = currentBook?.isAnonymous;
+        const html = isAnon || !username
+            ? `@${escapeHtml(label)}`
+            : authorLinkHtml({ username, label, className: "book-author-link" });
+        const sidebarHtml = isAnon || !username
+            ? `@${escapeHtml(label)}`
+            : authorLinkHtml({ username, label, className: "sidebar-author-link" });
+        if (bookAuthor) bookAuthor.innerHTML = html;
+        if (sideBookAuthor) sideBookAuthor.innerHTML = sidebarHtml;
+        if (drawerBookAuthor) drawerBookAuthor.innerHTML = sidebarHtml;
+    }
+
+    function renderAuthorEndAvatar(profile) {
+        if (!authorEndAvatarInitial || !authorEndAvatarImg) return;
+        const initial = authorInitial(profile?.displayName || profile?.username || currentBook?.author);
+        authorEndAvatarInitial.textContent = initial;
+        const imageUrl = profile?.profileImageUrl || "";
+        if (imageUrl) {
+            authorEndAvatarImg.src = imageUrl;
+            authorEndAvatarImg.alt = `${profile.displayName} profile picture`;
+            authorEndAvatarImg.hidden = false;
+            authorEndAvatarInitial.hidden = true;
+            authorEndAvatarImg.onerror = () => {
+                authorEndAvatarImg.hidden = true;
+                authorEndAvatarInitial.hidden = false;
+            };
+        } else {
+            authorEndAvatarImg.hidden = true;
+            authorEndAvatarInitial.hidden = false;
+        }
+    }
+
+    async function renderAuthorEndSection() {
+        if (!authorEndCard) return;
+        if (currentBook?.isAnonymous || !authorOwnerProfile?.username) {
+            authorEndCard.classList.add("hidden");
+            return;
+        }
+
+        const profile = authorOwnerProfile;
+        authorEndCard.classList.remove("hidden");
+        if (authorEndName) {
+            authorEndName.innerHTML = authorLinkHtml({
+                username: profile.username,
+                label: profile.displayName,
+                className: "sidebar-author-link",
+            });
+        }
+        if (authorEndBio) {
+            if (profile.bio) {
+                authorEndBio.textContent = profile.bio;
+                authorEndBio.classList.remove("empty");
+            } else {
+                authorEndBio.textContent = "This author hasn't added a biography yet.";
+                authorEndBio.classList.add("empty");
+            }
+        }
+        renderAuthorEndAvatar(profile);
+
+        const profileUrl = authorPageUrl(profile.username);
+        if (authorEndProfileLink && profileUrl) authorEndProfileLink.href = profileUrl;
+
+        try {
+            const works = await fetchPublishedWorksForAuthor(supabase, profile.id, { excludeBookId: bookId });
+            if (!authorWorksGrid || !authorEndWorks || !authorEndWorksTitle) return;
+            authorWorksGrid.innerHTML = "";
+            if (!works.length) {
+                authorEndWorks.classList.add("hidden");
+                return;
+            }
+            authorEndWorksTitle.textContent = `Other works by ${profile.displayName}`;
+            authorEndWorks.classList.remove("hidden");
+            for (const work of works.slice(0, 6)) {
+                const card = document.createElement("article");
+                card.className = "author-work-card";
+                card.tabIndex = 0;
+                card.innerHTML = `
+                    <div class="author-work-title">${escapeHtml(work.title)}</div>
+                    <div class="author-work-meta">${work.chapterCount} chapter${work.chapterCount === 1 ? "" : "s"}</div>
+                `;
+                const openWork = () => {
+                    window.location.href = `read.html?book=${encodeURIComponent(work.id)}`;
+                };
+                card.addEventListener("click", openWork);
+                card.addEventListener("keydown", (e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        openWork();
+                    }
+                });
+                authorWorksGrid.appendChild(card);
+            }
+        } catch (err) {
+            console.warn("Could not load other works for author.", err);
+            authorEndWorks?.classList.add("hidden");
+        }
+    }
+
+    function renderMeta() { if (!currentBook) return; const comic = isComicFormat(currentBook.mediaFormat); bookTitle.textContent = currentBook.title; renderAuthorLinks(); bookSummary.textContent = currentBook.summary || "No summary yet."; sideBookTitle.textContent = currentBook.title; sideBookSummary.textContent = currentBook.summary || "No summary yet."; drawerBookTitle.textContent = currentBook.title; drawerBookSummary.textContent = currentBook.summary || "No summary yet."; topbarTitle.textContent = currentBook.title; statChapters.textContent = formatNumber(currentBook.chapterCount || currentBook.chapters.length); statWords.textContent = comic ? mediaFormatLabel(currentBook.mediaFormat) : formatNumber(currentBook.words); statReads.textContent = formatNumber(currentBook.views); statType.textContent = comic ? mediaFormatLabel(currentBook.mediaFormat) : (currentBook.type || "—"); statRating.textContent = currentBook.rating || "—"; renderChipList(tagList, currentBook.tags, "No tags listed"); renderChipList(warningList, currentBook.warnings, "No warnings listed"); renderChipList(sideTagList, currentBook.tags, "No tags listed"); renderChipList(sideWarningList, currentBook.warnings, "No warnings listed"); renderChipList(drawerTagList, currentBook.tags, "No tags listed"); renderChipList(drawerWarningList, currentBook.warnings, "No warnings listed"); }
     function goToNextChapter() {
         if (!currentBook || currentChapterIndex >= currentBook.chapters.length - 1) return;
         currentChapterIndex++;
@@ -696,7 +842,43 @@
 
     function updateReaderWatermark() { const sheet = document.getElementById("readerWatermarkSheet"); const footer = document.getElementById("readerWatermarkFooter"); if (!sheet || !footer) return; if (!bookId || !currentBook) { sheet.innerHTML = ""; footer.textContent = ""; return; } const ownerName = bookOwnerHandle || currentBook.author || null; applyReaderWatermark(sheet, footer, { bookId, currentUser, profileUsername: readerWatermarkProfileUser, bookOwnerUsername: ownerName }); }
     async function syncReaderWatermarkProfile() { const u = currentUser; if (!u?.id) { readerWatermarkProfileUser = null; updateReaderWatermark(); return; } try { const { data } = await supabase.from("users").select("username").eq("id", u.id).maybeSingle(); readerWatermarkProfileUser = String(data?.username || "").trim() || null; } catch { readerWatermarkProfileUser = null; } updateReaderWatermark(); }
-    async function syncBookOwnerHandle() { if (currentBook?.isAnonymous) { bookOwnerHandle = "Anonymous"; updateReaderWatermark(); updateChapterReactionsTitle(); return; } const ownerUid = currentBook?.ownerUid; if (!ownerUid) { bookOwnerHandle = null; updateReaderWatermark(); updateChapterReactionsTitle(); return; } try { const { data } = await supabase.from("users").select("username").eq("id", ownerUid).maybeSingle(); bookOwnerHandle = String(data?.username || "").trim() || null; } catch { bookOwnerHandle = null; } updateReaderWatermark(); updateChapterReactionsTitle(); }
+    async function syncBookOwnerHandle() {
+        if (currentBook?.isAnonymous) {
+            bookOwnerHandle = "Anonymous";
+            authorOwnerProfile = null;
+            updateReaderWatermark();
+            updateChapterReactionsTitle();
+            renderAuthorLinks();
+            authorEndCard?.classList.add("hidden");
+            return;
+        }
+        const ownerUid = currentBook?.ownerUid;
+        if (!ownerUid) {
+            bookOwnerHandle = null;
+            authorOwnerProfile = null;
+            updateReaderWatermark();
+            updateChapterReactionsTitle();
+            renderAuthorLinks();
+            authorEndCard?.classList.add("hidden");
+            return;
+        }
+        try {
+            const { data } = await supabase
+                .from("users")
+                .select("id, username, display_name, bio, profile_image_url")
+                .eq("id", ownerUid)
+                .maybeSingle();
+            authorOwnerProfile = normalizeAuthorProfile(data);
+            bookOwnerHandle = authorOwnerProfile?.username || String(data?.username || "").trim() || null;
+        } catch {
+            bookOwnerHandle = null;
+            authorOwnerProfile = null;
+        }
+        updateReaderWatermark();
+        updateChapterReactionsTitle();
+        renderAuthorLinks();
+        void renderAuthorEndSection();
+    }
 
     async function loadBook() {
         if (!bookId) bookId = await findFallbackBookId();

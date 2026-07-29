@@ -85,6 +85,8 @@
     .card-title-wrap { min-width: 0; }
     .card-title { font-size: 22px; font-weight: 900; line-height: 1.15; word-break: break-word; }
     .card-author { margin-top: 6px; font-size: 14px; color: var(--text-soft); font-weight: 700; }
+    .card-author-link, .cover-author-link { color: inherit; text-decoration: none; }
+    .card-author-link:hover, .cover-author-link:hover { color: #c4b5fd; text-decoration: underline; }
     .rating-badge { flex: 0 0 auto; border-radius: 999px; padding: 8px 12px; background: rgba(109,40,217,0.18); color: #ddd6fe; font-size: 12px; font-weight: 900; letter-spacing: 0.04em; text-transform: uppercase; }
     .meta-row { display: flex; gap: 8px; flex-wrap: wrap; }
     .chip { background: var(--chip); border: 1px solid rgba(255,255,255,0.06); color: var(--text); border-radius: 999px; padding: 7px 11px; font-size: 12px; font-weight: 800; line-height: 1.2; }
@@ -182,6 +184,11 @@
         mediaFormatLabel,
         normalizeMediaFormat,
     } from "./js/book-media-format.js?v=1";
+    import {
+        authorLinkHtml,
+        authorPageUrl,
+        fetchUsernamesByIds,
+    } from "./js/author-profile.js?v=1";
 
     const navButtons = document.querySelectorAll(".nav-btn");
     const searchInput = document.getElementById("searchInput");
@@ -196,6 +203,7 @@
     let currentFilter = "all";
     let currentUserId = null;
     const readCounts = new Map();
+    let authorUsernameMap = new Map();
 
     async function loadCurrentUser() {
         const { data: authData, error: authError } = await supabase.auth.getUser();
@@ -248,9 +256,45 @@
             words: safeNumber(data.words, 0),
             views: safeNumber(data.views, 0),
             ownerUid: safeString(data.ownerUid || data.user_id || row?.user_id, ""),
+            isAnonymous: !!(data.isAnonymous ?? data.is_anonymous),
             updated: safeNumber(data.updated, 0),
             isPublished: data.isPublished !== false
         };
+    }
+
+    function authorMarkup(book) {
+        const label = escapeHtml(book.author);
+        if (book.isAnonymous) return `@${label}`;
+        const username = authorUsernameMap.get(book.ownerUid);
+        if (!username) return `@${label}`;
+        return authorLinkHtml({ username, label: book.author, className: "card-author-link" });
+    }
+
+    function coverAuthorMarkup(book) {
+        const label = escapeHtml(book.author);
+        if (book.isAnonymous) return `@${label}`;
+        const username = authorUsernameMap.get(book.ownerUid);
+        if (!username) return `@${label}`;
+        const url = authorPageUrl(username);
+        return `<a class="cover-author-link" href="${escapeAttribute(url)}">@${label}</a>`;
+    }
+
+    async function loadAuthorUsernames() {
+        authorUsernameMap = new Map();
+        const ownerIds = allBooks
+            .filter((book) => !book.isAnonymous && book.ownerUid)
+            .map((book) => book.ownerUid);
+        try {
+            authorUsernameMap = await fetchUsernamesByIds(supabase, ownerIds);
+        } catch (err) {
+            console.warn("Could not load author usernames for library links.", err);
+        }
+    }
+
+    function bindAuthorLinkStopPropagation(root) {
+        root.querySelectorAll(".card-author-link, .cover-author-link").forEach((link) => {
+            link.addEventListener("click", (e) => e.stopPropagation());
+        });
     }
 
     function formatNumber(num) { return new Intl.NumberFormat().format(num || 0); }
@@ -281,7 +325,7 @@
                         <div class="cover-placeholder-title-wrap">
                             <div class="cover-placeholder-title">${escapeHtml(book.title)}</div>
                         </div>
-                        <div class="cover-placeholder-author">@${escapeHtml(book.author)}</div>
+                        <div class="cover-placeholder-author">${coverAuthorMarkup(book)}</div>
                     </div>
                 </div>`;
     }
@@ -361,7 +405,7 @@
                 <div class="card-top">
                     <div class="card-title-wrap">
                         <div class="card-title">${escapeHtml(book.title)}</div>
-                        <div class="card-author">@${escapeHtml(book.author)}</div>
+                        <div class="card-author">${authorMarkup(book)}</div>
                     </div>
                     <div class="rating-badge">${escapeHtml(rating)}</div>
                 </div>
@@ -385,6 +429,7 @@
             `;
             const openBook = () => { window.location.href = "read.html?book=" + encodeURIComponent(book.id); };
             card.addEventListener("click", openBook);
+            bindAuthorLinkStopPropagation(card);
             card.querySelector(".read-btn").addEventListener("click", (e) => { e.stopPropagation(); openBook(); });
             const reportBtn = card.querySelector(".report-card-btn");
             reportBtn?.addEventListener("click", (e) => {
@@ -431,7 +476,7 @@
 
             if (error) throw error;
             allBooks = (data || []).map(normalizeBook).filter(book => book.id);
-            await loadReadCounts();
+            await Promise.all([loadReadCounts(), loadAuthorUsernames()]);
             renderBooks();
         } catch (error) {
             console.error(error);

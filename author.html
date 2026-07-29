@@ -1,0 +1,416 @@
+<!DOCTYPE html><html lang="en">
+<head>
+    <!-- ALYSUM:PWA:START -->
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta name="theme-color" content="#7c3aed" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#020b18" media="(prefers-color-scheme: dark)">
+    <meta name="color-scheme" content="dark light">
+    <meta name="application-name" content="Alysum">
+    <meta name="msapplication-TileColor" content="#7c3aed">
+    <meta name="msapplication-TileImage" content="Alysum-3.png">
+    <link rel="icon" type="image/png" sizes="any" href="Alysum-3.png">
+    <link rel="apple-touch-icon" href="Alysum-3.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="Alysum-3.png">
+    <script src="js/pwa-register.js" defer></script>
+    <!-- ALYSUM:PWA:END -->
+    <!-- ALYSUM:ANALYTICS:START -->
+    <script type="module" src="js/vercel-analytics.js"></script>
+    <!-- ALYSUM:ANALYTICS:END -->
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>About the Author — Alysum</title>
+    <script src="js/alysum-appearance-boot.js"></script>
+    <link rel="stylesheet" href="css/site-responsive.css?v=1" />
+    <link rel="stylesheet" href="css/gradient-themes.css?v=5" />
+    <script src="js/gradient-theme-sync.js" defer></script>
+    <style>
+        * { box-sizing: border-box; }
+        :root {
+            --bg: #0b1220;
+            --panel: #111827;
+            --panel-soft: #172132;
+            --text: #f9fafb;
+            --text-soft: #9ca3af;
+            --border: rgba(255,255,255,0.08);
+            --purple: #6d28d9;
+            --purple-dark: #5b21b6;
+            --shadow: 0 14px 34px rgba(0,0,0,0.28);
+        }
+        html, body {
+            margin: 0;
+            min-height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background:
+                radial-gradient(ellipse 120% 60% at 50% -10%, var(--theme-body-spot, rgba(124, 58, 237, 0.24)) 0%, transparent 55%),
+                linear-gradient(180deg, #0d1426 0%, var(--bg) 42%);
+            color: var(--text);
+        }
+        .hidden { display: none !important; }
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 40;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(180deg, rgba(14,22,38,0.94), rgba(11,18,32,0.9));
+            backdrop-filter: blur(14px);
+        }
+        .topbar-inner {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .topbar-links { display: flex; gap: 10px; flex-wrap: wrap; }
+        .btn {
+            border: 1px solid var(--border);
+            background: var(--panel);
+            color: var(--text);
+            border-radius: 12px;
+            padding: 10px 14px;
+            font-weight: 800;
+            font-size: 14px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+        }
+        .btn.primary {
+            background: linear-gradient(135deg, var(--purple-dark), var(--purple));
+            color: white;
+            border-color: transparent;
+        }
+        .page {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 28px 20px 56px;
+        }
+        .profile-card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 28px;
+            padding: 28px;
+            box-shadow: var(--shadow);
+            display: flex;
+            gap: 22px;
+            align-items: flex-start;
+            flex-wrap: wrap;
+        }
+        .profile-avatar {
+            width: 112px;
+            height: 112px;
+            border-radius: 999px;
+            overflow: hidden;
+            flex-shrink: 0;
+            border: 2px solid rgba(255,255,255,0.12);
+            background: linear-gradient(135deg, rgba(109,40,217,0.35), rgba(255,255,255,0.08));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 42px;
+            font-weight: 900;
+            color: #ede9fe;
+        }
+        .profile-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .profile-copy { flex: 1; min-width: min(100%, 260px); }
+        .eyebrow {
+            font-size: 12px;
+            font-weight: 900;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #c4b5fd;
+            margin-bottom: 8px;
+        }
+        .profile-name {
+            margin: 0;
+            font-size: clamp(28px, 5vw, 36px);
+            font-weight: 900;
+            line-height: 1.1;
+        }
+        .profile-handle {
+            margin-top: 8px;
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text-soft);
+        }
+        .profile-bio {
+            margin-top: 18px;
+            font-size: 16px;
+            line-height: 1.7;
+            color: #e5e7eb;
+            white-space: pre-wrap;
+        }
+        .profile-bio.empty {
+            color: var(--text-soft);
+            font-style: italic;
+        }
+        .edit-hint {
+            margin-top: 16px;
+            font-size: 14px;
+            color: var(--text-soft);
+        }
+        .edit-hint a { color: #c4b5fd; font-weight: 800; }
+        .works-section { margin-top: 28px; }
+        .works-title {
+            margin: 0 0 16px;
+            font-size: 22px;
+            font-weight: 900;
+        }
+        .works-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+        }
+        .work-card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 16px;
+            box-shadow: var(--shadow);
+            cursor: pointer;
+            transition: transform 0.15s ease, border-color 0.15s ease;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            min-width: 0;
+        }
+        .work-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(167,139,250,0.32);
+        }
+        .work-cover {
+            width: 100%;
+            aspect-ratio: 2 / 3;
+            border-radius: 14px;
+            overflow: hidden;
+            background: linear-gradient(135deg, rgba(109,40,217,0.28), rgba(255,255,255,0.06));
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+        .work-cover img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .work-title {
+            font-size: 18px;
+            font-weight: 900;
+            line-height: 1.2;
+            word-break: break-word;
+        }
+        .work-summary {
+            font-size: 14px;
+            line-height: 1.55;
+            color: var(--text-soft);
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .work-meta {
+            margin-top: auto;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-soft);
+        }
+        .state-box {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 36px 24px;
+            text-align: center;
+            color: var(--text-soft);
+            line-height: 1.6;
+        }
+        @media (max-width: 700px) {
+            .works-grid { grid-template-columns: 1fr; }
+            .profile-card { padding: 22px 18px; }
+        }
+    </style>
+</head>
+<body>
+    <header class="topbar">
+        <div class="topbar-inner">
+            <a class="btn" href="library.html">← Library</a>
+            <div class="topbar-links">
+                <a class="btn" href="index.html">Home</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="page">
+        <div class="state-box" id="loadingState">Loading author…</div>
+        <div class="state-box hidden" id="errorState">Author not found.</div>
+
+        <div class="hidden" id="authorContent">
+            <section class="profile-card" aria-labelledby="authorName">
+                <div class="profile-avatar" id="authorAvatar">
+                    <span id="authorAvatarInitial" aria-hidden="true">A</span>
+                    <img id="authorAvatarImg" alt="" hidden />
+                </div>
+                <div class="profile-copy">
+                    <div class="eyebrow">About the Author</div>
+                    <h1 class="profile-name" id="authorName">Author</h1>
+                    <div class="profile-handle" id="authorHandle">@author</div>
+                    <div class="profile-bio" id="authorBio"></div>
+                    <p class="edit-hint hidden" id="editBioHint">
+                        This is your public author page.
+                        <a href="settings.html">Edit your biography in Settings</a>.
+                    </p>
+                </div>
+            </section>
+
+            <section class="works-section hidden" id="worksSection" aria-labelledby="worksTitle">
+                <h2 class="works-title" id="worksTitle">Published works</h2>
+                <div class="works-grid" id="worksGrid"></div>
+            </section>
+        </div>
+    </main>
+
+    <script type="module">
+        import { supabase } from "./firebase.js";
+        import {
+            authorInitial,
+            escapeAttribute,
+            escapeHtml,
+            fetchAuthorByUsername,
+            fetchPublishedWorksForAuthor,
+        } from "./js/author-profile.js?v=1";
+
+        const params = new URLSearchParams(window.location.search);
+        const usernameParam = params.get("u") || params.get("user") || params.get("username") || "";
+
+        const loadingState = document.getElementById("loadingState");
+        const errorState = document.getElementById("errorState");
+        const authorContent = document.getElementById("authorContent");
+        const authorName = document.getElementById("authorName");
+        const authorHandle = document.getElementById("authorHandle");
+        const authorBio = document.getElementById("authorBio");
+        const authorAvatar = document.getElementById("authorAvatar");
+        const authorAvatarImg = document.getElementById("authorAvatarImg");
+        const authorAvatarInitial = document.getElementById("authorAvatarInitial");
+        const editBioHint = document.getElementById("editBioHint");
+        const worksSection = document.getElementById("worksSection");
+        const worksGrid = document.getElementById("worksGrid");
+        const worksTitle = document.getElementById("worksTitle");
+
+        function showState(state) {
+            loadingState.classList.toggle("hidden", state !== "loading");
+            errorState.classList.toggle("hidden", state !== "error");
+            authorContent.classList.toggle("hidden", state !== "content");
+        }
+
+        function renderAvatar(profile) {
+            const initial = authorInitial(profile.displayName || profile.username);
+            authorAvatarInitial.textContent = initial;
+            const imageUrl = profile.profileImageUrl;
+            if (imageUrl) {
+                authorAvatarImg.src = imageUrl;
+                authorAvatarImg.alt = `${profile.displayName} profile picture`;
+                authorAvatarImg.hidden = false;
+                authorAvatarInitial.hidden = true;
+                authorAvatarImg.onerror = () => {
+                    authorAvatarImg.hidden = true;
+                    authorAvatarInitial.hidden = false;
+                };
+            } else {
+                authorAvatarImg.hidden = true;
+                authorAvatarInitial.hidden = false;
+            }
+        }
+
+        function renderWorks(books, authorDisplayName) {
+            worksGrid.innerHTML = "";
+            if (!books.length) {
+                worksSection.classList.add("hidden");
+                return;
+            }
+            worksTitle.textContent = `Published works by ${authorDisplayName}`;
+            worksSection.classList.remove("hidden");
+
+            for (const book of books) {
+                const card = document.createElement("article");
+                card.className = "work-card";
+                card.tabIndex = 0;
+                card.setAttribute("role", "link");
+                const coverHtml = book.coverUrl
+                    ? `<img src="${escapeAttribute(book.coverUrl)}" alt="" loading="lazy" onerror="this.remove()">`
+                    : "";
+                card.innerHTML = `
+                    <div class="work-cover">${coverHtml}</div>
+                    <div class="work-title">${escapeHtml(book.title)}</div>
+                    <div class="work-summary">${escapeHtml(book.summary || "No summary yet.")}</div>
+                    <div class="work-meta">${book.chapterCount} chapter${book.chapterCount === 1 ? "" : "s"}</div>
+                `;
+                const openBook = () => {
+                    window.location.href = `read.html?book=${encodeURIComponent(book.id)}`;
+                };
+                card.addEventListener("click", openBook);
+                card.addEventListener("keydown", (e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        openBook();
+                    }
+                });
+                worksGrid.appendChild(card);
+            }
+        }
+
+        async function init() {
+            if (!usernameParam.trim()) {
+                showState("error");
+                errorState.textContent = "Missing author username. Open this page from a book in the library.";
+                return;
+            }
+
+            try {
+                const profile = await fetchAuthorByUsername(supabase, usernameParam);
+                if (!profile) {
+                    showState("error");
+                    errorState.textContent = `No author found for @${usernameParam.trim()}.`;
+                    document.title = "Author not found — Alysum";
+                    return;
+                }
+
+                document.title = `${profile.displayName} — Alysum`;
+                authorName.textContent = profile.displayName;
+                authorHandle.textContent = `@${profile.username}`;
+
+                if (profile.bio) {
+                    authorBio.textContent = profile.bio;
+                    authorBio.classList.remove("empty");
+                } else {
+                    authorBio.textContent = "This author hasn't added a biography yet.";
+                    authorBio.classList.add("empty");
+                }
+
+                renderAvatar(profile);
+
+                const { data: authData } = await supabase.auth.getUser();
+                const viewerId = authData?.user?.id;
+                if (viewerId && viewerId === profile.id) {
+                    editBioHint.classList.remove("hidden");
+                }
+
+                const books = await fetchPublishedWorksForAuthor(supabase, profile.id);
+                renderWorks(books, profile.displayName);
+                showState("content");
+            } catch (err) {
+                console.error(err);
+                showState("error");
+                errorState.textContent = "Could not load this author page. Try again later.";
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>

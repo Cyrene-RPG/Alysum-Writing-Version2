@@ -236,7 +236,8 @@
     }
     input[type="text"],
     input[type="email"],
-    input[type="password"] {
+    input[type="password"],
+    textarea {
         width: 100%;
         padding: 12px 14px;
         border-radius: 12px;
@@ -245,11 +246,19 @@
         color: var(--text);
         font-size: 15px;
         transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        font-family: inherit;
+    }
+
+    textarea {
+        min-height: 140px;
+        resize: vertical;
+        line-height: 1.55;
     }
 
     input[type="text"]:focus,
     input[type="email"]:focus,
-    input[type="password"]:focus {
+    input[type="password"]:focus,
+    textarea:focus {
         outline: none;
         border-color: color-mix(in srgb, var(--purple-bright) 70%, transparent);
         box-shadow: 0 0 0 3px color-mix(in srgb, var(--purple-bright) 22%, transparent);
@@ -832,6 +841,7 @@
     #profilePanel input[type="text"],
     #profilePanel input[type="email"],
     #profilePanel input[type="password"],
+    #profilePanel textarea,
     #profilePanel .readonly,
     #securityPanel input[type="password"] {
         border-width: 1.5px;
@@ -842,6 +852,7 @@
     #profilePanel input[type="text"]:focus,
     #profilePanel input[type="email"]:focus,
     #profilePanel input[type="password"]:focus,
+    #profilePanel textarea:focus,
     #securityPanel input[type="password"]:focus {
         border-color: color-mix(in srgb, var(--purple-bright) 78%, transparent);
         box-shadow:
@@ -1448,6 +1459,21 @@
             <div class="msg" id="avatarMsg" role="status"></div>
         </section>
 
+        <section class="profile-box profile-bio-box" aria-labelledby="profileBioTitle">
+            <h3 class="profile-box-title" id="profileBioTitle">Author biography</h3>
+            <p class="hint">Tell readers a little about yourself. This appears on your public author page and at the end of your published books in the library.</p>
+            <div class="field">
+                <label for="authorBioInput">About me</label>
+                <textarea id="authorBioInput" maxlength="2000" rows="8" placeholder="Share your writing background, interests, or what readers can expect from your work…"></textarea>
+                <p class="hint" style="margin-top:8px;margin-bottom:0"><span id="authorBioCount">0</span> / 2000 characters</p>
+            </div>
+            <div class="profile-box-actions">
+                <button type="button" class="btn btn-primary" id="saveBioBtn">Save biography</button>
+                <a class="btn" id="authorBioPreviewLink" href="author.html" target="_blank" rel="noopener">Preview author page</a>
+                <div class="msg" id="bioMsg" role="status"></div>
+            </div>
+        </section>
+
         <section class="profile-box story-bible-box" aria-labelledby="storyBibleBoxTitle">
             <h3 class="profile-box-title" id="storyBibleBoxTitle">Story Wiki</h3>
             <p class="hint" style="margin-bottom: 12px">
@@ -1646,6 +1672,7 @@
     import { resolveStudioSession } from "./js/studio-session.js?v=1";
     import { getProfileRow, updateProfileRow, LOCAL_GUEST_USER_ID } from "./js/local-studio-store.js?v=1";
     import { permanentHandleFromUserData } from "./js/profile-display.js?v=1";
+    import { AUTHOR_BIO_MAX_LENGTH, authorPageUrl } from "./js/author-profile.js?v=1";
     import {
         GRADIENT_THEMES,
         applyGradientTheme,
@@ -1695,6 +1722,11 @@
     const displayNameInput = document.getElementById("displayNameInput");
     const saveDisplayBtn = document.getElementById("saveDisplayBtn");
     const profileMsg = document.getElementById("profileMsg");
+    const authorBioInput = document.getElementById("authorBioInput");
+    const authorBioCount = document.getElementById("authorBioCount");
+    const saveBioBtn = document.getElementById("saveBioBtn");
+    const authorBioPreviewLink = document.getElementById("authorBioPreviewLink");
+    const bioMsg = document.getElementById("bioMsg");
     const currentPw = document.getElementById("currentPw");
     const newPw = document.getElementById("newPw");
     const confirmPw = document.getElementById("confirmPw");
@@ -1807,8 +1839,25 @@
             displayName: row.display_name ?? row.displayName,
             accountType: row.account_type ?? row.accountType,
             writingDayTotals: row.writing_day_totals ?? row.writingDayTotals,
-            profileImageUrl: row.profile_image_url ?? row.profileImageUrl ?? ""
+            profileImageUrl: row.profile_image_url ?? row.profileImageUrl ?? "",
+            bio: row.bio ?? ""
         };
+    }
+
+    function updateAuthorBioCount() {
+        if (!authorBioCount || !authorBioInput) return;
+        authorBioCount.textContent = String(authorBioInput.value.length);
+    }
+
+    function setAuthorBioPreviewLink(handle) {
+        if (!authorBioPreviewLink) return;
+        const url = authorPageUrl(handle);
+        if (!url || isLocalSettings) {
+            authorBioPreviewLink.classList.add("hidden");
+            return;
+        }
+        authorBioPreviewLink.href = url;
+        authorBioPreviewLink.classList.remove("hidden");
     }
 
     function setAvatarPreview(imageUrl, label) {
@@ -2148,6 +2197,13 @@
         handleField.textContent = "@guest";
         displayNameInput.value = String(profile.display_name ?? "Guest").trim();
         setAvatarPreview(null, profile.display_name || "Guest");
+        if (authorBioInput) {
+            authorBioInput.value = "";
+            authorBioInput.disabled = true;
+        }
+        if (saveBioBtn) saveBioBtn.disabled = true;
+        updateAuthorBioCount();
+        setAuthorBioPreviewLink("");
         settingsHomeUrl = "writer-dashboard.html";
 
         const acct = normalizeAccountType(profile.account_type || "author");
@@ -2254,6 +2310,13 @@
             handleField.textContent = "@" + handle;
             displayNameInput.value = String(data.displayName ?? "").trim();
             setAvatarPreview(data.profileImageUrl, data.displayName || handle || user.email || "A");
+            if (authorBioInput) {
+                authorBioInput.value = String(data.bio ?? "").slice(0, AUTHOR_BIO_MAX_LENGTH);
+                authorBioInput.disabled = false;
+            }
+            if (saveBioBtn) saveBioBtn.disabled = false;
+            updateAuthorBioCount();
+            setAuthorBioPreviewLink(handle);
 
             const acct = normalizeAccountType(data.accountType);
             settingsHomeUrl = homeUrlForUserData({ ...data, accountType: acct });
@@ -2429,6 +2492,36 @@
             showMsg(accountTypeMsg, e?.message || "Could not save.", false);
         } finally {
             saveAccountTypeBtn.disabled = false;
+        }
+    });
+
+    authorBioInput?.addEventListener("input", updateAuthorBioCount);
+
+    saveBioBtn?.addEventListener("click", async () => {
+        hideMsg(bioMsg);
+        if (isLocalSettings) {
+            showMsg(bioMsg, "Sign in to save your biography to your public author page.", false);
+            return;
+        }
+
+        const bio = String(authorBioInput?.value ?? "").trim().slice(0, AUTHOR_BIO_MAX_LENGTH);
+        saveBioBtn.disabled = true;
+        try {
+            const { data: udata } = await supabase.auth.getUser();
+            const user = udata?.user;
+            if (!user) return;
+
+            const { error } = await supabase
+                .from("users")
+                .update({ bio, bio_updated_at: new Date().toISOString() })
+                .eq("id", user.id);
+            if (error) throw error;
+            showMsg(bioMsg, "Biography saved. It will appear on your author page and at the end of your published books.", true);
+        } catch (e) {
+            console.error(e);
+            showMsg(bioMsg, e?.message || "Could not save biography.", false);
+        } finally {
+            saveBioBtn.disabled = false;
         }
     });
 
