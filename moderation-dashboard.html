@@ -25,6 +25,7 @@
             <p id="modDeniedHint">You need database setup before moderation tools will open.</p>
             <ol class="mod-setup-steps">
                 <li id="modStepReports"><strong>supabase-library-reports.sql</strong></li>
+                <li id="modStepPublishCooldown"><strong>supabase-publish-cooldown.sql</strong></li>
                 <li id="modStepStaffUsers"><strong>supabase-staff-users.sql</strong></li>
                 <li id="modStepBootstrap"><strong>Bootstrap SQL</strong></li>
             </ol>
@@ -76,6 +77,7 @@
                         <nav class="mod-tabs" role="tablist">
                             <button type="button" class="mod-tab is-active" data-inbox-tab="reports" role="tab">Reports</button>
                             <button type="button" class="mod-tab" data-inbox-tab="appeals" role="tab">Appeals</button>
+                            <button type="button" class="mod-tab" data-inbox-tab="publish-approvals" role="tab">Publish approvals</button>
                         </nav>
                         <div id="modInboxReportsPanel">
                             <div class="mod-list-toolbar">
@@ -91,12 +93,18 @@
                         <div id="modInboxAppealsPanel" class="hidden">
                             <div class="mod-queue" id="modAppeals"></div>
                         </div>
+                        <div id="modInboxPublishApprovalsPanel" class="hidden">
+                            <div class="mod-queue" id="modPublishApprovalsQueue"></div>
+                        </div>
                     </div>
                     <div class="mod-split-detail" id="modReportsDetailPane">
                         <div id="modDetail"><p class="mod-detail-empty">Select a report to review.</p></div>
                     </div>
                     <div class="mod-split-detail hidden" id="modAppealsDetailPane">
                         <div id="modAppealDetail"><p class="mod-detail-empty">Select an appeal to review.</p></div>
+                    </div>
+                    <div class="mod-split-detail hidden" id="modPublishApprovalsDetailPane">
+                        <div id="modPublishApprovalDetail"><p class="mod-detail-empty">Select a publish approval request.</p></div>
                     </div>
                 </div>
             </div>
@@ -162,12 +170,14 @@
 <script type="module">
     import { bootModerationPage } from "./js/moderation-access.js?v=12";
     import { initReportsPanel } from "./js/moderation-reports-panel.js?v=12";
+    import { initPublishApprovalsPanel } from "./js/moderation-publish-approvals-panel.js?v=1";
     import { initUsersPanel } from "./js/moderation-users-panel.js?v=12";
     import { staffUsersOverviewStats } from "./js/staff-users-api.js?v=12";
     import { getDashboardStats as getReportStats } from "./js/library-reports-api.js?v=12";
 
     const modStatus = document.getElementById("modStatus");
     let reportsApi = null;
+    let publishApprovalsApi = null;
     let usersApi = null;
     let activeView = "inbox";
 
@@ -219,8 +229,13 @@
             });
             document.getElementById("modInboxReportsPanel")?.classList.toggle("hidden", tab !== "reports");
             document.getElementById("modInboxAppealsPanel")?.classList.toggle("hidden", tab !== "appeals");
+            document.getElementById("modInboxPublishApprovalsPanel")?.classList.toggle("hidden", tab !== "publish-approvals");
             document.getElementById("modReportsDetailPane")?.classList.toggle("hidden", tab !== "reports");
             document.getElementById("modAppealsDetailPane")?.classList.toggle("hidden", tab !== "appeals");
+            document.getElementById("modPublishApprovalsDetailPane")?.classList.toggle("hidden", tab !== "publish-approvals");
+            if (tab === "publish-approvals") {
+                publishApprovalsApi?.loadAll().catch((e) => showStatus(e.message, "error"));
+            }
         });
     });
 
@@ -250,6 +265,7 @@
     const access = await bootModerationPage({ returnPath: "moderation-dashboard.html" });
     if (access) {
         reportsApi = initReportsPanel({ showStatus });
+        publishApprovalsApi = initPublishApprovalsPanel({ showStatus });
         usersApi = initUsersPanel({ showStatus, onUserSelect, getSelectedUserId: () => new URLSearchParams(window.location.search).get("user") });
         showView(initialView);
 
@@ -261,7 +277,10 @@
                     await usersApi.pickUser(params.get("user"));
                 }
             } else {
-                await reportsApi.loadAll();
+                await Promise.all([
+                    reportsApi.loadAll(),
+                    publishApprovalsApi.loadAll(),
+                ]);
             }
         } catch (err) {
             showStatus(err.message || "Could not load moderation data.", "error");

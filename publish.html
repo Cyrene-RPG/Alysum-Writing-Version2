@@ -124,6 +124,14 @@
     .anonymous-toggle .check-item { cursor: pointer; }
     .anonymous-toggle .hint { display: block; margin-top: 4px; font-weight: 600; }
     .footer-space { height: 24px; }
+    .cooldown-card { margin-top: 0; border: 1px solid rgba(220, 38, 38, 0.22); border-radius: 20px; background: rgba(220, 38, 38, 0.08); padding: 18px; }
+    .cooldown-card.is-ok { border-color: rgba(21, 128, 61, 0.22); background: rgba(21, 128, 61, 0.08); }
+    .cooldown-card.is-pending { border-color: rgba(109, 40, 217, 0.22); background: rgba(109, 40, 217, 0.08); }
+    .cooldown-title { margin: 0 0 8px; font-size: 18px; font-weight: 800; }
+    .cooldown-copy { margin: 0; font-size: 14px; line-height: 1.6; color: var(--text-soft); }
+    .cooldown-copy + .cooldown-copy { margin-top: 8px; }
+    .approval-form { margin-top: 14px; display: grid; gap: 10px; }
+    .approval-form[hidden] { display: none !important; }
     @media (max-width: 1120px) { .layout { grid-template-columns: 1fr; } .sidebar { position: static; top: auto; } .hero-card { grid-template-columns: 1fr; } }
     @media (max-width: 760px) { html, body { overflow-x: hidden; } .topbar { padding: 12px; } .brand-title { font-size: 18px; } .layout { padding: 14px; gap: 16px; } .content-card, .sidebar, .hero-card { border-radius: 20px; padding: 16px; } .field-grid, .rating-grid, .rating-guide-grid, .check-grid, .hero-meta { grid-template-columns: 1fr; } .publish-actions { flex-direction: column; align-items: stretch; } .publish-actions-left, .publish-actions-right { width: 100%; justify-content: stretch; } .publish-actions-left > *, .publish-actions-right > * { width: 100%; } .text-btn, .primary-btn, .danger-btn { width: 100%; } }
 </style>
@@ -203,7 +211,20 @@
 
         <section class="content-card"><h2 class="section-title">Summary & Extra Tags</h2><p class="section-note">Summary is required. Extra tags are optional and should be comma-separated.</p><div class="field-grid"><div class="field full"><label class="label" for="summaryInput">Summary</label><textarea class="textarea" id="summaryInput" placeholder="Write the story summary readers will see in the library..."></textarea></div><div class="field full"><label class="label" for="extraTagsInput">Extra Tags</label><input class="input" id="extraTagsInput" type="text" placeholder="slow burn, found family, enemies to lovers"><div class="hint">Optional. Separate each tag with a comma.</div></div></div></section>
 
-        <section class="content-card"><h2 class="section-title">Publish</h2><p class="section-note">When you publish, Alysum will save this metadata to the selected book and create/update the public library entry.</p><div class="status-box" id="statusBox"></div><div class="publish-actions"><div class="publish-actions-left"><button class="text-btn" id="saveDraftBtn" type="button">Save Draft Metadata</button><button class="danger-btn" id="unpublishBtn" type="button">Unpublish</button></div><div class="publish-actions-right"><div class="mini-note" id="publishHint">Nothing published yet.</div><button class="primary-btn" id="publishBtn" type="button">Publish Story</button></div></div></section>
+        <section class="content-card" id="publishCooldownSection" hidden>
+            <div class="cooldown-card" id="publishCooldownCard">
+                <h2 class="cooldown-title" id="publishCooldownTitle">Publish availability</h2>
+                <p class="cooldown-copy" id="publishCooldownMessage"></p>
+                <p class="cooldown-copy" id="publishCooldownSubmessage" hidden></p>
+                <form class="approval-form" id="publishApprovalForm" hidden>
+                    <label class="label" for="publishApprovalMessage">Request early publish approval</label>
+                    <textarea class="textarea" id="publishApprovalMessage" rows="4" maxlength="2000" placeholder="Tell staff why this book should be published before the 30-day interval ends…"></textarea>
+                    <button class="primary-btn" id="submitPublishApprovalBtn" type="submit">Submit approval request</button>
+                </form>
+            </div>
+        </section>
+
+        <section class="content-card"><h2 class="section-title">Publish</h2><p class="section-note">When you publish, Alysum will save this metadata to the selected book and create/update the public library entry. New accounts wait 7 days before their first publish; new library listings are limited to one every 30 days unless staff approves an early request.</p><div class="status-box" id="statusBox"></div><div class="publish-actions"><div class="publish-actions-left"><button class="text-btn" id="saveDraftBtn" type="button">Save Draft Metadata</button><button class="danger-btn" id="unpublishBtn" type="button">Unpublish</button></div><div class="publish-actions-right"><div class="mini-note" id="publishHint">Nothing published yet.</div><button class="primary-btn" id="publishBtn" type="button">Publish Story</button></div></div></section>
         <div class="footer-space"></div>
     </main>
 </div>
@@ -211,6 +232,12 @@
 </div><script type="module">
     import { supabase } from "./firebase.js";
     import { publicDisplayNameFromUserData } from "./js/profile-display.js?v=1";
+    import {
+        getPublishEligibility,
+        submitPublishApprovalRequest,
+        formatPublishBlockMessage,
+        canSubmitPublishApproval,
+    } from "./js/publish-cooldown.js?v=1";
     import {
         isComicFormat,
         normalizeMediaFormat,
@@ -280,6 +307,16 @@
     let warningOpenState = {};
     let isPublished = false;
     let isAnonymousPost = false;
+    /** @type {import("./js/publish-cooldown.js").PublishEligibility | null} */
+    let publishEligibility = null;
+    const publishCooldownSection = el("publishCooldownSection");
+    const publishCooldownCard = el("publishCooldownCard");
+    const publishCooldownTitle = el("publishCooldownTitle");
+    const publishCooldownMessage = el("publishCooldownMessage");
+    const publishCooldownSubmessage = el("publishCooldownSubmessage");
+    const publishApprovalForm = el("publishApprovalForm");
+    const publishApprovalMessage = el("publishApprovalMessage");
+    const submitPublishApprovalBtn = el("submitPublishApprovalBtn");
 
     const RATING_GUIDES = {
         General: { title: "General (G)", summary: "Suitable for all audiences, including children. Conflict, danger, sadness, romance, or emotional growth should be mild, age-appropriate, and non-graphic.", blocks: [{ heading: "May include", items: ["Mild fantasy or adventure violence without graphic injury.","Brief, non-detailed peril, conflict, or danger.","Innocent romance such as hand-holding, hugging, or kissing."] }, { heading: "Should not include", items: ["Explicit sexual acts or sustained sexual themes.","Graphic violence, gore, torture, or realistic bodily injury detail.","Detailed abuse, coercion, self-harm, suicide, addiction, or severe psychological trauma."] }] },
@@ -366,7 +403,60 @@
     anonymousPostCheckbox?.addEventListener("change", () => { isAnonymousPost = !!anonymousPostCheckbox.checked; renderHero(); });
     function getExtraTags() { return extraTagsInput.value.split(",").map(tag => tag.trim()).filter(Boolean); }
     function buildPublishMeta() { return { genres: [...selectedGenres].sort((a, b) => a.localeCompare(b)), rating: selectedRating, warnings: WARNING_GROUPS.reduce((acc, group) => { acc[group.key] = safeArray(warningSelections[group.key], []); return acc; }, {}), summary: summaryInput.value.trim(), extraTags: getExtraTags(), coverUrl: normalizeCoverUrl(coverUrlInput?.value || ""), isAnonymous: !!isAnonymousPost }; }
-    function validateBeforePublish() { const errors = []; if (!bookId) errors.push("Missing book id."); if (!currentBook) errors.push("Book data has not loaded yet."); if (!selectedChapterObjects.length) errors.push("No chapters were selected. Go back and choose at least one chapter."); if (!bookTitleInput.value.trim()) errors.push("Title is required."); if (!libraryShelfSelect.value) errors.push("Choose Fiction, Nonfiction, or Fanfiction."); if (selectedGenres.size === 0) errors.push("Pick at least one genre."); if (!selectedRating) errors.push("Select one age rating."); if (!everyWarningCategoryHasAChoice()) errors.push("Every warning category must have at least one choice."); if (!summaryInput.value.trim()) errors.push("Summary is required."); if ((selectedRating === "Mature" || selectedRating === "Explicit") && countNonNoneWarnings() === 0) errors.push("Mature and Explicit stories must include at least one non-“None” content warning."); return errors; }
+    function validateBeforePublish() { const errors = []; if (!bookId) errors.push("Missing book id."); if (!currentBook) errors.push("Book data has not loaded yet."); if (publishEligibility && !publishEligibility.allowed) errors.push(formatPublishBlockMessage(publishEligibility)); if (!selectedChapterObjects.length) errors.push("No chapters were selected. Go back and choose at least one chapter."); if (!bookTitleInput.value.trim()) errors.push("Title is required."); if (!libraryShelfSelect.value) errors.push("Choose Fiction, Nonfiction, or Fanfiction."); if (selectedGenres.size === 0) errors.push("Pick at least one genre."); if (!selectedRating) errors.push("Select one age rating."); if (!everyWarningCategoryHasAChoice()) errors.push("Every warning category must have at least one choice."); if (!summaryInput.value.trim()) errors.push("Summary is required."); if ((selectedRating === "Mature" || selectedRating === "Explicit") && countNonNoneWarnings() === 0) errors.push("Mature and Explicit stories must include at least one non-“None” content warning."); return errors; }
+
+    function renderPublishCooldownUI() {
+        if (!publishCooldownSection || !publishCooldownCard) return;
+        if (!publishEligibility) {
+            publishCooldownSection.hidden = true;
+            if (publishBtn) publishBtn.disabled = false;
+            return;
+        }
+
+        publishCooldownSection.hidden = false;
+        publishCooldownCard.classList.remove("is-ok", "is-pending");
+
+        if (publishEligibility.allowed) {
+            publishCooldownCard.classList.add("is-ok");
+            publishCooldownTitle.textContent = "Ready to publish";
+            publishCooldownMessage.textContent = publishEligibility.isNewListing
+                ? "Your account meets the publish requirements for a new library listing."
+                : "You can update this story’s public library entry.";
+            if (publishCooldownSubmessage) publishCooldownSubmessage.hidden = true;
+            if (publishApprovalForm) publishApprovalForm.hidden = true;
+            if (publishBtn) publishBtn.disabled = false;
+            return;
+        }
+
+        if (publishEligibility.pendingRequest) publishCooldownCard.classList.add("is-pending");
+        publishCooldownTitle.textContent = "Publishing temporarily unavailable";
+        publishCooldownMessage.textContent = formatPublishBlockMessage(publishEligibility);
+        if (publishCooldownSubmessage) {
+            if (publishEligibility.approvedBypass) {
+                publishCooldownSubmessage.hidden = false;
+                publishCooldownSubmessage.textContent = "Staff approved an early publish for this book. You can publish now.";
+            } else if (publishEligibility.pendingRequest) {
+                publishCooldownSubmessage.hidden = false;
+                publishCooldownSubmessage.textContent = "Your approval request is waiting for staff review.";
+            } else {
+                publishCooldownSubmessage.hidden = true;
+                publishCooldownSubmessage.textContent = "";
+            }
+        }
+        if (publishApprovalForm) publishApprovalForm.hidden = !canSubmitPublishApproval(publishEligibility);
+        if (publishBtn) publishBtn.disabled = true;
+    }
+
+    async function refreshPublishEligibility() {
+        if (!bookId) return;
+        try {
+            publishEligibility = await getPublishEligibility(bookId);
+        } catch (error) {
+            console.warn("Could not load publish eligibility.", error);
+            publishEligibility = null;
+        }
+        renderPublishCooldownUI();
+    }
 
     async function upsertLibraryEntry(libraryData) {
         const row = { id: bookId, user_id: currentUser.id, data: libraryData };
@@ -452,11 +542,15 @@
             await upsertLibraryEntry(libraryData);
             currentBook.title = payloadTitle; currentBook.libraryType = libraryShelfSelect.value; currentBook.publishMeta = publishMeta; currentBook.publishedChapterIds = chapterIds; currentBook.isPublished = true; isPublished = true;
             renderBasicInfo(); renderHero(); renderSidebar(); setStatus("Story published successfully.", "success");
+            await refreshPublishEligibility();
         } catch (error) {
             console.error(error);
             const msg = error?.message || "";
             if (/row-level security/i.test(msg) && /library/i.test(msg)) {
-                setStatus("Publish blocked by Supabase security rules on the library table. In Supabase → SQL Editor, run supabase-library-rls.sql from this project, then try again.", "error");
+                setStatus("Publish blocked by cooldown or Supabase security rules. Run supabase-publish-cooldown.sql and supabase-library-rls.sql in Supabase, then try again.", "error");
+            } else if (/cooldown|7 days|30 days|approval/i.test(msg)) {
+                setStatus(msg, "error");
+                await refreshPublishEligibility();
             } else {
                 setStatus(msg || "Publish failed. Check Supabase table columns and RLS policies.", "error");
             }
@@ -478,6 +572,27 @@
     saveDraftBtn.addEventListener("click", async () => { try { await saveDraftMetadata(); } catch (error) { console.error(error); setStatus(error?.message || "Could not save draft metadata.", "error"); } });
     publishBtn.addEventListener("click", publishStory);
     unpublishBtn.addEventListener("click", unpublishStory);
+    publishApprovalForm?.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        if (!bookId || !canSubmitPublishApproval(publishEligibility)) return;
+        const message = publishApprovalMessage?.value?.trim() || "";
+        if (!message) {
+            setStatus("Add a short message explaining why staff should approve early publish.", "error");
+            return;
+        }
+        submitPublishApprovalBtn.disabled = true;
+        try {
+            await submitPublishApprovalRequest(bookId, message);
+            if (publishApprovalMessage) publishApprovalMessage.value = "";
+            setStatus("Approval request submitted. Staff will review it in moderation.", "success");
+            await refreshPublishEligibility();
+        } catch (error) {
+            console.error(error);
+            setStatus(error?.message || "Could not submit approval request.", "error");
+        } finally {
+            submitPublishApprovalBtn.disabled = false;
+        }
+    });
 
     async function resolveBookId() {
         if (bookId) { rememberBookId(bookId); return true; }
@@ -524,7 +639,15 @@
         const hasBook = await resolveBookId().catch((error) => { console.error(error); setStatus(error?.message || "Could not find a book.", "error"); return false; });
         if (!hasBook) { setStatus("Missing book id in URL and no recent book was found.", "error"); heroTitle.textContent = "Missing book id"; sidebarBookTitle.textContent = "Missing book id"; return; }
         heroBookId.textContent = bookId;
-        try { await loadBook(); } catch (error) { console.error(error); setStatus(error?.message || "Could not load this book.", "error"); heroTitle.textContent = "Could not load this book"; sidebarBookTitle.textContent = "Could not load this book"; }
+        try {
+            await loadBook();
+            await refreshPublishEligibility();
+        } catch (error) {
+            console.error(error);
+            setStatus(error?.message || "Could not load this book.", "error");
+            heroTitle.textContent = "Could not load this book";
+            sidebarBookTitle.textContent = "Could not load this book";
+        }
     }
 
     init();

@@ -1018,6 +1018,10 @@
     import { mountBookVersionPanel } from "./js/book-version-panel.js?v=8";
     import { hashSnapshot, buildManuscriptSnapshot } from "./js/book-version-api.js?v=3";
     import {
+        getPublishEligibility,
+        formatPublishBlockMessage,
+    } from "./js/publish-cooldown.js?v=1";
+    import {
         saveBookShadow,
         getBookShadow,
         markBookSynced,
@@ -3016,14 +3020,36 @@ function rememberBookId(id) {
         });
     }
     function resetPublishBypassUI() { publishBypassOverlay?.classList.remove("open"); publishBypassOverlay?.setAttribute("aria-hidden", "true"); publishQuickWrap?.classList.remove("visible"); publishBypassChoiceRow?.classList.remove("hidden"); if (publishQuickStatus) publishQuickStatus.textContent = ""; }
-    function openPublishModal() { if (!currentBook) return; resetPublishBypassUI(); buildPublishChapterList(); publishModal.classList.add("open"); }
+    async function ensurePublishAllowed() {
+        if (!bookId || isLocalStudio) return true;
+        try {
+            const eligibility = await getPublishEligibility(bookId);
+            if (!eligibility) return true;
+            if (eligibility.allowed) return true;
+            alert(formatPublishBlockMessage(eligibility));
+            return false;
+        } catch (error) {
+            console.warn("Publish eligibility check failed.", error);
+            return true;
+        }
+    }
+    async function openPublishModal() {
+        if (!currentBook) return;
+        if (!(await ensurePublishAllowed())) return;
+        resetPublishBypassUI();
+        buildPublishChapterList();
+        publishModal.classList.add("open");
+    }
     function closePublishModal() { resetPublishBypassUI(); publishModal.classList.remove("open"); }
     function getSelectedPublishChapterIds() { return [...publishList.querySelectorAll("input[type='checkbox']:checked")].map(input => input.dataset.id).filter(Boolean); }
     function goToPublishPage() {
         const selectedIds = getSelectedPublishChapterIds();
         if (!selectedIds.length) { alert("Choose at least one chapter."); return; }
-        const query = new URLSearchParams({ book: bookId, chapters: selectedIds.join(",") });
-        window.location.href = "publish.html?" + query.toString();
+        void (async () => {
+            if (!(await ensurePublishAllowed())) return;
+            const query = new URLSearchParams({ book: bookId, chapters: selectedIds.join(",") });
+            window.location.href = "publish.html?" + query.toString();
+        })();
     }
     function everyEditorWarningCategoryHasChoice(warnings) { const w = safeObject(warnings, {}); return PUBLISH_WARNING_KEYS.every(key => safeArray(w[key], []).length > 0); }
     function countNonNoneWarningsEditor(warnings) { let total = 0; const w = safeObject(warnings, {}); PUBLISH_WARNING_KEYS.forEach(key => safeArray(w[key], []).forEach(value => { if (value !== "None") total += 1; })); return total; }
@@ -3055,6 +3081,8 @@ function rememberBookId(id) {
         const selectedIds = getSelectedPublishChapterIds();
         if (!selectedIds.length) { alert("Choose at least one chapter."); return; }
         if (!canOfferPublishBypass()) { if (publishQuickStatus) publishQuickStatus.textContent = "Saved publish details are incomplete. Opening full publish…"; setTimeout(() => goToPublishPage(), 600); return; }
+        const { data: existingLibraryCheck } = await supabase.from("library").select("id").eq("id", bookId).maybeSingle();
+        if (!existingLibraryCheck?.id && !(await ensurePublishAllowed())) return;
         const bodyList = safeArray(currentBook.sections?.body, []);
         const wanted = new Set(selectedIds);
         const selectedChapterObjects = bodyList.filter(ch => wanted.has(ch.id));
@@ -3125,7 +3153,14 @@ function rememberBookId(id) {
             renderTitles();
         } catch (error) {
             console.error(error);
-            if (publishQuickStatus) publishQuickStatus.textContent = "Publish failed. Try the full publish page.";
+            const msg = error?.message || "";
+            if (/row-level security/i.test(msg) && /library/i.test(msg)) {
+                if (publishQuickStatus) publishQuickStatus.textContent = "Publish blocked by cooldown rules.";
+            } else if (/cooldown|7 days|30 days|approval/i.test(msg)) {
+                if (publishQuickStatus) publishQuickStatus.textContent = msg;
+            } else if (publishQuickStatus) {
+                publishQuickStatus.textContent = "Publish failed. Try the full publish page.";
+            }
         } finally { publishQuickPublishBtn.disabled = false; }
     }
 
@@ -3495,8 +3530,8 @@ function rememberBookId(id) {
     quickAddBtn.addEventListener("click", () => addChapterTo("body"));
     deleteBookBtn.addEventListener("click", deleteBook);
     deleteBookTopBtn.addEventListener("click", deleteBook);
-    publishBtn.addEventListener("click", openPublishModal);
-    publishTopBtn.addEventListener("click", openPublishModal);
+    publishBtn.addEventListener("click", () => void openPublishModal());
+    publishTopBtn.addEventListener("click", () => void openPublishModal());
     closePublishBtn.addEventListener("click", closePublishModal);
     publishNextBtn.addEventListener("click", onPublishNextClick);
     publishBypassNo?.addEventListener("click", () => { resetPublishBypassUI(); goToPublishPage(); });
