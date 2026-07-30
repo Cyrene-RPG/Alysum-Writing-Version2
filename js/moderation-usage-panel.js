@@ -1,0 +1,274 @@
+import { staffFeatureUsageStats, staffFeatureUsageForUser } from "./feature-usage-api.js";
+import { FEATURE_LABELS } from "./feature-usage-track.js";
+
+function escapeHtml(str) {
+    return String(str || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;");
+}
+
+function featureLabel(feature) {
+    return FEATURE_LABELS[feature] || feature.replace(/-/g, " ");
+}
+
+function formatDate(iso) {
+    if (!iso) return "—";
+    return new Date(iso).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+}
+
+/**
+ * @param {HTMLElement} root
+ * @param {Array<{ feature?: string, events?: number, unique_users?: number }>} rows
+ */
+function renderFeatureBars(root, rows) {
+    if (!root) return;
+    const list = Array.isArray(rows) ? rows : [];
+    if (!list.length) {
+        root.innerHTML = '<p class="mod-empty mod-empty-inline">No feature visits recorded yet.</p>';
+        return;
+    }
+    const max = Math.max(1, ...list.map((row) => Number(row.events || 0)));
+    root.innerHTML = `
+        <div class="mod-usage-bars" role="img" aria-label="Feature usage">
+            ${list.map((row) => {
+                const count = Number(row.events || 0);
+                const users = Number(row.unique_users || 0);
+                const width = Math.max(count > 0 ? 4 : 1, Math.round((count / max) * 100));
+                const label = featureLabel(String(row.feature || ""));
+                return `
+                    <div class="mod-usage-row" title="${escapeHtml(label)}: ${count} visits · ${users} users">
+                        <div class="mod-usage-label">${escapeHtml(label)}</div>
+                        <div class="mod-usage-track-wrap">
+                            <div class="mod-usage-track">
+                                <div class="mod-usage-bar" style="width:${width}%"></div>
+                            </div>
+                            <span class="mod-usage-count">${count.toLocaleString()}</span>
+                        </div>
+                        <div class="mod-usage-meta">${users.toLocaleString()} user${users === 1 ? "" : "s"}</div>
+                    </div>
+                `;
+            }).join("")}
+        </div>
+    `;
+}
+
+/**
+ * @param {HTMLElement} root
+ * @param {Array<{ day?: string, count?: number }>} rows
+ */
+function renderDailyChart(root, rows) {
+    if (!root) return;
+    const list = Array.isArray(rows) ? rows : [];
+    if (!list.length) {
+        root.innerHTML = '<p class="mod-empty mod-empty-inline">No daily totals yet.</p>';
+        return;
+    }
+    const max = Math.max(1, ...list.map((row) => Number(row.count || 0)));
+    const trackHeight = 72;
+    root.innerHTML = `
+        <div class="mod-joins-bars mod-joins-bars-compact" role="img" aria-label="Daily feature visits">
+            ${list.map((row) => {
+                const count = Number(row.count || 0);
+                const barHeight = count > 0
+                    ? Math.max(4, Math.round((count / max) * trackHeight))
+                    : 2;
+                const day = String(row.day || "").slice(5, 10) || "—";
+                return `
+                    <div class="mod-joins-bar-wrap" title="${escapeHtml(String(row.day || ""))}: ${count}">
+                        <div class="mod-joins-bar-track">
+                            <div class="mod-joins-bar" style="height:${barHeight}px"></div>
+                        </div>
+                        <span class="mod-joins-day">${escapeHtml(day)}</span>
+                    </div>
+                `;
+            }).join("")}
+        </div>
+    `;
+}
+
+/**
+ * @param {{
+ *   showStatus: (msg: string, type?: string) => void,
+ *   onUserSelect?: (userId: string) => void,
+ * }} opts
+ */
+export function initUsagePanel(opts) {
+    const { showStatus, onUserSelect } = opts;
+    const metricsEl = document.getElementById("modUsageMetrics");
+    const featureChartEl = document.getElementById("modUsageFeatureChart");
+    const dailyChartEl = document.getElementById("modUsageDailyChart");
+    const topUsersEl = document.getElementById("modUsageTopUsers");
+    const userFeaturesEl = document.getElementById("modUsageUserFeatures");
+    const daysSelect = document.getElementById("modUsageDays");
+    const refreshBtn = document.getElementById("modUsageRefreshBtn");
+
+    let days = Number(daysSelect?.value || 14) || 14;
+    let stats = null;
+    let selectedUserId = null;
+
+    function renderMetrics(data) {
+        if (!metricsEl) return;
+        const totals = data?.totals || {};
+        const cards = [
+            { label: "Visits", value: Number(totals.events || 0).toLocaleString() },
+            { label: "Unique users", value: Number(totals.uniqueUsers || 0).toLocaleString() },
+            { label: "Features used", value: Number(totals.uniqueFeatures || 0).toLocaleString() },
+            { label: "Window", value: `${data?.days || days}d` },
+        ];
+        metricsEl.innerHTML = cards.map((card) => `
+            <div class="mod-metric">
+                <span class="mod-metric-value">${escapeHtml(String(card.value))}</span>
+                <span class="mod-metric-label">${escapeHtml(card.label)}</span>
+            </div>
+        `).join("");
+    }
+
+    function renderTopUsers(rows) {
+        if (!topUsersEl) return;
+        const list = Array.isArray(rows) ? rows : [];
+        if (!list.length) {
+            topUsersEl.innerHTML = '<p class="mod-empty">No user activity yet.</p>';
+            return;
+        }
+        topUsersEl.innerHTML = `
+            <table class="mod-usage-table">
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Visits</th>
+                        <th>Features</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${list.map((row) => `
+                        <tr class="mod-usage-user-row${row.user_id === selectedUserId ? " is-selected" : ""}" data-user-id="${escapeHtml(row.user_id)}">
+                            <td>
+                                <button type="button" class="mod-link-btn" data-pick-user="${escapeHtml(row.user_id)}">
+                                    @${escapeHtml(row.username || "unknown")}
+                                </button>
+                                ${row.display_name ? `<div class="mod-usage-sub">${escapeHtml(row.display_name)}</div>` : ""}
+                            </td>
+                            <td>${Number(row.events || 0).toLocaleString()}</td>
+                            <td>${Number(row.features_used || 0).toLocaleString()}</td>
+                        </tr>
+                    `).join("")}
+                </tbody>
+            </table>
+        `;
+        topUsersEl.querySelectorAll("[data-pick-user]").forEach((btn) => {
+            btn.addEventListener("click", () => {
+                selectedUserId = btn.getAttribute("data-pick-user");
+                renderTopUsers(list);
+                void loadUserBreakdown(selectedUserId);
+                onUserSelect?.(selectedUserId);
+            });
+        });
+    }
+
+    function renderUserFeatures(rows) {
+        if (!userFeaturesEl) return;
+        const list = Array.isArray(rows) ? rows : [];
+        if (!list.length) {
+            userFeaturesEl.innerHTML = '<p class="mod-empty">No per-user feature breakdown yet.</p>';
+            return;
+        }
+        userFeaturesEl.innerHTML = `
+            <table class="mod-usage-table">
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Feature</th>
+                        <th>Visits</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${list.map((row) => `
+                        <tr>
+                            <td>
+                                <button type="button" class="mod-link-btn" data-pick-user="${escapeHtml(row.user_id)}">
+                                    @${escapeHtml(row.username || "unknown")}
+                                </button>
+                            </td>
+                            <td>${escapeHtml(featureLabel(String(row.feature || "")))}</td>
+                            <td>${Number(row.events || 0).toLocaleString()}</td>
+                        </tr>
+                    `).join("")}
+                </tbody>
+            </table>
+        `;
+        userFeaturesEl.querySelectorAll("[data-pick-user]").forEach((btn) => {
+            btn.addEventListener("click", () => {
+                selectedUserId = btn.getAttribute("data-pick-user");
+                void loadUserBreakdown(selectedUserId);
+                onUserSelect?.(selectedUserId);
+            });
+        });
+    }
+
+    async function loadUserBreakdown(userId) {
+        const detailEl = document.getElementById("modUsageUserDetail");
+        if (!detailEl || !userId) return;
+        detailEl.innerHTML = '<p class="mod-empty">Loading user feature breakdown…</p>';
+        try {
+            const detail = await staffFeatureUsageForUser(userId, days);
+            const rows = Array.isArray(detail.byFeature) ? detail.byFeature : [];
+            if (!rows.length) {
+                detailEl.innerHTML = `<p class="mod-empty">No tracked visits for this user in the last ${days} days.</p>`;
+                return;
+            }
+            detailEl.innerHTML = `
+                <div class="mod-usage-user-detail">
+                    <div class="mod-kicker">Selected user</div>
+                    <h3 class="mod-detail-title"><code>${escapeHtml(userId)}</code></h3>
+                    <p class="mod-detail-meta-line">${Number(detail.totalEvents || 0).toLocaleString()} visits in ${days} days</p>
+                    <div class="mod-usage-bars mod-usage-bars-compact">
+                        ${rows.map((row) => {
+                            const count = Number(row.events || 0);
+                            const max = Math.max(1, ...rows.map((r) => Number(r.events || 0)));
+                            const width = Math.max(count > 0 ? 4 : 1, Math.round((count / max) * 100));
+                            return `
+                                <div class="mod-usage-row">
+                                    <div class="mod-usage-label">${escapeHtml(featureLabel(String(row.feature || "")))}</div>
+                                    <div class="mod-usage-track-wrap">
+                                        <div class="mod-usage-track">
+                                            <div class="mod-usage-bar" style="width:${width}%"></div>
+                                        </div>
+                                        <span class="mod-usage-count">${count.toLocaleString()}</span>
+                                    </div>
+                                    <div class="mod-usage-meta">${escapeHtml(formatDate(row.last_seen))}</div>
+                                </div>
+                            `;
+                        }).join("")}
+                    </div>
+                </div>
+            `;
+        } catch (error) {
+            detailEl.innerHTML = `<p class="mod-empty">Could not load user breakdown: ${escapeHtml(error.message || String(error))}</p>`;
+        }
+    }
+
+    async function loadAll() {
+        if (featureChartEl) featureChartEl.innerHTML = '<p class="mod-empty mod-empty-inline">Loading…</p>';
+        stats = await staffFeatureUsageStats(days);
+        renderMetrics(stats);
+        renderFeatureBars(featureChartEl, stats.byFeature);
+        renderDailyChart(dailyChartEl, stats.dailyTotals);
+        renderTopUsers(stats.topUsers);
+        renderUserFeatures(stats.topUserFeatures);
+        if (selectedUserId) await loadUserBreakdown(selectedUserId);
+        return stats;
+    }
+
+    daysSelect?.addEventListener("change", () => {
+        days = Number(daysSelect.value || 14) || 14;
+        loadAll().catch((err) => showStatus(err.message, "error"));
+    });
+
+    refreshBtn?.addEventListener("click", () => {
+        loadAll().catch((err) => showStatus(err.message, "error"));
+    });
+
+    return { loadAll };
+}

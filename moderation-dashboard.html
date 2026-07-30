@@ -6,7 +6,7 @@
     <title>Moderation — Alysum</title>
     <link rel="stylesheet" href="css/site-responsive.css?v=1">
     <link rel="stylesheet" href="css/gradient-themes.css?v=5">
-    <link rel="stylesheet" href="css/library-reports.css?v=12">
+    <link rel="stylesheet" href="css/library-reports.css?v=13">
     <script src="js/gradient-theme-sync.js" defer></script>
     <script src="js/alysum-appearance-boot.js"></script>
 </head>
@@ -27,6 +27,7 @@
                 <li id="modStepReports"><strong>supabase-library-reports.sql</strong></li>
                 <li id="modStepPublishCooldown"><strong>supabase-publish-cooldown.sql</strong></li>
                 <li id="modStepStaffUsers"><strong>supabase-staff-users.sql</strong></li>
+                <li id="modStepFeatureUsage"><strong>supabase-feature-usage.sql</strong></li>
                 <li id="modStepBootstrap"><strong>Bootstrap SQL</strong></li>
             </ol>
             <pre class="mod-denied-code" id="modDeniedSql"></pre>
@@ -48,6 +49,9 @@
                 </button>
                 <button type="button" class="mod-sidebar-btn" data-mod-view="people">
                     People <span class="mod-sidebar-badge" id="modPeopleBadge">0</span>
+                </button>
+                <button type="button" class="mod-sidebar-btn" data-mod-view="usage">
+                    Usage
                 </button>
             </nav>
             <div class="mod-sidebar-foot">
@@ -163,6 +167,53 @@
                     </div>
                 </div>
             </div>
+
+            <!-- USAGE -->
+            <div class="mod-view mod-view-usage hidden" id="modViewUsage" data-mod-view-panel="usage">
+                <header class="mod-view-header">
+                    <div>
+                        <h1>Feature usage</h1>
+                        <p>Which Alysum tools authors use most, and who is using them.</p>
+                    </div>
+                    <div class="mod-toolbar">
+                        <label class="mod-select-wrap">
+                            <span>Range</span>
+                            <select class="mod-input" id="modUsageDays">
+                                <option value="7">7 days</option>
+                                <option value="14" selected>14 days</option>
+                                <option value="30">30 days</option>
+                                <option value="90">90 days</option>
+                            </select>
+                        </label>
+                        <button type="button" class="mod-btn primary" id="modUsageRefreshBtn">Refresh</button>
+                    </div>
+                </header>
+
+                <div class="mod-metrics" id="modUsageMetrics"></div>
+
+                <div class="mod-usage-grid">
+                    <section class="mod-usage-panel">
+                        <span class="mod-kicker">Most used features</span>
+                        <div id="modUsageFeatureChart"></div>
+                    </section>
+                    <section class="mod-usage-panel">
+                        <span class="mod-kicker">Daily visits</span>
+                        <div class="mod-joins-chart" id="modUsageDailyChart" aria-label="Daily feature visits"></div>
+                    </section>
+                    <section class="mod-usage-panel mod-usage-panel-wide">
+                        <span class="mod-kicker">Top users</span>
+                        <div id="modUsageTopUsers"></div>
+                    </section>
+                    <section class="mod-usage-panel mod-usage-panel-wide">
+                        <span class="mod-kicker">Who uses what</span>
+                        <div id="modUsageUserFeatures"></div>
+                    </section>
+                    <section class="mod-usage-panel mod-usage-panel-wide">
+                        <span class="mod-kicker">Selected user breakdown</span>
+                        <div id="modUsageUserDetail"><p class="mod-empty">Select a user above to inspect their feature mix.</p></div>
+                    </section>
+                </div>
+            </div>
         </main>
     </div>
 </div>
@@ -171,6 +222,7 @@
     import { bootModerationPage } from "./js/moderation-access.js?v=12";
     import { initReportsPanel } from "./js/moderation-reports-panel.js?v=12";
     import { initPublishApprovalsPanel } from "./js/moderation-publish-approvals-panel.js?v=1";
+    import { initUsagePanel } from "./js/moderation-usage-panel.js?v=1";
     import { initUsersPanel } from "./js/moderation-users-panel.js?v=12";
     import { staffUsersOverviewStats } from "./js/staff-users-api.js?v=12";
     import { getDashboardStats as getReportStats } from "./js/library-reports-api.js?v=12";
@@ -178,6 +230,7 @@
     const modStatus = document.getElementById("modStatus");
     let reportsApi = null;
     let publishApprovalsApi = null;
+    let usageApi = null;
     let usersApi = null;
     let activeView = "inbox";
 
@@ -189,7 +242,7 @@
     }
 
     function showView(view) {
-        activeView = view === "people" ? "people" : "inbox";
+        activeView = view === "people" || view === "usage" ? view : "inbox";
         document.querySelectorAll("[data-mod-view]").forEach((btn) => {
             btn.classList.toggle("is-active", btn.dataset.modView === activeView);
         });
@@ -203,6 +256,10 @@
     }
 
     function onUserSelect(userId) {
+        showView("people");
+        if (usersApi) {
+            usersApi.loadAll().then(() => usersApi.pickUser(userId)).catch((e) => showStatus(e.message, "error"));
+        }
         const url = new URL(window.location.href);
         url.searchParams.set("view", "people");
         url.searchParams.set("user", userId);
@@ -216,6 +273,8 @@
                 usersApi.loadAll().catch((e) => showStatus(e.message, "error"));
             } else if (btn.dataset.modView === "inbox" && reportsApi) {
                 reportsApi.loadAll().catch((e) => showStatus(e.message, "error"));
+            } else if (btn.dataset.modView === "usage" && usageApi) {
+                usageApi.loadAll().catch((e) => showStatus(e.message, "error"));
             }
         });
     });
@@ -258,14 +317,17 @@
     }
 
     const params = new URLSearchParams(window.location.search);
-    const initialView = params.get("view") === "people" || params.get("user") || params.get("tab") === "users"
-        ? "people"
-        : "inbox";
+    const initialView = params.get("view") === "usage"
+        ? "usage"
+        : params.get("view") === "people" || params.get("user") || params.get("tab") === "users"
+            ? "people"
+            : "inbox";
 
     const access = await bootModerationPage({ returnPath: "moderation-dashboard.html" });
     if (access) {
         reportsApi = initReportsPanel({ showStatus });
         publishApprovalsApi = initPublishApprovalsPanel({ showStatus });
+        usageApi = initUsagePanel({ showStatus, onUserSelect });
         usersApi = initUsersPanel({ showStatus, onUserSelect, getSelectedUserId: () => new URLSearchParams(window.location.search).get("user") });
         showView(initialView);
 
@@ -276,6 +338,8 @@
                 if (params.get("user")) {
                     await usersApi.pickUser(params.get("user"));
                 }
+            } else if (initialView === "usage") {
+                await usageApi.loadAll();
             } else {
                 await Promise.all([
                     reportsApi.loadAll(),
@@ -291,6 +355,8 @@
             refreshSidebarStats().catch(() => {});
             if (activeView === "people") {
                 usersApi.loadAll({ remountUser: false }).catch(() => {});
+            } else if (activeView === "usage") {
+                usageApi.loadAll().catch(() => {});
             }
         }, 90_000);
     }
