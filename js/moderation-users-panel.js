@@ -8,12 +8,12 @@ import { mountUserDetail, escapeHtml, formatRelative, listUserStandingLabel } fr
 /**
  * @param {{
  *   showStatus: (msg: string, type?: string) => void,
- *   onUserSelect?: (userId: string) => void,
+ *   syncUserUrl?: (userId: string) => void,
  *   getSelectedUserId?: () => string | null,
  * }} opts
  */
 export function initUsersPanel(opts) {
-    const { showStatus, onUserSelect, getSelectedUserId } = opts;
+    const { showStatus, syncUserUrl, getSelectedUserId } = opts;
     const modUserList = document.getElementById("modUserList");
     const modUserDetailPane = document.getElementById("modUserDetailPane");
     const modSearch = document.getElementById("modSearch");
@@ -30,10 +30,28 @@ export function initUsersPanel(opts) {
     let query = "";
     let filter = "all";
     let selectedUserId = getSelectedUserId?.() || null;
+    let hasLoaded = false;
+    let lastStatsJson = "";
+    let lastUsersKey = "";
+    /** @type {Promise<unknown> | null} */
+    let loadInFlight = null;
 
     function setSidebarBadges(stats) {
         const el = document.getElementById("modPeopleBadge");
         if (el) el.textContent = String(stats.usersNeedingAttention || 0);
+    }
+
+    function updateSelectedUser(userId) {
+        selectedUserId = userId || null;
+        modUserList?.querySelectorAll("[data-pick-user]").forEach((btn) => {
+            btn.classList.toggle("is-selected", btn.dataset.pickUser === selectedUserId);
+        });
+        modRecentJoins?.querySelectorAll("[data-pick-user]").forEach((btn) => {
+            btn.classList.toggle("is-selected", btn.dataset.pickUser === selectedUserId);
+        });
+        modOnlineList?.querySelectorAll("[data-pick-user]").forEach((btn) => {
+            btn.classList.toggle("is-selected", btn.dataset.pickUser === selectedUserId);
+        });
     }
 
     function renderUsageStats(stats) {
@@ -64,7 +82,7 @@ export function initUsersPanel(opts) {
         const max = Math.max(1, ...rows.map((d) => Number(d.count || 0)));
         const trackHeight = 64;
         modJoinsChart.innerHTML = `
-            <div class="mod-joins-bars mod-joins-bars-compact" role="img" aria-label="Daily new accounts">
+            <div class="mod-joins-bars mod-joins-bars-compact mod-joins-bars-static" role="img" aria-label="Daily new accounts">
                 ${rows.map((d) => {
                     const count = Number(d.count || 0);
                     const barHeight = count > 0
@@ -92,7 +110,7 @@ export function initUsersPanel(opts) {
             return;
         }
         modRecentJoins.innerHTML = rows.map((u) => `
-            <button type="button" class="mod-recent-join" data-pick-user="${escapeHtml(u.id)}">
+            <button type="button" class="mod-recent-join${u.id === selectedUserId ? " is-selected" : ""}" data-pick-user="${escapeHtml(u.id)}">
                 <span class="mod-recent-join-name">@${escapeHtml(u.username || "unknown")}</span>
                 <span class="mod-recent-join-meta">${escapeHtml(formatRelative(u.created_at))}</span>
             </button>
@@ -109,7 +127,7 @@ export function initUsersPanel(opts) {
             return;
         }
         modOnlineList.innerHTML = users.slice(0, 12).map((u) => `
-            <button type="button" class="mod-chip mod-chip-link" data-pick-user="${escapeHtml(u.id)}">@${escapeHtml(u.username)}</button>
+            <button type="button" class="mod-chip mod-chip-link${u.id === selectedUserId ? " is-selected" : ""}" data-pick-user="${escapeHtml(u.id)}">@${escapeHtml(u.username)}</button>
         `).join("");
         modOnlineList.querySelectorAll("[data-pick-user]").forEach((btn) => {
             btn.addEventListener("click", () => pickUser(btn.dataset.pickUser));
@@ -163,15 +181,12 @@ export function initUsersPanel(opts) {
             ?.scrollIntoView({ block: "nearest", behavior: "smooth" });
     }
 
-            async function pickUser(userId) {
+    async function pickUser(userId) {
         if (!userId) return;
-        selectedUserId = userId;
-        onUserSelect?.(userId);
+        updateSelectedUser(userId);
+        syncUserUrl?.(userId);
         document.getElementById("modPeopleOverview")?.classList.add("hidden");
         document.getElementById("modPeopleOverviewBtn")?.classList.remove("is-active");
-        modUserList?.querySelectorAll("[data-pick-user]").forEach((btn) => {
-            btn.classList.toggle("is-selected", btn.dataset.pickUser === userId);
-        });
         scrollSelectedIntoView();
         if (!modUserDetailPane) return;
         try {
@@ -205,17 +220,28 @@ export function initUsersPanel(opts) {
         });
     }
 
-    async function loadUsers() {
-        if (modUserList) modUserList.innerHTML = '<p class="mod-empty">Loading…</p>';
+    async function loadUsers(options = {}) {
+        const silent = !!options.silent;
+        const usersKey = `${query}|${filter}|${offset}`;
+        if (!silent && !modUserList?.querySelector("[data-pick-user]")) {
+            modUserList.innerHTML = '<p class="mod-empty">Loading…</p>';
+        }
         try {
             const onlineOnly = filter === "online";
             const activeToday = filter === "today";
             const needsAttention = filter === "attention";
             const result = await staffSearchUsers(query, PAGE_SIZE, offset, { onlineOnly, activeToday, needsAttention });
             total = Number(result.total || 0);
+            const nextKey = `${usersKey}|${total}|${JSON.stringify(result.users || [])}`;
+            if (silent && nextKey === lastUsersKey) {
+                updatePagination();
+                return result;
+            }
+            lastUsersKey = nextKey;
             renderUserList(result.users || []);
             updatePagination();
             scrollSelectedIntoView();
+            return result;
         } catch (err) {
             if (modUserList) {
                 modUserList.innerHTML = `<p class="mod-detail-empty mod-load-error">Could not load users: ${escapeHtml(err.message || String(err))}</p>`;
@@ -224,27 +250,63 @@ export function initUsersPanel(opts) {
         }
     }
 
-    async function loadAll(options = {}) {
-        const { remountUser = false } = options;
-        const [stats, online] = await Promise.all([
-            staffUsersOverviewStats(),
-            staffListOnlineUsers(16),
-            loadUsers(),
-        ]);
+    function renderOverview(stats, online) {
         setSidebarBadges(stats);
         renderUsageStats(stats);
         renderJoinsChart(stats.joinsByDay);
         renderRecentJoins(stats.recentJoins);
         renderOnlineNow(online);
-        if (remountUser && selectedUserId && modUserDetailPane) {
-            await pickUser(selectedUserId);
-        }
-        return stats;
+    }
+
+    async function loadAll(options = {}) {
+        if (loadInFlight) return loadInFlight;
+
+        const force = !!options.force;
+        const silent = !!options.silent || (hasLoaded && !force);
+        const remountUser = !!options.remountUser;
+
+        loadInFlight = (async () => {
+            try {
+                const [stats, online] = await Promise.all([
+                    staffUsersOverviewStats(),
+                    staffListOnlineUsers(16),
+                ]);
+                const statsJson = JSON.stringify({ stats, online });
+                if (!force && hasLoaded && statsJson === lastStatsJson) {
+                    await loadUsers({ silent: true });
+                } else {
+                    lastStatsJson = statsJson;
+                    renderOverview(stats, online);
+                    await loadUsers({ silent: hasLoaded && !force });
+                }
+                hasLoaded = true;
+                if (remountUser && selectedUserId && modUserDetailPane) {
+                    await mountUserDetail(selectedUserId, modUserDetailPane, { showStatus });
+                }
+                return stats;
+            } finally {
+                loadInFlight = null;
+            }
+        })();
+
+        return loadInFlight;
+    }
+
+    async function ensureLoaded() {
+        if (hasLoaded) return null;
+        return loadAll({ force: true });
+    }
+
+    async function refresh() {
+        lastStatsJson = "";
+        lastUsersKey = "";
+        return loadAll({ force: true, silent: true, remountUser: !!selectedUserId });
     }
 
     document.getElementById("modSearchBtn")?.addEventListener("click", () => {
         query = modSearch?.value.trim() || "";
         offset = 0;
+        lastUsersKey = "";
         syncSearchUrl();
         loadUsers().catch((e) => showStatus(e.message, "error"));
     });
@@ -253,6 +315,7 @@ export function initUsersPanel(opts) {
         if (modSearch) modSearch.value = "";
         query = "";
         offset = 0;
+        lastUsersKey = "";
         syncSearchUrl();
         loadUsers().catch((e) => showStatus(e.message, "error"));
     });
@@ -261,6 +324,7 @@ export function initUsersPanel(opts) {
         if (e.key === "Enter") {
             query = modSearch.value.trim();
             offset = 0;
+            lastUsersKey = "";
             syncSearchUrl();
             loadUsers().catch((err) => showStatus(err.message, "error"));
         }
@@ -268,16 +332,18 @@ export function initUsersPanel(opts) {
 
     document.getElementById("modPrevBtn")?.addEventListener("click", () => {
         offset = Math.max(0, offset - PAGE_SIZE);
+        lastUsersKey = "";
         loadUsers().catch((e) => showStatus(e.message, "error"));
     });
 
     document.getElementById("modNextBtn")?.addEventListener("click", () => {
         offset += PAGE_SIZE;
+        lastUsersKey = "";
         loadUsers().catch((e) => showStatus(e.message, "error"));
     });
 
     document.getElementById("modRefreshUsersBtn")?.addEventListener("click", () => {
-        loadAll({ remountUser: !!selectedUserId }).catch((e) => showStatus(e.message, "error"));
+        refresh().catch((e) => showStatus(e.message, "error"));
     });
 
     document.getElementById("modPeopleOverviewBtn")?.addEventListener("click", () => {
@@ -293,6 +359,7 @@ export function initUsersPanel(opts) {
     document.querySelectorAll("[data-user-filter]").forEach((btn) => {
         btn.addEventListener("click", () => {
             setFilter(btn.dataset.userFilter || "all");
+            lastUsersKey = "";
             loadUsers().catch((e) => showStatus(e.message, "error"));
         });
     });
@@ -308,5 +375,5 @@ export function initUsersPanel(opts) {
         showPickUserHint();
     }
 
-    return { loadAll, pickUser, setFilter, showPickUserHint };
+    return { loadAll, ensureLoaded, refresh, pickUser, setFilter, showPickUserHint };
 }

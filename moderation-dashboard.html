@@ -6,7 +6,7 @@
     <title>Moderation — Alysum</title>
     <link rel="stylesheet" href="css/site-responsive.css?v=1">
     <link rel="stylesheet" href="css/gradient-themes.css?v=5">
-    <link rel="stylesheet" href="css/library-reports.css?v=15">
+    <link rel="stylesheet" href="css/library-reports.css?v=16">
     <script src="js/gradient-theme-sync.js" defer></script>
     <script src="js/alysum-appearance-boot.js"></script>
 </head>
@@ -269,14 +269,11 @@
         window.history.replaceState({}, "", url.pathname + url.search);
     }
 
-    function onUserSelect(userId) {
-        showView("people");
-        if (usersApi) {
-            usersApi.loadAll().then(() => usersApi.pickUser(userId)).catch((e) => showStatus(e.message, "error"));
-        }
+    function syncPeopleUserUrl(userId) {
         const url = new URL(window.location.href);
         url.searchParams.set("view", "people");
-        url.searchParams.set("user", userId);
+        if (userId) url.searchParams.set("user", userId);
+        else url.searchParams.delete("user");
         window.history.replaceState({}, "", url.pathname + url.search);
     }
 
@@ -284,7 +281,7 @@
         btn.addEventListener("click", () => {
             showView(btn.dataset.modView);
             if (btn.dataset.modView === "people" && usersApi) {
-                usersApi.loadAll().catch((e) => showStatus(e.message, "error"));
+                usersApi.ensureLoaded().catch((e) => showStatus(e.message, "error"));
             } else if (btn.dataset.modView === "inbox" && reportsApi) {
                 reportsApi.loadAll().catch((e) => showStatus(e.message, "error"));
             } else if (btn.dataset.modView === "usage" && usageApi) {
@@ -342,13 +339,17 @@
         reportsApi = initReportsPanel({ showStatus });
         publishApprovalsApi = initPublishApprovalsPanel({ showStatus });
         usageApi = initUsagePanel({ showStatus });
-        usersApi = initUsersPanel({ showStatus, onUserSelect, getSelectedUserId: () => new URLSearchParams(window.location.search).get("user") });
+        usersApi = initUsersPanel({
+            showStatus,
+            syncUserUrl: syncPeopleUserUrl,
+            getSelectedUserId: () => new URLSearchParams(window.location.search).get("user"),
+        });
         showView(initialView);
 
         try {
             await refreshSidebarStats();
             if (initialView === "people") {
-                await usersApi.loadAll();
+                await usersApi.loadAll({ force: true });
                 if (params.get("user")) {
                     await usersApi.pickUser(params.get("user"));
                 }
@@ -367,9 +368,6 @@
         window.setInterval(() => {
             if (document.visibilityState !== "visible") return;
             refreshSidebarStats().catch(() => {});
-            if (activeView === "people") {
-                usersApi.loadAll({ remountUser: false }).catch(() => {});
-            }
         }, 90_000);
     }
 </script>
