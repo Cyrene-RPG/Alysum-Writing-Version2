@@ -918,8 +918,14 @@
 <div class="sprint-modal" id="sprintResultModal"><div class="sprint-modal-box"><h2 class="sprint-modal-title" id="sprintResultTitle">Sprint complete</h2><p class="sprint-modal-text" id="sprintResultText">...</p><div class="sprint-modal-actions"><button class="primary" id="sprintResultOk" type="button" data-tip="Dismiss">OK</button></div></div></div>
 <div class="sprint-modal" id="inlineImageSizeModal" aria-hidden="true">
     <div class="sprint-modal-box inline-image-modal-box">
-        <h2 class="sprint-modal-title">Add image</h2>
-        <p class="sprint-modal-text">Pick a size and frame for your illustration.</p>
+        <h2 class="sprint-modal-title">Place illustration</h2>
+        <p class="sprint-modal-text">Choose size, placement, and frame so the image feels at home on the page.</p>
+        <p class="inline-image-section-label">Placement</p>
+        <div class="inline-image-align-grid" id="inlineImageAlignGrid">
+            <button class="inline-image-align-opt" type="button" data-align="align-left" data-tip="Float left — text wraps on the right">Left + wrap</button>
+            <button class="inline-image-align-opt is-selected" type="button" data-align="align-center" data-tip="Centered between paragraphs">Center</button>
+            <button class="inline-image-align-opt" type="button" data-align="align-right" data-tip="Float right — text wraps on the left">Right + wrap</button>
+        </div>
         <p class="inline-image-section-label">Size</p>
         <div class="sprint-opt-grid" id="inlineImageSizeGrid">
             <button class="sprint-opt is-selected" type="button" data-size="img-small" data-tip="Small (240px max)">Small</button>
@@ -1246,6 +1252,7 @@ function rememberBookId(id) {
     const inlineImageSizeModal = document.getElementById("inlineImageSizeModal");
     const inlineImageSizeGrid = document.getElementById("inlineImageSizeGrid");
     const inlineImageFrameGrid = document.getElementById("inlineImageFrameGrid");
+    const inlineImageAlignGrid = document.getElementById("inlineImageAlignGrid");
     const inlineImageCaptionInput = document.getElementById("inlineImageCaptionInput");
     const inlineImageInsertBtn = document.getElementById("inlineImageInsertBtn");
     const inlineImageSizeCancel = document.getElementById("inlineImageSizeCancel");
@@ -1618,7 +1625,7 @@ function rememberBookId(id) {
     function buildInlineImageHtml(url, options = {}) {
         const safeSize = INLINE_IMAGE_SIZE_CLASSES.has(options.size) ? options.size : INLINE_IMAGE_DEFAULT_SIZE;
         const safeFrame = INLINE_IMAGE_FRAME_CLASSES.has(options.frame) ? options.frame : INLINE_IMAGE_DEFAULT_FRAME;
-        const safeAlign = INLINE_IMAGE_DEFAULT_ALIGN;
+        const safeAlign = INLINE_IMAGE_ALIGN_CLASSES.has(options.align) ? options.align : INLINE_IMAGE_DEFAULT_ALIGN;
         let resolvedSize = safeSize;
         if (isFloatedInlineAlign(safeAlign) && safeSize === "img-full") {
             resolvedSize = "img-large";
@@ -1804,12 +1811,13 @@ function rememberBookId(id) {
     function pickInlineImageOptions() {
         return new Promise((resolve) => {
             if (!inlineImageSizeModal) {
-                resolve({ size: INLINE_IMAGE_DEFAULT_SIZE, frame: INLINE_IMAGE_DEFAULT_FRAME, caption: "" });
+                resolve({ size: INLINE_IMAGE_DEFAULT_SIZE, frame: INLINE_IMAGE_DEFAULT_FRAME, align: INLINE_IMAGE_DEFAULT_ALIGN, caption: "" });
                 return;
             }
 
             let selectedSize = INLINE_IMAGE_DEFAULT_SIZE;
             let selectedFrame = INLINE_IMAGE_DEFAULT_FRAME;
+            let selectedAlign = INLINE_IMAGE_DEFAULT_ALIGN;
 
             const sizeButtons = inlineImageSizeGrid
                 ? [...inlineImageSizeGrid.querySelectorAll("[data-size]")]
@@ -1817,23 +1825,42 @@ function rememberBookId(id) {
             const frameButtons = inlineImageFrameGrid
                 ? [...inlineImageFrameGrid.querySelectorAll("[data-frame]")]
                 : [];
+            const alignButtons = inlineImageAlignGrid
+                ? [...inlineImageAlignGrid.querySelectorAll("[data-align]")]
+                : [];
 
             function markSelected(buttons, activeBtn, className) {
                 buttons.forEach((btn) => btn.classList.toggle(className, btn === activeBtn));
             }
 
+            function syncSizeOptionsForAlign() {
+                const floated = isFloatedInlineAlign(selectedAlign);
+                sizeButtons.forEach((btn) => {
+                    const isFull = btn.dataset.size === "img-full";
+                    btn.disabled = floated && isFull;
+                    btn.classList.toggle("is-disabled", floated && isFull);
+                });
+                if (floated && selectedSize === "img-full") {
+                    selectedSize = "img-large";
+                    markSelected(sizeButtons, sizeButtons.find((btn) => btn.dataset.size === selectedSize), "is-selected");
+                }
+            }
+
             function resetModalState() {
                 selectedSize = INLINE_IMAGE_DEFAULT_SIZE;
                 selectedFrame = INLINE_IMAGE_DEFAULT_FRAME;
+                selectedAlign = INLINE_IMAGE_DEFAULT_ALIGN;
                 sizeButtons.forEach((btn) => {
                     btn.classList.toggle("is-selected", btn.dataset.size === selectedSize);
-                    btn.disabled = false;
-                    btn.classList.remove("is-disabled");
                 });
                 frameButtons.forEach((btn) => {
                     btn.classList.toggle("is-selected", btn.dataset.frame === selectedFrame);
                 });
+                alignButtons.forEach((btn) => {
+                    btn.classList.toggle("is-selected", btn.dataset.align === selectedAlign);
+                });
                 if (inlineImageCaptionInput) inlineImageCaptionInput.value = "";
+                syncSizeOptionsForAlign();
             }
 
             function cleanup() {
@@ -1841,6 +1868,7 @@ function rememberBookId(id) {
                 inlineImageSizeModal.setAttribute("aria-hidden", "true");
                 sizeButtons.forEach((btn) => btn.removeEventListener("click", onSizeClick));
                 frameButtons.forEach((btn) => btn.removeEventListener("click", onFrameClick));
+                alignButtons.forEach((btn) => btn.removeEventListener("click", onAlignClick));
                 inlineImageInsertBtn?.removeEventListener("click", onInsert);
                 inlineImageSizeCancel?.removeEventListener("click", onCancel);
                 inlineImageSizeModal.removeEventListener("click", onBackdropClick);
@@ -1866,10 +1894,19 @@ function rememberBookId(id) {
                 markSelected(frameButtons, e.currentTarget, "is-selected");
             }
 
+            function onAlignClick(e) {
+                const alignClass = e.currentTarget?.dataset?.align;
+                if (!alignClass || !INLINE_IMAGE_ALIGN_CLASSES.has(alignClass)) return;
+                selectedAlign = alignClass;
+                markSelected(alignButtons, e.currentTarget, "is-selected");
+                syncSizeOptionsForAlign();
+            }
+
             function onInsert() {
                 finish({
                     size: selectedSize,
                     frame: selectedFrame,
+                    align: selectedAlign,
                     caption: inlineImageCaptionInput?.value || "",
                 });
             }
@@ -1895,6 +1932,7 @@ function rememberBookId(id) {
             inlineImageSizeModal.setAttribute("aria-hidden", "false");
             sizeButtons.forEach((btn) => btn.addEventListener("click", onSizeClick));
             frameButtons.forEach((btn) => btn.addEventListener("click", onFrameClick));
+            alignButtons.forEach((btn) => btn.addEventListener("click", onAlignClick));
             inlineImageInsertBtn?.addEventListener("click", onInsert);
             inlineImageSizeCancel?.addEventListener("click", onCancel);
             inlineImageSizeModal.addEventListener("click", onBackdropClick);
