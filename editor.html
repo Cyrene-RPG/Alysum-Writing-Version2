@@ -23,6 +23,7 @@
 <link rel="stylesheet" href="css/site-responsive.css?v=1" />
 <link rel="stylesheet" href="css/gradient-themes.css?v=7" />
     <link rel="stylesheet" href="css/workspace-nav.css?v=9" />
+    <link rel="stylesheet" href="css/book-inline-images.css?v=5" />
 <link rel="stylesheet" href="css/plot-doctor.css?v=4" />
 <link rel="stylesheet" href="css/book-version.css?v=8" />
     <script src="js/gradient-theme-sync.js" defer></script>
@@ -418,7 +419,7 @@
     }
     .chapter-number { display: none; text-align: center; font-family: Georgia, serif; color: var(--page-subtle); font-size: 18px; margin-bottom: 22px; }
     .chapter-title { text-align: center; font-family: Georgia, "Times New Roman", serif; color: var(--page-text); font-size: 28px; font-weight: 700; margin-bottom: 40px; outline: none; }
-    .editor { min-height: 440px; outline: none; font-family: Georgia, "Times New Roman", serif; font-size: 20px; line-height: 1.7; letter-spacing: 0.2px; color: var(--page-text); white-space: normal; word-break: break-word; }
+    .editor { min-height: 440px; outline: none; font-family: Georgia, "Times New Roman", serif; font-size: 20px; line-height: 1.7; letter-spacing: 0.2px; color: var(--page-text); white-space: normal; word-break: break-word; display: flow-root; }
     .editor div, .editor p { margin: 0; text-indent: 2em; }
     .editor div:first-child, .editor p:first-child { text-indent: 0; }
     .editor h2, .editor blockquote, .editor ul, .editor ol, .editor li { text-indent: 0; }
@@ -427,8 +428,10 @@
     .editor blockquote { border-left: 4px solid var(--alysum-purple); margin: 0 0 1.15em; padding-left: 16px; color: #575f69; }
     body.dark .editor blockquote { color: #cbd5e1; }
     .editor h2 { font-size: 1.3em; margin: 0 0 1em; font-weight: 700; }
+    .editor .book-inline-image { text-indent: 0; }
+    .page::after { content: ""; display: block; clear: both; }
     .editor:empty:before { content: attr(data-placeholder); color: #a7afb8; }
-    .bottom-meta { margin-top: 16px; text-align: center; font-size: 13px; color: #7b8490; font-weight: 700; }
+    .bottom-meta { margin-top: 16px; text-align: center; font-size: 13px; color: #7b8490; font-weight: 700; clear: both; }
     .overlay { display: none; }
     .publish-modal, .sprint-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.65); display: none; align-items: center; justify-content: center; z-index: 99999; padding: 20px; }
     .publish-modal.open, .sprint-modal.open { display: flex; }
@@ -830,6 +833,8 @@
     <select class="tool-select" id="formatSelect" data-tip="Paragraph style" aria-label="Paragraph style"><option value="p">Body</option><option value="h2">Heading</option></select>
     <select class="tool-select" id="fontSelect" data-tip="Editor font" aria-label="Font"></select>
     <select class="tool-select" id="fontSizeSelect" data-tip="Editor text size" aria-label="Text size"><option value="18">Compact</option><option value="20">Book</option><option value="22">Comfort</option><option value="26">Large</option></select>
+    <button class="tool-btn" type="button" id="insertImageBtn" data-tip="Insert image at cursor">＋ Image</button>
+    <input id="inlineImageUploadInput" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden />
     <button class="tool-btn" type="button" id="backgroundBtn" data-tip="Set editor background image">Background</button>
     <div class="toolbar-spacer"></div>
     <span class="sprint-anchor" id="sprintAnchor"><button class="sprint-btn" id="sprintToolbarBtn" type="button" data-tip="Writing sprint timer" aria-label="Sprint timer">⏱ Sprint</button></span>
@@ -910,7 +915,55 @@
     </div>
 </div><div class="sprint-modal" id="sprintConfirmModal"><div class="sprint-modal-box"><h2 class="sprint-modal-title">Ready to start?</h2><p class="sprint-modal-text" id="sprintConfirmText">Start a sprint?</p><div class="sprint-modal-actions"><button class="secondary" id="sprintConfirmNo" type="button" data-tip="Cancel sprint">Not yet</button><button class="primary" id="sprintConfirmYes" type="button" data-tip="Start the sprint">Yes, start</button></div></div></div>
 <div class="sprint-modal" id="sprintOptionsModal"><div class="sprint-modal-box"><h2 class="sprint-modal-title">Choose a timer</h2><p class="sprint-modal-text" id="sprintOptionsSub">Tracks words written during the sprint.</p><div class="sprint-opt-grid" id="sprintOptionsGrid"><button class="sprint-opt" type="button" data-min="10" data-tip="10 minute sprint">10 min</button><button class="sprint-opt" type="button" data-min="15" data-tip="15 minute sprint">15 min</button><button class="sprint-opt" type="button" data-min="25" data-tip="25 minute sprint">25 min</button><button class="sprint-opt" type="button" data-min="60" data-tip="1 hour sprint">1 hour</button></div><div class="sprint-modal-actions" style="margin-top:14px;"><button class="secondary" id="sprintOptionsClose" type="button" data-tip="Close sprint options">Close</button></div></div></div>
-<div class="sprint-modal" id="sprintResultModal"><div class="sprint-modal-box"><h2 class="sprint-modal-title" id="sprintResultTitle">Sprint complete</h2><p class="sprint-modal-text" id="sprintResultText">...</p><div class="sprint-modal-actions"><button class="primary" id="sprintResultOk" type="button" data-tip="Dismiss">OK</button></div></div></div><script type="module">
+<div class="sprint-modal" id="sprintResultModal"><div class="sprint-modal-box"><h2 class="sprint-modal-title" id="sprintResultTitle">Sprint complete</h2><p class="sprint-modal-text" id="sprintResultText">...</p><div class="sprint-modal-actions"><button class="primary" id="sprintResultOk" type="button" data-tip="Dismiss">OK</button></div></div></div>
+<div class="sprint-modal" id="inlineImageSizeModal" aria-hidden="true">
+    <div class="sprint-modal-box inline-image-modal-box">
+        <h2 class="sprint-modal-title">Add image</h2>
+        <p class="sprint-modal-text">Pick a size and frame for your illustration.</p>
+        <p class="inline-image-section-label">Size</p>
+        <div class="sprint-opt-grid" id="inlineImageSizeGrid">
+            <button class="sprint-opt is-selected" type="button" data-size="img-small" data-tip="Small (240px max)">Small</button>
+            <button class="sprint-opt" type="button" data-size="img-medium" data-tip="Medium (480px max)">Medium</button>
+            <button class="sprint-opt" type="button" data-size="img-large" data-tip="Large (720px max)">Large</button>
+            <button class="sprint-opt" type="button" data-size="img-full" data-tip="Full column width">Full width</button>
+        </div>
+        <p class="inline-image-section-label">Frame</p>
+        <div class="inline-image-frame-grid" id="inlineImageFrameGrid">
+            <button class="inline-image-frame-opt is-selected" type="button" data-frame="frame-plain" data-tip="Minimal, flush with the page">
+                <span class="inline-image-frame-preview frame-plain" aria-hidden="true"></span>
+                Plain
+            </button>
+            <button class="inline-image-frame-opt" type="button" data-frame="frame-soft" data-tip="Soft shadow, floating plate">
+                <span class="inline-image-frame-preview frame-soft" aria-hidden="true"></span>
+                Soft
+            </button>
+            <button class="inline-image-frame-opt" type="button" data-frame="frame-mat" data-tip="Mat board mount, illustrated edition">
+                <span class="inline-image-frame-preview frame-mat" aria-hidden="true"></span>
+                Mat
+            </button>
+            <button class="inline-image-frame-opt" type="button" data-frame="frame-rule" data-tip="Fine double-line border">
+                <span class="inline-image-frame-preview frame-rule" aria-hidden="true"></span>
+                Rule
+            </button>
+            <button class="inline-image-frame-opt" type="button" data-frame="frame-etched" data-tip="Recessed engraved plate">
+                <span class="inline-image-frame-preview frame-etched" aria-hidden="true"></span>
+                Etched
+            </button>
+            <button class="inline-image-frame-opt" type="button" data-frame="frame-vintage" data-tip="Aged paper with warm tone">
+                <span class="inline-image-frame-preview frame-vintage" aria-hidden="true"></span>
+                Vintage
+            </button>
+        </div>
+        <label class="inline-image-caption-field">
+            <span class="inline-image-section-label" style="margin:0;">Caption <span style="font-weight:600;text-transform:none;letter-spacing:0;">(optional)</span></span>
+            <input class="inline-image-caption-input" id="inlineImageCaptionInput" type="text" autocomplete="off" spellcheck="true" placeholder="Figure caption or scene note…" />
+        </label>
+        <div class="sprint-modal-actions">
+            <button class="secondary" id="inlineImageSizeCancel" type="button" data-tip="Cancel image insert">Cancel</button>
+            <button class="primary" id="inlineImageInsertBtn" type="button" data-tip="Insert image at cursor">Insert image</button>
+        </div>
+    </div>
+</div><script type="module">
     import { supabase } from "./firebase.js";
     import { isDesktopLocalHost, goToLogin } from "./js/desktop-auth.js?v=1";
     import { alysumPrompt } from "./js/alysum-prompt.js?v=1";
@@ -1188,6 +1241,14 @@ function rememberBookId(id) {
     const frReplaceAllBtn = document.getElementById("frReplaceAllBtn");
     const frCloseBtn = document.getElementById("frCloseBtn");
     const frStatus = document.getElementById("frStatus");
+    const insertImageBtn = document.getElementById("insertImageBtn");
+    const inlineImageUploadInput = document.getElementById("inlineImageUploadInput");
+    const inlineImageSizeModal = document.getElementById("inlineImageSizeModal");
+    const inlineImageSizeGrid = document.getElementById("inlineImageSizeGrid");
+    const inlineImageFrameGrid = document.getElementById("inlineImageFrameGrid");
+    const inlineImageCaptionInput = document.getElementById("inlineImageCaptionInput");
+    const inlineImageInsertBtn = document.getElementById("inlineImageInsertBtn");
+    const inlineImageSizeCancel = document.getElementById("inlineImageSizeCancel");
     const backgroundBtn = document.getElementById("backgroundBtn");
     const backgroundBar = document.getElementById("backgroundBar");
     const backgroundFitSelect = document.getElementById("backgroundFitSelect");
@@ -1224,7 +1285,19 @@ function rememberBookId(id) {
     let frActiveIndex = -1;
     let dailyGoalBadgeTimer = null;
     let activeEditorBackgroundObjectUrl = "";
+    let pendingInlineImageUrl = "";
     const frSupportsHighlight = typeof Highlight !== "undefined" && !!CSS.highlights;
+    const INLINE_IMAGE_FIGURE_CLASS = "book-inline-image";
+    const INLINE_IMAGE_SIZE_CLASSES = new Set(["img-small", "img-medium", "img-large", "img-full"]);
+    const INLINE_IMAGE_FRAME_CLASSES = new Set(["frame-plain", "frame-soft", "frame-mat", "frame-rule", "frame-etched", "frame-vintage"]);
+    const INLINE_IMAGE_ALIGN_CLASSES = new Set(["align-left", "align-center", "align-right"]);
+    const INLINE_IMAGE_DEFAULT_SIZE = "img-medium";
+    const INLINE_IMAGE_DEFAULT_FRAME = "frame-plain";
+    const INLINE_IMAGE_DEFAULT_ALIGN = "align-center";
+
+    function isFloatedInlineAlign(align) {
+        return align === "align-left" || align === "align-right";
+    }
 
     const sprintToolbarBtn = document.getElementById("sprintToolbarBtn");
     const sprintFloat = document.getElementById("sprintFloat");
@@ -1517,6 +1590,360 @@ function rememberBookId(id) {
         if (uploadError) throw uploadError;
         const { data: publicData } = supabase.storage.from("comic-pages").getPublicUrl(path);
         return publicData?.publicUrl || "";
+    }
+
+    async function uploadBookContentImage(file) {
+        if (!file || !file.type.startsWith("image/")) throw new Error("Please upload an image file.");
+        if (isLocalStudio) {
+            return await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = () => reject(reader.error || new Error("Could not read image."));
+                reader.readAsDataURL(file);
+            });
+        }
+        if (!currentUser?.id) throw new Error("You must be signed in to upload images.");
+        const chapterId = currentChapter()?.id || generateId();
+        const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
+        const path = `${currentUser.id}/${bookId}/${chapterId}/${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${ext}`;
+        const { error: uploadError } = await supabase.storage.from("book-content-images").upload(path, file, {
+            upsert: true,
+            contentType: file.type,
+        });
+        if (uploadError) throw uploadError;
+        const { data: publicData } = supabase.storage.from("book-content-images").getPublicUrl(path);
+        return publicData?.publicUrl || "";
+    }
+
+    function buildInlineImageHtml(url, options = {}) {
+        const safeSize = INLINE_IMAGE_SIZE_CLASSES.has(options.size) ? options.size : INLINE_IMAGE_DEFAULT_SIZE;
+        const safeFrame = INLINE_IMAGE_FRAME_CLASSES.has(options.frame) ? options.frame : INLINE_IMAGE_DEFAULT_FRAME;
+        const safeAlign = INLINE_IMAGE_DEFAULT_ALIGN;
+        let resolvedSize = safeSize;
+        if (isFloatedInlineAlign(safeAlign) && safeSize === "img-full") {
+            resolvedSize = "img-large";
+        }
+        const caption = safeString(options.caption, "").trim();
+        const captionHtml = caption
+            ? `<figcaption class="book-inline-caption">${escapeHtml(caption)}</figcaption>`
+            : "";
+        return `<figure class="${INLINE_IMAGE_FIGURE_CLASS} ${resolvedSize} ${safeFrame} ${safeAlign}"><img src="${escapeHtml(url)}" alt="" loading="lazy" />${captionHtml}</figure>`;
+    }
+
+    function placeCaretInBlock(block, atStart = true) {
+        if (!block) return;
+        editor.focus();
+        const range = document.createRange();
+        range.selectNodeContents(block);
+        range.collapse(atStart);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+    }
+
+    function applyEditorInlineImageGuards(root = editor) {
+        if (!root) return;
+        root.querySelectorAll(`figure.${INLINE_IMAGE_FIGURE_CLASS}`).forEach((fig) => {
+            fig.contentEditable = "false";
+            fig.dataset.inlineImage = "1";
+        });
+    }
+
+    async function deleteInlineImage(fig) {
+        if (!fig || !editor?.contains(fig)) return;
+        fig.remove();
+        normalizeInlineImagesInEditor();
+        cleanAndStoreCurrentChapterFromEditor();
+        syncStats();
+        try {
+            await saveBook("Image removed");
+        } catch (err) {
+            console.error(err);
+            setSaveStatus("Save failed");
+        }
+    }
+
+    function promptDeleteInlineImage(fig) {
+        if (!fig || isCurrentBookComic()) return;
+        if (!confirm("Delete this image from the chapter?")) return;
+        void deleteInlineImage(fig);
+    }
+
+    function normalizeInlineImagesInHolder(holder) {
+        if (!holder) return;
+        holder.querySelectorAll(`p figure.${INLINE_IMAGE_FIGURE_CLASS}, div figure.${INLINE_IMAGE_FIGURE_CLASS}`).forEach((fig) => {
+            const block = fig.parentElement;
+            if (!block || block === holder) return;
+            const hasOtherContent = [...block.childNodes].some((node) => {
+                if (node === fig) return false;
+                if (node.nodeType === Node.TEXT_NODE) return !!node.textContent.trim();
+                return true;
+            });
+            if (!hasOtherContent) block.replaceWith(fig);
+            else block.parentElement.insertBefore(fig, block.nextSibling);
+        });
+        holder.querySelectorAll(`.${INLINE_IMAGE_FIGURE_CLASS} figcaption`).forEach((caption) => {
+            if (!caption.textContent.trim()) caption.remove();
+        });
+    }
+
+    function normalizeInlineImagesInEditor() {
+        if (!editor) return;
+        normalizeInlineImagesInHolder(editor);
+        applyEditorInlineImageGuards();
+        ensureTypingBlockAfterFigures();
+    }
+
+    function isEmptyEditorParagraph(el) {
+        if (!el || (el.tagName !== "P" && el.tagName !== "DIV")) return false;
+        return !el.textContent.trim() && !el.querySelector("img, figure");
+    }
+
+    function pruneGapParagraphsNearFigures(root = editor) {
+        if (!root) return;
+        root.querySelectorAll(`figure.${INLINE_IMAGE_FIGURE_CLASS}`).forEach((fig) => {
+            const prev = fig.previousElementSibling;
+            if (isEmptyEditorParagraph(prev)) prev.remove();
+
+            const next = fig.nextElementSibling;
+            if (isEmptyEditorParagraph(next) && next.nextElementSibling) {
+                next.remove();
+            }
+        });
+    }
+
+    function ensureTypingBlockAfterFigures() {
+        if (!editor) return;
+        pruneGapParagraphsNearFigures();
+        const last = editor.lastElementChild;
+        if (last?.matches(`figure.${INLINE_IMAGE_FIGURE_CLASS}`)) {
+            const p = document.createElement("p");
+            p.appendChild(document.createElement("br"));
+            editor.appendChild(p);
+        }
+    }
+
+    function placeCaretAfterFigure(figure) {
+        if (!figure) return;
+        let next = figure.nextElementSibling;
+        while (next && next.tagName === "FIGURE") next = next.nextElementSibling;
+        if (next && (next.tagName === "P" || next.tagName === "DIV")) {
+            placeCaretInBlock(next, true);
+            return;
+        }
+        const typingBlock = document.createElement("p");
+        typingBlock.appendChild(document.createElement("br"));
+        figure.insertAdjacentElement("afterend", typingBlock);
+        placeCaretInBlock(typingBlock, true);
+    }
+
+    function insertInlineImageAtCursor(html) {
+        editor.focus();
+        const holder = document.createElement("div");
+        holder.innerHTML = html.trim();
+        const figure = holder.querySelector(`figure.${INLINE_IMAGE_FIGURE_CLASS}`);
+        if (!figure) {
+            insertCleanHtml(html);
+            normalizeInlineImagesInEditor();
+            return null;
+        }
+
+        const sel = window.getSelection();
+        if (!sel?.rangeCount || !editor.contains(sel.getRangeAt(0).commonAncestorContainer)) {
+            editor.appendChild(figure);
+            normalizeInlineImagesInEditor();
+            placeCaretAfterFigure(figure);
+            return figure;
+        }
+
+        const range = sel.getRangeAt(0);
+        let block = range.startContainer;
+        if (block.nodeType === Node.TEXT_NODE) block = block.parentElement;
+        while (block && block !== editor && !["P", "DIV"].includes(block.tagName)) {
+            block = block.parentElement;
+        }
+
+        if (block && block !== editor && range.startContainer.nodeType === Node.TEXT_NODE && range.startContainer.parentElement === block) {
+            const textNode = range.startContainer;
+            const tailText = textNode.splitText(range.startOffset);
+            const tailBlock = document.createElement("p");
+            let node = tailText;
+            while (node) {
+                const next = node.nextSibling;
+                tailBlock.appendChild(node);
+                node = next;
+            }
+            range.deleteContents();
+
+            if (!block.textContent.trim() && !block.querySelector("img, figure, br")) {
+                block.remove();
+            } else {
+                block.parentElement.insertBefore(figure, block.nextSibling);
+            }
+
+            if (tailBlock.textContent.trim()) {
+                figure.insertAdjacentElement("afterend", tailBlock);
+                normalizeInlineImagesInEditor();
+                placeCaretInBlock(tailBlock, true);
+                return figure;
+            }
+
+            tailBlock.remove();
+            normalizeInlineImagesInEditor();
+            placeCaretAfterFigure(figure);
+            return figure;
+        }
+
+        range.deleteContents();
+        range.insertNode(figure);
+        normalizeInlineImagesInEditor();
+        placeCaretAfterFigure(figure);
+        return figure;
+    }
+
+    function pickInlineImageOptions() {
+        return new Promise((resolve) => {
+            if (!inlineImageSizeModal) {
+                resolve({ size: INLINE_IMAGE_DEFAULT_SIZE, frame: INLINE_IMAGE_DEFAULT_FRAME, caption: "" });
+                return;
+            }
+
+            let selectedSize = INLINE_IMAGE_DEFAULT_SIZE;
+            let selectedFrame = INLINE_IMAGE_DEFAULT_FRAME;
+
+            const sizeButtons = inlineImageSizeGrid
+                ? [...inlineImageSizeGrid.querySelectorAll("[data-size]")]
+                : [];
+            const frameButtons = inlineImageFrameGrid
+                ? [...inlineImageFrameGrid.querySelectorAll("[data-frame]")]
+                : [];
+
+            function markSelected(buttons, activeBtn, className) {
+                buttons.forEach((btn) => btn.classList.toggle(className, btn === activeBtn));
+            }
+
+            function resetModalState() {
+                selectedSize = INLINE_IMAGE_DEFAULT_SIZE;
+                selectedFrame = INLINE_IMAGE_DEFAULT_FRAME;
+                sizeButtons.forEach((btn) => {
+                    btn.classList.toggle("is-selected", btn.dataset.size === selectedSize);
+                    btn.disabled = false;
+                    btn.classList.remove("is-disabled");
+                });
+                frameButtons.forEach((btn) => {
+                    btn.classList.toggle("is-selected", btn.dataset.frame === selectedFrame);
+                });
+                if (inlineImageCaptionInput) inlineImageCaptionInput.value = "";
+            }
+
+            function cleanup() {
+                inlineImageSizeModal.classList.remove("open");
+                inlineImageSizeModal.setAttribute("aria-hidden", "true");
+                sizeButtons.forEach((btn) => btn.removeEventListener("click", onSizeClick));
+                frameButtons.forEach((btn) => btn.removeEventListener("click", onFrameClick));
+                inlineImageInsertBtn?.removeEventListener("click", onInsert);
+                inlineImageSizeCancel?.removeEventListener("click", onCancel);
+                inlineImageSizeModal.removeEventListener("click", onBackdropClick);
+                document.removeEventListener("keydown", onKeyDown);
+            }
+
+            function finish(result) {
+                cleanup();
+                resolve(result);
+            }
+
+            function onSizeClick(e) {
+                const sizeClass = e.currentTarget?.dataset?.size;
+                if (!sizeClass || !INLINE_IMAGE_SIZE_CLASSES.has(sizeClass)) return;
+                selectedSize = sizeClass;
+                markSelected(sizeButtons, e.currentTarget, "is-selected");
+            }
+
+            function onFrameClick(e) {
+                const frameClass = e.currentTarget?.dataset?.frame;
+                if (!frameClass || !INLINE_IMAGE_FRAME_CLASSES.has(frameClass)) return;
+                selectedFrame = frameClass;
+                markSelected(frameButtons, e.currentTarget, "is-selected");
+            }
+
+            function onInsert() {
+                finish({
+                    size: selectedSize,
+                    frame: selectedFrame,
+                    caption: inlineImageCaptionInput?.value || "",
+                });
+            }
+
+            function onCancel() {
+                finish(null);
+            }
+
+            function onBackdropClick(e) {
+                if (e.target === inlineImageSizeModal) finish(null);
+            }
+
+            function onKeyDown(e) {
+                if (e.key === "Escape") finish(null);
+                if (e.key === "Enter" && document.activeElement === inlineImageCaptionInput) {
+                    e.preventDefault();
+                    onInsert();
+                }
+            }
+
+            resetModalState();
+            inlineImageSizeModal.classList.add("open");
+            inlineImageSizeModal.setAttribute("aria-hidden", "false");
+            sizeButtons.forEach((btn) => btn.addEventListener("click", onSizeClick));
+            frameButtons.forEach((btn) => btn.addEventListener("click", onFrameClick));
+            inlineImageInsertBtn?.addEventListener("click", onInsert);
+            inlineImageSizeCancel?.addEventListener("click", onCancel);
+            inlineImageSizeModal.addEventListener("click", onBackdropClick);
+            document.addEventListener("keydown", onKeyDown);
+            inlineImageInsertBtn?.focus();
+        });
+    }
+
+    function normalizeChapterElementAttributes(el) {
+        if (el.tagName === "FIGURE") {
+            const isInlineImage = el.classList.contains(INLINE_IMAGE_FIGURE_CLASS);
+            [...el.attributes].forEach((attr) => {
+                if (/^on/i.test(attr.name) || attr.name === "style") el.removeAttribute(attr.name);
+            });
+            if (isInlineImage) {
+                const sizeClass = [...el.classList].find((c) => INLINE_IMAGE_SIZE_CLASSES.has(c)) || INLINE_IMAGE_DEFAULT_SIZE;
+                const frameClass = [...el.classList].find((c) => INLINE_IMAGE_FRAME_CLASSES.has(c)) || INLINE_IMAGE_DEFAULT_FRAME;
+                const alignClass = [...el.classList].find((c) => INLINE_IMAGE_ALIGN_CLASSES.has(c)) || INLINE_IMAGE_DEFAULT_ALIGN;
+                el.className = `${INLINE_IMAGE_FIGURE_CLASS} ${sizeClass} ${frameClass} ${alignClass}`;
+            } else {
+                el.removeAttribute("class");
+            }
+            return;
+        }
+        if (el.tagName === "FIGCAPTION") {
+            [...el.attributes].forEach((attr) => {
+                if (/^on/i.test(attr.name) || attr.name === "style" || attr.name === "class") {
+                    el.removeAttribute(attr.name);
+                }
+            });
+            if (el.parentElement?.classList?.contains(INLINE_IMAGE_FIGURE_CLASS)) {
+                el.className = "book-inline-caption";
+            }
+            return;
+        }
+        if (el.tagName === "IMG") {
+            const src = el.getAttribute("src") || "";
+            const alt = el.getAttribute("alt") || "";
+            [...el.attributes].forEach((attr) => el.removeAttribute(attr.name));
+            if (src) el.setAttribute("src", src);
+            el.setAttribute("alt", alt);
+            el.setAttribute("loading", "lazy");
+            return;
+        }
+        [...el.attributes].forEach((attr) => {
+            if (/^on/i.test(attr.name) || attr.name === "style" || attr.name === "class") {
+                el.removeAttribute(attr.name);
+            }
+        });
     }
 
     function normalizeSections(rawSections) {
@@ -2003,11 +2430,7 @@ function rememberBookId(id) {
         holder.innerHTML = safeString(html, "");
 
         holder.querySelectorAll("script, style, meta, link, iframe, object, embed").forEach(el => el.remove());
-        holder.querySelectorAll("*").forEach(el => {
-            [...el.attributes].forEach(attr => {
-                if (/^on/i.test(attr.name) || attr.name === "style" || attr.name === "class") el.removeAttribute(attr.name);
-            });
-        });
+        holder.querySelectorAll("*").forEach(el => normalizeChapterElementAttributes(el));
 
         holder.querySelectorAll("div").forEach(div => {
             const p = document.createElement("p");
@@ -2015,8 +2438,25 @@ function rememberBookId(id) {
             div.replaceWith(p);
         });
 
+        normalizeInlineImagesInHolder(holder);
+
+        holder.querySelectorAll(`.${INLINE_IMAGE_FIGURE_CLASS} figcaption`).forEach(caption => {
+            if (!caption.textContent.trim()) caption.remove();
+        });
+
+        holder.querySelectorAll(`figure.${INLINE_IMAGE_FIGURE_CLASS}`).forEach((fig) => {
+            const prev = fig.previousElementSibling;
+            if (prev && (prev.tagName === "P" || prev.tagName === "DIV") && !prev.textContent.trim() && !prev.querySelector("img, figure")) {
+                prev.remove();
+            }
+            const next = fig.nextElementSibling;
+            if (next && (next.tagName === "P" || next.tagName === "DIV") && !next.textContent.trim() && !next.querySelector("img, figure") && next.nextElementSibling) {
+                next.remove();
+            }
+        });
+
         holder.querySelectorAll("p").forEach(p => {
-            if (!p.textContent.trim() && !p.querySelector("img, br")) p.remove();
+            if (!p.textContent.trim() && !p.querySelector("img, br, figure")) p.remove();
         });
 
         return holder.innerHTML
@@ -2310,6 +2750,7 @@ function rememberBookId(id) {
             chapterTitle.textContent = ch.title || "Untitled";
             editor.innerHTML = cleanEditorHtml(ch.content || "");
             applyEditorStyle();
+            normalizeInlineImagesInEditor();
             editorLoadedChapterKey = chapterLoadKey(section, index);
         }
         if (rerender) renderAllSections();
@@ -3028,6 +3469,34 @@ function rememberBookId(id) {
         backgroundBar?.classList.toggle("open");
         if (backgroundBar?.classList.contains("open")) backgroundUploadInput?.focus();
     });
+    insertImageBtn?.addEventListener("click", () => {
+        if (isCurrentBookComic()) return;
+        inlineImageUploadInput?.click();
+    });
+    inlineImageUploadInput?.addEventListener("change", async () => {
+        const file = inlineImageUploadInput.files?.[0];
+        inlineImageUploadInput.value = "";
+        if (!file || isCurrentBookComic()) return;
+        try {
+            setSaveStatus("Uploading image…");
+            pendingInlineImageUrl = await uploadBookContentImage(file);
+            const options = await pickInlineImageOptions();
+            if (!options || !pendingInlineImageUrl) {
+                pendingInlineImageUrl = "";
+                setSaveStatus("Ready");
+                return;
+            }
+            insertInlineImageAtCursor(buildInlineImageHtml(pendingInlineImageUrl, options));
+            pendingInlineImageUrl = "";
+            cleanAndStoreCurrentChapterFromEditor();
+            syncStats();
+            await saveBook("Image inserted");
+        } catch (err) {
+            console.error(err);
+            pendingInlineImageUrl = "";
+            setSaveStatus(err?.message || "Upload failed");
+        }
+    });
     backgroundUploadInput?.addEventListener("change", () => {
         const file = backgroundUploadInput.files?.[0];
         void saveUploadedEditorBackground(file);
@@ -3117,13 +3586,23 @@ function rememberBookId(id) {
         scheduleSave();
     });
     editor.addEventListener("input", () => {
+        if (editor.querySelector(`p figure.${INLINE_IMAGE_FIGURE_CLASS}, div figure.${INLINE_IMAGE_FIGURE_CLASS}`)) {
+            normalizeInlineImagesInEditor();
+        }
         syncCurrentChapterFromEditor();
         syncStats();
         scheduleSave();
         scheduleWriterResumeSave();
     });
     editor.addEventListener("keyup", () => scheduleWriterResumeSave());
-    editor.addEventListener("click", () => scheduleWriterResumeSave());
+    editor.addEventListener("click", (e) => {
+        scheduleWriterResumeSave();
+        if (isCurrentBookComic()) return;
+        const fig = e.target.closest(`figure.${INLINE_IMAGE_FIGURE_CLASS}`);
+        if (!fig || !editor.contains(fig)) return;
+        e.preventDefault();
+        promptDeleteInlineImage(fig);
+    });
     document.addEventListener("selectionchange", () => {
         if (document.activeElement === editor) scheduleWriterResumeSave();
         snapshotStoryBibleSelection();

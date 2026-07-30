@@ -1,23 +1,83 @@
 /**
  * Sanitize HTML for Alysum chapter content (mirrors editor cleanEditorHtml).
  */
-export function cleanImportHtml(html) {
-  const holder = document.createElement("div");
-  holder.innerHTML = String(html || "");
+const INLINE_IMAGE_FIGURE_CLASS = "book-inline-image";
+const INLINE_IMAGE_SIZE_CLASSES = new Set(["img-small", "img-medium", "img-large", "img-full"]);
+const INLINE_IMAGE_FRAME_CLASSES = new Set(["frame-plain", "frame-soft", "frame-mat", "frame-rule", "frame-etched", "frame-vintage"]);
+const INLINE_IMAGE_ALIGN_CLASSES = new Set(["align-left", "align-center", "align-right"]);
+const INLINE_IMAGE_DEFAULT_SIZE = "img-medium";
+const INLINE_IMAGE_DEFAULT_FRAME = "frame-plain";
+const INLINE_IMAGE_DEFAULT_ALIGN = "align-center";
 
-  holder.querySelectorAll("script, style, meta, link, iframe, object, embed").forEach((el) => el.remove());
-  holder.querySelectorAll("*").forEach((el) => {
+function normalizeChapterElementAttributes(el) {
+  if (el.tagName === "FIGURE") {
+    const isInlineImage = el.classList.contains(INLINE_IMAGE_FIGURE_CLASS);
+    [...el.attributes].forEach((attr) => {
+      if (/^on/i.test(attr.name) || attr.name === "style") el.removeAttribute(attr.name);
+    });
+    if (isInlineImage) {
+      let sizeClass = [...el.classList].find((c) => INLINE_IMAGE_SIZE_CLASSES.has(c)) || INLINE_IMAGE_DEFAULT_SIZE;
+      const frameClass = [...el.classList].find((c) => INLINE_IMAGE_FRAME_CLASSES.has(c)) || INLINE_IMAGE_DEFAULT_FRAME;
+      let alignClass = [...el.classList].find((c) => INLINE_IMAGE_ALIGN_CLASSES.has(c)) || INLINE_IMAGE_DEFAULT_ALIGN;
+      if ((alignClass === "align-left" || alignClass === "align-right") && sizeClass === "img-full") {
+        sizeClass = "img-large";
+      }
+      el.className = `${INLINE_IMAGE_FIGURE_CLASS} ${sizeClass} ${frameClass} ${alignClass}`;
+    } else {
+      el.removeAttribute("class");
+    }
+    return;
+  }
+  if (el.tagName === "FIGCAPTION") {
     [...el.attributes].forEach((attr) => {
       if (/^on/i.test(attr.name) || attr.name === "style" || attr.name === "class") {
         el.removeAttribute(attr.name);
       }
     });
+    if (el.parentElement?.classList?.contains(INLINE_IMAGE_FIGURE_CLASS)) {
+      el.className = "book-inline-caption";
+    }
+    return;
+  }
+  if (el.tagName === "IMG") {
+    const src = el.getAttribute("src") || "";
+    const alt = el.getAttribute("alt") || "";
+    [...el.attributes].forEach((attr) => el.removeAttribute(attr.name));
+    if (src) el.setAttribute("src", src);
+    el.setAttribute("alt", alt);
+    el.setAttribute("loading", "lazy");
+    return;
+  }
+  [...el.attributes].forEach((attr) => {
+    if (/^on/i.test(attr.name) || attr.name === "style" || attr.name === "class") {
+      el.removeAttribute(attr.name);
+    }
   });
+}
+
+export function cleanImportHtml(html) {
+  const holder = document.createElement("div");
+  holder.innerHTML = String(html || "");
+
+  holder.querySelectorAll("script, style, meta, link, iframe, object, embed").forEach((el) => el.remove());
+  holder.querySelectorAll("*").forEach((el) => normalizeChapterElementAttributes(el));
 
   holder.querySelectorAll("div").forEach((div) => {
     const p = document.createElement("p");
     while (div.firstChild) p.appendChild(div.firstChild);
     div.replaceWith(p);
+  });
+
+  holder.querySelectorAll(`p figure.${INLINE_IMAGE_FIGURE_CLASS}, div figure.${INLINE_IMAGE_FIGURE_CLASS}`).forEach((fig) => {
+    const block = fig.parentElement;
+    if (!block || block === holder) return;
+    const hasOtherContent = [...block.childNodes].some((node) => {
+      if (node === fig) return false;
+      if (node.nodeType === Node.TEXT_NODE) return !!node.textContent.trim();
+      return true;
+    });
+    if (!hasOtherContent) block.replaceWith(fig);
+    else block.parentElement.insertBefore(fig, block.nextSibling);
   });
 
   // Normalize headings: h1/h3/h4+ become h2 (h1 is reserved for chapter titles in split logic)
@@ -27,8 +87,12 @@ export function cleanImportHtml(html) {
     heading.replaceWith(h2);
   });
 
+  holder.querySelectorAll(`.${INLINE_IMAGE_FIGURE_CLASS} figcaption`).forEach((caption) => {
+    if (!caption.textContent.trim()) caption.remove();
+  });
+
   holder.querySelectorAll("p").forEach((p) => {
-    if (!p.textContent.trim() && !p.querySelector("img, br")) p.remove();
+    if (!p.textContent.trim() && !p.querySelector("img, br, figure")) p.remove();
   });
 
   return holder.innerHTML
