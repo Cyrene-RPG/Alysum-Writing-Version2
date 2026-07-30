@@ -2336,10 +2336,15 @@ body.mod-dialog-open { overflow: hidden; }
 
 /* ---- Usage analytics ---- */
 
+.mod-joins-bars-static .mod-joins-bar {
+    transition: none;
+}
+
 .mod-view-usage {
     display: flex;
     flex-direction: column;
     gap: 14px;
+    contain: layout style;
 }
 
 .mod-select-wrap {

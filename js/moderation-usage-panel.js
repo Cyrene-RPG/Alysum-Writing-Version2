@@ -71,7 +71,7 @@ function renderDailyChart(root, rows, opts = {}) {
     const max = Math.max(1, ...list.map((row) => Number(row.count || 0)));
     const trackHeight = 72;
     root.innerHTML = `
-        <div class="mod-joins-bars mod-joins-bars-compact" role="img" aria-label="${escapeHtml(ariaLabel)}">
+        <div class="mod-joins-bars mod-joins-bars-compact mod-joins-bars-static" role="img" aria-label="${escapeHtml(ariaLabel)}">
             ${list.map((row) => {
                 const count = Number(row.count || 0);
                 const barHeight = count > 0
@@ -158,6 +158,41 @@ export function initUsagePanel(opts) {
     let stats = null;
     let selectedUserId = null;
     let hasLoaded = false;
+    let lastStatsJson = "";
+    /** @type {Promise<unknown> | null} */
+    let loadInFlight = null;
+
+    function updateSelectedUser(userId) {
+        selectedUserId = userId || null;
+        topUsersEl?.querySelectorAll(".mod-usage-user-row").forEach((row) => {
+            row.classList.toggle("is-selected", row.dataset.userId === selectedUserId);
+        });
+        usersByVisitsChartEl?.querySelectorAll(".mod-usage-row-user").forEach((row) => {
+            const btn = row.querySelector("[data-pick-user]");
+            row.classList.toggle("is-selected", btn?.getAttribute("data-pick-user") === selectedUserId);
+        });
+    }
+
+    function renderAll() {
+        if (!stats) return;
+        renderMetrics(stats);
+        renderFeatureBars(featureChartEl, stats.byFeature);
+        renderDailyChart(dailyChartEl, stats.dailyTotals, { ariaLabel: "Daily feature visits" });
+        renderDailyChart(dailyActiveChartEl, stats.dailyActiveUsers, {
+            ariaLabel: "Daily active users",
+            barClass: "mod-joins-bar-active",
+        });
+        renderDailyChart(dailyNewUsersChartEl, stats.dailyNewUsers, {
+            ariaLabel: "Daily new users",
+            barClass: "mod-joins-bar-signups",
+        });
+        renderUsersByVisitsChart(usersByVisitsChartEl, stats.topUsers, {
+            selectedUserId,
+            onPickUser: pickUser,
+        });
+        renderTopUsers(stats.topUsers);
+        renderUserFeatures(stats.topUserFeatures);
+    }
 
     function renderMetrics(data) {
         if (!metricsEl) return;
@@ -179,13 +214,8 @@ export function initUsagePanel(opts) {
 
     function pickUser(userId) {
         if (!userId) return;
-        selectedUserId = userId;
-        renderTopUsers(stats?.topUsers || []);
-        renderUsersByVisitsChart(usersByVisitsChartEl, stats?.topUsers || [], {
-            selectedUserId,
-            onPickUser: pickUser,
-        });
-        void loadUserBreakdown(userId);
+        updateSelectedUser(userId);
+        void loadUserBreakdown(userId, true);
     }
 
     function renderTopUsers(rows) {
@@ -310,41 +340,55 @@ export function initUsagePanel(opts) {
     }
 
     async function loadAll(options = {}) {
-        const silent = !!options.silent || hasLoaded;
-        if (!silent && featureChartEl && !featureChartEl.querySelector(".mod-usage-bars, .mod-joins-bars")) {
-            featureChartEl.innerHTML = '<p class="mod-empty mod-empty-inline">Loading…</p>';
-        }
-        stats = await staffFeatureUsageStats(days);
-        hasLoaded = true;
-        renderMetrics(stats);
-        renderFeatureBars(featureChartEl, stats.byFeature);
-        renderDailyChart(dailyChartEl, stats.dailyTotals, { ariaLabel: "Daily feature visits" });
-        renderDailyChart(dailyActiveChartEl, stats.dailyActiveUsers, {
-            ariaLabel: "Daily active users",
-            barClass: "mod-joins-bar-active",
-        });
-        renderDailyChart(dailyNewUsersChartEl, stats.dailyNewUsers, {
-            ariaLabel: "Daily new users",
-            barClass: "mod-joins-bar-signups",
-        });
-        renderUsersByVisitsChart(usersByVisitsChartEl, stats.topUsers, {
-            selectedUserId,
-            onPickUser: pickUser,
-        });
-        renderTopUsers(stats.topUsers);
-        renderUserFeatures(stats.topUserFeatures);
-        if (selectedUserId) await loadUserBreakdown(selectedUserId, silent);
-        return stats;
+        if (loadInFlight) return loadInFlight;
+
+        const force = !!options.force;
+        const silent = !!options.silent || (hasLoaded && !force);
+
+        loadInFlight = (async () => {
+            try {
+                if (!silent && !hasLoaded && featureChartEl) {
+                    featureChartEl.innerHTML = '<p class="mod-empty mod-empty-inline">Loading…</p>';
+                }
+
+                const fresh = await staffFeatureUsageStats(days);
+                const freshJson = JSON.stringify(fresh);
+                if (!force && hasLoaded && freshJson === lastStatsJson) {
+                    return stats;
+                }
+
+                stats = fresh;
+                lastStatsJson = freshJson;
+                hasLoaded = true;
+                renderAll();
+                if (selectedUserId) await loadUserBreakdown(selectedUserId, true);
+                return stats;
+            } finally {
+                loadInFlight = null;
+            }
+        })();
+
+        return loadInFlight;
+    }
+
+    async function ensureLoaded() {
+        if (hasLoaded) return stats;
+        return loadAll({ force: true });
+    }
+
+    async function refresh() {
+        return loadAll({ force: true, silent: true });
     }
 
     daysSelect?.addEventListener("change", () => {
         days = Number(daysSelect.value || 14) || 14;
-        loadAll().catch((err) => showStatus(err.message, "error"));
+        lastStatsJson = "";
+        loadAll({ force: true }).catch((err) => showStatus(err.message, "error"));
     });
 
     refreshBtn?.addEventListener("click", () => {
-        loadAll().catch((err) => showStatus(err.message, "error"));
+        refresh().catch((err) => showStatus(err.message, "error"));
     });
 
-    return { loadAll };
+    return { loadAll, ensureLoaded, refresh };
 }

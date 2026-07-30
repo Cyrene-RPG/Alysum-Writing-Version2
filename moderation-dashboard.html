@@ -6,7 +6,7 @@
     <title>Moderation — Alysum</title>
     <link rel="stylesheet" href="css/site-responsive.css?v=1">
     <link rel="stylesheet" href="css/gradient-themes.css?v=5">
-    <link rel="stylesheet" href="css/library-reports.css?v=14">
+    <link rel="stylesheet" href="css/library-reports.css?v=15">
     <script src="js/gradient-theme-sync.js" defer></script>
     <script src="js/alysum-appearance-boot.js"></script>
 </head>
@@ -288,7 +288,7 @@
             } else if (btn.dataset.modView === "inbox" && reportsApi) {
                 reportsApi.loadAll().catch((e) => showStatus(e.message, "error"));
             } else if (btn.dataset.modView === "usage" && usageApi) {
-                usageApi.loadAll({ silent: true }).catch((e) => showStatus(e.message, "error"));
+                usageApi.ensureLoaded().catch((e) => showStatus(e.message, "error"));
             }
         });
     });
@@ -353,7 +353,7 @@
                     await usersApi.pickUser(params.get("user"));
                 }
             } else if (initialView === "usage") {
-                await usageApi.loadAll();
+                await usageApi.ensureLoaded();
             } else {
                 await Promise.all([
                     reportsApi.loadAll(),
