@@ -288,7 +288,7 @@
             } else if (btn.dataset.modView === "inbox" && reportsApi) {
                 reportsApi.loadAll().catch((e) => showStatus(e.message, "error"));
             } else if (btn.dataset.modView === "usage" && usageApi) {
-                usageApi.loadAll().catch((e) => showStatus(e.message, "error"));
+                usageApi.loadAll({ silent: true }).catch((e) => showStatus(e.message, "error"));
             }
         });
     });
@@ -341,7 +341,7 @@
     if (access) {
         reportsApi = initReportsPanel({ showStatus });
         publishApprovalsApi = initPublishApprovalsPanel({ showStatus });
-        usageApi = initUsagePanel({ showStatus, onUserSelect });
+        usageApi = initUsagePanel({ showStatus });
         usersApi = initUsersPanel({ showStatus, onUserSelect, getSelectedUserId: () => new URLSearchParams(window.location.search).get("user") });
         showView(initialView);
 
@@ -369,8 +369,6 @@
             refreshSidebarStats().catch(() => {});
             if (activeView === "people") {
                 usersApi.loadAll({ remountUser: false }).catch(() => {});
-            } else if (activeView === "usage") {
-                usageApi.loadAll().catch(() => {});
             }
         }, 90_000);
     }

@@ -139,11 +139,10 @@ function renderUsersByVisitsChart(root, rows, opts = {}) {
 /**
  * @param {{
  *   showStatus: (msg: string, type?: string) => void,
- *   onUserSelect?: (userId: string) => void,
  * }} opts
  */
 export function initUsagePanel(opts) {
-    const { showStatus, onUserSelect } = opts;
+    const { showStatus } = opts;
     const metricsEl = document.getElementById("modUsageMetrics");
     const featureChartEl = document.getElementById("modUsageFeatureChart");
     const dailyChartEl = document.getElementById("modUsageDailyChart");
@@ -158,6 +157,7 @@ export function initUsagePanel(opts) {
     let days = Number(daysSelect?.value || 14) || 14;
     let stats = null;
     let selectedUserId = null;
+    let hasLoaded = false;
 
     function renderMetrics(data) {
         if (!metricsEl) return;
@@ -186,7 +186,6 @@ export function initUsagePanel(opts) {
             onPickUser: pickUser,
         });
         void loadUserBreakdown(userId);
-        onUserSelect?.(userId);
     }
 
     function renderTopUsers(rows) {
@@ -266,10 +265,12 @@ export function initUsagePanel(opts) {
         });
     }
 
-    async function loadUserBreakdown(userId) {
+    async function loadUserBreakdown(userId, silent = false) {
         const detailEl = document.getElementById("modUsageUserDetail");
         if (!detailEl || !userId) return;
-        detailEl.innerHTML = '<p class="mod-empty">Loading user feature breakdown…</p>';
+        if (!silent || !detailEl.querySelector(".mod-usage-user-detail")) {
+            detailEl.innerHTML = '<p class="mod-empty">Loading user feature breakdown…</p>';
+        }
         try {
             const detail = await staffFeatureUsageForUser(userId, days);
             const rows = Array.isArray(detail.byFeature) ? detail.byFeature : [];
@@ -308,9 +309,13 @@ export function initUsagePanel(opts) {
         }
     }
 
-    async function loadAll() {
-        if (featureChartEl) featureChartEl.innerHTML = '<p class="mod-empty mod-empty-inline">Loading…</p>';
+    async function loadAll(options = {}) {
+        const silent = !!options.silent || hasLoaded;
+        if (!silent && featureChartEl && !featureChartEl.querySelector(".mod-usage-bars, .mod-joins-bars")) {
+            featureChartEl.innerHTML = '<p class="mod-empty mod-empty-inline">Loading…</p>';
+        }
         stats = await staffFeatureUsageStats(days);
+        hasLoaded = true;
         renderMetrics(stats);
         renderFeatureBars(featureChartEl, stats.byFeature);
         renderDailyChart(dailyChartEl, stats.dailyTotals, { ariaLabel: "Daily feature visits" });
@@ -328,7 +333,7 @@ export function initUsagePanel(opts) {
         });
         renderTopUsers(stats.topUsers);
         renderUserFeatures(stats.topUserFeatures);
-        if (selectedUserId) await loadUserBreakdown(selectedUserId);
+        if (selectedUserId) await loadUserBreakdown(selectedUserId, silent);
         return stats;
     }
 
