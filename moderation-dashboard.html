@@ -6,7 +6,7 @@
     <title>Moderation — Alysum</title>
     <link rel="stylesheet" href="css/site-responsive.css?v=1">
     <link rel="stylesheet" href="css/gradient-themes.css?v=5">
-    <link rel="stylesheet" href="css/library-reports.css?v=13">
+    <link rel="stylesheet" href="css/library-reports.css?v=14">
     <script src="js/gradient-theme-sync.js" defer></script>
     <script src="js/alysum-appearance-boot.js"></script>
 </head>
@@ -199,6 +199,20 @@
                     <section class="mod-usage-panel">
                         <span class="mod-kicker">Daily visits</span>
                         <div class="mod-joins-chart" id="modUsageDailyChart" aria-label="Daily feature visits"></div>
+                    </section>
+                    <section class="mod-usage-panel">
+                        <span class="mod-kicker">Active users per day</span>
+                        <p class="mod-usage-note">Unique users with at least one tracked feature visit.</p>
+                        <div class="mod-joins-chart" id="modUsageDailyActiveChart" aria-label="Daily active users"></div>
+                    </section>
+                    <section class="mod-usage-panel">
+                        <span class="mod-kicker">New users per day</span>
+                        <p class="mod-usage-note">New account signups (Pacific time).</p>
+                        <div class="mod-joins-chart" id="modUsageDailyNewUsersChart" aria-label="Daily new users"></div>
+                    </section>
+                    <section class="mod-usage-panel mod-usage-panel-wide">
+                        <span class="mod-kicker">Users by visits</span>
+                        <div id="modUsageUsersByVisitsChart"></div>
                     </section>
                     <section class="mod-usage-panel mod-usage-panel-wide">
                         <span class="mod-kicker">Top users</span>

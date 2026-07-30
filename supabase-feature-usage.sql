@@ -89,8 +89,11 @@ DECLARE
   v_local_today date;
   v_by_feature jsonb := '[]'::jsonb;
   v_daily jsonb := '[]'::jsonb;
+  v_daily_active jsonb := '[]'::jsonb;
+  v_daily_new jsonb := '[]'::jsonb;
   v_top_users jsonb := '[]'::jsonb;
   v_user_features jsonb := '[]'::jsonb;
+  v_chart_start timestamptz;
 BEGIN
   IF NOT public.is_moderation_staff() THEN
     RAISE EXCEPTION 'Moderation staff only.';
@@ -98,6 +101,7 @@ BEGIN
 
   v_since := now() - make_interval(days => v_days);
   v_local_today := (timezone('America/Los_Angeles', now()))::date;
+  v_chart_start := (v_local_today - (v_days - 1))::timestamp AT TIME ZONE 'America/Los_Angeles';
 
   SELECT COALESCE(jsonb_agg(row_to_json(t)::jsonb ORDER BY t.events DESC, t.feature ASC), '[]'::jsonb)
   INTO v_by_feature
@@ -128,6 +132,50 @@ BEGIN
         COUNT(*)::integer AS cnt
       FROM public.feature_usage_events e
       WHERE e.created_at >= v_since
+      GROUP BY 1
+    ) c ON c.day = d::date
+  ) t;
+
+  SELECT COALESCE(jsonb_agg(row_to_json(t)::jsonb ORDER BY t.day ASC), '[]'::jsonb)
+  INTO v_daily_active
+  FROM (
+    SELECT
+      d::date AS day,
+      COALESCE(c.cnt, 0)::integer AS count
+    FROM generate_series(
+      v_local_today - (v_days - 1),
+      v_local_today,
+      interval '1 day'
+    ) AS d
+    LEFT JOIN (
+      SELECT
+        (timezone('America/Los_Angeles', e.created_at))::date AS day,
+        COUNT(DISTINCT e.user_id)::integer AS cnt
+      FROM public.feature_usage_events e
+      WHERE e.created_at >= v_since
+      GROUP BY 1
+    ) c ON c.day = d::date
+  ) t;
+
+  SELECT COALESCE(jsonb_agg(row_to_json(t)::jsonb ORDER BY t.day ASC), '[]'::jsonb)
+  INTO v_daily_new
+  FROM (
+    SELECT
+      d::date AS day,
+      COALESCE(c.cnt, 0)::integer AS count
+    FROM generate_series(
+      v_local_today - (v_days - 1),
+      v_local_today,
+      interval '1 day'
+    ) AS d
+    LEFT JOIN (
+      SELECT
+        (timezone('America/Los_Angeles', au.created_at))::date AS day,
+        COUNT(*)::integer AS cnt
+      FROM auth.users au
+      WHERE au.created_at >= v_chart_start
+        AND au.deleted_at IS NULL
+        AND COALESCE(au.is_anonymous, false) = false
       GROUP BY 1
     ) c ON c.day = d::date
   ) t;
@@ -175,10 +223,19 @@ BEGIN
     'totals', jsonb_build_object(
       'events', (SELECT COUNT(*) FROM public.feature_usage_events WHERE created_at >= v_since),
       'uniqueUsers', (SELECT COUNT(DISTINCT user_id) FROM public.feature_usage_events WHERE created_at >= v_since),
-      'uniqueFeatures', (SELECT COUNT(DISTINCT feature) FROM public.feature_usage_events WHERE created_at >= v_since)
+      'uniqueFeatures', (SELECT COUNT(DISTINCT feature) FROM public.feature_usage_events WHERE created_at >= v_since),
+      'newUsers', (
+        SELECT COUNT(*)
+        FROM auth.users au
+        WHERE au.created_at >= v_chart_start
+          AND au.deleted_at IS NULL
+          AND COALESCE(au.is_anonymous, false) = false
+      )
     ),
     'byFeature', v_by_feature,
     'dailyTotals', v_daily,
+    'dailyActiveUsers', v_daily_active,
+    'dailyNewUsers', v_daily_new,
     'topUsers', v_top_users,
     'topUserFeatures', v_user_features
   );

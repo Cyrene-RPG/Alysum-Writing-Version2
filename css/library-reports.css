@@ -2501,4 +2501,32 @@ body.mod-dialog-open { overflow: hidden; }
     }
 }
 
+.mod-usage-note {
+    margin: 0 0 8px;
+    font-size: 12px;
+    color: var(--mod-muted);
+    line-height: 1.45;
+}
+
+.mod-joins-bar-active {
+    background: linear-gradient(180deg, #38bdf8, #0ea5e9);
+}
+
+.mod-joins-bar-signups {
+    background: linear-gradient(180deg, #34d399, #10b981);
+}
+
+.mod-usage-bar-users {
+    background: linear-gradient(90deg, #0ea5e9, #67e8f9);
+}
+
+.mod-usage-row-user.is-selected .mod-usage-label {
+    color: #fff;
+}
+
+.mod-usage-row-user .mod-usage-label {
+    text-align: left;
+    padding: 0;
+}
+
 .hidden { display: none !important; }

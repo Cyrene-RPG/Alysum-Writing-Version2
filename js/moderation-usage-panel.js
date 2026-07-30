@@ -57,18 +57,21 @@ function renderFeatureBars(root, rows) {
 /**
  * @param {HTMLElement} root
  * @param {Array<{ day?: string, count?: number }>} rows
+ * @param {{ ariaLabel?: string, barClass?: string }} [opts]
  */
-function renderDailyChart(root, rows) {
+function renderDailyChart(root, rows, opts = {}) {
     if (!root) return;
     const list = Array.isArray(rows) ? rows : [];
+    const ariaLabel = opts.ariaLabel || "Daily totals";
+    const barClass = opts.barClass ? ` ${opts.barClass}` : "";
     if (!list.length) {
-        root.innerHTML = '<p class="mod-empty mod-empty-inline">No daily totals yet.</p>';
+        root.innerHTML = '<p class="mod-empty mod-empty-inline">No daily data yet.</p>';
         return;
     }
     const max = Math.max(1, ...list.map((row) => Number(row.count || 0)));
     const trackHeight = 72;
     root.innerHTML = `
-        <div class="mod-joins-bars mod-joins-bars-compact" role="img" aria-label="Daily feature visits">
+        <div class="mod-joins-bars mod-joins-bars-compact" role="img" aria-label="${escapeHtml(ariaLabel)}">
             ${list.map((row) => {
                 const count = Number(row.count || 0);
                 const barHeight = count > 0
@@ -78,7 +81,7 @@ function renderDailyChart(root, rows) {
                 return `
                     <div class="mod-joins-bar-wrap" title="${escapeHtml(String(row.day || ""))}: ${count}">
                         <div class="mod-joins-bar-track">
-                            <div class="mod-joins-bar" style="height:${barHeight}px"></div>
+                            <div class="mod-joins-bar${barClass}" style="height:${barHeight}px"></div>
                         </div>
                         <span class="mod-joins-day">${escapeHtml(day)}</span>
                     </div>
@@ -86,6 +89,51 @@ function renderDailyChart(root, rows) {
             }).join("")}
         </div>
     `;
+}
+
+/**
+ * @param {HTMLElement} root
+ * @param {Array<{ user_id?: string, username?: string, display_name?: string, events?: number }>} rows
+ * @param {{ onPickUser?: (userId: string) => void, selectedUserId?: string | null }} [opts]
+ */
+function renderUsersByVisitsChart(root, rows, opts = {}) {
+    if (!root) return;
+    const list = Array.isArray(rows) ? rows.slice(0, 20) : [];
+    if (!list.length) {
+        root.innerHTML = '<p class="mod-empty mod-empty-inline">No user visit data yet.</p>';
+        return;
+    }
+    const max = Math.max(1, ...list.map((row) => Number(row.events || 0)));
+    root.innerHTML = `
+        <div class="mod-usage-bars" role="img" aria-label="Users by visit count">
+            ${list.map((row) => {
+                const count = Number(row.events || 0);
+                const width = Math.max(count > 0 ? 4 : 1, Math.round((count / max) * 100));
+                const label = `@${row.username || "unknown"}`;
+                const selected = row.user_id === opts.selectedUserId ? " is-selected" : "";
+                return `
+                    <div class="mod-usage-row mod-usage-row-user${selected}">
+                        <button type="button" class="mod-usage-label mod-link-btn" data-pick-user="${escapeHtml(row.user_id || "")}" title="${escapeHtml(row.display_name || label)}">
+                            ${escapeHtml(label)}
+                        </button>
+                        <div class="mod-usage-track-wrap">
+                            <div class="mod-usage-track">
+                                <div class="mod-usage-bar mod-usage-bar-users" style="width:${width}%"></div>
+                            </div>
+                            <span class="mod-usage-count">${count.toLocaleString()}</span>
+                        </div>
+                        <div class="mod-usage-meta">${Number(row.features_used || 0).toLocaleString()} features</div>
+                    </div>
+                `;
+            }).join("")}
+        </div>
+    `;
+    root.querySelectorAll("[data-pick-user]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+            const userId = btn.getAttribute("data-pick-user");
+            if (userId) opts.onPickUser?.(userId);
+        });
+    });
 }
 
 /**
@@ -99,6 +147,9 @@ export function initUsagePanel(opts) {
     const metricsEl = document.getElementById("modUsageMetrics");
     const featureChartEl = document.getElementById("modUsageFeatureChart");
     const dailyChartEl = document.getElementById("modUsageDailyChart");
+    const dailyActiveChartEl = document.getElementById("modUsageDailyActiveChart");
+    const dailyNewUsersChartEl = document.getElementById("modUsageDailyNewUsersChart");
+    const usersByVisitsChartEl = document.getElementById("modUsageUsersByVisitsChart");
     const topUsersEl = document.getElementById("modUsageTopUsers");
     const userFeaturesEl = document.getElementById("modUsageUserFeatures");
     const daysSelect = document.getElementById("modUsageDays");
@@ -114,6 +165,7 @@ export function initUsagePanel(opts) {
         const cards = [
             { label: "Visits", value: Number(totals.events || 0).toLocaleString() },
             { label: "Unique users", value: Number(totals.uniqueUsers || 0).toLocaleString() },
+            { label: "New users", value: Number(totals.newUsers || 0).toLocaleString() },
             { label: "Features used", value: Number(totals.uniqueFeatures || 0).toLocaleString() },
             { label: "Window", value: `${data?.days || days}d` },
         ];
@@ -123,6 +175,18 @@ export function initUsagePanel(opts) {
                 <span class="mod-metric-label">${escapeHtml(card.label)}</span>
             </div>
         `).join("");
+    }
+
+    function pickUser(userId) {
+        if (!userId) return;
+        selectedUserId = userId;
+        renderTopUsers(stats?.topUsers || []);
+        renderUsersByVisitsChart(usersByVisitsChartEl, stats?.topUsers || [], {
+            selectedUserId,
+            onPickUser: pickUser,
+        });
+        void loadUserBreakdown(userId);
+        onUserSelect?.(userId);
     }
 
     function renderTopUsers(rows) {
@@ -159,10 +223,7 @@ export function initUsagePanel(opts) {
         `;
         topUsersEl.querySelectorAll("[data-pick-user]").forEach((btn) => {
             btn.addEventListener("click", () => {
-                selectedUserId = btn.getAttribute("data-pick-user");
-                renderTopUsers(list);
-                void loadUserBreakdown(selectedUserId);
-                onUserSelect?.(selectedUserId);
+                pickUser(btn.getAttribute("data-pick-user"));
             });
         });
     }
@@ -200,9 +261,7 @@ export function initUsagePanel(opts) {
         `;
         userFeaturesEl.querySelectorAll("[data-pick-user]").forEach((btn) => {
             btn.addEventListener("click", () => {
-                selectedUserId = btn.getAttribute("data-pick-user");
-                void loadUserBreakdown(selectedUserId);
-                onUserSelect?.(selectedUserId);
+                pickUser(btn.getAttribute("data-pick-user"));
             });
         });
     }
@@ -254,7 +313,19 @@ export function initUsagePanel(opts) {
         stats = await staffFeatureUsageStats(days);
         renderMetrics(stats);
         renderFeatureBars(featureChartEl, stats.byFeature);
-        renderDailyChart(dailyChartEl, stats.dailyTotals);
+        renderDailyChart(dailyChartEl, stats.dailyTotals, { ariaLabel: "Daily feature visits" });
+        renderDailyChart(dailyActiveChartEl, stats.dailyActiveUsers, {
+            ariaLabel: "Daily active users",
+            barClass: "mod-joins-bar-active",
+        });
+        renderDailyChart(dailyNewUsersChartEl, stats.dailyNewUsers, {
+            ariaLabel: "Daily new users",
+            barClass: "mod-joins-bar-signups",
+        });
+        renderUsersByVisitsChart(usersByVisitsChartEl, stats.topUsers, {
+            selectedUserId,
+            onPickUser: pickUser,
+        });
         renderTopUsers(stats.topUsers);
         renderUserFeatures(stats.topUserFeatures);
         if (selectedUserId) await loadUserBreakdown(selectedUserId);
