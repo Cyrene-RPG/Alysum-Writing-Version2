@@ -161,6 +161,11 @@
             font-size: 13px;
             line-height: 1.45;
         }
+        .ww-banner--demo {
+            border-color: rgba(124, 58, 237, 0.35);
+            background: rgba(124, 58, 237, 0.12);
+            color: #ddd6fe;
+        }
         .ww-status {
             margin-bottom: 16px;
             padding: 12px 14px;
@@ -658,6 +663,10 @@
                     Cloud Word Wars schema is not applied yet. Lobbies work in local test mode on this browser until you run <code>supabase-word-wars.sql</code> in Supabase.
                 </div>
 
+                <div id="demoBanner" class="ww-banner ww-banner--demo hidden">
+                    Preview mode — mock 4-writer lobby for layout review. Remove <code>?demo=4</code> from the URL for the real flow.
+                </div>
+
                 <div id="pageStatus" class="ww-status hidden"></div>
 
                 <section id="hubView">
@@ -756,6 +765,6 @@
         </div>
     </main>
 
-    <script type="module" src="js/word-wars-lobby.js?v=6"></script>
+    <script type="module" src="js/word-wars-lobby.js?v=7"></script>
 </body>
 </html>

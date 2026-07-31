@@ -27,11 +27,13 @@ import {
 const params = new URLSearchParams(window.location.search);
 const initialCode = String(params.get("code") || "").trim().toUpperCase();
 const initialRoomId = String(params.get("room") || "").trim();
+const isDemoMode = params.get("demo") === "4";
 
 const hubView = document.getElementById("hubView");
 const lobbyView = document.getElementById("lobbyView");
 const pageStatus = document.getElementById("pageStatus");
 const fallbackBanner = document.getElementById("fallbackBanner");
+const demoBanner = document.getElementById("demoBanner");
 const roomCodeEl = document.getElementById("roomCode");
 const inviteLinkEl = document.getElementById("inviteLink");
 const durationPicker = document.getElementById("durationPicker");
@@ -95,7 +97,7 @@ function othersInLobby(lobby) {
 function renderDurationPicker(lobby) {
     if (!durationPicker) return;
     const me = meInLobby(lobby);
-    const canEdit = Boolean(me?.isHost) && lobby.status === "lobby";
+    const canEdit = !isDemoMode && Boolean(me?.isHost) && lobby.status === "lobby";
     durationPicker.innerHTML = WORD_WAR_DURATIONS.map((min) => {
         const active = lobby.durationMin === min ? " is-active" : "";
         const disabled = canEdit ? "" : " disabled";
@@ -106,7 +108,7 @@ function renderDurationPicker(lobby) {
 function renderBookSelect(lobby) {
     if (!bookSelect || !sessionCtx) return;
     const me = meInLobby(lobby);
-    const disabled = lobby.status !== "lobby";
+    const disabled = isDemoMode || lobby.status !== "lobby";
     const options = ['<option value="">Choose a book…</option>']
         .concat(
             sessionCtx.books.map(
@@ -202,7 +204,7 @@ function renderLobbyActions(lobby) {
     const canStart = Boolean(me?.isHost && canStartWordWar(lobby) && lobby.status === "lobby");
 
     if (readyBtn) {
-        readyBtn.disabled = lobby.status !== "lobby" || !me?.bookId;
+        readyBtn.disabled = isDemoMode || lobby.status !== "lobby" || !me?.bookId;
         readyBtn.textContent = me?.isReady ? "Not ready" : "I'm ready";
         readyBtn.classList.toggle("is-ready", Boolean(me?.isReady));
     }
@@ -239,7 +241,7 @@ function maybeRedirectToSprint(lobby) {
 function renderLobby(lobby) {
     currentLobby = lobby;
     if (!lobby) return;
-    if (maybeRedirectToSprint(lobby)) return;
+    if (!isDemoMode && maybeRedirectToSprint(lobby)) return;
 
     if (roomCodeEl) roomCodeEl.textContent = lobby.code || "------";
     if (inviteLinkEl) {
@@ -251,6 +253,8 @@ function renderLobby(lobby) {
     renderFighters(lobby);
     renderLobbyActions(lobby);
     showView("lobby");
+
+    if (isDemoMode) return;
 
     const url = new URL(window.location.href);
     url.searchParams.set("room", lobby.roomId);
@@ -318,6 +322,7 @@ async function bootHub() {
 
 createForm?.addEventListener("submit", async (event) => {
     event.preventDefault();
+    if (isDemoMode) return;
     if (!sessionCtx) return;
     setStatus("");
     createForm.querySelector("button[type=submit]")?.setAttribute("disabled", "true");
@@ -340,6 +345,7 @@ createForm?.addEventListener("submit", async (event) => {
 
 joinForm?.addEventListener("submit", async (event) => {
     event.preventDefault();
+    if (isDemoMode) return;
     if (!sessionCtx) return;
     setStatus("");
     const code = String(joinCodeInput?.value || "").trim().toUpperCase();
@@ -376,6 +382,7 @@ document.getElementById("hubWriterPicker")?.addEventListener("click", (event) =>
 });
 
 durationPicker?.addEventListener("click", async (event) => {
+    if (isDemoMode) return;
     const btn = event.target.closest("[data-duration]");
     if (!btn || btn.disabled || !currentLobby) return;
     const durationMin = Number(btn.dataset.duration);
@@ -389,7 +396,7 @@ durationPicker?.addEventListener("click", async (event) => {
 });
 
 bookSelect?.addEventListener("change", async () => {
-    if (!currentLobby || !sessionCtx) return;
+    if (isDemoMode || !currentLobby || !sessionCtx) return;
     const bookId = bookSelect.value;
     const book = sessionCtx.books.find((row) => row.id === bookId);
     if (!bookId || !book) return;
@@ -405,7 +412,7 @@ bookSelect?.addEventListener("change", async () => {
 });
 
 readyBtn?.addEventListener("click", async () => {
-    if (!currentLobby) return;
+    if (isDemoMode || !currentLobby) return;
     const me = meInLobby(currentLobby);
     try {
         const lobby = await updateWordWarLobby(currentLobby.roomId, {
@@ -419,7 +426,7 @@ readyBtn?.addEventListener("click", async () => {
 });
 
 startBtn?.addEventListener("click", async () => {
-    if (!currentLobby) return;
+    if (isDemoMode || !currentLobby) return;
     startBtn.disabled = true;
     try {
         const lobby = await startWordWar(currentLobby.roomId);
@@ -431,6 +438,10 @@ startBtn?.addEventListener("click", async () => {
 });
 
 leaveBtn?.addEventListener("click", () => {
+    if (isDemoMode) {
+        window.location.href = window.location.pathname;
+        return;
+    }
     unsubscribe?.();
     unsubscribe = null;
     currentLobby = null;
@@ -463,7 +474,76 @@ copyLinkBtn?.addEventListener("click", () => {
     copyText(inviteLinkEl.value, "Invite link copied.");
 });
 
+function buildDemoLobby() {
+    const hostName = sessionCtx?.profile?.displayName || "You";
+    const hostBook = sessionCtx?.books?.[0]?.title || "My Manuscript";
+    const hostBookId = sessionCtx?.books?.[0]?.id || "demo-book";
+    const hostId = sessionCtx?.uid || "demo-host";
+
+    return {
+        roomId: "demo-4-writers",
+        code: "DEMO42",
+        hostId,
+        durationMin: 15,
+        maxWriters: 4,
+        status: "lobby",
+        participants: [
+            {
+                userId: hostId,
+                displayName: hostName,
+                bookId: hostBookId,
+                bookTitle: hostBook,
+                isReady: true,
+                isHost: true,
+            },
+            {
+                userId: "demo-writer-2",
+                displayName: "Alex Chen",
+                bookId: "demo-book-2",
+                bookTitle: "The Last Harbor",
+                isReady: true,
+                isHost: false,
+            },
+            {
+                userId: "demo-writer-3",
+                displayName: "Jordan Wells",
+                bookId: "demo-book-3",
+                bookTitle: "Starfall Chronicles",
+                isReady: false,
+                isHost: false,
+            },
+            {
+                userId: "demo-writer-4",
+                displayName: "Sam Rivera",
+                bookId: "demo-book-4",
+                bookTitle: "Ink & Ember",
+                isReady: true,
+                isHost: false,
+            },
+        ],
+    };
+}
+
+async function bootDemoPreview() {
+    if (fallbackBanner) fallbackBanner.classList.add("hidden");
+    demoBanner?.classList.remove("hidden");
+
+    sessionCtx = {
+        uid: "demo-host",
+        profile: { displayName: "You" },
+        books: [{ id: "demo-book", title: "My Manuscript" }],
+    };
+
+    renderLobby(buildDemoLobby());
+    setStatus("Preview: 4/4 writers joined — waiting on Jordan to mark ready before start.");
+}
+
 async function boot() {
+    if (isDemoMode) {
+        await bootDemoPreview();
+        return;
+    }
+
     const nextPath = window.location.pathname + window.location.search;
     const session = await requireStudioSession(supabase, nextPath);
     const uid = session?.user?.id;
