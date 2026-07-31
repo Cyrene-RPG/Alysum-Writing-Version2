@@ -133,8 +133,10 @@
     width: 100%;
     max-width: 100%;
     overflow-x: auto;
-    overflow-y: visible;
+    overflow-y: hidden;
     -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    touch-action: pan-x;
     scrollbar-width: thin;
     scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
     background: rgba(11, 18, 32, 0.92);
@@ -157,9 +159,9 @@
     align-items: center;
     justify-content: flex-start;
     gap: 4px 6px;
-    width: 100%;
-    min-width: 0;
-    max-width: 100%;
+    width: max-content;
+    min-width: 100%;
+    max-width: none;
     margin: 0;
     padding: 10px clamp(12px, 2vw, 24px);
     box-sizing: border-box;
