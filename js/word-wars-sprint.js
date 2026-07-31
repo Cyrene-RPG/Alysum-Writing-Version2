@@ -58,6 +58,8 @@ let unsubscribe = null;
 let sprintEnded = false;
 let syncingShare = false;
 let syncingPause = false;
+let shareDraftOverride = null;
+let typingIdleTimer = null;
 let lastOpponentHtml = "";
 
 function escapeHtml(str) {
@@ -81,6 +83,47 @@ function setPageStatus(message, isError = false) {
 
 function meInLobby() {
     return lobby?.participants?.find((p) => p.userId === uid) || null;
+}
+
+function getShareDraftState() {
+    if (shareDraftOverride !== null) return shareDraftOverride;
+    return Boolean(meInLobby()?.shareDraft);
+}
+
+function requestEditorDraftPing() {
+    try {
+        myEditorFrame?.contentWindow?.postMessage(
+            { type: "alysum-word-war", event: "ping" },
+            window.location.origin
+        );
+    } catch {
+        /* iframe may not be ready yet */
+    }
+}
+
+function buildSharePatch(enabled) {
+    return {
+        shareDraft: enabled,
+        sprintWords: latestDraft.sprintWords,
+        liveChapterTitle: enabled ? latestDraft.chapterTitle : "",
+        liveChapterHtml: enabled ? latestDraft.chapterHtml : "",
+        liveChapterId: enabled ? latestDraft.chapterId : "",
+        isTyping: false,
+    };
+}
+
+function buildProgressPatch(extra = {}) {
+    const patch = { ...extra };
+    if (typeof patch.sprintWords !== "number") {
+        patch.sprintWords = latestDraft.sprintWords;
+    }
+    if (getShareDraftState()) {
+        patch.shareDraft = true;
+        patch.liveChapterTitle = latestDraft.chapterTitle;
+        patch.liveChapterHtml = latestDraft.chapterHtml;
+        patch.liveChapterId = latestDraft.chapterId;
+    }
+    return patch;
 }
 
 function opponentInLobby() {
@@ -225,11 +268,11 @@ async function handlePauseClick() {
 }
 
 function renderShareControls() {
-    const me = meInLobby();
-    shareDraft = Boolean(me?.shareDraft);
+    shareDraft = getShareDraftState();
     if (shareBtn) {
         shareBtn.textContent = shareDraft ? "Hide my draft" : "Share my draft";
         shareBtn.classList.toggle("mint", shareDraft);
+        shareBtn.disabled = syncingShare;
     }
     if (sharePill) {
         if (lobby?.isPaused) {
@@ -332,11 +375,14 @@ function buildEditorFrameUrl(bookId) {
 }
 
 function scheduleProgressPatch(patch = {}) {
+    if (syncingShare) return;
     window.clearTimeout(progressTimer);
     progressTimer = window.setTimeout(async () => {
         try {
-            lobby = await updateWordWarProgress(roomId, patch);
-            renderShareControls();
+            lobby = await updateWordWarProgress(roomId, buildProgressPatch(patch));
+            if (shareDraftOverride === null) {
+                renderShareControls();
+            }
             renderPauseControls();
             renderOpponentMirror();
         } catch (err) {
@@ -345,50 +391,56 @@ function scheduleProgressPatch(patch = {}) {
     }, 400);
 }
 
-function pushDraftProgress(force = false) {
-    if (sprintEnded) return;
-    const patch = {
-        sprintWords: latestDraft.sprintWords,
-        isTyping: true,
-    };
-    if (shareDraft) {
-        patch.shareDraft = true;
-        patch.liveChapterTitle = latestDraft.chapterTitle;
-        patch.liveChapterHtml = latestDraft.chapterHtml;
-        patch.liveChapterId = latestDraft.chapterId;
-    } else if (force) {
-        patch.shareDraft = false;
-    }
-    if (wordsAtStart && !meInLobby()?.wordsAtStart) {
-        patch.wordsAtStart = wordsAtStart;
-    }
-    scheduleProgressPatch(patch);
-    window.setTimeout(() => {
-        scheduleProgressPatch({ isTyping: false, sprintWords: latestDraft.sprintWords });
+function pushDraftProgress() {
+    if (sprintEnded || syncingShare) return;
+    scheduleProgressPatch({ isTyping: true });
+    window.clearTimeout(typingIdleTimer);
+    typingIdleTimer = window.setTimeout(() => {
+        scheduleProgressPatch({ isTyping: false });
     }, 1600);
+}
+
+async function flushSharedDraftNow() {
+    if (!getShareDraftState() || sprintEnded || syncingShare) return;
+    window.clearTimeout(progressTimer);
+    progressTimer = null;
+    try {
+        lobby = await updateWordWarProgress(roomId, buildProgressPatch({ isTyping: false }));
+        if (shareDraftOverride === null) renderShareControls();
+        renderOpponentMirror();
+    } catch (err) {
+        console.warn(err);
+    }
 }
 
 async function setShareDraft(next) {
     if (syncingShare || sprintEnded) return;
     syncingShare = true;
+    shareDraftOverride = next;
     shareDraft = next;
+    window.clearTimeout(progressTimer);
+    window.clearTimeout(typingIdleTimer);
+    progressTimer = null;
     renderShareControls();
     try {
-        lobby = await updateWordWarProgress(roomId, {
-            shareDraft: next,
-            sprintWords: latestDraft.sprintWords,
-            liveChapterTitle: next ? latestDraft.chapterTitle : "",
-            liveChapterHtml: next ? latestDraft.chapterHtml : "",
-            liveChapterId: next ? latestDraft.chapterId : "",
-            isTyping: false,
-        });
-        if (next && latestDraft.chapterHtml) pushDraftProgress(true);
+        lobby = await updateWordWarProgress(roomId, buildSharePatch(next));
+        shareDraftOverride = null;
+        shareDraft = Boolean(meInLobby()?.shareDraft);
+        renderShareControls();
         renderOpponentMirror();
+        if (next) {
+            requestEditorDraftPing();
+            await flushSharedDraftNow();
+        }
     } catch (err) {
         console.error(err);
+        shareDraftOverride = null;
+        shareDraft = Boolean(meInLobby()?.shareDraft);
+        renderShareControls();
         setPageStatus(err?.message || "Could not update sharing.", true);
     } finally {
         syncingShare = false;
+        renderShareControls();
     }
 }
 
@@ -402,7 +454,6 @@ function handleEditorMessage(event) {
         scheduleProgressPatch({
             wordsAtStart,
             sprintWords: 0,
-            shareDraft,
             isTyping: false,
         });
         return;
@@ -424,7 +475,7 @@ async function refreshLobby() {
     const next = await fetchWordWarLobby({ roomId });
     if (!next) return;
     lobby = next;
-    renderShareControls();
+    if (shareDraftOverride === null) renderShareControls();
     renderPauseControls();
     renderOpponentMirror();
     if (lobby.status === "finished" && !sprintEnded) {
@@ -437,6 +488,7 @@ async function endSprint(reason = "Sprint finished") {
     sprintEnded = true;
     window.clearInterval(timerInterval);
     window.clearTimeout(progressTimer);
+    window.clearTimeout(typingIdleTimer);
     try {
         lobby = await finishWordWar(roomId);
     } catch (err) {
@@ -495,7 +547,7 @@ async function boot() {
 }
 
 shareBtn?.addEventListener("click", () => {
-    setShareDraft(!shareDraft).catch(console.error);
+    setShareDraft(!getShareDraftState()).catch(console.error);
 });
 
 pauseBtn?.addEventListener("click", () => {
