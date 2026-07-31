@@ -6,6 +6,9 @@ import { requireStudioSession } from "./studio-session.js?v=3";
 import { publicDisplayNameFromUserData } from "./profile-display.js?v=1";
 import {
     WORD_WAR_DURATIONS,
+    WORD_WAR_MAX_WRITERS,
+    WORD_WAR_MIN_WRITERS,
+    canStartWordWar,
     formatWordWarDuration,
     isWordWarDuration,
     createWordWarRoom,
@@ -18,7 +21,7 @@ import {
     wordWarLobbyUrl,
     wordWarSprintUrl,
     isUsingLocalWordWarsFallback,
-} from "./word-wars-api.js?v=2";
+} from "./word-wars-api.js?v=5";
 
 const params = new URLSearchParams(window.location.search);
 const initialCode = String(params.get("code") || "").trim().toUpperCase();
@@ -42,10 +45,11 @@ const createForm = document.getElementById("createForm");
 const joinForm = document.getElementById("joinForm");
 const joinCodeInput = document.getElementById("joinCodeInput");
 const lobbyStatusBadge = document.getElementById("lobbyStatusBadge");
+const lobbyCapacity = document.getElementById("lobbyCapacity");
 
 /** @type {{ uid: string, profile: { displayName: string }, books: Array<{ id: string, title: string }> } | null} */
 let sessionCtx = null;
-/** @type {ReturnType<typeof normalizeLobby> | null} */
+/** @type {ReturnType<typeof fetchWordWarLobby> extends Promise<infer R> ? R : null} */
 let currentLobby = null;
 /** @type {(() => void) | null} */
 let unsubscribe = null;
@@ -81,8 +85,8 @@ function meInLobby(lobby) {
     return lobby?.participants?.find((p) => p.userId === sessionCtx?.uid) || null;
 }
 
-function opponentInLobby(lobby) {
-    return lobby?.participants?.find((p) => p.userId !== sessionCtx?.uid) || null;
+function othersInLobby(lobby) {
+    return (lobby?.participants || []).filter((p) => p.userId !== sessionCtx?.uid);
 }
 
 function renderDurationPicker(lobby) {
@@ -116,10 +120,10 @@ function renderFighterCard(fighter, label, extraClass = "") {
     if (!fighter) {
         return `
             <article class="ww-fighter is-empty ${extraClass}">
-                <p class="ww-fighter-label">${label}</p>
+                <p class="ww-fighter-label">${escapeHtml(label)}</p>
                 <div class="ww-fighter-empty">
-                    <span class="ww-fighter-icon" aria-hidden="true">?</span>
-                    <p>Waiting for a friend…</p>
+                    <span class="ww-fighter-icon" aria-hidden="true">+</span>
+                    <p>Waiting for a writer…</p>
                 </div>
             </article>
         `;
@@ -128,7 +132,7 @@ function renderFighterCard(fighter, label, extraClass = "") {
     const readyLabel = fighter.isReady ? "Ready to spar" : "Still gearing up";
     return `
         <article class="ww-fighter${fighter.isReady ? " is-ready" : ""} ${extraClass}">
-            <p class="ww-fighter-label">${label}</p>
+            <p class="ww-fighter-label">${escapeHtml(label)}</p>
             <div class="ww-fighter-head">
                 <span class="ww-fighter-avatar" aria-hidden="true">${escapeHtml((fighter.displayName || "W")[0].toUpperCase())}</span>
                 <div>
@@ -141,24 +145,50 @@ function renderFighterCard(fighter, label, extraClass = "") {
     `;
 }
 
+function buildFighterSlots(lobby) {
+    const me = meInLobby(lobby);
+    const others = othersInLobby(lobby);
+    const slots = [];
+
+    if (me) {
+        slots.push({ fighter: me, label: "You", className: "" });
+    }
+    others.forEach((fighter, index) => {
+        slots.push({
+            fighter,
+            label: `Writer ${index + 2}`,
+            className: "is-opponent",
+        });
+    });
+
+    while (slots.length < WORD_WAR_MAX_WRITERS) {
+        slots.push({
+            fighter: null,
+            label: `Open slot ${slots.length + 1}`,
+            className: "",
+        });
+    }
+
+    return slots.slice(0, WORD_WAR_MAX_WRITERS);
+}
+
 function renderFighters(lobby) {
     if (!fighterSlots) return;
-    const me = meInLobby(lobby);
-    const opponent = opponentInLobby(lobby);
-    fighterSlots.innerHTML = `
-        ${renderFighterCard(me, "You", "")}
-        <div class="ww-vs-col" aria-hidden="true">
-            <div class="ww-vs-ring ww-vs-ring--sm">VS</div>
-        </div>
-        ${renderFighterCard(opponent, "Opponent", "is-opponent")}
-    `;
+    fighterSlots.innerHTML = buildFighterSlots(lobby)
+        .map(({ fighter, label, className }) => renderFighterCard(fighter, label, className))
+        .join("");
+}
+
+function renderLobbyCapacity(lobby) {
+    if (!lobbyCapacity) return;
+    const count = lobby?.participants?.length || 0;
+    lobbyCapacity.textContent = `${count}/${WORD_WAR_MAX_WRITERS} writers`;
 }
 
 function renderLobbyActions(lobby) {
     const me = meInLobby(lobby);
-    const opponent = opponentInLobby(lobby);
-    const bothReady = Boolean(me?.isReady && opponent?.isReady);
-    const hasOpponent = Boolean(opponent);
+    const participantCount = lobby.participants?.length || 0;
+    const canStart = Boolean(me?.isHost && canStartWordWar(lobby) && lobby.status === "lobby");
 
     if (readyBtn) {
         readyBtn.disabled = lobby.status !== "lobby" || !me?.bookId;
@@ -167,15 +197,23 @@ function renderLobbyActions(lobby) {
     }
 
     if (startBtn) {
-        const canStart = Boolean(me?.isHost && hasOpponent && bothReady && lobby.status === "lobby");
         startBtn.disabled = !canStart;
         startBtn.classList.toggle("hidden", !me?.isHost || lobby.status !== "lobby");
+        if (me?.isHost && lobby.status === "lobby" && participantCount < WORD_WAR_MIN_WRITERS) {
+            startBtn.title = `Need at least ${WORD_WAR_MIN_WRITERS} writers to start`;
+        } else if (me?.isHost && lobby.status === "lobby" && !canStartWordWar(lobby)) {
+            startBtn.title = "Every writer must pick a book and mark ready";
+        } else {
+            startBtn.title = "";
+        }
     }
 
     if (lobbyStatusBadge) {
         lobbyStatusBadge.textContent = lobby.status;
         lobbyStatusBadge.className = "ww-badge " + escapeHtml(lobby.status);
     }
+
+    renderLobbyCapacity(lobby);
 }
 
 function maybeRedirectToSprint(lobby) {

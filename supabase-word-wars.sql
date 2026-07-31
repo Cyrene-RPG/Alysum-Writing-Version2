@@ -293,7 +293,7 @@ BEGIN
   FROM public.word_wars_participants wp
   WHERE wp.room_id = v_room_id;
 
-  IF v_count >= 2 THEN
+  IF v_count >= 4 THEN
     RAISE EXCEPTION 'Room is full';
   END IF;
 
@@ -361,7 +361,7 @@ BEGIN
     WHERE wr.id = v_room_id
       AND wr.status = 'lobby'
       AND wr.expires_at > now()
-      AND (SELECT count(*) FROM public.word_wars_participants wp WHERE wp.room_id = wr.id) < 2;
+      AND (SELECT count(*) FROM public.word_wars_participants wp WHERE wp.room_id = wr.id) < 4;
 
     IF NOT FOUND THEN
       RAISE EXCEPTION 'Room not accessible';
@@ -453,6 +453,7 @@ AS $$
 DECLARE
   v_uid uuid := auth.uid();
   v_ready_count integer;
+  v_participant_count integer;
 BEGIN
   IF v_uid IS NULL THEN
     RAISE EXCEPTION 'Not authenticated';
@@ -465,12 +466,17 @@ BEGIN
     RAISE EXCEPTION 'Only the host can start';
   END IF;
 
-  SELECT count(*)::integer INTO v_ready_count
+  SELECT count(*)::integer, count(*) FILTER (WHERE wp.is_ready AND coalesce(nullif(trim(wp.book_id), ''), '') <> '')::integer
+  INTO v_participant_count, v_ready_count
   FROM public.word_wars_participants wp
-  WHERE wp.room_id = p_room_id AND wp.is_ready;
+  WHERE wp.room_id = p_room_id;
 
-  IF v_ready_count < 2 THEN
-    RAISE EXCEPTION 'Both writers must be ready';
+  IF v_participant_count < 2 THEN
+    RAISE EXCEPTION 'Need at least 2 writers in the lobby';
+  END IF;
+
+  IF v_ready_count < v_participant_count THEN
+    RAISE EXCEPTION 'Every writer must be ready';
   END IF;
 
   UPDATE public.word_wars_rooms

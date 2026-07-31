@@ -22,14 +22,8 @@ const timerModeEl = document.getElementById("timerMode");
 const roomCodeEl = document.getElementById("roomCode");
 const myWordsEl = document.getElementById("myWords");
 const myBookTitleEl = document.getElementById("myBookTitle");
-const opponentWordsEl = document.getElementById("opponentWords");
-const opponentNameEl = document.getElementById("opponentName");
-const opponentBookEl = document.getElementById("opponentBook");
-const opponentChapterTitleEl = document.getElementById("opponentChapterTitle");
-const opponentEditorEl = document.getElementById("opponentEditor");
-const opponentMirrorEl = document.getElementById("opponentMirror");
-const opponentHiddenEl = document.getElementById("opponentHidden");
-const opponentHiddenTextEl = document.getElementById("opponentHiddenText");
+const opponentsSummaryEl = document.getElementById("opponentsSummary");
+const opponentsPanelEl = document.getElementById("opponentsPanel");
 const shareBtn = document.getElementById("shareBtn");
 const sharePill = document.getElementById("sharePill");
 const pauseBtn = document.getElementById("pauseBtn");
@@ -60,7 +54,7 @@ let syncingShare = false;
 let syncingPause = false;
 let shareDraftOverride = null;
 let typingIdleTimer = null;
-let lastOpponentHtml = "";
+const opponentHtmlCache = new Map();
 
 function escapeHtml(str) {
     return String(str)
@@ -126,8 +120,8 @@ function buildProgressPatch(extra = {}) {
     return patch;
 }
 
-function opponentInLobby() {
-    return lobby?.participants?.find((p) => p.userId !== uid) || null;
+function othersInLobby() {
+    return (lobby?.participants || []).filter((p) => p.userId !== uid);
 }
 
 function formatClock(ms) {
@@ -197,10 +191,14 @@ function renderTimer() {
 
 function renderPauseControls() {
     const me = meInLobby();
-    const opponent = opponentInLobby();
+    const participants = lobby?.participants || [];
+    const others = participants.filter((p) => p.userId !== uid);
+    const requestedCount = participants.filter((p) => p.pauseRequested).length;
+    const othersRequested = others.filter((p) => p.pauseRequested);
     const isPaused = Boolean(lobby?.isPaused);
     const myReq = Boolean(me?.pauseRequested);
-    const theirReq = Boolean(opponent?.pauseRequested);
+    const allRequested = requestedCount >= participants.length && participants.length >= 2;
+    const someOthersRequested = othersRequested.length > 0;
 
     if (!pauseBtn) return;
 
@@ -210,20 +208,26 @@ function renderPauseControls() {
             pauseBtn.textContent = "Ready to resume";
             pauseBtn.disabled = false;
         } else {
-            pauseBtn.textContent = opponent
-                ? `Waiting for ${opponent.displayName || "friend"}…`
-                : "Waiting to resume…";
+            const waitingCount = othersRequested.length;
+            if (waitingCount === 0) {
+                pauseBtn.textContent = "Resuming…";
+            } else if (waitingCount === 1) {
+                pauseBtn.textContent = `Waiting for ${othersRequested[0].displayName || "writer"}…`;
+            } else {
+                pauseBtn.textContent = `Waiting for ${waitingCount} writers…`;
+            }
             pauseBtn.disabled = true;
         }
         return;
     }
 
+    pauseBtn.classList.remove("pause");
     pauseBtn.disabled = false;
-    if (myReq && !theirReq) {
+    if (myReq && !allRequested) {
         pauseBtn.textContent = "Cancel pause request";
-    } else if (!myReq && theirReq) {
+    } else if (!myReq && someOthersRequested) {
         pauseBtn.textContent = "Agree to pause";
-    } else if (myReq && theirReq) {
+    } else if (myReq && allRequested) {
         pauseBtn.textContent = "Pausing…";
         pauseBtn.disabled = true;
     } else {
@@ -238,14 +242,14 @@ async function handlePauseClick() {
 
     const isPaused = Boolean(lobby?.isPaused);
     const myReq = Boolean(me.pauseRequested);
-    const opponent = opponentInLobby();
-    const theirReq = Boolean(opponent?.pauseRequested);
+    const participants = lobby?.participants || [];
+    const requestedCount = participants.filter((p) => p.pauseRequested).length;
 
     let nextRequested = myReq;
     if (isPaused) {
         if (!myReq) return;
         nextRequested = false;
-    } else if (myReq && !theirReq) {
+    } else if (myReq && requestedCount < participants.length) {
         nextRequested = false;
     } else {
         nextRequested = true;
@@ -287,79 +291,119 @@ function renderShareControls() {
     }
 }
 
+function renderOpponentBlock(opponent) {
+    const showingDraft = Boolean(opponent.shareDraft && opponent.liveChapterHtml);
+    const hiddenText = opponent.shareDraft
+        ? "Sharing is on, but nothing is in this chapter yet."
+        : "Draft hidden — they can opt in with Share my draft.";
+
+    let body = `<div class="ww-opponent-block-empty">${escapeHtml(hiddenText)}</div>`;
+    if (showingDraft) {
+        body = `
+            <article class="ww-opponent-block-page">
+                <h3 class="ww-opponent-block-title">${escapeHtml(opponent.liveChapterTitle || "Untitled chapter")}</h3>
+                <div class="ww-opponent-block-editor" data-opponent-id="${escapeHtml(opponent.userId)}"></div>
+            </article>
+        `;
+    }
+
+    return `
+        <article class="ww-opponent-block">
+            <div class="ww-opponent-block-head">
+                <div>
+                    <h3 class="ww-opponent-block-name">${escapeHtml(opponent.displayName || "Writer")}</h3>
+                    <p class="ww-opponent-block-book">${escapeHtml(opponent.bookTitle || "Untitled")}</p>
+                </div>
+                <div class="ww-opponent-block-score">${escapeHtml(String(opponent.sprintWords || 0))} words</div>
+            </div>
+            ${body}
+        </article>
+    `;
+}
+
 function renderOpponentMirror() {
-    const opponent = opponentInLobby();
     const me = meInLobby();
+    const opponents = othersInLobby();
     if (roomCodeEl) roomCodeEl.textContent = lobby?.code || "------";
     if (myBookTitleEl) myBookTitleEl.textContent = me?.bookTitle || "Untitled";
     if (myWordsEl) myWordsEl.textContent = String(me?.sprintWords ?? latestDraft.sprintWords ?? 0);
 
-    if (!opponent) {
-        if (opponentNameEl) opponentNameEl.textContent = "Waiting…";
-        if (opponentBookEl) opponentBookEl.textContent = "—";
-        if (opponentWordsEl) opponentWordsEl.textContent = "0";
-        opponentMirrorEl?.classList.add("hidden");
-        opponentHiddenEl?.classList.remove("hidden");
-        if (opponentHiddenTextEl) {
-            opponentHiddenTextEl.textContent =
-                "Waiting for your friend to join the sprint.";
+    if (opponentsSummaryEl) {
+        if (!opponents.length) {
+            opponentsSummaryEl.textContent = "Waiting for other writers…";
+        } else if (opponents.length === 1) {
+            opponentsSummaryEl.textContent = opponents[0].displayName || "1 writer in the war";
+        } else {
+            opponentsSummaryEl.textContent = `${opponents.length} writers in the war`;
         }
+    }
+
+    if (!opponentsPanelEl) return;
+
+    if (!opponents.length) {
+        opponentsPanelEl.innerHTML = `
+            <div class="ww-opponent-block-empty">
+                Waiting for other writers to join this sprint.
+            </div>
+        `;
         return;
     }
 
-    if (opponentNameEl) opponentNameEl.textContent = opponent.displayName || "Writer";
-    if (opponentBookEl) opponentBookEl.textContent = opponent.bookTitle || "Untitled";
-    if (opponentWordsEl) opponentWordsEl.textContent = String(opponent.sprintWords || 0);
+    opponentsPanelEl.innerHTML = opponents.map((opponent) => renderOpponentBlock(opponent)).join("");
 
-    const showingDraft = Boolean(opponent.shareDraft && opponent.liveChapterHtml);
-    opponentMirrorEl?.classList.toggle("hidden", !showingDraft);
-    opponentHiddenEl?.classList.toggle("hidden", showingDraft);
-
-    if (!showingDraft && opponentHiddenTextEl) {
-        opponentHiddenTextEl.textContent = opponent.shareDraft
-            ? "Your friend is sharing, but hasn't typed in this chapter yet."
-            : "Your friend hasn't shared their draft yet. They can opt in with Share my draft.";
-    }
-
-    if (showingDraft && opponentEditorEl) {
+    opponents.forEach((opponent) => {
+        if (!opponent.shareDraft || !opponent.liveChapterHtml) return;
+        const editorEl = opponentsPanelEl.querySelector(
+            `[data-opponent-id="${CSS.escape(opponent.userId)}"]`
+        );
+        if (!editorEl) return;
         const html = opponent.liveChapterHtml || "";
-        if (html !== lastOpponentHtml) {
-            opponentEditorEl.innerHTML = html;
-            lastOpponentHtml = html;
-        }
-        if (opponentChapterTitleEl) {
-            opponentChapterTitleEl.textContent =
-                opponent.liveChapterTitle || "Untitled chapter";
-        }
-    }
+        if (opponentHtmlCache.get(opponent.userId) === html) return;
+        editorEl.innerHTML = html;
+        opponentHtmlCache.set(opponent.userId, html);
+    });
 }
 
 function renderRecap() {
     const me = meInLobby();
-    const opponent = opponentInLobby();
+    const opponents = othersInLobby();
     const myCount = me?.sprintWords ?? latestDraft.sprintWords ?? 0;
-    const theirCount = opponent?.sprintWords ?? 0;
     let headline = "Sprint complete";
-    if (opponent) {
-        if (myCount === theirCount) headline = "Perfect tie!";
-        else if (myCount > theirCount) headline = "You wrote more this round!";
-        else headline = "Your friend edged ahead this round";
+    if (opponents.length) {
+        const topOpponent = opponents.reduce(
+            (best, row) => ((row.sprintWords || 0) > (best.sprintWords || 0) ? row : best),
+            opponents[0]
+        );
+        const theirCount = topOpponent?.sprintWords ?? 0;
+        if (myCount === theirCount && opponents.every((row) => (row.sprintWords || 0) === myCount)) {
+            headline = "Perfect tie!";
+        } else if (myCount > theirCount) {
+            headline = "You wrote the most this round!";
+        } else if (myCount < theirCount) {
+            headline = `${topOpponent.displayName || "Another writer"} edged ahead this round`;
+        }
     }
+    const scoreCards = [
+        `<div class="ww-recap-score">
+            <span class="ww-recap-label">You</span>
+            <strong>${escapeHtml(String(myCount))}</strong>
+            <span class="ww-recap-sub">words this sprint</span>
+        </div>`,
+        ...opponents.map(
+            (opponent) => `
+                <div class="ww-recap-score is-opponent">
+                    <span class="ww-recap-label">${escapeHtml(opponent.displayName || "Writer")}</span>
+                    <strong>${escapeHtml(String(opponent.sprintWords || 0))}</strong>
+                    <span class="ww-recap-sub">words this sprint</span>
+                </div>
+            `
+        ),
+    ].join("");
+
     if (recapBody) {
         recapBody.innerHTML = `
             <p class="ww-recap-headline">${escapeHtml(headline)}</p>
-            <div class="ww-recap-scores">
-                <div class="ww-recap-score">
-                    <span class="ww-recap-label">You</span>
-                    <strong>${escapeHtml(String(myCount))}</strong>
-                    <span class="ww-recap-sub">words this sprint</span>
-                </div>
-                <div class="ww-recap-score is-opponent">
-                    <span class="ww-recap-label">${escapeHtml(opponent?.displayName || "Opponent")}</span>
-                    <strong>${escapeHtml(String(theirCount))}</strong>
-                    <span class="ww-recap-sub">words this sprint</span>
-                </div>
-            </div>
+            <div class="ww-recap-scores">${scoreCards}</div>
             <p class="ww-recap-note">Your manuscript was saved through the real editor throughout the sprint.</p>
         `;
     }

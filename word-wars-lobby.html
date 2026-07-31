@@ -403,6 +403,12 @@
             gap: 12px;
             margin-bottom: 22px;
         }
+        .ww-lobby-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
         .ww-lobby-head h2 {
             margin: 0;
             font-size: 24px;
@@ -427,10 +433,10 @@
             color: #c4b5fd;
             border: 1px solid rgba(167,139,250,0.22);
         }
-        .ww-badge.active {
-            background: rgba(20,184,166,0.16);
-            color: #99f6e4;
-            border-color: rgba(52,211,153,0.28);
+        .ww-badge.capacity {
+            background: rgba(124,58,237,0.18);
+            color: #c4b5fd;
+            border: 1px solid rgba(167,139,250,0.22);
         }
         .ww-code-block {
             display: flex;
@@ -466,16 +472,15 @@
         }
         .ww-arena-fighters {
             display: grid;
-            grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+            grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 14px;
             align-items: stretch;
             margin: 22px 0;
         }
-        @media (max-width: 700px) {
+        @media (max-width: 720px) {
             .ww-arena-fighters {
                 grid-template-columns: 1fr;
             }
-            .ww-arena-fighters .ww-vs-col { display: none; }
         }
         .ww-fighter {
             border: 1px solid var(--border);
@@ -636,7 +641,7 @@
                 <div class="ww-hero">
                     <p class="ww-kicker"><span class="ww-kicker-dot" aria-hidden="true"></span> Friendly writing spar</p>
                     <h1 class="ww-title">Word Wars</h1>
-                    <p class="ww-sub">Challenge a friend, open your real manuscript, sync a sprint timer, and write side by side.</p>
+                    <p class="ww-sub">Gather up to four writers, open your real manuscripts, sync a sprint timer, and write together.</p>
                 </div>
 
                 <div id="fallbackBanner" class="ww-banner hidden">
@@ -650,7 +655,7 @@
                         <article class="ww-gate-card ww-gate-card--host">
                             <div class="ww-card-icon" aria-hidden="true">⚔</div>
                             <h2>Start a Word War</h2>
-                            <p>Create a lobby, share the code, and pick how long you want to sprint.</p>
+                            <p>Create a lobby for 2–4 writers, share the code, and pick how long you want to sprint.</p>
                             <form id="createForm">
                                 <span class="ww-label">Sprint length</span>
                                 <div class="ww-chip-grid" id="hubDurationPicker">
@@ -673,7 +678,7 @@
                         <article class="ww-gate-card ww-gate-card--guest">
                             <div class="ww-card-icon" aria-hidden="true">🛡</div>
                             <h2>Join a friend</h2>
-                            <p>Enter their 6-character room code and step into the arena.</p>
+                            <p>Enter their 6-character room code — up to four writers can join.</p>
                             <form id="joinForm">
                                 <label class="ww-label" for="joinCodeInput">Room code</label>
                                 <input id="joinCodeInput" class="ww-input" maxlength="6" autocomplete="off" placeholder="ABC123" />
@@ -687,9 +692,12 @@
                     <div class="ww-lobby-head">
                         <div>
                             <h2>War lobby</h2>
-                            <p class="ww-lobby-sub">Pick your book, mark ready, and wait for your opponent.</p>
+                            <p class="ww-lobby-sub">Pick your book, mark ready, and wait for everyone else.</p>
                         </div>
-                        <span id="lobbyStatusBadge" class="ww-badge">lobby</span>
+                        <div class="ww-lobby-badges">
+                            <span id="lobbyCapacity" class="ww-badge capacity">0/4 writers</span>
+                            <span id="lobbyStatusBadge" class="ww-badge">lobby</span>
+                        </div>
                     </div>
 
                     <div class="ww-card">
@@ -727,6 +735,6 @@
         </div>
     </main>
 
-    <script type="module" src="js/word-wars-lobby.js?v=3"></script>
+    <script type="module" src="js/word-wars-lobby.js?v=5"></script>
 </body>
 </html>

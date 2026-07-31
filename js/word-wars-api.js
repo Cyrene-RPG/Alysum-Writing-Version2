@@ -9,6 +9,14 @@ const LOCAL_STORE_KEY = "alysum-word-wars:rooms";
 
 export const WORD_WAR_DURATION_UNLIMITED = 0;
 export const WORD_WAR_DURATIONS = [5, 15, 20, 25, 30, 45, WORD_WAR_DURATION_UNLIMITED];
+export const WORD_WAR_MAX_WRITERS = 4;
+export const WORD_WAR_MIN_WRITERS = 2;
+
+export function canStartWordWar(lobby) {
+    const participants = lobby?.participants || [];
+    if (participants.length < WORD_WAR_MIN_WRITERS) return false;
+    return participants.every((p) => p.isReady && p.bookId);
+}
 
 export function formatWordWarDuration(minutes) {
     const value = Number(minutes);
@@ -189,7 +197,7 @@ function joinLocalRoom(code, uid, profile, bookId, bookTitle) {
     if (!lobby) throw new Error("Room not found or no longer open");
     if (lobby.status !== "lobby") throw new Error("Lobby is closed");
     if (lobby.participants.some((p) => p.userId === uid)) return lobby;
-    if (lobby.participants.length >= 2) throw new Error("Room is full");
+    if (lobby.participants.length >= WORD_WAR_MAX_WRITERS) throw new Error("Room is full (4 writers max)");
     upsertLocalParticipant(
         lobby,
         localParticipant(uid, profile, bookId, bookTitle, false)
@@ -228,8 +236,11 @@ function startLocalWar(roomId, uid) {
     const lobby = loadLocalLobby({ roomId });
     if (!lobby) throw new Error("Room not found");
     if (lobby.hostId !== uid) throw new Error("Only the host can start");
-    if (lobby.participants.filter((p) => p.isReady).length < 2) {
-        throw new Error("Both writers must be ready");
+    if (lobby.participants.length < WORD_WAR_MIN_WRITERS) {
+        throw new Error("Need at least 2 writers in the lobby");
+    }
+    if (!canStartWordWar(lobby)) {
+        throw new Error("Every writer must pick a book and mark ready");
     }
     lobby.status = "active";
     lobby.startedAt = new Date().toISOString();
