@@ -50,6 +50,10 @@ ALTER TABLE public.word_wars_participants ADD COLUMN IF NOT EXISTS words_at_star
 ALTER TABLE public.word_wars_participants ADD COLUMN IF NOT EXISTS sprint_words integer NOT NULL DEFAULT 0;
 ALTER TABLE public.word_wars_participants ADD COLUMN IF NOT EXISTS is_typing boolean NOT NULL DEFAULT false;
 ALTER TABLE public.word_wars_participants ADD COLUMN IF NOT EXISTS last_ping_at timestamptz;
+ALTER TABLE public.word_wars_participants ADD COLUMN IF NOT EXISTS share_draft boolean NOT NULL DEFAULT false;
+ALTER TABLE public.word_wars_participants ADD COLUMN IF NOT EXISTS live_chapter_title text NOT NULL DEFAULT '';
+ALTER TABLE public.word_wars_participants ADD COLUMN IF NOT EXISTS live_chapter_html text NOT NULL DEFAULT '';
+ALTER TABLE public.word_wars_participants ADD COLUMN IF NOT EXISTS live_chapter_id text;
 
 -- ---------------------------------------------------------------------------
 -- 2. Helpers
@@ -138,7 +142,11 @@ BEGIN
       'wordsAtStart', wp.words_at_start,
       'sprintWords', wp.sprint_words,
       'isTyping', wp.is_typing,
-      'lastPingAt', wp.last_ping_at
+      'lastPingAt', wp.last_ping_at,
+      'shareDraft', wp.share_draft,
+      'liveChapterTitle', wp.live_chapter_title,
+      'liveChapterHtml', wp.live_chapter_html,
+      'liveChapterId', wp.live_chapter_id
     )
     ORDER BY wp.is_host DESC, wp.joined_at ASC
   ), '[]'::jsonb)
@@ -466,6 +474,10 @@ BEGIN
   SET words_at_start = 0,
       sprint_words = 0,
       is_typing = false,
+      share_draft = false,
+      live_chapter_title = '',
+      live_chapter_html = '',
+      live_chapter_id = NULL,
       last_ping_at = now()
   WHERE room_id = p_room_id;
 
@@ -477,7 +489,11 @@ CREATE OR REPLACE FUNCTION public.update_word_war_progress(
   p_room_id uuid,
   p_sprint_words integer DEFAULT NULL,
   p_words_at_start integer DEFAULT NULL,
-  p_is_typing boolean DEFAULT NULL
+  p_is_typing boolean DEFAULT NULL,
+  p_share_draft boolean DEFAULT NULL,
+  p_live_chapter_title text DEFAULT NULL,
+  p_live_chapter_html text DEFAULT NULL,
+  p_live_chapter_id text DEFAULT NULL
 )
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -512,6 +528,22 @@ BEGIN
       ELSE wp.words_at_start
     END,
     is_typing = coalesce(p_is_typing, wp.is_typing),
+    share_draft = coalesce(p_share_draft, wp.share_draft),
+    live_chapter_title = CASE
+      WHEN coalesce(p_share_draft, wp.share_draft) = false THEN ''
+      WHEN p_live_chapter_title IS NOT NULL THEN left(p_live_chapter_title, 500)
+      ELSE wp.live_chapter_title
+    END,
+    live_chapter_html = CASE
+      WHEN coalesce(p_share_draft, wp.share_draft) = false THEN ''
+      WHEN p_live_chapter_html IS NOT NULL THEN left(p_live_chapter_html, 120000)
+      ELSE wp.live_chapter_html
+    END,
+    live_chapter_id = CASE
+      WHEN coalesce(p_share_draft, wp.share_draft) = false THEN NULL
+      WHEN p_live_chapter_id IS NOT NULL THEN left(p_live_chapter_id, 128)
+      ELSE wp.live_chapter_id
+    END,
     last_ping_at = now()
   WHERE wp.room_id = p_room_id
     AND wp.user_id = v_uid;
@@ -556,7 +588,7 @@ GRANT EXECUTE ON FUNCTION public.join_word_war_room(text, text) TO authenticated
 GRANT EXECUTE ON FUNCTION public.get_word_war_lobby(text, uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.update_word_war_lobby(uuid, integer, text, boolean) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.start_word_war(uuid) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.update_word_war_progress(uuid, integer, integer, boolean) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.update_word_war_progress(uuid, integer, integer, boolean, boolean, text, text, text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.finish_word_war(uuid) TO authenticated;
 
 -- ---------------------------------------------------------------------------

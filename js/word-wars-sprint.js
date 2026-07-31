@@ -1,15 +1,8 @@
 /**
- * Word Wars sprint — shared timer, real book editing, opponent stats.
+ * Word Wars sprint — side-by-side real editors with optional live draft sharing.
  */
 import { supabase } from "../firebase.js";
 import { requireStudioSession } from "./studio-session.js?v=3";
-import { countWordsFromHTML, countBookWords } from "./book-word-count.js?v=1";
-import { cleanImportHtml } from "./book-html-sanitize.js?v=1";
-import {
-    readWriterResume,
-    resolveResumeChapter,
-    writeWriterResume,
-} from "./writer-resume.js?v=3";
 import {
     fetchWordWarLobby,
     finishWordWar,
@@ -18,7 +11,7 @@ import {
     updateWordWarProgress,
     wordWarLobbyUrl,
     WORD_WAR_DURATION_UNLIMITED,
-} from "./word-wars-api.js?v=2";
+} from "./word-wars-api.js?v=3";
 
 const params = new URLSearchParams(window.location.search);
 const roomId = String(params.get("room") || "").trim();
@@ -27,36 +20,42 @@ const timerEl = document.getElementById("sprintTimer");
 const timerModeEl = document.getElementById("timerMode");
 const roomCodeEl = document.getElementById("roomCode");
 const myWordsEl = document.getElementById("myWords");
+const myBookTitleEl = document.getElementById("myBookTitle");
 const opponentWordsEl = document.getElementById("opponentWords");
 const opponentNameEl = document.getElementById("opponentName");
 const opponentBookEl = document.getElementById("opponentBook");
-const opponentTypingEl = document.getElementById("opponentTyping");
-const chapterTitleEl = document.getElementById("chapterTitle");
-const editorEl = document.getElementById("sprintEditor");
-const saveStatusEl = document.getElementById("saveStatus");
+const opponentChapterTitleEl = document.getElementById("opponentChapterTitle");
+const opponentEditorEl = document.getElementById("opponentEditor");
+const opponentMirrorEl = document.getElementById("opponentMirror");
+const opponentHiddenEl = document.getElementById("opponentHidden");
+const opponentHiddenTextEl = document.getElementById("opponentHiddenText");
+const shareBtn = document.getElementById("shareBtn");
+const sharePill = document.getElementById("sharePill");
+const myEditorFrame = document.getElementById("myEditorFrame");
 const pageStatusEl = document.getElementById("pageStatus");
 const recapOverlay = document.getElementById("recapOverlay");
 const recapBody = document.getElementById("recapBody");
 const finishBtn = document.getElementById("finishBtn");
 const leaveBtn = document.getElementById("leaveBtn");
-const openEditorBtn = document.getElementById("openEditorBtn");
 
 /** @type {string} */
 let uid = "";
-/** @type {ReturnType<import("./word-wars-api.js").normalizeLobby> | null} */
+/** @type {ReturnType<typeof import("./word-wars-api.js").fetchWordWarLobby> extends Promise<infer R> ? R : null} */
 let lobby = null;
-/** @type {object | null} */
-let book = null;
-/** @type {{ section: string, index: number } | null} */
-let chapterRef = null;
+let shareDraft = false;
 let wordsAtStart = 0;
-let saveTimer = null;
+let latestDraft = {
+    chapterTitle: "",
+    chapterHtml: "",
+    chapterId: "",
+    sprintWords: 0,
+};
 let progressTimer = null;
-let typingTimer = null;
 let timerInterval = null;
 let unsubscribe = null;
 let sprintEnded = false;
-let saving = false;
+let syncingShare = false;
+let lastOpponentHtml = "";
 
 function escapeHtml(str) {
     return String(str)
@@ -77,66 +76,12 @@ function setPageStatus(message, isError = false) {
     pageStatusEl.classList.remove("hidden");
 }
 
-function setSaveStatus(text) {
-    if (saveStatusEl) saveStatusEl.textContent = text;
-}
-
 function meInLobby() {
     return lobby?.participants?.find((p) => p.userId === uid) || null;
 }
 
 function opponentInLobby() {
     return lobby?.participants?.find((p) => p.userId !== uid) || null;
-}
-
-function parseSections(raw) {
-    let sections = raw;
-    if (typeof raw === "string") {
-        try {
-            sections = JSON.parse(raw);
-        } catch {
-            sections = {};
-        }
-    }
-    if (!sections || typeof sections !== "object" || Array.isArray(sections)) sections = {};
-    const body =
-        Array.isArray(sections.body) && sections.body.length
-            ? sections.body
-            : [{ id: "chapter-1", title: "Chapter 1", content: "" }];
-    return {
-        front: Array.isArray(sections.front) ? sections.front : [],
-        body,
-        back: Array.isArray(sections.back) ? sections.back : [],
-    };
-}
-
-function normalizeBookRow(row) {
-    return {
-        id: row.id,
-        title: row.title || "Untitled",
-        sections: parseSections(row.sections),
-        words: Number(row.words) || 0,
-        updated: Number(row.updated) || Date.now(),
-        isPublished: !!(row.is_published ?? row.isPublished),
-        libraryType: row.library_type ?? row.libraryType ?? null,
-        mediaFormat: row.media_format ?? row.mediaFormat ?? "novel",
-        publishedChapterIds: row.published_chapter_ids ?? row.publishedChapterIds ?? [],
-        publishMeta: row.publish_meta ?? row.publishMeta ?? {},
-    };
-}
-
-function currentChapter() {
-    if (!book || !chapterRef) return null;
-    const list = book.sections[chapterRef.section];
-    return list?.[chapterRef.index] || null;
-}
-
-function totalBookWords() {
-    return countBookWords(book);
-}
-
-function sprintWordDelta() {
-    return Math.max(0, totalBookWords() - wordsAtStart);
 }
 
 function formatClock(ms) {
@@ -175,30 +120,70 @@ function renderTimer() {
     if (state.ended && !sprintEnded) endSprint("Time's up!");
 }
 
-function renderOpponent() {
+function renderShareControls() {
+    const me = meInLobby();
+    shareDraft = Boolean(me?.shareDraft);
+    if (shareBtn) {
+        shareBtn.textContent = shareDraft ? "Hide my draft" : "Share my draft";
+        shareBtn.classList.toggle("mint", shareDraft);
+    }
+    if (sharePill) {
+        sharePill.textContent = shareDraft ? "Sharing live" : "Draft hidden";
+        sharePill.classList.toggle("is-live", shareDraft);
+    }
+}
+
+function renderOpponentMirror() {
     const opponent = opponentInLobby();
     const me = meInLobby();
     if (roomCodeEl) roomCodeEl.textContent = lobby?.code || "------";
-    if (myWordsEl) myWordsEl.textContent = String(me?.sprintWords ?? sprintWordDelta());
+    if (myBookTitleEl) myBookTitleEl.textContent = me?.bookTitle || "Untitled";
+    if (myWordsEl) myWordsEl.textContent = String(me?.sprintWords ?? latestDraft.sprintWords ?? 0);
+
     if (!opponent) {
         if (opponentNameEl) opponentNameEl.textContent = "Waiting…";
         if (opponentBookEl) opponentBookEl.textContent = "—";
         if (opponentWordsEl) opponentWordsEl.textContent = "0";
-        if (opponentTypingEl) opponentTypingEl.classList.add("hidden");
+        opponentMirrorEl?.classList.add("hidden");
+        opponentHiddenEl?.classList.remove("hidden");
+        if (opponentHiddenTextEl) {
+            opponentHiddenTextEl.textContent =
+                "Waiting for your friend to join the sprint.";
+        }
         return;
     }
+
     if (opponentNameEl) opponentNameEl.textContent = opponent.displayName || "Writer";
     if (opponentBookEl) opponentBookEl.textContent = opponent.bookTitle || "Untitled";
     if (opponentWordsEl) opponentWordsEl.textContent = String(opponent.sprintWords || 0);
-    if (opponentTypingEl) {
-        opponentTypingEl.classList.toggle("hidden", !opponent.isTyping);
+
+    const showingDraft = Boolean(opponent.shareDraft && opponent.liveChapterHtml);
+    opponentMirrorEl?.classList.toggle("hidden", !showingDraft);
+    opponentHiddenEl?.classList.toggle("hidden", showingDraft);
+
+    if (!showingDraft && opponentHiddenTextEl) {
+        opponentHiddenTextEl.textContent = opponent.shareDraft
+            ? "Your friend is sharing, but hasn't typed in this chapter yet."
+            : "Your friend hasn't shared their draft yet. They can opt in with Share my draft.";
+    }
+
+    if (showingDraft && opponentEditorEl) {
+        const html = opponent.liveChapterHtml || "";
+        if (html !== lastOpponentHtml) {
+            opponentEditorEl.innerHTML = html;
+            lastOpponentHtml = html;
+        }
+        if (opponentChapterTitleEl) {
+            opponentChapterTitleEl.textContent =
+                opponent.liveChapterTitle || "Untitled chapter";
+        }
     }
 }
 
 function renderRecap() {
     const me = meInLobby();
     const opponent = opponentInLobby();
-    const myCount = me?.sprintWords ?? sprintWordDelta();
+    const myCount = me?.sprintWords ?? latestDraft.sprintWords ?? 0;
     const theirCount = opponent?.sprintWords ?? 0;
     let headline = "Sprint complete";
     if (opponent) {
@@ -221,124 +206,114 @@ function renderRecap() {
                     <span class="ww-recap-sub">words this sprint</span>
                 </div>
             </div>
-            <p class="ww-recap-note">Your manuscript was saved to your book throughout the sprint.</p>
+            <p class="ww-recap-note">Your manuscript was saved through the real editor throughout the sprint.</p>
         `;
     }
     recapOverlay?.classList.remove("hidden");
 }
 
-async function loadBook(bookId) {
-    const { data, error } = await supabase.from("books").select("*").eq("id", bookId).maybeSingle();
-    if (error) throw error;
-    if (!data || data.user_id !== uid) throw new Error("Book not found");
-    book = normalizeBookRow(data);
-    wordsAtStart = totalBookWords();
-
-    const resume = readWriterResume(bookId);
-    chapterRef = resolveResumeChapter(book.sections, resume) || { section: "body", index: 0 };
-    const chapter = currentChapter();
-    if (!chapter) throw new Error("No chapter to open");
-
-    if (chapterTitleEl) chapterTitleEl.textContent = chapter.title || "Untitled chapter";
-    if (editorEl) {
-        editorEl.innerHTML = chapter.content || "";
-        editorEl.focus();
-    }
-
-    await updateWordWarProgress(roomId, {
-        wordsAtStart,
-        sprintWords: 0,
-        isTyping: false,
-    }).catch(console.warn);
+function buildEditorFrameUrl(bookId) {
+    const url = new URL("editor.html", window.location.href);
+    url.searchParams.set("book", bookId);
+    url.searchParams.set("embed", "wordWar");
+    url.searchParams.set("room", roomId);
+    return url.pathname + url.search;
 }
 
-function syncChapterFromEditor() {
-    const chapter = currentChapter();
-    if (!chapter || !editorEl) return;
-    chapter.content = editorEl.innerHTML;
-}
-
-function toDbBookPatch() {
-    syncChapterFromEditor();
-    return {
-        title: book.title || "Untitled",
-        sections: book.sections,
-        words: totalBookWords(),
-        updated: Date.now(),
-        is_published: !!book.isPublished,
-        library_type: book.libraryType || null,
-        media_format: book.mediaFormat || "novel",
-        published_chapter_ids: book.publishedChapterIds || [],
-        publish_meta: book.publishMeta || {},
-    };
-}
-
-async function saveBook() {
-    if (!book || saving) return;
-    saving = true;
-    setSaveStatus("Saving…");
-    syncChapterFromEditor();
-    const chapter = currentChapter();
-    if (chapter && editorEl) {
-        chapter.content = cleanImportHtml(editorEl.innerHTML);
-        editorEl.innerHTML = chapter.content;
-    }
-    try {
-        const { error } = await supabase.from("books").update(toDbBookPatch()).eq("id", book.id);
-        if (error) throw error;
-        if (chapterRef && chapter) {
-            writeWriterResume(book.id, {
-                section: chapterRef.section,
-                chapterId: chapter.id,
-                chapterIndex: chapterRef.index,
-            });
-        }
-        setSaveStatus("Saved");
-    } catch (err) {
-        console.error(err);
-        setSaveStatus("Save failed");
-    } finally {
-        saving = false;
-    }
-}
-
-function scheduleSave() {
-    window.clearTimeout(saveTimer);
-    setSaveStatus("Unsaved changes");
-    saveTimer = window.setTimeout(() => {
-        saveBook().catch(console.error);
-    }, 700);
-}
-
-function scheduleProgress(isTyping = true) {
-    if (opponentTypingEl && isTyping) {
-        /* local typing indicator not shown for self */
-    }
-    window.clearTimeout(typingTimer);
+function scheduleProgressPatch(patch = {}) {
     window.clearTimeout(progressTimer);
     progressTimer = window.setTimeout(async () => {
         try {
-            lobby = await updateWordWarProgress(roomId, {
-                sprintWords: sprintWordDelta(),
-                isTyping,
-            });
-            renderOpponent();
+            lobby = await updateWordWarProgress(roomId, patch);
+            renderShareControls();
+            renderOpponentMirror();
         } catch (err) {
             console.warn(err);
         }
     }, 400);
-    if (isTyping) {
-        typingTimer = window.setTimeout(() => {
-            scheduleProgress(false);
-        }, 1800);
+}
+
+function pushDraftProgress(force = false) {
+    if (sprintEnded) return;
+    const patch = {
+        sprintWords: latestDraft.sprintWords,
+        isTyping: true,
+    };
+    if (shareDraft) {
+        patch.shareDraft = true;
+        patch.liveChapterTitle = latestDraft.chapterTitle;
+        patch.liveChapterHtml = latestDraft.chapterHtml;
+        patch.liveChapterId = latestDraft.chapterId;
+    } else if (force) {
+        patch.shareDraft = false;
     }
+    if (wordsAtStart && !meInLobby()?.wordsAtStart) {
+        patch.wordsAtStart = wordsAtStart;
+    }
+    scheduleProgressPatch(patch);
+    window.setTimeout(() => {
+        scheduleProgressPatch({ isTyping: false, sprintWords: latestDraft.sprintWords });
+    }, 1600);
+}
+
+async function setShareDraft(next) {
+    if (syncingShare || sprintEnded) return;
+    syncingShare = true;
+    shareDraft = next;
+    renderShareControls();
+    try {
+        lobby = await updateWordWarProgress(roomId, {
+            shareDraft: next,
+            sprintWords: latestDraft.sprintWords,
+            liveChapterTitle: next ? latestDraft.chapterTitle : "",
+            liveChapterHtml: next ? latestDraft.chapterHtml : "",
+            liveChapterId: next ? latestDraft.chapterId : "",
+            isTyping: false,
+        });
+        if (next && latestDraft.chapterHtml) pushDraftProgress(true);
+        renderOpponentMirror();
+    } catch (err) {
+        console.error(err);
+        setPageStatus(err?.message || "Could not update sharing.", true);
+    } finally {
+        syncingShare = false;
+    }
+}
+
+function handleEditorMessage(event) {
+    if (event.origin !== window.location.origin) return;
+    const data = event.data;
+    if (!data || data.type !== "alysum-word-war") return;
+
+    if (data.event === "ready") {
+        wordsAtStart = Number(data.wordsAtStart) || 0;
+        scheduleProgressPatch({
+            wordsAtStart,
+            sprintWords: 0,
+            shareDraft,
+            isTyping: false,
+        });
+        return;
+    }
+
+    if (data.event !== "draft") return;
+
+    latestDraft = {
+        chapterTitle: String(data.chapterTitle || "Untitled"),
+        chapterHtml: String(data.chapterHtml || ""),
+        chapterId: String(data.chapterId || ""),
+        sprintWords: Math.max(0, Number(data.sprintWords) || 0),
+    };
+    if (myWordsEl) myWordsEl.textContent = String(latestDraft.sprintWords);
+    pushDraftProgress();
 }
 
 async function refreshLobby() {
     const next = await fetchWordWarLobby({ roomId });
     if (!next) return;
     lobby = next;
-    renderOpponent();
+    renderShareControls();
+    renderOpponentMirror();
     if (lobby.status === "finished" && !sprintEnded) {
         await endSprint("Sprint finished");
     }
@@ -348,8 +323,7 @@ async function endSprint(reason = "Sprint finished") {
     if (sprintEnded) return;
     sprintEnded = true;
     window.clearInterval(timerInterval);
-    window.clearTimeout(saveTimer);
-    await saveBook().catch(console.error);
+    window.clearTimeout(progressTimer);
     try {
         lobby = await finishWordWar(roomId);
     } catch (err) {
@@ -358,15 +332,7 @@ async function endSprint(reason = "Sprint finished") {
     setPageStatus(reason, false);
     renderRecap();
     if (finishBtn) finishBtn.disabled = true;
-}
-
-function bindEditor() {
-    editorEl?.addEventListener("input", () => {
-        syncChapterFromEditor();
-        scheduleSave();
-        scheduleProgress(true);
-        if (myWordsEl) myWordsEl.textContent = String(sprintWordDelta());
-    });
+    if (shareBtn) shareBtn.disabled = true;
 }
 
 async function boot() {
@@ -388,7 +354,8 @@ async function boot() {
     }
     if (lobby.status === "finished") {
         sprintEnded = true;
-        renderOpponent();
+        renderShareControls();
+        renderOpponentMirror();
         renderRecap();
         return;
     }
@@ -396,20 +363,25 @@ async function boot() {
     const me = meInLobby();
     if (!me?.bookId) throw new Error("No book selected for this Word War");
 
-    await loadBook(me.bookId);
-    renderOpponent();
+    window.addEventListener("message", handleEditorMessage);
+
+    if (myEditorFrame) {
+        myEditorFrame.src = buildEditorFrameUrl(me.bookId);
+    }
+
+    renderShareControls();
+    renderOpponentMirror();
     renderTimer();
     timerInterval = window.setInterval(renderTimer, 250);
-    bindEditor();
 
     unsubscribe = subscribeWordWarLobby(roomId, () => {
         refreshLobby().catch(console.warn);
     });
-
-    if (openEditorBtn) {
-        openEditorBtn.href = `editor.html?book=${encodeURIComponent(me.bookId)}`;
-    }
 }
+
+shareBtn?.addEventListener("click", () => {
+    setShareDraft(!shareDraft).catch(console.error);
+});
 
 finishBtn?.addEventListener("click", () => {
     endSprint("Sprint ended").catch(console.error);

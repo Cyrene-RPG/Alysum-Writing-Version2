@@ -673,6 +673,27 @@
         .sidebar { width: min(300px, 94vw); }
         .top-title { max-width: 34vw; font-size: 16px; }
     }
+    body.word-war-embed.alysum-with-workspace-nav > .wd-welcome-bar,
+    body.word-war-embed.alysum-with-workspace-nav > .wd-nav-wrap { display: none !important; }
+    body.word-war-embed.alysum-with-workspace-nav {
+        height: 100%;
+        overflow: hidden;
+    }
+    body.word-war-embed .alysum-tool-root {
+        flex: 1;
+        min-height: 0;
+        height: 100vh !important;
+    }
+    body.word-war-embed .main,
+    body.word-war-embed .workspace {
+        min-height: 0;
+        height: 100%;
+    }
+    body.word-war-embed #homeBtn,
+    body.word-war-embed #publishTopBtn,
+    body.word-war-embed #deleteBookTopBtn,
+    body.word-war-embed #betaShareTopLinkWrap,
+    body.word-war-embed #sprintAnchor { display: none !important; }
 </style></head><body class="alysum-with-workspace-nav alysum-tool-editor">
     <header class="wd-welcome-bar" aria-label="Welcome">
             <div class="wd-welcome-inner">
@@ -1033,6 +1054,11 @@
     } from "./js/book-offline-store.js?v=1";
 
 const params = new URLSearchParams(window.location.search);
+const wordWarEmbed = params.get("embed") === "wordWar";
+const wordWarRoomId = String(params.get("room") || "").trim();
+let wordWarWordsAtStart = null;
+let wordWarDraftTimer = null;
+
 let bookId =
     params.get("book") ||
     params.get("id") ||
@@ -1040,6 +1066,65 @@ let bookId =
     localStorage.getItem("alysum-current-book-id") ||
     sessionStorage.getItem("alysum-current-book-id") ||
     "";
+
+if (wordWarEmbed) document.body.classList.add("word-war-embed");
+
+function emitWordWarDraft() {
+    if (!wordWarEmbed || window.parent === window || !currentBook) return;
+    const chapter = currentChapter?.();
+    const chapterHtml = isCurrentBookComic?.()
+        ? String(chapter?.content || "")
+        : cleanAndStoreCurrentChapterFromEditor?.() || editor?.innerHTML || "";
+    const total = typeof totalWords === "function" ? totalWords() : 0;
+    const start = typeof wordWarWordsAtStart === "number" ? wordWarWordsAtStart : total;
+    window.parent.postMessage(
+        {
+            type: "alysum-word-war",
+            event: "draft",
+            roomId: wordWarRoomId,
+            bookId,
+            chapterId: chapter?.id || "",
+            chapterTitle: chapter?.title || chapterTitle?.textContent?.trim() || "Untitled",
+            chapterHtml,
+            totalWords: total,
+            sprintWords: Math.max(0, total - start),
+        },
+        window.location.origin
+    );
+}
+
+function scheduleWordWarDraft() {
+    if (!wordWarEmbed) return;
+    window.clearTimeout(wordWarDraftTimer);
+    wordWarDraftTimer = window.setTimeout(emitWordWarDraft, 350);
+}
+
+function notifyWordWarReady() {
+    if (!wordWarEmbed || window.parent === window || !currentBook) return;
+    const total = typeof totalWords === "function" ? totalWords() : 0;
+    wordWarWordsAtStart = total;
+    window.parent.postMessage(
+        {
+            type: "alysum-word-war",
+            event: "ready",
+            roomId: wordWarRoomId,
+            bookId,
+            wordsAtStart: total,
+        },
+        window.location.origin
+    );
+    emitWordWarDraft();
+}
+
+window.addEventListener("message", (event) => {
+    if (event.origin !== window.location.origin) return;
+    const data = event.data;
+    if (!data || data.type !== "alysum-word-war") return;
+    if (data.event === "init" && typeof data.wordsAtStart === "number") {
+        wordWarWordsAtStart = data.wordsAtStart;
+    }
+    if (data.event === "ping") emitWordWarDraft();
+});
 
 function storyBoardHref(id) {
     const bid = (id || bookId || "").trim();
@@ -2801,6 +2886,7 @@ function rememberBookId(id) {
         applyComicModeUI();
         applyPendingResumeViewport();
         frOnChapterChanged();
+        scheduleWordWarDraft();
     }
 
     function frIsWholeWordMatch(text, start, length) {
@@ -3658,6 +3744,7 @@ function rememberBookId(id) {
         currentChapter().title = chapterTitle.textContent.trim() || "Untitled";
         renderAllSections();
         scheduleSave();
+        scheduleWordWarDraft();
     });
     editor.addEventListener("input", () => {
         if (editor.querySelector(`p figure.${INLINE_IMAGE_FIGURE_CLASS}, div figure.${INLINE_IMAGE_FIGURE_CLASS}`)) {
@@ -3667,6 +3754,7 @@ function rememberBookId(id) {
         syncStats();
         scheduleSave();
         scheduleWriterResumeSave();
+        scheduleWordWarDraft();
     });
     editor.addEventListener("keyup", () => scheduleWriterResumeSave());
     editor.addEventListener("click", (e) => {
@@ -4090,6 +4178,8 @@ async function loadBook() {
         const s = loadEditorSprint();
         if (s && s.bookId === bookId && s.end && s.end > Date.now()) { renderSprintUI(); if (sprintTick) clearInterval(sprintTick); sprintTick = setInterval(renderSprintUI, 500); }
         else if (s && s.bookId === bookId) clearEditorSprint();
+
+        if (wordWarEmbed) notifyWordWarReady();
     }
 
     init();

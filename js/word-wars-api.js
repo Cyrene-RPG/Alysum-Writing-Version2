@@ -82,6 +82,10 @@ function normalizeLobby(raw) {
             sprintWords: Number(p.sprintWords ?? p.sprint_words ?? 0) || 0,
             isTyping: Boolean(p.isTyping ?? p.is_typing),
             lastPingAt: p.lastPingAt || p.last_ping_at || null,
+            shareDraft: Boolean(p.shareDraft ?? p.share_draft),
+            liveChapterTitle: safeString(p.liveChapterTitle || p.live_chapter_title, ""),
+            liveChapterHtml: safeString(p.liveChapterHtml || p.live_chapter_html, ""),
+            liveChapterId: safeString(p.liveChapterId || p.live_chapter_id, ""),
         })),
         localOnly: Boolean(raw.localOnly),
     };
@@ -142,6 +146,14 @@ function localParticipant(uid, profile, bookId, bookTitle, isHost) {
         isReady: false,
         isHost,
         joinedAt: new Date().toISOString(),
+        wordsAtStart: 0,
+        sprintWords: 0,
+        isTyping: false,
+        lastPingAt: null,
+        shareDraft: false,
+        liveChapterTitle: "",
+        liveChapterHtml: "",
+        liveChapterId: "",
     };
 }
 
@@ -220,20 +232,41 @@ function startLocalWar(roomId, uid) {
         p.sprintWords = 0;
         p.wordsAtStart = 0;
         p.isTyping = false;
+        p.shareDraft = false;
+        p.liveChapterTitle = "";
+        p.liveChapterHtml = "";
+        p.liveChapterId = "";
     });
     return saveLocalLobby(lobby);
 }
 
-function updateLocalProgress(roomId, uid, { sprintWords, wordsAtStart, isTyping } = {}) {
+function updateLocalProgress(roomId, uid, patch = {}) {
     const lobby = loadLocalLobby({ roomId });
     if (!lobby) throw new Error("Room not found");
     const me = lobby.participants.find((p) => p.userId === uid);
     if (!me) throw new Error("Not a participant");
-    if (typeof sprintWords === "number") me.sprintWords = Math.max(0, sprintWords);
-    if (typeof wordsAtStart === "number" && !me.wordsAtStart) {
-        me.wordsAtStart = Math.max(0, wordsAtStart);
+    if (typeof patch.sprintWords === "number") me.sprintWords = Math.max(0, patch.sprintWords);
+    if (typeof patch.wordsAtStart === "number" && !me.wordsAtStart) {
+        me.wordsAtStart = Math.max(0, patch.wordsAtStart);
     }
-    if (typeof isTyping === "boolean") me.isTyping = isTyping;
+    if (typeof patch.isTyping === "boolean") me.isTyping = patch.isTyping;
+    if (typeof patch.shareDraft === "boolean") {
+        me.shareDraft = patch.shareDraft;
+        if (!patch.shareDraft) {
+            me.liveChapterTitle = "";
+            me.liveChapterHtml = "";
+            me.liveChapterId = "";
+        }
+    }
+    if (typeof patch.liveChapterTitle === "string") {
+        me.liveChapterTitle = patch.liveChapterTitle.slice(0, 500);
+    }
+    if (typeof patch.liveChapterHtml === "string") {
+        me.liveChapterHtml = patch.liveChapterHtml.slice(0, 120000);
+    }
+    if (typeof patch.liveChapterId === "string") {
+        me.liveChapterId = patch.liveChapterId.slice(0, 128);
+    }
     me.lastPingAt = new Date().toISOString();
     return saveLocalLobby(lobby);
 }
@@ -365,7 +398,15 @@ export async function startWordWar(roomId) {
 
 /**
  * @param {string} roomId
- * @param {{ sprintWords?: number, wordsAtStart?: number, isTyping?: boolean }} patch
+ * @param {{
+ *   sprintWords?: number,
+ *   wordsAtStart?: number,
+ *   isTyping?: boolean,
+ *   shareDraft?: boolean,
+ *   liveChapterTitle?: string,
+ *   liveChapterHtml?: string,
+ *   liveChapterId?: string,
+ * }} patch
  */
 export async function updateWordWarProgress(roomId, patch = {}) {
     const localLobby = loadLocalLobby({ roomId });
@@ -381,6 +422,11 @@ export async function updateWordWarProgress(roomId, patch = {}) {
         p_sprint_words: typeof patch.sprintWords === "number" ? patch.sprintWords : null,
         p_words_at_start: typeof patch.wordsAtStart === "number" ? patch.wordsAtStart : null,
         p_is_typing: typeof patch.isTyping === "boolean" ? patch.isTyping : null,
+        p_share_draft: typeof patch.shareDraft === "boolean" ? patch.shareDraft : null,
+        p_live_chapter_title:
+            typeof patch.liveChapterTitle === "string" ? patch.liveChapterTitle : null,
+        p_live_chapter_html: typeof patch.liveChapterHtml === "string" ? patch.liveChapterHtml : null,
+        p_live_chapter_id: typeof patch.liveChapterId === "string" ? patch.liveChapterId : null,
     });
     if (error) throw error;
     return normalizeLobby(data);
