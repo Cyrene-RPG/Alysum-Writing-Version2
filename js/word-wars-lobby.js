@@ -6,11 +6,12 @@ import { requireStudioSession } from "./studio-session.js?v=3";
 import { publicDisplayNameFromUserData } from "./profile-display.js?v=1";
 import {
     WORD_WAR_DURATIONS,
-    WORD_WAR_MAX_WRITERS,
     WORD_WAR_MIN_WRITERS,
     canStartWordWar,
     formatWordWarDuration,
     isWordWarDuration,
+    isWordWarWriterCount,
+    lobbyMaxWriters,
     createWordWarRoom,
     fetchWordWarLobby,
     joinWordWarRoom,
@@ -21,7 +22,7 @@ import {
     wordWarLobbyUrl,
     wordWarSprintUrl,
     isUsingLocalWordWarsFallback,
-} from "./word-wars-api.js?v=5";
+} from "./word-wars-api.js?v=6";
 
 const params = new URLSearchParams(window.location.search);
 const initialCode = String(params.get("code") || "").trim().toUpperCase();
@@ -46,6 +47,7 @@ const joinForm = document.getElementById("joinForm");
 const joinCodeInput = document.getElementById("joinCodeInput");
 const lobbyStatusBadge = document.getElementById("lobbyStatusBadge");
 const lobbyCapacity = document.getElementById("lobbyCapacity");
+const lobbyWriterCount = document.getElementById("lobbyWriterCount");
 
 /** @type {{ uid: string, profile: { displayName: string }, books: Array<{ id: string, title: string }> } | null} */
 let sessionCtx = null;
@@ -54,6 +56,7 @@ let currentLobby = null;
 /** @type {(() => void) | null} */
 let unsubscribe = null;
 let selectedDuration = 15;
+let selectedMaxWriters = 2;
 let refreshTimer = null;
 
 function escapeHtml(str) {
@@ -148,6 +151,7 @@ function renderFighterCard(fighter, label, extraClass = "") {
 function buildFighterSlots(lobby) {
     const me = meInLobby(lobby);
     const others = othersInLobby(lobby);
+    const maxWriters = lobbyMaxWriters(lobby);
     const slots = [];
 
     if (me) {
@@ -161,7 +165,7 @@ function buildFighterSlots(lobby) {
         });
     });
 
-    while (slots.length < WORD_WAR_MAX_WRITERS) {
+    while (slots.length < maxWriters) {
         slots.push({
             fighter: null,
             label: `Open slot ${slots.length + 1}`,
@@ -169,7 +173,7 @@ function buildFighterSlots(lobby) {
         });
     }
 
-    return slots.slice(0, WORD_WAR_MAX_WRITERS);
+    return slots.slice(0, maxWriters);
 }
 
 function renderFighters(lobby) {
@@ -182,7 +186,14 @@ function renderFighters(lobby) {
 function renderLobbyCapacity(lobby) {
     if (!lobbyCapacity) return;
     const count = lobby?.participants?.length || 0;
-    lobbyCapacity.textContent = `${count}/${WORD_WAR_MAX_WRITERS} writers`;
+    const maxWriters = lobbyMaxWriters(lobby);
+    lobbyCapacity.textContent = `${count}/${maxWriters} writers`;
+}
+
+function renderLobbyWriterCount(lobby) {
+    if (!lobbyWriterCount) return;
+    const maxWriters = lobbyMaxWriters(lobby);
+    lobbyWriterCount.textContent = `${maxWriters} writers`;
 }
 
 function renderLobbyActions(lobby) {
@@ -214,6 +225,7 @@ function renderLobbyActions(lobby) {
     }
 
     renderLobbyCapacity(lobby);
+    renderLobbyWriterCount(lobby);
 }
 
 function maybeRedirectToSprint(lobby) {
@@ -314,6 +326,7 @@ createForm?.addEventListener("submit", async (event) => {
             sessionCtx.uid,
             sessionCtx.profile,
             selectedDuration,
+            selectedMaxWriters,
             "",
             ""
         );
@@ -348,6 +361,17 @@ document.getElementById("hubDurationPicker")?.addEventListener("click", (event) 
     if (isWordWarDuration(nextDuration)) selectedDuration = nextDuration;
     document.querySelectorAll("#hubDurationPicker .ww-chip").forEach((chip) => {
         chip.classList.toggle("is-active", Number(chip.dataset.duration) === selectedDuration);
+    });
+});
+
+document.getElementById("hubWriterPicker")?.addEventListener("click", (event) => {
+    const btn = event.target.closest("[data-writers]");
+    if (!btn) return;
+    const nextWriters = Number(btn.dataset.writers);
+    if (!isWordWarWriterCount(nextWriters)) return;
+    selectedMaxWriters = nextWriters;
+    document.querySelectorAll("#hubWriterPicker .ww-chip").forEach((chip) => {
+        chip.classList.toggle("is-active", Number(chip.dataset.writers) === selectedMaxWriters);
     });
 });
 

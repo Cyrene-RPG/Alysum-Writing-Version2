@@ -11,6 +11,20 @@ export const WORD_WAR_DURATION_UNLIMITED = 0;
 export const WORD_WAR_DURATIONS = [5, 15, 20, 25, 30, 45, WORD_WAR_DURATION_UNLIMITED];
 export const WORD_WAR_MAX_WRITERS = 4;
 export const WORD_WAR_MIN_WRITERS = 2;
+export const WORD_WAR_WRITER_COUNTS = [2, 3, 4];
+
+export function normalizeWordWarWriterCount(value, fallback = 4) {
+    const n = Number(value);
+    return WORD_WAR_WRITER_COUNTS.includes(n) ? n : fallback;
+}
+
+export function isWordWarWriterCount(value) {
+    return WORD_WAR_WRITER_COUNTS.includes(Number(value));
+}
+
+export function lobbyMaxWriters(lobby) {
+    return normalizeWordWarWriterCount(lobby?.maxWriters ?? lobby?.max_writers, WORD_WAR_MAX_WRITERS);
+}
 
 export function canStartWordWar(lobby) {
     const participants = lobby?.participants || [];
@@ -74,6 +88,7 @@ function normalizeLobby(raw) {
             const parsed = Number(raw.durationMin ?? raw.duration_min ?? 15);
             return isWordWarDuration(parsed) ? parsed : 15;
         })(),
+        maxWriters: normalizeWordWarWriterCount(raw.maxWriters ?? raw.max_writers, WORD_WAR_MAX_WRITERS),
         status: safeString(raw.status, "lobby"),
         createdAt: raw.createdAt || raw.created_at || null,
         startedAt: raw.startedAt || raw.started_at || null,
@@ -176,7 +191,7 @@ function upsertLocalParticipant(lobby, participant) {
     else lobby.participants.push(participant);
 }
 
-function createLocalRoom(uid, profile, durationMin, bookId, bookTitle) {
+function createLocalRoom(uid, profile, durationMin, maxWriters, bookId, bookTitle) {
     const roomId = genLocalRoomId();
     const code = genLocalCode();
     const lobby = normalizeLobby({
@@ -184,6 +199,7 @@ function createLocalRoom(uid, profile, durationMin, bookId, bookTitle) {
         code,
         hostId: uid,
         durationMin,
+        maxWriters: normalizeWordWarWriterCount(maxWriters),
         status: "lobby",
         createdAt: new Date().toISOString(),
         participants: [localParticipant(uid, profile, bookId, bookTitle, true)],
@@ -197,7 +213,10 @@ function joinLocalRoom(code, uid, profile, bookId, bookTitle) {
     if (!lobby) throw new Error("Room not found or no longer open");
     if (lobby.status !== "lobby") throw new Error("Lobby is closed");
     if (lobby.participants.some((p) => p.userId === uid)) return lobby;
-    if (lobby.participants.length >= WORD_WAR_MAX_WRITERS) throw new Error("Room is full (4 writers max)");
+    const maxWriters = lobbyMaxWriters(lobby);
+    if (lobby.participants.length >= maxWriters) {
+        throw new Error(`Room is full (${maxWriters} writers max)`);
+    }
     upsertLocalParticipant(
         lobby,
         localParticipant(uid, profile, bookId, bookTitle, false)
@@ -351,19 +370,29 @@ async function probeCloudSchema() {
  * @param {string} uid
  * @param {{ displayName?: string }} profile
  * @param {number} durationMin
+ * @param {number} [maxWriters]
  * @param {string} [bookId]
  * @param {string} [bookTitle]
  */
-export async function createWordWarRoom(uid, profile, durationMin = 15, bookId = "", bookTitle = "") {
+export async function createWordWarRoom(
+    uid,
+    profile,
+    durationMin = 15,
+    maxWriters = 4,
+    bookId = "",
+    bookTitle = ""
+) {
+    const writerCount = normalizeWordWarWriterCount(maxWriters);
     if (await probeCloudSchema()) {
         const { data, error } = await supabase.rpc("create_word_war_room", {
             p_duration_min: durationMin,
+            p_max_writers: writerCount,
             p_book_id: bookId || null,
         });
         if (error) throw error;
         return normalizeLobby(data);
     }
-    return createLocalRoom(uid, profile, durationMin, bookId, bookTitle);
+    return createLocalRoom(uid, profile, durationMin, writerCount, bookId, bookTitle);
 }
 
 /**

@@ -22,6 +22,11 @@ CREATE TABLE IF NOT EXISTS public.word_wars_rooms (
 ALTER TABLE public.word_wars_rooms ADD COLUMN IF NOT EXISTS is_paused boolean NOT NULL DEFAULT false;
 ALTER TABLE public.word_wars_rooms ADD COLUMN IF NOT EXISTS paused_at timestamptz;
 ALTER TABLE public.word_wars_rooms ADD COLUMN IF NOT EXISTS pause_ms_total bigint NOT NULL DEFAULT 0;
+ALTER TABLE public.word_wars_rooms ADD COLUMN IF NOT EXISTS max_writers integer NOT NULL DEFAULT 4;
+ALTER TABLE public.word_wars_rooms DROP CONSTRAINT IF EXISTS word_wars_rooms_max_writers_check;
+ALTER TABLE public.word_wars_rooms
+  ADD CONSTRAINT word_wars_rooms_max_writers_check
+  CHECK (max_writers IN (2, 3, 4));
 
 CREATE INDEX IF NOT EXISTS word_wars_rooms_host_id_idx
   ON public.word_wars_rooms (host_id, created_at DESC);
@@ -165,6 +170,7 @@ BEGIN
     'code', v_room.code,
     'hostId', v_room.host_id,
     'durationMin', v_room.duration_min,
+    'maxWriters', v_room.max_writers,
     'status', v_room.status,
     'createdAt', v_room.created_at,
     'startedAt', v_room.started_at,
@@ -183,6 +189,7 @@ $$;
 
 CREATE OR REPLACE FUNCTION public.create_word_war_room(
   p_duration_min integer DEFAULT 15,
+  p_max_writers integer DEFAULT 4,
   p_book_id text DEFAULT NULL
 )
 RETURNS jsonb
@@ -193,6 +200,7 @@ AS $$
 DECLARE
   v_uid uuid := auth.uid();
   v_duration integer := coalesce(p_duration_min, 15);
+  v_max_writers integer := coalesce(p_max_writers, 4);
   v_book_id text := nullif(trim(coalesce(p_book_id, '')), '');
   v_book_title text := 'Untitled';
   v_code text;
@@ -205,6 +213,10 @@ BEGIN
 
   IF v_duration NOT IN (0, 5, 15, 20, 25, 30, 45) THEN
     RAISE EXCEPTION 'Invalid sprint length';
+  END IF;
+
+  IF v_max_writers NOT IN (2, 3, 4) THEN
+    RAISE EXCEPTION 'Invalid writer count';
   END IF;
 
   IF v_book_id IS NOT NULL THEN
@@ -226,8 +238,8 @@ BEGIN
   LOOP
     v_code := public.gen_word_war_code();
     BEGIN
-      INSERT INTO public.word_wars_rooms (code, host_id, duration_min)
-      VALUES (v_code, v_uid, v_duration)
+      INSERT INTO public.word_wars_rooms (code, host_id, duration_min, max_writers)
+      VALUES (v_code, v_uid, v_duration, v_max_writers)
       RETURNING id INTO v_room_id;
       EXIT;
     EXCEPTION WHEN unique_violation THEN
@@ -259,6 +271,7 @@ DECLARE
   v_book_id text := nullif(trim(coalesce(p_book_id, '')), '');
   v_book_title text := 'Untitled';
   v_room_id uuid;
+  v_max_writers integer;
   v_count integer;
   v_display_name text;
 BEGIN
@@ -270,8 +283,8 @@ BEGIN
     RAISE EXCEPTION 'Invalid room code';
   END IF;
 
-  SELECT wr.id
-  INTO v_room_id
+  SELECT wr.id, wr.max_writers
+  INTO v_room_id, v_max_writers
   FROM public.word_wars_rooms wr
   WHERE wr.code = v_code
     AND wr.status = 'lobby'
@@ -293,7 +306,7 @@ BEGIN
   FROM public.word_wars_participants wp
   WHERE wp.room_id = v_room_id;
 
-  IF v_count >= 4 THEN
+  IF v_count >= v_max_writers THEN
     RAISE EXCEPTION 'Room is full';
   END IF;
 
@@ -361,7 +374,7 @@ BEGIN
     WHERE wr.id = v_room_id
       AND wr.status = 'lobby'
       AND wr.expires_at > now()
-      AND (SELECT count(*) FROM public.word_wars_participants wp WHERE wp.room_id = wr.id) < 4;
+      AND (SELECT count(*) FROM public.word_wars_participants wp WHERE wp.room_id = wr.id) < wr.max_writers;
 
     IF NOT FOUND THEN
       RAISE EXCEPTION 'Room not accessible';
@@ -669,7 +682,7 @@ BEGIN
 END;
 $$;
 
-GRANT EXECUTE ON FUNCTION public.create_word_war_room(integer, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.create_word_war_room(integer, integer, text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.join_word_war_room(text, text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_word_war_lobby(text, uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.update_word_war_lobby(uuid, integer, text, boolean) TO authenticated;
