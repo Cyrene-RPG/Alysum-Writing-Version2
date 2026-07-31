@@ -243,6 +243,33 @@
             text-decoration: none;
         }
 
+        .word-wars-preview-strip {
+            display: none;
+            margin: 0 0 18px;
+            padding: 12px 14px;
+            border-radius: 14px;
+            border: 1px solid rgba(124, 58, 237, 0.25);
+            background: rgba(124, 58, 237, 0.08);
+            color: #5b21b6;
+            font-size: 13px;
+            line-height: 1.5;
+            text-align: center;
+        }
+
+        .word-wars-preview-strip.visible {
+            display: block;
+        }
+
+        .word-wars-preview-strip a {
+            color: #6d28d9;
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .word-wars-preview-strip a:hover {
+            text-decoration: underline;
+        }
+
         @media (max-width: 480px) {
             body {
                 padding: 12px;
@@ -261,6 +288,13 @@
 
 <div class="card">
     <h2>Welcome Back</h2>
+
+    <div class="word-wars-preview-strip" id="word-wars-preview-strip">
+        Layout preview only — no login needed.
+        <a href="word-wars-lobby-preview-4.html">Mock lobby</a>
+        ·
+        <a href="word-wars-sprint.html?preview=4">Sprint preview (real editor)</a>
+    </div>
 
     <div class="beta-invite-banner" id="beta-invite-banner" role="status">
         <strong>Private beta invite.</strong> Sign in below — we'll bring you back to the draft right after you're in.
@@ -491,6 +525,11 @@ function applyLoginReturnContext() {
         betaInviteBanner?.classList.add("visible");
         const heading = document.querySelector(".card h2");
         if (heading) heading.textContent = "Sign in to open beta room";
+    }
+
+    const wordWarsPreviewStrip = document.getElementById("word-wars-preview-strip");
+    if (wordWarsPreviewStrip && safe && /word-wars/i.test(safe)) {
+        wordWarsPreviewStrip.classList.add("visible");
     }
 }
 

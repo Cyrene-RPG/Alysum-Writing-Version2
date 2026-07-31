@@ -16,16 +16,16 @@ import {
 } from "./word-wars-api.js?v=6";
 
 const params = new URLSearchParams(window.location.search);
-const isPreviewMode = params.get("preview") === "4";
-const roomId = isPreviewMode ? "preview-4" : String(params.get("room") || "").trim();
+const previewWriters = params.get("preview");
+const isPreviewMode = previewWriters === "4" || previewWriters === "3";
+const roomId = isPreviewMode ? `preview-${previewWriters}` : String(params.get("room") || "").trim();
 
 const timerEl = document.getElementById("sprintTimer");
 const timerModeEl = document.getElementById("timerMode");
 const roomCodeEl = document.getElementById("roomCode");
 const myWordsEl = document.getElementById("myWords");
 const myBookTitleEl = document.getElementById("myBookTitle");
-const opponentsSummaryEl = document.getElementById("opponentsSummary");
-const opponentsPanelEl = document.getElementById("opponentsPanel");
+const duelGridEl = document.getElementById("duelGrid");
 const shareBtn = document.getElementById("shareBtn");
 const sharePill = document.getElementById("sharePill");
 const pauseBtn = document.getElementById("pauseBtn");
@@ -35,50 +35,54 @@ const recapOverlay = document.getElementById("recapOverlay");
 const recapBody = document.getElementById("recapBody");
 const finishBtn = document.getElementById("finishBtn");
 const leaveBtn = document.getElementById("leaveBtn");
-const writersToggle = document.getElementById("writersToggle");
-const sprintShell = document.querySelector(".ww-sprint-shell");
 const previewBanner = document.getElementById("previewBanner");
-const WRITERS_PANEL_KEY = "alysum-word-wars:writers-panel-open";
+const expandEditorBtn = document.getElementById("expandEditorBtn");
+const sprintShellEl = document.querySelector(".ww-sprint-shell");
+const EXPAND_EDITOR_KEY = "alysum-word-wars:editor-expanded";
 
 function formatSprintWords(count) {
     const value = Math.max(0, Number(count) || 0);
     return `${value} word${value === 1 ? "" : "s"}`;
 }
 
-function readWritersPanelOpen() {
+function duelGridCount() {
+    const count = lobby?.participants?.length || 2;
+    return Math.min(4, Math.max(2, count));
+}
+
+function readEditorExpanded() {
     try {
-        return localStorage.getItem(WRITERS_PANEL_KEY) !== "0";
+        return localStorage.getItem(EXPAND_EDITOR_KEY) === "1";
     } catch {
-        return true;
+        return false;
     }
 }
 
-function writeWritersPanelOpen(open) {
+function writeEditorExpanded(expanded) {
     try {
-        localStorage.setItem(WRITERS_PANEL_KEY, open ? "1" : "0");
+        localStorage.setItem(EXPAND_EDITOR_KEY, expanded ? "1" : "0");
     } catch {
         /* ignore */
     }
 }
 
-function renderWritersPanelToggle(open = !sprintShell?.classList.contains("is-writers-collapsed")) {
-    if (!writersToggle) return;
-    writersToggle.textContent = open ? "Hide writers" : "Writers";
-    writersToggle.classList.toggle("is-active", open);
-    writersToggle.setAttribute("aria-pressed", open ? "true" : "false");
+function renderExpandEditorToggle(expanded = sprintShellEl?.classList.contains("is-editor-expanded")) {
+    if (!expandEditorBtn) return;
+    expandEditorBtn.textContent = expanded ? "Show writers" : "Expand editor";
+    expandEditorBtn.classList.toggle("is-active", expanded);
+    expandEditorBtn.setAttribute("aria-pressed", expanded ? "true" : "false");
 }
 
-function setWritersPanelOpen(open) {
-    sprintShell?.classList.toggle("is-writers-collapsed", !open);
-    renderWritersPanelToggle(open);
-    writeWritersPanelOpen(open);
+function setEditorExpanded(expanded) {
+    sprintShellEl?.classList.toggle("is-editor-expanded", expanded);
+    renderExpandEditorToggle(expanded);
+    writeEditorExpanded(expanded);
 }
 
-function initWritersPanelToggle() {
-    setWritersPanelOpen(readWritersPanelOpen());
-    writersToggle?.addEventListener("click", () => {
-        const nextOpen = sprintShell?.classList.contains("is-writers-collapsed");
-        setWritersPanelOpen(nextOpen);
+function initExpandEditorToggle() {
+    setEditorExpanded(readEditorExpanded());
+    expandEditorBtn?.addEventListener("click", () => {
+        setEditorExpanded(!sprintShellEl?.classList.contains("is-editor-expanded"));
     });
 }
 
@@ -343,33 +347,68 @@ function renderShareControls() {
     }
 }
 
-function renderOpponentBlock(opponent) {
+function renderOpponentPaneBody(opponent) {
     const showingDraft = Boolean(opponent.shareDraft && opponent.liveChapterHtml);
-    const hiddenText = opponent.shareDraft
-        ? "Sharing is on, but nothing is in this chapter yet."
-        : "Draft hidden — they can opt in with Share my draft.";
-
-    let body = `<div class="ww-opponent-block-empty">${escapeHtml(hiddenText)}</div>`;
-    if (showingDraft) {
-        body = `
-            <article class="ww-opponent-block-page">
-                <h3 class="ww-opponent-block-title">${escapeHtml(opponent.liveChapterTitle || "Untitled chapter")}</h3>
-                <div class="ww-opponent-block-editor" data-opponent-id="${escapeHtml(opponent.userId)}"></div>
-            </article>
+    if (!showingDraft) {
+        const hiddenText = opponent.shareDraft
+            ? "Sharing is on, but nothing is in this chapter yet."
+            : "Draft hidden — they can opt in with Share my draft.";
+        return `
+            <div class="ww-duel-frame-wrap">
+                <div class="ww-opponent-empty">
+                    <div>
+                        <strong>${escapeHtml(opponent.displayName || "Writer")}</strong>
+                        ${escapeHtml(hiddenText)}
+                    </div>
+                </div>
+            </div>
         `;
     }
 
     return `
-        <article class="ww-opponent-block">
-            <div class="ww-opponent-block-head">
-                <div>
-                    <h3 class="ww-opponent-block-name">${escapeHtml(opponent.displayName || "Writer")}</h3>
-                    <p class="ww-opponent-block-book">${escapeHtml(opponent.bookTitle || "Untitled")}</p>
-                </div>
-                <div class="ww-opponent-block-score">${escapeHtml(String(opponent.sprintWords || 0))} words</div>
+        <div class="ww-duel-frame-wrap">
+            <div class="ww-opponent-scroll">
+                <article class="ww-opponent-page">
+                    <h3 class="ww-opponent-chapter-title">${escapeHtml(opponent.liveChapterTitle || "Untitled chapter")}</h3>
+                    <div class="ww-opponent-editor" data-opponent-id="${escapeHtml(opponent.userId)}"></div>
+                </article>
             </div>
-            ${body}
-        </article>
+        </div>
+    `;
+}
+
+function renderOpponentPane(opponent, index, opponentCount) {
+    const label = opponentCount === 1 ? "Opponent" : `Writer ${index + 2}`;
+    return `
+        <section class="ww-duel-pane is-opponent" data-opponent-pane="${escapeHtml(opponent.userId)}">
+            <div class="ww-duel-pane-head">
+                <div>
+                    <p class="ww-duel-label">${escapeHtml(label)}</p>
+                    <p class="ww-duel-title">${escapeHtml(opponent.displayName || "Writer")}</p>
+                    <p class="ww-duel-sub">${escapeHtml(opponent.bookTitle || "Untitled")}</p>
+                </div>
+                <div class="ww-duel-score">${escapeHtml(formatSprintWords(opponent.sprintWords || 0))} this sprint</div>
+            </div>
+            ${renderOpponentPaneBody(opponent)}
+        </section>
+    `;
+}
+
+function renderEmptyOpponentPane() {
+    return `
+        <section class="ww-duel-pane is-opponent is-empty">
+            <div class="ww-duel-pane-head">
+                <div>
+                    <p class="ww-duel-label">Opponent</p>
+                    <p class="ww-duel-title">Waiting…</p>
+                </div>
+            </div>
+            <div class="ww-duel-frame-wrap">
+                <div class="ww-opponent-empty">
+                    <div>Waiting for other writers to join this sprint.</div>
+                </div>
+            </div>
+        </section>
     `;
 }
 
@@ -380,32 +419,23 @@ function renderOpponentMirror() {
     if (myBookTitleEl) myBookTitleEl.textContent = me?.bookTitle || "Untitled";
     if (myWordsEl) myWordsEl.textContent = formatSprintWords(me?.sprintWords ?? latestDraft.sprintWords ?? 0);
 
-    if (opponentsSummaryEl) {
-        if (!opponents.length) {
-            opponentsSummaryEl.textContent = "Waiting for other writers…";
-        } else if (opponents.length === 1) {
-            opponentsSummaryEl.textContent = opponents[0].displayName || "1 writer in the war";
-        } else {
-            opponentsSummaryEl.textContent = `${opponents.length} writers in the war`;
-        }
+    if (duelGridEl) {
+        duelGridEl.className = `ww-duel-grid is-count-${duelGridCount()}`;
     }
 
-    if (!opponentsPanelEl) return;
+    duelGridEl?.querySelectorAll(".ww-duel-pane.is-opponent").forEach((pane) => pane.remove());
+
+    if (!duelGridEl) return;
 
     if (!opponents.length) {
-        opponentsPanelEl.innerHTML = `
-            <div class="ww-opponent-block-empty">
-                Waiting for other writers to join this sprint.
-            </div>
-        `;
+        duelGridEl.insertAdjacentHTML("beforeend", renderEmptyOpponentPane());
         return;
     }
 
-    opponentsPanelEl.innerHTML = opponents.map((opponent) => renderOpponentBlock(opponent)).join("");
-
-    opponents.forEach((opponent) => {
+    opponents.forEach((opponent, index) => {
+        duelGridEl.insertAdjacentHTML("beforeend", renderOpponentPane(opponent, index, opponents.length));
         if (!opponent.shareDraft || !opponent.liveChapterHtml) return;
-        const editorEl = opponentsPanelEl.querySelector(
+        const editorEl = duelGridEl.querySelector(
             `[data-opponent-id="${CSS.escape(opponent.userId)}"]`
         );
         if (!editorEl) return;
@@ -471,12 +501,57 @@ function buildEditorFrameUrl(bookId) {
 }
 
 function buildPreviewLobby(uid, book) {
+    const mockOpponents = [
+        {
+            userId: "preview-writer-2",
+            displayName: "Alex Chen",
+            bookId: "preview-book-2",
+            bookTitle: "The Last Harbor",
+            isReady: true,
+            isHost: false,
+            sprintWords: 142,
+            shareDraft: true,
+            liveChapterTitle: "The Fog Line",
+            liveChapterHtml:
+                "<p>By the time the ferry cleared the breakwater, the fog had swallowed the whole town behind them.</p><p>Mara kept her hand on the rail and tried not to think about what waited on the other side.</p>",
+            pauseRequested: false,
+        },
+        {
+            userId: "preview-writer-3",
+            displayName: "Jordan Wells",
+            bookId: "preview-book-3",
+            bookTitle: "Starfall Chronicles",
+            isReady: true,
+            isHost: false,
+            sprintWords: 87,
+            shareDraft: false,
+            liveChapterTitle: "",
+            liveChapterHtml: "",
+            pauseRequested: false,
+        },
+        {
+            userId: "preview-writer-4",
+            displayName: "Sam Rivera",
+            bookId: "preview-book-4",
+            bookTitle: "Ink & Ember",
+            isReady: true,
+            isHost: false,
+            sprintWords: 203,
+            shareDraft: true,
+            liveChapterTitle: "Ash Notes",
+            liveChapterHtml:
+                "<p>Every spell I learned in the academy had a counterspell. Every counterspell had a cost.</p><p>Tonight I was willing to pay it.</p>",
+            pauseRequested: false,
+        },
+    ];
+    const writerCount = previewWriters === "3" ? 3 : 4;
+
     return {
-        roomId: "preview-4",
+        roomId: `preview-${writerCount}`,
         code: "PREVIEW",
         hostId: uid,
         durationMin: 15,
-        maxWriters: 4,
+        maxWriters: writerCount,
         status: "active",
         startedAt: new Date(Date.now() - 6 * 60 * 1000).toISOString(),
         isPaused: false,
@@ -496,71 +571,48 @@ function buildPreviewLobby(uid, book) {
                 liveChapterHtml: "",
                 pauseRequested: false,
             },
-            {
-                userId: "preview-writer-2",
-                displayName: "Alex Chen",
-                bookId: "preview-book-2",
-                bookTitle: "The Last Harbor",
-                isReady: true,
-                isHost: false,
-                sprintWords: 142,
-                shareDraft: true,
-                liveChapterTitle: "The Fog Line",
-                liveChapterHtml:
-                    "<p>By the time the ferry cleared the breakwater, the fog had swallowed the whole town behind them.</p><p>Mara kept her hand on the rail and tried not to think about what waited on the other side.</p>",
-                pauseRequested: false,
-            },
-            {
-                userId: "preview-writer-3",
-                displayName: "Jordan Wells",
-                bookId: "preview-book-3",
-                bookTitle: "Starfall Chronicles",
-                isReady: true,
-                isHost: false,
-                sprintWords: 87,
-                shareDraft: false,
-                liveChapterTitle: "",
-                liveChapterHtml: "",
-                pauseRequested: false,
-            },
-            {
-                userId: "preview-writer-4",
-                displayName: "Sam Rivera",
-                bookId: "preview-book-4",
-                bookTitle: "Ink & Ember",
-                isReady: true,
-                isHost: false,
-                sprintWords: 203,
-                shareDraft: true,
-                liveChapterTitle: "Ash Notes",
-                liveChapterHtml:
-                    "<p>Every spell I learned in the academy had a counterspell. Every counterspell had a cost.</p><p>Tonight I was willing to pay it.</p>",
-                pauseRequested: false,
-            },
+            ...mockOpponents.slice(0, writerCount - 1),
         ],
     };
 }
 
 function pickPreviewBook(books) {
     if (!books.length) return null;
-    let storedBookId = "";
+    const storedBookId = readStoredBookId();
+    return books.find((book) => book.id === storedBookId) || books[0];
+}
+
+function readStoredBookId() {
     try {
-        storedBookId =
+        return (
             localStorage.getItem("alysum-current-book-id") ||
             sessionStorage.getItem("alysum-current-book-id") ||
-            "";
+            ""
+        );
     } catch {
-        /* ignore */
+        return "";
     }
-    return books.find((book) => book.id === storedBookId) || books[0];
+}
+
+function resolvePreviewBook(books) {
+    const fromList = pickPreviewBook(books);
+    if (fromList?.id) return fromList;
+
+    const paramBookId = String(params.get("book") || "").trim();
+    if (paramBookId) {
+        return { id: paramBookId, title: "Your manuscript" };
+    }
+
+    const storedBookId = readStoredBookId();
+    if (storedBookId) {
+        return { id: storedBookId, title: "Your manuscript" };
+    }
+
+    return null;
 }
 
 async function bootPreview() {
     previewBanner?.classList.remove("hidden");
-    setPageStatus(
-        "Preview mode — this loads your real Alysum editor. Mock writers appear in the side rail only.",
-        false
-    );
 
     const nextPath = window.location.pathname + window.location.search;
     const session = await requireStudioSession(supabase, nextPath);
@@ -568,9 +620,9 @@ async function bootPreview() {
     if (!uid) return;
 
     const books = await listMyBooks(uid);
-    const book = pickPreviewBook(books);
+    const book = resolvePreviewBook(books);
     if (!book?.id) {
-        setPageStatus("Create or open a book in the editor first, then reload this preview.", true);
+        setPageStatus("Open any book in the editor once, then reload this preview.", true);
         return;
     }
 
@@ -580,14 +632,16 @@ async function bootPreview() {
     if (myEditorFrame) {
         myEditorFrame.src = buildEditorFrameUrl(book.id);
     }
+    if (myBookTitleEl) myBookTitleEl.textContent = book.title || "Your manuscript";
 
-    initWritersPanelToggle();
+    initExpandEditorToggle();
     renderShareControls();
     renderPauseControls();
     renderOpponentMirror();
     if (timerEl) timerEl.textContent = "08:42";
     if (timerModeEl) timerModeEl.textContent = "15 min sprint";
     if (roomCodeEl) roomCodeEl.textContent = "PREVIEW";
+    setPageStatus("");
 }
 
 function scheduleProgressPatch(patch = {}) {
@@ -807,7 +861,7 @@ async function boot() {
         myEditorFrame.src = buildEditorFrameUrl(me.bookId);
     }
 
-    initWritersPanelToggle();
+    initExpandEditorToggle();
     renderShareControls();
     renderPauseControls();
     renderOpponentMirror();

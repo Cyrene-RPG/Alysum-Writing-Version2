@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Word Wars - test views</title>
+    <script src="js/alysum-appearance-boot.js"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100dvh;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: #070b14;
+            color: #f8fafc;
+            padding: 32px 20px 48px;
+        }
+        .wrap { max-width: 720px; margin: 0 auto; }
+        h1 { margin: 0 0 8px; font-size: 28px; font-weight: 900; }
+        .sub { margin: 0 0 28px; color: #94a3b8; line-height: 1.5; }
+        .card {
+            border: 1px solid rgba(167,139,250,0.22);
+            border-radius: 18px;
+            padding: 20px;
+            margin-bottom: 16px;
+            background: rgba(15,22,40,0.85);
+        }
+        .card h2 { margin: 0 0 6px; font-size: 18px; }
+        .card p { margin: 0 0 14px; color: #94a3b8; font-size: 14px; line-height: 1.45; }
+        .links { display: flex; flex-wrap: wrap; gap: 10px; }
+        a.btn {
+            display: inline-flex;
+            align-items: center;
+            padding: 10px 14px;
+            border-radius: 12px;
+            font-weight: 800;
+            font-size: 13px;
+            text-decoration: none;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.04);
+            color: #f8fafc;
+        }
+        a.btn.primary {
+            background: linear-gradient(135deg, #5b21b6, #7c3aed);
+            border: none;
+        }
+        a.btn:hover { filter: brightness(1.08); }
+        .tag {
+            display: inline-block;
+            margin-left: 8px;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: #fde68a;
+            border: 1px solid rgba(251,191,36,0.28);
+            background: rgba(251,191,36,0.1);
+            vertical-align: middle;
+        }
+        .tag.static { color: #99f6e4; border-color: rgba(52,211,153,0.28); background: rgba(52,211,153,0.1); }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <h1>Word Wars test views</h1>
+        <p class="sub">Sprint previews load your real <code>editor.html</code> in your pane (sign in required). Mock opponents fill the other panes.</p>
+
+        <section class="card">
+            <h2>Sprint with real editor <span class="tag">sign in</span></h2>
+            <p>Same split layout as live Word Wars. Your manuscript opens in the real Alysum editor iframe.</p>
+            <div class="links">
+                <a class="btn primary" href="word-wars-sprint.html?preview=4">4-writer sprint preview</a>
+                <a class="btn" href="word-wars-sprint.html?preview=3">3-writer sprint preview</a>
+            </div>
+        </section>
+
+        <section class="card">
+            <h2>Lobby layouts <span class="tag static">no login</span></h2>
+            <p>Mock 4-writer lobby before launch.</p>
+            <div class="links">
+                <a class="btn primary" href="word-wars-lobby-preview-4.html">4-writer lobby mock</a>
+                <a class="btn" href="word-wars-lobby.html">Interactive lobby</a>
+            </div>
+        </section>
+    </div>
+</body>
+</html>

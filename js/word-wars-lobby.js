@@ -2,7 +2,8 @@
  * Word Wars lobby page boot logic.
  */
 import { supabase } from "../firebase.js";
-import { requireStudioSession } from "./studio-session.js?v=3";
+import { resolveStudioSession } from "./studio-session.js?v=3";
+import { goToLogin } from "./desktop-auth.js?v=1";
 import { publicDisplayNameFromUserData } from "./profile-display.js?v=1";
 import {
     WORD_WAR_DURATIONS,
@@ -27,7 +28,12 @@ import {
 const params = new URLSearchParams(window.location.search);
 const initialCode = String(params.get("code") || "").trim().toUpperCase();
 const initialRoomId = String(params.get("room") || "").trim();
-const isDemoMode = params.get("demo") === "4";
+const wantsLayoutPreview =
+    params.get("demo") === "4" ||
+    params.get("preview") === "lobby" ||
+    params.get("preview") === "4";
+/** @type {boolean} */
+let isLayoutPreview = wantsLayoutPreview;
 
 const hubView = document.getElementById("hubView");
 const lobbyView = document.getElementById("lobbyView");
@@ -50,6 +56,7 @@ const joinCodeInput = document.getElementById("joinCodeInput");
 const lobbyStatusBadge = document.getElementById("lobbyStatusBadge");
 const lobbyCapacity = document.getElementById("lobbyCapacity");
 const lobbyWriterCount = document.getElementById("lobbyWriterCount");
+const wwHero = document.querySelector(".ww-hero");
 
 /** @type {{ uid: string, profile: { displayName: string }, books: Array<{ id: string, title: string }> } | null} */
 let sessionCtx = null;
@@ -84,6 +91,7 @@ function setStatus(message, isError = false) {
 function showView(view) {
     hubView?.classList.toggle("hidden", view !== "hub");
     lobbyView?.classList.toggle("hidden", view !== "lobby");
+    wwHero?.classList.toggle("hidden", isLayoutPreview && view === "lobby");
 }
 
 function meInLobby(lobby) {
@@ -97,7 +105,7 @@ function othersInLobby(lobby) {
 function renderDurationPicker(lobby) {
     if (!durationPicker) return;
     const me = meInLobby(lobby);
-    const canEdit = !isDemoMode && Boolean(me?.isHost) && lobby.status === "lobby";
+    const canEdit = !isLayoutPreview && Boolean(me?.isHost) && lobby.status === "lobby";
     durationPicker.innerHTML = WORD_WAR_DURATIONS.map((min) => {
         const active = lobby.durationMin === min ? " is-active" : "";
         const disabled = canEdit ? "" : " disabled";
@@ -108,7 +116,7 @@ function renderDurationPicker(lobby) {
 function renderBookSelect(lobby) {
     if (!bookSelect || !sessionCtx) return;
     const me = meInLobby(lobby);
-    const disabled = isDemoMode || lobby.status !== "lobby";
+    const disabled = isLayoutPreview || lobby.status !== "lobby";
     const options = ['<option value="">Choose a book…</option>']
         .concat(
             sessionCtx.books.map(
@@ -204,7 +212,7 @@ function renderLobbyActions(lobby) {
     const canStart = Boolean(me?.isHost && canStartWordWar(lobby) && lobby.status === "lobby");
 
     if (readyBtn) {
-        readyBtn.disabled = isDemoMode || lobby.status !== "lobby" || !me?.bookId;
+        readyBtn.disabled = isLayoutPreview || lobby.status !== "lobby" || !me?.bookId;
         readyBtn.textContent = me?.isReady ? "Not ready" : "I'm ready";
         readyBtn.classList.toggle("is-ready", Boolean(me?.isReady));
     }
@@ -241,7 +249,7 @@ function maybeRedirectToSprint(lobby) {
 function renderLobby(lobby) {
     currentLobby = lobby;
     if (!lobby) return;
-    if (!isDemoMode && maybeRedirectToSprint(lobby)) return;
+    if (!isLayoutPreview && maybeRedirectToSprint(lobby)) return;
 
     if (roomCodeEl) roomCodeEl.textContent = lobby.code || "------";
     if (inviteLinkEl) {
@@ -254,7 +262,7 @@ function renderLobby(lobby) {
     renderLobbyActions(lobby);
     showView("lobby");
 
-    if (isDemoMode) return;
+    if (isLayoutPreview) return;
 
     const url = new URL(window.location.href);
     url.searchParams.set("room", lobby.roomId);
@@ -322,7 +330,7 @@ async function bootHub() {
 
 createForm?.addEventListener("submit", async (event) => {
     event.preventDefault();
-    if (isDemoMode) return;
+    if (isLayoutPreview) return;
     if (!sessionCtx) return;
     setStatus("");
     createForm.querySelector("button[type=submit]")?.setAttribute("disabled", "true");
@@ -345,7 +353,7 @@ createForm?.addEventListener("submit", async (event) => {
 
 joinForm?.addEventListener("submit", async (event) => {
     event.preventDefault();
-    if (isDemoMode) return;
+    if (isLayoutPreview) return;
     if (!sessionCtx) return;
     setStatus("");
     const code = String(joinCodeInput?.value || "").trim().toUpperCase();
@@ -382,7 +390,7 @@ document.getElementById("hubWriterPicker")?.addEventListener("click", (event) =>
 });
 
 durationPicker?.addEventListener("click", async (event) => {
-    if (isDemoMode) return;
+    if (isLayoutPreview) return;
     const btn = event.target.closest("[data-duration]");
     if (!btn || btn.disabled || !currentLobby) return;
     const durationMin = Number(btn.dataset.duration);
@@ -396,7 +404,7 @@ durationPicker?.addEventListener("click", async (event) => {
 });
 
 bookSelect?.addEventListener("change", async () => {
-    if (isDemoMode || !currentLobby || !sessionCtx) return;
+    if (isLayoutPreview || !currentLobby || !sessionCtx) return;
     const bookId = bookSelect.value;
     const book = sessionCtx.books.find((row) => row.id === bookId);
     if (!bookId || !book) return;
@@ -412,7 +420,7 @@ bookSelect?.addEventListener("change", async () => {
 });
 
 readyBtn?.addEventListener("click", async () => {
-    if (isDemoMode || !currentLobby) return;
+    if (isLayoutPreview || !currentLobby) return;
     const me = meInLobby(currentLobby);
     try {
         const lobby = await updateWordWarLobby(currentLobby.roomId, {
@@ -426,7 +434,7 @@ readyBtn?.addEventListener("click", async () => {
 });
 
 startBtn?.addEventListener("click", async () => {
-    if (isDemoMode || !currentLobby) return;
+    if (isLayoutPreview || !currentLobby) return;
     startBtn.disabled = true;
     try {
         const lobby = await startWordWar(currentLobby.roomId);
@@ -438,7 +446,7 @@ startBtn?.addEventListener("click", async () => {
 });
 
 leaveBtn?.addEventListener("click", () => {
-    if (isDemoMode) {
+    if (isLayoutPreview) {
         window.location.href = window.location.pathname;
         return;
     }
@@ -524,9 +532,12 @@ function buildDemoLobby() {
     };
 }
 
-async function bootDemoPreview() {
+async function bootDemoPreview(message) {
     if (fallbackBanner) fallbackBanner.classList.add("hidden");
     demoBanner?.classList.remove("hidden");
+    if (demoBanner && message) {
+        demoBanner.innerHTML = message;
+    }
 
     sessionCtx = {
         uid: "demo-host",
@@ -534,20 +545,33 @@ async function bootDemoPreview() {
         books: [{ id: "demo-book", title: "My Manuscript" }],
     };
 
+    isLayoutPreview = true;
     renderLobby(buildDemoLobby());
     setStatus("Preview: 4/4 writers joined — waiting on Jordan to mark ready before start.");
 }
 
 async function boot() {
-    if (isDemoMode) {
-        await bootDemoPreview();
+    if (wantsLayoutPreview) {
+        await bootDemoPreview(
+            'Preview mode — mock 4-writer lobby. Remove <code>?demo=4</code> from the URL after you sign in for the real flow.'
+        );
         return;
     }
 
     const nextPath = window.location.pathname + window.location.search;
-    const session = await requireStudioSession(supabase, nextPath);
-    const uid = session?.user?.id;
-    if (!uid) return;
+    const studioSession = await resolveStudioSession(supabase);
+    const uid = studioSession.user?.id;
+
+    if (!uid) {
+        if (initialCode || initialRoomId) {
+            goToLogin(nextPath);
+            return;
+        }
+        await bootDemoPreview(
+            'Preview — mock 4-writer lobby (no login). <a href="login.html?next=%2Fword-wars-lobby.html" style="color:#c4b5fd;font-weight:700;">Sign in</a> to create or join a real Word War.'
+        );
+        return;
+    }
 
     let profileRow = null;
     try {
