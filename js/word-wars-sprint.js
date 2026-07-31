@@ -1,5 +1,5 @@
 /**
- * Word Wars sprint — side-by-side real editors with optional live draft sharing.
+ * Word Wars sprint — full Alysum editor with optional writers rail.
  */
 import { supabase } from "../firebase.js";
 import { requireStudioSession } from "./studio-session.js?v=3";
@@ -33,6 +33,51 @@ const recapOverlay = document.getElementById("recapOverlay");
 const recapBody = document.getElementById("recapBody");
 const finishBtn = document.getElementById("finishBtn");
 const leaveBtn = document.getElementById("leaveBtn");
+const writersToggle = document.getElementById("writersToggle");
+const sprintShell = document.querySelector(".ww-sprint-shell");
+const WRITERS_PANEL_KEY = "alysum-word-wars:writers-panel-open";
+
+function formatSprintWords(count) {
+    const value = Math.max(0, Number(count) || 0);
+    return `${value} word${value === 1 ? "" : "s"}`;
+}
+
+function readWritersPanelOpen() {
+    try {
+        return localStorage.getItem(WRITERS_PANEL_KEY) !== "0";
+    } catch {
+        return true;
+    }
+}
+
+function writeWritersPanelOpen(open) {
+    try {
+        localStorage.setItem(WRITERS_PANEL_KEY, open ? "1" : "0");
+    } catch {
+        /* ignore */
+    }
+}
+
+function renderWritersPanelToggle(open = !sprintShell?.classList.contains("is-writers-collapsed")) {
+    if (!writersToggle) return;
+    writersToggle.textContent = open ? "Hide writers" : "Writers";
+    writersToggle.classList.toggle("is-active", open);
+    writersToggle.setAttribute("aria-pressed", open ? "true" : "false");
+}
+
+function setWritersPanelOpen(open) {
+    sprintShell?.classList.toggle("is-writers-collapsed", !open);
+    renderWritersPanelToggle(open);
+    writeWritersPanelOpen(open);
+}
+
+function initWritersPanelToggle() {
+    setWritersPanelOpen(readWritersPanelOpen());
+    writersToggle?.addEventListener("click", () => {
+        const nextOpen = sprintShell?.classList.contains("is-writers-collapsed");
+        setWritersPanelOpen(nextOpen);
+    });
+}
 
 /** @type {string} */
 let uid = "";
@@ -326,7 +371,7 @@ function renderOpponentMirror() {
     const opponents = othersInLobby();
     if (roomCodeEl) roomCodeEl.textContent = lobby?.code || "------";
     if (myBookTitleEl) myBookTitleEl.textContent = me?.bookTitle || "Untitled";
-    if (myWordsEl) myWordsEl.textContent = String(me?.sprintWords ?? latestDraft.sprintWords ?? 0);
+    if (myWordsEl) myWordsEl.textContent = formatSprintWords(me?.sprintWords ?? latestDraft.sprintWords ?? 0);
 
     if (opponentsSummaryEl) {
         if (!opponents.length) {
@@ -511,7 +556,7 @@ function handleEditorMessage(event) {
         chapterId: String(data.chapterId || ""),
         sprintWords: Math.max(0, Number(data.sprintWords) || 0),
     };
-    if (myWordsEl) myWordsEl.textContent = String(latestDraft.sprintWords);
+    if (myWordsEl) myWordsEl.textContent = formatSprintWords(latestDraft.sprintWords);
     pushDraftProgress();
 }
 
@@ -579,6 +624,7 @@ async function boot() {
         myEditorFrame.src = buildEditorFrameUrl(me.bookId);
     }
 
+    initWritersPanelToggle();
     renderShareControls();
     renderPauseControls();
     renderOpponentMirror();
