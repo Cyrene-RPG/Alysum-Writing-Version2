@@ -132,19 +132,31 @@
     flex-shrink: 0;
     width: 100%;
     max-width: 100%;
-    overflow-x: clip;
+    overflow-x: auto;
     overflow-y: visible;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
     background: rgba(11, 18, 32, 0.92);
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     backdrop-filter: blur(10px);
 }
 
+.wd-nav-wrap::-webkit-scrollbar {
+    height: 4px;
+}
+
+.wd-nav-wrap::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 999px;
+}
+
 .wd-nav {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     align-items: center;
     justify-content: flex-start;
-    gap: 6px 8px;
+    gap: 4px 6px;
     width: 100%;
     min-width: 0;
     max-width: 100%;
