@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Word Wars — Alysum</title>
+    <script src="js/alysum-appearance-boot.js"></script>
+    <link rel="stylesheet" href="css/site-responsive.css?v=1" />
+    <link rel="stylesheet" href="css/gradient-themes.css?v=5" />
+    <link rel="stylesheet" href="css/workspace-nav.css?v=9" />
+    <script src="js/gradient-theme-sync.js" defer></script>
+    <style>
+        * { box-sizing: border-box; }
+        :root {
+            --bg: #070b14;
+            --panel: #0f1628;
+            --panel-2: #151f35;
+            --panel-3: #1c2844;
+            --text: #f8fafc;
+            --muted: #94a3b8;
+            --muted-2: #64748b;
+            --border: rgba(255,255,255,0.08);
+            --frame: rgba(167,139,250,0.22);
+            --shadow: 0 24px 64px rgba(0,0,0,0.45);
+            --gold: #fbbf24;
+            --gold-soft: #fde68a;
+            --mint: #34d399;
+            --danger: #fb7185;
+            --purple: var(--theme-header-end, #7c3aed);
+            --purple-mid: var(--theme-header-mid, #5b21b6);
+        }
+        html, body {
+            margin: 0;
+            min-height: 100dvh;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            color: var(--text);
+            background: var(--bg);
+        }
+        body {
+            position: relative;
+            overflow-x: hidden;
+        }
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            background:
+                radial-gradient(ellipse 80% 50% at 50% -20%, rgba(124,58,237,0.35), transparent 55%),
+                radial-gradient(ellipse 50% 40% at 0% 40%, rgba(251,191,36,0.1), transparent 50%),
+                radial-gradient(ellipse 45% 35% at 100% 60%, rgba(219,39,119,0.12), transparent 50%),
+                linear-gradient(180deg, #0a1020 0%, var(--bg) 100%);
+            z-index: 0;
+        }
+        body::after {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            opacity: 0.35;
+            background-image:
+                linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 48px 48px;
+            mask-image: radial-gradient(ellipse 80% 60% at 50% 20%, black, transparent);
+            z-index: 0;
+        }
+        .hidden { display: none !important; }
+        .page {
+            position: relative;
+            z-index: 1;
+            max-width: 1080px;
+            margin: 0 auto;
+            padding: 18px 20px 56px;
+        }
+        .ww-arena-shell {
+            border: 1px solid var(--frame);
+            border-radius: 24px;
+            background:
+                linear-gradient(180deg, rgba(255,255,255,0.04) 0%, transparent 18%),
+                linear-gradient(180deg, rgba(18,26,44,0.96) 0%, rgba(8,12,22,0.98) 100%);
+            box-shadow:
+                inset 0 1px 0 rgba(255,255,255,0.08),
+                inset 0 0 100px rgba(124,58,237,0.08),
+                var(--shadow);
+            overflow: hidden;
+            position: relative;
+        }
+        .ww-arena-shell::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 50% 0%, rgba(124,58,237,0.16), transparent 42%);
+            pointer-events: none;
+        }
+        .ww-arena-inner { position: relative; padding: clamp(22px, 4vw, 36px); }
+        .ww-hero {
+            text-align: center;
+            margin-bottom: clamp(24px, 4vw, 36px);
+        }
+        .ww-kicker {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0 0 14px;
+            padding: 6px 12px;
+            border-radius: 999px;
+            border: 1px solid rgba(251,191,36,0.28);
+            background: rgba(251,191,36,0.08);
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--gold-soft);
+        }
+        .ww-kicker-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 999px;
+            background: var(--gold);
+            box-shadow: 0 0 12px rgba(251,191,36,0.8);
+            animation: ww-pulse 2.4s ease-in-out infinite;
+        }
+        @keyframes ww-pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.55; transform: scale(0.85); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .ww-kicker-dot { animation: none; }
+            .ww-title { animation: none; }
+        }
+        .ww-title {
+            margin: 0 0 12px;
+            font-size: clamp(34px, 7vw, 56px);
+            font-weight: 900;
+            letter-spacing: -0.04em;
+            line-height: 0.95;
+            background: linear-gradient(135deg, #fff 0%, #e9d5ff 42%, var(--gold-soft) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 0 40px rgba(124,58,237,0.25);
+        }
+        .ww-sub {
+            margin: 0 auto;
+            max-width: 520px;
+            color: var(--muted);
+            font-size: 15px;
+            line-height: 1.6;
+        }
+        .ww-banner {
+            margin-bottom: 18px;
+            padding: 12px 14px;
+            border-radius: 14px;
+            border: 1px solid rgba(251, 191, 36, 0.28);
+            background: rgba(251, 191, 36, 0.08);
+            color: #fde68a;
+            font-size: 13px;
+            line-height: 1.45;
+        }
+        .ww-status {
+            margin-bottom: 16px;
+            padding: 12px 14px;
+            border-radius: 14px;
+            border: 1px solid var(--border);
+            background: rgba(15,22,40,0.8);
+            color: var(--muted);
+            font-size: 14px;
+        }
+        .ww-status.error {
+            color: #fecaca;
+            border-color: rgba(239,68,68,0.35);
+            background: rgba(127,29,29,0.2);
+        }
+        .ww-duel-gate {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+            gap: clamp(12px, 2vw, 20px);
+            align-items: stretch;
+        }
+        @media (max-width: 820px) {
+            .ww-duel-gate {
+                grid-template-columns: 1fr;
+            }
+            .ww-vs-col { display: none; }
+        }
+        .ww-vs-col {
+            display: grid;
+            place-items: center;
+            align-self: center;
+        }
+        .ww-vs-ring {
+            width: 58px;
+            height: 58px;
+            border-radius: 999px;
+            display: grid;
+            place-items: center;
+            font-size: 15px;
+            font-weight: 900;
+            letter-spacing: 0.08em;
+            color: #fff;
+            background:
+                radial-gradient(circle at 30% 25%, rgba(255,255,255,0.25), transparent 45%),
+                linear-gradient(135deg, var(--purple-mid), #db2777);
+            border: 2px solid rgba(255,255,255,0.14);
+            box-shadow:
+                0 0 0 6px rgba(124,58,237,0.12),
+                0 0 32px rgba(124,58,237,0.35),
+                inset 0 1px 0 rgba(255,255,255,0.2);
+        }
+        .ww-vs-ring--sm {
+            width: 46px;
+            height: 46px;
+            font-size: 12px;
+        }
+        .ww-gate-card,
+        .ww-card {
+            position: relative;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 22px;
+            background:
+                linear-gradient(145deg, rgba(255,255,255,0.04), transparent 40%),
+                rgba(12,18,32,0.92);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+            overflow: hidden;
+            transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .ww-gate-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(167,139,250,0.28);
+            box-shadow:
+                inset 0 1px 0 rgba(255,255,255,0.06),
+                0 16px 40px rgba(0,0,0,0.28);
+        }
+        .ww-gate-card::after,
+        .ww-card::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.03) 50%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.25s ease;
+        }
+        .ww-gate-card:hover::after { opacity: 1; }
+        .ww-gate-card--host { border-top: 2px solid rgba(124,58,237,0.55); }
+        .ww-gate-card--guest { border-top: 2px solid rgba(251,191,36,0.45); }
+        .ww-card-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 14px;
+            display: grid;
+            place-items: center;
+            font-size: 20px;
+            margin-bottom: 14px;
+            background: rgba(124,58,237,0.16);
+            border: 1px solid rgba(167,139,250,0.22);
+        }
+        .ww-gate-card--guest .ww-card-icon {
+            background: rgba(251,191,36,0.12);
+            border-color: rgba(251,191,36,0.22);
+        }
+        .ww-gate-card h2,
+        .ww-card h2 {
+            margin: 0 0 8px;
+            font-size: 21px;
+            font-weight: 900;
+            letter-spacing: -0.02em;
+        }
+        .ww-gate-card p,
+        .ww-card > p {
+            margin: 0 0 18px;
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.55;
+        }
+        .ww-label {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--muted-2);
+        }
+        .ww-chip-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 8px;
+            margin-bottom: 18px;
+        }
+        .ww-chip-grid .ww-chip[data-duration="0"] {
+            grid-column: 1 / -1;
+        }
+        .ww-chip-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        .ww-chip {
+            border: 1px solid var(--border);
+            background: rgba(255,255,255,0.03);
+            color: var(--text);
+            border-radius: 12px;
+            padding: 10px 12px;
+            font-size: 13px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .ww-chip:hover:not(:disabled) {
+            border-color: rgba(167,139,250,0.35);
+            transform: translateY(-1px);
+        }
+        .ww-chip.is-active {
+            background: linear-gradient(135deg, var(--purple-mid), var(--purple));
+            border-color: transparent;
+            box-shadow: 0 8px 24px rgba(124,58,237,0.35);
+        }
+        .ww-chip:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .ww-input {
+            width: 100%;
+            border: 1px solid var(--border);
+            background: rgba(0,0,0,0.22);
+            color: var(--text);
+            border-radius: 14px;
+            padding: 16px 18px;
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            text-align: center;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+        .ww-input:focus {
+            outline: none;
+            border-color: rgba(251,191,36,0.45);
+            box-shadow: 0 0 0 4px rgba(251,191,36,0.1);
+        }
+        .ww-input::placeholder { color: rgba(148,163,184,0.45); letter-spacing: 0.18em; }
+        .ww-select {
+            width: 100%;
+            border: 1px solid var(--border);
+            background: rgba(0,0,0,0.22);
+            color: var(--text);
+            border-radius: 14px;
+            padding: 12px 14px;
+            font-size: 14px;
+            font-weight: 700;
+        }
+        .btn {
+            border: 1px solid var(--border);
+            background: rgba(255,255,255,0.04);
+            color: var(--text);
+            border-radius: 14px;
+            padding: 12px 16px;
+            font-weight: 800;
+            font-size: 14px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+        }
+        .btn:hover:not(:disabled) { transform: translateY(-1px); }
+        .btn.primary {
+            background: linear-gradient(135deg, var(--purple-mid), var(--purple));
+            border: none;
+            color: #fff;
+            box-shadow: 0 10px 28px rgba(124,58,237,0.35);
+        }
+        .btn.primary:hover:not(:disabled) {
+            box-shadow: 0 14px 36px rgba(124,58,237,0.45);
+        }
+        .btn.gold {
+            background: linear-gradient(135deg, #b45309, var(--gold));
+            border: none;
+            color: #111827;
+            box-shadow: 0 10px 28px rgba(251,191,36,0.25);
+        }
+        .btn.block { width: 100%; }
+        .btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+        .btn.is-ready {
+            background: rgba(52, 211, 153, 0.14);
+            border-color: rgba(52, 211, 153, 0.35);
+            color: #99f6e4;
+        }
+        .ww-lobby-head {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 22px;
+        }
+        .ww-lobby-head h2 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 900;
+            letter-spacing: -0.02em;
+        }
+        .ww-lobby-sub {
+            margin: 6px 0 0;
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.5;
+            text-align: left;
+        }
+        .ww-badge {
+            font-size: 10px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: rgba(124,58,237,0.18);
+            color: #c4b5fd;
+            border: 1px solid rgba(167,139,250,0.22);
+        }
+        .ww-badge.active {
+            background: rgba(20,184,166,0.16);
+            color: #99f6e4;
+            border-color: rgba(52,211,153,0.28);
+        }
+        .ww-code-block {
+            display: grid;
+            grid-template-columns: 1fr auto auto;
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+        @media (max-width: 640px) { .ww-code-block { grid-template-columns: 1fr; } }
+        .ww-code {
+            font-size: clamp(28px, 6vw, 40px);
+            font-weight: 900;
+            letter-spacing: 0.24em;
+            text-align: center;
+            padding: 18px 16px;
+            border-radius: 16px;
+            border: 1px solid rgba(251, 191, 36, 0.28);
+            background:
+                linear-gradient(180deg, rgba(251,191,36,0.1), rgba(251,191,36,0.03)),
+                rgba(0,0,0,0.2);
+            color: var(--gold-soft);
+            text-shadow: 0 0 24px rgba(251,191,36,0.25);
+        }
+        .ww-arena-fighters {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+            gap: 14px;
+            align-items: stretch;
+            margin: 22px 0;
+        }
+        @media (max-width: 700px) {
+            .ww-arena-fighters {
+                grid-template-columns: 1fr;
+            }
+            .ww-arena-fighters .ww-vs-col { display: none; }
+        }
+        .ww-fighter {
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 18px;
+            background:
+                linear-gradient(160deg, rgba(255,255,255,0.03), transparent 55%),
+                rgba(0,0,0,0.18);
+            min-height: 180px;
+            position: relative;
+            overflow: hidden;
+        }
+        .ww-fighter::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--purple), transparent);
+            opacity: 0.7;
+        }
+        .ww-fighter.is-opponent::before {
+            background: linear-gradient(270deg, var(--gold), transparent);
+        }
+        .ww-fighter.is-ready {
+            border-color: rgba(52, 211, 153, 0.35);
+            box-shadow: inset 0 0 30px rgba(52,211,153,0.06);
+        }
+        .ww-fighter.is-empty {
+            border-style: dashed;
+            display: flex;
+            flex-direction: column;
+            opacity: 0.85;
+        }
+        .ww-fighter-label {
+            margin: 0 0 14px;
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--muted-2);
+        }
+        .ww-fighter-head {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        .ww-fighter-avatar {
+            width: 52px;
+            height: 52px;
+            border-radius: 16px;
+            display: grid;
+            place-items: center;
+            font-size: 18px;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--purple-mid), #db2777);
+            border: 1px solid rgba(255,255,255,0.12);
+            box-shadow: 0 8px 20px rgba(124,58,237,0.25);
+        }
+        .ww-fighter.is-opponent .ww-fighter-avatar {
+            background: linear-gradient(135deg, #b45309, var(--gold));
+            box-shadow: 0 8px 20px rgba(251,191,36,0.2);
+        }
+        .ww-fighter-name {
+            margin: 0 0 4px;
+            font-size: 18px;
+            font-weight: 900;
+            letter-spacing: -0.02em;
+        }
+        .ww-fighter-book {
+            margin: 0;
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.4;
+        }
+        .ww-fighter-ready {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin: 16px 0 0;
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 800;
+            color: var(--gold-soft);
+            background: rgba(251,191,36,0.1);
+            border: 1px solid rgba(251,191,36,0.18);
+        }
+        .ww-fighter.is-ready .ww-fighter-ready {
+            color: #99f6e4;
+            background: rgba(52,211,153,0.1);
+            border-color: rgba(52,211,153,0.22);
+        }
+        .ww-fighter-empty {
+            flex: 1;
+            display: grid;
+            place-items: center;
+            text-align: center;
+            color: var(--muted);
+            padding: 12px;
+        }
+        .ww-fighter-icon {
+            display: grid;
+            place-items: center;
+            width: 52px;
+            height: 52px;
+            border-radius: 16px;
+            margin: 0 auto 10px;
+            font-size: 22px;
+            border: 1px dashed rgba(255,255,255,0.12);
+            color: var(--muted-2);
+        }
+        .ww-mini-badge {
+            display: inline-block;
+            margin-left: 6px;
+            padding: 2px 7px;
+            border-radius: 999px;
+            font-size: 9px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            background: rgba(251, 191, 36, 0.16);
+            color: #fde68a;
+            vertical-align: middle;
+        }
+        .ww-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 22px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+        .ww-section { margin-bottom: 20px; }
+        .ww-panel-divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--border), transparent);
+            margin: 4px 0 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="alysum-workspace-nav" data-active="word-wars"></div>
+    <script type="module" src="js/workspace-nav.js?v=9"></script>
+
+    <main class="page">
+        <div class="ww-arena-shell">
+            <div class="ww-arena-inner">
+                <div class="ww-hero">
+                    <p class="ww-kicker"><span class="ww-kicker-dot" aria-hidden="true"></span> Friendly writing spar</p>
+                    <h1 class="ww-title">Word Wars</h1>
+                    <p class="ww-sub">Challenge a friend, open your real manuscript, sync a sprint timer, and write side by side.</p>
+                </div>
+
+                <div id="fallbackBanner" class="ww-banner hidden">
+                    Cloud Word Wars schema is not applied yet. Lobbies work in local test mode on this browser until you run <code>supabase-word-wars.sql</code> in Supabase.
+                </div>
+
+                <div id="pageStatus" class="ww-status hidden"></div>
+
+                <section id="hubView">
+                    <div class="ww-duel-gate">
+                        <article class="ww-gate-card ww-gate-card--host">
+                            <div class="ww-card-icon" aria-hidden="true">⚔</div>
+                            <h2>Start a Word War</h2>
+                            <p>Create a lobby, share the code, and pick how long you want to sprint.</p>
+                            <form id="createForm">
+                                <span class="ww-label">Sprint length</span>
+                                <div class="ww-chip-grid" id="hubDurationPicker">
+                                    <button type="button" class="ww-chip" data-duration="5">5 min</button>
+                                    <button type="button" class="ww-chip is-active" data-duration="15">15 min</button>
+                                    <button type="button" class="ww-chip" data-duration="20">20 min</button>
+                                    <button type="button" class="ww-chip" data-duration="25">25 min</button>
+                                    <button type="button" class="ww-chip" data-duration="30">30 min</button>
+                                    <button type="button" class="ww-chip" data-duration="45">45 min</button>
+                                    <button type="button" class="ww-chip" data-duration="0">Unlimited</button>
+                                </div>
+                                <button type="submit" class="btn primary block">Create lobby</button>
+                            </form>
+                        </article>
+
+                        <div class="ww-vs-col" aria-hidden="true">
+                            <div class="ww-vs-ring">VS</div>
+                        </div>
+
+                        <article class="ww-gate-card ww-gate-card--guest">
+                            <div class="ww-card-icon" aria-hidden="true">🛡</div>
+                            <h2>Join a friend</h2>
+                            <p>Enter their 6-character room code and step into the arena.</p>
+                            <form id="joinForm">
+                                <label class="ww-label" for="joinCodeInput">Room code</label>
+                                <input id="joinCodeInput" class="ww-input" maxlength="6" autocomplete="off" placeholder="ABC123" />
+                                <button type="submit" class="btn primary block" style="margin-top:16px;">Join lobby</button>
+                            </form>
+                        </article>
+                    </div>
+                </section>
+
+                <section id="lobbyView" class="hidden">
+                    <div class="ww-lobby-head">
+                        <div>
+                            <h2>War lobby</h2>
+                            <p class="ww-lobby-sub">Pick your book, mark ready, and wait for your opponent.</p>
+                        </div>
+                        <span id="lobbyStatusBadge" class="ww-badge">lobby</span>
+                    </div>
+
+                    <div class="ww-card">
+                        <span class="ww-label">Room code</span>
+                        <div class="ww-code-block">
+                            <div id="roomCode" class="ww-code">------</div>
+                            <button type="button" class="btn" id="copyCodeBtn">Copy code</button>
+                            <button type="button" class="btn" id="copyLinkBtn">Copy link</button>
+                        </div>
+                        <label class="ww-label" for="inviteLink">Invite link</label>
+                        <input id="inviteLink" class="ww-select" readonly />
+
+                        <div class="ww-panel-divider"></div>
+
+                        <div class="ww-section">
+                            <span class="ww-label">Sprint length</span>
+                            <div class="ww-chip-row" id="durationPicker"></div>
+                        </div>
+
+                        <div class="ww-section">
+                            <label class="ww-label" for="bookSelect">Your book for this spar</label>
+                            <select id="bookSelect" class="ww-select"></select>
+                        </div>
+
+                        <div class="ww-arena-fighters" id="fighterSlots"></div>
+
+                        <div class="ww-actions">
+                            <button type="button" class="btn" id="readyBtn">I'm ready</button>
+                            <button type="button" class="btn gold hidden" id="startBtn">Start Word War</button>
+                            <button type="button" class="btn" id="leaveBtn">Leave lobby</button>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <script type="module" src="js/word-wars-lobby.js?v=3"></script>
+</body>
+</html>

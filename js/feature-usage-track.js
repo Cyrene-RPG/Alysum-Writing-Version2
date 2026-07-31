@@ -38,6 +38,8 @@ const PAGE_TO_FEATURE = new Map([
     ["Novel_Exporter.html", "exporter"],
     ["badges.html", "achievements"],
     ["leaderboard.html", "leaderboards"],
+    ["word-wars-lobby.html", "word-wars"],
+    ["word-wars-sprint.html", "word-wars"],
     ["settings.html", "settings"],
     ["reader-home.html", "reading"],
     ["realm-builder.html", "encyclopedia"],

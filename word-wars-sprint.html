@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Word War sprint — Alysum</title>
+    <script src="js/alysum-appearance-boot.js"></script>
+    <link rel="stylesheet" href="css/site-responsive.css?v=1" />
+    <link rel="stylesheet" href="css/gradient-themes.css?v=5" />
+    <link rel="stylesheet" href="css/book-inline-images.css?v=1" />
+    <script src="js/gradient-theme-sync.js" defer></script>
+    <style>
+        * { box-sizing: border-box; }
+        :root {
+            --bg: #070b14;
+            --panel: #0f1628;
+            --text: #f8fafc;
+            --muted: #94a3b8;
+            --border: rgba(255,255,255,0.08);
+            --gold: #fbbf24;
+            --mint: #34d399;
+            --purple: var(--theme-header-end, #7c3aed);
+        }
+        html, body {
+            margin: 0;
+            min-height: 100dvh;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background:
+                radial-gradient(ellipse 80% 50% at 50% -20%, rgba(124,58,237,0.28), transparent 55%),
+                var(--bg);
+            color: var(--text);
+        }
+        .hidden { display: none !important; }
+        .ww-sprint-shell {
+            min-height: 100dvh;
+            display: grid;
+            grid-template-rows: auto 1fr;
+        }
+        .ww-sprint-hud {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 16px;
+            align-items: center;
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(8,12,22,0.92);
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 20;
+        }
+        @media (max-width: 820px) {
+            .ww-sprint-hud { grid-template-columns: 1fr; text-align: center; }
+        }
+        .ww-sprint-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+        @media (max-width: 820px) { .ww-sprint-meta { justify-content: center; } }
+        .ww-sprint-code {
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--gold);
+        }
+        .ww-sprint-timer-wrap { text-align: center; }
+        .ww-sprint-timer {
+            font-size: clamp(32px, 6vw, 48px);
+            font-weight: 900;
+            letter-spacing: 0.06em;
+            font-variant-numeric: tabular-nums;
+            line-height: 1;
+        }
+        .ww-sprint-timer.is-urgent {
+            color: #fb7185;
+            text-shadow: 0 0 24px rgba(251,113,133,0.35);
+        }
+        .ww-sprint-timer-mode {
+            margin-top: 4px;
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+        .ww-sprint-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+        @media (max-width: 820px) { .ww-sprint-actions { justify-content: center; } }
+        .btn {
+            border: 1px solid var(--border);
+            background: rgba(255,255,255,0.04);
+            color: var(--text);
+            border-radius: 12px;
+            padding: 10px 14px;
+            font-weight: 800;
+            font-size: 13px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+        }
+        .btn.primary {
+            background: linear-gradient(135deg, var(--theme-header-mid, #5b21b6), var(--purple));
+            border: none;
+        }
+        .btn.gold {
+            background: linear-gradient(135deg, #b45309, var(--gold));
+            border: none;
+            color: #111827;
+        }
+        .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+        .ww-sprint-body {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 280px;
+            gap: 0;
+            min-height: 0;
+        }
+        @media (max-width: 960px) {
+            .ww-sprint-body { grid-template-columns: 1fr; }
+        }
+        .ww-sprint-editor-pane {
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+        }
+        .ww-sprint-status {
+            margin: 12px 18px 0;
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: rgba(15,22,40,0.8);
+            color: var(--muted);
+            font-size: 13px;
+        }
+        .ww-sprint-status.error {
+            color: #fecaca;
+            border-color: rgba(239,68,68,0.35);
+            background: rgba(127,29,29,0.2);
+        }
+        .ww-sprint-page {
+            flex: 1;
+            overflow: auto;
+            padding: 28px clamp(20px, 4vw, 56px) 48px;
+        }
+        .ww-sprint-paper {
+            max-width: 760px;
+            margin: 0 auto;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            box-shadow: 0 24px 64px rgba(0,0,0,0.35);
+            padding: clamp(24px, 4vw, 48px);
+        }
+        .ww-chapter-title {
+            margin: 0 0 18px;
+            font-size: clamp(22px, 4vw, 30px);
+            font-weight: 900;
+            letter-spacing: -0.02em;
+        }
+        .ww-sprint-editor {
+            min-height: 52vh;
+            outline: none;
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: 20px;
+            line-height: 1.75;
+            color: #eef2ff;
+        }
+        .ww-sprint-editor:empty:before {
+            content: attr(data-placeholder);
+            color: #64748b;
+        }
+        .ww-sprint-editor div, .ww-sprint-editor p { margin: 0; text-indent: 2em; }
+        .ww-sprint-editor div:first-child, .ww-sprint-editor p:first-child { text-indent: 0; }
+        .ww-sprint-footer {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 10px 18px 16px;
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 700;
+        }
+        .ww-sprint-side {
+            border-left: 1px solid var(--border);
+            background: rgba(0,0,0,0.18);
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        @media (max-width: 960px) {
+            .ww-sprint-side {
+                border-left: none;
+                border-top: 1px solid var(--border);
+            }
+        }
+        .ww-score-card {
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 16px;
+            background: rgba(255,255,255,0.02);
+        }
+        .ww-score-card.is-you { border-top: 2px solid rgba(124,58,237,0.55); }
+        .ww-score-card.is-opponent { border-top: 2px solid rgba(251,191,36,0.45); }
+        .ww-score-label {
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 8px;
+        }
+        .ww-score-value {
+            font-size: 34px;
+            font-weight: 900;
+            line-height: 1;
+            font-variant-numeric: tabular-nums;
+        }
+        .ww-score-sub { margin-top: 6px; color: var(--muted); font-size: 12px; }
+        .ww-opponent-name {
+            margin: 0 0 4px;
+            font-size: 18px;
+            font-weight: 900;
+        }
+        .ww-opponent-book {
+            margin: 0 0 12px;
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.4;
+        }
+        .ww-typing {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: rgba(52,211,153,0.1);
+            border: 1px solid rgba(52,211,153,0.22);
+            color: #99f6e4;
+            font-size: 12px;
+            font-weight: 800;
+        }
+        .ww-typing-dots {
+            display: inline-flex;
+            gap: 3px;
+        }
+        .ww-typing-dots span {
+            width: 5px;
+            height: 5px;
+            border-radius: 999px;
+            background: currentColor;
+            animation: ww-dot 1.2s infinite ease-in-out;
+        }
+        .ww-typing-dots span:nth-child(2) { animation-delay: 0.15s; }
+        .ww-typing-dots span:nth-child(3) { animation-delay: 0.3s; }
+        @keyframes ww-dot {
+            0%, 80%, 100% { opacity: 0.35; transform: translateY(0); }
+            40% { opacity: 1; transform: translateY(-2px); }
+        }
+        .ww-recap-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            display: grid;
+            place-items: center;
+            padding: 20px;
+            background: rgba(2,8,20,0.78);
+            backdrop-filter: blur(8px);
+        }
+        .ww-recap-card {
+            width: min(100%, 520px);
+            border: 1px solid rgba(167,139,250,0.25);
+            border-radius: 22px;
+            padding: 28px;
+            background: linear-gradient(180deg, rgba(26,35,54,0.98), rgba(10,14,26,0.98));
+            box-shadow: 0 24px 64px rgba(0,0,0,0.45);
+        }
+        .ww-recap-card h2 {
+            margin: 0 0 16px;
+            font-size: 24px;
+            font-weight: 900;
+        }
+        .ww-recap-headline {
+            margin: 0 0 18px;
+            color: var(--gold);
+            font-size: 16px;
+            font-weight: 800;
+        }
+        .ww-recap-scores {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .ww-recap-score {
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 14px;
+            text-align: center;
+        }
+        .ww-recap-score strong {
+            display: block;
+            font-size: 32px;
+            margin: 6px 0;
+        }
+        .ww-recap-label, .ww-recap-sub {
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+        .ww-recap-note {
+            margin: 0 0 18px;
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        .ww-recap-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+    </style>
+</head>
+<body>
+    <div class="ww-sprint-shell">
+        <header class="ww-sprint-hud">
+            <div class="ww-sprint-meta">
+                <span class="ww-sprint-code">Word War · <span id="roomCode">------</span></span>
+            </div>
+            <div class="ww-sprint-timer-wrap">
+                <div id="sprintTimer" class="ww-sprint-timer">00:00</div>
+                <div id="timerMode" class="ww-sprint-timer-mode">Sprint</div>
+            </div>
+            <div class="ww-sprint-actions">
+                <a class="btn" id="openEditorBtn" href="editor.html">Full editor</a>
+                <button type="button" class="btn gold" id="finishBtn">End sprint</button>
+                <button type="button" class="btn" id="leaveBtn">Lobby</button>
+            </div>
+        </header>
+
+        <div id="pageStatus" class="ww-sprint-status hidden"></div>
+
+        <div class="ww-sprint-body">
+            <section class="ww-sprint-editor-pane">
+                <div class="ww-sprint-page">
+                    <article class="ww-sprint-paper">
+                        <h1 class="ww-chapter-title" id="chapterTitle">Chapter</h1>
+                        <div
+                            id="sprintEditor"
+                            class="ww-sprint-editor"
+                            contenteditable="true"
+                            spellcheck="true"
+                            data-placeholder="Write your spar here…"
+                        ></div>
+                    </article>
+                </div>
+                <div class="ww-sprint-footer">
+                    <span id="saveStatus">Ready</span>
+                    <span>Changes save to your real book</span>
+                </div>
+            </section>
+
+            <aside class="ww-sprint-side">
+                <div class="ww-score-card is-you">
+                    <div class="ww-score-label">Your sprint</div>
+                    <div class="ww-score-value" id="myWords">0</div>
+                    <div class="ww-score-sub">words this round</div>
+                </div>
+
+                <div class="ww-score-card is-opponent">
+                    <div class="ww-score-label">Opponent</div>
+                    <p class="ww-opponent-name" id="opponentName">Waiting…</p>
+                    <p class="ww-opponent-book" id="opponentBook">—</p>
+                    <div class="ww-score-value" id="opponentWords">0</div>
+                    <div class="ww-score-sub">words this round</div>
+                    <div id="opponentTyping" class="ww-typing hidden" style="margin-top:12px;">
+                        <span class="ww-typing-dots" aria-hidden="true"><span></span><span></span><span></span></span>
+                        Typing…
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <div id="recapOverlay" class="ww-recap-overlay hidden">
+        <div class="ww-recap-card">
+            <h2>Sprint recap</h2>
+            <div id="recapBody"></div>
+            <div class="ww-recap-actions">
+                <button type="button" class="btn primary" id="recapLobbyBtn">Back to lobby</button>
+                <a class="btn" href="word-wars-lobby.html">New Word War</a>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="js/word-wars-sprint.js?v=1"></script>
+</body>
+</html>
