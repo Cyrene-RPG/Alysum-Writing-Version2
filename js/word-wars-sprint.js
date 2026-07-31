@@ -10,12 +10,14 @@ import {
     subscribeWordWarLobby,
     updateWordWarPause,
     updateWordWarProgress,
+    listMyBooks,
     wordWarLobbyUrl,
     WORD_WAR_DURATION_UNLIMITED,
-} from "./word-wars-api.js?v=4";
+} from "./word-wars-api.js?v=6";
 
 const params = new URLSearchParams(window.location.search);
-const roomId = String(params.get("room") || "").trim();
+const isPreviewMode = params.get("preview") === "4";
+const roomId = isPreviewMode ? "preview-4" : String(params.get("room") || "").trim();
 
 const timerEl = document.getElementById("sprintTimer");
 const timerModeEl = document.getElementById("timerMode");
@@ -35,6 +37,7 @@ const finishBtn = document.getElementById("finishBtn");
 const leaveBtn = document.getElementById("leaveBtn");
 const writersToggle = document.getElementById("writersToggle");
 const sprintShell = document.querySelector(".ww-sprint-shell");
+const previewBanner = document.getElementById("previewBanner");
 const WRITERS_PANEL_KEY = "alysum-word-wars:writers-panel-open";
 
 function formatSprintWords(count) {
@@ -281,6 +284,10 @@ function renderPauseControls() {
 }
 
 async function handlePauseClick() {
+    if (isPreviewMode) {
+        setPageStatus("Preview only — pause is disabled here.", false);
+        return;
+    }
     if (syncingPause || sprintEnded) return;
     const me = meInLobby();
     if (!me) return;
@@ -463,8 +470,141 @@ function buildEditorFrameUrl(bookId) {
     return url.pathname + url.search;
 }
 
+function buildPreviewLobby(uid, book) {
+    return {
+        roomId: "preview-4",
+        code: "PREVIEW",
+        hostId: uid,
+        durationMin: 15,
+        maxWriters: 4,
+        status: "active",
+        startedAt: new Date(Date.now() - 6 * 60 * 1000).toISOString(),
+        isPaused: false,
+        pausedAt: null,
+        pauseMsTotal: 0,
+        participants: [
+            {
+                userId: uid,
+                displayName: "You",
+                bookId: book.id,
+                bookTitle: book.title,
+                isReady: true,
+                isHost: true,
+                sprintWords: 0,
+                shareDraft: false,
+                liveChapterTitle: "",
+                liveChapterHtml: "",
+                pauseRequested: false,
+            },
+            {
+                userId: "preview-writer-2",
+                displayName: "Alex Chen",
+                bookId: "preview-book-2",
+                bookTitle: "The Last Harbor",
+                isReady: true,
+                isHost: false,
+                sprintWords: 142,
+                shareDraft: true,
+                liveChapterTitle: "The Fog Line",
+                liveChapterHtml:
+                    "<p>By the time the ferry cleared the breakwater, the fog had swallowed the whole town behind them.</p><p>Mara kept her hand on the rail and tried not to think about what waited on the other side.</p>",
+                pauseRequested: false,
+            },
+            {
+                userId: "preview-writer-3",
+                displayName: "Jordan Wells",
+                bookId: "preview-book-3",
+                bookTitle: "Starfall Chronicles",
+                isReady: true,
+                isHost: false,
+                sprintWords: 87,
+                shareDraft: false,
+                liveChapterTitle: "",
+                liveChapterHtml: "",
+                pauseRequested: false,
+            },
+            {
+                userId: "preview-writer-4",
+                displayName: "Sam Rivera",
+                bookId: "preview-book-4",
+                bookTitle: "Ink & Ember",
+                isReady: true,
+                isHost: false,
+                sprintWords: 203,
+                shareDraft: true,
+                liveChapterTitle: "Ash Notes",
+                liveChapterHtml:
+                    "<p>Every spell I learned in the academy had a counterspell. Every counterspell had a cost.</p><p>Tonight I was willing to pay it.</p>",
+                pauseRequested: false,
+            },
+        ],
+    };
+}
+
+function pickPreviewBook(books) {
+    if (!books.length) return null;
+    let storedBookId = "";
+    try {
+        storedBookId =
+            localStorage.getItem("alysum-current-book-id") ||
+            sessionStorage.getItem("alysum-current-book-id") ||
+            "";
+    } catch {
+        /* ignore */
+    }
+    return books.find((book) => book.id === storedBookId) || books[0];
+}
+
+async function bootPreview() {
+    previewBanner?.classList.remove("hidden");
+    setPageStatus(
+        "Preview mode — this loads your real Alysum editor. Mock writers appear in the side rail only.",
+        false
+    );
+
+    const nextPath = window.location.pathname + window.location.search;
+    const session = await requireStudioSession(supabase, nextPath);
+    uid = session?.user?.id || "";
+    if (!uid) return;
+
+    const books = await listMyBooks(uid);
+    const book = pickPreviewBook(books);
+    if (!book?.id) {
+        setPageStatus("Create or open a book in the editor first, then reload this preview.", true);
+        return;
+    }
+
+    lobby = buildPreviewLobby(uid, book);
+    window.addEventListener("message", handleEditorMessage);
+
+    if (myEditorFrame) {
+        myEditorFrame.src = buildEditorFrameUrl(book.id);
+    }
+
+    initWritersPanelToggle();
+    renderShareControls();
+    renderPauseControls();
+    renderOpponentMirror();
+    if (timerEl) timerEl.textContent = "08:42";
+    if (timerModeEl) timerModeEl.textContent = "15 min sprint";
+    if (roomCodeEl) roomCodeEl.textContent = "PREVIEW";
+}
+
 function scheduleProgressPatch(patch = {}) {
     if (syncingShare) return;
+    if (isPreviewMode) {
+        const me = meInLobby();
+        if (me) {
+            if (typeof patch.sprintWords === "number") me.sprintWords = patch.sprintWords;
+            if (typeof patch.shareDraft === "boolean") me.shareDraft = patch.shareDraft;
+            if (patch.liveChapterHtml != null) me.liveChapterHtml = patch.liveChapterHtml;
+            if (patch.liveChapterTitle != null) me.liveChapterTitle = patch.liveChapterTitle;
+            if (patch.liveChapterId != null) me.liveChapterId = patch.liveChapterId;
+        }
+        renderShareControls();
+        renderOpponentMirror();
+        return;
+    }
     window.clearTimeout(progressTimer);
     progressTimer = window.setTimeout(async () => {
         try {
@@ -491,6 +631,17 @@ function pushDraftProgress() {
 
 async function flushSharedDraftNow() {
     if (!getShareDraftState() || sprintEnded || syncingShare) return;
+    if (isPreviewMode) {
+        scheduleProgressPatch({
+            isTyping: false,
+            shareDraft: true,
+            liveChapterTitle: latestDraft.chapterTitle,
+            liveChapterHtml: latestDraft.chapterHtml,
+            liveChapterId: latestDraft.chapterId,
+            sprintWords: latestDraft.sprintWords,
+        });
+        return;
+    }
     window.clearTimeout(progressTimer);
     progressTimer = null;
     try {
@@ -504,6 +655,18 @@ async function flushSharedDraftNow() {
 
 async function setShareDraft(next) {
     if (syncingShare || sprintEnded) return;
+    if (isPreviewMode) {
+        shareDraft = next;
+        const me = meInLobby();
+        if (me) me.shareDraft = next;
+        renderShareControls();
+        renderOpponentMirror();
+        if (next) {
+            requestEditorDraftPing();
+            await flushSharedDraftNow();
+        }
+        return;
+    }
     syncingShare = true;
     shareDraftOverride = next;
     shareDraft = next;
@@ -557,6 +720,17 @@ function handleEditorMessage(event) {
         sprintWords: Math.max(0, Number(data.sprintWords) || 0),
     };
     if (myWordsEl) myWordsEl.textContent = formatSprintWords(latestDraft.sprintWords);
+    if (isPreviewMode && getShareDraftState()) {
+        scheduleProgressPatch({
+            sprintWords: latestDraft.sprintWords,
+            shareDraft: true,
+            liveChapterTitle: latestDraft.chapterTitle,
+            liveChapterHtml: latestDraft.chapterHtml,
+            liveChapterId: latestDraft.chapterId,
+            isTyping: false,
+        });
+        return;
+    }
     pushDraftProgress();
 }
 
@@ -574,6 +748,10 @@ async function refreshLobby() {
 
 async function endSprint(reason = "Sprint finished") {
     if (sprintEnded) return;
+    if (isPreviewMode) {
+        setPageStatus("Preview only — sprint controls are disabled here.", false);
+        return;
+    }
     sprintEnded = true;
     window.clearInterval(timerInterval);
     window.clearTimeout(progressTimer);
@@ -591,6 +769,11 @@ async function endSprint(reason = "Sprint finished") {
 }
 
 async function boot() {
+    if (isPreviewMode) {
+        await bootPreview();
+        return;
+    }
+
     if (!roomId) {
         window.location.replace("word-wars-lobby.html");
         return;
@@ -649,6 +832,10 @@ finishBtn?.addEventListener("click", () => {
 });
 
 leaveBtn?.addEventListener("click", () => {
+    if (isPreviewMode) {
+        window.location.href = "word-wars-lobby.html";
+        return;
+    }
     window.location.href = wordWarLobbyUrl(lobby?.code || "", { roomId: false });
 });
 

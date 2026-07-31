@@ -441,9 +441,21 @@
         }
         .ww-recap-note { margin: 0 0 18px; color: var(--muted); font-size: 13px; line-height: 1.5; }
         .ww-recap-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+        .ww-preview-banner {
+            margin: 0;
+            padding: 10px 16px;
+            border-bottom: 1px solid rgba(124, 58, 237, 0.35);
+            background: rgba(124, 58, 237, 0.12);
+            color: #ddd6fe;
+            font-size: 12px;
+            line-height: 1.45;
+        }
     </style>
 </head>
 <body>
+    <p id="previewBanner" class="ww-preview-banner hidden">
+        Sprint preview — your real <strong>editor.html</strong> loads on the left. Side rail writers are mock data only.
+    </p>
     <div class="ww-sprint-shell">
         <header class="ww-sprint-hud">
             <div class="ww-sprint-meta">
@@ -497,6 +509,6 @@
         </div>
     </div>
 
-    <script type="module" src="js/word-wars-sprint.js?v=6"></script>
+    <script type="module" src="js/word-wars-sprint.js?v=7"></script>
 </body>
 </html>
