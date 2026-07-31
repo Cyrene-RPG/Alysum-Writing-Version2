@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Word War sprint — 4-writer preview</title>
+    <script src="js/alysum-appearance-boot.js"></script>
+    <link rel="stylesheet" href="css/site-responsive.css?v=1" />
+    <link rel="stylesheet" href="css/gradient-themes.css?v=5" />
+    <style>
+        * { box-sizing: border-box; }
+        :root {
+            --bg: #070b14;
+            --text: #f8fafc;
+            --muted: #94a3b8;
+            --border: rgba(255,255,255,0.08);
+            --gold: #fbbf24;
+            --mint: #34d399;
+            --purple: var(--theme-header-end, #7c3aed);
+            --editor-page-bg: #111827;
+            --editor-page-text: #e5e7eb;
+            --editor-workspace-bg: #0b1220;
+        }
+        html, body {
+            margin: 0;
+            height: 100%;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: var(--bg);
+            color: var(--text);
+        }
+        .ww-preview-bar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 8px 14px;
+            border-bottom: 1px solid rgba(124,58,237,0.35);
+            background: rgba(124, 58, 237, 0.14);
+            color: #ddd6fe;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        .ww-preview-bar a {
+            color: #c4b5fd;
+            font-weight: 800;
+            text-decoration: none;
+        }
+        .ww-preview-bar a:hover { text-decoration: underline; }
+        .ww-sprint-shell {
+            height: calc(100dvh - 42px);
+            display: grid;
+            grid-template-rows: auto 1fr;
+            min-height: 0;
+        }
+        .ww-sprint-hud {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(8,12,22,0.94);
+        }
+        .ww-sprint-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+        .ww-sprint-code {
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--gold);
+        }
+        .ww-share-pill {
+            font-size: 11px;
+            font-weight: 800;
+            padding: 5px 10px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            color: var(--muted);
+        }
+        .ww-share-pill.is-live {
+            color: #99f6e4;
+            border-color: rgba(52,211,153,0.28);
+            background: rgba(52,211,153,0.1);
+        }
+        .ww-sprint-timer-wrap { text-align: center; }
+        .ww-sprint-timer {
+            font-size: clamp(28px, 5vw, 42px);
+            font-weight: 900;
+            letter-spacing: 0.06em;
+            font-variant-numeric: tabular-nums;
+            line-height: 1;
+        }
+        .ww-sprint-timer-mode {
+            margin-top: 4px;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+        .ww-sprint-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+        .btn {
+            border: 1px solid var(--border);
+            background: rgba(255,255,255,0.04);
+            color: var(--text);
+            border-radius: 12px;
+            padding: 10px 14px;
+            font-weight: 800;
+            font-size: 13px;
+            cursor: default;
+        }
+        .btn.gold {
+            background: linear-gradient(135deg, #b45309, var(--gold));
+            border: none;
+            color: #111827;
+        }
+        .btn.mint {
+            background: rgba(52,211,153,0.14);
+            border-color: rgba(52,211,153,0.35);
+            color: #99f6e4;
+        }
+        .btn.pause {
+            background: rgba(251,191,36,0.12);
+            border-color: rgba(251,191,36,0.28);
+            color: #fde68a;
+        }
+        .ww-duel-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            min-height: 0;
+        }
+        @media (max-width: 1100px) {
+            .ww-duel-grid { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
+        }
+        .ww-duel-pane {
+            min-width: 0;
+            min-height: 0;
+            display: grid;
+            grid-template-rows: auto 1fr;
+            border-right: 1px solid var(--border);
+        }
+        .ww-duel-pane.is-opponent { border-right: none; }
+        @media (max-width: 1100px) {
+            .ww-duel-pane { border-right: none; border-bottom: 1px solid var(--border); }
+            .ww-duel-pane.is-opponent { border-bottom: none; }
+        }
+        .ww-duel-pane-head {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(0,0,0,0.22);
+        }
+        .ww-duel-pane.is-you .ww-duel-pane-head {
+            border-top: 2px solid rgba(124,58,237,0.55);
+        }
+        .ww-duel-pane.is-opponent .ww-duel-pane-head {
+            border-top: 2px solid rgba(251,191,36,0.45);
+        }
+        .ww-duel-label {
+            margin: 0;
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+        .ww-duel-title {
+            margin: 2px 0 0;
+            font-size: 15px;
+            font-weight: 900;
+        }
+        .ww-duel-score {
+            text-align: right;
+            font-size: 12px;
+            font-weight: 800;
+            color: var(--gold);
+            font-variant-numeric: tabular-nums;
+        }
+        .ww-duel-frame-wrap {
+            min-height: 0;
+            overflow: auto;
+            background: var(--editor-workspace-bg);
+        }
+        .ww-mock-editor {
+            min-height: 100%;
+            padding: 24px clamp(16px, 3vw, 40px) 40px;
+        }
+        .ww-mock-page {
+            max-width: 760px;
+            margin: 0 auto;
+            border-radius: 12px;
+            background: var(--editor-page-bg);
+            color: var(--editor-page-text);
+            padding: 28px 24px 32px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+        }
+        .ww-mock-page h1 {
+            margin: 0 0 18px;
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: 28px;
+            font-weight: 900;
+        }
+        .ww-mock-page p {
+            margin: 0 0 1em;
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: 16px;
+            line-height: 1.7;
+            text-indent: 2em;
+        }
+        .ww-mock-page p:first-of-type { text-indent: 0; }
+        .ww-mock-cursor {
+            display: inline-block;
+            width: 2px;
+            height: 1.1em;
+            background: #a78bfa;
+            vertical-align: text-bottom;
+            animation: ww-blink 1s step-end infinite;
+        }
+        @keyframes ww-blink { 50% { opacity: 0; } }
+        .ww-opponents-panel {
+            height: 100%;
+            overflow: auto;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .ww-opponent-block {
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 14px;
+            background: rgba(255,255,255,0.02);
+        }
+        .ww-opponent-block-head {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+        .ww-opponent-block-name {
+            margin: 0 0 4px;
+            font-size: 16px;
+            font-weight: 900;
+        }
+        .ww-opponent-block-book {
+            margin: 0;
+            color: var(--muted);
+            font-size: 12px;
+        }
+        .ww-opponent-block-score {
+            font-size: 12px;
+            font-weight: 800;
+            color: var(--gold);
+            font-variant-numeric: tabular-nums;
+        }
+        .ww-opponent-block-empty {
+            padding: 16px;
+            text-align: center;
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.45;
+        }
+        .ww-opponent-block-page {
+            border-radius: 12px;
+            background: var(--editor-page-bg);
+            color: var(--editor-page-text);
+            padding: 20px 18px;
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04);
+        }
+        .ww-opponent-block-title {
+            margin: 0 0 12px;
+            font-size: 18px;
+            font-weight: 900;
+        }
+        .ww-opponent-block-editor {
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: 16px;
+            line-height: 1.7;
+        }
+        .ww-opponent-block-editor p {
+            margin: 0;
+            text-indent: 2em;
+        }
+        .ww-opponent-block-editor p:first-child { text-indent: 0; }
+    </style>
+</head>
+<body>
+    <div class="ww-preview-bar">
+        <span>Preview only — active 4-writer sprint after launch (test branch)</span>
+        <span>
+            <a href="word-wars-lobby-preview-4.html">Lobby preview</a>
+            ·
+            <a href="word-wars-lobby.html">Word Wars</a>
+        </span>
+    </div>
+
+    <div class="ww-sprint-shell">
+        <header class="ww-sprint-hud">
+            <div class="ww-sprint-meta">
+                <span class="ww-sprint-code">Word War · DEMO42</span>
+                <span class="ww-share-pill is-live">Sharing live</span>
+            </div>
+            <div class="ww-sprint-timer-wrap">
+                <div class="ww-sprint-timer">08:42</div>
+                <div class="ww-sprint-timer-mode">15 min sprint</div>
+            </div>
+            <div class="ww-sprint-actions">
+                <button type="button" class="btn pause" disabled>Request pause</button>
+                <button type="button" class="btn mint" disabled>Hide my draft</button>
+                <button type="button" class="btn gold" disabled>End sprint</button>
+                <button type="button" class="btn" disabled>Lobby</button>
+            </div>
+        </header>
+
+        <div class="ww-duel-grid">
+            <section class="ww-duel-pane is-you">
+                <div class="ww-duel-pane-head">
+                    <div>
+                        <p class="ww-duel-label">Your manuscript</p>
+                        <p class="ww-duel-title">My Manuscript</p>
+                    </div>
+                    <div class="ww-duel-score">156 words this sprint</div>
+                </div>
+                <div class="ww-duel-frame-wrap">
+                    <div class="ww-mock-editor">
+                        <article class="ww-mock-page">
+                            <h1>Chapter Twelve</h1>
+                            <p>The lantern light trembled against the stone wall as she leaned closer to the page. Outside, the harbor bells rang twice — still early, still dark, still hers.</p>
+                            <p>She wrote faster now, not because the words came easily, but because three other writers somewhere in the world were doing the same thing at the same time<span class="ww-mock-cursor" aria-hidden="true"></span></p>
+                        </article>
+                    </div>
+                </div>
+            </section>
+
+            <section class="ww-duel-pane is-opponent">
+                <div class="ww-duel-pane-head">
+                    <div>
+                        <p class="ww-duel-label">Other writers</p>
+                        <p class="ww-duel-title">3 writers in the war</p>
+                    </div>
+                </div>
+                <div class="ww-duel-frame-wrap">
+                    <div class="ww-opponents-panel">
+                        <article class="ww-opponent-block">
+                            <div class="ww-opponent-block-head">
+                                <div>
+                                    <h3 class="ww-opponent-block-name">Alex Chen</h3>
+                                    <p class="ww-opponent-block-book">The Last Harbor</p>
+                                </div>
+                                <div class="ww-opponent-block-score">142 words</div>
+                            </div>
+                            <article class="ww-opponent-block-page">
+                                <h3 class="ww-opponent-block-title">The Fog Line</h3>
+                                <div class="ww-opponent-block-editor">
+                                    <p>By the time the ferry cleared the breakwater, the fog had swallowed the whole town behind them.</p>
+                                    <p>Mara kept her hand on the rail and tried not to think about what waited on the other side.</p>
+                                </div>
+                            </article>
+                        </article>
+
+                        <article class="ww-opponent-block">
+                            <div class="ww-opponent-block-head">
+                                <div>
+                                    <h3 class="ww-opponent-block-name">Jordan Wells</h3>
+                                    <p class="ww-opponent-block-book">Starfall Chronicles</p>
+                                </div>
+                                <div class="ww-opponent-block-score">87 words</div>
+                            </div>
+                            <div class="ww-opponent-block-empty">
+                                Draft hidden — they can opt in with Share my draft.
+                            </div>
+                        </article>
+
+                        <article class="ww-opponent-block">
+                            <div class="ww-opponent-block-head">
+                                <div>
+                                    <h3 class="ww-opponent-block-name">Sam Rivera</h3>
+                                    <p class="ww-opponent-block-book">Ink &amp; Ember</p>
+                                </div>
+                                <div class="ww-opponent-block-score">203 words</div>
+                            </div>
+                            <article class="ww-opponent-block-page">
+                                <h3 class="ww-opponent-block-title">Ash Notes</h3>
+                                <div class="ww-opponent-block-editor">
+                                    <p>Every spell I learned in the academy had a counterspell. Every counterspell had a cost.</p>
+                                    <p>Tonight I was willing to pay it.</p>
+                                </div>
+                            </article>
+                        </article>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+</body>
+</html>
