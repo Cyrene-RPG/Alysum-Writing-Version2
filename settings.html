@@ -2149,7 +2149,7 @@
         applyChromeGradient(getThemePreview(getStoredGradientThemeId()));
         initAppearancePickers();
         initSettingsNav();
-        import("./js/feature-highlights.js?v=2").then((m) => m.applyFeatureNewBadges()).catch(() => {});
+        import("./js/feature-highlights.js?v=3").then((m) => m.applyFeatureNewBadges()).catch(() => {});
 
         const storyBibleUiToggle = document.getElementById("storyBibleUiToggle");
         if (storyBibleUiToggle && storyBibleUiToggle.dataset.bound !== "1") {

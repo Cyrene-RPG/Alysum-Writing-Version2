@@ -20,7 +20,7 @@ import {
     readLastWriterSession,
 } from "./writer-resume.js?v=3";
 import { goToLogin, isDesktopLocalHost } from "./desktop-auth.js?v=3";
-import { bootFeatureHighlights } from "./feature-highlights.js?v=2";
+import { bootFeatureHighlights } from "./feature-highlights.js?v=3";
 import { bootFeatureUsageTracking } from "./feature-usage-track.js?v=1";
 
 const PROFILE_SELECT = "id, username, display_name, account_type, profile_image_url";

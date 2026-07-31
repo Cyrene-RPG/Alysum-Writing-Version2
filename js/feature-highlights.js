@@ -29,6 +29,17 @@ const RETURNING_MIN_AWAY_MS = 24 * 60 * 60 * 1000;
  */
 export const FEATURE_CATALOG = [
     {
+        id: "word-wars",
+        title: "Word Wars",
+        description:
+            "Challenge friends to a friendly writing spar — shared sprint timer, real manuscript editing, and optional draft sharing with up to four writers.",
+        where: "Workspace nav → Word Wars",
+        releasedAt: "2026-07-30T12:00:00.000Z",
+        navSelectors: ['a[href*="word-wars-lobby.html"]'],
+        ctaHref: "word-wars-lobby.html",
+        ctaLabel: "Open Word Wars",
+    },
+    {
         id: "book-version-history",
         title: "Version history",
         description:
