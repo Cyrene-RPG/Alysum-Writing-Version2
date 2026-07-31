@@ -19,6 +19,10 @@ CREATE TABLE IF NOT EXISTS public.word_wars_rooms (
   expires_at timestamptz NOT NULL DEFAULT (now() + interval '4 hours')
 );
 
+ALTER TABLE public.word_wars_rooms ADD COLUMN IF NOT EXISTS is_paused boolean NOT NULL DEFAULT false;
+ALTER TABLE public.word_wars_rooms ADD COLUMN IF NOT EXISTS paused_at timestamptz;
+ALTER TABLE public.word_wars_rooms ADD COLUMN IF NOT EXISTS pause_ms_total bigint NOT NULL DEFAULT 0;
+
 CREATE INDEX IF NOT EXISTS word_wars_rooms_host_id_idx
   ON public.word_wars_rooms (host_id, created_at DESC);
 
@@ -54,6 +58,7 @@ ALTER TABLE public.word_wars_participants ADD COLUMN IF NOT EXISTS share_draft b
 ALTER TABLE public.word_wars_participants ADD COLUMN IF NOT EXISTS live_chapter_title text NOT NULL DEFAULT '';
 ALTER TABLE public.word_wars_participants ADD COLUMN IF NOT EXISTS live_chapter_html text NOT NULL DEFAULT '';
 ALTER TABLE public.word_wars_participants ADD COLUMN IF NOT EXISTS live_chapter_id text;
+ALTER TABLE public.word_wars_participants ADD COLUMN IF NOT EXISTS pause_requested boolean NOT NULL DEFAULT false;
 
 -- ---------------------------------------------------------------------------
 -- 2. Helpers
@@ -146,7 +151,8 @@ BEGIN
       'shareDraft', wp.share_draft,
       'liveChapterTitle', wp.live_chapter_title,
       'liveChapterHtml', wp.live_chapter_html,
-      'liveChapterId', wp.live_chapter_id
+      'liveChapterId', wp.live_chapter_id,
+      'pauseRequested', wp.pause_requested
     )
     ORDER BY wp.is_host DESC, wp.joined_at ASC
   ), '[]'::jsonb)
@@ -163,6 +169,9 @@ BEGIN
     'createdAt', v_room.created_at,
     'startedAt', v_room.started_at,
     'expiresAt', v_room.expires_at,
+    'isPaused', v_room.is_paused,
+    'pausedAt', v_room.paused_at,
+    'pauseMsTotal', v_room.pause_ms_total,
     'participants', v_participants
   );
 END;
@@ -466,7 +475,10 @@ BEGIN
 
   UPDATE public.word_wars_rooms
   SET status = 'active',
-      started_at = now()
+      started_at = now(),
+      is_paused = false,
+      paused_at = NULL,
+      pause_ms_total = 0
   WHERE id = p_room_id
     AND status = 'lobby';
 
@@ -478,6 +490,7 @@ BEGIN
       live_chapter_title = '',
       live_chapter_html = '',
       live_chapter_id = NULL,
+      pause_requested = false,
       last_ping_at = now()
   WHERE room_id = p_room_id;
 
@@ -552,6 +565,73 @@ BEGIN
 END;
 $$;
 
+CREATE OR REPLACE FUNCTION public.update_word_war_pause(
+  p_room_id uuid,
+  p_pause_requested boolean
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_uid uuid := auth.uid();
+  v_status text;
+  v_is_paused boolean;
+  v_paused_at timestamptz;
+  v_pause_ms_total bigint;
+  v_participant_count integer;
+  v_requested_count integer;
+BEGIN
+  IF v_uid IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+
+  IF NOT public.is_word_war_participant(p_room_id) THEN
+    RAISE EXCEPTION 'Not a participant';
+  END IF;
+
+  SELECT wr.status, wr.is_paused, wr.paused_at, wr.pause_ms_total
+  INTO v_status, v_is_paused, v_paused_at, v_pause_ms_total
+  FROM public.word_wars_rooms wr
+  WHERE wr.id = p_room_id;
+
+  IF v_status <> 'active' THEN
+    RAISE EXCEPTION 'Word War is not active';
+  END IF;
+
+  UPDATE public.word_wars_participants wp
+  SET pause_requested = coalesce(p_pause_requested, false)
+  WHERE wp.room_id = p_room_id
+    AND wp.user_id = v_uid;
+
+  SELECT count(*)::integer, count(*) FILTER (WHERE wp.pause_requested)::integer
+  INTO v_participant_count, v_requested_count
+  FROM public.word_wars_participants wp
+  WHERE wp.room_id = p_room_id;
+
+  IF NOT v_is_paused
+     AND v_participant_count >= 2
+     AND v_requested_count >= v_participant_count THEN
+    UPDATE public.word_wars_rooms
+    SET is_paused = true,
+        paused_at = now()
+    WHERE id = p_room_id;
+  ELSIF v_is_paused AND v_requested_count = 0 THEN
+    UPDATE public.word_wars_rooms
+    SET is_paused = false,
+        pause_ms_total = v_pause_ms_total + greatest(
+          0,
+          (extract(epoch FROM (now() - v_paused_at)) * 1000)::bigint
+        ),
+        paused_at = NULL
+    WHERE id = p_room_id;
+  END IF;
+
+  RETURN public.word_war_lobby_json(p_room_id);
+END;
+$$;
+
 CREATE OR REPLACE FUNCTION public.finish_word_war(p_room_id uuid)
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -589,6 +669,7 @@ GRANT EXECUTE ON FUNCTION public.get_word_war_lobby(text, uuid) TO authenticated
 GRANT EXECUTE ON FUNCTION public.update_word_war_lobby(uuid, integer, text, boolean) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.start_word_war(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.update_word_war_progress(uuid, integer, integer, boolean, boolean, text, text, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.update_word_war_pause(uuid, boolean) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.finish_word_war(uuid) TO authenticated;
 
 -- ---------------------------------------------------------------------------

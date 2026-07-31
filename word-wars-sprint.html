@@ -79,6 +79,11 @@
             border-color: rgba(52,211,153,0.28);
             background: rgba(52,211,153,0.1);
         }
+        .ww-share-pill.is-paused {
+            color: #fde68a;
+            border-color: rgba(251,191,36,0.28);
+            background: rgba(251,191,36,0.1);
+        }
         .ww-sprint-timer-wrap { text-align: center; }
         .ww-sprint-timer {
             font-size: clamp(28px, 5vw, 42px);
@@ -90,6 +95,10 @@
         .ww-sprint-timer.is-urgent {
             color: #fb7185;
             text-shadow: 0 0 24px rgba(251,113,133,0.35);
+        }
+        .ww-sprint-timer.is-paused {
+            color: #fde68a;
+            text-shadow: 0 0 24px rgba(251,191,36,0.25);
         }
         .ww-sprint-timer-mode {
             margin-top: 4px;
@@ -134,6 +143,11 @@
             background: rgba(52,211,153,0.14);
             border-color: rgba(52,211,153,0.35);
             color: #99f6e4;
+        }
+        .btn.pause {
+            background: rgba(251,191,36,0.12);
+            border-color: rgba(251,191,36,0.28);
+            color: #fde68a;
         }
         .btn:disabled { opacity: 0.45; cursor: not-allowed; }
         .ww-sprint-status {
@@ -329,6 +343,7 @@
                 <div id="timerMode" class="ww-sprint-timer-mode">Sprint</div>
             </div>
             <div class="ww-sprint-actions">
+                <button type="button" class="btn pause" id="pauseBtn">Request pause</button>
                 <button type="button" class="btn mint" id="shareBtn">Share my draft</button>
                 <button type="button" class="btn gold" id="finishBtn">End sprint</button>
                 <button type="button" class="btn" id="leaveBtn">Lobby</button>
@@ -389,6 +404,6 @@
         </div>
     </div>
 
-    <script type="module" src="js/word-wars-sprint.js?v=2"></script>
+    <script type="module" src="js/word-wars-sprint.js?v=3"></script>
 </body>
 </html>

@@ -8,10 +8,11 @@ import {
     finishWordWar,
     formatWordWarDuration,
     subscribeWordWarLobby,
+    updateWordWarPause,
     updateWordWarProgress,
     wordWarLobbyUrl,
     WORD_WAR_DURATION_UNLIMITED,
-} from "./word-wars-api.js?v=3";
+} from "./word-wars-api.js?v=4";
 
 const params = new URLSearchParams(window.location.search);
 const roomId = String(params.get("room") || "").trim();
@@ -31,6 +32,7 @@ const opponentHiddenEl = document.getElementById("opponentHidden");
 const opponentHiddenTextEl = document.getElementById("opponentHiddenText");
 const shareBtn = document.getElementById("shareBtn");
 const sharePill = document.getElementById("sharePill");
+const pauseBtn = document.getElementById("pauseBtn");
 const myEditorFrame = document.getElementById("myEditorFrame");
 const pageStatusEl = document.getElementById("pageStatus");
 const recapOverlay = document.getElementById("recapOverlay");
@@ -55,6 +57,7 @@ let timerInterval = null;
 let unsubscribe = null;
 let sprintEnded = false;
 let syncingShare = false;
+let syncingPause = false;
 let lastOpponentHtml = "";
 
 function escapeHtml(str) {
@@ -93,31 +96,132 @@ function formatClock(ms) {
     return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
+function effectiveElapsedMs() {
+    if (!lobby?.startedAt) return 0;
+    const startedAt = Date.parse(lobby.startedAt);
+    const pauseMsTotal = Number(lobby.pauseMsTotal) || 0;
+    let currentPauseMs = 0;
+    if (lobby.isPaused && lobby.pausedAt) {
+        currentPauseMs = Math.max(0, Date.now() - Date.parse(lobby.pausedAt));
+    }
+    return Math.max(0, Date.now() - startedAt - pauseMsTotal - currentPauseMs);
+}
+
 function getTimerState() {
-    const startedAt = lobby?.startedAt ? Date.parse(lobby.startedAt) : Date.now();
-    const elapsed = Math.max(0, Date.now() - startedAt);
+    const elapsed = effectiveElapsedMs();
     const durationMin = Number(lobby?.durationMin ?? 15);
     if (durationMin === WORD_WAR_DURATION_UNLIMITED) {
-        return { mode: "elapsed", elapsed, remaining: null, ended: false };
+        return { mode: "elapsed", elapsed, remaining: null, ended: false, paused: Boolean(lobby?.isPaused) };
     }
     const total = durationMin * 60 * 1000;
     const remaining = Math.max(0, total - elapsed);
-    return { mode: "countdown", elapsed, remaining, ended: remaining <= 0 };
+    return {
+        mode: "countdown",
+        elapsed,
+        remaining,
+        ended: !lobby?.isPaused && remaining <= 0,
+        paused: Boolean(lobby?.isPaused),
+    };
 }
 
 function renderTimer() {
     const state = getTimerState();
     if (!timerEl || !timerModeEl) return;
+    timerEl.classList.toggle("is-paused", state.paused);
+    timerEl.classList.remove("is-urgent");
+
+    if (state.paused) {
+        if (state.mode === "elapsed") {
+            timerEl.textContent = formatClock(state.elapsed);
+            timerModeEl.textContent = "Paused · Unlimited";
+        } else {
+            timerEl.textContent = formatClock(state.remaining || 0);
+            timerModeEl.textContent = "Paused · break time";
+        }
+        return;
+    }
+
     if (state.mode === "elapsed") {
         timerEl.textContent = formatClock(state.elapsed);
         timerModeEl.textContent = "Elapsed · Unlimited";
-        timerEl.classList.remove("is-urgent");
         return;
     }
     timerEl.textContent = formatClock(state.remaining || 0);
     timerModeEl.textContent = `${formatWordWarDuration(lobby?.durationMin)} sprint`;
     timerEl.classList.toggle("is-urgent", (state.remaining || 0) <= 60_000);
     if (state.ended && !sprintEnded) endSprint("Time's up!");
+}
+
+function renderPauseControls() {
+    const me = meInLobby();
+    const opponent = opponentInLobby();
+    const isPaused = Boolean(lobby?.isPaused);
+    const myReq = Boolean(me?.pauseRequested);
+    const theirReq = Boolean(opponent?.pauseRequested);
+
+    if (!pauseBtn) return;
+
+    if (isPaused) {
+        pauseBtn.classList.add("pause");
+        if (myReq) {
+            pauseBtn.textContent = "Ready to resume";
+            pauseBtn.disabled = false;
+        } else {
+            pauseBtn.textContent = opponent
+                ? `Waiting for ${opponent.displayName || "friend"}…`
+                : "Waiting to resume…";
+            pauseBtn.disabled = true;
+        }
+        return;
+    }
+
+    pauseBtn.disabled = false;
+    if (myReq && !theirReq) {
+        pauseBtn.textContent = "Cancel pause request";
+    } else if (!myReq && theirReq) {
+        pauseBtn.textContent = "Agree to pause";
+    } else if (myReq && theirReq) {
+        pauseBtn.textContent = "Pausing…";
+        pauseBtn.disabled = true;
+    } else {
+        pauseBtn.textContent = "Request pause";
+    }
+}
+
+async function handlePauseClick() {
+    if (syncingPause || sprintEnded) return;
+    const me = meInLobby();
+    if (!me) return;
+
+    const isPaused = Boolean(lobby?.isPaused);
+    const myReq = Boolean(me.pauseRequested);
+    const opponent = opponentInLobby();
+    const theirReq = Boolean(opponent?.pauseRequested);
+
+    let nextRequested = myReq;
+    if (isPaused) {
+        if (!myReq) return;
+        nextRequested = false;
+    } else if (myReq && !theirReq) {
+        nextRequested = false;
+    } else {
+        nextRequested = true;
+    }
+
+    syncingPause = true;
+    pauseBtn.disabled = true;
+    try {
+        lobby = await updateWordWarPause(roomId, nextRequested);
+        renderShareControls();
+        renderPauseControls();
+        renderTimer();
+    } catch (err) {
+        console.error(err);
+        setPageStatus(err?.message || "Could not update pause.", true);
+    } finally {
+        syncingPause = false;
+        renderPauseControls();
+    }
 }
 
 function renderShareControls() {
@@ -128,8 +232,15 @@ function renderShareControls() {
         shareBtn.classList.toggle("mint", shareDraft);
     }
     if (sharePill) {
-        sharePill.textContent = shareDraft ? "Sharing live" : "Draft hidden";
-        sharePill.classList.toggle("is-live", shareDraft);
+        if (lobby?.isPaused) {
+            sharePill.textContent = "Sprint paused";
+            sharePill.classList.add("is-paused");
+            sharePill.classList.remove("is-live");
+        } else {
+            sharePill.textContent = shareDraft ? "Sharing live" : "Draft hidden";
+            sharePill.classList.toggle("is-live", shareDraft);
+            sharePill.classList.remove("is-paused");
+        }
     }
 }
 
@@ -226,6 +337,7 @@ function scheduleProgressPatch(patch = {}) {
         try {
             lobby = await updateWordWarProgress(roomId, patch);
             renderShareControls();
+            renderPauseControls();
             renderOpponentMirror();
         } catch (err) {
             console.warn(err);
@@ -313,6 +425,7 @@ async function refreshLobby() {
     if (!next) return;
     lobby = next;
     renderShareControls();
+    renderPauseControls();
     renderOpponentMirror();
     if (lobby.status === "finished" && !sprintEnded) {
         await endSprint("Sprint finished");
@@ -333,6 +446,7 @@ async function endSprint(reason = "Sprint finished") {
     renderRecap();
     if (finishBtn) finishBtn.disabled = true;
     if (shareBtn) shareBtn.disabled = true;
+    if (pauseBtn) pauseBtn.disabled = true;
 }
 
 async function boot() {
@@ -370,6 +484,7 @@ async function boot() {
     }
 
     renderShareControls();
+    renderPauseControls();
     renderOpponentMirror();
     renderTimer();
     timerInterval = window.setInterval(renderTimer, 250);
@@ -381,6 +496,10 @@ async function boot() {
 
 shareBtn?.addEventListener("click", () => {
     setShareDraft(!shareDraft).catch(console.error);
+});
+
+pauseBtn?.addEventListener("click", () => {
+    handlePauseClick().catch(console.error);
 });
 
 finishBtn?.addEventListener("click", () => {

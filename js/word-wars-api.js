@@ -70,6 +70,9 @@ function normalizeLobby(raw) {
         createdAt: raw.createdAt || raw.created_at || null,
         startedAt: raw.startedAt || raw.started_at || null,
         expiresAt: raw.expiresAt || raw.expires_at || null,
+        isPaused: Boolean(raw.isPaused ?? raw.is_paused),
+        pausedAt: raw.pausedAt || raw.paused_at || null,
+        pauseMsTotal: Number(raw.pauseMsTotal ?? raw.pause_ms_total ?? 0) || 0,
         participants: participants.map((p) => ({
             userId: safeString(p.userId || p.user_id),
             displayName: safeString(p.displayName || p.display_name, "Writer"),
@@ -86,6 +89,7 @@ function normalizeLobby(raw) {
             liveChapterTitle: safeString(p.liveChapterTitle || p.live_chapter_title, ""),
             liveChapterHtml: safeString(p.liveChapterHtml || p.live_chapter_html, ""),
             liveChapterId: safeString(p.liveChapterId || p.live_chapter_id, ""),
+            pauseRequested: Boolean(p.pauseRequested ?? p.pause_requested),
         })),
         localOnly: Boolean(raw.localOnly),
     };
@@ -154,6 +158,7 @@ function localParticipant(uid, profile, bookId, bookTitle, isHost) {
         liveChapterTitle: "",
         liveChapterHtml: "",
         liveChapterId: "",
+        pauseRequested: false,
     };
 }
 
@@ -228,6 +233,9 @@ function startLocalWar(roomId, uid) {
     }
     lobby.status = "active";
     lobby.startedAt = new Date().toISOString();
+    lobby.isPaused = false;
+    lobby.pausedAt = null;
+    lobby.pauseMsTotal = 0;
     lobby.participants.forEach((p) => {
         p.sprintWords = 0;
         p.wordsAtStart = 0;
@@ -236,6 +244,7 @@ function startLocalWar(roomId, uid) {
         p.liveChapterTitle = "";
         p.liveChapterHtml = "";
         p.liveChapterId = "";
+        p.pauseRequested = false;
     });
     return saveLocalLobby(lobby);
 }
@@ -268,6 +277,32 @@ function updateLocalProgress(roomId, uid, patch = {}) {
         me.liveChapterId = patch.liveChapterId.slice(0, 128);
     }
     me.lastPingAt = new Date().toISOString();
+    return saveLocalLobby(lobby);
+}
+
+function updateLocalPause(roomId, uid, pauseRequested) {
+    const lobby = loadLocalLobby({ roomId });
+    if (!lobby) throw new Error("Room not found");
+    if (lobby.status !== "active") throw new Error("Word War is not active");
+    const me = lobby.participants.find((p) => p.userId === uid);
+    if (!me) throw new Error("Not a participant");
+
+    me.pauseRequested = Boolean(pauseRequested);
+
+    const participantCount = lobby.participants.length;
+    const requestedCount = lobby.participants.filter((p) => p.pauseRequested).length;
+
+    if (!lobby.isPaused && participantCount >= 2 && requestedCount >= participantCount) {
+        lobby.isPaused = true;
+        lobby.pausedAt = new Date().toISOString();
+    } else if (lobby.isPaused && requestedCount === 0) {
+        const pausedAtMs = lobby.pausedAt ? Date.parse(lobby.pausedAt) : Date.now();
+        lobby.pauseMsTotal =
+            (Number(lobby.pauseMsTotal) || 0) + Math.max(0, Date.now() - pausedAtMs);
+        lobby.isPaused = false;
+        lobby.pausedAt = null;
+    }
+
     return saveLocalLobby(lobby);
 }
 
@@ -427,6 +462,24 @@ export async function updateWordWarProgress(roomId, patch = {}) {
             typeof patch.liveChapterTitle === "string" ? patch.liveChapterTitle : null,
         p_live_chapter_html: typeof patch.liveChapterHtml === "string" ? patch.liveChapterHtml : null,
         p_live_chapter_id: typeof patch.liveChapterId === "string" ? patch.liveChapterId : null,
+    });
+    if (error) throw error;
+    return normalizeLobby(data);
+}
+
+/** @param {string} roomId @param {boolean} pauseRequested */
+export async function updateWordWarPause(roomId, pauseRequested) {
+    const localLobby = loadLocalLobby({ roomId });
+    if (localLobby?.localOnly || !(await probeCloudSchema())) {
+        const { data: authData } = await supabase.auth.getUser();
+        const uid = authData?.user?.id;
+        if (!uid) throw new Error("Not authenticated");
+        return updateLocalPause(roomId, uid, pauseRequested);
+    }
+
+    const { data, error } = await supabase.rpc("update_word_war_pause", {
+        p_room_id: roomId,
+        p_pause_requested: Boolean(pauseRequested),
     });
     if (error) throw error;
     return normalizeLobby(data);
