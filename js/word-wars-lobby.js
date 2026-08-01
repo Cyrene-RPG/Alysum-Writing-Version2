@@ -2,8 +2,7 @@
  * Word Wars lobby page boot logic.
  */
 import { supabase } from "../firebase.js";
-import { resolveStudioSession } from "./studio-session.js?v=3";
-import { goToLogin } from "./desktop-auth.js?v=1";
+import { requireStudioSession } from "./studio-session.js?v=3";
 import { publicDisplayNameFromUserData } from "./profile-display.js?v=1";
 import {
     WORD_WAR_DURATIONS,
@@ -28,12 +27,9 @@ import {
 const params = new URLSearchParams(window.location.search);
 const initialCode = String(params.get("code") || "").trim().toUpperCase();
 const initialRoomId = String(params.get("room") || "").trim();
-const wantsLayoutPreview =
-    params.get("demo") === "4" ||
-    params.get("preview") === "lobby" ||
-    params.get("preview") === "4";
+const isDemoMode = params.get("demo") === "4";
 /** @type {boolean} */
-let isLayoutPreview = wantsLayoutPreview;
+let isLayoutPreview = isDemoMode;
 
 const hubView = document.getElementById("hubView");
 const lobbyView = document.getElementById("lobbyView");
@@ -551,27 +547,17 @@ async function bootDemoPreview(message) {
 }
 
 async function boot() {
-    if (wantsLayoutPreview) {
+    if (isDemoMode) {
         await bootDemoPreview(
-            'Preview mode — mock 4-writer lobby. Remove <code>?demo=4</code> from the URL after you sign in for the real flow.'
+            'Layout demo only — remove <code>?demo=4</code> from the URL for the real Word Wars flow.'
         );
         return;
     }
 
     const nextPath = window.location.pathname + window.location.search;
-    const studioSession = await resolveStudioSession(supabase);
-    const uid = studioSession.user?.id;
-
-    if (!uid) {
-        if (initialCode || initialRoomId) {
-            goToLogin(nextPath);
-            return;
-        }
-        await bootDemoPreview(
-            'Preview — mock 4-writer lobby (no login). <a href="login.html?next=%2Fword-wars-lobby.html" style="color:#c4b5fd;font-weight:700;">Sign in</a> to create or join a real Word War.'
-        );
-        return;
-    }
+    const session = await requireStudioSession(supabase, nextPath);
+    const uid = session?.user?.id;
+    if (!uid) return;
 
     let profileRow = null;
     try {
