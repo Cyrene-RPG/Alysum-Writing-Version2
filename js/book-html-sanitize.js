@@ -48,6 +48,38 @@ function normalizeChapterElementAttributes(el) {
     el.setAttribute("loading", "lazy");
     return;
   }
+  if (el.tagName === "P") {
+    const isSpacer = el.classList.contains("scene-spacer");
+    const isBreak = el.classList.contains("scene-break");
+    if (isSpacer || isBreak) {
+      const classes = isSpacer ? ["scene-spacer"] : ["scene-break"];
+      if (isBreak) {
+        for (const name of el.classList) {
+          if (name.startsWith("scene-break--")) classes.push(name);
+        }
+      }
+      [...el.attributes].forEach((attr) => {
+        if (/^on/i.test(attr.name) || attr.name === "style") el.removeAttribute(attr.name);
+      });
+      el.className = [...new Set(classes)].join(" ");
+      const glyph = el.querySelector(".scene-break-glyph");
+      if (glyph) {
+        [...glyph.attributes].forEach((attr) => glyph.removeAttribute(attr.name));
+        glyph.className = "scene-break-glyph";
+        glyph.setAttribute("aria-hidden", "true");
+        el.textContent = "";
+        el.appendChild(glyph);
+      }
+      return;
+    }
+  }
+  if (el.tagName === "HR" && el.classList.contains("scene-rule")) {
+    [...el.attributes].forEach((attr) => {
+      if (/^on/i.test(attr.name) || attr.name === "style") el.removeAttribute(attr.name);
+    });
+    el.className = "scene-rule";
+    return;
+  }
   [...el.attributes].forEach((attr) => {
     if (/^on/i.test(attr.name) || attr.name === "style" || attr.name === "class") {
       el.removeAttribute(attr.name);
@@ -92,11 +124,12 @@ export function cleanImportHtml(html) {
   });
 
   holder.querySelectorAll("p").forEach((p) => {
+    if (p.classList.contains("scene-break") || p.classList.contains("scene-spacer")) return;
     if (!p.textContent.trim() && !p.querySelector("img, br, figure")) p.remove();
   });
 
   return holder.innerHTML
-    .replace(/<p>(\s|&nbsp;|<br\s*\/?>)*<\/p>/gi, "")
+    .replace(/<p(?![^>]*scene-break)(?![^>]*scene-spacer)>(\s|&nbsp;|<br\s*\/?>)*<\/p>/gi, "")
     .replace(/<div>(\s|&nbsp;|<br\s*\/?>)*<\/div>/gi, "")
     .trim();
 }

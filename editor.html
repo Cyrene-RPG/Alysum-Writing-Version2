@@ -24,6 +24,7 @@
 <link rel="stylesheet" href="css/gradient-themes.css?v=7" />
     <link rel="stylesheet" href="css/workspace-nav.css?v=11" />
     <link rel="stylesheet" href="css/book-inline-images.css?v=5" />
+    <link rel="stylesheet" href="css/scene-breaks.css?v=7" />
 <link rel="stylesheet" href="css/plot-doctor.css?v=4" />
 <link rel="stylesheet" href="css/book-version.css?v=8" />
     <script src="js/gradient-theme-sync.js" defer></script>
@@ -429,6 +430,42 @@
     body.dark .editor blockquote { color: #cbd5e1; }
     .editor h2 { font-size: 1.3em; margin: 0 0 1em; font-weight: 700; }
     .editor .book-inline-image { text-indent: 0; }
+    .scene-break-modal-box { max-width: 480px; }
+    .scene-break-list { max-height: min(52vh, 420px); overflow-y: auto; display: grid; gap: 6px; }
+    .scene-break-section-label {
+        font-size: 11px;
+        font-weight: 900;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--page-subtle);
+        padding: 10px 4px 4px;
+    }
+    .scene-break-section-label:first-child { padding-top: 0; }
+    .scene-break-pick {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        width: 100%;
+        border: 1px solid var(--border);
+        background: rgba(0,0,0,0.03);
+        color: var(--page-text);
+        border-radius: 12px;
+        padding: 10px 12px;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        text-align: left;
+    }
+    body.dark .scene-break-pick { background: rgba(255,255,255,0.04); }
+    .scene-break-pick:hover { border-color: var(--alysum-purple); }
+    .scene-break-pick-preview {
+        flex: 1 1 auto;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        min-width: 0;
+    }
     .page::after { content: ""; display: block; clear: both; }
     .editor:empty:before { content: attr(data-placeholder); color: #a7afb8; }
     .bottom-meta { margin-top: 16px; text-align: center; font-size: 13px; color: #7b8490; font-weight: 700; clear: both; }
@@ -857,6 +894,7 @@
     <select class="tool-select" id="fontSizeSelect" data-tip="Editor text size" aria-label="Text size"><option value="18">Compact</option><option value="20">Book</option><option value="22">Comfort</option><option value="26">Large</option></select>
     <button class="tool-btn" type="button" id="insertImageBtn" data-tip="Insert image at cursor">＋ Image</button>
     <input id="inlineImageUploadInput" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden />
+    <button class="tool-btn" type="button" id="insertSceneBreakBtn" data-tip="Insert scene break">✦ Break</button>
     <button class="tool-btn" type="button" id="backgroundBtn" data-tip="Set editor background image">Background</button>
     <div class="toolbar-spacer"></div>
     <span class="sprint-anchor" id="sprintAnchor"><button class="sprint-btn" id="sprintToolbarBtn" type="button" data-tip="Writing sprint timer" aria-label="Sprint timer">⏱ Sprint</button></span>
@@ -938,6 +976,16 @@
 </div><div class="sprint-modal" id="sprintConfirmModal"><div class="sprint-modal-box"><h2 class="sprint-modal-title">Ready to start?</h2><p class="sprint-modal-text" id="sprintConfirmText">Start a sprint?</p><div class="sprint-modal-actions"><button class="secondary" id="sprintConfirmNo" type="button" data-tip="Cancel sprint">Not yet</button><button class="primary" id="sprintConfirmYes" type="button" data-tip="Start the sprint">Yes, start</button></div></div></div>
 <div class="sprint-modal" id="sprintOptionsModal"><div class="sprint-modal-box"><h2 class="sprint-modal-title">Choose a timer</h2><p class="sprint-modal-text" id="sprintOptionsSub">Tracks words written during the sprint.</p><div class="sprint-opt-grid" id="sprintOptionsGrid"><button class="sprint-opt" type="button" data-min="10" data-tip="10 minute sprint">10 min</button><button class="sprint-opt" type="button" data-min="15" data-tip="15 minute sprint">15 min</button><button class="sprint-opt" type="button" data-min="25" data-tip="25 minute sprint">25 min</button><button class="sprint-opt" type="button" data-min="60" data-tip="1 hour sprint">1 hour</button></div><div class="sprint-modal-actions" style="margin-top:14px;"><button class="secondary" id="sprintOptionsClose" type="button" data-tip="Close sprint options">Close</button></div></div></div>
 <div class="sprint-modal" id="sprintResultModal"><div class="sprint-modal-box"><h2 class="sprint-modal-title" id="sprintResultTitle">Sprint complete</h2><p class="sprint-modal-text" id="sprintResultText">...</p><div class="sprint-modal-actions"><button class="primary" id="sprintResultOk" type="button" data-tip="Dismiss">OK</button></div></div></div>
+<div class="sprint-modal" id="sceneBreakModal" aria-hidden="true">
+    <div class="sprint-modal-box scene-break-modal-box">
+        <h2 class="sprint-modal-title">Insert scene break</h2>
+        <p class="sprint-modal-text">Pick an ornament for the gap between scenes. Genre suggestions appear if your book has genres set.</p>
+        <div class="scene-break-list" id="sceneBreakList" role="listbox" aria-label="Scene break presets"></div>
+        <div class="sprint-modal-actions" style="margin-top:14px;">
+            <button class="secondary" id="sceneBreakCloseBtn" type="button" data-tip="Close scene break picker">Close</button>
+        </div>
+    </div>
+</div>
 <div class="sprint-modal" id="inlineImageSizeModal" aria-hidden="true">
     <div class="sprint-modal-box inline-image-modal-box">
         <h2 class="sprint-modal-title">Place illustration</h2>
@@ -1052,6 +1100,12 @@
         isNetworkError,
         pickNewerBookRow,
     } from "./js/book-offline-store.js?v=1";
+    import {
+        buildSceneBreakHtml,
+        initSceneBreakPicker,
+        isSceneBreakParagraph,
+        normalizeSceneBreakAttributes,
+    } from "./js/scene-breaks.js?v=6";
 
 const params = new URLSearchParams(window.location.search);
 const wordWarEmbed = params.get("embed") === "wordWar";
@@ -2067,6 +2121,7 @@ function rememberBookId(id) {
             el.setAttribute("loading", "lazy");
             return;
         }
+        if (normalizeSceneBreakAttributes(el)) return;
         [...el.attributes].forEach((attr) => {
             if (/^on/i.test(attr.name) || attr.name === "style" || attr.name === "class") {
                 el.removeAttribute(attr.name);
@@ -2584,11 +2639,12 @@ function rememberBookId(id) {
         });
 
         holder.querySelectorAll("p").forEach(p => {
+            if (isSceneBreakParagraph(p)) return;
             if (!p.textContent.trim() && !p.querySelector("img, br, figure")) p.remove();
         });
 
         return holder.innerHTML
-            .replace(/<p>(\s|&nbsp;|<br\s*\/?>)*<\/p>/gi, "")
+            .replace(/<p(?![^>]*scene-break)(?![^>]*scene-spacer)>(\s|&nbsp;|<br\s*\/?>)*<\/p>/gi, "")
             .replace(/<div>(\s|&nbsp;|<br\s*\/?>)*<\/div>/gi, "")
             .trim();
     }
@@ -3632,6 +3688,21 @@ function rememberBookId(id) {
     insertImageBtn?.addEventListener("click", () => {
         if (isCurrentBookComic()) return;
         inlineImageUploadInput?.click();
+    });
+    initSceneBreakPicker({
+        btn: document.getElementById("insertSceneBreakBtn"),
+        modal: document.getElementById("sceneBreakModal"),
+        listEl: document.getElementById("sceneBreakList"),
+        closeBtn: document.getElementById("sceneBreakCloseBtn"),
+        getGenres: () => safeArray(currentBook?.publishMeta?.genres, []),
+        isDisabled: () => isCurrentBookComic(),
+        onPick: (presetId) => {
+            insertCleanHtml(buildSceneBreakHtml(presetId));
+            cleanAndStoreCurrentChapterFromEditor();
+            syncStats();
+            scheduleSave();
+            editor.focus();
+        },
     });
     inlineImageUploadInput?.addEventListener("change", async () => {
         const file = inlineImageUploadInput.files?.[0];

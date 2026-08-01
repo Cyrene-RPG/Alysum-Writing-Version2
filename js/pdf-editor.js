@@ -653,6 +653,7 @@ function buildPreviewDocumentHtml(options = {}) {
 <head>
   <meta charset="utf-8" />
   ${printFontHeadBlock()}
+  <link rel="stylesheet" href="css/scene-breaks.css?v=7" />
   <style>
     ${atPageCssBlock()}
     :root {
@@ -1030,23 +1031,7 @@ function buildPreviewDocumentHtml(options = {}) {
     .pdf-body blockquote div {
       text-indent: 0;
     }
-    .scene-break {
-      text-align: center;
-      letter-spacing: 0.42em;
-      margin: 1.65em 0;
-      color: #8a8886;
-      font-size: 0.88rem;
-      font-weight: 300;
-      border: none;
-      page-break-inside: avoid;
-    }
     .scene-spacer { visibility: hidden; height: 2.75em; }
-    .scene-rule {
-      width: 18%;
-      margin: 1.65em auto;
-      border: none;
-      border-top: 1px solid rgba(28, 27, 26, 0.12);
-    }
   </style>
 </head>
 <body>

@@ -1,3 +1,5 @@
+@import url("css/scene-breaks.css");
+
 :root {
   --preview-scale: 1;
   --bg: #041225;
@@ -540,11 +542,6 @@ body.light .field select {
 .toc-item-dots {
   border-bottom: 1px dotted #999;
   transform: translateY(-3px);
-}
-
-.scene-break {
-  text-align: center;
-  margin: 1.4em 0;
 }
 
 .blank-page .page-content::before {
