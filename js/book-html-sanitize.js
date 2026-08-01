@@ -62,6 +62,7 @@ function normalizeChapterElementAttributes(el) {
         if (/^on/i.test(attr.name) || attr.name === "style") el.removeAttribute(attr.name);
       });
       el.className = [...new Set(classes)].join(" ");
+      el.setAttribute("contenteditable", "false");
       const glyph = el.querySelector(".scene-break-glyph");
       if (glyph) {
         [...glyph.attributes].forEach((attr) => glyph.removeAttribute(attr.name));
@@ -78,6 +79,7 @@ function normalizeChapterElementAttributes(el) {
       if (/^on/i.test(attr.name) || attr.name === "style") el.removeAttribute(attr.name);
     });
     el.className = "scene-rule";
+    el.setAttribute("contenteditable", "false");
     return;
   }
   [...el.attributes].forEach((attr) => {
@@ -125,11 +127,14 @@ export function cleanImportHtml(html) {
 
   holder.querySelectorAll("p").forEach((p) => {
     if (p.classList.contains("scene-break") || p.classList.contains("scene-spacer")) return;
-    if (!p.textContent.trim() && !p.querySelector("img, br, figure")) p.remove();
+    const isCaretOnly = !p.textContent.replace(/\u200B/g, "").trim() &&
+      !p.querySelector("img, figure") &&
+      (p.querySelector("br") || p.textContent.includes("\u200B"));
+    if (isCaretOnly || (!p.textContent.trim() && !p.querySelector("img, br, figure"))) p.remove();
   });
 
   return holder.innerHTML
-    .replace(/<p(?![^>]*scene-break)(?![^>]*scene-spacer)>(\s|&nbsp;|<br\s*\/?>)*<\/p>/gi, "")
+    .replace(/<p(?![^>]*scene-break)(?![^>]*scene-spacer)>(\s|&nbsp;)*<\/p>/gi, "")
     .replace(/<div>(\s|&nbsp;|<br\s*\/?>)*<\/div>/gi, "")
     .trim();
 }

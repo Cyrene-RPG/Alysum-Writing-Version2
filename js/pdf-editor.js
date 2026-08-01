@@ -653,7 +653,7 @@ function buildPreviewDocumentHtml(options = {}) {
 <head>
   <meta charset="utf-8" />
   ${printFontHeadBlock()}
-  <link rel="stylesheet" href="css/scene-breaks.css?v=7" />
+  <link rel="stylesheet" href="css/scene-breaks.css?v=8" />
   <style>
     ${atPageCssBlock()}
     :root {

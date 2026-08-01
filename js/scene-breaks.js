@@ -40,6 +40,17 @@ function sceneBreakClassList(el) {
     return [...new Set(classes)];
 }
 
+export function followsSceneBreak(el) {
+    const prev = el?.previousElementSibling;
+    return !!(prev && (isSceneBreakParagraph(prev) || isSceneBreakRule(prev)));
+}
+
+export function isCaretParagraph(el) {
+    if (!el || el.tagName !== "P" || isSceneBreakParagraph(el)) return false;
+    const text = el.textContent.replace(/\u200B/g, "").trim();
+    return !text && !el.querySelector("img, figure") && (el.querySelector("br") || el.textContent.includes("\u200B"));
+}
+
 /** Preserve scene-break markup when sanitizing chapter HTML. Returns true if handled. */
 export function normalizeSceneBreakAttributes(el) {
     if (isSceneBreakParagraph(el)) {
@@ -47,6 +58,7 @@ export function normalizeSceneBreakAttributes(el) {
             if (/^on/i.test(attr.name) || attr.name === "style") el.removeAttribute(attr.name);
         });
         el.className = sceneBreakClassList(el).join(" ");
+        el.setAttribute("contenteditable", "false");
         const glyph = el.querySelector(".scene-break-glyph");
         if (glyph) {
             [...glyph.attributes].forEach((attr) => glyph.removeAttribute(attr.name));
@@ -62,6 +74,7 @@ export function normalizeSceneBreakAttributes(el) {
             if (/^on/i.test(attr.name) || attr.name === "style") el.removeAttribute(attr.name);
         });
         el.className = "scene-rule";
+        el.setAttribute("contenteditable", "false");
         return true;
     }
     return false;
@@ -70,10 +83,111 @@ export function normalizeSceneBreakAttributes(el) {
 export function buildSceneBreakHtml(presetId) {
     const preset = SCENE_BREAK_PRESETS.find((item) => item.id === presetId);
     if (!preset) return "";
-    if (preset.type === "rule") return '<hr class="scene-rule" />';
-    if (preset.type === "spacer") return '<p class="scene-spacer">&nbsp;</p>';
+    if (preset.type === "rule") return '<hr class="scene-rule" contenteditable="false" />';
+    if (preset.type === "spacer") return '<p class="scene-spacer" contenteditable="false">&nbsp;</p>';
     const minimal = preset.minimal ? " scene-break--minimal" : "";
-    return `<p class="scene-break scene-break--${preset.id}${minimal}"><span class="scene-break-glyph" aria-hidden="true"></span></p>`;
+    return `<p class="scene-break scene-break--${preset.id}${minimal}" contenteditable="false"><span class="scene-break-glyph" aria-hidden="true"></span></p>`;
+}
+
+function focusEditorParagraph(paragraph) {
+    if (!paragraph) return;
+    const selection = window.getSelection();
+    if (!selection) return;
+    if (!paragraph.querySelector("br") && !paragraph.textContent.trim()) {
+        paragraph.innerHTML = "<br>";
+    }
+    const range = document.createRange();
+    if (paragraph.firstChild?.nodeType === Node.TEXT_NODE) {
+        range.setStart(paragraph.firstChild, paragraph.firstChild.length);
+    } else {
+        range.setStart(paragraph, 0);
+    }
+    range.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(range);
+}
+
+function placeCaretAfterSceneBreak(breakEl) {
+    let next = breakEl.nextElementSibling;
+    if (!next || isSceneBreakParagraph(next) || isSceneBreakRule(next)) {
+        next = document.createElement("p");
+        next.innerHTML = "<br>";
+        breakEl.after(next);
+    } else if (next.tagName === "P" && !next.textContent.replace(/\u200B/g, "").trim() && !next.querySelector("img, figure")) {
+        if (!next.querySelector("br")) next.innerHTML = "<br>";
+    }
+    focusEditorParagraph(next);
+}
+
+export function ensureEditorTailAfterSceneBreaks(editor) {
+    if (!editor) return;
+    const last = editor.lastElementChild;
+    if (!last) return;
+    if (isSceneBreakParagraph(last) || isSceneBreakRule(last)) {
+        const paragraph = document.createElement("p");
+        paragraph.innerHTML = "<br>";
+        editor.appendChild(paragraph);
+    }
+}
+
+function fixSceneBreakSelection(editor) {
+    const selection = window.getSelection();
+    if (!selection?.rangeCount) return;
+    const node = selection.anchorNode;
+    if (!node) return;
+    const anchor = node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement;
+    const inBreak = anchor?.closest?.(".scene-break, .scene-spacer, hr.scene-rule");
+    if (inBreak) {
+        placeCaretAfterSceneBreak(inBreak);
+        return;
+    }
+    ensureEditorTailAfterSceneBreaks(editor);
+}
+
+export function insertSceneBreakAtCursor(editor, presetId) {
+    const breakHtml = buildSceneBreakHtml(presetId);
+    if (!breakHtml || !editor) return;
+    const html = `${breakHtml}<p><br></p>`;
+    editor.focus();
+    if (document.queryCommandSupported?.("insertHTML")) {
+        document.execCommand("insertHTML", false, html);
+    } else {
+        const selection = window.getSelection();
+        const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
+        const temp = document.createElement("div");
+        temp.innerHTML = html;
+        const fragment = document.createDocumentFragment();
+        let lastNode = null;
+        while (temp.firstChild) lastNode = fragment.appendChild(temp.firstChild);
+        if (range) {
+            range.deleteContents();
+            range.insertNode(fragment);
+        } else {
+            editor.appendChild(fragment);
+        }
+        if (lastNode && selection) {
+            const nextRange = document.createRange();
+            nextRange.setStartAfter(lastNode);
+            nextRange.collapse(true);
+            selection.removeAllRanges();
+            selection.addRange(nextRange);
+        }
+    }
+    const breaks = editor.querySelectorAll(".scene-break, .scene-spacer, hr.scene-rule");
+    const lastBreak = breaks[breaks.length - 1];
+    if (lastBreak) placeCaretAfterSceneBreak(lastBreak);
+}
+
+export function initSceneBreakEditorBehavior(editor) {
+    if (!editor || editor.dataset.sceneBreakBound === "1") return;
+    editor.dataset.sceneBreakBound = "1";
+    const scheduleFix = () => requestAnimationFrame(() => fixSceneBreakSelection(editor));
+    editor.addEventListener("click", scheduleFix);
+    editor.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || (event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey)) {
+            scheduleFix();
+        }
+    });
 }
 
 function scorePresetForGenres(preset, genres) {

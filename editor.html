@@ -24,7 +24,7 @@
 <link rel="stylesheet" href="css/gradient-themes.css?v=7" />
     <link rel="stylesheet" href="css/workspace-nav.css?v=11" />
     <link rel="stylesheet" href="css/book-inline-images.css?v=5" />
-    <link rel="stylesheet" href="css/scene-breaks.css?v=7" />
+    <link rel="stylesheet" href="css/scene-breaks.css?v=8" />
 <link rel="stylesheet" href="css/plot-doctor.css?v=4" />
 <link rel="stylesheet" href="css/book-version.css?v=8" />
     <script src="js/gradient-theme-sync.js" defer></script>
@@ -1101,11 +1101,15 @@
         pickNewerBookRow,
     } from "./js/book-offline-store.js?v=1";
     import {
-        buildSceneBreakHtml,
+        ensureEditorTailAfterSceneBreaks,
+        initSceneBreakEditorBehavior,
         initSceneBreakPicker,
+        insertSceneBreakAtCursor,
+        isCaretParagraph,
         isSceneBreakParagraph,
+        isCaretParagraph,
         normalizeSceneBreakAttributes,
-    } from "./js/scene-breaks.js?v=6";
+    } from "./js/scene-breaks.js?v=7";
 
 const params = new URLSearchParams(window.location.search);
 const wordWarEmbed = params.get("embed") === "wordWar";
@@ -1260,6 +1264,7 @@ function rememberBookId(id) {
                 if (comicCaptionInput) comicCaptionInput.value = String(content || "").replace(/<[^>]+>/g, "").trim();
             } else if (editorLoadedChapterKey === editedKey) {
                 editor.innerHTML = cleanEditorHtml(content);
+                ensureEditorTailAfterSceneBreaks(editor);
             }
         }
         syncStats();
@@ -1283,6 +1288,7 @@ function rememberBookId(id) {
                 if (comicCaptionInput) comicCaptionInput.value = String(ch.content || "").replace(/<[^>]+>/g, "").trim();
             } else if (editorLoadedChapterKey === editedKey) {
                 editor.innerHTML = cleanEditorHtml(ch.content || "");
+                ensureEditorTailAfterSceneBreaks(editor);
             }
         }
         renderAllSections();
@@ -2640,11 +2646,11 @@ function rememberBookId(id) {
 
         holder.querySelectorAll("p").forEach(p => {
             if (isSceneBreakParagraph(p)) return;
-            if (!p.textContent.trim() && !p.querySelector("img, br, figure")) p.remove();
+            if (isCaretParagraph(p) || (!p.textContent.trim() && !p.querySelector("img, br, figure"))) p.remove();
         });
 
         return holder.innerHTML
-            .replace(/<p(?![^>]*scene-break)(?![^>]*scene-spacer)>(\s|&nbsp;|<br\s*\/?>)*<\/p>/gi, "")
+            .replace(/<p(?![^>]*scene-break)(?![^>]*scene-spacer)>(\s|&nbsp;)*<\/p>/gi, "")
             .replace(/<div>(\s|&nbsp;|<br\s*\/?>)*<\/div>/gi, "")
             .trim();
     }
@@ -2933,6 +2939,7 @@ function rememberBookId(id) {
             chapterNumber.textContent = section === "body" ? index + 1 : "";
             chapterTitle.textContent = ch.title || "Untitled";
             editor.innerHTML = cleanEditorHtml(ch.content || "");
+            ensureEditorTailAfterSceneBreaks(editor);
             applyEditorStyle();
             normalizeInlineImagesInEditor();
             editorLoadedChapterKey = chapterLoadKey(section, index);
@@ -3697,13 +3704,15 @@ function rememberBookId(id) {
         getGenres: () => safeArray(currentBook?.publishMeta?.genres, []),
         isDisabled: () => isCurrentBookComic(),
         onPick: (presetId) => {
-            insertCleanHtml(buildSceneBreakHtml(presetId));
+            insertSceneBreakAtCursor(editor, presetId);
             cleanAndStoreCurrentChapterFromEditor();
+            ensureEditorTailAfterSceneBreaks(editor);
             syncStats();
             scheduleSave();
             editor.focus();
         },
     });
+    initSceneBreakEditorBehavior(editor);
     inlineImageUploadInput?.addEventListener("change", async () => {
         const file = inlineImageUploadInput.files?.[0];
         inlineImageUploadInput.value = "";

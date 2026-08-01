@@ -128,6 +128,14 @@ hr.scene-rule,
   border-top: 1px solid color-mix(in srgb, currentColor 30%, transparent);
 }
 
+.editor .scene-break,
+.editor .scene-spacer,
+.editor hr.scene-rule {
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
+}
+
 .editor .scene-break + p,
 .editor .scene-spacer + p,
 .editor hr.scene-rule + p,
