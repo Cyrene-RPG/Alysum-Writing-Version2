@@ -566,6 +566,10 @@ export function subscribeWordWarLobby(roomId, onChange) {
         return () => window.clearInterval(interval);
     }
 
+    const pollInterval = window.setInterval(() => {
+        onChange?.();
+    }, 1500);
+
     const channel = supabase
         .channel(`word_wars_lobby_${roomId}`)
         .on(
@@ -581,6 +585,7 @@ export function subscribeWordWarLobby(roomId, onChange) {
         .subscribe();
 
     return () => {
+        window.clearInterval(pollInterval);
         supabase.removeChannel(channel);
     };
 }
