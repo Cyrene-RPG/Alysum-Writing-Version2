@@ -19,19 +19,23 @@ import {
 } from "./collab-rooms-demo.js?v=2";
 import {
     htmlToParagraphTexts,
-    renderAuthorManuscript,
+    renderAuthorManuscriptHtml,
     paragraphsToEditableHtml,
     diffChapterHtmlSuggestions,
+    normalizeManuscriptHtml,
+    hunkPreviewHtml,
     countPending,
     escapeHtml,
     suggestionRowToHunk,
-} from "./collab-room-render.js?v=3";
+} from "./collab-room-render.js?v=4";
 import { mountCollabToolbar } from "./collab-toolbar.js?v=1";
 
 /**
  * @param {{ isPreview?: boolean, params?: URLSearchParams }} opts
  */
 export async function bootCollabRoomPage(opts = {}) {
+    document.body.classList.add("collab-room-active");
+
     const params = opts.params || new URLSearchParams(window.location.search);
     const isPreview = !!opts.isPreview;
 
@@ -88,6 +92,7 @@ export async function bootCollabRoomPage(opts = {}) {
         document.getElementById("errorText").textContent = msg;
         panel?.classList.remove("hidden");
         document.querySelector(".collab-layout")?.classList.add("hidden");
+        document.querySelector(".collab-app-frame")?.classList.add("hidden");
         document.getElementById("collabTopbar")?.classList.add("hidden");
         collabToolbar?.classList.add("hidden");
     }
@@ -154,8 +159,8 @@ export async function bootCollabRoomPage(opts = {}) {
                 const statusLabel = h.status === "pending" ? "Pending" : h.status === "accepted" ? "Accepted" : "Rejected";
                 const body =
                     h.type === "insert"
-                        ? `<span class="new">${escapeHtml(h.newText)}</span>`
-                        : `<span class="old">${escapeHtml(h.oldText)}</span><span class="new">${escapeHtml(h.newText)}</span>`;
+                        ? `<span class="new">${hunkPreviewHtml(h.newText)}</span>`
+                        : `<span class="old">${hunkPreviewHtml(h.oldText)}</span><span class="new">${hunkPreviewHtml(h.newText)}</span>`;
                 const actions =
                     resolved || !isAuthor
                         ? `<span class="collab-hunk-status is-${h.status}">${statusLabel}</span>`
@@ -225,7 +230,7 @@ export async function bootCollabRoomPage(opts = {}) {
         if (isAuthor) {
             manuscript.removeAttribute("contenteditable");
             collabToolbar?.classList.add("hidden");
-            manuscript.innerHTML = renderAuthorManuscript(canonParagraphs, hunks);
+            manuscript.innerHTML = renderAuthorManuscriptHtml(baseChapterHtml, hunks);
             manuscript.querySelectorAll("[data-hunk]").forEach((el) => {
                 el.addEventListener("mouseenter", () => highlightHunk(el.getAttribute("data-hunk")));
             });
@@ -414,10 +419,10 @@ export async function bootCollabRoomPage(opts = {}) {
         });
 
         document.getElementById("submitBtn").addEventListener("click", async () => {
-            const nextHtml = manuscript.innerHTML;
+            const nextHtml = normalizeManuscriptHtml(manuscript.innerHTML);
             const suggestions = diffChapterHtmlSuggestions(baseChapterHtml, nextHtml);
             if (!suggestions.length) {
-                alert("No text changes to submit. Edit the chapter text, then submit.");
+                alert("No changes to submit. Edit text or formatting, then submit.");
                 return;
             }
             const btn = document.getElementById("submitBtn");

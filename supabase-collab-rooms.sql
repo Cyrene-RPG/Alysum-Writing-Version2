@@ -538,15 +538,15 @@ BEGIN
       IF v_elem->>'id' = v_s.chapter_id THEN
         v_found := true;
         v_content := coalesce(v_elem->>'content', '');
-        IF v_s.change_type = 'insert' AND v_s.old_text = '' THEN
-          v_content := v_content || '<p>' || replace(v_s.new_text, '<', '&lt;') || '</p>';
-        ELSIF v_s.old_text <> '' AND position(v_s.old_text in v_content) > 0 THEN
-          v_content := replace(v_content, v_s.old_text, v_s.new_text);
-        ELSIF v_s.old_text <> '' THEN
+        if (v_s.change_type = 'insert' AND coalesce(v_s.old_text, '') = '' THEN
+          v_content := v_content || v_s.new_text;
+        ELSIF coalesce(v_s.old_text, '') <> '' AND position(v_s.old_text in v_content) > 0 THEN
+          v_content := replace(v_content, v_s.old_text, coalesce(v_s.new_text, ''));
+        ELSIF coalesce(v_s.old_text, '') <> '' AND v_s.new_text <> '' THEN
           v_content := replace(
             v_content,
-            '<p>' || replace(v_s.old_text, '<', '&lt;') || '</p>',
-            '<p>' || replace(v_s.new_text, '<', '&lt;') || '</p>'
+            '<p>' || replace(replace(v_s.old_text, '<', '&lt;'), '>', '&gt;') || '</p>',
+            v_s.new_text
           );
         END IF;
         v_elem := jsonb_set(v_elem, '{content}', to_jsonb(v_content), true);

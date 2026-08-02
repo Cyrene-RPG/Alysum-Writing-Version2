@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
     <link rel="stylesheet" href="css/gradient-themes.css?v=7" />
     <link rel="stylesheet" href="css/workspace-nav.css?v=11" />
-    <link rel="stylesheet" href="css/collab-room.css?v=5" />
+    <link rel="stylesheet" href="css/collab-room.css?v=7" />
     <script src="js/gradient-theme-sync.js" defer></script>
     <title>Collab room preview — Alysum</title>
     <style>
@@ -61,8 +61,6 @@
             align-items: center;
         }
         .topbar {
-            position: sticky;
-            top: var(--collab-nav-offset);
             z-index: 50;
             display: grid;
             grid-template-columns: minmax(0, 1fr) minmax(180px, auto) minmax(0, 1fr);
@@ -120,6 +118,7 @@
         <span id="errorText"></span>
     </div>
 
+    <div class="collab-app-frame">
     <div class="topbar" id="collabTopbar">
         <div class="topbar-left">
             <a class="btn" id="backBtn" href="collab-rooms.html">← Collab rooms</a>
@@ -188,14 +187,14 @@
                 <span id="hunkEmptyHint">Edits you submit will appear here for the author to review.</span>
             </div>
             <div class="collab-sidebar-submit hidden" id="sidebarSubmit">
-                <p><strong>Ready to send?</strong> Submit your edits when you're done with this pass.</p>
                 <button type="button" class="collab-btn primary collab-sidebar-submit-btn" id="submitBtn">Submit suggestions</button>
             </div>
         </aside>
     </div>
+    </div>
 
     <script type="module">
-        import { bootCollabRoomPage } from "./js/collab-room-page.js?v=2";
+        import { bootCollabRoomPage } from "./js/collab-room-page.js?v=4";
         await bootCollabRoomPage({ isPreview: true });
     </script>
 </body>
