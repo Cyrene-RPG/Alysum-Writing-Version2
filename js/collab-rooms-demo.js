@@ -74,6 +74,16 @@ export const DEMO_COMMENTS = [
         parentId: "",
     },
     {
+        id: "c1-r1",
+        by: "author",
+        byLabel: "@author",
+        paragraphIndex: 0,
+        quote: "",
+        body: "Good catch — keep north for now; we'll reconcile in ch 9.",
+        status: "open",
+        parentId: "c1",
+    },
+    {
         id: "c2",
         by: "sam",
         byLabel: "@sam",

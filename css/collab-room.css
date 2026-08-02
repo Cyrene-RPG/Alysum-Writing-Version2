@@ -943,6 +943,38 @@ body.dark .collab-mode-banner:not(.is-author) {
 .collab-comment-actions {
     display: flex;
     gap: 6px;
+    flex-wrap: wrap;
+}
+
+.collab-comment-inline-reply {
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.collab-comment-inline-reply textarea,
+.collab-reply-input {
+    width: 100%;
+    resize: vertical;
+    min-height: 56px;
+    border-radius: 10px;
+    border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+    background: var(--panel, #111827);
+    color: var(--text, #f9fafb);
+    padding: 8px 10px;
+    font-family: inherit;
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+.collab-comment.is-replying {
+    border-color: rgba(245, 158, 11, 0.45);
+}
+
+.collab-comment-reply.is-author-reply {
+    border-left-color: var(--collab-green);
+    color: var(--text, #f9fafb);
 }
 
 .collab-comment-composer {

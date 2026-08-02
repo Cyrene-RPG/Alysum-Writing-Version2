@@ -22,7 +22,7 @@ import {
     DEMO_HUNKS,
     DEMO_CANON,
     DEMO_COMMENTS,
-} from "./collab-rooms-demo.js?v=3";
+} from "./collab-rooms-demo.js?v=4";
 import {
     htmlToParagraphTexts,
     paragraphsToEditableHtml,
@@ -65,9 +65,14 @@ export async function bootCollabRoomPage(opts = {}) {
     /** @type {import("./collab-room-render.js").CollabComment[]} */
     let comments = [];
     let activeSidebarTab = "edits";
-    /** @type {{ quote: string, paragraphIndex: number } | null} */
+    /** @type {{ quote: string, paragraphIndex: number, parentId?: string } | null} */
     let pendingComment = null;
+    /** @type {string} */
+    let replyTargetId = "";
+    /** @type {string} */
+    let replyDraftText = "";
     let refreshSidebarTimer = 0;
+    let realtimeStarted = false;
     let currentUserLabel = "You";
     /** @type {ReturnType<typeof createCollabRealtimeSession> | null} */
     let realtimeSession = null;
@@ -137,19 +142,55 @@ export async function bootCollabRoomPage(opts = {}) {
         btn.addEventListener("click", () => setSidebarTab(btn.getAttribute("data-tab") || "edits"));
     });
 
-    function openCommentComposer(quote, paragraphIndex) {
-        pendingComment = { quote, paragraphIndex };
-        commentQuote && (commentQuote.textContent = quote ? `"${quote}"` : "General comment");
-        commentInput.value = "";
+    function openCommentComposer(quote, paragraphIndex, parentId = "") {
+        pendingComment = { quote, paragraphIndex, parentId: parentId || "" };
+        replyTargetId = parentId || "";
+        if (parentId) {
+            commentComposer?.classList.add("hidden");
+            setSidebarTab("comments");
+            renderCommentList();
+            requestAnimationFrame(() => {
+                const box = commentList?.querySelector(`.collab-reply-input[data-parent-id="${parentId}"]`);
+                box?.focus();
+            });
+            return;
+        }
+        if (commentQuote) {
+            commentQuote.textContent = quote ? `"${quote}"` : "General comment";
+        }
+        if (commentInput) {
+            commentInput.value = "";
+            commentInput.placeholder = "Add a comment…";
+        }
         commentComposer?.classList.remove("hidden");
         setSidebarTab("comments");
         commentInput?.focus();
+        renderCommentList();
+    }
+
+    function openReplyComposer(parent) {
+        if (!parent?.id || parent.status === "resolved") return;
+        openCommentComposer(parent.quote || "", parent.paragraphIndex ?? 0, parent.id);
+        requestAnimationFrame(() => {
+            const card = commentList?.querySelector(`[data-comment-id="${parent.id}"]`);
+            card?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        });
     }
 
     function closeCommentComposer() {
         pendingComment = null;
+        replyTargetId = "";
+        replyDraftText = "";
+        if (commentInput) commentInput.placeholder = "Add a comment…";
         commentComposer?.classList.add("hidden");
         selectionCommentBtn?.classList.add("hidden");
+        renderCommentList();
+    }
+
+    function captureReplyDraft() {
+        if (!replyTargetId || !commentList) return;
+        const box = commentList.querySelector(`.collab-reply-input[data-parent-id="${replyTargetId}"]`);
+        if (box) replyDraftText = String(box.value || "");
     }
 
     function paragraphIndexFromSelection() {
@@ -192,16 +233,17 @@ export async function bootCollabRoomPage(opts = {}) {
         if (!body) return;
         const quote = pendingComment?.quote || "";
         const paragraphIndex = pendingComment?.paragraphIndex ?? 0;
+        const parentId = pendingComment?.parentId || "";
         if (isPreview) {
             comments.push({
                 id: `c-${Date.now()}`,
                 by: activeRole,
                 byLabel: `@${activeRole}`,
                 paragraphIndex,
-                quote,
+                quote: parentId ? "" : quote,
                 body,
                 status: "open",
-                parentId: "",
+                parentId,
             });
             closeCommentComposer();
             renderAll();
@@ -210,9 +252,10 @@ export async function bootCollabRoomPage(opts = {}) {
         const btn = document.getElementById("commentPostBtn");
         btn.disabled = true;
         try {
-            await submitCollabComment(bookId, chapterId, paragraphIndex, quote, body);
+            await submitCollabComment(bookId, chapterId, paragraphIndex, parentId ? "" : quote, body, parentId || null);
             closeCommentComposer();
-            await reloadLiveRoom();
+            await reloadLiveRoom({ applyManuscript: false });
+            setSidebarTab("comments");
         } catch (err) {
             alert(err?.message || "Could not post comment.");
         } finally {
@@ -358,6 +401,7 @@ export async function bootCollabRoomPage(opts = {}) {
 
     function startRealtimeSession() {
         if (isPreview || !bookId || !chapterId || !currentUserId) return;
+        if (realtimeStarted && realtimeSession) return;
         realtimeSession?.disconnect();
         realtimeSession = createCollabRealtimeSession({
             bookId,
@@ -366,12 +410,16 @@ export async function bootCollabRoomPage(opts = {}) {
             userLabel: currentUserLabel,
             isAuthor,
             onRemoteDoc: (html, userId, userLabel) => applyRemoteManuscript(html, userId, userLabel),
-            onRemotePersisted: (html, userId) => applyRemoteManuscript(html, userId, remoteEditorLabel),
+            onRemotePersisted: (html, userId) => {
+                applyRemoteManuscript(html, userId, remoteEditorLabel);
+                scheduleRefreshSidebar();
+            },
             onSuggestionsChange: scheduleRefreshSidebar,
             onCommentsChange: scheduleRefreshSidebar,
             onPresenceChange: renderPresence,
         });
         realtimeSession.connect();
+        realtimeStarted = true;
     }
 
     window.addEventListener("beforeunload", () => {
@@ -588,6 +636,8 @@ export async function bootCollabRoomPage(opts = {}) {
                 "Green shows collaborator edits in real time. Use Accept / Reject in the sidebar — rejected edits are removed from the live draft.";
             reviewTitle.textContent = "Live suggested edits";
             document.getElementById("bulkActions")?.classList.remove("hidden");
+            const commentsSub = document.getElementById("commentsSub");
+            if (commentsSub) commentsSub.textContent = "Reply to collaborator threads, or resolve when done.";
             return;
         }
 
@@ -597,9 +647,12 @@ export async function bootCollabRoomPage(opts = {}) {
             "Changes sync instantly with everyone in the room. Select text and click Comment for feedback.";
         reviewTitle.textContent = "Live edits";
         document.getElementById("bulkActions")?.classList.add("hidden");
+        const commentsSub = document.getElementById("commentsSub");
+        if (commentsSub) commentsSub.textContent = "Select text in the manuscript to add a comment.";
     }
 
     function renderCommentList() {
+        captureReplyDraft();
         const threads = comments.filter((c) => !c.parentId);
         const openCount = threads.filter((c) => c.status === "open").length;
         commentBadge?.classList.toggle("hidden", openCount === 0);
@@ -609,33 +662,134 @@ export async function bootCollabRoomPage(opts = {}) {
         commentList?.classList.toggle("hidden", threads.length === 0);
         if (!commentList) return;
 
+        const hadFocus = document.activeElement?.classList?.contains("collab-reply-input");
+        const selStart = hadFocus ? document.activeElement.selectionStart : null;
+        const selEnd = hadFocus ? document.activeElement.selectionEnd : null;
+
         commentList.innerHTML = threads
             .map((c) => {
                 const replies = comments.filter((r) => r.parentId === c.id);
                 const resolved = c.status === "resolved";
-                const resolveBtn =
-                    isAuthor || isMyHunk({ by: c.by })
-                        ? `<button type="button" class="collab-btn" data-comment-action="${resolved ? "reopen" : "resolve"}" data-id="${c.id}">${resolved ? "Reopen" : "Resolve"}</button>`
-                        : "";
-                return `<article class="collab-comment${resolved ? " is-resolved" : ""}" data-comment-id="${c.id}">
+                const isReplying = replyTargetId === c.id;
+                const canResolve = isAuthor || isMyHunk({ by: c.by });
+                const resolveBtn = canResolve
+                    ? `<button type="button" class="collab-btn" data-comment-action="${resolved ? "reopen" : "resolve"}" data-id="${c.id}">${resolved ? "Reopen" : "Resolve"}</button>`
+                    : "";
+                const replyBtn = !resolved
+                    ? `<button type="button" class="collab-btn primary" data-comment-action="reply" data-id="${c.id}">Reply</button>`
+                    : "";
+                const draftValue = isReplying ? escapeHtml(replyDraftText) : "";
+                const inlineReply = isReplying
+                    ? `<div class="collab-comment-inline-reply" data-reply-for="${c.id}">
+                        <textarea rows="2" placeholder="${isAuthor ? "Reply as author…" : "Write a reply…"}" class="collab-reply-input" data-parent-id="${c.id}">${draftValue}</textarea>
+                        <div class="collab-comment-composer-actions">
+                            <button type="button" class="collab-btn" data-comment-action="cancel-reply" data-id="${c.id}">Cancel</button>
+                            <button type="button" class="collab-btn primary" data-comment-action="post-reply" data-id="${c.id}">Post reply</button>
+                        </div>
+                       </div>`
+                    : "";
+                return `<article class="collab-comment${resolved ? " is-resolved" : ""}${isReplying ? " is-replying" : ""}" data-comment-id="${c.id}">
                     <div class="collab-comment-head">
                         <span class="collab-hunk-author" data-by="${escapeHtml(c.by)}">${escapeHtml(c.byLabel)}</span>
                         <span class="collab-hunk-type">${resolved ? "Resolved" : "Open"}</span>
                     </div>
                     ${c.quote ? `<div class="collab-comment-quote">${escapeHtml(c.quote)}</div>` : ""}
                     <div class="collab-comment-body">${escapeHtml(c.body)}</div>
-                    ${replies.map((r) => `<div class="collab-comment-reply"><strong>${escapeHtml(r.byLabel)}</strong> ${escapeHtml(r.body)}</div>`).join("")}
-                    <div class="collab-comment-actions">${resolveBtn}</div>
+                    ${replies
+                        .map((r) => {
+                            const mine = isMyHunk({ by: r.by }) || (isAuthor && r.by === currentUserId);
+                            return `<div class="collab-comment-reply${mine ? " is-author-reply" : ""}"><strong>${escapeHtml(r.byLabel)}</strong> ${escapeHtml(r.body)}</div>`;
+                        })
+                        .join("")}
+                    <div class="collab-comment-actions">${replyBtn}${resolveBtn}</div>
+                    ${inlineReply}
                 </article>`;
             })
             .join("");
 
+        if (replyTargetId) {
+            const box = commentList.querySelector(`.collab-reply-input[data-parent-id="${replyTargetId}"]`);
+            if (box) {
+                box.addEventListener("input", () => {
+                    replyDraftText = String(box.value || "");
+                });
+                box.addEventListener("keydown", (e) => {
+                    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+                        e.preventDefault();
+                        commentList.querySelector(`[data-comment-action="post-reply"][data-id="${replyTargetId}"]`)?.click();
+                    }
+                });
+                if (hadFocus) {
+                    box.focus();
+                    const len = box.value.length;
+                    const start = typeof selStart === "number" ? selStart : len;
+                    const end = typeof selEnd === "number" ? selEnd : len;
+                    try {
+                        box.setSelectionRange(start, end);
+                    } catch {
+                        /* ignore */
+                    }
+                }
+            }
+        }
+
         commentList.querySelectorAll("[data-comment-action]").forEach((btn) => {
-            btn.addEventListener("click", async () => {
+            btn.addEventListener("click", async (e) => {
+                e.stopPropagation();
                 const id = btn.getAttribute("data-id");
                 const action = btn.getAttribute("data-comment-action");
                 const comment = comments.find((x) => x.id === id);
-                if (!comment) return;
+                if (!comment && action !== "cancel-reply") return;
+
+                if (action === "reply") {
+                    openReplyComposer(comment);
+                    return;
+                }
+                if (action === "cancel-reply") {
+                    closeCommentComposer();
+                    return;
+                }
+                if (action === "post-reply") {
+                    const box = commentList.querySelector(`.collab-reply-input[data-parent-id="${id}"]`);
+                    const body = String(box?.value || replyDraftText || "").trim();
+                    if (!body || !comment) return;
+                    btn.disabled = true;
+                    try {
+                        if (isPreview) {
+                            comments.push({
+                                id: `c-${Date.now()}`,
+                                by: activeRole,
+                                byLabel: `@${activeRole}`,
+                                paragraphIndex: comment.paragraphIndex,
+                                quote: "",
+                                body,
+                                status: "open",
+                                parentId: comment.id,
+                            });
+                            closeCommentComposer();
+                            renderAll();
+                            return;
+                        }
+                        await submitCollabComment(
+                            bookId,
+                            chapterId,
+                            comment.paragraphIndex,
+                            "",
+                            body,
+                            comment.id
+                        );
+                        closeCommentComposer();
+                        await reloadLiveRoom({ applyManuscript: false });
+                        setSidebarTab("comments");
+                    } catch (err) {
+                        alert(err?.message || "Could not post reply.");
+                    } finally {
+                        btn.disabled = false;
+                    }
+                    return;
+                }
+
+                if (action !== "resolve" && action !== "reopen") return;
                 if (isPreview) {
                     comment.status = action === "resolve" ? "resolved" : "open";
                     renderAll();
@@ -645,6 +799,7 @@ export async function bootCollabRoomPage(opts = {}) {
                 try {
                     await resolveCollabComment(id, action);
                     await reloadLiveRoom({ applyManuscript: false });
+                    setSidebarTab("comments");
                 } catch (err) {
                     alert(err?.message || "Could not update comment.");
                 } finally {
@@ -654,7 +809,10 @@ export async function bootCollabRoomPage(opts = {}) {
         });
 
         commentList.querySelectorAll(".collab-comment").forEach((card) => {
-            card.addEventListener("click", () => highlightComment(card.getAttribute("data-comment-id")));
+            card.addEventListener("click", (e) => {
+                if (e.target.closest("button, textarea, .collab-comment-inline-reply")) return;
+                highlightComment(card.getAttribute("data-comment-id"));
+            });
         });
     }
 
@@ -697,8 +855,11 @@ export async function bootCollabRoomPage(opts = {}) {
 
         const canonHash = chapter.content_hash || "";
         const liveBaseHash = chapter.live_base_hash || canonHash;
-        if (!chapter.live_html || liveBaseHash === canonHash) {
-            liveHtml = prepareCollaboratorChapterHtml(chapter.live_html || chapter.content || "");
+        // Prefer the shared live draft when it exists; fall back to canon if the draft is from a stale base.
+        if (chapter.live_html && (!liveBaseHash || liveBaseHash === canonHash)) {
+            liveHtml = prepareCollaboratorChapterHtml(chapter.live_html);
+        } else if (chapter.live_html && liveBaseHash !== canonHash && options.forceLive) {
+            liveHtml = prepareCollaboratorChapterHtml(chapter.live_html);
         } else {
             liveHtml = prepareCollaboratorChapterHtml(chapter.content || "");
         }
@@ -899,7 +1060,7 @@ export async function bootCollabRoomPage(opts = {}) {
         });
     }
 
-    hunkList.addEventListener("mouseover", (e) => {
+    hunkList?.addEventListener("mouseover", (e) => {
         const card = e.target.closest(".collab-hunk");
         if (card && isAuthor) highlightHunk(card.getAttribute("data-hunk-id"));
     });

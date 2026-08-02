@@ -963,6 +963,19 @@ BEGIN
     RAISE EXCEPTION 'empty_body';
   END IF;
 
+  IF p_parent_id IS NOT NULL THEN
+    IF NOT EXISTS (
+      SELECT 1
+      FROM public.collab_comments p
+      WHERE p.id = p_parent_id
+        AND p.book_id = p_book_id
+        AND p.chapter_id = p_chapter_id
+        AND p.parent_id IS NULL
+    ) THEN
+      RAISE EXCEPTION 'invalid_parent';
+    END IF;
+  END IF;
+
   INSERT INTO public.collab_comments (
     book_id, chapter_id, author_id, commenter_id, parent_id,
     paragraph_index, quote, body
@@ -994,6 +1007,7 @@ BEGIN
   IF NOT (
     v_row.author_id = auth.uid()
     OR v_row.commenter_id = auth.uid()
+    OR public.is_collab_chapter_author(v_row.book_id, v_row.chapter_id)
   ) THEN
     RAISE EXCEPTION 'not_allowed';
   END IF;
