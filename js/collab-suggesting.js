@@ -1,7 +1,11 @@
 /**
  * Google Docs-style Suggesting mode for collab contenteditable.
  * Inserts wrap in green marks; deletes become red strikethrough instead of vanishing.
+ * Block-level indent/outdent is tracked as accept/rejectable suggestions.
  */
+
+const BLOCK_SELECTOR = "p, h2, h3, blockquote, li, div";
+const INDENT_STEP_PX = 40;
 
 function uid() {
     return `sg-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
@@ -18,7 +22,9 @@ function escapeHtml(str) {
 export function isSuggestMark(node) {
     return (
         node?.nodeType === 1 &&
-        (node.classList?.contains("collab-suggest-add") || node.classList?.contains("collab-suggest-del"))
+        (node.classList?.contains("collab-suggest-add") ||
+            node.classList?.contains("collab-suggest-del") ||
+            node.classList?.contains("collab-suggest-block"))
     );
 }
 
@@ -58,6 +64,36 @@ function insertNodeAtSelection(node) {
     return range;
 }
 
+function clearBlockSuggestMeta(el) {
+    el.classList.remove("collab-suggest-block", "is-focused");
+    el.removeAttribute("data-suggest-id");
+    el.removeAttribute("data-suggest");
+    el.removeAttribute("data-by");
+    el.removeAttribute("data-by-label");
+    el.removeAttribute("data-before-style");
+    el.removeAttribute("data-indent-level");
+}
+
+function getBlockElement(node, root) {
+    if (!node || !root) return null;
+    const el = node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+    const block = el?.closest?.(BLOCK_SELECTOR);
+    if (!block || !root.contains(block)) return null;
+    if (block === root) return null;
+    return block;
+}
+
+function readMarginLeftPx(el) {
+    const inline = el.style?.marginLeft || "";
+    if (inline) {
+        const n = parseFloat(inline);
+        if (!Number.isNaN(n)) return n;
+    }
+    const attr = el.getAttribute("style") || "";
+    const m = attr.match(/margin-left\s*:\s*([\d.]+)px/i);
+    return m ? parseFloat(m[1]) : 0;
+}
+
 /**
  * Accept one suggestion id inside a root element (mutates DOM).
  * @param {HTMLElement} root
@@ -67,6 +103,10 @@ export function acceptSuggestionInDom(root, suggestId) {
     if (!root || !suggestId) return;
     root.querySelectorAll("[data-suggest-id]").forEach((el) => {
         if (el.getAttribute("data-suggest-id") !== suggestId) return;
+        if (el.classList.contains("collab-suggest-block")) {
+            clearBlockSuggestMeta(el);
+            return;
+        }
         if (el.classList.contains("collab-suggest-add")) unwrap(el);
         else if (el.classList.contains("collab-suggest-del")) el.remove();
     });
@@ -81,6 +121,15 @@ export function rejectSuggestionInDom(root, suggestId) {
     if (!root || !suggestId) return;
     root.querySelectorAll("[data-suggest-id]").forEach((el) => {
         if (el.getAttribute("data-suggest-id") !== suggestId) return;
+        if (el.classList.contains("collab-suggest-block")) {
+            const before = el.getAttribute("data-before-style");
+            if (before != null) {
+                if (before) el.setAttribute("style", before);
+                else el.removeAttribute("style");
+            }
+            clearBlockSuggestMeta(el);
+            return;
+        }
         if (el.classList.contains("collab-suggest-del")) unwrap(el);
         else if (el.classList.contains("collab-suggest-add")) el.remove();
     });
@@ -129,7 +178,7 @@ export function acceptedHtmlFromSuggesting(html) {
  */
 export function extractSuggestionsFromDom(root) {
     if (!root) return [];
-    /** @type {Map<string, { id: string, by: string, byLabel: string, adds: string[], dels: string[] }>} */
+    /** @type {Map<string, { id: string, by: string, byLabel: string, adds: string[], dels: string[], blockKind: string }>} */
     const map = new Map();
     root.querySelectorAll("[data-suggest-id]").forEach((el) => {
         const id = el.getAttribute("data-suggest-id") || "";
@@ -143,11 +192,36 @@ export function extractSuggestionsFromDom(root) {
                 byLabel: label.startsWith("@") ? label : `@${label}`,
                 adds: [],
                 dels: [],
+                blockKind: "",
             });
         }
         const entry = map.get(id);
-        const text = (el.textContent || "").replace(/\s+/g, " ").trim();
-        if (!text) return;
+
+        if (el.classList.contains("collab-suggest-block")) {
+            const kind = el.getAttribute("data-suggest") || "indent";
+            entry.blockKind = kind;
+            const snippet = (el.textContent || "").replace(/\s+/g, " ").trim().slice(0, 80);
+            if (kind === "indent") {
+                entry.adds.push(snippet ? `Indent · “${snippet}${snippet.length >= 80 ? "…" : ""}”` : "Indent paragraph");
+            } else if (kind === "outdent") {
+                entry.adds.push(snippet ? `Outdent · “${snippet}${snippet.length >= 80 ? "…" : ""}”` : "Outdent paragraph");
+            } else {
+                entry.adds.push(snippet || "Format change");
+            }
+            return;
+        }
+
+        const raw = el.textContent || "";
+        const text = raw.replace(/\s+/g, " ").trim();
+        if (!text) {
+            // Spaces / tabs used as indent still need Accept / Reject
+            if (el.classList.contains("collab-suggest-add") && raw.length) {
+                entry.adds.push("Paragraph indent (spaces)");
+            } else if (el.classList.contains("collab-suggest-del") && raw.length) {
+                entry.dels.push("Removed spacing");
+            }
+            return;
+        }
         if (el.classList.contains("collab-suggest-add")) entry.adds.push(text);
         if (el.classList.contains("collab-suggest-del")) entry.dels.push(text);
     });
@@ -156,8 +230,11 @@ export function extractSuggestionsFromDom(root) {
         const oldText = e.dels.join(" ");
         const newText = e.adds.join(" ");
         let type = "replace";
-        if (!oldText && newText) type = "insert";
-        if (oldText && !newText) type = "delete";
+        if (e.blockKind === "indent") type = "indent";
+        else if (e.blockKind === "outdent") type = "outdent";
+        else if (e.blockKind) type = "format";
+        else if (!oldText && newText) type = "insert";
+        else if (oldText && !newText) type = "delete";
         return {
             id: e.id,
             by: e.by,
@@ -187,6 +264,7 @@ export function mountSuggestingMode(opts) {
 
     let activeInsertId = "";
     let composing = false;
+    let notifyTimer = 0;
 
     function makeAddSpan(text, suggestId) {
         const span = document.createElement("span");
@@ -211,16 +289,79 @@ export function mountSuggestingMode(opts) {
     }
 
     function notify() {
-        onChange?.();
+        window.clearTimeout(notifyTimer);
+        notifyTimer = window.setTimeout(() => onChange?.(), 0);
+    }
+
+    function markBlockSuggestion(block, kind) {
+        if (!block) return;
+        const existingId = block.getAttribute("data-suggest-id");
+        const existingBy = block.getAttribute("data-by");
+        const suggestId =
+            existingId && existingBy === userId && block.classList.contains("collab-suggest-block")
+                ? existingId
+                : uid();
+
+        if (!block.hasAttribute("data-before-style")) {
+            block.setAttribute("data-before-style", block.getAttribute("style") || "");
+        }
+        block.classList.add("collab-suggest-block");
+        block.setAttribute("data-suggest-id", suggestId);
+        block.setAttribute("data-suggest", kind);
+        block.setAttribute("data-by", userId);
+        block.setAttribute("data-by-label", userLabel);
+        const level = Math.round(readMarginLeftPx(block) / INDENT_STEP_PX);
+        block.setAttribute("data-indent-level", String(level));
+        activeInsertId = "";
+    }
+
+    function indentSelection(direction) {
+        const sel = window.getSelection();
+        if (!sel?.rangeCount) return;
+        const block = getBlockElement(sel.anchorNode, editor);
+        if (!block) return;
+
+        const beforeStyle = block.hasAttribute("data-before-style")
+            ? block.getAttribute("data-before-style")
+            : block.getAttribute("style") || "";
+        const cur = readMarginLeftPx(block);
+        const next = Math.max(0, cur + direction * INDENT_STEP_PX);
+
+        if (!block.hasAttribute("data-before-style")) {
+            block.setAttribute("data-before-style", beforeStyle);
+        }
+
+        if (next > 0) block.style.marginLeft = `${next}px`;
+        else block.style.marginLeft = "";
+
+        // If we returned to the pre-suggestion indent, drop the mark entirely
+        const baseline = (() => {
+            const raw = block.getAttribute("data-before-style") || "";
+            const tmp = document.createElement("div");
+            tmp.setAttribute("style", raw);
+            return readMarginLeftPx(tmp);
+        })();
+
+        if (next === baseline && block.getAttribute("data-by") === userId) {
+            if (beforeStyle) block.setAttribute("style", beforeStyle);
+            else block.removeAttribute("style");
+            clearBlockSuggestMeta(block);
+            notify();
+            return;
+        }
+
+        const kind = next > baseline ? "indent" : "outdent";
+        markBlockSuggestion(block, kind);
+        notify();
     }
 
     function insertText(text) {
         const sel = window.getSelection();
         if (!sel?.rangeCount) return;
+        if (!text) return;
 
         const mark = closestSuggestMark(sel.anchorNode);
         if (mark?.classList.contains("collab-suggest-add") && mark.getAttribute("data-by") === userId) {
-            // Continue typing inside own green mark
             const range = sel.getRangeAt(0);
             if (mark.contains(range.startContainer)) {
                 range.deleteContents();
@@ -233,20 +374,12 @@ export function mountSuggestingMode(opts) {
             }
         }
 
-        // Typing over a selection: mark deleted content, then insert green
         const range = sel.getRangeAt(0);
         const suggestId = activeInsertId || uid();
         activeInsertId = suggestId;
 
         if (!range.collapsed) {
             const contents = range.extractContents();
-            // If selection was only our own add mark text, just delete it
-            const tmp = document.createElement("div");
-            tmp.appendChild(contents.cloneNode(true));
-            const onlyOwnAdd =
-                tmp.childNodes.length &&
-                [...tmp.querySelectorAll(".collab-suggest-add, .collab-suggest-del, #x")].length >= 0;
-            void onlyOwnAdd;
             const del = makeDelSpan(contents, suggestId);
             range.insertNode(del);
             range.setStartAfter(del);
@@ -268,7 +401,6 @@ export function mountSuggestingMode(opts) {
         let range = sel.getRangeAt(0);
 
         if (range.collapsed) {
-            // Extend one grapheme-ish unit
             range = range.cloneRange();
             const node = sel.anchorNode;
             const offset = sel.anchorOffset;
@@ -280,7 +412,6 @@ export function mountSuggestingMode(opts) {
                 } else if (direction === "forward" && offset < node.length) {
                     range.setEnd(node, offset + 1);
                 } else {
-                    // Cross element boundary — use Selection.modify
                     sel.modify("extend", direction, "character");
                     if (sel.isCollapsed) return;
                     range = sel.getRangeAt(0);
@@ -292,7 +423,6 @@ export function mountSuggestingMode(opts) {
             }
         }
 
-        // Deleting inside own green insert → hard delete (withdraw suggestion text)
         const startMark = closestSuggestMark(range.startContainer);
         const endMark = closestSuggestMark(range.endContainer);
         if (
@@ -306,15 +436,6 @@ export function mountSuggestingMode(opts) {
             activeInsertId = startMark.getAttribute("data-suggest-id") || "";
             notify();
             return;
-        }
-
-        // Deleting a red mark → remove the deletion mark (restore) if own? Google: deleting del mark accepts? Simpler: unwrap del = restore text then re-delete as new op
-        if (
-            startMark &&
-            startMark === endMark &&
-            startMark.classList.contains("collab-suggest-del")
-        ) {
-            // Extending delete through a del — leave it; collapsed caret movement handles most cases
         }
 
         const suggestId = uid();
@@ -334,12 +455,39 @@ export function mountSuggestingMode(opts) {
         notify();
     }
 
+    function wrapComposedText(data) {
+        if (!data) return;
+        const sel = window.getSelection();
+        if (!sel?.rangeCount || !sel.isCollapsed) return;
+
+        const mark = closestSuggestMark(sel.anchorNode);
+        if (mark?.classList.contains("collab-suggest-add") && mark.getAttribute("data-by") === userId) {
+            activeInsertId = mark.getAttribute("data-suggest-id") || "";
+            return;
+        }
+
+        const node = sel.anchorNode;
+        const offset = sel.anchorOffset;
+        if (node?.nodeType !== Node.TEXT_NODE || offset < data.length) return;
+        if (node.textContent.slice(offset - data.length, offset) !== data) return;
+
+        const range = document.createRange();
+        range.setStart(node, offset - data.length);
+        range.setEnd(node, offset);
+        const suggestId = activeInsertId || uid();
+        activeInsertId = suggestId;
+        const contents = range.extractContents();
+        const add = makeAddSpan(contents.textContent || data, suggestId);
+        range.insertNode(add);
+        if (add.firstChild) placeCaret(add.firstChild, add.textContent.length);
+    }
+
     function onBeforeInput(e) {
         if (!enabled()) return;
         if (composing) return;
         const type = e.inputType || "";
 
-        if (type === "insertText" || type === "insertReplacementText") {
+        if (type === "insertText" || type === "insertReplacementText" || type === "insertTranspose") {
             e.preventDefault();
             insertText(e.data || "");
             return;
@@ -354,29 +502,74 @@ export function mountSuggestingMode(opts) {
         }
         if (type === "insertFromPaste" || type === "insertFromDrop") {
             e.preventDefault();
-            const text = e.dataTransfer?.getData("text/plain") || e.data || "";
+            const text =
+                e.dataTransfer?.getData("text/plain") ||
+                e.clipboardData?.getData("text/plain") ||
+                e.data ||
+                "";
             if (text) insertText(text);
+            else notify();
             return;
         }
-        if (type === "deleteContentBackward" || type === "deleteByCut" || type === "deleteContent") {
+        if (
+            type === "deleteContentBackward" ||
+            type === "deleteByCut" ||
+            type === "deleteContent" ||
+            type === "deleteWordBackward" ||
+            type === "deleteSoftLineBackward"
+        ) {
             e.preventDefault();
             deleteSelection("backward");
             return;
         }
-        if (type === "deleteContentForward") {
+        if (
+            type === "deleteContentForward" ||
+            type === "deleteWordForward" ||
+            type === "deleteSoftLineForward"
+        ) {
             e.preventDefault();
             deleteSelection("forward");
             return;
         }
-        // Other input types (formatBold etc.) — allow default, then wrap? Formatting on suggestions is OK via execCommand
+        if (type === "formatIndent") {
+            e.preventDefault();
+            indentSelection(1);
+            return;
+        }
+        if (type === "formatOutdent") {
+            e.preventDefault();
+            indentSelection(-1);
+            return;
+        }
+
+        // Formatting (bold/italic/lists) — let the browser apply, then sync
         activeInsertId = "";
+        queueMicrotask(() => {
+            if (enabled()) notify();
+        });
+    }
+
+    function onInput() {
+        if (!enabled() || composing) return;
+        // Safety net: any DOM mutation the browser applied without our beforeinput path
+        notify();
     }
 
     function onKeyDown(e) {
         if (!enabled()) return;
         if (e.key === "Enter") activeInsertId = "";
-        // Escape clears active insert chain
         if (e.key === "Escape") activeInsertId = "";
+        if (e.key === "Tab") {
+            e.preventDefault();
+            indentSelection(e.shiftKey ? -1 : 1);
+        }
+    }
+
+    function onPaste(e) {
+        if (!enabled()) return;
+        e.preventDefault();
+        const text = e.clipboardData?.getData("text/plain") || "";
+        if (text) insertText(text);
     }
 
     function onCompositionStart() {
@@ -385,20 +578,23 @@ export function mountSuggestingMode(opts) {
     function onCompositionEnd(e) {
         composing = false;
         if (!enabled()) return;
-        if (e.data) {
-            // Composition already inserted by browser — wrap last inserted text is hard; re-run lightly
-            notify();
-        }
+        wrapComposedText(e.data || "");
+        notify();
     }
 
     editor.addEventListener("beforeinput", onBeforeInput);
+    editor.addEventListener("input", onInput);
     editor.addEventListener("keydown", onKeyDown);
+    editor.addEventListener("paste", onPaste);
     editor.addEventListener("compositionstart", onCompositionStart);
     editor.addEventListener("compositionend", onCompositionEnd);
 
     return () => {
+        window.clearTimeout(notifyTimer);
         editor.removeEventListener("beforeinput", onBeforeInput);
+        editor.removeEventListener("input", onInput);
         editor.removeEventListener("keydown", onKeyDown);
+        editor.removeEventListener("paste", onPaste);
         editor.removeEventListener("compositionstart", onCompositionStart);
         editor.removeEventListener("compositionend", onCompositionEnd);
     };
@@ -416,3 +612,5 @@ export function countSuggestionMarks(root) {
     if (!root) return 0;
     return new Set([...root.querySelectorAll("[data-suggest-id]")].map((el) => el.getAttribute("data-suggest-id"))).size;
 }
+
+void escapeHtml;

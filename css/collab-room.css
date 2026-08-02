@@ -393,6 +393,20 @@ body.collab-author-mode .collab-suggest-del {
     background: rgba(167, 139, 250, 0.12);
 }
 
+.collab-suggest-block {
+    box-shadow: inset 3px 0 0 var(--collab-green);
+    background: linear-gradient(90deg, var(--collab-green-soft), transparent 48px);
+}
+
+.collab-suggest-block.is-focused {
+    outline: 2px solid var(--collab-green);
+    outline-offset: 2px;
+}
+
+body.collab-author-mode .collab-suggest-block {
+    cursor: pointer;
+}
+
 .collab-review-panel {
     background: var(--panel, #111827);
     border-left: 1px solid var(--border, rgba(255, 255, 255, 0.08));

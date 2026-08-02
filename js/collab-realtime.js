@@ -46,6 +46,8 @@ export function createCollabRealtimeSession(opts) {
     let localEditUntil = 0;
     let applyingRemote = false;
     let lastRemoteTs = 0;
+    let pendingRemote = null;
+    let pendingFlushTimer = 0;
     const color = PRESENCE_COLORS[Math.abs(hashCode(userId)) % PRESENCE_COLORS.length];
 
     function hashCode(str) {
@@ -55,11 +57,56 @@ export function createCollabRealtimeSession(opts) {
     }
 
     function markLocalEdit() {
-        localEditUntil = Date.now() + 1600;
+        // Authors only review — never gate remote applies on their own review commits
+        if (isAuthor) return;
+        localEditUntil = Date.now() + 900;
     }
 
     function canApplyRemote() {
-        return !applyingRemote && Date.now() >= localEditUntil;
+        if (applyingRemote) return false;
+        // Author must always see collaborator keystrokes
+        if (isAuthor) return true;
+        return Date.now() >= localEditUntil;
+    }
+
+    function flushPendingRemote() {
+        window.clearTimeout(pendingFlushTimer);
+        if (!pendingRemote || !canApplyRemote()) {
+            if (pendingRemote && !isAuthor) {
+                const wait = Math.max(40, localEditUntil - Date.now() + 40);
+                pendingFlushTimer = window.setTimeout(flushPendingRemote, wait);
+            }
+            return;
+        }
+        const next = pendingRemote;
+        pendingRemote = null;
+        if (next.source === "persisted") {
+            onRemotePersisted?.(next.html, next.userId);
+        } else {
+            onRemoteDoc?.(next.html, next.userId, next.userLabel || "");
+        }
+    }
+
+    function queueOrApplyRemote(html, fromUserId, fromLabel, source, ts) {
+        if (!html) return;
+        if (ts && ts <= lastRemoteTs) return;
+        if (ts) lastRemoteTs = ts;
+        else lastRemoteTs = Date.now();
+
+        if (!canApplyRemote()) {
+            pendingRemote = {
+                html,
+                userId: fromUserId,
+                userLabel: fromLabel || "",
+                source,
+                ts: lastRemoteTs,
+            };
+            flushPendingRemote();
+            return;
+        }
+        pendingRemote = null;
+        if (source === "persisted") onRemotePersisted?.(html, fromUserId);
+        else onRemoteDoc?.(html, fromUserId, fromLabel || "");
     }
 
     function broadcastDoc(html) {
@@ -73,7 +120,7 @@ export function createCollabRealtimeSession(opts) {
     function scheduleBroadcast(html) {
         markLocalEdit();
         window.clearTimeout(broadcastTimer);
-        broadcastTimer = window.setTimeout(() => broadcastDoc(html), 120);
+        broadcastTimer = window.setTimeout(() => broadcastDoc(html), 80);
     }
 
     async function persistAndSync(html, baseContentHash, suggestions) {
@@ -93,10 +140,10 @@ export function createCollabRealtimeSession(opts) {
         window.clearTimeout(syncTimer);
         persistTimer = window.setTimeout(() => {
             upsertCollabLiveDraft(bookId, chapterId, html, baseContentHash).catch(() => {});
-        }, 600);
+        }, 450);
         syncTimer = window.setTimeout(() => {
             persistAndSync(html, baseContentHash, suggestions);
-        }, 900);
+        }, 750);
     }
 
     function flattenPresence(state) {
@@ -126,10 +173,13 @@ export function createCollabRealtimeSession(opts) {
         channel
             .on("broadcast", { event: "doc" }, ({ payload }) => {
                 if (!payload || payload.userId === userId) return;
-                if (payload.ts <= lastRemoteTs) return;
-                lastRemoteTs = payload.ts;
-                if (!canApplyRemote()) return;
-                onRemoteDoc?.(payload.html, payload.userId, payload.userLabel || "");
+                queueOrApplyRemote(
+                    payload.html || "",
+                    payload.userId,
+                    payload.userLabel || "",
+                    "broadcast",
+                    payload.ts || Date.now()
+                );
             })
             .on(
                 "postgres_changes",
@@ -143,9 +193,10 @@ export function createCollabRealtimeSession(opts) {
                     const row = payload.new || payload.old;
                     if (!row || row.chapter_id !== chapterId) return;
                     if (row.updated_by === userId) return;
-                    if (!canApplyRemote()) return;
-                    lastRemoteTs = Date.now();
-                    onRemotePersisted?.(row.html || "", row.updated_by || "");
+                    // Prefer live broadcast; only use persisted draft if newer than last broadcast
+                    const rowTs = row.updated_at ? Date.parse(row.updated_at) : Date.now();
+                    if (rowTs && rowTs <= lastRemoteTs) return;
+                    queueOrApplyRemote(row.html || "", row.updated_by || "", "", "persisted", rowTs || Date.now());
                 }
             )
             .on(
@@ -202,6 +253,8 @@ export function createCollabRealtimeSession(opts) {
         window.clearTimeout(broadcastTimer);
         window.clearTimeout(persistTimer);
         window.clearTimeout(syncTimer);
+        window.clearTimeout(pendingFlushTimer);
+        pendingRemote = null;
         if (channel) {
             supabase.removeChannel(channel);
             channel = null;

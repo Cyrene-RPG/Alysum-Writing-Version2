@@ -23,8 +23,8 @@ import {
     escapeHtml,
     commentRowToComment,
 } from "./collab-room-render.js?v=7";
-import { mountCollabToolbar } from "./collab-toolbar.js?v=1";
-import { createCollabRealtimeSession } from "./collab-realtime.js?v=4";
+import { mountCollabToolbar } from "./collab-toolbar.js?v=2";
+import { createCollabRealtimeSession } from "./collab-realtime.js?v=5";
 import {
     mountSuggestingMode,
     extractSuggestionsFromDom,
@@ -34,7 +34,7 @@ import {
     rejectAllSuggestionsInDom,
     canonHtmlFromSuggesting,
     highlightSuggestionMarks,
-} from "./collab-suggesting.js?v=1";
+} from "./collab-suggesting.js?v=2";
 
 /**
  * @param {{ isPreview?: boolean, params?: URLSearchParams }} opts
@@ -114,7 +114,13 @@ export async function bootCollabRoomPage(opts = {}) {
         applyTheme(document.body.classList.contains("dark") ? "light" : "dark");
     });
 
-    mountCollabToolbar({ editor: manuscript, toolbar: collabToolbar });
+    mountCollabToolbar({
+        editor: manuscript,
+        toolbar: collabToolbar,
+        onCommand: () => {
+            if (!isAuthor) persistLive();
+        },
+    });
 
     function setSidebarTab(tab) {
         document.querySelectorAll(".collab-sidebar-tab").forEach((btn) => {
@@ -185,6 +191,19 @@ export async function bootCollabRoomPage(opts = {}) {
         }
     }
 
+    function bindAuthorMarkClicks() {
+        if (!isAuthor || !manuscript) return;
+        manuscript.querySelectorAll("[data-suggest-id]").forEach((el) => {
+            el.addEventListener("click", (e) => {
+                e.preventDefault();
+                const id = el.getAttribute("data-suggest-id");
+                highlightSuggestionMarks(manuscript, id);
+                highlightHunkCard(id);
+                setSidebarTab("edits");
+            });
+        });
+    }
+
     function applyRemoteHtml(html, fromUserId = "", fromLabel = "") {
         if (!manuscript || !html) return;
         if (realtimeSession) realtimeSession.applyingRemote = true;
@@ -195,6 +214,7 @@ export async function bootCollabRoomPage(opts = {}) {
         syncHunksFromDom();
         renderHunkList();
         updateStats();
+        if (isAuthor) bindAuthorMarkClicks();
         if (hadFocus && !isAuthor) manuscript.focus();
         if (realtimeSession) realtimeSession.applyingRemote = false;
         void fromUserId;
@@ -211,16 +231,7 @@ export async function bootCollabRoomPage(opts = {}) {
             document.body.classList.add("collab-author-mode");
             manuscript.innerHTML = liveHtml || baseChapterHtml || "<p><br></p>";
             syncHunksFromDom();
-            // Author clicks a mark → highlight sidebar
-            manuscript.querySelectorAll("[data-suggest-id]").forEach((el) => {
-                el.addEventListener("click", (e) => {
-                    e.preventDefault();
-                    const id = el.getAttribute("data-suggest-id");
-                    highlightSuggestionMarks(manuscript, id);
-                    highlightHunkCard(id);
-                    setSidebarTab("edits");
-                });
-            });
+            bindAuthorMarkClicks();
             return;
         }
 
@@ -311,13 +322,26 @@ export async function bootCollabRoomPage(opts = {}) {
 
         hunkList.innerHTML = visible
             .map((h) => {
-                const typeLabel = h.type === "insert" ? "Addition" : h.type === "delete" ? "Deletion" : "Change";
+                const typeLabel =
+                    h.type === "insert"
+                        ? "Addition"
+                        : h.type === "delete"
+                          ? "Deletion"
+                          : h.type === "indent"
+                            ? "Indent"
+                            : h.type === "outdent"
+                              ? "Outdent"
+                              : h.type === "format"
+                                ? "Format"
+                                : "Change";
                 const body =
                     h.type === "insert"
                         ? `<span class="new"><span class="collab-suggest-add">${escapeHtml(h.newText)}</span></span>`
                         : h.type === "delete"
                           ? `<span class="old"><span class="collab-suggest-del">${escapeHtml(h.oldText)}</span></span>`
-                          : `<span class="old"><span class="collab-suggest-del">${escapeHtml(h.oldText)}</span></span><span class="new"><span class="collab-suggest-add">${escapeHtml(h.newText)}</span></span>`;
+                          : h.type === "indent" || h.type === "outdent" || h.type === "format"
+                            ? `<span class="new"><span class="collab-suggest-add">${escapeHtml(h.newText || typeLabel)}</span></span>`
+                            : `<span class="old"><span class="collab-suggest-del">${escapeHtml(h.oldText)}</span></span><span class="new"><span class="collab-suggest-add">${escapeHtml(h.newText)}</span></span>`;
                 const mine = isMySuggestion(h);
                 const actions = isAuthor
                     ? `<div class="collab-hunk-actions">

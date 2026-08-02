@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
     <link rel="stylesheet" href="css/gradient-themes.css?v=7" />
     <link rel="stylesheet" href="css/workspace-nav.css?v=11" />
-    <link rel="stylesheet" href="css/collab-room.css?v=12" />
+    <link rel="stylesheet" href="css/collab-room.css?v=13" />
     <script src="js/gradient-theme-sync.js" defer></script>
     <title>Collab room preview — Alysum</title>
     <style>
@@ -145,6 +145,8 @@
             <button class="tool-btn" type="button" data-cmd="underline" title="Underline"><u>U</u></button>
             <button class="tool-btn" type="button" data-cmd="insertUnorderedList" title="Bulleted list">• List</button>
             <button class="tool-btn" type="button" data-cmd="insertOrderedList" title="Numbered list">1. List</button>
+            <button class="tool-btn" type="button" data-cmd="indent" title="Indent paragraph (Tab)">⟹</button>
+            <button class="tool-btn" type="button" data-cmd="outdent" title="Outdent paragraph (Shift+Tab)">⟸</button>
             <button class="tool-btn" type="button" id="quoteBtn" title="Block quote">❝</button>
             <select class="tool-select" id="formatSelect" aria-label="Paragraph style">
                 <option value="p">Body</option>
@@ -232,7 +234,7 @@
     <button type="button" class="collab-selection-btn hidden" id="selectionCommentBtn" aria-label="Add comment">Comment</button>
 
     <script type="module">
-        import { bootCollabRoomPage } from "./js/collab-room-page.js?v=13";
+        import { bootCollabRoomPage } from "./js/collab-room-page.js?v=14";
         await bootCollabRoomPage({ isPreview: true });
     </script>
 </body>
