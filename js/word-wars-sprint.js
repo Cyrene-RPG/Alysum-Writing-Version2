@@ -108,6 +108,8 @@ let shareDraftOverride = null;
 let typingIdleTimer = null;
 /** @type {(() => void) | null} */
 let draftPingResolver = null;
+/** @type {Map<string, string>} */
+const opponentDraftHtmlCache = new Map();
 
 function escapeHtml(str) {
     return String(str)
@@ -431,6 +433,113 @@ function renderEmptyOpponentPane() {
     `;
 }
 
+function opponentShowsDraft(opponent) {
+    return Boolean(opponent.shareDraft && opponent.liveChapterHtml);
+}
+
+function updateOpponentPaneHead(pane, opponent, label) {
+    const labelEl = pane.querySelector(".ww-duel-label");
+    const titleEl = pane.querySelector(".ww-duel-title");
+    const subEl = pane.querySelector(".ww-duel-sub");
+    const scoreEl = pane.querySelector(".ww-duel-score");
+    if (labelEl) labelEl.textContent = label;
+    if (titleEl) titleEl.textContent = opponent.displayName || "Writer";
+    if (subEl) subEl.textContent = opponent.bookTitle || "Untitled";
+    if (scoreEl) {
+        scoreEl.textContent = `${formatSprintWords(opponent.sprintWords || 0)} this sprint`;
+    }
+}
+
+function mountOpponentHiddenBody(pane, opponent) {
+    const hiddenText = opponent.shareDraft
+        ? "Sharing is on, but nothing is in this chapter yet."
+        : "Draft hidden — they can turn on Share draft live.";
+    const frameWrap = pane.querySelector(".ww-duel-frame-wrap");
+    if (!frameWrap) return;
+    frameWrap.innerHTML = `
+        <div class="ww-opponent-empty">
+            <div>
+                <strong>${escapeHtml(opponent.displayName || "Writer")}</strong>
+                ${escapeHtml(hiddenText)}
+            </div>
+        </div>
+    `;
+    opponentDraftHtmlCache.delete(opponent.userId);
+}
+
+function mountOpponentDraftBody(pane, opponent) {
+    const frameWrap = pane.querySelector(".ww-duel-frame-wrap");
+    if (!frameWrap) return;
+
+    const scrollEl = frameWrap.querySelector(".ww-opponent-scroll");
+    const scrollTop = scrollEl?.scrollTop ?? 0;
+    const nextHtml = opponent.liveChapterHtml || "";
+    const nextTitle = opponent.liveChapterTitle || "Untitled chapter";
+
+    if (!scrollEl) {
+        frameWrap.innerHTML = `
+            <div class="ww-opponent-scroll">
+                <article class="ww-opponent-page">
+                    <h3 class="ww-opponent-chapter-title">${escapeHtml(nextTitle)}</h3>
+                    <div class="ww-opponent-editor" data-opponent-id="${escapeHtml(opponent.userId)}"></div>
+                </article>
+            </div>
+        `;
+        const editorEl = frameWrap.querySelector(".ww-opponent-editor");
+        if (editorEl) editorEl.innerHTML = nextHtml;
+        const nextScrollEl = frameWrap.querySelector(".ww-opponent-scroll");
+        if (nextScrollEl) nextScrollEl.scrollTop = scrollTop;
+        opponentDraftHtmlCache.set(opponent.userId, nextHtml);
+        return;
+    }
+
+    const titleEl = scrollEl.querySelector(".ww-opponent-chapter-title");
+    const editorEl = scrollEl.querySelector(
+        `[data-opponent-id="${CSS.escape(opponent.userId)}"]`
+    );
+    if (titleEl) titleEl.textContent = nextTitle;
+    if (editorEl && opponentDraftHtmlCache.get(opponent.userId) !== nextHtml) {
+        editorEl.innerHTML = nextHtml;
+        opponentDraftHtmlCache.set(opponent.userId, nextHtml);
+    }
+    scrollEl.scrollTop = scrollTop;
+}
+
+function syncOpponentPaneBody(pane, opponent) {
+    const showingDraft = opponentShowsDraft(opponent);
+    const hasDraftView = Boolean(pane.querySelector(".ww-opponent-scroll"));
+
+    if (showingDraft !== hasDraftView) {
+        if (showingDraft) mountOpponentDraftBody(pane, opponent);
+        else mountOpponentHiddenBody(pane, opponent);
+        return;
+    }
+
+    if (showingDraft) mountOpponentDraftBody(pane, opponent);
+}
+
+function ensureOpponentPane(opponent, index, opponentCount) {
+    let pane = duelGridEl.querySelector(
+        `[data-opponent-pane="${CSS.escape(opponent.userId)}"]`
+    );
+    if (pane) return pane;
+
+    duelGridEl.insertAdjacentHTML("beforeend", renderOpponentPane(opponent, index, opponentCount));
+    pane = duelGridEl.querySelector(`[data-opponent-pane="${CSS.escape(opponent.userId)}"]`);
+    if (!pane) return null;
+
+    if (opponentShowsDraft(opponent)) {
+        const editorEl = pane.querySelector(
+            `[data-opponent-id="${CSS.escape(opponent.userId)}"]`
+        );
+        if (editorEl) {
+            editorEl.innerHTML = opponent.liveChapterHtml || "";
+            opponentDraftHtmlCache.set(opponent.userId, opponent.liveChapterHtml || "");
+        }
+    }
+    return pane;
+}
+
 function renderOpponentMirror() {
     const me = meInLobby();
     const opponents = othersInLobby();
@@ -438,28 +547,39 @@ function renderOpponentMirror() {
     if (myBookTitleEl) myBookTitleEl.textContent = me?.bookTitle || "Untitled";
     if (myWordsEl) myWordsEl.textContent = formatSprintWords(me?.sprintWords ?? latestDraft.sprintWords ?? 0);
 
-    if (duelGridEl) {
-        duelGridEl.className = `ww-duel-grid is-count-${duelGridCount()}`;
-    }
-
-    duelGridEl?.querySelectorAll(".ww-duel-pane.is-opponent").forEach((pane) => pane.remove());
-
     if (!duelGridEl) return;
 
-    if (!opponents.length) {
-        duelGridEl.insertAdjacentHTML("beforeend", renderEmptyOpponentPane());
-        return;
+    const gridScrollTop = duelGridEl.scrollTop;
+    duelGridEl.className = `ww-duel-grid is-count-${duelGridCount()}`;
+
+    if (opponents.length) {
+        duelGridEl.querySelector(".ww-duel-pane.is-opponent.is-empty")?.remove();
     }
 
+    const seenIds = new Set();
+
     opponents.forEach((opponent, index) => {
-        duelGridEl.insertAdjacentHTML("beforeend", renderOpponentPane(opponent, index, opponents.length));
-        if (!opponent.shareDraft || !opponent.liveChapterHtml) return;
-        const editorEl = duelGridEl.querySelector(
-            `[data-opponent-id="${CSS.escape(opponent.userId)}"]`
-        );
-        if (!editorEl) return;
-        editorEl.innerHTML = opponent.liveChapterHtml || "";
+        seenIds.add(opponent.userId);
+        const label = opponents.length === 1 ? "Opponent" : `Writer ${index + 2}`;
+        const pane = ensureOpponentPane(opponent, index, opponents.length);
+        if (!pane) return;
+        updateOpponentPaneHead(pane, opponent, label);
+        syncOpponentPaneBody(pane, opponent);
     });
+
+    duelGridEl.querySelectorAll(".ww-duel-pane.is-opponent:not(.is-empty)").forEach((pane) => {
+        const id = pane.getAttribute("data-opponent-pane");
+        if (id && !seenIds.has(id)) {
+            opponentDraftHtmlCache.delete(id);
+            pane.remove();
+        }
+    });
+
+    if (!opponents.length && !duelGridEl.querySelector(".ww-duel-pane.is-opponent")) {
+        duelGridEl.insertAdjacentHTML("beforeend", renderEmptyOpponentPane());
+    }
+
+    duelGridEl.scrollTop = gridScrollTop;
 }
 
 function renderRecap() {
