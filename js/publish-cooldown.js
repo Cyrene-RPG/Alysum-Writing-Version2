@@ -1,5 +1,6 @@
 /**
  * Publish cooldown checks — 7-day account age, 30-day gap between new library listings.
+ * Staff can approve requests or grant a bypass for either cooldown.
  * Requires supabase-publish-cooldown.sql applied in Supabase.
  */
 
@@ -77,7 +78,10 @@ export function formatPublishBlockMessage(eligibility) {
                   timeStyle: "short",
               })
             : "";
-        return `New accounts must wait 7 days before publishing. You can publish${when ? ` on ${when}` : ` in about ${days} day${days === 1 ? "" : "s"}`}.`;
+        if (eligibility.pendingRequest) {
+            return `New accounts must wait 7 days before publishing. Your approval request is pending.${when ? ` Otherwise you can publish on ${when}.` : ""}`;
+        }
+        return `New accounts must wait 7 days before publishing. You can publish${when ? ` on ${when}` : ` in about ${days} day${days === 1 ? "" : "s"}`}. Submit an approval request below if you need staff to allow an earlier publish.`;
     }
 
     if (eligibility.bookIntervalCooldown.active) {
@@ -106,10 +110,9 @@ export function formatPublishBlockMessage(eligibility) {
  */
 export function canSubmitPublishApproval(eligibility) {
     if (!eligibility || eligibility.allowed) return false;
-    if (eligibility.accountCooldown.active) return false;
-    if (!eligibility.bookIntervalCooldown.active) return false;
     if (eligibility.approvedBypass || eligibility.pendingRequest) return false;
-    return eligibility.isNewListing;
+    if (!eligibility.isNewListing) return false;
+    return eligibility.accountCooldown.active || eligibility.bookIntervalCooldown.active;
 }
 
 /**
@@ -136,4 +139,21 @@ export async function moderationReviewPublishApproval(requestId, approve, staffN
         p_staff_note: staffNote,
     });
     if (error) throw error;
+}
+
+/**
+ * Staff-only: grant an immediate cooldown bypass for a user + book (7-day and/or 30-day).
+ * @param {string} userId
+ * @param {string} bookId
+ * @param {string} staffNote
+ * @returns {Promise<string>} request id
+ */
+export async function moderationGrantPublishBypass(userId, bookId, staffNote = "") {
+    const { data, error } = await supabase.rpc("moderation_grant_publish_bypass", {
+        p_user_id: userId,
+        p_book_id: bookId,
+        p_staff_note: staffNote,
+    });
+    if (error) throw error;
+    return String(data || "");
 }

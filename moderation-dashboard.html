@@ -98,6 +98,13 @@
                             <div class="mod-queue" id="modAppeals"></div>
                         </div>
                         <div id="modInboxPublishApprovalsPanel" class="hidden">
+                            <form class="mod-list-toolbar" id="modPublishGrantForm" style="flex-direction:column;align-items:stretch;gap:8px;">
+                                <strong style="font-size:13px;">Grant cooldown bypass</strong>
+                                <input class="mod-input" id="modPublishGrantUserId" type="text" placeholder="Author user id (uuid)" autocomplete="off" required />
+                                <input class="mod-input" id="modPublishGrantBookId" type="text" placeholder="Book id" autocomplete="off" required />
+                                <input class="mod-input" id="modPublishGrantNote" type="text" placeholder="Staff note (optional)" autocomplete="off" maxlength="2000" />
+                                <button type="submit" class="mod-btn primary">Grant bypass</button>
+                            </form>
                             <div class="mod-queue" id="modPublishApprovalsQueue"></div>
                         </div>
                     </div>
@@ -235,7 +242,7 @@
 <script type="module">
     import { bootModerationPage } from "./js/moderation-access.js?v=12";
     import { initReportsPanel } from "./js/moderation-reports-panel.js?v=12";
-    import { initPublishApprovalsPanel } from "./js/moderation-publish-approvals-panel.js?v=1";
+    import { initPublishApprovalsPanel } from "./js/moderation-publish-approvals-panel.js?v=2";
     import { initUsagePanel } from "./js/moderation-usage-panel.js?v=1";
     import { initUsersPanel } from "./js/moderation-users-panel.js?v=12";
     import { staffUsersOverviewStats } from "./js/staff-users-api.js?v=12";

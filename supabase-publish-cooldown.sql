@@ -1,5 +1,6 @@
 -- Run once in Supabase → SQL Editor (safe to re-run).
 -- Publish cooldowns: 7-day account age before any publish, 30-day gap between new library listings.
+-- Staff can approve requests or directly grant a bypass for either cooldown.
 -- Apply after supabase-library-rls.sql and supabase-library-reports.sql (uses is_moderation_staff).
 
 -- ---------------------------------------------------------------------------
@@ -10,7 +11,7 @@ ALTER TABLE public.users
   ADD COLUMN IF NOT EXISTS last_new_book_published_at timestamptz;
 
 -- ---------------------------------------------------------------------------
--- 2. Staff-reviewed bypass tickets (30-day interval only)
+-- 2. Staff-reviewed bypass tickets (7-day account age and/or 30-day interval)
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS public.publish_approval_requests (
@@ -68,6 +69,23 @@ AS $$
   );
 $$;
 
+CREATE OR REPLACE FUNCTION public.publish_has_approved_bypass(p_user_id uuid, p_book_id text)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.publish_approval_requests par
+    WHERE par.user_id = p_user_id
+      AND par.book_id = p_book_id
+      AND par.status = 'approved'
+      AND par.consumed_at IS NULL
+  );
+$$;
+
 CREATE OR REPLACE FUNCTION public.publish_cooldown_allows(p_user_id uuid, p_book_id text)
 RETURNS boolean
 LANGUAGE plpgsql
@@ -78,7 +96,6 @@ AS $$
 DECLARE
   v_account_created timestamptz;
   v_last_new_book timestamptz;
-  v_has_bypass boolean;
 BEGIN
   IF p_user_id IS NULL OR p_book_id IS NULL OR length(trim(p_book_id)) = 0 THEN
     RETURN false;
@@ -101,6 +118,11 @@ BEGIN
     RETURN false;
   END IF;
 
+  -- Staff-approved / staff-granted ticket clears both 7-day and 30-day waits.
+  IF public.publish_has_approved_bypass(p_user_id, p_book_id) THEN
+    RETURN true;
+  END IF;
+
   v_account_created := public.user_account_created_at(p_user_id);
   IF now() < v_account_created + interval '7 days' THEN
     RETURN false;
@@ -114,20 +136,7 @@ BEGIN
   FROM public.users u
   WHERE u.id = p_user_id;
 
-  IF v_last_new_book IS NULL OR now() >= v_last_new_book + interval '30 days' THEN
-    RETURN true;
-  END IF;
-
-  SELECT EXISTS (
-    SELECT 1
-    FROM public.publish_approval_requests par
-    WHERE par.user_id = p_user_id
-      AND par.book_id = p_book_id
-      AND par.status = 'approved'
-      AND par.consumed_at IS NULL
-  ) INTO v_has_bypass;
-
-  RETURN v_has_bypass;
+  RETURN v_last_new_book IS NULL OR now() >= v_last_new_book + interval '30 days';
 END;
 $$;
 
@@ -170,7 +179,8 @@ BEGIN
   v_is_new_listing := public.publish_is_new_library_listing(p_book_id);
   v_account_created := public.user_account_created_at(v_user_id);
   v_account_eligible_at := v_account_created + interval '7 days';
-  v_account_blocked := now() < v_account_eligible_at;
+  v_approved_bypass := public.publish_has_approved_bypass(v_user_id, p_book_id);
+  v_account_blocked := now() < v_account_eligible_at AND NOT v_approved_bypass;
 
   SELECT u.last_new_book_published_at INTO v_last_new_book
   FROM public.users u
@@ -179,16 +189,8 @@ BEGIN
   v_interval_eligible_at := COALESCE(v_last_new_book, v_account_created) + interval '30 days';
   v_interval_blocked := v_is_new_listing
     AND v_last_new_book IS NOT NULL
-    AND now() < v_interval_eligible_at;
-
-  SELECT EXISTS (
-    SELECT 1
-    FROM public.publish_approval_requests par
-    WHERE par.user_id = v_user_id
-      AND par.book_id = p_book_id
-      AND par.status = 'approved'
-      AND par.consumed_at IS NULL
-  ) INTO v_approved_bypass;
+    AND now() < v_interval_eligible_at
+    AND NOT v_approved_bypass;
 
   SELECT par.id, par.status, par.created_at, par.reviewed_at, par.staff_note
   INTO v_pending_request
@@ -213,10 +215,10 @@ BEGIN
       END
     ),
     'bookIntervalCooldown', jsonb_build_object(
-      'active', v_interval_blocked AND NOT v_approved_bypass,
+      'active', v_interval_blocked,
       'eligibleAt', CASE WHEN v_last_new_book IS NULL THEN NULL ELSE v_interval_eligible_at END,
       'daysRemaining', CASE
-        WHEN v_interval_blocked AND NOT v_approved_bypass
+        WHEN v_interval_blocked
           THEN ceil(extract(epoch FROM (v_interval_eligible_at - now())) / 86400.0)
         ELSE 0
       END
@@ -271,16 +273,8 @@ BEGIN
     RAISE EXCEPTION 'Approval tickets only apply to publishing a new book listing';
   END IF;
 
-  IF now() < public.user_account_created_at(v_user_id) + interval '7 days' THEN
-    RAISE EXCEPTION 'Your account must be at least 7 days old before requesting publish approval';
-  END IF;
-
-  SELECT u.last_new_book_published_at INTO v_last_new_book
-  FROM public.users u
-  WHERE u.id = v_user_id;
-
-  IF v_last_new_book IS NULL OR now() >= v_last_new_book + interval '30 days' THEN
-    RAISE EXCEPTION 'You are not in the 30-day new-book waiting period';
+  IF public.publish_has_approved_bypass(v_user_id, p_book_id) THEN
+    RAISE EXCEPTION 'You already have an approved bypass for this book';
   END IF;
 
   IF EXISTS (
@@ -292,18 +286,105 @@ BEGIN
     RAISE EXCEPTION 'You already have a pending approval request for this book';
   END IF;
 
-  IF EXISTS (
-    SELECT 1 FROM public.publish_approval_requests par
-    WHERE par.user_id = v_user_id
-      AND par.book_id = p_book_id
-      AND par.status = 'approved'
-      AND par.consumed_at IS NULL
+  SELECT u.last_new_book_published_at INTO v_last_new_book
+  FROM public.users u
+  WHERE u.id = v_user_id;
+
+  IF NOT (
+    now() < public.user_account_created_at(v_user_id) + interval '7 days'
+    OR (
+      v_last_new_book IS NOT NULL
+      AND now() < v_last_new_book + interval '30 days'
+    )
   ) THEN
-    RAISE EXCEPTION 'You already have an approved bypass for this book';
+    RAISE EXCEPTION 'You are not currently in a publish cooldown';
   END IF;
 
   INSERT INTO public.publish_approval_requests (user_id, book_id, message)
   VALUES (v_user_id, p_book_id, v_message)
+  RETURNING id INTO v_request_id;
+
+  RETURN v_request_id;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.moderation_grant_publish_bypass(
+  p_user_id uuid,
+  p_book_id text,
+  p_staff_note text DEFAULT ''
+)
+RETURNS uuid
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_staff_id uuid := auth.uid();
+  v_note text := left(trim(coalesce(p_staff_note, '')), 2000);
+  v_book_id text := trim(coalesce(p_book_id, ''));
+  v_request_id uuid;
+BEGIN
+  IF NOT public.is_moderation_staff() THEN
+    RAISE EXCEPTION 'Not authorized';
+  END IF;
+
+  IF p_user_id IS NULL THEN
+    RAISE EXCEPTION 'Missing user id';
+  END IF;
+
+  IF length(v_book_id) = 0 THEN
+    RAISE EXCEPTION 'Missing book id';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM public.books b
+    WHERE b.id::text = v_book_id
+      AND b.user_id = p_user_id
+  ) THEN
+    RAISE EXCEPTION 'Book not found for that user';
+  END IF;
+
+  IF public.publish_has_approved_bypass(p_user_id, v_book_id) THEN
+    RAISE EXCEPTION 'This user already has an unused approved bypass for that book';
+  END IF;
+
+  -- Close any pending request for this book, then grant immediately.
+  UPDATE public.publish_approval_requests par
+  SET
+    status = 'approved',
+    reviewed_at = now(),
+    reviewed_by = v_staff_id,
+    staff_note = CASE
+      WHEN length(v_note) > 0 THEN v_note
+      ELSE coalesce(nullif(par.staff_note, ''), 'Staff-granted cooldown bypass')
+    END
+  WHERE par.user_id = p_user_id
+    AND par.book_id = v_book_id
+    AND par.status = 'pending'
+  RETURNING par.id INTO v_request_id;
+
+  IF v_request_id IS NOT NULL THEN
+    RETURN v_request_id;
+  END IF;
+
+  INSERT INTO public.publish_approval_requests (
+    user_id,
+    book_id,
+    message,
+    status,
+    reviewed_at,
+    reviewed_by,
+    staff_note
+  )
+  VALUES (
+    p_user_id,
+    v_book_id,
+    'Staff-granted cooldown bypass',
+    'approved',
+    now(),
+    v_staff_id,
+    CASE WHEN length(v_note) > 0 THEN v_note ELSE 'Staff-granted cooldown bypass' END
+  )
   RETURNING id INTO v_request_id;
 
   RETURN v_request_id;
@@ -443,12 +524,14 @@ GRANT SELECT ON public.publish_approval_requests TO authenticated;
 
 REVOKE ALL ON FUNCTION public.user_account_created_at(uuid) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.publish_is_new_library_listing(text) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.publish_has_approved_bypass(uuid, text) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.publish_cooldown_allows(uuid, text) FROM PUBLIC;
 
 GRANT EXECUTE ON FUNCTION public.get_publish_eligibility(text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.submit_publish_approval_request(text, text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.moderation_list_publish_approvals(text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.moderation_review_publish_approval(uuid, boolean, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.moderation_grant_publish_bypass(uuid, text, text) TO authenticated;
 
 -- Backfill last_new_book_published_at for existing authors
 UPDATE public.users u

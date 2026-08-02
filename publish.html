@@ -273,7 +273,7 @@
             </div>
         </section>
 
-        <section class="content-card"><h2 class="section-title">Publish</h2><p class="section-note">When you publish, Alysum will save this metadata to the selected book and create/update the public library entry. Chapters marked “Schedule” go live automatically at their chosen time. New accounts wait 7 days before their first publish; new library listings are limited to one every 30 days unless staff approves an early request.</p><div class="status-box" id="statusBox"></div><div class="publish-actions"><div class="publish-actions-left"><button class="text-btn" id="saveDraftBtn" type="button">Save Draft Metadata</button><button class="danger-btn" id="unpublishBtn" type="button">Unpublish</button></div><div class="publish-actions-right"><div class="mini-note" id="publishHint">Nothing published yet.</div><button class="primary-btn" id="publishBtn" type="button">Publish Story</button></div></div></section>
+        <section class="content-card"><h2 class="section-title">Publish</h2><p class="section-note">When you publish, Alysum will save this metadata to the selected book and create/update the public library entry. Chapters marked “Schedule” go live automatically at their chosen time. New accounts wait 7 days before their first publish; new library listings are limited to one every 30 days. Authors can request staff approval to publish earlier for either wait.</p><div class="status-box" id="statusBox"></div><div class="publish-actions"><div class="publish-actions-left"><button class="text-btn" id="saveDraftBtn" type="button">Save Draft Metadata</button><button class="danger-btn" id="unpublishBtn" type="button">Unpublish</button></div><div class="publish-actions-right"><div class="mini-note" id="publishHint">Nothing published yet.</div><button class="primary-btn" id="publishBtn" type="button">Publish Story</button></div></div></section>
         <div class="footer-space"></div>
     </main>
 </div>
@@ -286,7 +286,7 @@
         submitPublishApprovalRequest,
         formatPublishBlockMessage,
         canSubmitPublishApproval,
-    } from "./js/publish-cooldown.js?v=1";
+    } from "./js/publish-cooldown.js?v=2";
     import {
         listScheduledChapterReleases,
         cancelScheduledChapterRelease,

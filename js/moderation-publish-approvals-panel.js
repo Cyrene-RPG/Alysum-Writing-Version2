@@ -1,4 +1,5 @@
 import {
+    moderationGrantPublishBypass,
     moderationListPublishApprovals,
     moderationReviewPublishApproval,
 } from "./publish-cooldown.js";
@@ -24,6 +25,10 @@ export function initPublishApprovalsPanel(opts) {
     const { showStatus } = opts;
     const queueEl = document.getElementById("modPublishApprovalsQueue");
     const detailEl = document.getElementById("modPublishApprovalDetail");
+    const grantForm = document.getElementById("modPublishGrantForm");
+    const grantUserInput = document.getElementById("modPublishGrantUserId");
+    const grantBookInput = document.getElementById("modPublishGrantBookId");
+    const grantNoteInput = document.getElementById("modPublishGrantNote");
 
     let requests = [];
     let selectedId = null;
@@ -109,7 +114,7 @@ export function initPublishApprovalsPanel(opts) {
         const ok = await confirmModAction(
             approve ? "Approve publish request?" : "Deny publish request?",
             approve
-                ? "The author can publish this new book before the 30-day interval ends."
+                ? "The author can publish this book early, skipping the 7-day and/or 30-day cooldown."
                 : "The author will remain blocked until the cooldown expires or submits a new request.",
             approve ? "success" : "danger"
         );
@@ -123,6 +128,37 @@ export function initPublishApprovalsPanel(opts) {
             showStatus(err?.message || "Could not review request.", "error");
         }
     }
+
+    async function grantBypass(event) {
+        event?.preventDefault?.();
+        const userId = grantUserInput?.value?.trim() || "";
+        const bookId = grantBookInput?.value?.trim() || "";
+        const note = grantNoteInput?.value?.trim() || "";
+        if (!userId || !bookId) {
+            showStatus("Enter both the author user id and book id.", "error");
+            return;
+        }
+
+        const ok = await confirmModAction(
+            "Grant publish cooldown bypass?",
+            "This lets the author publish that book immediately, skipping the 7-day and/or 30-day cooldown.",
+            "success"
+        );
+        if (!ok) return;
+
+        try {
+            await moderationGrantPublishBypass(userId, bookId, note);
+            showStatus("Cooldown bypass granted. The author can publish that book now.");
+            if (grantForm) grantForm.reset();
+            await loadAll();
+        } catch (err) {
+            showStatus(err?.message || "Could not grant bypass.", "error");
+        }
+    }
+
+    grantForm?.addEventListener("submit", (event) => {
+        void grantBypass(event);
+    });
 
     async function loadAll() {
         requests = await moderationListPublishApprovals("pending");
