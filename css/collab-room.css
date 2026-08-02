@@ -1,4 +1,4 @@
-/* Collab rooms — test branch preview styles */
+/* Collab rooms — editor-aligned shell styles */
 
 :root {
     --collab-green: #22c55e;
@@ -8,6 +8,8 @@
     --collab-del: rgba(248, 113, 113, 0.35);
     --collab-alex: #38bdf8;
     --collab-sam: #a78bfa;
+    --collab-nav-offset: var(--alysum-nav-sticky-offset, 45px);
+    --collab-topbar-height: 56px;
 }
 
 body.dark {
@@ -30,33 +32,11 @@ body.dark {
     text-underline-offset: 2px;
 }
 
-.collab-topbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 12px 18px;
-    border-bottom: 1px solid var(--border, rgba(255, 255, 255, 0.08));
-    background: var(--panel, #111827);
-    flex-wrap: wrap;
-}
-
-.collab-topbar-title {
-    font-size: 15px;
-    font-weight: 900;
-    line-height: 1.2;
-}
-
-.collab-topbar-sub {
-    font-size: 12px;
-    color: var(--muted, #9ca3af);
-    margin-top: 2px;
-}
-
 .collab-role-tabs {
     display: flex;
     gap: 6px;
     flex-wrap: wrap;
+    justify-content: flex-end;
 }
 
 .collab-role-tab {
@@ -91,9 +71,9 @@ body.dark {
 
 .collab-layout {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 340px;
+    grid-template-columns: minmax(0, 1fr) min(380px, 34vw);
     gap: 0;
-    min-height: calc(100vh - 120px);
+    min-height: calc(100vh - var(--collab-nav-offset) - var(--collab-topbar-height));
 }
 
 @media (max-width: 960px) {
@@ -150,9 +130,9 @@ body.dark {
 }
 
 .collab-mode-banner.is-author {
-    border-color: rgba(124, 58, 237, 0.35);
-    background: rgba(124, 58, 237, 0.12);
-    color: #c4b5fd;
+    border-color: color-mix(in srgb, var(--theme-header-mid, #7c3aed) 45%, transparent);
+    background: color-mix(in srgb, var(--theme-header-mid, #7c3aed) 16%, transparent);
+    color: color-mix(in srgb, var(--theme-header-end, #c4b5fd) 75%, #e9d5ff);
 }
 
 .collab-mode-banner strong {
@@ -224,9 +204,9 @@ body.dark {
     border-left: 1px solid var(--border, rgba(255, 255, 255, 0.08));
     padding: 18px 16px 24px;
     overflow-y: auto;
-    max-height: calc(100vh - 120px);
+    max-height: calc(100vh - var(--collab-nav-offset) - var(--collab-topbar-height));
     position: sticky;
-    top: 0;
+    top: calc(var(--collab-nav-offset) + var(--collab-topbar-height));
 }
 
 .collab-review-head {
@@ -296,9 +276,9 @@ body.dark {
 }
 
 .collab-btn.primary {
-    background: var(--collab-green);
+    background: linear-gradient(135deg, var(--theme-header-mid, #15803d), var(--theme-header-end, var(--collab-green)));
     border-color: transparent;
-    color: #052e16;
+    color: #fff;
 }
 
 .collab-btn.danger {

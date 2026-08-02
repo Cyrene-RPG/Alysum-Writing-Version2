@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script src="js/alysum-appearance-boot.js"></script>
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
-    <link rel="stylesheet" href="css/gradient-themes.css?v=5" />
+    <link rel="stylesheet" href="css/gradient-themes.css?v=7" />
     <link rel="stylesheet" href="css/workspace-nav.css?v=11" />
     <script src="js/gradient-theme-sync.js" defer></script>
     <title>Collab rooms — Alysum</title>
@@ -27,8 +27,8 @@
             min-height: 100%;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
             background:
-                radial-gradient(ellipse 120% 60% at 50% -10%, rgba(34, 197, 94, 0.14) 0%, transparent 55%),
-                linear-gradient(180deg, #0d1426 0%, var(--bg) 42%);
+                radial-gradient(ellipse 120% 60% at 50% -10%, var(--theme-body-spot, rgba(34, 197, 94, 0.14)) 0%, transparent 55%),
+                var(--bg);
             color: var(--text);
         }
         .hidden { display: none !important; }
@@ -58,9 +58,9 @@
             align-items: center;
         }
         .btn.primary {
-            background: linear-gradient(135deg, #15803d, var(--collab-green));
+            background: linear-gradient(135deg, var(--theme-header-mid, #15803d), var(--theme-header-end, var(--collab-green)));
             border: none;
-            color: #052e16;
+            color: #fff;
         }
         .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
         @media (max-width: 900px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
@@ -82,7 +82,7 @@
             position: absolute;
             left: 0; top: 0; bottom: 0;
             width: 4px;
-            background: linear-gradient(180deg, #15803d, var(--collab-green));
+            background: linear-gradient(180deg, var(--theme-header-mid, #15803d), var(--theme-header-end, var(--collab-green)));
         }
         .card-title { margin: 0; font-size: 18px; font-weight: 900; line-height: 1.2; }
         .badge {
@@ -123,48 +123,7 @@
     </style>
 </head>
 <body>
-    <header class="wd-welcome-bar" aria-label="Welcome">
-            <div class="wd-welcome-inner">
-                <div class="wd-pfp" id="welcomePfp">
-                    <img id="welcomePfpImg" alt="" hidden />
-                    <span class="wd-pfp-initial" id="welcomePfpInitial" aria-hidden="true"></span>
-                </div>
-                <div class="wd-welcome-copy">
-                    <h1 class="wd-welcome-title" id="welcomeTitle">Welcome back.</h1>
-                    <p class="wd-welcome-sub is-hidden" id="welcomeSubtitle"></p>
-                </div>
-            </div>
-        </header>
-        <nav class="wd-nav-wrap" aria-label="Workspace" data-active="collab-rooms">
-            <div class="wd-nav">
-                <button type="button" id="navContinue">Continue writing</button>
-                <span class="wd-nav-divider" aria-hidden="true"></span>
-                <a href="writer-dashboard.html">Studio</a>
-                <a href="library.html">Library</a>
-                <a href="beta-rooms.html">Beta rooms</a>
-                <a href="collab-rooms.html" class="is-active">Collab rooms</a>
-                <a href="author-dashboard.html" id="navAuthorStats">
-                    Author stats
-                    <span class="wd-nav-badge is-hidden" id="navDashBadge" aria-hidden="true">0</span>
-                </a>
-                <a href="world-encyclopedia.html">Encyclopedia</a>
-                <span class="wd-nav-divider" aria-hidden="true"></span>
-                <a href="vault.html">Notes</a>
-                <a href="note-graph.html">Note Graph</a>
-                <a href="story-board/">Story Board</a>
-                <a href="plotweave.html">Plotweave</a>
-                <a href="Novel_Exporter.html">Exporter</a>
-                <a href="badges.html">Achievements</a>
-                <a href="leaderboard.html">Leaderboards</a>
-                <a href="word-wars-lobby.html">Word Wars</a>
-                <span class="wd-nav-divider" aria-hidden="true"></span>
-                <a href="settings.html">Settings</a>
-                <a href="reader-home.html" class="is-hidden" id="navReading">Reading</a>
-                <button type="button" class="wd-nav-logout" data-logout-btn>Log out</button>
-                <a href="index.html">Home</a>
-            </div>
-        </nav>
-        <script type="module" src="js/workspace-nav.js?v=9"></script>
+    <div id="alysum-workspace-nav" data-active="collab-rooms"></div>
 
     <div class="test-banner hidden" id="schemaBanner">Run supabase-collab-rooms.sql in Supabase to enable live collab rooms.</div>
 
@@ -312,5 +271,6 @@
 
         boot();
     </script>
+    <script type="module" src="js/workspace-nav.js?v=9"></script>
 </body>
 </html>

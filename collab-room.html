@@ -6,8 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script src="js/alysum-appearance-boot.js"></script>
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
-    <link rel="stylesheet" href="css/gradient-themes.css?v=5" />
-    <link rel="stylesheet" href="css/collab-room.css?v=1" />
+    <link rel="stylesheet" href="css/gradient-themes.css?v=7" />
+    <link rel="stylesheet" href="css/workspace-nav.css?v=11" />
+    <link rel="stylesheet" href="css/collab-room.css?v=2" />
     <script src="js/gradient-theme-sync.js" defer></script>
     <title>Collab room — Alysum</title>
     <style>
@@ -19,6 +20,8 @@
             --text: #f9fafb;
             --muted: #9ca3af;
             --border: rgba(255,255,255,0.08);
+            --shadow: 0 14px 34px rgba(0,0,0,0.28);
+            --collab-nav-offset: var(--alysum-nav-sticky-offset, 45px);
         }
         body.light {
             --bg: #f4f6fb;
@@ -27,6 +30,7 @@
             --text: #171717;
             --muted: #5f6470;
             --border: rgba(0,0,0,0.08);
+            --shadow: 0 14px 34px rgba(0,0,0,0.08);
         }
         html, body {
             margin: 0;
@@ -34,25 +38,117 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
             background:
                 radial-gradient(ellipse 120% 60% at 50% -10%, var(--theme-body-spot, rgba(34, 197, 94, 0.16)) 0%, transparent 55%),
-                linear-gradient(180deg, #0d1426 0%, var(--bg) 42%);
+                var(--bg);
             color: var(--text);
         }
-        body.light {
-            background:
-                radial-gradient(ellipse 120% 60% at 50% -10%, rgba(34, 197, 94, 0.08) 0%, transparent 55%),
-                var(--bg);
-        }
         .hidden { display: none !important; }
-        .collab-back {
-            color: var(--muted);
+        .btn {
+            border: 1px solid var(--border);
+            background: var(--panel);
+            color: var(--text);
+            border-radius: 12px;
+            padding: 10px 14px;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+            font-family: inherit;
+            font-size: 14px;
             text-decoration: none;
-            font-size: 13px;
-            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
         }
-        .collab-back:hover { color: var(--text); }
+        .btn.primary {
+            background: linear-gradient(135deg, var(--theme-header-mid, #6d28d9), var(--theme-header-end, #db2777));
+            color: #fff;
+            border-color: transparent;
+        }
+        .topbar {
+            position: sticky;
+            top: var(--collab-nav-offset);
+            z-index: 50;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(180px, auto) minmax(0, 1fr);
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            background: color-mix(in srgb, var(--bg) 88%, transparent);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+        }
+        .topbar-left, .topbar-right { display: flex; align-items: center; gap: 8px; min-width: 0; }
+        .topbar-left { justify-self: start; }
+        .topbar-right { justify-self: end; }
+        .topbar-center {
+            min-width: 0;
+            text-align: center;
+            justify-self: center;
+            max-width: min(42vw, 420px);
+        }
+        .topbar-title {
+            font-size: 15px;
+            font-weight: 900;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .topbar-subtitle {
+            margin-top: 2px;
+            font-size: 12px;
+            color: var(--muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        @media (max-width: 720px) {
+            .topbar { grid-template-columns: auto minmax(0, 1fr) auto; }
+            .topbar-center { max-width: none; }
+        }
     </style>
 </head>
-<body class="dark">
+<body>
+    <header class="wd-welcome-bar" aria-label="Welcome">
+        <div class="wd-welcome-inner">
+            <div class="wd-pfp" id="welcomePfp">
+                <img id="welcomePfpImg" alt="" hidden />
+                <span class="wd-pfp-initial" id="welcomePfpInitial" aria-hidden="true"></span>
+            </div>
+            <div class="wd-welcome-copy">
+                <h1 class="wd-welcome-title" id="welcomeTitle">Welcome back.</h1>
+                <p class="wd-welcome-sub is-hidden" id="welcomeSubtitle"></p>
+            </div>
+        </div>
+    </header>
+    <nav class="wd-nav-wrap" aria-label="Workspace" data-active="collab-rooms">
+        <div class="wd-nav">
+            <button type="button" id="navContinue">Continue writing</button>
+            <span class="wd-nav-divider" aria-hidden="true"></span>
+            <a href="writer-dashboard.html">Studio</a>
+            <a href="library.html">Library</a>
+            <a href="beta-rooms.html">Beta rooms</a>
+            <a href="collab-rooms.html" class="is-active">Collab rooms</a>
+            <a href="author-dashboard.html" id="navAuthorStats">
+                Author stats
+                <span class="wd-nav-badge is-hidden" id="navDashBadge" aria-hidden="true">0</span>
+            </a>
+            <a href="world-encyclopedia.html">Encyclopedia</a>
+            <span class="wd-nav-divider" aria-hidden="true"></span>
+            <a href="vault.html">Notes</a>
+            <a href="note-graph.html">Note Graph</a>
+            <a href="story-board/">Story Board</a>
+            <a href="plotweave.html">Plotweave</a>
+            <a href="Novel_Exporter.html">Exporter</a>
+            <a href="badges.html">Achievements</a>
+            <a href="leaderboard.html">Leaderboards</a>
+            <a href="word-wars-lobby.html">Word Wars</a>
+            <span class="wd-nav-divider" aria-hidden="true"></span>
+            <a href="settings.html">Settings</a>
+            <a href="reader-home.html" class="is-hidden" id="navReading">Reading</a>
+            <button type="button" class="wd-nav-logout" data-logout-btn>Log out</button>
+            <a href="index.html">Home</a>
+        </div>
+    </nav>
+    <script type="module" src="js/workspace-nav.js?v=9"></script>
+
     <div class="collab-test-banner hidden" id="testBanner">
         Demo preview — add <code>?preview=1</code> intentionally. Live collab uses your real chapters.
         <a href="collab-room-manage.html">Manage invites</a> ·
@@ -63,18 +159,22 @@
         <span id="errorText"></span>
     </div>
 
-    <header class="collab-topbar">
-        <div>
-            <a class="collab-back" href="collab-rooms.html">← Collab rooms</a>
-            <div class="collab-topbar-title" id="roomTitle">The Glass Orchard</div>
-            <div class="collab-topbar-sub" id="roomSub">Chapter 12 — invite-only collab</div>
+    <div class="topbar" id="collabTopbar">
+        <div class="topbar-left">
+            <a class="btn" id="backBtn" href="collab-rooms.html">← Collab rooms</a>
         </div>
-        <div class="collab-role-tabs hidden" id="roleTabs" aria-label="Preview role switcher">
-            <button type="button" class="collab-role-tab is-active" data-role="author">Author review</button>
-            <button type="button" class="collab-role-tab" data-role="alex">@alex (editor)</button>
-            <button type="button" class="collab-role-tab" data-role="sam">@sam (editor)</button>
+        <div class="topbar-center">
+            <div class="topbar-title" id="topTitle">The Glass Orchard</div>
+            <div class="topbar-subtitle" id="topSub">Chapter 12 — invite-only collab</div>
         </div>
-    </header>
+        <div class="topbar-right">
+            <div class="collab-role-tabs hidden" id="roleTabs" aria-label="Preview role switcher">
+                <button type="button" class="collab-role-tab is-active" data-role="author">Author review</button>
+                <button type="button" class="collab-role-tab" data-role="alex">@alex (editor)</button>
+                <button type="button" class="collab-role-tab" data-role="sam">@sam (editor)</button>
+            </div>
+        </div>
+    </div>
 
     <div class="collab-layout">
         <div class="collab-editor-pane">
@@ -173,12 +273,12 @@
             document.getElementById("errorText").textContent = msg;
             panel.classList.remove("hidden");
             document.querySelector(".collab-layout")?.classList.add("hidden");
-            document.querySelector(".collab-topbar")?.classList.add("hidden");
+            document.getElementById("collabTopbar")?.classList.add("hidden");
         }
 
         function setHeader(bookTitle, chapterTitle, meta = "") {
-            document.getElementById("roomTitle").textContent = bookTitle;
-            document.getElementById("roomSub").textContent = `${chapterTitle} · invite-only collab`;
+            document.getElementById("topTitle").textContent = bookTitle;
+            document.getElementById("topSub").textContent = `${chapterTitle} · invite-only collab`;
             document.getElementById("chapterTitle").textContent = chapterTitle;
             document.getElementById("chapterMeta").textContent = meta;
         }
@@ -468,7 +568,7 @@
             if (card && isAuthor) highlightHunk(card.getAttribute("data-hunk-id"));
         });
 
-        document.querySelector(".collab-back").href = "collab-rooms.html";
+        document.getElementById("backBtn").href = "collab-rooms.html";
 
         if (isPreview) {
             bootDemo();

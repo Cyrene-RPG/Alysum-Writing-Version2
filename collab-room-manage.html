@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script src="js/alysum-appearance-boot.js"></script>
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
-    <link rel="stylesheet" href="css/gradient-themes.css?v=5" />
+    <link rel="stylesheet" href="css/gradient-themes.css?v=7" />
     <link rel="stylesheet" href="css/workspace-nav.css?v=11" />
     <script src="js/gradient-theme-sync.js" defer></script>
     <title>Collab invite — Alysum</title>
@@ -27,11 +27,21 @@
             min-height: 100%;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
             background:
-                radial-gradient(ellipse 120% 60% at 50% -10%, rgba(34, 197, 94, 0.14) 0%, transparent 55%),
-                linear-gradient(180deg, #0d1426 0%, var(--bg) 42%);
+                radial-gradient(ellipse 120% 60% at 50% -10%, var(--theme-body-spot, rgba(34, 197, 94, 0.14)) 0%, transparent 55%),
+                var(--bg);
             color: var(--text);
         }
         .page { max-width: 860px; margin: 0 auto; padding: 22px 20px 48px; }
+        .page-head {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+        .page-head-main { min-width: 0; flex: 1 1 280px; }
+        .page-head-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
         .back-link {
             display: inline-flex;
             margin-bottom: 10px;
@@ -58,7 +68,7 @@
             position: absolute;
             left: 0; top: 0; bottom: 0;
             width: 4px;
-            background: linear-gradient(180deg, #15803d, var(--collab-green));
+            background: linear-gradient(180deg, var(--theme-header-mid, #15803d), var(--theme-header-end, var(--collab-green)));
         }
         .card h3 { margin: 0 0 6px; font-size: 18px; font-weight: 900; }
         .card p { margin: 0 0 14px; color: var(--muted); font-size: 14px; line-height: 1.5; }
@@ -98,9 +108,9 @@
             align-items: center;
         }
         .btn.primary {
-            background: linear-gradient(135deg, #15803d, var(--collab-green));
+            background: linear-gradient(135deg, var(--theme-header-mid, #15803d), var(--theme-header-end, var(--collab-green)));
             border: none;
-            color: #052e16;
+            color: #fff;
         }
         .btn:disabled { opacity: 0.5; cursor: not-allowed; }
         .invite-list { display: flex; flex-direction: column; gap: 10px; }
@@ -154,12 +164,16 @@
     <div id="alysum-workspace-nav" data-active="collab-rooms"></div>
 
     <main class="page">
-        <a class="back-link" id="backBtn" href="collab-rooms.html">← Collab rooms</a>
-        <div class="page-head-actions" style="float:right;margin-top:-4px">
-            <a class="btn" id="editorBtn" href="writer-dashboard.html" hidden>Open in editor</a>
+        <div class="page-head">
+            <div class="page-head-main">
+                <a class="back-link" id="backBtn" href="collab-rooms.html">← Collab rooms</a>
+                <h2 id="pageTitle">Collab invite</h2>
+                <p class="hint" id="pageSub">Create a chapter-scoped invite link. Collaborators can suggest edits; you approve before they merge into your draft.</p>
+            </div>
+            <div class="page-head-actions">
+                <a class="btn" id="editorBtn" href="writer-dashboard.html" hidden>Open in editor</a>
+            </div>
         </div>
-        <h2 id="pageTitle">Collab invite</h2>
-        <p class="hint" id="pageSub">Create a chapter-scoped invite link. Collaborators can suggest edits; you approve before they merge into your draft.</p>
 
         <div id="schemaWarn" class="schema-warn hidden"></div>
         <div id="pageStatus" class="status hidden"></div>
@@ -392,6 +406,6 @@
 
         boot().catch(console.error);
     </script>
-    <script type="module" src="js/workspace-nav.js?v=10"></script>
+    <script type="module" src="js/workspace-nav.js?v=9"></script>
 </body>
 </html>
