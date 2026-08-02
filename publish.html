@@ -151,6 +151,9 @@
     .chapter-warning-status { font-size: 12px; font-weight: 700; color: var(--text-soft); white-space: nowrap; }
     .chapter-warning-body { display: none; padding: 0 16px 16px; border-top: 1px solid var(--border); }
     .chapter-warning-body.open { display: block; }
+    .chapter-author-notes-list { display: grid; gap: 12px; margin-top: 14px; }
+    .chapter-author-notes-input { width: 100%; min-height: 96px; resize: vertical; border: 1px solid var(--border); border-radius: 12px; background: var(--panel); color: inherit; font: inherit; font-size: 14px; line-height: 1.55; padding: 12px 14px; }
+    .chapter-author-notes-hint { margin-top: 8px; font-size: 12px; font-weight: 600; color: var(--text-soft); line-height: 1.45; }
     .warning-section-compact .warning-card { margin-top: 10px; }
     @media (max-width: 760px) { .schedule-row { grid-template-columns: 1fr; } .schedule-row-controls { justify-content: stretch; } .schedule-datetime { width: 100%; min-width: 0; } }
     @media (max-width: 1120px) { .layout { grid-template-columns: 1fr; } .sidebar { position: static; top: auto; } .hero-card { grid-template-columns: 1fr; } }
@@ -238,6 +241,12 @@
             <div class="chapter-warnings-list" id="chapterWarningsList"></div>
         </section>
 
+        <section class="content-card" id="chapterAuthorNotesSection">
+            <h2 class="section-title">Author's Notes</h2>
+            <p class="section-note">Optional notes readers see before each chapter. Plain text only — use for thank-yous, context, or reminders.</p>
+            <div class="chapter-author-notes-list" id="chapterAuthorNotesList"></div>
+        </section>
+
         <section class="content-card"><h2 class="section-title">Summary & Extra Tags</h2><p class="section-note">Summary is required. Extra tags are optional and should be comma-separated.</p><div class="field-grid"><div class="field full"><label class="label" for="summaryInput">Summary</label><textarea class="textarea" id="summaryInput" placeholder="Write the story summary readers will see in the library..."></textarea></div><div class="field full"><label class="label" for="extraTagsInput">Extra Tags</label><input class="input" id="extraTagsInput" type="text" placeholder="slow burn, found family, enemies to lovers"><div class="hint">Optional. Separate each tag with a comma.</div></div></div></section>
 
         <section class="content-card" id="releaseScheduleSection">
@@ -303,7 +312,7 @@
         toggleWarningChoice,
     } from "./js/content-warnings.js?v=1";
     import { mountWarningPicker } from "./js/chapter-warnings-ui.js?v=1";
-    import { normalizeAuthorNotes } from "./js/chapter-author-notes.js?v=1";
+    import { normalizeAuthorNotes, MAX_AUTHOR_NOTES_LENGTH } from "./js/chapter-author-notes.js?v=1";
 
     const WARNING_GROUPS = CONTENT_WARNING_GROUPS;
 
@@ -338,7 +347,7 @@
     const ANONYMOUS_AUTHOR_LABEL = "Anonymous";
 
     const el = (id) => document.getElementById(id);
-    const backBtn = el("backBtn"), themeBtn = el("themeBtn"), sidebarBookTitle = el("sidebarBookTitle"), selectedChapterCount = el("selectedChapterCount"), selectedChaptersList = el("selectedChaptersList"), checkGenres = el("checkGenres"), checkRating = el("checkRating"), checkWarnings = el("checkWarnings"), checkChapterWarnings = el("checkChapterWarnings"), checkSummary = el("checkSummary"), heroTitle = el("heroTitle"), heroChapterCount = el("heroChapterCount"), heroWordCount = el("heroWordCount"), heroBookId = el("heroBookId"), heroStatus = el("heroStatus"), bookTitleInput = el("bookTitleInput"), libraryShelfSelect = el("libraryShelfSelect"), authorDisplay = el("authorDisplay"), anonymousPostCheckbox = el("anonymousPostCheckbox"), chapterSummaryBox = el("chapterSummaryBox"), coverUrlInput = el("coverUrlInput"), coverPreviewWrap = el("coverPreviewWrap"), coverPreviewImg = el("coverPreviewImg"), coverPreviewStatus = el("coverPreviewStatus"), genreSearchInput = el("genreSearchInput"), clearGenresBtn = el("clearGenresBtn"), selectedGenresChips = el("selectedGenresChips"), genreGroups = el("genreGroups"), ratingGrid = el("ratingGrid"), ratingGuideTitle = el("ratingGuideTitle"), ratingGuideSummary = el("ratingGuideSummary"), ratingGuideGrid = el("ratingGuideGrid"), warningSection = el("warningSection"), chapterWarningsList = el("chapterWarningsList"), applyBookWarningsToChaptersBtn = el("applyBookWarningsToChaptersBtn"), summaryInput = el("summaryInput"), extraTagsInput = el("extraTagsInput"), statusBox = el("statusBox"), saveDraftBtn = el("saveDraftBtn"), unpublishBtn = el("unpublishBtn"), publishHint = el("publishHint"), publishBtn = el("publishBtn");
+    const backBtn = el("backBtn"), themeBtn = el("themeBtn"), sidebarBookTitle = el("sidebarBookTitle"), selectedChapterCount = el("selectedChapterCount"), selectedChaptersList = el("selectedChaptersList"), checkGenres = el("checkGenres"), checkRating = el("checkRating"), checkWarnings = el("checkWarnings"), checkChapterWarnings = el("checkChapterWarnings"), checkSummary = el("checkSummary"), heroTitle = el("heroTitle"), heroChapterCount = el("heroChapterCount"), heroWordCount = el("heroWordCount"), heroBookId = el("heroBookId"), heroStatus = el("heroStatus"), bookTitleInput = el("bookTitleInput"), libraryShelfSelect = el("libraryShelfSelect"), authorDisplay = el("authorDisplay"), anonymousPostCheckbox = el("anonymousPostCheckbox"), chapterSummaryBox = el("chapterSummaryBox"), coverUrlInput = el("coverUrlInput"), coverPreviewWrap = el("coverPreviewWrap"), coverPreviewImg = el("coverPreviewImg"), coverPreviewStatus = el("coverPreviewStatus"), genreSearchInput = el("genreSearchInput"), clearGenresBtn = el("clearGenresBtn"), selectedGenresChips = el("selectedGenresChips"), genreGroups = el("genreGroups"), ratingGrid = el("ratingGrid"), ratingGuideTitle = el("ratingGuideTitle"), ratingGuideSummary = el("ratingGuideSummary"), ratingGuideGrid = el("ratingGuideGrid"), warningSection = el("warningSection"), chapterWarningsList = el("chapterWarningsList"), applyBookWarningsToChaptersBtn = el("applyBookWarningsToChaptersBtn"), chapterAuthorNotesList = el("chapterAuthorNotesList"), summaryInput = el("summaryInput"), extraTagsInput = el("extraTagsInput"), statusBox = el("statusBox"), saveDraftBtn = el("saveDraftBtn"), unpublishBtn = el("unpublishBtn"), publishHint = el("publishHint"), publishBtn = el("publishBtn");
 
     let currentUser = null;
     let currentBook = null;
@@ -377,6 +386,12 @@
     const chapterWarningOpenState = {};
     /** @type {Record<string, boolean>} */
     const chapterWarningCardOpen = {};
+    /** @type {Map<string, string>} */
+    const chapterAuthorNotes = new Map();
+    /** @type {Record<string, boolean>} */
+    const chapterAuthorNotesCardOpen = {};
+    /** @type {Record<string, string>} */
+    let libraryChapterAuthorNotes = {};
 
     const RATING_GUIDES = {
         General: { title: "General (G)", summary: "Suitable for all audiences, including children. Conflict, danger, sadness, romance, or emotional growth should be mild, age-appropriate, and non-graphic.", blocks: [{ heading: "May include", items: ["Mild fantasy or adventure violence without graphic injury.","Brief, non-detailed peril, conflict, or danger.","Innocent romance such as hand-holding, hugging, or kissing."] }, { heading: "Should not include", items: ["Explicit sexual acts or sustained sexual themes.","Graphic violence, gore, torture, or realistic bodily injury detail.","Detailed abuse, coercion, self-harm, suicide, addiction, or severe psychological trauma."] }] },
@@ -400,7 +415,6 @@
             imageUrl: imageUrls[0] || "",
             imageUrls,
             warnings: normalizeWarningData(chapter.warnings),
-            authorNotes: normalizeAuthorNotes(chapter.authorNotes ?? chapter.author_notes),
         };
     }
     function normalizeSections(rawSections) { const sections = safeObject(rawSections, {}); const frontRaw = safeArray(sections.front, []); const bodyRaw = safeArray(sections.body, []); const backRaw = safeArray(sections.back, []); return { front: frontRaw.length ? frontRaw.map((ch, index) => normalizeChapter(ch, index === 0 ? "Copyright" : "Table of Contents")) : [{ id: generateId(), title: "Copyright", content: "" }, { id: generateId(), title: "Table of Contents", content: "" }], body: bodyRaw.length ? bodyRaw.map((ch, index) => normalizeChapter(ch, `Chapter ${index + 1}`)) : [{ id: generateId(), title: "Chapter 1", content: "" }], back: backRaw.map((ch, index) => normalizeChapter(ch, `Back Matter ${index + 1}`)) }; }
@@ -411,7 +425,7 @@
         if (s.startsWith("//")) return "https:" + s;
         return "https://" + s.replace(/^\/+/, "");
     }
-    function normalizePublishMeta(rawPublishMeta) { const meta = safeObject(rawPublishMeta, {}); return { genres: safeArray(meta.genres, []).filter(item => typeof item === "string"), rating: safeString(meta.rating, ""), warnings: normalizeWarningData(meta.warnings), summary: safeString(meta.summary, ""), extraTags: safeArray(meta.extraTags || meta.extra_tags, []).filter(item => typeof item === "string"), coverUrl: normalizeCoverUrl(meta.coverUrl || meta.cover_url), isAnonymous: !!(meta.isAnonymous ?? meta.is_anonymous) }; }
+    function normalizePublishMeta(rawPublishMeta) { const meta = safeObject(rawPublishMeta, {}); const rawNotes = meta.chapterAuthorNotes ?? meta.chapter_author_notes; return { genres: safeArray(meta.genres, []).filter(item => typeof item === "string"), rating: safeString(meta.rating, ""), warnings: normalizeWarningData(meta.warnings), summary: safeString(meta.summary, ""), extraTags: safeArray(meta.extraTags || meta.extra_tags, []).filter(item => typeof item === "string"), coverUrl: normalizeCoverUrl(meta.coverUrl || meta.cover_url), isAnonymous: !!(meta.isAnonymous ?? meta.is_anonymous), chapterAuthorNotes: safeObject(rawNotes, {}) }; }
     function libraryAuthorName() { return isAnonymousPost ? ANONYMOUS_AUTHOR_LABEL : (authorName || "unknown"); }
     function normalizeBookData(rawData) { const data = safeObject(rawData, {}); return { id: safeString(data.id, bookId), user_id: safeString(data.user_id, currentUser?.id || ""), title: safeString(data.title, "Untitled Book"), sections: normalizeSections(data.sections), words: safeNumber(data.words, 0), updated: safeNumber(data.updated, Date.now()), isPublished: !!(data.isPublished ?? data.is_published), libraryType: safeString(data.libraryType ?? data.library_type, ""), mediaFormat: normalizeMediaFormat(data.mediaFormat ?? data.media_format), publishedChapterIds: safeArray(data.publishedChapterIds ?? data.published_chapter_ids, []).filter(item => typeof item === "string"), publishMeta: normalizePublishMeta(data.publishMeta ?? data.publish_meta) }; }
     function toDbBookPatch(extra = {}) { return { title: bookTitleInput.value.trim() || currentBook.title || "Untitled Book", library_type: libraryShelfSelect.value || null, media_format: currentBook?.mediaFormat || "novel", publish_meta: buildPublishMeta(), published_chapter_ids: selectedChapterObjects.map(ch => ch.id), is_published: !!isPublished, updated: Date.now(), ...extra }; }
@@ -474,7 +488,61 @@
         return selectedChapterObjects.map((chapter) => ({
             ...chapter,
             warnings: cloneWarningData(getChapterWarningSelections(chapter.id)),
+            authorNotes: getChapterAuthorNotes(chapter.id),
         }));
+    }
+
+    function getChapterAuthorNotes(chapterId) {
+        if (chapterAuthorNotes.has(chapterId)) return chapterAuthorNotes.get(chapterId);
+        const metaNotes = currentBook?.publishMeta?.chapterAuthorNotes;
+        if (metaNotes && Object.prototype.hasOwnProperty.call(metaNotes, chapterId)) {
+            const fromMeta = normalizeAuthorNotes(metaNotes[chapterId]);
+            chapterAuthorNotes.set(chapterId, fromMeta);
+            return fromMeta;
+        }
+        const fromLibrary = normalizeAuthorNotes(libraryChapterAuthorNotes[chapterId]);
+        chapterAuthorNotes.set(chapterId, fromLibrary);
+        return fromLibrary;
+    }
+
+    function renderChapterAuthorNotes() {
+        if (!chapterAuthorNotesList) return;
+        chapterAuthorNotesList.innerHTML = "";
+        selectedChapterObjects.forEach((chapter, index) => {
+            const notes = getChapterAuthorNotes(chapter.id);
+            const card = document.createElement("div");
+            card.className = "chapter-warning-card";
+            const header = document.createElement("button");
+            header.type = "button";
+            header.className = "chapter-warning-header";
+            const statusLabel = notes.trim() ? "Has note" : "Optional";
+            header.innerHTML = `<span class="chapter-warning-title">${index + 1}. ${chapter.title || "Untitled"}</span><span class="chapter-warning-status">${statusLabel} ${chapterAuthorNotesCardOpen[chapter.id] ? "▲" : "▼"}</span>`;
+            const body = document.createElement("div");
+            body.className = "chapter-warning-body" + (chapterAuthorNotesCardOpen[chapter.id] ? " open" : "");
+            const textarea = document.createElement("textarea");
+            textarea.className = "chapter-author-notes-input";
+            textarea.maxLength = MAX_AUTHOR_NOTES_LENGTH;
+            textarea.placeholder = "Optional note shown before this chapter (thank-yous, context, trigger reminders, etc.)";
+            textarea.value = notes;
+            textarea.addEventListener("input", () => {
+                chapterAuthorNotes.set(chapter.id, normalizeAuthorNotes(textarea.value));
+                const status = header.querySelector(".chapter-warning-status");
+                if (status) {
+                    const open = chapterAuthorNotesCardOpen[chapter.id];
+                    status.textContent = `${normalizeAuthorNotes(textarea.value) ? "Has note" : "Optional"} ${open ? "▲" : "▼"}`;
+                }
+            });
+            const hint = document.createElement("div");
+            hint.className = "chapter-author-notes-hint";
+            hint.textContent = "Plain text only. Saved when you publish or save draft metadata.";
+            body.append(textarea, hint);
+            header.addEventListener("click", () => {
+                chapterAuthorNotesCardOpen[chapter.id] = !chapterAuthorNotesCardOpen[chapter.id];
+                renderChapterAuthorNotes();
+            });
+            card.append(header, body);
+            chapterAuthorNotesList.appendChild(card);
+        });
     }
 
     function renderChapterWarnings() {
@@ -670,7 +738,7 @@
     coverUrlInput?.addEventListener("change", renderCoverPreview);
     anonymousPostCheckbox?.addEventListener("change", () => { isAnonymousPost = !!anonymousPostCheckbox.checked; renderHero(); });
     function getExtraTags() { return extraTagsInput.value.split(",").map(tag => tag.trim()).filter(Boolean); }
-    function buildPublishMeta() { return { genres: [...selectedGenres].sort((a, b) => a.localeCompare(b)), rating: selectedRating, warnings: WARNING_GROUPS.reduce((acc, group) => { acc[group.key] = safeArray(warningSelections[group.key], []); return acc; }, {}), summary: summaryInput.value.trim(), extraTags: getExtraTags(), coverUrl: normalizeCoverUrl(coverUrlInput?.value || ""), isAnonymous: !!isAnonymousPost }; }
+    function buildPublishMeta() { return { genres: [...selectedGenres].sort((a, b) => a.localeCompare(b)), rating: selectedRating, warnings: WARNING_GROUPS.reduce((acc, group) => { acc[group.key] = safeArray(warningSelections[group.key], []); return acc; }, {}), summary: summaryInput.value.trim(), extraTags: getExtraTags(), coverUrl: normalizeCoverUrl(coverUrlInput?.value || ""), isAnonymous: !!isAnonymousPost, chapterAuthorNotes: selectedChapterObjects.reduce((acc, chapter) => { acc[chapter.id] = getChapterAuthorNotes(chapter.id); return acc; }, {}) }; }
     function validateBeforePublish() { const errors = []; if (!bookId) errors.push("Missing book id."); if (!currentBook) errors.push("Book data has not loaded yet."); if (publishEligibility && !publishEligibility.allowed) errors.push(formatPublishBlockMessage(publishEligibility)); if (!selectedChapterObjects.length) errors.push("No chapters were selected. Go back and choose at least one chapter."); if (!bookTitleInput.value.trim()) errors.push("Title is required."); if (!libraryShelfSelect.value) errors.push("Choose Fiction, Nonfiction, or Fanfiction."); if (selectedGenres.size === 0) errors.push("Pick at least one genre."); if (!selectedRating) errors.push("Select one age rating."); if (!everyWarningCategoryHasAChoice(warningSelections)) errors.push("Every story warning category must have at least one choice."); if (!everySelectedChapterHasWarnings()) errors.push("Every selected chapter needs complete content warnings."); if (!summaryInput.value.trim()) errors.push("Summary is required."); if ((selectedRating === "Mature" || selectedRating === "Explicit") && countNonNoneWarnings(warningSelections) === 0) errors.push("Mature and Explicit stories must include at least one non-“None” story content warning."); selectedChapterObjects.forEach((chapter) => { if ((selectedRating === "Mature" || selectedRating === "Explicit") && countNonNoneWarnings(getChapterWarningSelections(chapter.id)) === 0) errors.push(`"${chapter.title || "Untitled"}" needs at least one non-“None” chapter warning for Mature/Explicit ratings.`); }); const { immediate, scheduled } = buildReleasePlan(); if (!immediate.length && !scheduled.length) errors.push("Choose at least one chapter to publish or schedule."); scheduled.forEach(({ chapter, scheduledAt }) => { if (!isValidFutureSchedule(scheduledAt)) errors.push(`"${chapter.title || "Untitled"}" needs a release time at least 5 minutes in the future.`); }); return errors; }
 
     function renderPublishCooldownUI() {
@@ -775,7 +843,6 @@
             const target = bodyList.find((ch) => ch.id === chapter.id);
             if (target) {
                 target.warnings = cloneWarningData(chapter.warnings);
-                target.authorNotes = normalizeAuthorNotes(chapter.authorNotes);
             }
         });
         try {
@@ -920,12 +987,16 @@
         if (!currentBook.publishMeta.isAnonymous && (libData.isAnonymous || libData.is_anonymous || libData.author === ANONYMOUS_AUTHOR_LABEL)) {
             currentBook.publishMeta = { ...currentBook.publishMeta, isAnonymous: true };
         }
+        libraryChapterAuthorNotes = Object.fromEntries(
+            safeArray(libData.chapters, []).map((chapter) => [chapter.id, normalizeAuthorNotes(chapter.authorNotes ?? chapter.author_notes)])
+        );
+        chapterAuthorNotes.clear();
         selectedChapterIds = parseChapterIds();
         if (!selectedChapterIds.length && currentBook.publishedChapterIds?.length) selectedChapterIds = [...currentBook.publishedChapterIds];
         if (!selectedChapterIds.length) selectedChapterIds = safeArray(currentBook.sections.body, []).map(ch => ch.id);
         buildSelectedChapters();
         hydrateFormFromBook();
-        renderSidebar(); renderHero(); renderBasicInfo(); renderGenres(); renderRating(); renderWarnings(); renderChapterWarnings(); renderChecklist();
+        renderSidebar(); renderHero(); renderBasicInfo(); renderGenres(); renderRating(); renderWarnings(); renderChapterWarnings(); renderChapterAuthorNotes(); renderChecklist();
         await refreshPendingSchedules();
     }
 
