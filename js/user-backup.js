@@ -31,9 +31,6 @@ const CLOUD_TABLES = [
   { table: "books", eq: "user_id" },
   { table: "library", eq: "user_id" },
   { table: "notifications", eq: "user_id" },
-  { table: "story_bible_characters", eq: "user_id" },
-  { table: "story_bible_places", eq: "user_id" },
-  { table: "story_bible_facts", eq: "user_id" },
   { table: "worldbuilding_encyclopedia", eq: "user_id" },
   { table: "worldbuilding_workbooks", eq: "user_id" },
   { table: "world_encyclopedias", eq: "user_id" },
@@ -48,7 +45,6 @@ const CLOUD_TABLES = [
   { table: "chapter_reactions", eq: "user_id" },
   { table: "reads", eq: "user_id" },
   { table: "reader_beta_notes", eq: "user_id" },
-  { table: "plot_issues", eq: "user_id" },
   { table: "book_versions", eq: "user_id" },
 ];
 
@@ -60,7 +56,6 @@ const DEVICE_PREFERENCE_KEYS = [
   "alysum-display-text-color",
   "alysum-display-text-color-main",
   "alysum-display-text-color-accent",
-  "alysum-story-bible-ui",
   "alysum-theme",
   "alysum-font",
   "alysum-fontSize",
@@ -84,9 +79,6 @@ const EXCLUDED_LS_EXACT = new Set(["alysumBackendAlertDismissed"]);
 const RESTORE_TABLES = [
   { table: "books", onConflict: "id", userField: "user_id" },
   { table: "library", onConflict: "id", userField: "user_id" },
-  { table: "story_bible_characters", onConflict: "user_id,book_id,id", userField: "user_id" },
-  { table: "story_bible_places", onConflict: "user_id,book_id,id", userField: "user_id" },
-  { table: "story_bible_facts", onConflict: "user_id,book_id,id", userField: "user_id" },
   { table: "worldbuilding_encyclopedia", onConflict: "user_id,id", userField: "user_id" },
   { table: "worldbuilding_workbooks", onConflict: "user_id,id", userField: "user_id" },
   { table: "world_encyclopedias", onConflict: "user_id,id", userField: "user_id" },
@@ -101,7 +93,6 @@ const RESTORE_TABLES = [
   { table: "chapter_reactions", onConflict: "id", userField: "user_id" },
   { table: "reads", onConflict: "id", userField: "user_id" },
   { table: "reader_beta_notes", onConflict: "user_id,book_id", userField: "user_id" },
-  { table: "plot_issues", onConflict: "id", userField: "user_id" },
   { table: "book_versions", onConflict: "id", userField: "user_id" },
   { table: "notifications", onConflict: "id", userField: "user_id", skipRestore: true },
 ];

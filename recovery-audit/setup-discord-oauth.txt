@@ -1,19 +1,28 @@
-DISCORD LOGIN FIX — "Unsupported provider: provider is not enabled"
-===================================================================
+DISCORD LOGIN FIX
+=================
 
-This error means Discord is NOT turned on in the NEW Supabase project yet.
-The Alysum app code is fine. You must enable Discord in Supabase + Discord Developer Portal.
+LIVE VALUES (verified from Supabase on 2026-07-11)
+  Supabase project: jrfxgpkpbacajhcwimgz
+  Discord Client ID in Supabase: 1505258346696151231
+  Redirect URI Discord must allow (copy exactly):
+    https://jrfxgpkpbacajhcwimgz.supabase.co/auth/v1/callback
 
-PROJECT: jrfxgpkpbacajhcwimgz
-CALLBACK URL (paste into Discord Developer Portal):
-  https://jrfxgpkpbacajhcwimgz.supabase.co/auth/v1/callback
+ERROR: "Unsupported provider: provider is not enabled"
+  → Discord is OFF in Supabase. See STEP 2 below.
+
+ERROR: "Invalid OAuth2 redirect_uri"
+  → Discord app 1505258346696151231 is missing the Supabase callback above.
+  → Do NOT add https://www.alysumwriting.com/login.html to Discord — that is wrong.
+  → Do NOT use the old project callback (tiqmhozzxhiydjnyuuaw) unless you also add the new one.
 
 STEP 1 — Discord Developer Portal
   https://discord.com/developers/applications
-  • Open your existing Alysum app (or create one)
-  • OAuth2 → General
-  • Add redirect:
+  • Open the app whose Client ID is 1505258346696151231
+    (must match Supabase → Auth → Providers → Discord)
+  • OAuth2 → Redirects → Add Redirect
+  • Paste exactly (no trailing slash):
       https://jrfxgpkpbacajhcwimgz.supabase.co/auth/v1/callback
+  • Click Save Changes at the bottom of the page
   • Copy Client ID and Client Secret (Reset Secret if you no longer have it)
 
 STEP 2 — Supabase (required)

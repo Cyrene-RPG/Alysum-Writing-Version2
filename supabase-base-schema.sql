@@ -5,11 +5,10 @@
 --   1. supabase-sibling-tables.sql
 --   2. supabase-library-rls.sql
 --   3. supabase-leaderboard.sql
---   4. supabase-plot-issues.sql
---   5. supabase-library-reports.sql (after library RLS)
---   6. supabase-staff-users.sql (after library reports — user browser RPCs)
---   7. supabase-publish-cooldown.sql (after library reports)
---   8. supabase-feature-usage.sql (after library reports)
+--   4. supabase-library-reports.sql (after library RLS)
+--   5. supabase-staff-users.sql (after library reports — user browser RPCs)
+--   6. supabase-publish-cooldown.sql (after library reports)
+--   7. supabase-feature-usage.sql (after library reports)
 
 -- ---------------------------------------------------------------------------
 -- public.users — profile row keyed to auth.users

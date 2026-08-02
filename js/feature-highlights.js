@@ -60,28 +60,6 @@ export const FEATURE_CATALOG = [
         ctaHref: "settings.html#author-bio",
         ctaLabel: "Go to Author biography",
     },
-    {
-        id: "lore-wiki",
-        title: "Lore Wiki",
-        description:
-            "Publish read-only lore encyclopedias for readers. Draft in Story Wiki, then publish articles to Lore Wiki.",
-        where: "Workspace nav → Lore Wiki",
-        releasedAt: "2026-07-14T12:00:00.000Z",
-        navSelectors: ['a[href*="lore-wiki.html"]'],
-        ctaHref: "lore-wiki.html",
-        ctaLabel: "Open Lore Wiki",
-    },
-    {
-        id: "story-wiki",
-        title: "Story Wiki",
-        description:
-            "A Wikipedia-style wiki for characters, places, and lore — linked to your manuscript while you write.",
-        where: "Workspace nav → Story Wiki",
-        releasedAt: "2026-07-07T12:00:00.000Z",
-        navSelectors: ['#navStoryBible', 'a[href*="wiki.html"]', 'a[href*="story-bible.html"]'],
-        ctaHref: "wiki.html",
-        ctaLabel: "Open Story Wiki",
-    },
 ];
 
 function escapeHtml(value) {

@@ -110,6 +110,11 @@ let typingIdleTimer = null;
 let draftPingResolver = null;
 /** @type {Map<string, string>} */
 const opponentDraftHtmlCache = new Map();
+/** @type {Map<string, { interactingUntil: number, flushTimer: number | null, pendingHtml: string | null, pendingTitle: string | null }>} */
+const opponentScrollState = new Map();
+
+const OPPONENT_SCROLL_IDLE_MS = 900;
+const OPPONENT_READING_THRESHOLD_PX = 16;
 
 function escapeHtml(str) {
     return String(str)
@@ -369,11 +374,9 @@ function renderShareControls() {
 }
 
 function renderOpponentPaneBody(opponent) {
-    const showingDraft = Boolean(opponent.shareDraft && opponent.liveChapterHtml);
-    if (!showingDraft) {
-        const hiddenText = opponent.shareDraft
-            ? "Sharing is on, but nothing is in this chapter yet."
-            : "Draft hidden — they can turn on Share draft live.";
+    const sharing = opponentSharingEnabled(opponent);
+    if (!sharing) {
+        const hiddenText = "Draft hidden — they can turn on Share draft live.";
         return `
             <div class="ww-duel-frame-wrap">
                 <div class="ww-opponent-empty">
@@ -433,8 +436,154 @@ function renderEmptyOpponentPane() {
     `;
 }
 
-function opponentShowsDraft(opponent) {
-    return Boolean(opponent.shareDraft && opponent.liveChapterHtml);
+function opponentSharingEnabled(opponent) {
+    return Boolean(opponent.shareDraft);
+}
+
+function getOpponentScrollEl(pane) {
+    return pane?.querySelector(".ww-opponent-scroll") || null;
+}
+
+function captureOpponentScrollAnchor(scrollEl) {
+    if (!scrollEl || scrollEl.scrollTop <= OPPONENT_READING_THRESHOLD_PX) {
+        return { scrollTop: scrollEl?.scrollTop ?? 0 };
+    }
+    const scrollRect = scrollEl.getBoundingClientRect();
+    const probeY = scrollRect.top + 12;
+    const probeX = scrollRect.left + Math.min(scrollRect.width / 2, 120);
+    let node = document.elementFromPoint(probeX, probeY);
+    while (node && node !== scrollEl && !scrollEl.contains(node)) {
+        node = node.parentElement;
+    }
+    if (!node || !scrollEl.contains(node) || node === scrollEl) {
+        return { scrollTop: scrollEl.scrollTop };
+    }
+    return { scrollTop: scrollEl.scrollTop, node };
+}
+
+function restoreOpponentScrollAnchor(scrollEl, anchor) {
+    if (!scrollEl || !anchor) return;
+    if (anchor.node?.isConnected && scrollEl.contains(anchor.node)) {
+        const scrollRect = scrollEl.getBoundingClientRect();
+        const nodeRect = anchor.node.getBoundingClientRect();
+        scrollEl.scrollTop += nodeRect.top - scrollRect.top - 12;
+        return;
+    }
+    scrollEl.scrollTop = anchor.scrollTop;
+}
+
+function restoreOpponentScrollSoon(scrollEl, anchor) {
+    if (!scrollEl) return;
+    const apply = () => restoreOpponentScrollAnchor(scrollEl, anchor);
+    apply();
+    requestAnimationFrame(() => {
+        apply();
+        requestAnimationFrame(apply);
+    });
+}
+
+function opponentIsReading(userId, scrollEl) {
+    if (!scrollEl || scrollEl.scrollTop <= OPPONENT_READING_THRESHOLD_PX) return false;
+    const state = opponentScrollState.get(userId);
+    return Boolean(state && Date.now() < state.interactingUntil);
+}
+
+function bindOpponentScroll(pane, userId) {
+    if (pane.dataset.scrollBound === userId) return;
+    pane.dataset.scrollBound = userId;
+
+    const markInteracting = () => {
+        const scrollEl = getOpponentScrollEl(pane);
+        const prev = opponentScrollState.get(userId) || {};
+        opponentScrollState.set(userId, {
+            interactingUntil: Date.now() + OPPONENT_SCROLL_IDLE_MS,
+            flushTimer: prev.flushTimer ?? null,
+            pendingHtml: prev.pendingHtml ?? null,
+            pendingTitle: prev.pendingTitle ?? null,
+        });
+        if (prev.pendingHtml != null || prev.pendingTitle != null) {
+            scheduleOpponentDraftFlush(userId, pane);
+        }
+    };
+
+    pane.addEventListener("wheel", markInteracting, { passive: true, capture: true });
+    pane.addEventListener("touchstart", markInteracting, { passive: true, capture: true });
+    pane.addEventListener("pointerdown", markInteracting, { passive: true, capture: true });
+    getOpponentScrollEl(pane)?.addEventListener("scroll", markInteracting, { passive: true });
+}
+
+function scheduleOpponentDraftFlush(userId, pane) {
+    const state = opponentScrollState.get(userId);
+    if (!state) return;
+    if (state.pendingHtml == null && state.pendingTitle == null) return;
+    if (state.flushTimer) window.clearTimeout(state.flushTimer);
+    state.flushTimer = window.setTimeout(() => {
+        state.flushTimer = null;
+        const scrollEl = getOpponentScrollEl(pane);
+        if (opponentIsReading(userId, scrollEl)) {
+            scheduleOpponentDraftFlush(userId, pane);
+            return;
+        }
+        flushOpponentDraftUpdate(pane, userId);
+    }, OPPONENT_SCROLL_IDLE_MS);
+}
+
+function flushOpponentDraftUpdate(pane, userId) {
+    const state = opponentScrollState.get(userId);
+    if (!state) return;
+    const scrollEl = getOpponentScrollEl(pane);
+    const editorEl = pane.querySelector(`[data-opponent-id="${CSS.escape(userId)}"]`);
+    const titleEl = scrollEl?.querySelector(".ww-opponent-chapter-title");
+
+    if (state.pendingTitle != null && titleEl) {
+        titleEl.textContent = state.pendingTitle;
+        state.pendingTitle = null;
+    }
+    if (state.pendingHtml != null && editorEl) {
+        applyOpponentDraftHtml(editorEl, scrollEl, userId, state.pendingHtml);
+        state.pendingHtml = null;
+    }
+}
+
+function applyOpponentDraftHtml(editorEl, scrollEl, userId, nextHtml) {
+    if (opponentDraftHtmlCache.get(userId) === nextHtml) return;
+    const anchor = captureOpponentScrollAnchor(scrollEl);
+    editorEl.innerHTML = nextHtml;
+    opponentDraftHtmlCache.set(userId, nextHtml);
+    restoreOpponentScrollSoon(scrollEl, anchor);
+}
+
+function queueOpponentDraftHtmlUpdate(pane, opponent) {
+    const userId = opponent.userId;
+    const scrollEl = getOpponentScrollEl(pane);
+    const nextHtml = opponent.liveChapterHtml || "";
+    const nextTitle = opponent.liveChapterTitle || "Untitled chapter";
+    bindOpponentScroll(pane, userId);
+
+    const state = opponentScrollState.get(userId) || {
+        interactingUntil: 0,
+        flushTimer: null,
+        pendingHtml: null,
+        pendingTitle: null,
+    };
+
+    if (opponentDraftHtmlCache.get(userId) === nextHtml) {
+        const titleEl = scrollEl?.querySelector(".ww-opponent-chapter-title");
+        if (titleEl && titleEl.textContent !== nextTitle) titleEl.textContent = nextTitle;
+        opponentScrollState.set(userId, state);
+        return;
+    }
+
+    state.pendingHtml = nextHtml;
+    state.pendingTitle = nextTitle;
+    opponentScrollState.set(userId, state);
+
+    if (opponentIsReading(userId, scrollEl)) {
+        scheduleOpponentDraftFlush(userId, pane);
+        return;
+    }
+
+    flushOpponentDraftUpdate(pane, userId);
 }
 
 function updateOpponentPaneHead(pane, opponent, label) {
@@ -465,16 +614,18 @@ function mountOpponentHiddenBody(pane, opponent) {
         </div>
     `;
     opponentDraftHtmlCache.delete(opponent.userId);
+    const state = opponentScrollState.get(opponent.userId);
+    if (state?.flushTimer) window.clearTimeout(state.flushTimer);
+    opponentScrollState.delete(opponent.userId);
 }
 
 function mountOpponentDraftBody(pane, opponent) {
     const frameWrap = pane.querySelector(".ww-duel-frame-wrap");
     if (!frameWrap) return;
 
-    const scrollEl = frameWrap.querySelector(".ww-opponent-scroll");
-    const scrollTop = scrollEl?.scrollTop ?? 0;
     const nextHtml = opponent.liveChapterHtml || "";
     const nextTitle = opponent.liveChapterTitle || "Untitled chapter";
+    const scrollEl = frameWrap.querySelector(".ww-opponent-scroll");
 
     if (!scrollEl) {
         frameWrap.innerHTML = `
@@ -486,36 +637,32 @@ function mountOpponentDraftBody(pane, opponent) {
             </div>
         `;
         const editorEl = frameWrap.querySelector(".ww-opponent-editor");
-        if (editorEl) editorEl.innerHTML = nextHtml;
-        const nextScrollEl = frameWrap.querySelector(".ww-opponent-scroll");
-        if (nextScrollEl) nextScrollEl.scrollTop = scrollTop;
-        opponentDraftHtmlCache.set(opponent.userId, nextHtml);
+        if (editorEl && nextHtml) {
+            editorEl.innerHTML = nextHtml;
+            opponentDraftHtmlCache.set(opponent.userId, nextHtml);
+        }
+        bindOpponentScroll(pane, opponent.userId);
         return;
     }
 
-    const titleEl = scrollEl.querySelector(".ww-opponent-chapter-title");
-    const editorEl = scrollEl.querySelector(
-        `[data-opponent-id="${CSS.escape(opponent.userId)}"]`
-    );
-    if (titleEl) titleEl.textContent = nextTitle;
-    if (editorEl && opponentDraftHtmlCache.get(opponent.userId) !== nextHtml) {
-        editorEl.innerHTML = nextHtml;
-        opponentDraftHtmlCache.set(opponent.userId, nextHtml);
-    }
-    scrollEl.scrollTop = scrollTop;
+    queueOpponentDraftHtmlUpdate(pane, opponent);
 }
 
 function syncOpponentPaneBody(pane, opponent) {
-    const showingDraft = opponentShowsDraft(opponent);
+    const sharing = opponentSharingEnabled(opponent);
     const hasDraftView = Boolean(pane.querySelector(".ww-opponent-scroll"));
 
-    if (showingDraft !== hasDraftView) {
-        if (showingDraft) mountOpponentDraftBody(pane, opponent);
-        else mountOpponentHiddenBody(pane, opponent);
+    if (sharing && !hasDraftView) {
+        mountOpponentDraftBody(pane, opponent);
         return;
     }
-
-    if (showingDraft) mountOpponentDraftBody(pane, opponent);
+    if (!sharing && hasDraftView) {
+        mountOpponentHiddenBody(pane, opponent);
+        return;
+    }
+    if (sharing) {
+        queueOpponentDraftHtmlUpdate(pane, opponent);
+    }
 }
 
 function ensureOpponentPane(opponent, index, opponentCount) {
@@ -528,14 +675,15 @@ function ensureOpponentPane(opponent, index, opponentCount) {
     pane = duelGridEl.querySelector(`[data-opponent-pane="${CSS.escape(opponent.userId)}"]`);
     if (!pane) return null;
 
-    if (opponentShowsDraft(opponent)) {
+    if (opponentSharingEnabled(opponent)) {
         const editorEl = pane.querySelector(
             `[data-opponent-id="${CSS.escape(opponent.userId)}"]`
         );
-        if (editorEl) {
-            editorEl.innerHTML = opponent.liveChapterHtml || "";
-            opponentDraftHtmlCache.set(opponent.userId, opponent.liveChapterHtml || "");
+        if (editorEl && opponent.liveChapterHtml) {
+            editorEl.innerHTML = opponent.liveChapterHtml;
+            opponentDraftHtmlCache.set(opponent.userId, opponent.liveChapterHtml);
         }
+        bindOpponentScroll(pane, opponent.userId);
     }
     return pane;
 }
@@ -550,7 +698,10 @@ function renderOpponentMirror() {
     if (!duelGridEl) return;
 
     const gridScrollTop = duelGridEl.scrollTop;
-    duelGridEl.className = `ww-duel-grid is-count-${duelGridCount()}`;
+    const nextGridClass = `ww-duel-grid is-count-${duelGridCount()}`;
+    if (duelGridEl.className !== nextGridClass) {
+        duelGridEl.className = nextGridClass;
+    }
 
     if (opponents.length) {
         duelGridEl.querySelector(".ww-duel-pane.is-opponent.is-empty")?.remove();
@@ -571,6 +722,9 @@ function renderOpponentMirror() {
         const id = pane.getAttribute("data-opponent-pane");
         if (id && !seenIds.has(id)) {
             opponentDraftHtmlCache.delete(id);
+            const state = opponentScrollState.get(id);
+            if (state?.flushTimer) window.clearTimeout(state.flushTimer);
+            opponentScrollState.delete(id);
             pane.remove();
         }
     });
@@ -579,7 +733,9 @@ function renderOpponentMirror() {
         duelGridEl.insertAdjacentHTML("beforeend", renderEmptyOpponentPane());
     }
 
-    duelGridEl.scrollTop = gridScrollTop;
+    requestAnimationFrame(() => {
+        duelGridEl.scrollTop = gridScrollTop;
+    });
 }
 
 function renderRecap() {

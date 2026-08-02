@@ -10,5 +10,13 @@
 
 import { inject } from "https://esm.sh/@vercel/analytics@1";
 
-// Initialize Vercel Analytics
-inject();
+const host = typeof location !== "undefined" ? location.hostname : "";
+const isLocalDev =
+    host === "localhost" ||
+    host === "127.0.0.1" ||
+    host.endsWith(".local");
+
+// Vercel serves /_vercel/insights/script.js only on deployed projects with Web Analytics enabled.
+if (!isLocalDev) {
+    inject();
+}

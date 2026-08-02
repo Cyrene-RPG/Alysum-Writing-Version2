@@ -58,7 +58,7 @@ export function mountMagicSystemBuilder(container, config) {
     output.className = "ms-output";
     output.innerHTML =
         "<h2>Compiled magic bible</h2>" +
-        "<p>Only answered fields appear here. Paste into your encyclopedia, Story Bible, or manuscript notes.</p>" +
+        "<p>Only answered fields appear here. Paste into your encyclopedia or manuscript notes.</p>" +
         "<pre data-ms-output></pre>";
 
     container.replaceChildren(shell, output);

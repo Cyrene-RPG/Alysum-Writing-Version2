@@ -13,7 +13,6 @@ import {
     cosmeticDisplayNameFromUserData,
     permanentHandleFromUserData,
 } from "./profile-display.js?v=3";
-import { isStoryBibleUiEnabled, STORY_BIBLE_PREF_KEY, STORY_BIBLE_PREF_EVENT } from "./story-bible-prefs.js?v=3";
 import {
     buildEditorContinueUrl,
     pickContinueWritingBookId,
@@ -30,7 +29,6 @@ const PATH_TO_ACTIVE = new Map([
     ["writer-dashboard.html", "studio"],
     ["studio.html", "studio"],
     ["library.html", "library"],
-    ["lore-wiki.html", "lore-wiki"],
     ["library-violations.html", "library"],
     ["beta-rooms.html", "beta-rooms"],
     ["beta-room.html", "beta-rooms"],
@@ -43,9 +41,6 @@ const PATH_TO_ACTIVE = new Map([
     ["encyclopedia.html", "encyclopedia"],
     ["vault.html", "notes"],
     ["note-graph.html", "note-graph"],
-    ["Story-Bible-New.html", "story-wiki"],
-    ["story-bible.html", "story-wiki"],
-    ["wiki.html", "story-wiki"],
     ["plotweave.html", "plotweave"],
     ["Novel_Exporter.html", "exporter"],
     ["badges.html", "achievements"],
@@ -61,7 +56,6 @@ const PATH_TO_ACTIVE = new Map([
     ["worldbuilding.html", "encyclopedia"],
     ["flow-mapper.html", "plotweave"],
     ["prompt-notebook.html", "notes"],
-    ["character-profile.html", "story-bible"],
     ["library-violations.html", "library"],
     ["names.html", "encyclopedia"],
     ["writer-resources.html", "studio"],
@@ -83,10 +77,6 @@ const WELCOME_DEFAULTS = {
         title: "Welcome to the Library.",
         subtitle: "Browse the shelves, find your next read, and keep your place across Alysum.",
     },
-    "lore-wiki": {
-        title: "Lore Wiki",
-        subtitle: "Explore read-only lore encyclopedias published by authors — editing stays private in Story Wiki.",
-    },
     notes: {
         title: "Alysum Vault",
         subtitle: "Your story memory, organized.",
@@ -100,8 +90,6 @@ const WELCOME_DEFAULTS = {
     encyclopedia: { title: "World encyclopedia", subtitle: "Build and browse your story worlds." },
     "note-graph": { title: "Note Graph", subtitle: "Visualize connections between your notes." },
     plotweave: { title: "Plotweave", subtitle: "Map story structure and plot threads." },
-    "story-bible": { title: "Story Wiki", subtitle: "Linked encyclopedia for characters, places, and lore." },
-    "story-wiki": { title: "Story Wiki", subtitle: "Linked encyclopedia for characters, places, and lore." },
     "story-board": { title: "Story Board", subtitle: "Organize scenes and story beats." },
     exporter: { title: "Novel Exporter", subtitle: "Export manuscripts for print and sharing." },
     "author-stats": { title: "Author stats", subtitle: "Insights into your writing and readership." },
@@ -167,7 +155,6 @@ function renderNavHtml(active) {
                 <span class="wd-nav-divider" aria-hidden="true"></span>
                 <a href="${navHref("writer-dashboard.html")}"${activeClass("studio", active)}>Studio</a>
                 <a href="${navHref("library.html")}"${activeClass("library", active)}>Library</a>
-                <a href="${navHref("lore-wiki.html")}"${activeClass("lore-wiki", active)}>Lore Wiki</a>
                 <a href="${navHref("beta-rooms.html")}"${activeClass("beta-rooms", active)}>Beta rooms</a>
                 <a href="${navHref("collab-rooms.html")}"${activeClass("collab-rooms", active)}>Collab rooms</a>
                 <a href="${navHref("author-dashboard.html")}" id="navAuthorStats"${activeClass("author-stats", active)}>
@@ -178,7 +165,6 @@ function renderNavHtml(active) {
                 <span class="wd-nav-divider" aria-hidden="true"></span>
                 <a href="${navHref("vault.html")}"${activeClass("notes", active)}>Notes</a>
                 <a href="${navHref("note-graph.html")}"${activeClass("note-graph", active)}>Note Graph</a>
-                <a href="${navHref("wiki.html")}" id="navStoryBible"${activeClass("story-wiki", active)}>Story Wiki</a>
                 <a href="${navHref("story-board/")}"${activeClass("story-board", active)}>Story Board</a>
                 <a href="${navHref("plotweave.html")}"${activeClass("plotweave", active)}>Plotweave</a>
                 <a href="${navHref("Novel_Exporter.html")}"${activeClass("exporter", active)}>Exporter</a>
@@ -220,12 +206,6 @@ function renderWelcomeProfile(profile, fallbackLabel) {
         welcomePfpImg.removeAttribute("src");
         welcomePfpInitial.classList.remove("is-hidden");
     }
-}
-
-function applyStoryBibleNav() {
-    const navStoryBible = document.getElementById("navStoryBible");
-    if (!navStoryBible) return;
-    navStoryBible.classList.toggle("is-hidden", !isStoryBibleUiEnabled());
 }
 
 async function loadDashboardBadge(uid) {
@@ -300,7 +280,6 @@ async function hydrateWelcomeBar(options) {
         const label = "Guest";
         welcomeTitle.innerHTML = `Welcome, <span class="wd-name">${escapeHtml(label)}</span>.`;
         renderWelcomeProfile({}, label);
-        applyStoryBibleNav();
         return;
     }
 
@@ -309,7 +288,6 @@ async function hydrateWelcomeBar(options) {
     if (!user) {
         if (signedOutTitle) welcomeTitle.textContent = signedOutTitle;
         else welcomeTitle.textContent = "Welcome back.";
-        applyStoryBibleNav();
         return;
     }
 
@@ -332,7 +310,6 @@ async function hydrateWelcomeBar(options) {
         navReading?.classList.remove("is-hidden");
     }
 
-    applyStoryBibleNav();
     void loadDashboardBadge(user.id);
 }
 
@@ -373,11 +350,6 @@ export function initWorkspaceNav(options = {}) {
 
     wireLogoutButtons(document);
     wireContinueButton();
-
-    window.addEventListener("storage", (e) => {
-        if (e.key === STORY_BIBLE_PREF_KEY) applyStoryBibleNav();
-    });
-    window.addEventListener(STORY_BIBLE_PREF_EVENT, applyStoryBibleNav);
 
     if (!options.skipAuthHydrate) {
         hydrateWelcomeBar({ ...options, active }).catch(console.warn);

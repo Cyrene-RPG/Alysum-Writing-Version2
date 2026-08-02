@@ -954,47 +954,8 @@
         }
     }
 
-    .story-bible-box .profile-box-title {
-        margin-bottom: 8px;
-    }
-
-    .story-bible-box .btn {
-        margin-top: 4px;
-        text-decoration: none;
-    }
-
     .password-panel-body .profile-box-actions {
         grid-column: 1 / -1;
-    }
-
-    .story-bible-toggle {
-        display: flex;
-        align-items: flex-start;
-        gap: 10px;
-        cursor: pointer;
-        margin: 16px 0 0;
-        padding: 12px 14px;
-        border-radius: 12px;
-        border: 1px solid color-mix(in srgb, var(--purple-bright) 35%, var(--border));
-        background: rgba(0, 0, 0, 0.2);
-        font-size: 12px;
-        font-weight: 800;
-        color: var(--muted);
-        text-transform: none;
-        letter-spacing: 0;
-    }
-
-    .story-bible-toggle input {
-        margin-top: 3px;
-        accent-color: var(--purple-bright, #a78bfa);
-    }
-
-    .story-bible-toggle strong {
-        display: block;
-        font-size: 14px;
-        margin-bottom: 4px;
-        color: #fff;
-        font-weight: 800;
     }
 
     .backup-panel-body {
@@ -1121,11 +1082,6 @@
     }
 
     @media (min-width: 768px) {
-        .story-bible-box {
-            grid-column: 1;
-            grid-row: 2;
-        }
-
         .profile-danger-box {
             grid-column: 2;
             grid-row: 2;
@@ -1276,7 +1232,6 @@
                 <span class="wd-nav-divider" aria-hidden="true"></span>
                 <a href="writer-dashboard.html">Studio</a>
                 <a href="library.html">Library</a>
-                <a href="lore-wiki.html">Lore Wiki</a>
                 <a href="beta-rooms.html">Beta rooms</a>
                 <a href="collab-rooms.html">Collab rooms</a>
                 <a href="author-dashboard.html" id="navAuthorStats">
@@ -1287,7 +1242,6 @@
                 <span class="wd-nav-divider" aria-hidden="true"></span>
                 <a href="vault.html">Notes</a>
                 <a href="note-graph.html">Note Graph</a>
-                <a href="story-bible.html" id="navStoryBible">Story Wiki</a>
                 <a href="story-board/">Story Board</a>
                 <a href="plotweave.html">Plotweave</a>
                 <a href="Novel_Exporter.html">Exporter</a>
@@ -1370,7 +1324,7 @@
                         <strong>Author</strong>
                         <span class="account-type-tagline">Write, publish, and manage your books.</span>
                         <p class="account-type-detail">
-                            You land in Studio after sign-in. The editor, Story Wiki, worldbuilding, and publish tools stay front and center. Open the Library from the menu when you want to read or leave feedback on someone else’s work.
+                            You land in Studio after sign-in. The editor, worldbuilding, and publish tools stay front and center. Open the Library from the menu when you want to read or leave feedback on someone else’s work.
                         </p>
                     </span>
                 </span>
@@ -1474,24 +1428,6 @@
                 <a class="btn" id="authorBioPreviewLink" href="author.html" target="_blank" rel="noopener">Preview author page</a>
                 <div class="msg" id="bioMsg" role="status"></div>
             </div>
-        </section>
-
-        <section class="profile-box story-bible-box" aria-labelledby="storyBibleBoxTitle">
-            <h3 class="profile-box-title" id="storyBibleBoxTitle">Story Wiki</h3>
-            <p class="hint" style="margin-bottom: 12px">
-                Linked encyclopedia per book — write articles for characters and places, connect them with <strong>[[wikilinks]]</strong>, and browse like Wikipedia while you draft.
-            </p>
-            <a href="story-bible.html" class="btn btn-primary">Open Story Wiki</a>
-            <label class="story-bible-toggle" for="storyBibleUiToggle">
-                <input type="checkbox" id="storyBibleUiToggle" />
-                <span>
-                    <strong>Show Story Wiki in the app</strong>
-                    <span class="hint" style="margin: 0; display: block"
-                        >When off, editor and Studio hide Story Wiki links. This device only; your saved wiki data
-                        stays in your account.</span
-                    >
-                </span>
-            </label>
         </section>
 
         <section class="profile-box profile-danger-box hidden" id="deleteAccountSection" aria-labelledby="deleteAccountTitle">
@@ -1701,7 +1637,6 @@
         resolveDisplayColorPair
     } from "./js/display-text-color.js?v=4";
     import { normalizeAccountType, ACCOUNT_AUTHOR, ACCOUNT_READER, ACCOUNT_BOTH, homeUrlForUserData } from "./js/account-mode.js?v=1";
-    import { isStoryBibleUiEnabled, setStoryBibleUiEnabled } from "./js/story-bible-prefs.js?v=1";
     import {
         exportUserBackup,
         saveUserBackupToDisk,
@@ -2152,14 +2087,6 @@
         initSettingsNav();
         import("./js/feature-highlights.js?v=3").then((m) => m.applyFeatureNewBadges()).catch(() => {});
 
-        const storyBibleUiToggle = document.getElementById("storyBibleUiToggle");
-        if (storyBibleUiToggle && storyBibleUiToggle.dataset.bound !== "1") {
-            storyBibleUiToggle.dataset.bound = "1";
-            storyBibleUiToggle.checked = isStoryBibleUiEnabled();
-            storyBibleUiToggle.addEventListener("change", () => {
-                setStoryBibleUiEnabled(storyBibleUiToggle.checked);
-            });
-        }
         refreshBackupStatusUi();
         void import("./js/moderation-access.js").then(({ isModerationStaffReliable }) => {
             return isModerationStaffReliable();

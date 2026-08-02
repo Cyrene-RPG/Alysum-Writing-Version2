@@ -15,7 +15,6 @@ const PAGE_TO_FEATURE = new Map([
     ["read.html", "read"],
     ["beta-read.html", "beta-read"],
     ["library.html", "library"],
-    ["lore-wiki.html", "lore-wiki"],
     ["library-violations.html", "library"],
     ["beta-rooms.html", "beta-rooms"],
     ["beta-room.html", "beta-rooms"],
@@ -33,9 +32,6 @@ const PAGE_TO_FEATURE = new Map([
     ["scratch.html", "notes"],
     ["prompt-notebook.html", "notes"],
     ["note-graph.html", "note-graph"],
-    ["Story-Bible-New.html", "story-wiki"],
-    ["story-bible.html", "story-wiki"],
-    ["wiki.html", "story-wiki"],
     ["plotweave.html", "plotweave"],
     ["flow-mapper.html", "plotweave"],
     ["Novel_Exporter.html", "exporter"],
@@ -57,7 +53,6 @@ const PAGE_TO_FEATURE = new Map([
     ["magic-system-soft.html", "encyclopedia"],
     ["magic-system-undecided.html", "encyclopedia"],
     ["names.html", "encyclopedia"],
-    ["character-profile.html", "story-wiki"],
     ["writer-resources.html", "studio"],
     ["pdf-editor.html", "exporter"],
 ]);
@@ -69,7 +64,6 @@ export const FEATURE_LABELS = {
     read: "Reader",
     "beta-read": "Beta read",
     library: "Library",
-    "lore-wiki": "Lore Wiki",
     "beta-rooms": "Beta rooms",
     "collab-rooms": "Collab rooms",
     "author-stats": "Author stats",
@@ -77,7 +71,6 @@ export const FEATURE_LABELS = {
     encyclopedia: "World encyclopedia",
     notes: "Vault / notes",
     "note-graph": "Note graph",
-    "story-wiki": "Story Wiki",
     plotweave: "Plotweave",
     exporter: "Novel exporter",
     achievements: "Achievements",
@@ -93,7 +86,6 @@ export const FEATURE_LABELS = {
 export function detectFeatureFromLocation(loc = window.location) {
     const path = String(loc.pathname || "").replace(/\\/g, "/");
     if (path.includes("/story-board")) return "story-board";
-    if (path.includes("/plot-doctor")) return "plot-doctor";
     if (path.includes("/plot-studio")) return "plotweave";
     const file = path.split("/").pop() || "index.html";
     return PAGE_TO_FEATURE.get(file) || "";

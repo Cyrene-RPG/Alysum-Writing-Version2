@@ -273,7 +273,7 @@
             </div>
         </section>
 
-        <section class="content-card"><h2 class="section-title">Publish</h2><p class="section-note">When you publish, Alysum will save this metadata to the selected book and create/update the public library entry. Chapters marked “Schedule” go live automatically at their chosen time. New accounts wait 7 days before their first publish; new library listings are limited to one every 30 days. Authors can request staff approval to publish earlier for either wait.</p><div class="status-box" id="statusBox"></div><div class="publish-actions"><div class="publish-actions-left"><button class="text-btn" id="saveDraftBtn" type="button">Save Draft Metadata</button><button class="danger-btn" id="unpublishBtn" type="button">Unpublish</button></div><div class="publish-actions-right"><div class="mini-note" id="publishHint">Nothing published yet.</div><button class="primary-btn" id="publishBtn" type="button">Publish Story</button></div></div></section>
+        <section class="content-card"><h2 class="section-title">Publish</h2><p class="section-note">Use <strong>Save Without Publishing</strong> to keep title, shelf, genres, rating, warnings, summary, tags, and author’s notes on the book without listing it in the library. <strong>Publish Story</strong> creates or updates the public library entry. Chapters marked “Schedule” go live automatically at their chosen time. New accounts wait 7 days before their first publish; new library listings are limited to one every 30 days. Authors can request staff approval to publish earlier for either wait.</p><div class="status-box" id="statusBox"></div><div class="publish-actions"><div class="publish-actions-left"><button class="danger-btn" id="unpublishBtn" type="button">Unpublish</button></div><div class="publish-actions-right"><div class="mini-note" id="publishHint">Nothing published yet.</div><button class="text-btn" id="saveDraftBtn" type="button">Save Without Publishing</button><button class="primary-btn" id="publishBtn" type="button">Publish Story</button></div></div></section>
         <div class="footer-space"></div>
     </main>
 </div>
@@ -320,7 +320,8 @@
     const GENRES = {
         "Fantasy": ["High Fantasy","Low Fantasy","Dark Fantasy","Epic Fantasy","Sword and Sorcery","Urban Fantasy","Mythic Fantasy","Fairy Tale / Retelling","Grimdark","Gaslamp Fantasy","Portal Fantasy","Historical Fantasy","Contemporary Fantasy"],
         "Science Fiction": ["Hard Sci-Fi","Soft Sci-Fi","Space Opera","Cyberpunk","Biopunk","Steampunk","Dieselpunk","Solarpunk","Time Travel","Alternate Timeline","Dystopian","Utopian","Post-Apocalyptic","Military Sci-Fi","First Contact","AI / Robotics"],
-        "Romance": ["Contemporary Romance","Historical Romance","Paranormal Romance","Dark Romance","Romantic Comedy","Erotic Romance","Slow Burn","Second Chance Romance","Forbidden Love","Friends to Lovers","Enemies to Lovers"],
+        "Romance": ["Contemporary Romance","Historical Romance","Paranormal Romance","Dark Romance","Romantic Comedy","Erotic Romance","Slow Burn","Second Chance Romance","Forbidden Love","Friends to Lovers","Enemies to Lovers","Queer Romance","MM Romance","FF Romance","MX Romance"],
+        "LGBTQ+": ["LGBTQ+","Queer","Gay","Lesbian","Bisexual","Pansexual","Asexual","Aromantic","Transgender","Non-Binary","Genderfluid","Intersex","MLM / Boys' Love","WLW / Girls' Love","Coming Out","Found Family","Queerplatonic","Gender Exploration","Trans Coming of Age"],
         "Mystery & Thriller": ["Mystery","Detective","Crime","Noir","Cozy Mystery","Whodunit","Thriller","Psychological Thriller","Legal Thriller","Spy Thriller","Political Thriller"],
         "Horror": ["Psychological Horror","Supernatural Horror","Gothic Horror","Body Horror","Cosmic Horror","Folk Horror","Slasher","Survival Horror","Paranormal Horror"],
         "Action & Adventure": ["Action","Adventure","Survival","War","Military","Swashbuckler","Treasure Hunt"],
@@ -535,7 +536,7 @@
             });
             const hint = document.createElement("div");
             hint.className = "chapter-author-notes-hint";
-            hint.textContent = "Plain text only. Saved when you publish or save draft metadata.";
+            hint.textContent = "Plain text only. Saved when you publish or use Save Without Publishing.";
             body.append(textarea, hint);
             header.addEventListener("click", () => {
                 chapterAuthorNotesCardOpen[chapter.id] = !chapterAuthorNotesCardOpen[chapter.id];
@@ -819,11 +820,38 @@
 
     async function saveDraftMetadata() {
         if (!currentUser || !currentBook || !bookId) return;
-        const patch = toDbBookPatch({ is_published: !!currentBook.isPublished });
-        const { error } = await supabase.from("books").update(patch).eq("id", bookId).eq("user_id", currentUser.id);
-        if (error) throw error;
-        currentBook = { ...currentBook, title: patch.title, libraryType: patch.library_type || "", publishMeta: patch.publish_meta, publishedChapterIds: patch.published_chapter_ids, isPublished: patch.is_published };
-        renderBasicInfo(); renderHero(); renderSidebar(); setStatus("Draft publish metadata saved.", "success");
+        if (saveDraftBtn) saveDraftBtn.disabled = true;
+        setStatus("Saving…", "success");
+        try {
+            const publishChapters = chaptersForPublish();
+            const updatedSections = JSON.parse(JSON.stringify(currentBook.sections || {}));
+            publishChapters.forEach((chapter) => {
+                const bodyList = safeArray(updatedSections.body, []);
+                const target = bodyList.find((ch) => ch.id === chapter.id);
+                if (target) target.warnings = cloneWarningData(chapter.warnings);
+            });
+            const patch = toDbBookPatch({
+                is_published: !!currentBook.isPublished,
+                sections: updatedSections,
+            });
+            const { error } = await supabase.from("books").update(patch).eq("id", bookId).eq("user_id", currentUser.id);
+            if (error) throw error;
+            currentBook = {
+                ...currentBook,
+                title: patch.title,
+                libraryType: patch.library_type || "",
+                publishMeta: patch.publish_meta,
+                publishedChapterIds: patch.published_chapter_ids,
+                isPublished: patch.is_published,
+                sections: updatedSections,
+            };
+            renderBasicInfo();
+            renderHero();
+            renderSidebar();
+            setStatus("Saved. Your publish info is stored on the book — nothing was published to the library.", "success");
+        } finally {
+            if (saveDraftBtn) saveDraftBtn.disabled = false;
+        }
     }
 
     async function publishStory() {
@@ -936,7 +964,7 @@
     }
 
     applyBookWarningsToChaptersBtn?.addEventListener("click", applyBookDefaultsToChapters);
-    saveDraftBtn.addEventListener("click", async () => { try { await saveDraftMetadata(); } catch (error) { console.error(error); setStatus(error?.message || "Could not save draft metadata.", "error"); } });
+    saveDraftBtn.addEventListener("click", async () => { try { await saveDraftMetadata(); } catch (error) { console.error(error); setStatus(error?.message || "Could not save. Try again.", "error"); if (saveDraftBtn) saveDraftBtn.disabled = false; } });
     publishBtn.addEventListener("click", publishStory);
     unpublishBtn.addEventListener("click", unpublishStory);
     publishApprovalForm?.addEventListener("submit", async (event) => {

@@ -816,7 +816,6 @@
                 <span class="wd-nav-divider" aria-hidden="true"></span>
                 <a href="writer-dashboard.html" class="is-active">Studio</a>
                 <a href="library.html">Library</a>
-                <a href="lore-wiki.html">Lore Wiki</a>
                 <a href="beta-rooms.html">Beta rooms</a>
                 <a href="collab-rooms.html">Collab rooms</a>
                 <a href="author-dashboard.html" id="navAuthorStats">
@@ -827,7 +826,6 @@
                 <span class="wd-nav-divider" aria-hidden="true"></span>
                 <a href="vault.html">Notes</a>
                 <a href="note-graph.html">Note Graph</a>
-                <a href="story-bible.html" id="navStoryBible">Story Wiki</a>
                 <a href="story-board/">Story Board</a>
                 <a href="plotweave.html">Plotweave</a>
                 <a href="Novel_Exporter.html">Exporter</a>
@@ -970,11 +968,6 @@
         ensureUserStreakLocal,
         notifyLocalStudioSync,
     } from "./js/local-studio-store.js?v=1";
-    import {
-        isStoryBibleUiEnabled,
-        STORY_BIBLE_PREF_KEY,
-        STORY_BIBLE_PREF_EVENT,
-    } from "./js/story-bible-prefs.js?v=1";
     import { countBookWords } from "./js/book-word-count.js?v=3";
     import {
         localDayKey,
@@ -1004,7 +997,6 @@
     const welcomeTitle = document.getElementById("welcomeTitle");
     const welcomePfpImg = document.getElementById("welcomePfpImg");
     const welcomePfpInitial = document.getElementById("welcomePfpInitial");
-    const navStoryBible = document.getElementById("navStoryBible");
     const navReading = document.getElementById("navReading");
     const navDashBadge = document.getElementById("navDashBadge");
     const statWords = document.getElementById("statWords");
@@ -1803,13 +1795,7 @@
         return refreshBooksAndStats();
     }
 
-    function applyStoryBibleNav() {
-        if (!navStoryBible) return;
-        navStoryBible.classList.toggle("is-hidden", !isStoryBibleUiEnabled());
-    }
-
     window.addEventListener("storage", (e) => {
-        if (e.key === STORY_BIBLE_PREF_KEY) applyStoryBibleNav();
         if (e.key === "alysum-writer-dashboard-sync" && currentUser) {
             refreshProfileFromServer()
                 .then(() => refreshBooksAndStats())
@@ -1829,7 +1815,6 @@
     } catch {
         /* BroadcastChannel unavailable */
     }
-    window.addEventListener(STORY_BIBLE_PREF_EVENT, applyStoryBibleNav);
 
     async function loadDashboardBadge(uid) {
         const { data, error } = await supabase
@@ -1978,8 +1963,6 @@
         if (!isLocalStudio && accountSupportsModeToggle(profile.accountType)) {
             navReading?.classList.remove("is-hidden");
         }
-
-        applyStoryBibleNav();
 
         try {
             const { streak, lastLogin } = await ensureUserStreak(profile);
