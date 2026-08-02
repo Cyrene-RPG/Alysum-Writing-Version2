@@ -303,6 +303,7 @@
         toggleWarningChoice,
     } from "./js/content-warnings.js?v=1";
     import { mountWarningPicker } from "./js/chapter-warnings-ui.js?v=1";
+    import { normalizeAuthorNotes } from "./js/chapter-author-notes.js?v=1";
 
     const WARNING_GROUPS = CONTENT_WARNING_GROUPS;
 
@@ -399,6 +400,7 @@
             imageUrl: imageUrls[0] || "",
             imageUrls,
             warnings: normalizeWarningData(chapter.warnings),
+            authorNotes: normalizeAuthorNotes(chapter.authorNotes ?? chapter.author_notes),
         };
     }
     function normalizeSections(rawSections) { const sections = safeObject(rawSections, {}); const frontRaw = safeArray(sections.front, []); const bodyRaw = safeArray(sections.body, []); const backRaw = safeArray(sections.back, []); return { front: frontRaw.length ? frontRaw.map((ch, index) => normalizeChapter(ch, index === 0 ? "Copyright" : "Table of Contents")) : [{ id: generateId(), title: "Copyright", content: "" }, { id: generateId(), title: "Table of Contents", content: "" }], body: bodyRaw.length ? bodyRaw.map((ch, index) => normalizeChapter(ch, `Chapter ${index + 1}`)) : [{ id: generateId(), title: "Chapter 1", content: "" }], back: backRaw.map((ch, index) => normalizeChapter(ch, `Back Matter ${index + 1}`)) }; }
@@ -771,7 +773,10 @@
         publishChapters.forEach((chapter) => {
             const bodyList = safeArray(updatedSections.body, []);
             const target = bodyList.find((ch) => ch.id === chapter.id);
-            if (target) target.warnings = cloneWarningData(chapter.warnings);
+            if (target) {
+                target.warnings = cloneWarningData(chapter.warnings);
+                target.authorNotes = normalizeAuthorNotes(chapter.authorNotes);
+            }
         });
         try {
             const { data: existingLibrary, error: existingError } = await supabase.from("library").select("*").eq("id", bookId).maybeSingle();
@@ -802,6 +807,7 @@
                     imageUrls: normalizeComicImageUrls(ch),
                     words: countWords(ch.content || ""),
                     warnings: cloneWarningData(ch.warnings),
+                    authorNotes: normalizeAuthorNotes(ch.authorNotes),
                 })),
                 publishedChapterIds: immediateChapterIds,
                 chapterCount: publishChapters.length,

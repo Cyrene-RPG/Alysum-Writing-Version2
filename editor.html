@@ -439,6 +439,13 @@
         font-weight: 700;
     }
     .chapter-number { display: none; text-align: center; font-family: Georgia, serif; color: var(--page-subtle); font-size: 18px; margin-bottom: 22px; }
+    .author-notes-wrap { margin: 0 0 28px; border: 1px solid var(--border); border-radius: 16px; background: rgba(109, 40, 217, 0.05); overflow: hidden; }
+    .author-notes-wrap[hidden] { display: none !important; }
+    .author-notes-toggle { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 14px; border: none; background: transparent; color: var(--page-text); font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; text-align: left; }
+    .author-notes-panel { padding: 0 14px 14px; }
+    .author-notes-panel[hidden] { display: none !important; }
+    .author-notes-input { width: 100%; min-height: 96px; resize: vertical; border: 1px solid var(--border); border-radius: 12px; background: var(--topbar-bg); color: var(--page-text); font: inherit; font-size: 15px; line-height: 1.55; padding: 12px 14px; }
+    .author-notes-hint { margin-top: 8px; font-size: 12px; font-weight: 600; color: var(--page-subtle); line-height: 1.45; }
     .chapter-title { text-align: center; font-family: Georgia, "Times New Roman", serif; color: var(--page-text); font-size: 28px; font-weight: 700; margin-bottom: 40px; outline: none; }
     .editor { min-height: 440px; outline: none; font-family: Georgia, "Times New Roman", serif; font-size: 20px; line-height: 1.7; letter-spacing: 0.2px; color: var(--page-text); white-space: normal; word-break: break-word; display: flow-root; }
     .editor div, .editor p { margin: 0; text-indent: 2em; }
@@ -968,6 +975,16 @@
         <div class="page">
             <div class="chapter-number" id="chapterNumber">1</div>
             <div class="chapter-title" id="chapterTitle" contenteditable="true">Chapter 1</div>
+            <div class="author-notes-wrap" id="authorNotesWrap" hidden>
+                <button class="author-notes-toggle" id="authorNotesToggle" type="button" aria-expanded="false" aria-controls="authorNotesPanel">
+                    <span>Author's notes for readers</span>
+                    <span id="authorNotesToggleState">Show</span>
+                </button>
+                <div class="author-notes-panel" id="authorNotesPanel" hidden>
+                    <textarea class="author-notes-input" id="authorNotesInput" maxlength="2000" placeholder="Optional note shown before this chapter when published (thank-yous, context, trigger reminders, etc.)"></textarea>
+                    <div class="author-notes-hint">Plain text only. Saved with this chapter when you write or switch chapters.</div>
+                </div>
+            </div>
             <div class="editor" id="editor" contenteditable="true" data-placeholder="Begin writing here..."></div>
             <div class="comic-workspace" id="comicWorkspace">
                 <div class="comic-page-panel">
@@ -1153,6 +1170,7 @@
         countNonNoneWarnings,
     } from "./js/content-warnings.js?v=1";
     import { mountWarningPicker } from "./js/chapter-warnings-ui.js?v=1";
+    import { normalizeAuthorNotes } from "./js/chapter-author-notes.js?v=1";
     import {
         saveBookShadow,
         getBookShadow,
@@ -1452,6 +1470,13 @@ function rememberBookId(id) {
     const chapterWarningsApplyBookBtn = document.getElementById("chapterWarningsApplyBookBtn");
     const chapterWarningsCloseBtn = document.getElementById("chapterWarningsCloseBtn");
     const chapterWarningsSaveBtn = document.getElementById("chapterWarningsSaveBtn");
+    const authorNotesWrap = document.getElementById("authorNotesWrap");
+    const authorNotesToggle = document.getElementById("authorNotesToggle");
+    const authorNotesToggleState = document.getElementById("authorNotesToggleState");
+    const authorNotesPanel = document.getElementById("authorNotesPanel");
+    const authorNotesInput = document.getElementById("authorNotesInput");
+
+    let authorNotesPanelOpen = false;
 
     /** @type {ReturnType<typeof mountWarningPicker> | null} */
     let chapterWarningsPicker = null;
@@ -1657,6 +1682,7 @@ function rememberBookId(id) {
             imageUrl: imageUrls[0] || "",
             imageUrls,
             warnings: normalizeWarningData(chapter.warnings),
+            authorNotes: normalizeAuthorNotes(chapter.authorNotes ?? chapter.author_notes),
         };
     }
 
@@ -1760,6 +1786,7 @@ function rememberBookId(id) {
         const ch = currentChapter();
         if (comicCaptionInput) ch.content = comicCaptionInput.value.trim();
         setChapterImageUrls(ch, normalizeComicImageUrls(ch));
+        syncAuthorNotesFromUI();
     }
 
     async function moveComicStripImage(index, delta) {
@@ -2615,8 +2642,30 @@ function rememberBookId(id) {
             .trim();
     }
 
+    function syncAuthorNotesFromUI() {
+        const ch = currentChapter?.();
+        if (!ch || !authorNotesInput) return;
+        ch.authorNotes = normalizeAuthorNotes(authorNotesInput.value);
+    }
+
+    function syncAuthorNotesToUI() {
+        const ch = currentChapter?.();
+        const isBody = currentSection === "body";
+        if (authorNotesWrap) authorNotesWrap.hidden = !isBody;
+        if (!isBody || !authorNotesInput) return;
+        authorNotesInput.value = normalizeAuthorNotes(ch?.authorNotes);
+        const hasNotes = !!authorNotesInput.value.trim();
+        if (hasNotes && !authorNotesPanelOpen) {
+            authorNotesPanelOpen = true;
+        }
+        if (authorNotesPanel) authorNotesPanel.hidden = !authorNotesPanelOpen;
+        if (authorNotesToggle) authorNotesToggle.setAttribute("aria-expanded", authorNotesPanelOpen ? "true" : "false");
+        if (authorNotesToggleState) authorNotesToggleState.textContent = authorNotesPanelOpen ? "Hide" : "Show";
+    }
+
     function syncCurrentChapterFromEditor() {
         currentChapter().content = editor.innerHTML;
+        syncAuthorNotesFromUI();
     }
 
     function chapterLoadKey(section, index) {
@@ -2626,6 +2675,7 @@ function rememberBookId(id) {
     }
 
     function cleanAndStoreCurrentChapterFromEditor() {
+        syncAuthorNotesFromUI();
         const cleaned = cleanEditorHtml(editor.innerHTML);
         currentChapter().content = cleaned;
         return cleaned;
@@ -2904,6 +2954,7 @@ function rememberBookId(id) {
             normalizeInlineImagesInEditor();
             editorLoadedChapterKey = chapterLoadKey(section, index);
         }
+        syncAuthorNotesToUI();
         if (rerender) renderAllSections();
         syncStats();
         applyComicModeUI();
@@ -3366,6 +3417,7 @@ function rememberBookId(id) {
                         imageUrls: normalizeComicImageUrls(ch),
                         words: countWords(ch.content || ""),
                         warnings: cloneWarningData(ch.warnings),
+                        authorNotes: normalizeAuthorNotes(ch.authorNotes),
                     })),
                     publishedChapterIds: immediateChapterIds,
                     chapterCount: selectedChapterObjects.length,
@@ -3800,6 +3852,14 @@ function rememberBookId(id) {
     });
     chapterWarningsModal?.addEventListener("click", (event) => {
         if (event.target === chapterWarningsModal) closeChapterWarningsModal();
+    });
+    authorNotesToggle?.addEventListener("click", () => {
+        authorNotesPanelOpen = !authorNotesPanelOpen;
+        syncAuthorNotesToUI();
+    });
+    authorNotesInput?.addEventListener("input", () => {
+        syncAuthorNotesFromUI();
+        scheduleSave();
     });
     publishModal.addEventListener("click", e => { if (e.target === publishModal) closePublishModal(); });
     backgroundBtn?.addEventListener("click", () => {
