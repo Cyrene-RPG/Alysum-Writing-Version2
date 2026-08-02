@@ -260,6 +260,7 @@
     .toolbar { min-height: 54px; background: var(--toolbar-bg); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; padding: 8px 12px; overflow-x: auto; flex-wrap: wrap; }
     .tool-btn, .tool-select { height: 36px; border: 1px solid var(--border); background: var(--topbar-bg); border-radius: 10px; color: var(--page-text); font-size: 14px; font-weight: 700; padding: 0 12px; cursor: pointer; }
     #fontSelect { min-width: 9.5rem; max-width: 12rem; }
+    #fontSizeSelect { min-width: 8.5rem; max-width: 11rem; }
     #findReplaceBtn { font-size: 17px; line-height: 1; padding: 0 11px; }
     .toolbar-spacer { flex: 1; min-width: 8px; }
     .sprint-btn { height: 36px; border: 1px solid var(--border); background: linear-gradient(135deg, var(--alysum-purple), #a855f7); color: white; border-radius: 999px; padding: 0 14px; font-size: 14px; font-weight: 900; cursor: pointer; white-space: nowrap; }
@@ -925,7 +926,7 @@
     <button class="tool-btn" type="button" id="findReplaceBtn" data-tip="Find and replace (Ctrl+F)" aria-label="Find and replace">🔍</button>
     <select class="tool-select" id="formatSelect" data-tip="Paragraph style" aria-label="Paragraph style"><option value="p">Body</option><option value="h2">Heading</option></select>
     <select class="tool-select" id="fontSelect" data-tip="Font — highlight text to apply to selection, or sets chapter default" aria-label="Font"></select>
-    <select class="tool-select" id="fontSizeSelect" data-tip="Editor text size" aria-label="Text size"><option value="18">Compact</option><option value="20">Book</option><option value="22">Comfort</option><option value="26">Large</option></select>
+    <select class="tool-select" id="fontSizeSelect" data-tip="Editor text size — chapter default" aria-label="Text size"></select>
     <button class="tool-btn" type="button" id="insertImageBtn" data-tip="Insert image at cursor">＋ Image</button>
     <input id="inlineImageUploadInput" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden />
     <button class="tool-btn" type="button" id="insertSceneBreakBtn" data-tip="Insert scene break">✦ Break</button>
@@ -1308,7 +1309,7 @@ function rememberBookId(id) {
     function applyCompareEditorStyle(el) {
         if (!el) return;
         const fontId = normalizeStoredEditorFont(localStorage.getItem("alysum-font") || "Georgia");
-        const size = localStorage.getItem("alysum-fontSize") || "20";
+        const size = normalizeStoredEditorFontSize(localStorage.getItem("alysum-fontSize") || "20");
         const stack = editorFontStack(fontId);
         el.style.fontFamily = stack;
         el.style.fontSize = size + "px";
@@ -3749,6 +3750,26 @@ function rememberBookId(id) {
         },
     ];
 
+    const EDITOR_FONT_SIZES = [
+        { px: 14, label: "14 — Small print" },
+        { px: 16, label: "16 — Fine" },
+        { px: 17, label: "17" },
+        { px: 18, label: "18 — Compact" },
+        { px: 19, label: "19" },
+        { px: 20, label: "20 — Book" },
+        { px: 21, label: "21" },
+        { px: 22, label: "22 — Comfort" },
+        { px: 23, label: "23" },
+        { px: 24, label: "24 — Relaxed" },
+        { px: 25, label: "25" },
+        { px: 26, label: "26 — Large" },
+        { px: 28, label: "28 — Open page" },
+        { px: 30, label: "30 — Spacious" },
+        { px: 32, label: "32 — Extra large" },
+        { px: 34, label: "34 — Manuscript" },
+        { px: 36, label: "36 — Display" },
+    ];
+
     function editorFontStack(fontId) {
         for (const group of EDITOR_FONT_GROUPS) {
             const match = group.fonts.find(f => f.id === fontId);
@@ -3882,6 +3903,34 @@ function rememberBookId(id) {
         }
     }
 
+    function populateEditorFontSizeSelect() {
+        if (!fontSizeSelect) return;
+        fontSizeSelect.replaceChildren();
+        for (const size of EDITOR_FONT_SIZES) {
+            const opt = document.createElement("option");
+            opt.value = String(size.px);
+            opt.textContent = size.label;
+            fontSizeSelect.appendChild(opt);
+        }
+    }
+
+    function normalizeStoredEditorFontSize(sizePx) {
+        const px = Math.round(Number(sizePx));
+        if (!Number.isFinite(px)) return "20";
+        const allowed = EDITOR_FONT_SIZES.map((s) => s.px);
+        if (allowed.includes(px)) return String(px);
+        let nearest = allowed[0];
+        let nearestDiff = Math.abs(px - nearest);
+        for (const candidate of allowed) {
+            const diff = Math.abs(px - candidate);
+            if (diff < nearestDiff) {
+                nearest = candidate;
+                nearestDiff = diff;
+            }
+        }
+        return String(nearest);
+    }
+
     function normalizeStoredEditorFont(fontId) {
         const id = safeString(fontId, "Georgia");
         for (const group of EDITOR_FONT_GROUPS) {
@@ -3892,16 +3941,18 @@ function rememberBookId(id) {
 
     function applyEditorStyle() {
         const fontId = normalizeStoredEditorFont(localStorage.getItem("alysum-font") || "Georgia");
-        const size = localStorage.getItem("alysum-fontSize") || "20";
+        const size = normalizeStoredEditorFontSize(localStorage.getItem("alysum-fontSize") || "20");
         const stack = editorFontStack(fontId);
         editor.style.fontFamily = stack;
         if (chapterTitle) chapterTitle.style.fontFamily = stack;
         editor.style.fontSize = size + "px";
         editor.style.lineHeight = "1.7";
         if (fontSelect) fontSelect.value = fontId;
+        if (fontSizeSelect) fontSizeSelect.value = size;
     }
 
     populateEditorFontSelect();
+    populateEditorFontSizeSelect();
 
     addChapterBtn.addEventListener("click", () => addChapterTo("body"));
 
@@ -4473,7 +4524,7 @@ async function loadBook() {
         setupOfflineSyncListeners();
         applyResponsiveSidebar();
         applyTheme(localStorage.getItem("alysum-theme") || "light");
-        fontSizeSelect.value = localStorage.getItem("alysum-fontSize") || "20";
+        fontSizeSelect.value = normalizeStoredEditorFontSize(localStorage.getItem("alysum-fontSize") || "20");
         applyEditorStyle();
         restoreEditorBackgroundImage();
         document.execCommand("defaultParagraphSeparator", false, "p");
