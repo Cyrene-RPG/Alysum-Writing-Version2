@@ -521,6 +521,15 @@
     .publish-quick-schedule-controls { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
     .publish-quick-schedule-controls label { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; cursor: pointer; }
     .publish-quick-schedule-controls input[type="datetime-local"] { min-width: 170px; height: 34px; border: 1px solid var(--border); border-radius: 10px; background: var(--topbar-bg); color: var(--page-text); font-size: 13px; padding: 0 8px; }
+    .chapter-warnings-modal-box { width: 100%; max-width: min(720px, 96vw); max-height: min(86vh, 900px); overflow: auto; }
+    .chapter-warnings-host .warning-section { margin-top: 10px; }
+    .chapter-warnings-host .warning-card { border: 1px solid var(--border); border-radius: 14px; background: rgba(0,0,0,0.03); margin-top: 10px; }
+    body.dark .chapter-warnings-host .warning-card { background: rgba(255,255,255,0.03); }
+    .chapter-warnings-host .warning-header { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 14px; border: none; background: transparent; cursor: pointer; color: inherit; text-align: left; }
+    .chapter-warnings-host .warning-body { display: none; padding: 0 14px 14px; border-top: 1px solid var(--border); }
+    .chapter-warnings-host .warning-body.open { display: block; }
+    .chapter-warnings-host .check-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
+    .chapter-warnings-host .check-item { display: flex; align-items: center; gap: 8px; border: 1px solid var(--border); border-radius: 12px; padding: 10px; }
     .publish-quick-status { margin: 10px 0 0; font-size: 13px; color: var(--page-subtle); min-height: 1.2em; }
     .sprint-opt-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
     .sprint-opt { border: 1px solid var(--border); background: rgba(0,0,0,0.03); color: var(--page-text); border-radius: 12px; padding: 10px; font-weight: 900; cursor: pointer; }
@@ -892,6 +901,7 @@
             <span class="topbar-tip" data-tip="Export / print"><button class="icon-btn purple" id="exportBtn" type="button" aria-label="Export">📄</button></span>
             <span class="topbar-tip" data-tip="Story Board (Alt+P)"><a class="pd-toggle" id="storyBoardLink" href="story-board/">Story Board</a></span>
             <span class="topbar-tip" data-tip="Notes"><button class="icon-btn" id="nbBtn" type="button" aria-label="Notes">⌘</button></span>
+            <span class="topbar-tip" data-tip="Chapter content warnings"><button class="icon-btn" id="chapterWarningsBtn" type="button" aria-label="Chapter warnings">⚠</button></span>
             <span class="topbar-tip" data-tip="Rename chapter"><button class="icon-btn" id="renameChapterBtn" type="button" aria-label="Rename chapter">⋯</button></span>
             <span class="topbar-tip" data-tip="Light / dark"><button class="icon-btn" id="themeTopBtn" type="button" aria-label="Toggle theme">◐</button></span>
             <span class="topbar-tip" data-tip="Delete entire book"><button class="icon-btn danger" id="deleteBookTopBtn" type="button" aria-label="Delete book">🗑</button></span>
@@ -997,6 +1007,17 @@
                 </div>
                 <p class="publish-quick-status" id="publishQuickStatus" aria-live="polite"></p>
             </div>
+        </div>
+    </div>
+</div><div class="sprint-modal" id="chapterWarningsModal" aria-hidden="true">
+    <div class="sprint-modal-box chapter-warnings-modal-box">
+        <h2 class="sprint-modal-title" id="chapterWarningsModalTitle">Chapter content warnings</h2>
+        <p class="sprint-modal-text" id="chapterWarningsModalSubtitle">Tag what appears in this chapter. Every category needs at least one choice.</p>
+        <div class="chapter-warnings-host" id="chapterWarningsHost"></div>
+        <div class="sprint-modal-actions" style="margin-top:14px;">
+            <button class="secondary" id="chapterWarningsApplyBookBtn" type="button">Use story defaults</button>
+            <button class="secondary" id="chapterWarningsCloseBtn" type="button">Close</button>
+            <button class="primary" id="chapterWarningsSaveBtn" type="button">Save warnings</button>
         </div>
     </div>
 </div><div class="sprint-modal" id="sprintConfirmModal"><div class="sprint-modal-box"><h2 class="sprint-modal-title">Ready to start?</h2><p class="sprint-modal-text" id="sprintConfirmText">Start a sprint?</p><div class="sprint-modal-actions"><button class="secondary" id="sprintConfirmNo" type="button" data-tip="Cancel sprint">Not yet</button><button class="primary" id="sprintConfirmYes" type="button" data-tip="Start the sprint">Yes, start</button></div></div></div>
@@ -1123,6 +1144,15 @@
         fromDatetimeLocalValue,
         MIN_SCHEDULE_LEAD_MS,
     } from "./js/scheduled-chapter-releases.js?v=1";
+    import {
+        CONTENT_WARNING_KEYS,
+        normalizeWarningData,
+        cloneWarningData,
+        aggregateWarningsFromChapters,
+        everyWarningCategoryHasAChoice,
+        countNonNoneWarnings,
+    } from "./js/content-warnings.js?v=1";
+    import { mountWarningPicker } from "./js/chapter-warnings-ui.js?v=1";
     import {
         saveBookShadow,
         getBookShadow,
@@ -1414,7 +1444,17 @@ function rememberBookId(id) {
     const publishQuickPublishBtn = document.getElementById("publishQuickPublishBtn");
     const publishQuickStatus = document.getElementById("publishQuickStatus");
     const publishQuickSchedule = document.getElementById("publishQuickSchedule");
+    const chapterWarningsBtn = document.getElementById("chapterWarningsBtn");
+    const chapterWarningsModal = document.getElementById("chapterWarningsModal");
+    const chapterWarningsModalTitle = document.getElementById("chapterWarningsModalTitle");
+    const chapterWarningsModalSubtitle = document.getElementById("chapterWarningsModalSubtitle");
+    const chapterWarningsHost = document.getElementById("chapterWarningsHost");
+    const chapterWarningsApplyBookBtn = document.getElementById("chapterWarningsApplyBookBtn");
+    const chapterWarningsCloseBtn = document.getElementById("chapterWarningsCloseBtn");
+    const chapterWarningsSaveBtn = document.getElementById("chapterWarningsSaveBtn");
 
+    /** @type {ReturnType<typeof mountWarningPicker> | null} */
+    let chapterWarningsPicker = null;
     /** @type {Map<string, { mode: 'immediate' | 'scheduled', scheduledAt: string }>} */
     const quickPublishReleaseModes = new Map();
     const findReplaceBar = document.getElementById("findReplaceBar");
@@ -1605,7 +1645,7 @@ function rememberBookId(id) {
     function safeArray(value, fallback = []) { return Array.isArray(value) ? value : fallback; }
     function safeObject(value, fallback = {}) { return value && typeof value === "object" && !Array.isArray(value) ? value : fallback; }
 
-    const PUBLISH_WARNING_KEYS = ["violence", "abuse", "sexual_content", "mental_health", "self_harm", "substance_use", "eating_body", "moral_dark", "fear_disturbing", "body_medical", "identity_social", "sensitive_life_events"];
+    const PUBLISH_WARNING_KEYS = CONTENT_WARNING_KEYS;
 
     function normalizeChapter(raw, fallbackTitle = "Untitled") {
         const chapter = safeObject(raw, {});
@@ -1616,6 +1656,7 @@ function rememberBookId(id) {
             content: safeString(chapter.content, ""),
             imageUrl: imageUrls[0] || "",
             imageUrls,
+            warnings: normalizeWarningData(chapter.warnings),
         };
     }
 
@@ -2177,10 +2218,7 @@ function rememberBookId(id) {
     }
 
     function normalizeWarningDataForPublish(rawWarnings) {
-        const source = safeObject(rawWarnings, {});
-        const out = {};
-        PUBLISH_WARNING_KEYS.forEach(key => { out[key] = safeArray(source[key], []).filter(item => typeof item === "string"); });
-        return out;
+        return normalizeWarningData(rawWarnings);
     }
 
     function normalizePublishMetaForBook(rawPublishMeta) {
@@ -3221,6 +3259,48 @@ function rememberBookId(id) {
             if (publishQuickStatus) publishQuickStatus.textContent = "";
         } else goToPublishPage();
     }
+    function closeChapterWarningsModal() {
+        chapterWarningsModal?.classList.remove("open");
+        chapterWarningsModal?.setAttribute("aria-hidden", "true");
+    }
+    function openChapterWarningsModal() {
+        if (!currentBook || !chapterWarningsModal || !chapterWarningsHost) return;
+        if (document.activeElement === editor && editorLoadedChapterKey) cleanAndStoreCurrentChapterFromEditor();
+        const chapter = currentChapter?.();
+        if (!chapter) return;
+        const sectionLabel = currentSection === "body" ? "Chapter" : (currentSection === "front" ? "Front matter" : "Back matter");
+        if (chapterWarningsModalTitle) chapterWarningsModalTitle.textContent = `${sectionLabel} content warnings`;
+        if (chapterWarningsModalSubtitle) chapterWarningsModalSubtitle.textContent = `Tag what appears in “${chapter.title || "Untitled"}”. Every category needs at least one choice.`;
+        const initial = everyWarningCategoryHasAChoice(chapter.warnings)
+            ? cloneWarningData(chapter.warnings)
+            : cloneWarningData(currentBook.publishMeta?.warnings || {});
+        chapterWarningsHost.innerHTML = "";
+        chapterWarningsPicker = mountWarningPicker(chapterWarningsHost, {
+            selections: initial,
+            openState: chapterWarningsOpenState,
+            compact: true,
+        });
+        chapterWarningsModal.classList.add("open");
+        chapterWarningsModal.setAttribute("aria-hidden", "false");
+    }
+    async function saveChapterWarningsFromModal() {
+        if (!currentBook || !chapterWarningsPicker) return;
+        const chapter = currentChapter?.();
+        if (!chapter) return;
+        const next = chapterWarningsPicker.getSelections();
+        if (!everyWarningCategoryHasAChoice(next)) {
+            alert("Every warning category must have at least one choice.");
+            return;
+        }
+        chapter.warnings = cloneWarningData(next);
+        closeChapterWarningsModal();
+        try {
+            await saveBook("Chapter warnings saved");
+        } catch (error) {
+            console.error(error);
+            setSaveStatus("Save failed");
+        }
+    }
     async function quickRepublishFromEditor() {
         if (!currentUser || !bookId || !currentBook) return;
         const selectedIds = getSelectedPublishChapterIds();
@@ -3243,6 +3323,11 @@ function rememberBookId(id) {
             if (publishQuickStatus) publishQuickStatus.textContent = "Choose at least one chapter.";
             return;
         }
+        const publishChapters = selectedChapterObjects.map((ch) => ({
+            ...ch,
+            warnings: normalizeWarningData(ch.warnings || currentBook.publishMeta?.warnings),
+        }));
+        const aggregatedWarnings = aggregateWarningsFromChapters(publishChapters);
         const publishMeta = normalizePublishMetaForBook(currentBook.publishMeta);
         const payloadTitle = safeString(currentBook.title, "Untitled Book").trim() || "Untitled Book";
         const immediateChapterIds = immediate.map(ch => ch.id);
@@ -3268,11 +3353,11 @@ function rememberBookId(id) {
                     mediaFormat: currentBook.mediaFormat || "novel",
                     genres: publishMeta.genres,
                     rating: publishMeta.rating,
-                    warnings: publishMeta.warnings,
+                    warnings: aggregatedWarnings,
                     summary: publishMeta.summary,
                     extraTags: publishMeta.extraTags,
                     coverUrl: publishMeta.coverUrl || safeString(existingLibrary?.data?.coverUrl || existingLibrary?.data?.cover_url || existingLibrary?.coverUrl, ""),
-                    chapters: selectedChapterObjects.map((ch, index) => ({
+                    chapters: publishChapters.map((ch, index) => ({
                         id: ch.id,
                         order: index + 1,
                         title: ch.title || (isCurrentBookComic() ? `Page ${index + 1}` : `Chapter ${index + 1}`),
@@ -3280,6 +3365,7 @@ function rememberBookId(id) {
                         imageUrl: comicPrimaryImageUrl(ch),
                         imageUrls: normalizeComicImageUrls(ch),
                         words: countWords(ch.content || ""),
+                        warnings: cloneWarningData(ch.warnings),
                     })),
                     publishedChapterIds: immediateChapterIds,
                     chapterCount: selectedChapterObjects.length,
@@ -3705,6 +3791,16 @@ function rememberBookId(id) {
     publishBypassYes?.addEventListener("click", () => { publishBypassChoiceRow?.classList.add("hidden"); publishQuickWrap?.classList.add("visible"); renderQuickPublishSchedule(); });
     publishList?.addEventListener("change", () => { if (publishQuickWrap?.classList.contains("visible")) renderQuickPublishSchedule(); });
     publishQuickPublishBtn?.addEventListener("click", () => void quickRepublishFromEditor());
+    chapterWarningsBtn?.addEventListener("click", openChapterWarningsModal);
+    chapterWarningsCloseBtn?.addEventListener("click", closeChapterWarningsModal);
+    chapterWarningsSaveBtn?.addEventListener("click", () => void saveChapterWarningsFromModal());
+    chapterWarningsApplyBookBtn?.addEventListener("click", () => {
+        if (!chapterWarningsPicker || !currentBook) return;
+        chapterWarningsPicker.setSelections(cloneWarningData(currentBook.publishMeta?.warnings || {}));
+    });
+    chapterWarningsModal?.addEventListener("click", (event) => {
+        if (event.target === chapterWarningsModal) closeChapterWarningsModal();
+    });
     publishModal.addEventListener("click", e => { if (e.target === publishModal) closePublishModal(); });
     backgroundBtn?.addEventListener("click", () => {
         backgroundBar?.classList.toggle("open");

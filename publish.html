@@ -143,6 +143,15 @@
     .schedule-pending-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; border: 1px dashed rgba(109, 40, 217, 0.28); border-radius: 14px; padding: 12px 14px; background: rgba(109, 40, 217, 0.06); }
     .schedule-pending-meta { font-size: 13px; font-weight: 700; line-height: 1.45; }
     .schedule-pending-meta span { display: block; color: var(--text-soft); font-weight: 600; font-size: 12px; margin-top: 2px; }
+    .chapter-warnings-tools { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+    .chapter-warnings-list { display: grid; gap: 12px; margin-top: 14px; }
+    .chapter-warning-card { border: 1px solid var(--border); border-radius: 16px; background: var(--panel-soft); overflow: hidden; }
+    .chapter-warning-header { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border: none; background: transparent; cursor: pointer; text-align: left; color: inherit; font: inherit; }
+    .chapter-warning-title { font-size: 15px; font-weight: 800; line-height: 1.35; }
+    .chapter-warning-status { font-size: 12px; font-weight: 700; color: var(--text-soft); white-space: nowrap; }
+    .chapter-warning-body { display: none; padding: 0 16px 16px; border-top: 1px solid var(--border); }
+    .chapter-warning-body.open { display: block; }
+    .warning-section-compact .warning-card { margin-top: 10px; }
     @media (max-width: 760px) { .schedule-row { grid-template-columns: 1fr; } .schedule-row-controls { justify-content: stretch; } .schedule-datetime { width: 100%; min-width: 0; } }
     @media (max-width: 1120px) { .layout { grid-template-columns: 1fr; } .sidebar { position: static; top: auto; } .hero-card { grid-template-columns: 1fr; } }
     @media (max-width: 760px) { html, body { overflow-x: hidden; } .topbar { padding: 12px; } .brand-title { font-size: 18px; } .layout { padding: 14px; gap: 16px; } .content-card, .sidebar, .hero-card { border-radius: 20px; padding: 16px; } .field-grid, .rating-grid, .rating-guide-grid, .check-grid, .hero-meta { grid-template-columns: 1fr; } .publish-actions { flex-direction: column; align-items: stretch; } .publish-actions-left, .publish-actions-right { width: 100%; justify-content: stretch; } .publish-actions-left > *, .publish-actions-right > * { width: 100%; } .text-btn, .primary-btn, .danger-btn { width: 100%; } }
@@ -203,7 +212,7 @@
     <aside class="sidebar">
         <div class="sidebar-section"><div class="sidebar-label">Book</div><div class="sidebar-value" id="sidebarBookTitle">Loading...</div></div>
         <div class="sidebar-section"><div class="sidebar-label">Selected Chapters</div><div class="sidebar-value" id="selectedChapterCount">0 chapters</div><div class="selected-chapters" id="selectedChaptersList"></div></div>
-        <div class="sidebar-section"><div class="sidebar-label">Publish Checklist</div><div class="selected-chapters"><div class="chapter-pill" id="checkGenres">Genres: not ready</div><div class="chapter-pill" id="checkRating">Rating: not ready</div><div class="chapter-pill" id="checkWarnings">Warnings: not ready</div><div class="chapter-pill" id="checkSummary">Summary: not ready</div></div></div>
+        <div class="sidebar-section"><div class="sidebar-label">Publish Checklist</div><div class="selected-chapters"><div class="chapter-pill" id="checkGenres">Genres: not ready</div><div class="chapter-pill" id="checkRating">Rating: not ready</div><div class="chapter-pill" id="checkWarnings">Story warnings: not ready</div><div class="chapter-pill" id="checkChapterWarnings">Chapter warnings: not ready</div><div class="chapter-pill" id="checkSummary">Summary: not ready</div></div></div>
     </aside>
 
     <main class="main">
@@ -218,7 +227,16 @@
 
         <section class="content-card"><h2 class="section-title">Age Rating</h2><p class="section-note">Every story must have one rating.</p><div class="rating-grid" id="ratingGrid"><button class="rating-btn" type="button" data-rating="General"><div class="rating-emoji">🟢</div><div class="rating-name">General</div><div class="rating-code">G</div></button><button class="rating-btn" type="button" data-rating="Teen"><div class="rating-emoji">🟡</div><div class="rating-name">Teen</div><div class="rating-code">T</div></button><button class="rating-btn" type="button" data-rating="Mature"><div class="rating-emoji">🟠</div><div class="rating-name">Mature</div><div class="rating-code">M</div></button><button class="rating-btn" type="button" data-rating="Explicit"><div class="rating-emoji">🔴</div><div class="rating-name">Explicit</div><div class="rating-code">E</div></button></div><article class="rating-guide-card"><div class="rating-guide-kicker">Rating guide</div><h3 class="rating-guide-title" id="ratingGuideTitle">Pick or hover a rating</h3><p class="rating-guide-summary" id="ratingGuideSummary">Use the guide here to choose the safest rating for the most intense content anywhere in your story.</p><div class="rating-guide-grid" id="ratingGuideGrid"></div><div class="rating-principles"><strong>Rate by the highest-intensity content.</strong> A single intense scene can set the rating. When uncertain, choose the safer higher rating.</div></article></section>
 
-        <section class="content-card"><h2 class="section-title">Content Warnings</h2><p class="section-note">Each category must have at least one selection. “None” is allowed per category, but you cannot skip a category completely.</p><div class="warning-section" id="warningSection"></div></section>
+        <section class="content-card"><h2 class="section-title">Content Warnings</h2><p class="section-note">Story-wide defaults for the library listing. Each selected chapter also needs its own warnings below — use “Apply story defaults to all chapters” to copy these selections.</p><div class="warning-section" id="warningSection"></div></section>
+
+        <section class="content-card" id="chapterWarningsSection">
+            <h2 class="section-title">Chapter Content Warnings</h2>
+            <p class="section-note">Tag what appears in each chapter you are publishing. Readers see the warnings for the chapter they are reading.</p>
+            <div class="chapter-warnings-tools">
+                <button class="text-btn" id="applyBookWarningsToChaptersBtn" type="button">Apply story defaults to all chapters</button>
+            </div>
+            <div class="chapter-warnings-list" id="chapterWarningsList"></div>
+        </section>
 
         <section class="content-card"><h2 class="section-title">Summary & Extra Tags</h2><p class="section-note">Summary is required. Extra tags are optional and should be comma-separated.</p><div class="field-grid"><div class="field full"><label class="label" for="summaryInput">Summary</label><textarea class="textarea" id="summaryInput" placeholder="Write the story summary readers will see in the library..."></textarea></div><div class="field full"><label class="label" for="extraTagsInput">Extra Tags</label><input class="input" id="extraTagsInput" type="text" placeholder="slow burn, found family, enemies to lovers"><div class="hint">Optional. Separate each tag with a comma.</div></div></div></section>
 
@@ -275,6 +293,18 @@
         comicPrimaryImageUrl,
         countComicPagesWithImages,
     } from "./js/book-media-format.js?v=2";
+    import {
+        CONTENT_WARNING_GROUPS,
+        normalizeWarningData,
+        cloneWarningData,
+        aggregateWarningsFromChapters,
+        everyWarningCategoryHasAChoice,
+        countNonNoneWarnings,
+        toggleWarningChoice,
+    } from "./js/content-warnings.js?v=1";
+    import { mountWarningPicker } from "./js/chapter-warnings-ui.js?v=1";
+
+    const WARNING_GROUPS = CONTENT_WARNING_GROUPS;
 
     const GENRES = {
         "Fantasy": ["High Fantasy","Low Fantasy","Dark Fantasy","Epic Fantasy","Sword and Sorcery","Urban Fantasy","Mythic Fantasy","Fairy Tale / Retelling","Grimdark","Gaslamp Fantasy","Portal Fantasy","Historical Fantasy","Contemporary Fantasy"],
@@ -289,21 +319,6 @@
         "Informational / Educational": ["History","Science","Psychology","Philosophy","Self-Help","True Crime","Politics","Economics","Sociology"],
         "Transformative Genres (Fanfiction)": ["Alternate Universe (AU)","Canon Divergence","Fix-It Fic","Crossover","Self-Insert","Reader-Insert","Rewrite / Retelling"]
     };
-
-    const WARNING_GROUPS = [
-        { key: "violence", title: "Violence & Physical Harm", subtitle: "Required: choose one or more, including None if not applicable.", options: ["None","Mild Violence","Moderate Violence","Graphic Violence","Gore","Torture","Mutilation","Disfigurement","War Violence","Gun Violence","Knife Violence","Physical Assault","Kidnapping","Hostage Situations","Human Experimentation"] },
-        { key: "abuse", title: "Abuse & Power Dynamics", subtitle: "Required.", options: ["None","Physical Abuse","Emotional Abuse","Psychological Abuse","Verbal Abuse","Domestic Abuse","Child Abuse","Neglect","Gaslighting","Bullying","Workplace Abuse","Institutional Abuse","Cult / Coercive Control"] },
-        { key: "sexual_content", title: "Sexual Content & Consent", subtitle: "Required.", options: ["None","Consensual Sexual Content","Non-Graphic Sexual Content","Explicit Sexual Content","Sexual Tension","Dubious Consent","Non-Consensual (Rape)","Sexual Assault","Sexual Harassment","Exploitation"] },
-        { key: "mental_health", title: "Mental Health", subtitle: "Required.", options: ["None","Anxiety","Panic Attacks","Depression","Trauma / PTSD","Dissociation","Psychosis","Paranoia","Obsessive Behavior","Suicidal Ideation"] },
-        { key: "self_harm", title: "Self-Harm & Suicide", subtitle: "Required.", options: ["None","Self-Harm","Attempted Suicide","Suicide","Graphic Self-Harm"] },
-        { key: "substance_use", title: "Substance Use", subtitle: "Required.", options: ["None","Alcohol Use","Alcohol Abuse","Drug Use","Drug Abuse","Addiction","Withdrawal","Overdose"] },
-        { key: "eating_body", title: "Eating & Body", subtitle: "Required.", options: ["None","Eating Disorder","Starvation","Binge Eating","Body Dysmorphia","Extreme Dieting"] },
-        { key: "moral_dark", title: "Moral / Dark Themes", subtitle: "Required.", options: ["None","Crime","Murder","Serial Killing","Corruption","Betrayal","Revenge","Moral Ambiguity","Villain Protagonist","Anti-Hero"] },
-        { key: "fear_disturbing", title: "Fear & Disturbing Content", subtitle: "Required.", options: ["None","Jump Scares","Psychological Distress","Disturbing Imagery","Nightmares","Claustrophobia","Isolation","Existential Dread"] },
-        { key: "body_medical", title: "Body & Medical", subtitle: "Required.", options: ["None","Illness","Terminal Illness","Injury","Surgery","Medical Trauma","Body Horror","Mutation","Parasites","Infestation"] },
-        { key: "identity_social", title: "Identity & Social Issues", subtitle: "Required.", options: ["None","Racism","Sexism","Homophobia","Transphobia","Discrimination","Slavery","Oppression","Xenophobia"] },
-        { key: "sensitive_life_events", title: "Sensitive Life Events", subtitle: "Required.", options: ["None","Major Character Death","Minor Character Death","Pregnancy","Miscarriage","Infertility","Child Loss","Grief / Mourning"] }
-    ];
 
     const params = new URLSearchParams(window.location.search);
     let bookId = params.get("book") || params.get("id") || params.get("bookId") || localStorage.getItem("alysum-current-book-id") || sessionStorage.getItem("alysum-current-book-id") || "";
@@ -322,7 +337,7 @@
     const ANONYMOUS_AUTHOR_LABEL = "Anonymous";
 
     const el = (id) => document.getElementById(id);
-    const backBtn = el("backBtn"), themeBtn = el("themeBtn"), sidebarBookTitle = el("sidebarBookTitle"), selectedChapterCount = el("selectedChapterCount"), selectedChaptersList = el("selectedChaptersList"), checkGenres = el("checkGenres"), checkRating = el("checkRating"), checkWarnings = el("checkWarnings"), checkSummary = el("checkSummary"), heroTitle = el("heroTitle"), heroChapterCount = el("heroChapterCount"), heroWordCount = el("heroWordCount"), heroBookId = el("heroBookId"), heroStatus = el("heroStatus"), bookTitleInput = el("bookTitleInput"), libraryShelfSelect = el("libraryShelfSelect"), authorDisplay = el("authorDisplay"), anonymousPostCheckbox = el("anonymousPostCheckbox"), chapterSummaryBox = el("chapterSummaryBox"), coverUrlInput = el("coverUrlInput"), coverPreviewWrap = el("coverPreviewWrap"), coverPreviewImg = el("coverPreviewImg"), coverPreviewStatus = el("coverPreviewStatus"), genreSearchInput = el("genreSearchInput"), clearGenresBtn = el("clearGenresBtn"), selectedGenresChips = el("selectedGenresChips"), genreGroups = el("genreGroups"), ratingGrid = el("ratingGrid"), ratingGuideTitle = el("ratingGuideTitle"), ratingGuideSummary = el("ratingGuideSummary"), ratingGuideGrid = el("ratingGuideGrid"), warningSection = el("warningSection"), summaryInput = el("summaryInput"), extraTagsInput = el("extraTagsInput"), statusBox = el("statusBox"), saveDraftBtn = el("saveDraftBtn"), unpublishBtn = el("unpublishBtn"), publishHint = el("publishHint"), publishBtn = el("publishBtn");
+    const backBtn = el("backBtn"), themeBtn = el("themeBtn"), sidebarBookTitle = el("sidebarBookTitle"), selectedChapterCount = el("selectedChapterCount"), selectedChaptersList = el("selectedChaptersList"), checkGenres = el("checkGenres"), checkRating = el("checkRating"), checkWarnings = el("checkWarnings"), checkChapterWarnings = el("checkChapterWarnings"), checkSummary = el("checkSummary"), heroTitle = el("heroTitle"), heroChapterCount = el("heroChapterCount"), heroWordCount = el("heroWordCount"), heroBookId = el("heroBookId"), heroStatus = el("heroStatus"), bookTitleInput = el("bookTitleInput"), libraryShelfSelect = el("libraryShelfSelect"), authorDisplay = el("authorDisplay"), anonymousPostCheckbox = el("anonymousPostCheckbox"), chapterSummaryBox = el("chapterSummaryBox"), coverUrlInput = el("coverUrlInput"), coverPreviewWrap = el("coverPreviewWrap"), coverPreviewImg = el("coverPreviewImg"), coverPreviewStatus = el("coverPreviewStatus"), genreSearchInput = el("genreSearchInput"), clearGenresBtn = el("clearGenresBtn"), selectedGenresChips = el("selectedGenresChips"), genreGroups = el("genreGroups"), ratingGrid = el("ratingGrid"), ratingGuideTitle = el("ratingGuideTitle"), ratingGuideSummary = el("ratingGuideSummary"), ratingGuideGrid = el("ratingGuideGrid"), warningSection = el("warningSection"), chapterWarningsList = el("chapterWarningsList"), applyBookWarningsToChaptersBtn = el("applyBookWarningsToChaptersBtn"), summaryInput = el("summaryInput"), extraTagsInput = el("extraTagsInput"), statusBox = el("statusBox"), saveDraftBtn = el("saveDraftBtn"), unpublishBtn = el("unpublishBtn"), publishHint = el("publishHint"), publishBtn = el("publishBtn");
 
     let currentUser = null;
     let currentBook = null;
@@ -355,6 +370,12 @@
     const chapterReleaseModes = new Map();
     /** @type {import("./js/scheduled-chapter-releases.js").ScheduledChapterRelease[]} */
     let pendingScheduledReleases = [];
+    /** @type {Map<string, Record<string, string[]>>} */
+    const chapterWarningSelections = new Map();
+    /** @type {Record<string, Record<string, boolean>>} */
+    const chapterWarningOpenState = {};
+    /** @type {Record<string, boolean>} */
+    const chapterWarningCardOpen = {};
 
     const RATING_GUIDES = {
         General: { title: "General (G)", summary: "Suitable for all audiences, including children. Conflict, danger, sadness, romance, or emotional growth should be mild, age-appropriate, and non-graphic.", blocks: [{ heading: "May include", items: ["Mild fantasy or adventure violence without graphic injury.","Brief, non-detailed peril, conflict, or danger.","Innocent romance such as hand-holding, hugging, or kissing."] }, { heading: "Should not include", items: ["Explicit sexual acts or sustained sexual themes.","Graphic violence, gore, torture, or realistic bodily injury detail.","Detailed abuse, coercion, self-harm, suicide, addiction, or severe psychological trauma."] }] },
@@ -377,10 +398,10 @@
             content: safeString(chapter.content, ""),
             imageUrl: imageUrls[0] || "",
             imageUrls,
+            warnings: normalizeWarningData(chapter.warnings),
         };
     }
     function normalizeSections(rawSections) { const sections = safeObject(rawSections, {}); const frontRaw = safeArray(sections.front, []); const bodyRaw = safeArray(sections.body, []); const backRaw = safeArray(sections.back, []); return { front: frontRaw.length ? frontRaw.map((ch, index) => normalizeChapter(ch, index === 0 ? "Copyright" : "Table of Contents")) : [{ id: generateId(), title: "Copyright", content: "" }, { id: generateId(), title: "Table of Contents", content: "" }], body: bodyRaw.length ? bodyRaw.map((ch, index) => normalizeChapter(ch, `Chapter ${index + 1}`)) : [{ id: generateId(), title: "Chapter 1", content: "" }], back: backRaw.map((ch, index) => normalizeChapter(ch, `Back Matter ${index + 1}`)) }; }
-    function normalizeWarningData(rawWarnings) { const source = safeObject(rawWarnings, {}); const out = {}; WARNING_GROUPS.forEach(group => { out[group.key] = safeArray(source[group.key], []).filter(item => typeof item === "string"); }); return out; }
     function normalizeCoverUrl(raw) {
         const s = safeString(raw, "").trim();
         if (!s) return "";
@@ -428,11 +449,74 @@
     function renderRating() { ratingGrid.querySelectorAll(".rating-btn").forEach(btn => btn.classList.toggle("selected", btn.dataset.rating === selectedRating)); renderRatingGuide(selectedRating || "General"); }
     function renderRatingGuide(rating) { const guide = RATING_GUIDES[rating] || RATING_GUIDES.General; ratingGuideTitle.textContent = guide.title; ratingGuideSummary.textContent = guide.summary; ratingGuideGrid.innerHTML = ""; guide.blocks.forEach(block => { const section = document.createElement("div"); section.className = "rating-guide-block"; const heading = document.createElement("h4"); heading.textContent = block.heading; section.appendChild(heading); const list = document.createElement("ul"); block.items.forEach(item => { const li = document.createElement("li"); li.textContent = item; list.appendChild(li); }); section.appendChild(list); ratingGuideGrid.appendChild(section); }); }
     ratingGrid.querySelectorAll(".rating-btn").forEach(btn => { btn.addEventListener("mouseenter", () => renderRatingGuide(btn.dataset.rating || selectedRating || "General")); btn.addEventListener("focus", () => renderRatingGuide(btn.dataset.rating || selectedRating || "General")); btn.addEventListener("mouseleave", () => renderRatingGuide(selectedRating || "General")); btn.addEventListener("click", () => { selectedRating = btn.dataset.rating || ""; renderRating(); renderChecklist(); }); });
-    function normalizeWarningChoice(groupKey, value) { if (!warningSelections[groupKey]) warningSelections[groupKey] = []; const current = new Set(warningSelections[groupKey]); if (value === "None") { current.clear(); current.add("None"); } else { current.delete("None"); if (current.has(value)) current.delete(value); else current.add(value); } warningSelections[groupKey] = current.size ? [...current] : []; }
+    function normalizeWarningChoice(groupKey, value) { warningSelections = toggleWarningChoice(warningSelections, groupKey, value); }
     function renderWarnings() { warningSection.innerHTML = ""; WARNING_GROUPS.forEach(group => { if (!(group.key in warningOpenState)) warningOpenState[group.key] = false; const selected = safeArray(warningSelections[group.key], []); const card = document.createElement("div"); card.className = "warning-card"; const header = document.createElement("button"); header.type = "button"; header.className = "warning-header"; header.innerHTML = `<div class="warning-header-left"><div class="warning-title">${group.title}</div><div class="warning-subtitle">${group.subtitle}</div></div><div class="warning-header-state">${selected.length ? `${selected.length} selected` : "Choose at least one"} ${warningOpenState[group.key] ? "▲" : "▼"}</div>`; header.addEventListener("click", () => { warningOpenState[group.key] = !warningOpenState[group.key]; renderWarnings(); }); const body = document.createElement("div"); body.className = "warning-body" + (warningOpenState[group.key] ? " open" : ""); const note = document.createElement("div"); note.className = "warning-note"; note.textContent = "Pick “None” if nothing in this category applies. Otherwise choose one or more warning tags."; body.appendChild(note); const grid = document.createElement("div"); grid.className = "check-grid"; group.options.forEach(option => { const item = document.createElement("label"); item.className = "check-item"; const input = document.createElement("input"); input.type = "checkbox"; input.checked = selected.includes(option); input.addEventListener("change", () => { normalizeWarningChoice(group.key, option); renderWarnings(); renderChecklist(); }); const span = document.createElement("span"); span.textContent = option; item.appendChild(input); item.appendChild(span); grid.appendChild(item); }); body.appendChild(grid); if (selected.length) { const preview = document.createElement("div"); preview.className = "warning-selected-preview"; selected.forEach(value => { const chip = document.createElement("div"); chip.className = "warning-preview-chip"; chip.textContent = value; preview.appendChild(chip); }); body.appendChild(preview); } card.appendChild(header); card.appendChild(body); warningSection.appendChild(card); }); }
-    function everyWarningCategoryHasAChoice() { return WARNING_GROUPS.every(group => safeArray(warningSelections[group.key], []).length > 0); }
-    function countNonNoneWarnings() { let total = 0; WARNING_GROUPS.forEach(group => safeArray(warningSelections[group.key], []).forEach(value => { if (value !== "None") total += 1; })); return total; }
-    function renderChecklist() { const genresReady = selectedGenres.size > 0; const ratingReady = !!selectedRating; const warningsReady = everyWarningCategoryHasAChoice(); const summaryReady = summaryInput.value.trim().length > 0; checkGenres.textContent = genresReady ? `Genres: ${selectedGenres.size} selected` : "Genres: not ready"; checkRating.textContent = ratingReady ? `Rating: ${selectedRating}` : "Rating: not ready"; checkWarnings.textContent = warningsReady ? "Warnings: complete" : "Warnings: not ready"; checkSummary.textContent = summaryReady ? "Summary: ready" : "Summary: not ready"; }
+    function everySelectedChapterHasWarnings() {
+        return selectedChapterObjects.every((chapter) => everyWarningCategoryHasAChoice(getChapterWarningSelections(chapter.id)));
+    }
+
+    function getChapterWarningSelections(chapterId) {
+        if (!chapterWarningSelections.has(chapterId)) {
+            const chapter = selectedChapterObjects.find((ch) => ch.id === chapterId);
+            const fromChapter = normalizeWarningData(chapter?.warnings);
+            if (everyWarningCategoryHasAChoice(fromChapter)) {
+                chapterWarningSelections.set(chapterId, cloneWarningData(fromChapter));
+            } else {
+                chapterWarningSelections.set(chapterId, cloneWarningData(warningSelections));
+            }
+        }
+        return chapterWarningSelections.get(chapterId);
+    }
+
+    function chaptersForPublish() {
+        return selectedChapterObjects.map((chapter) => ({
+            ...chapter,
+            warnings: cloneWarningData(getChapterWarningSelections(chapter.id)),
+        }));
+    }
+
+    function renderChapterWarnings() {
+        if (!chapterWarningsList) return;
+        chapterWarningsList.innerHTML = "";
+        selectedChapterObjects.forEach((chapter, index) => {
+            const card = document.createElement("div");
+            card.className = "chapter-warning-card";
+            const header = document.createElement("button");
+            header.type = "button";
+            header.className = "chapter-warning-header";
+            const ready = everyWarningCategoryHasAChoice(getChapterWarningSelections(chapter.id));
+            header.innerHTML = `<span class="chapter-warning-title">${index + 1}. ${chapter.title || "Untitled"}</span><span class="chapter-warning-status">${ready ? "Complete" : "Needs tags"} ${chapterWarningCardOpen[chapter.id] ? "▲" : "▼"}</span>`;
+            const body = document.createElement("div");
+            body.className = "chapter-warning-body" + (chapterWarningCardOpen[chapter.id] ? " open" : "");
+            const host = document.createElement("div");
+            body.appendChild(host);
+            mountWarningPicker(host, {
+                selections: getChapterWarningSelections(chapter.id),
+                onChange: (next) => {
+                    chapterWarningSelections.set(chapter.id, next);
+                    renderChecklist();
+                },
+                openState: chapterWarningOpenState[chapter.id] || (chapterWarningOpenState[chapter.id] = {}),
+                compact: true,
+            });
+            header.addEventListener("click", () => {
+                chapterWarningCardOpen[chapter.id] = !chapterWarningCardOpen[chapter.id];
+                renderChapterWarnings();
+            });
+            card.append(header, body);
+            chapterWarningsList.appendChild(card);
+        });
+    }
+
+    function applyBookDefaultsToChapters() {
+        selectedChapterObjects.forEach((chapter) => {
+            chapterWarningSelections.set(chapter.id, cloneWarningData(warningSelections));
+        });
+        renderChapterWarnings();
+        renderChecklist();
+    }
+
+    function renderChecklist() { const genresReady = selectedGenres.size > 0; const ratingReady = !!selectedRating; const warningsReady = everyWarningCategoryHasAChoice(warningSelections); const chapterWarningsReady = everySelectedChapterHasWarnings(); const summaryReady = summaryInput.value.trim().length > 0; checkGenres.textContent = genresReady ? `Genres: ${selectedGenres.size} selected` : "Genres: not ready"; checkRating.textContent = ratingReady ? `Rating: ${selectedRating}` : "Rating: not ready"; checkWarnings.textContent = warningsReady ? "Story warnings: complete" : "Story warnings: not ready"; if (checkChapterWarnings) checkChapterWarnings.textContent = chapterWarningsReady ? "Chapter warnings: complete" : "Chapter warnings: not ready"; checkSummary.textContent = summaryReady ? "Summary: ready" : "Summary: not ready"; }
 
     function defaultScheduleLocalValue() {
         const d = new Date(Date.now() + MIN_SCHEDULE_LEAD_MS + 60 * 60 * 1000);
@@ -585,7 +669,7 @@
     anonymousPostCheckbox?.addEventListener("change", () => { isAnonymousPost = !!anonymousPostCheckbox.checked; renderHero(); });
     function getExtraTags() { return extraTagsInput.value.split(",").map(tag => tag.trim()).filter(Boolean); }
     function buildPublishMeta() { return { genres: [...selectedGenres].sort((a, b) => a.localeCompare(b)), rating: selectedRating, warnings: WARNING_GROUPS.reduce((acc, group) => { acc[group.key] = safeArray(warningSelections[group.key], []); return acc; }, {}), summary: summaryInput.value.trim(), extraTags: getExtraTags(), coverUrl: normalizeCoverUrl(coverUrlInput?.value || ""), isAnonymous: !!isAnonymousPost }; }
-    function validateBeforePublish() { const errors = []; if (!bookId) errors.push("Missing book id."); if (!currentBook) errors.push("Book data has not loaded yet."); if (publishEligibility && !publishEligibility.allowed) errors.push(formatPublishBlockMessage(publishEligibility)); if (!selectedChapterObjects.length) errors.push("No chapters were selected. Go back and choose at least one chapter."); if (!bookTitleInput.value.trim()) errors.push("Title is required."); if (!libraryShelfSelect.value) errors.push("Choose Fiction, Nonfiction, or Fanfiction."); if (selectedGenres.size === 0) errors.push("Pick at least one genre."); if (!selectedRating) errors.push("Select one age rating."); if (!everyWarningCategoryHasAChoice()) errors.push("Every warning category must have at least one choice."); if (!summaryInput.value.trim()) errors.push("Summary is required."); if ((selectedRating === "Mature" || selectedRating === "Explicit") && countNonNoneWarnings() === 0) errors.push("Mature and Explicit stories must include at least one non-“None” content warning."); const { immediate, scheduled } = buildReleasePlan(); if (!immediate.length && !scheduled.length) errors.push("Choose at least one chapter to publish or schedule."); scheduled.forEach(({ chapter, scheduledAt }) => { if (!isValidFutureSchedule(scheduledAt)) errors.push(`"${chapter.title || "Untitled"}" needs a release time at least 5 minutes in the future.`); }); return errors; }
+    function validateBeforePublish() { const errors = []; if (!bookId) errors.push("Missing book id."); if (!currentBook) errors.push("Book data has not loaded yet."); if (publishEligibility && !publishEligibility.allowed) errors.push(formatPublishBlockMessage(publishEligibility)); if (!selectedChapterObjects.length) errors.push("No chapters were selected. Go back and choose at least one chapter."); if (!bookTitleInput.value.trim()) errors.push("Title is required."); if (!libraryShelfSelect.value) errors.push("Choose Fiction, Nonfiction, or Fanfiction."); if (selectedGenres.size === 0) errors.push("Pick at least one genre."); if (!selectedRating) errors.push("Select one age rating."); if (!everyWarningCategoryHasAChoice(warningSelections)) errors.push("Every story warning category must have at least one choice."); if (!everySelectedChapterHasWarnings()) errors.push("Every selected chapter needs complete content warnings."); if (!summaryInput.value.trim()) errors.push("Summary is required."); if ((selectedRating === "Mature" || selectedRating === "Explicit") && countNonNoneWarnings(warningSelections) === 0) errors.push("Mature and Explicit stories must include at least one non-“None” story content warning."); selectedChapterObjects.forEach((chapter) => { if ((selectedRating === "Mature" || selectedRating === "Explicit") && countNonNoneWarnings(getChapterWarningSelections(chapter.id)) === 0) errors.push(`"${chapter.title || "Untitled"}" needs at least one non-“None” chapter warning for Mature/Explicit ratings.`); }); const { immediate, scheduled } = buildReleasePlan(); if (!immediate.length && !scheduled.length) errors.push("Choose at least one chapter to publish or schedule."); scheduled.forEach(({ chapter, scheduledAt }) => { if (!isValidFutureSchedule(scheduledAt)) errors.push(`"${chapter.title || "Untitled"}" needs a release time at least 5 minutes in the future.`); }); return errors; }
 
     function renderPublishCooldownUI() {
         if (!publishCooldownSection || !publishCooldownCard) return;
@@ -675,12 +759,20 @@
         const errors = validateBeforePublish();
         if (errors.length) { setStatus(errors.join(" "), "error"); return; }
         const { immediate, scheduled } = buildReleasePlan();
+        const publishChapters = chaptersForPublish();
+        const aggregatedWarnings = aggregateWarningsFromChapters(publishChapters);
         setStatus("Publishing...", "success");
         const payloadTitle = bookTitleInput.value.trim() || currentBook.title || "Untitled Book";
         const publishMeta = buildPublishMeta();
         const immediateChapterIds = immediate.map(ch => ch.id);
         const wordCount = chapterWordTotal(selectedChapterObjects);
         const now = Date.now();
+        const updatedSections = JSON.parse(JSON.stringify(currentBook.sections || {}));
+        publishChapters.forEach((chapter) => {
+            const bodyList = safeArray(updatedSections.body, []);
+            const target = bodyList.find((ch) => ch.id === chapter.id);
+            if (target) target.warnings = cloneWarningData(chapter.warnings);
+        });
         try {
             const { data: existingLibrary, error: existingError } = await supabase.from("library").select("*").eq("id", bookId).maybeSingle();
             if (existingError) throw existingError;
@@ -697,11 +789,11 @@
                 mediaFormat: currentBook.mediaFormat || "novel",
                 genres: publishMeta.genres,
                 rating: publishMeta.rating,
-                warnings: publishMeta.warnings,
+                warnings: aggregatedWarnings,
                 summary: publishMeta.summary,
                 extraTags: publishMeta.extraTags,
                 coverUrl: publishMeta.coverUrl || "",
-                chapters: selectedChapterObjects.map((ch, index) => ({
+                chapters: publishChapters.map((ch, index) => ({
                     id: ch.id,
                     order: index + 1,
                     title: ch.title || (isComicFormat(currentBook.mediaFormat) ? `Page ${index + 1}` : `Chapter ${index + 1}`),
@@ -709,9 +801,10 @@
                     imageUrl: comicPrimaryImageUrl(ch),
                     imageUrls: normalizeComicImageUrls(ch),
                     words: countWords(ch.content || ""),
+                    warnings: cloneWarningData(ch.warnings),
                 })),
                 publishedChapterIds: immediateChapterIds,
-                chapterCount: selectedChapterObjects.length,
+                chapterCount: publishChapters.length,
                 words: wordCount,
                 createdAt: firstPublishedAt,
                 publishedAt: firstPublishedAt,
@@ -720,7 +813,7 @@
                 likes: safeNumber(existingData.likes, 0),
                 isPublished: true
             };
-            const { error: bookError } = await supabase.from("books").update({ title: payloadTitle, library_type: libraryShelfSelect.value, publish_meta: publishMeta, published_chapter_ids: immediateChapterIds, is_published: true, updated: now }).eq("id", bookId).eq("user_id", currentUser.id);
+            const { error: bookError } = await supabase.from("books").update({ title: payloadTitle, library_type: libraryShelfSelect.value, publish_meta: publishMeta, published_chapter_ids: immediateChapterIds, is_published: true, sections: updatedSections, updated: now }).eq("id", bookId).eq("user_id", currentUser.id);
             if (bookError) throw bookError;
             await upsertLibraryEntry(libraryData);
             if (scheduled.length) {
@@ -731,7 +824,7 @@
             } else {
                 await syncScheduledChapterReleases(bookId, []);
             }
-            currentBook.title = payloadTitle; currentBook.libraryType = libraryShelfSelect.value; currentBook.publishMeta = publishMeta; currentBook.publishedChapterIds = immediateChapterIds; currentBook.isPublished = true; isPublished = true;
+            currentBook.title = payloadTitle; currentBook.libraryType = libraryShelfSelect.value; currentBook.publishMeta = publishMeta; currentBook.publishedChapterIds = immediateChapterIds; currentBook.isPublished = true; currentBook.sections = updatedSections; isPublished = true;
             renderBasicInfo(); renderHero(); renderSidebar(); await refreshPendingSchedules();
             const scheduleNote = scheduled.length
                 ? ` ${scheduled.length} chapter${scheduled.length === 1 ? "" : "s"} scheduled for later release.`
@@ -768,6 +861,7 @@
         } catch (error) { console.error(error); setStatus(error?.message || "Unpublish failed.", "error"); }
     }
 
+    applyBookWarningsToChaptersBtn?.addEventListener("click", applyBookDefaultsToChapters);
     saveDraftBtn.addEventListener("click", async () => { try { await saveDraftMetadata(); } catch (error) { console.error(error); setStatus(error?.message || "Could not save draft metadata.", "error"); } });
     publishBtn.addEventListener("click", publishStory);
     unpublishBtn.addEventListener("click", unpublishStory);
@@ -825,7 +919,7 @@
         if (!selectedChapterIds.length) selectedChapterIds = safeArray(currentBook.sections.body, []).map(ch => ch.id);
         buildSelectedChapters();
         hydrateFormFromBook();
-        renderSidebar(); renderHero(); renderBasicInfo(); renderGenres(); renderRating(); renderWarnings(); renderChecklist();
+        renderSidebar(); renderHero(); renderBasicInfo(); renderGenres(); renderRating(); renderWarnings(); renderChapterWarnings(); renderChecklist();
         await refreshPendingSchedules();
     }
 
