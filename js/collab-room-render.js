@@ -2,6 +2,12 @@
  * Collab room rendering — HTML block canon + Google Docs-style suggestion overlays.
  */
 
+import {
+    renderInlineTrackChanges,
+    renderInlineDiffPreview,
+    renderCollaboratorLiveMarks,
+} from "./collab-inline-diff.js?v=1";
+
 /** @typedef {{ id: string, by: string, byLabel: string, type: "replace"|"insert"|"delete", oldText: string, newText: string, paragraphIndex: number, status: "pending"|"accepted"|"rejected" }} CollabHunk */
 
 /** @typedef {{ tag: string, innerHtml: string, outerHtml: string, text: string }} HtmlBlock */
@@ -111,15 +117,53 @@ function isHtmlBlockValue(value) {
     return /^\s*<(p|h2|h3|blockquote|li)\b/i.test(String(value || ""));
 }
 
-/** Preview HTML for sidebar cards (preserves bold/italic/etc.). */
-export function hunkPreviewHtml(value) {
-    const raw = String(value || "").trim();
-    if (!raw) return '<span class="collab-hunk-empty">—</span>';
-    if (isHtmlBlockValue(raw)) {
-        const blocks = htmlToBlocks(raw);
-        return blocks.map((b) => b.innerHtml || "<br>").join('<span class="collab-hunk-break"> · </span>');
+/** Preview HTML for sidebar cards (inline word-level track changes). */
+export function hunkPreviewHtml(oldValue, newValue) {
+    return renderInlineDiffPreview(oldValue, newValue, escapeHtml);
+}
+
+/** Author/collaborator read-only view with inline marks for one paragraph block. */
+export function renderBlockWithInlineSuggestions(block, hunks) {
+    const pending = hunks.filter((h) => h.status === "pending");
+    if (!pending.length) return block.outerHtml;
+
+    const h = pending.find((x) => x.type === "replace") || pending[0];
+    if (h.type === "delete") {
+        return `<${block.tag} class="collab-suggest-delete-block" data-hunk="${h.id}" data-by="${h.by}"><span class="collab-suggest-del">${blockInnerFromStored(h.oldText || block.outerHtml)}</span></${block.tag}>`;
     }
-    return escapeHtml(raw);
+    if (h.type === "insert" && !h.oldText) return block.outerHtml;
+
+    const oldInner = isHtmlBlockValue(h.oldText) ? blockInnerFromStored(h.oldText) : block.innerHtml;
+    const newInner = isHtmlBlockValue(h.newText) ? blockInnerFromStored(h.newText) : h.newText;
+    const inline = renderInlineTrackChanges(oldInner, newInner, {
+        hunkId: h.id,
+        by: h.by,
+        escape: escapeHtml,
+    });
+    return `<${block.tag} data-hunk="${h.id}" data-paragraph="${h.paragraphIndex}">${inline}</${block.tag}>`;
+}
+
+/** Live draft preview for collaborator sidebar (pre-submit). */
+export function renderDraftInlinePreview(baseHtml, nextHtml, escapeFn = escapeHtml) {
+    const base = htmlToBlocks(baseHtml);
+    const next = htmlToBlocks(nextHtml);
+    const parts = [];
+    const max = Math.max(base.length, next.length);
+    for (let i = 0; i < max; i++) {
+        const b = base[i];
+        const n = next[i];
+        if (b && n && blocksEquivalent(b, n)) continue;
+        if (b && n) {
+            parts.push(
+                `<div class="collab-draft-para"><span class="collab-draft-label">¶ ${i + 1}</span> ${renderCollaboratorLiveMarks(b.innerHtml, n.innerHtml, escapeFn)}</div>`
+            );
+        } else if (n) {
+            parts.push(`<div class="collab-draft-para collab-draft-insert"><span class="collab-draft-label">+ ¶</span> ${n.innerHtml}</div>`);
+        } else if (b) {
+            parts.push(`<div class="collab-draft-para collab-draft-delete"><span class="collab-draft-label">− ¶</span> <span class="collab-live-del">${escapeFn(b.text)}</span></div>`);
+        }
+    }
+    return parts.join("");
 }
 
 /**
@@ -222,40 +266,69 @@ export function renderAuthorManuscriptHtml(baseHtml, hunks) {
         .map((block, idx) => {
             const pending = hunks.filter((h) => h.paragraphIndex === idx && h.status === "pending");
             if (!pending.length) return block.outerHtml;
-
-            let replaced = false;
-            for (const h of pending) {
-                if (h.type === "delete") {
-                    return `<${block.tag} class="collab-suggest-delete-block" data-hunk="${h.id}" data-by="${h.by}"><span class="collab-suggest-del">${blockInnerFromStored(h.oldText || block.outerHtml)}</span></${block.tag}>`;
-                }
-                if (h.type === "insert" && !h.oldText) continue;
-
-                if (isHtmlBlockValue(h.oldText) && isHtmlBlockValue(h.newText)) {
-                    replaced = true;
-                    return `<${block.tag} data-hunk="${h.id}"><span class="collab-suggest-del">${blockInnerFromStored(h.oldText)}</span><span class="collab-suggest-add" data-hunk="${h.id}" data-by="${h.by}">${blockInnerFromStored(h.newText)}</span></${block.tag}>`;
-                }
-
-                if (h.oldText && block.innerHtml.includes(h.oldText)) {
-                    replaced = true;
-                    const marked = `<span class="collab-suggest-del" data-hunk="${h.id}" data-by="${h.by}">${escapeHtml(h.oldText)}</span><span class="collab-suggest-add" data-hunk="${h.id}" data-by="${h.by}">${escapeHtml(h.newText)}</span>`;
-                    return `<${block.tag}>${block.innerHtml.replace(h.oldText, marked)}</${block.tag}>`;
-                }
-            }
-
-            const h = pending.find((x) => x.type === "replace") || pending[0];
-            if (h && !replaced) {
-                return `<${block.tag} data-hunk="${h.id}"><span class="collab-suggest-del">${blockInnerFromStored(h.oldText || block.outerHtml)}</span><span class="collab-suggest-add" data-hunk="${h.id}" data-by="${h.by}">${blockInnerFromStored(h.newText)}</span></${block.tag}>`;
-            }
-            return block.outerHtml;
+            return renderBlockWithInlineSuggestions({ ...block, paragraphIndex: idx }, pending);
         })
         .join("");
 
     const inserts = hunks.filter((h) => h.status === "pending" && h.type === "insert" && !h.oldText);
     for (const h of inserts) {
         const blockHtml = isHtmlBlockValue(h.newText) ? h.newText : `<p>${escapeHtml(h.newText)}</p>`;
-        html += blockHtml.replace(/^(<[a-z0-9]+)/i, `$1 class="collab-suggest-insert-block" data-hunk="${h.id}" data-by="${h.by}"`);
+        const inner = blockInnerFromStored(blockHtml);
+        const tag = blockHtml.match(/<([a-z0-9]+)/i)?.[1] || "p";
+        html += `<${tag} class="collab-suggest-insert-block" data-hunk="${h.id}" data-by="${h.by}"><span class="collab-suggest-add" data-hunk="${h.id}" data-by="${h.by}">${inner}</span></${tag}>`;
     }
     return html;
+}
+
+/** @typedef {{ id: string, by: string, byLabel: string, paragraphIndex: number, quote: string, body: string, status: "open"|"resolved", parentId?: string, createdAt?: string }} CollabComment */
+
+/** Wrap open comment quotes in the manuscript (Google Docs-style anchors). */
+export function renderManuscriptWithComments(baseHtml, comments) {
+    const open = comments.filter((c) => c.status === "open" && c.quote && !c.parentId);
+    if (!open.length) return baseHtml;
+
+    const blocks = htmlToBlocks(baseHtml);
+    const byPara = new Map();
+    for (const c of open) {
+        const list = byPara.get(c.paragraphIndex) || [];
+        list.push(c);
+        byPara.set(c.paragraphIndex, list);
+    }
+
+    return blocks
+        .map((block, idx) => {
+            const paraComments = byPara.get(idx);
+            if (!paraComments?.length) return block.outerHtml;
+
+            let inner = block.innerHtml;
+            for (const c of paraComments) {
+                const q = c.quote.trim();
+                if (!q) continue;
+                if (!block.text.includes(q)) continue;
+                const marked = `<span class="collab-comment-anchor" data-comment-id="${c.id}" title="Comment">${escapeHtml(q)}</span>`;
+                if (inner.includes(q)) {
+                    inner = inner.replace(q, marked);
+                }
+            }
+            return `<${block.tag} data-paragraph="${idx}">${inner}</${block.tag}>`;
+        })
+        .join("");
+}
+
+/** @param {object} row */
+export function commentRowToComment(row) {
+    const handle = row.commenter_username || row.commenter_display_name || "collaborator";
+    return {
+        id: row.id,
+        by: row.commenter_id || handle,
+        byLabel: handle.startsWith("@") ? handle : `@${handle}`,
+        paragraphIndex: row.paragraph_index ?? 0,
+        quote: row.quote || "",
+        body: row.body || "",
+        status: row.status || "open",
+        parentId: row.parent_id || "",
+        createdAt: row.created_at || "",
+    };
 }
 
 /**

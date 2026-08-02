@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
     <link rel="stylesheet" href="css/gradient-themes.css?v=7" />
     <link rel="stylesheet" href="css/workspace-nav.css?v=11" />
-    <link rel="stylesheet" href="css/collab-room.css?v=7" />
+    <link rel="stylesheet" href="css/collab-room.css?v=8" />
     <script src="js/gradient-theme-sync.js" defer></script>
     <title>Collab room preview — Alysum</title>
     <style>
@@ -128,6 +128,7 @@
             <div class="topbar-subtitle" id="topSub">Chapter 12 · invite-only collab</div>
         </div>
         <div class="topbar-right">
+            <div class="collab-presence" id="collabPresence" aria-label="Editors in room"></div>
             <div class="collab-role-tabs" id="roleTabs" aria-label="Preview role switcher">
                 <button type="button" class="collab-role-tab is-active" data-role="author">Author review</button>
                 <button type="button" class="collab-role-tab" data-role="alex">@alex (editor)</button>
@@ -168,33 +169,66 @@
                 </div>
             </div>
         </div>
-        <aside class="collab-review-panel" id="reviewPanel" aria-label="Suggested edits">
-            <div class="collab-review-head">
-                <h3 id="reviewTitle">Suggested edits</h3>
-                <p id="reviewSub">4 suggestions waiting</p>
+        <aside class="collab-review-panel" id="reviewPanel" aria-label="Suggested edits and comments">
+            <div class="collab-sidebar-tabs" role="tablist" aria-label="Sidebar">
+                <button type="button" class="collab-sidebar-tab is-active" data-tab="edits" role="tab" aria-selected="true" id="tabEdits">Edits</button>
+                <button type="button" class="collab-sidebar-tab" data-tab="comments" role="tab" aria-selected="false" id="tabComments">Comments <span class="collab-tab-badge hidden" id="commentBadge">0</span></button>
             </div>
-            <div class="collab-review-stats">
-                <span class="collab-stat-pill pending" id="pendingPill">4 pending</span>
-                <span class="collab-stat-pill" id="acceptedPill">0 accepted</span>
+
+            <div class="collab-sidebar-pane" id="editsPane" role="tabpanel">
+                <div class="collab-review-head">
+                    <h3 id="reviewTitle">Suggested edits</h3>
+                    <p id="reviewSub">4 suggestions waiting</p>
+                </div>
+                <div class="collab-review-stats">
+                    <span class="collab-stat-pill pending" id="pendingPill">4 pending</span>
+                    <span class="collab-stat-pill" id="acceptedPill">0 accepted</span>
+                </div>
+                <div class="collab-draft-preview hidden" id="draftPreview">
+                    <div class="collab-draft-head">Draft changes</div>
+                    <div class="collab-draft-body" id="draftPreviewBody"></div>
+                </div>
+                <div class="collab-review-actions" id="bulkActions">
+                    <button type="button" class="collab-btn primary" id="acceptAllBtn">Accept all</button>
+                    <button type="button" class="collab-btn danger" id="rejectAllBtn">Reject all</button>
+                </div>
+                <div class="collab-hunk-list" id="hunkList"></div>
+                <div class="collab-sidebar-empty hidden" id="hunkEmpty">
+                    <p>No suggestions yet.</p>
+                    <span id="hunkEmptyHint">Edits you submit will appear here for the author to review.</span>
+                </div>
+                <div class="collab-sidebar-submit hidden" id="sidebarSubmit">
+                    <button type="button" class="collab-btn primary collab-sidebar-submit-btn" id="submitBtn">Submit suggestions</button>
+                </div>
             </div>
-            <div class="collab-review-actions" id="bulkActions">
-                <button type="button" class="collab-btn primary" id="acceptAllBtn">Accept all</button>
-                <button type="button" class="collab-btn danger" id="rejectAllBtn">Reject all</button>
-            </div>
-            <div class="collab-hunk-list" id="hunkList"></div>
-            <div class="collab-sidebar-empty hidden" id="hunkEmpty">
-                <p>No suggestions yet.</p>
-                <span id="hunkEmptyHint">Edits you submit will appear here for the author to review.</span>
-            </div>
-            <div class="collab-sidebar-submit hidden" id="sidebarSubmit">
-                <button type="button" class="collab-btn primary collab-sidebar-submit-btn" id="submitBtn">Submit suggestions</button>
+
+            <div class="collab-sidebar-pane hidden" id="commentsPane" role="tabpanel">
+                <div class="collab-review-head">
+                    <h3>Comments</h3>
+                    <p id="commentsSub">Select text in the manuscript to add a comment.</p>
+                </div>
+                <div class="collab-comment-list" id="commentList"></div>
+                <div class="collab-sidebar-empty hidden" id="commentEmpty">
+                    <p>No comments yet.</p>
+                    <span>Highlight a passage and click Comment to start a thread.</span>
+                </div>
+                <div class="collab-comment-composer hidden" id="commentComposer">
+                    <div class="collab-comment-quote" id="commentQuote"></div>
+                    <textarea id="commentInput" rows="3" placeholder="Add a comment…"></textarea>
+                    <div class="collab-comment-composer-actions">
+                        <button type="button" class="collab-btn" id="commentCancelBtn">Cancel</button>
+                        <button type="button" class="collab-btn primary" id="commentPostBtn">Post</button>
+                    </div>
+                </div>
             </div>
         </aside>
     </div>
     </div>
 
+    <button type="button" class="collab-selection-btn hidden" id="selectionCommentBtn" aria-label="Add comment">Comment</button>
+
     <script type="module">
-        import { bootCollabRoomPage } from "./js/collab-room-page.js?v=4";
+        import { bootCollabRoomPage } from "./js/collab-room-page.js?v=7";
         await bootCollabRoomPage({ isPreview: true });
     </script>
 </body>

@@ -102,6 +102,59 @@ export async function reviewCollabSuggestion(suggestionId, action) {
     return data;
 }
 
+export async function upsertCollabLiveDraft(bookId, chapterId, html, baseContentHash) {
+    const { data, error } = await supabase.rpc("upsert_collab_live_draft", {
+        p_book_id: bookId,
+        p_chapter_id: chapterId,
+        p_html: html || "",
+        p_base_content_hash: baseContentHash || "",
+    });
+    if (error) throw error;
+    return data;
+}
+
+export async function syncCollabChapterSuggestions(bookId, chapterId, baseContentHash, suggestions) {
+    const { data, error } = await supabase.rpc("sync_collab_chapter_suggestions", {
+        p_book_id: bookId,
+        p_chapter_id: chapterId,
+        p_base_content_hash: baseContentHash || "",
+        p_suggestions: suggestions,
+    });
+    if (error) throw error;
+    return data;
+}
+
+export async function listCollabComments(bookId, chapterId) {
+    const { data, error } = await supabase.rpc("list_collab_comments", {
+        p_book_id: bookId,
+        p_chapter_id: chapterId,
+    });
+    if (error) throw error;
+    return data || [];
+}
+
+export async function submitCollabComment(bookId, chapterId, paragraphIndex, quote, body, parentId = null) {
+    const { data, error } = await supabase.rpc("submit_collab_comment", {
+        p_book_id: bookId,
+        p_chapter_id: chapterId,
+        p_paragraph_index: paragraphIndex,
+        p_quote: quote || "",
+        p_body: body,
+        p_parent_id: parentId || null,
+    });
+    if (error) throw error;
+    return data;
+}
+
+export async function resolveCollabComment(commentId, action) {
+    const { data, error } = await supabase.rpc("resolve_collab_comment", {
+        p_comment_id: commentId,
+        p_action: action,
+    });
+    if (error) throw error;
+    return data;
+}
+
 export async function listMyCollabMemberships() {
     const { data, error } = await supabase.rpc("list_my_collab_memberships");
     if (error) throw error;
@@ -151,6 +204,6 @@ export function isCollabRoomsSchemaMissing(error) {
         code === "42P01" ||
         code === "PGRST202" ||
         /collab_chapter_invites|collab_memberships|collab_suggestions/i.test(msg) ||
-        /create_collab_chapter_invite|accept_collab_chapter_invite|get_collab_chapter|list_collab_invites_for_book|revoke_collab_chapter_invite|list_collab_suggestions|submit_collab_suggestions|review_collab_suggestion|list_my_collab_memberships/i.test(msg)
+        /create_collab_chapter_invite|accept_collab_chapter_invite|get_collab_chapter|list_collab_invites_for_book|revoke_collab_chapter_invite|list_collab_suggestions|submit_collab_suggestions|review_collab_suggestion|list_my_collab_memberships|list_collab_comments|submit_collab_comment|resolve_collab_comment|upsert_collab_live_draft|sync_collab_chapter_suggestions/i.test(msg)
     );
 }
