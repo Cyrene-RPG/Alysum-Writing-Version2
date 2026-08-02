@@ -18,13 +18,13 @@
     <!-- ALYSUM:ANALYTICS:END -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&amp;family=Cormorant+Garamond:wght@400;600&amp;family=Crimson+Pro:wght@400;600&amp;family=EB+Garamond:wght@400;600&amp;family=Inter:wght@400;600&amp;family=Libre+Baskerville:wght@400;700&amp;family=Lora:wght@400;600&amp;family=Merriweather:wght@400;700&amp;family=Nunito:wght@400;600&amp;family=Open+Sans:wght@400;600&amp;family=Playfair+Display:wght@400;700&amp;family=Source+Code+Pro:wght@400;600&amp;family=Source+Serif+4:wght@400;600&amp;family=Spectral:wght@400;600&amp;display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Abril+Fatface&amp;family=Alegreya:wght@400;600&amp;family=Audiowide&amp;family=Bitter:wght@400;600&amp;family=Cardo:wght@400;700&amp;family=Caveat:wght@400;600&amp;family=Cinzel:wght@400;600&amp;family=Cormorant+Garamond:wght@400;600&amp;family=Crimson+Pro:wght@400;600&amp;family=Dancing+Script:wght@400;600&amp;family=DM+Sans:wght@400;600&amp;family=EB+Garamond:wght@400;600&amp;family=Exo+2:wght@400;600&amp;family=IBM+Plex+Mono:wght@400;600&amp;family=IM+Fell+English&amp;family=Inter:wght@400;600&amp;family=JetBrains+Mono:wght@400;600&amp;family=Lato:wght@400;600&amp;family=Libre+Baskerville:wght@400;700&amp;family=Libre+Caslon+Text:wght@400;700&amp;family=Literata:wght@400;600&amp;family=Lora:wght@400;600&amp;family=Merriweather:wght@400;700&amp;family=Michroma&amp;family=Montserrat:wght@400;600&amp;family=Noto+Serif:wght@400;600&amp;family=Nunito:wght@400;600&amp;family=Open+Sans:wght@400;600&amp;family=Orbitron:wght@400;600;700&amp;family=Oxanium:wght@400;600&amp;family=Playfair+Display:wght@400;700&amp;family=Press+Start+2P&amp;family=Quantico:wght@400;700&amp;family=Rajdhani:wght@400;600;700&amp;family=Raleway:wght@400;600&amp;family=Roboto:wght@400;600&amp;family=Share+Tech+Mono&amp;family=Source+Code+Pro:wght@400;600&amp;family=Source+Serif+4:wght@400;600&amp;family=Space+Mono:wght@400;700&amp;family=Spectral:wght@400;600&amp;family=Syncopate:wght@400;700&amp;family=VT323&amp;family=Vollkorn:wght@400;600&amp;family=Work+Sans:wght@400;600&amp;display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="css/notebook.css?v=9" />
 <link rel="stylesheet" href="css/site-responsive.css?v=1" />
 <link rel="stylesheet" href="css/gradient-themes.css?v=7" />
     <link rel="stylesheet" href="css/workspace-nav.css?v=11" />
     <link rel="stylesheet" href="css/book-inline-images.css?v=5" />
-    <link rel="stylesheet" href="css/book-inline-fonts.css?v=1" />
+    <link rel="stylesheet" href="css/book-inline-fonts.css?v=3" />
     <link rel="stylesheet" href="css/scene-breaks.css?v=8" />
 <link rel="stylesheet" href="css/book-version.css?v=8" />
     <script src="js/gradient-theme-sync.js" defer></script>
@@ -3661,6 +3661,9 @@ function rememberBookId(id) {
                 { id: "Times New Roman", label: "Times New Roman", stack: '"Times New Roman", Times, serif' },
                 { id: "Garamond", label: "Garamond", stack: 'Garamond, "Palatino Linotype", serif' },
                 { id: "Palatino Linotype", label: "Palatino", stack: '"Palatino Linotype", Palatino, serif' },
+                { id: "Book Antiqua", label: "Book Antiqua", stack: '"Book Antiqua", Palatino, serif' },
+                { id: "Baskerville", label: "Baskerville", stack: 'Baskerville, "Libre Baskerville", serif' },
+                { id: "Century Schoolbook", label: "Century Schoolbook", stack: '"Century Schoolbook", Georgia, serif' },
             ],
         },
         {
@@ -3675,6 +3678,13 @@ function rememberBookId(id) {
                 { id: "Spectral", label: "Spectral", stack: '"Spectral", Georgia, serif' },
                 { id: "Source Serif 4", label: "Source Serif 4", stack: '"Source Serif 4", Georgia, serif' },
                 { id: "Playfair Display", label: "Playfair Display", stack: '"Playfair Display", Georgia, serif' },
+                { id: "Literata", label: "Literata", stack: '"Literata", Georgia, serif' },
+                { id: "Noto Serif", label: "Noto Serif", stack: '"Noto Serif", Georgia, serif' },
+                { id: "Cardo", label: "Cardo", stack: '"Cardo", Georgia, serif' },
+                { id: "Vollkorn", label: "Vollkorn", stack: '"Vollkorn", Georgia, serif' },
+                { id: "Bitter", label: "Bitter", stack: '"Bitter", Georgia, serif' },
+                { id: "Alegreya", label: "Alegreya", stack: '"Alegreya", Georgia, serif' },
+                { id: "Libre Caslon Text", label: "Libre Caslon Text", stack: '"Libre Caslon Text", Georgia, serif' },
             ],
         },
         {
@@ -3683,8 +3693,16 @@ function rememberBookId(id) {
                 { id: "Arial", label: "Arial", stack: 'Arial, Helvetica, sans-serif' },
                 { id: "Verdana", label: "Verdana", stack: "Verdana, Geneva, sans-serif" },
                 { id: "Tahoma", label: "Tahoma", stack: "Tahoma, Geneva, sans-serif" },
+                { id: "Trebuchet MS", label: "Trebuchet MS", stack: '"Trebuchet MS", sans-serif' },
+                { id: "Segoe UI", label: "Segoe UI", stack: '"Segoe UI", system-ui, sans-serif' },
                 { id: "Inter", label: "Inter", stack: '"Inter", system-ui, sans-serif' },
+                { id: "Roboto", label: "Roboto", stack: '"Roboto", system-ui, sans-serif' },
                 { id: "Open Sans", label: "Open Sans", stack: '"Open Sans", system-ui, sans-serif' },
+                { id: "Lato", label: "Lato", stack: '"Lato", system-ui, sans-serif' },
+                { id: "Montserrat", label: "Montserrat", stack: '"Montserrat", system-ui, sans-serif' },
+                { id: "Raleway", label: "Raleway", stack: '"Raleway", system-ui, sans-serif' },
+                { id: "Work Sans", label: "Work Sans", stack: '"Work Sans", system-ui, sans-serif' },
+                { id: "DM Sans", label: "DM Sans", stack: '"DM Sans", system-ui, sans-serif' },
                 { id: "Nunito", label: "Nunito", stack: '"Nunito", system-ui, sans-serif' },
             ],
         },
@@ -3693,12 +3711,40 @@ function rememberBookId(id) {
             fonts: [
                 { id: "Courier New", label: "Courier New", stack: '"Courier New", Courier, monospace' },
                 { id: "Source Code Pro", label: "Source Code Pro", stack: '"Source Code Pro", "Courier New", monospace' },
+                { id: "JetBrains Mono", label: "JetBrains Mono", stack: '"JetBrains Mono", "Courier New", monospace' },
+                { id: "IBM Plex Mono", label: "IBM Plex Mono", stack: '"IBM Plex Mono", "Courier New", monospace' },
             ],
         },
         {
             label: "Display",
             fonts: [
                 { id: "Cinzel", label: "Cinzel", stack: '"Cinzel", Georgia, serif' },
+                { id: "IM Fell English", label: "IM Fell English", stack: '"IM Fell English", Georgia, serif' },
+                { id: "Abril Fatface", label: "Abril Fatface", stack: '"Abril Fatface", Georgia, serif' },
+            ],
+        },
+        {
+            label: "Handwriting",
+            fonts: [
+                { id: "Caveat", label: "Caveat", stack: '"Caveat", cursive' },
+                { id: "Dancing Script", label: "Dancing Script", stack: '"Dancing Script", cursive' },
+            ],
+        },
+        {
+            label: "Sci-fi & cyberpunk",
+            fonts: [
+                { id: "Orbitron", label: "Orbitron", stack: '"Orbitron", sans-serif' },
+                { id: "Rajdhani", label: "Rajdhani", stack: '"Rajdhani", sans-serif' },
+                { id: "Exo 2", label: "Exo 2", stack: '"Exo 2", sans-serif' },
+                { id: "Oxanium", label: "Oxanium", stack: '"Oxanium", sans-serif' },
+                { id: "Quantico", label: "Quantico", stack: '"Quantico", sans-serif' },
+                { id: "Audiowide", label: "Audiowide", stack: '"Audiowide", sans-serif' },
+                { id: "Michroma", label: "Michroma", stack: '"Michroma", sans-serif' },
+                { id: "Syncopate", label: "Syncopate", stack: '"Syncopate", sans-serif' },
+                { id: "Share Tech Mono", label: "Share Tech Mono", stack: '"Share Tech Mono", monospace' },
+                { id: "Space Mono", label: "Space Mono", stack: '"Space Mono", monospace' },
+                { id: "VT323", label: "VT323", stack: '"VT323", monospace' },
+                { id: "Press Start 2P", label: "Press Start 2P", stack: '"Press Start 2P", monospace' },
             ],
         },
     ];
