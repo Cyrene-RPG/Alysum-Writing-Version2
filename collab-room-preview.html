@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
     <link rel="stylesheet" href="css/gradient-themes.css?v=7" />
     <link rel="stylesheet" href="css/workspace-nav.css?v=11" />
-    <link rel="stylesheet" href="css/collab-room.css?v=4" />
+    <link rel="stylesheet" href="css/collab-room.css?v=5" />
     <script src="js/gradient-theme-sync.js" defer></script>
     <title>Collab room preview — Alysum</title>
     <style>
@@ -139,17 +139,18 @@
     </div>
 
     <div class="collab-toolbar hidden" id="collabToolbar" aria-label="Formatting tools">
-        <button class="tool-btn" type="button" data-cmd="bold" title="Bold">B</button>
-        <button class="tool-btn" type="button" data-cmd="italic" title="Italic"><em>I</em></button>
-        <button class="tool-btn" type="button" data-cmd="underline" title="Underline"><u>U</u></button>
-        <button class="tool-btn" type="button" data-cmd="insertUnorderedList" title="Bulleted list">• List</button>
-        <button class="tool-btn" type="button" data-cmd="insertOrderedList" title="Numbered list">1. List</button>
-        <button class="tool-btn" type="button" id="quoteBtn" title="Block quote">❝</button>
-        <select class="tool-select" id="formatSelect" aria-label="Paragraph style">
-            <option value="p">Body</option>
-            <option value="h2">Heading</option>
-        </select>
-        <div class="toolbar-spacer"></div>
+        <div class="collab-toolbar-inner">
+            <button class="tool-btn" type="button" data-cmd="bold" title="Bold">B</button>
+            <button class="tool-btn" type="button" data-cmd="italic" title="Italic"><em>I</em></button>
+            <button class="tool-btn" type="button" data-cmd="underline" title="Underline"><u>U</u></button>
+            <button class="tool-btn" type="button" data-cmd="insertUnorderedList" title="Bulleted list">• List</button>
+            <button class="tool-btn" type="button" data-cmd="insertOrderedList" title="Numbered list">1. List</button>
+            <button class="tool-btn" type="button" id="quoteBtn" title="Block quote">❝</button>
+            <select class="tool-select" id="formatSelect" aria-label="Paragraph style">
+                <option value="p">Body</option>
+                <option value="h2">Heading</option>
+            </select>
+        </div>
     </div>
 
     <div class="collab-layout">
@@ -165,16 +166,12 @@
                     <h1 class="collab-chapter-title" id="chapterTitle">Chapter 12 — The North Gate</h1>
                     <div class="collab-chapter-meta" id="chapterMeta">3,842 words · invite-only collab</div>
                     <div class="collab-manuscript editor" id="manuscript"></div>
-                    <div class="collab-submit-bar hidden" id="submitBar">
-                        <p><strong>Your edits stay pending</strong> until the author approves.</p>
-                        <button type="button" class="collab-btn primary" id="submitBtn">Submit suggestions</button>
-                    </div>
                 </div>
             </div>
         </div>
-        <aside class="collab-review-panel" id="reviewPanel">
+        <aside class="collab-review-panel" id="reviewPanel" aria-label="Suggested edits">
             <div class="collab-review-head">
-                <h3 id="reviewTitle">Pending review</h3>
+                <h3 id="reviewTitle">Suggested edits</h3>
                 <p id="reviewSub">4 suggestions waiting</p>
             </div>
             <div class="collab-review-stats">
@@ -186,11 +183,19 @@
                 <button type="button" class="collab-btn danger" id="rejectAllBtn">Reject all</button>
             </div>
             <div class="collab-hunk-list" id="hunkList"></div>
+            <div class="collab-sidebar-empty hidden" id="hunkEmpty">
+                <p>No suggestions yet.</p>
+                <span id="hunkEmptyHint">Edits you submit will appear here for the author to review.</span>
+            </div>
+            <div class="collab-sidebar-submit hidden" id="sidebarSubmit">
+                <p><strong>Ready to send?</strong> Submit your edits when you're done with this pass.</p>
+                <button type="button" class="collab-btn primary collab-sidebar-submit-btn" id="submitBtn">Submit suggestions</button>
+            </div>
         </aside>
     </div>
 
     <script type="module">
-        import { bootCollabRoomPage } from "./js/collab-room-page.js?v=1";
+        import { bootCollabRoomPage } from "./js/collab-room-page.js?v=2";
         await bootCollabRoomPage({ isPreview: true });
     </script>
 </body>

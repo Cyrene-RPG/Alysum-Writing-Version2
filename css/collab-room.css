@@ -49,10 +49,17 @@ body.light {
     border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
+    justify-content: center;
+    padding: 8px 16px;
+}
+
+.collab-toolbar-inner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     gap: 8px;
-    padding: 8px 12px;
-    overflow-x: auto;
     flex-wrap: wrap;
+    max-width: min(980px, 100%);
 }
 
 .collab-toolbar .tool-btn,
@@ -71,11 +78,6 @@ body.light {
 
 .collab-toolbar .tool-select {
     padding-right: 28px;
-}
-
-.collab-toolbar .toolbar-spacer {
-    flex: 1;
-    min-width: 8px;
 }
 
 .collab-theme-btn {
@@ -147,9 +149,13 @@ body.light {
 
 .collab-layout {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) min(380px, 34vw);
+    grid-template-columns: minmax(0, 1fr) min(360px, 32vw);
     gap: 0;
     min-height: calc(100vh - var(--collab-nav-offset) - var(--collab-chrome-height));
+}
+
+body.collab-author-mode .collab-layout {
+    grid-template-columns: minmax(0, 1fr) min(360px, 32vw);
 }
 
 .collab-workspace {
@@ -341,11 +347,89 @@ body.dark .collab-mode-banner:not(.is-author) {
 .collab-review-panel {
     background: var(--panel, #111827);
     border-left: 1px solid var(--border, rgba(255, 255, 255, 0.08));
-    padding: 18px 16px 24px;
-    overflow-y: auto;
+    padding: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
     max-height: calc(100vh - var(--collab-nav-offset) - var(--collab-chrome-height));
     position: sticky;
     top: calc(var(--collab-nav-offset) + var(--collab-chrome-height));
+    box-shadow: -8px 0 32px rgba(0, 0, 0, 0.12);
+}
+
+.collab-review-panel > .collab-review-head,
+.collab-review-panel > .collab-review-stats,
+.collab-review-panel > .collab-review-actions {
+    padding-left: 16px;
+    padding-right: 16px;
+}
+
+.collab-review-panel > .collab-review-head {
+    padding-top: 18px;
+}
+
+.collab-review-panel > .collab-review-actions {
+    padding-bottom: 4px;
+}
+
+.collab-hunk-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 12px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.collab-sidebar-empty {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 32px 20px;
+    color: var(--muted, #9ca3af);
+    gap: 8px;
+}
+
+.collab-sidebar-empty p {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--text, #f9fafb);
+}
+
+.collab-sidebar-empty span {
+    font-size: 12px;
+    line-height: 1.5;
+    max-width: 240px;
+}
+
+.collab-sidebar-submit {
+    margin-top: auto;
+    padding: 14px 16px 18px;
+    border-top: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+    background: color-mix(in srgb, var(--panel, #111827) 92%, var(--collab-green) 8%);
+}
+
+.collab-sidebar-submit p {
+    margin: 0 0 12px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--muted, #9ca3af);
+}
+
+.collab-sidebar-submit strong {
+    color: var(--text, #f9fafb);
+    display: block;
+    margin-bottom: 2px;
+}
+
+.collab-sidebar-submit-btn {
+    width: 100%;
+    padding: 10px 14px;
+    font-size: 13px;
 }
 
 .collab-review-head {
@@ -430,27 +514,65 @@ body.dark .collab-mode-banner:not(.is-author) {
     cursor: not-allowed;
 }
 
-.collab-hunk-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
 .collab-hunk {
     border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
-    border-radius: 14px;
-    padding: 12px;
+    border-left: 3px solid var(--collab-green);
+    border-radius: 0 12px 12px 0;
+    padding: 12px 12px 12px 14px;
     background: var(--panel-2, #172132);
-    transition: border-color 0.15s, opacity 0.2s;
+    transition: border-color 0.15s, opacity 0.2s, box-shadow 0.15s;
+    cursor: default;
+}
+
+.collab-hunk.is-mine {
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--collab-green) 25%, transparent);
+}
+
+.collab-hunk.is-pending {
+    border-left-color: var(--collab-green);
+}
+
+.collab-hunk.is-accepted {
+    border-left-color: #3b82f6;
+}
+
+.collab-hunk.is-rejected {
+    border-left-color: #ef4444;
 }
 
 .collab-hunk.is-resolved {
-    opacity: 0.45;
+    opacity: 0.72;
 }
 
 .collab-hunk.is-selected {
     border-color: var(--collab-green-border);
-    box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.15);
+    box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.2), 0 4px 16px rgba(34, 197, 94, 0.08);
+}
+
+.collab-hunk-status {
+    font-size: 10px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: var(--collab-green-soft);
+    color: var(--collab-green-text);
+}
+
+.collab-hunk-status.is-accepted {
+    background: rgba(59, 130, 246, 0.15);
+    color: #93c5fd;
+}
+
+.collab-hunk-status.is-rejected {
+    background: rgba(239, 68, 68, 0.15);
+    color: #fca5a5;
+}
+
+.collab-hunk-status.is-pending {
+    background: var(--collab-green-soft);
+    color: var(--collab-green-text);
 }
 
 .collab-hunk-head {
@@ -544,6 +666,10 @@ body.dark .collab-mode-banner:not(.is-author) {
         border-top: 1px solid var(--border, rgba(255, 255, 255, 0.08));
         position: static;
         max-height: none;
+        box-shadow: none;
+    }
+    .collab-hunk-list {
+        max-height: 360px;
     }
 }
 
