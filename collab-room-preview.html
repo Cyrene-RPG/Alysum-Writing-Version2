@@ -1,0 +1,584 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="js/alysum-appearance-boot.js"></script>
+    <link rel="stylesheet" href="css/site-responsive.css?v=1" />
+    <link rel="stylesheet" href="css/gradient-themes.css?v=7" />
+    <link rel="stylesheet" href="css/workspace-nav.css?v=11" />
+    <link rel="stylesheet" href="css/collab-room.css?v=3" />
+    <script src="js/gradient-theme-sync.js" defer></script>
+    <title>Collab room ΓÇö Alysum</title>
+    <style>
+        * { box-sizing: border-box; }
+        :root {
+            --bg: #0b1220;
+            --panel: #111827;
+            --panel-2: #172132;
+            --text: #f9fafb;
+            --muted: #9ca3af;
+            --border: rgba(255,255,255,0.08);
+            --shadow: 0 14px 34px rgba(0,0,0,0.28);
+            --collab-nav-offset: var(--alysum-nav-sticky-offset, 45px);
+        }
+        body.light {
+            --bg: #f4f6fb;
+            --panel: #ffffff;
+            --panel-2: #f7f9fc;
+            --text: #171717;
+            --muted: #5f6470;
+            --border: rgba(0,0,0,0.08);
+            --shadow: 0 14px 34px rgba(0,0,0,0.08);
+        }
+        html, body {
+            margin: 0;
+            min-height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background:
+                radial-gradient(ellipse 120% 60% at 50% -10%, var(--theme-body-spot, rgba(34, 197, 94, 0.16)) 0%, transparent 55%),
+                var(--bg);
+            color: var(--text);
+        }
+        .hidden { display: none !important; }
+        .btn {
+            border: 1px solid var(--border);
+            background: var(--panel);
+            color: var(--text);
+            border-radius: 12px;
+            padding: 10px 14px;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+            font-family: inherit;
+            font-size: 14px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+        }
+        .btn.primary {
+            background: linear-gradient(135deg, var(--theme-header-mid, #6d28d9), var(--theme-header-end, #db2777));
+            color: #fff;
+            border-color: transparent;
+        }
+        .topbar {
+            position: sticky;
+            top: var(--collab-nav-offset);
+            z-index: 50;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(180px, auto) minmax(0, 1fr);
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            background: color-mix(in srgb, var(--bg) 88%, transparent);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+        }
+        .topbar-left, .topbar-right { display: flex; align-items: center; gap: 8px; min-width: 0; }
+        .topbar-left { justify-self: start; }
+        .topbar-right { justify-self: end; }
+        .topbar-center {
+            min-width: 0;
+            text-align: center;
+            justify-self: center;
+            max-width: min(42vw, 420px);
+        }
+        .topbar-title {
+            font-size: 15px;
+            font-weight: 900;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .topbar-subtitle {
+            margin-top: 2px;
+            font-size: 12px;
+            color: var(--muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        @media (max-width: 720px) {
+            .topbar { grid-template-columns: auto minmax(0, 1fr) auto; }
+            .topbar-center { max-width: none; }
+        }
+    </style>
+</head>
+<body>
+    <header class="wd-welcome-bar" aria-label="Welcome">
+        <div class="wd-welcome-inner">
+            <div class="wd-pfp" id="welcomePfp">
+                <img id="welcomePfpImg" alt="" hidden />
+                <span class="wd-pfp-initial" id="welcomePfpInitial" aria-hidden="true"></span>
+            </div>
+            <div class="wd-welcome-copy">
+                <h1 class="wd-welcome-title" id="welcomeTitle">Welcome back.</h1>
+                <p class="wd-welcome-sub is-hidden" id="welcomeSubtitle"></p>
+            </div>
+        </div>
+    </header>
+    <nav class="wd-nav-wrap" aria-label="Workspace" data-active="collab-rooms">
+        <div class="wd-nav">
+            <button type="button" id="navContinue">Continue writing</button>
+            <span class="wd-nav-divider" aria-hidden="true"></span>
+            <a href="writer-dashboard.html">Studio</a>
+            <a href="library.html">Library</a>
+            <a href="beta-rooms.html">Beta rooms</a>
+            <a href="collab-rooms.html" class="is-active">Collab rooms</a>
+            <a href="author-dashboard.html" id="navAuthorStats">
+                Author stats
+                <span class="wd-nav-badge is-hidden" id="navDashBadge" aria-hidden="true">0</span>
+            </a>
+            <a href="world-encyclopedia.html">Encyclopedia</a>
+            <span class="wd-nav-divider" aria-hidden="true"></span>
+            <a href="vault.html">Notes</a>
+            <a href="note-graph.html">Note Graph</a>
+            <a href="story-board/">Story Board</a>
+            <a href="plotweave.html">Plotweave</a>
+            <a href="Novel_Exporter.html">Exporter</a>
+            <a href="badges.html">Achievements</a>
+            <a href="leaderboard.html">Leaderboards</a>
+            <a href="word-wars-lobby.html">Word Wars</a>
+            <span class="wd-nav-divider" aria-hidden="true"></span>
+            <a href="settings.html">Settings</a>
+            <a href="reader-home.html" class="is-hidden" id="navReading">Reading</a>
+            <button type="button" class="wd-nav-logout" data-logout-btn>Log out</button>
+            <a href="index.html">Home</a>
+        </div>
+    </nav>
+    <script type="module" src="js/workspace-nav.js?v=9"></script>
+
+    <div class="collab-test-banner hidden" id="testBanner">
+        Demo preview ΓÇö add <code>?preview=1</code> intentionally. Live collab uses your real chapters.
+        <a href="collab-room-manage.html">Manage invites</a> ┬╖
+        <a href="collab-rooms.html">All collab rooms</a>
+    </div>
+
+    <div id="errorPanel" class="collab-test-banner hidden" style="background:rgba(127,29,29,0.35);border-color:rgba(239,68,68,0.35)" role="alert">
+        <span id="errorText"></span>
+    </div>
+
+    <div class="topbar" id="collabTopbar">
+        <div class="topbar-left">
+            <a class="btn" id="backBtn" href="collab-rooms.html">ΓåÉ Collab rooms</a>
+        </div>
+        <div class="topbar-center">
+            <div class="topbar-title" id="topTitle">The Glass Orchard</div>
+            <div class="topbar-subtitle" id="topSub">Chapter 12 ΓÇö invite-only collab</div>
+        </div>
+        <div class="topbar-right">
+            <div class="collab-role-tabs hidden" id="roleTabs" aria-label="Preview role switcher">
+                <button type="button" class="collab-role-tab is-active" data-role="author">Author review</button>
+                <button type="button" class="collab-role-tab" data-role="alex">@alex (editor)</button>
+                <button type="button" class="collab-role-tab" data-role="sam">@sam (editor)</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="collab-layout">
+        <div class="collab-workspace">
+            <div class="collab-page-wrap">
+                <div class="collab-page">
+                    <div class="collab-mode-banner is-author" id="modeBanner">
+                        <div>
+                            <strong id="modeBannerLabel">Author review</strong>
+                            <span id="modeBannerText">Green highlights are pending suggestions. Accept to merge into your draft, or reject to discard.</span>
+                        </div>
+                    </div>
+
+                    <h1 class="collab-chapter-title" id="chapterTitle">Chapter 12 ΓÇö The North Gate</h1>
+                    <div class="collab-chapter-meta" id="chapterMeta">3,842 words ┬╖ invite-only collab</div>
+
+                    <div class="collab-manuscript editor" id="manuscript"></div>
+
+                    <div class="collab-submit-bar hidden" id="submitBar">
+                        <p><strong>Your edits stay green</strong> until the author approves. Submit when you're done with this pass.</p>
+                        <button type="button" class="collab-btn primary" id="submitBtn">Submit suggestions</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <aside class="collab-review-panel" id="reviewPanel">
+            <div class="collab-review-head">
+                <h3 id="reviewTitle">Pending review</h3>
+                <p id="reviewSub">4 suggestions waiting ┬╖ 2 collaborators</p>
+            </div>
+            <div class="collab-review-stats">
+                <span class="collab-stat-pill pending" id="pendingPill">4 pending</span>
+                <span class="collab-stat-pill" id="acceptedPill">0 accepted</span>
+            </div>
+            <div class="collab-review-actions" id="bulkActions">
+                <button type="button" class="collab-btn primary" id="acceptAllBtn">Accept all</button>
+                <button type="button" class="collab-btn danger" id="rejectAllBtn">Reject all</button>
+            </div>
+            <div class="collab-hunk-list" id="hunkList"></div>
+        </aside>
+    </div>
+
+    <script type="module">
+        import { supabase } from "./firebase.js";
+        import { resolveStudioSession } from "./js/studio-session.js?v=3";
+        import {
+            acceptCollabChapterInvite,
+            getCollabChapter,
+            listCollabSuggestions,
+            submitCollabSuggestions,
+            reviewCollabSuggestion,
+            isCollabRoomsSchemaMissing,
+        } from "./js/collab-rooms-api.js?v=2";
+        import {
+            DEMO_ROOM,
+            DEMO_HUNKS,
+            DEMO_CANON,
+            collabRoomPreviewUrl,
+        } from "./js/collab-rooms-demo.js?v=2";
+        import {
+            htmlToParagraphTexts,
+            renderAuthorManuscript,
+            renderCollaboratorManuscript,
+            readParagraphTextsFromManuscript,
+            diffParagraphSuggestions,
+            countPending,
+            escapeHtml,
+            suggestionRowToHunk,
+        } from "./js/collab-room-render.js?v=1";
+
+        const params = new URLSearchParams(window.location.search);
+        const isPreview = params.get("preview") === "1";
+        let bookId = String(params.get("book") || "").trim();
+        let chapterId = String(params.get("chapter") || "").trim();
+        const inviteToken = String(params.get("invite") || "").trim();
+
+        let activeRole = "author";
+        let isAuthor = true;
+        let contentHash = "";
+        /** @type {string[]} */
+        let canonParagraphs = [];
+        /** @type {import("./js/collab-room-render.js").CollabHunk[]} */
+        let hunks = [];
+
+        const manuscript = document.getElementById("manuscript");
+        const hunkList = document.getElementById("hunkList");
+        const reviewPanel = document.getElementById("reviewPanel");
+        const submitBar = document.getElementById("submitBar");
+        const modeBanner = document.getElementById("modeBanner");
+        const modeBannerLabel = document.getElementById("modeBannerLabel");
+        const modeBannerText = document.getElementById("modeBannerText");
+        const pendingPill = document.getElementById("pendingPill");
+        const acceptedPill = document.getElementById("acceptedPill");
+        const reviewSub = document.getElementById("reviewSub");
+        const roleTabs = document.getElementById("roleTabs");
+
+        function showError(msg) {
+            const panel = document.getElementById("errorPanel");
+            document.getElementById("errorText").textContent = msg;
+            panel.classList.remove("hidden");
+            document.querySelector(".collab-layout")?.classList.add("hidden");
+            document.querySelector(".collab-workspace")?.classList.add("hidden");
+            document.getElementById("collabTopbar")?.classList.add("hidden");
+        }
+
+        function setHeader(bookTitle, chapterTitle, meta = "") {
+            document.getElementById("topTitle").textContent = bookTitle;
+            document.getElementById("topSub").textContent = `${chapterTitle} ┬╖ invite-only collab`;
+            document.getElementById("chapterTitle").textContent = chapterTitle;
+            document.getElementById("chapterMeta").textContent = meta;
+        }
+
+        function updateStats() {
+            const pending = countPending(hunks);
+            const accepted = hunks.filter((h) => h.status === "accepted").length;
+            pendingPill.textContent = `${pending} pending`;
+            pendingPill.classList.toggle("pending", pending > 0);
+            acceptedPill.textContent = `${accepted} accepted`;
+            const collaborators = new Set(hunks.filter((h) => h.status === "pending").map((h) => h.by)).size;
+            reviewSub.textContent =
+                pending === 0
+                    ? "All suggestions reviewed"
+                    : `${pending} suggestion${pending === 1 ? "" : "s"} waiting ┬╖ ${collaborators} collaborator${collaborators === 1 ? "" : "s"}`;
+            document.getElementById("acceptAllBtn").disabled = pending === 0;
+            document.getElementById("rejectAllBtn").disabled = pending === 0;
+        }
+
+        function renderHunkList() {
+            hunkList.innerHTML = hunks
+                .map((h) => {
+                    const resolved = h.status !== "pending";
+                    const typeLabel = h.type === "insert" ? "Addition" : h.type === "delete" ? "Deletion" : "Change";
+                    const body =
+                        h.type === "insert"
+                            ? `<span class="new">${escapeHtml(h.newText)}</span>`
+                            : `<span class="old">${escapeHtml(h.oldText)}</span><span class="new">${escapeHtml(h.newText)}</span>`;
+                    const actions =
+                        resolved || !isAuthor
+                            ? `<div class="collab-hunk-type">${h.status}</div>`
+                            : `<div class="collab-hunk-actions">
+                            <button type="button" class="collab-btn primary" data-action="accept" data-id="${h.id}">Accept</button>
+                            <button type="button" class="collab-btn danger" data-action="reject" data-id="${h.id}">Reject</button>
+                           </div>`;
+                    return `<article class="collab-hunk${resolved ? " is-resolved" : ""}" data-hunk-id="${h.id}">
+                        <div class="collab-hunk-head">
+                            <span class="collab-hunk-author" data-by="${escapeHtml(h.by)}">${escapeHtml(h.byLabel)}</span>
+                            <span class="collab-hunk-type">${typeLabel}</span>
+                        </div>
+                        <div class="collab-hunk-body">${body}</div>
+                        ${actions}
+                    </article>`;
+                })
+                .join("");
+
+            hunkList.querySelectorAll("[data-action]").forEach((btn) => {
+                btn.addEventListener("click", async () => {
+                    const id = btn.getAttribute("data-id");
+                    const action = btn.getAttribute("data-action");
+                    const hunk = hunks.find((x) => x.id === id);
+                    if (!hunk || hunk.status !== "pending") return;
+                    if (isPreview) {
+                        hunk.status = action === "accept" ? "accepted" : "rejected";
+                        renderAll();
+                        return;
+                    }
+                    btn.disabled = true;
+                    try {
+                        await reviewCollabSuggestion(id, action === "accept" ? "accept" : "reject");
+                        await reloadLiveRoom();
+                    } catch (err) {
+                        alert(err?.message || "Could not review suggestion.");
+                    } finally {
+                        btn.disabled = false;
+                    }
+                });
+            });
+        }
+
+        function highlightHunk(hunkId) {
+            manuscript.querySelectorAll("[data-hunk]").forEach((el) => {
+                el.style.outline = el.getAttribute("data-hunk") === hunkId ? "2px solid #22c55e" : "";
+            });
+            hunkList.querySelectorAll(".collab-hunk").forEach((el) => {
+                el.classList.toggle("is-selected", el.getAttribute("data-hunk-id") === hunkId);
+            });
+        }
+
+        function renderManuscript() {
+            if (isAuthor) {
+                manuscript.removeAttribute("contenteditable");
+                manuscript.innerHTML = renderAuthorManuscript(canonParagraphs, hunks);
+                manuscript.querySelectorAll("[data-hunk]").forEach((el) => {
+                    el.addEventListener("mouseenter", () => highlightHunk(el.getAttribute("data-hunk")));
+                });
+                return;
+            }
+            manuscript.setAttribute("contenteditable", "true");
+            manuscript.setAttribute("spellcheck", "true");
+            manuscript.innerHTML = renderCollaboratorManuscript(canonParagraphs);
+        }
+
+        function renderModeBanner() {
+            if (isAuthor) {
+                modeBanner.classList.add("is-author");
+                modeBannerLabel.textContent = "Author review";
+                modeBannerText.textContent =
+                    "Green highlights are pending suggestions. Accept to merge into your draft, or reject to discard.";
+                reviewPanel.classList.remove("hidden");
+                submitBar.classList.add("hidden");
+                document.getElementById("bulkActions").classList.remove("hidden");
+                return;
+            }
+            modeBanner.classList.remove("is-author");
+            modeBannerLabel.textContent = "Collaborator ┬╖ editor";
+            modeBannerText.textContent =
+                "Edit freely ΓÇö submit suggestions when done. Changes stay pending until the author approves.";
+            reviewPanel.classList.add("hidden");
+            submitBar.classList.remove("hidden");
+        }
+
+        function renderAll() {
+            renderModeBanner();
+            renderManuscript();
+            renderHunkList();
+            updateStats();
+        }
+
+        async function reloadLiveRoom() {
+            const chapter = await getCollabChapter(bookId, chapterId);
+            contentHash = chapter.content_hash || "";
+            isAuthor = !!chapter.is_author;
+            canonParagraphs = htmlToParagraphTexts(chapter.content || "");
+            const wordCount = canonParagraphs.join(" ").split(/\s+/).filter(Boolean).length;
+            setHeader(
+                chapter.book_title || "Untitled",
+                chapter.chapter_title || "Chapter",
+                `${wordCount.toLocaleString()} words ┬╖ invite-only collab`
+            );
+            const rows = await listCollabSuggestions(bookId, chapterId);
+            hunks = rows.map(suggestionRowToHunk);
+            renderAll();
+        }
+
+        function bootDemo() {
+            document.getElementById("testBanner")?.classList.remove("hidden");
+            roleTabs?.classList.remove("hidden");
+            activeRole = params.get("role") || "author";
+            isAuthor = activeRole === "author";
+            hunks = DEMO_HUNKS.map((h) => ({ ...h }));
+            canonParagraphs = [...DEMO_CANON];
+            setHeader(DEMO_ROOM.bookTitle, DEMO_ROOM.chapterTitle, DEMO_ROOM.chapterMeta);
+
+            roleTabs.querySelectorAll(".collab-role-tab").forEach((tab) => {
+                tab.addEventListener("click", () => {
+                    activeRole = tab.getAttribute("data-role");
+                    isAuthor = activeRole === "author";
+                    roleTabs.querySelectorAll(".collab-role-tab").forEach((t) => {
+                        t.classList.toggle("is-active", t.getAttribute("data-role") === activeRole);
+                    });
+                    renderAll();
+                });
+            });
+
+            document.getElementById("acceptAllBtn").addEventListener("click", () => {
+                hunks.forEach((h) => {
+                    if (h.status === "pending") h.status = "accepted";
+                });
+                renderAll();
+            });
+            document.getElementById("rejectAllBtn").addEventListener("click", () => {
+                hunks.forEach((h) => {
+                    if (h.status === "pending") h.status = "rejected";
+                });
+                renderAll();
+            });
+            document.getElementById("submitBtn").addEventListener("click", () => {
+                alert("Demo mode ΓÇö use a real invite link for live suggestions.");
+            });
+            renderAll();
+        }
+
+        async function bootLive() {
+            const session = await resolveStudioSession(supabase);
+            if (!session?.user) {
+                const next = window.location.pathname + window.location.search;
+                window.location.href = `login.html?next=${encodeURIComponent(next)}`;
+                return;
+            }
+
+            if (inviteToken && !bookId) {
+                try {
+                    const membership = await acceptCollabChapterInvite(inviteToken);
+                    bookId = membership.book_id;
+                    chapterId = membership.chapter_id;
+                    const url = new URL(window.location.href);
+                    url.searchParams.delete("invite");
+                    url.searchParams.set("book", bookId);
+                    url.searchParams.set("chapter", chapterId);
+                    window.history.replaceState({}, "", url.pathname + url.search);
+                } catch (err) {
+                    if (isCollabRoomsSchemaMissing(err)) {
+                        showError("Collab rooms are not set up in Supabase yet. Run supabase-collab-rooms.sql in the SQL Editor.");
+                        return;
+                    }
+                    showError(err?.message || "Could not accept invite.");
+                    return;
+                }
+            }
+
+            if (!bookId || !chapterId) {
+                showError("Missing book or chapter. Open a collab invite link, or review from Collab invite in the editor.");
+                return;
+            }
+
+            try {
+                await reloadLiveRoom();
+            } catch (err) {
+                console.error(err);
+                if (isCollabRoomsSchemaMissing(err)) {
+                    showError("Collab rooms are not set up in Supabase yet. Run supabase-collab-rooms.sql in the SQL Editor.");
+                    return;
+                }
+                showError(err?.message || "Could not open collab room.");
+                return;
+            }
+
+            document.getElementById("acceptAllBtn").addEventListener("click", async () => {
+                const pending = hunks.filter((h) => h.status === "pending");
+                if (!pending.length) return;
+                const acceptBtn = document.getElementById("acceptAllBtn");
+                const rejectBtn = document.getElementById("rejectAllBtn");
+                acceptBtn.disabled = true;
+                rejectBtn.disabled = true;
+                try {
+                    for (const h of pending) {
+                        await reviewCollabSuggestion(h.id, "accept");
+                    }
+                    await reloadLiveRoom();
+                } catch (err) {
+                    alert(err?.message || "Could not accept all suggestions.");
+                    await reloadLiveRoom();
+                } finally {
+                    acceptBtn.disabled = false;
+                    rejectBtn.disabled = false;
+                }
+            });
+
+            document.getElementById("rejectAllBtn").addEventListener("click", async () => {
+                const pending = hunks.filter((h) => h.status === "pending");
+                if (!pending.length) return;
+                const acceptBtn = document.getElementById("acceptAllBtn");
+                const rejectBtn = document.getElementById("rejectAllBtn");
+                acceptBtn.disabled = true;
+                rejectBtn.disabled = true;
+                try {
+                    for (const h of pending) {
+                        await reviewCollabSuggestion(h.id, "reject");
+                    }
+                    await reloadLiveRoom();
+                } catch (err) {
+                    alert(err?.message || "Could not reject all suggestions.");
+                    await reloadLiveRoom();
+                } finally {
+                    acceptBtn.disabled = false;
+                    rejectBtn.disabled = false;
+                }
+            });
+
+            document.getElementById("submitBtn").addEventListener("click", async () => {
+                const nextParagraphs = readParagraphTextsFromManuscript(manuscript);
+                const suggestions = diffParagraphSuggestions(canonParagraphs, nextParagraphs);
+                if (!suggestions.length) {
+                    alert("No changes to submit.");
+                    return;
+                }
+                const btn = document.getElementById("submitBtn");
+                btn.disabled = true;
+                try {
+                    const count = await submitCollabSuggestions(bookId, chapterId, contentHash, suggestions);
+                    alert(count ? `Submitted ${count} suggestion${count === 1 ? "" : "s"} for author review.` : "Nothing new to submit.");
+                    await reloadLiveRoom();
+                } catch (err) {
+                    const msg = /stale_base_hash/i.test(err?.message || "")
+                        ? "The chapter changed since you opened it. Refresh and try again."
+                        : err?.message || "Could not submit suggestions.";
+                    alert(msg);
+                } finally {
+                    btn.disabled = false;
+                }
+            });
+        }
+
+        hunkList.addEventListener("mouseover", (e) => {
+            const card = e.target.closest(".collab-hunk");
+            if (card && isAuthor) highlightHunk(card.getAttribute("data-hunk-id"));
+        });
+
+        document.getElementById("backBtn").href = "collab-rooms.html";
+
+        if (isPreview) {
+            bootDemo();
+        } else {
+            bootLive();
+        }
+    </script>
+</body>
+</html>

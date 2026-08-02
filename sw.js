@@ -8,7 +8,7 @@
  * Bump SW_VERSION when shipping breaking shell changes to force a refresh.
  */
 
-const SW_VERSION = 'v2.5.5';
+const SW_VERSION = 'v2.5.7';
 const SHELL_CACHE = `alysum-shell-${SW_VERSION}`;
 const ASSET_CACHE = `alysum-assets-${SW_VERSION}`;
 
@@ -18,7 +18,6 @@ const APP_SHELL = [
   'reset-password.html',
   'signup.html',
   'library.html',
-  'lore-wiki.html',
   'editor.html',
   'studio.html',
   'writer-dashboard.html',
@@ -30,6 +29,7 @@ const APP_SHELL = [
   'beta-notes-library.html',
   'collab-rooms.html',
   'collab-room.html',
+  'collab-room-preview.html',
   'collab-room-manage.html',
   'reader-home.html',
   'vault.html',
@@ -46,11 +46,6 @@ const APP_SHELL = [
   'histories.html',
   'history-record.html',
   'css/magic-codex.css',
-  'css/story-bible.css',
-  'css/story-bible-v10.css',
-  'js/story-bible-cards.js',
-  'js/story-bible-story.js',
-  'character-profile.html',
   'worldbuilding.html',
   'settings.html',
   'moderation-dashboard.html',
@@ -93,41 +88,11 @@ const APP_SHELL = [
   'js/alysum-appearance-boot.js',
   'js/display-text-style.js',
   'js/display-text-color.js',
-  'js/story-bible-fact-rules.js',
-  'js/story-bible-facts-api.js',
-  'js/story-bible-continuity.js',
-  'js/story-bible-utils.js',
-  'js/story-bible-overview.js',
-  'js/story-bible-atlas.js',
-  'js/story-bible-graph.js',
-  'js/story-bible-command-palette.js',
-  'js/story-bible-page.js',
-  'js/story-bible-unified.js',
-  'css/wiki-vector.css?v=8',
-  'js/wiki/boot.js',
-  'js/wiki/app.js',
-  'js/wiki/api.js',
-  'js/wiki/render.js',
-  'js/wiki/links.js',
-  'js/wiki/toc.js',
-  'js/wiki/search.js',
-  'js/wiki/editor.js',
-  'js/wiki/link-toolbar.js',
-  'js/wiki/publish.js',
-  'js/wiki/creator-render.js',
-  'js/lore-wiki-api.js',
-  'js/lore-wiki-page.js',
-  'lore-wiki.html',
-  'css/plot-doctor.css',
   'css/book-version.css',
   'js/book-version-api.js',
   'js/book-version-diff.js',
   'js/book-version-panel.js',
-  'js/book-media-format.js',
-  'wiki.html',
-  'story-bible.html',
-  'story-bible-legacy.html',
-  'Story-Bible-New.html'
+  'js/book-media-format.js'
 ];
 
 self.addEventListener('install', (event) => {

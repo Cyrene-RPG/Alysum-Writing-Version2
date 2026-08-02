@@ -93,6 +93,11 @@ export function renderCollaboratorManuscript(canon) {
     return paragraphsToEditableHtml(canon);
 }
 
+/** Diff chapter HTML into suggestion payloads (paragraph-level). */
+export function diffChapterHtmlSuggestions(baseHtml, nextHtml) {
+    return diffParagraphSuggestions(htmlToParagraphTexts(baseHtml), htmlToParagraphTexts(nextHtml));
+}
+
 export function countPending(hunks) {
     return hunks.filter((h) => h.status === "pending").length;
 }

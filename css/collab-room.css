@@ -482,3 +482,46 @@ body.dark .collab-mode-banner:not(.is-author) {
 .collab-hidden-role {
     display: none !important;
 }
+
+/* Editor-embedded collab mode */
+body.collab-editor-review .main,
+body.collab-editor-edit .main {
+    margin-right: min(380px, 34vw);
+}
+
+.collab-editor-review-panel {
+    position: fixed;
+    right: 0;
+    top: calc(var(--collab-nav-offset, 45px) + var(--collab-topbar-height, 56px));
+    width: min(380px, 34vw);
+    height: calc(100vh - var(--collab-nav-offset, 45px) - var(--collab-topbar-height, 56px));
+    z-index: 40;
+    max-height: none;
+}
+
+.collab-editor-submit-bar {
+    position: fixed;
+    left: max(18px, calc(50% - 360px));
+    right: max(18px, calc(50% - 360px));
+    bottom: 16px;
+    z-index: 45;
+    max-width: 720px;
+    margin: 0 auto;
+}
+
+body.collab-editor-edit .collab-editor-review-panel.hidden {
+    display: none !important;
+}
+
+@media (max-width: 960px) {
+    body.collab-editor-review .main,
+    body.collab-editor-edit .main {
+        margin-right: 0;
+    }
+    .collab-editor-review-panel {
+        position: static;
+        width: 100%;
+        height: auto;
+        max-height: none;
+    }
+}

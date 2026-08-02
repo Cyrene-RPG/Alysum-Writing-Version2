@@ -643,3 +643,17 @@ GRANT SELECT, INSERT, UPDATE ON public.collab_chapter_invites TO authenticated;
 GRANT SELECT, INSERT, UPDATE ON public.collab_memberships TO authenticated;
 GRANT SELECT, INSERT, UPDATE ON public.collab_suggestions TO authenticated;
 
+-- Collaborators can load the book in editor.html (read-only via app; RLS blocks UPDATE).
+DROP POLICY IF EXISTS "books_select_collab_member" ON public.books;
+CREATE POLICY "books_select_collab_member" ON public.books
+  FOR SELECT TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1
+      FROM public.collab_memberships m
+      WHERE m.book_id = books.id::text
+        AND m.collaborator_id = auth.uid()
+        AND m.status = 'active'
+    )
+  );
+

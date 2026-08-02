@@ -10,15 +10,17 @@ function safeString(value, fallback = "") {
 }
 
 export function collabRoomInviteUrl(inviteToken) {
-    const url = new URL("collab-room.html", window.location.href);
+    const url = new URL("editor.html", window.location.href);
     url.searchParams.set("invite", inviteToken);
+    url.searchParams.set("collab", "edit");
     return url.pathname + url.search;
 }
 
 export function collabRoomAuthorUrl(bookId, chapterId) {
-    const url = new URL("collab-room.html", window.location.href);
+    const url = new URL("editor.html", window.location.href);
     url.searchParams.set("book", bookId);
     url.searchParams.set("chapter", chapterId);
+    url.searchParams.set("collab", "review");
     return url.pathname + url.search;
 }
 

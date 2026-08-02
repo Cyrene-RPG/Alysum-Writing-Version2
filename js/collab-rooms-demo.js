@@ -63,14 +63,14 @@ export const DEMO_HUNKS = [
 ];
 
 export function collabRoomPreviewUrl(role = "author") {
-    const url = new URL("collab-room.html", window.location.href);
+    const url = new URL("collab-room-preview.html", window.location.href);
     url.searchParams.set("preview", "1");
     url.searchParams.set("role", role);
     return url.pathname + url.search;
 }
 
 export function collabRoomDemoInviteUrl(token = "demo-invite-token") {
-    const url = new URL("collab-room.html", window.location.href);
+    const url = new URL("collab-room-preview.html", window.location.href);
     url.searchParams.set("preview", "1");
     url.searchParams.set("invite", token);
     return url.pathname + url.search;
