@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
     <link rel="stylesheet" href="css/gradient-themes.css?v=7" />
     <link rel="stylesheet" href="css/workspace-nav.css?v=11" />
-    <link rel="stylesheet" href="css/collab-room.css?v=2" />
+    <link rel="stylesheet" href="css/collab-room.css?v=3" />
     <script src="js/gradient-theme-sync.js" defer></script>
     <title>Collab room — Alysum</title>
     <style>
@@ -177,23 +177,26 @@
     </div>
 
     <div class="collab-layout">
-        <div class="collab-editor-pane">
-            <div class="collab-chapter-kicker">Collab chapter</div>
-            <h1 class="collab-chapter-title" id="chapterTitle">Chapter 12 — The North Gate</h1>
-            <div class="collab-chapter-meta" id="chapterMeta">3,842 words · invite-only collab</div>
+        <div class="collab-workspace">
+            <div class="collab-page-wrap">
+                <div class="collab-page">
+                    <div class="collab-mode-banner is-author" id="modeBanner">
+                        <div>
+                            <strong id="modeBannerLabel">Author review</strong>
+                            <span id="modeBannerText">Green highlights are pending suggestions. Accept to merge into your draft, or reject to discard.</span>
+                        </div>
+                    </div>
 
-            <div class="collab-mode-banner is-author" id="modeBanner">
-                <div>
-                    <strong id="modeBannerLabel">Author review</strong>
-                    <span id="modeBannerText">Green highlights are pending suggestions. Accept to merge into your draft, or reject to discard.</span>
+                    <h1 class="collab-chapter-title" id="chapterTitle">Chapter 12 — The North Gate</h1>
+                    <div class="collab-chapter-meta" id="chapterMeta">3,842 words · invite-only collab</div>
+
+                    <div class="collab-manuscript editor" id="manuscript"></div>
+
+                    <div class="collab-submit-bar hidden" id="submitBar">
+                        <p><strong>Your edits stay green</strong> until the author approves. Submit when you're done with this pass.</p>
+                        <button type="button" class="collab-btn primary" id="submitBtn">Submit suggestions</button>
+                    </div>
                 </div>
-            </div>
-
-            <div class="collab-manuscript" id="manuscript"></div>
-
-            <div class="collab-submit-bar hidden" id="submitBar">
-                <p><strong>Your edits stay green</strong> until the author approves. Submit when you're done with this pass.</p>
-                <button type="button" class="collab-btn primary" id="submitBtn">Submit suggestions</button>
             </div>
         </div>
 
@@ -273,6 +276,7 @@
             document.getElementById("errorText").textContent = msg;
             panel.classList.remove("hidden");
             document.querySelector(".collab-layout")?.classList.add("hidden");
+            document.querySelector(".collab-workspace")?.classList.add("hidden");
             document.getElementById("collabTopbar")?.classList.add("hidden");
         }
 
