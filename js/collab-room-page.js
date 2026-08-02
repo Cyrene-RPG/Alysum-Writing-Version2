@@ -22,7 +22,7 @@ import {
     prepareCollaboratorChapterHtml,
     escapeHtml,
     commentRowToComment,
-} from "./collab-room-render.js?v=7";
+} from "./collab-room-render.js?v=8";
 import { mountCollabToolbar } from "./collab-toolbar.js?v=2";
 import { createCollabRealtimeSession } from "./collab-realtime.js?v=5";
 import {
@@ -208,7 +208,7 @@ export async function bootCollabRoomPage(opts = {}) {
         if (!manuscript || !html) return;
         if (realtimeSession) realtimeSession.applyingRemote = true;
         const hadFocus = document.activeElement === manuscript;
-        liveHtml = html;
+        liveHtml = normalizeManuscriptHtml(html);
         manuscript.innerHTML = liveHtml;
         if (!manuscript.innerHTML.trim()) manuscript.innerHTML = "<p><br></p>";
         syncHunksFromDom();
@@ -229,7 +229,8 @@ export async function bootCollabRoomPage(opts = {}) {
             manuscript.removeAttribute("contenteditable");
             collabToolbar?.classList.add("hidden");
             document.body.classList.add("collab-author-mode");
-            manuscript.innerHTML = liveHtml || baseChapterHtml || "<p><br></p>";
+            liveHtml = normalizeManuscriptHtml(liveHtml || baseChapterHtml || "<p><br></p>");
+            manuscript.innerHTML = liveHtml;
             syncHunksFromDom();
             bindAuthorMarkClicks();
             return;
@@ -240,7 +241,8 @@ export async function bootCollabRoomPage(opts = {}) {
         manuscript.setAttribute("spellcheck", "true");
         collabToolbar?.classList.remove("hidden");
         if (document.activeElement !== manuscript) {
-            manuscript.innerHTML = liveHtml || baseChapterHtml || "<p><br></p>";
+            liveHtml = normalizeManuscriptHtml(liveHtml || baseChapterHtml || "<p><br></p>");
+            manuscript.innerHTML = liveHtml;
         }
         if (!manuscript.innerHTML.trim()) manuscript.innerHTML = "<p><br></p>";
 
@@ -277,7 +279,9 @@ export async function bootCollabRoomPage(opts = {}) {
                     ? "No suggestions — manuscript matches your draft"
                     : `${pending} suggestion${pending === 1 ? "" : "s"} in the document — Accept or Reject`;
             document.getElementById("acceptAllBtn").disabled = pending === 0;
-            document.getElementById("rejectAllBtn").disabled = pending === 0;
+            // Reject all always available — hard-resets live draft to chapter (clears gaps)
+            document.getElementById("rejectAllBtn").disabled = false;
+            document.getElementById("repairDraftBtn")?.removeAttribute("disabled");
             if (removeMineBtn) removeMineBtn.disabled = true;
         } else {
             reviewSub.textContent =
@@ -482,19 +486,48 @@ export async function bootCollabRoomPage(opts = {}) {
     }
 
     async function rejectAll() {
-        rejectAllSuggestionsInDom(manuscript);
-        // Prefer hard reset to last canon
+        // Hard reset to last saved chapter canon — wipes corrupted live gaps
         liveHtml = prepareCollaboratorChapterHtml(baseChapterHtml);
         manuscript.innerHTML = liveHtml || "<p><br></p>";
+        syncHunksFromDom();
+        renderHunkList();
+        updateStats();
         if (isPreview) {
-            syncHunksFromDom();
-            renderHunkList();
-            updateStats();
             previewChannel?.postMessage({ type: "doc", html: liveHtml, role: activeRole, label: currentUserLabel });
             return;
         }
-        await commitCollabChapterContent(bookId, chapterId, baseChapterHtml, baseChapterHtml);
+        if (isAuthor) {
+            await commitCollabChapterContent(bookId, chapterId, baseChapterHtml, liveHtml);
+        } else {
+            await upsertCollabLiveDraft(bookId, chapterId, liveHtml, contentHash);
+        }
+        realtimeSession?.notifyInput(liveHtml, contentHash, []);
         await reloadLiveRoom({ applyManuscript: true });
+        mountEditorMode();
+    }
+
+    /** Repair empty-paragraph spam / layout junk in the current live draft and save it. */
+    async function repairLiveDraft() {
+        const cleaned = normalizeManuscriptHtml(manuscript?.innerHTML || liveHtml || "");
+        liveHtml = cleaned || "<p><br></p>";
+        manuscript.innerHTML = liveHtml;
+        syncHunksFromDom();
+        renderHunkList();
+        updateStats();
+        if (isPreview) {
+            previewChannel?.postMessage({ type: "doc", html: liveHtml, role: activeRole, label: currentUserLabel });
+            mountEditorMode();
+            return;
+        }
+        if (isAuthor) {
+            const canon = canonHtmlFromSuggesting(liveHtml);
+            await commitCollabChapterContent(bookId, chapterId, baseChapterHtml, liveHtml);
+            void canon;
+        } else {
+            await upsertCollabLiveDraft(bookId, chapterId, liveHtml, contentHash);
+        }
+        realtimeSession?.notifyInput(liveHtml, contentHash, []);
+        mountEditorMode();
     }
 
     function renderModeBanner() {
@@ -804,7 +837,17 @@ export async function bootCollabRoomPage(opts = {}) {
         contentHash = chapter.content_hash || "";
         baseChapterHtml = prepareCollaboratorChapterHtml(chapter.content || "");
         isAuthor = !!chapter.is_author;
-        liveHtml = prepareCollaboratorChapterHtml(chapter.live_html || chapter.content || "");
+        const rawLive = chapter.live_html || chapter.content || "";
+        liveHtml = prepareCollaboratorChapterHtml(rawLive);
+        // If the stored draft had empty-paragraph spam / layout junk, write the cleaned version back
+        if (!isPreview) {
+            const rawEmpty = (String(rawLive).match(/<p>\s*(?:<br\s*\/?>)?\s*<\/p>/gi) || []).length;
+            const cleanEmpty = (String(liveHtml).match(/<p>\s*(?:<br\s*\/?>)?\s*<\/p>/gi) || []).length;
+            const hadLayoutJunk = /margin-top\s*:|min-height\s*:|(?:^|;)\s*height\s*:/i.test(String(rawLive));
+            if (rawEmpty > cleanEmpty || hadLayoutJunk || rawEmpty > 2) {
+                upsertCollabLiveDraft(bookId, chapterId, liveHtml, chapter.content_hash || contentHash).catch(() => {});
+            }
+        }
         const paras = htmlToParagraphTexts(baseChapterHtml);
         setHeader(
             chapter.book_title || "Untitled",
@@ -865,6 +908,8 @@ export async function bootCollabRoomPage(opts = {}) {
 
         document.getElementById("acceptAllBtn")?.addEventListener("click", () => acceptAll().catch((e) => alert(e.message)));
         document.getElementById("rejectAllBtn")?.addEventListener("click", () => rejectAll().catch((e) => alert(e.message)));
+        document.getElementById("repairDraftBtn")?.addEventListener("click", () => repairLiveDraft().catch((e) => alert(e.message)));
+        document.getElementById("repairDraftBtnCollab")?.addEventListener("click", () => repairLiveDraft().catch((e) => alert(e.message)));
         document.getElementById("removeMySuggestionsBtn")?.addEventListener("click", () =>
             withdrawMine().catch((e) => alert(e.message || "Could not remove suggestions."))
         );
@@ -933,6 +978,15 @@ export async function bootCollabRoomPage(opts = {}) {
                 alert(err?.message || "Could not reject all.");
             }
         });
+        const runRepair = async () => {
+            try {
+                await repairLiveDraft();
+            } catch (err) {
+                alert(err?.message || "Could not fix spacing.");
+            }
+        };
+        document.getElementById("repairDraftBtn")?.addEventListener("click", runRepair);
+        document.getElementById("repairDraftBtnCollab")?.addEventListener("click", runRepair);
         document.getElementById("removeMySuggestionsBtn")?.addEventListener("click", async () => {
             const btn = document.getElementById("removeMySuggestionsBtn");
             btn.disabled = true;

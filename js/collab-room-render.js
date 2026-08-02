@@ -29,11 +29,83 @@ function replaceTag(el, tagName) {
     el.replaceWith(next);
 }
 
+/** True when a block has no visible text/media (only br / whitespace). */
+function isVisuallyEmptyBlock(el) {
+    if (!el) return true;
+    if (el.querySelector?.("img, svg, video, iframe")) return false;
+    const text = (el.textContent || "").replace(/\u00a0/g, " ").replace(/\s+/g, "");
+    return !text;
+}
+
+/**
+ * Repair corrupted collab HTML (empty-paragraph spam, illegal layout styles from
+ * broken suggestion wraps). Safe to run repeatedly.
+ * @param {string} html
+ * @returns {string}
+ */
+export function repairCollabManuscriptHtml(html) {
+    if (typeof document === "undefined") return String(html || "");
+    const root = document.createElement("div");
+    root.innerHTML = String(html || "").trim();
+
+    // Strip layout-breaking inline styles; keep modest left indent only
+    root.querySelectorAll("[style]").forEach((el) => {
+        const ml = parseFloat(el.style?.marginLeft || "") || 0;
+        const safeIndent = ml > 0 && ml <= 240 ? Math.round(ml) : 0;
+        el.removeAttribute("style");
+        if (safeIndent) el.style.marginLeft = `${safeIndent}px`;
+    });
+
+    // Drop empty suggestion marks left behind by corruption
+    root.querySelectorAll(".collab-suggest-add, .collab-suggest-del").forEach((el) => {
+        if (isVisuallyEmptyBlock(el)) el.remove();
+    });
+
+    // Clear suggest-block chrome on empty / non-indented blocks
+    root.querySelectorAll(".collab-suggest-block").forEach((el) => {
+        const ml = parseFloat(el.style?.marginLeft || "") || 0;
+        if (ml <= 0) {
+            el.classList.remove("collab-suggest-block", "is-focused");
+            el.removeAttribute("data-suggest-id");
+            el.removeAttribute("data-suggest");
+            el.removeAttribute("data-by");
+            el.removeAttribute("data-by-label");
+            el.removeAttribute("data-before-style");
+            el.removeAttribute("data-indent-level");
+        }
+    });
+
+    // Remove empty paragraphs entirely (corruption left dozens of <p><br></p> gaps;
+    // Alysum prose uses text-indent, not blank lines, between paragraphs)
+    const blocks = [...root.querySelectorAll(BLOCK_SELECTOR)];
+    for (const el of blocks) {
+        if (!el.isConnected) continue;
+        if (isVisuallyEmptyBlock(el)) el.remove();
+    }
+
+    // Collapse absurd <br> runs inside real paragraphs
+    root.querySelectorAll(BLOCK_SELECTOR).forEach((el) => {
+        el.innerHTML = (el.innerHTML || "").replace(/(?:<br\s*\/?>\s*){3,}/gi, "<br><br>");
+    });
+
+    // Unwrap orphan empty divs
+    root.querySelectorAll("div").forEach((el) => {
+        if (el.classList?.contains("collab-manuscript")) return;
+        if (isVisuallyEmptyBlock(el) && !el.querySelector(BLOCK_SELECTOR)) {
+            el.remove();
+            return;
+        }
+    });
+
+    if (!root.innerHTML.trim()) return "<p><br></p>";
+    return root.innerHTML;
+}
+
 /** Normalize editor HTML so formatting diffs are stable (b→strong, trim empty nodes). */
 export function normalizeManuscriptHtml(html) {
     if (typeof document === "undefined") return String(html || "");
     const root = document.createElement("div");
-    root.innerHTML = String(html || "").trim();
+    root.innerHTML = repairCollabManuscriptHtml(html);
     root.querySelectorAll("b").forEach((el) => replaceTag(el, "strong"));
     root.querySelectorAll("i").forEach((el) => replaceTag(el, "em"));
     root.querySelectorAll("font").forEach((el) => {
@@ -42,6 +114,9 @@ export function normalizeManuscriptHtml(html) {
         el.replaceWith(span);
     });
     root.querySelectorAll("span").forEach((el) => {
+        if (el.classList?.contains("collab-suggest-add") || el.classList?.contains("collab-suggest-del")) {
+            return;
+        }
         const hasMeaningfulAttr = [...el.attributes].some(
             (a) => a.name !== "style" || String(a.value || "").trim()
         );
@@ -54,7 +129,8 @@ export function normalizeManuscriptHtml(html) {
         const trimmed = el.innerHTML.replace(/^\s+|\s+$/g, "");
         if (!trimmed) el.innerHTML = "<br>";
     });
-    return root.innerHTML;
+    // Second pass: collapse empties created by unwraps
+    return repairCollabManuscriptHtml(root.innerHTML);
 }
 
 /** @param {string} html @returns {HtmlBlock[]} */

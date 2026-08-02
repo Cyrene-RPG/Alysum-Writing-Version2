@@ -193,10 +193,12 @@
                 <div class="collab-review-actions" id="bulkActions">
                     <button type="button" class="collab-btn primary" id="acceptAllBtn">Accept all</button>
                     <button type="button" class="collab-btn danger" id="rejectAllBtn">Reject all</button>
+                    <button type="button" class="collab-btn" id="repairDraftBtn" title="Remove empty gaps left by a bad draft">Fix spacing</button>
                     <button type="button" class="collab-btn" id="dismissResolvedBtn">Dismiss resolved</button>
                 </div>
                 <div class="collab-review-actions hidden" id="collaboratorActions">
                     <button type="button" class="collab-btn danger" id="removeMySuggestionsBtn">Remove my suggestions</button>
+                    <button type="button" class="collab-btn" id="repairDraftBtnCollab" title="Remove empty gaps left by a bad draft">Fix spacing</button>
                 </div>
                 <div class="collab-hunk-list" id="hunkList"></div>
                 <div class="collab-sidebar-empty hidden" id="hunkEmpty">
@@ -234,7 +236,7 @@
     <button type="button" class="collab-selection-btn hidden" id="selectionCommentBtn" aria-label="Add comment">Comment</button>
 
     <script type="module">
-        import { bootCollabRoomPage } from "./js/collab-room-page.js?v=16";
+        import { bootCollabRoomPage } from "./js/collab-room-page.js?v=17";
         await bootCollabRoomPage({ isPreview: true });
     </script>
 </body>
