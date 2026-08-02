@@ -136,6 +136,14 @@
     .topbar { min-height: 64px; background: var(--topbar-bg); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; gap: 10px; position: relative; z-index: 15; overflow: visible; }
     .topbar-left, .topbar-right { display: flex; align-items: center; gap: 10px; min-width: 0; overflow: visible; }
     .icon-btn { width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--border); background: var(--topbar-bg); color: var(--page-text); font-size: 22px; line-height: 1; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
+    .topbar .icon-btn:not(.danger) {
+        background: linear-gradient(135deg, var(--theme-header-mid, var(--alysum-purple-dark)), var(--theme-header-end, var(--alysum-purple)));
+        border-color: var(--theme-header-mid, var(--alysum-purple));
+        color: #fff;
+    }
+    .topbar .icon-btn:not(.danger):hover {
+        filter: brightness(1.08);
+    }
     .pd-toggle {
         border: 1px solid rgba(196, 181, 253, 0.35);
         background: rgba(109, 40, 217, 0.2);
@@ -157,7 +165,6 @@
         border-color: rgba(196, 181, 253, 0.55);
         box-shadow: 0 0 20px rgba(124, 58, 237, 0.25);
     }
-    .icon-btn.purple { background: var(--alysum-purple); border-color: var(--alysum-purple); color: white; }
     .icon-btn.danger { background: var(--danger); border-color: var(--danger); color: white; }
     .top-title { font-size: 18px; font-weight: 700; color: var(--page-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 36vw; }
     .save-status { font-size: 13px; color: var(--page-subtle); font-weight: 700; }
@@ -706,7 +713,7 @@
     @media (max-width: 600px) {
         .toolbar-mobile-toggle-wrap { display: inline-flex; }
         .toolbar-mobile-toggle { font-size: 15px; font-weight: 900; letter-spacing: -0.02em; }
-        .toolbar-mobile-toggle.is-active { background: var(--alysum-purple); border-color: var(--alysum-purple); color: #fff; }
+        .toolbar-mobile-toggle.is-active { background: linear-gradient(135deg, var(--theme-header-mid, var(--alysum-purple-dark)), var(--theme-header-end, var(--alysum-purple))); border-color: var(--theme-header-mid, var(--alysum-purple)); color: #fff; }
         body:not(.toolbar-mobile-open) #toolbar { display: none !important; }
         body:not(.toolbar-mobile-open).comic-mode .comic-toolbar { display: none !important; }
         body.toolbar-mobile-open #toolbar {
@@ -899,12 +906,12 @@
             <div class="top-title" id="topBookTitle">Loading...</div>
         </div>
         <div class="topbar-right">
-            <span class="topbar-tip" data-tip="New chapter"><button class="icon-btn purple" id="quickAddBtn" type="button" aria-label="Add chapter">＋</button></span>
-            <span class="topbar-tip" data-tip="Publish to web"><button class="icon-btn purple" id="publishTopBtn" type="button" aria-label="Publish">🚀</button></span>
+            <span class="topbar-tip" data-tip="New chapter"><button class="icon-btn" id="quickAddBtn" type="button" aria-label="Add chapter">＋</button></span>
+            <span class="topbar-tip" data-tip="Publish to web"><button class="icon-btn" id="publishTopBtn" type="button" aria-label="Publish">🚀</button></span>
             <span class="topbar-tip" data-tip="Invite editors to suggest chapter changes" id="collabShareTopLinkWrap"><a class="icon-btn" id="collabShareTopLink" href="collab-room-manage.html" aria-label="Collab invite">✎</a></span>
             <span class="topbar-tip" data-tip="Share unpublished draft with beta readers" id="betaShareTopLinkWrap"><a class="icon-btn" id="betaShareTopLink" href="beta-room-manage.html" aria-label="Beta share">✉</a></span>
             <span class="topbar-tip" data-tip="Version history (Ctrl+Shift+H)"><button class="icon-btn" id="historyTopBtn" type="button" aria-label="Version history">🕘</button></span>
-            <span class="topbar-tip" data-tip="Export / print"><button class="icon-btn purple" id="exportBtn" type="button" aria-label="Export">📄</button></span>
+            <span class="topbar-tip" data-tip="Export / print"><button class="icon-btn" id="exportBtn" type="button" aria-label="Export">📄</button></span>
             <span class="topbar-tip" data-tip="Story Board (Alt+P)"><a class="pd-toggle" id="storyBoardLink" href="story-board/">Story Board</a></span>
             <span class="topbar-tip" data-tip="Notes"><button class="icon-btn" id="nbBtn" type="button" aria-label="Notes">⌘</button></span>
             <span class="topbar-tip" data-tip="Chapter content warnings"><button class="icon-btn" id="chapterWarningsBtn" type="button" aria-label="Chapter warnings">⚠</button></span>
