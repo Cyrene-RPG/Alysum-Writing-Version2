@@ -144,6 +144,7 @@ export async function listMyCollabAuthorInvites() {
     return data || [];
 }
 
+export function isCollabRoomsSchemaMissing(error) {
     const msg = safeString(error?.message, "");
     const code = safeString(error?.code, "");
     return (
