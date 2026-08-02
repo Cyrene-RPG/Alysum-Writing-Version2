@@ -34,7 +34,7 @@ import {
     rejectAllSuggestionsInDom,
     canonHtmlFromSuggesting,
     highlightSuggestionMarks,
-} from "./collab-suggesting.js?v=2";
+} from "./collab-suggesting.js?v=3";
 
 /**
  * @param {{ isPreview?: boolean, params?: URLSearchParams }} opts

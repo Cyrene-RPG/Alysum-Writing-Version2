@@ -263,8 +263,10 @@ export function mountSuggestingMode(opts) {
     if (!editor) return () => {};
 
     let activeInsertId = "";
+    let activeDeleteId = "";
     let composing = false;
     let notifyTimer = 0;
+    let deleteHandledAt = 0;
 
     function makeAddSpan(text, suggestId) {
         const span = document.createElement("span");
@@ -359,6 +361,7 @@ export function mountSuggestingMode(opts) {
         const sel = window.getSelection();
         if (!sel?.rangeCount) return;
         if (!text) return;
+        activeDeleteId = "";
 
         const mark = closestSuggestMark(sel.anchorNode);
         if (mark?.classList.contains("collab-suggest-add") && mark.getAttribute("data-by") === userId) {
@@ -395,34 +398,214 @@ export function mountSuggestingMode(opts) {
         notify();
     }
 
-    function deleteSelection(direction) {
+    function graphemeLenBefore(text, end) {
+        if (end <= 0) return 0;
+        try {
+            const parts = [...new Intl.Segmenter(undefined, { granularity: "grapheme" }).segment(text.slice(0, end))];
+            return parts.length ? parts[parts.length - 1].segment.length : 1;
+        } catch {
+            const c = text.charCodeAt(end - 1);
+            if (c >= 0xdc00 && c <= 0xdfff && end >= 2) return 2;
+            return 1;
+        }
+    }
+
+    function graphemeLenAfter(text, start) {
+        if (start >= text.length) return 0;
+        try {
+            const parts = [...new Intl.Segmenter(undefined, { granularity: "grapheme" }).segment(text.slice(start))];
+            return parts.length ? parts[0].segment.length : 1;
+        } catch {
+            const c = text.charCodeAt(start);
+            if (c >= 0xd800 && c <= 0xdbff) return 2;
+            return 1;
+        }
+    }
+
+    function textNodesInEditor() {
+        const out = [];
+        const w = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT, null);
+        let n;
+        while ((n = w.nextNode())) out.push(n);
+        return out;
+    }
+
+    function lastTextIn(node) {
+        if (!node) return null;
+        if (node.nodeType === Node.TEXT_NODE) return node;
+        const w = document.createTreeWalker(node, NodeFilter.SHOW_TEXT, null);
+        let last = null;
+        let cur;
+        while ((cur = w.nextNode())) last = cur;
+        return last;
+    }
+
+    function firstTextIn(node) {
+        if (!node) return null;
+        if (node.nodeType === Node.TEXT_NODE) return node;
+        const w = document.createTreeWalker(node, NodeFilter.SHOW_TEXT, null);
+        return w.nextNode();
+    }
+
+    /** Expand a collapsed caret to cover one grapheme (or word) in `direction`. */
+    function expandCollapsedRange(direction, unit = "character") {
         const sel = window.getSelection();
-        if (!sel?.rangeCount) return;
-        let range = sel.getRangeAt(0);
+        if (!sel?.rangeCount) return null;
+        const saved = sel.getRangeAt(0).cloneRange();
+        if (!saved.collapsed) return saved.cloneRange();
 
-        if (range.collapsed) {
-            range = range.cloneRange();
-            const node = sel.anchorNode;
-            const offset = sel.anchorOffset;
-            if (!node) return;
+        const modifyUnit = unit === "lineboundary" ? "lineboundary" : unit === "word" ? "word" : "character";
+        sel.removeAllRanges();
+        sel.addRange(saved.cloneRange());
+        try {
+            sel.modify("extend", direction, modifyUnit);
+        } catch {
+            /* ignore */
+        }
+        if (!sel.isCollapsed) {
+            const expanded = sel.getRangeAt(0).cloneRange();
+            sel.removeAllRanges();
+            sel.addRange(saved);
+            return expanded;
+        }
+        sel.removeAllRanges();
+        sel.addRange(saved);
 
-            if (node.nodeType === Node.TEXT_NODE) {
-                if (direction === "backward" && offset > 0) {
-                    range.setStart(node, offset - 1);
-                } else if (direction === "forward" && offset < node.length) {
-                    range.setEnd(node, offset + 1);
-                } else {
-                    sel.modify("extend", direction, "character");
-                    if (sel.isCollapsed) return;
-                    range = sel.getRangeAt(0);
-                }
-            } else {
-                sel.modify("extend", direction, "character");
-                if (sel.isCollapsed) return;
-                range = sel.getRangeAt(0);
+        if (unit !== "character") return null;
+
+        const node = saved.startContainer;
+        const offset = saved.startOffset;
+
+        // Same text node
+        if (node.nodeType === Node.TEXT_NODE) {
+            const text = node.textContent || "";
+            if (direction === "backward" && offset > 0) {
+                const len = graphemeLenBefore(text, offset);
+                const range = saved.cloneRange();
+                range.setStart(node, offset - len);
+                return range;
+            }
+            if (direction === "forward" && offset < text.length) {
+                const len = graphemeLenAfter(text, offset);
+                const range = saved.cloneRange();
+                range.setEnd(node, offset + len);
+                return range;
             }
         }
 
+        // Element caret — look at neighboring child
+        if (node.nodeType === Node.ELEMENT_NODE) {
+            if (direction === "backward" && offset > 0) {
+                const prev = node.childNodes[offset - 1];
+                const t = lastTextIn(prev);
+                if (t && (t.textContent || "").length) {
+                    const len = graphemeLenBefore(t.textContent || "", (t.textContent || "").length);
+                    const range = document.createRange();
+                    range.setStart(t, (t.textContent || "").length - len);
+                    range.setEnd(saved.startContainer, saved.startOffset);
+                    return range;
+                }
+            }
+            if (direction === "forward" && offset < node.childNodes.length) {
+                const next = node.childNodes[offset];
+                const t = firstTextIn(next);
+                if (t && (t.textContent || "").length) {
+                    const len = graphemeLenAfter(t.textContent || "", 0);
+                    const range = document.createRange();
+                    range.setStart(saved.startContainer, saved.startOffset);
+                    range.setEnd(t, len);
+                    return range;
+                }
+            }
+        }
+
+        // Cross text-node boundary via ordered list
+        const texts = textNodesInEditor().filter((t) => (t.textContent || "").length > 0);
+        if (!texts.length) return null;
+
+        let idx = -1;
+        let localOff = 0;
+        if (node.nodeType === Node.TEXT_NODE) {
+            idx = texts.indexOf(node);
+            localOff = offset;
+        } else {
+            const caret = saved.cloneRange();
+            if (direction === "backward") {
+                for (let i = texts.length - 1; i >= 0; i--) {
+                    const end = document.createRange();
+                    end.selectNodeContents(texts[i]);
+                    end.collapse(false);
+                    if (end.compareBoundaryPoints(Range.START_TO_START, caret) <= 0) {
+                        idx = i;
+                        localOff = (texts[i].textContent || "").length;
+                        break;
+                    }
+                }
+            } else {
+                for (let i = 0; i < texts.length; i++) {
+                    const start = document.createRange();
+                    start.selectNodeContents(texts[i]);
+                    start.collapse(true);
+                    if (start.compareBoundaryPoints(Range.START_TO_START, caret) >= 0) {
+                        idx = i;
+                        localOff = 0;
+                        break;
+                    }
+                }
+            }
+        }
+        if (idx < 0) return null;
+
+        if (direction === "backward") {
+            if (localOff > 0) {
+                const t = texts[idx];
+                const len = graphemeLenBefore(t.textContent || "", localOff);
+                const range = document.createRange();
+                range.setStart(t, localOff - len);
+                range.setEnd(saved.startContainer, saved.startOffset);
+                return range;
+            }
+            if (idx === 0) return null;
+            const t = texts[idx - 1];
+            const end = (t.textContent || "").length;
+            const len = graphemeLenBefore(t.textContent || "", end);
+            const range = document.createRange();
+            range.setStart(t, end - len);
+            range.setEnd(saved.startContainer, saved.startOffset);
+            return range;
+        }
+
+        const t = texts[idx];
+        const text = t.textContent || "";
+        if (localOff < text.length) {
+            const len = graphemeLenAfter(text, localOff);
+            const range = document.createRange();
+            range.setStart(saved.startContainer, saved.startOffset);
+            range.setEnd(t, localOff + len);
+            return range;
+        }
+        if (idx >= texts.length - 1) return null;
+        const next = texts[idx + 1];
+        const len = graphemeLenAfter(next.textContent || "", 0);
+        const range = document.createRange();
+        range.setStart(saved.startContainer, saved.startOffset);
+        range.setEnd(next, len);
+        return range;
+    }
+
+    function deleteSelection(direction, unit = "character") {
+        const sel = window.getSelection();
+        if (!sel?.rangeCount) return false;
+        let range = sel.getRangeAt(0);
+
+        if (range.collapsed) {
+            range = expandCollapsedRange(direction, unit);
+            if (!range || range.collapsed) return false;
+        } else {
+            range = range.cloneRange();
+        }
+
+        // Own green insert → hard-delete (withdraw suggestion text)
         const startMark = closestSuggestMark(range.startContainer);
         const endMark = closestSuggestMark(range.endContainer);
         if (
@@ -432,27 +615,83 @@ export function mountSuggestingMode(opts) {
             startMark.getAttribute("data-by") === userId
         ) {
             range.deleteContents();
-            if (!startMark.textContent) startMark.remove();
-            activeInsertId = startMark.getAttribute("data-suggest-id") || "";
+            if (!startMark.textContent) {
+                const parent = startMark.parentNode;
+                const idx = parent ? [...parent.childNodes].indexOf(startMark) : -1;
+                startMark.remove();
+                if (parent && idx >= 0) {
+                    try {
+                        const caret = document.createRange();
+                        caret.setStart(parent, Math.min(idx, parent.childNodes.length));
+                        caret.collapse(true);
+                        sel.removeAllRanges();
+                        sel.addRange(caret);
+                    } catch {
+                        /* ignore */
+                    }
+                }
+                activeInsertId = "";
+            } else {
+                activeInsertId = startMark.getAttribute("data-suggest-id") || "";
+                // range is collapsed at the deletion point after deleteContents
+                try {
+                    sel.removeAllRanges();
+                    sel.addRange(range);
+                } catch {
+                    const tn = firstTextIn(startMark);
+                    if (tn) placeCaret(tn, Math.min(tn.textContent.length, range.startOffset || 0));
+                }
+            }
+            activeDeleteId = "";
             notify();
-            return;
+            return true;
         }
 
-        const suggestId = uid();
+        let suggestId = activeDeleteId || uid();
+        const adjDel =
+            (startMark?.classList.contains("collab-suggest-del") && startMark) ||
+            (endMark?.classList.contains("collab-suggest-del") && endMark) ||
+            null;
+        if (adjDel && adjDel.getAttribute("data-by") === userId) {
+            suggestId = adjDel.getAttribute("data-suggest-id") || suggestId;
+        }
+
         activeInsertId = "";
-        const contents = range.extractContents();
-        if (!contents.textContent) return;
+        activeDeleteId = suggestId;
+
+        let contents;
+        try {
+            contents = range.extractContents();
+        } catch {
+            return false;
+        }
+        if (!contents.childNodes.length) return false;
+
+        if (adjDel?.isConnected && adjDel.getAttribute("data-suggest-id") === suggestId) {
+            if (direction === "backward") {
+                while (contents.lastChild) adjDel.insertBefore(contents.lastChild, adjDel.firstChild);
+                range.setStartBefore(adjDel);
+            } else {
+                while (contents.firstChild) adjDel.appendChild(contents.firstChild);
+                range.setStartAfter(adjDel);
+            }
+            range.collapse(true);
+            sel.removeAllRanges();
+            sel.addRange(range);
+            notify();
+            return true;
+        }
+
         const del = makeDelSpan(contents, suggestId);
         range.insertNode(del);
-        if (direction === "backward") {
-            range.setStartBefore(del);
-        } else {
-            range.setStartAfter(del);
-        }
+        // Keep caret on the side that continues deleting through the manuscript
+        if (direction === "backward") range.setStartBefore(del);
+        else range.setStartAfter(del);
         range.collapse(true);
         sel.removeAllRanges();
         sel.addRange(range);
         notify();
+        return true;
     }
 
     function wrapComposedText(data) {
@@ -518,8 +757,16 @@ export function mountSuggestingMode(opts) {
             type === "deleteWordBackward" ||
             type === "deleteSoftLineBackward"
         ) {
+            // keydown already handled Backspace in most browsers
+            if (Date.now() - deleteHandledAt < 50) {
+                e.preventDefault();
+                return;
+            }
             e.preventDefault();
-            deleteSelection("backward");
+            const unit =
+                type === "deleteWordBackward" ? "word" : type === "deleteSoftLineBackward" ? "lineboundary" : "character";
+            deleteSelection("backward", unit);
+            deleteHandledAt = Date.now();
             return;
         }
         if (
@@ -527,8 +774,15 @@ export function mountSuggestingMode(opts) {
             type === "deleteWordForward" ||
             type === "deleteSoftLineForward"
         ) {
+            if (Date.now() - deleteHandledAt < 50) {
+                e.preventDefault();
+                return;
+            }
             e.preventDefault();
-            deleteSelection("forward");
+            const unit =
+                type === "deleteWordForward" ? "word" : type === "deleteSoftLineForward" ? "lineboundary" : "character";
+            deleteSelection("forward", unit);
+            deleteHandledAt = Date.now();
             return;
         }
         if (type === "formatIndent") {
@@ -556,12 +810,39 @@ export function mountSuggestingMode(opts) {
     }
 
     function onKeyDown(e) {
-        if (!enabled()) return;
-        if (e.key === "Enter") activeInsertId = "";
-        if (e.key === "Escape") activeInsertId = "";
+        if (!enabled() || composing) return;
+        if (e.key === "Enter") {
+            activeInsertId = "";
+            activeDeleteId = "";
+        }
+        if (e.key === "Escape") {
+            activeInsertId = "";
+            activeDeleteId = "";
+        }
+        if (e.key === "ArrowLeft" || e.key === "ArrowRight" || e.key === "ArrowUp" || e.key === "ArrowDown") {
+            activeInsertId = "";
+            activeDeleteId = "";
+        }
         if (e.key === "Tab") {
             e.preventDefault();
             indentSelection(e.shiftKey ? -1 : 1);
+            return;
+        }
+        // Primary delete path — beforeinput is inconsistent across browsers around suggestion marks
+        if (e.key === "Backspace") {
+            if (e.isComposing) return;
+            e.preventDefault();
+            const unit = e.ctrlKey || e.metaKey || e.altKey ? "word" : "character";
+            deleteSelection("backward", unit);
+            deleteHandledAt = Date.now();
+            return;
+        }
+        if (e.key === "Delete") {
+            if (e.isComposing) return;
+            e.preventDefault();
+            const unit = e.ctrlKey || e.metaKey || e.altKey ? "word" : "character";
+            deleteSelection("forward", unit);
+            deleteHandledAt = Date.now();
         }
     }
 
