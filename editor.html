@@ -25,7 +25,6 @@
     <link rel="stylesheet" href="css/workspace-nav.css?v=11" />
     <link rel="stylesheet" href="css/book-inline-images.css?v=5" />
     <link rel="stylesheet" href="css/scene-breaks.css?v=8" />
-<link rel="stylesheet" href="css/plot-doctor.css?v=4" />
 <link rel="stylesheet" href="css/book-version.css?v=8" />
     <script src="js/gradient-theme-sync.js" defer></script>
 <title>Alysum Editor</title>
@@ -136,6 +135,27 @@
     .topbar { min-height: 64px; background: var(--topbar-bg); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; gap: 10px; position: relative; z-index: 15; overflow: visible; }
     .topbar-left, .topbar-right { display: flex; align-items: center; gap: 10px; min-width: 0; overflow: visible; }
     .icon-btn { width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--border); background: var(--topbar-bg); color: var(--page-text); font-size: 22px; line-height: 1; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
+    .pd-toggle {
+        border: 1px solid rgba(196, 181, 253, 0.35);
+        background: rgba(109, 40, 217, 0.2);
+        color: #e9d5ff;
+        border-radius: 999px;
+        padding: 6px 14px;
+        font-weight: 800;
+        font-size: 12px;
+        letter-spacing: 0.04em;
+        cursor: pointer;
+        transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+        font-family: "Cinzel", Georgia, serif;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+    }
+    .pd-toggle:hover {
+        background: rgba(109, 40, 217, 0.35);
+        border-color: rgba(196, 181, 253, 0.55);
+        box-shadow: 0 0 20px rgba(124, 58, 237, 0.25);
+    }
     .icon-btn.purple { background: var(--alysum-purple); border-color: var(--alysum-purple); color: white; }
     .icon-btn.danger { background: var(--danger); border-color: var(--danger); color: white; }
     .top-title { font-size: 18px; font-weight: 700; color: var(--page-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 36vw; }
@@ -493,6 +513,14 @@
     .publish-bypass-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
     .publish-quick-wrap { margin-top: 14px; display: none; }
     .publish-quick-wrap.visible { display: block; }
+    .publish-quick-schedule { margin-top: 14px; display: grid; gap: 10px; max-height: 220px; overflow: auto; border: 1px solid var(--border); border-radius: 12px; padding: 10px; background: rgba(0,0,0,0.03); }
+    body.dark .publish-quick-schedule { background: rgba(255,255,255,0.03); }
+    .publish-quick-schedule-row { display: grid; gap: 8px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+    .publish-quick-schedule-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .publish-quick-schedule-title { font-size: 13px; font-weight: 800; line-height: 1.35; }
+    .publish-quick-schedule-controls { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
+    .publish-quick-schedule-controls label { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; cursor: pointer; }
+    .publish-quick-schedule-controls input[type="datetime-local"] { min-width: 170px; height: 34px; border: 1px solid var(--border); border-radius: 10px; background: var(--topbar-bg); color: var(--page-text); font-size: 13px; padding: 0 8px; }
     .publish-quick-status { margin: 10px 0 0; font-size: 13px; color: var(--page-subtle); min-height: 1.2em; }
     .sprint-opt-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
     .sprint-opt { border: 1px solid var(--border); background: rgba(0,0,0,0.03); color: var(--page-text); border-radius: 12px; padding: 10px; font-weight: 900; cursor: pointer; }
@@ -750,7 +778,6 @@
                 <span class="wd-nav-divider" aria-hidden="true"></span>
                 <a href="writer-dashboard.html">Studio</a>
                 <a href="library.html">Library</a>
-                <a href="lore-wiki.html">Lore Wiki</a>
                 <a href="beta-rooms.html">Beta rooms</a>
                 <a href="author-dashboard.html" id="navAuthorStats">
                     Author stats
@@ -760,7 +787,6 @@
                 <span class="wd-nav-divider" aria-hidden="true"></span>
                 <a href="vault.html">Notes</a>
                 <a href="note-graph.html">Note Graph</a>
-                <a href="wiki.html" id="navStoryBible">Story Wiki</a>
                 <a href="story-board/">Story Board</a>
                 <a href="plotweave.html">Plotweave</a>
                 <a href="Novel_Exporter.html">Exporter</a>
@@ -815,7 +841,6 @@
                             <span class="nb-status-left" id="nbStatus">Ready</span>
                             <div class="nb-status-actions">
                                 <button type="button" class="nb-miniact" id="nbLinkCh" data-tip="Insert link to current chapter">Chapter link</button>
-                                <button type="button" class="nb-miniact" id="nbWiki" data-tip="Insert wiki-style [[link]]">[[link]]</button>
                                 <button type="button" class="nb-miniact" id="nbCopy" data-tip="Copy note text">Copy</button>
                                 <button type="button" class="nb-miniact nb-miniact-accent" id="nbInsert" data-tip="Insert note into chapter">Insert to chapter</button>
                             </div>
@@ -842,7 +867,6 @@
             <button class="pill-btn secondary" id="publishBtn" type="button" data-tip="Publish chapters to the web">Publish</button>
             <button class="pill-btn secondary" id="historyBookBtn" type="button" data-tip="Version history — save, compare, restore (Ctrl+Shift+H)">History</button>
             <a class="pill-btn secondary" id="betaShareLink" href="beta-room-manage.html" data-tip="Share an unpublished snapshot with beta readers">Beta share</a>
-            <a class="pill-btn secondary" id="storyBibleLink" href="wiki.html" data-tip="Open Story Wiki for this book">Story Wiki</a>
             <button class="pill-btn danger" id="deleteBookBtn" type="button" data-tip="Permanently delete this book">Delete Book</button>
         </div>
     </div>
@@ -866,7 +890,6 @@
             <span class="topbar-tip" data-tip="Share unpublished draft with beta readers" id="betaShareTopLinkWrap"><a class="icon-btn" id="betaShareTopLink" href="beta-room-manage.html" aria-label="Beta share">✉</a></span>
             <span class="topbar-tip" data-tip="Version history (Ctrl+Shift+H)"><button class="icon-btn" id="historyTopBtn" type="button" aria-label="Version history">🕘</button></span>
             <span class="topbar-tip" data-tip="Export / print"><button class="icon-btn purple" id="exportBtn" type="button" aria-label="Export">📄</button></span>
-            <span class="topbar-tip" data-tip="Story Wiki" id="storyBibleTopLinkWrap"><a class="icon-btn" id="storyBibleTopLink" href="wiki.html" aria-label="Story Wiki">📖</a></span>
             <span class="topbar-tip" data-tip="Story Board (Alt+P)"><a class="pd-toggle" id="storyBoardLink" href="story-board/">Story Board</a></span>
             <span class="topbar-tip" data-tip="Notes"><button class="icon-btn" id="nbBtn" type="button" aria-label="Notes">⌘</button></span>
             <span class="topbar-tip" data-tip="Rename chapter"><button class="icon-btn" id="renameChapterBtn" type="button" aria-label="Rename chapter">⋯</button></span>
@@ -968,7 +991,10 @@
                     <button class="publish-modal-btn secondary" id="publishBypassNo" type="button" data-tip="Open full publish flow">No</button>
                     <button class="publish-modal-btn primary" id="publishBypassYes" type="button" data-tip="Quick publish with saved settings">Yes</button>
                 </div>
-                <div class="publish-quick-wrap" id="publishQuickWrap"><button class="publish-modal-btn primary" id="publishQuickPublishBtn" type="button" data-tip="Publish selected chapters now">Publish update</button></div>
+                <div class="publish-quick-wrap" id="publishQuickWrap">
+                    <div class="publish-quick-schedule" id="publishQuickSchedule" hidden></div>
+                    <button class="publish-modal-btn primary" id="publishQuickPublishBtn" type="button" data-tip="Publish selected chapters now">Publish update</button>
+                </div>
                 <p class="publish-quick-status" id="publishQuickStatus" aria-live="polite"></p>
             </div>
         </div>
@@ -1075,7 +1101,6 @@
         normalizeWritingDayTotals,
     } from "./js/writing-day-stats.js?v=2";
     import { ensureLoginStreakCloud } from "./js/ensure-login-streak.js?v=3";
-    import { isStoryBibleUiEnabled, STORY_BIBLE_PREF_KEY, STORY_BIBLE_PREF_EVENT } from "./js/story-bible-prefs.js?v=1";
     import {
         readWriterResume,
         writeWriterResume,
@@ -1091,6 +1116,13 @@
         getPublishEligibility,
         formatPublishBlockMessage,
     } from "./js/publish-cooldown.js?v=1";
+    import {
+        syncScheduledChapterReleases,
+        isValidFutureSchedule,
+        toDatetimeLocalValue,
+        fromDatetimeLocalValue,
+        MIN_SCHEDULE_LEAD_MS,
+    } from "./js/scheduled-chapter-releases.js?v=1";
     import {
         saveBookShadow,
         getBookShadow,
@@ -1193,7 +1225,7 @@ function syncStoryBoardLink() {
     if (link) link.href = storyBoardHref(bookId);
 }
 
-if ((params.get("storyBoard") === "1" || params.get("plotDoctor") === "1") && bookId) {
+if (params.get("storyBoard") === "1" && bookId) {
     window.location.replace(storyBoardHref(bookId));
 }
 
@@ -1203,7 +1235,7 @@ function rememberBookId(id) {
     localStorage.setItem("alysum-current-book-id", bookId);
     sessionStorage.setItem("alysum-current-book-id", bookId);
     syncStoryBoardLink();
-    applyEditorStoryBibleLinks();
+    applyEditorBetaLinks();
     const url = new URL(window.location.href);
     url.searchParams.set("book", bookId);
     window.history.replaceState({}, "", url.toString());
@@ -1326,12 +1358,9 @@ function rememberBookId(id) {
         void versionPanel?.saveStructuralVersion(label);
     }
 
-    const storyBibleLink = document.getElementById("storyBibleLink");
     const betaShareLink = document.getElementById("betaShareLink");
     const betaShareTopLink = document.getElementById("betaShareTopLink");
     const betaShareTopLinkWrap = document.getElementById("betaShareTopLinkWrap");
-    const storyBibleTopLink = document.getElementById("storyBibleTopLink");
-    const storyBibleTopLinkWrap = document.getElementById("storyBibleTopLinkWrap");
     const sidebar = document.getElementById("sidebar");
     const overlay = document.getElementById("overlay");
     const toggleSidebarBtn = document.getElementById("toggleSidebarBtn");
@@ -1384,6 +1413,10 @@ function rememberBookId(id) {
     const publishQuickWrap = document.getElementById("publishQuickWrap");
     const publishQuickPublishBtn = document.getElementById("publishQuickPublishBtn");
     const publishQuickStatus = document.getElementById("publishQuickStatus");
+    const publishQuickSchedule = document.getElementById("publishQuickSchedule");
+
+    /** @type {Map<string, { mode: 'immediate' | 'scheduled', scheduledAt: string }>} */
+    const quickPublishReleaseModes = new Map();
     const findReplaceBar = document.getElementById("findReplaceBar");
     const findReplaceBtn = document.getElementById("findReplaceBtn");
     const frFindInput = document.getElementById("frFindInput");
@@ -1478,9 +1511,6 @@ function rememberBookId(id) {
     const EDITOR_BACKGROUND_UPLOAD_ID = "current-upload";
     let sprintTick = null;
     let pendingSprintMinutes = null;
-    const STORY_BIBLE_SELECTION_KEY = "alysum-story-bible-selection-v1";
-    const STORY_BIBLE_SELECTION_BACKUP_KEY = "alysum-story-bible-selection-backup-v1";
-    let lastStoryBibleSelection = null;
     let offlinePendingSync = false;
     let syncInFlight = false;
     let syncedFlashTimer = null;
@@ -2214,13 +2244,8 @@ function rememberBookId(id) {
         };
     }
 
-    function applyEditorStoryBibleLinks() {
-        const prefOn = isStoryBibleUiEnabled();
+    function applyEditorBetaLinks() {
         const hasBook = !!bookId;
-        const show = prefOn && hasBook;
-        if (storyBibleLink) { storyBibleLink.style.display = show ? "" : "none"; if (hasBook) storyBibleLink.href = `wiki.html?book=${encodeURIComponent(bookId)}`; }
-        if (storyBibleTopLinkWrap) storyBibleTopLinkWrap.classList.toggle("hidden", !show);
-        if (storyBibleTopLink && hasBook) storyBibleTopLink.href = `wiki.html?book=${encodeURIComponent(bookId)}`;
         if (betaShareLink) {
             const showBeta = hasBook && !isLocalStudio;
             betaShareLink.style.display = showBeta ? "" : "none";
@@ -2231,109 +2256,7 @@ function rememberBookId(id) {
             betaShareTopLink.href = `beta-room-manage.html?book=${encodeURIComponent(bookId)}`;
         }
     }
-    applyEditorStoryBibleLinks();
-    window.addEventListener("storage", e => { if (e.key === STORY_BIBLE_PREF_KEY) applyEditorStoryBibleLinks(); });
-    window.addEventListener(STORY_BIBLE_PREF_EVENT, applyEditorStoryBibleLinks);
-    document.addEventListener("visibilitychange", () => { if (!document.hidden) applyEditorStoryBibleLinks(); });
-
-    function normalizeSelectionText(value) {
-        return String(value || "").replace(/\s+/g, " ").trim();
-    }
-
-    function selectionRangeFromEditor() {
-        const selection = window.getSelection();
-        if (!selection || selection.isCollapsed || !selection.rangeCount) return null;
-        const range = selection.getRangeAt(0);
-        const startNode = range.startContainer;
-        const endNode = range.endContainer;
-        if (!editor.contains(startNode) || !editor.contains(endNode)) return null;
-        return range;
-    }
-
-    function chapterParagraphsFromHtml(html) {
-        const holder = document.createElement("div");
-        holder.innerHTML = safeString(html, "");
-        const blocks = [...holder.querySelectorAll("p, div, li, blockquote, h1, h2, h3")];
-        if (!blocks.length) {
-            const only = normalizeSelectionText(stripHtmlToText(holder.innerHTML));
-            return only ? [only] : [];
-        }
-        return blocks
-            .map(block => normalizeSelectionText(stripHtmlToText(block.innerHTML || block.textContent || "")))
-            .filter(Boolean);
-    }
-
-    function selectedPlainTextInEditor() {
-        const selection = window.getSelection();
-        if (!selection || selection.isCollapsed || !selection.rangeCount) return "";
-        const range = selectionRangeFromEditor();
-        if (!range) return "";
-        const container = document.createElement("div");
-        container.appendChild(range.cloneContents());
-        const html = cleanEditorHtml(container.innerHTML);
-        return normalizeSelectionText(stripHtmlToText(html));
-    }
-
-    function resolveSourceParagraph(html, selectedText) {
-        const needle = normalizeSelectionText(selectedText).toLowerCase();
-        if (!needle) return "";
-        const paragraphs = chapterParagraphsFromHtml(html);
-        for (let i = 0; i < paragraphs.length; i++) {
-            if (paragraphs[i].toLowerCase().includes(needle)) return String(i + 1);
-        }
-        return "";
-    }
-
-    function rememberStoryBibleSelectionHandoff() {
-        if (!bookId || !currentBook) return;
-        let sourceText = selectedPlainTextInEditor();
-        let sourceParagraph = "";
-        if (!sourceText && lastStoryBibleSelection?.sourceText && Date.now() - Number(lastStoryBibleSelection.capturedAt || 0) < 5 * 60 * 1000) {
-            sourceText = normalizeSelectionText(lastStoryBibleSelection.sourceText);
-            sourceParagraph = normalizeSelectionText(lastStoryBibleSelection.sourceParagraph || "");
-        }
-        if (!sourceText) {
-            sessionStorage.removeItem(STORY_BIBLE_SELECTION_KEY);
-            localStorage.removeItem(STORY_BIBLE_SELECTION_BACKUP_KEY);
-            return;
-        }
-        const chapter = currentChapter();
-        const payload = {
-            bookId,
-            chapterId: chapter?.id || "",
-            chapterTitle: chapter?.title || "",
-            chapterSection: currentSection,
-            chapterIndex: currentChapterIndex,
-            sourceParagraph: sourceParagraph || resolveSourceParagraph(chapter?.content || "", sourceText),
-            sourceText,
-            capturedAt: Date.now()
-        };
-        sessionStorage.setItem(STORY_BIBLE_SELECTION_KEY, JSON.stringify(payload));
-        localStorage.setItem(STORY_BIBLE_SELECTION_BACKUP_KEY, JSON.stringify(payload));
-    }
-
-    function snapshotStoryBibleSelection() {
-        if (!bookId || !currentBook) return;
-        const sourceText = selectedPlainTextInEditor();
-        if (!sourceText) return;
-        const chapter = currentChapter();
-        lastStoryBibleSelection = {
-            sourceText,
-            sourceParagraph: resolveSourceParagraph(chapter?.content || "", sourceText),
-            capturedAt: Date.now()
-        };
-    }
-
-    storyBibleLink?.addEventListener("pointerdown", () => {
-        snapshotStoryBibleSelection();
-        rememberStoryBibleSelectionHandoff();
-    });
-    storyBibleTopLink?.addEventListener("pointerdown", () => {
-        snapshotStoryBibleSelection();
-        rememberStoryBibleSelectionHandoff();
-    });
-    storyBibleLink?.addEventListener("click", rememberStoryBibleSelectionHandoff);
-    storyBibleTopLink?.addEventListener("click", rememberStoryBibleSelectionHandoff);
+    applyEditorBetaLinks();
 
     function applyTheme(theme) {
         const dark = theme === "dark";
@@ -3168,7 +3091,80 @@ function rememberBookId(id) {
             publishList.appendChild(row);
         });
     }
-    function resetPublishBypassUI() { publishBypassOverlay?.classList.remove("open"); publishBypassOverlay?.setAttribute("aria-hidden", "true"); publishQuickWrap?.classList.remove("visible"); publishBypassChoiceRow?.classList.remove("hidden"); if (publishQuickStatus) publishQuickStatus.textContent = ""; }
+    function defaultQuickScheduleLocalValue() {
+        const d = new Date(Date.now() + MIN_SCHEDULE_LEAD_MS + 60 * 60 * 1000);
+        return toDatetimeLocalValue(d.toISOString());
+    }
+    function ensureQuickReleaseMode(chapterId) {
+        if (!quickPublishReleaseModes.has(chapterId)) {
+            quickPublishReleaseModes.set(chapterId, { mode: "immediate", scheduledAt: defaultQuickScheduleLocalValue() });
+        }
+        return quickPublishReleaseModes.get(chapterId);
+    }
+    function buildQuickReleasePlan(selectedChapterObjects) {
+        const immediate = [];
+        const scheduled = [];
+        selectedChapterObjects.forEach((chapter) => {
+            const modeState = ensureQuickReleaseMode(chapter.id);
+            if (modeState.mode === "scheduled") {
+                scheduled.push({ chapter, scheduledAt: fromDatetimeLocalValue(modeState.scheduledAt) });
+            } else {
+                immediate.push(chapter);
+            }
+        });
+        return { immediate, scheduled };
+    }
+    function renderQuickPublishSchedule() {
+        if (!publishQuickSchedule) return;
+        const selectedIds = getSelectedPublishChapterIds();
+        const bodyList = safeArray(currentBook?.sections?.body, []);
+        const wanted = new Set(selectedIds);
+        const selectedChapterObjects = bodyList.filter(ch => wanted.has(ch.id));
+        publishQuickSchedule.innerHTML = "";
+        publishQuickSchedule.hidden = !selectedChapterObjects.length;
+        selectedChapterObjects.forEach((chapter) => {
+            const modeState = ensureQuickReleaseMode(chapter.id);
+            const row = document.createElement("div");
+            row.className = "publish-quick-schedule-row";
+            const title = document.createElement("div");
+            title.className = "publish-quick-schedule-title";
+            title.textContent = chapter.title || "Untitled";
+            const controls = document.createElement("div");
+            controls.className = "publish-quick-schedule-controls";
+            const immediateLabel = document.createElement("label");
+            const immediateInput = document.createElement("input");
+            immediateInput.type = "radio";
+            immediateInput.name = `quick-release-${chapter.id}`;
+            immediateInput.checked = modeState.mode === "immediate";
+            immediateInput.addEventListener("change", () => {
+                modeState.mode = "immediate";
+                datetimeInput.hidden = true;
+            });
+            immediateLabel.append(immediateInput, document.createTextNode("Immediate"));
+            const scheduledLabel = document.createElement("label");
+            const scheduledInput = document.createElement("input");
+            scheduledInput.type = "radio";
+            scheduledInput.name = `quick-release-${chapter.id}`;
+            scheduledInput.checked = modeState.mode === "scheduled";
+            scheduledInput.addEventListener("change", () => {
+                modeState.mode = "scheduled";
+                datetimeInput.hidden = false;
+                if (!modeState.scheduledAt) modeState.scheduledAt = defaultQuickScheduleLocalValue();
+                datetimeInput.value = modeState.scheduledAt;
+            });
+            scheduledLabel.append(scheduledInput, document.createTextNode("Schedule"));
+            const datetimeInput = document.createElement("input");
+            datetimeInput.type = "datetime-local";
+            datetimeInput.hidden = modeState.mode !== "scheduled";
+            datetimeInput.value = modeState.scheduledAt || defaultQuickScheduleLocalValue();
+            datetimeInput.min = toDatetimeLocalValue(new Date(Date.now() + MIN_SCHEDULE_LEAD_MS).toISOString());
+            datetimeInput.addEventListener("change", () => { modeState.scheduledAt = datetimeInput.value; });
+            controls.append(immediateLabel, scheduledLabel, datetimeInput);
+            row.append(title, controls);
+            publishQuickSchedule.appendChild(row);
+        });
+    }
+    function resetPublishBypassUI() { publishBypassOverlay?.classList.remove("open"); publishBypassOverlay?.setAttribute("aria-hidden", "true"); publishQuickWrap?.classList.remove("visible"); publishBypassChoiceRow?.classList.remove("hidden"); if (publishQuickStatus) publishQuickStatus.textContent = ""; if (publishQuickSchedule) { publishQuickSchedule.innerHTML = ""; publishQuickSchedule.hidden = true; } }
     async function ensurePublishAllowed() {
         if (!bookId || isLocalStudio) return true;
         try {
@@ -3236,9 +3232,20 @@ function rememberBookId(id) {
         const wanted = new Set(selectedIds);
         const selectedChapterObjects = bodyList.filter(ch => wanted.has(ch.id));
         if (!selectedChapterObjects.length) { if (publishQuickStatus) publishQuickStatus.textContent = "Could not match selected chapters."; return; }
+        const { immediate, scheduled } = buildQuickReleasePlan(selectedChapterObjects);
+        for (const { chapter, scheduledAt } of scheduled) {
+            if (!isValidFutureSchedule(scheduledAt)) {
+                if (publishQuickStatus) publishQuickStatus.textContent = `"${chapter.title || "Untitled"}" needs a release time at least 5 minutes in the future.`;
+                return;
+            }
+        }
+        if (!immediate.length && !scheduled.length) {
+            if (publishQuickStatus) publishQuickStatus.textContent = "Choose at least one chapter.";
+            return;
+        }
         const publishMeta = normalizePublishMetaForBook(currentBook.publishMeta);
         const payloadTitle = safeString(currentBook.title, "Untitled Book").trim() || "Untitled Book";
-        const chapterIds = selectedChapterObjects.map(ch => ch.id);
+        const immediateChapterIds = immediate.map(ch => ch.id);
         const wordCount = selectedChapterObjects.reduce((sum, ch) => sum + countWords(ch.content || ""), 0);
         const now = Date.now();
         publishQuickPublishBtn.disabled = true;
@@ -3274,7 +3281,7 @@ function rememberBookId(id) {
                         imageUrls: normalizeComicImageUrls(ch),
                         words: countWords(ch.content || ""),
                     })),
-                    publishedChapterIds: chapterIds,
+                    publishedChapterIds: immediateChapterIds,
                     chapterCount: selectedChapterObjects.length,
                     words: wordCount,
                     createdAt: firstPublishedAt,
@@ -3287,7 +3294,7 @@ function rememberBookId(id) {
             };
             currentBook.title = payloadTitle;
             currentBook.publishMeta = publishMeta;
-            currentBook.publishedChapterIds = chapterIds;
+            currentBook.publishedChapterIds = immediateChapterIds;
             currentBook.isPublished = true;
             await supabase.from("books").update(toDbBookPatch(currentBook)).eq("id", bookId);
             const libRow = { id: bookId, user_id: currentUser.id, data: libraryPayload.data };
@@ -3298,7 +3305,18 @@ function rememberBookId(id) {
                 const { error: libErr } = await supabase.from("library").insert(libRow);
                 if (libErr) throw libErr;
             }
-            if (publishQuickStatus) publishQuickStatus.textContent = "Published successfully.";
+            if (scheduled.length) {
+                await syncScheduledChapterReleases(
+                    bookId,
+                    scheduled.map(({ chapter, scheduledAt }) => ({ chapterId: chapter.id, scheduledAt }))
+                );
+            } else {
+                await syncScheduledChapterReleases(bookId, []);
+            }
+            const scheduleNote = scheduled.length
+                ? ` ${scheduled.length} chapter${scheduled.length === 1 ? "" : "s"} scheduled.`
+                : "";
+            if (publishQuickStatus) publishQuickStatus.textContent = `Published successfully.${scheduleNote}`;
             renderTitles();
         } catch (error) {
             console.error(error);
@@ -3684,7 +3702,8 @@ function rememberBookId(id) {
     closePublishBtn.addEventListener("click", closePublishModal);
     publishNextBtn.addEventListener("click", onPublishNextClick);
     publishBypassNo?.addEventListener("click", () => { resetPublishBypassUI(); goToPublishPage(); });
-    publishBypassYes?.addEventListener("click", () => { publishBypassChoiceRow?.classList.add("hidden"); publishQuickWrap?.classList.add("visible"); });
+    publishBypassYes?.addEventListener("click", () => { publishBypassChoiceRow?.classList.add("hidden"); publishQuickWrap?.classList.add("visible"); renderQuickPublishSchedule(); });
+    publishList?.addEventListener("change", () => { if (publishQuickWrap?.classList.contains("visible")) renderQuickPublishSchedule(); });
     publishQuickPublishBtn?.addEventListener("click", () => void quickRepublishFromEditor());
     publishModal.addEventListener("click", e => { if (e.target === publishModal) closePublishModal(); });
     backgroundBtn?.addEventListener("click", () => {
@@ -3846,7 +3865,6 @@ function rememberBookId(id) {
     });
     document.addEventListener("selectionchange", () => {
         if (document.activeElement === editor) scheduleWriterResumeSave();
-        snapshotStoryBibleSelection();
     });
     editorWorkspace?.addEventListener("scroll", () => scheduleWriterResumeSave(), { passive: true });
     window.addEventListener("beforeunload", flushWriterResumeSave);
@@ -4074,7 +4092,7 @@ async function loadBook() {
             else if (isLikelyOffline()) setSaveStatus("Ready (offline)");
             else setSaveStatus("Ready");
             scheduleWriterResumeSave();
-            applyEditorStoryBibleLinks();
+            applyEditorBetaLinks();
             initVersionPanel();
             void hashSnapshot(buildManuscriptSnapshot(currentBook)).then(h => { lastSavedContentHash = h; }).catch(() => {});
         } catch (e) {

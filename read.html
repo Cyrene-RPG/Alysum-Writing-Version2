@@ -228,7 +228,6 @@
                 <span class="wd-nav-divider" aria-hidden="true"></span>
                 <a href="writer-dashboard.html">Studio</a>
                 <a href="library.html">Library</a>
-                <a href="lore-wiki.html">Lore Wiki</a>
                 <a href="beta-rooms.html">Beta rooms</a>
                 <a href="author-dashboard.html" id="navAuthorStats">
                     Author stats
@@ -238,7 +237,6 @@
                 <span class="wd-nav-divider" aria-hidden="true"></span>
                 <a href="vault.html">Notes</a>
                 <a href="note-graph.html">Note Graph</a>
-                <a href="story-bible.html" id="navStoryBible">Story Wiki</a>
                 <a href="story-board/">Story Board</a>
                 <a href="plotweave.html">Plotweave</a>
                 <a href="Novel_Exporter.html">Exporter</a>
@@ -349,6 +347,7 @@
         fetchPublishedWorksForAuthor,
         normalizeAuthorProfile,
     } from "./js/author-profile.js?v=1";
+    import { processDueChapterReleases } from "./js/scheduled-chapter-releases.js?v=1";
 
     const params = new URLSearchParams(window.location.search);
     let bookId =
@@ -897,6 +896,11 @@
         try {
             hideError(); showStatus("Loading story…");
             librarySourceRow = null;
+            try {
+                await processDueChapterReleases(bookId);
+            } catch (releaseErr) {
+                console.warn("Could not process scheduled chapter releases.", releaseErr);
+            }
             const { data, error } = await supabase.from("library").select("*").eq("id", bookId).maybeSingle();
             if (error) throw error;
             if (!data) { showError(`Story not found: ${bookId}`); topbarTitle.textContent = "Story not found"; hideStatus(); updateReaderWatermark(); return; }

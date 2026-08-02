@@ -132,6 +132,18 @@
     .cooldown-copy + .cooldown-copy { margin-top: 8px; }
     .approval-form { margin-top: 14px; display: grid; gap: 10px; }
     .approval-form[hidden] { display: none !important; }
+    .schedule-list { display: grid; gap: 12px; margin-top: 14px; }
+    .schedule-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; border: 1px solid var(--border); border-radius: 16px; background: var(--panel-soft); padding: 14px; }
+    .schedule-row-title { font-size: 14px; font-weight: 800; line-height: 1.35; }
+    .schedule-row-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; justify-content: flex-end; }
+    .schedule-mode { display: flex; gap: 8px; flex-wrap: wrap; }
+    .schedule-mode label { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; cursor: pointer; }
+    .schedule-datetime { min-width: 190px; }
+    .schedule-pending-list { display: grid; gap: 10px; margin-top: 14px; }
+    .schedule-pending-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; border: 1px dashed rgba(109, 40, 217, 0.28); border-radius: 14px; padding: 12px 14px; background: rgba(109, 40, 217, 0.06); }
+    .schedule-pending-meta { font-size: 13px; font-weight: 700; line-height: 1.45; }
+    .schedule-pending-meta span { display: block; color: var(--text-soft); font-weight: 600; font-size: 12px; margin-top: 2px; }
+    @media (max-width: 760px) { .schedule-row { grid-template-columns: 1fr; } .schedule-row-controls { justify-content: stretch; } .schedule-datetime { width: 100%; min-width: 0; } }
     @media (max-width: 1120px) { .layout { grid-template-columns: 1fr; } .sidebar { position: static; top: auto; } .hero-card { grid-template-columns: 1fr; } }
     @media (max-width: 760px) { html, body { overflow-x: hidden; } .topbar { padding: 12px; } .brand-title { font-size: 18px; } .layout { padding: 14px; gap: 16px; } .content-card, .sidebar, .hero-card { border-radius: 20px; padding: 16px; } .field-grid, .rating-grid, .rating-guide-grid, .check-grid, .hero-meta { grid-template-columns: 1fr; } .publish-actions { flex-direction: column; align-items: stretch; } .publish-actions-left, .publish-actions-right { width: 100%; justify-content: stretch; } .publish-actions-left > *, .publish-actions-right > * { width: 100%; } .text-btn, .primary-btn, .danger-btn { width: 100%; } }
 </style>
@@ -156,7 +168,6 @@
                 <span class="wd-nav-divider" aria-hidden="true"></span>
                 <a href="writer-dashboard.html">Studio</a>
                 <a href="library.html">Library</a>
-                <a href="lore-wiki.html">Lore Wiki</a>
                 <a href="beta-rooms.html">Beta rooms</a>
                 <a href="author-dashboard.html" id="navAuthorStats">
                     Author stats
@@ -166,7 +177,6 @@
                 <span class="wd-nav-divider" aria-hidden="true"></span>
                 <a href="vault.html">Notes</a>
                 <a href="note-graph.html">Note Graph</a>
-                <a href="story-bible.html" id="navStoryBible">Story Wiki</a>
                 <a href="story-board/">Story Board</a>
                 <a href="plotweave.html">Plotweave</a>
                 <a href="Novel_Exporter.html">Exporter</a>
@@ -212,6 +222,16 @@
 
         <section class="content-card"><h2 class="section-title">Summary & Extra Tags</h2><p class="section-note">Summary is required. Extra tags are optional and should be comma-separated.</p><div class="field-grid"><div class="field full"><label class="label" for="summaryInput">Summary</label><textarea class="textarea" id="summaryInput" placeholder="Write the story summary readers will see in the library..."></textarea></div><div class="field full"><label class="label" for="extraTagsInput">Extra Tags</label><input class="input" id="extraTagsInput" type="text" placeholder="slow burn, found family, enemies to lovers"><div class="hint">Optional. Separate each tag with a comma.</div></div></div></section>
 
+        <section class="content-card" id="releaseScheduleSection">
+            <h2 class="section-title">Chapter Release Schedule</h2>
+            <p class="section-note">Release chapters immediately when you publish, or pick a future date and time for each chapter. Scheduled chapters stay hidden from readers until their release time (at least 5 minutes from now).</p>
+            <div class="schedule-list" id="releaseScheduleList"></div>
+            <div id="pendingSchedulesWrap" hidden>
+                <p class="section-note" style="margin-top:18px;margin-bottom:0;">Already scheduled (not in current selection)</p>
+                <div class="schedule-pending-list" id="pendingSchedulesList"></div>
+            </div>
+        </section>
+
         <section class="content-card" id="publishCooldownSection" hidden>
             <div class="cooldown-card" id="publishCooldownCard">
                 <h2 class="cooldown-title" id="publishCooldownTitle">Publish availability</h2>
@@ -225,7 +245,7 @@
             </div>
         </section>
 
-        <section class="content-card"><h2 class="section-title">Publish</h2><p class="section-note">When you publish, Alysum will save this metadata to the selected book and create/update the public library entry. New accounts wait 7 days before their first publish; new library listings are limited to one every 30 days unless staff approves an early request.</p><div class="status-box" id="statusBox"></div><div class="publish-actions"><div class="publish-actions-left"><button class="text-btn" id="saveDraftBtn" type="button">Save Draft Metadata</button><button class="danger-btn" id="unpublishBtn" type="button">Unpublish</button></div><div class="publish-actions-right"><div class="mini-note" id="publishHint">Nothing published yet.</div><button class="primary-btn" id="publishBtn" type="button">Publish Story</button></div></div></section>
+        <section class="content-card"><h2 class="section-title">Publish</h2><p class="section-note">When you publish, Alysum will save this metadata to the selected book and create/update the public library entry. Chapters marked “Schedule” go live automatically at their chosen time. New accounts wait 7 days before their first publish; new library listings are limited to one every 30 days unless staff approves an early request.</p><div class="status-box" id="statusBox"></div><div class="publish-actions"><div class="publish-actions-left"><button class="text-btn" id="saveDraftBtn" type="button">Save Draft Metadata</button><button class="danger-btn" id="unpublishBtn" type="button">Unpublish</button></div><div class="publish-actions-right"><div class="mini-note" id="publishHint">Nothing published yet.</div><button class="primary-btn" id="publishBtn" type="button">Publish Story</button></div></div></section>
         <div class="footer-space"></div>
     </main>
 </div>
@@ -239,6 +259,15 @@
         formatPublishBlockMessage,
         canSubmitPublishApproval,
     } from "./js/publish-cooldown.js?v=1";
+    import {
+        listScheduledChapterReleases,
+        cancelScheduledChapterRelease,
+        syncScheduledChapterReleases,
+        isValidFutureSchedule,
+        toDatetimeLocalValue,
+        fromDatetimeLocalValue,
+        MIN_SCHEDULE_LEAD_MS,
+    } from "./js/scheduled-chapter-releases.js?v=1";
     import {
         isComicFormat,
         normalizeMediaFormat,
@@ -318,6 +347,14 @@
     const publishApprovalForm = el("publishApprovalForm");
     const publishApprovalMessage = el("publishApprovalMessage");
     const submitPublishApprovalBtn = el("submitPublishApprovalBtn");
+    const releaseScheduleList = el("releaseScheduleList");
+    const pendingSchedulesWrap = el("pendingSchedulesWrap");
+    const pendingSchedulesList = el("pendingSchedulesList");
+
+    /** @type {Map<string, { mode: 'immediate' | 'scheduled', scheduledAt: string }>} */
+    const chapterReleaseModes = new Map();
+    /** @type {import("./js/scheduled-chapter-releases.js").ScheduledChapterRelease[]} */
+    let pendingScheduledReleases = [];
 
     const RATING_GUIDES = {
         General: { title: "General (G)", summary: "Suitable for all audiences, including children. Conflict, danger, sadness, romance, or emotional growth should be mild, age-appropriate, and non-graphic.", blocks: [{ heading: "May include", items: ["Mild fantasy or adventure violence without graphic injury.","Brief, non-detailed peril, conflict, or danger.","Innocent romance such as hand-holding, hugging, or kissing."] }, { heading: "Should not include", items: ["Explicit sexual acts or sustained sexual themes.","Graphic violence, gore, torture, or realistic bodily injury detail.","Detailed abuse, coercion, self-harm, suicide, addiction, or severe psychological trauma."] }] },
@@ -396,6 +433,150 @@
     function everyWarningCategoryHasAChoice() { return WARNING_GROUPS.every(group => safeArray(warningSelections[group.key], []).length > 0); }
     function countNonNoneWarnings() { let total = 0; WARNING_GROUPS.forEach(group => safeArray(warningSelections[group.key], []).forEach(value => { if (value !== "None") total += 1; })); return total; }
     function renderChecklist() { const genresReady = selectedGenres.size > 0; const ratingReady = !!selectedRating; const warningsReady = everyWarningCategoryHasAChoice(); const summaryReady = summaryInput.value.trim().length > 0; checkGenres.textContent = genresReady ? `Genres: ${selectedGenres.size} selected` : "Genres: not ready"; checkRating.textContent = ratingReady ? `Rating: ${selectedRating}` : "Rating: not ready"; checkWarnings.textContent = warningsReady ? "Warnings: complete" : "Warnings: not ready"; checkSummary.textContent = summaryReady ? "Summary: ready" : "Summary: not ready"; }
+
+    function defaultScheduleLocalValue() {
+        const d = new Date(Date.now() + MIN_SCHEDULE_LEAD_MS + 60 * 60 * 1000);
+        return toDatetimeLocalValue(d.toISOString());
+    }
+
+    function ensureChapterReleaseMode(chapterId) {
+        if (!chapterReleaseModes.has(chapterId)) {
+            chapterReleaseModes.set(chapterId, { mode: "immediate", scheduledAt: defaultScheduleLocalValue() });
+        }
+        return chapterReleaseModes.get(chapterId);
+    }
+
+    function chapterTitleById(chapterId) {
+        const fromSelection = selectedChapterObjects.find(ch => ch.id === chapterId);
+        if (fromSelection) return fromSelection.title || "Untitled";
+        const fromBody = safeArray(currentBook?.sections?.body, []).find(ch => ch.id === chapterId);
+        return fromBody?.title || "Untitled chapter";
+    }
+
+    function renderReleaseSchedule() {
+        if (!releaseScheduleList) return;
+        releaseScheduleList.innerHTML = "";
+        selectedChapterObjects.forEach((chapter, index) => {
+            const modeState = ensureChapterReleaseMode(chapter.id);
+            const row = document.createElement("div");
+            row.className = "schedule-row";
+            const title = document.createElement("div");
+            title.className = "schedule-row-title";
+            title.textContent = `${index + 1}. ${chapter.title || "Untitled"}`;
+            const controls = document.createElement("div");
+            controls.className = "schedule-row-controls";
+            const modeWrap = document.createElement("div");
+            modeWrap.className = "schedule-mode";
+            const immediateLabel = document.createElement("label");
+            const immediateInput = document.createElement("input");
+            immediateInput.type = "radio";
+            immediateInput.name = `release-mode-${chapter.id}`;
+            immediateInput.checked = modeState.mode === "immediate";
+            immediateInput.addEventListener("change", () => {
+                modeState.mode = "immediate";
+                datetimeInput.hidden = true;
+            });
+            immediateLabel.append(immediateInput, document.createTextNode("Immediate"));
+            const scheduledLabel = document.createElement("label");
+            const scheduledInput = document.createElement("input");
+            scheduledInput.type = "radio";
+            scheduledInput.name = `release-mode-${chapter.id}`;
+            scheduledInput.checked = modeState.mode === "scheduled";
+            scheduledInput.addEventListener("change", () => {
+                modeState.mode = "scheduled";
+                datetimeInput.hidden = false;
+                if (!modeState.scheduledAt) modeState.scheduledAt = defaultScheduleLocalValue();
+                datetimeInput.value = modeState.scheduledAt;
+            });
+            scheduledLabel.append(scheduledInput, document.createTextNode("Schedule"));
+            modeWrap.append(immediateLabel, scheduledLabel);
+            const datetimeInput = document.createElement("input");
+            datetimeInput.type = "datetime-local";
+            datetimeInput.className = "input schedule-datetime";
+            datetimeInput.hidden = modeState.mode !== "scheduled";
+            datetimeInput.value = modeState.scheduledAt || defaultScheduleLocalValue();
+            datetimeInput.min = toDatetimeLocalValue(new Date(Date.now() + MIN_SCHEDULE_LEAD_MS).toISOString());
+            datetimeInput.addEventListener("change", () => { modeState.scheduledAt = datetimeInput.value; });
+            controls.append(modeWrap, datetimeInput);
+            row.append(title, controls);
+            releaseScheduleList.appendChild(row);
+        });
+        renderPendingSchedules();
+    }
+
+    function renderPendingSchedules() {
+        if (!pendingSchedulesWrap || !pendingSchedulesList) return;
+        const selectedIds = new Set(selectedChapterObjects.map(ch => ch.id));
+        const external = pendingScheduledReleases.filter(row => row.status === "pending" && !selectedIds.has(row.chapterId));
+        pendingSchedulesWrap.hidden = !external.length;
+        pendingSchedulesList.innerHTML = "";
+        external.forEach((row) => {
+            const item = document.createElement("div");
+            item.className = "schedule-pending-item";
+            const when = row.scheduledAt
+                ? new Date(row.scheduledAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })
+                : "Unknown time";
+            const meta = document.createElement("div");
+            meta.className = "schedule-pending-meta";
+            meta.innerHTML = `${chapterTitleById(row.chapterId)}<span>Scheduled for ${when}</span>`;
+            const cancelBtn = document.createElement("button");
+            cancelBtn.type = "button";
+            cancelBtn.className = "text-btn";
+            cancelBtn.textContent = "Cancel";
+            cancelBtn.addEventListener("click", async () => {
+                cancelBtn.disabled = true;
+                try {
+                    await cancelScheduledChapterRelease(row.id);
+                    pendingScheduledReleases = pendingScheduledReleases.filter(r => r.id !== row.id);
+                    renderPendingSchedules();
+                    setStatus("Scheduled release cancelled.", "success");
+                } catch (error) {
+                    console.error(error);
+                    setStatus(error?.message || "Could not cancel schedule.", "error");
+                } finally {
+                    cancelBtn.disabled = false;
+                }
+            });
+            item.append(meta, cancelBtn);
+            pendingSchedulesList.appendChild(item);
+        });
+    }
+
+    function buildReleasePlan() {
+        const immediate = [];
+        const scheduled = [];
+        selectedChapterObjects.forEach((chapter) => {
+            const modeState = ensureChapterReleaseMode(chapter.id);
+            if (modeState.mode === "scheduled") {
+                const iso = fromDatetimeLocalValue(modeState.scheduledAt);
+                scheduled.push({ chapter, scheduledAt: iso });
+            } else {
+                immediate.push(chapter);
+            }
+        });
+        return { immediate, scheduled };
+    }
+
+    async function refreshPendingSchedules() {
+        if (!bookId) return;
+        try {
+            pendingScheduledReleases = await listScheduledChapterReleases(bookId);
+            pendingScheduledReleases.forEach((row) => {
+                if (row.status !== "pending") return;
+                const existing = chapterReleaseModes.get(row.chapterId);
+                if (!existing) {
+                    chapterReleaseModes.set(row.chapterId, {
+                        mode: "scheduled",
+                        scheduledAt: toDatetimeLocalValue(row.scheduledAt),
+                    });
+                }
+            });
+        } catch (error) {
+            console.warn("Could not load scheduled releases.", error);
+            pendingScheduledReleases = [];
+        }
+        renderReleaseSchedule();
+    }
     summaryInput.addEventListener("input", renderChecklist);
     libraryShelfSelect.addEventListener("change", renderChecklist);
     bookTitleInput.addEventListener("input", renderBasicInfo);
@@ -404,7 +585,7 @@
     anonymousPostCheckbox?.addEventListener("change", () => { isAnonymousPost = !!anonymousPostCheckbox.checked; renderHero(); });
     function getExtraTags() { return extraTagsInput.value.split(",").map(tag => tag.trim()).filter(Boolean); }
     function buildPublishMeta() { return { genres: [...selectedGenres].sort((a, b) => a.localeCompare(b)), rating: selectedRating, warnings: WARNING_GROUPS.reduce((acc, group) => { acc[group.key] = safeArray(warningSelections[group.key], []); return acc; }, {}), summary: summaryInput.value.trim(), extraTags: getExtraTags(), coverUrl: normalizeCoverUrl(coverUrlInput?.value || ""), isAnonymous: !!isAnonymousPost }; }
-    function validateBeforePublish() { const errors = []; if (!bookId) errors.push("Missing book id."); if (!currentBook) errors.push("Book data has not loaded yet."); if (publishEligibility && !publishEligibility.allowed) errors.push(formatPublishBlockMessage(publishEligibility)); if (!selectedChapterObjects.length) errors.push("No chapters were selected. Go back and choose at least one chapter."); if (!bookTitleInput.value.trim()) errors.push("Title is required."); if (!libraryShelfSelect.value) errors.push("Choose Fiction, Nonfiction, or Fanfiction."); if (selectedGenres.size === 0) errors.push("Pick at least one genre."); if (!selectedRating) errors.push("Select one age rating."); if (!everyWarningCategoryHasAChoice()) errors.push("Every warning category must have at least one choice."); if (!summaryInput.value.trim()) errors.push("Summary is required."); if ((selectedRating === "Mature" || selectedRating === "Explicit") && countNonNoneWarnings() === 0) errors.push("Mature and Explicit stories must include at least one non-“None” content warning."); return errors; }
+    function validateBeforePublish() { const errors = []; if (!bookId) errors.push("Missing book id."); if (!currentBook) errors.push("Book data has not loaded yet."); if (publishEligibility && !publishEligibility.allowed) errors.push(formatPublishBlockMessage(publishEligibility)); if (!selectedChapterObjects.length) errors.push("No chapters were selected. Go back and choose at least one chapter."); if (!bookTitleInput.value.trim()) errors.push("Title is required."); if (!libraryShelfSelect.value) errors.push("Choose Fiction, Nonfiction, or Fanfiction."); if (selectedGenres.size === 0) errors.push("Pick at least one genre."); if (!selectedRating) errors.push("Select one age rating."); if (!everyWarningCategoryHasAChoice()) errors.push("Every warning category must have at least one choice."); if (!summaryInput.value.trim()) errors.push("Summary is required."); if ((selectedRating === "Mature" || selectedRating === "Explicit") && countNonNoneWarnings() === 0) errors.push("Mature and Explicit stories must include at least one non-“None” content warning."); const { immediate, scheduled } = buildReleasePlan(); if (!immediate.length && !scheduled.length) errors.push("Choose at least one chapter to publish or schedule."); scheduled.forEach(({ chapter, scheduledAt }) => { if (!isValidFutureSchedule(scheduledAt)) errors.push(`"${chapter.title || "Untitled"}" needs a release time at least 5 minutes in the future.`); }); return errors; }
 
     function renderPublishCooldownUI() {
         if (!publishCooldownSection || !publishCooldownCard) return;
@@ -493,10 +674,11 @@
     async function publishStory() {
         const errors = validateBeforePublish();
         if (errors.length) { setStatus(errors.join(" "), "error"); return; }
+        const { immediate, scheduled } = buildReleasePlan();
         setStatus("Publishing...", "success");
         const payloadTitle = bookTitleInput.value.trim() || currentBook.title || "Untitled Book";
         const publishMeta = buildPublishMeta();
-        const chapterIds = selectedChapterObjects.map(ch => ch.id);
+        const immediateChapterIds = immediate.map(ch => ch.id);
         const wordCount = chapterWordTotal(selectedChapterObjects);
         const now = Date.now();
         try {
@@ -528,7 +710,7 @@
                     imageUrls: normalizeComicImageUrls(ch),
                     words: countWords(ch.content || ""),
                 })),
-                publishedChapterIds: chapterIds,
+                publishedChapterIds: immediateChapterIds,
                 chapterCount: selectedChapterObjects.length,
                 words: wordCount,
                 createdAt: firstPublishedAt,
@@ -538,11 +720,23 @@
                 likes: safeNumber(existingData.likes, 0),
                 isPublished: true
             };
-            const { error: bookError } = await supabase.from("books").update({ title: payloadTitle, library_type: libraryShelfSelect.value, publish_meta: publishMeta, published_chapter_ids: chapterIds, is_published: true, updated: now }).eq("id", bookId).eq("user_id", currentUser.id);
+            const { error: bookError } = await supabase.from("books").update({ title: payloadTitle, library_type: libraryShelfSelect.value, publish_meta: publishMeta, published_chapter_ids: immediateChapterIds, is_published: true, updated: now }).eq("id", bookId).eq("user_id", currentUser.id);
             if (bookError) throw bookError;
             await upsertLibraryEntry(libraryData);
-            currentBook.title = payloadTitle; currentBook.libraryType = libraryShelfSelect.value; currentBook.publishMeta = publishMeta; currentBook.publishedChapterIds = chapterIds; currentBook.isPublished = true; isPublished = true;
-            renderBasicInfo(); renderHero(); renderSidebar(); setStatus("Story published successfully.", "success");
+            if (scheduled.length) {
+                await syncScheduledChapterReleases(
+                    bookId,
+                    scheduled.map(({ chapter, scheduledAt }) => ({ chapterId: chapter.id, scheduledAt }))
+                );
+            } else {
+                await syncScheduledChapterReleases(bookId, []);
+            }
+            currentBook.title = payloadTitle; currentBook.libraryType = libraryShelfSelect.value; currentBook.publishMeta = publishMeta; currentBook.publishedChapterIds = immediateChapterIds; currentBook.isPublished = true; isPublished = true;
+            renderBasicInfo(); renderHero(); renderSidebar(); await refreshPendingSchedules();
+            const scheduleNote = scheduled.length
+                ? ` ${scheduled.length} chapter${scheduled.length === 1 ? "" : "s"} scheduled for later release.`
+                : "";
+            setStatus(`Story published successfully.${scheduleNote}`, "success");
             await refreshPublishEligibility();
         } catch (error) {
             console.error(error);
@@ -566,7 +760,11 @@
             if (libError) throw libError;
             const { error: bookError } = await supabase.from("books").update({ is_published: false, published_chapter_ids: [], updated: Date.now() }).eq("id", bookId).eq("user_id", currentUser.id);
             if (bookError) throw bookError;
-            currentBook.isPublished = false; currentBook.publishedChapterIds = []; isPublished = false; renderHero(); renderSidebar(); setStatus("Story unpublished.", "success");
+            try { await syncScheduledChapterReleases(bookId, []); } catch (_) { /* optional if SQL not applied */ }
+            currentBook.isPublished = false; currentBook.publishedChapterIds = []; isPublished = false;
+            pendingScheduledReleases = [];
+            renderPendingSchedules();
+            renderHero(); renderSidebar(); setStatus("Story unpublished.", "success");
         } catch (error) { console.error(error); setStatus(error?.message || "Unpublish failed.", "error"); }
     }
 
@@ -628,6 +826,7 @@
         buildSelectedChapters();
         hydrateFormFromBook();
         renderSidebar(); renderHero(); renderBasicInfo(); renderGenres(); renderRating(); renderWarnings(); renderChecklist();
+        await refreshPendingSchedules();
     }
 
     async function init() {
