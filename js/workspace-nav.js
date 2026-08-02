@@ -35,6 +35,9 @@ const PATH_TO_ACTIVE = new Map([
     ["beta-rooms.html", "beta-rooms"],
     ["beta-room.html", "beta-rooms"],
     ["beta-room-manage.html", "beta-rooms"],
+    ["collab-rooms.html", "collab-rooms"],
+    ["collab-room.html", "collab-rooms"],
+    ["collab-room-manage.html", "collab-rooms"],
     ["author-dashboard.html", "author-stats"],
     ["world-encyclopedia.html", "encyclopedia"],
     ["encyclopedia.html", "encyclopedia"],
@@ -93,6 +96,7 @@ const WELCOME_DEFAULTS = {
     leaderboards: { title: "Leaderboards", subtitle: "See how you stack up in the Alysum community." },
     "word-wars": { title: "Word Wars", subtitle: "Challenge a friend to a friendly writing spar." },
     "beta-rooms": { title: "Beta rooms", subtitle: "Share draft snapshots with trusted readers." },
+    "collab-rooms": { title: "Collab rooms", subtitle: "Invite editors to suggest chapter changes you approve." },
     encyclopedia: { title: "World encyclopedia", subtitle: "Build and browse your story worlds." },
     "note-graph": { title: "Note Graph", subtitle: "Visualize connections between your notes." },
     plotweave: { title: "Plotweave", subtitle: "Map story structure and plot threads." },
@@ -165,6 +169,7 @@ function renderNavHtml(active) {
                 <a href="${navHref("library.html")}"${activeClass("library", active)}>Library</a>
                 <a href="${navHref("lore-wiki.html")}"${activeClass("lore-wiki", active)}>Lore Wiki</a>
                 <a href="${navHref("beta-rooms.html")}"${activeClass("beta-rooms", active)}>Beta rooms</a>
+                <a href="${navHref("collab-rooms.html")}"${activeClass("collab-rooms", active)}>Collab rooms</a>
                 <a href="${navHref("author-dashboard.html")}" id="navAuthorStats"${activeClass("author-stats", active)}>
                     Author stats
                     <span class="wd-nav-badge is-hidden" id="navDashBadge" aria-hidden="true">0</span>
