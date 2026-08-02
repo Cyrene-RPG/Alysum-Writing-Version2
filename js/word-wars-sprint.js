@@ -106,7 +106,8 @@ let syncingShare = false;
 let syncingPause = false;
 let shareDraftOverride = null;
 let typingIdleTimer = null;
-const opponentHtmlCache = new Map();
+/** @type {(() => void) | null} */
+let draftPingResolver = null;
 
 function escapeHtml(str) {
     return String(str)
@@ -148,21 +149,14 @@ function requestEditorDraftPing() {
 }
 
 function buildSharePatch(enabled) {
-    const patch = {
+    return {
         shareDraft: enabled,
         sprintWords: latestDraft.sprintWords,
+        liveChapterTitle: enabled ? latestDraft.chapterTitle : "",
+        liveChapterHtml: enabled ? latestDraft.chapterHtml : "",
+        liveChapterId: enabled ? latestDraft.chapterId : "",
         isTyping: false,
     };
-    if (enabled) {
-        if (latestDraft.chapterTitle) patch.liveChapterTitle = latestDraft.chapterTitle;
-        if (latestDraft.chapterHtml) patch.liveChapterHtml = latestDraft.chapterHtml;
-        if (latestDraft.chapterId) patch.liveChapterId = latestDraft.chapterId;
-    } else {
-        patch.liveChapterTitle = "";
-        patch.liveChapterHtml = "";
-        patch.liveChapterId = "";
-    }
-    return patch;
 }
 
 function buildProgressPatch(extra = {}) {
@@ -172,17 +166,29 @@ function buildProgressPatch(extra = {}) {
     }
     if (getShareDraftState()) {
         patch.shareDraft = true;
-        if (latestDraft.chapterTitle) patch.liveChapterTitle = latestDraft.chapterTitle;
-        if (latestDraft.chapterHtml) patch.liveChapterHtml = latestDraft.chapterHtml;
-        if (latestDraft.chapterId) patch.liveChapterId = latestDraft.chapterId;
+        patch.liveChapterTitle = latestDraft.chapterTitle;
+        patch.liveChapterHtml = latestDraft.chapterHtml;
+        patch.liveChapterId = latestDraft.chapterId;
     }
     return patch;
 }
 
-function waitForEditorDraftPing(ms = 200) {
+function waitForEditorDraftPing(ms = 600) {
     return new Promise((resolve) => {
-        window.setTimeout(resolve, ms);
+        draftPingResolver = resolve;
+        window.setTimeout(() => {
+            if (draftPingResolver !== resolve) return;
+            draftPingResolver = null;
+            resolve();
+        }, ms);
     });
+}
+
+function resolveEditorDraftPing() {
+    if (!draftPingResolver) return;
+    const resolve = draftPingResolver;
+    draftPingResolver = null;
+    resolve();
 }
 
 function othersInLobby() {
@@ -452,10 +458,7 @@ function renderOpponentMirror() {
             `[data-opponent-id="${CSS.escape(opponent.userId)}"]`
         );
         if (!editorEl) return;
-        const html = opponent.liveChapterHtml || "";
-        if (opponentHtmlCache.get(opponent.userId) === html) return;
-        editorEl.innerHTML = html;
-        opponentHtmlCache.set(opponent.userId, html);
+        editorEl.innerHTML = opponent.liveChapterHtml || "";
     });
 }
 
@@ -810,6 +813,7 @@ function handleEditorMessage(event) {
         chapterId: String(data.chapterId || ""),
         sprintWords: Math.max(0, Number(data.sprintWords) || 0),
     };
+    resolveEditorDraftPing();
     if (myWordsEl) myWordsEl.textContent = formatSprintWords(latestDraft.sprintWords);
     if (isPreviewMode && getShareDraftState()) {
         scheduleProgressPatch({
