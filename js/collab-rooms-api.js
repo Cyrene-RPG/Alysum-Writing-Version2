@@ -124,6 +124,32 @@ export async function syncCollabChapterSuggestions(bookId, chapterId, baseConten
     return data;
 }
 
+export async function dismissCollabSuggestion(suggestionId) {
+    const { data, error } = await supabase.rpc("dismiss_collab_suggestion", {
+        p_suggestion_id: suggestionId,
+    });
+    if (error) throw error;
+    return data;
+}
+
+export async function dismissAllResolvedCollabSuggestions(bookId, chapterId) {
+    const { data, error } = await supabase.rpc("dismiss_all_resolved_collab_suggestions", {
+        p_book_id: bookId,
+        p_chapter_id: chapterId,
+    });
+    if (error) throw error;
+    return data;
+}
+
+export async function rejectAllCollabSuggestions(bookId, chapterId) {
+    const { data, error } = await supabase.rpc("reject_all_collab_suggestions", {
+        p_book_id: bookId,
+        p_chapter_id: chapterId,
+    });
+    if (error) throw error;
+    return data;
+}
+
 export async function listCollabComments(bookId, chapterId) {
     const { data, error } = await supabase.rpc("list_collab_comments", {
         p_book_id: bookId,
@@ -204,6 +230,6 @@ export function isCollabRoomsSchemaMissing(error) {
         code === "42P01" ||
         code === "PGRST202" ||
         /collab_chapter_invites|collab_memberships|collab_suggestions/i.test(msg) ||
-        /create_collab_chapter_invite|accept_collab_chapter_invite|get_collab_chapter|list_collab_invites_for_book|revoke_collab_chapter_invite|list_collab_suggestions|submit_collab_suggestions|review_collab_suggestion|list_my_collab_memberships|list_collab_comments|submit_collab_comment|resolve_collab_comment|upsert_collab_live_draft|sync_collab_chapter_suggestions/i.test(msg)
+        /create_collab_chapter_invite|accept_collab_chapter_invite|get_collab_chapter|list_collab_invites_for_book|revoke_collab_chapter_invite|list_collab_suggestions|submit_collab_suggestions|review_collab_suggestion|list_my_collab_memberships|list_collab_comments|submit_collab_comment|resolve_collab_comment|upsert_collab_live_draft|sync_collab_chapter_suggestions|dismiss_collab_suggestion|dismiss_all_resolved_collab_suggestions|reject_all_collab_suggestions/i.test(msg)
     );
 }

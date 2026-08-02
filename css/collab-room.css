@@ -680,6 +680,17 @@ body.dark .collab-mode-banner:not(.is-author) {
     gap: 6px;
 }
 
+.collab-hunk-actions.is-resolved-row {
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+}
+
+.collab-hunk-actions.is-resolved-row .collab-btn {
+    padding: 5px 10px;
+    font-size: 11px;
+}
+
 .collab-hunk-actions .collab-btn {
     flex: 1;
     padding: 6px 8px;

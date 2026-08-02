@@ -6,7 +6,7 @@ import { supabase } from "../firebase.js";
 import {
     upsertCollabLiveDraft,
     syncCollabChapterSuggestions,
-} from "./collab-rooms-api.js?v=6";
+} from "./collab-rooms-api.js?v=8";
 
 const PRESENCE_COLORS = ["#22c55e", "#38bdf8", "#a78bfa", "#f59e0b", "#f472b6", "#fb7185"];
 
@@ -17,7 +17,7 @@ const PRESENCE_COLORS = ["#22c55e", "#38bdf8", "#a78bfa", "#f59e0b", "#f472b6", 
  *   userId: string,
  *   userLabel: string,
  *   isAuthor?: boolean,
- *   onRemoteDoc?: (html: string, userId: string) => void,
+ *   onRemoteDoc?: (html: string, userId: string, userLabel: string) => void,
  *   onRemotePersisted?: (html: string, userId: string) => void,
  *   onSuggestionsChange?: () => void,
  *   onCommentsChange?: () => void,
@@ -66,7 +66,7 @@ export function createCollabRealtimeSession(opts) {
         channel?.send({
             type: "broadcast",
             event: "doc",
-            payload: { html, userId, ts: Date.now() },
+            payload: { html, userId, userLabel, ts: Date.now() },
         });
     }
 
@@ -96,7 +96,7 @@ export function createCollabRealtimeSession(opts) {
         }, 600);
         syncTimer = window.setTimeout(() => {
             persistAndSync(html, baseContentHash, suggestions);
-        }, 1800);
+        }, 900);
     }
 
     function flattenPresence(state) {
@@ -129,7 +129,7 @@ export function createCollabRealtimeSession(opts) {
                 if (payload.ts <= lastRemoteTs) return;
                 lastRemoteTs = payload.ts;
                 if (!canApplyRemote()) return;
-                onRemoteDoc?.(payload.html, payload.userId);
+                onRemoteDoc?.(payload.html, payload.userId, payload.userLabel || "");
             })
             .on(
                 "postgres_changes",

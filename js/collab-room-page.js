@@ -9,11 +9,14 @@ import {
     getCollabChapter,
     listCollabSuggestions,
     reviewCollabSuggestion,
+    dismissCollabSuggestion,
+    dismissAllResolvedCollabSuggestions,
+    rejectAllCollabSuggestions,
     listCollabComments,
     submitCollabComment,
     resolveCollabComment,
     isCollabRoomsSchemaMissing,
-} from "./collab-rooms-api.js?v=6";
+} from "./collab-rooms-api.js?v=8";
 import {
     DEMO_ROOM,
     DEMO_HUNKS,
@@ -26,14 +29,15 @@ import {
     diffChapterHtmlSuggestions,
     normalizeManuscriptHtml,
     prepareCollaboratorChapterHtml,
+    renderAuthorManuscriptHtml,
     hunkPreviewHtml,
     countPending,
     escapeHtml,
     suggestionRowToHunk,
     commentRowToComment,
-} from "./collab-room-render.js?v=6";
+} from "./collab-room-render.js?v=7";
 import { mountCollabToolbar } from "./collab-toolbar.js?v=1";
-import { createCollabRealtimeSession } from "./collab-realtime.js?v=1";
+import { createCollabRealtimeSession } from "./collab-realtime.js?v=3";
 
 /**
  * @param {{ isPreview?: boolean, params?: URLSearchParams }} opts
@@ -69,6 +73,8 @@ export async function bootCollabRoomPage(opts = {}) {
     let realtimeSession = null;
     /** @type {BroadcastChannel | null} */
     let previewChannel = null;
+    let remoteEditorId = "";
+    let remoteEditorLabel = "";
 
     const manuscript = document.getElementById("manuscript");
     const hunkList = document.getElementById("hunkList");
@@ -237,15 +243,60 @@ export async function bootCollabRoomPage(opts = {}) {
                 .join("");
     }
 
-    function applyRemoteManuscript(html) {
+    function applyRemoteManuscript(html, fromUserId = "", fromUserLabel = "") {
         if (!manuscript || !html) return;
         liveHtml = prepareCollaboratorChapterHtml(html);
+        if (fromUserId) remoteEditorId = fromUserId;
+        if (fromUserLabel) remoteEditorLabel = fromUserLabel;
+        if (isAuthor) {
+            renderAuthorSuggestingManuscript();
+            return;
+        }
         if (realtimeSession) realtimeSession.applyingRemote = true;
         const hadFocus = document.activeElement === manuscript;
         manuscript.innerHTML = liveHtml;
         if (!manuscript.innerHTML.trim()) manuscript.innerHTML = "<p><br></p>";
         if (hadFocus) manuscript.focus();
         if (realtimeSession) realtimeSession.applyingRemote = false;
+    }
+
+    function computeLiveDisplayHunks() {
+        const base = prepareCollaboratorChapterHtml(baseChapterHtml);
+        const next = prepareCollaboratorChapterHtml(liveHtml || baseChapterHtml);
+        const suggestions = diffChapterHtmlSuggestions(base, next);
+        const by = remoteEditorId || "collaborator";
+        const label = remoteEditorLabel || "Collaborator";
+        const byLabel = label.startsWith("@") ? label : `@${label}`;
+        return suggestions.map((s, idx) => ({
+            id: `live-${s.paragraph_index}-${idx}`,
+            by,
+            byLabel,
+            type: s.change_type,
+            oldText: s.old_text,
+            newText: s.new_text,
+            paragraphIndex: s.paragraph_index,
+            status: "pending",
+        }));
+    }
+
+    function authorDisplayHunks() {
+        const pendingDb = hunks.filter((h) => h.status === "pending");
+        const liveComputed = computeLiveDisplayHunks();
+        const dbParas = new Set(pendingDb.map((h) => h.paragraphIndex));
+        const liveOnly = liveComputed.filter((h) => !dbParas.has(h.paragraphIndex));
+        return [...pendingDb, ...liveOnly];
+    }
+
+    function renderAuthorSuggestingManuscript() {
+        if (!manuscript) return;
+        manuscript.removeAttribute("contenteditable");
+        collabToolbar?.classList.add("hidden");
+        document.body.classList.add("collab-author-mode");
+        const displayHunks = authorDisplayHunks();
+        manuscript.innerHTML = renderAuthorManuscriptHtml(baseChapterHtml, displayHunks);
+        manuscript.querySelectorAll("[data-hunk]").forEach((el) => {
+            el.addEventListener("mouseenter", () => highlightHunk(el.getAttribute("data-hunk")));
+        });
     }
 
     function currentSuggestionsPayload() {
@@ -255,11 +306,16 @@ export async function bootCollabRoomPage(opts = {}) {
     }
 
     function onManuscriptInput() {
-        if (realtimeSession?.applyingRemote) return;
+        if (isAuthor || realtimeSession?.applyingRemote) return;
         liveHtml = normalizeManuscriptHtml(manuscript.innerHTML);
         const suggestions = currentSuggestionsPayload();
         if (isPreview) {
-            previewChannel?.postMessage({ type: "doc", html: liveHtml, role: activeRole });
+            previewChannel?.postMessage({
+                type: "doc",
+                html: liveHtml,
+                role: activeRole,
+                label: `@${activeRole}`,
+            });
             hunks = suggestions.map((s, idx) => ({
                 id: `preview-${idx}`,
                 by: activeRole,
@@ -294,6 +350,7 @@ export async function bootCollabRoomPage(opts = {}) {
             renderHunkList();
             renderCommentList();
             updateStats();
+            if (isAuthor) renderAuthorSuggestingManuscript();
         } catch (err) {
             console.warn("[collab-room] sidebar refresh failed", err);
         }
@@ -308,8 +365,8 @@ export async function bootCollabRoomPage(opts = {}) {
             userId: currentUserId,
             userLabel: currentUserLabel,
             isAuthor,
-            onRemoteDoc: (html) => applyRemoteManuscript(html),
-            onRemotePersisted: (html) => applyRemoteManuscript(html),
+            onRemoteDoc: (html, userId, userLabel) => applyRemoteManuscript(html, userId, userLabel),
+            onRemotePersisted: (html, userId) => applyRemoteManuscript(html, userId, remoteEditorLabel),
             onSuggestionsChange: scheduleRefreshSidebar,
             onCommentsChange: scheduleRefreshSidebar,
             onPresenceChange: renderPresence,
@@ -353,11 +410,10 @@ export async function bootCollabRoomPage(opts = {}) {
         acceptedPill.textContent = `${accepted} accepted`;
 
         if (isAuthor) {
-            const collaborators = new Set(hunks.filter((h) => h.status === "pending").map((h) => h.by)).size;
             reviewSub.textContent =
                 pending === 0
-                    ? "Live document — no pending changes vs canon"
-                    : `${pending} live change${pending === 1 ? "" : "s"} · ${collaborators} editor${collaborators === 1 ? "" : "s"}`;
+                    ? "Live preview synced — accept or reject edits in the sidebar"
+                    : `${pending} change${pending === 1 ? "" : "s"} to review · green = live preview`;
             document.getElementById("acceptAllBtn").disabled = pending === 0;
             document.getElementById("rejectAllBtn").disabled = pending === 0;
             return;
@@ -373,9 +429,13 @@ export async function bootCollabRoomPage(opts = {}) {
     }
 
     function renderHunkList() {
-        const visibleHunks = isAuthor ? hunks : hunks;
+        const visibleHunks = hunks.filter((h) => h.status !== "withdrawn");
         hunkEmpty?.classList.toggle("hidden", visibleHunks.length > 0);
         hunkList.classList.toggle("hidden", visibleHunks.length === 0);
+
+        const resolvedCount = visibleHunks.filter((h) => h.status === "accepted" || h.status === "rejected").length;
+        const dismissResolvedBtn = document.getElementById("dismissResolvedBtn");
+        if (dismissResolvedBtn) dismissResolvedBtn.disabled = resolvedCount === 0;
 
         if (!visibleHunks.length) {
             hunkList.innerHTML = "";
@@ -398,7 +458,10 @@ export async function bootCollabRoomPage(opts = {}) {
                         : hunkPreviewHtml(h.oldText, h.newText);
                 const actions =
                     resolved || !isAuthor
-                        ? `<span class="collab-hunk-status is-${h.status}">${statusLabel}</span>`
+                        ? `<div class="collab-hunk-actions is-resolved-row">
+                            <span class="collab-hunk-status is-${h.status}">${statusLabel}</span>
+                            ${resolved && (isAuthor || isMyHunk(h)) ? `<button type="button" class="collab-btn" data-action="dismiss" data-id="${h.id}">Dismiss</button>` : ""}
+                           </div>`
                         : `<div class="collab-hunk-actions">
                             <button type="button" class="collab-btn primary" data-action="accept" data-id="${h.id}">Accept</button>
                             <button type="button" class="collab-btn danger" data-action="reject" data-id="${h.id}">Reject</button>
@@ -421,7 +484,30 @@ export async function bootCollabRoomPage(opts = {}) {
                 const id = btn.getAttribute("data-id");
                 const action = btn.getAttribute("data-action");
                 const hunk = hunks.find((x) => x.id === id);
-                if (!hunk || hunk.status !== "pending") return;
+                if (!hunk) return;
+
+                if (action === "dismiss") {
+                    if (hunk.status !== "accepted" && hunk.status !== "rejected") return;
+                    if (isPreview) {
+                        hunk.status = "withdrawn";
+                        renderAll();
+                        return;
+                    }
+                    btn.disabled = true;
+                    try {
+                        await dismissCollabSuggestion(id);
+                        hunks = hunks.filter((x) => x.id !== id);
+                        renderHunkList();
+                        updateStats();
+                    } catch (err) {
+                        alert(err?.message || "Could not dismiss suggestion.");
+                    } finally {
+                        btn.disabled = false;
+                    }
+                    return;
+                }
+
+                if (hunk.status !== "pending") return;
                 if (isPreview) {
                     hunk.status = action === "accept" ? "accepted" : "rejected";
                     renderAll();
@@ -447,11 +533,17 @@ export async function bootCollabRoomPage(opts = {}) {
     }
 
     function highlightHunk(hunkId) {
-        const hunk = hunks.find((x) => x.id === hunkId);
+        const display = authorDisplayHunks();
+        const hunk = hunks.find((x) => x.id === hunkId) || display.find((x) => x.id === hunkId);
         hunkList.querySelectorAll(".collab-hunk").forEach((el) => {
             el.classList.toggle("is-selected", el.getAttribute("data-hunk-id") === hunkId);
         });
         if (hunk && manuscript) {
+            const marked = manuscript.querySelector(`[data-hunk="${hunkId}"]`);
+            if (marked) {
+                marked.scrollIntoView({ behavior: "smooth", block: "center" });
+                return;
+            }
             const blocks = manuscript.querySelectorAll("p, h2, h3, blockquote, li");
             blocks[hunk.paragraphIndex]?.scrollIntoView({ behavior: "smooth", block: "center" });
         }
@@ -464,12 +556,17 @@ export async function bootCollabRoomPage(opts = {}) {
     }
 
     function renderManuscript() {
+        if (realtimeSession?.applyingRemote && !isAuthor) return;
+
+        if (isAuthor) {
+            renderAuthorSuggestingManuscript();
+            return;
+        }
+
         manuscript.setAttribute("contenteditable", "true");
         manuscript.setAttribute("spellcheck", "true");
         collabToolbar?.classList.remove("hidden");
         document.body.classList.remove("collab-author-mode");
-
-        if (realtimeSession?.applyingRemote) return;
 
         const html = collaboratorManuscriptHtml();
         if (document.activeElement !== manuscript || !manuscript.innerHTML.trim()) {
@@ -486,9 +583,9 @@ export async function bootCollabRoomPage(opts = {}) {
 
         if (isAuthor) {
             modeBanner.classList.add("is-author");
-            modeBannerLabel.textContent = "Author · live collab";
+            modeBannerLabel.textContent = "Author · live + review";
             modeBannerText.textContent =
-                "Everyone edits the same document in real time. Accept or reject changes in the sidebar to merge into your canon draft.";
+                "Green shows collaborator edits in real time. Use Accept / Reject in the sidebar — rejected edits are removed from the live draft.";
             reviewTitle.textContent = "Live suggested edits";
             document.getElementById("bulkActions")?.classList.remove("hidden");
             return;
@@ -650,7 +747,7 @@ export async function bootCollabRoomPage(opts = {}) {
             const msg = event.data;
             if (!msg || msg.role === activeRole) return;
             if (msg.type === "doc" && msg.html) {
-                applyRemoteManuscript(msg.html);
+                applyRemoteManuscript(msg.html, msg.role, msg.label || `@${msg.role}`);
             }
         };
 
@@ -678,6 +775,13 @@ export async function bootCollabRoomPage(opts = {}) {
         document.getElementById("rejectAllBtn").addEventListener("click", () => {
             hunks.forEach((h) => {
                 if (h.status === "pending") h.status = "rejected";
+            });
+            liveHtml = baseChapterHtml;
+            renderAll();
+        });
+        document.getElementById("dismissResolvedBtn")?.addEventListener("click", () => {
+            hunks.forEach((h) => {
+                if (h.status === "accepted" || h.status === "rejected") h.status = "withdrawn";
             });
             renderAll();
         });
@@ -765,9 +869,7 @@ export async function bootCollabRoomPage(opts = {}) {
             acceptBtn.disabled = true;
             rejectBtn.disabled = true;
             try {
-                for (const h of pending) {
-                    await reviewCollabSuggestion(h.id, "reject");
-                }
+                await rejectAllCollabSuggestions(bookId, chapterId);
                 await reloadLiveRoom({ applyManuscript: true });
             } catch (err) {
                 alert(err?.message || "Could not reject all suggestions.");
@@ -775,6 +877,24 @@ export async function bootCollabRoomPage(opts = {}) {
             } finally {
                 acceptBtn.disabled = false;
                 rejectBtn.disabled = false;
+            }
+        });
+
+        document.getElementById("dismissResolvedBtn")?.addEventListener("click", async () => {
+            const resolved = hunks.filter((h) => h.status === "accepted" || h.status === "rejected");
+            if (!resolved.length) return;
+            const btn = document.getElementById("dismissResolvedBtn");
+            btn.disabled = true;
+            try {
+                await dismissAllResolvedCollabSuggestions(bookId, chapterId);
+                hunks = hunks.filter((h) => h.status !== "accepted" && h.status !== "rejected");
+                renderHunkList();
+                updateStats();
+            } catch (err) {
+                alert(err?.message || "Could not dismiss resolved suggestions.");
+                await refreshSidebar();
+            } finally {
+                btn.disabled = false;
             }
         });
     }

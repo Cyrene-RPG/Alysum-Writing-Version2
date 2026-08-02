@@ -488,7 +488,70 @@ BEGIN
   LEFT JOIN public.users u ON u.id = s.collaborator_id
   WHERE s.book_id = p_book_id
     AND s.chapter_id = p_chapter_id
+    AND s.status <> 'withdrawn'
   ORDER BY s.submitted_at ASC, s.paragraph_index ASC;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.dismiss_collab_suggestion(p_suggestion_id uuid)
+RETURNS public.collab_suggestions
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_s public.collab_suggestions%ROWTYPE;
+BEGIN
+  SELECT * INTO v_s
+  FROM public.collab_suggestions
+  WHERE id = p_suggestion_id;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'suggestion_not_found';
+  END IF;
+
+  IF v_s.status NOT IN ('accepted', 'rejected') THEN
+    RAISE EXCEPTION 'cannot_dismiss';
+  END IF;
+
+  IF NOT (v_s.author_id = auth.uid() OR v_s.collaborator_id = auth.uid()) THEN
+    RAISE EXCEPTION 'not_allowed';
+  END IF;
+
+  UPDATE public.collab_suggestions
+  SET status = 'withdrawn'
+  WHERE id = p_suggestion_id
+  RETURNING * INTO v_s;
+
+  RETURN v_s;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.dismiss_all_resolved_collab_suggestions(
+  p_book_id text,
+  p_chapter_id text
+)
+RETURNS integer
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_count integer;
+BEGIN
+  IF NOT public.can_access_collab_chapter(p_book_id, p_chapter_id) THEN
+    RAISE EXCEPTION 'access_denied';
+  END IF;
+
+  UPDATE public.collab_suggestions
+  SET status = 'withdrawn'
+  WHERE book_id = p_book_id
+    AND chapter_id = p_chapter_id
+    AND status IN ('accepted', 'rejected')
+    AND (author_id = auth.uid() OR collaborator_id = auth.uid());
+
+  GET DIAGNOSTICS v_count = ROW_COUNT;
+  RETURN v_count;
 END;
 $$;
 
@@ -588,6 +651,8 @@ DECLARE
   v_new_body jsonb := '[]'::jsonb;
   v_elem jsonb;
   v_content text;
+  v_live text;
+  v_canon text;
   v_found boolean := false;
 BEGIN
   SELECT * INTO v_s
@@ -669,6 +734,51 @@ BEGIN
     WHERE id = p_suggestion_id
     RETURNING * INTO v_s;
   ELSIF p_action = 'reject' THEN
+    SELECT html INTO v_live
+    FROM public.collab_live_drafts
+    WHERE book_id = v_s.book_id
+      AND chapter_id = v_s.chapter_id;
+
+    IF coalesce(v_live, '') <> '' THEN
+      IF v_s.change_type = 'insert' AND coalesce(v_s.old_text, '') = '' THEN
+        v_live := replace(v_live, v_s.new_text, '');
+      ELSIF coalesce(v_s.new_text, '') <> '' AND position(v_s.new_text in v_live) > 0 THEN
+        v_live := replace(v_live, v_s.new_text, coalesce(v_s.old_text, ''));
+      ELSIF coalesce(v_s.old_text, '') <> '' AND position(v_s.old_text in v_live) = 0 THEN
+        v_live := v_live || v_s.old_text;
+      END IF;
+
+      UPDATE public.collab_live_drafts
+      SET html = v_live,
+          updated_at = now(),
+          updated_by = auth.uid()
+      WHERE book_id = v_s.book_id
+        AND chapter_id = v_s.chapter_id;
+    ELSE
+      SELECT coalesce(ch.elem->>'content', '') INTO v_canon
+      FROM public.books b
+      LEFT JOIN LATERAL (
+        SELECT elem
+        FROM jsonb_array_elements(coalesce(b.sections, '{}'::jsonb)->'body') elem
+        WHERE elem->>'id' = v_s.chapter_id
+        LIMIT 1
+      ) ch ON true
+      WHERE b.id::text = v_s.book_id
+      LIMIT 1;
+
+      INSERT INTO public.collab_live_drafts (
+        book_id, chapter_id, html, base_content_hash, updated_at, updated_by
+      )
+      VALUES (
+        v_s.book_id, v_s.chapter_id, coalesce(v_canon, ''), md5(coalesce(v_canon, '')), now(), auth.uid()
+      )
+      ON CONFLICT (book_id, chapter_id) DO UPDATE
+      SET html = EXCLUDED.html,
+          base_content_hash = EXCLUDED.base_content_hash,
+          updated_at = now(),
+          updated_by = auth.uid();
+    END IF;
+
     UPDATE public.collab_suggestions
     SET status = 'rejected', reviewed_at = now(), reviewed_by = auth.uid()
     WHERE id = p_suggestion_id
@@ -687,6 +797,58 @@ BEGIN
   );
 
   RETURN v_s;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.reject_all_collab_suggestions(
+  p_book_id text,
+  p_chapter_id text
+)
+RETURNS integer
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_canon text;
+  v_count integer;
+BEGIN
+  IF NOT public.is_collab_chapter_author(p_book_id, p_chapter_id) THEN
+    RAISE EXCEPTION 'not_author';
+  END IF;
+
+  SELECT coalesce(ch.elem->>'content', '') INTO v_canon
+  FROM public.books b
+  LEFT JOIN LATERAL (
+    SELECT elem
+    FROM jsonb_array_elements(coalesce(b.sections, '{}'::jsonb)->'body') elem
+    WHERE elem->>'id' = p_chapter_id
+    LIMIT 1
+  ) ch ON true
+  WHERE b.id::text = p_book_id
+  LIMIT 1;
+
+  UPDATE public.collab_suggestions
+  SET status = 'rejected', reviewed_at = now(), reviewed_by = auth.uid()
+  WHERE book_id = p_book_id
+    AND chapter_id = p_chapter_id
+    AND status = 'pending';
+
+  GET DIAGNOSTICS v_count = ROW_COUNT;
+
+  INSERT INTO public.collab_live_drafts (
+    book_id, chapter_id, html, base_content_hash, updated_at, updated_by
+  )
+  VALUES (
+    p_book_id, p_chapter_id, coalesce(v_canon, ''), md5(coalesce(v_canon, '')), now(), auth.uid()
+  )
+  ON CONFLICT (book_id, chapter_id) DO UPDATE
+  SET html = EXCLUDED.html,
+      base_content_hash = EXCLUDED.base_content_hash,
+      updated_at = now(),
+      updated_by = auth.uid();
+
+  RETURN v_count;
 END;
 $$;
 
@@ -999,6 +1161,9 @@ GRANT EXECUTE ON FUNCTION public.submit_collab_comment(text, text, integer, text
 GRANT EXECUTE ON FUNCTION public.resolve_collab_comment(uuid, text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.upsert_collab_live_draft(text, text, text, text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.sync_collab_chapter_suggestions(text, text, text, jsonb) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.dismiss_collab_suggestion(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.dismiss_all_resolved_collab_suggestions(text, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.reject_all_collab_suggestions(text, text) TO authenticated;
 
 GRANT SELECT, INSERT, UPDATE ON public.collab_chapter_invites TO authenticated;
 GRANT SELECT, INSERT, UPDATE ON public.collab_memberships TO authenticated;
