@@ -1,0 +1,110 @@
+/* Inline chapter fonts — class names mirror editor EDITOR_FONT_GROUPS ids (slugified). */
+.editor .alysum-font-georgia,
+.content .alysum-font-georgia,
+#betaContent .alysum-font-georgia,
+.pdf-body .alysum-font-georgia { font-family: Georgia, "Times New Roman", serif; }
+
+.editor .alysum-font-times-new-roman,
+.content .alysum-font-times-new-roman,
+#betaContent .alysum-font-times-new-roman,
+.pdf-body .alysum-font-times-new-roman { font-family: "Times New Roman", Times, serif; }
+
+.editor .alysum-font-garamond,
+.content .alysum-font-garamond,
+#betaContent .alysum-font-garamond,
+.pdf-body .alysum-font-garamond { font-family: Garamond, "Palatino Linotype", serif; }
+
+.editor .alysum-font-palatino-linotype,
+.content .alysum-font-palatino-linotype,
+#betaContent .alysum-font-palatino-linotype,
+.pdf-body .alysum-font-palatino-linotype { font-family: "Palatino Linotype", Palatino, serif; }
+
+.editor .alysum-font-lora,
+.content .alysum-font-lora,
+#betaContent .alysum-font-lora,
+.pdf-body .alysum-font-lora { font-family: "Lora", Georgia, serif; }
+
+.editor .alysum-font-merriweather,
+.content .alysum-font-merriweather,
+#betaContent .alysum-font-merriweather,
+.pdf-body .alysum-font-merriweather { font-family: "Merriweather", Georgia, serif; }
+
+.editor .alysum-font-libre-baskerville,
+.content .alysum-font-libre-baskerville,
+#betaContent .alysum-font-libre-baskerville,
+.pdf-body .alysum-font-libre-baskerville { font-family: "Libre Baskerville", Georgia, serif; }
+
+.editor .alysum-font-crimson-pro,
+.content .alysum-font-crimson-pro,
+#betaContent .alysum-font-crimson-pro,
+.pdf-body .alysum-font-crimson-pro { font-family: "Crimson Pro", Georgia, serif; }
+
+.editor .alysum-font-cormorant-garamond,
+.content .alysum-font-cormorant-garamond,
+#betaContent .alysum-font-cormorant-garamond,
+.pdf-body .alysum-font-cormorant-garamond { font-family: "Cormorant Garamond", Garamond, serif; }
+
+.editor .alysum-font-eb-garamond,
+.content .alysum-font-eb-garamond,
+#betaContent .alysum-font-eb-garamond,
+.pdf-body .alysum-font-eb-garamond { font-family: "EB Garamond", Garamond, serif; }
+
+.editor .alysum-font-spectral,
+.content .alysum-font-spectral,
+#betaContent .alysum-font-spectral,
+.pdf-body .alysum-font-spectral { font-family: "Spectral", Georgia, serif; }
+
+.editor .alysum-font-source-serif-4,
+.content .alysum-font-source-serif-4,
+#betaContent .alysum-font-source-serif-4,
+.pdf-body .alysum-font-source-serif-4 { font-family: "Source Serif 4", Georgia, serif; }
+
+.editor .alysum-font-playfair-display,
+.content .alysum-font-playfair-display,
+#betaContent .alysum-font-playfair-display,
+.pdf-body .alysum-font-playfair-display { font-family: "Playfair Display", Georgia, serif; }
+
+.editor .alysum-font-arial,
+.content .alysum-font-arial,
+#betaContent .alysum-font-arial,
+.pdf-body .alysum-font-arial { font-family: Arial, Helvetica, sans-serif; }
+
+.editor .alysum-font-verdana,
+.content .alysum-font-verdana,
+#betaContent .alysum-font-verdana,
+.pdf-body .alysum-font-verdana { font-family: Verdana, Geneva, sans-serif; }
+
+.editor .alysum-font-tahoma,
+.content .alysum-font-tahoma,
+#betaContent .alysum-font-tahoma,
+.pdf-body .alysum-font-tahoma { font-family: Tahoma, Geneva, sans-serif; }
+
+.editor .alysum-font-inter,
+.content .alysum-font-inter,
+#betaContent .alysum-font-inter,
+.pdf-body .alysum-font-inter { font-family: "Inter", system-ui, sans-serif; }
+
+.editor .alysum-font-open-sans,
+.content .alysum-font-open-sans,
+#betaContent .alysum-font-open-sans,
+.pdf-body .alysum-font-open-sans { font-family: "Open Sans", system-ui, sans-serif; }
+
+.editor .alysum-font-nunito,
+.content .alysum-font-nunito,
+#betaContent .alysum-font-nunito,
+.pdf-body .alysum-font-nunito { font-family: "Nunito", system-ui, sans-serif; }
+
+.editor .alysum-font-courier-new,
+.content .alysum-font-courier-new,
+#betaContent .alysum-font-courier-new,
+.pdf-body .alysum-font-courier-new { font-family: "Courier New", Courier, monospace; }
+
+.editor .alysum-font-source-code-pro,
+.content .alysum-font-source-code-pro,
+#betaContent .alysum-font-source-code-pro,
+.pdf-body .alysum-font-source-code-pro { font-family: "Source Code Pro", "Courier New", monospace; }
+
+.editor .alysum-font-cinzel,
+.content .alysum-font-cinzel,
+#betaContent .alysum-font-cinzel,
+.pdf-body .alysum-font-cinzel { font-family: "Cinzel", Georgia, serif; }

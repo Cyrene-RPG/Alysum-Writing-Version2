@@ -82,6 +82,15 @@ function normalizeChapterElementAttributes(el) {
     el.setAttribute("contenteditable", "false");
     return;
   }
+  if (el.tagName === "SPAN") {
+    const fontClass = [...el.classList].find((c) => c.startsWith("alysum-font-"));
+    [...el.attributes].forEach((attr) => {
+      if (/^on/i.test(attr.name) || attr.name === "style") el.removeAttribute(attr.name);
+      else if (attr.name === "class" && !fontClass) el.removeAttribute(attr.name);
+    });
+    if (fontClass) el.className = fontClass;
+    return;
+  }
   [...el.attributes].forEach((attr) => {
     if (/^on/i.test(attr.name) || attr.name === "style" || attr.name === "class") {
       el.removeAttribute(attr.name);
@@ -131,6 +140,15 @@ export function cleanImportHtml(html) {
       !p.querySelector("img, figure") &&
       (p.querySelector("br") || p.textContent.includes("\u200B"));
     if (isCaretOnly || (!p.textContent.trim() && !p.querySelector("img, br, figure"))) p.remove();
+  });
+
+  holder.querySelectorAll("span").forEach((span) => {
+    if (span.classList.length) return;
+    if (span.attributes.length > 0) return;
+    const parent = span.parentNode;
+    if (!parent) return;
+    while (span.firstChild) parent.insertBefore(span.firstChild, span);
+    parent.removeChild(span);
   });
 
   return holder.innerHTML

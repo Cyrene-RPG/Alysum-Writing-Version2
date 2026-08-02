@@ -24,6 +24,7 @@
 <link rel="stylesheet" href="css/gradient-themes.css?v=7" />
     <link rel="stylesheet" href="css/workspace-nav.css?v=11" />
     <link rel="stylesheet" href="css/book-inline-images.css?v=5" />
+    <link rel="stylesheet" href="css/book-inline-fonts.css?v=1" />
     <link rel="stylesheet" href="css/scene-breaks.css?v=8" />
 <link rel="stylesheet" href="css/book-version.css?v=8" />
     <script src="js/gradient-theme-sync.js" defer></script>
@@ -923,7 +924,7 @@
     <button class="tool-btn" type="button" id="quoteBtn" data-tip="Block quote">❝</button>
     <button class="tool-btn" type="button" id="findReplaceBtn" data-tip="Find and replace (Ctrl+F)" aria-label="Find and replace">🔍</button>
     <select class="tool-select" id="formatSelect" data-tip="Paragraph style" aria-label="Paragraph style"><option value="p">Body</option><option value="h2">Heading</option></select>
-    <select class="tool-select" id="fontSelect" data-tip="Editor font" aria-label="Font"></select>
+    <select class="tool-select" id="fontSelect" data-tip="Font — highlight text to apply to selection, or sets chapter default" aria-label="Font"></select>
     <select class="tool-select" id="fontSizeSelect" data-tip="Editor text size" aria-label="Text size"><option value="18">Compact</option><option value="20">Book</option><option value="22">Comfort</option><option value="26">Large</option></select>
     <button class="tool-btn" type="button" id="insertImageBtn" data-tip="Insert image at cursor">＋ Image</button>
     <input id="inlineImageUploadInput" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden />
@@ -2199,6 +2200,15 @@ function rememberBookId(id) {
             return;
         }
         if (normalizeSceneBreakAttributes(el)) return;
+        if (el.tagName === "SPAN") {
+            const fontClass = [...el.classList].find((c) => c.startsWith("alysum-font-"));
+            [...el.attributes].forEach((attr) => {
+                if (/^on/i.test(attr.name) || attr.name === "style") el.removeAttribute(attr.name);
+                else if (attr.name === "class" && !fontClass) el.removeAttribute(attr.name);
+            });
+            if (fontClass) el.className = fontClass;
+            return;
+        }
         [...el.attributes].forEach((attr) => {
             if (/^on/i.test(attr.name) || attr.name === "style" || attr.name === "class") {
                 el.removeAttribute(attr.name);
@@ -2608,6 +2618,15 @@ function rememberBookId(id) {
         holder.querySelectorAll("p").forEach(p => {
             if (isSceneBreakParagraph(p)) return;
             if (isCaretParagraph(p) || (!p.textContent.trim() && !p.querySelector("img, br, figure"))) p.remove();
+        });
+
+        holder.querySelectorAll("span").forEach((span) => {
+            if (span.classList.length) return;
+            if (span.attributes.length > 0) return;
+            const parent = span.parentNode;
+            if (!parent) return;
+            while (span.firstChild) parent.insertBefore(span.firstChild, span);
+            parent.removeChild(span);
         });
 
         return holder.innerHTML
@@ -3692,6 +3711,115 @@ function rememberBookId(id) {
         return 'Georgia, "Times New Roman", serif';
     }
 
+    function editorFontClassName(fontId) {
+        return "alysum-font-" + String(fontId || "").toLowerCase().replace(/\s+/g, "-");
+    }
+
+    function editorFontIdFromClass(className) {
+        if (!className || !className.startsWith("alysum-font-")) return null;
+        for (const group of EDITOR_FONT_GROUPS) {
+            for (const font of group.fonts) {
+                if (editorFontClassName(font.id) === className) return font.id;
+            }
+        }
+        return null;
+    }
+
+    function stripInlineFontClasses(root) {
+        const nodes = [];
+        if (root.nodeType === Node.DOCUMENT_FRAGMENT_NODE || root.nodeType === Node.ELEMENT_NODE) {
+            const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
+            while (walker.nextNode()) {
+                if (walker.currentNode.tagName === "SPAN") nodes.push(walker.currentNode);
+            }
+        }
+        nodes.forEach((span) => {
+            [...span.classList].filter((c) => c.startsWith("alysum-font-")).forEach((c) => span.classList.remove(c));
+            if (!span.classList.length && !span.getAttribute("style") && span.attributes.length === 0) {
+                const parent = span.parentNode;
+                if (!parent) return;
+                while (span.firstChild) parent.insertBefore(span.firstChild, span);
+                parent.removeChild(span);
+            }
+        });
+    }
+
+    function getActiveEditorFontId() {
+        const sel = window.getSelection();
+        if (!sel || !sel.rangeCount || !editor.contains(sel.anchorNode)) {
+            return normalizeStoredEditorFont(localStorage.getItem("alysum-font") || "Georgia");
+        }
+        let node = sel.anchorNode;
+        if (node.nodeType === Node.TEXT_NODE) node = node.parentElement;
+        while (node && node !== editor) {
+            if (node.tagName === "SPAN") {
+                const fontClass = [...node.classList].find((c) => c.startsWith("alysum-font-"));
+                const fontId = editorFontIdFromClass(fontClass);
+                if (fontId) return fontId;
+            }
+            node = node.parentElement;
+        }
+        return normalizeStoredEditorFont(localStorage.getItem("alysum-font") || "Georgia");
+    }
+
+    function getActiveBlockFormat() {
+        const sel = window.getSelection();
+        if (!sel || !sel.rangeCount || !editor.contains(sel.anchorNode)) return "p";
+        let node = sel.anchorNode;
+        if (node.nodeType === Node.TEXT_NODE) node = node.parentElement;
+        while (node && node !== editor) {
+            const tag = node.tagName;
+            if (tag === "H2") return "h2";
+            if (tag === "P" || tag === "DIV") return "p";
+            node = node.parentElement;
+        }
+        return "p";
+    }
+
+    function syncFormatSelectToSelection() {
+        if (!formatSelect || document.activeElement !== editor || isCurrentBookComic()) return;
+        const selectValue = getActiveBlockFormat() === "h2" ? "h2" : "p";
+        if (formatSelect.value !== selectValue) formatSelect.value = selectValue;
+    }
+
+    function syncFontSelectToSelection() {
+        if (!fontSelect || document.activeElement !== editor || isCurrentBookComic()) return;
+        const fontId = getActiveEditorFontId();
+        if (fontSelect.value !== fontId) fontSelect.value = fontId;
+    }
+
+    function applyFontToEditorSelection(fontId) {
+        if (isCurrentBookComic()) return;
+        const normalizedId = normalizeStoredEditorFont(fontId);
+        editor.focus();
+        const sel = window.getSelection();
+        if (!sel || !sel.rangeCount || !editor.contains(sel.anchorNode)) {
+            localStorage.setItem("alysum-font", normalizedId);
+            applyEditorStyle();
+            return;
+        }
+        const range = sel.getRangeAt(0);
+        if (range.collapsed) {
+            localStorage.setItem("alysum-font", normalizedId);
+            applyEditorStyle();
+            return;
+        }
+        const className = editorFontClassName(normalizedId);
+        const span = document.createElement("span");
+        span.className = className;
+        const fragment = range.extractContents();
+        stripInlineFontClasses(fragment);
+        span.appendChild(fragment);
+        range.insertNode(span);
+        sel.removeAllRanges();
+        const newRange = document.createRange();
+        newRange.selectNodeContents(span);
+        sel.addRange(newRange);
+        syncCurrentChapterFromEditor();
+        syncStats();
+        scheduleSave();
+    }
+
     function populateEditorFontSelect() {
         if (!fontSelect) return;
         fontSelect.replaceChildren();
@@ -3966,7 +4094,11 @@ function rememberBookId(id) {
         promptDeleteInlineImage(fig);
     });
     document.addEventListener("selectionchange", () => {
-        if (document.activeElement === editor) scheduleWriterResumeSave();
+        if (document.activeElement === editor) {
+            scheduleWriterResumeSave();
+            syncFormatSelectToSelection();
+            syncFontSelectToSelection();
+        }
     });
     editorWorkspace?.addEventListener("scroll", () => scheduleWriterResumeSave(), { passive: true });
     window.addEventListener("beforeunload", flushWriterResumeSave);
@@ -4031,7 +4163,7 @@ function rememberBookId(id) {
     });
     formatSelect.addEventListener("change", () => { document.execCommand("formatBlock", false, formatSelect.value === "h2" ? "h2" : "p"); editor.focus(); syncCurrentChapterFromEditor(); syncStats(); scheduleSave(); });
     quoteBtn.addEventListener("click", () => { document.execCommand("formatBlock", false, "blockquote"); editor.focus(); syncCurrentChapterFromEditor(); syncStats(); scheduleSave(); });
-    fontSelect.addEventListener("change", () => { localStorage.setItem("alysum-font", fontSelect.value); applyEditorStyle(); });
+    fontSelect.addEventListener("change", () => { applyFontToEditorSelection(fontSelect.value); });
     fontSizeSelect.addEventListener("change", () => { localStorage.setItem("alysum-fontSize", fontSizeSelect.value); applyEditorStyle(); });
 
     findReplaceBtn?.addEventListener("click", () => frOpen(false));
