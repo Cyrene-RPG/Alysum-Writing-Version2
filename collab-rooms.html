@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="js/alysum-appearance-boot.js"></script>
+    <link rel="stylesheet" href="css/site-responsive.css?v=1" />
+    <link rel="stylesheet" href="css/gradient-themes.css?v=5" />
+    <link rel="stylesheet" href="css/workspace-nav.css?v=11" />
+    <script src="js/gradient-theme-sync.js" defer></script>
+    <title>Collab rooms — Alysum (test branch)</title>
+    <style>
+        * { box-sizing: border-box; }
+        :root {
+            --bg: #0b1220;
+            --panel: #111827;
+            --panel-2: #172132;
+            --text: #f9fafb;
+            --muted: #9ca3af;
+            --border: rgba(255,255,255,0.08);
+            --shadow: 0 14px 34px rgba(0,0,0,0.28);
+            --collab-green: #22c55e;
+        }
+        html, body {
+            margin: 0;
+            min-height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background:
+                radial-gradient(ellipse 120% 60% at 50% -10%, rgba(34, 197, 94, 0.14) 0%, transparent 55%),
+                linear-gradient(180deg, #0d1426 0%, var(--bg) 42%);
+            color: var(--text);
+        }
+        .hidden { display: none !important; }
+        .test-banner {
+            background: linear-gradient(90deg, rgba(34, 197, 94, 0.18), rgba(124, 58, 237, 0.12));
+            border-bottom: 1px solid rgba(34, 197, 94, 0.25);
+            padding: 10px 16px;
+            font-size: 13px;
+            font-weight: 700;
+            text-align: center;
+        }
+        .page { max-width: 1320px; margin: 0 auto; padding: 22px 20px 48px; }
+        .page-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+        .page-head h2 { margin: 0; font-size: 22px; font-weight: 900; }
+        .hint { margin: 8px 0 0; color: var(--muted); font-size: 14px; line-height: 1.5; max-width: 560px; }
+        .btn {
+            border: 1px solid var(--border);
+            background: var(--panel);
+            color: var(--text);
+            border-radius: 12px;
+            padding: 10px 14px;
+            font-weight: 800;
+            font-size: 14px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+        }
+        .btn.primary {
+            background: linear-gradient(135deg, #15803d, var(--collab-green));
+            border: none;
+            color: #052e16;
+        }
+        .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+        @media (max-width: 900px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        @media (max-width: 560px) { .grid { grid-template-columns: 1fr; } }
+        .card {
+            background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent), var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 16px;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+        .card::before {
+            content: "";
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            width: 4px;
+            background: linear-gradient(180deg, #15803d, var(--collab-green));
+        }
+        .card-title { margin: 0; font-size: 18px; font-weight: 900; line-height: 1.2; }
+        .badge {
+            font-size: 10px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            padding: 4px 8px;
+            border-radius: 999px;
+            background: rgba(34, 197, 94, 0.18);
+            color: #86efac;
+            align-self: flex-start;
+        }
+        .badge.review { background: rgba(251, 191, 36, 0.18); color: #fde68a; }
+        .card-meta { color: var(--muted); font-size: 13px; line-height: 1.45; }
+        .card-actions { margin-top: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+        .compare-note {
+            margin-top: 24px;
+            padding: 18px 20px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            background: var(--panel);
+            font-size: 14px;
+            line-height: 1.55;
+            color: var(--muted);
+        }
+        .compare-note strong { color: var(--text); }
+    </style>
+</head>
+<body>
+    <div class="test-banner">Test branch — Collab rooms preview. No Supabase setup required for demo mode.</div>
+
+    <nav class="wd-nav-wrap" aria-label="Workspace" data-active="">
+        <div class="wd-nav" style="padding: 12px 20px;">
+            <a href="writer-dashboard.html">Studio</a>
+            <a href="beta-rooms.html">Beta rooms</a>
+            <a href="collab-rooms.html?preview=1" class="is-active">Collab rooms</a>
+            <a href="collab-room-manage.html?preview=1">Collab invites</a>
+            <a href="index.html">Home</a>
+        </div>
+    </nav>
+
+    <main class="page">
+        <div class="page-head">
+            <div>
+                <h2>Collab rooms</h2>
+                <p class="hint">
+                    Invite-only chapter editing. Collaborators get editor access; their changes stay green until you approve.
+                    Unlike beta rooms, this touches live chapters — not frozen snapshots.
+                </p>
+            </div>
+            <a class="btn primary" href="collab-room.html?preview=1&role=author">Open demo room</a>
+        </div>
+
+        <div class="grid" id="roomGrid"></div>
+
+        <div class="compare-note">
+            <strong>Beta room vs collab room</strong><br />
+            Beta rooms share a read-only snapshot for feedback and DMs.
+            Collab rooms let invited editors suggest changes on a chapter; you review green highlights and accept or reject before anything hits your canon draft.
+        </div>
+    </main>
+
+    <script type="module">
+        import { collabRoomPreviewUrl, collabRoomInviteUrl } from "./js/collab-rooms-demo.js?v=1";
+
+        const rooms = [
+            {
+                title: "The Glass Orchard",
+                chapter: "Ch. 12 — The North Gate",
+                role: "author",
+                badge: "4 pending",
+                badgeClass: "review",
+                meta: "2 collaborators · last activity 2h ago",
+                cta: "Review suggestions",
+                href: collabRoomPreviewUrl("author"),
+            },
+            {
+                title: "The Glass Orchard",
+                chapter: "Ch. 12 — The North Gate",
+                role: "collaborator",
+                badge: "Editor invite",
+                badgeClass: "",
+                meta: "Invited by @author · suggest-only",
+                cta: "Open as @alex",
+                href: collabRoomPreviewUrl("alex"),
+            },
+            {
+                title: "Midnight Atlas (demo)",
+                chapter: "Ch. 3 — Harbor Lights",
+                role: "collaborator",
+                badge: "Coming soon",
+                badgeClass: "",
+                meta: "Placeholder card for second book",
+                cta: "Preview invite flow",
+                href: collabRoomInviteUrl("demo-ch3"),
+            },
+        ];
+
+        document.getElementById("roomGrid").innerHTML = rooms
+            .map(
+                (r) => `<article class="card">
+                    <span class="badge ${r.badgeClass}">${r.badge}</span>
+                    <h3 class="card-title">${r.title}</h3>
+                    <div class="card-meta">${r.chapter}<br />${r.meta}</div>
+                    <div class="card-actions"><a class="btn primary" href="${r.href}">${r.cta}</a></div>
+                </article>`
+            )
+            .join("");
+    </script>
+</body>
+</html>

@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="js/alysum-appearance-boot.js"></script>
+    <link rel="stylesheet" href="css/site-responsive.css?v=1" />
+    <link rel="stylesheet" href="css/gradient-themes.css?v=5" />
+    <link rel="stylesheet" href="css/collab-room.css?v=1" />
+    <script src="js/gradient-theme-sync.js" defer></script>
+    <title>Collab room — Alysum (test branch)</title>
+    <style>
+        * { box-sizing: border-box; }
+        :root {
+            --bg: #0b1220;
+            --panel: #111827;
+            --panel-2: #172132;
+            --text: #f9fafb;
+            --muted: #9ca3af;
+            --border: rgba(255,255,255,0.08);
+        }
+        body.light {
+            --bg: #f4f6fb;
+            --panel: #ffffff;
+            --panel-2: #f7f9fc;
+            --text: #171717;
+            --muted: #5f6470;
+            --border: rgba(0,0,0,0.08);
+        }
+        html, body {
+            margin: 0;
+            min-height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background:
+                radial-gradient(ellipse 120% 60% at 50% -10%, var(--theme-body-spot, rgba(34, 197, 94, 0.16)) 0%, transparent 55%),
+                linear-gradient(180deg, #0d1426 0%, var(--bg) 42%);
+            color: var(--text);
+        }
+        body.light {
+            background:
+                radial-gradient(ellipse 120% 60% at 50% -10%, rgba(34, 197, 94, 0.08) 0%, transparent 55%),
+                var(--bg);
+        }
+        .hidden { display: none !important; }
+        .collab-back {
+            color: var(--muted);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 700;
+        }
+        .collab-back:hover { color: var(--text); }
+    </style>
+</head>
+<body class="dark">
+    <div class="collab-test-banner" id="testBanner">
+        Test branch preview — green = pending suggestions until author approves.
+        <a href="collab-room-manage.html?preview=1">Manage invites</a> ·
+        <a href="collab-rooms.html?preview=1">All collab rooms</a>
+    </div>
+
+    <header class="collab-topbar">
+        <div>
+            <a class="collab-back" href="collab-rooms.html?preview=1">← Collab rooms</a>
+            <div class="collab-topbar-title" id="roomTitle">The Glass Orchard</div>
+            <div class="collab-topbar-sub" id="roomSub">Chapter 12 — invite-only collab</div>
+        </div>
+        <div class="collab-role-tabs" id="roleTabs" aria-label="Preview role switcher">
+            <button type="button" class="collab-role-tab is-active" data-role="author">Author review</button>
+            <button type="button" class="collab-role-tab" data-role="alex">@alex (editor)</button>
+            <button type="button" class="collab-role-tab" data-role="sam">@sam (editor)</button>
+        </div>
+    </header>
+
+    <div class="collab-layout">
+        <div class="collab-editor-pane">
+            <div class="collab-chapter-kicker">Collab chapter</div>
+            <h1 class="collab-chapter-title" id="chapterTitle">Chapter 12 — The North Gate</h1>
+            <div class="collab-chapter-meta" id="chapterMeta">3,842 words · invite-only collab</div>
+
+            <div class="collab-mode-banner is-author" id="modeBanner">
+                <div>
+                    <strong id="modeBannerLabel">Author review</strong>
+                    <span id="modeBannerText">Green highlights are pending suggestions. Accept to merge into your draft, or reject to discard.</span>
+                </div>
+            </div>
+
+            <div class="collab-manuscript" id="manuscript"></div>
+
+            <div class="collab-submit-bar hidden" id="submitBar">
+                <p><strong>Your edits stay green</strong> until the author approves. Submit when you're done with this pass.</p>
+                <button type="button" class="collab-btn primary" id="submitBtn">Submit suggestions</button>
+            </div>
+        </div>
+
+        <aside class="collab-review-panel" id="reviewPanel">
+            <div class="collab-review-head">
+                <h3 id="reviewTitle">Pending review</h3>
+                <p id="reviewSub">4 suggestions waiting · 2 collaborators</p>
+            </div>
+            <div class="collab-review-stats">
+                <span class="collab-stat-pill pending" id="pendingPill">4 pending</span>
+                <span class="collab-stat-pill" id="acceptedPill">0 accepted</span>
+            </div>
+            <div class="collab-review-actions" id="bulkActions">
+                <button type="button" class="collab-btn primary" id="acceptAllBtn">Accept all</button>
+                <button type="button" class="collab-btn danger" id="rejectAllBtn">Reject all</button>
+            </div>
+            <div class="collab-hunk-list" id="hunkList"></div>
+        </aside>
+    </div>
+
+    <script type="module">
+        import {
+            DEMO_ROOM,
+            DEMO_HUNKS,
+            renderAuthorManuscript,
+            renderCollaboratorManuscript,
+            countPending,
+            escapeHtml,
+        } from "./js/collab-rooms-demo.js?v=1";
+
+        const params = new URLSearchParams(window.location.search);
+        const isPreview = params.get("preview") === "1" || !params.get("room");
+        let activeRole = params.get("role") || "author";
+        /** @type {import("./js/collab-rooms-demo.js").CollabHunk[]} */
+        let hunks = DEMO_HUNKS.map((h) => ({ ...h }));
+
+        const manuscript = document.getElementById("manuscript");
+        const hunkList = document.getElementById("hunkList");
+        const reviewPanel = document.getElementById("reviewPanel");
+        const submitBar = document.getElementById("submitBar");
+        const modeBanner = document.getElementById("modeBanner");
+        const modeBannerLabel = document.getElementById("modeBannerLabel");
+        const modeBannerText = document.getElementById("modeBannerText");
+        const pendingPill = document.getElementById("pendingPill");
+        const acceptedPill = document.getElementById("acceptedPill");
+        const reviewSub = document.getElementById("reviewSub");
+        const roleTabs = document.getElementById("roleTabs");
+
+        document.getElementById("roomTitle").textContent = DEMO_ROOM.bookTitle;
+        document.getElementById("roomSub").textContent = `${DEMO_ROOM.chapterTitle} · invite-only`;
+        document.getElementById("chapterTitle").textContent = DEMO_ROOM.chapterTitle;
+        document.getElementById("chapterMeta").textContent = DEMO_ROOM.chapterMeta;
+
+        if (!isPreview) {
+            document.getElementById("testBanner")?.classList.add("hidden");
+            roleTabs?.classList.add("hidden");
+        }
+
+        function collaboratorLabel(role) {
+            if (role === "alex") return "@alex";
+            if (role === "sam") return "@sam";
+            return "Collaborator";
+        }
+
+        function updateStats() {
+            const pending = countPending(hunks);
+            const accepted = hunks.filter((h) => h.status === "accepted").length;
+            const rejected = hunks.filter((h) => h.status === "rejected").length;
+            pendingPill.textContent = `${pending} pending`;
+            pendingPill.classList.toggle("pending", pending > 0);
+            acceptedPill.textContent = `${accepted} accepted`;
+            const collaborators = new Set(hunks.filter((h) => h.status === "pending").map((h) => h.by)).size;
+            reviewSub.textContent =
+                pending === 0
+                    ? "All suggestions reviewed"
+                    : `${pending} suggestion${pending === 1 ? "" : "s"} waiting · ${collaborators} collaborator${collaborators === 1 ? "" : "s"}`;
+            document.getElementById("acceptAllBtn").disabled = pending === 0;
+            document.getElementById("rejectAllBtn").disabled = pending === 0;
+        }
+
+        function renderHunkList() {
+            hunkList.innerHTML = hunks
+                .map((h) => {
+                    const resolved = h.status !== "pending";
+                    const typeLabel = h.type === "insert" ? "Addition" : h.type === "delete" ? "Deletion" : "Change";
+                    const body =
+                        h.type === "insert"
+                            ? `<span class="new">${escapeHtml(h.newText)}</span>`
+                            : `<span class="old">${escapeHtml(h.oldText)}</span><span class="new">${escapeHtml(h.newText)}</span>`;
+                    const actions = resolved
+                        ? `<div class="collab-hunk-type">${h.status}</div>`
+                        : `<div class="collab-hunk-actions">
+                            <button type="button" class="collab-btn primary" data-action="accept" data-id="${h.id}">Accept</button>
+                            <button type="button" class="collab-btn danger" data-action="reject" data-id="${h.id}">Reject</button>
+                           </div>`;
+                    return `<article class="collab-hunk${resolved ? " is-resolved" : ""}" data-hunk-id="${h.id}">
+                        <div class="collab-hunk-head">
+                            <span class="collab-hunk-author" data-by="${h.by}">${escapeHtml(h.byLabel)}</span>
+                            <span class="collab-hunk-type">${typeLabel}</span>
+                        </div>
+                        <div class="collab-hunk-body">${body}</div>
+                        ${actions}
+                    </article>`;
+                })
+                .join("");
+
+            hunkList.querySelectorAll("[data-action]").forEach((btn) => {
+                btn.addEventListener("click", () => {
+                    const id = btn.getAttribute("data-id");
+                    const action = btn.getAttribute("data-action");
+                    const hunk = hunks.find((x) => x.id === id);
+                    if (!hunk || hunk.status !== "pending") return;
+                    hunk.status = action === "accept" ? "accepted" : "rejected";
+                    renderAll();
+                });
+            });
+        }
+
+        function highlightHunk(hunkId) {
+            manuscript.querySelectorAll("[data-hunk]").forEach((el) => {
+                el.style.outline = el.getAttribute("data-hunk") === hunkId ? "2px solid #22c55e" : "";
+            });
+            hunkList.querySelectorAll(".collab-hunk").forEach((el) => {
+                el.classList.toggle("is-selected", el.getAttribute("data-hunk-id") === hunkId);
+            });
+        }
+
+        function renderManuscript() {
+            if (activeRole === "author") {
+                manuscript.removeAttribute("contenteditable");
+                manuscript.innerHTML = renderAuthorManuscript(hunks);
+                manuscript.querySelectorAll("[data-hunk]").forEach((el) => {
+                    el.addEventListener("mouseenter", () => highlightHunk(el.getAttribute("data-hunk")));
+                });
+                return;
+            }
+
+            manuscript.setAttribute("contenteditable", "true");
+            manuscript.setAttribute("spellcheck", "true");
+            manuscript.innerHTML = renderCollaboratorManuscript(activeRole);
+        }
+
+        function renderModeBanner() {
+            if (activeRole === "author") {
+                modeBanner.classList.add("is-author");
+                modeBannerLabel.textContent = "Author review";
+                modeBannerText.textContent =
+                    "Green highlights are pending suggestions. Accept to merge into your draft, or reject to discard.";
+                reviewPanel.classList.remove("hidden");
+                submitBar.classList.add("hidden");
+                reviewPanel.querySelector("#reviewTitle").textContent = "Pending review";
+                document.getElementById("bulkActions").classList.remove("hidden");
+                return;
+            }
+
+            modeBanner.classList.remove("is-author");
+            modeBannerLabel.textContent = `${collaboratorLabel(activeRole)} · editor`;
+            modeBannerText.textContent =
+                "Edit freely — your changes appear in green and stay pending until the author approves. You can't publish or invite others.";
+            reviewPanel.classList.add("hidden");
+            submitBar.classList.remove("hidden");
+        }
+
+        function setRole(role) {
+            activeRole = role;
+            roleTabs.querySelectorAll(".collab-role-tab").forEach((tab) => {
+                tab.classList.toggle("is-active", tab.getAttribute("data-role") === role);
+            });
+            const url = new URL(window.location.href);
+            url.searchParams.set("role", role);
+            window.history.replaceState({}, "", url.pathname + url.search);
+            renderAll();
+        }
+
+        function renderAll() {
+            renderModeBanner();
+            renderManuscript();
+            renderHunkList();
+            updateStats();
+        }
+
+        roleTabs.querySelectorAll(".collab-role-tab").forEach((tab) => {
+            tab.addEventListener("click", () => setRole(tab.getAttribute("data-role")));
+        });
+
+        document.getElementById("acceptAllBtn").addEventListener("click", () => {
+            hunks.forEach((h) => {
+                if (h.status === "pending") h.status = "accepted";
+            });
+            renderAll();
+        });
+
+        document.getElementById("rejectAllBtn").addEventListener("click", () => {
+            hunks.forEach((h) => {
+                if (h.status === "pending") h.status = "rejected";
+            });
+            renderAll();
+        });
+
+        document.getElementById("submitBtn").addEventListener("click", () => {
+            alert("Demo: suggestions submitted! In production, the author would get a notification and see them in review.");
+        });
+
+        hunkList.addEventListener("mouseover", (e) => {
+            const card = e.target.closest(".collab-hunk");
+            if (card && activeRole === "author") highlightHunk(card.getAttribute("data-hunk-id"));
+        });
+
+        setRole(activeRole);
+    </script>
+</body>
+</html>

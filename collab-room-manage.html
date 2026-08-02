@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="js/alysum-appearance-boot.js"></script>
+    <link rel="stylesheet" href="css/site-responsive.css?v=1" />
+    <link rel="stylesheet" href="css/gradient-themes.css?v=5" />
+    <script src="js/gradient-theme-sync.js" defer></script>
+    <title>Collab invite — Alysum (test branch)</title>
+    <style>
+        * { box-sizing: border-box; }
+        :root {
+            --bg: #0b1220;
+            --panel: #111827;
+            --panel-2: #172132;
+            --text: #f9fafb;
+            --muted: #9ca3af;
+            --border: rgba(255,255,255,0.08);
+            --shadow: 0 14px 34px rgba(0,0,0,0.28);
+            --collab-green: #22c55e;
+        }
+        html, body {
+            margin: 0;
+            min-height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background:
+                radial-gradient(ellipse 120% 60% at 50% -10%, rgba(34, 197, 94, 0.14) 0%, transparent 55%),
+                linear-gradient(180deg, #0d1426 0%, var(--bg) 42%);
+            color: var(--text);
+        }
+        .test-banner {
+            background: linear-gradient(90deg, rgba(34, 197, 94, 0.18), rgba(124, 58, 237, 0.12));
+            border-bottom: 1px solid rgba(34, 197, 94, 0.25);
+            padding: 10px 16px;
+            font-size: 13px;
+            font-weight: 700;
+            text-align: center;
+        }
+        .page { max-width: 860px; margin: 0 auto; padding: 22px 20px 48px; }
+        .back-link {
+            display: inline-flex;
+            margin-bottom: 10px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--muted);
+            text-decoration: none;
+        }
+        .back-link:hover { color: var(--text); }
+        h2 { margin: 0 0 8px; font-size: clamp(20px, 3vw, 24px); font-weight: 900; }
+        .hint { margin: 0 0 20px; color: var(--muted); font-size: 14px; line-height: 1.55; }
+        .card {
+            background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent), var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 18px;
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: hidden;
+        }
+        .card::before {
+            content: "";
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            width: 4px;
+            background: linear-gradient(180deg, #15803d, var(--collab-green));
+        }
+        .card h3 { margin: 0 0 6px; font-size: 18px; font-weight: 900; }
+        .card p { margin: 0 0 14px; color: var(--muted); font-size: 14px; line-height: 1.5; }
+        label { display: block; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 6px; }
+        select, input[type="email"], input[type="text"] {
+            width: 100%;
+            padding: 11px 12px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: var(--panel-2);
+            color: var(--text);
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+        .invite-url {
+            font-family: ui-monospace, monospace;
+            font-size: 12px;
+            word-break: break-all;
+            padding: 12px;
+            border-radius: 12px;
+            background: var(--panel-2);
+            border: 1px solid var(--border);
+            margin-bottom: 12px;
+        }
+        .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+        .btn {
+            border: 1px solid var(--border);
+            background: var(--panel-2);
+            color: var(--text);
+            border-radius: 12px;
+            padding: 10px 14px;
+            font-weight: 800;
+            font-size: 14px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+        }
+        .btn.primary {
+            background: linear-gradient(135deg, #15803d, var(--collab-green));
+            border: none;
+            color: #052e16;
+        }
+        .invite-list { display: flex; flex-direction: column; gap: 10px; }
+        .invite-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 12px 14px;
+            border-radius: 14px;
+            border: 1px solid var(--border);
+            background: var(--panel-2);
+            flex-wrap: wrap;
+        }
+        .invite-row-meta { font-size: 13px; line-height: 1.45; }
+        .invite-row-meta strong { display: block; font-size: 14px; }
+        .pill {
+            font-size: 10px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            padding: 4px 8px;
+            border-radius: 999px;
+            background: rgba(34, 197, 94, 0.18);
+            color: #86efac;
+        }
+        .pill.pending { background: rgba(124, 58, 237, 0.18); color: #c4b5fd; }
+        .status-toast {
+            margin-bottom: 16px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            background: rgba(34, 197, 94, 0.15);
+            border: 1px solid rgba(34, 197, 94, 0.35);
+            color: #86efac;
+        }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+    <div class="test-banner">Test branch preview — invite management UI mockup</div>
+
+    <main class="page">
+        <a class="back-link" href="collab-rooms.html?preview=1">← Collab rooms</a>
+        <h2>Collab invite</h2>
+        <p class="hint">Create a chapter-scoped invite link. Anyone who accepts gets editor status; their edits stay green until you approve.</p>
+
+        <div id="statusToast" class="status-toast hidden"></div>
+
+        <section class="card">
+            <h3>New chapter invite</h3>
+            <p>Pick a chapter and share the link. Collaborators can suggest edits but cannot publish or invite others.</p>
+            <label for="chapterSelect">Chapter</label>
+            <select id="chapterSelect">
+                <option value="ch-12">Chapter 12 — The North Gate</option>
+                <option value="ch-11">Chapter 11 — Ash Market</option>
+                <option value="ch-13">Chapter 13 — The Archivist</option>
+            </select>
+            <label for="inviteEmail">Email (optional)</label>
+            <input type="email" id="inviteEmail" placeholder="collaborator@example.com" />
+            <div class="btn-row">
+                <button type="button" class="btn primary" id="createInviteBtn">Create invite link</button>
+                <a class="btn" href="collab-room.html?preview=1&role=author">Open review demo</a>
+            </div>
+            <div id="newInviteBlock" class="hidden">
+                <label>Invite link</label>
+                <div class="invite-url" id="inviteUrl"></div>
+                <div class="btn-row">
+                    <button type="button" class="btn" id="copyInviteBtn">Copy link</button>
+                </div>
+            </div>
+        </section>
+
+        <section class="card">
+            <h3>Active invites — Chapter 12</h3>
+            <p>Revoke anytime. Pending suggestions from revoked collaborators stay in review until you accept or reject.</p>
+            <div class="invite-list" id="inviteList"></div>
+        </section>
+    </main>
+
+    <script type="module">
+        import { collabRoomInviteUrl } from "./js/collab-rooms-demo.js?v=1";
+
+        const invites = [
+            { name: "@alex", email: "alex@example.com", status: "active", pending: 2, token: "alex-demo" },
+            { name: "@sam", email: "sam@example.com", status: "active", pending: 2, token: "sam-demo" },
+            { name: "(open link)", email: "—", status: "pending", pending: 0, token: "open-demo" },
+        ];
+
+        const inviteList = document.getElementById("inviteList");
+        const statusToast = document.getElementById("statusToast");
+        let lastInviteUrl = "";
+
+        function showToast(msg) {
+            statusToast.textContent = msg;
+            statusToast.classList.remove("hidden");
+            window.setTimeout(() => statusToast.classList.add("hidden"), 3200);
+        }
+
+        function renderInvites() {
+            inviteList.innerHTML = invites
+                .map(
+                    (inv) => `<div class="invite-row">
+                        <div class="invite-row-meta">
+                            <strong>${inv.name}</strong>
+                            ${inv.email} · ${inv.pending ? `${inv.pending} pending suggestions` : "Not accepted yet"}
+                        </div>
+                        <span class="pill ${inv.status === "pending" ? "pending" : ""}">${inv.status}</span>
+                        <div class="btn-row">
+                            <a class="btn" href="${collabRoomInviteUrl(inv.token)}">Open</a>
+                            <button type="button" class="btn" data-revoke="${inv.token}">Revoke</button>
+                        </div>
+                    </div>`
+                )
+                .join("");
+
+            inviteList.querySelectorAll("[data-revoke]").forEach((btn) => {
+                btn.addEventListener("click", () => {
+                    showToast("Demo: invite revoked. Production would block new edits from this link.");
+                });
+            });
+        }
+
+        document.getElementById("createInviteBtn").addEventListener("click", () => {
+            const token = "inv-" + Math.random().toString(36).slice(2, 10);
+            lastInviteUrl = window.location.origin + collabRoomInviteUrl(token);
+            document.getElementById("inviteUrl").textContent = lastInviteUrl;
+            document.getElementById("newInviteBlock").classList.remove("hidden");
+            showToast("Demo invite created — copy and share the link.");
+        });
+
+        document.getElementById("copyInviteBtn").addEventListener("click", async () => {
+            if (!lastInviteUrl) return;
+            try {
+                await navigator.clipboard.writeText(lastInviteUrl);
+                showToast("Invite link copied.");
+            } catch {
+                showToast("Copy failed — select the link manually.");
+            }
+        });
+
+        renderInvites();
+    </script>
+</body>
+</html>
