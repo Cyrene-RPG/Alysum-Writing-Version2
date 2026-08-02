@@ -879,7 +879,7 @@
             <button class="pill-btn secondary" id="publishBtn" type="button" data-tip="Publish chapters to the web">Publish</button>
             <button class="pill-btn secondary" id="historyBookBtn" type="button" data-tip="Version history — save, compare, restore (Ctrl+Shift+H)">History</button>
             <a class="pill-btn secondary" id="betaShareLink" href="beta-room-manage.html" data-tip="Share an unpublished snapshot with beta readers">Beta share</a>
-            <a class="pill-btn secondary" id="collabShareLink" href="collab-room-manage.html?preview=1" data-tip="Invite editors to suggest chapter changes (test branch preview)">Collab invite</a>
+            <a class="pill-btn secondary" id="collabShareLink" href="collab-room-manage.html" data-tip="Invite editors to suggest chapter changes">Collab invite</a>
             <button class="pill-btn danger" id="deleteBookBtn" type="button" data-tip="Permanently delete this book">Delete Book</button>
         </div>
     </div>
@@ -2315,7 +2315,7 @@ function rememberBookId(id) {
         if (collabShareLink) {
             const showCollab = hasBook && !isLocalStudio;
             collabShareLink.style.display = showCollab ? "" : "none";
-            if (showCollab) collabShareLink.href = `collab-room-manage.html?preview=1&book=${encodeURIComponent(bookId)}`;
+            if (showCollab) collabShareLink.href = `collab-room-manage.html?book=${encodeURIComponent(bookId)}`;
         }
         if (betaShareTopLinkWrap) betaShareTopLinkWrap.classList.toggle("hidden", !(hasBook && !isLocalStudio));
         if (betaShareTopLink && hasBook && !isLocalStudio) {

@@ -7,8 +7,9 @@
     <script src="js/alysum-appearance-boot.js"></script>
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
     <link rel="stylesheet" href="css/gradient-themes.css?v=5" />
+    <link rel="stylesheet" href="css/workspace-nav.css?v=11" />
     <script src="js/gradient-theme-sync.js" defer></script>
-    <title>Collab invite — Alysum (test branch)</title>
+    <title>Collab invite — Alysum</title>
     <style>
         * { box-sizing: border-box; }
         :root {
@@ -29,14 +30,6 @@
                 radial-gradient(ellipse 120% 60% at 50% -10%, rgba(34, 197, 94, 0.14) 0%, transparent 55%),
                 linear-gradient(180deg, #0d1426 0%, var(--bg) 42%);
             color: var(--text);
-        }
-        .test-banner {
-            background: linear-gradient(90deg, rgba(34, 197, 94, 0.18), rgba(124, 58, 237, 0.12));
-            border-bottom: 1px solid rgba(34, 197, 94, 0.25);
-            padding: 10px 16px;
-            font-size: 13px;
-            font-weight: 700;
-            text-align: center;
         }
         .page { max-width: 860px; margin: 0 auto; padding: 22px 20px 48px; }
         .back-link {
@@ -109,6 +102,7 @@
             border: none;
             color: #052e16;
         }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
         .invite-list { display: flex; flex-direction: column; gap: 10px; }
         .invite-row {
             display: flex;
@@ -133,44 +127,50 @@
             background: rgba(34, 197, 94, 0.18);
             color: #86efac;
         }
-        .pill.pending { background: rgba(124, 58, 237, 0.18); color: #c4b5fd; }
-        .status-toast {
-            margin-bottom: 16px;
+        .pill.revoked { background: rgba(248, 113, 113, 0.18); color: #fca5a5; }
+        .status {
             padding: 12px 14px;
             border-radius: 12px;
             font-size: 14px;
             font-weight: 600;
-            background: rgba(34, 197, 94, 0.15);
-            border: 1px solid rgba(34, 197, 94, 0.35);
-            color: #86efac;
+            margin-bottom: 16px;
+        }
+        .status.error { color: #fecaca; border: 1px solid rgba(239,68,68,0.35); background: rgba(127,29,29,0.2); }
+        .status.ok { color: #86efac; border: 1px solid rgba(34,197,94,0.35); background: rgba(20,83,45,0.25); }
+        .schema-warn {
+            margin-bottom: 16px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            font-size: 13px;
+            line-height: 1.5;
+            border: 1px solid rgba(251, 191, 36, 0.35);
+            background: rgba(120, 53, 15, 0.25);
+            color: #fde68a;
         }
         .hidden { display: none !important; }
     </style>
 </head>
 <body>
-    <div class="test-banner">Test branch preview — invite management UI mockup</div>
+    <div id="alysum-workspace-nav" data-active="collab-rooms"></div>
 
     <main class="page">
-        <a class="back-link" href="collab-rooms.html?preview=1">← Collab rooms</a>
-        <h2>Collab invite</h2>
-        <p class="hint">Create a chapter-scoped invite link. Anyone who accepts gets editor status; their edits stay green until you approve.</p>
+        <a class="back-link" id="backBtn" href="collab-rooms.html">← Collab rooms</a>
+        <h2 id="pageTitle">Collab invite</h2>
+        <p class="hint" id="pageSub">Create a chapter-scoped invite link. Collaborators can suggest edits; you approve before they merge into your draft.</p>
 
-        <div id="statusToast" class="status-toast hidden"></div>
+        <div id="schemaWarn" class="schema-warn hidden"></div>
+        <div id="pageStatus" class="status hidden"></div>
 
         <section class="card">
             <h3>New chapter invite</h3>
-            <p>Pick a chapter and share the link. Collaborators can suggest edits but cannot publish or invite others.</p>
+            <p>Pick a chapter and share the link. Collaborators cannot publish or invite others.</p>
             <label for="chapterSelect">Chapter</label>
-            <select id="chapterSelect">
-                <option value="ch-12">Chapter 12 — The North Gate</option>
-                <option value="ch-11">Chapter 11 — Ash Market</option>
-                <option value="ch-13">Chapter 13 — The Archivist</option>
-            </select>
+            <select id="chapterSelect"></select>
             <label for="inviteEmail">Email (optional)</label>
             <input type="email" id="inviteEmail" placeholder="collaborator@example.com" />
             <div class="btn-row">
                 <button type="button" class="btn primary" id="createInviteBtn">Create invite link</button>
-                <a class="btn" href="collab-room.html?preview=1&role=author">Open review demo</a>
+                <a class="btn" id="reviewBtn" href="collab-rooms.html">Review chapter</a>
             </div>
             <div id="newInviteBlock" class="hidden">
                 <label>Invite link</label>
@@ -182,74 +182,208 @@
         </section>
 
         <section class="card">
-            <h3>Active invites — Chapter 12</h3>
-            <p>Revoke anytime. Pending suggestions from revoked collaborators stay in review until you accept or reject.</p>
+            <h3 id="invitesHeading">Active invites</h3>
+            <p>Revoke anytime. Pending suggestions stay in review until you accept or reject.</p>
             <div class="invite-list" id="inviteList"></div>
         </section>
     </main>
 
     <script type="module">
-        import { collabRoomInviteUrl } from "./js/collab-rooms-demo.js?v=1";
+        import { supabase } from "./firebase.js";
+        import { requireStudioSession } from "./js/studio-session.js?v=3";
+        import {
+            loadAuthorBookChapters,
+            createCollabChapterInvite,
+            listCollabInvitesForBook,
+            revokeCollabChapterInvite,
+            collabRoomInviteUrl,
+            collabRoomAuthorUrl,
+            isCollabRoomsSchemaMissing,
+        } from "./js/collab-rooms-api.js?v=1";
 
-        const invites = [
-            { name: "@alex", email: "alex@example.com", status: "active", pending: 2, token: "alex-demo" },
-            { name: "@sam", email: "sam@example.com", status: "active", pending: 2, token: "sam-demo" },
-            { name: "(open link)", email: "—", status: "pending", pending: 0, token: "open-demo" },
-        ];
+        const params = new URLSearchParams(window.location.search);
+        const bookId = String(params.get("book") || "").trim();
+        const initialChapter = String(params.get("chapter") || "").trim();
 
+        const chapterSelect = document.getElementById("chapterSelect");
         const inviteList = document.getElementById("inviteList");
-        const statusToast = document.getElementById("statusToast");
+        const pageStatus = document.getElementById("pageStatus");
+        const schemaWarn = document.getElementById("schemaWarn");
+        const reviewBtn = document.getElementById("reviewBtn");
+        const pageTitle = document.getElementById("pageTitle");
+        const pageSub = document.getElementById("pageSub");
+        const inviteEmail = document.getElementById("inviteEmail");
+
+        let chapters = [];
+        let chapterTitleById = new Map();
         let lastInviteUrl = "";
 
-        function showToast(msg) {
-            statusToast.textContent = msg;
-            statusToast.classList.remove("hidden");
-            window.setTimeout(() => statusToast.classList.add("hidden"), 3200);
+        function escapeHtml(str) {
+            return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
         }
 
-        function renderInvites() {
-            inviteList.innerHTML = invites
-                .map(
-                    (inv) => `<div class="invite-row">
+        function setStatus(msg, kind = "") {
+            if (!msg) {
+                pageStatus.classList.add("hidden");
+                return;
+            }
+            pageStatus.textContent = msg;
+            pageStatus.className = "status " + kind;
+            pageStatus.classList.remove("hidden");
+        }
+
+        function showSchemaWarn() {
+            schemaWarn.textContent = "Collab rooms tables are not in Supabase yet. Run supabase-collab-rooms.sql in the SQL Editor, then refresh.";
+            schemaWarn.classList.remove("hidden");
+        }
+
+        function updateReviewLink() {
+            const chapterId = chapterSelect.value;
+            if (bookId && chapterId) {
+                reviewBtn.href = collabRoomAuthorUrl(bookId, chapterId);
+            }
+        }
+
+        function renderChapters() {
+            if (!chapters.length) {
+                chapterSelect.innerHTML = '<option value="">No body chapters yet</option>';
+                document.getElementById("createInviteBtn").disabled = true;
+                return;
+            }
+            chapterSelect.innerHTML = chapters
+                .map((ch) => `<option value="${escapeHtml(ch.id)}">${escapeHtml(ch.title)}</option>`)
+                .join("");
+            if (initialChapter && chapters.some((c) => c.id === initialChapter)) {
+                chapterSelect.value = initialChapter;
+            }
+            updateReviewLink();
+            document.getElementById("createInviteBtn").disabled = false;
+        }
+
+        function chapterLabel(chapterId) {
+            return chapterTitleById.get(chapterId) || chapterId;
+        }
+
+        async function refreshInvites() {
+            const rows = await listCollabInvitesForBook(bookId);
+            if (!rows.length) {
+                inviteList.innerHTML = '<p class="hint" style="margin:0;color:var(--muted)">No invites yet for this book.</p>';
+                return;
+            }
+            inviteList.innerHTML = rows
+                .map((row) => {
+                    const token = row.invite_token;
+                    const url = window.location.origin + collabRoomInviteUrl(token);
+                    const status = row.status || "active";
+                    return `<div class="invite-row">
                         <div class="invite-row-meta">
-                            <strong>${inv.name}</strong>
-                            ${inv.email} · ${inv.pending ? `${inv.pending} pending suggestions` : "Not accepted yet"}
+                            <strong>${escapeHtml(chapterLabel(row.chapter_id))}</strong>
+                            ${row.invited_email ? escapeHtml(row.invited_email) + " · " : ""}
+                            ${Number(row.member_count || 0)} member${row.member_count === 1 ? "" : "s"} ·
+                            ${Number(row.pending_suggestions || 0)} pending
                         </div>
-                        <span class="pill ${inv.status === "pending" ? "pending" : ""}">${inv.status}</span>
+                        <span class="pill ${status === "revoked" ? "revoked" : ""}">${escapeHtml(status)}</span>
                         <div class="btn-row">
-                            <a class="btn" href="${collabRoomInviteUrl(inv.token)}">Open</a>
-                            <button type="button" class="btn" data-revoke="${inv.token}">Revoke</button>
+                            <a class="btn" href="${escapeHtml(collabRoomAuthorUrl(bookId, row.chapter_id))}">Review</a>
+                            <button type="button" class="btn" data-copy="${escapeHtml(url)}">Copy link</button>
+                            ${status === "active" ? `<button type="button" class="btn" data-revoke="${escapeHtml(row.id)}">Revoke</button>` : ""}
                         </div>
-                    </div>`
-                )
+                    </div>`;
+                })
                 .join("");
 
+            inviteList.querySelectorAll("[data-copy]").forEach((btn) => {
+                btn.addEventListener("click", async () => {
+                    try {
+                        await navigator.clipboard.writeText(btn.getAttribute("data-copy"));
+                        setStatus("Invite link copied.", "ok");
+                    } catch {
+                        setStatus("Copy failed — select the link manually.", "error");
+                    }
+                });
+            });
+
             inviteList.querySelectorAll("[data-revoke]").forEach((btn) => {
-                btn.addEventListener("click", () => {
-                    showToast("Demo: invite revoked. Production would block new edits from this link.");
+                btn.addEventListener("click", async () => {
+                    const id = btn.getAttribute("data-revoke");
+                    btn.disabled = true;
+                    try {
+                        await revokeCollabChapterInvite(id);
+                        setStatus("Invite revoked.", "ok");
+                        await refreshInvites();
+                    } catch (err) {
+                        setStatus(err?.message || "Could not revoke invite.", "error");
+                    } finally {
+                        btn.disabled = false;
+                    }
                 });
             });
         }
 
-        document.getElementById("createInviteBtn").addEventListener("click", () => {
-            const token = "inv-" + Math.random().toString(36).slice(2, 10);
-            lastInviteUrl = window.location.origin + collabRoomInviteUrl(token);
-            document.getElementById("inviteUrl").textContent = lastInviteUrl;
-            document.getElementById("newInviteBlock").classList.remove("hidden");
-            showToast("Demo invite created — copy and share the link.");
+        chapterSelect.addEventListener("change", updateReviewLink);
+
+        document.getElementById("createInviteBtn").addEventListener("click", async () => {
+            const chapterId = chapterSelect.value;
+            if (!chapterId) {
+                setStatus("Pick a chapter first.", "error");
+                return;
+            }
+            const btn = document.getElementById("createInviteBtn");
+            btn.disabled = true;
+            try {
+                const row = await createCollabChapterInvite(bookId, chapterId, inviteEmail?.value?.trim() || "");
+                lastInviteUrl = window.location.origin + collabRoomInviteUrl(row.invite_token);
+                document.getElementById("inviteUrl").textContent = lastInviteUrl;
+                document.getElementById("newInviteBlock").classList.remove("hidden");
+                setStatus("Invite created — copy and share the link.", "ok");
+                await refreshInvites();
+            } catch (err) {
+                if (isCollabRoomsSchemaMissing(err)) showSchemaWarn();
+                setStatus(err?.message || "Could not create invite.", "error");
+            } finally {
+                btn.disabled = false;
+            }
         });
 
         document.getElementById("copyInviteBtn").addEventListener("click", async () => {
             if (!lastInviteUrl) return;
             try {
                 await navigator.clipboard.writeText(lastInviteUrl);
-                showToast("Invite link copied.");
+                setStatus("Invite link copied.", "ok");
             } catch {
-                showToast("Copy failed — select the link manually.");
+                setStatus("Copy failed.", "error");
             }
         });
 
-        renderInvites();
+        async function boot() {
+            const nextPath = window.location.pathname + window.location.search;
+            const session = await requireStudioSession(supabase, nextPath);
+            if (!session?.user) return;
+
+            if (!bookId) {
+                setStatus("No book specified. Open Collab invite from the editor.", "error");
+                return;
+            }
+
+            try {
+                const { book, chapters: loaded } = await loadAuthorBookChapters(bookId);
+                chapters = loaded;
+                chapterTitleById = new Map(chapters.map((c) => [c.id, c.title]));
+                const title = book.title || "Untitled";
+                pageTitle.textContent = `Collab invite · ${title}`;
+                pageSub.textContent = `Invite editors to suggest changes on chapters in "${title}".`;
+                document.title = `Collab invite · ${title} — Alysum`;
+                renderChapters();
+                await refreshInvites();
+            } catch (err) {
+                console.error(err);
+                if (isCollabRoomsSchemaMissing(err)) showSchemaWarn();
+                setStatus(err?.message || "Could not load book.", "error");
+            }
+        }
+
+        boot().catch(console.error);
     </script>
+    <script type="module" src="js/workspace-nav.js?v=10"></script>
 </body>
 </html>

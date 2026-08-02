@@ -110,6 +110,16 @@
             color: var(--muted);
         }
         .compare-note strong { color: var(--text); }
+        .loading, .empty, .status {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 28px 20px;
+            text-align: center;
+            color: var(--muted);
+            line-height: 1.55;
+        }
+        .status.error { color: #fecaca; border-color: rgba(239,68,68,0.35); background: rgba(127,29,29,0.2); }
     </style>
 </head>
 <body>
@@ -158,6 +168,8 @@
         </nav>
         <script type="module" src="js/workspace-nav.js?v=9"></script>
 
+    <div class="test-banner hidden" id="schemaBanner">Run supabase-collab-rooms.sql in Supabase to enable live collab rooms.</div>
+
     <main class="page">
         <div class="page-head">
             <div>
@@ -167,64 +179,134 @@
                     Unlike beta rooms, this touches live chapters — not frozen snapshots.
                 </p>
             </div>
-            <a class="btn primary" href="collab-room.html?preview=1&role=author">Open demo room</a>
+            <a class="btn" href="writer-dashboard.html">Studio → pick a book</a>
         </div>
 
-        <div class="grid" id="roomGrid"></div>
+        <div id="pageStatus" class="status hidden"></div>
+        <div id="loadingState" class="loading">Loading collab rooms…</div>
+        <div id="emptyState" class="empty hidden">No collab rooms yet. From the editor, use Collab invite on a book to share a chapter.</div>
+        <div class="grid hidden" id="roomGrid"></div>
 
         <div class="compare-note">
             <strong>Beta room vs collab room</strong><br />
             Beta rooms share a read-only snapshot for feedback and DMs.
             Collab rooms let invited editors suggest changes on a chapter; you review green highlights and accept or reject before anything hits your canon draft.
+            <br /><br />
+            <a href="collab-room.html?preview=1&role=author">Open UI demo</a> (sample data only)
         </div>
     </main>
 
     <script type="module">
-        import { collabRoomPreviewUrl, collabRoomInviteUrl } from "./js/collab-rooms-demo.js?v=1";
+        import { supabase } from "./firebase.js";
+        import { requireStudioSession } from "./js/studio-session.js?v=3";
+        import {
+            listMyCollabMemberships,
+            listMyCollabAuthorInvites,
+            collabRoomAuthorUrl,
+            isCollabRoomsSchemaMissing,
+        } from "./js/collab-rooms-api.js?v=1";
 
-        const rooms = [
-            {
-                title: "The Glass Orchard",
-                chapter: "Ch. 12 — The North Gate",
-                role: "author",
-                badge: "4 pending",
-                badgeClass: "review",
-                meta: "2 collaborators · last activity 2h ago",
-                cta: "Review suggestions",
-                href: collabRoomPreviewUrl("author"),
-            },
-            {
-                title: "The Glass Orchard",
-                chapter: "Ch. 12 — The North Gate",
-                role: "collaborator",
-                badge: "Editor invite",
-                badgeClass: "",
-                meta: "Invited by @author · suggest-only",
-                cta: "Open as @alex",
-                href: collabRoomPreviewUrl("alex"),
-            },
-            {
-                title: "Midnight Atlas (demo)",
-                chapter: "Ch. 3 — Harbor Lights",
-                role: "collaborator",
-                badge: "Coming soon",
-                badgeClass: "",
-                meta: "Placeholder card for second book",
-                cta: "Preview invite flow",
-                href: collabRoomInviteUrl("demo-ch3"),
-            },
-        ];
+        const roomGrid = document.getElementById("roomGrid");
+        const loadingState = document.getElementById("loadingState");
+        const emptyState = document.getElementById("emptyState");
+        const pageStatus = document.getElementById("pageStatus");
+        const schemaBanner = document.getElementById("schemaBanner");
 
-        document.getElementById("roomGrid").innerHTML = rooms
-            .map(
-                (r) => `<article class="card">
-                    <span class="badge ${r.badgeClass}">${r.badge}</span>
-                    <h3 class="card-title">${r.title}</h3>
-                    <div class="card-meta">${r.chapter}<br />${r.meta}</div>
-                    <div class="card-actions"><a class="btn primary" href="${r.href}">${r.cta}</a></div>
+        function escapeHtml(str) {
+            return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        function chapterTitleFromBook(book, chapterId) {
+            const body = book?.sections?.body;
+            if (!Array.isArray(body)) return chapterId;
+            const ch = body.find((row) => row?.id === chapterId);
+            return ch?.title || chapterId;
+        }
+
+        async function boot() {
+            const session = await requireStudioSession(supabase, window.location.pathname + window.location.search);
+            if (!session?.user) return;
+
+            try {
+                const [memberships, authorInvites] = await Promise.all([
+                    listMyCollabMemberships(),
+                    listMyCollabAuthorInvites(),
+                ]);
+
+                const bookIds = [...new Set(authorInvites.map((i) => i.book_id).filter(Boolean))];
+                /** @type {Map<string, object>} */
+                const booksById = new Map();
+                if (bookIds.length) {
+                    const { data: books } = await supabase
+                        .from("books")
+                        .select("id, title, sections")
+                        .in("id", bookIds)
+                        .eq("user_id", session.user.id);
+                    for (const book of books || []) booksById.set(String(book.id), book);
+                }
+
+                /** @type {Array<{ title: string, chapter: string, badge: string, badgeClass: string, meta: string, cta: string, href: string }>} */
+                const cards = [];
+
+                for (const inv of authorInvites) {
+                    const book = booksById.get(inv.book_id);
+                    const chapterTitle = chapterTitleFromBook(book, inv.chapter_id);
+                    cards.push({
+                        title: book?.title || "Your book",
+                        chapter: chapterTitle,
+                        badge: "Author",
+                        badgeClass: "",
+                        meta: "Your chapter invite · review pending suggestions",
+                        cta: "Review chapter",
+                        href: collabRoomAuthorUrl(inv.book_id, inv.chapter_id),
+                    });
+                }
+
+                for (const m of memberships) {
+                    cards.push({
+                        title: m.book_title || "Untitled",
+                        chapter: m.chapter_title || m.chapter_id,
+                        badge: "Editor invite",
+                        badgeClass: "",
+                        meta: `Collaborator · ${Number(m.pending_suggestions || 0)} of your suggestions pending`,
+                        cta: "Open collab room",
+                        href: collabRoomAuthorUrl(m.book_id, m.chapter_id),
+                    });
+                }
+
+                loadingState.classList.add("hidden");
+                if (!cards.length) {
+                    emptyState.classList.remove("hidden");
+                    return;
+                }
+
+                roomGrid.classList.remove("hidden");
+                roomGrid.innerHTML = cards
+                    .map(
+                        (r) => `<article class="card">
+                    <span class="badge ${r.badgeClass}">${escapeHtml(r.badge)}</span>
+                    <h3 class="card-title">${escapeHtml(r.title)}</h3>
+                    <div class="card-meta">${escapeHtml(r.chapter)}<br />${escapeHtml(r.meta)}</div>
+                    <div class="card-actions"><a class="btn primary" href="${escapeHtml(r.href)}">${escapeHtml(r.cta)}</a></div>
                 </article>`
-            )
-            .join("");
+                    )
+                    .join("");
+            } catch (err) {
+                console.error(err);
+                loadingState.classList.add("hidden");
+                if (isCollabRoomsSchemaMissing(err)) {
+                    schemaBanner.classList.remove("hidden");
+                    emptyState.textContent = "Collab rooms need supabase-collab-rooms.sql applied first.";
+                    emptyState.classList.remove("hidden");
+                    return;
+                }
+                pageStatus.textContent = err?.message || "Could not load collab rooms.";
+                pageStatus.className = "status error";
+                pageStatus.classList.remove("hidden");
+            }
+        }
+
+        boot();
     </script>
 </body>
 </html>
