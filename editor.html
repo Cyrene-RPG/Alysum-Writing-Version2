@@ -1186,16 +1186,13 @@
         isSceneBreakParagraph,
         normalizeSceneBreakAttributes,
     } from "./js/scene-breaks.js?v=8";
-    import { bootCollabEditorMode } from "./js/collab-editor-mode.js?v=1";
-    import { acceptCollabChapterInvite, isCollabRoomsSchemaMissing } from "./js/collab-rooms-api.js?v=3";
 
 const params = new URLSearchParams(window.location.search);
 const wordWarEmbed = params.get("embed") === "wordWar";
+if ((params.get("collab") || params.get("invite")) && !wordWarEmbed) {
+    window.location.replace("collab-room.html" + window.location.search);
+}
 const wordWarRoomId = String(params.get("room") || "").trim();
-const collabChapterId = String(params.get("chapter") || "").trim();
-let collabChapterIdLive = collabChapterId;
-const collabModeRequested = !!(params.get("collab") || params.get("invite"));
-let collabBlockSave = false;
 let wordWarWordsAtStart = null;
 let wordWarDraftTimer = null;
 
@@ -3534,10 +3531,6 @@ function rememberBookId(id) {
     }
 
     async function saveBook(doneText = "Saved") {
-        if (collabBlockSave) {
-            setSaveStatus("Collab mode — submit suggestions to save changes");
-            return;
-        }
         if (!currentUser || !bookId || !currentBook) return;
         setSaveStatus("Saving...");
         if (isCurrentBookComic()) syncCurrentComicPageFromUI();
@@ -4482,13 +4475,7 @@ async function loadBook() {
             renderAllSections();
             applyComicModeUI();
             suppressResumeSave = true;
-            if (collabChapterIdLive && collabModeRequested) {
-                const collabLoc = findChapterLocation(collabChapterIdLive);
-                if (collabLoc) loadChapter(collabLoc.section, collabLoc.index, false);
-                else openInitialChapterFromResume(readWriterResume(bookId));
-            } else {
-                openInitialChapterFromResume(readWriterResume(bookId));
-            }
+            openInitialChapterFromResume(readWriterResume(bookId));
             suppressResumeSave = false;
             syncStats();
             persistedBookWordCount = totalWords();
@@ -4499,30 +4486,6 @@ async function loadBook() {
             applyEditorBetaLinks();
             initVersionPanel();
             void hashSnapshot(buildManuscriptSnapshot(currentBook)).then(h => { lastSavedContentHash = h; }).catch(() => {});
-
-            if (collabModeRequested && collabChapterIdLive) {
-                try {
-                    const collabState = await bootCollabEditorMode({
-                        params,
-                        supabase,
-                        getBookId: () => bookId,
-                        setBookId: (id) => rememberBookId(id),
-                        getCurrentBook: () => currentBook,
-                        setCurrentBook: (book) => { currentBook = book; },
-                        normalizeBookData,
-                        editor,
-                        loadChapter,
-                        findChapterLocation,
-                        reloadBookFromCloud,
-                        cleanAndStoreCurrentChapterFromEditor,
-                        setSaveStatus,
-                        isLocalStudio,
-                    });
-                    if (collabState) collabBlockSave = !!collabState.blockSave;
-                } catch (collabErr) {
-                    console.error("Collab mode failed:", collabErr);
-                }
-            }
         } catch (e) {
             console.error("LOAD ERROR:", e);
             setSaveStatus("Error loading");
@@ -4629,26 +4592,6 @@ async function loadBook() {
     await loadProfile().catch(console.error);
     if (params.get("testDailyGoalBadge") === "1") {
         setTimeout(previewDailyGoalBadge, 450);
-    }
-
-    const inviteToken = String(params.get("invite") || "").trim();
-    if (inviteToken && !isLocalStudio) {
-        try {
-            const membership = await acceptCollabChapterInvite(inviteToken);
-            rememberBookId(membership.book_id);
-            collabChapterIdLive = membership.chapter_id;
-            const url = new URL(window.location.href);
-            url.searchParams.delete("invite");
-            url.searchParams.set("book", membership.book_id);
-            url.searchParams.set("chapter", membership.chapter_id);
-            url.searchParams.set("collab", "edit");
-            window.history.replaceState({}, "", url.pathname + url.search);
-        } catch (err) {
-            setSaveStatus("Collab invite failed");
-            topBookTitle.textContent = "Collab invite failed";
-            alert(isCollabRoomsSchemaMissing(err) ? "Run supabase-collab-rooms.sql first." : err?.message || "Could not accept invite.");
-            return;
-        }
     }
 
     const hasBook = await resolveBookId().catch((e) => {

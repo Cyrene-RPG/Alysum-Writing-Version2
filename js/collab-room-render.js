@@ -12,15 +12,25 @@ export function escapeHtml(str) {
         .replace(/"/g, "&quot;");
 }
 
+const BLOCK_SELECTOR = "p, h2, blockquote, li";
+
+function blockTextsFromRoot(root) {
+    const blocks = [...root.querySelectorAll(BLOCK_SELECTOR)];
+    if (blocks.length) {
+        return blocks
+            .map((el) => el.textContent.replace(/\s+/g, " ").trim())
+            .filter((t, i, arr) => t.length > 0 || arr.length === 1);
+    }
+    const plain = root.textContent.replace(/\s+/g, " ").trim();
+    return plain ? [plain] : [""];
+}
+
 /** @param {string} html */
 export function htmlToParagraphTexts(html) {
     if (typeof document === "undefined") return [];
     const root = document.createElement("div");
-    root.innerHTML = String(html || "");
-    const fromTags = [...root.querySelectorAll("p")].map((p) => p.textContent.replace(/\s+/g, " ").trim()).filter(Boolean);
-    if (fromTags.length) return fromTags;
-    const plain = root.textContent.replace(/\s+/g, " ").trim();
-    return plain ? [plain] : [];
+    root.innerHTML = String(html || "").trim();
+    return blockTextsFromRoot(root);
 }
 
 /** @param {string[]} paragraphs */
@@ -32,9 +42,7 @@ export function paragraphsToEditableHtml(paragraphs) {
 /** Read plain-text paragraphs from a contenteditable manuscript root. */
 export function readParagraphTextsFromManuscript(root) {
     if (!root) return [];
-    return [...root.querySelectorAll("p")]
-        .map((p) => p.textContent.replace(/\s+/g, " ").trim())
-        .filter((t, i, arr) => t || arr.length === 1);
+    return blockTextsFromRoot(root);
 }
 
 /**

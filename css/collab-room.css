@@ -10,6 +10,12 @@
     --collab-sam: #a78bfa;
     --collab-nav-offset: var(--alysum-nav-sticky-offset, 45px);
     --collab-topbar-height: 56px;
+    --collab-toolbar-height: 54px;
+    --collab-chrome-height: calc(var(--collab-topbar-height) + var(--collab-toolbar-height));
+    --toolbar-bg: #0f172a;
+    --topbar-bg: #111827;
+    --border: rgba(255, 255, 255, 0.08);
+    --page-text: #f1f5f9;
     --workspace-bg: #eef1f5;
     --page-bg: #ffffff;
     --page-text: #171717;
@@ -22,6 +28,68 @@ body.dark {
     --page-bg: #1e293b;
     --page-text: #f1f5f9;
     --page-subtle: #94a3b8;
+    --toolbar-bg: #0f172a;
+    --topbar-bg: #111827;
+    --border: rgba(255, 255, 255, 0.08);
+}
+
+body.light {
+    --toolbar-bg: #ffffff;
+    --topbar-bg: #ffffff;
+    --border: rgba(0, 0, 0, 0.08);
+    --page-text: #171717;
+}
+
+.collab-toolbar {
+    position: sticky;
+    top: calc(var(--collab-nav-offset) + var(--collab-topbar-height));
+    z-index: 49;
+    min-height: var(--collab-toolbar-height);
+    background: var(--toolbar-bg);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    overflow-x: auto;
+    flex-wrap: wrap;
+}
+
+.collab-toolbar .tool-btn,
+.collab-toolbar .tool-select {
+    height: 36px;
+    border: 1px solid var(--border);
+    background: var(--topbar-bg);
+    border-radius: 10px;
+    color: var(--page-text);
+    font-size: 14px;
+    font-weight: 700;
+    padding: 0 12px;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.collab-toolbar .tool-select {
+    padding-right: 28px;
+}
+
+.collab-toolbar .toolbar-spacer {
+    flex: 1;
+    min-width: 8px;
+}
+
+.collab-theme-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+    background: var(--panel, #111827);
+    color: var(--text, #f9fafb);
+    font-size: 18px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .collab-test-banner {
@@ -81,7 +149,7 @@ body.dark {
     display: grid;
     grid-template-columns: minmax(0, 1fr) min(380px, 34vw);
     gap: 0;
-    min-height: calc(100vh - var(--collab-nav-offset) - var(--collab-topbar-height));
+    min-height: calc(100vh - var(--collab-nav-offset) - var(--collab-chrome-height));
 }
 
 .collab-workspace {
@@ -98,7 +166,7 @@ body.dark {
 
 .collab-page {
     background: var(--page-bg);
-    min-height: calc(100vh - var(--collab-nav-offset) - var(--collab-topbar-height) - 120px);
+    min-height: calc(100vh - var(--collab-nav-offset) - var(--collab-chrome-height) - 120px);
     border-radius: 8px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
     padding: 72px 120px 96px;
@@ -275,9 +343,9 @@ body.dark .collab-mode-banner:not(.is-author) {
     border-left: 1px solid var(--border, rgba(255, 255, 255, 0.08));
     padding: 18px 16px 24px;
     overflow-y: auto;
-    max-height: calc(100vh - var(--collab-nav-offset) - var(--collab-topbar-height));
+    max-height: calc(100vh - var(--collab-nav-offset) - var(--collab-chrome-height));
     position: sticky;
-    top: calc(var(--collab-nav-offset) + var(--collab-topbar-height));
+    top: calc(var(--collab-nav-offset) + var(--collab-chrome-height));
 }
 
 .collab-review-head {
