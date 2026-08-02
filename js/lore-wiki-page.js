@@ -96,11 +96,12 @@ export async function bootLoreWikiPage() {
             const entry = loreArticleFromRow(article);
 
             document.title = `${entry.name} — Lore Wiki`;
-            byId("wikiPageTitle").textContent = entry.name;
-            byId("wikiContentSub").innerHTML = `<a href="lore-wiki.html">Lore Wiki</a> · <a href="lore-wiki.html?book=${encodeURIComponent(bookId)}">${escapeHtml(wiki.title)}</a>`;
+            byId("wikiPageTitle")?.textContent = entry.name;
+            byId("wikiContentSub")?.innerHTML = `<a href="lore-wiki.html">Lore Wiki</a> · <a href="lore-wiki.html?book=${encodeURIComponent(bookId)}">${escapeHtml(wiki.title)}</a>`;
 
             mountArticle(byId("wikiParserOutput"), entry, bookId, entries, "lore");
-            byId("wikiLastModified").textContent = `Published snapshot · read only`;
+            const lastModified = byId("wikiLastModified");
+            if (lastModified) lastModified.textContent = "Published snapshot · read only";
             return;
         }
 
@@ -119,23 +120,23 @@ export async function bootLoreWikiPage() {
 
             if (query) {
                 document.title = `Search: ${query} — ${wiki.title}`;
-                byId("wikiPageTitle").textContent = `Search: ${query}`;
-                byId("wikiContentSub").innerHTML = `<a href="lore-wiki.html?book=${encodeURIComponent(bookId)}">${escapeHtml(wiki.title)}</a>`;
+                byId("wikiPageTitle")?.textContent = `Search: ${query}`;
+                byId("wikiContentSub")?.innerHTML = `<a href="lore-wiki.html?book=${encodeURIComponent(bookId)}">${escapeHtml(wiki.title)}</a>`;
                 byId("wikiParserOutput").innerHTML = renderSearchPage(query, entries, bookId, "lore");
                 return;
             }
 
             document.title = `${wiki.title} — Lore Wiki`;
-            byId("wikiPageTitle").textContent = wiki.title;
-            byId("wikiContentSub").innerHTML = `<a href="lore-wiki.html">Lore Wiki</a> · by ${escapeHtml(wiki.author)}`;
+            byId("wikiPageTitle")?.textContent = wiki.title;
+            byId("wikiContentSub")?.innerHTML = `<a href="lore-wiki.html">Lore Wiki</a> · by ${escapeHtml(wiki.author)}`;
             byId("wikiParserOutput").innerHTML = renderLoreBookMainPage(wiki, entries, bookId);
             return;
         }
 
         setPageMode("home");
         document.title = "Lore Wiki — Alysum";
-        byId("wikiPageTitle").textContent = "";
-        byId("wikiContentSub").textContent = "";
+        byId("wikiPageTitle")?.textContent = "";
+        byId("wikiContentSub")?.textContent = "";
         byId("wikiLoreHomeHero")?.removeAttribute("hidden");
         byId("wikiBodyContent")?.classList.add("wiki-lore-home-shell");
 
