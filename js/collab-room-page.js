@@ -11,9 +11,10 @@ import {
     commitCollabChapterContent,
     listCollabComments,
     submitCollabComment,
+    editCollabComment,
     resolveCollabComment,
     isCollabRoomsSchemaMissing,
-} from "./collab-rooms-api.js?v=9";
+} from "./collab-rooms-api.js?v=10";
 import { DEMO_ROOM, DEMO_CANON, DEMO_COMMENTS } from "./collab-rooms-demo.js?v=4";
 import {
     htmlToParagraphTexts,
@@ -22,7 +23,7 @@ import {
     prepareCollaboratorChapterHtml,
     escapeHtml,
     commentRowToComment,
-} from "./collab-room-render.js?v=8";
+} from "./collab-room-render.js?v=9";
 import { mountCollabToolbar } from "./collab-toolbar.js?v=2";
 import { createCollabRealtimeSession } from "./collab-realtime.js?v=5";
 import {
@@ -62,6 +63,8 @@ export async function bootCollabRoomPage(opts = {}) {
     let hunks = [];
     let replyTargetId = "";
     let replyDraftText = "";
+    let editingCommentId = "";
+    let editDraftText = "";
     let pendingComment = null;
     let refreshTimer = 0;
     let realtimeStarted = false;
@@ -589,6 +592,54 @@ export async function bootCollabRoomPage(opts = {}) {
         renderCommentList();
     }
 
+    function isMyComment(c) {
+        if (!c) return false;
+        if (currentUserId && c.by === currentUserId) return true;
+        if (isPreview && c.by === activeRole) return true;
+        return false;
+    }
+
+    function startEditComment(comment) {
+        if (!comment || !isMyComment(comment)) return;
+        editingCommentId = comment.id;
+        editDraftText = comment.body || "";
+        replyTargetId = "";
+        replyDraftText = "";
+        pendingComment = null;
+        commentComposer?.classList.add("hidden");
+        setSidebarTab("comments");
+        renderCommentList();
+    }
+
+    function cancelEditComment() {
+        editingCommentId = "";
+        editDraftText = "";
+        renderCommentList();
+    }
+
+    async function saveEditComment(id) {
+        const comment = comments.find((c) => c.id === id);
+        if (!comment || !isMyComment(comment)) return;
+        const box = commentList?.querySelector(`.collab-edit-input[data-edit-id="${id}"]`);
+        const body = String(box?.value ?? editDraftText ?? "").trim();
+        if (!body) {
+            alert("Comment can’t be empty.");
+            return;
+        }
+        if (isPreview) {
+            comment.body = body;
+            comment.edited = true;
+            comment.updatedAt = new Date().toISOString();
+            cancelEditComment();
+            return;
+        }
+        await editCollabComment(id, body);
+        editingCommentId = "";
+        editDraftText = "";
+        await refreshComments();
+        setSidebarTab("comments");
+    }
+
     function captureReplyDraft() {
         if (!replyTargetId || !commentList) return;
         const box = commentList.querySelector(`.collab-reply-input[data-parent-id="${replyTargetId}"]`);
@@ -671,6 +722,10 @@ export async function bootCollabRoomPage(opts = {}) {
 
     function renderCommentList() {
         captureReplyDraft();
+        if (editingCommentId && commentList) {
+            const box = commentList.querySelector(`.collab-edit-input[data-edit-id="${editingCommentId}"]`);
+            if (box) editDraftText = String(box.value || "");
+        }
         const threads = comments.filter((c) => !c.parentId);
         const openCount = threads.filter((c) => c.status === "open").length;
         commentBadge?.classList.toggle("hidden", openCount === 0);
@@ -684,13 +739,59 @@ export async function bootCollabRoomPage(opts = {}) {
                 const replies = comments.filter((r) => r.parentId === c.id);
                 const resolved = c.status === "resolved";
                 const isReplying = replyTargetId === c.id;
-                const canResolve = isAuthor || c.by === currentUserId || (isPreview && c.by === activeRole);
+                const isEditing = editingCommentId === c.id;
+                const mine = isMyComment(c);
+                const canResolve = isAuthor || mine;
                 const resolveBtn = canResolve
                     ? `<button type="button" class="collab-btn" data-comment-action="${resolved ? "reopen" : "resolve"}" data-id="${c.id}">${resolved ? "Reopen" : "Resolve"}</button>`
                     : "";
                 const replyBtn = !resolved
                     ? `<button type="button" class="collab-btn primary" data-comment-action="reply" data-id="${c.id}">Reply</button>`
                     : "";
+                const editBtn =
+                    mine && !resolved && !isEditing
+                        ? `<button type="button" class="collab-btn" data-comment-action="edit" data-id="${c.id}">Edit</button>`
+                        : "";
+                const editedMark = c.edited ? ` <span class="collab-comment-edited">(edited)</span>` : "";
+                const bodyHtml = isEditing
+                    ? `<div class="collab-comment-edit">
+                        <textarea rows="3" class="collab-edit-input" data-edit-id="${c.id}">${escapeHtml(editDraftText || c.body)}</textarea>
+                        <div class="collab-comment-composer-actions">
+                            <button type="button" class="collab-btn" data-comment-action="cancel-edit" data-id="${c.id}">Cancel</button>
+                            <button type="button" class="collab-btn primary" data-comment-action="save-edit" data-id="${c.id}">Save</button>
+                        </div>
+                       </div>`
+                    : `<div class="collab-comment-body">${escapeHtml(c.body)}${editedMark}</div>`;
+                const repliesHtml = replies
+                    .map((r) => {
+                        const rMine = isMyComment(r);
+                        const rEditing = editingCommentId === r.id;
+                        const rEdited = r.edited ? ` <span class="collab-comment-edited">(edited)</span>` : "";
+                        if (rEditing) {
+                            return `<div class="collab-comment-reply is-editing">
+                                <strong>${escapeHtml(r.byLabel)}</strong>
+                                <div class="collab-comment-edit">
+                                    <textarea rows="2" class="collab-edit-input" data-edit-id="${r.id}">${escapeHtml(editDraftText || r.body)}</textarea>
+                                    <div class="collab-comment-composer-actions">
+                                        <button type="button" class="collab-btn" data-comment-action="cancel-edit" data-id="${r.id}">Cancel</button>
+                                        <button type="button" class="collab-btn primary" data-comment-action="save-edit" data-id="${r.id}">Save</button>
+                                    </div>
+                                </div>
+                            </div>`;
+                        }
+                        const rEditBtn =
+                            rMine && !resolved
+                                ? `<button type="button" class="collab-btn collab-comment-reply-edit" data-comment-action="edit" data-id="${r.id}">Edit</button>`
+                                : "";
+                        return `<div class="collab-comment-reply">
+                            <div class="collab-comment-reply-row">
+                                <strong>${escapeHtml(r.byLabel)}</strong>
+                                ${rEditBtn}
+                            </div>
+                            <span class="collab-comment-reply-body">${escapeHtml(r.body)}${rEdited}</span>
+                        </div>`;
+                    })
+                    .join("");
                 const inlineReply = isReplying
                     ? `<div class="collab-comment-inline-reply">
                         <textarea rows="2" class="collab-reply-input" data-parent-id="${c.id}" placeholder="${isAuthor ? "Reply as author…" : "Write a reply…"}">${escapeHtml(replyDraftText)}</textarea>
@@ -700,15 +801,15 @@ export async function bootCollabRoomPage(opts = {}) {
                         </div>
                        </div>`
                     : "";
-                return `<article class="collab-comment${resolved ? " is-resolved" : ""}${isReplying ? " is-replying" : ""}" data-comment-id="${c.id}">
+                return `<article class="collab-comment${resolved ? " is-resolved" : ""}${isReplying ? " is-replying" : ""}${isEditing ? " is-editing" : ""}" data-comment-id="${c.id}">
                     <div class="collab-comment-head">
                         <span class="collab-hunk-author">${escapeHtml(c.byLabel)}</span>
                         <span class="collab-hunk-type">${resolved ? "Resolved" : "Open"}</span>
                     </div>
                     ${c.quote ? `<div class="collab-comment-quote">${escapeHtml(c.quote)}</div>` : ""}
-                    <div class="collab-comment-body">${escapeHtml(c.body)}</div>
-                    ${replies.map((r) => `<div class="collab-comment-reply"><strong>${escapeHtml(r.byLabel)}</strong> ${escapeHtml(r.body)}</div>`).join("")}
-                    <div class="collab-comment-actions">${replyBtn}${resolveBtn}</div>
+                    ${bodyHtml}
+                    ${repliesHtml}
+                    <div class="collab-comment-actions">${editBtn}${replyBtn}${resolveBtn}</div>
                     ${inlineReply}
                 </article>`;
             })
@@ -721,6 +822,19 @@ export async function bootCollabRoomPage(opts = {}) {
             });
             box?.focus();
         }
+        if (editingCommentId) {
+            const box = commentList.querySelector(`.collab-edit-input[data-edit-id="${editingCommentId}"]`);
+            box?.addEventListener("input", () => {
+                editDraftText = box.value || "";
+            });
+            box?.focus();
+            const len = box?.value?.length ?? 0;
+            try {
+                box?.setSelectionRange(len, len);
+            } catch {
+                /* ignore */
+            }
+        }
 
         commentList.querySelectorAll("[data-comment-action]").forEach((btn) => {
             btn.addEventListener("click", async (e) => {
@@ -728,7 +842,28 @@ export async function bootCollabRoomPage(opts = {}) {
                 const id = btn.getAttribute("data-id");
                 const action = btn.getAttribute("data-comment-action");
                 const comment = comments.find((x) => x.id === id);
+                if (action === "edit" && comment) {
+                    startEditComment(comment);
+                    return;
+                }
+                if (action === "cancel-edit") {
+                    cancelEditComment();
+                    return;
+                }
+                if (action === "save-edit" && comment) {
+                    btn.disabled = true;
+                    try {
+                        await saveEditComment(id);
+                    } catch (err) {
+                        alert(err?.message || "Could not save edit.");
+                    } finally {
+                        btn.disabled = false;
+                    }
+                    return;
+                }
                 if (action === "reply" && comment) {
+                    editingCommentId = "";
+                    editDraftText = "";
                     openCommentComposer(comment.quote || "", comment.paragraphIndex ?? 0, comment.id);
                     return;
                 }

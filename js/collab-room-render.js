@@ -394,6 +394,10 @@ export function renderManuscriptWithComments(baseHtml, comments) {
 /** @param {object} row */
 export function commentRowToComment(row) {
     const handle = row.commenter_username || row.commenter_display_name || "collaborator";
+    const createdAt = row.created_at || "";
+    const updatedAt = row.updated_at || createdAt;
+    const edited =
+        !!(createdAt && updatedAt && String(updatedAt) !== String(createdAt) && Date.parse(updatedAt) > Date.parse(createdAt) + 1000);
     return {
         id: row.id,
         by: row.commenter_id || handle,
@@ -403,7 +407,9 @@ export function commentRowToComment(row) {
         body: row.body || "",
         status: row.status || "open",
         parentId: row.parent_id || "",
-        createdAt: row.created_at || "",
+        createdAt,
+        updatedAt,
+        edited,
     };
 }
 

@@ -192,6 +192,15 @@ export async function resolveCollabComment(commentId, action) {
     return data;
 }
 
+export async function editCollabComment(commentId, body) {
+    const { data, error } = await supabase.rpc("edit_collab_comment", {
+        p_comment_id: commentId,
+        p_body: body || "",
+    });
+    if (error) throw error;
+    return data;
+}
+
 export async function listMyCollabMemberships() {
     const { data, error } = await supabase.rpc("list_my_collab_memberships");
     if (error) throw error;
@@ -241,6 +250,6 @@ export function isCollabRoomsSchemaMissing(error) {
         code === "42P01" ||
         code === "PGRST202" ||
         /collab_chapter_invites|collab_memberships|collab_suggestions/i.test(msg) ||
-        /create_collab_chapter_invite|accept_collab_chapter_invite|get_collab_chapter|list_collab_invites_for_book|revoke_collab_chapter_invite|list_collab_suggestions|submit_collab_suggestions|review_collab_suggestion|list_my_collab_memberships|list_collab_comments|submit_collab_comment|resolve_collab_comment|upsert_collab_live_draft|sync_collab_chapter_suggestions|dismiss_collab_suggestion|dismiss_all_resolved_collab_suggestions|reject_all_collab_suggestions|commit_collab_chapter_content/i.test(msg)
+        /create_collab_chapter_invite|accept_collab_chapter_invite|get_collab_chapter|list_collab_invites_for_book|revoke_collab_chapter_invite|list_collab_suggestions|submit_collab_suggestions|review_collab_suggestion|list_my_collab_memberships|list_collab_comments|submit_collab_comment|edit_collab_comment|resolve_collab_comment|upsert_collab_live_draft|sync_collab_chapter_suggestions|dismiss_collab_suggestion|dismiss_all_resolved_collab_suggestions|reject_all_collab_suggestions|commit_collab_chapter_content/i.test(msg)
     );
 }

@@ -956,6 +956,54 @@ body.collab-author-mode .collab-suggest-block {
     font-size: 12px;
     line-height: 1.45;
     margin-bottom: 6px;
+    white-space: pre-wrap;
+}
+
+.collab-comment-edited {
+    font-size: 10px;
+    opacity: 0.55;
+    font-weight: 400;
+}
+
+.collab-comment-edit {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 4px 0 8px;
+}
+
+.collab-comment-edit textarea,
+.collab-edit-input {
+    width: 100%;
+    resize: vertical;
+    min-height: 64px;
+    border-radius: 10px;
+    border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+    background: var(--panel-2, #172132);
+    color: var(--text, #f9fafb);
+    padding: 8px 10px;
+    font: inherit;
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+.collab-comment-reply-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.collab-comment-reply-edit {
+    padding: 2px 8px;
+    font-size: 11px;
+    min-height: 0;
+}
+
+.collab-comment-reply-body {
+    display: block;
+    margin-top: 2px;
+    white-space: pre-wrap;
 }
 
 .collab-comment-quote {

@@ -103,12 +103,17 @@ CREATE TABLE IF NOT EXISTS public.collab_comments (
   quote text NOT NULL DEFAULT '',
   body text NOT NULL DEFAULT '',
   created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
   resolved_at timestamptz,
   resolved_by uuid REFERENCES auth.users (id) ON DELETE SET NULL
 );
 
 CREATE INDEX IF NOT EXISTS collab_comments_chapter_idx
   ON public.collab_comments (book_id, chapter_id, created_at DESC);
+
+-- Existing installs: add updated_at if missing
+ALTER TABLE public.collab_comments
+  ADD COLUMN IF NOT EXISTS updated_at timestamptz NOT NULL DEFAULT now();
 
 CREATE TABLE IF NOT EXISTS public.collab_live_drafts (
   book_id text NOT NULL,
@@ -918,6 +923,7 @@ BEGIN
     'quote', c.quote,
     'body', c.body,
     'created_at', c.created_at,
+    'updated_at', c.updated_at,
     'resolved_at', c.resolved_at,
     'commenter_username', coalesce(u.username, ''),
     'commenter_display_name', coalesce(u.display_name, '')
@@ -984,6 +990,39 @@ BEGIN
     p_book_id, p_chapter_id, v_author, auth.uid(), p_parent_id,
     coalesce(p_paragraph_index, 0), coalesce(p_quote, ''), trim(p_body)
   )
+  RETURNING * INTO v_row;
+
+  RETURN v_row;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.edit_collab_comment(p_comment_id uuid, p_body text)
+RETURNS public.collab_comments
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_row public.collab_comments;
+BEGIN
+  SELECT * INTO v_row FROM public.collab_comments WHERE id = p_comment_id;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'not_found';
+  END IF;
+
+  -- Only the person who wrote the comment can edit it
+  IF v_row.commenter_id IS DISTINCT FROM auth.uid() THEN
+    RAISE EXCEPTION 'not_allowed';
+  END IF;
+
+  IF coalesce(trim(p_body), '') = '' THEN
+    RAISE EXCEPTION 'empty_body';
+  END IF;
+
+  UPDATE public.collab_comments
+  SET body = trim(p_body),
+      updated_at = now()
+  WHERE id = p_comment_id
   RETURNING * INTO v_row;
 
   RETURN v_row;
@@ -1262,6 +1301,7 @@ GRANT EXECUTE ON FUNCTION public.review_collab_suggestion(uuid, text) TO authent
 GRANT EXECUTE ON FUNCTION public.list_my_collab_memberships() TO authenticated;
 GRANT EXECUTE ON FUNCTION public.list_collab_comments(text, text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.submit_collab_comment(text, text, integer, text, text, uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.edit_collab_comment(uuid, text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.resolve_collab_comment(uuid, text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.upsert_collab_live_draft(text, text, text, text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.sync_collab_chapter_suggestions(text, text, text, jsonb) TO authenticated;
