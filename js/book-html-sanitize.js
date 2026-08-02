@@ -83,6 +83,14 @@ function normalizeChapterElementAttributes(el) {
     return;
   }
   if (el.tagName === "SPAN") {
+    if (el.classList.contains("scene-break-glyph")) {
+      [...el.attributes].forEach((attr) => {
+        if (/^on/i.test(attr.name) || attr.name === "style") el.removeAttribute(attr.name);
+      });
+      el.className = "scene-break-glyph";
+      el.setAttribute("aria-hidden", "true");
+      return;
+    }
     const fontClass = [...el.classList].find((c) => c.startsWith("alysum-font-"));
     [...el.attributes].forEach((attr) => {
       if (/^on/i.test(attr.name) || attr.name === "style") el.removeAttribute(attr.name);
@@ -149,6 +157,10 @@ export function cleanImportHtml(html) {
     if (!parent) return;
     while (span.firstChild) parent.insertBefore(span.firstChild, span);
     parent.removeChild(span);
+  });
+
+  holder.querySelectorAll("p.scene-break, p.scene-spacer, hr.scene-rule").forEach((el) => {
+    normalizeChapterElementAttributes(el);
   });
 
   return holder.innerHTML

@@ -2202,6 +2202,14 @@ function rememberBookId(id) {
         }
         if (normalizeSceneBreakAttributes(el)) return;
         if (el.tagName === "SPAN") {
+            if (el.classList.contains("scene-break-glyph")) {
+                [...el.attributes].forEach((attr) => {
+                    if (/^on/i.test(attr.name) || attr.name === "style") el.removeAttribute(attr.name);
+                });
+                el.className = "scene-break-glyph";
+                el.setAttribute("aria-hidden", "true");
+                return;
+            }
             const fontClass = [...el.classList].find((c) => c.startsWith("alysum-font-"));
             [...el.attributes].forEach((attr) => {
                 if (/^on/i.test(attr.name) || attr.name === "style") el.removeAttribute(attr.name);
@@ -2630,6 +2638,10 @@ function rememberBookId(id) {
             parent.removeChild(span);
         });
 
+        holder.querySelectorAll("p.scene-break, p.scene-spacer, hr.scene-rule").forEach((el) => {
+            normalizeSceneBreakAttributes(el);
+        });
+
         return holder.innerHTML
             .replace(/<p(?![^>]*scene-break)(?![^>]*scene-spacer)>(\s|&nbsp;)*<\/p>/gi, "")
             .replace(/<div>(\s|&nbsp;|<br\s*\/?>)*<\/div>/gi, "")
@@ -2905,7 +2917,7 @@ function rememberBookId(id) {
         const canSyncFromEditor = !!editorLoadedChapterKey && editorLoadedChapterKey === activeChapterKey;
         if (canSyncFromEditor) {
             if (isCurrentBookComic()) syncCurrentComicPageFromUI();
-            else syncCurrentChapterFromEditor();
+            else cleanAndStoreCurrentChapterFromEditor();
         }
         currentSection = section;
         currentChapterIndex = index;
