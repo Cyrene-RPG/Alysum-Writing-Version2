@@ -36,9 +36,12 @@ export function normalizeManuscriptHtml(html) {
         el.replaceWith(span);
     });
     root.querySelectorAll("span").forEach((el) => {
-        if (!el.attributes.length && el.innerHTML === el.textContent) {
-            const text = document.createTextNode(el.textContent || "");
-            el.replaceWith(text);
+        const hasMeaningfulAttr = [...el.attributes].some(
+            (a) => a.name !== "style" || String(a.value || "").trim()
+        );
+        if (!hasMeaningfulAttr && el.childNodes.length) {
+            while (el.firstChild) el.parentNode.insertBefore(el.firstChild, el);
+            el.remove();
         }
     });
     root.querySelectorAll(BLOCK_SELECTOR).forEach((el) => {
@@ -84,8 +87,24 @@ export function readParagraphTextsFromManuscript(root) {
     return htmlToParagraphTexts(root.innerHTML);
 }
 
-function normalizeCompareHtml(value) {
-    return normalizeManuscriptHtml(value).replace(/\s+/g, " ").trim();
+/** Normalize inner HTML for stable equality checks (formatting-only edits still differ). */
+function normalizeInnerHtml(html) {
+    const shell = document.createElement("div");
+    shell.innerHTML = normalizeManuscriptHtml(`<p>${html}</p>`);
+    const p = shell.querySelector("p");
+    return (p?.innerHTML || "").replace(/\s+/g, " ").trim();
+}
+
+function blocksEquivalent(oldBlock, newBlock) {
+    if (!oldBlock || !newBlock) return false;
+    if (oldBlock.tag !== newBlock.tag) return false;
+    if (oldBlock.text !== newBlock.text) return false;
+    return normalizeInnerHtml(oldBlock.innerHtml) === normalizeInnerHtml(newBlock.innerHtml);
+}
+
+/** @param {string} html @returns {string} */
+export function prepareCollaboratorChapterHtml(html) {
+    return normalizeManuscriptHtml(html || "");
 }
 
 function isHtmlBlockValue(value) {
@@ -137,7 +156,7 @@ export function diffChapterHtmlSuggestions(baseHtml, nextHtml) {
             continue;
         }
         if (!oldBlock || !newBlock) continue;
-        if (normalizeCompareHtml(oldBlock.outerHtml) === normalizeCompareHtml(newBlock.outerHtml)) continue;
+        if (blocksEquivalent(oldBlock, newBlock)) continue;
         out.push({
             paragraph_index: i,
             change_type: "replace",
@@ -145,7 +164,16 @@ export function diffChapterHtmlSuggestions(baseHtml, nextHtml) {
             new_text: newBlock.outerHtml,
         });
     }
-    return out;
+    return dedupeSuggestionsByParagraph(out);
+}
+
+/** Keep one suggestion per paragraph index (last wins). */
+function dedupeSuggestionsByParagraph(suggestions) {
+    const byIndex = new Map();
+    for (const item of suggestions) {
+        byIndex.set(item.paragraph_index, item);
+    }
+    return [...byIndex.values()].sort((a, b) => a.paragraph_index - b.paragraph_index);
 }
 
 /** @deprecated Plain-text paragraph diff — prefer diffChapterHtmlSuggestions. */

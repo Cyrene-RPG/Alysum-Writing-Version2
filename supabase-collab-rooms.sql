@@ -453,6 +453,14 @@ BEGIN
     RAISE EXCEPTION 'invalid_suggestions';
   END IF;
 
+  -- Replace this collaborator's pending batch for this chapter snapshot (one submit = one review pass).
+  DELETE FROM public.collab_suggestions
+  WHERE book_id = p_book_id
+    AND chapter_id = p_chapter_id
+    AND collaborator_id = auth.uid()
+    AND status = 'pending'
+    AND base_content_hash = coalesce(p_base_content_hash, '');
+
   FOR v_item IN SELECT value FROM jsonb_array_elements(p_suggestions)
   LOOP
     IF coalesce(v_item->>'new_text', '') = coalesce(v_item->>'old_text', '') THEN

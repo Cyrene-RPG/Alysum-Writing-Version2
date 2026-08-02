@@ -23,11 +23,12 @@ import {
     paragraphsToEditableHtml,
     diffChapterHtmlSuggestions,
     normalizeManuscriptHtml,
+    prepareCollaboratorChapterHtml,
     hunkPreviewHtml,
     countPending,
     escapeHtml,
     suggestionRowToHunk,
-} from "./collab-room-render.js?v=4";
+} from "./collab-room-render.js?v=5";
 import { mountCollabToolbar } from "./collab-toolbar.js?v=1";
 
 /**
@@ -222,7 +223,7 @@ export async function bootCollabRoomPage(opts = {}) {
 
     function collaboratorManuscriptHtml() {
         const html = String(baseChapterHtml || "").trim();
-        if (html) return html;
+        if (html) return prepareCollaboratorChapterHtml(html);
         return paragraphsToEditableHtml(canonParagraphs);
     }
 
@@ -419,12 +420,19 @@ export async function bootCollabRoomPage(opts = {}) {
         });
 
         document.getElementById("submitBtn").addEventListener("click", async () => {
+            const normalizedBase = prepareCollaboratorChapterHtml(baseChapterHtml);
             const nextHtml = normalizeManuscriptHtml(manuscript.innerHTML);
-            const suggestions = diffChapterHtmlSuggestions(baseChapterHtml, nextHtml);
+            const suggestions = diffChapterHtmlSuggestions(normalizedBase, nextHtml);
             if (!suggestions.length) {
                 alert("No changes to submit. Edit text or formatting, then submit.");
                 return;
             }
+            const summary =
+                suggestions.length === 1
+                    ? "Submit 1 suggestion for author review?"
+                    : `Submit ${suggestions.length} paragraph changes for author review?`;
+            if (!window.confirm(summary)) return;
+
             const btn = document.getElementById("submitBtn");
             btn.disabled = true;
             try {
