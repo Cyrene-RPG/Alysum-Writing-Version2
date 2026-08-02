@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="css/gradient-themes.css?v=5" />
     <link rel="stylesheet" href="css/collab-room.css?v=1" />
     <script src="js/gradient-theme-sync.js" defer></script>
-    <title>Collab room — Alysum (test branch)</title>
+    <title>Collab room — Alysum</title>
     <style>
         * { box-sizing: border-box; }
         :root {
@@ -65,7 +65,7 @@
 
     <header class="collab-topbar">
         <div>
-            <a class="collab-back" href="collab-rooms.html?preview=1">← Collab rooms</a>
+            <a class="collab-back" href="collab-rooms.html">← Collab rooms</a>
             <div class="collab-topbar-title" id="roomTitle">The Glass Orchard</div>
             <div class="collab-topbar-sub" id="roomSub">Chapter 12 — invite-only collab</div>
         </div>
@@ -123,9 +123,8 @@
             listCollabSuggestions,
             submitCollabSuggestions,
             reviewCollabSuggestion,
-            collabRoomAuthorUrl,
             isCollabRoomsSchemaMissing,
-        } from "./js/collab-rooms-api.js?v=1";
+        } from "./js/collab-rooms-api.js?v=2";
         import {
             DEMO_ROOM,
             DEMO_HUNKS,
@@ -400,18 +399,44 @@
 
             document.getElementById("acceptAllBtn").addEventListener("click", async () => {
                 const pending = hunks.filter((h) => h.status === "pending");
-                for (const h of pending) {
-                    await reviewCollabSuggestion(h.id, "accept");
+                if (!pending.length) return;
+                const acceptBtn = document.getElementById("acceptAllBtn");
+                const rejectBtn = document.getElementById("rejectAllBtn");
+                acceptBtn.disabled = true;
+                rejectBtn.disabled = true;
+                try {
+                    for (const h of pending) {
+                        await reviewCollabSuggestion(h.id, "accept");
+                    }
+                    await reloadLiveRoom();
+                } catch (err) {
+                    alert(err?.message || "Could not accept all suggestions.");
+                    await reloadLiveRoom();
+                } finally {
+                    acceptBtn.disabled = false;
+                    rejectBtn.disabled = false;
                 }
-                await reloadLiveRoom();
             });
 
             document.getElementById("rejectAllBtn").addEventListener("click", async () => {
                 const pending = hunks.filter((h) => h.status === "pending");
-                for (const h of pending) {
-                    await reviewCollabSuggestion(h.id, "reject");
+                if (!pending.length) return;
+                const acceptBtn = document.getElementById("acceptAllBtn");
+                const rejectBtn = document.getElementById("rejectAllBtn");
+                acceptBtn.disabled = true;
+                rejectBtn.disabled = true;
+                try {
+                    for (const h of pending) {
+                        await reviewCollabSuggestion(h.id, "reject");
+                    }
+                    await reloadLiveRoom();
+                } catch (err) {
+                    alert(err?.message || "Could not reject all suggestions.");
+                    await reloadLiveRoom();
+                } finally {
+                    acceptBtn.disabled = false;
+                    rejectBtn.disabled = false;
                 }
-                await reloadLiveRoom();
             });
 
             document.getElementById("submitBtn").addEventListener("click", async () => {

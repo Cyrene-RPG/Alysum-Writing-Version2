@@ -151,6 +151,6 @@ export function isCollabRoomsSchemaMissing(error) {
         code === "42P01" ||
         code === "PGRST202" ||
         /collab_chapter_invites|collab_memberships|collab_suggestions/i.test(msg) ||
-        /create_collab_chapter_invite|accept_collab_chapter_invite|get_collab_chapter|list_collab_suggestions|submit_collab_suggestions|review_collab_suggestion/i.test(msg)
+        /create_collab_chapter_invite|accept_collab_chapter_invite|get_collab_chapter|list_collab_invites_for_book|revoke_collab_chapter_invite|list_collab_suggestions|submit_collab_suggestions|review_collab_suggestion|list_my_collab_memberships/i.test(msg)
     );
 }

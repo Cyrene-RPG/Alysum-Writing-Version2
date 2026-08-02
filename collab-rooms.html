@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="css/gradient-themes.css?v=5" />
     <link rel="stylesheet" href="css/workspace-nav.css?v=11" />
     <script src="js/gradient-theme-sync.js" defer></script>
-    <title>Collab rooms — Alysum (test branch)</title>
+    <title>Collab rooms — Alysum</title>
     <style>
         * { box-sizing: border-box; }
         :root {
@@ -123,8 +123,6 @@
     </style>
 </head>
 <body>
-    <div class="test-banner">Test branch — Collab rooms preview. No Supabase setup required for demo mode.</div>
-
     <header class="wd-welcome-bar" aria-label="Welcome">
             <div class="wd-welcome-inner">
                 <div class="wd-pfp" id="welcomePfp">
@@ -204,7 +202,7 @@
             listMyCollabAuthorInvites,
             collabRoomAuthorUrl,
             isCollabRoomsSchemaMissing,
-        } from "./js/collab-rooms-api.js?v=1";
+        } from "./js/collab-rooms-api.js?v=2";
 
         const roomGrid = document.getElementById("roomGrid");
         const loadingState = document.getElementById("loadingState");
@@ -247,8 +245,12 @@
 
                 /** @type {Array<{ title: string, chapter: string, badge: string, badgeClass: string, meta: string, cta: string, href: string }>} */
                 const cards = [];
+                const authorChapterKeys = new Set();
 
                 for (const inv of authorInvites) {
+                    const key = `${inv.book_id}:${inv.chapter_id}`;
+                    if (authorChapterKeys.has(key)) continue;
+                    authorChapterKeys.add(key);
                     const book = booksById.get(inv.book_id);
                     const chapterTitle = chapterTitleFromBook(book, inv.chapter_id);
                     cards.push({
@@ -256,13 +258,15 @@
                         chapter: chapterTitle,
                         badge: "Author",
                         badgeClass: "",
-                        meta: "Your chapter invite · review pending suggestions",
+                        meta: "Your chapter · review pending suggestions",
                         cta: "Review chapter",
                         href: collabRoomAuthorUrl(inv.book_id, inv.chapter_id),
                     });
                 }
 
                 for (const m of memberships) {
+                    const key = `${m.book_id}:${m.chapter_id}`;
+                    if (authorChapterKeys.has(key)) continue;
                     cards.push({
                         title: m.book_title || "Untitled",
                         chapter: m.chapter_title || m.chapter_id,

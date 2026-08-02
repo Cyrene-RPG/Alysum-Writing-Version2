@@ -155,6 +155,9 @@
 
     <main class="page">
         <a class="back-link" id="backBtn" href="collab-rooms.html">← Collab rooms</a>
+        <div class="page-head-actions" style="float:right;margin-top:-4px">
+            <a class="btn" id="editorBtn" href="writer-dashboard.html" hidden>Open in editor</a>
+        </div>
         <h2 id="pageTitle">Collab invite</h2>
         <p class="hint" id="pageSub">Create a chapter-scoped invite link. Collaborators can suggest edits; you approve before they merge into your draft.</p>
 
@@ -170,7 +173,7 @@
             <input type="email" id="inviteEmail" placeholder="collaborator@example.com" />
             <div class="btn-row">
                 <button type="button" class="btn primary" id="createInviteBtn">Create invite link</button>
-                <a class="btn" id="reviewBtn" href="collab-rooms.html">Review chapter</a>
+                <a class="btn" id="reviewBtn" href="#">Open collab room</a>
             </div>
             <div id="newInviteBlock" class="hidden">
                 <label>Invite link</label>
@@ -199,7 +202,7 @@
             collabRoomInviteUrl,
             collabRoomAuthorUrl,
             isCollabRoomsSchemaMissing,
-        } from "./js/collab-rooms-api.js?v=1";
+        } from "./js/collab-rooms-api.js?v=2";
 
         const params = new URLSearchParams(window.location.search);
         const bookId = String(params.get("book") || "").trim();
@@ -213,6 +216,7 @@
         const pageTitle = document.getElementById("pageTitle");
         const pageSub = document.getElementById("pageSub");
         const inviteEmail = document.getElementById("inviteEmail");
+        const editorBtn = document.getElementById("editorBtn");
 
         let chapters = [];
         let chapterTitleById = new Map();
@@ -373,6 +377,10 @@
                 pageTitle.textContent = `Collab invite · ${title}`;
                 pageSub.textContent = `Invite editors to suggest changes on chapters in "${title}".`;
                 document.title = `Collab invite · ${title} — Alysum`;
+                if (editorBtn) {
+                    editorBtn.href = `editor.html?book=${encodeURIComponent(bookId)}`;
+                    editorBtn.hidden = false;
+                }
                 renderChapters();
                 await refreshInvites();
             } catch (err) {
