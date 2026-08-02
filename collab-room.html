@@ -222,6 +222,9 @@
                     <button type="button" class="collab-btn danger" id="rejectAllBtn">Reject all</button>
                     <button type="button" class="collab-btn" id="dismissResolvedBtn">Dismiss resolved</button>
                 </div>
+                <div class="collab-review-actions hidden" id="collaboratorActions">
+                    <button type="button" class="collab-btn danger" id="removeMySuggestionsBtn">Remove my suggestions</button>
+                </div>
                 <div class="collab-hunk-list" id="hunkList"></div>
                 <div class="collab-sidebar-empty hidden" id="hunkEmpty">
                     <p>No suggestions yet.</p>
@@ -258,7 +261,7 @@
     <button type="button" class="collab-selection-btn hidden" id="selectionCommentBtn" aria-label="Add comment">Comment</button>
 
     <script type="module">
-        import { bootCollabRoomPage } from "./js/collab-room-page.js?v=12";
+        import { bootCollabRoomPage } from "./js/collab-room-page.js?v=13";
         await bootCollabRoomPage({ isPreview: false });
     </script>
 </body>

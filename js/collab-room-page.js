@@ -246,11 +246,20 @@ export async function bootCollabRoomPage(opts = {}) {
         syncHunksFromDom();
     }
 
+    function isMySuggestion(h) {
+        if (!h) return false;
+        if (currentUserId && h.by === currentUserId) return true;
+        if (isPreview && h.by === activeRole) return true;
+        return false;
+    }
+
     function updateStats() {
         const pending = hunks.length;
+        const mine = hunks.filter(isMySuggestion).length;
         pendingPill.textContent = `${pending} pending`;
         pendingPill.classList.toggle("pending", pending > 0);
-        acceptedPill.textContent = "Suggesting mode";
+        acceptedPill.textContent = isAuthor ? "Suggesting mode" : `${mine} yours`;
+        const removeMineBtn = document.getElementById("removeMySuggestionsBtn");
         if (isAuthor) {
             reviewSub.textContent =
                 pending === 0
@@ -258,13 +267,15 @@ export async function bootCollabRoomPage(opts = {}) {
                     : `${pending} suggestion${pending === 1 ? "" : "s"} in the document — Accept or Reject`;
             document.getElementById("acceptAllBtn").disabled = pending === 0;
             document.getElementById("rejectAllBtn").disabled = pending === 0;
+            if (removeMineBtn) removeMineBtn.disabled = true;
         } else {
             reviewSub.textContent =
-                pending === 0
+                mine === 0
                     ? "Type to suggest edits — they appear in green for the author"
-                    : `${pending} of your suggestions waiting for the author`;
+                    : `${mine} of your suggestion${mine === 1 ? "" : "s"} pending — remove any you want to withdraw`;
             document.getElementById("acceptAllBtn").disabled = true;
             document.getElementById("rejectAllBtn").disabled = true;
+            if (removeMineBtn) removeMineBtn.disabled = mine === 0;
         }
         const dismissBtn = document.getElementById("dismissResolvedBtn");
         if (dismissBtn) dismissBtn.classList.add("hidden");
@@ -307,15 +318,21 @@ export async function bootCollabRoomPage(opts = {}) {
                         : h.type === "delete"
                           ? `<span class="old"><span class="collab-suggest-del">${escapeHtml(h.oldText)}</span></span>`
                           : `<span class="old"><span class="collab-suggest-del">${escapeHtml(h.oldText)}</span></span><span class="new"><span class="collab-suggest-add">${escapeHtml(h.newText)}</span></span>`;
+                const mine = isMySuggestion(h);
                 const actions = isAuthor
                     ? `<div class="collab-hunk-actions">
                         <button type="button" class="collab-btn primary" data-action="accept" data-id="${escapeHtml(h.id)}">Accept</button>
                         <button type="button" class="collab-btn danger" data-action="reject" data-id="${escapeHtml(h.id)}">Reject</button>
                        </div>`
-                    : `<span class="collab-hunk-status is-pending">Pending</span>`;
-                return `<article class="collab-hunk is-pending" data-hunk-id="${escapeHtml(h.id)}" tabindex="0" role="button">
+                    : mine
+                      ? `<div class="collab-hunk-actions">
+                            <span class="collab-hunk-status is-pending">Pending</span>
+                            <button type="button" class="collab-btn danger" data-action="withdraw" data-id="${escapeHtml(h.id)}">Remove</button>
+                           </div>`
+                      : `<span class="collab-hunk-status is-pending">Pending</span>`;
+                return `<article class="collab-hunk is-pending${mine ? " is-mine" : ""}" data-hunk-id="${escapeHtml(h.id)}" tabindex="0" role="button">
                     <div class="collab-hunk-head">
-                        <span class="collab-hunk-author">${escapeHtml(h.byLabel)}</span>
+                        <span class="collab-hunk-author">${escapeHtml(h.byLabel)}${mine && !isAuthor ? " · you" : ""}</span>
                         <span class="collab-hunk-type">${typeLabel}</span>
                     </div>
                     <div class="collab-hunk-body">${body}</div>
@@ -329,7 +346,19 @@ export async function bootCollabRoomPage(opts = {}) {
                 e.stopPropagation();
                 const id = btn.getAttribute("data-id");
                 const action = btn.getAttribute("data-action");
-                if (!id || !isAuthor) return;
+                if (!id) return;
+                const hunk = hunks.find((x) => x.id === id);
+                if (action === "withdraw") {
+                    if (!isMySuggestion(hunk)) return;
+                    btn.disabled = true;
+                    try {
+                        await withdrawOne(id);
+                    } finally {
+                        btn.disabled = false;
+                    }
+                    return;
+                }
+                if (!isAuthor) return;
                 btn.disabled = true;
                 try {
                     if (action === "accept") await acceptOne(id);
@@ -373,6 +402,33 @@ export async function bootCollabRoomPage(opts = {}) {
             await upsertCollabLiveDraft(bookId, chapterId, liveHtml, contentHash);
             throw err;
         }
+    }
+
+    async function persistLiveOnly() {
+        liveHtml = normalizeManuscriptHtml(manuscript.innerHTML);
+        syncHunksFromDom();
+        renderHunkList();
+        updateStats();
+        if (isPreview) {
+            previewChannel?.postMessage({ type: "doc", html: liveHtml, role: activeRole, label: currentUserLabel });
+            return;
+        }
+        await upsertCollabLiveDraft(bookId, chapterId, liveHtml, contentHash);
+        realtimeSession?.notifyInput(liveHtml, contentHash, []);
+    }
+
+    async function withdrawOne(id) {
+        rejectSuggestionInDom(manuscript, id);
+        await persistLiveOnly();
+        mountEditorMode();
+    }
+
+    async function withdrawMine() {
+        const mine = hunks.filter(isMySuggestion);
+        if (!mine.length) return;
+        for (const h of mine) rejectSuggestionInDom(manuscript, h.id);
+        await persistLiveOnly();
+        mountEditorMode();
     }
 
     async function acceptOne(id) {
@@ -430,15 +486,17 @@ export async function bootCollabRoomPage(opts = {}) {
                 "Collaborator edits appear in green (additions) and red strikethrough (deletions), like Google Docs. Accept or Reject each one.";
             reviewTitle.textContent = "Suggestions";
             document.getElementById("bulkActions")?.classList.remove("hidden");
+            document.getElementById("collaboratorActions")?.classList.add("hidden");
             if (commentsSub) commentsSub.textContent = "Reply to collaborator threads, or resolve when done.";
             return;
         }
         modeBanner.classList.remove("is-author");
         modeBannerLabel.textContent = "Suggesting";
         modeBannerText.textContent =
-            "You're in Suggesting mode — everything you type is a green suggestion until the author accepts it. Deletes stay visible with a red strikethrough.";
+            "You're in Suggesting mode — everything you type is a green suggestion until the author accepts it. Deletes stay visible with a red strikethrough. Use Remove to withdraw a suggestion.";
         reviewTitle.textContent = "Your suggestions";
         document.getElementById("bulkActions")?.classList.add("hidden");
+        document.getElementById("collaboratorActions")?.classList.remove("hidden");
         if (commentsSub) commentsSub.textContent = "Select text in the manuscript to add a comment.";
     }
 
@@ -783,6 +841,9 @@ export async function bootCollabRoomPage(opts = {}) {
 
         document.getElementById("acceptAllBtn")?.addEventListener("click", () => acceptAll().catch((e) => alert(e.message)));
         document.getElementById("rejectAllBtn")?.addEventListener("click", () => rejectAll().catch((e) => alert(e.message)));
+        document.getElementById("removeMySuggestionsBtn")?.addEventListener("click", () =>
+            withdrawMine().catch((e) => alert(e.message || "Could not remove suggestions."))
+        );
         renderAll();
     }
 
@@ -846,6 +907,17 @@ export async function bootCollabRoomPage(opts = {}) {
                 await rejectAll();
             } catch (err) {
                 alert(err?.message || "Could not reject all.");
+            }
+        });
+        document.getElementById("removeMySuggestionsBtn")?.addEventListener("click", async () => {
+            const btn = document.getElementById("removeMySuggestionsBtn");
+            btn.disabled = true;
+            try {
+                await withdrawMine();
+            } catch (err) {
+                alert(err?.message || "Could not remove your suggestions.");
+            } finally {
+                btn.disabled = false;
             }
         });
     }
