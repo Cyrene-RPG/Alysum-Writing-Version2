@@ -4,8 +4,9 @@
  * Block-level indent/outdent is tracked as accept/rejectable suggestions.
  */
 
-const BLOCK_SELECTOR = "p, h2, h3, blockquote, li, div";
+const BLOCK_SELECTOR = "p, h2, h3, blockquote, li";
 const INDENT_STEP_PX = 40;
+const INDENT_MAX_PX = 240;
 
 function uid() {
     return `sg-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
@@ -62,6 +63,31 @@ function insertNodeAtSelection(node) {
     sel.removeAllRanges();
     sel.addRange(range);
     return range;
+}
+
+function blockOf(node) {
+    if (!node) return null;
+    const el = node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+    return el?.closest?.(BLOCK_SELECTOR) || null;
+}
+
+function rangeCrossesBlocks(range) {
+    if (!range) return false;
+    const a = blockOf(range.startContainer);
+    const b = blockOf(range.endContainer);
+    return !!(a && b && a !== b);
+}
+
+function fragmentHasBlockNodes(frag) {
+    if (!frag) return false;
+    for (const n of frag.childNodes) {
+        if (n.nodeType !== Node.ELEMENT_NODE) continue;
+        if (/^(P|DIV|H1|H2|H3|H4|BLOCKQUOTE|LI|UL|OL|TABLE|SECTION|ARTICLE|HR)$/i.test(n.tagName)) {
+            return true;
+        }
+        if (n.querySelector?.("p, div, h1, h2, h3, h4, blockquote, li, ul, ol, table")) return true;
+    }
+    return false;
 }
 
 function clearBlockSuggestMeta(el) {
@@ -333,8 +359,15 @@ export function mountSuggestingMode(opts) {
             block.setAttribute("data-before-style", beforeStyle);
         }
 
-        if (next > 0) block.style.marginLeft = `${next}px`;
-        else block.style.marginLeft = "";
+        if (next > 0) block.style.marginLeft = `${Math.min(next, INDENT_MAX_PX)}px`;
+        else block.style.removeProperty("margin-left");
+        // Keep first-line indent from stylesheet; don't fight layout with padding on wrappers
+        block.style.removeProperty("margin-top");
+        block.style.removeProperty("margin-bottom");
+        block.style.removeProperty("height");
+        block.style.removeProperty("min-height");
+        block.style.removeProperty("padding-top");
+        block.style.removeProperty("padding-bottom");
 
         // If we returned to the pre-suggestion indent, drop the mark entirely
         const baseline = (() => {
@@ -447,12 +480,16 @@ export function mountSuggestingMode(opts) {
         return w.nextNode();
     }
 
-    /** Expand a collapsed caret to cover one grapheme (or word) in `direction`. */
+    /** Expand a collapsed caret to cover one grapheme (or word) in `direction`.
+     * Never returns a range that crosses block boundaries — wrapping <p> in <span> destroys the DOM. */
     function expandCollapsedRange(direction, unit = "character") {
         const sel = window.getSelection();
         if (!sel?.rangeCount) return null;
         const saved = sel.getRangeAt(0).cloneRange();
-        if (!saved.collapsed) return saved.cloneRange();
+        if (!saved.collapsed) {
+            if (rangeCrossesBlocks(saved) || fragmentHasBlockNodes(saved.cloneContents())) return null;
+            return saved.cloneRange();
+        }
 
         const modifyUnit = unit === "lineboundary" ? "lineboundary" : unit === "word" ? "word" : "character";
         sel.removeAllRanges();
@@ -466,12 +503,14 @@ export function mountSuggestingMode(opts) {
             const expanded = sel.getRangeAt(0).cloneRange();
             sel.removeAllRanges();
             sel.addRange(saved);
-            return expanded;
+            if (!rangeCrossesBlocks(expanded) && !fragmentHasBlockNodes(expanded.cloneContents())) {
+                return expanded;
+            }
+            // Cross-block modify result — fall through to safe single-grapheme pick
+        } else {
+            sel.removeAllRanges();
+            sel.addRange(saved);
         }
-        sel.removeAllRanges();
-        sel.addRange(saved);
-
-        if (unit !== "character") return null;
 
         const node = saved.startContainer;
         const offset = saved.startOffset;
@@ -481,45 +520,48 @@ export function mountSuggestingMode(opts) {
             const text = node.textContent || "";
             if (direction === "backward" && offset > 0) {
                 const len = graphemeLenBefore(text, offset);
-                const range = saved.cloneRange();
+                const range = document.createRange();
                 range.setStart(node, offset - len);
+                range.setEnd(node, offset);
                 return range;
             }
             if (direction === "forward" && offset < text.length) {
                 const len = graphemeLenAfter(text, offset);
-                const range = saved.cloneRange();
+                const range = document.createRange();
+                range.setStart(node, offset);
                 range.setEnd(node, offset + len);
                 return range;
             }
         }
 
-        // Element caret — look at neighboring child
+        // Element caret — neighboring child text only (same block)
         if (node.nodeType === Node.ELEMENT_NODE) {
             if (direction === "backward" && offset > 0) {
                 const prev = node.childNodes[offset - 1];
                 const t = lastTextIn(prev);
-                if (t && (t.textContent || "").length) {
-                    const len = graphemeLenBefore(t.textContent || "", (t.textContent || "").length);
+                if (t && (t.textContent || "").length && blockOf(t) === blockOf(node)) {
+                    const end = (t.textContent || "").length;
+                    const len = graphemeLenBefore(t.textContent || "", end);
                     const range = document.createRange();
-                    range.setStart(t, (t.textContent || "").length - len);
-                    range.setEnd(saved.startContainer, saved.startOffset);
+                    range.setStart(t, end - len);
+                    range.setEnd(t, end);
                     return range;
                 }
             }
             if (direction === "forward" && offset < node.childNodes.length) {
                 const next = node.childNodes[offset];
                 const t = firstTextIn(next);
-                if (t && (t.textContent || "").length) {
+                if (t && (t.textContent || "").length && blockOf(t) === blockOf(node)) {
                     const len = graphemeLenAfter(t.textContent || "", 0);
                     const range = document.createRange();
-                    range.setStart(saved.startContainer, saved.startOffset);
+                    range.setStart(t, 0);
                     range.setEnd(t, len);
                     return range;
                 }
             }
         }
 
-        // Cross text-node boundary via ordered list
+        // Adjacent text node — select ONLY inside that node (never span the block boundary)
         const texts = textNodesInEditor().filter((t) => (t.textContent || "").length > 0);
         if (!texts.length) return null;
 
@@ -557,45 +599,38 @@ export function mountSuggestingMode(opts) {
         if (idx < 0) return null;
 
         if (direction === "backward") {
-            if (localOff > 0) {
-                const t = texts[idx];
-                const len = graphemeLenBefore(t.textContent || "", localOff);
-                const range = document.createRange();
-                range.setStart(t, localOff - len);
-                range.setEnd(saved.startContainer, saved.startOffset);
-                return range;
+            let t = texts[idx];
+            let off = localOff;
+            if (off <= 0) {
+                if (idx === 0) return null;
+                t = texts[idx - 1];
+                off = (t.textContent || "").length;
             }
-            if (idx === 0) return null;
-            const t = texts[idx - 1];
-            const end = (t.textContent || "").length;
-            const len = graphemeLenBefore(t.textContent || "", end);
+            const len = graphemeLenBefore(t.textContent || "", off);
             const range = document.createRange();
-            range.setStart(t, end - len);
-            range.setEnd(saved.startContainer, saved.startOffset);
+            range.setStart(t, off - len);
+            range.setEnd(t, off);
             return range;
         }
 
-        const t = texts[idx];
-        const text = t.textContent || "";
-        if (localOff < text.length) {
-            const len = graphemeLenAfter(text, localOff);
-            const range = document.createRange();
-            range.setStart(saved.startContainer, saved.startOffset);
-            range.setEnd(t, localOff + len);
-            return range;
+        let t = texts[idx];
+        let off = localOff;
+        if (off >= (t.textContent || "").length) {
+            if (idx >= texts.length - 1) return null;
+            t = texts[idx + 1];
+            off = 0;
         }
-        if (idx >= texts.length - 1) return null;
-        const next = texts[idx + 1];
-        const len = graphemeLenAfter(next.textContent || "", 0);
+        const len = graphemeLenAfter(t.textContent || "", off);
         const range = document.createRange();
-        range.setStart(saved.startContainer, saved.startOffset);
-        range.setEnd(next, len);
+        range.setStart(t, off);
+        range.setEnd(t, off + len);
         return range;
     }
 
     function deleteSelection(direction, unit = "character") {
         const sel = window.getSelection();
         if (!sel?.rangeCount) return false;
+        const caretBefore = sel.getRangeAt(0).cloneRange();
         let range = sel.getRangeAt(0);
 
         if (range.collapsed) {
@@ -603,9 +638,29 @@ export function mountSuggestingMode(opts) {
             if (!range || range.collapsed) return false;
         } else {
             range = range.cloneRange();
+            // Refuse illegal multi-block wraps — shrink to one grapheme at the focus edge
+            if (rangeCrossesBlocks(range) || fragmentHasBlockNodes(range.cloneContents())) {
+                sel.removeAllRanges();
+                sel.addRange(caretBefore);
+                if (caretBefore.collapsed) {
+                    range = expandCollapsedRange(direction, "character");
+                } else {
+                    // Collapse to end/start and delete one grapheme
+                    const edge = caretBefore.cloneRange();
+                    edge.collapse(direction === "backward");
+                    sel.removeAllRanges();
+                    sel.addRange(edge);
+                    range = expandCollapsedRange(direction, "character");
+                }
+                if (!range || range.collapsed) return false;
+            }
         }
 
-        // Own green insert → hard-delete (withdraw suggestion text)
+        // Final safety: never extract block nodes into an inline suggest span
+        if (rangeCrossesBlocks(range) || fragmentHasBlockNodes(range.cloneContents())) {
+            return false;
+        }
+
         const startMark = closestSuggestMark(range.startContainer);
         const endMark = closestSuggestMark(range.endContainer);
         if (
@@ -633,7 +688,6 @@ export function mountSuggestingMode(opts) {
                 activeInsertId = "";
             } else {
                 activeInsertId = startMark.getAttribute("data-suggest-id") || "";
-                // range is collapsed at the deletion point after deleteContents
                 try {
                     sel.removeAllRanges();
                     sel.addRange(range);
@@ -666,30 +720,44 @@ export function mountSuggestingMode(opts) {
             return false;
         }
         if (!contents.childNodes.length) return false;
+        if (fragmentHasBlockNodes(contents)) {
+            // Restore extracted nodes — should be unreachable after guards
+            range.insertNode(contents);
+            return false;
+        }
 
         if (adjDel?.isConnected && adjDel.getAttribute("data-suggest-id") === suggestId) {
             if (direction === "backward") {
                 while (contents.lastChild) adjDel.insertBefore(contents.lastChild, adjDel.firstChild);
-                range.setStartBefore(adjDel);
             } else {
                 while (contents.firstChild) adjDel.appendChild(contents.firstChild);
-                range.setStartAfter(adjDel);
             }
-            range.collapse(true);
-            sel.removeAllRanges();
-            sel.addRange(range);
+            try {
+                const caret = document.createRange();
+                if (direction === "backward") caret.setStartBefore(adjDel);
+                else caret.setStartAfter(adjDel);
+                caret.collapse(true);
+                sel.removeAllRanges();
+                sel.addRange(caret);
+            } catch {
+                /* ignore */
+            }
             notify();
             return true;
         }
 
         const del = makeDelSpan(contents, suggestId);
         range.insertNode(del);
-        // Keep caret on the side that continues deleting through the manuscript
-        if (direction === "backward") range.setStartBefore(del);
-        else range.setStartAfter(del);
-        range.collapse(true);
-        sel.removeAllRanges();
-        sel.addRange(range);
+        try {
+            const caret = document.createRange();
+            if (direction === "backward") caret.setStartBefore(del);
+            else caret.setStartAfter(del);
+            caret.collapse(true);
+            sel.removeAllRanges();
+            sel.addRange(caret);
+        } catch {
+            /* ignore */
+        }
         notify();
         return true;
     }
