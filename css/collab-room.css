@@ -336,6 +336,22 @@ body.dark .collab-mode-banner:not(.is-author) {
     padding: 0 1px;
 }
 
+.collab-suggest-add.is-focused,
+.collab-suggest-del.is-focused {
+    outline: 2px solid var(--collab-green);
+    outline-offset: 1px;
+}
+
+body.collab-author-mode .collab-suggest-add,
+body.collab-author-mode .collab-suggest-del {
+    cursor: pointer;
+}
+
+.collab-manuscript.editor[contenteditable="true"] .collab-suggest-add {
+    /* Collaborator sees their own green typing live */
+    caret-color: var(--collab-green);
+}
+
 .collab-suggest-add strong,
 .collab-suggest-add b {
     font-weight: 700;

@@ -1030,6 +1030,96 @@ BEGIN
 END;
 $$;
 
+CREATE OR REPLACE FUNCTION public.commit_collab_chapter_content(
+  p_book_id text,
+  p_chapter_id text,
+  p_html text,
+  p_live_html text DEFAULT NULL
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_book public.books%ROWTYPE;
+  v_body jsonb;
+  v_new_body jsonb := '[]'::jsonb;
+  v_elem jsonb;
+  v_found boolean := false;
+  v_content text;
+  v_live text;
+BEGIN
+  IF NOT public.is_collab_chapter_author(p_book_id, p_chapter_id) THEN
+    RAISE EXCEPTION 'not_author';
+  END IF;
+
+  SELECT * INTO v_book
+  FROM public.books b
+  WHERE b.id::text = p_book_id
+    AND b.user_id = auth.uid()
+  FOR UPDATE;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'book_not_found';
+  END IF;
+
+  v_content := coalesce(p_html, '');
+  v_live := coalesce(p_live_html, v_content);
+
+  v_body := coalesce(v_book.sections, '{}'::jsonb)->'body';
+  IF jsonb_typeof(v_body) <> 'array' THEN
+    v_body := '[]'::jsonb;
+  END IF;
+
+  FOR v_elem IN SELECT value FROM jsonb_array_elements(v_body)
+  LOOP
+    IF v_elem->>'id' = p_chapter_id THEN
+      v_found := true;
+      v_elem := jsonb_set(v_elem, '{content}', to_jsonb(v_content), true);
+    END IF;
+    v_new_body := v_new_body || jsonb_build_array(v_elem);
+  END LOOP;
+
+  IF NOT v_found THEN
+    RAISE EXCEPTION 'chapter_not_found';
+  END IF;
+
+  UPDATE public.books
+  SET sections = jsonb_set(coalesce(sections, '{}'::jsonb), '{body}', v_new_body, true),
+      updated = (extract(epoch from now()) * 1000)::bigint
+  WHERE id::text = p_book_id
+    AND user_id = auth.uid();
+
+  INSERT INTO public.collab_live_drafts (
+    book_id, chapter_id, html, base_content_hash, updated_at, updated_by
+  )
+  VALUES (
+    p_book_id, p_chapter_id, v_live, md5(v_content), now(), auth.uid()
+  )
+  ON CONFLICT (book_id, chapter_id) DO UPDATE
+  SET html = EXCLUDED.html,
+      base_content_hash = EXCLUDED.base_content_hash,
+      updated_at = now(),
+      updated_by = auth.uid();
+
+  -- Clear pending suggestion rows; marks in live HTML are the source of truth.
+  UPDATE public.collab_suggestions
+  SET status = 'withdrawn'
+  WHERE book_id = p_book_id
+    AND chapter_id = p_chapter_id
+    AND status = 'pending';
+
+  RETURN jsonb_build_object(
+    'book_id', p_book_id,
+    'chapter_id', p_chapter_id,
+    'content', v_content,
+    'content_hash', md5(v_content),
+    'live_html', v_live
+  );
+END;
+$$;
+
 CREATE OR REPLACE FUNCTION public.upsert_collab_live_draft(
   p_book_id text,
   p_chapter_id text,
@@ -1178,6 +1268,7 @@ GRANT EXECUTE ON FUNCTION public.sync_collab_chapter_suggestions(text, text, tex
 GRANT EXECUTE ON FUNCTION public.dismiss_collab_suggestion(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.dismiss_all_resolved_collab_suggestions(text, text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.reject_all_collab_suggestions(text, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.commit_collab_chapter_content(text, text, text, text) TO authenticated;
 
 GRANT SELECT, INSERT, UPDATE ON public.collab_chapter_invites TO authenticated;
 GRANT SELECT, INSERT, UPDATE ON public.collab_memberships TO authenticated;

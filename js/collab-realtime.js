@@ -6,7 +6,7 @@ import { supabase } from "../firebase.js";
 import {
     upsertCollabLiveDraft,
     syncCollabChapterSuggestions,
-} from "./collab-rooms-api.js?v=8";
+} from "./collab-rooms-api.js?v=9";
 
 const PRESENCE_COLORS = ["#22c55e", "#38bdf8", "#a78bfa", "#f59e0b", "#f472b6", "#fb7185"];
 
