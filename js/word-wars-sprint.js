@@ -110,11 +110,12 @@ let typingIdleTimer = null;
 let draftPingResolver = null;
 /** @type {Map<string, string>} */
 const opponentDraftHtmlCache = new Map();
-/** @type {Map<string, { interactingUntil: number, flushTimer: number | null, pendingHtml: string | null, pendingTitle: string | null }>} */
+/** @type {Map<string, { interactingUntil: number, followTail: boolean }>} */
 const opponentScrollState = new Map();
 
 const OPPONENT_SCROLL_IDLE_MS = 900;
 const OPPONENT_READING_THRESHOLD_PX = 16;
+const OPPONENT_TAIL_THRESHOLD_PX = 48;
 
 function escapeHtml(str) {
     return String(str)
@@ -444,13 +445,23 @@ function getOpponentScrollEl(pane) {
     return pane?.querySelector(".ww-opponent-scroll") || null;
 }
 
+function opponentScrollNearBottom(scrollEl) {
+    if (!scrollEl) return false;
+    return scrollEl.scrollHeight - scrollEl.scrollTop - scrollEl.clientHeight <= OPPONENT_TAIL_THRESHOLD_PX;
+}
+
 function captureOpponentScrollAnchor(scrollEl, userId) {
-    if (!scrollEl) return { scrollTop: 0 };
-    const state = userId ? opponentScrollState.get(userId) : null;
+    if (!scrollEl) return { mode: "top", scrollTop: 0 };
+    if (opponentScrollNearBottom(scrollEl)) {
+        return { mode: "tail" };
+    }
+
+    const state = opponentScrollState.get(userId);
     const interacting = Boolean(state && Date.now() < state.interactingUntil);
     if (!interacting && scrollEl.scrollTop <= OPPONENT_READING_THRESHOLD_PX) {
-        return { scrollTop: scrollEl.scrollTop };
+        return { mode: "top", scrollTop: scrollEl.scrollTop };
     }
+
     const scrollRect = scrollEl.getBoundingClientRect();
     const probeY = scrollRect.top + 12;
     const probeX = scrollRect.left + Math.min(scrollRect.width / 2, 120);
@@ -459,20 +470,24 @@ function captureOpponentScrollAnchor(scrollEl, userId) {
         node = node.parentElement;
     }
     if (!node || !scrollEl.contains(node) || node === scrollEl) {
-        return { scrollTop: scrollEl.scrollTop };
+        return { mode: "top", scrollTop: scrollEl.scrollTop };
     }
-    return { scrollTop: scrollEl.scrollTop, node };
+    return { mode: "anchor", scrollTop: scrollEl.scrollTop, node };
 }
 
 function restoreOpponentScrollAnchor(scrollEl, anchor) {
     if (!scrollEl || !anchor) return;
-    if (anchor.node?.isConnected && scrollEl.contains(anchor.node)) {
+    if (anchor.mode === "tail") {
+        scrollEl.scrollTop = scrollEl.scrollHeight - scrollEl.clientHeight;
+        return;
+    }
+    if (anchor.mode === "anchor" && anchor.node?.isConnected && scrollEl.contains(anchor.node)) {
         const scrollRect = scrollEl.getBoundingClientRect();
         const nodeRect = anchor.node.getBoundingClientRect();
         scrollEl.scrollTop += nodeRect.top - scrollRect.top - 12;
         return;
     }
-    scrollEl.scrollTop = anchor.scrollTop;
+    scrollEl.scrollTop = anchor.scrollTop ?? 0;
 }
 
 function restoreOpponentScrollSoon(scrollEl, anchor) {
@@ -485,11 +500,6 @@ function restoreOpponentScrollSoon(scrollEl, anchor) {
     });
 }
 
-function opponentIsReading(userId) {
-    const state = opponentScrollState.get(userId);
-    return Boolean(state && Date.now() < state.interactingUntil);
-}
-
 function bindOpponentScroll(pane, userId) {
     if (pane.dataset.scrollBound === userId) return;
     pane.dataset.scrollBound = userId;
@@ -499,13 +509,17 @@ function bindOpponentScroll(pane, userId) {
         const prev = opponentScrollState.get(userId) || {};
         opponentScrollState.set(userId, {
             interactingUntil: Date.now() + OPPONENT_SCROLL_IDLE_MS,
-            flushTimer: prev.flushTimer ?? null,
-            pendingHtml: prev.pendingHtml ?? null,
-            pendingTitle: prev.pendingTitle ?? null,
+            followTail: scrollEl ? opponentScrollNearBottom(scrollEl) : prev.followTail ?? false,
         });
-        if (prev.pendingHtml != null || prev.pendingTitle != null) {
-            scheduleOpponentDraftFlush(userId, pane);
-        }
+    };
+
+    const markScroll = () => {
+        const scrollEl = getOpponentScrollEl(pane);
+        const prev = opponentScrollState.get(userId) || {};
+        opponentScrollState.set(userId, {
+            interactingUntil: Date.now() + OPPONENT_SCROLL_IDLE_MS,
+            followTail: scrollEl ? opponentScrollNearBottom(scrollEl) : prev.followTail ?? false,
+        });
     };
 
     pane.addEventListener("wheel", markInteracting, { passive: true, capture: true });
@@ -513,54 +527,16 @@ function bindOpponentScroll(pane, userId) {
     pane.addEventListener("touchmove", markInteracting, { passive: true, capture: true });
     pane.addEventListener("pointerdown", markInteracting, { passive: true, capture: true });
     const scrollEl = getOpponentScrollEl(pane);
-    scrollEl?.addEventListener("scroll", markInteracting, { passive: true });
+    scrollEl?.addEventListener("scroll", markScroll, { passive: true });
     scrollEl?.addEventListener("wheel", markInteracting, { passive: true });
-}
-
-function scheduleOpponentDraftFlush(userId, pane) {
-    const state = opponentScrollState.get(userId);
-    if (!state) return;
-    if (state.pendingHtml == null && state.pendingTitle == null) return;
-    if (state.flushTimer) window.clearTimeout(state.flushTimer);
-    state.flushTimer = window.setTimeout(() => {
-        state.flushTimer = null;
-        const scrollEl = getOpponentScrollEl(pane);
-        if (opponentIsReading(userId)) {
-            scheduleOpponentDraftFlush(userId, pane);
-            return;
-        }
-        flushOpponentDraftUpdate(pane, userId);
-    }, OPPONENT_SCROLL_IDLE_MS);
-}
-
-function flushOpponentDraftUpdate(pane, userId) {
-    const state = opponentScrollState.get(userId);
-    if (!state) return;
-    const scrollEl = getOpponentScrollEl(pane);
-    const editorEl = pane.querySelector(`[data-opponent-id="${CSS.escape(userId)}"]`);
-    const titleEl = scrollEl?.querySelector(".ww-opponent-chapter-title");
-
-    if (state.pendingTitle != null && titleEl) {
-        titleEl.textContent = state.pendingTitle;
-        state.pendingTitle = null;
-    }
-    if (state.pendingHtml != null && editorEl) {
-        applyOpponentDraftHtml(editorEl, scrollEl, userId, state.pendingHtml);
-        state.pendingHtml = null;
-    }
 }
 
 function applyOpponentDraftHtml(editorEl, scrollEl, userId, nextHtml) {
     if (opponentDraftHtmlCache.get(userId) === nextHtml) return;
-    const shouldPreserveScroll =
-        opponentIsReading(userId) ||
-        (scrollEl?.scrollTop ?? 0) > OPPONENT_READING_THRESHOLD_PX;
-    const anchor = shouldPreserveScroll ? captureOpponentScrollAnchor(scrollEl, userId) : null;
+    const anchor = captureOpponentScrollAnchor(scrollEl, userId);
     editorEl.innerHTML = nextHtml;
     opponentDraftHtmlCache.set(userId, nextHtml);
-    if (shouldPreserveScroll && anchor) {
-        restoreOpponentScrollSoon(scrollEl, anchor);
-    }
+    restoreOpponentScrollSoon(scrollEl, anchor);
 }
 
 function queueOpponentDraftHtmlUpdate(pane, opponent) {
@@ -570,30 +546,13 @@ function queueOpponentDraftHtmlUpdate(pane, opponent) {
     const nextTitle = opponent.liveChapterTitle || "Untitled chapter";
     bindOpponentScroll(pane, userId);
 
-    const state = opponentScrollState.get(userId) || {
-        interactingUntil: 0,
-        flushTimer: null,
-        pendingHtml: null,
-        pendingTitle: null,
-    };
+    const titleEl = scrollEl?.querySelector(".ww-opponent-chapter-title");
+    if (titleEl && titleEl.textContent !== nextTitle) titleEl.textContent = nextTitle;
 
-    if (opponentDraftHtmlCache.get(userId) === nextHtml) {
-        const titleEl = scrollEl?.querySelector(".ww-opponent-chapter-title");
-        if (titleEl && titleEl.textContent !== nextTitle) titleEl.textContent = nextTitle;
-        opponentScrollState.set(userId, state);
-        return;
+    const editorEl = pane.querySelector(`[data-opponent-id="${CSS.escape(userId)}"]`);
+    if (editorEl) {
+        applyOpponentDraftHtml(editorEl, scrollEl, userId, nextHtml);
     }
-
-    state.pendingHtml = nextHtml;
-    state.pendingTitle = nextTitle;
-    opponentScrollState.set(userId, state);
-
-    if (opponentIsReading(userId)) {
-        scheduleOpponentDraftFlush(userId, pane);
-        return;
-    }
-
-    flushOpponentDraftUpdate(pane, userId);
 }
 
 function updateOpponentPaneHead(pane, opponent, label) {
@@ -624,8 +583,6 @@ function mountOpponentHiddenBody(pane, opponent) {
         </div>
     `;
     opponentDraftHtmlCache.delete(opponent.userId);
-    const state = opponentScrollState.get(opponent.userId);
-    if (state?.flushTimer) window.clearTimeout(state.flushTimer);
     opponentScrollState.delete(opponent.userId);
 }
 
@@ -732,8 +689,6 @@ function renderOpponentMirror() {
         const id = pane.getAttribute("data-opponent-pane");
         if (id && !seenIds.has(id)) {
             opponentDraftHtmlCache.delete(id);
-            const state = opponentScrollState.get(id);
-            if (state?.flushTimer) window.clearTimeout(state.flushTimer);
             opponentScrollState.delete(id);
             pane.remove();
         }
