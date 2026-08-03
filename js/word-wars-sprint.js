@@ -444,9 +444,12 @@ function getOpponentScrollEl(pane) {
     return pane?.querySelector(".ww-opponent-scroll") || null;
 }
 
-function captureOpponentScrollAnchor(scrollEl) {
-    if (!scrollEl || scrollEl.scrollTop <= OPPONENT_READING_THRESHOLD_PX) {
-        return { scrollTop: scrollEl?.scrollTop ?? 0 };
+function captureOpponentScrollAnchor(scrollEl, userId) {
+    if (!scrollEl) return { scrollTop: 0 };
+    const state = userId ? opponentScrollState.get(userId) : null;
+    const interacting = Boolean(state && Date.now() < state.interactingUntil);
+    if (!interacting && scrollEl.scrollTop <= OPPONENT_READING_THRESHOLD_PX) {
+        return { scrollTop: scrollEl.scrollTop };
     }
     const scrollRect = scrollEl.getBoundingClientRect();
     const probeY = scrollRect.top + 12;
@@ -482,8 +485,7 @@ function restoreOpponentScrollSoon(scrollEl, anchor) {
     });
 }
 
-function opponentIsReading(userId, scrollEl) {
-    if (!scrollEl || scrollEl.scrollTop <= OPPONENT_READING_THRESHOLD_PX) return false;
+function opponentIsReading(userId) {
     const state = opponentScrollState.get(userId);
     return Boolean(state && Date.now() < state.interactingUntil);
 }
@@ -508,8 +510,11 @@ function bindOpponentScroll(pane, userId) {
 
     pane.addEventListener("wheel", markInteracting, { passive: true, capture: true });
     pane.addEventListener("touchstart", markInteracting, { passive: true, capture: true });
+    pane.addEventListener("touchmove", markInteracting, { passive: true, capture: true });
     pane.addEventListener("pointerdown", markInteracting, { passive: true, capture: true });
-    getOpponentScrollEl(pane)?.addEventListener("scroll", markInteracting, { passive: true });
+    const scrollEl = getOpponentScrollEl(pane);
+    scrollEl?.addEventListener("scroll", markInteracting, { passive: true });
+    scrollEl?.addEventListener("wheel", markInteracting, { passive: true });
 }
 
 function scheduleOpponentDraftFlush(userId, pane) {
@@ -520,7 +525,7 @@ function scheduleOpponentDraftFlush(userId, pane) {
     state.flushTimer = window.setTimeout(() => {
         state.flushTimer = null;
         const scrollEl = getOpponentScrollEl(pane);
-        if (opponentIsReading(userId, scrollEl)) {
+        if (opponentIsReading(userId)) {
             scheduleOpponentDraftFlush(userId, pane);
             return;
         }
@@ -547,10 +552,15 @@ function flushOpponentDraftUpdate(pane, userId) {
 
 function applyOpponentDraftHtml(editorEl, scrollEl, userId, nextHtml) {
     if (opponentDraftHtmlCache.get(userId) === nextHtml) return;
-    const anchor = captureOpponentScrollAnchor(scrollEl);
+    const shouldPreserveScroll =
+        opponentIsReading(userId) ||
+        (scrollEl?.scrollTop ?? 0) > OPPONENT_READING_THRESHOLD_PX;
+    const anchor = shouldPreserveScroll ? captureOpponentScrollAnchor(scrollEl, userId) : null;
     editorEl.innerHTML = nextHtml;
     opponentDraftHtmlCache.set(userId, nextHtml);
-    restoreOpponentScrollSoon(scrollEl, anchor);
+    if (shouldPreserveScroll && anchor) {
+        restoreOpponentScrollSoon(scrollEl, anchor);
+    }
 }
 
 function queueOpponentDraftHtmlUpdate(pane, opponent) {
@@ -578,7 +588,7 @@ function queueOpponentDraftHtmlUpdate(pane, opponent) {
     state.pendingTitle = nextTitle;
     opponentScrollState.set(userId, state);
 
-    if (opponentIsReading(userId, scrollEl)) {
+    if (opponentIsReading(userId)) {
         scheduleOpponentDraftFlush(userId, pane);
         return;
     }
