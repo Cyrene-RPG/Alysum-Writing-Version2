@@ -679,33 +679,6 @@
     .copyright-field-input.copyright-field-inline--name { width: min(14rem, 100%); }
     .copyright-field-input.copyright-field-inline--wide { width: min(18rem, 100%); }
     .copyright-field-input.copyright-field-inline--isbn { width: min(13rem, 100%); }
-    .copyright-field-input.copyright-field-inline--country { width: min(10rem, 100%); }
-    .copyright-optional-block { margin-top: 8px; }
-    .copyright-optional-check {
-        display: flex;
-        align-items: flex-start;
-        gap: 10px;
-        margin: 0 0 8px;
-        cursor: pointer;
-        font-size: 13px;
-        font-weight: 700;
-        color: var(--page-text);
-    }
-    .copyright-optional-check input { margin-top: 2px; accent-color: var(--alysum-purple); }
-    .copyright-optional-textarea {
-        width: 100%;
-        min-height: 72px;
-        padding: 10px 12px;
-        border: 1px dashed rgba(109, 40, 217, 0.45);
-        border-radius: 8px;
-        background: var(--page-bg);
-        color: var(--page-text);
-        font-family: inherit;
-        font-size: 14px;
-        line-height: 1.45;
-        resize: vertical;
-    }
-    .copyright-optional-textarea:disabled { opacity: 0.45; cursor: not-allowed; }
     .copyright-preview {
         margin-top: 18px;
         padding-top: 16px;
@@ -1358,17 +1331,6 @@
                         Editing by:
                         <input type="text" class="copyright-field-input copyright-field-inline--name" id="edCpEditingBy" spellcheck="true" aria-label="Editor name" placeholder="Name" />
                     </p>
-                    <p class="copyright-copy-p">
-                        Printed in
-                        <input type="text" class="copyright-field-input copyright-field-inline--country" id="edCpPrintedIn" spellcheck="true" aria-label="Country printed in" placeholder="Country" />
-                    </p>
-                    <div class="copyright-optional-block">
-                        <label class="copyright-optional-check" for="edCpOptionalInclude">
-                            <input type="checkbox" id="edCpOptionalInclude" />
-                            <span>Include optional reader advisory</span>
-                        </label>
-                        <textarea class="copyright-optional-textarea" id="edCpOptional" rows="3" spellcheck="true" disabled aria-label="Optional reader advisory text" placeholder="This book may contain material that some readers may find disturbing. Reader discretion is advised."></textarea>
-                    </div>
                 </div>
                 <div class="copyright-preview" aria-live="polite">
                     <p class="copyright-preview-label">Preview</p>
@@ -1544,8 +1506,7 @@
         buildCopyrightHtml,
         readCopyrightFieldsFromDom,
         writeCopyrightFieldsToDom,
-        bindCopyrightOptionalToggle,
-    } from "./js/copyright-page.js?v=1";
+    } from "./js/copyright-page.js?v=2";
     import { mountBookVersionPanel } from "./js/book-version-panel.js?v=8";
     import { hashSnapshot, buildManuscriptSnapshot } from "./js/book-version-api.js?v=3";
     import {
@@ -4745,7 +4706,6 @@ function rememberBookId(id) {
         }
     });
 
-    bindCopyrightOptionalToggle();
     copyrightTabTemplate?.addEventListener("click", () => setCopyrightEditorMode("template"));
     copyrightTabFree?.addEventListener("click", () => {
         if (getCopyrightEditorMode() === "template") syncCopyrightTemplateToChapter(false);

@@ -1,4 +1,4 @@
-/** @typedef {{ year: string, holder: string, contact: string, editionYear: string, imprint: string, publisherLocation: string, isbn: string, coverDesignBy: string, editingBy: string, printedIn: string, optionalOn: boolean, optionalText: string }} CopyrightFields */
+/** @typedef {{ year: string, holder: string, contact: string, editionYear: string, imprint: string, publisherLocation: string, isbn: string, coverDesignBy: string, editingBy: string }} CopyrightFields */
 
 const FIELD_IDS = {
     year: "edCpYear",
@@ -10,9 +10,6 @@ const FIELD_IDS = {
     isbn: "edCpIsbn",
     coverDesignBy: "edCpCoverDesign",
     editingBy: "edCpEditingBy",
-    printedIn: "edCpPrintedIn",
-    optionalOn: "edCpOptionalInclude",
-    optionalText: "edCpOptional",
 };
 
 function escapeHtml(value) {
@@ -36,9 +33,6 @@ export function emptyCopyrightFields(defaults = {}) {
         isbn: defaults.isbn ?? "",
         coverDesignBy: defaults.coverDesignBy ?? "",
         editingBy: defaults.editingBy ?? "",
-        printedIn: defaults.printedIn ?? "",
-        optionalOn: !!defaults.optionalOn,
-        optionalText: defaults.optionalText ?? "",
     };
 }
 
@@ -80,10 +74,6 @@ export function buildCopyrightHtml(fields) {
     if (f.isbn) blocks.push(`<p>ISBN: ${escapeHtml(f.isbn)}</p>`);
     if (f.coverDesignBy) blocks.push(`<p>Cover design by: ${escapeHtml(f.coverDesignBy)}</p>`);
     if (f.editingBy) blocks.push(`<p>Editing by: ${escapeHtml(f.editingBy)}</p>`);
-    if (f.printedIn) blocks.push(`<p>Printed in ${escapeHtml(f.printedIn)}</p>`);
-    if (f.optionalOn && f.optionalText) {
-        blocks.push(`<p>${escapeHtml(f.optionalText).replace(/\n+/g, "<br>")}</p>`);
-    }
 
     return blocks.join("");
 }
@@ -101,9 +91,6 @@ export function readCopyrightFieldsFromDom(root = document) {
         isbn: get(FIELD_IDS.isbn)?.value,
         coverDesignBy: get(FIELD_IDS.coverDesignBy)?.value,
         editingBy: get(FIELD_IDS.editingBy)?.value,
-        printedIn: get(FIELD_IDS.printedIn)?.value,
-        optionalOn: !!get(FIELD_IDS.optionalOn)?.checked,
-        optionalText: get(FIELD_IDS.optionalText)?.value,
     });
 }
 
@@ -123,22 +110,4 @@ export function writeCopyrightFieldsToDom(fields, root = document) {
     set(FIELD_IDS.isbn, f.isbn);
     set(FIELD_IDS.coverDesignBy, f.coverDesignBy);
     set(FIELD_IDS.editingBy, f.editingBy);
-    set(FIELD_IDS.printedIn, f.printedIn);
-    const optionalOn = root.getElementById(FIELD_IDS.optionalOn);
-    const optionalText = root.getElementById(FIELD_IDS.optionalText);
-    if (optionalOn) optionalOn.checked = !!f.optionalOn;
-    if (optionalText) {
-        optionalText.value = f.optionalText;
-        optionalText.disabled = !f.optionalOn;
-    }
-}
-
-export function bindCopyrightOptionalToggle(root = document) {
-    const optionalOn = root.getElementById(FIELD_IDS.optionalOn);
-    const optionalText = root.getElementById(FIELD_IDS.optionalText);
-    if (!optionalOn || !optionalText) return;
-    optionalOn.addEventListener("change", () => {
-        optionalText.disabled = !optionalOn.checked;
-        if (!optionalOn.checked) optionalText.value = "";
-    });
 }
