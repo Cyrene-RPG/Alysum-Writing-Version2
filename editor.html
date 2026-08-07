@@ -794,23 +794,19 @@
     .page-content::after { content: ""; display: block; clear: both; }
     .editor:empty:before { content: attr(data-placeholder); color: #a7afb8; }
     .bottom-meta { margin-top: 16px; text-align: center; font-size: 13px; color: #7b8490; font-weight: 700; clear: both; }
-    .editor-status-bar {
-        flex-shrink: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 36px;
-        padding: 6px 16px;
-        border-top: 1px solid var(--border);
-        background: var(--toolbar-bg);
-    }
-    .editor-status-bar .bottom-meta {
-        margin: 0;
+    .toolbar-wordcount {
         font-size: 12px;
         font-weight: 600;
         color: var(--page-subtle);
+        white-space: nowrap;
+        padding: 0 6px;
+        flex-shrink: 0;
     }
-    body.comic-mode .editor-status-bar { display: none; }
+    body.comic-mode .toolbar-wordcount { display: none; }
+    body.copyright-template-mode .toolbar-wordcount { display: none; }
+    @media (max-width: 900px) {
+        .toolbar-wordcount { display: none; }
+    }
     .overlay { display: none; }
     .publish-modal, .sprint-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.65); display: none; align-items: center; justify-content: center; z-index: 99999; padding: 20px; }
     .publish-modal.open, .sprint-modal.open { display: flex; }
@@ -1306,6 +1302,7 @@
     <button class="tool-btn" type="button" id="pageLayoutBtn" data-tip="Paginated pages — click for infinite scroll" aria-pressed="true">Pages</button>
     <button class="tool-btn" type="button" id="backgroundBtn" data-tip="Set editor background image">Background</button>
     <div class="toolbar-spacer"></div>
+    <div class="toolbar-wordcount bottom-meta" aria-live="polite"><span id="chapterWords">0</span> <span id="bottomMetaLabel">chapter words</span> · <span id="bottomTotalWords">0</span> <span id="bottomTotalLabel">total words</span></div>
     <span class="sprint-anchor" id="sprintAnchor"><button class="sprint-btn" id="sprintToolbarBtn" type="button" data-tip="Writing sprint timer" aria-label="Sprint timer">⏱ Sprint</button></span>
 </div>
 <div class="comic-toolbar" id="comicToolbar" aria-label="Comic page tools">
@@ -1417,9 +1414,6 @@
             </div>
         </div>
     </div>
-</div>
-<div class="editor-status-bar" id="editorStatusBar" aria-live="polite">
-    <div class="bottom-meta"><span id="chapterWords">0</span> <span id="bottomMetaLabel">chapter words</span> • <span id="bottomTotalWords">0</span> <span id="bottomTotalLabel">total words</span></div>
 </div>
 </div><div class="publish-modal" id="publishModal">
     <div class="publish-modal-box">
