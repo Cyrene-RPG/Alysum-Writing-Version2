@@ -440,7 +440,9 @@
         background: #e8eaed;
         padding: 28px 16px 56px;
     }
-    body.dark .workspace.is-docs-pages { background: #202124; }
+    body.dark .workspace.is-docs-pages {
+        background: var(--workspace-bg);
+    }
     .workspace.has-custom-bg {
         background-image:
             linear-gradient(rgba(2, 6, 23, 0.48), rgba(2, 6, 23, 0.6)),
@@ -468,34 +470,21 @@
         padding-bottom: 96px;
         font-size: 12px;
         font-weight: 600;
-        color: #80868b;
+        color: var(--page-subtle);
     }
-    body.dark .page-flow.is-paginated .bottom-meta { color: #9aa0a6; }
     .editor-page-bg {
         position: absolute;
         left: 0;
         right: 0;
-        background: #fff;
+        background: var(--page-bg);
         border-radius: 0;
-        border: 1px solid #dadce0;
+        border: 1px solid var(--border);
         box-shadow: 0 1px 3px 1px rgba(60, 64, 67, 0.15), 0 1px 2px 0 rgba(60, 64, 67, 0.3);
     }
     body.dark .page-flow.is-paginated .editor-page-bg {
-        background: #fff;
-        border-color: #dadce0;
+        box-shadow: 0 2px 6px 2px rgba(0, 0, 0, 0.35), 0 1px 2px 0 rgba(0, 0, 0, 0.4);
     }
-    .page-flow.is-paginated .page-content,
-    .page-flow.is-paginated .chapter-title,
-    .page-flow.is-paginated .editor,
-    .page-flow.is-paginated .bottom-meta {
-        color: #202124;
-    }
-    .page-flow.is-paginated .editor blockquote {
-        color: #5f6368;
-        border-left-color: #1a73e8;
-    }
-    .page-flow.is-paginated .editor:empty:before { color: #9aa0a6; }
-    body.dark .page-flow.is-paginated .bottom-meta { color: #80868b; }
+    .page-flow.is-paginated .editor:empty:before { color: var(--page-subtle); }
     .page-flow:not(.is-paginated) .page-backgrounds { display: none; }
     .page-flow:not(.is-paginated) { min-height: calc(100vh - 180px); }
     .page-flow:not(.is-paginated)::before {
@@ -1616,7 +1605,7 @@
     } from "./js/content-warnings.js?v=1";
     import { mountWarningPicker } from "./js/chapter-warnings-ui.js?v=1";
     import { normalizeAuthorNotes } from "./js/chapter-author-notes.js?v=1";
-    import { mountEditorPagination, stripEditorPageGapsFromHtml } from "./js/editor-pagination.js?v=3";
+    import { mountEditorPagination, stripEditorPageGapsFromHtml } from "./js/editor-pagination.js?v=4";
     import {
         saveBookShadow,
         getBookShadow,
