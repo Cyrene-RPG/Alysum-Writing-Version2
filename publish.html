@@ -314,6 +314,7 @@
     } from "./js/content-warnings.js?v=1";
     import { mountWarningPicker } from "./js/chapter-warnings-ui.js?v=1";
     import { normalizeAuthorNotes, MAX_AUTHOR_NOTES_LENGTH } from "./js/chapter-author-notes.js?v=1";
+    import { chapterTypographyPayload } from "./js/chapter-typography.js?v=1";
 
     const WARNING_GROUPS = CONTENT_WARNING_GROUPS;
 
@@ -904,6 +905,7 @@
                     words: countWords(ch.content || ""),
                     warnings: cloneWarningData(ch.warnings),
                     authorNotes: normalizeAuthorNotes(ch.authorNotes),
+                    ...chapterTypographyPayload(ch),
                 })),
                 publishedChapterIds: immediateChapterIds,
                 chapterCount: publishChapters.length,

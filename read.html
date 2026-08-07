@@ -363,6 +363,7 @@
     import { flattenWarnings, aggregateWarningsFromChapters } from "./js/content-warnings.js?v=1";
     import { normalizeAuthorNotes } from "./js/chapter-author-notes.js?v=1";
     import { sanitizeChapterHtml } from "./js/book-html-sanitize.js?v=1";
+    import { applyChapterTypographyStyles, chapterTypographyPayload } from "./js/chapter-typography.js?v=1";
 
     const params = new URLSearchParams(window.location.search);
     let bookId =
@@ -475,6 +476,7 @@
                 words: safeNumber(item.words, countWordsFromHtml(item.content || "")),
                 warnings: flattenWarnings(item.warnings),
                 authorNotes: normalizeAuthorNotes(item.authorNotes ?? item.author_notes),
+                ...chapterTypographyPayload(item),
             };
         });
         if (publishedIds.length) chapters = chapters.filter(ch => publishedIds.includes(ch.id));
@@ -688,9 +690,13 @@
             if (caption) html += `<p class="comic-page-caption">${escapeHtml(caption)}</p>`;
             content.innerHTML = html;
             content.classList.toggle("comic-reader", true);
+            content.style.removeProperty("font-family");
+            content.style.removeProperty("font-size");
+            content.style.removeProperty("line-height");
         } else {
             content.classList.remove("comic-reader");
             content.innerHTML = sanitizeChapterHtml(chapter.content) || "<p>No chapter text yet.</p>";
+            applyChapterTypographyStyles(content, chapter);
         }
         prevBtn.disabled = currentChapterIndex === 0;
         nextBtn.disabled = currentChapterIndex === currentBook.chapters.length - 1;

@@ -1508,6 +1508,21 @@
         readCopyrightFieldsFromDom,
         writeCopyrightFieldsToDom,
     } from "./js/copyright-page.js?v=2";
+    import {
+        EDITOR_FONT_GROUPS,
+        EDITOR_FONT_SIZES,
+        fontStackForId,
+        fontClassName,
+        fontIdFromClass,
+        normalizeFontId,
+        normalizeFontSize,
+    } from "./js/editor-font-catalog.js?v=1";
+    import {
+        resolveEditorChapterFontId,
+        resolveEditorChapterFontSize,
+        writeChapterTypography,
+        chapterTypographyPayload,
+    } from "./js/chapter-typography.js?v=1";
     import { mountBookVersionPanel } from "./js/book-version-panel.js?v=8";
     import { hashSnapshot, buildManuscriptSnapshot } from "./js/book-version-api.js?v=3";
     import {
@@ -1687,10 +1702,9 @@ function rememberBookId(id) {
 
     function applyCompareEditorStyle(el) {
         if (!el) return;
-        const fontId = normalizeStoredEditorFont(localStorage.getItem("alysum-font") || "Georgia");
-        const size = normalizeStoredEditorFontSize(localStorage.getItem("alysum-fontSize") || "20");
-        const stack = editorFontStack(fontId);
-        el.style.fontFamily = stack;
+        const fontId = resolveEditorChapterFontId(currentChapter(), getEditorTypographyFallbackFontId());
+        const size = resolveEditorChapterFontSize(currentChapter(), getEditorTypographyFallbackFontSize());
+        el.style.fontFamily = fontStackForId(fontId);
         el.style.fontSize = size + "px";
         el.style.lineHeight = "1.7";
     }
@@ -2054,7 +2068,19 @@ function rememberBookId(id) {
             copyrightEditorMode: chapter.copyrightEditorMode === "free"
                 ? "free"
                 : (chapter.copyrightEditorMode === "template" ? "template" : null),
+            defaultFont: readChapterField(chapter, "defaultFont", "default_font")
+                ? normalizeFontId(readChapterField(chapter, "defaultFont", "default_font"))
+                : "",
+            defaultFontSize: readChapterField(chapter, "defaultFontSize", "default_font_size")
+                ? normalizeFontSize(readChapterField(chapter, "defaultFontSize", "default_font_size"))
+                : "",
         };
+    }
+
+    function readChapterField(chapter, camel, snake) {
+        if (!chapter || typeof chapter !== "object") return "";
+        const value = chapter[camel] ?? chapter[snake];
+        return value == null ? "" : String(value).trim();
     }
 
     function setChapterImageUrls(ch, urls) {
@@ -3965,6 +3991,7 @@ function rememberBookId(id) {
                         words: countWords(ch.content || ""),
                         warnings: cloneWarningData(ch.warnings),
                         authorNotes: authorNotesByChapterId.get(ch.id) || "",
+                        ...chapterTypographyPayload(ch),
                     })),
                     publishedChapterIds: immediateChapterIds,
                     chapterCount: selectedChapterObjects.length,
@@ -4227,149 +4254,12 @@ function rememberBookId(id) {
         } catch (e) { console.error(e); setSaveStatus("Delete failed"); }
     }
 
-    const EDITOR_FONT_GROUPS = [
-        {
-            label: "Classic serif",
-            fonts: [
-                { id: "Georgia", label: "Georgia", stack: 'Georgia, "Times New Roman", serif' },
-                { id: "Times New Roman", label: "Times New Roman", stack: '"Times New Roman", Times, serif' },
-                { id: "Garamond", label: "Garamond", stack: 'Garamond, "Palatino Linotype", serif' },
-                { id: "Palatino Linotype", label: "Palatino", stack: '"Palatino Linotype", Palatino, serif' },
-                { id: "Book Antiqua", label: "Book Antiqua", stack: '"Book Antiqua", Palatino, serif' },
-                { id: "Baskerville", label: "Baskerville", stack: 'Baskerville, "Libre Baskerville", serif' },
-                { id: "Century Schoolbook", label: "Century Schoolbook", stack: '"Century Schoolbook", Georgia, serif' },
-            ],
-        },
-        {
-            label: "Book serif",
-            fonts: [
-                { id: "Lora", label: "Lora", stack: '"Lora", Georgia, serif' },
-                { id: "Merriweather", label: "Merriweather", stack: '"Merriweather", Georgia, serif' },
-                { id: "Libre Baskerville", label: "Libre Baskerville", stack: '"Libre Baskerville", Georgia, serif' },
-                { id: "Crimson Pro", label: "Crimson Pro", stack: '"Crimson Pro", Georgia, serif' },
-                { id: "Cormorant Garamond", label: "Cormorant Garamond", stack: '"Cormorant Garamond", Garamond, serif' },
-                { id: "EB Garamond", label: "EB Garamond", stack: '"EB Garamond", Garamond, serif' },
-                { id: "Spectral", label: "Spectral", stack: '"Spectral", Georgia, serif' },
-                { id: "Source Serif 4", label: "Source Serif 4", stack: '"Source Serif 4", Georgia, serif' },
-                { id: "Playfair Display", label: "Playfair Display", stack: '"Playfair Display", Georgia, serif' },
-                { id: "Literata", label: "Literata", stack: '"Literata", Georgia, serif' },
-                { id: "Noto Serif", label: "Noto Serif", stack: '"Noto Serif", Georgia, serif' },
-                { id: "Cardo", label: "Cardo", stack: '"Cardo", Georgia, serif' },
-                { id: "Vollkorn", label: "Vollkorn", stack: '"Vollkorn", Georgia, serif' },
-                { id: "Bitter", label: "Bitter", stack: '"Bitter", Georgia, serif' },
-                { id: "Alegreya", label: "Alegreya", stack: '"Alegreya", Georgia, serif' },
-                { id: "Libre Caslon Text", label: "Libre Caslon Text", stack: '"Libre Caslon Text", Georgia, serif' },
-            ],
-        },
-        {
-            label: "Sans serif",
-            fonts: [
-                { id: "Arial", label: "Arial", stack: 'Arial, Helvetica, sans-serif' },
-                { id: "Verdana", label: "Verdana", stack: "Verdana, Geneva, sans-serif" },
-                { id: "Tahoma", label: "Tahoma", stack: "Tahoma, Geneva, sans-serif" },
-                { id: "Trebuchet MS", label: "Trebuchet MS", stack: '"Trebuchet MS", sans-serif' },
-                { id: "Segoe UI", label: "Segoe UI", stack: '"Segoe UI", system-ui, sans-serif' },
-                { id: "Inter", label: "Inter", stack: '"Inter", system-ui, sans-serif' },
-                { id: "Roboto", label: "Roboto", stack: '"Roboto", system-ui, sans-serif' },
-                { id: "Open Sans", label: "Open Sans", stack: '"Open Sans", system-ui, sans-serif' },
-                { id: "Lato", label: "Lato", stack: '"Lato", system-ui, sans-serif' },
-                { id: "Montserrat", label: "Montserrat", stack: '"Montserrat", system-ui, sans-serif' },
-                { id: "Raleway", label: "Raleway", stack: '"Raleway", system-ui, sans-serif' },
-                { id: "Work Sans", label: "Work Sans", stack: '"Work Sans", system-ui, sans-serif' },
-                { id: "DM Sans", label: "DM Sans", stack: '"DM Sans", system-ui, sans-serif' },
-                { id: "Nunito", label: "Nunito", stack: '"Nunito", system-ui, sans-serif' },
-            ],
-        },
-        {
-            label: "Monospace",
-            fonts: [
-                { id: "Courier New", label: "Courier New", stack: '"Courier New", Courier, monospace' },
-                { id: "Source Code Pro", label: "Source Code Pro", stack: '"Source Code Pro", "Courier New", monospace' },
-                { id: "JetBrains Mono", label: "JetBrains Mono", stack: '"JetBrains Mono", "Courier New", monospace' },
-                { id: "IBM Plex Mono", label: "IBM Plex Mono", stack: '"IBM Plex Mono", "Courier New", monospace' },
-            ],
-        },
-        {
-            label: "Display",
-            fonts: [
-                { id: "Cinzel", label: "Cinzel", stack: '"Cinzel", Georgia, serif' },
-                { id: "IM Fell English", label: "IM Fell English", stack: '"IM Fell English", Georgia, serif' },
-                { id: "Abril Fatface", label: "Abril Fatface", stack: '"Abril Fatface", Georgia, serif' },
-            ],
-        },
-        {
-            label: "Handwriting",
-            fonts: [
-                { id: "Caveat", label: "Caveat", stack: '"Caveat", cursive' },
-                { id: "Dancing Script", label: "Dancing Script", stack: '"Dancing Script", cursive' },
-            ],
-        },
-        {
-            label: "Accessibility",
-            fonts: [
-                { id: "OpenDyslexic", label: "OpenDyslexic", stack: '"OpenDyslexic", sans-serif' },
-                { id: "Atkinson Hyperlegible", label: "Atkinson Hyperlegible", stack: '"Atkinson Hyperlegible", sans-serif' },
-            ],
-        },
-        {
-            label: "Sci-fi & cyberpunk",
-            fonts: [
-                { id: "Orbitron", label: "Orbitron", stack: '"Orbitron", sans-serif' },
-                { id: "Rajdhani", label: "Rajdhani", stack: '"Rajdhani", sans-serif' },
-                { id: "Exo 2", label: "Exo 2", stack: '"Exo 2", sans-serif' },
-                { id: "Oxanium", label: "Oxanium", stack: '"Oxanium", sans-serif' },
-                { id: "Quantico", label: "Quantico", stack: '"Quantico", sans-serif' },
-                { id: "Audiowide", label: "Audiowide", stack: '"Audiowide", sans-serif' },
-                { id: "Michroma", label: "Michroma", stack: '"Michroma", sans-serif' },
-                { id: "Syncopate", label: "Syncopate", stack: '"Syncopate", sans-serif' },
-                { id: "Share Tech Mono", label: "Share Tech Mono", stack: '"Share Tech Mono", monospace' },
-                { id: "Space Mono", label: "Space Mono", stack: '"Space Mono", monospace' },
-                { id: "VT323", label: "VT323", stack: '"VT323", monospace' },
-                { id: "Press Start 2P", label: "Press Start 2P", stack: '"Press Start 2P", monospace' },
-            ],
-        },
-    ];
-
-    const EDITOR_FONT_SIZES = [
-        { px: 14, label: "Small print" },
-        { px: 16, label: "Fine" },
-        { px: 17, label: "Petite" },
-        { px: 18, label: "Compact" },
-        { px: 19, label: "Cozy" },
-        { px: 20, label: "Book" },
-        { px: 21, label: "Easy" },
-        { px: 22, label: "Comfort" },
-        { px: 23, label: "Ample" },
-        { px: 24, label: "Relaxed" },
-        { px: 25, label: "Generous" },
-        { px: 26, label: "Large" },
-        { px: 28, label: "Open page" },
-        { px: 30, label: "Spacious" },
-        { px: 32, label: "Extra large" },
-        { px: 34, label: "Manuscript" },
-        { px: 36, label: "Display" },
-    ];
-
-    function editorFontStack(fontId) {
-        for (const group of EDITOR_FONT_GROUPS) {
-            const match = group.fonts.find(f => f.id === fontId);
-            if (match) return match.stack;
-        }
-        return 'Georgia, "Times New Roman", serif';
+    function getEditorTypographyFallbackFontId() {
+        return localStorage.getItem("alysum-font") || "Georgia";
     }
 
-    function editorFontClassName(fontId) {
-        return "alysum-font-" + String(fontId || "").toLowerCase().replace(/\s+/g, "-");
-    }
-
-    function editorFontIdFromClass(className) {
-        if (!className || !className.startsWith("alysum-font-")) return null;
-        for (const group of EDITOR_FONT_GROUPS) {
-            for (const font of group.fonts) {
-                if (editorFontClassName(font.id) === className) return font.id;
-            }
-        }
-        return null;
+    function getEditorTypographyFallbackFontSize() {
+        return localStorage.getItem("alysum-fontSize") || "20";
     }
 
     function stripInlineFontClasses(root) {
@@ -4394,19 +4284,19 @@ function rememberBookId(id) {
     function getActiveEditorFontId() {
         const sel = window.getSelection();
         if (!sel || !sel.rangeCount || !editor.contains(sel.anchorNode)) {
-            return normalizeStoredEditorFont(localStorage.getItem("alysum-font") || "Georgia");
+            return resolveEditorChapterFontId(currentChapter(), getEditorTypographyFallbackFontId());
         }
         let node = sel.anchorNode;
         if (node.nodeType === Node.TEXT_NODE) node = node.parentElement;
         while (node && node !== editor) {
             if (node.tagName === "SPAN") {
                 const fontClass = [...node.classList].find((c) => c.startsWith("alysum-font-"));
-                const fontId = editorFontIdFromClass(fontClass);
+                const fontId = fontIdFromClass(fontClass);
                 if (fontId) return fontId;
             }
             node = node.parentElement;
         }
-        return normalizeStoredEditorFont(localStorage.getItem("alysum-font") || "Georgia");
+        return resolveEditorChapterFontId(currentChapter(), getEditorTypographyFallbackFontId());
     }
 
     function getActiveBlockFormat() {
@@ -4437,21 +4327,25 @@ function rememberBookId(id) {
 
     function applyFontToEditorSelection(fontId) {
         if (isCurrentBookComic()) return;
-        const normalizedId = normalizeStoredEditorFont(fontId);
+        const normalizedId = normalizeFontId(fontId);
         editor.focus();
         const sel = window.getSelection();
         if (!sel || !sel.rangeCount || !editor.contains(sel.anchorNode)) {
             localStorage.setItem("alysum-font", normalizedId);
+            writeChapterTypography(currentChapter(), { fontId: normalizedId });
             applyEditorStyle();
+            scheduleSave();
             return;
         }
         const range = sel.getRangeAt(0);
         if (range.collapsed) {
             localStorage.setItem("alysum-font", normalizedId);
+            writeChapterTypography(currentChapter(), { fontId: normalizedId });
             applyEditorStyle();
+            scheduleSave();
             return;
         }
-        const className = editorFontClassName(normalizedId);
+        const className = fontClassName(normalizedId);
         const span = document.createElement("span");
         span.className = className;
         const fragment = range.extractContents();
@@ -4494,35 +4388,11 @@ function rememberBookId(id) {
         }
     }
 
-    function normalizeStoredEditorFontSize(sizePx) {
-        const px = Math.round(Number(sizePx));
-        if (!Number.isFinite(px)) return "20";
-        const allowed = EDITOR_FONT_SIZES.map((s) => s.px);
-        if (allowed.includes(px)) return String(px);
-        let nearest = allowed[0];
-        let nearestDiff = Math.abs(px - nearest);
-        for (const candidate of allowed) {
-            const diff = Math.abs(px - candidate);
-            if (diff < nearestDiff) {
-                nearest = candidate;
-                nearestDiff = diff;
-            }
-        }
-        return String(nearest);
-    }
-
-    function normalizeStoredEditorFont(fontId) {
-        const id = safeString(fontId, "Georgia");
-        for (const group of EDITOR_FONT_GROUPS) {
-            if (group.fonts.some(f => f.id === id)) return id;
-        }
-        return "Georgia";
-    }
-
     function applyEditorStyle() {
-        const fontId = normalizeStoredEditorFont(localStorage.getItem("alysum-font") || "Georgia");
-        const size = normalizeStoredEditorFontSize(localStorage.getItem("alysum-fontSize") || "20");
-        const stack = editorFontStack(fontId);
+        const ch = currentChapter();
+        const fontId = resolveEditorChapterFontId(ch, getEditorTypographyFallbackFontId());
+        const size = resolveEditorChapterFontSize(ch, getEditorTypographyFallbackFontSize());
+        const stack = fontStackForId(fontId);
         editor.style.fontFamily = stack;
         if (chapterTitle) chapterTitle.style.fontFamily = stack;
         editor.style.fontSize = size + "px";
@@ -4849,7 +4719,13 @@ function rememberBookId(id) {
     formatSelect.addEventListener("change", () => { document.execCommand("formatBlock", false, formatSelect.value === "h2" ? "h2" : "p"); editor.focus(); syncCurrentChapterFromEditor(); syncStats(); scheduleSave(); });
     quoteBtn.addEventListener("click", () => { document.execCommand("formatBlock", false, "blockquote"); editor.focus(); syncCurrentChapterFromEditor(); syncStats(); scheduleSave(); });
     fontSelect.addEventListener("change", () => { applyFontToEditorSelection(fontSelect.value); });
-    fontSizeSelect.addEventListener("change", () => { localStorage.setItem("alysum-fontSize", fontSizeSelect.value); applyEditorStyle(); });
+    fontSizeSelect.addEventListener("change", () => {
+        const size = fontSizeSelect.value;
+        localStorage.setItem("alysum-fontSize", size);
+        writeChapterTypography(currentChapter(), { fontSizePx: size });
+        applyEditorStyle();
+        scheduleSave();
+    });
 
     findReplaceBtn?.addEventListener("click", () => frOpen(false));
     frCloseBtn?.addEventListener("click", () => frClose());
@@ -5122,7 +4998,7 @@ async function loadBook() {
         setupOfflineSyncListeners();
         applyResponsiveSidebar();
         applyTheme(localStorage.getItem("alysum-theme") || "light");
-        fontSizeSelect.value = normalizeStoredEditorFontSize(localStorage.getItem("alysum-fontSize") || "20");
+        fontSizeSelect.value = resolveEditorChapterFontSize(currentChapter(), getEditorTypographyFallbackFontSize());
         applyEditorStyle();
         restoreEditorBackgroundImage();
         document.execCommand("defaultParagraphSeparator", false, "p");

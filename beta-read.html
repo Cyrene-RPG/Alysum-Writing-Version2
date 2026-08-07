@@ -892,6 +892,7 @@
         import { installReaderCopyGuards } from "./js/reader-copy-guards.js?v=1";
         import { applyReaderWatermark } from "./js/reader-watermark.js?v=6";
         import { sanitizeChapterHtml } from "./js/book-html-sanitize.js?v=1";
+        import { applyChapterTypographyStyles, chapterTypographyPayload } from "./js/chapter-typography.js?v=1";
 
         function resolveBetaReadBookIdFromLocation() {
             const params = new URLSearchParams(window.location.search);
@@ -1064,7 +1065,8 @@
                     title: safeString(item.title, `Chapter ${index + 1}`),
                     content: safeString(item.content, ""),
                     order: typeof item.order === "number" ? item.order : index + 1,
-                    words: safeNumber(item.words, countWordsFromHtml(item.content || ""))
+                    words: safeNumber(item.words, countWordsFromHtml(item.content || "")),
+                    ...chapterTypographyPayload(item),
                 };
             });
 
@@ -1151,6 +1153,7 @@
                 chapterNavPill.textContent = `${currentChapterIndex + 1} / ${currentBook.chapters.length}`;
             }
             betaContent.innerHTML = sanitizeChapterHtml(ch.content) || "<p></p>";
+            applyChapterTypographyStyles(betaContent, ch);
             prevBtn.disabled = currentChapterIndex === 0;
             nextBtn.disabled = currentChapterIndex >= currentBook.chapters.length - 1;
             draftQuote.value = "";
