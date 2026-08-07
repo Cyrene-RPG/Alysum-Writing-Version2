@@ -87,19 +87,102 @@
     .sidebar.collapsed-desktop { width: 0; border-right: none; }
     .sidebar.mobile-hidden { transform: translateX(-100%); }
     .sidebar-top {
-        padding: 16px;
+        padding: 18px 16px 14px;
         border-bottom: 1px solid rgba(255,255,255,0.08);
         background: linear-gradient(135deg, var(--alysum-purple-dark), var(--alysum-purple));
     }
-    .sidebar-title-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-    .sidebar-mini { font-size: 14px; font-weight: 700; opacity: 0.95; }
-    .sidebar-book-title { margin-top: 10px; font-size: 28px; font-weight: 800; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .sidebar-meta { margin-top: 10px; display: flex; gap: 16px; font-size: 13px; color: #efe9ff; }
-    .sidebar-actions { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
-    .pill-btn { border: none; border-radius: 999px; padding: 10px 14px; font-size: 14px; font-weight: 700; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
+    .sidebar-eyebrow {
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        opacity: 0.72;
+    }
+    .sidebar-title-block {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        margin-top: 8px;
+    }
+    .sidebar-book-title {
+        flex: 1;
+        min-width: 0;
+        margin: 0;
+        font-size: 24px;
+        font-weight: 800;
+        line-height: 1.15;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .sidebar-rename-btn {
+        flex-shrink: 0;
+        margin-top: 2px;
+        border: 1px solid rgba(255,255,255,0.28);
+        background: rgba(255,255,255,0.1);
+        color: #fff;
+        border-radius: 8px;
+        padding: 5px 10px;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        cursor: pointer;
+        font-family: inherit;
+    }
+    .sidebar-rename-btn:hover { background: rgba(255,255,255,0.2); }
+    .sidebar-stats {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 12px;
+    }
+    .sidebar-stat {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 5px 11px;
+        border-radius: 999px;
+        background: rgba(0,0,0,0.16);
+        font-size: 12px;
+        font-weight: 600;
+        color: rgba(255,255,255,0.92);
+    }
+    .sidebar-stat strong { font-weight: 800; font-size: 13px; }
+    .sidebar-sections {
+        margin-top: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+    .sidebar-section-label {
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        opacity: 0.62;
+        margin-bottom: 6px;
+    }
+    .sidebar-section-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px;
+    }
+    .sidebar-section-grid .span-2 { grid-column: 1 / -1; }
+    .sidebar-section--danger {
+        margin-top: 2px;
+        padding-top: 12px;
+        border-top: 1px solid rgba(255,255,255,0.12);
+    }
+    .sidebar-section--danger .pill-btn { width: 100%; }
+    .pill-btn { border: none; border-radius: 10px; padding: 9px 12px; font-size: 13px; font-weight: 700; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; font-family: inherit; line-height: 1.2; }
+    .sidebar-section-grid .pill-btn { width: 100%; }
     .pill-btn.primary { background: white; color: var(--alysum-purple-dark); }
-    .pill-btn.secondary { background: rgba(255,255,255,0.18); color: white; }
+    .pill-btn.primary:hover { filter: brightness(0.96); }
+    .pill-btn.secondary { background: rgba(255,255,255,0.16); color: white; border: 1px solid rgba(255,255,255,0.08); }
+    .pill-btn.secondary:hover { background: rgba(255,255,255,0.24); }
     .pill-btn.danger { background: var(--danger); color: white; }
+    .pill-btn.danger:hover { filter: brightness(1.06); }
     .manuscript { flex: 1; overflow-y: auto; background: var(--sidebar-panel); }
     .group { border-bottom: 1px solid rgba(255,255,255,0.08); }
     .group-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; background: #3b5062; font-size: 15px; font-weight: 700; cursor: pointer; }
@@ -754,16 +837,11 @@
         }
         .overlay.hidden { display: none; }
         .sidebar:not(.mobile-hidden) ~ .overlay ~ .main { visibility: hidden; }
-        .sidebar-actions {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 8px;
-        }
-        .sidebar-actions .pill-btn {
-            width: 100%;
-            padding: 9px 10px;
+        .sidebar-section-grid .pill-btn {
+            padding: 9px 8px;
             font-size: 12px;
         }
+        .sidebar-book-title { font-size: 21px; }
         .top-title { max-width: 40vw; }
         .page { padding: 42px 24px 60px; }
         .chapter-title { font-size: 22px; margin-bottom: 32px; }
@@ -942,24 +1020,41 @@
         </div>
     </div><div class="alysum-tool-root"><div class="sidebar mobile-hidden" id="sidebar">
     <div class="sidebar-top">
-        <div class="sidebar-title-row">
-            <div class="sidebar-mini">Manuscript</div>
-            <button class="pill-btn secondary" id="renameBookBtn" type="button" data-tip="Rename this book">Rename</button>
+        <div class="sidebar-eyebrow">Manuscript</div>
+        <div class="sidebar-title-block">
+            <h2 class="sidebar-book-title" id="sidebarBookTitle">Loading...</h2>
+            <button class="sidebar-rename-btn" id="renameBookBtn" type="button" data-tip="Rename this book">Rename</button>
         </div>
-        <div class="sidebar-book-title" id="sidebarBookTitle">Loading...</div>
-        <div class="sidebar-meta">
-            <div><span id="totalWords">0</span> <span id="sidebarMetaPrimaryLabel">words</span></div>
-            <div><span id="chapterCount">0</span> <span id="sidebarMetaSecondaryLabel">chapters</span></div>
+        <div class="sidebar-stats">
+            <span class="sidebar-stat"><strong id="totalWords">0</strong> <span id="sidebarMetaPrimaryLabel">words</span></span>
+            <span class="sidebar-stat"><strong id="chapterCount">0</strong> <span id="sidebarMetaSecondaryLabel">chapters</span></span>
         </div>
-        <div class="sidebar-actions">
-            <button class="pill-btn primary" id="addChapterBtn" type="button" data-tip="Add a new body chapter">Add Chapter</button>
-            <button class="pill-btn secondary" id="deleteChapterBtn" type="button" data-tip="Delete current chapter">Delete Chapter</button>
-            <button class="pill-btn secondary" id="themeToggleBtn" type="button" data-tip="Toggle light / dark mode">Dark Mode</button>
-            <button class="pill-btn secondary" id="publishBtn" type="button" data-tip="Publish chapters to the web">Publish</button>
-            <button class="pill-btn secondary" id="historyBookBtn" type="button" data-tip="Version history — save, compare, restore (Ctrl+Shift+H)">History</button>
-            <a class="pill-btn secondary" id="betaShareLink" href="beta-room-manage.html" data-tip="Share an unpublished snapshot with beta readers">Beta share</a>
-            <a class="pill-btn secondary" id="collabShareLink" href="collab-room-manage.html" data-tip="Invite editors to suggest chapter changes">Collab invite</a>
-            <button class="pill-btn danger" id="deleteBookBtn" type="button" data-tip="Permanently delete this book">Delete Book</button>
+        <div class="sidebar-sections">
+            <section class="sidebar-section" aria-label="Chapter actions">
+                <div class="sidebar-section-label">Chapter</div>
+                <div class="sidebar-section-grid">
+                    <button class="pill-btn primary span-2" id="addChapterBtn" type="button" data-tip="Add a new body chapter">+ Add Chapter</button>
+                    <button class="pill-btn secondary span-2" id="deleteChapterBtn" type="button" data-tip="Delete current chapter">Delete Chapter</button>
+                </div>
+            </section>
+            <section class="sidebar-section" aria-label="Share">
+                <div class="sidebar-section-label">Share</div>
+                <div class="sidebar-section-grid">
+                    <button class="pill-btn secondary span-2" id="publishBtn" type="button" data-tip="Publish chapters to the web">Publish</button>
+                    <a class="pill-btn secondary" id="betaShareLink" href="beta-room-manage.html" data-tip="Share an unpublished snapshot with beta readers">Beta share</a>
+                    <a class="pill-btn secondary" id="collabShareLink" href="collab-room-manage.html" data-tip="Invite editors to suggest chapter changes">Collab invite</a>
+                </div>
+            </section>
+            <section class="sidebar-section" aria-label="Book">
+                <div class="sidebar-section-label">Book</div>
+                <div class="sidebar-section-grid">
+                    <button class="pill-btn secondary" id="historyBookBtn" type="button" data-tip="Version history — save, compare, restore (Ctrl+Shift+H)">History</button>
+                    <button class="pill-btn secondary" id="themeToggleBtn" type="button" data-tip="Toggle light / dark mode">Dark Mode</button>
+                </div>
+            </section>
+            <section class="sidebar-section sidebar-section--danger" aria-label="Danger zone">
+                <button class="pill-btn danger" id="deleteBookBtn" type="button" data-tip="Permanently delete this book">Delete Book</button>
+            </section>
         </div>
     </div>
     <div class="manuscript">
