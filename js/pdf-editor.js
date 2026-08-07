@@ -654,7 +654,7 @@ function buildPreviewDocumentHtml(options = {}) {
   <meta charset="utf-8" />
   ${printFontHeadBlock()}
   <link rel="stylesheet" href="css/scene-breaks.css?v=8" />
-  <link rel="stylesheet" href="css/book-inline-fonts.css?v=3" />
+  <link rel="stylesheet" href="css/book-inline-fonts.css?v=4" />
   <style>
     ${atPageCssBlock()}
     :root {

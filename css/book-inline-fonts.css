@@ -288,3 +288,13 @@
 .content .alysum-font-press-start-2p,
 #betaContent .alysum-font-press-start-2p,
 .pdf-body .alysum-font-press-start-2p { font-family: "Press Start 2P", monospace; }
+
+.editor .alysum-font-opendyslexic,
+.content .alysum-font-opendyslexic,
+#betaContent .alysum-font-opendyslexic,
+.pdf-body .alysum-font-opendyslexic { font-family: "OpenDyslexic", sans-serif; }
+
+.editor .alysum-font-atkinson-hyperlegible,
+.content .alysum-font-atkinson-hyperlegible,
+#betaContent .alysum-font-atkinson-hyperlegible,
+.pdf-body .alysum-font-atkinson-hyperlegible { font-family: "Atkinson Hyperlegible", sans-serif; }
