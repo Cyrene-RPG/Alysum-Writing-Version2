@@ -2149,7 +2149,7 @@ function rememberBookId(id) {
     }
 
     function isOnCopyrightChapter() {
-        if (!currentBook || isCurrentBookComic()) return false;
+        if (!currentBook?.sections || isCurrentBookComic()) return false;
         return isCopyrightChapter(currentSection, currentChapterIndex, currentChapter());
     }
 
@@ -3147,6 +3147,16 @@ function rememberBookId(id) {
     function allChaptersFlat() { return [...currentBook.sections.front.map((ch, i) => ({ section: "front", index: i, ...ch })), ...currentBook.sections.body.map((ch, i) => ({ section: "body", index: i, ...ch })), ...currentBook.sections.back.map((ch, i) => ({ section: "back", index: i, ...ch }))]; }
     function totalWords() { return allChaptersFlat().reduce((sum, ch) => sum + countWords(ch.content || ""), 0); }
     function currentChapter() {
+        if (!currentBook?.sections) {
+            return {
+                id: "",
+                title: "Untitled",
+                content: "",
+                warnings: [],
+                defaultFont: "",
+                defaultFontSize: "",
+            };
+        }
         const list = currentBook.sections[currentSection];
         if (!Array.isArray(list) || !list.length) { currentSection = "body"; currentChapterIndex = 0; return currentBook.sections.body[0]; }
         if (currentChapterIndex < 0) currentChapterIndex = 0;
@@ -5045,7 +5055,7 @@ async function loadBook() {
         setupOfflineSyncListeners();
         applyResponsiveSidebar();
         applyTheme(localStorage.getItem("alysum-theme") || "light");
-        fontSizeSelect.value = resolveEditorChapterFontSize(currentChapter(), getEditorTypographyFallbackFontSize());
+        fontSizeSelect.value = resolveEditorChapterFontSize(null, getEditorTypographyFallbackFontSize());
         applyEditorStyle();
         restoreEditorBackgroundImage();
         document.execCommand("defaultParagraphSeparator", false, "p");
