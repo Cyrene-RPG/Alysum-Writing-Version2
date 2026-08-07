@@ -136,6 +136,7 @@
     .main { flex: 1; min-width: 0; display: flex; flex-direction: column; height: 100vh; }
     .topbar { min-height: 64px; background: var(--topbar-bg); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; gap: 10px; position: relative; z-index: 15; overflow: visible; }
     .topbar-left, .topbar-right { display: flex; align-items: center; gap: 10px; min-width: 0; overflow: visible; }
+    .topbar-right { justify-content: flex-end; }
     .icon-btn { width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--border); background: var(--topbar-bg); color: var(--page-text); font-size: 22px; line-height: 1; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
     .topbar .icon-btn:not(.danger) {
         background: linear-gradient(135deg, var(--theme-header-mid, var(--alysum-purple-dark)), var(--theme-header-end, var(--alysum-purple)));
@@ -244,6 +245,53 @@
         opacity: 0.92;
     }
     .topbar .topbar-tip { position: relative; display: inline-flex; align-items: center; vertical-align: middle; }
+    .topbar-actions { display: flex; align-items: center; gap: 8px; min-width: 0; flex-wrap: nowrap; }
+    .topbar-group { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; }
+    .topbar-divider { width: 1px; height: 26px; background: var(--border); opacity: 0.55; flex-shrink: 0; }
+    .topbar-more-wrap { position: relative; flex-shrink: 0; }
+    .topbar-more-menu {
+        position: absolute;
+        top: calc(100% + 8px);
+        right: 0;
+        min-width: 210px;
+        padding: 6px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: var(--page-bg);
+        box-shadow: 0 14px 36px rgba(0, 0, 0, 0.18);
+        z-index: 120;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+    .topbar-more-menu.hidden { display: none; }
+    .topbar-more-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        padding: 10px 12px;
+        border: none;
+        border-radius: 8px;
+        background: transparent;
+        color: var(--page-text);
+        font-size: 14px;
+        font-weight: 700;
+        text-align: left;
+        cursor: pointer;
+        text-decoration: none;
+        font-family: inherit;
+    }
+    .topbar-more-item:hover { background: rgba(109, 40, 217, 0.1); }
+    .topbar-more-item .more-icon { width: 22px; text-align: center; font-size: 16px; flex-shrink: 0; }
+    .topbar-more-item.danger { color: var(--danger); }
+    .topbar-more-item.danger:hover { background: rgba(220, 38, 38, 0.08); }
+    .topbar-collapse-btn { font-size: 14px; font-weight: 900; letter-spacing: -0.04em; flex-shrink: 0; }
+    body.topbar-collapsed .topbar-actions { display: none; }
+    body.topbar-collapsed .topbar { min-height: 44px; padding-top: 4px; padding-bottom: 4px; }
+    body.topbar-collapsed #toolbar,
+    body.topbar-collapsed .comic-toolbar { display: none !important; }
+    body.topbar-collapsed .sprint-float { top: 56px; }
     .editor-tooltip {
         position: fixed;
         z-index: 100000;
@@ -705,8 +753,11 @@
         .editor { font-size: 17px; line-height: 1.7; }
         .topbar { min-height: 52px; flex-wrap: nowrap; row-gap: 0; padding: 6px 8px; gap: 6px; }
         .topbar-left, .topbar-right { flex-wrap: nowrap; min-width: 0; gap: 6px; }
-        .topbar-right { flex: 1; justify-content: flex-end; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
-        .topbar-right::-webkit-scrollbar { display: none; }
+        .topbar-right { flex: 1; justify-content: flex-end; min-width: 0; overflow: visible; gap: 6px; }
+        .topbar-actions { flex: 1; justify-content: flex-end; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+        .topbar-actions::-webkit-scrollbar { display: none; }
+        .topbar-group { gap: 4px; }
+        .topbar-divider { height: 22px; }
         .topbar-right .save-status { display: none; }
         .topbar-right .pd-toggle { padding: 6px 10px; font-size: 11px; }
     }
@@ -907,18 +958,35 @@
             <div class="top-title" id="topBookTitle">Loading...</div>
         </div>
         <div class="topbar-right">
-            <span class="topbar-tip" data-tip="New chapter"><button class="icon-btn" id="quickAddBtn" type="button" aria-label="Add chapter">＋</button></span>
-            <span class="topbar-tip" data-tip="Publish to web"><button class="icon-btn" id="publishTopBtn" type="button" aria-label="Publish">🚀</button></span>
-            <span class="topbar-tip" data-tip="Invite editors to suggest chapter changes" id="collabShareTopLinkWrap"><a class="icon-btn" id="collabShareTopLink" href="collab-room-manage.html" aria-label="Collab invite">✎</a></span>
-            <span class="topbar-tip" data-tip="Share unpublished draft with beta readers" id="betaShareTopLinkWrap"><a class="icon-btn" id="betaShareTopLink" href="beta-room-manage.html" aria-label="Beta share">✉</a></span>
-            <span class="topbar-tip" data-tip="Version history (Ctrl+Shift+H)"><button class="icon-btn" id="historyTopBtn" type="button" aria-label="Version history">🕘</button></span>
-            <span class="topbar-tip" data-tip="Export / print"><button class="icon-btn" id="exportBtn" type="button" aria-label="Export">📄</button></span>
-            <span class="topbar-tip" data-tip="Story Board (Alt+P)"><a class="pd-toggle" id="storyBoardLink" href="story-board/">Story Board</a></span>
-            <span class="topbar-tip" data-tip="Notes"><button class="icon-btn" id="nbBtn" type="button" aria-label="Notes">⌘</button></span>
-            <span class="topbar-tip" data-tip="Chapter content warnings"><button class="icon-btn" id="chapterWarningsBtn" type="button" aria-label="Chapter warnings">⚠</button></span>
-            <span class="topbar-tip" data-tip="Rename chapter"><button class="icon-btn" id="renameChapterBtn" type="button" aria-label="Rename chapter">⋯</button></span>
-            <span class="topbar-tip" data-tip="Light / dark"><button class="icon-btn" id="themeTopBtn" type="button" aria-label="Toggle theme">◐</button></span>
-            <span class="topbar-tip" data-tip="Delete entire book"><button class="icon-btn danger" id="deleteBookTopBtn" type="button" aria-label="Delete book">🗑</button></span>
+            <div class="topbar-actions" id="topbarActions">
+                <div class="topbar-group" aria-label="Writing">
+                    <span class="topbar-tip" data-tip="New chapter"><button class="icon-btn" id="quickAddBtn" type="button" aria-label="Add chapter">＋</button></span>
+                    <span class="topbar-tip" data-tip="Notes"><button class="icon-btn" id="nbBtn" type="button" aria-label="Notes">⌘</button></span>
+                    <span class="topbar-tip" data-tip="Rename chapter"><button class="icon-btn" id="renameChapterBtn" type="button" aria-label="Rename chapter">📝</button></span>
+                </div>
+                <span class="topbar-divider" aria-hidden="true"></span>
+                <div class="topbar-group" aria-label="Share and publish">
+                    <span class="topbar-tip" data-tip="Publish to web"><button class="icon-btn" id="publishTopBtn" type="button" aria-label="Publish">🚀</button></span>
+                    <span class="topbar-tip" data-tip="Invite editors to suggest chapter changes" id="collabShareTopLinkWrap"><a class="icon-btn" id="collabShareTopLink" href="collab-room-manage.html" aria-label="Collab invite">✎</a></span>
+                    <span class="topbar-tip" data-tip="Share unpublished draft with beta readers" id="betaShareTopLinkWrap"><a class="icon-btn" id="betaShareTopLink" href="beta-room-manage.html" aria-label="Beta share">✉</a></span>
+                </div>
+                <span class="topbar-divider" aria-hidden="true"></span>
+                <div class="topbar-group" aria-label="Tools">
+                    <span class="topbar-tip" data-tip="Version history (Ctrl+Shift+H)"><button class="icon-btn" id="historyTopBtn" type="button" aria-label="Version history">🕘</button></span>
+                    <span class="topbar-tip" data-tip="Export / print"><button class="icon-btn" id="exportBtn" type="button" aria-label="Export">📄</button></span>
+                    <span class="topbar-tip" data-tip="Story Board (Alt+P)"><a class="pd-toggle" id="storyBoardLink" href="story-board/">Story Board</a></span>
+                </div>
+                <span class="topbar-divider" aria-hidden="true"></span>
+                <div class="topbar-more-wrap">
+                    <span class="topbar-tip" data-tip="More options"><button class="icon-btn" id="topbarMoreBtn" type="button" aria-label="More options" aria-expanded="false" aria-haspopup="true" aria-controls="topbarMoreMenu">⋯</button></span>
+                    <div class="topbar-more-menu hidden" id="topbarMoreMenu" role="menu">
+                        <button class="topbar-more-item" id="chapterWarningsBtn" type="button" role="menuitem"><span class="more-icon" aria-hidden="true">⚠</span>Chapter warnings</button>
+                        <button class="topbar-more-item" id="themeTopBtn" type="button" role="menuitem"><span class="more-icon" aria-hidden="true">◐</span>Light / dark</button>
+                        <button class="topbar-more-item danger" id="deleteBookTopBtn" type="button" role="menuitem"><span class="more-icon" aria-hidden="true">🗑</span>Delete book</button>
+                    </div>
+                </div>
+            </div>
+            <span class="topbar-tip topbar-collapse-wrap" data-tip="Hide toolbar"><button class="icon-btn topbar-collapse-btn" id="toggleTopbarBtn" type="button" aria-label="Hide toolbar" aria-expanded="true" aria-controls="topbarActions toolbar">▲</button></span>
             <div class="save-status" id="saveStatus" data-tip="Save status" aria-live="polite">Loading...</div>
         </div>
     </div>
@@ -2588,6 +2656,59 @@ function rememberBookId(id) {
     toggleToolbarBtn?.addEventListener("click", toggleMobileToolbar);
     window.addEventListener("resize", applyResponsiveMobileToolbar);
     applyResponsiveMobileToolbar();
+
+    const topbarMoreBtn = document.getElementById("topbarMoreBtn");
+    const topbarMoreMenu = document.getElementById("topbarMoreMenu");
+    const toggleTopbarBtn = document.getElementById("toggleTopbarBtn");
+    const TOPBAR_COLLAPSED_KEY = "alysum-editor-topbar-collapsed";
+
+    function setTopbarMoreOpen(open) {
+        if (!topbarMoreMenu || !topbarMoreBtn) return;
+        topbarMoreMenu.classList.toggle("hidden", !open);
+        topbarMoreBtn.setAttribute("aria-expanded", open ? "true" : "false");
+    }
+    function closeTopbarMore() { setTopbarMoreOpen(false); }
+    topbarMoreBtn?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        setTopbarMoreOpen(topbarMoreMenu?.classList.contains("hidden"));
+    });
+    topbarMoreMenu?.addEventListener("click", () => closeTopbarMore());
+    document.addEventListener("click", (e) => {
+        if (!topbarMoreMenu || topbarMoreMenu.classList.contains("hidden")) return;
+        if (topbarMoreMenu.contains(e.target) || topbarMoreBtn?.contains(e.target)) return;
+        closeTopbarMore();
+    });
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") closeTopbarMore();
+    });
+
+    function syncTopbarCollapseUi() {
+        if (!toggleTopbarBtn) return;
+        const collapsed = document.body.classList.contains("topbar-collapsed");
+        toggleTopbarBtn.textContent = collapsed ? "▼" : "▲";
+        toggleTopbarBtn.setAttribute("aria-expanded", collapsed ? "false" : "true");
+        toggleTopbarBtn.setAttribute("aria-label", collapsed ? "Show toolbar" : "Hide toolbar");
+        const tip = toggleTopbarBtn.closest(".topbar-tip");
+        if (tip) tip.dataset.tip = collapsed ? "Show toolbar" : "Hide toolbar";
+    }
+    function setTopbarCollapsed(collapsed, persist = true) {
+        document.body.classList.toggle("topbar-collapsed", collapsed);
+        if (collapsed) closeTopbarMore();
+        if (persist) {
+            try { localStorage.setItem(TOPBAR_COLLAPSED_KEY, collapsed ? "1" : "0"); } catch (_) {}
+        }
+        syncTopbarCollapseUi();
+    }
+    function toggleTopbarCollapsed() {
+        setTopbarCollapsed(!document.body.classList.contains("topbar-collapsed"));
+    }
+    toggleTopbarBtn?.addEventListener("click", toggleTopbarCollapsed);
+    try {
+        if (localStorage.getItem(TOPBAR_COLLAPSED_KEY) === "1") setTopbarCollapsed(true, false);
+        else syncTopbarCollapseUi();
+    } catch (_) {
+        syncTopbarCollapseUi();
+    }
 
     function stripHtmlToText(html) {
         return safeString(html, "").replace(/<br\s*\/?>/gi, " ").replace(/<\/(div|p|h1|h2|h3|li|blockquote|ul|ol)>/gi, " ").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
