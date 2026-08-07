@@ -1295,7 +1295,7 @@ function rememberBookId(id) {
 
     function flushEditorToBook() {
         if (isCurrentBookComic()) syncCurrentComicPageFromUI();
-        else if (document.activeElement === editor && editorLoadedChapterKey) cleanAndStoreCurrentChapterFromEditor();
+        else if (editorLoadedChapterKey) cleanAndStoreCurrentChapterFromEditor();
     }
 
     function isEditorDirty() {
@@ -2615,7 +2615,10 @@ function rememberBookId(id) {
             if (bottomMetaLabel) bottomMetaLabel.textContent = stripCount === 1 ? "strip image" : "strip images";
             totalWordsEl.textContent = uploaded;
             chapterCountEl.textContent = pageCount;
-            footerWordsEl.textContent = uploaded;
+            const wordsFooter = footerWordsEl?.isConnected
+                ? footerWordsEl
+                : document.getElementById("footerWords");
+            if (wordsFooter) wordsFooter.textContent = uploaded;
             bottomTotalWordsEl.textContent = uploaded;
             if (bottomTotalLabel) bottomTotalLabel.textContent = `of ${pageCount} pages uploaded`;
         } else {
@@ -2624,7 +2627,10 @@ function rememberBookId(id) {
             if (bottomMetaLabel) bottomMetaLabel.textContent = "chapter words";
             totalWordsEl.textContent = total;
             bottomTotalWordsEl.textContent = total;
-            footerWordsEl.textContent = total;
+            const wordsFooter = footerWordsEl?.isConnected
+                ? footerWordsEl
+                : document.getElementById("footerWords");
+            if (wordsFooter) wordsFooter.textContent = total;
             if (bottomTotalLabel) bottomTotalLabel.textContent = "total words";
             chapterCountEl.textContent = allChaptersFlat().length;
         }
@@ -3466,7 +3472,7 @@ function rememberBookId(id) {
             currentBook.publishMeta = publishMeta;
             currentBook.publishedChapterIds = immediateChapterIds;
             currentBook.isPublished = true;
-            await supabase.from("books").update(toDbBookPatch(currentBook)).eq("id", bookId);
+            await supabase.from("books").update(toDbBookPatch(currentBook)).eq("id", bookId).eq("user_id", currentUser.id);
             const libRow = { id: bookId, user_id: currentUser.id, data: libraryPayload.data };
             if (existingLibrary?.id) {
                 const { error: libErr } = await supabase.from("library").update(libRow).eq("id", bookId);
@@ -3542,7 +3548,7 @@ function rememberBookId(id) {
         if (!currentUser || !bookId || !currentBook) return;
         setSaveStatus("Saving...");
         if (isCurrentBookComic()) syncCurrentComicPageFromUI();
-        else if (document.activeElement === editor && editorLoadedChapterKey) cleanAndStoreCurrentChapterFromEditor();
+        else if (editorLoadedChapterKey) cleanAndStoreCurrentChapterFromEditor();
         const nextWords = totalWords();
         const prevPersisted = persistedBookWordCount;
         const patch = toDbBookPatch(currentBook);
@@ -3561,7 +3567,7 @@ function rememberBookId(id) {
                 statusText = "Saved offline";
             } else {
                 try {
-                    const { error } = await supabase.from("books").update(patch).eq("id", bookId);
+                    const { error } = await supabase.from("books").update(patch).eq("id", bookId).eq("user_id", currentUser.id);
                     if (error) throw error;
                     await markBookSynced(currentUser.id, bookId, shadowRow);
                     offlinePendingSync = false;
@@ -3601,11 +3607,11 @@ function rememberBookId(id) {
         setSaveStatus("Syncing...");
         try {
             if (isCurrentBookComic()) syncCurrentComicPageFromUI();
-            else if (document.activeElement === editor && editorLoadedChapterKey) cleanAndStoreCurrentChapterFromEditor();
+            else if (editorLoadedChapterKey) cleanAndStoreCurrentChapterFromEditor();
             const nextWords = totalWords();
             const prevPersisted = persistedBookWordCount;
             const patch = toDbBookPatch(currentBook);
-            const { error } = await supabase.from("books").update(patch).eq("id", bookId);
+            const { error } = await supabase.from("books").update(patch).eq("id", bookId).eq("user_id", currentUser.id);
             if (error) throw error;
             const shadowRow = { id: bookId, user_id: currentUser.id, ...patch };
             await markBookSynced(currentUser.id, bookId, shadowRow);

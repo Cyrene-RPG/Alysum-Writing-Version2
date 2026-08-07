@@ -111,7 +111,13 @@ export function cleanImportHtml(html) {
   holder.innerHTML = String(html || "");
 
   holder.querySelectorAll("script, style, meta, link, iframe, object, embed").forEach((el) => el.remove());
-  holder.querySelectorAll("*").forEach((el) => normalizeChapterElementAttributes(el));
+  holder.querySelectorAll("*").forEach((el) => {
+    normalizeChapterElementAttributes(el);
+    for (const attr of ["href", "src", "xlink:href"]) {
+      const val = (el.getAttribute(attr) || "").trim().toLowerCase();
+      if (/^(javascript:|data:text\/html|vbscript:)/.test(val)) el.removeAttribute(attr);
+    }
+  });
 
   holder.querySelectorAll("div").forEach((div) => {
     const p = document.createElement("p");
@@ -167,4 +173,9 @@ export function cleanImportHtml(html) {
     .replace(/<p(?![^>]*scene-break)(?![^>]*scene-spacer)>(\s|&nbsp;)*<\/p>/gi, "")
     .replace(/<div>(\s|&nbsp;|<br\s*\/?>)*<\/div>/gi, "")
     .trim();
+}
+
+/** Reader-safe chapter HTML (defense in depth on publish/read paths). */
+export function sanitizeChapterHtml(html) {
+  return cleanImportHtml(html);
 }

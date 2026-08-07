@@ -33,10 +33,13 @@ const DRY_RUN = process.argv.includes("--dry-run");
 const uidArg = process.argv.find((a) => a.startsWith("--uid="));
 const ONLY_FIREBASE_UID = uidArg ? uidArg.slice("--uid=".length).trim() : "";
 
-const SUPABASE_URL =
-  process.env.SUPABASE_URL || "https://tiqmhozzxhiydjnyuuaw.supabase.co";
-const SUPABASE_SERVICE_ROLE_KEY =
-  process.env.SUPABASE_SERVICE_ROLE_KEY || "sb_secret_TdrwPyOL5EHyEBeH_fXzTQ_FBNJbjlX";
+const SUPABASE_URL = process.env.SUPABASE_URL || "";
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+
+if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+  console.error("Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY before running.");
+  process.exit(1);
+}
 
 function resolveExistingFile(rel) {
   const a = path.join(SCRIPT_DIR, rel);

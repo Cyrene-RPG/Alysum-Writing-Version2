@@ -24,7 +24,15 @@ export const supabase = createClient(supabaseUrl, supabaseKey, {
         autoRefreshToken: true,
         detectSessionInUrl: true,
         storage: typeof window !== "undefined" ? window.localStorage : undefined
-    }
+    },
+    global: {
+        fetch: async (input, init) => {
+            const response = await fetch(input, init);
+            if (response.status !== 522) return response;
+            await new Promise((resolve) => setTimeout(resolve, 2000));
+            return fetch(input, init);
+        },
+    },
 });
 
 if (typeof window !== "undefined") {

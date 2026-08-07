@@ -103,7 +103,7 @@ export async function isBookReadable(bookId) {
     });
     if (error) {
         console.warn("library_book_is_readable:", error);
-        return true;
+        return false;
     }
     return !!data;
 }

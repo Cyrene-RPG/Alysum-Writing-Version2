@@ -14,6 +14,7 @@ import {
     wordWarLobbyUrl,
     WORD_WAR_DURATION_UNLIMITED,
 } from "./word-wars-api.js?v=7";
+import { sanitizeChapterHtml } from "./book-html-sanitize.js?v=1";
 
 const params = new URLSearchParams(window.location.search);
 const previewWriters = params.get("preview");
@@ -534,7 +535,7 @@ function bindOpponentScroll(pane, userId) {
 function applyOpponentDraftHtml(editorEl, scrollEl, userId, nextHtml) {
     if (opponentDraftHtmlCache.get(userId) === nextHtml) return;
     const anchor = captureOpponentScrollAnchor(scrollEl, userId);
-    editorEl.innerHTML = nextHtml;
+    editorEl.innerHTML = sanitizeChapterHtml(nextHtml);
     opponentDraftHtmlCache.set(userId, nextHtml);
     restoreOpponentScrollSoon(scrollEl, anchor);
 }
@@ -647,7 +648,7 @@ function ensureOpponentPane(opponent, index, opponentCount) {
             `[data-opponent-id="${CSS.escape(opponent.userId)}"]`
         );
         if (editorEl && opponent.liveChapterHtml) {
-            editorEl.innerHTML = opponent.liveChapterHtml;
+            editorEl.innerHTML = sanitizeChapterHtml(opponent.liveChapterHtml);
             opponentDraftHtmlCache.set(opponent.userId, opponent.liveChapterHtml);
         }
         bindOpponentScroll(pane, opponent.userId);

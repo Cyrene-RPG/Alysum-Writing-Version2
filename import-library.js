@@ -2,8 +2,13 @@ import fs from "fs";
 import admin from "firebase-admin";
 import { createClient } from "@supabase/supabase-js";
 
-const SUPABASE_URL = "https://tiqmhozzxhiydjnyuuaw.supabase.co";
-const SUPABASE_SECRET = "sb_secret_TdrwPyOL5EHyEBeH_fXzTQ_FBNJbjlX";
+const SUPABASE_URL = process.env.SUPABASE_URL || "";
+const SUPABASE_SECRET = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+
+if (!SUPABASE_URL || !SUPABASE_SECRET) {
+  console.error("Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY before running.");
+  process.exit(1);
+}
 
 const serviceAccount = JSON.parse(fs.readFileSync("./serviceAccountKey.json", "utf8"));
 

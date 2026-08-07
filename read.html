@@ -361,6 +361,7 @@
     import { processDueChapterReleases } from "./js/scheduled-chapter-releases.js?v=1";
     import { flattenWarnings, aggregateWarningsFromChapters } from "./js/content-warnings.js?v=1";
     import { normalizeAuthorNotes } from "./js/chapter-author-notes.js?v=1";
+    import { sanitizeChapterHtml } from "./js/book-html-sanitize.js?v=1";
 
     const params = new URLSearchParams(window.location.search);
     let bookId =
@@ -688,7 +689,7 @@
             content.classList.toggle("comic-reader", true);
         } else {
             content.classList.remove("comic-reader");
-            content.innerHTML = chapter.content || "<p>No chapter text yet.</p>";
+            content.innerHTML = sanitizeChapterHtml(chapter.content) || "<p>No chapter text yet.</p>";
         }
         prevBtn.disabled = currentChapterIndex === 0;
         nextBtn.disabled = currentChapterIndex === currentBook.chapters.length - 1;
@@ -933,7 +934,6 @@
 
             librarySourceRow = data;
             currentBook = normalizeBook(data);
-            await recordStoryView();
 
             const readable = await isBookReadable(bookId);
             if (!readable && !isBookOwnerModerator()) {
@@ -942,6 +942,8 @@
                 hideStatus();
                 return;
             }
+
+            await recordStoryView();
 
             if (!currentBook.chapters.length) {
                 showError("This story has no readable chapters.");

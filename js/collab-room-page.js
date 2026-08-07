@@ -474,18 +474,7 @@ export async function bootCollabRoomPage(opts = {}) {
 
     async function acceptAll() {
         acceptAllSuggestionsInDom(manuscript);
-        liveHtml = normalizeManuscriptHtml(manuscript.innerHTML);
-        if (isPreview) {
-            baseChapterHtml = liveHtml;
-            syncHunksFromDom();
-            renderHunkList();
-            updateStats();
-            return;
-        }
-        await commitCollabChapterContent(bookId, chapterId, liveHtml, liveHtml);
-        baseChapterHtml = liveHtml;
-        contentHash = undefined;
-        await reloadLiveRoom({ applyManuscript: true });
+        await saveAfterReview();
     }
 
     async function rejectAll() {
@@ -524,8 +513,8 @@ export async function bootCollabRoomPage(opts = {}) {
         }
         if (isAuthor) {
             const canon = canonHtmlFromSuggesting(liveHtml);
-            await commitCollabChapterContent(bookId, chapterId, baseChapterHtml, liveHtml);
-            void canon;
+            await commitCollabChapterContent(bookId, chapterId, canon, liveHtml);
+            baseChapterHtml = canon;
         } else {
             await upsertCollabLiveDraft(bookId, chapterId, liveHtml, contentHash);
         }

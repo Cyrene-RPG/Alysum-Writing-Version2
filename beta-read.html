@@ -890,6 +890,7 @@
         import { writeBetaShelfEntryLocal } from "./js/beta-shelf-local.js?v=1";
         import { installReaderCopyGuards } from "./js/reader-copy-guards.js?v=1";
         import { applyReaderWatermark } from "./js/reader-watermark.js?v=6";
+        import { sanitizeChapterHtml } from "./js/book-html-sanitize.js?v=1";
 
         function resolveBetaReadBookIdFromLocation() {
             const params = new URLSearchParams(window.location.search);
@@ -1148,7 +1149,7 @@
             if (chapterNavPill) {
                 chapterNavPill.textContent = `${currentChapterIndex + 1} / ${currentBook.chapters.length}`;
             }
-            betaContent.innerHTML = ch.content || "<p></p>";
+            betaContent.innerHTML = sanitizeChapterHtml(ch.content) || "<p></p>";
             prevBtn.disabled = currentChapterIndex === 0;
             nextBtn.disabled = currentChapterIndex >= currentBook.chapters.length - 1;
             draftQuote.value = "";
