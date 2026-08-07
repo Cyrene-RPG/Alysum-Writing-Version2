@@ -9,7 +9,7 @@ export const EDITOR_PAGE = {
     width: 816,
     height: 1056,
     gap: 12,
-    paddingTop: 96,
+    paddingTop: 24,
     paddingRight: 96,
     paddingBottom: 24,
     paddingLeft: 96

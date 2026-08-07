@@ -462,7 +462,7 @@
     .page-content { position: relative; z-index: 1; padding: 80px 120px 100px; }
     .page-backgrounds { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
     .page-flow.is-paginated { width: 816px; max-width: calc(100% - 32px); }
-    .page-flow.is-paginated .page-content { padding: 96px 96px 0; }
+    .page-flow.is-paginated .page-content { padding: 24px 96px 0; }
     .page-flow.is-paginated .chapter-title { font-size: 24px; margin-bottom: 28px; }
     .page-flow.is-paginated .editor { min-height: 0; font-size: 18px; line-height: 1.65; }
     .page-flow.is-paginated .bottom-meta {
@@ -1605,7 +1605,7 @@
     } from "./js/content-warnings.js?v=1";
     import { mountWarningPicker } from "./js/chapter-warnings-ui.js?v=1";
     import { normalizeAuthorNotes } from "./js/chapter-author-notes.js?v=1";
-    import { mountEditorPagination, stripEditorPageGapsFromHtml } from "./js/editor-pagination.js?v=6";
+    import { mountEditorPagination, stripEditorPageGapsFromHtml } from "./js/editor-pagination.js?v=7";
     import {
         saveBookShadow,
         getBookShadow,
