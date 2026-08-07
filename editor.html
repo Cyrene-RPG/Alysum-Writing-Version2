@@ -416,11 +416,6 @@
     body.dark .editor-tooltip { background: #0f172a; color: #e2e8f0; border: 1px solid #334155; }
     .toolbar { min-height: 54px; background: var(--toolbar-bg); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; padding: 8px 12px; overflow-x: auto; flex-wrap: wrap; }
     .tool-btn, .tool-select { height: 36px; border: 1px solid var(--border); background: var(--topbar-bg); border-radius: 10px; color: var(--page-text); font-size: 14px; font-weight: 700; padding: 0 12px; cursor: pointer; }
-    .tool-btn.is-active {
-        background: linear-gradient(135deg, var(--theme-header-mid, var(--alysum-purple-dark)), var(--theme-header-end, var(--alysum-purple)));
-        border-color: var(--theme-header-mid, var(--alysum-purple));
-        color: #fff;
-    }
     #pageLayoutBtn { min-width: 5.5rem; }
     #fontSelect { min-width: 9.5rem; max-width: 12rem; }
     #fontSizeSelect { min-width: 8.5rem; max-width: 11rem; }
@@ -1937,7 +1932,6 @@ function rememberBookId(id) {
             && !document.body.classList.contains("copyright-template-mode");
         document.body.classList.toggle("editor-scroll-mode", !pagesMode);
         if (pageLayoutBtn) {
-            pageLayoutBtn.classList.toggle("is-active", pagesMode);
             pageLayoutBtn.setAttribute("aria-pressed", pagesMode ? "true" : "false");
             pageLayoutBtn.textContent = pagesMode ? "Pages" : "Scroll";
             pageLayoutBtn.dataset.tip = pagesMode
