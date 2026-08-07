@@ -247,6 +247,19 @@
     .topbar .topbar-tip { position: relative; display: inline-flex; align-items: center; vertical-align: middle; }
     .topbar-actions { display: flex; align-items: center; gap: 8px; min-width: 0; flex-wrap: nowrap; }
     .topbar-group { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; }
+    .topbar-group-labeled { flex-direction: column; align-items: center; gap: 3px; }
+    .topbar-group-row { display: inline-flex; align-items: center; gap: 6px; }
+    .topbar-group-label {
+        font-size: 9px;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--page-subtle);
+        opacity: 0.72;
+        line-height: 1;
+        white-space: nowrap;
+        user-select: none;
+    }
     .topbar-divider { width: 1px; height: 26px; background: var(--border); opacity: 0.55; flex-shrink: 0; }
     .topbar-more-wrap { position: relative; flex-shrink: 0; }
     .topbar-more-menu {
@@ -292,6 +305,10 @@
     body.topbar-collapsed #toolbar,
     body.topbar-collapsed .comic-toolbar { display: none !important; }
     body.topbar-collapsed .sprint-float { top: 56px; }
+    @media (min-width: 761px) {
+        .topbar { min-height: 72px; }
+        .topbar-divider { height: 32px; }
+    }
     .editor-tooltip {
         position: fixed;
         z-index: 100000;
@@ -757,6 +774,8 @@
         .topbar-actions { flex: 1; justify-content: flex-end; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
         .topbar-actions::-webkit-scrollbar { display: none; }
         .topbar-group { gap: 4px; }
+        .topbar-group-label { display: none; }
+        .topbar-group-labeled { flex-direction: row; }
         .topbar-divider { height: 22px; }
         .topbar-right .save-status { display: none; }
         .topbar-right .pd-toggle { padding: 6px 10px; font-size: 11px; }
@@ -959,28 +978,43 @@
         </div>
         <div class="topbar-right">
             <div class="topbar-actions" id="topbarActions">
-                <div class="topbar-group" aria-label="Writing">
-                    <span class="topbar-tip" data-tip="New chapter"><button class="icon-btn" id="quickAddBtn" type="button" aria-label="Add chapter">＋</button></span>
-                    <span class="topbar-tip" data-tip="Notes"><button class="icon-btn" id="nbBtn" type="button" aria-label="Notes">⌘</button></span>
-                    <span class="topbar-tip" data-tip="Rename chapter"><button class="icon-btn" id="renameChapterBtn" type="button" aria-label="Rename chapter">📝</button></span>
+                <div class="topbar-group topbar-group-labeled" aria-label="Write">
+                    <span class="topbar-group-label">Write</span>
+                    <div class="topbar-group-row">
+                        <span class="topbar-tip" data-tip="New chapter"><button class="icon-btn" id="quickAddBtn" type="button" aria-label="Add chapter">＋</button></span>
+                        <span class="topbar-tip" data-tip="Notes"><button class="icon-btn" id="nbBtn" type="button" aria-label="Notes">⌘</button></span>
+                        <span class="topbar-tip" data-tip="Story Board (Alt+P)"><a class="pd-toggle" id="storyBoardLink" href="story-board/">Story Board</a></span>
+                    </div>
                 </div>
                 <span class="topbar-divider" aria-hidden="true"></span>
-                <div class="topbar-group" aria-label="Share and publish">
-                    <span class="topbar-tip" data-tip="Publish to web"><button class="icon-btn" id="publishTopBtn" type="button" aria-label="Publish">🚀</button></span>
-                    <span class="topbar-tip" data-tip="Invite editors to suggest chapter changes" id="collabShareTopLinkWrap"><a class="icon-btn" id="collabShareTopLink" href="collab-room-manage.html" aria-label="Collab invite">✎</a></span>
-                    <span class="topbar-tip" data-tip="Share unpublished draft with beta readers" id="betaShareTopLinkWrap"><a class="icon-btn" id="betaShareTopLink" href="beta-room-manage.html" aria-label="Beta share">✉</a></span>
+                <div class="topbar-group topbar-group-labeled" aria-label="Chapter">
+                    <span class="topbar-group-label">Chapter</span>
+                    <div class="topbar-group-row">
+                        <span class="topbar-tip" data-tip="Rename chapter"><button class="icon-btn" id="renameChapterBtn" type="button" aria-label="Rename chapter">📝</button></span>
+                        <span class="topbar-tip" data-tip="Chapter content warnings"><button class="icon-btn" id="chapterWarningsBtn" type="button" aria-label="Chapter warnings">⚠</button></span>
+                    </div>
                 </div>
                 <span class="topbar-divider" aria-hidden="true"></span>
-                <div class="topbar-group" aria-label="Tools">
-                    <span class="topbar-tip" data-tip="Version history (Ctrl+Shift+H)"><button class="icon-btn" id="historyTopBtn" type="button" aria-label="Version history">🕘</button></span>
-                    <span class="topbar-tip" data-tip="Export / print"><button class="icon-btn" id="exportBtn" type="button" aria-label="Export">📄</button></span>
-                    <span class="topbar-tip" data-tip="Story Board (Alt+P)"><a class="pd-toggle" id="storyBoardLink" href="story-board/">Story Board</a></span>
+                <div class="topbar-group topbar-group-labeled" aria-label="Share">
+                    <span class="topbar-group-label">Share</span>
+                    <div class="topbar-group-row">
+                        <span class="topbar-tip" data-tip="Publish to web"><button class="icon-btn" id="publishTopBtn" type="button" aria-label="Publish">🚀</button></span>
+                        <span class="topbar-tip" data-tip="Share unpublished draft with beta readers" id="betaShareTopLinkWrap"><a class="icon-btn" id="betaShareTopLink" href="beta-room-manage.html" aria-label="Beta share">✉</a></span>
+                        <span class="topbar-tip" data-tip="Invite editors to suggest chapter changes" id="collabShareTopLinkWrap"><a class="icon-btn" id="collabShareTopLink" href="collab-room-manage.html" aria-label="Collab invite">👥</a></span>
+                    </div>
+                </div>
+                <span class="topbar-divider" aria-hidden="true"></span>
+                <div class="topbar-group topbar-group-labeled" aria-label="Book">
+                    <span class="topbar-group-label">Book</span>
+                    <div class="topbar-group-row">
+                        <span class="topbar-tip" data-tip="Version history (Ctrl+Shift+H)"><button class="icon-btn" id="historyTopBtn" type="button" aria-label="Version history">🕘</button></span>
+                        <span class="topbar-tip" data-tip="Export / print"><button class="icon-btn" id="exportBtn" type="button" aria-label="Export">📄</button></span>
+                    </div>
                 </div>
                 <span class="topbar-divider" aria-hidden="true"></span>
                 <div class="topbar-more-wrap">
                     <span class="topbar-tip" data-tip="More options"><button class="icon-btn" id="topbarMoreBtn" type="button" aria-label="More options" aria-expanded="false" aria-haspopup="true" aria-controls="topbarMoreMenu">⋯</button></span>
                     <div class="topbar-more-menu hidden" id="topbarMoreMenu" role="menu">
-                        <button class="topbar-more-item" id="chapterWarningsBtn" type="button" role="menuitem"><span class="more-icon" aria-hidden="true">⚠</span>Chapter warnings</button>
                         <button class="topbar-more-item" id="themeTopBtn" type="button" role="menuitem"><span class="more-icon" aria-hidden="true">◐</span>Light / dark</button>
                         <button class="topbar-more-item danger" id="deleteBookTopBtn" type="button" role="menuitem"><span class="more-icon" aria-hidden="true">🗑</span>Delete book</button>
                     </div>
