@@ -416,6 +416,12 @@
     body.dark .editor-tooltip { background: #0f172a; color: #e2e8f0; border: 1px solid #334155; }
     .toolbar { min-height: 54px; background: var(--toolbar-bg); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; padding: 8px 12px; overflow-x: auto; flex-wrap: wrap; }
     .tool-btn, .tool-select { height: 36px; border: 1px solid var(--border); background: var(--topbar-bg); border-radius: 10px; color: var(--page-text); font-size: 14px; font-weight: 700; padding: 0 12px; cursor: pointer; }
+    .tool-btn.is-active {
+        background: linear-gradient(135deg, var(--theme-header-mid, var(--alysum-purple-dark)), var(--theme-header-end, var(--alysum-purple)));
+        border-color: var(--theme-header-mid, var(--alysum-purple));
+        color: #fff;
+    }
+    #pageLayoutBtn { min-width: 5.5rem; }
     #fontSelect { min-width: 9.5rem; max-width: 12rem; }
     #fontSizeSelect { min-width: 8.5rem; max-width: 11rem; }
     #findReplaceBtn { font-size: 17px; line-height: 1; padding: 0 11px; }
@@ -430,6 +436,11 @@
     .sprint-mini-btn { border: 1px solid var(--border); background: transparent; color: var(--page-text); border-radius: 10px; font-weight: 900; padding: 6px 10px; cursor: pointer; }
     .sprint-mini-btn.danger { background: var(--danger); border-color: var(--danger); color: white; }
     .workspace { flex: 1; overflow: auto; padding: 34px 18px 60px; background: var(--workspace-bg); }
+    .workspace.is-docs-pages {
+        background: #e8eaed;
+        padding: 28px 16px 56px;
+    }
+    body.dark .workspace.is-docs-pages { background: #202124; }
     .workspace.has-custom-bg {
         background-image:
             linear-gradient(rgba(2, 6, 23, 0.48), rgba(2, 6, 23, 0.6)),
@@ -445,8 +456,59 @@
         box-shadow: inset 0 0 0 9999px rgba(109, 40, 217, 0.12);
     }
     .page-wrap { max-width: 980px; margin: 0 auto; }
-    .page { background: var(--page-bg); min-height: calc(100vh - 180px); border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.10); padding: 80px 120px 100px; }
-    .workspace.has-custom-bg .page {
+    .page-flow { position: relative; width: 100%; max-width: 980px; margin: 0 auto; }
+    .page-content { position: relative; z-index: 1; padding: 80px 120px 100px; }
+    .page-backgrounds { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+    .page-flow.is-paginated { width: 816px; max-width: calc(100% - 32px); }
+    .page-flow.is-paginated .page-content { padding: 96px 96px 0; }
+    .page-flow.is-paginated .chapter-title { font-size: 24px; margin-bottom: 28px; }
+    .page-flow.is-paginated .editor { min-height: 0; font-size: 18px; line-height: 1.65; }
+    .page-flow.is-paginated .bottom-meta {
+        margin-top: 24px;
+        padding-bottom: 96px;
+        font-size: 12px;
+        font-weight: 600;
+        color: #80868b;
+    }
+    body.dark .page-flow.is-paginated .bottom-meta { color: #9aa0a6; }
+    .editor-page-bg {
+        position: absolute;
+        left: 0;
+        right: 0;
+        background: #fff;
+        border-radius: 0;
+        border: 1px solid #dadce0;
+        box-shadow: 0 1px 3px 1px rgba(60, 64, 67, 0.15), 0 1px 2px 0 rgba(60, 64, 67, 0.3);
+    }
+    body.dark .page-flow.is-paginated .editor-page-bg {
+        background: #fff;
+        border-color: #dadce0;
+    }
+    .page-flow.is-paginated .page-content,
+    .page-flow.is-paginated .chapter-title,
+    .page-flow.is-paginated .editor,
+    .page-flow.is-paginated .bottom-meta {
+        color: #202124;
+    }
+    .page-flow.is-paginated .editor blockquote {
+        color: #5f6368;
+        border-left-color: #1a73e8;
+    }
+    .page-flow.is-paginated .editor:empty:before { color: #9aa0a6; }
+    body.dark .page-flow.is-paginated .bottom-meta { color: #80868b; }
+    .page-flow:not(.is-paginated) .page-backgrounds { display: none; }
+    .page-flow:not(.is-paginated) { min-height: calc(100vh - 180px); }
+    .page-flow:not(.is-paginated)::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: var(--page-bg);
+        border-radius: 8px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.10);
+        z-index: 0;
+    }
+    .workspace.has-custom-bg .editor-page-bg,
+    .workspace.has-custom-bg .page-flow:not(.is-paginated)::before {
         background: transparent;
         box-shadow: none;
     }
@@ -471,6 +533,7 @@
     body.comic-mode #toolbar,
     body.comic-mode .bg-bar,
     body.comic-mode .fr-bar { display: none !important; }
+    body.comic-mode #pageLayoutBtn { display: none !important; }
     body.comic-mode .chapter-title { margin-bottom: 18px; }
     body.comic-mode .bottom-meta { margin-top: 18px; }
     .comic-toolbar {
@@ -706,6 +769,8 @@
     body.copyright-chapter .chapter-title { margin-bottom: 18px; }
     .editor div, .editor p { margin: 0; text-indent: 2em; }
     .editor div:first-child, .editor p:first-child { text-indent: 0; }
+    .editor p.editor-page-split-cont,
+    .editor div.editor-page-split-cont { text-indent: 0; }
     .editor h2, .editor blockquote, .editor ul, .editor ol, .editor li { text-indent: 0; }
     .editor h2 + div, .editor h2 + p, .editor blockquote + div, .editor blockquote + p { text-indent: 0; }
     .editor ul, .editor ol { margin: 0 0 1.15em 1.5em; }
@@ -749,7 +814,7 @@
         justify-content: flex-end;
         min-width: 0;
     }
-    .page::after { content: ""; display: block; clear: both; }
+    .page-content::after { content: ""; display: block; clear: both; }
     .editor:empty:before { content: attr(data-placeholder); color: #a7afb8; }
     .bottom-meta { margin-top: 16px; text-align: center; font-size: 13px; color: #7b8490; font-weight: 700; clear: both; }
     .overlay { display: none; }
@@ -920,7 +985,7 @@
     @media (prefers-reduced-motion: reduce) {
         .daily-goal-badge { transition: none; }
     }
-    @media (max-width: 900px) { .page { padding: 52px 56px 70px; } .chapter-title { font-size: 24px; } .editor { font-size: 18px; } .top-title { max-width: 28vw; } }
+    @media (max-width: 900px) { .page-content { padding: 52px 56px 70px; } .chapter-title { font-size: 24px; } .editor { font-size: 18px; } .top-title { max-width: 28vw; } }
     @media (max-width: 760px) {
         .alysum-tool-root { position: relative; isolation: isolate; }
         .sidebar {
@@ -948,7 +1013,7 @@
         }
         .sidebar-book-title { font-size: 21px; }
         .top-title { max-width: 40vw; }
-        .page { padding: 42px 24px 60px; }
+        .page-content { padding: 42px 24px 60px; }
         .chapter-title { font-size: 22px; margin-bottom: 32px; }
         .editor { font-size: 17px; line-height: 1.7; }
         .topbar { min-height: 52px; flex-wrap: nowrap; row-gap: 0; padding: 6px 8px; gap: 6px; }
@@ -1006,7 +1071,7 @@
     }
     @media (max-width: 480px) {
         .workspace { padding: 16px 10px 40px; }
-        .page { padding: 32px 16px 48px; }
+        .page-content { padding: 32px 16px 48px; }
         .sidebar { width: min(300px, 94vw); }
         .top-title { max-width: 34vw; font-size: 16px; }
     }
@@ -1244,6 +1309,7 @@
     <button class="tool-btn" type="button" id="insertImageBtn" data-tip="Insert image at cursor">＋ Image</button>
     <input id="inlineImageUploadInput" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden />
     <button class="tool-btn" type="button" id="insertSceneBreakBtn" data-tip="Insert scene break">✦ Break</button>
+    <button class="tool-btn" type="button" id="pageLayoutBtn" data-tip="Paginated pages — click for infinite scroll" aria-pressed="true">Pages</button>
     <button class="tool-btn" type="button" id="backgroundBtn" data-tip="Set editor background image">Background</button>
     <div class="toolbar-spacer"></div>
     <span class="sprint-anchor" id="sprintAnchor"><button class="sprint-btn" id="sprintToolbarBtn" type="button" data-tip="Writing sprint timer" aria-label="Sprint timer">⏱ Sprint</button></span>
@@ -1281,7 +1347,9 @@
 
 <div class="workspace" id="editorWorkspace">
     <div class="page-wrap">
-        <div class="page">
+        <div class="page-flow" id="pageFlow">
+            <div class="page-backgrounds" id="pageBackgrounds" aria-hidden="true"></div>
+            <div class="page-content" id="pageContent">
             <div class="copyright-mode-bar hidden" id="copyrightModeBar" aria-label="Copyright editing mode">
                 <div class="copyright-mode-tabs" role="tablist">
                     <button type="button" class="copyright-mode-tab is-active" id="copyrightTabTemplate" role="tab" aria-selected="true" aria-controls="copyrightBuilder" data-mode="template">Fill in the blank</button>
@@ -1353,6 +1421,7 @@
                 </div>
             </div>
             <div class="bottom-meta"><span id="chapterWords">0</span> <span id="bottomMetaLabel">chapter words</span> • <span id="bottomTotalWords">0</span> <span id="bottomTotalLabel">total words</span></div>
+            </div>
         </div>
     </div>
 </div></div><div class="publish-modal" id="publishModal">
@@ -1547,6 +1616,7 @@
     } from "./js/content-warnings.js?v=1";
     import { mountWarningPicker } from "./js/chapter-warnings-ui.js?v=1";
     import { normalizeAuthorNotes } from "./js/chapter-author-notes.js?v=1";
+    import { mountEditorPagination, stripEditorPageGapsFromHtml } from "./js/editor-pagination.js?v=3";
     import {
         saveBookShadow,
         getBookShadow,
@@ -1819,6 +1889,9 @@ function rememberBookId(id) {
     const chapterTitle = document.getElementById("chapterTitle");
     const editor = document.getElementById("editor");
     const editorWorkspace = document.getElementById("editorWorkspace");
+    const pageFlow = document.getElementById("pageFlow");
+    const pageBackgrounds = document.getElementById("pageBackgrounds");
+    const pageContent = document.getElementById("pageContent");
     const dailyGoalBadge = document.getElementById("dailyGoalBadge");
     const dailyGoalBadgeSub = document.getElementById("dailyGoalBadgeSub");
     const totalWordsEl = document.getElementById("totalWords");
@@ -1851,6 +1924,57 @@ function rememberBookId(id) {
     const chapterWarningsApplyBookBtn = document.getElementById("chapterWarningsApplyBookBtn");
     const chapterWarningsCloseBtn = document.getElementById("chapterWarningsCloseBtn");
     const chapterWarningsSaveBtn = document.getElementById("chapterWarningsSaveBtn");
+    const EDITOR_PAGE_LAYOUT_KEY = "alysum-editor-page-layout";
+
+    function isEditorPaginationDisabled() {
+        return isCurrentBookComic()
+            || document.body.classList.contains("copyright-template-mode")
+            || getEditorPageLayout() === "scroll";
+    }
+
+    function getEditorPageLayout() {
+        const stored = localStorage.getItem(EDITOR_PAGE_LAYOUT_KEY);
+        return stored === "scroll" ? "scroll" : "pages";
+    }
+
+    function setEditorPageLayout(mode) {
+        localStorage.setItem(EDITOR_PAGE_LAYOUT_KEY, mode === "scroll" ? "scroll" : "pages");
+        applyEditorPageLayoutUI();
+    }
+
+    function applyEditorPageLayoutUI() {
+        const pagesMode = getEditorPageLayout() === "pages"
+            && !isCurrentBookComic()
+            && !document.body.classList.contains("copyright-template-mode");
+        document.body.classList.toggle("editor-scroll-mode", !pagesMode);
+        if (pageLayoutBtn) {
+            pageLayoutBtn.classList.toggle("is-active", pagesMode);
+            pageLayoutBtn.setAttribute("aria-pressed", pagesMode ? "true" : "false");
+            pageLayoutBtn.textContent = pagesMode ? "Pages" : "Scroll";
+            pageLayoutBtn.dataset.tip = pagesMode
+                ? "Paginated pages — click for infinite scroll"
+                : "Infinite scroll — click for paginated pages";
+        }
+        if (pagesMode) scheduleEditorPagination();
+        else editorPagination.disableLayout();
+    }
+
+    function toggleEditorPageLayout() {
+        setEditorPageLayout(getEditorPageLayout() === "pages" ? "scroll" : "pages");
+    }
+
+    const editorPagination = mountEditorPagination({
+        pageFlow,
+        pageBackgrounds,
+        pageContent,
+        editor,
+        editorWorkspace,
+        getDisabled: isEditorPaginationDisabled,
+    });
+
+    function scheduleEditorPagination() {
+        editorPagination.scheduleLayout();
+    }
 
     /** @type {ReturnType<typeof mountWarningPicker> | null} */
     let chapterWarningsPicker = null;
@@ -1878,6 +2002,7 @@ function rememberBookId(id) {
     const inlineImageInsertBtn = document.getElementById("inlineImageInsertBtn");
     const inlineImageSizeCancel = document.getElementById("inlineImageSizeCancel");
     const backgroundBtn = document.getElementById("backgroundBtn");
+    const pageLayoutBtn = document.getElementById("pageLayoutBtn");
     const backgroundBar = document.getElementById("backgroundBar");
     const backgroundFitSelect = document.getElementById("backgroundFitSelect");
     const backgroundUploadInput = document.getElementById("backgroundUploadInput");
@@ -2123,6 +2248,7 @@ function rememberBookId(id) {
         }
         if (sidebarMetaPrimaryLabel) sidebarMetaPrimaryLabel.textContent = comic ? "pages uploaded" : "words";
         if (sidebarMetaSecondaryLabel) sidebarMetaSecondaryLabel.textContent = comic ? "pages" : "chapters";
+        applyEditorPageLayoutUI();
     }
 
     function defaultCopyrightAuthorName() {
@@ -2192,6 +2318,7 @@ function rememberBookId(id) {
             document.body.classList.remove("copyright-chapter", "copyright-template-mode");
             copyrightModeBar?.classList.add("hidden");
             copyrightBuilder?.classList.add("hidden");
+            applyEditorPageLayoutUI();
             return;
         }
         const ch = currentChapter();
@@ -2199,6 +2326,7 @@ function rememberBookId(id) {
             ch.copyrightFields = emptyCopyrightFields({ holder: defaultCopyrightAuthorName() });
         }
         setCopyrightEditorMode(getCopyrightEditorMode(), { persistFields: true, updatePreview: true });
+        applyEditorPageLayoutUI();
     }
 
     function syncComicPageView(ch) {
@@ -2937,6 +3065,7 @@ function rememberBookId(id) {
                 URL.revokeObjectURL(activeEditorBackgroundObjectUrl);
                 activeEditorBackgroundObjectUrl = "";
             }
+            scheduleEditorPagination();
             return;
         }
 
@@ -2947,6 +3076,7 @@ function rememberBookId(id) {
         editorWorkspace.style.setProperty("--editor-bg-repeat", cssFit.repeat);
         editorWorkspace.classList.add("has-custom-bg");
         if (backgroundFitSelect) backgroundFitSelect.value = cleanFit;
+        scheduleEditorPagination();
     }
 
     async function applyUploadedEditorBackground(fit = localStorage.getItem(EDITOR_BACKGROUND_FIT_KEY) || "cover") {
@@ -3064,6 +3194,7 @@ function rememberBookId(id) {
     }
     toggleToolbarBtn?.addEventListener("click", toggleMobileToolbar);
     window.addEventListener("resize", applyResponsiveMobileToolbar);
+    window.addEventListener("resize", scheduleEditorPagination);
     applyResponsiveMobileToolbar();
 
     const topbarMoreBtn = document.getElementById("topbarMoreBtn");
@@ -3226,6 +3357,8 @@ function rememberBookId(id) {
             normalizeSceneBreakAttributes(el);
         });
 
+        stripEditorPageGapsFromHtml(holder);
+
         return holder.innerHTML
             .replace(/<p(?![^>]*scene-break)(?![^>]*scene-spacer)>(\s|&nbsp;)*<\/p>/gi, "")
             .replace(/<div>(\s|&nbsp;|<br\s*\/?>)*<\/div>/gi, "")
@@ -3233,7 +3366,10 @@ function rememberBookId(id) {
     }
 
     function syncCurrentChapterFromEditor() {
-        currentChapter().content = editor.innerHTML;
+        const holder = document.createElement("div");
+        holder.innerHTML = editor.innerHTML;
+        stripEditorPageGapsFromHtml(holder);
+        currentChapter().content = holder.innerHTML;
     }
 
     function chapterLoadKey(section, index) {
@@ -3533,6 +3669,7 @@ function rememberBookId(id) {
         frOnChapterChanged();
         scheduleWordWarDraft();
         applyEditorBetaLinks();
+        scheduleEditorPagination();
     }
 
     function frIsWholeWordMatch(text, start, length) {
@@ -4409,6 +4546,7 @@ function rememberBookId(id) {
         editor.style.lineHeight = "1.7";
         if (fontSelect) fontSelect.value = fontId;
         if (fontSizeSelect) fontSizeSelect.value = size;
+        scheduleEditorPagination();
     }
 
     populateEditorFontSelect();
@@ -4497,6 +4635,7 @@ function rememberBookId(id) {
         backgroundBar?.classList.toggle("open");
         if (backgroundBar?.classList.contains("open")) backgroundUploadInput?.focus();
     });
+    pageLayoutBtn?.addEventListener("click", () => toggleEditorPageLayout());
     insertImageBtn?.addEventListener("click", () => {
         if (isCurrentBookComic()) return;
         inlineImageUploadInput?.click();
@@ -4638,6 +4777,7 @@ function rememberBookId(id) {
         renderAllSections();
         scheduleSave();
         scheduleWordWarDraft();
+        scheduleEditorPagination();
     });
     editor.addEventListener("input", () => {
         if (editor.querySelector(`p figure.${INLINE_IMAGE_FIGURE_CLASS}, div figure.${INLINE_IMAGE_FIGURE_CLASS}`)) {
@@ -4648,6 +4788,7 @@ function rememberBookId(id) {
         scheduleSave();
         scheduleWriterResumeSave();
         scheduleWordWarDraft();
+        scheduleEditorPagination();
     });
     editor.addEventListener("keyup", () => scheduleWriterResumeSave());
     editor.addEventListener("click", (e) => {
@@ -4693,6 +4834,7 @@ function rememberBookId(id) {
         syncCurrentChapterFromEditor();
         syncStats();
         scheduleSave();
+        scheduleEditorPagination();
     });
     editor.addEventListener("copy", e => {
         const selection = window.getSelection();
@@ -4726,8 +4868,8 @@ function rememberBookId(id) {
             scheduleSave();
         });
     });
-    formatSelect.addEventListener("change", () => { document.execCommand("formatBlock", false, formatSelect.value === "h2" ? "h2" : "p"); editor.focus(); syncCurrentChapterFromEditor(); syncStats(); scheduleSave(); });
-    quoteBtn.addEventListener("click", () => { document.execCommand("formatBlock", false, "blockquote"); editor.focus(); syncCurrentChapterFromEditor(); syncStats(); scheduleSave(); });
+    formatSelect.addEventListener("change", () => { document.execCommand("formatBlock", false, formatSelect.value === "h2" ? "h2" : "p"); editor.focus(); syncCurrentChapterFromEditor(); syncStats(); scheduleSave(); scheduleEditorPagination(); });
+    quoteBtn.addEventListener("click", () => { document.execCommand("formatBlock", false, "blockquote"); editor.focus(); syncCurrentChapterFromEditor(); syncStats(); scheduleSave(); scheduleEditorPagination(); });
     fontSelect.addEventListener("change", () => { applyFontToEditorSelection(fontSelect.value); });
     fontSizeSelect.addEventListener("change", () => {
         const size = fontSizeSelect.value;
@@ -5031,6 +5173,7 @@ async function loadBook() {
     }
 
     await loadBook();
+    applyEditorPageLayoutUI();
     void flushPendingBookSync();
     syncStoryBoardLink();
 
