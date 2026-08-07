@@ -27,6 +27,7 @@
     <link rel="stylesheet" href="css/accessibility-fonts.css?v=1" />
     <link rel="stylesheet" href="css/book-inline-fonts.css?v=4" />
     <link rel="stylesheet" href="css/scene-breaks.css?v=8" />
+    <link rel="stylesheet" href="css/editor-page-view.css?v=1" />
 <link rel="stylesheet" href="css/book-version.css?v=8" />
     <link rel="stylesheet" href="css/collab-room.css?v=4" />
     <script src="js/gradient-theme-sync.js" defer></script>
@@ -1209,6 +1210,7 @@
                     <div class="topbar-group-row">
                         <span class="topbar-tip" data-tip="Version history (Ctrl+Shift+H)"><button class="icon-btn" id="historyTopBtn" type="button" aria-label="Version history">🕘</button></span>
                         <span class="topbar-tip" data-tip="Export / print"><button class="icon-btn" id="exportBtn" type="button" aria-label="Export">📄</button></span>
+                        <span class="topbar-tip" data-tip="Paginated page view (5×8 novel)"><button class="icon-btn" id="togglePageViewBtn" type="button" aria-label="Page view" aria-pressed="false">📑</button></span>
                     </div>
                 </div>
                 <span class="topbar-divider" aria-hidden="true"></span>
@@ -1244,6 +1246,7 @@
     <button class="tool-btn" type="button" id="insertImageBtn" data-tip="Insert image at cursor">＋ Image</button>
     <input id="inlineImageUploadInput" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden />
     <button class="tool-btn" type="button" id="insertSceneBreakBtn" data-tip="Insert scene break">✦ Break</button>
+    <button class="tool-btn hidden" type="button" id="pageBreakBtn" data-tip="Insert page break (Ctrl+Enter)">⎘ Page</button>
     <button class="tool-btn" type="button" id="backgroundBtn" data-tip="Set editor background image">Background</button>
     <div class="toolbar-spacer"></div>
     <span class="sprint-anchor" id="sprintAnchor"><button class="sprint-btn" id="sprintToolbarBtn" type="button" data-tip="Writing sprint timer" aria-label="Sprint timer">⏱ Sprint</button></span>
@@ -1276,12 +1279,17 @@
     </div>
     <span class="fr-status" id="frStatus" aria-live="polite"></span>
 </div>
+<div class="page-view-status" id="pageViewStatus" aria-live="polite">
+    <span class="page-view-status-label" id="pageViewStatusLabel">5 × 8 in (novel) · Page view</span>
+    <select class="page-view-format-select" id="pageViewFormatSelect" aria-label="Page trim size"></select>
+</div>
 
 <div class="sprint-float" id="sprintFloat" aria-live="polite"><div class="sprint-float-box"><div class="sprint-float-top"><div class="sprint-float-label">Sprint</div><button class="sprint-mini-btn danger" id="sprintStopBtn" type="button" data-tip="Stop sprint early">Stop</button></div><div class="sprint-float-time" id="sprintFloatTime">00:00</div></div></div>
 
 <div class="workspace" id="editorWorkspace">
     <div class="page-wrap">
-        <div class="page">
+        <div class="page" id="editorPage">
+            <div class="page-view-backdrop" id="pageViewBackdrop" aria-hidden="true"></div>
             <div class="copyright-mode-bar hidden" id="copyrightModeBar" aria-label="Copyright editing mode">
                 <div class="copyright-mode-tabs" role="tablist">
                     <button type="button" class="copyright-mode-tab is-active" id="copyrightTabTemplate" role="tab" aria-selected="true" aria-controls="copyrightBuilder" data-mode="template">Fill in the blank</button>
@@ -1523,6 +1531,10 @@
         writeChapterTypography,
         chapterTypographyPayload,
     } from "./js/chapter-typography.js?v=1";
+    import {
+        initEditorPageView,
+        normalizePageBreakAttributes,
+    } from "./js/editor-page-view.js?v=1";
     import { mountBookVersionPanel } from "./js/book-version-panel.js?v=8";
     import { hashSnapshot, buildManuscriptSnapshot } from "./js/book-version-api.js?v=3";
     import {
@@ -1818,6 +1830,12 @@ function rememberBookId(id) {
     const chapterNumber = document.getElementById("chapterNumber");
     const chapterTitle = document.getElementById("chapterTitle");
     const editor = document.getElementById("editor");
+    const editorPage = document.getElementById("editorPage");
+    const pageViewBackdrop = document.getElementById("pageViewBackdrop");
+    const togglePageViewBtn = document.getElementById("togglePageViewBtn");
+    const pageBreakBtn = document.getElementById("pageBreakBtn");
+    const pageViewStatusLabel = document.getElementById("pageViewStatusLabel");
+    const pageViewFormatSelect = document.getElementById("pageViewFormatSelect");
     const editorWorkspace = document.getElementById("editorWorkspace");
     const dailyGoalBadge = document.getElementById("dailyGoalBadge");
     const dailyGoalBadgeSub = document.getElementById("dailyGoalBadgeSub");
@@ -2123,6 +2141,7 @@ function rememberBookId(id) {
         }
         if (sidebarMetaPrimaryLabel) sidebarMetaPrimaryLabel.textContent = comic ? "pages uploaded" : "words";
         if (sidebarMetaSecondaryLabel) sidebarMetaSecondaryLabel.textContent = comic ? "pages" : "chapters";
+        pageViewApi?.refresh();
     }
 
     function defaultCopyrightAuthorName() {
@@ -2199,6 +2218,7 @@ function rememberBookId(id) {
             ch.copyrightFields = emptyCopyrightFields({ holder: defaultCopyrightAuthorName() });
         }
         setCopyrightEditorMode(getCopyrightEditorMode(), { persistFields: true, updatePreview: true });
+        pageViewApi?.refresh();
     }
 
     function syncComicPageView(ch) {
@@ -2697,6 +2717,7 @@ function rememberBookId(id) {
             return;
         }
         if (normalizeSceneBreakAttributes(el)) return;
+        if (normalizePageBreakAttributes(el)) return;
         if (el.tagName === "SPAN") {
             if (el.classList.contains("scene-break-glyph")) {
                 [...el.attributes].forEach((attr) => {
@@ -3173,6 +3194,7 @@ function rememberBookId(id) {
         holder.innerHTML = safeString(html, "");
 
         holder.querySelectorAll("script, style, meta, link, iframe, object, embed").forEach(el => el.remove());
+        holder.querySelectorAll(".alysum-page-view-spacer").forEach(el => el.remove());
         holder.querySelectorAll("*").forEach(el => normalizeChapterElementAttributes(el));
 
         holder.querySelectorAll("div").forEach(div => {
@@ -3202,6 +3224,8 @@ function rememberBookId(id) {
             if (isSceneBreakParagraph(p)) return;
             if (isCaretParagraph(p) || (!p.textContent.trim() && !p.querySelector("img, br, figure"))) p.remove();
         });
+
+        holder.querySelectorAll("hr.alysum-page-break").forEach((el) => normalizePageBreakAttributes(el));
 
         holder.querySelectorAll("span").forEach((span) => {
             if (span.classList.length) return;
@@ -3233,6 +3257,7 @@ function rememberBookId(id) {
     }
 
     function cleanAndStoreCurrentChapterFromEditor() {
+        pageViewApi?.stripLayoutSpacers();
         if (isOnCopyrightChapter() && getCopyrightEditorMode() === "template") {
             syncCopyrightTemplateToChapter(false);
             return currentChapter().content || "";
@@ -3523,6 +3548,7 @@ function rememberBookId(id) {
         frOnChapterChanged();
         scheduleWordWarDraft();
         applyEditorBetaLinks();
+        pageViewApi?.scheduleRecalc();
     }
 
     function frIsWholeWordMatch(text, start, length) {
@@ -4397,9 +4423,30 @@ function rememberBookId(id) {
         if (chapterTitle) chapterTitle.style.fontFamily = stack;
         editor.style.fontSize = size + "px";
         editor.style.lineHeight = "1.7";
+        if (editorPage) editorPage.style.setProperty("--page-editor-font-size", `${size}px`);
         if (fontSelect) fontSelect.value = fontId;
         if (fontSizeSelect) fontSizeSelect.value = size;
+        pageViewApi?.scheduleRecalc();
     }
+
+    /** @type {ReturnType<typeof initEditorPageView> | null} */
+    let pageViewApi = null;
+    pageViewApi = initEditorPageView({
+        pageEl: editorPage,
+        backdropEl: pageViewBackdrop,
+        editorEl: editor,
+        chapterTitleEl: chapterTitle,
+        statusLabelEl: pageViewStatusLabel,
+        formatSelect: pageViewFormatSelect,
+        toggleBtn: togglePageViewBtn,
+        insertBtn: pageBreakBtn,
+        getDisabled: () => isCurrentBookComic() || isOnCopyrightChapter(),
+        onLayoutChange: () => {
+            cleanAndStoreCurrentChapterFromEditor();
+            syncStats();
+            scheduleSave();
+        },
+    });
 
     populateEditorFontSelect();
     populateEditorFontSizeSelect();
