@@ -460,13 +460,6 @@
     .page-flow.is-paginated .page-content { padding: 24px 96px 0; }
     .page-flow.is-paginated .chapter-title { font-size: 24px; margin-bottom: 28px; }
     .page-flow.is-paginated .editor { min-height: 0; font-size: 18px; line-height: 1.65; }
-    .page-flow.is-paginated .bottom-meta {
-        margin-top: 24px;
-        padding-bottom: 24px;
-        font-size: 12px;
-        font-weight: 600;
-        color: var(--page-subtle);
-    }
     .editor-page-bg {
         position: absolute;
         left: 0;
@@ -801,6 +794,23 @@
     .page-content::after { content: ""; display: block; clear: both; }
     .editor:empty:before { content: attr(data-placeholder); color: #a7afb8; }
     .bottom-meta { margin-top: 16px; text-align: center; font-size: 13px; color: #7b8490; font-weight: 700; clear: both; }
+    .editor-status-bar {
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 36px;
+        padding: 6px 16px;
+        border-top: 1px solid var(--border);
+        background: var(--toolbar-bg);
+    }
+    .editor-status-bar .bottom-meta {
+        margin: 0;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--page-subtle);
+    }
+    body.comic-mode .editor-status-bar { display: none; }
     .overlay { display: none; }
     .publish-modal, .sprint-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.65); display: none; align-items: center; justify-content: center; z-index: 99999; padding: 20px; }
     .publish-modal.open, .sprint-modal.open { display: flex; }
@@ -1404,11 +1414,14 @@
                     </div>
                 </div>
             </div>
-            <div class="bottom-meta"><span id="chapterWords">0</span> <span id="bottomMetaLabel">chapter words</span> • <span id="bottomTotalWords">0</span> <span id="bottomTotalLabel">total words</span></div>
             </div>
         </div>
     </div>
-</div></div><div class="publish-modal" id="publishModal">
+</div>
+<div class="editor-status-bar" id="editorStatusBar" aria-live="polite">
+    <div class="bottom-meta"><span id="chapterWords">0</span> <span id="bottomMetaLabel">chapter words</span> • <span id="bottomTotalWords">0</span> <span id="bottomTotalLabel">total words</span></div>
+</div>
+</div><div class="publish-modal" id="publishModal">
     <div class="publish-modal-box">
         <h2 class="publish-modal-title">Choose Chapters to Publish</h2>
         <p class="publish-modal-text">Select the chapters you want to publish now.</p>
