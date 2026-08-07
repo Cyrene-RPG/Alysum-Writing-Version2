@@ -1,7 +1,7 @@
 /* Paginated writing view — 5×8 default, zoomed for comfortable editing */
 
 :root {
-    --page-view-gap: 28px;
+    --page-view-gap: 32px;
     --page-view-sheet-shadow: 0 8px 28px rgba(15, 23, 42, 0.14);
 }
 
@@ -99,13 +99,14 @@ body.page-view-mode .editor {
 
 body.page-view-mode .editor .alysum-page-view-spacer {
     display: block;
-    height: var(--page-view-gap, 28px);
     margin: 0;
     padding: 0;
     border: 0;
     pointer-events: none;
     user-select: none;
     background: transparent;
+    overflow: hidden;
+    flex-shrink: 0;
 }
 
 body.page-view-mode .editor hr.alysum-page-break {

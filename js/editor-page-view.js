@@ -8,7 +8,7 @@ export const PAGE_VIEW_FORMAT_KEY = "alysum-editor-page-format";
 
 /** Screen pixels per inch — keeps 5×8 readable while matching print proportions. */
 export const DEFAULT_WRITING_PX_PER_IN = 112;
-export const PAGE_VIEW_GAP_PX = 28;
+export const PAGE_VIEW_GAP_PX = 32;
 
 export const PAGE_FORMATS = {
     "5x8": {
@@ -81,6 +81,7 @@ export function computePageLayout(formatId = DEFAULT_PAGE_FORMAT, pxPerIn = DEFA
         liveHeightPx,
         pageGapPx: PAGE_VIEW_GAP_PX,
         pxPerIn,
+        stridePx: trimHeightPx + PAGE_VIEW_GAP_PX,
     };
 }
 
@@ -89,68 +90,110 @@ function removeLayoutSpacers(root) {
     root.querySelectorAll(`.${SPACER_CLASS}`).forEach((el) => el.remove());
 }
 
+/** Y of an element relative to the page card top (padding edge). */
+function pageRelativeTop(el, pageEl) {
+    if (!el || !pageEl) return 0;
+    const elRect = el.getBoundingClientRect();
+    const pageRect = pageEl.getBoundingClientRect();
+    return elRect.top - pageRect.top;
+}
+
+function liveEndY(pageIdx, layout) {
+    return layout.padTop + pageIdx * layout.stridePx + layout.liveHeightPx;
+}
+
+function nextPageStartY(pageIdx, layout) {
+    return layout.padTop + (pageIdx + 1) * layout.stridePx;
+}
+
+function pageIdxForY(y, layout) {
+    if (y < layout.padTop + layout.liveHeightPx) return 0;
+    return Math.floor((y - layout.padTop) / layout.stridePx);
+}
+
 /**
- * Walk editor blocks and return insertion points for page gaps.
+ * Compute spacer inserts so text never crosses the gray gap between sheets.
+ * Uses a virtual Y cursor that includes spacer heights as they are planned.
+ * @param {HTMLElement} pageEl
  * @param {HTMLElement} editorEl
- * @param {HTMLElement | null} chapterTitleEl
  * @param {ReturnType<typeof computePageLayout>} layout
  */
-export function computeEditorPageBreaks(editorEl, chapterTitleEl, layout) {
-    if (!editorEl) return [];
-    /** @type {{ before: Element | null, after: Element | null, type: string }[]} */
-    const breaks = [];
-    const titleHeight = chapterTitleEl && chapterTitleEl.offsetParent
-        ? chapterTitleEl.offsetHeight + parseFloat(getComputedStyle(chapterTitleEl).marginBottom || "0")
-        : 0;
-    let budget = Math.max(120, layout.liveHeightPx - titleHeight);
+function planPageFlowSpacers(pageEl, editorEl, layout) {
+    /** @type {{ before?: Element, after?: Element, height: number }[]} */
+    const inserts = [];
+    if (!pageEl || !editorEl) return inserts;
+
+    let cursorY = pageRelativeTop(editorEl, pageEl);
+    let pageIdx = 0;
 
     for (const child of editorEl.children) {
         if (child.classList?.contains(SPACER_CLASS)) continue;
 
+        const h = Math.max(child.offsetHeight || 0, isPageBreakElement(child) ? 36 : 0);
+        if (h <= 0 && !isPageBreakElement(child)) continue;
+
         if (isPageBreakElement(child)) {
-            breaks.push({ before: null, after: child, type: "manual" });
-            budget = layout.liveHeightPx;
+            cursorY += h;
+            pageIdx = pageIdxForY(cursorY, layout);
+            const jumpTo = nextPageStartY(pageIdx, layout);
+            if (cursorY < jumpTo - 2) {
+                inserts.push({ after: child, height: jumpTo - cursorY });
+                cursorY = jumpTo;
+            }
+            pageIdx = pageIdxForY(cursorY, layout);
             continue;
         }
 
-        const h = child.offsetHeight || 0;
-        if (h <= 0) continue;
+        let liveEnd = liveEndY(pageIdx, layout);
 
-        if (h > budget && budget < layout.liveHeightPx) {
-            breaks.push({ before: child, after: null, type: "auto" });
-            budget = layout.liveHeightPx;
-        }
-
-        if (h > budget) {
-            let remaining = h;
-            while (remaining > budget) {
-                if (budget < layout.liveHeightPx) {
-                    breaks.push({ before: child, after: null, type: "auto" });
+        while (cursorY + h > liveEnd + 0.5) {
+            if (cursorY < liveEnd - 0.5) {
+                const spacerH = nextPageStartY(pageIdx, layout) - cursorY;
+                if (spacerH > 2) {
+                    inserts.push({ before: child, height: spacerH });
                 }
-                remaining -= budget;
-                budget = layout.liveHeightPx;
+                cursorY = nextPageStartY(pageIdx, layout);
+                pageIdx++;
+            } else if (h > layout.liveHeightPx) {
+                pageIdx++;
+            } else {
+                pageIdx++;
             }
-            budget -= remaining;
-        } else {
-            budget -= h;
+            liveEnd = liveEndY(pageIdx, layout);
+            if (h > layout.liveHeightPx) break;
         }
 
-        if (budget <= 0) {
-            const next = child.nextElementSibling;
-            if (next && !next.classList?.contains(SPACER_CLASS) && !isPageBreakElement(next)) {
-                breaks.push({ before: next, after: null, type: "auto" });
-            }
-            budget = layout.liveHeightPx;
-        }
+        cursorY += h;
+        pageIdx = pageIdxForY(cursorY, layout);
     }
 
-    const seen = new Set();
-    return breaks.filter((item) => {
-        const key = item.before ? `b:${item.before}` : `a:${item.after}`;
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-    });
+    return inserts;
+}
+
+function makeSpacer(heightPx) {
+    const spacer = document.createElement("div");
+    spacer.className = SPACER_CLASS;
+    spacer.setAttribute("contenteditable", "false");
+    spacer.setAttribute("aria-hidden", "true");
+    spacer.style.height = `${Math.max(0, Math.round(heightPx))}px`;
+    return spacer;
+}
+
+function applyPageFlowSpacers(editorEl, inserts) {
+    if (!editorEl || !inserts.length) return;
+
+    for (let i = inserts.length - 1; i >= 0; i -= 1) {
+        const item = inserts[i];
+        if (item.after?.isConnected) {
+            if (item.after.nextElementSibling?.classList?.contains(SPACER_CLASS)) continue;
+            item.after.after(makeSpacer(item.height));
+            continue;
+        }
+        if (item.before?.isConnected) {
+            if (item.before.previousElementSibling?.classList?.contains(SPACER_CLASS)) continue;
+            editorEl.insertBefore(makeSpacer(item.height), item.before);
+        }
+    }
 }
 
 function applyLayoutVars(pageEl, layout) {
@@ -164,15 +207,13 @@ function applyLayoutVars(pageEl, layout) {
     pageEl.style.setProperty("--page-view-gap", `${layout.pageGapPx}px`);
 }
 
-function renderPageSheets(backdropEl, pageEl, editorEl, chapterTitleEl, layout) {
+function renderPageSheets(backdropEl, pageEl, layout) {
     if (!backdropEl || !pageEl) return;
     backdropEl.replaceChildren();
 
-    const pageHeight = layout.trimHeightPx;
-    const gap = layout.pageGapPx;
-    const stride = pageHeight + gap;
-    const totalHeight = Math.max(pageEl.offsetHeight, pageHeight);
-    const pageCount = Math.max(1, Math.ceil((totalHeight + gap) / stride));
+    const stride = layout.stridePx;
+    const totalHeight = Math.max(pageEl.offsetHeight, layout.trimHeightPx);
+    const pageCount = Math.max(1, Math.ceil((totalHeight + layout.pageGapPx) / stride));
 
     for (let i = 0; i < pageCount; i += 1) {
         const sheet = document.createElement("div");
@@ -186,27 +227,11 @@ function renderPageSheets(backdropEl, pageEl, editorEl, chapterTitleEl, layout) 
     }
 }
 
-function injectFlowSpacers(editorEl, breaks, layout) {
-    if (!editorEl || !breaks.length) return;
-
-    for (const br of breaks) {
-        const spacer = document.createElement("div");
-        spacer.className = SPACER_CLASS;
-        spacer.setAttribute("contenteditable", "false");
-        spacer.setAttribute("aria-hidden", "true");
-        spacer.style.height = `${layout.pageGapPx}px`;
-
-        if (br.after && br.after.isConnected) {
-            if (br.after.nextElementSibling?.classList?.contains(SPACER_CLASS)) continue;
-            br.after.after(spacer);
-            continue;
-        }
-
-        if (br.before && br.before.isConnected) {
-            if (br.before.previousElementSibling?.classList?.contains(SPACER_CLASS)) continue;
-            editorEl.insertBefore(spacer, br.before);
-        }
-    }
+function layoutPageView(pageEl, backdropEl, editorEl, layout) {
+    removeLayoutSpacers(editorEl);
+    const inserts = planPageFlowSpacers(pageEl, editorEl, layout);
+    applyPageFlowSpacers(editorEl, inserts);
+    renderPageSheets(backdropEl, pageEl, layout);
 }
 
 export function insertPageBreakAtCursor(editorEl) {
@@ -262,7 +287,6 @@ export function initEditorPageView(options) {
         pageEl,
         backdropEl,
         editorEl,
-        chapterTitleEl,
         statusLabelEl,
         toggleBtn,
         insertBtn,
@@ -276,6 +300,7 @@ export function initEditorPageView(options) {
     if (!PAGE_FORMATS[formatId]) formatId = DEFAULT_PAGE_FORMAT;
 
     let recalcTimer = 0;
+    let relayoutPass = 0;
 
     function layout() {
         return computePageLayout(formatId);
@@ -315,10 +340,14 @@ export function initEditorPageView(options) {
             statusLabelEl.textContent = `${metrics.label} · Page view`;
         }
 
-        removeLayoutSpacers(editorEl);
-        const breaks = computeEditorPageBreaks(editorEl, chapterTitleEl, metrics);
-        injectFlowSpacers(editorEl, breaks, metrics);
-        renderPageSheets(backdropEl, pageEl, editorEl, chapterTitleEl, metrics);
+        layoutPageView(pageEl, backdropEl, editorEl, metrics);
+
+        // Second pass after spacers land — corrects drift from first-pass estimates.
+        const pass = ++relayoutPass;
+        requestAnimationFrame(() => {
+            if (pass !== relayoutPass || !enabled || getDisabled()) return;
+            layoutPageView(pageEl, backdropEl, editorEl, metrics);
+        });
     }
 
     function scheduleRecalc() {
