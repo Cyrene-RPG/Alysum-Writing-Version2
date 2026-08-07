@@ -1,0 +1,1692 @@
+# Archangel Vrs. 2
+
+Recovered from DuckDuckGo browser cache (Supabase API)
+Book ID: 29f82da6-00d8-4fe2-9bff-9f7499c34133
+Word count: 11665
+Updated: 2026-06-19T03:03:22.543Z
+Cache file: f_00070f
+
+
+=== Front: Copyright (ch_vjvzx0bfmpvkix5q) — 0 words ===
+
+
+
+=== Front: Table of Contents (ch_wuw06xwvmpvkix5q) — 0 words ===
+
+
+
+=== Body: Prologue (ch_6cb5js00mpvkix5q) — 2046 words ===
+
+It was a cold evening, the kind of cold that slipped through layers of clothing and settled deep in the bones. A steady wind swept across the city rooftops, carrying the metallic scent of rain and the distant hum of traffic below. The sky hung low beneath a blanket of heavy clouds, swallowing the last traces of daylight and hinting at the fast-approaching winter.    I knelt on the roof of a warehouse, tucked behind the bulky frame of a generator. Its constant mechanical rumble vibrated through the concrete beneath me, offering a thin veil of noise to mask my presence. The metal casing was cold against my shoulder, even through my armor and I could feel the dampness of the evening air gathering on every exposed surface.
+
+From my position, I had a narrow view over the edge of the roof and across the maze of industrial buildings beyond. Their windows glowed faintly in the growing darkness, scattered islands of pale yellow and sterile white among endless stretches of steel and concrete. Exhaust vents coughed steam into the cold air. Cargo drones drifted silently between distant towers, their navigation lights blinking like wandering stars.
+
+Somewhere in the city, a bell tolled mournfully, its deep notes carrying farther than they should have through the night. One. Two. Three.
+
+Almost midnight.
+
+Another hour was added to the mental clock that never stopped running in the back of my mind.
+
+Five years, two weeks, three days, seven hours, and forty minutes.
+
+That's how long it had been since my brothers vanished.
+
+No bodies.
+
+No answers.
+
+No final message, no ransom demand, no trace worth a damn.
+
+Just a clock that never stopped counting, and me filling the empty space between its ticks with things I never thought I'd do.
+
+Smuggling. Theft. Corporate espionage. A few jobs that sat in the gray area between legal and necessary.
+
+The kind of work that paid well enough to keep searching.
+
+The kind of work that slowly changed a person.
+
+I pushed the thoughts aside and slowed my breathing until even my enhanced hearing barely registered it. The city faded into the background—distant engines, humming power lines, the rhythmic clatter of machinery several blocks away. My pulse settled. Muscles loosened.
+
+One tap against the control port on my hip.
+
+The blue-green glow of my cybernetics vanished instantly.
+
+Darkness swallowed me.
+
+The augmented overlay that usually painted the world in thermal signatures, threat markers, and targeting data winked out, leaving only shadows and moonlight. For a brief moment I felt naked without it, stripped of the artificial senses I'd relied on for years.
+
+Blind and exposed to the night.
+
+Just the way I needed to be.
+
+Across the street, the target building stood silent and unaware. Security patrols followed their predictable routes. Cameras swept through their programmed arcs. Behind reinforced walls sat a prize worth more credits than I'd earn in a decade of honest work.
+
+One more job.
+
+Get in.
+
+Get out.
+
+Pay off the last chunk of debt from the Ghost-Class armor I'd upgraded to. A couple steps below Wraith-Class, but still capable of stopping a rail round and outrunning a turret's targeting solution.
+
+Expensive as hell.
+
+Worth every credit.
+
+Pain hurts more than guilt ever did.
+
+My fingers brushed the armored plating beneath my jacket. I could still remember signing the loan agreement. Remember the interest rates. Remember realizing I'd just sold years of my life for a chance to survive a little longer.
+
+But survival had a way of becoming addictive.
+
+Almost free.
+
+The thought lingered in the darkness.
+
+Almost.
+
+Gravel shifted below me.
+
+I froze.
+
+Every muscle locked in place. Even the wind seemed to vanish. For a heartbeat, the only sound was the low growl of the generator at my back and the distant pulse of the city beyond the warehouse district.
+
+Another tap.
+
+Emerald vision flared to life.
+
+The darkness shattered.
+
+Heat signatures bled into the world like coals in a furnace, painting every living thing in shades of amber, gold, and white. Night vision layered itself beneath the thermal feed, outlines sharpening as targeting software quietly synchronized the two streams. Distances. Angles. Movement vectors.
+
+Five figures.
+
+Two baseline humans.
+
+Thin silhouettes wrapped in heavy coats, moving with the nervous energy of people who knew exactly what kind of company they kept. Their hearts fluttered visibly through the thermal overlay, rapid flashes in their chests like trapped birds beating against a cage.
+
+Three Fomori.
+
+The giants stalked between them.
+
+Slab-built monsters, broad enough to block an alley and tall enough to make ordinary men look adolescent by comparison. Their Aegis-Class dermal plating caught the faint ambient light in dull metallic ridges where synthetic armor merged seamlessly with flesh. The thermal feed showed heat pouring from them in waves, each one radiating like an industrial engine.
+
+Fuck their armor.
+
+Aegis-Class wasn't protection. It was a philosophy.
+
+Become the wall.
+
+Become the tank.
+
+Let the other bastard run out of ammunition first.
+
+They traded speed, stealth, and comfort for raw survivability. Small-arms fire bounced. Explosives annoyed them. Most people faced with a charging Fomori discovered exactly how fragile the human body really was.
+
+Corporate muscle.
+
+The kind companies deployed when they wanted a problem solved publicly.
+
+The kind built to break doors and people with equal efficiency.
+
+One of them turned its head, scanning the rooftops. My targeting suite immediately highlighted threat probabilities, escape routes, and estimated engagement outcomes.
+
+None of them looked good.
+
+I held perfectly still.
+
+My lungs burned as I resisted the urge to breathe.
+
+Don't move.
+
+Don't twitch.
+
+Don't give the sensors anything to catch.
+
+The group continued down the alley below, boots crunching over loose gravel and discarded debris. The humans talked quietly among themselves. One of the Fomori laughed—a deep metallic rumble that echoed between the warehouse walls.
+
+Seconds stretched.
+
+Then they kept walking.
+
+Good.
+
+Let them pass.
+
+Let them disappear into the night.
+
+And for once, this job might actually finish clean.
+
+Job was simple enough.
+
+Get in the building, grab the goods, and get out.
+
+Experience didn't buy simple.
+
+It never had.
+
+The patrol rounded the corner, boots grinding against the gravel below. Their voices faded into the maze of warehouses and loading yards. I stayed motionless, counting the seconds in my head.
+
+Five.
+
+Ten.
+
+Fifteen.
+
+The heat signatures dwindled at the edge of my HUD, shrinking to distant embers before vanishing entirely. Silence reclaimed the rooftop.
+
+I rose from my crouch.
+
+My knees protested immediately. Hours spent perched on concrete and steel had left them stiff despite the reinforcement braces woven through my armor. 
+
+The city wind swept across the rooftop, tugging at my jacket and slipping through the seams of my gear. It carried the familiar scent of the industrial district—ozone from overloaded transformers, rust from aging metal, and the faint chemical bite of exhaust from the street-level generators.
+
+Then the world lurched sideways.
+
+Frag.
+
+Pain exploded through my skull.
+
+It felt like someone had driven a white-hot spike through my right eye and buried it deep in the center of my brain. The pain hit so suddenly that my vision went white for a fraction of a second. My balance disappeared with it.
+
+My vision fractured.
+
+I staggered.
+
+One hand shot out and slammed against the generator housing before I could fall. Cold metal bit into my palm.
+
+The world refused to stay still.
+
+My night-vision feed shattered into emerald static. Thousands of bright green pixels danced across my vision like a swarm of insects. Diagnostic windows erupted across my HUD faster than I could process them. Warnings, system checks, error codes. Half of them vanished before I could read them. The other half dissolved into corrupted symbols.
+
+The rooftop flickered.
+
+One moment I was staring at a rusted ventilation duct twenty feet away.
+
+The next it was gone.
+
+Replaced by darkness.
+
+Then the darkness vanished and the rooftop snapped back into existence.
+
+Then darkness again.
+
+Then color.
+
+Then black.
+
+The transitions came so quickly my stomach rolled.
+
+A high-pitched whine began somewhere deep inside my skull.
+
+At first I thought it was coming from the generator.
+
+Then I thought it was coming from my comms.
+
+Then I realized I wasn't hearing it at all.
+
+I was feeling it.
+
+The vibration crawled through my teeth and jawbone, rattling the tiny implants buried along the base of my skull. Every cybernetic component in my body suddenly felt present. The ocular replacements behind my eyes. The neural jack at the base of my neck. The reinforcement mesh threaded through my spine.
+
+I became aware of all of it at once.
+
+Every piece of machinery.
+
+Every foreign component.
+
+Every gram of metal living inside me.
+
+The sensation was nauseating.
+
+My right eye twitched violently.
+
+The HUD tried to recalibrate.
+
+Failed.
+
+Tried again.
+
+Failed again.
+
+Thermal imaging flooded my vision without warning. Heat signatures smeared across the rooftop in brilliant oranges and whites. A heartbeat later the thermal layer vanished and low-light optics took over. Then both systems attempted to run simultaneously.
+
+The result looked like someone had poured molten glass over reality.
+
+I squeezed my eyes shut.
+
+That somehow made it worse.
+
+The pain intensified instantly.
+
+A tremor raced down my neck and into my shoulders. My muscles locked. For a terrifying moment I couldn't tell if my body was shaking or if the rooftop itself was vibrating beneath me.
+
+My pulse hammered in my ears.
+
+Too fast.
+
+Far too fast.
+
+I tasted copper.
+
+Blood.
+
+I had bitten down hard enough to split the inside of my cheek.
+
+The metallic taste spread across my tongue.
+
+The whine climbed higher.
+
+Higher.
+
+Higher.
+
+My implants felt hot.
+
+Not physically hot. Not enough to burn.
+
+Just wrong.
+
+Like circuitry operating beyond tolerances.
+
+Like a machine trying desperately to do something it wasn't designed to do.
+
+I dropped to one knee.
+
+The impact jarred through my armor. Even that felt distant. Muffled. As though my body belonged to someone else and the pain was arriving through a damaged connection.
+
+"Not now..." I hissed through clenched teeth.
+
+The words sounded strange.
+
+Distant.
+
+Like I was hearing someone else speak.
+
+My hand tightened against the concrete until the armored glove creaked and the concrete cracked beneath it.
+
+Seconds dragged by.
+
+Each one felt longer than the last.
+
+Then, as suddenly as it had begun, the pressure eased.
+
+The whine faltered.
+
+The static thinned.
+
+The fractured layers of vision slowly drifted back into alignment.
+
+Diagnostic windows stabilized.
+
+The rooftop stopped spinning.
+
+The pain retreated from a screaming inferno to a dull, familiar throb behind my eye.
+
+I stayed where I was, breathing hard, waiting for another wave.
+
+It didn't come.
+
+One breath.
+
+Then another.
+
+Long enough for the pain to retreat behind my eye and become manageable. Long enough for the rooftop to stop pitching beneath my feet. Not long enough to trust that the episode was over.
+
+Good enough.
+
+It would have to be.
+
+I stepped to the edge and jumped.
+
+Air rushed past, cold and electric. The city rose to meet me in a blur of concrete, steel, and fractured neon. Wind clawed at my jacket and roared in my ears, drowning out the distant hum of traffic and machinery.
+
+For a brief moment, gravity owned me.
+
+Mid-fall, I triggered the reinforcement servos in my legs.
+
+A fraction later than I should have.
+
+Part of it was habit. Part of it was distraction. Part of it was the lingering question of whether the implants would decide to eat themselves again before I hit the ground.
+
+My HUD apparently shared the concern.
+
+A small amber warning appeared in the corner of my vision.
+
+[OPTIMAL ENGAGEMENT WINDOW EXCEEDED.]
+
+"No shit," I muttered.
+
+The ground rushed up.
+
+I hit in a crouch.
+
+The shock dampeners ignited through the armor, dumping the impact into the reinforcement frame. Heat flashed through my knees, hips, and lower back as the system dispersed the force. The landing drove a dull jolt up my spine.
+
+Still better than shattered ankles.
+
+I straightened carefully.
+
+A faint tremor lingered in my hands.
+
+Whether from the jump or the episode, I couldn't tell.
+
+The street was empty.
+
+Silent, save for the distant buzz of neon billboards and the low rhythmic pulse of a rooftop drone somewhere overhead.
+
+=== Body: Vesper  (ch_rldjoml0mpwzpl7n) — 2543 words ===
+
+Breaking in felt too easy.Experience had taught me that easy jobs were usually just complicated jobs waiting for the right moment to reveal themselves.
+
+I spent another minute watching the alley anyway, tracking sightlines and movement patterns. The patrol hadn't changed course. No sudden detours. No bored guards deciding to cut through an area they weren't supposed to be in.
+
+Satisfied, I finally moved.
+
+Ghost, my armor's combat AI, projected a route across my HUD in a thin ribbon of pale green light. It wound between loading bays, stacked cargo containers, and maintenance sheds in a pattern that looked almost random at first glance.
+
+It wasn't.
+
+Every step fell inside the blind spots of the facility's security network. Camera sweeps. Patrol drone flight paths. Motion sensors. Ghost had mapped them all and stitched together a path through the gaps.
+
+[Ninety-seven-point-eight percent probability of remaining undetected,] Ghost informed me in its usual calm tone.
+
+I resisted the urge to roll my eyes.
+
+"And the other two-point-two?"
+
+[Unpredictable human behavior.]
+
+"Good to know you're still accounting for miracles."
+
+Ghost didn't respond. It never understood sarcasm.
+
+I slipped from shadow to shadow, keeping low as I crossed the service yard. Security cameras rotated through their programmed arcs overhead. Patrol drones drifted along preset routes, their sensor packages sweeping the darkness with mechanical precision.
+
+Ghost directed me toward a ventilation shaft tucked into the side of the building behind a cluster of coolant pipes and electrical conduits. I followed the highlighted route across the service yard, stepping over bundles of cabling and patches of cracked concrete until the vent came into view. Then I stopped.
+
+The thing looked insultingly small.
+
+Not impossible. Just small enough to make me question every life choice that had led me to this exact moment. The opening sat several feet off the ground, hidden in the shadow cast by a pair of industrial air handlers. Dust coated the grille in a thick layer, disturbed only where rainwater had carved clean streaks through it. Rust crept along the edges of the mounting brackets, and the surrounding wall carried the stains of decades spent enduring weather, pollution, and corporate neglect. 
+
+My HUD outlined the opening in pale green and conveniently displayed dimensions that suggested I would fit.
+
+Barely.
+
+I stared at the vent for several seconds before finally shaking my head. "There's no way I'm not making enough noise to be heard in there."
+
+Ghost responded immediately.
+
+[Accounting for ambient environmental noise, you should remain reasonably concealed.]
+
+I frowned and took a step closer. The vibration reached me before the sound did. The metal grille hummed faintly beneath my gloved fingertips, transmitting the steady pulse of the building's ventilation system.
+
+Somewhere deep inside the structure, enormous turbines were forcing air through kilometers of ductwork. The entire shaft vibrated with the effort. When I leaned closer, the smell hit me—a mixture of dust, machine oil, heated metal, and the stale scent of recycled air that had probably circulated through the building for years.
+
+Reasonably concealed.
+
+That was exactly the kind of phrase an AI would use when it wanted to avoid making promises.
+
+I listened carefully. Beneath the distant sounds of the city, the building generated its own constant symphony of noise. Air handlers throbbed somewhere overhead. Pumps cycled behind reinforced walls. Electrical transformers emitted a low, continuous hum that I could feel more than hear through my implants. 
+
+Every few seconds the ductwork groaned softly as pressure shifted through the system. None of it was particularly loud on its own, but together it formed a blanket of industrial noise thick enough to swallow smaller sounds.
+
+That didn't necessarily make me feel better.
+
+I crouched and studied the opening again, mentally measuring my shoulders against its dimensions. Ghost's calculations said I would fit. Ghost's calculations also assumed I was willing to scrape several thousand credits worth of armor plating through a metal tube designed for airflow instead of people. 
+
+The shaft narrowed just beyond the entrance before opening into the main duct. I could see that much even without enhanced optics. If I got stuck halfway through, there wouldn't be enough room to turn around. I'd have to keep going forward and hope panic didn't become a factor. 
+
+"How confident are you?"
+
+[Current projections indicate a ninety-four percent probability of successful entry.]
+
+I snorted. "That's not an answer."
+
+[It is a statistically accurate answer.]
+
+"Which means there's still a six percent chance I wedge myself in there like a piece of oversized cargo."
+
+Ghost remained silent for a moment.
+
+[That outcome remains unlikely.]
+
+The fact that it didn't dismiss the possibility entirely wasn't encouraging.
+
+I looked around one final time, searching for an alternative. A maintenance door left unsecured. A service hatch. A forgotten access point some underpaid contractor had neglected to lock. Nothing. Just concrete walls, security sensors, and a vent that seemed to grow smaller every time I looked at it. Breaking into places for a living had taught me that the route requiring the least dignity was usually the correct one.
+
+Unfortunately, Ghost seemed to have reached the same conclusion.
+
+Frag me.
+
+"How am I supposed to close it behind me?" I asked. "A patrol would notice a loose grate. I don't need a Fomori breathing down my neck."
+
+Technically they were a troll subspecies, though calling them that around either group was a good way to start a fight. Trolls considered Fomori undersized cousins trying too hard to prove themselves. Fomori tended to respond by demonstrating exactly how much damage they could inflict in a confined space.
+
+On paper, they were smaller than full-blooded trolls and generally weaker.
+
+Reality was less comforting.
+
+A Fomori could still tear a reinforced security door off its hinges. They could punch through interior walls, flip compact vehicles, and reduce an unaugmented human being to a cautionary workplace safety presentation with alarming efficiency. 
+
+They traded some of their cousins' absurd size for denser musculature, faster reflexes, and a metabolism that seemed specifically engineered around violence. That made them popular with corporate security departments that needed something stronger than a man but couldn't justify military-grade combat frames on the quarterly budget.
+
+Most executives probably viewed them as cost-effective.
+
+The people responsible for fighting them usually had different opinions.
+
+I had watched one throw a vending machine once.
+
+The machine had traveled almost twenty meters before introducing itself to a concrete wall.
+
+The wall lost.
+
+The memory did absolutely nothing for my mood.
+
+I examined the grate again, hoping prolonged observation would somehow cause a better plan to materialize.
+
+It didn't.
+
+[It can be secured from the inside.]
+
+I squinted as Ghost highlighted several features I had completely missed. Small retention latches sat recessed along the interior frame, nearly invisible beneath years of accumulated dust and grime. A maintenance worker crawling through the shaft could apparently lock the grate back into position after entering.
+
+Convenient.
+
+For maintenance workers.
+
+I looked from the highlighted latches to the opening itself.
+
+Then back to the latches.
+
+Then back to the opening.
+
+"Still doesn't change the fact I'm going in head first."
+
+Ghost was silent for a moment. [I fail to identify the problem.]
+
+"The problem is that if I get stuck, the last thing I see is going to be several meters of ventilation shaft."
+
+[That outcome remains statistically unlikely.]
+
+"See, that's exactly the sort of sentence that makes me think it isn't." I said. "I also can't close it behind me in a space this narrow," I added.
+
+[I still fail to identify the problem.]
+
+I hissed through my teeth.
+
+Sometimes Ghost could model a battlefield down to the second. It could track dozens of moving targets, predict patrol routes, and calculate firing solutions faster than I could blink. It could sift through millions of data points and somehow conclude that a guard would stop for coffee three minutes before his scheduled patrol.
+
+Other times it felt like it had never actually met a human being.
+
+I stared at the vent.
+
+Then at the highlighted retention latches.
+
+Then back at the vent.
+
+The shaft was barely large enough for me to crawl through. Once I committed, my shoulders would be wedged between two metal walls with all the grace and maneuverability of a round jammed in the wrong caliber chamber.
+
+"Ghost."
+
+[Yes?]
+
+"If I'm crawling head first through a vent that's only a few centimeters wider than my shoulders, how exactly am I supposed to reach behind myself and secure the grate?"
+
+The AI was silent for nearly two seconds.
+
+[I estimate a ninety-two percent probability that you would be physically incapable of doing so.]
+
+"Thank you."
+
+[You are welcome.]
+
+I closed my eyes. "That wasn't a compliment."
+
+The AI paused again.
+
+[I am aware.]
+
+"Dammit, Ghost, how?" I demanded.
+
+Time was running out. Every second I spent arguing with my combat AI was another second that patrol spent working its way through the perimeter. For all I knew, the Fomori were already halfway through their route back.
+
+A section of the grate lit up in pale green.
+
+Then another.
+
+Then a third.
+
+I stared.
+
+"Oh."
+
+The retention latches weren't on the inside.
+
+Well, they were, technically.
+
+What Ghost had highlighted was a narrow maintenance cable running through the edge of the grate assembly. It disappeared into the frame before terminating at a small recessed pull ring just inside the opening.
+
+A maintenance worker would crawl inside, pull the cable, and lock the grate from within.
+
+The system was designed to prevent accidental closure while someone was still outside.
+
+I felt a little stupid.
+
+Only a little.
+
+"Why didn't you just say that?"
+
+[I believed the highlighted visual indicators were sufficient.]
+
+I rubbed at the bridge of my nose.
+
+"Ghost."
+
+[Yes?]
+
+"One day you're going to realize that humans occasionally require explanations."
+
+[I have observed no evidence supporting this hypothesis.]
+
+I snorted despite myself.
+
+The patrol timer ticking away in the back of my mind kept me from enjoying the moment.
+
+"Right. Of course."
+
+I grabbed the edge of the grate and gave it an experimental tug. The hinges groaned softly before swinging outward. A wave of stale, dusty air drifted out of the shaft and hit me in the face.
+
+Up close, the opening looked even less inviting.
+
+The duct was a narrow rectangle of steel disappearing into darkness. Reinforcement ribs ran along the interior every meter or so, reducing the usable space even further. The metal walls were scratched and stained from years of maintenance traffic. Not human maintenance traffic, judging by the dimensions. Something smaller had been crawling through here.
+
+"Still hate this."
+
+[Your emotional state has already been logged.]
+
+"Good. Put it in the report," I said, dripping sarcasm.
+
+I lowered my head into the opening and immediately regretted it. The shaft felt smaller from the inside. My shoulders brushed both sides as I eased forward, armor scraping softly against the metal walls. Dust coated the interior in a fine layer that clung to my gloves and sleeves. The stale air carried the smell of old machinery, oxidized steel, and years of accumulated grime.
+
+I twisted slightly and shoved forward.
+
+The first few inches weren't bad.
+
+The next few were worse.
+
+My shoulders cleared the opening with millimeters to spare. The reinforcement braces woven through my armor caught on something inside the shaft, producing a faint metallic scrape that made me wince. I froze, listening.
+
+Nothing.
+
+Just the steady thrum of the ventilation system.
+
+I continued.
+
+The ductwork vibrated beneath me as massive fans pushed air through the building. Every movement sent faint echoes ahead of me. My elbows dug into the metal floor of the shaft while my knees kicked uselessly behind me, still outside.
+
+I hated this.
+
+[I would hurry.]
+
+Ghost's voice arrived directly through my neural link.
+
+[The patrol appears to be looping back faster than anticipated.]
+
+My stomach dropped.
+
+"Shit."
+
+A route projection appeared in the corner of my HUD. Five heat signatures. Moving.
+
+Closer than I liked.
+
+Much closer.
+
+I stopped caring about noise.
+
+My elbows dug into the duct and I hauled myself forward with considerably less caution than before. Metal rasped against armor. Dust filled the air around me. The shaft suddenly felt half its original size as urgency replaced patience.
+
+One arm.
+
+Pull.
+
+The other.
+
+Pull again.
+
+My chest cleared the opening.
+
+Then my waist.
+
+The edge of the vent frame snagged briefly against one of the utility pouches on my belt.
+
+For one horrifying second I stopped moving.
+
+Completely.
+
+The patrol indicators continued advancing across my HUD.
+
+I swore and yanked harder.
+
+The pouch tore free with an unpleasant ripping sound.
+
+Momentum carried me forward another half meter.
+
+My legs were finally inside.
+
+Behind me, the open grate remained visible as a rectangle of darkness framed by the dim lights of the service yard.
+
+Far too visible.
+
+[Estimated patrol arrival: ninety-two seconds.]
+
+"Ninety-two?"
+
+[Approximately.]
+
+"That's not enough time."
+
+[It is the amount of time currently available.]
+
+I hated when Ghost got literal.
+
+Bracing one elbow against the duct wall, I reached back toward the maintenance cable Ghost had identified earlier.
+
+The confined space made the movement awkward. My shoulder immediately protested. Armor plates dug into my ribs. For several seconds my fingers searched blindly through the darkness before finally brushing the recessed pull ring.
+
+Found you.
+
+I wrapped two fingers through the loop and pulled.
+
+Behind me, the grate swung shut with a muted metallic click.
+
+Better.
+
+Not good.
+
+But better.
+
+Now all I had to do was crawl deeper into a ventilation shaft while a patrol full of Fomori walked directly beneath me.
+
+Easy.
+
+"Hey, Ghost," I whispered, my voice barely audible over the rumble of the ventilation system. "Can you engage the sound dampeners without drawing too much attention?"
+
+I paused halfway through another pull, chest pressed against cold steel. The shaft was just large enough to crawl through and just small enough to make every movement feel loud. Armor plates brushed the walls. Utility pouches snagged on protruding rivets. Every scrape sounded deafening to me.
+
+Ghost took less than a second to answer.
+
+[Partial activation is possible.]
+
+"Define partial."
+
+[Thirty-seven percent output. Acoustic signature reduction estimated at forty-three percent. Power consumption negligible.]
+
+I frowned.
+
+"That's a weird ratio."
+
+[The dampening field becomes progressively less efficient at lower output levels.]
+
+"Of course it does."
+
+A brief icon flashed in the corner of my HUD.
+
+[Sensors indicate nearby personnel are unlikely to detect activation.]
+
+"Unlikely."
+
+[Correct.]
+
+"That word keeps showing up tonight."
+
+Ghost ignored me.
+
+A faint vibration passed through the armor. Not enough to feel with normal senses, but I recognized it immediately. The sound dampening mesh woven throughout the suit was coming online. Microscopic actuators embedded beneath the outer plating began generating counter-vibrations designed to absorb and disrupt noise before it escaped into the environment.
+
+The difference was subtle at first.
+
+Then I shifted forward.
+
+Instead of the usual metallic scrape, the sound arrived as a muted rasp. Still there, just... softer. As though someone had wrapped the entire vent in layers of cloth.
+
+I moved again. Same result. Not completely silent.
+
+But better. A lot better.
+
+[Sound dampeners operating within acceptable parameters.]
+
+"Good."
+
+I dug my elbows into the ductwork and resumed crawling.
+
+=== Body: Hamish  (ch_xde178j0mpym8inu) — 4735 words ===
+
+The van coughed and rattled like it resented every mile it traveled.        Fine by me.
+
+Anything with enough circuitry to qualify as modern transportation would have died the moment I climbed aboard, or shortly thereafter.
+
+The engine growled beneath the floorboards, every vibration traveling up through the frame and into the bench seat. The dashboard looked like it belonged in a museum. Most of the gauges were analog. The radio had been ripped out years ago, leaving a jagged hole in the panel. Even the windows had to be rolled down manually. In any other city, the thing would have been considered scrap.
+
+The smell of gasoline mixed with mold, rust, and old vinyl in the cramped cabin. Every time the driver hit a pothole, another chorus of rattles erupted from somewhere inside the vehicle. Something metallic clanked beneath the chassis. A loose bolt, maybe. I wasn't inclined to investigate.
+
+I lowered my head and continued sketching the warding pattern in my notebook, carefully tracing each line while the van bounced beneath me. The paper shifted constantly. Twice I had to erase sections where an unexpected bump sent my pencil wandering off course. Warding diagrams demanded precision. Mana was many things, but forgiving wasn't one of them.
+
+Finding a machine old enough to survive my presence had taken nearly a week.
+
+That was becoming a recurring problem.
+
+Most modern electronics reacted to my mana the way small animals reacted to predators. They sensed something was wrong long before I touched them. Phones froze. Smart screens flickered. Vehicle diagnostics threw error messages that mechanics swore shouldn't exist. Once, I had managed to crash an entire self-checkout system by standing too close to it while trying to buy groceries.
+
+The manager had accused me of hacking the store.
+
+I hadn't bothered explaining that the alternative sounded even less believable.
+
+The van's owner hadn't asked many questions when I offered cash. He'd looked at the vehicle, looked at me, and decided whatever strange circumstances had led to this arrangement were none of his business. That sort of wisdom was increasingly rare.
+
+A sharp turn sent my shoulder into the side of the cabin.
+
+I steadied myself and examined the warding pattern.
+
+Three concentric circles.
+
+Seven anchor points.
+
+Two containment layers.
+
+Simple work, by my standards.
+
+The fact that I was checking it for the fifth time suggested I was more nervous about the job than I wanted to admit.
+
+The vehicle shuddered violently, one final protest rattling through the frame before it rolled to a stop. The engine continued idling, coughing and growling beneath the hood as though offended by the entire journey.
+
+"I go no further," the driver announced.
+
+I paused in the middle of the glyph and looked up from my notebook.
+
+The guide had twisted around in his seat to face us. Up close, he looked exactly like the sort of man people hired when they needed directions to places that sensible maps refused to acknowledge. 
+
+His synth-leather coat had been patched so many times that I suspected very little of the original garment remained. Thin strands of warding wire had been sewn into the collar and cuffs, not for fashion but protection. The metal had tarnished with age and use. His left eye had been replaced by a chrome implant whose iris constantly shifted through faint diagnostic runes, each symbol glowing briefly before being replaced by another.
+
+The guide held out his hand.
+
+"Give rest of payment."
+
+His fingers twitched once.
+
+Not nervous.
+
+Expectant.
+
+"No," Cameron said from the back seat.
+
+The guide's expression immediately flattened.
+
+Cameron leaned forward, the glow from his wrist-rig casting pale blue light across his face. Shadows sharpened along his jawline as he glanced between the guide and the windshield.
+
+"We agreed fifty percent up front, fifty percent after we get back."
+
+The guide didn't lower his hand.
+
+"Destination reached."
+
+Cameron snorted.
+
+"Destination reached? We're still in the middle of nowhere."
+
+He craned his neck to peer through the rain-streaked windshield. Water crawled across the glass in uneven rivers. Beyond it, darkness stretched between clusters of skeletal trees and abandoned utility poles.
+
+"And aren't we still, like, two miles out?"
+
+I frowned.
+
+The question wasn't unreasonable.
+
+According to the map Cameron had shown me before we left the city, we should have been closer.
+
+Much closer.
+
+I closed my notebook and slipped it into my satchel before leaning toward the windshield.
+
+Outside, the rain had weakened to a steady drizzle. The road ahead narrowed into little more than a muddy track disappearing into the darkness. No lights. No buildings. No signs of habitation. Just wet earth, dying vegetation, and an uncomfortable amount of silence.
+
+The guide finally lowered his hand.
+
+"You walk rest."
+
+His tone suggested this should have been obvious.
+
+I exchanged a look with Cameron.
+
+Then I looked back at the guide. "Why?"
+
+For the first time since we'd stopped, the man hesitated.
+
+Only for a moment.
+
+But I noticed.
+
+His chrome eye flickered.
+
+The runes spinning across its surface accelerated briefly.
+
+When he finally spoke, his voice was quieter. "Road ahead bad."
+
+I stared at him.
+
+That wasn't the answer. It wasn't even an attempt at an answer.
+
+Another voice interrupted before Cameron could continue.
+
+"Cameron, just give him the payment. We'll be fine."
+
+Our healer spoke softly, but there was a certainty in her voice that cut through the tension filling the van. She sat with both hands wrapped around the mana crystal hanging at her throat, fingers curled protectively around the polished stone. Soft blue light pulsed beneath her skin and spilled across her dark brown hair, turning individual strands silver whenever the crystal brightened. The glow should have looked artificial. Instead it only made her seem calmer, as though she carried a piece of moonlight around her neck and had somehow convinced it to stay.
+
+"We'll be okay."
+
+Cameron looked unconvinced.
+
+His jaw tightened and for a moment I thought he might keep arguing. Then he glanced through the rain-streaked windshield toward the darkness beyond the road. Whatever he saw out there—or failed to see—seemed to make the decision for him. He swore under his breath and dug into one of his pockets.
+
+"Fine," he muttered. "But he leaves the vehicle here."
+
+The guide's expression didn't change.
+
+For a moment I expected an argument. The van was ancient, but it was still transportation, and transportation had value. Instead the man merely shrugged. The gesture was so casual it almost looked rehearsed, as though he had reached the point where none of this concerned him anymore. 
+
+That struck me as odd. Most people cared about their property. Most people cared about getting home. Most people cared about something. The guide suddenly seemed detached from the entire situation, standing apart from it in a way I couldn't quite explain.
+
+Cameron slapped a pre-loaded cred-stick into the waiting hand.
+
+The guide pocketed it immediately.
+
+That was what finally made me uneasy.
+
+He didn't check the balance. He didn't verify the transfer. He didn't even glance at it. Most people checked. 
+
+Everyone checked. 
+
+The sort of people who made a living driving strangers into remote corners of the world checked twice. Money mattered. It mattered enough that entire cities rose and fell around it. Yet the guide treated the cred-stick like an inconvenience, something to be dealt with so the conversation could end. It wasn't the behavior of a man worried about being cheated. It was the behavior of a man whose attention was fixed on something else entirely.
+
+"Fine by me." He opened the door.
+
+Rain and cold flooded into the cabin immediately. Damp air rolled through the van carrying the smell of wet earth, rotting leaves, and stagnant water. The temperature dropped enough that I felt it through my coat. Outside, darkness stretched beyond the reach of the headlights. Trees stood motionless at the edge of the road, their branches black against a sky hidden behind thick clouds.
+
+The guide stepped halfway out before pausing.
+
+Something about the hesitation made me look up.
+
+Until then he'd seemed indifferent. Annoyed, maybe. Eager to leave. Now, for the first time since we'd met him, his expression carried something else. Not fear. Not exactly. The closest word I could find was concern, though even that didn't feel entirely right. It looked more like the expression someone wore after watching another person make a mistake they could no longer prevent.
+
+"Where you go is death."
+
+Then the guide stepped out into the darkness and pulled the door shut behind him.
+
+"Yeah, frag you too," Cameron muttered, watching the guide's silhouette disappear into the rain.
+
+The darkness swallowed the man surprisingly quickly. One moment he was visible between the headlights, coat flapping in the wind as he made his way back down the road. The next he was gone, reduced to another shadow among countless others. If he was worried about walking multiple miles, back to the city, through the rain by himself, he hid it well.
+
+I looked down and returned to my work.
+
+The unfinished sigil waited on the page where I'd left it. Most of the pattern was already complete, a dense arrangement of interlocking lines, circles, and anchor points that would have looked like meaningless geometry to anyone without magical training. I picked up my pen and completed the final stroke.
+
+Mana flowed immediately.
+
+The ink brightened beneath the tip, pale blue light racing through the pattern as energy filled the channels I'd spent the last hour constructing. For a brief moment the entire design glowed. Individual lines shimmered. The anchor points flared brighter than the rest. Then the energy settled into equilibrium and the light faded to a faint luminescence barely visible beneath the cabin lights.
+
+Satisfied, I leaned forward and blew gently across the page.
+
+Residual mana rippled across the surface like disturbed water. Tiny sparks of blue drifted away from the paper before dissolving into the air. The sigil's glow dimmed another fraction, stabilizing as the last traces of excess energy bled away.
+
+Only then did I relax.
+
+A poorly stabilized ward was like a poorly assembled firearm. Most of the time it worked exactly as intended.
+
+Most of the time.
+
+"Don't know why you don't just use a tablet."
+
+I looked up.
+
+Cameron had leaned forward from the rear bench, one arm draped over the seatback. The glow from one of his cybernetic implants washed over the notebook in pale blue light. His wrist-rig was active again, holographic indicators flickering across the polished metal housing.
+
+"Would be faster."
+
+I snorted.
+
+That was a very Cameron solution to problems.
+
+If something existed, automate it. If it couldn't be automated, augment it. If that didn't work, add more processing power and try again.
+
+I folded the paper carefully instead of answering immediately. The ward had to be folded along specific lines. Random creases could interfere with mana flow if they crossed critical sections of the pattern. My thumb pressed each edge flat, and I felt the familiar warmth lingering inside the paper.
+
+"That's a myth."
+
+"It absolutely isn't."
+
+Cameron opened his mouth, already preparing whatever argument he'd made the last dozen times we'd had this conversation. I knew the expression by now. He got it whenever someone suggested technology might not be the universal solution to every problem ever conceived.
+
+I raised an eyebrow. "How many phones have I killed this year?"
+
+That actually made him stop.
+
+Not because he didn't have a response, but because both of us knew there was an answer.
+
+Several.
+
+The exact number depended on how strictly one defined killed. Some devices had merely frozen permanently. Others had experienced catastrophic hardware failures. One memorable tablet had emitted smoke, displayed a series of increasingly creative error messages, and then died so thoroughly that even Cameron couldn't recover the data. I'd felt bad about that one. Mostly because it hadn't belonged to him.
+
+Cameron grimaced. "That's not the point."
+
+"It feels like the point."
+
+Milyah laughed quietly.
+
+Not a loud laugh. More the sort of sound someone made when they were trying not to encourage an argument while simultaneously enjoying it. The blue mana crystal hanging around her neck pulsed softly as she shifted in her seat, the reflected light dancing across the van walls.
+
+The argument wasn't really about phones.
+
+Or tablets.
+
+Or technology in general.
+
+It never was.
+
+The problem was that magic and technology approached reality from opposite directions. Technology demanded consistency. Predictability. Rules that behaved the same way every single time. Push a button and receive a result. Build a machine correctly and it would perform exactly as intended.
+
+Magic had opinions about that arrangement.
+
+Most magical theory described mana as responsive to intention, emotion, symbolism, and belief. In practice that meant two mages could perform the exact same ritual and achieve slightly different results because one of them had been distracted halfway through. It meant wards worked better when hand-drawn than machine-printed. It meant enchanted objects developed quirks over time that no engineer would tolerate for five minutes.
+
+Most importantly, it meant mana occasionally looked at advanced electronics and decided they were suggestions.
+
+The interaction wasn't always dramatic. Most of the time it manifested as minor glitches. Corrupted files. Unexplained errors. Systems behaving in ways their designers swore should be impossible. The more sophisticated the technology became, the more opportunities there were for mana to interfere with something important.
+
+And my mana was particularly bad about it.
+
+I wasn't entirely sure why.
+
+Some mages could operate smartphones without issue. Others caused occasional interference. I seemed to occupy the extreme end of the spectrum. Given enough exposure, electronics simply stopped behaving correctly around me. I'd spent years trying to determine whether that represented a unique magical condition, an unusual affinity, or some bizarre side effect of my training.
+
+So far the answer to all of them appeared to be "yes."
+
+Cameron still looked unconvinced.
+
+That wasn't surprising. Cameron trusted machines the same way priests trusted scripture. If technology failed, his solution was usually more technology. Better technology. Technology with additional technology attached to it.
+
+To be fair, that approach worked far more often than it should have.
+
+I finished folding the ward and handed it over.
+
+The paper felt warm in my fingers. Not physically warm. The sensation was subtler than that. Mana gathered within the sigil's structure in slow, deliberate currents, waiting for the conditions that would activate it. Even folded, I could feel the pattern humming faintly beneath the surface.
+
+"Besides," I said, nodding toward the ward, "show me a tablet that can do that."
+
+Cameron looked down at the folded paper.
+
+Then back at me.
+
+"Give me six months."
+
+He finally took it.
+
+For a moment he simply turned the folded sheet over in his hands, studying it with a concentration I usually only saw when someone handed him unfamiliar technology. His brows drew together slightly as he rotated the paper between his fingers. I wasn't sure whether he could actually feel the mana stored inside it or if he was just curious. Most non-mages described enchanted objects as feeling different somehow. Not warm. Not cold. Just present in a way ordinary objects weren't.
+
+"What is it?"
+
+"A protection ward." I said as I settled back against the seat and watched him examine it. 
+
+The folded paper looked unremarkable from the outside. A few carefully pressed creases.
+
+Nothing about it suggested hours of study, years of practice, and a small amount of personal risk had gone into creating it.
+
+Cameron shrugged. The motion was casual enough to border on dismissive. "Cool."
+
+I stared at him for a second.
+
+Sometimes I genuinely envied Cameron's ability to treat potentially lethal situations with the same level of concern most people reserved for grocery shopping. Either he possessed remarkable confidence or an underdeveloped sense of self-preservation. After working with him for nearly a year, I still wasn't completely sure which explanation was correct.
+
+"It should stop an attack from someone about your strength," I said, making sure I had his attention. "Once."
+
+The shrug disappeared.
+
+Good.
+
+"After that, it'll break." I tapped the folded paper twice.
+
+The ward answered with a faint pulse of mana. Not enough for Cameron to notice, but enough that I felt the pattern shift inside the paper.
+
+"I can't keep throwing mana around. Need to conserve what I've got."
+
+"Did you do one for Milyah?"
+
+Before I could answer, Milyah shook her head.
+
+"I'm good."
+
+The mana crystal hanging around her neck brightened slightly as she shifted. Blue light slid across her features before fading again. Unlike me, she carried her magic with an ease that always seemed effortless. Watching Milyah work was like watching water flow downhill. Watching me work was more like observing someone negotiate a contract with reality.
+
+"I may be specialized in healing," she continued, "but I know a few defensive spells."
+
+Her gaze dropped briefly to the ward in Cameron's hands before returning to me.
+
+"And a couple offensive ones, if it comes to that. But I appreciate the thought."
+
+I smiled despite myself.
+
+Milyah always sounded polite.
+
+Even when discussing hypothetical violence.
+
+That talent alone probably made her a better people person than the rest of our group combined.
+
+"Anyway," I said, pushing myself upright and sliding the notebook back into my satchel, "we came all the way out here for reconnaissance. All the client wants to know is why towns out here keep getting abandoned. We find the reason, document whatever we can, get out, and then they send a specialized team."
+
+That was the official version.
+
+The version designed to make everyone feel better.
+
+The truth was that nobody hired a team like ours unless several other people had already failed to find answers. Clients didn't spend money on mages, augmented specialists, and healers because everything was proceeding normally.
+
+"Hey, y'all done chit-chatting up there?"
+
+The voice crackled through our Nexus comms, distorted slightly by static.
+
+"It's kinda cramped back here."
+
+For a second nobody spoke.
+
+Then Cameron laughed.
+
+The sound cut through the tension that had been building inside the van ever since the guide left.
+
+"Oh, right." He rubbed the back of his neck sheepishly even though they couldn't see it. "Sorry, guys."
+
+The reminder was appreciated.
+
+It was easy to forget there were four other people packed into the vehicle when most of the conversation had been happening near the front.
+
+We climbed out of the vehicle and made our way around to the rear of the transport. The rain had weakened to a persistent drizzle, just enough to soak through clothing if given enough time. Mud sucked at my boots with every step. The old van looked even worse from the outside than it had from within. Rust consumed large sections of the bodywork, and one of the rear panels had been secured with mismatched bolts that looked like they were barely keeping the door attached to the van.
+
+Cameron reached the back first and popped the latch.
+
+The rear door swung open with a metallic groan.
+
+A rush of stale air escaped from the cargo compartment, followed almost immediately by the remaining members of our team. For a few seconds the scene looked less like a professional reconnaissance unit and more like survivors escaping a shipping container. Limbs stretched in every direction. Joints cracked. Someone swore. Someone else immediately agreed.
+
+Jason emerged first.
+
+The large Australian unfolded himself from the cramped compartment and slowly straightened to his full height. His Genesis armor crackled softly as it compensated for the movement. Hydraulic fibers tightened beneath composite plating while tiny servos whined inside the joints. The suit had clearly seen better days. Scratches covered most of the armor's outer surfaces and several sections had been repaired often enough that the original finish was barely visible beneath newer materials.
+
+"Crikey." He rolled his shoulders until something audibly popped. "Hope this goes smoothly. I need the cred from this job if I'm ever gonna afford an upgrade."
+
+I couldn't really blame him.
+
+Genesis armor had once been considered cutting-edge equipment. That had been several generations ago. Modern combat rigs were lighter, faster, stronger, and dramatically more expensive. The fact that Jason still trusted the suit said as much about his finances as it did his personality.
+
+Dallas climbed out behind him.
+
+Our locksmith landed lightly despite carrying enough tools to qualify as a mobile workshop. I wasn't entirely certain how he managed it. The man seemed physically incapable of going anywhere without at least three lockpicks, two bypass kits, a portable diagnostic suite, and enough miscellaneous equipment to violate several local regulations.
+
+He snorted and punched Jason in the shoulder. The impact produced a satisfying metallic thump.
+
+"Damn straight. Your rig's what, three generations behind now?" He looked Jason up and down. "I've seen museum pieces with better response times."
+
+"Barely." Avery chimed in with a roll of his eyes.
+
+That was probably the closest thing he had to a signature expression. Avery wasn't much for dramatic reactions. Most of his emotional range manifested through increasingly disappointed looks. The fact that we'd all learned to distinguish between his mildly disappointed, seriously disappointed, and actively reconsidering our intelligence expressions probably said something concerning about our team dynamic.
+
+He was also probably the least augmented person present.
+
+Not counting Milyah and me, anyway.
+
+No visible chrome. No glowing interfaces embedded beneath the skin. No obvious hardware protruding from his neck or wrists. Standing next to Cameron made the contrast even more obvious. Cameron practically advertised his modifications. Avery looked like he'd walked out of a gym and accidentally wandered into the augmented side of things.
+
+Appearances were misleading.
+
+The man carried enough muscle to make professional athletes uncomfortable. Not the sculpted kind people showed off on social media, either. Dense muscle. Functional muscle. The sort built through years of carrying heavy things, hitting other heavy things, and surviving situations that would have hospitalized normal people. 
+
+He looked human enough at first glance, but everyone who spent more than a few minutes around him eventually arrived at the same conclusion.
+
+There had to be some orc in his family tree.
+
+Nobody had ever been able to prove it.
+
+"Pay off the Sharks first," he added flatly. "Upgrades don't mean much if you're dead in an alley."
+
+Jason immediately winced.
+
+The Sharks had that effect on people.
+
+I wasn't entirely sure whether the organization had chosen the name themselves or whether the city had assigned it to them after observing their business practices. Either way, everyone knew who they were. If a bank wouldn't lend you money and a corporation wasn't interested in owning your soul directly, the Sharks were always willing to help.
+
+For a price.
+
+Usually several prices.
+
+"Yeah, yeah," Jason grouched, adjusting the tension on one of his shoulder plates. Tiny servos whined as the armor recalibrated around the movement. "Can't go five minutes without somebody reminding me about my debt."
+
+"If you'd stop gambling, we would stop."
+
+Jason shot me a wounded look while running a hand through his sandy hair. "It ain't gambling if I'm good at it."
+
+Dallas barked out a laugh, one someone produced after hearing the exact same excuse for the twentieth time and still finding it ridiculous.
+
+Avery just shook his head.
+
+Unimpressed.
+
+As usual.
+
+"Statistically," I added, "you're not."
+
+That earned an immediate groan.
+
+The complaint that followed was mostly incoherent, though I caught several accusations regarding my lack of support for entrepreneurial ventures and my apparent inability to appreciate calculated risk. The argument lost momentum halfway through because nobody, including Jason, genuinely believed it.
+
+"Alright," Avery said.
+
+The single word cut through the chatter immediately. Nobody argued. Nobody continued the joke. Even Jason shut up.
+
+"Eyes up. Focus. No more horseplay."
+
+He gestured toward the dark stretch of road disappearing into the rain. Beyond the reach of the van's headlights, the world dissolved into shifting shadows and silhouettes. The abandoned town sat somewhere out there, hidden behind darkness, trees, and several miles of increasingly questionable decisions.
+
+"We move in teams of two. Keep visual contact with your partner at all times. No heroics. No wandering off."
+
+His gaze settled on Jason for approximately half a second longer than necessary.
+
+Jason immediately looked offended.
+
+That reaction alone justified the suspicion.
+
+"We split to cover ground faster, sweep outward, then converge on the town center. If anything goes sideways, you fall back to your partner first, then the rally point. Comms stay open. If you see something that doesn't belong, you call it."
+
+I noticed he didn't waste time explaining why.
+
+Avery jerked his chin toward Jason. "You're with Cameron."
+
+Jason opened his mouth to argue.
+
+Cameron immediately pointed at him. "Don't."
+
+The protest died before it was born.
+
+Avery continued. "Dallas, take Milyah."
+
+Dallas gave a casual but slightly sarcastic salute.
+
+Milyah offered a polite nod.
+
+Neither seemed particularly concerned by the arrangement. Then again, Dallas could probably break into a military bunker using three paperclips and a screwdriver, while Milyah possessed enough healing magic to keep small disasters from becoming large ones.
+
+Between the two of them, they were probably safer than the rest of us.
+
+Finally Avery's attention shifted toward me. "Hamish, you're stuck with me."
+
+I shrugged and rolled one shoulder beneath my coat. "Sure. Just... no one get flattened, yeah? We've only got one actual healer, and I'd like to keep it that way."
+
+That earned several looks.
+
+Not because anyone disagreed.
+
+Because everyone knew exactly where the conversation was going.
+
+Dallas pointed at me as though he'd just caught me committing a crime.
+
+"You know healing spells."
+
+"I know healing spells," I agreed. "That's not the same thing as being good at healing spells."
+
+A significant difference.
+
+An alarmingly significant difference.
+
+I made a small gesture with one hand. "There's a reason I stick to offensive and defensive work."
+
+Magic, like most things, rewarded specialization. Milyah spent years studying anatomy, biological mana flow, tissue reconstruction, magical trauma, and approximately six thousand other topics that sounded unpleasant. I spent those same years learning how to set things on fire, prevent things from setting me on fire, and occasionally persuade reality to stop behaving correctly around hostile individuals.
+
+One of those skill sets translated into medicine considerably better than the other.
+
+Dallas opened his mouth. Then closed it again.
+
+Smart man.
+
+"I can heal," I continued. "Technically." That word did a lot of work in the sentence. "But the last time I tried was back in school, and the guy I was practicing on walked away with his leg put on backwards."
+
+Nobody spoke.
+
+I felt obligated to clarify. "Orientation was correct."
+
+The silence somehow became worse.
+
+"Placement was not."
+
+There was a beat where everyone processed that information.
+
+There was a beat where everyone processed that information.
+
+Then Jason barked out a laugh loud enough to echo down the road. The big Australian doubled over slightly, one hand braced against his knee while the servos in his aging armor protested the movement with a series of mechanical clicks.
+
+"You're telling me you put a guy's leg on backwards?"
+
+"Not backwards," I corrected automatically. "Sideways."
+
+That somehow made it worse.
+
+Dallas made a choking noise and turned away, shoulders shaking as he tried and failed to contain his laughter. Even Cameron looked like he was fighting a losing battle.
+
+Milyah physically winced. One hand drifted instinctively toward her own knee. "That is horrifying."
+
+"It was educational."
+
+She stared at me.
+
+The expression wasn't angry. It wasn't even disappointed. It was the look a healer gave someone who had just casually admitted to violating several fundamental principles of anatomy.
+
+"It should not have been."
+
+I considered that. In hindsight, she probably had a point. "I learned a lot."
+
+"That isn't helping."
+
+I nodded thoughtfully. "Fair."
+
+Another laugh escaped Jason.
+
+I pointed at him. "See? This is exactly why nobody respects medical professionals."
+
+Milyah opened her mouth.
+
+Then closed it again.
+
+Then opened it once more. "You are not a medical professional." She finally managed.
+
+"Exactly." I spread my hands. "Which is why I'd like us all to make a serious effort not to require my services."
+
+That earned another round of laughter from everyone except Milyah, who still looked mildly traumatized by the story.
+
+Honestly, I thought she was overreacting. The leg had worked eventually.
+
+Mostly.
+
+=== Body: Vesper  (ch_5ubu7rwdmpx71cw3) — 2238 words ===
+
+I finally reached a section of the ventilation network where continuing on foot made more sense than continuing to impersonate a maintenance drone.     The duct widened near a utility junction, opening into a cramped service space hidden behind a row of electrical cabinets. Through the grille below, I could see a dimly lit maintenance corridor stretching in both directions. No guards. No drones. No visible sensors beyond the standard corporate package.
+
+A good entry point.
+
+I should have dropped down immediately.
+
+Instead, I stayed where I was for a moment, lying flat against the cold metal and listening to the building breathe around me. Air rushed through the ducts. Machinery hummed behind the walls. Somewhere far below, an elevator cycled between floors.
+
+No alarms.
+
+No shouting.
+
+So far, so good.
+
+"Start hacking the security cameras," I whispered. "I need an undetectable loop."
+
+There was a brief pause. [Provide physical access to the network.]
+
+I stared at my HUD.
+
+"Ghost."
+
+[Yes?]
+
+"I am currently inside a ventilation shaft."
+
+[I am aware.]
+
+"Then you understand why that's difficult."
+
+[Physical access would significantly improve success probability.]
+
+I pinched the bridge of my nose. "Of course it would."
+
+Direct access was Ghost's preferred solution to almost everything. Plug into a terminal. Plug into a camera. Plug into a security hub. Once it got inside a system, the AI could move through it like a shark through water.
+
+Unfortunately, buildings rarely placed convenient network ports inside air ducts.
+
+"I can't exactly stroll into the server room and ask them to hold the door."
+
+[Remote intrusion remains possible.]
+
+"There it is."
+
+[Success probability decreases substantially.]
+
+"How substantially?"
+
+Ghost took a moment.
+
+I never liked when it took a moment.
+
+[Undetectable loop insertion: forty-eight percent.]
+
+I blinked. "Forty-eight?"
+
+[Current network architecture appears segmented. Camera systems are isolated from several external access points.]
+
+"Can you do it or not?"
+
+[I can attempt it.]
+
+That wasn't a yes.
+
+With Ghost, it was usually worse than a no.
+
+I shifted forward and peered through the maintenance grille again. The corridor remained empty. Fluorescent lights reflected off polished concrete floors. Somewhere beyond the walls sat the package I was here to steal.
+
+Between me and it stood a security system that apparently wasn't interested in cooperating.
+
+"What's the alternative?"
+
+Several sections of the building immediately lit up on my HUD.
+
+A maintenance office. A security station. Two network access closets.
+
+Ghost highlighted the nearest one.
+
+[Acquire physical access.]
+
+I sighed. The AI wasn't going to listen.  "Route me through the vents to a security room." 
+
+Ghost highlighted the path for me to take. 
+
+"Any security guards in there?" If I was lucky, none. If uncle Murphy hated me, one but they'd be kitted out and match me.
+
+I sighed.
+
+The AI wasn't going to let this go.
+
+Not that I could entirely blame it. Ghost was paranoid by design. Every combat model in its lineage had been built around the assumption that shortcuts got people killed.
+
+Unfortunately, that meant its preferred solution to almost every problem involved physically accessing something, physically disabling something, or physically shooting something.
+
+"Route me through the vents to a security room."
+
+A pale green line immediately appeared across my HUD, tracing a path through the building's ventilation network. It twisted through maintenance shafts, crossed above a pair of utility corridors, then terminated several floors deeper inside the facility.
+
+Naturally, it wasn't close.
+
+"Of course it isn't."
+
+[The nearest security office was deemed suboptimal.]
+
+"Because making my life easier would damage your reputation."
+
+Ghost elected not to respond.
+
+I began crawling again, elbows and knees carrying me deeper into the ductwork. The further I moved from the exterior wall, the warmer the air became. Heat from machinery and electrical systems seeped into the ventilation network, turning the confined metal tunnel into an increasingly uncomfortable oven. Dust clung to my gloves and sleeves. Every so often a support rib caught against my armor, forcing me to twist awkwardly before continuing.
+
+After a minute of crawling, I decided there was a question I should have asked immediately.
+
+"Any security guards in there?"
+
+Ghost answered instantly.
+
+[One.]
+
+I closed my eyes.
+
+Of course.
+
+There was always one.
+
+If I was lucky, they were underpaid, underqualified, and halfway through a twelve-hour night shift. The kind of guard whose greatest ambition was surviving until sunrise without paperwork.
+
+If Uncle Murphy hated me—and experience suggested he did—that single guard would be alert, competent, and equipped well enough to make my evening significantly more complicated.
+
+"Details."
+
+A thermal silhouette appeared in the corner of my HUD.
+
+[Human. Male. Estimated age thirty-one to thirty-seven. Elevated caffeine levels. Mild fatigue indicators. No detected cybernetic augmentation beyond standard corporate implants.]
+
+That sounded promising.
+
+"Armor?"
+
+[Light security vest. Most likely the Axon Beta Model.]
+
+Those were standard among security guards. Nothing I couldn't handle.
+
+"Weapons?"
+
+[Sidearm. Shock baton.]
+
+Much better.
+
+I felt some of the tension leave my shoulders. 
+
+"Any augmentations I should know about?"
+
+[Uncertain. Thermal data indicates multiple artificial heat sources consistent with cybernetic augmentation.]
+
+Naturally.
+
+I continued crawling.
+
+"Light augmentation or 'can punch through concrete augmentation?"
+
+[Insufficient data.]
+
+"That's Ghost for 'I don't know,' isn't it?"
+
+[Correct.]
+
+"Good. Glad we're communicating."
+
+I reached the vent above the security room pretty quickly, though "quickly" was relative when you were dragging yourself through a ventilation shaft while wearing enough armor and cybernetics to qualify as a small vehicle. Every movement produced some amount of noise. 
+
+The suit's sound dampeners were working, I could see that much from the diagnostics scrolling across my HUD, but that didn't stop every scrape of metal against metal from sounding deafening to me. The ventilation system masked most of it beneath the constant drone of moving air and industrial machinery, yet I still found myself wincing every time my shoulder brushed a support strut or a utility pouch dragged across the steel floor of the duct.
+
+Eventually the faint glow of a room appeared through the vent grille ahead.
+
+I eased forward the last few feet and peered through the slats.
+
+Sure enough, there was only one guard.
+
+For a moment I allowed myself to hope that meant my luck had finally decided to stop treating me like a personal insult. Then Ghost began highlighting details across my vision. Body temperature. Heart rate. Estimated reaction speed. Equipment profile. Threat assessment. 
+
+A marker appeared around the guard's head and I frowned. The ears were subtly pointed. Nothing dramatic, just enough that someone unfamiliar with elves might miss it entirely. The tips extended slightly farther than a baseline human's and came to those points.
+
+I swore silently.
+
+Half-elf.
+
+Technically that was better than finding a full-blooded elf sitting security duty. The difference wasn't especially comforting. Elves had earned their reputation honestly. Better hearing. Better eyesight. Faster reflexes. 
+
+Half-elves inherited enough of those traits to remain thoroughly irritating. Most couldn't match a true elf, but they didn't have to. A half-elf only needed to hear one suspicious noise from the ventilation system for my evening to become significantly more complicated.
+
+"Thanks a lot, Ghost, for not mentioning that detail," I thought at the AI.
+
+[It did not seem relevant given your own enhancements.]
+
+If I wasn't worried about giving myself away, I probably would have cursed it out. "How was that not relevant?"
+
+[As I previously stated, your augmentations provide you with a significant advantage over most opponents.]
+
+The irritating part was that Ghost wasn't wrong.
+
+In New Seattle's Kenzai Ring I was probably among the five most heavily augmented independent operators still breathing. 
+
+Corporate black-budget assets didn't count. Military special operations didn't count. Those people had entire departments dedicated to turning them into monsters. I had done it the hard way, one surgery at a time and one loan at a time, accumulating enough debt to make financial advisors cry. 
+
+The end result was a body carrying enough hardware to put me on roughly equal footing with augmented elves and give me a fighting chance against a Fomori. A fighting chance wasn't the same thing as favorable odds, though. I could probably take a Fomori in a straight fight, but I'd only walk away clean six times out of ten and I never came away uninjured.
+
+More importantly, there was almost no chance of getting the drop on the guard from inside a vent.
+
+Not while wedged in a steel tube like an oversized maintenance drone.
+
+[Behavioral analysis suggests the guard may leave his station shortly.]
+
+That got my attention.
+
+Ghost highlighted several details I hadn't been paying attention to. An empty water bottle sat beside one of the monitors. 
+
+The guard shifted in his chair every few minutes. A thin sheen of sweat had formed near his temples despite the room's climate control. Tiny indicators appeared beside each observation while the AI quietly assembled a prediction model.
+
+"Odds of him leaving?"
+
+[Sixty-seven point nine percent.]
+
+I pinched the bridge of my nose. "Fan-freaking-tastic."
+
+[I could cause a minor disturbance.]
+
+I looked back down at the guard. "How?"
+
+The vent suddenly felt much smaller than it had a minute ago. Maybe it was the thought of remaining inside it much longer. Maybe it was the knowledge that a half-elf sat directly below me.
+
+Whatever the reason, I had become acutely aware of the steel pressing against my shoulders and the stale recycled air filling my lungs. My knees ached. My lower back ached. Everything ached.
+
+For a moment Ghost didn't answer.
+
+In that brief silence I thought I felt something stutter inside my armor.
+
+The sensation lasted less than a second.
+
+Not a servo failure. Not exactly.
+
+More like a skipped heartbeat passing through the suit's systems. A tiny hitch somewhere beneath the layers of processors, neural interfaces, and reinforcement hardware integrated into the armor. The feeling vanished almost immediately. My diagnostics remained green. No alerts appeared. No warnings. Nothing.
+
+I frowned.
+
+Before I could investigate further, Ghost interrupted.
+
+[Your window will be seven minutes.]
+
+Before I could ask what that meant, the guard glanced toward one of the wall displays. His expression immediately darkened. He stared at the screen for several seconds, then shoved his chair back hard enough that the wheels rolled across the floor.
+
+The half-elf muttered something under his breath.
+
+Even with my enhanced hearing, the ventilation system swallowed most of it. I caught enough to identify the tone if not the words.
+
+Irritated.
+
+Very irritated.
+
+He rose from his workstation, shot one final look at the display, and headed for the door.
+
+I watched him leave.
+
+The door hissed shut behind him.
+
+A timer appeared in the corner of my HUD.
+
+07:00
+
+06:59
+
+06:58
+
+[Seven minute timer initiated.]
+
+I stared at it.
+
+"You already had a timer prepared."
+
+[Correct.]
+
+"You were pretty confident he'd leave."
+
+[Sixty-seven point nine percent confidence does not qualify as certainty.]
+
+"Close enough for you to start a countdown."
+
+[Correct.]
+
+Sometimes I forgot Ghost wasn't actually predicting the future.
+
+Then it would do something like this and I'd start wondering again.
+
+I shoved the vent cover open as carefully as I could. The hinges moved with only the faintest protest. Dust drifted through the air as I lowered myself through the opening. After spending the better part of twenty minutes folded inside ductwork, simply standing upright felt incredible.
+
+My spine produced several complaints.
+
+I ignored all of them.
+
+The security room was larger than I'd expected. Three workstations sat against the far wall beneath a bank of monitors displaying feeds from throughout the facility. Soft blue light from the displays washed over everything, reflecting from polished surfaces and casting long shadows between equipment racks. The constant hum of servers filled the room, accompanied by the steady drone of cooling fans and the occasional click of relay switches buried somewhere inside the walls.
+
+"What did you do?"
+
+[I released the electromagnetic locks securing a semi-confidential storage room.]
+
+I paused halfway to the nearest workstation.
+
+"That's it?"
+
+[I additionally altered system logs to indicate a synchronization fault. Security protocol requires manual verification before lock restoration.]
+
+I nodded slowly.
+
+"So you created paperwork."
+
+[Correct.]
+
+I couldn't help smiling.
+
+Corporate security personnel feared three things more than anything else.
+
+Actual emergencies.
+
+Their supervisors.
+
+And paperwork.
+
+Sometimes I suspected paperwork ranked first.
+
+"Remind me never to let you work in management."
+
+[Noted.]
+
+I moved toward the nearest terminal and started searching for a physical access port. Ghost could attempt a remote intrusion, but direct access turned difficult problems into easy ones. The workstation itself was locked down, but eventually I found a recessed maintenance jack hidden beneath the desk.
+
+"There you are."
+
+I crouched beside it and pulled a data cable from my wrist compartment.
+
+"And Ghost?"
+
+[Yes?]
+
+"Do make sure you don't trip any alarms."
+
+[I am not an amateur.]
+
+I laughed quietly while plugging the cable into the port.
+
+"Never implied you were."
+
+That wasn't entirely true.
+
+Ghost and I had a relationship built almost entirely on mutual disrespect and professional dependence.
+
+Somehow it worked.
+
+Streams of data immediately exploded across my HUD as the AI surged into the local network. Security architecture diagrams unfolded in translucent layers. Camera routes. Patrol schedules. Access permissions. Employee records. Maintenance reports. The amount of information was enough to make my eyes hurt.
+
+"How long until you're done?"
+
+There was a brief pause.
+
+[Approximately ninety seconds.]
+
+I leaned against the workstation and glanced at the countdown.
+
+05:43.
+
+Plenty of time.
+
+=== Body: Hamish (ch_ruxcnokmmqbmwfjf) — 82 words ===
+
+"So, what's the plan, Chief?" Jason asked his arms crossed across his chest.      Avery tilted his head as ge studied the groups he had made us pair off into.
+
+"I don't like the idea of wandering into a town that we dont have any information on." He said finally. "We need to get that sorted out first."
+
+"Yeah, that was weird." Cameron chimed in as Dante nodded. "They were super cagey, not even aerial footage or anything. Had to hack a satellite."

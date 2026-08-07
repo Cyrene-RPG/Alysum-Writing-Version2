@@ -1,0 +1,83 @@
+{
+  "mergedAt": "2026-06-20T14:51:13.760Z",
+  "source": "Supabase REST API cache from DuckDuckGo browser",
+  "uniqueBooks": 15,
+  "libraryRows": 14,
+  "titles": [
+    {
+      "id": "WotLrrcn0dh0KkxDaQzg",
+      "title": "Archangel",
+      "words": 41348
+    },
+    {
+      "id": "BBHsxFVd6u8hIigY4N80",
+      "title": "Herald of Shadow",
+      "words": 27344
+    },
+    {
+      "id": "1avszBSuo47gmSBWwgSx",
+      "title": "Bound by Lies",
+      "words": 17647
+    },
+    {
+      "id": "Nvss9lt1CtNh8AERu8kB",
+      "title": "Super Cool Title I'll Come Up With Eventually (WIP)",
+      "words": 15169
+    },
+    {
+      "id": "29f82da6-00d8-4fe2-9bff-9f7499c34133",
+      "title": "Archangel Vrs. 2",
+      "words": 11665
+    },
+    {
+      "id": "OdT59Vc6x2KdayZBtHsx",
+      "title": "Rare Medicine",
+      "words": 7219
+    },
+    {
+      "id": "0ljDRmmPrk28aivx5tjF",
+      "title": "Chimaera",
+      "words": 4672
+    },
+    {
+      "id": "JNqhplNs2T5kEUgEhrst",
+      "title": "Black Frost",
+      "words": 4297
+    },
+    {
+      "id": "LV5H30Zkkmkgj3RA8qGK",
+      "title": "Modern Day Martial Arts",
+      "words": 4077
+    },
+    {
+      "id": "33fe689a-117e-4eed-9922-40581be077fd",
+      "title": "Awakening Fury",
+      "words": 3556
+    },
+    {
+      "id": "fAcCBOE4lh491kisKPCK",
+      "title": "Cradle of Ashes",
+      "words": 3177
+    },
+    {
+      "id": "f364864f-4fbb-44bd-897c-6844177b0eec",
+      "title": "The Best Book In The Universe",
+      "words": 2345
+    },
+    {
+      "id": "p88egMxwraLtO7guJLRY",
+      "title": "A Kingdom of Cards: Spade Dynasty",
+      "words": 622
+    },
+    {
+      "id": "dk2dyq6aYmnbEXzk9NI9",
+      "title": "rootbeer bond (not the final tittle)",
+      "words": 539
+    },
+    {
+      "id": "Zha2OPkW5BIdN8bYUlaH",
+      "title": "Testing site",
+      "words": 4
+    }
+  ]
+}

@@ -111,7 +111,6 @@ export function cleanImportHtml(html) {
   holder.innerHTML = String(html || "");
 
   holder.querySelectorAll("script, style, meta, link, iframe, object, embed").forEach((el) => el.remove());
-  holder.querySelectorAll("hr.alysum-page-break, .alysum-page-view-spacer").forEach((el) => el.remove());
   holder.querySelectorAll("*").forEach((el) => {
     normalizeChapterElementAttributes(el);
     for (const attr of ["href", "src", "xlink:href"]) {

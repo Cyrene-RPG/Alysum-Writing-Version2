@@ -1,0 +1,77 @@
+{
+  "reportGeneratedAt": "2026-06-20T14:35:00.000Z",
+  "scanScope": "DuckDuckGo Desktop Browser — full Alysum/Supabase recovery scan",
+  "filesScanned": 12895,
+  "filesLocked": 2,
+  "outputFolder": "recovery-audit/ddg-deep-scan",
+
+  "accountsFound": [
+    {
+      "source": "Local Storage/leveldb (sb-tiqmhozzxhiydjnyuuaw-auth-token)",
+      "userId": "3ce04b19-0cbc-45f8-88f5-5ac18c8ba6a5",
+      "email": "romanovaanya03@gmail.com",
+      "provider": "google",
+      "lastSignInApprox": "2026-05-20",
+      "note": "Session snapshots found for localhost:3000 and alysumwriting.com. Tokens stored redacted in leveldb-snippets-redacted.json — do NOT commit those files."
+    }
+  ],
+
+  "booksRecovered": [
+    {
+      "id": "WotLrrcn0dh0KkxDaQzg",
+      "title": "Archangel",
+      "words": 41348,
+      "chapters": 24,
+      "files": ["books/Archangel_41348words_WotLrrcn0dh0.json", "books/Archangel_41348words_WotLrrcn0dh0.txt"]
+    },
+    {
+      "id": "1avszBSuo47gmSBWwgSx",
+      "title": "Bound by Lies",
+      "words": 17647,
+      "chapters": 5,
+      "files": ["books/Bound_by_Lies_17647words_1avszBSuo47g.json", "books/Bound_by_Lies_17647words_1avszBSuo47g.txt"]
+    },
+    {
+      "id": "29f82da6-00d8-4fe2-9bff-9f7499c34133",
+      "title": "Archangel Vrs. 2",
+      "words": 11665,
+      "chapters": 5,
+      "files": ["books/Archangel_Vrs._2_11665words_29f82da6-00d.json", "books/Archangel_Vrs._2_11665words_29f82da6-00d.txt"]
+    },
+    {
+      "id": "33fe689a-117e-4eed-9922-40581be077fd",
+      "title": "Awakening Fury",
+      "words": 3556,
+      "chapters": 1,
+      "files": ["books/Awakening_Fury_3556words_33fe689a-117.json", "books/Awakening_Fury_3556words_33fe689a-117.txt"]
+    }
+  ],
+
+  "libraryCatalogRows": 0,
+  "otherUserProfiles": 0,
+  "notifications": 0,
+
+  "localStorageKeysOfNote": [
+    "alysum-current-book-id",
+    "alysum-writer-resume-WotLrrcn0dh0KkxDaQzg",
+    "alysum-writer-resume-29f82da6-00d8-4fe2-9bff-9f7499c34133",
+    "issues-v1-3ce04b19-0cbc-45f8-88f5-5ac18c8ba6a5::WotLrrcn0dh0KkxDaQzg",
+    "alysum-beta-shelf-v2-3ce04b19-0cbc-45f8-88f5-5ac18c8ba6a5",
+    "alysum-local-studio-v1",
+    "alysum-vault-v1",
+    "alysum-story-bible-fact-db-v1"
+  ],
+
+  "notInDdgCache": {
+    "note": "DDG only caches pages/API responses actually loaded in that browser. Your Firebase/Supabase export (recovery-audit/export/) has 26 books, 47 auth users, 12 library entries — most of that was NOT in the browser cache.",
+    "missingFromCacheExamples": [
+      "Chimaera", "Herald of Shadow", "Black Frost", "Rare Medicine",
+      "Modern Day Martial Arts", "other users' accounts"
+    ]
+  },
+
+  "rerunCommands": [
+    "node recovery-audit/deep-scan-ddg-all-data.mjs",
+    "node recovery-audit/extract-ddg-leveldb-snippets.mjs"
+  ]
+}

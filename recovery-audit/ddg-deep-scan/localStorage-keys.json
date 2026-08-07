@@ -1,0 +1,370 @@
+[
+  {
+    "key": "alysum-purple",
+    "hits": 1170
+  },
+  {
+    "key": "alysum-purple-dark",
+    "hits": 856
+  },
+  {
+    "key": "alysum-appearance-boot",
+    "hits": 298
+  },
+  {
+    "key": "alysum-current-book-id",
+    "hits": 200
+  },
+  {
+    "key": "alysum-chrome-gradient",
+    "hits": 121
+  },
+  {
+    "key": "alysum-gradient-theme",
+    "hits": 120
+  },
+  {
+    "key": "sb-tiqmhozzxhiydjnyuuaw-auth-token",
+    "hits": 120
+  },
+  {
+    "key": "alysum-find",
+    "hits": 114
+  },
+  {
+    "key": "alysum-find-active",
+    "hits": 114
+  },
+  {
+    "key": "alysum-fontSize",
+    "hits": 114
+  },
+  {
+    "key": "alysum-theme",
+    "hits": 90
+  },
+  {
+    "key": "alysum-prompt",
+    "hits": 83
+  },
+  {
+    "key": "alysum-display-text-style",
+    "hits": 76
+  },
+  {
+    "key": "alysum-font",
+    "hits": 76
+  },
+  {
+    "key": "alysum-display-mid",
+    "hits": 70
+  },
+  {
+    "key": "alysum-display-text-color",
+    "hits": 66
+  },
+  {
+    "key": "alysum-display-highlight",
+    "hits": 62
+  },
+  {
+    "key": "alysum-display-shadow",
+    "hits": 62
+  },
+  {
+    "key": "alysum-writer-dashboard-sync",
+    "hits": 57
+  },
+  {
+    "key": "alysum-writer-dashboard",
+    "hits": 57
+  },
+  {
+    "key": "alysum-display-top",
+    "hits": 54
+  },
+  {
+    "key": "alysum-display-deep",
+    "hits": 54
+  },
+  {
+    "key": "alysum-display-edge",
+    "hits": 54
+  },
+  {
+    "key": "alysum-display-glow",
+    "hits": 54
+  },
+  {
+    "key": "alysum-display-solid",
+    "hits": 54
+  },
+  {
+    "key": "alysum-gradient-theme-preview",
+    "hits": 50
+  },
+  {
+    "key": "alysum-display-text-color-main",
+    "hits": 46
+  },
+  {
+    "key": "alysum-display-text-color-accent",
+    "hits": 46
+  },
+  {
+    "key": "alysum-display-typography",
+    "hits": 42
+  },
+  {
+    "key": "alysum-vault",
+    "hits": 40
+  },
+  {
+    "key": "alysum-editor-background-db",
+    "hits": 40
+  },
+  {
+    "key": "alysum-editor-sprint",
+    "hits": 38
+  },
+  {
+    "key": "alysum-prompt-btn",
+    "hits": 32
+  },
+  {
+    "key": "alysum-editor-background-image",
+    "hits": 32
+  },
+  {
+    "key": "alysum-login-next",
+    "hits": 32
+  },
+  {
+    "key": "alysum-reader-theme",
+    "hits": 30
+  },
+  {
+    "key": "alysum-wikilinks",
+    "hits": 28
+  },
+  {
+    "key": "alysum-editor-background-fit",
+    "hits": 26
+  },
+  {
+    "key": "alysum-open-book",
+    "hits": 26
+  },
+  {
+    "key": "alysum-prompt-input",
+    "hits": 24
+  },
+  {
+    "key": "alysum-prompt-btn--primary",
+    "hits": 24
+  },
+  {
+    "key": "alysum-reader-bookmark-",
+    "hits": 24
+  },
+  {
+    "key": "alysum-last-read-book",
+    "hits": 24
+  },
+  {
+    "key": "alysum-last-book",
+    "hits": 24
+  },
+  {
+    "key": "alysum-reader-font-size",
+    "hits": 24
+  },
+  {
+    "key": "alysum-vault-ui",
+    "hits": 22
+  },
+  {
+    "key": "alysum-vault-supabase",
+    "hits": 22
+  },
+  {
+    "key": "alysum-writer-resume-WotLrrcn0dh0KkxDaQzg",
+    "hits": 20
+  },
+  {
+    "key": "alysum-pwa-toast",
+    "hits": 16
+  },
+  {
+    "key": "alysum-pwa-reload",
+    "hits": 16
+  },
+  {
+    "key": "alysum-pwa-dismiss",
+    "hits": 16
+  },
+  {
+    "key": "alysum-prompt-root",
+    "hits": 16
+  },
+  {
+    "key": "alysum-prompt-box",
+    "hits": 16
+  },
+  {
+    "key": "alysum-prompt-msg",
+    "hits": 16
+  },
+  {
+    "key": "alysum-prompt-actions",
+    "hits": 16
+  },
+  {
+    "key": "alysum-desktop-local-host",
+    "hits": 14
+  },
+  {
+    "key": "alysum-rw-wrap",
+    "hits": 12
+  },
+  {
+    "key": "alysum-rw-sheet",
+    "hits": 12
+  },
+  {
+    "key": "alysum-rw-body",
+    "hits": 12
+  },
+  {
+    "key": "alysum-rw-footer",
+    "hits": 12
+  },
+  {
+    "key": "alysum-reader-nav-collapsed",
+    "hits": 12
+  },
+  {
+    "key": "alysum-reader-resume-",
+    "hits": 12
+  },
+  {
+    "key": "alysum-purple-bright",
+    "hits": 12
+  },
+  {
+    "key": "alysum-signup-account-type",
+    "hits": 11
+  },
+  {
+    "key": "alysum-ui-mode",
+    "hits": 8
+  },
+  {
+    "key": "alysum-story-bible-ui",
+    "hits": 8
+  },
+  {
+    "key": "alysum-story-bible-ui-change",
+    "hits": 8
+  },
+  {
+    "key": "alysum-oauth-pending",
+    "hits": 8
+  },
+  {
+    "key": "alysum-oauth-pending-login",
+    "hits": 8
+  },
+  {
+    "key": "alysum-oauth-pending-signup",
+    "hits": 8
+  },
+  {
+    "key": "alysum-local-guest",
+    "hits": 8
+  },
+  {
+    "key": "alysum-local-host-vault",
+    "hits": 8
+  },
+  {
+    "key": "alysum-local-studio-v1",
+    "hits": 8
+  },
+  {
+    "key": "alysum-writer-last-session",
+    "hits": 8
+  },
+  {
+    "key": "alysum-writer-resume-",
+    "hits": 8
+  },
+  {
+    "key": "alysum-reset-email-until",
+    "hits": 8
+  },
+  {
+    "key": "alysum-vault-v1",
+    "hits": 6
+  },
+  {
+    "key": "alysum-reader-anon-id",
+    "hits": 6
+  },
+  {
+    "key": "alysum-reader-viewed-",
+    "hits": 6
+  },
+  {
+    "key": "alysum-chrome-gradientl",
+    "hits": 6
+  },
+  {
+    "key": "alysum-worldbuilding-sheet-v1",
+    "hits": 6
+  },
+  {
+    "key": "alysum-active-worldbuilding-sheet-v1",
+    "hits": 6
+  },
+  {
+    "key": "alysum-shell-v1",
+    "hits": 6
+  },
+  {
+    "key": "alysum-assets-v1",
+    "hits": 6
+  },
+  {
+    "key": "alysum-story-bible-selection-v1",
+    "hits": 5
+  },
+  {
+    "key": "alysum-story-bible-selection-backup-v1",
+    "hits": 5
+  },
+  {
+    "key": "alysum-writer-resume-29f82da6-00d8-4fe2-9bff-9f7499c34133",
+    "hits": 4
+  },
+  {
+    "key": "alysum-ne-norm",
+    "hits": 2
+  },
+  {
+    "key": "alysum-story-bible-fact-db-v1",
+    "hits": 2
+  },
+  {
+    "key": "issues-v1-3ce04b19-0cbc-45f8-88f5-5ac18c8ba6a5::WotLrrcn0dh0KkxDaQzg",
+    "hits": 2
+  },
+  {
+    "key": "alysum-beta-shelf-v2-3ce04b19-0cbc-45f8-88f5-5ac18c8ba6a5",
+    "hits": 2
+  },
+  {
+    "key": "alysum-plot-doctor",
+    "hits": 1
+  }
+]

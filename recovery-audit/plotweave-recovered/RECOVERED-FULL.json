@@ -1,0 +1,18 @@
+{
+  "activeId": "map_x3obawu_mrhdr9d1",
+  "diagrams": [
+    {
+      "id": "map_x3obawu_mrhdr9d1",
+      "title": "Cyrene RPG Storyline camera",
+      "createdAt": 1783883850290,
+      "updatedAt": 1783888548481,
+      "nodes": [],
+      "edges": [],
+      "camera": {
+        "x": 390.23,
+        "y": 330.835,
+        "zoom": 0.695
+      }
+    }
+  ]
+}
