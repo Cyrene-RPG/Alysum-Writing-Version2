@@ -11,7 +11,7 @@ export const EDITOR_PAGE = {
     gap: 12,
     paddingTop: 96,
     paddingRight: 96,
-    paddingBottom: 96,
+    paddingBottom: 48,
     paddingLeft: 96
 };
 
