@@ -37,7 +37,7 @@
         .ww-sprint-shell {
             height: 100dvh;
             display: grid;
-            grid-template-rows: auto 1fr;
+            grid-template-rows: auto minmax(0, 1fr) auto;
             min-height: 0;
         }
         .ww-sprint-hud {
@@ -161,6 +161,140 @@
             background: rgba(124,58,237,0.12);
         }
         .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+        .ww-call-dock-wrap {
+            border-top: 1px solid var(--border);
+            background: rgba(4,8,18,0.96);
+            backdrop-filter: blur(10px);
+            min-height: 0;
+            z-index: 18;
+        }
+        .ww-call-dock-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 8px 14px 0;
+        }
+        .ww-call-dock-label {
+            margin: 0;
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+        .ww-call-dock-note {
+            font-size: 11px;
+            color: var(--muted);
+        }
+        .ww-call-dock {
+            display: flex;
+            gap: 10px;
+            padding: 10px 14px 14px;
+            overflow-x: auto;
+            overflow-y: hidden;
+            scroll-snap-type: x proximity;
+            -webkit-overflow-scrolling: touch;
+        }
+        .ww-call-dock.is-many .ww-call-tile {
+            flex: 0 0 clamp(120px, 14vw, 168px);
+        }
+        .ww-call-dock.is-crowded .ww-call-tile {
+            flex: 0 0 clamp(108px, 12vw, 140px);
+        }
+        .ww-call-tile {
+            flex: 0 0 clamp(140px, 16vw, 196px);
+            scroll-snap-align: start;
+            display: grid;
+            grid-template-rows: minmax(0, 1fr) auto;
+            min-height: 118px;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+            background: rgba(255,255,255,0.03);
+            padding: 0;
+            color: inherit;
+            text-align: left;
+        }
+        .ww-call-tile.is-you {
+            border-color: rgba(124,58,237,0.45);
+            box-shadow: inset 0 0 0 1px rgba(124,58,237,0.18);
+        }
+        .ww-call-tile.is-typing {
+            border-color: rgba(167,139,250,0.45);
+        }
+        .ww-call-tile-media {
+            position: relative;
+            min-height: 84px;
+            background:
+                radial-gradient(circle at 20% 20%, rgba(124,58,237,0.18), transparent 55%),
+                rgba(0,0,0,0.35);
+            overflow: hidden;
+            display: grid;
+            place-items: center;
+        }
+        .ww-call-avatar {
+            display: grid;
+            place-items: center;
+        }
+        .ww-call-avatar-fallback,
+        .ww-call-avatar-img {
+            width: 56px;
+            height: 56px;
+            border-radius: 999px;
+            object-fit: cover;
+            display: grid;
+            place-items: center;
+            font-size: 22px;
+            font-weight: 900;
+            color: #ede9fe;
+            background: linear-gradient(135deg, rgba(124,58,237,0.55), rgba(59,130,246,0.35));
+            border: 2px solid rgba(255,255,255,0.12);
+        }
+        .ww-call-typing {
+            margin-left: 6px;
+            font-size: 9px;
+            font-weight: 900;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            padding: 2px 6px;
+            border-radius: 999px;
+            color: #c4b5fd;
+            background: rgba(124,58,237,0.18);
+            border: 1px solid rgba(124,58,237,0.28);
+            vertical-align: middle;
+        }
+        .ww-call-tile-meta {
+            padding: 8px 10px 10px;
+            min-width: 0;
+        }
+        .ww-call-name,
+        .ww-call-words {
+            display: block;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .ww-call-name {
+            font-size: 12px;
+            font-weight: 800;
+        }
+        .ww-call-host {
+            margin-left: 6px;
+            font-size: 9px;
+            font-weight: 900;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--gold);
+        }
+        .ww-call-words {
+            margin-top: 2px;
+            font-size: 11px;
+            color: var(--muted);
+        }
+        .ww-sprint-shell.is-editor-expanded .ww-call-dock-wrap {
+            display: none;
+        }
         .ww-sprint-status {
             margin: 0 16px;
             padding: 10px 12px;
@@ -196,6 +330,62 @@
             grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
             grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
         }
+        .ww-duel-grid.is-count-5 {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+        }
+        .ww-duel-grid.is-count-5 .ww-duel-pane.is-you {
+            grid-column: 1;
+            grid-row: 1 / span 2;
+        }
+        .ww-duel-grid.is-count-6 {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+        }
+        .ww-duel-grid.is-count-7,
+        .ww-duel-grid.is-count-8 {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+        }
+        .ww-duel-grid.is-featured {
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            grid-template-rows: minmax(0, 2.15fr) minmax(120px, 1fr);
+            overflow: auto;
+            align-content: start;
+        }
+        .ww-duel-grid.is-featured .ww-duel-pane.is-you {
+            grid-column: 1 / -1;
+            grid-row: 1;
+        }
+        .ww-duel-grid.is-count-5 .ww-duel-pane-head,
+        .ww-duel-grid.is-count-6 .ww-duel-pane-head,
+        .ww-duel-grid.is-count-7 .ww-duel-pane-head,
+        .ww-duel-grid.is-count-8 .ww-duel-pane-head,
+        .ww-duel-grid.is-featured .ww-duel-pane.is-opponent .ww-duel-pane-head {
+            padding: 8px 10px;
+        }
+        .ww-duel-grid.is-count-5 .ww-duel-title,
+        .ww-duel-grid.is-count-6 .ww-duel-title,
+        .ww-duel-grid.is-count-7 .ww-duel-title,
+        .ww-duel-grid.is-count-8 .ww-duel-title,
+        .ww-duel-grid.is-featured .ww-duel-pane.is-opponent .ww-duel-title {
+            font-size: 13px;
+        }
+        .ww-duel-grid.is-count-5 .ww-duel-sub,
+        .ww-duel-grid.is-count-6 .ww-duel-sub,
+        .ww-duel-grid.is-count-7 .ww-duel-sub,
+        .ww-duel-grid.is-count-8 .ww-duel-sub,
+        .ww-duel-grid.is-featured .ww-duel-pane.is-opponent .ww-duel-sub,
+        .ww-duel-grid.is-count-5 .ww-duel-score,
+        .ww-duel-grid.is-count-6 .ww-duel-score,
+        .ww-duel-grid.is-count-7 .ww-duel-score,
+        .ww-duel-grid.is-count-8 .ww-duel-score,
+        .ww-duel-grid.is-featured .ww-duel-pane.is-opponent .ww-duel-score {
+            font-size: 11px;
+        }
+        .ww-duel-grid.is-featured .ww-duel-pane.is-opponent {
+            min-height: 0;
+        }
         .ww-sprint-shell.is-editor-expanded .ww-duel-pane.is-opponent {
             display: none;
         }
@@ -210,13 +400,20 @@
         @media (max-width: 1100px) {
             .ww-duel-grid.is-count-2,
             .ww-duel-grid.is-count-3,
-            .ww-duel-grid.is-count-4 {
+            .ww-duel-grid.is-count-4,
+            .ww-duel-grid.is-count-5,
+            .ww-duel-grid.is-count-6,
+            .ww-duel-grid.is-count-7,
+            .ww-duel-grid.is-count-8,
+            .ww-duel-grid.is-featured {
                 grid-template-columns: minmax(0, 1fr);
                 grid-template-rows: none;
                 grid-auto-rows: minmax(42vh, 1fr);
                 overflow: auto;
             }
-            .ww-duel-grid.is-count-3 .ww-duel-pane.is-you {
+            .ww-duel-grid.is-count-3 .ww-duel-pane.is-you,
+            .ww-duel-grid.is-count-5 .ww-duel-pane.is-you,
+            .ww-duel-grid.is-featured .ww-duel-pane.is-you {
                 grid-column: auto;
                 grid-row: auto;
             }
@@ -424,6 +621,14 @@
                 </div>
             </section>
         </div>
+
+        <div class="ww-call-dock-wrap">
+            <div class="ww-call-dock-head">
+                <p class="ww-call-dock-label">Writers in sprint</p>
+                <span class="ww-call-dock-note" id="callDockNote"></span>
+            </div>
+            <div class="ww-call-dock" id="callDock" aria-label="Word War participants"></div>
+        </div>
     </div>
 
     <div id="recapOverlay" class="ww-recap-overlay hidden">
@@ -437,6 +642,6 @@
         </div>
     </div>
 
-    <script type="module" src="js/word-wars-sprint.js?v=14"></script>
+    <script type="module" src="js/word-wars-sprint.js?v=17"></script>
 </body>
 </html>

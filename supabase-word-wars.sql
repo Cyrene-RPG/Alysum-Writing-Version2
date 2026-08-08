@@ -26,7 +26,7 @@ ALTER TABLE public.word_wars_rooms ADD COLUMN IF NOT EXISTS max_writers integer 
 ALTER TABLE public.word_wars_rooms DROP CONSTRAINT IF EXISTS word_wars_rooms_max_writers_check;
 ALTER TABLE public.word_wars_rooms
   ADD CONSTRAINT word_wars_rooms_max_writers_check
-  CHECK (max_writers IN (2, 3, 4));
+  CHECK (max_writers >= 2 AND max_writers <= 16);
 
 CREATE INDEX IF NOT EXISTS word_wars_rooms_host_id_idx
   ON public.word_wars_rooms (host_id, created_at DESC);
@@ -144,6 +144,7 @@ BEGIN
     jsonb_build_object(
       'userId', wp.user_id,
       'displayName', wp.display_name,
+      'profileImageUrl', nullif(trim(u.profile_image_url), ''),
       'bookId', wp.book_id,
       'bookTitle', wp.book_title,
       'isReady', wp.is_ready,
@@ -163,6 +164,7 @@ BEGIN
   ), '[]'::jsonb)
   INTO v_participants
   FROM public.word_wars_participants wp
+  LEFT JOIN public.users u ON u.id = wp.user_id
   WHERE wp.room_id = p_room_id;
 
   RETURN jsonb_build_object(
@@ -215,7 +217,7 @@ BEGIN
     RAISE EXCEPTION 'Invalid sprint length';
   END IF;
 
-  IF v_max_writers NOT IN (2, 3, 4) THEN
+  IF v_max_writers < 2 OR v_max_writers > 16 THEN
     RAISE EXCEPTION 'Invalid writer count';
   END IF;
 

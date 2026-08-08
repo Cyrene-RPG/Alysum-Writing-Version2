@@ -499,6 +499,27 @@
             align-items: stretch;
             margin: 22px 0;
         }
+        .ww-arena-fighters.is-large {
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        }
+        .ww-arena-fighters.is-large .ww-fighter {
+            min-height: 150px;
+            padding: 14px;
+        }
+        .ww-arena-fighters.is-xlarge {
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        }
+        .ww-arena-fighters.is-xlarge .ww-fighter {
+            min-height: 120px;
+            padding: 12px;
+        }
+        .ww-arena-fighters.is-xlarge .ww-fighter-name {
+            font-size: 14px;
+        }
+        .ww-arena-fighters.is-xlarge .ww-fighter-book,
+        .ww-arena-fighters.is-xlarge .ww-fighter-ready {
+            font-size: 12px;
+        }
         @media (max-width: 720px) {
             .ww-arena-fighters {
                 grid-template-columns: 1fr;
@@ -653,8 +674,40 @@
             color: var(--gold);
         }
         .ww-chip-grid--writers {
-            grid-template-columns: repeat(3, minmax(0, 1fr));
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            margin-bottom: 10px;
+        }
+        .ww-custom-writers {
+            display: flex;
+            align-items: center;
+            gap: 10px;
             margin-bottom: 18px;
+        }
+        .ww-custom-writers label {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--muted);
+            white-space: nowrap;
+        }
+        .ww-custom-writers input {
+            width: 72px;
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: rgba(0,0,0,0.28);
+            color: var(--text);
+            font: inherit;
+            font-weight: 800;
+            text-align: center;
+        }
+        .ww-custom-writers input:focus {
+            outline: none;
+            border-color: rgba(124,58,237,0.55);
+            box-shadow: 0 0 0 3px rgba(124,58,237,0.15);
+        }
+        .ww-custom-writers-hint {
+            font-size: 12px;
+            color: var(--muted);
         }
         .ww-panel-divider {
             height: 1px;
@@ -673,7 +726,7 @@
                 <div class="ww-hero" id="wwHero">
                     <p class="ww-kicker"><span class="ww-kicker-dot" aria-hidden="true"></span> Friendly writing spar</p>
                     <h1 class="ww-title">Word Wars</h1>
-                    <p class="ww-sub">Gather up to four writers, open your real manuscripts, sync a sprint timer, and write together.</p>
+                    <p class="ww-sub">Gather writers, open your real manuscripts, sync a sprint timer, and write together — from duels to full-group sprints.</p>
                 </div>
 
                 <div id="fallbackBanner" class="ww-banner hidden">
@@ -695,9 +748,18 @@
                             <form id="createForm">
                                 <span class="ww-label">Writers in this war</span>
                                 <div class="ww-chip-grid ww-chip-grid--writers" id="hubWriterPicker">
-                                    <button type="button" class="ww-chip is-active" data-writers="2">2 writers</button>
-                                    <button type="button" class="ww-chip" data-writers="3">3 writers</button>
-                                    <button type="button" class="ww-chip" data-writers="4">4 writers</button>
+                                    <button type="button" class="ww-chip is-active" data-writers="2">2</button>
+                                    <button type="button" class="ww-chip" data-writers="3">3</button>
+                                    <button type="button" class="ww-chip" data-writers="4">4</button>
+                                    <button type="button" class="ww-chip" data-writers="6">6</button>
+                                    <button type="button" class="ww-chip" data-writers="8">8</button>
+                                    <button type="button" class="ww-chip" data-writers="12">12</button>
+                                    <button type="button" class="ww-chip" data-writers="16">16</button>
+                                </div>
+                                <div class="ww-custom-writers">
+                                    <label for="hubCustomWritersInput">Custom</label>
+                                    <input id="hubCustomWritersInput" type="number" min="2" max="16" step="1" value="2" inputmode="numeric" aria-label="Custom writer count" />
+                                    <span class="ww-custom-writers-hint">2–16 writers</span>
                                 </div>
                                 <span class="ww-label">Sprint length</span>
                                 <div class="ww-chip-grid" id="hubDurationPicker">
@@ -782,6 +844,6 @@
         </div>
     </main>
 
-    <script type="module" src="js/word-wars-lobby.js?v=9"></script>
+    <script type="module" src="js/word-wars-lobby.js?v=10"></script>
 </body>
 </html>

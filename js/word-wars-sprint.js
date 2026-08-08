@@ -12,14 +12,18 @@ import {
     updateWordWarProgress,
     listMyBooks,
     wordWarLobbyUrl,
+    enrichWordWarParticipantProfiles,
     WORD_WAR_DURATION_UNLIMITED,
-} from "./word-wars-api.js?v=7";
+    WORD_WAR_FEATURED_GRID_THRESHOLD,
+} from "./word-wars-api.js?v=9";
+import { renderParticipantDock } from "./word-wars-call.js?v=2";
 import { sanitizeChapterHtml } from "./book-html-sanitize.js?v=1";
 
 const params = new URLSearchParams(window.location.search);
-const previewWriters = params.get("preview");
-const isPreviewMode = previewWriters === "4" || previewWriters === "3";
-const roomId = isPreviewMode ? `preview-${previewWriters}` : String(params.get("room") || "").trim();
+const previewWritersRaw = params.get("preview");
+const previewWriterCount = Number(previewWritersRaw);
+const isPreviewMode = Number.isFinite(previewWriterCount) && previewWriterCount >= 2;
+const roomId = isPreviewMode ? `preview-${previewWriterCount}` : String(params.get("room") || "").trim();
 
 const timerEl = document.getElementById("sprintTimer");
 const timerModeEl = document.getElementById("timerMode");
@@ -38,6 +42,8 @@ const finishBtn = document.getElementById("finishBtn");
 const leaveBtn = document.getElementById("leaveBtn");
 const previewBanner = document.getElementById("previewBanner");
 const expandEditorBtn = document.getElementById("expandEditorBtn");
+const callDockEl = document.getElementById("callDock");
+const callDockNoteEl = document.getElementById("callDockNote");
 const sprintShellEl = document.querySelector(".ww-sprint-shell");
 const EXPAND_EDITOR_KEY = "alysum-word-wars:editor-expanded";
 
@@ -46,9 +52,35 @@ function formatSprintWords(count) {
     return `${value} word${value === 1 ? "" : "s"}`;
 }
 
+function duelParticipantCount() {
+    return lobby?.participants?.length || 2;
+}
+
 function duelGridCount() {
-    const count = lobby?.participants?.length || 2;
-    return Math.min(4, Math.max(2, count));
+    const count = duelParticipantCount();
+    if (count >= WORD_WAR_FEATURED_GRID_THRESHOLD) return "featured";
+    return Math.max(2, Math.min(8, count));
+}
+
+function applyDuelGridClasses() {
+    if (!duelGridEl) return;
+    const mode = duelGridCount();
+    duelGridEl.className = mode === "featured" ? "ww-duel-grid is-featured" : `ww-duel-grid is-count-${mode}`;
+}
+
+function renderParticipantStrip() {
+    if (!callDockEl || !lobby) return;
+    const participantCount = lobby.participants?.length || 0;
+    if (callDockNoteEl) {
+        callDockNoteEl.textContent =
+            participantCount > 1
+                ? `${participantCount} writers in this sprint`
+                : "Waiting for writers";
+    }
+    renderParticipantDock(callDockEl, {
+        participants: lobby.participants || [],
+        userId: uid,
+    });
 }
 
 function readEditorExpanded() {
@@ -666,10 +698,7 @@ function renderOpponentMirror() {
     if (!duelGridEl) return;
 
     const gridScrollTop = duelGridEl.scrollTop;
-    const nextGridClass = `ww-duel-grid is-count-${duelGridCount()}`;
-    if (duelGridEl.className !== nextGridClass) {
-        duelGridEl.className = nextGridClass;
-    }
+    applyDuelGridClasses();
 
     if (opponents.length) {
         duelGridEl.querySelector(".ww-duel-pane.is-opponent.is-empty")?.remove();
@@ -702,6 +731,8 @@ function renderOpponentMirror() {
     requestAnimationFrame(() => {
         duelGridEl.scrollTop = gridScrollTop;
     });
+
+    renderParticipantStrip();
 }
 
 function renderRecap() {
@@ -759,50 +790,57 @@ function buildEditorFrameUrl(bookId) {
 }
 
 function buildPreviewLobby(uid, book) {
-    const mockOpponents = [
-        {
-            userId: "preview-writer-2",
-            displayName: "Alex Chen",
-            bookId: "preview-book-2",
-            bookTitle: "The Last Harbor",
-            isReady: true,
-            isHost: false,
-            sprintWords: 142,
-            shareDraft: true,
-            liveChapterTitle: "The Fog Line",
-            liveChapterHtml:
-                "<p>By the time the ferry cleared the breakwater, the fog had swallowed the whole town behind them.</p><p>Mara kept her hand on the rail and tried not to think about what waited on the other side.</p>",
-            pauseRequested: false,
-        },
-        {
-            userId: "preview-writer-3",
-            displayName: "Jordan Wells",
-            bookId: "preview-book-3",
-            bookTitle: "Starfall Chronicles",
-            isReady: true,
-            isHost: false,
-            sprintWords: 87,
-            shareDraft: false,
-            liveChapterTitle: "",
-            liveChapterHtml: "",
-            pauseRequested: false,
-        },
-        {
-            userId: "preview-writer-4",
-            displayName: "Sam Rivera",
-            bookId: "preview-book-4",
-            bookTitle: "Ink & Ember",
-            isReady: true,
-            isHost: false,
-            sprintWords: 203,
-            shareDraft: true,
-            liveChapterTitle: "Ash Notes",
-            liveChapterHtml:
-                "<p>Every spell I learned in the academy had a counterspell. Every counterspell had a cost.</p><p>Tonight I was willing to pay it.</p>",
-            pauseRequested: false,
-        },
+    const writerCount = Math.max(2, Math.min(16, Math.round(previewWriterCount) || 4));
+    const mockNames = [
+        "Alex Chen",
+        "Jordan Wells",
+        "Sam Rivera",
+        "TravelingSheep",
+        "TheVibinGuy",
+        "LewStar",
+        "Mira Vale",
+        "Casey Frost",
+        "Riley Moon",
+        "Nova Hart",
+        "Ember Lane",
+        "Ash Kiro",
+        "Penn Wright",
+        "Sage Cole",
+        "Drew Atlas",
     ];
-    const writerCount = previewWriters === "3" ? 3 : 4;
+    const mockBooks = [
+        "The Last Harbor",
+        "Starfall Chronicles",
+        "Ink & Ember",
+        "Half of Everything | Draft II",
+        "The Vibing Adventure",
+        "Untitled",
+        "Glass Orchard",
+        "Midnight Relay",
+        "Copper & Salt",
+        "The Quiet Engine",
+        "Paper Suns",
+        "Riverglass",
+        "Signal Fire",
+        "Northbound",
+        "City of Echoes",
+    ];
+    const mockHtml =
+        "<p>By the time the ferry cleared the breakwater, the fog had swallowed the whole town behind them.</p><p>Mara kept her hand on the rail and tried not to think about what waited on the other side.</p>";
+
+    const mockOpponents = Array.from({ length: writerCount - 1 }, (_, index) => ({
+        userId: `preview-writer-${index + 2}`,
+        displayName: mockNames[index % mockNames.length],
+        bookId: `preview-book-${index + 2}`,
+        bookTitle: mockBooks[index % mockBooks.length],
+        isReady: true,
+        isHost: false,
+        sprintWords: 80 + index * 37,
+        shareDraft: index % 3 !== 1,
+        liveChapterTitle: index % 3 !== 1 ? "Preview chapter" : "",
+        liveChapterHtml: index % 3 !== 1 ? mockHtml : "",
+        pauseRequested: false,
+    }));
 
     return {
         roomId: `preview-${writerCount}`,
@@ -829,7 +867,7 @@ function buildPreviewLobby(uid, book) {
                 liveChapterHtml: "",
                 pauseRequested: false,
             },
-            ...mockOpponents.slice(0, writerCount - 1),
+            ...mockOpponents,
         ],
     };
 }
@@ -1082,7 +1120,7 @@ function handleEditorMessage(event) {
 async function refreshLobby() {
     const next = await fetchWordWarLobby({ roomId });
     if (!next) return;
-    lobby = next;
+    lobby = await enrichWordWarParticipantProfiles(next);
     if (shareDraftOverride === null) renderShareControls();
     renderPauseControls();
     renderOpponentMirror();
@@ -1131,6 +1169,7 @@ async function boot() {
 
     lobby = await fetchWordWarLobby({ roomId });
     if (!lobby) throw new Error("Word War room not found");
+    lobby = await enrichWordWarParticipantProfiles(lobby);
     if (lobby.status === "lobby") {
         window.location.replace(wordWarLobbyUrl(lobby.roomId, { roomId: true }));
         return;

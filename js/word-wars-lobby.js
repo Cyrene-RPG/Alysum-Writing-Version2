@@ -11,6 +11,7 @@ import {
     formatWordWarDuration,
     isWordWarDuration,
     isWordWarWriterCount,
+    normalizeWordWarWriterCount,
     lobbyMaxWriters,
     createWordWarRoom,
     fetchWordWarLobby,
@@ -22,7 +23,7 @@ import {
     wordWarLobbyUrl,
     wordWarSprintUrl,
     isUsingLocalWordWarsFallback,
-} from "./word-wars-api.js?v=6";
+} from "./word-wars-api.js?v=8";
 
 const params = new URLSearchParams(window.location.search);
 const initialCode = String(params.get("code") || "").trim().toUpperCase();
@@ -63,6 +64,24 @@ let unsubscribe = null;
 let selectedDuration = 15;
 let selectedMaxWriters = 2;
 let refreshTimer = null;
+
+const hubCustomWritersInput = document.getElementById("hubCustomWritersInput");
+
+function syncWriterPickerUi() {
+    selectedMaxWriters = normalizeWordWarWriterCount(selectedMaxWriters, 2);
+    if (hubCustomWritersInput) {
+        hubCustomWritersInput.value = String(selectedMaxWriters);
+    }
+    document.querySelectorAll("#hubWriterPicker .ww-chip").forEach((chip) => {
+        chip.classList.toggle("is-active", Number(chip.dataset.writers) === selectedMaxWriters);
+    });
+}
+
+function setSelectedMaxWriters(nextValue) {
+    if (!isWordWarWriterCount(nextValue)) return;
+    selectedMaxWriters = normalizeWordWarWriterCount(nextValue, selectedMaxWriters);
+    syncWriterPickerUi();
+}
 
 function escapeHtml(str) {
     return String(str)
@@ -184,6 +203,9 @@ function buildFighterSlots(lobby) {
 
 function renderFighters(lobby) {
     if (!fighterSlots) return;
+    const maxWriters = lobbyMaxWriters(lobby);
+    fighterSlots.classList.toggle("is-large", maxWriters > 4);
+    fighterSlots.classList.toggle("is-xlarge", maxWriters > 8);
     fighterSlots.innerHTML = buildFighterSlots(lobby)
         .map(({ fighter, label, className }) => renderFighterCard(fighter, label, className))
         .join("");
@@ -377,13 +399,18 @@ document.getElementById("hubDurationPicker")?.addEventListener("click", (event) 
 document.getElementById("hubWriterPicker")?.addEventListener("click", (event) => {
     const btn = event.target.closest("[data-writers]");
     if (!btn) return;
-    const nextWriters = Number(btn.dataset.writers);
-    if (!isWordWarWriterCount(nextWriters)) return;
-    selectedMaxWriters = nextWriters;
-    document.querySelectorAll("#hubWriterPicker .ww-chip").forEach((chip) => {
-        chip.classList.toggle("is-active", Number(chip.dataset.writers) === selectedMaxWriters);
-    });
+    setSelectedMaxWriters(Number(btn.dataset.writers));
 });
+
+hubCustomWritersInput?.addEventListener("input", () => {
+    setSelectedMaxWriters(hubCustomWritersInput.value);
+});
+
+hubCustomWritersInput?.addEventListener("change", () => {
+    setSelectedMaxWriters(hubCustomWritersInput.value);
+});
+
+syncWriterPickerUi();
 
 durationPicker?.addEventListener("click", async (event) => {
     if (isLayoutPreview) return;

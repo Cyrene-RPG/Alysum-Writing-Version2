@@ -9,17 +9,26 @@ const LOCAL_STORE_KEY = "alysum-word-wars:rooms";
 
 export const WORD_WAR_DURATION_UNLIMITED = 0;
 export const WORD_WAR_DURATIONS = [5, 15, 20, 25, 30, 45, WORD_WAR_DURATION_UNLIMITED];
-export const WORD_WAR_MAX_WRITERS = 4;
+export const WORD_WAR_MAX_WRITERS = 16;
 export const WORD_WAR_MIN_WRITERS = 2;
-export const WORD_WAR_WRITER_COUNTS = [2, 3, 4];
+export const WORD_WAR_WRITER_PRESETS = [2, 3, 4, 6, 8, 12, 16];
+/** @deprecated Use WORD_WAR_WRITER_PRESETS */
+export const WORD_WAR_WRITER_COUNTS = WORD_WAR_WRITER_PRESETS;
+export const WORD_WAR_FEATURED_GRID_THRESHOLD = 9;
 
 export function normalizeWordWarWriterCount(value, fallback = 4) {
-    const n = Number(value);
-    return WORD_WAR_WRITER_COUNTS.includes(n) ? n : fallback;
+    const n = Math.round(Number(value));
+    if (!Number.isFinite(n)) return fallback;
+    return Math.min(WORD_WAR_MAX_WRITERS, Math.max(WORD_WAR_MIN_WRITERS, n));
 }
 
 export function isWordWarWriterCount(value) {
-    return WORD_WAR_WRITER_COUNTS.includes(Number(value));
+    const n = Number(value);
+    return Number.isFinite(n) && n >= WORD_WAR_MIN_WRITERS && n <= WORD_WAR_MAX_WRITERS;
+}
+
+export function isWordWarWriterPreset(value) {
+    return WORD_WAR_WRITER_PRESETS.includes(normalizeWordWarWriterCount(value, -1));
 }
 
 export function lobbyMaxWriters(lobby) {
@@ -113,6 +122,7 @@ function normalizeLobby(raw) {
             liveChapterHtml: safeString(p.liveChapterHtml || p.live_chapter_html, ""),
             liveChapterId: safeString(p.liveChapterId || p.live_chapter_id, ""),
             pauseRequested: Boolean(p.pauseRequested ?? p.pause_requested),
+            profileImageUrl: safeString(p.profileImageUrl || p.profile_image_url, ""),
         })),
         localOnly: Boolean(raw.localOnly),
     };
@@ -588,6 +598,39 @@ export function subscribeWordWarLobby(roomId, onChange) {
         window.clearInterval(pollInterval);
         supabase.removeChannel(channel);
     };
+}
+
+export async function enrichWordWarParticipantProfiles(lobby) {
+    if (!lobby?.participants?.length) return lobby;
+    const missing = lobby.participants.some((p) => !p.profileImageUrl);
+    if (!missing) return lobby;
+
+    const ids = lobby.participants.map((p) => p.userId).filter(Boolean);
+    if (!ids.length) return lobby;
+
+    try {
+        const { data, error } = await supabase
+            .from("users")
+            .select("id, profile_image_url")
+            .in("id", ids);
+        if (error) throw error;
+        const avatarById = new Map(
+            (data || []).map((row) => [String(row.id), String(row.profile_image_url || "").trim()])
+        );
+        return {
+            ...lobby,
+            participants: lobby.participants.map((participant) => ({
+                ...participant,
+                profileImageUrl:
+                    participant.profileImageUrl ||
+                    avatarById.get(participant.userId) ||
+                    "",
+            })),
+        };
+    } catch (err) {
+        console.warn("Word War profile enrichment failed", err);
+        return lobby;
+    }
 }
 
 export async function isUsingLocalWordWarsFallback() {
