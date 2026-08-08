@@ -191,9 +191,10 @@ export function subscribeLoungeChannel(boardId, { onMessage } = {}) {
     };
 }
 
-export function subscribeLoungePings({ onPing } = {}) {
+export function subscribeLoungePings(userId, { onPing } = {}) {
+    const channelName = userId ? `lounge_pings_${userId}` : "lounge_pings_global";
     const channel = supabase
-        .channel("lounge_pings_global")
+        .channel(channelName)
         .on(
             "postgres_changes",
             {

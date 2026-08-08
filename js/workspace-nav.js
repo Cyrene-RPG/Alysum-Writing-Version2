@@ -269,7 +269,10 @@ function startLoungeBadgePolling() {
     if (loungeBadgeTimer) return;
     loungeBadgeTimer = window.setInterval(() => {
         void loadLoungeNavBadge();
-    }, 90_000);
+    }, 30_000);
+    document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") void loadLoungeNavBadge();
+    });
 }
 
 async function loadDashboardBadge(uid) {

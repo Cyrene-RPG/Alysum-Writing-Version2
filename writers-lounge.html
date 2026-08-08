@@ -108,7 +108,7 @@
     <script type="module">
         import { supabase } from "./firebase.js";
         import { requireStudioSession } from "./js/studio-session.js?v=3";
-        import { mountWorkspaceNav, refreshLoungeNavBadge } from "./js/workspace-nav.js?v=12";
+        import { mountWorkspaceNav, refreshLoungeNavBadge } from "./js/workspace-nav.js?v=13";
         import { publicDisplayNameFromUserData } from "./js/profile-display.js?v=1";
         import {
             listLoungeHome,
@@ -130,7 +130,7 @@
             channelSlugFromLocation,
             writersLoungeChannelUrl,
             isWriterLoungeSchemaMissing
-        } from "./js/writer-lounge-api.js?v=11";
+        } from "./js/writer-lounge-api.js?v=12";
         import {
             friendlyLoungeSafetyError,
             populateDobMonthSelect,
@@ -185,6 +185,7 @@
         let pendingSendBody = "";
         let realtimeUnsub = null;
         let pingRealtimeUnsub = null;
+        let unreadPollTimer = null;
         let unreadPingsBySlug = new Map();
         let seenPingToastIds = new Set();
         let editingMessageId = null;
@@ -247,10 +248,66 @@
             return allBoards().find((b) => String(b.id) === String(boardId)) || null;
         }
 
+        function normalizeUuidArray(value) {
+            if (Array.isArray(value)) return value;
+            if (value && typeof value === "object" && typeof value.length === "number") {
+                return [...value];
+            }
+            if (typeof value === "string") {
+                const trimmed = value.replace(/^\{|\}$/g, "").trim();
+                if (!trimmed) return [];
+                return trimmed
+                    .split(",")
+                    .map((part) => part.trim().replace(/^"|"$/g, ""))
+                    .filter(Boolean);
+            }
+            return [];
+        }
+
+        function currentUserMentionHandles() {
+            const handles = new Set();
+            const username = String(currentProfile?.username || "").trim().replace(/^@+/, "");
+            if (username) handles.add(username.toLowerCase());
+            const fromName = String(currentProfile?.display_name || currentProfile?.displayName || "")
+                .trim()
+                .toLowerCase()
+                .replace(/[^a-z0-9_]+/g, "")
+                .slice(0, 32);
+            if (fromName) handles.add(fromName);
+            return handles;
+        }
+
+        function bodyMentionsCurrentUser(body) {
+            const handles = currentUserMentionHandles();
+            if (!handles.size || !body) return false;
+            for (const match of String(body).matchAll(/@([A-Za-z0-9_]{2,32})/g)) {
+                if (handles.has(match[1].toLowerCase())) return true;
+            }
+            return false;
+        }
+
         function messageMentionsUser(row, userId) {
-            const ids = row?.mentionedUserIds || row?.mentioned_user_ids || [];
-            if (!Array.isArray(ids)) return false;
-            return ids.some((id) => String(id) === String(userId));
+            const ids = normalizeUuidArray(row?.mentionedUserIds || row?.mentioned_user_ids);
+            if (userId && ids.some((id) => String(id) === String(userId))) return true;
+            return bodyMentionsCurrentUser(row?.body);
+        }
+
+        async function enrichActivityRow(row) {
+            if (!row?.id) return row || {};
+            let enriched = { ...row };
+            const ids = normalizeUuidArray(enriched.mentioned_user_ids || enriched.mentionedUserIds);
+            if (ids.length) return enriched;
+            try {
+                const { data } = await supabase
+                    .from("lounge_messages")
+                    .select("mentioned_user_ids, reply_to_id, body, board_id, sender_id")
+                    .eq("id", enriched.id)
+                    .maybeSingle();
+                if (data) enriched = { ...enriched, ...data };
+            } catch {
+                /* realtime payload or RLS may be enough */
+            }
+            return enriched;
         }
 
         function formatActivityPreview(body) {
@@ -279,9 +336,30 @@
         }
 
         async function getActivityKind(row) {
-            if (messageMentionsUser(row, currentUser?.id)) return "ping";
-            if (await isDirectReplyToUser(row)) return "reply";
+            const enriched = await enrichActivityRow(row);
+            if (messageMentionsUser(enriched, currentUser?.id)) return "ping";
+            if (await isDirectReplyToUser(enriched)) return "reply";
             return null;
+        }
+
+        function unreadPingTotal(map = unreadPingsBySlug) {
+            let total = 0;
+            for (const info of map.values()) total += Number(info?.count) || 0;
+            return total;
+        }
+
+        async function resolveSenderName(senderId, fallback = "Someone") {
+            if (!senderId) return fallback;
+            try {
+                const { data } = await supabase
+                    .from("users")
+                    .select("display_name, username")
+                    .eq("id", senderId)
+                    .maybeSingle();
+                return publicDisplayNameFromUserData(data) || data?.username || fallback;
+            } catch {
+                return fallback;
+            }
         }
 
         function showActivityToast({ messageId, kind, senderName, channelTitle, channelSlug, body }) {
@@ -340,48 +418,90 @@
             if (!row || !currentUser?.id) return;
             if (String(row.sender_id) === String(currentUser.id)) return;
 
-            const kind = await getActivityKind(row);
-            if (!kind) return;
+            const enriched = await enrichActivityRow(row);
+            const kind = await getActivityKind(enriched);
+            const prevSnapshot = new Map(unreadPingsBySlug);
+            const prevTotal = unreadPingTotal(prevSnapshot);
 
-            const board = findBoardById(row.board_id);
-            if (!board) {
-                await refreshHome(false);
-                await refreshUnreadPings();
-                return;
-            }
-
-            if (activeChannel === board.slug) {
-                await markLoungeChannelRead(board.slug).catch(() => {});
-                await refreshUnreadPings();
-                return;
-            }
-
-            let senderName = "Someone";
-            try {
-                const { data } = await supabase
-                    .from("users")
-                    .select("display_name, username")
-                    .eq("id", row.sender_id)
-                    .maybeSingle();
-                senderName = publicDisplayNameFromUserData(data) || data?.username || senderName;
-            } catch {
-                /* keep fallback */
-            }
-
-            showActivityToast({
-                messageId: row.id,
-                kind,
-                senderName,
-                channelTitle: board.title,
-                channelSlug: board.slug,
-                body: row.body || ""
-            });
             await refreshUnreadPings();
+
+            let board =
+                findBoardById(enriched.board_id) ||
+                [...unreadPingsBySlug.values()].find((info) => String(info.boardId) === String(enriched.board_id));
+            if (!board && enriched.board_id) {
+                await refreshHome(false);
+                board = findBoardById(enriched.board_id);
+            }
+
+            const boardSlug = board?.slug || board?.boardSlug;
+            const boardTitle = board?.title || board?.boardTitle || boardSlug;
+            const onActiveChannel = boardSlug && activeChannel === boardSlug;
+
+            // Server unread counts are the source of truth for badges.
+            for (const [slug, info] of unreadPingsBySlug) {
+                const prevCount = prevSnapshot.get(slug)?.count || 0;
+                if (info.count > prevCount && slug !== activeChannel) {
+                    const latest = info.latest || {};
+                    showActivityToast({
+                        messageId: enriched.id,
+                        kind: latest.kind || kind || "ping",
+                        senderName: latest.senderName || (await resolveSenderName(enriched.sender_id)),
+                        channelTitle: info.boardTitle || slug,
+                        channelSlug: slug,
+                        body: latest.body || enriched.body || ""
+                    });
+                    return;
+                }
+            }
+
+            // Fallback when SQL ping tracking is unavailable but @mention is visible in the message.
+            if (!kind) return;
+            if (onActiveChannel) {
+                if (kind === "ping") {
+                    showActivityToast({
+                        messageId: enriched.id,
+                        kind,
+                        senderName: await resolveSenderName(enriched.sender_id),
+                        channelTitle: boardTitle,
+                        channelSlug: boardSlug,
+                        body: enriched.body || ""
+                    });
+                }
+                if (boardSlug) await markLoungeChannelRead(boardSlug).catch(() => {});
+                await refreshUnreadPings();
+                return;
+            }
+
+            if (!boardSlug) return;
+
+            if (unreadPingTotal() <= prevTotal) {
+                showActivityToast({
+                    messageId: enriched.id,
+                    kind,
+                    senderName: await resolveSenderName(enriched.sender_id),
+                    channelTitle: boardTitle,
+                    channelSlug: boardSlug,
+                    body: enriched.body || ""
+                });
+            }
+        }
+
+        function startUnreadPolling() {
+            if (unreadPollTimer) return;
+            unreadPollTimer = window.setInterval(() => {
+                refreshUnreadPings().catch(() => {});
+            }, 20_000);
+        }
+
+        function stopUnreadPolling() {
+            if (!unreadPollTimer) return;
+            clearInterval(unreadPollTimer);
+            unreadPollTimer = null;
         }
 
         function startPingRealtime() {
             pingRealtimeUnsub?.();
-            pingRealtimeUnsub = subscribeLoungePings({
+            pingRealtimeUnsub = subscribeLoungePings(currentUser?.id, {
                 onPing: (row) => {
                     handleIncomingPing(row).catch(console.error);
                 }
@@ -976,10 +1096,10 @@
                     refreshMessages(stickToBottom)
                         .then(async () => {
                             await refreshHome(false);
-                            if (activeChannel) {
+                            if (activeChannel && stickToBottom) {
                                 await markLoungeChannelRead(activeChannel).catch(() => {});
-                                await refreshUnreadPings();
                             }
+                            await refreshUnreadPings();
                         })
                         .catch(console.error);
                 }
@@ -1417,6 +1537,7 @@
                 loadingPanel.classList.add("hidden");
                 mainLayout.classList.remove("hidden");
                 startPingRealtime();
+                startUnreadPolling();
 
                 const slug = channelSlugFromLocation();
                 const defaultSlug = slug || "general-chat";
