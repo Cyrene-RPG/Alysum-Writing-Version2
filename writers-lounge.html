@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
     <link rel="stylesheet" href="css/gradient-themes.css?v=5" />
     <link rel="stylesheet" href="css/workspace-nav.css?v=11" />
-    <link rel="stylesheet" href="css/writer-lounge.css?v=7" />
+    <link rel="stylesheet" href="css/writer-lounge.css?v=8" />
     <script src="js/gradient-theme-sync.js" defer></script>
     <script src="js/alysum-appearance-boot.js"></script>
 </head>
@@ -403,15 +403,23 @@
                     `sms-row ${mine ? "sent" : "recv"}${compact ? " is-compact" : ""}${editingMessageId === row.id ? " is-editing" : ""}`;
 
                 if (mine) {
+                    const sentHead = compact
+                        ? ""
+                        : `<div class="sms-sent-head">` +
+                          `<div class="sms-sender-name">${escapeHtml(row.senderName || "You")}</div>` +
+                          avatar +
+                          `</div>`;
+                    const sentTailAvatar = compact ? avatar : "";
                     parts.push(
                         `<div class="${rowClass}">` +
+                        `<div class="sms-sent-group">` +
                         `<div class="sms-stack">` +
-                        (!compact ? `<div class="sms-sender-name">${escapeHtml(row.senderName || "You")}</div>` : "") +
+                        sentHead +
                         renderMessageBody(row, true) +
                         (!compact ? renderTimeLabel(when, row.editedAt) : "") +
                         `</div>` +
-                        avatar +
-                        `</div>`
+                        sentTailAvatar +
+                        `</div></div>`
                     );
                 } else {
                     parts.push(

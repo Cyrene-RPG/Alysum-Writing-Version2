@@ -314,6 +314,22 @@ body.light .text-chat-msgs {
     justify-content: flex-end;
 }
 
+.sms-sent-group {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    max-width: min(78%, 520px);
+    margin-left: auto;
+}
+
+.sms-sent-head {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    width: 100%;
+}
+
 .sms-row.recv {
     justify-content: flex-start;
 }
@@ -335,6 +351,14 @@ body.light .text-chat-msgs {
     color: #fff;
     background: linear-gradient(135deg, var(--theme-header-mid, #6d28d9), var(--theme-header-end, #db2777));
     overflow: hidden;
+}
+
+.sms-row.sent .sms-avatar,
+.sms-row.recv .sms-avatar {
+    margin-bottom: 0;
+}
+
+.sms-row.recv .sms-avatar {
     margin-bottom: 14px;
 }
 
@@ -359,12 +383,14 @@ body.light .text-chat-msgs {
 
 .sms-row.sent .sms-stack {
     align-items: flex-end;
+    max-width: none;
+    flex: 1;
+    min-width: 0;
 }
 
 .sms-row.sent .sms-sender-name {
     text-align: right;
-    padding-right: 4px;
-    padding-left: 0;
+    padding: 0;
 }
 
 .sms-row.recv .sms-stack {
