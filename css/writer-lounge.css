@@ -290,11 +290,24 @@ body.light .lounge-channel-btn:hover {
     flex: 1;
     min-height: 0;
     overflow-y: auto;
+    overflow-x: hidden;
     padding: 8px 14px 14px;
     display: flex;
     flex-direction: column;
-    gap: 0;
     background: #000;
+}
+
+.text-chat-msgs-inner {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    margin-top: auto;
+    flex-shrink: 0;
+}
+
+.text-chat-msgs-inner--empty {
+    margin-top: auto;
+    margin-bottom: auto;
 }
 
 body.light .text-chat-msgs {

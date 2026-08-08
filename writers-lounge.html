@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
     <link rel="stylesheet" href="css/gradient-themes.css?v=5" />
     <link rel="stylesheet" href="css/workspace-nav.css?v=11" />
-    <link rel="stylesheet" href="css/writer-lounge.css?v=11" />
+    <link rel="stylesheet" href="css/writer-lounge.css?v=12" />
     <script src="js/gradient-theme-sync.js" defer></script>
     <script src="js/alysum-appearance-boot.js"></script>
 </head>
@@ -46,7 +46,9 @@
                     </div>
                     <div id="threadStatus" class="text-status hidden"></div>
                     <div class="text-chat-msgs" id="msgList">
-                        <div class="text-empty">Choose a channel to see messages.</div>
+                        <div class="text-chat-msgs-inner text-chat-msgs-inner--empty">
+                            <div class="text-empty">Choose a channel to see messages.</div>
+                        </div>
                     </div>
                     <div class="text-composer hidden" id="composer">
                         <input type="text" class="text-input" id="msgInput" placeholder="Text the channel…" maxlength="8000" autocomplete="off" />
@@ -358,9 +360,15 @@
             );
         }
 
-        function renderMessages() {
+        function scrollChatToBottom() {
+            requestAnimationFrame(() => {
+                msgList.scrollTop = msgList.scrollHeight;
+            });
+        }
+
+        function renderMessages({ stickToBottom = true } = {}) {
             if (!activeBoard) {
-                msgList.innerHTML = '<div class="text-empty">Choose a channel to see messages.</div>';
+                msgList.innerHTML = '<div class="text-chat-msgs-inner text-chat-msgs-inner--empty"><div class="text-empty">Choose a channel to see messages.</div></div>';
                 return;
             }
 
@@ -368,7 +376,7 @@
                 const emptyCopy = activeBoard.canPost
                     ? `Be the first to text in #${activeBoard.title}. Say hi, share a word count, or ask for help.`
                     : "No messages in this channel yet.";
-                msgList.innerHTML = `<div class="text-empty">${escapeHtml(emptyCopy)}</div>`;
+                msgList.innerHTML = `<div class="text-chat-msgs-inner text-chat-msgs-inner--empty"><div class="text-empty">${escapeHtml(emptyCopy)}</div></div>`;
                 return;
             }
 
@@ -433,12 +441,13 @@
                     : activeBoard.canPost
                       ? `Be the first to text in #${activeBoard.title}. Say hi, share a word count, or ask for help.`
                       : "No messages in this channel yet.";
-                msgList.innerHTML = `<div class="text-empty">${escapeHtml(emptyCopy)}</div>`;
+                msgList.innerHTML = `<div class="text-chat-msgs-inner text-chat-msgs-inner--empty"><div class="text-empty">${escapeHtml(emptyCopy)}</div></div>`;
                 return;
             }
 
-            msgList.innerHTML = parts.join("");
-            msgList.scrollTop = msgList.scrollHeight;
+            msgList.innerHTML = `<div class="text-chat-msgs-inner">${parts.join("")}</div>`;
+
+            if (stickToBottom) scrollChatToBottom();
 
             const loadBtn = document.getElementById("loadOlderBtn");
             if (loadBtn) {
@@ -507,9 +516,8 @@
                 editedAt: m.editedAt || null
             }));
             hasMore = (data.messages || []).length >= 50;
-            renderMessages();
+            renderMessages({ stickToBottom: scroll });
             updateComposerState();
-            if (scroll) msgList.scrollTop = msgList.scrollHeight;
         }
 
         async function loadOlderMessages() {
@@ -529,8 +537,10 @@
             hasMore = (data.messages || []).length >= 50;
             const prevHeight = msgList.scrollHeight;
             messages = [...older, ...messages];
-            renderMessages();
-            msgList.scrollTop = msgList.scrollHeight - prevHeight;
+            renderMessages({ stickToBottom: false });
+            requestAnimationFrame(() => {
+                msgList.scrollTop = msgList.scrollHeight - prevHeight;
+            });
         }
 
         async function openChannel(slug) {
