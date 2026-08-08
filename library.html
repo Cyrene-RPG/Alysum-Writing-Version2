@@ -449,21 +449,44 @@
     }
     function escapeAttribute(str) { return escapeHtml(str).replaceAll("`", "&#096;"); }
 
+    async function loadReadCountsBatchFallback(ids) {
+        const { data, error } = await supabase.from("reads").select("book_id").in("book_id", ids);
+        if (error) throw error;
+        for (const id of ids) readCounts.set(id, 0);
+        for (const row of data || []) {
+            const id = row?.book_id;
+            if (id) readCounts.set(id, (readCounts.get(id) || 0) + 1);
+        }
+    }
+
     async function loadReadCounts() {
         readCounts.clear();
-        if (!allBooks.length) return;
-        await Promise.all(allBooks.map(async (book) => {
-            if (!book.id) return;
-            try {
-                const { count, error } = await supabase
-                    .from("reads")
-                    .select("id", { count: "exact", head: true })
-                    .eq("book_id", book.id);
-                if (!error) readCounts.set(book.id, count || 0);
-            } catch (e) {
-                console.warn("Could not load reads for", book.id, e);
+        const ids = allBooks.map((book) => book.id).filter(Boolean);
+        if (!ids.length) return;
+        try {
+            const { data, error } = await supabase.rpc("get_library_read_counts", {
+                p_book_ids: ids,
+            });
+            if (error) throw error;
+            for (const id of ids) readCounts.set(id, 0);
+            for (const row of data || []) {
+                const bookId = row?.book_id;
+                const count = Number(row?.read_count);
+                if (bookId) readCounts.set(bookId, Number.isFinite(count) ? count : 0);
             }
-        }));
+        } catch (err) {
+            const msg = String(err?.message || err || "");
+            if (/function.*does not exist|get_library_read_counts/i.test(msg)) {
+                console.warn("Read-count RPC unavailable — using single batch query.", err);
+            } else {
+                console.warn("Read-count RPC failed — using single batch query.", err);
+            }
+            try {
+                await loadReadCountsBatchFallback(ids);
+            } catch (fallbackErr) {
+                console.warn("Could not load library read counts.", fallbackErr);
+            }
+        }
     }
 
     async function loadBooks() {

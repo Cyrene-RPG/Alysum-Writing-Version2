@@ -1550,6 +1550,7 @@
         DEFAULT_DAILY_WORD_GOAL,
         localDayKey,
         normalizeWritingDayTotals,
+        readDayWordCount,
     } from "./js/writing-day-stats.js?v=2";
     import { ensureLoginStreakCloud } from "./js/ensure-login-streak.js?v=3";
     import {
@@ -1748,6 +1749,7 @@ function rememberBookId(id) {
         const resumeChapterId = currentChapter()?.id || "";
         currentBook = normalizeBookData(row);
         editorLoadedChapterKey = "";
+        recomputeWordCountCache();
         renderTitles();
         renderAllSections();
         applyComicModeUI();
@@ -1775,6 +1777,7 @@ function rememberBookId(id) {
         if (!loc) return;
         const ch = currentBook.sections[loc.section][loc.index];
         ch.content = content;
+        updateChapterWordCountInCache(ch);
         const activeKey = chapterLoadKey(currentSection, currentChapterIndex);
         const editedKey = chapterLoadKey(loc.section, loc.index);
         if (activeKey === editedKey) {
@@ -1796,6 +1799,7 @@ function rememberBookId(id) {
         if (chapterData.title != null) ch.title = chapterData.title;
         if (chapterData.content != null) ch.content = chapterData.content;
         if (Array.isArray(chapterData.imageUrls)) setChapterImageUrls(ch, chapterData.imageUrls);
+        if (chapterData.content != null) updateChapterWordCountInCache(ch);
         const activeKey = chapterLoadKey(currentSection, currentChapterIndex);
         const editedKey = chapterLoadKey(loc.section, loc.index);
         if (activeKey === editedKey) {
@@ -2021,9 +2025,16 @@ function rememberBookId(id) {
     let currentSection = "body";
     let currentChapterIndex = 0;
     let saveTimer = null;
+    let editorChapterDirty = false;
+    let editorChapterSyncTimer = null;
+    const EDITOR_CHAPTER_SYNC_MS = 400;
     let dragged = null;
     let chapterDragDidMove = false;
     let persistedBookWordCount = null;
+    let wordCountCacheValid = false;
+    let cachedTotalWords = 0;
+    /** @type {Map<string, number>} */
+    const chapterWordCountByKey = new Map();
     let isLocalStudio = isDesktopLocalHost();
     let suppressResumeSave = false;
     let resumeSaveTimer = null;
@@ -3245,7 +3256,60 @@ function rememberBookId(id) {
     }
     function countWords(html) { const text = stripHtmlToText(html); return text ? text.split(" ").length : 0; }
     function allChaptersFlat() { return [...currentBook.sections.front.map((ch, i) => ({ section: "front", index: i, ...ch })), ...currentBook.sections.body.map((ch, i) => ({ section: "body", index: i, ...ch })), ...currentBook.sections.back.map((ch, i) => ({ section: "back", index: i, ...ch }))]; }
-    function totalWords() { return allChaptersFlat().reduce((sum, ch) => sum + countWords(ch.content || ""), 0); }
+
+    function chapterWordCacheKey(ch) {
+        const id = ch?.id;
+        return id ? String(id) : "";
+    }
+
+    function recomputeWordCountCache() {
+        chapterWordCountByKey.clear();
+        let total = 0;
+        for (const ch of allChaptersFlat()) {
+            const words = countWords(ch.content || "");
+            const key = chapterWordCacheKey(ch);
+            if (key) chapterWordCountByKey.set(key, words);
+            total += words;
+        }
+        cachedTotalWords = total;
+        wordCountCacheValid = true;
+        return total;
+    }
+
+    function invalidateWordCountCache() {
+        wordCountCacheValid = false;
+    }
+
+    /** @param {object | null | undefined} ch */
+    function updateChapterWordCountInCache(ch) {
+        const key = chapterWordCacheKey(ch);
+        const newWords = countWords(ch?.content || "");
+        if (!key || !wordCountCacheValid) return newWords;
+        const prev = chapterWordCountByKey.has(key) ? chapterWordCountByKey.get(key) : newWords;
+        cachedTotalWords += newWords - prev;
+        chapterWordCountByKey.set(key, newWords);
+        return newWords;
+    }
+
+    /** @param {object | null | undefined} ch */
+    function removeChapterFromWordCache(ch) {
+        const key = chapterWordCacheKey(ch);
+        if (!wordCountCacheValid || !key) return;
+        const words = chapterWordCountByKey.has(key) ? chapterWordCountByKey.get(key) : countWords(ch?.content || "");
+        cachedTotalWords = Math.max(0, cachedTotalWords - words);
+        chapterWordCountByKey.delete(key);
+    }
+
+    /** @param {object | null | undefined} ch */
+    function registerEmptyChapterInWordCache(ch) {
+        const key = chapterWordCacheKey(ch);
+        if (wordCountCacheValid && key) chapterWordCountByKey.set(key, 0);
+    }
+
+    function totalWords() {
+        if (wordCountCacheValid) return cachedTotalWords;
+        return recomputeWordCountCache();
+    }
     function currentChapter() {
         if (!currentBook?.sections) {
             return {
@@ -3265,9 +3329,7 @@ function rememberBookId(id) {
     }
     function syncStats() {
         if (isCurrentBookComic()) syncCurrentComicPageFromUI();
-        else if (document.activeElement === editor) syncCurrentChapterFromEditor();
         const ch = currentChapter();
-        const total = totalWords();
         if (isCurrentBookComic()) {
             const pageCount = countComicPages(currentBook?.sections);
             const uploaded = countComicPagesWithImages(currentBook?.sections);
@@ -3282,19 +3344,24 @@ function rememberBookId(id) {
             if (wordsFooter) wordsFooter.textContent = uploaded;
             bottomTotalWordsEl.textContent = uploaded;
             if (bottomTotalLabel) bottomTotalLabel.textContent = `of ${pageCount} pages uploaded`;
-        } else {
-            const chWords = countWords(ch.content || "");
-            chapterWordsEl.textContent = chWords;
-            if (bottomMetaLabel) bottomMetaLabel.textContent = "chapter words";
-            totalWordsEl.textContent = total;
-            bottomTotalWordsEl.textContent = total;
-            const wordsFooter = footerWordsEl?.isConnected
-                ? footerWordsEl
-                : document.getElementById("footerWords");
-            if (wordsFooter) wordsFooter.textContent = total;
-            if (bottomTotalLabel) bottomTotalLabel.textContent = "total words";
-            chapterCountEl.textContent = allChaptersFlat().length;
+            return;
         }
+
+        let total;
+        let chWords;
+        if (!wordCountCacheValid) recomputeWordCountCache();
+        chWords = applyActiveChapterWordsToCache(ch);
+        total = cachedTotalWords;
+        chapterWordsEl.textContent = chWords;
+        if (bottomMetaLabel) bottomMetaLabel.textContent = "chapter words";
+        totalWordsEl.textContent = total;
+        bottomTotalWordsEl.textContent = total;
+        const wordsFooter = footerWordsEl?.isConnected
+            ? footerWordsEl
+            : document.getElementById("footerWords");
+        if (wordsFooter) wordsFooter.textContent = total;
+        if (bottomTotalLabel) bottomTotalLabel.textContent = "total words";
+        chapterCountEl.textContent = allChaptersFlat().length;
     }
     function renderTitles() { const title = currentBook.title || "Untitled Book"; topBookTitle.textContent = title; sidebarBookTitle.textContent = title; }
     function escapeHtml(str) { return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
@@ -3355,11 +3422,54 @@ function rememberBookId(id) {
             .trim();
     }
 
-    function syncCurrentChapterFromEditor() {
+    function activeChapterWordsForStats(ch) {
+        if (!isCurrentBookComic() && editorChapterDirty && editor && document.activeElement === editor) {
+            return countWords(editor.innerHTML);
+        }
+        return countWords(ch?.content || "");
+    }
+
+    function applyActiveChapterWordsToCache(ch) {
+        const chWords = activeChapterWordsForStats(ch);
+        if (!wordCountCacheValid) return chWords;
+        const key = chapterWordCacheKey(ch);
+        const prev = chapterWordCountByKey.has(key) ? chapterWordCountByKey.get(key) : chWords;
+        cachedTotalWords += chWords - prev;
+        chapterWordCountByKey.set(key, chWords);
+        return chWords;
+    }
+
+    function resetEditorChapterSyncState() {
+        clearTimeout(editorChapterSyncTimer);
+        editorChapterSyncTimer = null;
+        editorChapterDirty = false;
+    }
+
+    function syncCurrentChapterFromEditor(options = {}) {
+        const force = !!options.force;
+        if (!editor || isCurrentBookComic()) return;
+        if (!force && !editorChapterDirty) return;
         const holder = document.createElement("div");
         holder.innerHTML = editor.innerHTML;
         stripEditorPageGapsFromHtml(holder);
         currentChapter().content = holder.innerHTML;
+        editorChapterDirty = false;
+    }
+
+    function markEditorChapterDirty() {
+        if (isCurrentBookComic() || !editor) return;
+        editorChapterDirty = true;
+        clearTimeout(editorChapterSyncTimer);
+        editorChapterSyncTimer = setTimeout(() => {
+            editorChapterSyncTimer = null;
+            syncCurrentChapterFromEditor({ force: true });
+        }, EDITOR_CHAPTER_SYNC_MS);
+    }
+
+    function flushEditorChapterSync() {
+        clearTimeout(editorChapterSyncTimer);
+        editorChapterSyncTimer = null;
+        syncCurrentChapterFromEditor({ force: true });
     }
 
     function chapterLoadKey(section, index) {
@@ -3371,10 +3481,13 @@ function rememberBookId(id) {
     function cleanAndStoreCurrentChapterFromEditor() {
         if (isOnCopyrightChapter() && getCopyrightEditorMode() === "template") {
             syncCopyrightTemplateToChapter(false);
+            editorChapterDirty = false;
             return currentChapter().content || "";
         }
+        flushEditorChapterSync();
         const cleaned = cleanEditorHtml(editor.innerHTML);
         currentChapter().content = cleaned;
+        editorChapterDirty = false;
         return cleaned;
     }
 
@@ -3631,7 +3744,10 @@ function rememberBookId(id) {
         const canSyncFromEditor = !!editorLoadedChapterKey && editorLoadedChapterKey === activeChapterKey;
         if (canSyncFromEditor) {
             if (isCurrentBookComic()) syncCurrentComicPageFromUI();
-            else cleanAndStoreCurrentChapterFromEditor();
+            else {
+                cleanAndStoreCurrentChapterFromEditor();
+                updateChapterWordCountInCache(currentChapter());
+            }
         }
         currentSection = section;
         currentChapterIndex = index;
@@ -3650,6 +3766,7 @@ function rememberBookId(id) {
             applyEditorStyle();
             normalizeInlineImagesInEditor();
             editorLoadedChapterKey = chapterLoadKey(section, index);
+            resetEditorChapterSyncState();
         }
         if (rerender) renderAllSections();
         syncStats();
@@ -3784,7 +3901,8 @@ function rememberBookId(id) {
     }
 
     function frAfterEdit() {
-        syncCurrentChapterFromEditor();
+        markEditorChapterDirty();
+        flushEditorChapterSync();
         syncStats();
         scheduleSave();
         frRunSearch(true);
@@ -4217,14 +4335,73 @@ function rememberBookId(id) {
         } catch (e) { console.error("Daily writing totals update failed:", e); }
     }
 
-    async function saveBook(doneText = "Saved") {
+    const DAILY_FULL_SAVE_WORD_THRESHOLD = 500;
+
+    function readTodayTypedWords() {
+        return readDayWordCount(
+            currentProfile?.writingDayTotals ?? currentProfile?.writing_day_totals,
+            localDayKey()
+        );
+    }
+
+    /** Autosave uses a full book write once today's typed words reach the threshold. */
+    function autosaveShouldUseFullBook(wordDelta) {
+        return readTodayTypedWords() + Math.max(0, wordDelta || 0) >= DAILY_FULL_SAVE_WORD_THRESHOLD;
+    }
+
+    function activeChapterSavePayload() {
+        const chapter = currentChapter();
+        if (!chapter) throw new Error("No active chapter");
+        return {
+            section: currentSection,
+            index: currentChapterIndex,
+            chapter: JSON.parse(JSON.stringify(chapter)),
+        };
+    }
+
+    async function persistChapterToCloud(totalWordsCount, updatedMs) {
+        const { section, index, chapter } = activeChapterSavePayload();
+        const { error } = await supabase.rpc("update_book_chapter", {
+            p_book_id: bookId,
+            p_section: section,
+            p_chapter_index: index,
+            p_chapter: chapter,
+            p_total_words: totalWordsCount,
+            p_updated: updatedMs,
+        });
+        if (error) {
+            const msg = error.message || "";
+            if (/function.*does not exist|update_book_chapter/i.test(msg)) {
+                console.warn("Chapter autosave RPC unavailable — falling back to full book save.", error);
+                const patch = toDbBookPatch(currentBook);
+                const { error: fullErr } = await supabase.from("books").update(patch).eq("id", bookId).eq("user_id", currentUser.id);
+                if (fullErr) throw fullErr;
+                return;
+            }
+            if (/chapter_index_out_of_range|invalid_section/i.test(msg)) {
+                console.warn("Chapter autosave out of sync — falling back to full book save.", error);
+                const patch = toDbBookPatch(currentBook);
+                const { error: fullErr } = await supabase.from("books").update(patch).eq("id", bookId).eq("user_id", currentUser.id);
+                if (fullErr) throw fullErr;
+                return;
+            }
+            throw error;
+        }
+    }
+
+    async function saveBook(doneText = "Saved", options = {}) {
+        const mode = options.mode === "chapter" ? "chapter" : "full";
         if (!currentUser || !bookId || !currentBook) return;
         setSaveStatus("Saving...");
         if (isCurrentBookComic()) syncCurrentComicPageFromUI();
-        else if (editorLoadedChapterKey) cleanAndStoreCurrentChapterFromEditor();
+        else if (editorLoadedChapterKey) {
+            cleanAndStoreCurrentChapterFromEditor();
+            if (wordCountCacheValid) updateChapterWordCountInCache(currentChapter());
+        }
         const nextWords = totalWords();
         const prevPersisted = persistedBookWordCount;
         const patch = toDbBookPatch(currentBook);
+        const updatedMs = patch.updated;
         let statusText = isLocalStudio ? "Saved locally" : doneText;
         if (isLocalStudio) {
             updateBook(bookId, patch);
@@ -4240,8 +4417,12 @@ function rememberBookId(id) {
                 statusText = "Saved offline";
             } else {
                 try {
-                    const { error } = await supabase.from("books").update(patch).eq("id", bookId).eq("user_id", currentUser.id);
-                    if (error) throw error;
+                    if (mode === "chapter") {
+                        await persistChapterToCloud(nextWords, updatedMs);
+                    } else {
+                        const { error } = await supabase.from("books").update(patch).eq("id", bookId).eq("user_id", currentUser.id);
+                        if (error) throw error;
+                    }
                     await markBookSynced(currentUser.id, bookId, shadowRow);
                     offlinePendingSync = false;
                 } catch (e) {
@@ -4341,14 +4522,32 @@ function rememberBookId(id) {
         currentBook = normalizeBookData(currentBook);
         const after = JSON.stringify(currentBook);
         if (before !== after) {
+            invalidateWordCountCache();
             try { await saveBook("Saved"); } catch (e) { console.error("Migration save failed:", e); }
+            recomputeWordCountCache();
         }
     }
 
     function scheduleSave() {
         clearTimeout(saveTimer);
         saveTimer = setTimeout(async () => {
-            try { await saveBook("Saved"); } catch (e) { console.error(e); setSaveStatus("Save failed"); }
+            try {
+                if (isCurrentBookComic()) syncCurrentComicPageFromUI();
+                else if (editorLoadedChapterKey) {
+                    cleanAndStoreCurrentChapterFromEditor();
+                    if (wordCountCacheValid) updateChapterWordCountInCache(currentChapter());
+                }
+                const nextWords = totalWords();
+                const delta =
+                    typeof persistedBookWordCount === "number" && Number.isFinite(persistedBookWordCount)
+                        ? Math.max(0, nextWords - persistedBookWordCount)
+                        : 0;
+                const mode = autosaveShouldUseFullBook(delta) ? "full" : "chapter";
+                await saveBook("Saved", { mode });
+            } catch (e) {
+                console.error(e);
+                setSaveStatus("Save failed");
+            }
         }, 700);
     }
 
@@ -4362,6 +4561,7 @@ function rememberBookId(id) {
                 imageUrl: "",
                 imageUrls: [],
             });
+            registerEmptyChapterInWordCache(currentBook.sections[section][currentBook.sections[section].length - 1]);
             renderAllSections();
             loadChapter(section, currentBook.sections[section].length - 1, false);
             try { await saveBook("Saved"); notifyStructuralVersion("Chapter added"); } catch (e) { console.error(e); setSaveStatus("Save failed"); }
@@ -4371,6 +4571,7 @@ function rememberBookId(id) {
         const name = await alysumPrompt(label);
         if (!name) return;
         currentBook.sections[section].push({ id: generateId(), title: name, content: "", imageUrl: "", imageUrls: [] });
+        registerEmptyChapterInWordCache(currentBook.sections[section][currentBook.sections[section].length - 1]);
         renderAllSections();
         loadChapter(section, currentBook.sections[section].length - 1, false);
         try { await saveBook("Saved"); notifyStructuralVersion("Chapter added"); } catch (e) { console.error(e); setSaveStatus("Save failed"); }
@@ -4493,7 +4694,7 @@ function rememberBookId(id) {
         const newRange = document.createRange();
         newRange.selectNodeContents(span);
         sel.addRange(newRange);
-        syncCurrentChapterFromEditor();
+        markEditorChapterDirty();
         syncStats();
         scheduleSave();
     }
@@ -4734,10 +4935,15 @@ function rememberBookId(id) {
     deleteChapterBtn.addEventListener("click", async () => {
         if (currentBook.sections[currentSection].length <= 1 && currentSection === "body") { alert("Your body needs at least one chapter."); return; }
         if (!confirm("Delete this chapter?")) return;
+        removeChapterFromWordCache(currentBook.sections[currentSection][currentChapterIndex]);
         currentBook.sections[currentSection].splice(currentChapterIndex, 1);
         if (currentBook.sections[currentSection].length === 0) {
             if (currentSection === "front" || currentSection === "back") { currentSection = "body"; currentChapterIndex = 0; }
-            else { currentBook.sections.body.push({ id: generateId(), title: "Chapter 1", content: "" }); currentChapterIndex = 0; }
+            else {
+                currentBook.sections.body.push({ id: generateId(), title: "Chapter 1", content: "" });
+                registerEmptyChapterInWordCache(currentBook.sections.body[currentBook.sections.body.length - 1]);
+                currentChapterIndex = 0;
+            }
         } else if (currentChapterIndex >= currentBook.sections[currentSection].length) currentChapterIndex = currentBook.sections[currentSection].length - 1;
         renderAllSections();
         loadChapter(currentSection, currentChapterIndex, false);
@@ -4773,12 +4979,15 @@ function rememberBookId(id) {
         if (editor.querySelector(`p figure.${INLINE_IMAGE_FIGURE_CLASS}, div figure.${INLINE_IMAGE_FIGURE_CLASS}`)) {
             normalizeInlineImagesInEditor();
         }
-        syncCurrentChapterFromEditor();
+        markEditorChapterDirty();
         syncStats();
         scheduleSave();
         scheduleWriterResumeSave();
         scheduleWordWarDraft();
         scheduleEditorPagination();
+    });
+    editor.addEventListener("blur", () => {
+        flushEditorChapterSync();
     });
     editor.addEventListener("keyup", () => scheduleWriterResumeSave());
     editor.addEventListener("click", (e) => {
@@ -4797,12 +5006,18 @@ function rememberBookId(id) {
         }
     });
     editorWorkspace?.addEventListener("scroll", () => scheduleWriterResumeSave(), { passive: true });
-    window.addEventListener("beforeunload", flushWriterResumeSave);
+    window.addEventListener("beforeunload", () => {
+        flushEditorChapterSync();
+        flushWriterResumeSave();
+    });
     document.addEventListener("visibilitychange", () => {
-        if (document.visibilityState === "hidden") flushWriterResumeSave();
+        if (document.visibilityState === "hidden") {
+            flushEditorChapterSync();
+            flushWriterResumeSave();
+        }
     });
     editor.addEventListener("keydown", e => {
-        if (e.key === "Enter") setTimeout(() => { syncCurrentChapterFromEditor(); syncStats(); scheduleSave(); }, 0);
+        if (e.key === "Enter") setTimeout(() => { markEditorChapterDirty(); syncStats(); scheduleSave(); }, 0);
     });
     editor.addEventListener("paste", e => {
         e.preventDefault();
@@ -4821,7 +5036,8 @@ function rememberBookId(id) {
 
         if (!html) return;
         insertCleanHtml(html);
-        syncCurrentChapterFromEditor();
+        markEditorChapterDirty();
+        flushEditorChapterSync();
         syncStats();
         scheduleSave();
         scheduleEditorPagination();
@@ -4853,13 +5069,13 @@ function rememberBookId(id) {
         btn.addEventListener("click", () => {
             document.execCommand(btn.dataset.cmd, false, null);
             editor.focus();
-            syncCurrentChapterFromEditor();
+            markEditorChapterDirty();
             syncStats();
             scheduleSave();
         });
     });
-    formatSelect.addEventListener("change", () => { document.execCommand("formatBlock", false, formatSelect.value === "h2" ? "h2" : "p"); editor.focus(); syncCurrentChapterFromEditor(); syncStats(); scheduleSave(); scheduleEditorPagination(); });
-    quoteBtn.addEventListener("click", () => { document.execCommand("formatBlock", false, "blockquote"); editor.focus(); syncCurrentChapterFromEditor(); syncStats(); scheduleSave(); scheduleEditorPagination(); });
+    formatSelect.addEventListener("change", () => { document.execCommand("formatBlock", false, formatSelect.value === "h2" ? "h2" : "p"); editor.focus(); markEditorChapterDirty(); syncStats(); scheduleSave(); scheduleEditorPagination(); });
+    quoteBtn.addEventListener("click", () => { document.execCommand("formatBlock", false, "blockquote"); editor.focus(); markEditorChapterDirty(); syncStats(); scheduleSave(); scheduleEditorPagination(); });
     fontSelect.addEventListener("change", () => { applyFontToEditorSelection(fontSelect.value); });
     fontSizeSelect.addEventListener("change", () => {
         const size = fontSizeSelect.value;
@@ -4981,6 +5197,7 @@ async function reloadBookFromCloud() {
     if (error) throw error;
     if (!data) throw new Error("Book not found.");
     currentBook = normalizeBookData(data);
+    recomputeWordCountCache();
     renderTitles();
     renderAllSections();
 }
@@ -5016,6 +5233,7 @@ async function loadBook() {
         }
             if (!data) { setSaveStatus("Book not found"); topBookTitle.textContent = "Book not found"; sidebarBookTitle.textContent = "Book not found"; return; }
             currentBook = normalizeBookData(data);
+            recomputeWordCountCache();
             await migrateBookIfNeeded();
             editorLoadedChapterKey = "";
             const prologueRepaired = await repairArchangelPrologueIfNeeded({
