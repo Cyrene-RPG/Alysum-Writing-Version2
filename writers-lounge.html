@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
     <link rel="stylesheet" href="css/gradient-themes.css?v=5" />
     <link rel="stylesheet" href="css/workspace-nav.css?v=11" />
-    <link rel="stylesheet" href="css/writer-lounge.css?v=2" />
+    <link rel="stylesheet" href="css/writer-lounge.css?v=3" />
     <script src="js/gradient-theme-sync.js" defer></script>
     <script src="js/alysum-appearance-boot.js"></script>
 </head>
@@ -93,6 +93,7 @@
         import { supabase } from "./firebase.js";
         import { requireStudioSession } from "./js/studio-session.js?v=3";
         import { mountWorkspaceNav } from "./js/workspace-nav.js?v=11";
+        import { publicDisplayNameFromUserData } from "./js/profile-display.js?v=1";
         import {
             listLoungeHome,
             listLoungeMessages,
@@ -142,6 +143,7 @@
         const ageGateCancelBtn = document.getElementById("ageGateCancelBtn");
 
         let currentUser = null;
+        let currentProfile = {};
         let homeData = null;
         let activeChannel = null;
         let activeBoard = null;
@@ -245,6 +247,49 @@
             ).join("");
         }
 
+        function initialsFromName(name) {
+            const parts = String(name || "?").trim().split(/\s+/).filter(Boolean);
+            if (!parts.length) return "?";
+            if (parts.length === 1) return parts[0].slice(0, 1).toUpperCase();
+            return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+        }
+
+        function renderAvatarHtml({ initials, imageUrl }) {
+            const label = escapeHtml(initials || "?");
+            if (imageUrl) {
+                return (
+                    `<span class="lounge-msg-avatar">` +
+                    `<img src="${escapeHtml(imageUrl)}" alt="" loading="lazy" ` +
+                    `onerror="this.remove(); this.parentElement.textContent='${label}';" />` +
+                    `</span>`
+                );
+            }
+            return `<span class="lounge-msg-avatar" aria-hidden="true">${label}</span>`;
+        }
+
+        function messageGroupCompact(prev, row) {
+            if (!prev || prev.senderId !== row.senderId) return false;
+            const prevTime = new Date(prev.createdAt).getTime();
+            const rowTime = new Date(row.createdAt).getTime();
+            if (!Number.isFinite(prevTime) || !Number.isFinite(rowTime)) return false;
+            return rowTime - prevTime <= 7 * 60 * 1000;
+        }
+
+        function enrichMessage(row) {
+            const mine = row.senderId === currentUser?.id;
+            if (mine && currentProfile) {
+                return {
+                    ...row,
+                    senderName: publicDisplayNameFromUserData(currentProfile) || row.senderName || "You",
+                    senderInitials: initialsFromName(
+                        publicDisplayNameFromUserData(currentProfile) || row.senderName || "You"
+                    ),
+                    senderAvatarUrl: currentProfile.profile_image_url || currentProfile.profileImageUrl || row.senderAvatarUrl || ""
+                };
+            }
+            return row;
+        }
+
         function renderMessages() {
             if (!activeBoard) {
                 msgList.innerHTML = '<div class="text-empty">Choose a channel to see messages.</div>';
@@ -264,18 +309,31 @@
                 parts.push('<button type="button" class="load-older-btn" id="loadOlderBtn">Load earlier messages</button>');
             }
 
-            let lastSender = "";
-            for (const row of messages) {
+            let prev = null;
+            for (const raw of messages) {
+                const row = enrichMessage(raw);
                 const mine = row.senderId === currentUser?.id;
-                const showSender = !mine && row.senderId !== lastSender;
-                lastSender = row.senderId;
+                const compact = messageGroupCompact(prev, row);
+                prev = row;
                 const when = formatMessageTime(row.createdAt);
+                const avatar = compact
+                    ? '<span class="lounge-msg-avatar is-spacer" aria-hidden="true"></span>'
+                    : renderAvatarHtml({
+                        initials: row.senderInitials || initialsFromName(row.senderName),
+                        imageUrl: row.senderAvatarUrl || ""
+                    });
+
                 parts.push(
-                    `<div class="text-bubble-wrap ${mine ? "sent" : "recv"}">` +
-                    (showSender ? `<div class="text-bubble-sender">${escapeHtml(row.senderName || "Writer")}</div>` : "") +
-                    `<div class="text-bubble ${mine ? "sent" : "recv"}">` +
-                    `${escapeHtml(row.body)}` +
-                    `<div class="text-bubble-time">${escapeHtml(when)}</div>` +
+                    `<div class="lounge-msg-row${compact ? " is-compact" : ""}${mine ? " is-mine" : ""}">` +
+                    avatar +
+                    `<div class="lounge-msg-content">` +
+                    (compact
+                        ? ""
+                        : `<div class="lounge-msg-meta">` +
+                          `<span class="lounge-msg-name">${escapeHtml(row.senderName || "Writer")}</span>` +
+                          `<span class="lounge-msg-time">${escapeHtml(when)}</span>` +
+                          `</div>`) +
+                    `<div class="lounge-msg-text">${escapeHtml(row.body)}</div>` +
                     `</div></div>`
                 );
             }
@@ -339,6 +397,8 @@
                 id: m.id,
                 senderId: m.senderId,
                 senderName: m.senderName,
+                senderInitials: m.senderInitials,
+                senderAvatarUrl: m.senderAvatarUrl || "",
                 body: m.body,
                 createdAt: m.createdAt
             }));
@@ -356,6 +416,8 @@
                 id: m.id,
                 senderId: m.senderId,
                 senderName: m.senderName,
+                senderInitials: m.senderInitials,
+                senderAvatarUrl: m.senderAvatarUrl || "",
                 body: m.body,
                 createdAt: m.createdAt
             }));
@@ -517,6 +579,13 @@
             const session = await requireStudioSession(supabase, window.location.pathname + window.location.search);
             if (!session?.user) return;
             currentUser = session.user;
+
+            const { data: profileRow } = await supabase
+                .from("users")
+                .select("display_name, username, profile_image_url")
+                .eq("id", currentUser.id)
+                .maybeSingle();
+            currentProfile = profileRow || {};
 
             mountWorkspaceNav({
                 mount: "#alysum-workspace-nav",

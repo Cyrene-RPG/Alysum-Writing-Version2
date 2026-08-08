@@ -306,6 +306,11 @@ BEGIN
       'senderId', m.sender_id,
       'senderName', public.lounge_display_name(m.sender_id),
       'senderInitials', public.lounge_user_initials(m.sender_id),
+      'senderAvatarUrl', (
+        SELECT nullif(trim(u.profile_image_url), '')
+        FROM public.users u
+        WHERE u.id = m.sender_id
+      ),
       'body', m.body,
       'createdAt', m.created_at
     ) AS msg
