@@ -325,6 +325,21 @@ body.light .text-chat-msgs {
     justify-content: flex-end;
 }
 
+.sms-sent-body {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+    max-width: min(72%, 460px);
+    min-width: 0;
+}
+
+.sms-row.sent .sms-sender-name {
+    padding: 0 12px 1px;
+    text-align: right;
+    width: 100%;
+}
+
 .sms-row.recv {
     justify-content: flex-start;
     align-items: flex-end;

@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
     <link rel="stylesheet" href="css/gradient-themes.css?v=5" />
     <link rel="stylesheet" href="css/workspace-nav.css?v=11" />
-    <link rel="stylesheet" href="css/writer-lounge.css?v=9" />
+    <link rel="stylesheet" href="css/writer-lounge.css?v=10" />
     <script src="js/gradient-theme-sync.js" defer></script>
     <script src="js/alysum-appearance-boot.js"></script>
 </head>
@@ -402,8 +402,10 @@
                 if (mine) {
                     parts.push(
                         `<div class="${rowClass}">` +
+                        `<div class="sms-sent-body">` +
+                        (groupStart ? `<div class="sms-sender-name">${escapeHtml(row.senderName || "You")}</div>` : "") +
                         renderMessageBody(row, true, when) +
-                        `</div>`
+                        `</div></div>`
                     );
                 } else {
                     const avatarCol = groupStart
