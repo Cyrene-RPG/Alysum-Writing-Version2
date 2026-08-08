@@ -310,7 +310,10 @@ AS $$
     SELECT lower(m[1]) AS uname
     FROM regexp_matches(coalesce(p_body, ''), '@([A-Za-z0-9_]{2,32})', 'g') AS m
   ) tags
-  JOIN public.users u ON lower(u.username) = tags.uname;
+  JOIN public.users u ON (
+    lower(u.username) = tags.uname
+    OR lower(regexp_replace(coalesce(u.display_name, ''), '[^a-z0-9]', '', 'g')) = tags.uname
+  );
 $$;
 
 CREATE OR REPLACE FUNCTION public.lounge_reply_json(p_reply_id uuid)
@@ -462,7 +465,7 @@ BEGIN
         WHERE u.id = m.sender_id
       ),
       'senderUsername', (
-        SELECT coalesce(nullif(trim(u.username), ''), 'writer')
+        SELECT nullif(trim(u.username), '')
         FROM public.users u
         WHERE u.id = m.sender_id
       ),
@@ -675,7 +678,7 @@ BEGIN
       SELECT jsonb_build_object(
         'id', u.id,
         'name', public.lounge_display_name(u.id),
-        'username', coalesce(nullif(trim(u.username), ''), 'writer'),
+        'username', nullif(trim(u.username), ''),
         'initials', public.lounge_user_initials(u.id),
         'lastSeenAt', u.last_seen_at
       ) AS row
@@ -713,7 +716,7 @@ BEGIN
       SELECT jsonb_build_object(
         'id', u.id,
         'name', public.lounge_display_name(u.id),
-        'username', coalesce(nullif(trim(u.username), ''), 'writer')
+        'username', nullif(trim(u.username), '')
       ) AS row
       FROM public.users u
       WHERE u.id <> auth.uid()

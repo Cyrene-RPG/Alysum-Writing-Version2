@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
     <link rel="stylesheet" href="css/gradient-themes.css?v=5" />
     <link rel="stylesheet" href="css/workspace-nav.css?v=11" />
-    <link rel="stylesheet" href="css/writer-lounge.css?v=16" />
+    <link rel="stylesheet" href="css/writer-lounge.css?v=17" />
     <script src="js/gradient-theme-sync.js" defer></script>
     <script src="js/alysum-appearance-boot.js"></script>
 </head>
@@ -278,7 +278,7 @@
                 const isSelf = m.id === currentUser?.id;
                 const pingBtn = isSelf
                     ? ""
-                    : `<button type="button" class="lounge-member-ping" data-member-action="ping" data-user-name="${escapeHtml(m.username || "writer")}" data-user-label="${escapeHtml(m.name || "Writer")}" aria-label="Ping ${escapeHtml(m.name || "Writer")}" title="Ping @${escapeHtml(m.username || "writer")}">@</button>`;
+                    : `<button type="button" class="lounge-member-ping" data-member-action="ping" data-user-id="${escapeHtml(m.id)}" data-user-handle="${escapeHtml(m.username || "")}" data-user-label="${escapeHtml(m.name || "Writer")}" aria-label="Ping ${escapeHtml(m.name || "Writer")}" title="Ping ${escapeHtml(m.name || "Writer")}">@</button>`;
                 const blockBtn = isSelf
                     ? ""
                     : `<button type="button" class="lounge-member-block" data-member-action="block" data-user-id="${escapeHtml(m.id)}" data-user-name="${escapeHtml(m.name || "Writer")}" aria-label="Block ${escapeHtml(m.name || "Writer")}" title="Block user">🚫</button>`;
@@ -363,11 +363,12 @@
         function mentionHandleForUser(row) {
             const handle = String(row?.senderUsername || row?.username || "").trim();
             if (handle) return handle.replace(/^@+/, "");
-            return String(row?.senderName || "writer")
+            const fromName = String(row?.senderName || row?.name || "")
                 .trim()
                 .toLowerCase()
                 .replace(/[^a-z0-9_]+/g, "")
-                .slice(0, 32) || "writer";
+                .slice(0, 32);
+            return fromName || "";
         }
 
         function mentionCandidates() {
@@ -442,13 +443,84 @@
             updateMentionMenu();
         }
 
-        function pingUser(row) {
+        async function pingUser(row, handleOverride = "") {
             if (!row || row.senderId === currentUser?.id) return;
             if (!messagingEligible) {
                 openAgeGate();
                 return;
             }
-            insertAtCursor(`@${mentionHandleForUser(row)} `);
+
+            let handle = String(handleOverride || row.senderUsername || "").trim().replace(/^@+/, "");
+            if (!handle && row.senderId) {
+                try {
+                    const { data } = await supabase
+                        .from("users")
+                        .select("username")
+                        .eq("id", row.senderId)
+                        .maybeSingle();
+                    handle = String(data?.username || "").trim().replace(/^@+/, "");
+                } catch {
+                    /* fall back below */
+                }
+            }
+            if (!handle) handle = mentionHandleForUser(row);
+            if (!handle) return;
+
+            if (document.activeElement !== msgInput) msgInput.focus();
+            insertAtCursor(`@${handle} `);
+            setThreadStatus(`Ping @${handle} added to your message.`, "wait");
+        }
+
+        function renderMessageActions(row, mine) {
+            const handle = mentionHandleForUser(row);
+            const pingLabel = handle ? `Ping @${escapeHtml(handle)}` : "Ping";
+            const replyBtn =
+                `<button type="button" class="sms-action-link" data-msg-action="reply" data-msg-id="${escapeHtml(row.id)}">Reply</button>`;
+            const pingBtn = mine
+                ? ""
+                : `<button type="button" class="sms-action-link" data-msg-action="ping" data-msg-id="${escapeHtml(row.id)}" data-user-handle="${escapeHtml(handle)}">${pingLabel}</button>`;
+            if (mine) {
+                return (
+                    `<div class="sms-actions">` +
+                    replyBtn +
+                    `<button type="button" class="sms-action-link" data-msg-action="edit" data-msg-id="${escapeHtml(row.id)}">Edit</button>` +
+                    `<button type="button" class="sms-action-link danger" data-msg-action="delete" data-msg-id="${escapeHtml(row.id)}">Delete</button>` +
+                    `</div>`
+                );
+            }
+            return (
+                `<div class="sms-actions">` +
+                replyBtn +
+                pingBtn +
+                `<button type="button" class="sms-action-link danger" data-msg-action="block" data-user-id="${escapeHtml(row.senderId)}" data-user-name="${escapeHtml(row.senderName || "Writer")}">Block</button>` +
+                `</div>`
+            );
+        }
+
+        function renderMessageBody(row, mine, when = "") {
+            if (editingMessageId === row.id) {
+                return (
+                    `<div class="sms-edit">` +
+                    `<textarea class="sms-edit-input" id="editInput-${escapeHtml(row.id)}">${escapeHtml(row.body)}</textarea>` +
+                    `<div class="sms-edit-actions">` +
+                    `<button type="button" class="sms-edit-btn primary" data-msg-action="save-edit" data-msg-id="${escapeHtml(row.id)}">Save</button>` +
+                    `<button type="button" class="sms-edit-btn" data-msg-action="cancel-edit">Cancel</button>` +
+                    `</div></div>`
+                );
+            }
+
+            const edited = row.editedAt ? " (edited)" : "";
+            const tip = when ? `${when}${edited}` : "";
+
+            return (
+                `<div class="sms-message-stack">` +
+                `<div class="sms-bubble-stack">` +
+                renderReplyQuote(row) +
+                `<div class="sms-bubble"${tip ? ` title="${escapeHtml(tip)}"` : ""}>${formatMessageHtml(row.body)}</div>` +
+                `</div>` +
+                renderMessageActions(row, mine) +
+                `</div>`
+            );
         }
 
         function hideMentionMenu() {
@@ -592,48 +664,6 @@
             msgInput.setSelectionRange(nextPos, nextPos);
             hideMentionMenu();
             msgInput.focus();
-        }
-
-        function renderMessageBody(row, mine, when = "") {
-            if (editingMessageId === row.id) {
-                return (
-                    `<div class="sms-edit">` +
-                    `<textarea class="sms-edit-input" id="editInput-${escapeHtml(row.id)}">${escapeHtml(row.body)}</textarea>` +
-                    `<div class="sms-edit-actions">` +
-                    `<button type="button" class="sms-edit-btn primary" data-msg-action="save-edit" data-msg-id="${escapeHtml(row.id)}">Save</button>` +
-                    `<button type="button" class="sms-edit-btn" data-msg-action="cancel-edit">Cancel</button>` +
-                    `</div></div>`
-                );
-            }
-
-            const edited = row.editedAt ? " (edited)" : "";
-            const tip = when ? `${when}${edited}` : "";
-            const replyBtn =
-                `<button type="button" class="sms-action" data-msg-action="reply" data-msg-id="${escapeHtml(row.id)}" aria-label="Reply" title="Reply">↩</button>`;
-            const pingBtn = mine
-                ? ""
-                : `<button type="button" class="sms-action" data-msg-action="ping" data-msg-id="${escapeHtml(row.id)}" aria-label="Ping user" title="Ping @${escapeHtml(mentionHandleForUser(row))}">@</button>`;
-            const actions = mine
-                ? `<div class="sms-actions">` +
-                  replyBtn +
-                  pingBtn +
-                  `<button type="button" class="sms-action" data-msg-action="edit" data-msg-id="${escapeHtml(row.id)}" aria-label="Edit message" title="Edit">✎</button>` +
-                  `<button type="button" class="sms-action danger" data-msg-action="delete" data-msg-id="${escapeHtml(row.id)}" aria-label="Delete message" title="Delete">🗑</button>` +
-                  `</div>`
-                : `<div class="sms-actions">` +
-                  replyBtn +
-                  pingBtn +
-                  `<button type="button" class="sms-action danger" data-msg-action="block" data-user-id="${escapeHtml(row.senderId)}" data-user-name="${escapeHtml(row.senderName || "Writer")}" aria-label="Block user" title="Block user">🚫</button>` +
-                  `</div>`;
-
-            return (
-                `<div class="sms-bubble-wrap">` +
-                actions +
-                `<div class="sms-bubble-stack">` +
-                renderReplyQuote(row) +
-                `<div class="sms-bubble"${tip ? ` title="${escapeHtml(tip)}"` : ""}>${formatMessageHtml(row.body)}</div>` +
-                `</div></div>`
-            );
         }
 
         function scrollChatToBottom() {
@@ -1043,7 +1073,7 @@
             }
             if (action === "ping") {
                 const row = messages.find((m) => m.id === messageId);
-                if (row) pingUser(row);
+                if (row) pingUser(row, btn.dataset.userHandle || "");
                 return;
             }
             if (action === "jump-reply") {
@@ -1061,11 +1091,14 @@
         memberList.addEventListener("click", (e) => {
             const pingBtn = e.target.closest("[data-member-action='ping']");
             if (pingBtn) {
-                if (!messagingEligible) {
-                    openAgeGate();
-                    return;
-                }
-                insertAtCursor(`@${pingBtn.dataset.userName || "writer"} `);
+                pingUser(
+                    {
+                        senderId: pingBtn.dataset.userId,
+                        senderUsername: pingBtn.dataset.userHandle || "",
+                        senderName: pingBtn.dataset.userLabel || "Writer"
+                    },
+                    pingBtn.dataset.userHandle || ""
+                ).catch(console.error);
                 return;
             }
             const btn = e.target.closest("[data-member-action='block']");
