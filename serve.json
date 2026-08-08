@@ -1,6 +1,3 @@
 {
-  "cleanUrls": false,
-  "rewrites": [
-    { "source": "/writers-lounge", "destination": "/writers-lounge.html" }
-  ]
+  "cleanUrls": false
 }

@@ -1,7 +1,4 @@
 {
-  "rewrites": [
-    { "source": "/writers-lounge", "destination": "/writers-lounge.html" }
-  ],
   "headers": [
     {
       "source": "/firebase.js",
