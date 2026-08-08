@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
     <link rel="stylesheet" href="css/gradient-themes.css?v=5" />
     <link rel="stylesheet" href="css/workspace-nav.css?v=11" />
-    <link rel="stylesheet" href="css/writer-lounge.css?v=8" />
+    <link rel="stylesheet" href="css/writer-lounge.css?v=9" />
     <script src="js/gradient-theme-sync.js" defer></script>
     <script src="js/alysum-appearance-boot.js"></script>
 </head>
@@ -295,15 +295,11 @@
 
         function renderAvatarHtml({ initials, imageUrl, className = "sms-avatar" }) {
             const label = escapeHtml(initials || "?");
-            if (imageUrl) {
-                return (
-                    `<span class="${className}">` +
-                    `<img src="${escapeHtml(imageUrl)}" alt="" loading="lazy" ` +
-                    `onerror="this.remove(); this.parentElement.textContent='${label}';" />` +
-                    `</span>`
-                );
-            }
-            return `<span class="${className}" aria-hidden="true">${label}</span>`;
+            const inner = imageUrl
+                ? `<img src="${escapeHtml(imageUrl)}" alt="" loading="lazy" ` +
+                  `onerror="this.remove(); this.parentElement.textContent='${label}';" />`
+                : label;
+            return `<div class="sms-avatar-col"><span class="${className}" aria-hidden="true">${inner}</span></div>`;
         }
 
         function messageGroupCompact(prev, row) {
@@ -329,7 +325,7 @@
             return row;
         }
 
-        function renderMessageBody(row, mine) {
+        function renderMessageBody(row, mine, when = "") {
             if (editingMessageId === row.id) {
                 return (
                     `<div class="sms-edit">` +
@@ -341,6 +337,8 @@
                 );
             }
 
+            const edited = row.editedAt ? " (edited)" : "";
+            const tip = when ? `${when}${edited}` : "";
             const actions = mine
                 ? `<div class="sms-actions">` +
                   `<button type="button" class="sms-action" data-msg-action="edit" data-msg-id="${escapeHtml(row.id)}" aria-label="Edit message" title="Edit">✎</button>` +
@@ -353,14 +351,9 @@
             return (
                 `<div class="sms-bubble-wrap">` +
                 actions +
-                `<div class="sms-bubble">${escapeHtml(row.body)}</div>` +
+                `<div class="sms-bubble"${tip ? ` title="${escapeHtml(tip)}"` : ""}>${escapeHtml(row.body)}</div>` +
                 `</div>`
             );
-        }
-
-        function renderTimeLabel(when, editedAt) {
-            const edited = editedAt ? ' <span class="sms-edited">edited</span>' : "";
-            return `<div class="sms-time">${escapeHtml(when)}${edited}</div>`;
         }
 
         function renderMessages() {
@@ -382,53 +375,49 @@
                 parts.push('<button type="button" class="load-older-btn" id="loadOlderBtn">Load earlier messages</button>');
             }
 
+            const visible = messages
+                .map((raw) => enrichMessage(raw))
+                .filter((row) => row.senderId === currentUser?.id || !blockedUserIds.has(row.senderId));
+
             let prev = null;
             let renderedCount = 0;
-            for (const raw of messages) {
-                const row = enrichMessage(raw);
-                if (row.senderId !== currentUser?.id && blockedUserIds.has(row.senderId)) continue;
+            for (let i = 0; i < visible.length; i += 1) {
+                const row = visible[i];
+                const next = i < visible.length - 1 ? visible[i + 1] : null;
                 renderedCount += 1;
                 const mine = row.senderId === currentUser?.id;
                 const compact = messageGroupCompact(prev, row);
+                const groupEnd = !messageGroupCompact(row, next);
+                const groupStart = !compact;
                 prev = row;
                 const when = formatMessageTime(row.createdAt);
-                const avatar = compact
-                    ? renderAvatarHtml({ initials: "?", imageUrl: "", className: "sms-avatar is-spacer" })
-                    : renderAvatarHtml({
-                        initials: row.senderInitials || initialsFromName(row.senderName),
-                        imageUrl: row.senderAvatarUrl || ""
-                    });
 
                 const rowClass =
-                    `sms-row ${mine ? "sent" : "recv"}${compact ? " is-compact" : ""}${editingMessageId === row.id ? " is-editing" : ""}`;
+                    `sms-row ${mine ? "sent" : "recv"}` +
+                    `${compact ? " is-compact" : ""}` +
+                    `${groupStart ? " is-group-start" : ""}` +
+                    `${groupEnd ? " is-group-end" : ""}` +
+                    `${editingMessageId === row.id ? " is-editing" : ""}`;
 
                 if (mine) {
-                    const sentHead = compact
-                        ? ""
-                        : `<div class="sms-sent-head">` +
-                          `<div class="sms-sender-name">${escapeHtml(row.senderName || "You")}</div>` +
-                          avatar +
-                          `</div>`;
-                    const sentTailAvatar = compact ? avatar : "";
                     parts.push(
                         `<div class="${rowClass}">` +
-                        `<div class="sms-sent-group">` +
-                        `<div class="sms-stack">` +
-                        sentHead +
-                        renderMessageBody(row, true) +
-                        (!compact ? renderTimeLabel(when, row.editedAt) : "") +
-                        `</div>` +
-                        sentTailAvatar +
-                        `</div></div>`
+                        renderMessageBody(row, true, when) +
+                        `</div>`
                     );
                 } else {
+                    const avatarCol = groupStart
+                        ? renderAvatarHtml({
+                            initials: row.senderInitials || initialsFromName(row.senderName),
+                            imageUrl: row.senderAvatarUrl || ""
+                        })
+                        : `<div class="sms-avatar-col is-empty" aria-hidden="true"></div>`;
                     parts.push(
                         `<div class="${rowClass}">` +
-                        avatar +
-                        `<div class="sms-stack">` +
-                        (!compact ? `<div class="sms-sender-name">${escapeHtml(row.senderName || "Writer")}</div>` : "") +
-                        renderMessageBody(row, false) +
-                        (!compact ? renderTimeLabel(when, row.editedAt) : "") +
+                        avatarCol +
+                        `<div class="sms-body">` +
+                        (groupStart ? `<div class="sms-sender-name">${escapeHtml(row.senderName || "Writer")}</div>` : "") +
+                        renderMessageBody(row, false, when) +
                         `</div></div>`
                     );
                 }
