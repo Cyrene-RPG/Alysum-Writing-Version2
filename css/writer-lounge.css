@@ -322,16 +322,16 @@ body.light .text-chat-msgs {
 }
 
 .sms-row.is-group-start {
-    margin-top: 12px;
+    margin-top: 8px;
 }
 
 .sms-row.is-group-start:first-child,
 .load-older-btn + .sms-row.is-group-start {
-    margin-top: 4px;
+    margin-top: 2px;
 }
 
 .sms-row.is-compact {
-    margin-top: 2px;
+    margin-top: 1px;
 }
 
 .sms-row.sent {
@@ -342,21 +342,30 @@ body.light .text-chat-msgs {
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    gap: 2px;
+    gap: 0;
     width: fit-content;
     max-width: min(72%, 460px);
 }
 
 .sms-row.sent .sms-sender-name {
-    padding: 0 12px 1px;
+    padding: 0 12px 2px;
     text-align: right;
     max-width: 100%;
+    line-height: 1;
 }
 
 .sms-row.recv {
     justify-content: flex-start;
     align-items: flex-end;
-    gap: 8px;
+    gap: 6px;
+}
+
+.sms-row.recv.is-group-start {
+    align-items: flex-start;
+}
+
+.sms-row.recv.is-compact {
+    align-items: flex-end;
 }
 
 .sms-avatar-col {
@@ -394,16 +403,16 @@ body.light .text-chat-msgs {
 .sms-body {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 0;
     max-width: min(72%, 460px);
     min-width: 0;
 }
 
 .sms-sender-name {
-    padding: 0 12px 1px;
-    font-size: 12px;
+    padding: 0 12px 2px;
+    font-size: 11px;
     font-weight: 600;
-    line-height: 1.2;
+    line-height: 1;
     color: #8e8e93;
 }
 
@@ -583,7 +592,7 @@ body.light .sms-edit-btn.primary {
 .sms-bubble-stack {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 2px;
     min-width: 0;
     max-width: 100%;
 }
