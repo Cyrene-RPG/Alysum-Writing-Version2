@@ -1447,15 +1447,23 @@ export function mountEmojiPicker({ container, toggleButton = null, onSelect, onO
             { id: "recent", icon: "🕘", label: "Recent" },
             ...EMOJI_CATEGORIES.map((cat) => ({ id: cat.id, icon: cat.icon, label: cat.label }))
         ];
-        tabs.innerHTML = tabItems
-            .map(
-                (tab) =>
-                    `<button type="button" class="emoji-picker-tab${tab.id === activeCategory ? " is-active" : ""}"` +
-                    ` role="tab" aria-selected="${tab.id === activeCategory ? "true" : "false"}"` +
-                    ` data-category="${tab.id}" title="${tab.label}" aria-label="${tab.label}">` +
-                    `<span aria-hidden="true">${tab.icon}</span></button>`
-            )
-            .join("");
+
+        if (tabs.childElementCount !== tabItems.length) {
+            tabs.innerHTML = tabItems
+                .map(
+                    (tab) =>
+                        `<button type="button" class="emoji-picker-tab" role="tab" aria-selected="false"` +
+                        ` data-category="${tab.id}" title="${tab.label}" aria-label="${tab.label}">` +
+                        `<span aria-hidden="true">${tab.icon}</span></button>`
+                )
+                .join("");
+        }
+
+        tabs.querySelectorAll("[data-category]").forEach((btn) => {
+            const isActive = btn.dataset.category === activeCategory;
+            btn.classList.toggle("is-active", isActive);
+            btn.setAttribute("aria-selected", isActive ? "true" : "false");
+        });
     }
 
     function renderGrid(items, label) {
@@ -1552,6 +1560,7 @@ export function mountEmojiPicker({ container, toggleButton = null, onSelect, onO
     });
 
     tabs.addEventListener("click", (e) => {
+        e.stopPropagation();
         const btn = e.target.closest("[data-category]");
         if (!btn) return;
         activeCategory = btn.dataset.category;
@@ -1560,6 +1569,7 @@ export function mountEmojiPicker({ container, toggleButton = null, onSelect, onO
     });
 
     grid.addEventListener("click", (e) => {
+        e.stopPropagation();
         const btn = e.target.closest("[data-emoji]");
         if (!btn) return;
         const emoji = btn.dataset.emoji || "";
@@ -1571,6 +1581,10 @@ export function mountEmojiPicker({ container, toggleButton = null, onSelect, onO
 
     container.addEventListener("mousedown", (e) => {
         e.preventDefault();
+    });
+
+    container.addEventListener("click", (e) => {
+        e.stopPropagation();
     });
 
     document.addEventListener("click", (e) => {
