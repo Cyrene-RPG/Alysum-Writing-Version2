@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
     <link rel="stylesheet" href="css/gradient-themes.css?v=5" />
     <link rel="stylesheet" href="css/workspace-nav.css?v=11" />
-    <link rel="stylesheet" href="css/writer-lounge.css?v=18" />
+    <link rel="stylesheet" href="css/writer-lounge.css?v=19" />
     <script src="js/gradient-theme-sync.js" defer></script>
     <script src="js/alysum-appearance-boot.js"></script>
 </head>
@@ -79,6 +79,8 @@
         </div>
     </div>
 
+    <div id="pingToastStack" class="ping-toast-stack" aria-live="polite" aria-atomic="false"></div>
+
     <div id="ageGateOverlay" class="safety-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="ageGateTitle">
         <div class="safety-card">
             <h3 id="ageGateTitle">Writer's Lounge is 18+ only</h3>
@@ -116,13 +118,17 @@
             deleteLoungeMessage,
             listLoungeOnlineMembers,
             subscribeLoungeChannel,
+            subscribeLoungePings,
             blockLoungeUser,
             listMyLoungeBlocks,
             searchLoungeMentionUsers,
+            ensureLoungeReadBaselines,
+            markLoungeChannelRead,
+            listLoungeUnreadPings,
             channelSlugFromLocation,
             writersLoungeChannelUrl,
             isWriterLoungeSchemaMissing
-        } from "./js/writer-lounge-api.js?v=9";
+        } from "./js/writer-lounge-api.js?v=10";
         import {
             attestBetaMessaging18Plus,
             hasBetaMessagingAttestation
@@ -158,6 +164,7 @@
         const composerReplyPreview = document.getElementById("composerReplyPreview");
         const composerReplyCancel = document.getElementById("composerReplyCancel");
         const mentionMenu = document.getElementById("mentionMenu");
+        const pingToastStack = document.getElementById("pingToastStack");
         const memberList = document.getElementById("memberList");
         const onlineCount = document.getElementById("onlineCount");
         const ageGateOverlay = document.getElementById("ageGateOverlay");
@@ -178,6 +185,9 @@
         let messagingEligible = false;
         let pendingSendBody = "";
         let realtimeUnsub = null;
+        let pingRealtimeUnsub = null;
+        let unreadPingsBySlug = new Map();
+        let seenPingToastIds = new Set();
         let editingMessageId = null;
         let blockedUserIds = new Set();
         let replyTarget = null;
@@ -234,6 +244,114 @@
             return allBoards().find((b) => b.slug === slug) || null;
         }
 
+        function findBoardById(boardId) {
+            return allBoards().find((b) => String(b.id) === String(boardId)) || null;
+        }
+
+        function messageMentionsUser(row, userId) {
+            const ids = row?.mentionedUserIds || row?.mentioned_user_ids || [];
+            if (!Array.isArray(ids)) return false;
+            return ids.some((id) => String(id) === String(userId));
+        }
+
+        function formatPingPreview(body) {
+            const text = String(body || "").trim();
+            if (!text) return "New ping";
+            return text.length > 90 ? `${text.slice(0, 90)}…` : text;
+        }
+
+        function showPingToast({ messageId, senderName, channelTitle, channelSlug, body }) {
+            if (!pingToastStack || !channelSlug) return;
+            if (messageId && seenPingToastIds.has(messageId)) return;
+            if (messageId) seenPingToastIds.add(messageId);
+
+            const toast = document.createElement("button");
+            toast.type = "button";
+            toast.className = "ping-toast";
+            toast.innerHTML =
+                `<span class="ping-toast-kicker">Ping in #${escapeHtml(channelTitle || channelSlug)}</span>` +
+                `<span class="ping-toast-title">${escapeHtml(senderName || "Someone")} mentioned you</span>` +
+                `<span class="ping-toast-body">${escapeHtml(formatPingPreview(body))}</span>`;
+            toast.addEventListener("click", () => {
+                toast.remove();
+                openChannel(channelSlug).catch(console.error);
+            });
+
+            pingToastStack.appendChild(toast);
+            while (pingToastStack.children.length > 4) {
+                pingToastStack.firstElementChild?.remove();
+            }
+
+            window.setTimeout(() => {
+                toast.classList.add("is-leaving");
+                window.setTimeout(() => toast.remove(), 220);
+            }, 7000);
+        }
+
+        async function refreshUnreadPings() {
+            try {
+                const rows = await listLoungeUnreadPings();
+                unreadPingsBySlug = new Map();
+                for (const row of rows) {
+                    if (row?.boardSlug && row.count > 0) {
+                        unreadPingsBySlug.set(row.boardSlug, row);
+                    }
+                }
+                renderChannelList();
+            } catch {
+                unreadPingsBySlug = new Map();
+            }
+        }
+
+        async function handleIncomingPing(row) {
+            if (!row || !currentUser?.id) return;
+            if (String(row.sender_id) === String(currentUser.id)) return;
+            if (!messageMentionsUser(row, currentUser.id)) return;
+
+            const board = findBoardById(row.board_id);
+            if (!board) {
+                await refreshHome(false);
+                await refreshUnreadPings();
+                return;
+            }
+
+            if (activeChannel === board.slug) {
+                await markLoungeChannelRead(board.slug).catch(() => {});
+                await refreshUnreadPings();
+                return;
+            }
+
+            let senderName = "Someone";
+            try {
+                const { data } = await supabase
+                    .from("users")
+                    .select("display_name, username")
+                    .eq("id", row.sender_id)
+                    .maybeSingle();
+                senderName = publicDisplayNameFromUserData(data) || data?.username || senderName;
+            } catch {
+                /* keep fallback */
+            }
+
+            showPingToast({
+                messageId: row.id,
+                senderName,
+                channelTitle: board.title,
+                channelSlug: board.slug,
+                body: row.body || ""
+            });
+            await refreshUnreadPings();
+        }
+
+        function startPingRealtime() {
+            pingRealtimeUnsub?.();
+            pingRealtimeUnsub = subscribeLoungePings({
+                onPing: (row) => {
+                    handleIncomingPing(row).catch(console.error);
+                }
+            });
+        }
+
         function renderChannelList() {
             const activeSlug = activeChannel;
             const parts = [];
@@ -246,6 +364,10 @@
                         ? `${board.lastMessage.senderName}: ${board.lastMessage.body}`
                         : board.description || "No messages yet";
                     const lock = board.isLocked ? '<span class="lounge-channel-lock" title="Staff only">🔒</span>' : "";
+                    const pingInfo = unreadPingsBySlug.get(board.slug);
+                    const badge = pingInfo?.count
+                        ? `<span class="lounge-channel-badge" aria-label="${pingInfo.count} unread ping${pingInfo.count === 1 ? "" : "s"}">${pingInfo.count > 9 ? "9+" : pingInfo.count}</span>`
+                        : "";
                     parts.push(
                         `<button type="button" class="lounge-channel-btn${active}" data-slug="${escapeHtml(board.slug)}">` +
                         `<span class="lounge-channel-hash">#</span>` +
@@ -253,6 +375,7 @@
                         `<div class="lounge-channel-name">${escapeHtml(board.title)}</div>` +
                         `<div class="lounge-channel-preview">${escapeHtml(preview)}</div>` +
                         `</span>` +
+                        badge +
                         lock +
                         `</button>`
                     );
@@ -793,8 +916,15 @@
             if (!activeBoard?.id) return;
             realtimeUnsub = subscribeLoungeChannel(activeBoard.id, {
                 onMessage: () => {
-                    refreshMessages(false).catch(console.error);
-                    refreshHome(false).catch(console.error);
+                    refreshMessages(false)
+                        .then(async () => {
+                            await refreshHome(false);
+                            if (activeChannel) {
+                                await markLoungeChannelRead(activeChannel).catch(() => {});
+                                await refreshUnreadPings();
+                            }
+                        })
+                        .catch(console.error);
                 }
             });
         }
@@ -879,6 +1009,12 @@
             }
 
             await refreshMessages(true);
+            try {
+                await markLoungeChannelRead(slug);
+                await refreshUnreadPings();
+            } catch {
+                /* ping tracking optional until SQL is applied */
+            }
             startRealtime();
             updateComposerState();
             msgInput.focus();
@@ -1211,12 +1347,15 @@
 
             try {
                 await refreshBlockedUsers();
+                await ensureLoungeReadBaselines().catch(() => {});
                 await refreshHome(true);
+                await refreshUnreadPings();
                 const members = await listLoungeOnlineMembers(50);
                 renderMembers(members);
 
                 loadingPanel.classList.add("hidden");
                 mainLayout.classList.remove("hidden");
+                startPingRealtime();
 
                 const slug = channelSlugFromLocation();
                 const defaultSlug = slug || "general-chat";

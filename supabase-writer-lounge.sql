@@ -78,6 +78,19 @@ WHERE b.id = sub.board_id
 CREATE INDEX IF NOT EXISTS lounge_messages_board_idx
   ON public.lounge_messages (board_id, created_at ASC);
 
+CREATE INDEX IF NOT EXISTS lounge_messages_mentioned_idx
+  ON public.lounge_messages USING GIN (mentioned_user_ids);
+
+CREATE TABLE IF NOT EXISTS public.lounge_channel_reads (
+  user_id uuid NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE,
+  board_id uuid NOT NULL REFERENCES public.lounge_boards (id) ON DELETE CASCADE,
+  last_read_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (user_id, board_id)
+);
+
+CREATE INDEX IF NOT EXISTS lounge_channel_reads_user_idx
+  ON public.lounge_channel_reads (user_id, last_read_at DESC);
+
 CREATE INDEX IF NOT EXISTS lounge_boards_last_message_idx
   ON public.lounge_boards (last_message_at DESC NULLS LAST);
 
@@ -739,6 +752,111 @@ BEGIN
 END;
 $$;
 
+CREATE OR REPLACE FUNCTION public.ensure_lounge_read_baselines()
+RETURNS void
+LANGUAGE plpgsql
+VOLATILE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RETURN;
+  END IF;
+
+  INSERT INTO public.lounge_channel_reads (user_id, board_id, last_read_at)
+  SELECT auth.uid(), b.id, now()
+  FROM public.lounge_boards b
+  ON CONFLICT (user_id, board_id) DO NOTHING;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.mark_lounge_channel_read(p_board_slug text)
+RETURNS void
+LANGUAGE plpgsql
+VOLATILE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_board public.lounge_boards;
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'not_authenticated';
+  END IF;
+
+  SELECT * INTO v_board
+  FROM public.lounge_boards b
+  WHERE b.slug = p_board_slug;
+
+  IF v_board.id IS NULL THEN
+    RAISE EXCEPTION 'channel_not_found';
+  END IF;
+
+  INSERT INTO public.lounge_channel_reads (user_id, board_id, last_read_at)
+  VALUES (auth.uid(), v_board.id, now())
+  ON CONFLICT (user_id, board_id)
+  DO UPDATE SET last_read_at = EXCLUDED.last_read_at;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.list_lounge_unread_pings()
+RETURNS jsonb
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RETURN '[]'::jsonb;
+  END IF;
+
+  RETURN coalesce((
+    SELECT jsonb_agg(row ORDER BY row->>'latestAt' DESC)
+    FROM (
+      SELECT jsonb_build_object(
+        'boardId', b.id,
+        'boardSlug', b.slug,
+        'boardTitle', b.title,
+        'count', count(*)::int,
+        'latestAt', max(m.created_at),
+        'latest', (
+          SELECT jsonb_build_object(
+            'senderName', public.lounge_display_name(lm.sender_id),
+            'body', left(lm.body, 120),
+            'createdAt', lm.created_at
+          )
+          FROM public.lounge_messages lm
+          LEFT JOIN public.lounge_channel_reads lr
+            ON lr.user_id = auth.uid()
+           AND lr.board_id = lm.board_id
+          WHERE lm.board_id = b.id
+            AND auth.uid() = ANY(lm.mentioned_user_ids)
+            AND lm.sender_id <> auth.uid()
+            AND lm.deleted_at IS NULL
+            AND lm.created_at > coalesce(lr.last_read_at, '-infinity'::timestamptz)
+            AND NOT public.lounge_users_are_blocked(auth.uid(), lm.sender_id)
+          ORDER BY lm.created_at DESC
+          LIMIT 1
+        )
+      ) AS row
+      FROM public.lounge_messages m
+      JOIN public.lounge_boards b ON b.id = m.board_id
+      LEFT JOIN public.lounge_channel_reads r
+        ON r.user_id = auth.uid()
+       AND r.board_id = b.id
+      WHERE auth.uid() = ANY(m.mentioned_user_ids)
+        AND m.sender_id <> auth.uid()
+        AND m.deleted_at IS NULL
+        AND m.created_at > coalesce(r.last_read_at, '-infinity'::timestamptz)
+        AND NOT public.lounge_users_are_blocked(auth.uid(), m.sender_id)
+      GROUP BY b.id, b.slug, b.title
+    ) grouped
+  ), '[]'::jsonb);
+END;
+$$;
+
 -- ---------------------------------------------------------------------------
 -- 5. RLS
 -- ---------------------------------------------------------------------------
@@ -746,6 +864,7 @@ $$;
 ALTER TABLE public.lounge_categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.lounge_boards ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.lounge_messages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.lounge_channel_reads ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "lounge_categories_select_auth" ON public.lounge_categories;
 CREATE POLICY "lounge_categories_select_auth" ON public.lounge_categories
@@ -761,6 +880,12 @@ DROP POLICY IF EXISTS "lounge_messages_select_auth" ON public.lounge_messages;
 CREATE POLICY "lounge_messages_select_auth" ON public.lounge_messages
   FOR SELECT TO authenticated
   USING (deleted_at IS NULL OR public.is_lounge_staff());
+
+DROP POLICY IF EXISTS "lounge_channel_reads_own" ON public.lounge_channel_reads;
+CREATE POLICY "lounge_channel_reads_own" ON public.lounge_channel_reads
+  FOR ALL TO authenticated
+  USING (user_id = auth.uid())
+  WITH CHECK (user_id = auth.uid());
 
 -- ---------------------------------------------------------------------------
 -- 6. Realtime
@@ -784,6 +909,7 @@ $lounge_realtime$;
 GRANT SELECT ON public.lounge_categories TO authenticated;
 GRANT SELECT ON public.lounge_boards TO authenticated;
 GRANT SELECT ON public.lounge_messages TO authenticated;
+GRANT SELECT, INSERT, UPDATE ON public.lounge_channel_reads TO authenticated;
 
 GRANT EXECUTE ON FUNCTION public.list_lounge_home() TO authenticated;
 GRANT EXECUTE ON FUNCTION public.list_lounge_messages(text, timestamptz, integer) TO authenticated;
@@ -796,6 +922,9 @@ GRANT EXECUTE ON FUNCTION public.block_lounge_user(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.unblock_lounge_user(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.list_my_lounge_blocks() TO authenticated;
 GRANT EXECUTE ON FUNCTION public.search_lounge_mention_users(text, integer) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.ensure_lounge_read_baselines() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.mark_lounge_channel_read(text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.list_lounge_unread_pings() TO authenticated;
 
 -- Messages are inserted only through send_lounge_message (SECURITY DEFINER).
 REVOKE INSERT ON public.lounge_messages FROM authenticated;

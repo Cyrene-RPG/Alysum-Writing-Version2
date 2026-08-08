@@ -121,6 +121,26 @@ export async function searchLoungeMentionUsers(query = "", limit = 8) {
     return Array.isArray(data) ? data : [];
 }
 
+export async function ensureLoungeReadBaselines() {
+    const { error } = await supabase.rpc("ensure_lounge_read_baselines");
+    if (error) throw error;
+}
+
+export async function markLoungeChannelRead(channelSlug) {
+    const slug = safeString(channelSlug).trim();
+    if (!slug) return;
+    const { error } = await supabase.rpc("mark_lounge_channel_read", {
+        p_board_slug: slug
+    });
+    if (error) throw error;
+}
+
+export async function listLoungeUnreadPings() {
+    const { data, error } = await supabase.rpc("list_lounge_unread_pings");
+    if (error) throw error;
+    return Array.isArray(data) ? data : [];
+}
+
 export function subscribeLoungeChannel(boardId, { onMessage } = {}) {
     if (!boardId) return () => {};
 
@@ -157,10 +177,31 @@ export function subscribeLoungeChannel(boardId, { onMessage } = {}) {
     };
 }
 
+export function subscribeLoungePings({ onPing } = {}) {
+    const channel = supabase
+        .channel("lounge_pings_global")
+        .on(
+            "postgres_changes",
+            {
+                event: "INSERT",
+                schema: "public",
+                table: "lounge_messages"
+            },
+            (payload) => {
+                if (typeof onPing === "function") onPing(payload.new || null);
+            }
+        )
+        .subscribe();
+
+    return () => {
+        supabase.removeChannel(channel);
+    };
+}
+
 export function isWriterLoungeSchemaMissing(error) {
     const msg = String(error?.message || error || "");
     return (
-        /lounge_categories|lounge_boards|lounge_messages/i.test(msg) ||
-        /list_lounge_home|list_lounge_messages|send_lounge_message|edit_lounge_message|delete_lounge_message|list_lounge_online_members|block_lounge_user|list_my_lounge_blocks|search_lounge_mention_users/i.test(msg)
+        /lounge_categories|lounge_boards|lounge_messages|lounge_channel_reads/i.test(msg) ||
+        /list_lounge_home|list_lounge_messages|send_lounge_message|edit_lounge_message|delete_lounge_message|list_lounge_online_members|block_lounge_user|list_my_lounge_blocks|search_lounge_mention_users|ensure_lounge_read_baselines|mark_lounge_channel_read|list_lounge_unread_pings/i.test(msg)
     );
 }
