@@ -157,6 +157,7 @@ function renderNavHtml(active) {
                 <span class="wd-nav-divider" aria-hidden="true"></span>
                 <a href="${navHref("writer-dashboard.html")}"${activeClass("studio", active)}>Studio</a>
                 <a href="${navHref("library.html")}"${activeClass("library", active)}>Library</a>
+                <a href="${DISCORD_URL}" class="wd-nav-discord" target="_blank" rel="noopener noreferrer">Discord</a>
                 <a href="${navHref("beta-rooms.html")}"${activeClass("beta-rooms", active)}>Beta rooms</a>
                 <a href="${navHref("collab-rooms.html")}"${activeClass("collab-rooms", active)}>Collab rooms</a>
                 <a href="${navHref("author-dashboard.html")}" id="navAuthorStats"${activeClass("author-stats", active)}>
@@ -177,7 +178,6 @@ function renderNavHtml(active) {
                 <a href="${navHref("settings.html")}"${activeClass("settings", active)}>Settings</a>
                 <a href="${navHref("reader-home.html")}"${active === "reading" ? ' class="is-active"' : ' class="is-hidden"'} id="navReading">Reading</a>
                 <button type="button" class="wd-nav-logout" data-logout-btn>Log out</button>
-                <a href="${DISCORD_URL}" class="wd-nav-discord" target="_blank" rel="noopener noreferrer">Discord</a>
                 <a href="${navHref("index.html")}">Home</a>
             </div>
         </nav>
@@ -195,9 +195,9 @@ function wireDiscordNavLink() {
     discordLink.rel = "noopener noreferrer";
     discordLink.textContent = "Discord";
 
-    const homeLink = nav.querySelector('a[href$="index.html"]');
-    if (homeLink) homeLink.before(discordLink);
-    else nav.appendChild(discordLink);
+    const libraryLink = nav.querySelector('a[href*="library.html"]');
+    if (libraryLink) libraryLink.after(discordLink);
+    else nav.prepend(discordLink);
 }
 
 function renderWelcomeProfile(profile, fallbackLabel) {

@@ -212,14 +212,16 @@
 }
 
 .wd-nav-discord {
-    color: #c7d2fe;
-    border-color: rgba(88, 101, 242, 0.28);
+    color: #fff;
+    background: #5865f2;
+    border-color: rgba(255, 255, 255, 0.18);
+    box-shadow: 0 4px 14px rgba(88, 101, 242, 0.35);
 }
 
 .wd-nav-discord:hover {
     color: #fff;
-    background: rgba(88, 101, 242, 0.22);
-    border-color: rgba(129, 140, 248, 0.45);
+    background: #4752c4;
+    border-color: rgba(255, 255, 255, 0.28);
 }
 
 @media (max-width: 1200px) {
