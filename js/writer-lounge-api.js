@@ -1,7 +1,7 @@
 /**
  * Writer's Lounge API — channel-based text chat for Alysum writers.
  * Requires supabase-writer-lounge.sql applied in Supabase.
- * Reuses beta messaging 18+ attestation from supabase-beta-rooms.sql.
+ * Writer's Lounge uses its own 13+ attestation (beta rooms stay 18+).
  */
 
 import { supabase } from "../firebase.js";
@@ -141,6 +141,20 @@ export async function listLoungeUnreadPings() {
     return Array.isArray(data) ? data : [];
 }
 
+export async function hasLoungeMessagingAttestation() {
+    const { data, error } = await supabase.rpc("has_lounge_messaging_attestation");
+    if (error) throw error;
+    return !!data;
+}
+
+export async function attestLoungeMessaging13Plus(birthDate) {
+    const iso = safeString(birthDate).trim();
+    const { error } = await supabase.rpc("attest_lounge_messaging_13plus", {
+        p_birth_date: iso || null
+    });
+    if (error) throw error;
+}
+
 export function subscribeLoungeChannel(boardId, { onMessage } = {}) {
     if (!boardId) return () => {};
 
@@ -202,6 +216,6 @@ export function isWriterLoungeSchemaMissing(error) {
     const msg = String(error?.message || error || "");
     return (
         /lounge_categories|lounge_boards|lounge_messages|lounge_channel_reads/i.test(msg) ||
-        /list_lounge_home|list_lounge_messages|send_lounge_message|edit_lounge_message|delete_lounge_message|list_lounge_online_members|block_lounge_user|list_my_lounge_blocks|search_lounge_mention_users|ensure_lounge_read_baselines|mark_lounge_channel_read|list_lounge_unread_pings/i.test(msg)
+        /list_lounge_home|list_lounge_messages|send_lounge_message|edit_lounge_message|delete_lounge_message|list_lounge_online_members|block_lounge_user|list_my_lounge_blocks|search_lounge_mention_users|ensure_lounge_read_baselines|mark_lounge_channel_read|list_lounge_unread_pings|has_lounge_messaging_attestation|attest_lounge_messaging_13plus/i.test(msg)
     );
 }

@@ -1,6 +1,6 @@
 -- Run once in Supabase → SQL Editor (safe to re-run).
 -- Writer's Lounge: channel-based text chat for Alysum writers.
--- Apply after supabase-base-schema.sql and supabase-beta-rooms.sql (reuses 18+ attestation).
+-- Apply after supabase-base-schema.sql (lounge has its own 13+ attestation; beta rooms stay 18+).
 -- Optional: supabase-staff-users.sql for is_moderation_staff() on locked channels.
 
 -- ---------------------------------------------------------------------------
@@ -90,6 +90,12 @@ CREATE TABLE IF NOT EXISTS public.lounge_channel_reads (
 
 CREATE INDEX IF NOT EXISTS lounge_channel_reads_user_idx
   ON public.lounge_channel_reads (user_id, last_read_at DESC);
+
+CREATE TABLE IF NOT EXISTS public.lounge_messaging_attestations (
+  user_id uuid PRIMARY KEY REFERENCES auth.users (id) ON DELETE CASCADE,
+  attested_at timestamptz NOT NULL DEFAULT now(),
+  birth_date date
+);
 
 CREATE INDEX IF NOT EXISTS lounge_boards_last_message_idx
   ON public.lounge_boards (last_message_at DESC NULLS LAST);
@@ -349,6 +355,55 @@ AS $$
   WHERE r.id = p_reply_id;
 $$;
 
+CREATE OR REPLACE FUNCTION public.has_lounge_messaging_attestation(p_user_id uuid DEFAULT auth.uid())
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.lounge_messaging_attestations a
+    WHERE a.user_id = p_user_id
+  );
+$$;
+
+CREATE OR REPLACE FUNCTION public.attest_lounge_messaging_13plus(p_birth_date date DEFAULT NULL)
+RETURNS void
+LANGUAGE plpgsql
+VOLATILE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_uid uuid := auth.uid();
+  v_cutoff date;
+BEGIN
+  IF v_uid IS NULL THEN
+    RAISE EXCEPTION 'not_authenticated';
+  END IF;
+
+  IF p_birth_date IS NULL THEN
+    RAISE EXCEPTION 'birth_date_required';
+  END IF;
+
+  IF p_birth_date > CURRENT_DATE THEN
+    RAISE EXCEPTION 'invalid_birth_date';
+  END IF;
+
+  v_cutoff := (CURRENT_DATE - INTERVAL '13 years')::date;
+  IF p_birth_date > v_cutoff THEN
+    RAISE EXCEPTION 'underage';
+  END IF;
+
+  INSERT INTO public.lounge_messaging_attestations (user_id, attested_at, birth_date)
+  VALUES (v_uid, now(), p_birth_date)
+  ON CONFLICT (user_id) DO UPDATE
+  SET attested_at = now(), birth_date = EXCLUDED.birth_date;
+END;
+$$;
+
 -- ---------------------------------------------------------------------------
 -- 4. RPCs
 -- ---------------------------------------------------------------------------
@@ -547,8 +602,8 @@ BEGIN
     RAISE EXCEPTION 'text_only_messages';
   END IF;
 
-  IF to_regprocedure('public.has_beta_messaging_attestation(uuid)') IS NOT NULL
-     AND NOT public.has_beta_messaging_attestation(v_uid) THEN
+  IF to_regprocedure('public.has_lounge_messaging_attestation(uuid)') IS NOT NULL
+     AND NOT public.has_lounge_messaging_attestation(v_uid) THEN
     RAISE EXCEPTION 'age_attestation_required';
   END IF;
 
@@ -889,6 +944,7 @@ ALTER TABLE public.lounge_categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.lounge_boards ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.lounge_messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.lounge_channel_reads ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.lounge_messaging_attestations ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "lounge_categories_select_auth" ON public.lounge_categories;
 CREATE POLICY "lounge_categories_select_auth" ON public.lounge_categories
@@ -907,6 +963,12 @@ CREATE POLICY "lounge_messages_select_auth" ON public.lounge_messages
 
 DROP POLICY IF EXISTS "lounge_channel_reads_own" ON public.lounge_channel_reads;
 CREATE POLICY "lounge_channel_reads_own" ON public.lounge_channel_reads
+  FOR ALL TO authenticated
+  USING (user_id = auth.uid())
+  WITH CHECK (user_id = auth.uid());
+
+DROP POLICY IF EXISTS "lounge_messaging_attestations_own" ON public.lounge_messaging_attestations;
+CREATE POLICY "lounge_messaging_attestations_own" ON public.lounge_messaging_attestations
   FOR ALL TO authenticated
   USING (user_id = auth.uid())
   WITH CHECK (user_id = auth.uid());
@@ -934,6 +996,7 @@ GRANT SELECT ON public.lounge_categories TO authenticated;
 GRANT SELECT ON public.lounge_boards TO authenticated;
 GRANT SELECT ON public.lounge_messages TO authenticated;
 GRANT SELECT, INSERT, UPDATE ON public.lounge_channel_reads TO authenticated;
+GRANT SELECT, INSERT, UPDATE ON public.lounge_messaging_attestations TO authenticated;
 
 GRANT EXECUTE ON FUNCTION public.list_lounge_home() TO authenticated;
 GRANT EXECUTE ON FUNCTION public.list_lounge_messages(text, timestamptz, integer) TO authenticated;
@@ -949,6 +1012,8 @@ GRANT EXECUTE ON FUNCTION public.search_lounge_mention_users(text, integer) TO a
 GRANT EXECUTE ON FUNCTION public.ensure_lounge_read_baselines() TO authenticated;
 GRANT EXECUTE ON FUNCTION public.mark_lounge_channel_read(text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.list_lounge_unread_pings() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.has_lounge_messaging_attestation(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.attest_lounge_messaging_13plus(date) TO authenticated;
 
 -- Messages are inserted only through send_lounge_message (SECURITY DEFINER).
 REVOKE INSERT ON public.lounge_messages FROM authenticated;

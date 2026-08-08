@@ -83,7 +83,7 @@
 
     <div id="ageGateOverlay" class="safety-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="ageGateTitle">
         <div class="safety-card">
-            <h3 id="ageGateTitle">Writer's Lounge is 18+ only</h3>
+            <h3 id="ageGateTitle">Writer's Lounge is 13+ only</h3>
             <p>Before you text in the lounge, confirm your age. Keep it writing-focused — no harassment or off-platform contact.</p>
             <label>Date of birth</label>
             <div class="dob-fields">
@@ -125,24 +125,23 @@
             ensureLoungeReadBaselines,
             markLoungeChannelRead,
             listLoungeUnreadPings,
+            hasLoungeMessagingAttestation,
+            attestLoungeMessaging13Plus,
             channelSlugFromLocation,
             writersLoungeChannelUrl,
             isWriterLoungeSchemaMissing
-        } from "./js/writer-lounge-api.js?v=10";
+        } from "./js/writer-lounge-api.js?v=11";
         import {
-            attestBetaMessaging18Plus,
-            hasBetaMessagingAttestation
-        } from "./js/beta-rooms-api.js?v=5";
-        import {
-            friendlyBetaSafetyError,
+            friendlyLoungeSafetyError,
             populateDobMonthSelect,
             populateDobYearSelect,
             populateDobDaySelect,
             evaluateAgeGateDob,
             birthDateIso,
-            isBetaAgeVerifiedLocally,
-            setBetaAgeVerifiedLocally
-        } from "./js/beta-room-safety.js?v=3";
+            isLoungeAgeVerifiedLocally,
+            setLoungeAgeVerifiedLocally,
+            LOUNGE_MIN_AGE
+        } from "./js/beta-room-safety.js?v=4";
 
         const loadingPanel = document.getElementById("loadingPanel");
         const mainLayout = document.getElementById("mainLayout");
@@ -480,7 +479,7 @@
                 const members = await listLoungeOnlineMembers(50);
                 renderMembers(members);
             } catch (err) {
-                setThreadStatus(friendlyBetaSafetyError(err), "error");
+                setThreadStatus(friendlyLoungeSafetyError(err), "error");
             }
         }
 
@@ -830,9 +829,24 @@
             msgInput.focus();
         }
 
+        function isChatNearBottom(threshold = 120) {
+            if (!msgList) return true;
+            const distance = msgList.scrollHeight - msgList.scrollTop - msgList.clientHeight;
+            return distance <= threshold;
+        }
+
         function scrollChatToBottom() {
-            requestAnimationFrame(() => {
+            if (!msgList) return;
+            const run = () => {
                 msgList.scrollTop = msgList.scrollHeight;
+                const inner = msgList.querySelector(".text-chat-msgs-inner");
+                const lastRow = inner?.lastElementChild;
+                lastRow?.scrollIntoView({ block: "end", inline: "nearest" });
+            };
+            run();
+            requestAnimationFrame(() => {
+                run();
+                requestAnimationFrame(run);
             });
         }
 
@@ -938,10 +952,11 @@
                 setThreadStatus("Only Alysum staff can post in this channel.", "wait");
             } else if (!messagingEligible) {
                 msgInput.placeholder = "Confirm age to text…";
-                setThreadStatus("Confirm you are 18 or older to text in Writer's Lounge.", "wait");
+                setThreadStatus(`Confirm you are ${LOUNGE_MIN_AGE} or older to text in Writer's Lounge.`, "wait");
             } else {
                 msgInput.placeholder = `Text #${activeBoard.title}…`;
-                if (threadStatus.textContent === "Confirm you are 18 or older to text in Writer's Lounge.") {
+                const loungeAgePrompt = `Confirm you are ${LOUNGE_MIN_AGE} or older to text in Writer's Lounge.`;
+                if (threadStatus.textContent === loungeAgePrompt) {
                     setThreadStatus("");
                 }
             }
@@ -957,7 +972,8 @@
             if (!activeBoard?.id) return;
             realtimeUnsub = subscribeLoungeChannel(activeBoard.id, {
                 onMessage: () => {
-                    refreshMessages(false)
+                    const stickToBottom = isChatNearBottom();
+                    refreshMessages(stickToBottom)
                         .then(async () => {
                             await refreshHome(false);
                             if (activeChannel) {
@@ -977,8 +993,11 @@
             if (rerenderList) renderChannelList();
         }
 
-        async function refreshMessages(scroll = true) {
+        async function refreshMessages(scroll) {
             if (!activeChannel) return;
+            const stickToBottom =
+                scroll === true ||
+                (scroll !== false && isChatNearBottom());
             const data = await listLoungeMessages(activeChannel, { limit: 50 });
             activeBoard = data.board || findBoard(activeChannel);
             const rows = data.messages || [];
@@ -996,7 +1015,7 @@
                 mentionedUserIds: m.mentionedUserIds || []
             }));
             hasMore = (data.messages || []).length >= 50;
-            renderMessages({ stickToBottom: scroll });
+            renderMessages({ stickToBottom });
             updateComposerState();
         }
 
@@ -1065,7 +1084,8 @@
             return evaluateAgeGateDob(
                 ageGateMonth.value,
                 ageGateDay.value,
-                ageGateYear.value
+                ageGateYear.value,
+                { minAge: LOUNGE_MIN_AGE }
             );
         }
 
@@ -1085,12 +1105,12 @@
         async function syncMessagingEligibility({ promptIfNeeded = false } = {}) {
             let serverOk = false;
             try {
-                serverOk = await hasBetaMessagingAttestation();
+                serverOk = await hasLoungeMessagingAttestation();
             } catch {
                 serverOk = false;
             }
 
-            if (serverOk || isBetaAgeVerifiedLocally()) {
+            if (serverOk || isLoungeAgeVerifiedLocally()) {
                 messagingEligible = true;
                 closeAgeGate();
                 updateComposerState();
@@ -1130,10 +1150,10 @@
                 return;
             }
             try {
-                await attestBetaMessaging18Plus(
+                await attestLoungeMessaging13Plus(
                     birthDateIso(ageGateMonth.value, ageGateDay.value, ageGateYear.value)
                 );
-                setBetaAgeVerifiedLocally();
+                setLoungeAgeVerifiedLocally();
                 messagingEligible = true;
                 closeAgeGate();
                 updateComposerState();
@@ -1144,7 +1164,7 @@
                     await doSend(body);
                 }
             } catch (err) {
-                ageGateHint.textContent = friendlyBetaSafetyError(err);
+                ageGateHint.textContent = friendlyLoungeSafetyError(err);
                 ageGateHint.classList.remove("hidden");
             }
         }
@@ -1163,7 +1183,7 @@
                 await refreshMessages(true);
                 await refreshHome(true);
             } catch (err) {
-                setThreadStatus(friendlyBetaSafetyError(err), "error");
+                setThreadStatus(friendlyLoungeSafetyError(err), "error");
             } finally {
                 updateComposerState();
             }
@@ -1192,7 +1212,7 @@
                 await refreshMessages(false);
                 await refreshHome(true);
             } catch (err) {
-                setThreadStatus(friendlyBetaSafetyError(err), "error");
+                setThreadStatus(friendlyLoungeSafetyError(err), "error");
             }
         }
 
@@ -1209,7 +1229,7 @@
                 setThreadStatus("");
                 await refreshMessages(false);
             } catch (err) {
-                setThreadStatus(friendlyBetaSafetyError(err), "error");
+                setThreadStatus(friendlyLoungeSafetyError(err), "error");
             }
         }
 

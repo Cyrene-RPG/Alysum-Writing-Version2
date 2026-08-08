@@ -3,6 +3,8 @@
  */
 
 export const BETA_AGE_SESSION_KEY = "alysum-beta-18-verified";
+export const LOUNGE_AGE_SESSION_KEY = "alysum-lounge-13-verified";
+export const LOUNGE_MIN_AGE = 13;
 
 export function isBetaAgeVerifiedLocally() {
     try {
@@ -15,6 +17,30 @@ export function isBetaAgeVerifiedLocally() {
 export function setBetaAgeVerifiedLocally() {
     try {
         sessionStorage.setItem(BETA_AGE_SESSION_KEY, "1");
+    } catch {
+        /* ignore */
+    }
+}
+
+export function isLoungeAgeVerifiedLocally() {
+    try {
+        return sessionStorage.getItem(LOUNGE_AGE_SESSION_KEY) === "1";
+    } catch {
+        return false;
+    }
+}
+
+export function setLoungeAgeVerifiedLocally() {
+    try {
+        sessionStorage.setItem(LOUNGE_AGE_SESSION_KEY, "1");
+    } catch {
+        /* ignore */
+    }
+}
+
+export function clearLoungeAgeVerifiedLocally() {
+    try {
+        sessionStorage.removeItem(LOUNGE_AGE_SESSION_KEY);
     } catch {
         /* ignore */
     }
@@ -42,7 +68,7 @@ export function isValidBirthDate(month, day, year) {
     return dt.getFullYear() === y && dt.getMonth() === m - 1 && dt.getDate() === d;
 }
 
-export function isAtLeast18(month, day, year) {
+export function isAtLeastAge(month, day, year, minAge = 18) {
     if (!isValidBirthDate(month, day, year)) return false;
     const m = Number(month);
     const d = Number(day);
@@ -54,7 +80,11 @@ export function isAtLeast18(month, day, year) {
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
         age -= 1;
     }
-    return age >= 18;
+    return age >= minAge;
+}
+
+export function isAtLeast18(month, day, year) {
+    return isAtLeastAge(month, day, year, 18);
 }
 
 export function birthDateIso(month, day, year) {
@@ -107,7 +137,7 @@ export function populateDobDaySelect(selectEl, month, year) {
     }
 }
 
-export function evaluateAgeGateDob(month, day, year) {
+export function evaluateAgeGateDob(month, day, year, { minAge = 18 } = {}) {
     if (!month || !day || !year) {
         return { complete: false, valid: false, adult: false, message: "" };
     }
@@ -119,12 +149,12 @@ export function evaluateAgeGateDob(month, day, year) {
             message: "Enter a valid date of birth."
         };
     }
-    if (!isAtLeast18(month, day, year)) {
+    if (!isAtLeastAge(month, day, year, minAge)) {
         return {
             complete: true,
             valid: true,
             adult: false,
-            message: "You must be 18 or older to continue."
+            message: `You must be ${minAge} or older to continue.`
         };
     }
     return { complete: true, valid: true, adult: true, message: "" };
@@ -133,10 +163,10 @@ export function evaluateAgeGateDob(month, day, year) {
 export function friendlyBetaSafetyError(err) {
     const msg = String(err?.message || err || "");
     if (/underage|birth_date_required|invalid_birth_date/i.test(msg)) {
-        return "You must be 18 or older to use Writer's Lounge texting.";
+        return "You must be 18 or older to use beta room texting.";
     }
     if (/age_attestation_required/i.test(msg)) {
-        return "Confirm you are 18 or older before texting in Writer's Lounge.";
+        return "Confirm you are 18 or older before texting in beta rooms.";
     }
     if (/user_blocked/i.test(msg)) {
         return "Messaging is unavailable because someone in this conversation is blocked.";
@@ -149,6 +179,35 @@ export function friendlyBetaSafetyError(err) {
     }
     if (/text_only_messages/i.test(msg)) {
         return "Beta texts must be plain text only — no HTML or attachments.";
+    }
+    if (/invalid_message_body/i.test(msg)) {
+        return "Enter a message between 1 and 8,000 characters.";
+    }
+    if (/reply_not_found/i.test(msg)) {
+        return "That reply target is no longer available.";
+    }
+    if (/user_blocks_missing/i.test(msg)) {
+        return "Blocking is not set up yet. Run supabase-writer-lounge.sql in Supabase.";
+    }
+    return msg || "Could not complete that safety action.";
+}
+
+export function friendlyLoungeSafetyError(err) {
+    const msg = String(err?.message || err || "");
+    if (/underage|birth_date_required|invalid_birth_date/i.test(msg)) {
+        return `You must be ${LOUNGE_MIN_AGE} or older to text in Writer's Lounge.`;
+    }
+    if (/age_attestation_required/i.test(msg)) {
+        return `Confirm you are ${LOUNGE_MIN_AGE} or older before texting in Writer's Lounge.`;
+    }
+    if (/user_blocked/i.test(msg)) {
+        return "Messaging is unavailable because someone in this conversation is blocked.";
+    }
+    if (/rate_limit_exceeded/i.test(msg)) {
+        return "You are sending messages too quickly. Please wait a bit and try again.";
+    }
+    if (/text_only_messages/i.test(msg)) {
+        return "Lounge texts must be plain text only — no HTML or attachments.";
     }
     if (/invalid_message_body/i.test(msg)) {
         return "Enter a message between 1 and 8,000 characters.";
