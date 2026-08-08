@@ -698,12 +698,14 @@ body.light .sms-mention {
     display: flex;
     align-items: center;
     gap: 8px;
+    width: 100%;
 }
 
 .composer-input-wrap {
     position: relative;
     flex: 1;
     min-width: 0;
+    width: 100%;
 }
 
 .mention-menu {
@@ -772,8 +774,9 @@ body.light .text-composer {
 }
 
 .text-input {
-    flex: 1;
-    min-width: 0;
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
     border: 1px solid var(--border);
     border-radius: 999px;
     background: var(--panel-2);
