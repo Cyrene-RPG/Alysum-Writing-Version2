@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
     <link rel="stylesheet" href="css/gradient-themes.css?v=5" />
     <link rel="stylesheet" href="css/workspace-nav.css?v=11" />
-    <link rel="stylesheet" href="css/writer-lounge.css?v=20" />
+    <link rel="stylesheet" href="css/writer-lounge.css?v=21" />
     <script src="js/gradient-theme-sync.js" defer></script>
     <script src="js/alysum-appearance-boot.js"></script>
 </head>
@@ -59,9 +59,18 @@
                             <button type="button" class="composer-reply-cancel" id="composerReplyCancel" aria-label="Cancel reply">×</button>
                         </div>
                         <div class="composer-input-row">
+                            <button type="button" class="emoji-toggle" id="emojiToggle" aria-label="Add emoji" title="Emoji">
+                                <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                    <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="1.75"/>
+                                    <circle cx="9" cy="10" r="1.25" fill="currentColor"/>
+                                    <circle cx="15" cy="10" r="1.25" fill="currentColor"/>
+                                    <path d="M8.5 14.5c1.2 1.4 2.8 2.1 3.5 2.1s2.3-.7 3.5-2.1" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+                                </svg>
+                            </button>
                             <div class="composer-input-wrap">
                                 <input type="text" class="text-input" id="msgInput" placeholder="Text the channel…" maxlength="8000" autocomplete="off" />
                                 <div class="mention-menu hidden" id="mentionMenu" role="listbox"></div>
+                                <div class="emoji-picker hidden" id="emojiPicker" role="dialog" aria-label="Emoji picker"></div>
                             </div>
                             <button type="button" class="text-send" id="sendBtn" aria-label="Send message">↑</button>
                         </div>
@@ -142,6 +151,7 @@
             setLoungeAgeVerifiedLocally,
             LOUNGE_MIN_AGE
         } from "./js/beta-room-safety.js?v=4";
+        import { mountEmojiPicker } from "./js/emoji-picker.js?v=1";
 
         const loadingPanel = document.getElementById("loadingPanel");
         const mainLayout = document.getElementById("mainLayout");
@@ -163,6 +173,8 @@
         const composerReplyPreview = document.getElementById("composerReplyPreview");
         const composerReplyCancel = document.getElementById("composerReplyCancel");
         const mentionMenu = document.getElementById("mentionMenu");
+        const emojiToggle = document.getElementById("emojiToggle");
+        const emojiPicker = document.getElementById("emojiPicker");
         const pingToastStack = document.getElementById("pingToastStack");
         const memberList = document.getElementById("memberList");
         const onlineCount = document.getElementById("onlineCount");
@@ -1089,6 +1101,7 @@
             composer.classList.toggle("hidden", !activeBoard);
             msgInput.disabled = !canPost;
             sendBtn.disabled = !canPost;
+            emojiToggle.disabled = !canPost;
 
             if (!activeBoard) {
                 msgInput.placeholder = "Text the channel…";
@@ -1505,6 +1518,13 @@
         });
         document.addEventListener("click", (e) => {
             if (!e.target.closest(".composer-input-wrap")) hideMentionMenu();
+        });
+
+        mountEmojiPicker({
+            container: emojiPicker,
+            toggleButton: emojiToggle,
+            onSelect: (emoji) => insertAtCursor(emoji),
+            onOpen: () => hideMentionMenu()
         });
 
         composer.addEventListener("click", () => {
