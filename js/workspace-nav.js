@@ -48,6 +48,8 @@ const PATH_TO_ACTIVE = new Map([
     ["leaderboard.html", "leaderboards"],
     ["word-wars-lobby.html", "word-wars"],
     ["word-wars-sprint.html", "word-wars"],
+    ["writers-lounge.html", "writers-lounge"],
+    ["writers-lounge", "writers-lounge"],
     ["settings.html", "settings"],
     ["reader-home.html", "reading"],
     ["editor.html", "continue"],
@@ -86,6 +88,7 @@ const WELCOME_DEFAULTS = {
     achievements: { title: "Achievements", subtitle: "Track milestones across your writing journey." },
     leaderboards: { title: "Leaderboards", subtitle: "See how you stack up in the Alysum community." },
     "word-wars": { title: "Word Wars", subtitle: "Challenge a friend to a friendly writing spar." },
+    "writers-lounge": { title: "Writer's Lounge", subtitle: "Community forums — check-ins, craft talk, and write-ins." },
     "beta-rooms": { title: "Beta rooms", subtitle: "Share draft snapshots with trusted readers." },
     "collab-rooms": { title: "Collab rooms", subtitle: "Invite editors to suggest chapter changes you approve." },
     encyclopedia: { title: "World encyclopedia", subtitle: "Build and browse your story worlds." },
@@ -172,6 +175,7 @@ function renderNavHtml(active) {
                 <a href="${navHref("badges.html")}"${activeClass("achievements", active)}>Achievements</a>
                 <a href="${navHref("leaderboard.html")}"${activeClass("leaderboards", active)}>Leaderboards</a>
                 <a href="${navHref("word-wars-lobby.html")}"${activeClass("word-wars", active)}>Word Wars</a>
+                <a href="${navHref("writers-lounge.html")}"${activeClass("writers-lounge", active)}>Writer's Lounge</a>
                 <span class="wd-nav-divider" aria-hidden="true"></span>
                 <a href="${navHref("settings.html")}"${activeClass("settings", active)}>Settings</a>
                 <a href="${navHref("reader-home.html")}"${active === "reading" ? ' class="is-active"' : ' class="is-hidden"'} id="navReading">Reading</a>

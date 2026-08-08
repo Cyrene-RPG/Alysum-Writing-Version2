@@ -59,6 +59,8 @@ const WRITER_PRESENCE_PAGES = new Set([
     "moderation-dashboard.html",
     "moderation-users.html",
     "moderation-user.html",
+    "writers-lounge.html",
+    "writers-lounge",
 ]);
 
 /**
