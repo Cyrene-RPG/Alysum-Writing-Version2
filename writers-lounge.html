@@ -303,7 +303,7 @@
         }
 
         function messageGroupCompact(prev, row) {
-            if (!prev || prev.senderId !== row.senderId) return false;
+            if (!prev || !row || prev.senderId !== row.senderId) return false;
             const prevTime = new Date(prev.createdAt).getTime();
             const rowTime = new Date(row.createdAt).getTime();
             if (!Number.isFinite(prevTime) || !Number.isFinite(rowTime)) return false;
