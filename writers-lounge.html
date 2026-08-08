@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
     <link rel="stylesheet" href="css/gradient-themes.css?v=5" />
     <link rel="stylesheet" href="css/workspace-nav.css?v=11" />
-    <link rel="stylesheet" href="css/writer-lounge.css?v=13" />
+    <link rel="stylesheet" href="css/writer-lounge.css?v=14" />
     <script src="js/gradient-theme-sync.js" defer></script>
     <script src="js/alysum-appearance-boot.js"></script>
 </head>
@@ -118,10 +118,11 @@
             subscribeLoungeChannel,
             blockLoungeUser,
             listMyLoungeBlocks,
+            searchLoungeMentionUsers,
             channelSlugFromLocation,
             writersLoungeChannelUrl,
             isWriterLoungeSchemaMissing
-        } from "./js/writer-lounge-api.js?v=8";
+        } from "./js/writer-lounge-api.js?v=9";
         import {
             attestBetaMessaging18Plus,
             hasBetaMessagingAttestation
@@ -183,6 +184,9 @@
         let onlineMembers = [];
         let mentionQuery = null;
         let mentionStart = -1;
+        let mentionActiveIndex = 0;
+        let mentionSearchToken = 0;
+        let mentionSearchTimer = null;
 
         function escapeHtml(value) {
             return String(value || "")
@@ -452,41 +456,129 @@
             mentionMenu.innerHTML = "";
             mentionQuery = null;
             mentionStart = -1;
+            mentionActiveIndex = 0;
+            if (mentionSearchTimer) {
+                clearTimeout(mentionSearchTimer);
+                mentionSearchTimer = null;
+            }
         }
 
-        function updateMentionMenu() {
+        function getMentionContext() {
             const value = msgInput.value;
             const caret = msgInput.selectionStart ?? value.length;
             const before = value.slice(0, caret);
             const match = before.match(/(^|\s)@([A-Za-z0-9_]*)$/);
-            if (!match) {
-                hideMentionMenu();
-                return;
-            }
+            if (!match) return null;
+            return {
+                query: match[2],
+                start: caret - match[2].length - 1
+            };
+        }
 
-            mentionStart = caret - match[2].length - 1;
-            mentionQuery = match[2].toLowerCase();
-            const candidates = mentionCandidates().filter((m) => {
+        function mergeMentionCandidates(localRows, remoteRows) {
+            const byId = new Map();
+            for (const row of [...localRows, ...remoteRows]) {
+                if (!row?.id || row.id === currentUser?.id) continue;
+                if (blockedUserIds.has(row.id)) continue;
+                if (!byId.has(row.id)) byId.set(row.id, row);
+            }
+            return [...byId.values()];
+        }
+
+        function filterMentionCandidates(rows, query) {
+            const q = String(query || "").toLowerCase();
+            const filtered = rows.filter((m) => {
+                if (!q) return true;
                 const handle = mentionHandleForUser(m).toLowerCase();
                 const name = String(m.name || "").toLowerCase();
-                return handle.includes(mentionQuery) || name.includes(mentionQuery);
-            }).slice(0, 8);
+                return handle.startsWith(q) || handle.includes(q) || name.includes(q);
+            });
+            filtered.sort((a, b) => {
+                const ah = mentionHandleForUser(a).toLowerCase();
+                const bh = mentionHandleForUser(b).toLowerCase();
+                if (q) {
+                    const aExact = ah.startsWith(q) ? 0 : 1;
+                    const bExact = bh.startsWith(q) ? 0 : 1;
+                    if (aExact !== bExact) return aExact - bExact;
+                }
+                return ah.localeCompare(bh);
+            });
+            return filtered.slice(0, 8);
+        }
 
+        function renderMentionMenu(candidates) {
             if (!candidates.length) {
-                hideMentionMenu();
+                mentionMenu.innerHTML = '<div class="mention-empty">No matching writers</div>';
+                mentionMenu.classList.remove("hidden");
                 return;
             }
 
-            mentionMenu.innerHTML = candidates.map((m) => {
+            mentionActiveIndex = Math.max(0, Math.min(mentionActiveIndex, candidates.length - 1));
+            mentionMenu.innerHTML = candidates.map((m, index) => {
                 const handle = mentionHandleForUser(m);
+                const active = index === mentionActiveIndex ? " is-active" : "";
                 return (
-                    `<button type="button" class="mention-option" data-mention="${escapeHtml(handle)}" role="option">` +
+                    `<button type="button" class="mention-option${active}" data-mention="${escapeHtml(handle)}" role="option" aria-selected="${index === mentionActiveIndex}">` +
                     `<span class="mention-option-name">${escapeHtml(m.name || handle)}</span>` +
                     `<span class="mention-option-handle">@${escapeHtml(handle)}</span>` +
                     `</button>`
                 );
             }).join("");
             mentionMenu.classList.remove("hidden");
+        }
+
+        function scheduleMentionSearch() {
+            const ctx = getMentionContext();
+            if (!ctx) {
+                hideMentionMenu();
+                return;
+            }
+
+            mentionStart = ctx.start;
+            mentionQuery = ctx.query;
+            mentionActiveIndex = 0;
+
+            const localMatches = filterMentionCandidates(mentionCandidates(), ctx.query);
+            renderMentionMenu(localMatches);
+
+            if (mentionSearchTimer) clearTimeout(mentionSearchTimer);
+            const token = ++mentionSearchToken;
+            mentionSearchTimer = setTimeout(async () => {
+                try {
+                    const remoteRows = await searchLoungeMentionUsers(ctx.query, 8);
+                    if (token !== mentionSearchToken) return;
+                    const ctxNow = getMentionContext();
+                    if (!ctxNow || ctxNow.start !== mentionStart) return;
+                    const merged = filterMentionCandidates(
+                        mergeMentionCandidates(mentionCandidates(), remoteRows),
+                        ctxNow.query
+                    );
+                    renderMentionMenu(merged);
+                } catch (err) {
+                    console.error(err);
+                }
+            }, 120);
+        }
+
+        function updateMentionMenu() {
+            scheduleMentionSearch();
+        }
+
+        function activeMentionOption() {
+            const options = [...mentionMenu.querySelectorAll(".mention-option")];
+            if (!options.length) return null;
+            return options[Math.max(0, Math.min(mentionActiveIndex, options.length - 1))];
+        }
+
+        function moveMentionSelection(delta) {
+            const options = mentionMenu.querySelectorAll(".mention-option");
+            if (!options.length) return;
+            mentionActiveIndex = (mentionActiveIndex + delta + options.length) % options.length;
+            options.forEach((el, index) => {
+                el.classList.toggle("is-active", index === mentionActiveIndex);
+                el.setAttribute("aria-selected", index === mentionActiveIndex ? "true" : "false");
+            });
+            options[mentionActiveIndex]?.scrollIntoView({ block: "nearest" });
         }
 
         function applyMention(handle) {
@@ -994,24 +1086,42 @@
         sendBtn.addEventListener("click", () => handleSend().catch(console.error));
         composerReplyCancel.addEventListener("click", clearReplyTarget);
         msgInput.addEventListener("input", updateMentionMenu);
+        msgInput.addEventListener("keyup", updateMentionMenu);
+        msgInput.addEventListener("click", updateMentionMenu);
         msgInput.addEventListener("keydown", (e) => {
-            if (mentionMenu.classList.contains("hidden")) {
+            const menuOpen = !mentionMenu.classList.contains("hidden");
+            if (!menuOpen) {
                 if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
                     handleSend().catch(console.error);
                 }
                 return;
             }
-            const first = mentionMenu.querySelector(".mention-option");
-            if (e.key === "Enter" && first) {
+            if (e.key === "ArrowDown") {
                 e.preventDefault();
-                applyMention(first.dataset.mention || "");
+                moveMentionSelection(1);
+                return;
+            }
+            if (e.key === "ArrowUp") {
+                e.preventDefault();
+                moveMentionSelection(-1);
+                return;
+            }
+            if (e.key === "Enter" || e.key === "Tab") {
+                const option = activeMentionOption();
+                if (option) {
+                    e.preventDefault();
+                    applyMention(option.dataset.mention || "");
+                }
                 return;
             }
             if (e.key === "Escape") {
                 e.preventDefault();
                 hideMentionMenu();
             }
+        });
+        mentionMenu.addEventListener("mousedown", (e) => {
+            e.preventDefault();
         });
         mentionMenu.addEventListener("click", (e) => {
             const btn = e.target.closest(".mention-option");

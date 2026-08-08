@@ -112,6 +112,15 @@ export async function listMyLoungeBlocks() {
     return Array.isArray(data) ? data.filter(Boolean) : [];
 }
 
+export async function searchLoungeMentionUsers(query = "", limit = 8) {
+    const { data, error } = await supabase.rpc("search_lounge_mention_users", {
+        p_query: safeString(query),
+        p_limit: limit
+    });
+    if (error) throw error;
+    return Array.isArray(data) ? data : [];
+}
+
 export function subscribeLoungeChannel(boardId, { onMessage } = {}) {
     if (!boardId) return () => {};
 
@@ -152,6 +161,6 @@ export function isWriterLoungeSchemaMissing(error) {
     const msg = String(error?.message || error || "");
     return (
         /lounge_categories|lounge_boards|lounge_messages/i.test(msg) ||
-        /list_lounge_home|list_lounge_messages|send_lounge_message|edit_lounge_message|delete_lounge_message|list_lounge_online_members|block_lounge_user|list_my_lounge_blocks/i.test(msg)
+        /list_lounge_home|list_lounge_messages|send_lounge_message|edit_lounge_message|delete_lounge_message|list_lounge_online_members|block_lounge_user|list_my_lounge_blocks|search_lounge_mention_users/i.test(msg)
     );
 }

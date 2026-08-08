@@ -693,6 +693,49 @@ BEGIN
 END;
 $$;
 
+CREATE OR REPLACE FUNCTION public.search_lounge_mention_users(
+  p_query text DEFAULT '',
+  p_limit integer DEFAULT 8
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_limit integer := least(greatest(coalesce(p_limit, 8), 1), 20);
+  v_query text := lower(trim(coalesce(p_query, '')));
+BEGIN
+  RETURN coalesce((
+    SELECT jsonb_agg(row ORDER BY row->>'username')
+    FROM (
+      SELECT jsonb_build_object(
+        'id', u.id,
+        'name', public.lounge_display_name(u.id),
+        'username', coalesce(nullif(trim(u.username), ''), 'writer')
+      ) AS row
+      FROM public.users u
+      WHERE u.id <> auth.uid()
+        AND (
+          auth.uid() IS NULL
+          OR NOT public.lounge_users_are_blocked(auth.uid(), u.id)
+        )
+        AND (
+          v_query = ''
+          OR lower(u.username) LIKE v_query || '%'
+          OR lower(replace(u.display_name, ' ', '')) LIKE v_query || '%'
+          OR lower(u.display_name) LIKE '%' || v_query || '%'
+        )
+      ORDER BY
+        CASE WHEN lower(u.username) LIKE v_query || '%' THEN 0 ELSE 1 END,
+        u.username
+      LIMIT v_limit
+    ) matches
+  ), '[]'::jsonb);
+END;
+$$;
+
 -- ---------------------------------------------------------------------------
 -- 5. RLS
 -- ---------------------------------------------------------------------------
@@ -749,6 +792,7 @@ GRANT EXECUTE ON FUNCTION public.is_lounge_user_blocked(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.block_lounge_user(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.unblock_lounge_user(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.list_my_lounge_blocks() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.search_lounge_mention_users(text, integer) TO authenticated;
 
 -- Messages are inserted only through send_lounge_message (SECURITY DEFINER).
 REVOKE INSERT ON public.lounge_messages FROM authenticated;
