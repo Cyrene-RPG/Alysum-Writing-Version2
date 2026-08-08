@@ -226,7 +226,14 @@ BEGIN
             'sortOrder', b.sort_order,
             'isLocked', b.is_locked,
             'canPost', public.can_post_lounge_board(b.id),
-            'lastMessageAt', b.last_message_at,
+            'lastMessageAt', (
+              SELECT m.created_at
+              FROM public.lounge_messages m
+              WHERE m.board_id = b.id
+                AND m.deleted_at IS NULL
+              ORDER BY m.created_at DESC
+              LIMIT 1
+            ),
             'lastMessage', (
               SELECT jsonb_build_object(
                 'body', left(m.body, 120),
@@ -330,6 +337,7 @@ CREATE OR REPLACE FUNCTION public.send_lounge_message(
 )
 RETURNS public.lounge_messages
 LANGUAGE plpgsql
+VOLATILE
 SECURITY DEFINER
 SET search_path = public
 AS $$
@@ -382,10 +390,6 @@ BEGIN
   VALUES (v_board.id, v_uid, v_body)
   RETURNING * INTO v_row;
 
-  UPDATE public.lounge_boards
-  SET last_message_at = v_row.created_at
-  WHERE id = v_board.id;
-
   RETURN v_row;
 END;
 $$;
@@ -400,9 +404,8 @@ AS $$
 DECLARE
   v_limit integer := least(greatest(coalesce(p_limit, 50), 1), 100);
 BEGIN
-  IF to_regprocedure('public.touch_user_presence()') IS NOT NULL THEN
-    PERFORM public.touch_user_presence();
-  END IF;
+  -- Presence heartbeat runs client-side via user-presence.js (touch_user_presence
+  -- must not run here — STABLE functions execute in a read-only transaction).
 
   RETURN coalesce((
     SELECT jsonb_agg(row ORDER BY row->>'lastSeenAt' DESC)
