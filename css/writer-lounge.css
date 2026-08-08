@@ -344,6 +344,14 @@ body.light .lounge-channel-btn:hover {
     }
 }
 
+.ping-toast.is-reply .ping-toast-kicker {
+    color: #0a84ff;
+}
+
+body.light .ping-toast.is-reply .ping-toast-kicker {
+    color: #007aff;
+}
+
 .text-panel {
     display: flex;
     flex-direction: column;

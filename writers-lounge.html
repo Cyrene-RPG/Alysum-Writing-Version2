@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
     <link rel="stylesheet" href="css/gradient-themes.css?v=5" />
     <link rel="stylesheet" href="css/workspace-nav.css?v=11" />
-    <link rel="stylesheet" href="css/writer-lounge.css?v=19" />
+    <link rel="stylesheet" href="css/writer-lounge.css?v=20" />
     <script src="js/gradient-theme-sync.js" defer></script>
     <script src="js/alysum-appearance-boot.js"></script>
 </head>
@@ -254,24 +254,57 @@
             return ids.some((id) => String(id) === String(userId));
         }
 
-        function formatPingPreview(body) {
+        function formatActivityPreview(body) {
             const text = String(body || "").trim();
-            if (!text) return "New ping";
+            if (!text) return "New message";
             return text.length > 90 ? `${text.slice(0, 90)}…` : text;
         }
 
-        function showPingToast({ messageId, senderName, channelTitle, channelSlug, body }) {
+        async function isDirectReplyToUser(row) {
+            const replyToId = row?.reply_to_id || row?.replyToId || null;
+            if (!replyToId || !currentUser?.id) return false;
+
+            const cached = messages.find((m) => String(m.id) === String(replyToId));
+            if (cached) return String(cached.senderId) === String(currentUser.id);
+
+            try {
+                const { data } = await supabase
+                    .from("lounge_messages")
+                    .select("sender_id")
+                    .eq("id", replyToId)
+                    .maybeSingle();
+                return String(data?.sender_id) === String(currentUser.id);
+            } catch {
+                return false;
+            }
+        }
+
+        async function getActivityKind(row) {
+            if (messageMentionsUser(row, currentUser?.id)) return "ping";
+            if (await isDirectReplyToUser(row)) return "reply";
+            return null;
+        }
+
+        function showActivityToast({ messageId, kind, senderName, channelTitle, channelSlug, body }) {
             if (!pingToastStack || !channelSlug) return;
             if (messageId && seenPingToastIds.has(messageId)) return;
             if (messageId) seenPingToastIds.add(messageId);
 
+            const isReply = kind === "reply";
+            const kicker = isReply
+                ? `Reply in #${escapeHtml(channelTitle || channelSlug)}`
+                : `Ping in #${escapeHtml(channelTitle || channelSlug)}`;
+            const title = isReply
+                ? `${escapeHtml(senderName || "Someone")} replied to you`
+                : `${escapeHtml(senderName || "Someone")} mentioned you`;
+
             const toast = document.createElement("button");
             toast.type = "button";
-            toast.className = "ping-toast";
+            toast.className = `ping-toast${isReply ? " is-reply" : ""}`;
             toast.innerHTML =
-                `<span class="ping-toast-kicker">Ping in #${escapeHtml(channelTitle || channelSlug)}</span>` +
-                `<span class="ping-toast-title">${escapeHtml(senderName || "Someone")} mentioned you</span>` +
-                `<span class="ping-toast-body">${escapeHtml(formatPingPreview(body))}</span>`;
+                `<span class="ping-toast-kicker">${kicker}</span>` +
+                `<span class="ping-toast-title">${title}</span>` +
+                `<span class="ping-toast-body">${escapeHtml(formatActivityPreview(body))}</span>`;
             toast.addEventListener("click", () => {
                 toast.remove();
                 openChannel(channelSlug).catch(console.error);
@@ -306,7 +339,9 @@
         async function handleIncomingPing(row) {
             if (!row || !currentUser?.id) return;
             if (String(row.sender_id) === String(currentUser.id)) return;
-            if (!messageMentionsUser(row, currentUser.id)) return;
+
+            const kind = await getActivityKind(row);
+            if (!kind) return;
 
             const board = findBoardById(row.board_id);
             if (!board) {
@@ -333,8 +368,9 @@
                 /* keep fallback */
             }
 
-            showPingToast({
+            showActivityToast({
                 messageId: row.id,
+                kind,
                 senderName,
                 channelTitle: board.title,
                 channelSlug: board.slug,
@@ -365,8 +401,12 @@
                         : board.description || "No messages yet";
                     const lock = board.isLocked ? '<span class="lounge-channel-lock" title="Staff only">🔒</span>' : "";
                     const pingInfo = unreadPingsBySlug.get(board.slug);
-                    const badge = pingInfo?.count
-                        ? `<span class="lounge-channel-badge" aria-label="${pingInfo.count} unread ping${pingInfo.count === 1 ? "" : "s"}">${pingInfo.count > 9 ? "9+" : pingInfo.count}</span>`
+                    const unreadCount = pingInfo?.count || 0;
+                    const badgeLabel = unreadCount === 1
+                        ? "1 missed ping or reply"
+                        : `${unreadCount} missed pings or replies`;
+                    const badge = unreadCount
+                        ? `<span class="lounge-channel-badge" aria-label="${badgeLabel}">${unreadCount > 9 ? "9+" : unreadCount}</span>`
                         : "";
                     parts.push(
                         `<button type="button" class="lounge-channel-btn${active}" data-slug="${escapeHtml(board.slug)}">` +

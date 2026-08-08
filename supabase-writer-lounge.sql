@@ -819,10 +819,20 @@ BEGIN
         'boardId', b.id,
         'boardSlug', b.slug,
         'boardTitle', b.title,
-        'count', count(*)::int,
+        'count', count(DISTINCT m.id)::int,
+        'pingCount', count(DISTINCT m.id) FILTER (
+          WHERE auth.uid() = ANY(m.mentioned_user_ids)
+        )::int,
+        'replyCount', count(DISTINCT m.id) FILTER (
+          WHERE parent.id IS NOT NULL
+        )::int,
         'latestAt', max(m.created_at),
         'latest', (
           SELECT jsonb_build_object(
+            'kind', CASE
+              WHEN parent_lm.id IS NOT NULL THEN 'reply'
+              ELSE 'ping'
+            END,
             'senderName', public.lounge_display_name(lm.sender_id),
             'body', left(lm.body, 120),
             'createdAt', lm.created_at
@@ -831,12 +841,19 @@ BEGIN
           LEFT JOIN public.lounge_channel_reads lr
             ON lr.user_id = auth.uid()
            AND lr.board_id = lm.board_id
+          LEFT JOIN public.lounge_messages parent_lm
+            ON parent_lm.id = lm.reply_to_id
+           AND parent_lm.sender_id = auth.uid()
+           AND parent_lm.deleted_at IS NULL
           WHERE lm.board_id = b.id
-            AND auth.uid() = ANY(lm.mentioned_user_ids)
             AND lm.sender_id <> auth.uid()
             AND lm.deleted_at IS NULL
             AND lm.created_at > coalesce(lr.last_read_at, '-infinity'::timestamptz)
             AND NOT public.lounge_users_are_blocked(auth.uid(), lm.sender_id)
+            AND (
+              auth.uid() = ANY(lm.mentioned_user_ids)
+              OR parent_lm.id IS NOT NULL
+            )
           ORDER BY lm.created_at DESC
           LIMIT 1
         )
@@ -846,11 +863,18 @@ BEGIN
       LEFT JOIN public.lounge_channel_reads r
         ON r.user_id = auth.uid()
        AND r.board_id = b.id
-      WHERE auth.uid() = ANY(m.mentioned_user_ids)
-        AND m.sender_id <> auth.uid()
+      LEFT JOIN public.lounge_messages parent
+        ON parent.id = m.reply_to_id
+       AND parent.sender_id = auth.uid()
+       AND parent.deleted_at IS NULL
+      WHERE m.sender_id <> auth.uid()
         AND m.deleted_at IS NULL
         AND m.created_at > coalesce(r.last_read_at, '-infinity'::timestamptz)
         AND NOT public.lounge_users_are_blocked(auth.uid(), m.sender_id)
+        AND (
+          auth.uid() = ANY(m.mentioned_user_ids)
+          OR parent.id IS NOT NULL
+        )
       GROUP BY b.id, b.slug, b.title
     ) grouped
   ), '[]'::jsonb);
