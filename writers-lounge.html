@@ -495,7 +495,7 @@
             if (!activeChannel) return;
             const data = await listLoungeMessages(activeChannel, { limit: 50 });
             activeBoard = data.board || findBoard(activeChannel);
-            const rows = (data.messages || []).slice().reverse();
+            const rows = data.messages || [];
             messages = rows.map((m) => ({
                 id: m.id,
                 senderId: m.senderId,
@@ -516,7 +516,7 @@
             if (!activeChannel || !messages.length) return;
             const oldest = messages[0]?.createdAt;
             const data = await listLoungeMessages(activeChannel, { before: oldest, limit: 50 });
-            const older = (data.messages || []).slice().reverse().map((m) => ({
+            const older = (data.messages || []).map((m) => ({
                 id: m.id,
                 senderId: m.senderId,
                 senderName: m.senderName,
