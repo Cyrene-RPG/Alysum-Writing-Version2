@@ -100,6 +100,7 @@ const WELCOME_DEFAULTS = {
 };
 
 let continueWritingHandler = null;
+let loungeBadgeTimer = null;
 
 function navBase() {
     const path = window.location.pathname.replace(/\\/g, "/");
@@ -158,7 +159,10 @@ function renderNavHtml(active) {
                 <span class="wd-nav-divider" aria-hidden="true"></span>
                 <a href="${navHref("writer-dashboard.html")}"${activeClass("studio", active)}>Studio</a>
                 <a href="${navHref("library.html")}"${activeClass("library", active)}>Library</a>
-                <a href="${navHref("writers-lounge.html")}"${activeClass("writers-lounge", active)}>Writer's Lounge</a>
+                <a href="${navHref("writers-lounge.html")}"${activeClass("writers-lounge", active)}>
+                    Writer's Lounge
+                    <span class="wd-nav-badge is-hidden" id="navLoungeBadge" aria-hidden="true">0</span>
+                </a>
                 <a href="${navHref("beta-rooms.html")}"${activeClass("beta-rooms", active)}>Beta rooms</a>
                 <a href="${navHref("collab-rooms.html")}"${activeClass("collab-rooms", active)}>Collab rooms</a>
                 <a href="${navHref("author-dashboard.html")}" id="navAuthorStats"${activeClass("author-stats", active)}>
@@ -191,7 +195,9 @@ function wireWritersLoungeNavLink() {
 
     const loungeLink = document.createElement("a");
     loungeLink.href = navHref("writers-lounge.html");
-    loungeLink.textContent = "Writer's Lounge";
+    loungeLink.innerHTML =
+        `Writer's Lounge` +
+        `<span class="wd-nav-badge is-hidden" id="navLoungeBadge" aria-hidden="true">0</span>`;
 
     const libraryLink = nav.querySelector('a[href*="library.html"]');
     if (libraryLink) libraryLink.after(loungeLink);
@@ -223,6 +229,47 @@ function renderWelcomeProfile(profile, fallbackLabel) {
         welcomePfpImg.removeAttribute("src");
         welcomePfpInitial.classList.remove("is-hidden");
     }
+}
+
+async function loadLoungeNavBadge() {
+    const navLoungeBadge = document.getElementById("navLoungeBadge");
+    if (!navLoungeBadge) return;
+
+    const { data: auth } = await supabase.auth.getUser();
+    if (!auth?.user) return;
+
+    try {
+        const { data, error } = await supabase.rpc("list_lounge_unread_pings");
+        if (error) return;
+
+        const rows = Array.isArray(data) ? data : [];
+        const total = rows.reduce((sum, row) => sum + (Number(row?.count) || 0), 0);
+        navLoungeBadge.textContent = total > 99 ? "99+" : String(total);
+        navLoungeBadge.classList.toggle("is-hidden", total <= 0);
+        navLoungeBadge.setAttribute("aria-hidden", total <= 0 ? "true" : "false");
+        if (total > 0) {
+            navLoungeBadge.setAttribute(
+                "aria-label",
+                `${total} missed ping${total === 1 ? "" : "s"} or repl${total === 1 ? "y" : "ies"} in Writer's Lounge`
+            );
+        } else {
+            navLoungeBadge.removeAttribute("aria-label");
+        }
+    } catch {
+        /* lounge ping schema may not be applied yet */
+    }
+}
+
+/** Refresh the Writer's Lounge unread badge in the workspace nav. */
+export function refreshLoungeNavBadge() {
+    void loadLoungeNavBadge();
+}
+
+function startLoungeBadgePolling() {
+    if (loungeBadgeTimer) return;
+    loungeBadgeTimer = window.setInterval(() => {
+        void loadLoungeNavBadge();
+    }, 90_000);
 }
 
 async function loadDashboardBadge(uid) {
@@ -328,6 +375,8 @@ async function hydrateWelcomeBar(options) {
     }
 
     void loadDashboardBadge(user.id);
+    void loadLoungeNavBadge();
+    startLoungeBadgePolling();
 }
 
 /**

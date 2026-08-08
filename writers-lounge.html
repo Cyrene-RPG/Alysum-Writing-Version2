@@ -108,7 +108,7 @@
     <script type="module">
         import { supabase } from "./firebase.js";
         import { requireStudioSession } from "./js/studio-session.js?v=3";
-        import { mountWorkspaceNav } from "./js/workspace-nav.js?v=11";
+        import { mountWorkspaceNav, refreshLoungeNavBadge } from "./js/workspace-nav.js?v=12";
         import { publicDisplayNameFromUserData } from "./js/profile-display.js?v=1";
         import {
             listLoungeHome,
@@ -334,6 +334,7 @@
             } catch {
                 unreadPingsBySlug = new Map();
             }
+            refreshLoungeNavBadge();
         }
 
         async function handleIncomingPing(row) {
