@@ -2889,7 +2889,20 @@ function rememberBookId(id) {
             summary: safeString(meta.summary, ""),
             extraTags: safeArray(meta.extraTags || meta.extra_tags, []).filter(item => typeof item === "string"),
             coverUrl,
-            isAnonymous: !!(meta.isAnonymous ?? meta.is_anonymous)
+            isAnonymous: !!(meta.isAnonymous ?? meta.is_anonymous),
+            serializationStatus: (() => {
+                const raw = String(meta.serializationStatus ?? meta.serialization_status ?? "").trim().toLowerCase();
+                return raw === "in_progress" || raw === "ongoing" ? "in_progress" : "complete";
+            })(),
+            plannedChapterCount: (() => {
+                const value = meta.plannedChapterCount ?? meta.planned_chapter_count;
+                if (typeof value === "number" && Number.isFinite(value) && value > 0) return Math.floor(value);
+                if (typeof value === "string" && value.trim()) {
+                    const parsed = parseInt(value.trim(), 10);
+                    if (Number.isFinite(parsed) && parsed > 0) return parsed;
+                }
+                return null;
+            })(),
         };
     }
 
@@ -4274,7 +4287,9 @@ function rememberBookId(id) {
                     updated: now,
                     views: safeNumber(existingLibrary?.data?.views ?? existingLibrary?.views, 0),
                     likes: safeNumber(existingLibrary?.data?.likes ?? existingLibrary?.likes, 0),
-                    isPublished: true
+                    isPublished: true,
+                    serializationStatus: publishMeta.serializationStatus,
+                    plannedChapterCount: publishMeta.plannedChapterCount,
                 }
             };
             currentBook.title = payloadTitle;

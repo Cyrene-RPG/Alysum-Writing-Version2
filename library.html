@@ -188,7 +188,12 @@
         authorLinkHtml,
         authorPageUrl,
         fetchUsernamesByIds,
-    } from "./js/author-profile.js?v=1";
+    } from "./js/author-profile.js?v=2";
+    import {
+        formatChapterProgress,
+        serializationFromBookData,
+        serializationStatusLabel,
+    } from "./js/story-serialization.js?v=1";
 
     const navButtons = document.querySelectorAll(".nav-btn");
     const searchInput = document.getElementById("searchInput");
@@ -240,6 +245,7 @@
         const publishTags = safeArray(data.extraTags);
         const chapters = safeArray(data.chapters);
         const warnings = flattenWarnings(data.warnings);
+        const serialization = serializationFromBookData(data);
         return {
             id,
             title: safeString(data.title, "Untitled"),
@@ -252,7 +258,10 @@
             genres: publishGenres.filter(v => typeof v === "string" && v.trim()),
             tags: publishTags.filter(v => typeof v === "string" && v.trim()),
             warnings,
-            chapterCount: safeNumber(data.chapterCount, chapters.length),
+            chapterCount: serialization.chapterCount,
+            publishedChapterCount: serialization.publishedCount,
+            serializationStatus: serialization.status,
+            plannedChapterCount: serialization.plannedChapterCount,
             words: safeNumber(data.words, 0),
             views: safeNumber(data.views, 0),
             ownerUid: safeString(data.ownerUid || data.user_id || row?.user_id, ""),
@@ -390,9 +399,14 @@
             const hasCover = !!trimmedCover;
             const comic = isComicFormat(book.mediaFormat);
             const formatChip = comic ? mediaFormatLabel(book.mediaFormat) : book.type;
-            const countChip = comic
-                ? `${book.chapterCount} page${book.chapterCount === 1 ? "" : "s"}`
-                : `${book.chapterCount} chapter${book.chapterCount === 1 ? "" : "s"}`;
+            const countChip = formatChapterProgress({
+                publishedCount: book.publishedChapterCount ?? book.chapterCount,
+                plannedChapterCount: book.plannedChapterCount,
+                chapterCount: book.chapterCount,
+                serializationStatus: book.serializationStatus,
+                comic,
+            });
+            const statusChip = serializationStatusLabel(book.serializationStatus);
             const coverInner = hasCover
                 ? `${coverPlaceholderMarkup(book, phHue)}
                     <img class="cover-img" src="${escapeAttribute(trimmedCover)}" alt="${escapeAttribute(book.title)} cover" loading="lazy" onerror="this.style.display='none'">`
@@ -411,7 +425,8 @@
                 </div>
                 <div class="meta-row">
                     <div class="chip">${escapeHtml(formatChip)}</div>
-                    <div class="chip soft">${countChip}</div>
+                    <div class="chip soft">${escapeHtml(countChip)}</div>
+                    <div class="chip soft">${escapeHtml(statusChip)}</div>
                     ${comic ? "" : `<div class="chip soft">${formatNumber(book.words)} words</div>`}
                     <div class="chip soft">${formatNumber(realReadCount(book))} reads</div>
                 </div>

@@ -283,7 +283,7 @@
             escapeHtml,
             fetchAuthorByUsername,
             fetchPublishedWorksForAuthor,
-        } from "./js/author-profile.js?v=1";
+        } from "./js/author-profile.js?v=2";
 
         const params = new URLSearchParams(window.location.search);
         const usernameParam = params.get("u") || params.get("user") || params.get("username") || "";
@@ -348,7 +348,7 @@
                     <div class="work-cover">${coverHtml}</div>
                     <div class="work-title">${escapeHtml(book.title)}</div>
                     <div class="work-summary">${escapeHtml(book.summary || "No summary yet.")}</div>
-                    <div class="work-meta">${book.chapterCount} chapter${book.chapterCount === 1 ? "" : "s"}</div>
+                    <div class="work-meta">${escapeHtml(book.chapterProgressLabel || `${book.chapterCount} chapters`)}</div>
                 `;
                 const openBook = () => {
                     window.location.href = `read.html?book=${encodeURIComponent(book.id)}`;

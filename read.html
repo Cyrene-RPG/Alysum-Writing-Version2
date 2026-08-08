@@ -103,6 +103,8 @@
         .book-author { margin-top: 8px; color: var(--muted); font-size: 15px; font-weight: 700; }
         .book-author-link, .sidebar-author-link { color: inherit; text-decoration: none; }
         .book-author-link:hover, .sidebar-author-link:hover { color: #c4b5fd; text-decoration: underline; }
+        .hero-serialization { margin-top: 10px; }
+        .serialization-chip { display: inline-flex; background: rgba(109, 40, 217, 0.14); border-color: rgba(109, 40, 217, 0.35); color: #ddd6fe; }
         .book-summary { margin-top: 14px; color: var(--muted); font-size: 15px; line-height: 1.65; white-space: pre-wrap; }
         .hero-stats { margin-top: 18px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
         .stat { background: var(--panel-2); border: 1px solid var(--border); border-radius: 16px; padding: 14px; }
@@ -128,6 +130,9 @@
         .author-notes-text { font-size: 15px; line-height: 1.65; color: var(--muted); white-space: pre-wrap; }
         .reader-body { padding: 24px; }
         .reader-next-chapter-wrap { padding: 8px 24px 28px; display: flex; justify-content: center; border-top: 1px solid var(--border); background: var(--panel-2); }
+        .reader-next-chapter-inner { display: flex; flex-direction: column; align-items: center; gap: 10px; width: min(100%, 420px); }
+        .reader-next-chapter-release-note { margin: 0; text-align: center; font-size: 14px; line-height: 1.55; color: var(--muted); }
+        .reader-next-chapter-release-note.hidden { display: none; }
         .reader-next-chapter-btn { min-width: min(100%, 340px); padding: 14px 22px; font-size: 15px; }
         .reader-next-chapter-btn:disabled { opacity: 0.45; cursor: not-allowed; }
         .content { font-family: Georgia, "Times New Roman", serif; font-size: var(--font-size); line-height: var(--line-height); word-wrap: break-word; }
@@ -297,12 +302,12 @@
         <main class="page-main">
             <div class="status hidden" id="statusBox"></div><div class="error-box hidden" id="errorBox"></div>
             <div class="hero">
-                <div class="eyebrow">Alysum Reader</div><h1 class="book-title" id="bookTitle">Loading…</h1><div class="book-author" id="bookAuthor"></div><div class="book-summary hidden" id="bookSummary"></div>
+                <div class="eyebrow">Alysum Reader</div><h1 class="book-title" id="bookTitle">Loading…</h1><div class="book-author" id="bookAuthor"></div><div class="hero-serialization" id="serializationBadge"></div><div class="book-summary hidden" id="bookSummary"></div>
                 <div class="hero-stats"><div class="stat"><div class="stat-label">Chapters</div><div class="stat-value" id="statChapters">0</div></div><div class="stat"><div class="stat-label">Words</div><div class="stat-value" id="statWords">0</div></div><div class="stat"><div class="stat-label">Reads</div><div class="stat-value" id="statReads">0</div></div><div class="stat"><div class="stat-label">Type</div><div class="stat-value" id="statType">—</div></div><div class="stat"><div class="stat-label">Rating</div><div class="stat-value" id="statRating">—</div></div></div>
                 <div class="chip-block hidden"><div class="chip-label">Tags</div><div class="chip-row" id="tagList"></div></div><div class="chip-block hidden"><div class="chip-label">Warnings</div><div class="chip-row" id="warningList"></div></div>
             </div>
             <div class="nav-row"><button class="btn" id="prevBtn">← Prev</button><div class="nav-center"><div class="nav-label">Current Chapter</div><div class="nav-current" id="chapterIndicator">Loading…</div></div><button class="btn" id="nextBtn">Next →</button></div>
-            <div class="reader-card"><div class="reader-head"><h2 class="chapter-title" id="chapterTitle">Loading…</h2><div class="chapter-meta" id="chapterMeta"></div><div class="chapter-warnings hidden" id="chapterWarningsBlock"><div class="chip-label">Chapter warnings</div><div class="chip-row" id="chapterWarningList"></div></div></div><div class="reader-chapter-wrap alysum-rw-wrap"><div class="alysum-rw-sheet" id="readerWatermarkSheet" aria-hidden="true"></div><div class="reader-body alysum-rw-body"><aside class="author-notes-block hidden" id="authorNotesBlock" aria-label="Author's note"><div class="author-notes-kicker">Author's note</div><div class="author-notes-text" id="authorNotesText"></div></aside><div class="content" id="content"></div></div><div class="alysum-rw-footer" id="readerWatermarkFooter"></div></div><div class="reader-next-chapter-wrap"><button class="btn primary reader-next-chapter-btn" id="nextChapterBottomBtn" type="button">Next Chapter →</button></div><div class="chapter-reactions" id="chapterReactions"><div class="chapter-reactions-title" id="chapterReactionsTitle">Let the author know what you thought about this chapter!</div><div class="chapter-reactions-grid" id="chapterReactionsGrid"></div></div></div>
+            <div class="reader-card"><div class="reader-head"><h2 class="chapter-title" id="chapterTitle">Loading…</h2><div class="chapter-meta" id="chapterMeta"></div><div class="chapter-warnings hidden" id="chapterWarningsBlock"><div class="chip-label">Chapter warnings</div><div class="chip-row" id="chapterWarningList"></div></div></div><div class="reader-chapter-wrap alysum-rw-wrap"><div class="alysum-rw-sheet" id="readerWatermarkSheet" aria-hidden="true"></div><div class="reader-body alysum-rw-body"><aside class="author-notes-block hidden" id="authorNotesBlock" aria-label="Author's note"><div class="author-notes-kicker">Author's note</div><div class="author-notes-text" id="authorNotesText"></div></aside><div class="content" id="content"></div></div><div class="alysum-rw-footer" id="readerWatermarkFooter"></div></div><div class="reader-next-chapter-wrap"><div class="reader-next-chapter-inner"><button class="btn primary reader-next-chapter-btn" id="nextChapterBottomBtn" type="button">Next Chapter →</button><p class="reader-next-chapter-release-note hidden" id="nextChapterReleaseNote"></p></div></div><div class="chapter-reactions" id="chapterReactions"><div class="chapter-reactions-title" id="chapterReactionsTitle">Let the author know what you thought about this chapter!</div><div class="chapter-reactions-grid" id="chapterReactionsGrid"></div></div></div>
             <div class="reader-tools"><button class="btn primary" id="bookmarkBtn">Bookmark This Chapter</button><button class="btn" id="resumeBtn">Resume Where I Left Off</button><button class="btn btn-report hidden" id="reportBookBtn" type="button">Report Book</button></div>
             <div class="likes-card"><div class="likes-title">Kudos</div><div class="likes-row"><button class="btn primary" id="likeBtn">❤️ Leave Kudos</button><div class="kudos-note">One Per User.</div></div><div class="kudos-count" id="likeCount">0 kudos</div></div>
             <div class="comments-card"><div class="comments-title">Comments</div><div class="comment-list" id="commentList"></div><div class="comment-form"><textarea class="comment-input" id="commentInput" placeholder="Write a comment…"></textarea><button class="btn primary" id="postCommentBtn">Post Comment</button></div></div>
@@ -359,7 +364,14 @@
         fetchPublishedWorksForAuthor,
         normalizeAuthorProfile,
     } from "./js/author-profile.js?v=1";
-    import { processDueChapterReleases } from "./js/scheduled-chapter-releases.js?v=1";
+    import { processDueChapterReleases, getNextChapterRelease } from "./js/scheduled-chapter-releases.js?v=2";
+    import {
+        formatChapterProgress,
+        formatChapterPositionMeta,
+        formatNextChapterReleaseNote,
+        serializationFromBookData,
+        serializationStatusLabel,
+    } from "./js/story-serialization.js?v=1";
     import { flattenWarnings, aggregateWarningsFromChapters } from "./js/content-warnings.js?v=1";
     import { normalizeAuthorNotes } from "./js/chapter-author-notes.js?v=1";
     import { sanitizeChapterHtml } from "./js/book-html-sanitize.js?v=1";
@@ -376,9 +388,9 @@
         localStorage.getItem("alysum-last-book") ||
         "";
 
-    const backBtn = document.getElementById("backBtn"), themeBtn = document.getElementById("themeBtn"), fontMinusBtn = document.getElementById("fontMinusBtn"), fontPlusBtn = document.getElementById("fontPlusBtn"), menuBtn = document.getElementById("menuBtn"), mobileDrawer = document.getElementById("mobileDrawer"), drawerBackdrop = document.getElementById("drawerBackdrop"), closeDrawerBtn = document.getElementById("closeDrawerBtn"), topbarTitle = document.getElementById("topbarTitle"), topbarSubtitle = document.getElementById("topbarSubtitle"), betaReadTopBtn = document.getElementById("betaReadTopBtn"), readerProfileTopBtn = document.getElementById("readerProfileTopBtn"), allNotesTopBtn = document.getElementById("allNotesTopBtn"), statusBox = document.getElementById("statusBox"), errorBox = document.getElementById("errorBox"), bookTitle = document.getElementById("bookTitle"), bookAuthor = document.getElementById("bookAuthor"), bookSummary = document.getElementById("bookSummary"), statChapters = document.getElementById("statChapters"), statWords = document.getElementById("statWords"), statReads = document.getElementById("statReads"), statType = document.getElementById("statType"), statRating = document.getElementById("statRating"), tagList = document.getElementById("tagList"), warningList = document.getElementById("warningList"), sideBookTitle = document.getElementById("sideBookTitle"), sideBookAuthor = document.getElementById("sideBookAuthor"), sideBookSummary = document.getElementById("sideBookSummary"), sideTagList = document.getElementById("sideTagList"), sideWarningList = document.getElementById("sideWarningList"), drawerBookTitle = document.getElementById("drawerBookTitle"), drawerBookAuthor = document.getElementById("drawerBookAuthor"), drawerBookSummary = document.getElementById("drawerBookSummary"), drawerTagList = document.getElementById("drawerTagList"), drawerWarningList = document.getElementById("drawerWarningList"), prevBtn = document.getElementById("prevBtn"), nextBtn = document.getElementById("nextBtn"), nextChapterBottomBtn = document.getElementById("nextChapterBottomBtn"), chapterIndicator = document.getElementById("chapterIndicator"), chapterTitle = document.getElementById("chapterTitle"), chapterMeta = document.getElementById("chapterMeta"), chapterWarningsBlock = document.getElementById("chapterWarningsBlock"), chapterWarningList = document.getElementById("chapterWarningList"), authorNotesBlock = document.getElementById("authorNotesBlock"), authorNotesText = document.getElementById("authorNotesText"), content = document.getElementById("content"), bookmarkBtn = document.getElementById("bookmarkBtn"), resumeBtn = document.getElementById("resumeBtn"), reportBookBtn = document.getElementById("reportBookBtn"), likeBtn = document.getElementById("likeBtn"), likeCount = document.getElementById("likeCount"), chapterReactionsTitle = document.getElementById("chapterReactionsTitle"), chapterReactionsGrid = document.getElementById("chapterReactionsGrid"), commentList = document.getElementById("commentList"), commentInput = document.getElementById("commentInput"), postCommentBtn = document.getElementById("postCommentBtn"), authorEndCard = document.getElementById("authorEndCard"), authorEndAvatarInitial = document.getElementById("authorEndAvatarInitial"), authorEndAvatarImg = document.getElementById("authorEndAvatarImg"), authorEndName = document.getElementById("authorEndName"), authorEndBio = document.getElementById("authorEndBio"), authorEndWorks = document.getElementById("authorEndWorks"), authorEndWorksTitle = document.getElementById("authorEndWorksTitle"), authorWorksGrid = document.getElementById("authorWorksGrid"), authorEndProfileLink = document.getElementById("authorEndProfileLink");
+    const backBtn = document.getElementById("backBtn"), themeBtn = document.getElementById("themeBtn"), fontMinusBtn = document.getElementById("fontMinusBtn"), fontPlusBtn = document.getElementById("fontPlusBtn"), menuBtn = document.getElementById("menuBtn"), mobileDrawer = document.getElementById("mobileDrawer"), drawerBackdrop = document.getElementById("drawerBackdrop"), closeDrawerBtn = document.getElementById("closeDrawerBtn"), topbarTitle = document.getElementById("topbarTitle"), topbarSubtitle = document.getElementById("topbarSubtitle"), betaReadTopBtn = document.getElementById("betaReadTopBtn"), readerProfileTopBtn = document.getElementById("readerProfileTopBtn"), allNotesTopBtn = document.getElementById("allNotesTopBtn"), statusBox = document.getElementById("statusBox"), errorBox = document.getElementById("errorBox"), bookTitle = document.getElementById("bookTitle"), bookAuthor = document.getElementById("bookAuthor"), bookSummary = document.getElementById("bookSummary"), serializationBadge = document.getElementById("serializationBadge"), statChapters = document.getElementById("statChapters"), statWords = document.getElementById("statWords"), statReads = document.getElementById("statReads"), statType = document.getElementById("statType"), statRating = document.getElementById("statRating"), tagList = document.getElementById("tagList"), warningList = document.getElementById("warningList"), sideBookTitle = document.getElementById("sideBookTitle"), sideBookAuthor = document.getElementById("sideBookAuthor"), sideBookSummary = document.getElementById("sideBookSummary"), sideTagList = document.getElementById("sideTagList"), sideWarningList = document.getElementById("sideWarningList"), drawerBookTitle = document.getElementById("drawerBookTitle"), drawerBookAuthor = document.getElementById("drawerBookAuthor"), drawerBookSummary = document.getElementById("drawerBookSummary"), drawerTagList = document.getElementById("drawerTagList"), drawerWarningList = document.getElementById("drawerWarningList"), prevBtn = document.getElementById("prevBtn"), nextBtn = document.getElementById("nextBtn"), nextChapterBottomBtn = document.getElementById("nextChapterBottomBtn"), nextChapterReleaseNote = document.getElementById("nextChapterReleaseNote"), chapterIndicator = document.getElementById("chapterIndicator"), chapterTitle = document.getElementById("chapterTitle"), chapterMeta = document.getElementById("chapterMeta"), chapterWarningsBlock = document.getElementById("chapterWarningsBlock"), chapterWarningList = document.getElementById("chapterWarningList"), authorNotesBlock = document.getElementById("authorNotesBlock"), authorNotesText = document.getElementById("authorNotesText"), content = document.getElementById("content"), bookmarkBtn = document.getElementById("bookmarkBtn"), resumeBtn = document.getElementById("resumeBtn"), reportBookBtn = document.getElementById("reportBookBtn"), likeBtn = document.getElementById("likeBtn"), likeCount = document.getElementById("likeCount"), chapterReactionsTitle = document.getElementById("chapterReactionsTitle"), chapterReactionsGrid = document.getElementById("chapterReactionsGrid"), commentList = document.getElementById("commentList"), commentInput = document.getElementById("commentInput"), postCommentBtn = document.getElementById("postCommentBtn"), authorEndCard = document.getElementById("authorEndCard"), authorEndAvatarInitial = document.getElementById("authorEndAvatarInitial"), authorEndAvatarImg = document.getElementById("authorEndAvatarImg"), authorEndName = document.getElementById("authorEndName"), authorEndBio = document.getElementById("authorEndBio"), authorEndWorks = document.getElementById("authorEndWorks"), authorEndWorksTitle = document.getElementById("authorEndWorksTitle"), authorWorksGrid = document.getElementById("authorWorksGrid"), authorEndProfileLink = document.getElementById("authorEndProfileLink");
 
-    let currentUser = null, currentBook = null, librarySourceRow = null, currentChapterIndex = 0, isLoaded = false, currentFontSize = 22, hasLikedThisBook = false, readerWatermarkProfileUser = null, bookOwnerHandle = null, authorOwnerProfile = null, chapterReactionBusy = false, userChapterReactionTypes = new Set();
+    let currentUser = null, currentBook = null, librarySourceRow = null, currentChapterIndex = 0, isLoaded = false, currentFontSize = 22, hasLikedThisBook = false, readerWatermarkProfileUser = null, bookOwnerHandle = null, authorOwnerProfile = null, chapterReactionBusy = false, userChapterReactionTypes = new Set(), nextPendingRelease = null;
 
     installReaderCopyGuards(content, { isActive: () => isLoaded && !!currentBook });
 
@@ -481,12 +493,13 @@
         });
         if (publishedIds.length) chapters = chapters.filter(ch => publishedIds.includes(ch.id));
         chapters.sort((a, b) => a.order - b.order);
+        const serialization = serializationFromBookData(data);
         const totalWords = safeNumber(data.words, chapters.reduce((sum, ch) => sum + safeNumber(ch.words, 0), 0));
         const mediaFormat = normalizeMediaFormat(data.mediaFormat ?? data.media_format);
         const bookWarnings = chapters.some((ch) => ch.warnings.length)
             ? flattenWarnings(aggregateWarningsFromChapters(chapters))
             : flattenWarnings(data.warnings);
-        return { id: safeString(data.bookId || row?.id, bookId), ownerUid: safeString(data.ownerUid || data.user_id || row?.user_id, ""), title: safeString(data.title, "Untitled"), author: safeString(data.author, "unknown"), isAnonymous: !!(data.isAnonymous ?? data.is_anonymous), summary: safeString(data.summary, ""), rating: safeString(data.rating, ""), type: safeString(data.type, "fiction"), mediaFormat, tags: rawTags.filter(v => typeof v === "string" && v.trim()), warnings: bookWarnings, chapterCount: safeNumber(data.chapterCount, chapters.length), words: totalWords, views: safeNumber(data.views, 0), likes: safeNumber(data.likes, 0), chapters };
+        return { id: safeString(data.bookId || row?.id, bookId), ownerUid: safeString(data.ownerUid || data.user_id || row?.user_id, ""), title: safeString(data.title, "Untitled"), author: safeString(data.author, "unknown"), isAnonymous: !!(data.isAnonymous ?? data.is_anonymous), summary: safeString(data.summary, ""), rating: safeString(data.rating, ""), type: safeString(data.type, "fiction"), mediaFormat, tags: rawTags.filter(v => typeof v === "string" && v.trim()), warnings: bookWarnings, chapterCount: serialization.chapterCount, publishedChapterCount: serialization.publishedCount, serializationStatus: serialization.status, plannedChapterCount: serialization.plannedChapterCount, words: totalWords, views: safeNumber(data.views, 0), likes: safeNumber(data.likes, 0), chapters };
     }
 
     /** All plausible `comments.book_id` / `likes.book_id` keys (URL id, JSON aliases, Firestore-era ids). */
@@ -632,7 +645,7 @@
                 card.tabIndex = 0;
                 card.innerHTML = `
                     <div class="author-work-title">${escapeHtml(work.title)}</div>
-                    <div class="author-work-meta">${work.chapterCount} chapter${work.chapterCount === 1 ? "" : "s"}</div>
+                    <div class="author-work-meta">${escapeHtml(work.chapterProgressLabel || `${work.chapterCount} chapters`)}</div>
                 `;
                 const openWork = () => {
                     window.location.href = `read.html?book=${encodeURIComponent(work.id)}`;
@@ -652,7 +665,7 @@
         }
     }
 
-    function renderMeta() { if (!currentBook) return; const comic = isComicFormat(currentBook.mediaFormat); bookTitle.textContent = currentBook.title; renderAuthorLinks(); bookSummary.textContent = currentBook.summary || "No summary yet."; sideBookTitle.textContent = currentBook.title; sideBookSummary.textContent = currentBook.summary || "No summary yet."; drawerBookTitle.textContent = currentBook.title; drawerBookSummary.textContent = currentBook.summary || "No summary yet."; topbarTitle.textContent = currentBook.title; statChapters.textContent = formatNumber(currentBook.chapterCount || currentBook.chapters.length); statWords.textContent = comic ? mediaFormatLabel(currentBook.mediaFormat) : formatNumber(currentBook.words); statReads.textContent = formatNumber(currentBook.views); statType.textContent = comic ? mediaFormatLabel(currentBook.mediaFormat) : (currentBook.type || "—"); statRating.textContent = currentBook.rating || "—"; renderChipList(tagList, currentBook.tags, "No tags listed"); renderChipList(warningList, currentBook.warnings, "No warnings listed"); renderChipList(sideTagList, currentBook.tags, "No tags listed"); renderChipList(sideWarningList, currentBook.warnings, "No warnings listed"); renderChipList(drawerTagList, currentBook.tags, "No tags listed"); renderChipList(drawerWarningList, currentBook.warnings, "No warnings listed"); }
+    function renderMeta() { if (!currentBook) return; const comic = isComicFormat(currentBook.mediaFormat); bookTitle.textContent = currentBook.title; renderAuthorLinks(); bookSummary.textContent = currentBook.summary || "No summary yet."; sideBookTitle.textContent = currentBook.title; sideBookSummary.textContent = currentBook.summary || "No summary yet."; drawerBookTitle.textContent = currentBook.title; drawerBookSummary.textContent = currentBook.summary || "No summary yet."; topbarTitle.textContent = currentBook.title; const chapterProgress = formatChapterProgress({ publishedCount: currentBook.publishedChapterCount ?? currentBook.chapters.length, plannedChapterCount: currentBook.plannedChapterCount, chapterCount: currentBook.chapterCount, serializationStatus: currentBook.serializationStatus, comic }); statChapters.textContent = chapterProgress; if (serializationBadge) serializationBadge.innerHTML = `<div class="chip serialization-chip">${escapeHtml(serializationStatusLabel(currentBook.serializationStatus))}</div>`; statWords.textContent = comic ? mediaFormatLabel(currentBook.mediaFormat) : formatNumber(currentBook.words); statReads.textContent = formatNumber(currentBook.views); statType.textContent = comic ? mediaFormatLabel(currentBook.mediaFormat) : (currentBook.type || "—"); statRating.textContent = currentBook.rating || "—"; renderChipList(tagList, currentBook.tags, "No tags listed"); renderChipList(warningList, currentBook.warnings, "No warnings listed"); renderChipList(sideTagList, currentBook.tags, "No tags listed"); renderChipList(sideWarningList, currentBook.warnings, "No warnings listed"); renderChipList(drawerTagList, currentBook.tags, "No tags listed"); renderChipList(drawerWarningList, currentBook.warnings, "No warnings listed"); }
     function goToNextChapter() {
         if (!currentBook || currentChapterIndex >= currentBook.chapters.length - 1) return;
         currentChapterIndex++;
@@ -664,9 +677,15 @@
         const comic = isComicFormat(currentBook.mediaFormat);
         const unit = comic ? "Page" : "Chapter";
         chapterTitle.textContent = chapter.title;
-        chapterMeta.textContent = comic
-            ? `${unit} ${currentChapterIndex + 1} of ${currentBook.chapters.length}`
-            : `${unit} ${currentChapterIndex + 1} of ${currentBook.chapters.length} • ${formatNumber(chapter.words)} words`;
+        chapterMeta.textContent = formatChapterPositionMeta({
+            currentIndex: currentChapterIndex,
+            publishedCount: currentBook.publishedChapterCount ?? currentBook.chapters.length,
+            plannedChapterCount: currentBook.plannedChapterCount,
+            chapterCount: currentBook.chapterCount,
+            serializationStatus: currentBook.serializationStatus,
+            comic,
+            words: chapter.words,
+        });
         renderChipList(chapterWarningList, chapter.warnings || [], "");
         if (chapterWarningsBlock) chapterWarningsBlock.classList.toggle("hidden", !(chapter.warnings || []).length);
         const notes = normalizeAuthorNotes(chapter.authorNotes);
@@ -702,12 +721,28 @@
         nextBtn.disabled = currentChapterIndex === currentBook.chapters.length - 1;
         const isLastChapter = currentChapterIndex >= currentBook.chapters.length - 1;
         if (nextChapterBottomBtn) {
-            nextChapterBottomBtn.disabled = isLastChapter;
             const nextChapter = !isLastChapter ? currentBook.chapters[currentChapterIndex + 1] : null;
             const nextLabel = comic ? "Next Page" : "Next Chapter";
-            nextChapterBottomBtn.textContent = nextChapter
-                ? `${nextLabel}: ${nextChapter.title} →`
-                : `${nextLabel} →`;
+            if (nextChapter) {
+                nextChapterBottomBtn.disabled = false;
+                nextChapterBottomBtn.textContent = `${nextLabel}: ${nextChapter.title} →`;
+                if (nextChapterReleaseNote) {
+                    nextChapterReleaseNote.textContent = "";
+                    nextChapterReleaseNote.classList.add("hidden");
+                }
+            } else {
+                nextChapterBottomBtn.disabled = true;
+                nextChapterBottomBtn.textContent = `${nextLabel} →`;
+                if (nextChapterReleaseNote) {
+                    if (nextPendingRelease) {
+                        nextChapterReleaseNote.textContent = formatNextChapterReleaseNote(nextPendingRelease);
+                        nextChapterReleaseNote.classList.remove("hidden");
+                    } else {
+                        nextChapterReleaseNote.textContent = "";
+                        nextChapterReleaseNote.classList.add("hidden");
+                    }
+                }
+            }
         }
         saveResumePosition();
         chapterTitle.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -912,6 +947,16 @@
         void renderAuthorEndSection();
     }
 
+    async function loadNextChapterRelease() {
+        nextPendingRelease = null;
+        if (!bookId) return;
+        try {
+            nextPendingRelease = await getNextChapterRelease(bookId);
+        } catch (err) {
+            console.warn("Could not load next chapter release.", err);
+        }
+    }
+
     async function loadBook() {
         if (!bookId) bookId = await findFallbackBookId();
         refreshBookLinks();
@@ -941,6 +986,7 @@
 
             librarySourceRow = data;
             currentBook = normalizeBook(data);
+            await loadNextChapterRelease();
 
             const readable = await isBookReadable(bookId);
             if (!readable && !isBookOwnerModerator()) {

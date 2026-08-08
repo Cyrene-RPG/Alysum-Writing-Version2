@@ -122,3 +122,33 @@ export function fromDatetimeLocalValue(localValue) {
     if (!Number.isFinite(d.getTime())) return "";
     return d.toISOString();
 }
+
+/**
+ * Earliest future pending chapter release for readers (public RPC).
+ * @param {string} bookId
+ * @returns {Promise<{ chapterId: string, scheduledAt: string, chapterTitle: string } | null>}
+ */
+export async function getNextChapterRelease(bookId) {
+    const id = String(bookId ?? "").trim();
+    if (!id) return null;
+
+    const { data, error } = await supabase.rpc("get_next_chapter_release", {
+        p_book_id: id,
+    });
+    if (error) {
+        if (/function.*does not exist/i.test(error.message || "")) {
+            return null;
+        }
+        throw error;
+    }
+    if (!data || typeof data !== "object") return null;
+
+    const scheduledAt = String(data.scheduledAt || data.scheduled_at || "").trim();
+    if (!scheduledAt) return null;
+
+    return {
+        chapterId: String(data.chapterId || data.chapter_id || ""),
+        scheduledAt,
+        chapterTitle: String(data.chapterTitle || data.chapter_title || "Next chapter").trim() || "Next chapter",
+    };
+}

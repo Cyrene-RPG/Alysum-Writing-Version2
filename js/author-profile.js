@@ -2,6 +2,11 @@
  * Public author profiles: biography pages and reader/library author links.
  */
 import { publicDisplayNameFromUserData } from "./profile-display.js?v=1";
+import { normalizeMediaFormat, isComicFormat } from "./book-media-format.js?v=1";
+import {
+    formatChapterProgress,
+    serializationFromBookData,
+} from "./story-serialization.js?v=1";
 
 export const AUTHOR_BIO_MAX_LENGTH = 2000;
 
@@ -57,13 +62,27 @@ export function normalizePublishedBookPreview(row) {
     if (!id) return null;
     if (data.isPublished === false) return null;
     if (data.isAnonymous) return null;
+    const mediaFormat = normalizeMediaFormat(data.mediaFormat ?? data.media_format);
+    const serialization = serializationFromBookData(data);
+    const chapterProgressLabel = formatChapterProgress({
+        publishedCount: serialization.publishedCount,
+        plannedChapterCount: serialization.plannedChapterCount,
+        chapterCount: serialization.chapterCount,
+        serializationStatus: serialization.status,
+        comic: isComicFormat(mediaFormat),
+    });
     return {
         id,
         title: String(data.title || "Untitled").trim() || "Untitled",
         author: String(data.author || "Unknown").trim() || "Unknown",
         coverUrl: String(data.coverUrl || data.cover_url || "").trim(),
         summary: String(data.summary || "").trim(),
-        chapterCount: typeof data.chapterCount === "number" ? data.chapterCount : Array.isArray(data.chapters) ? data.chapters.length : 0,
+        chapterCount: serialization.chapterCount,
+        publishedChapterCount: serialization.publishedCount,
+        serializationStatus: serialization.status,
+        plannedChapterCount: serialization.plannedChapterCount,
+        chapterProgressLabel,
+        mediaFormat,
         updated: typeof data.updated === "number" ? data.updated : 0,
         type: String(data.type || "fiction").trim() || "fiction",
     };

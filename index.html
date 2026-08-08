@@ -1123,6 +1123,7 @@
     import { supabase } from "./firebase.js";
     import { wireHomepageAuth } from "./js/homepage-auth-nav.js?v=1";
     import { homeUrlForUserData } from "./js/account-mode.js?v=1";
+    import { formatChapterProgress, serializationFromBookData } from "./js/story-serialization.js?v=1";
 
     await wireHomepageAuth(supabase);
 
@@ -1214,18 +1215,30 @@
       const data = libraryRowData(row);
       const id = safeString(row?.id || data.id || data.bookId, "");
       const chapters = safeArray(data.chapters);
+      const serialization = serializationFromBookData(data);
       return {
         id,
         title: safeString(data.title, "Untitled"),
         author: safeString(data.author, "unknown"),
         coverUrl: safeString(data.coverUrl, ""),
-        chapterCount: safeNumber(data.chapterCount, chapters.length),
+        chapterCount: serialization.chapterCount,
+        publishedChapterCount: serialization.publishedCount,
+        serializationStatus: serialization.status,
+        plannedChapterCount: serialization.plannedChapterCount,
         views: safeNumber(data.views, 0),
         updated: safeNumber(data.updated, 0),
         publishedAt: data.publishedAt,
         createdAt: data.createdAt,
         isPublished: data.isPublished !== false
       };
+    }
+    function featuredChapterMeta(book) {
+      return formatChapterProgress({
+        publishedCount: book.publishedChapterCount ?? book.chapterCount,
+        plannedChapterCount: book.plannedChapterCount,
+        chapterCount: book.chapterCount,
+        serializationStatus: book.serializationStatus,
+      });
     }
     function toMillis(value) {
       if (typeof value === "number" && Number.isFinite(value)) return value;
@@ -1318,7 +1331,7 @@
         wrap.innerHTML = bookCardHtml({
           title: safeString(data.title, "Untitled"),
           author: `by ${safeString(data.author, "Unknown")}`,
-          meta: `${safeNumber(data.chapterCount)} chapters · ${realKudosCount(data.id)} kudos · ${realReadCount(data)} reads`,
+          meta: `${featuredChapterMeta(data)} · ${realKudosCount(data.id)} kudos · ${realReadCount(data)} reads`,
           badge: safeString(data.title, "BK").slice(0, 2).toUpperCase(),
           coverUrl: data.coverUrl || ""
         });
