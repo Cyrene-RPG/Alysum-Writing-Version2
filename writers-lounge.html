@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta name="theme-color" content="#7c3aed" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#0b1220" media="(prefers-color-scheme: dark)">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Writer's Lounge — Alysum</title>
+    <link rel="stylesheet" href="css/site-responsive.css?v=1" />
+    <link rel="stylesheet" href="css/gradient-themes.css?v=5" />
+    <link rel="stylesheet" href="css/workspace-nav.css?v=11" />
+    <link rel="stylesheet" href="css/writer-lounge.css?v=1" />
+    <script src="js/gradient-theme-sync.js" defer></script>
+    <script src="js/alysum-appearance-boot.js"></script>
+</head>
+<body>
+    <div id="alysum-workspace-nav"></div>
+
+    <div class="lounge-page">
+        <div id="schemaBanner" class="schema-banner hidden" role="alert">
+            Writer's Lounge database tables are missing. Run <code>supabase-writer-lounge.sql</code> in Supabase SQL Editor, then refresh.
+        </div>
+
+        <div id="loadingPanel" class="loading-panel">Loading Writer's Lounge…</div>
+
+        <div id="mainLayout" class="hidden">
+            <button type="button" class="lounge-mobile-channel-btn" id="mobileChannelBtn">☰ Channels</button>
+
+            <div class="lounge-layout">
+                <aside class="lounge-channels" id="channelSidebar">
+                    <div class="lounge-sidebar-head">
+                        <h2>Writer's Lounge</h2>
+                        <p id="loungeStats">Community text channels</p>
+                    </div>
+                    <div class="lounge-channel-list" id="channelList"></div>
+                </aside>
+
+                <section class="text-panel" id="textPanel">
+                    <div class="text-panel-head">
+                        <div class="text-panel-avatar" id="channelAvatar" aria-hidden="true">#</div>
+                        <div class="text-panel-title-wrap">
+                            <h3 class="text-panel-title" id="channelTitle">Pick a channel</h3>
+                            <div class="text-panel-sub" id="channelSub">Select a channel from the sidebar to start texting.</div>
+                        </div>
+                    </div>
+                    <div id="threadStatus" class="text-status hidden"></div>
+                    <div class="text-chat-msgs" id="msgList">
+                        <div class="text-empty">Choose a channel to see messages.</div>
+                    </div>
+                    <div class="text-composer hidden" id="composer">
+                        <input type="text" class="text-input" id="msgInput" placeholder="Text the channel…" maxlength="8000" autocomplete="off" />
+                        <button type="button" class="text-send" id="sendBtn" aria-label="Send message">↑</button>
+                    </div>
+                </section>
+
+                <aside class="lounge-members" id="membersSidebar">
+                    <div class="lounge-sidebar-head">
+                        <h2>Online</h2>
+                        <p id="onlineCount">Writers active now</p>
+                    </div>
+                    <div class="lounge-member-list" id="memberList"></div>
+                </aside>
+            </div>
+        </div>
+    </div>
+
+    <div id="ageGateOverlay" class="safety-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="ageGateTitle">
+        <div class="safety-card">
+            <h3 id="ageGateTitle">Writer's Lounge is 18+ only</h3>
+            <p>Before you text in the lounge, confirm your age. Keep it writing-focused — no harassment or off-platform contact.</p>
+            <label>Date of birth</label>
+            <div class="dob-fields">
+                <select id="ageGateMonth" aria-label="Birth month">
+                    <option value="">Month</option>
+                </select>
+                <select id="ageGateDay" aria-label="Birth day">
+                    <option value="">Day</option>
+                </select>
+                <select id="ageGateYear" aria-label="Birth year">
+                    <option value="">Year</option>
+                </select>
+            </div>
+            <p id="ageGateHint" class="age-gate-hint hidden" role="alert"></p>
+            <div class="safety-actions">
+                <button type="button" class="btn" id="ageGateCancelBtn">Not now</button>
+                <button type="button" class="btn primary" id="ageGateConfirmBtn" disabled>Continue</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { supabase } from "./firebase.js";
+        import { requireStudioSession } from "./js/studio-session.js?v=3";
+        import { mountWorkspaceNav } from "./js/workspace-nav.js?v=11";
+        import {
+            listLoungeHome,
+            listLoungeMessages,
+            sendLoungeMessage,
+            listLoungeOnlineMembers,
+            subscribeLoungeChannel,
+            channelSlugFromLocation,
+            writersLoungeChannelUrl,
+            isWriterLoungeSchemaMissing
+        } from "./js/writer-lounge-api.js?v=5";
+        import {
+            attestBetaMessaging18Plus,
+            hasBetaMessagingAttestation
+        } from "./js/beta-rooms-api.js?v=5";
+        import {
+            friendlyBetaSafetyError,
+            populateDobMonthSelect,
+            populateDobYearSelect,
+            populateDobDaySelect,
+            evaluateAgeGateDob,
+            birthDateIso
+        } from "./js/beta-room-safety.js?v=2";
+
+        const loadingPanel = document.getElementById("loadingPanel");
+        const mainLayout = document.getElementById("mainLayout");
+        const schemaBanner = document.getElementById("schemaBanner");
+        const channelList = document.getElementById("channelList");
+        const channelSidebar = document.getElementById("channelSidebar");
+        const mobileChannelBtn = document.getElementById("mobileChannelBtn");
+        const loungeStats = document.getElementById("loungeStats");
+        const channelTitle = document.getElementById("channelTitle");
+        const channelSub = document.getElementById("channelSub");
+        const channelAvatar = document.getElementById("channelAvatar");
+        const threadStatus = document.getElementById("threadStatus");
+        const msgList = document.getElementById("msgList");
+        const msgInput = document.getElementById("msgInput");
+        const sendBtn = document.getElementById("sendBtn");
+        const composer = document.getElementById("composer");
+        const memberList = document.getElementById("memberList");
+        const onlineCount = document.getElementById("onlineCount");
+        const ageGateOverlay = document.getElementById("ageGateOverlay");
+        const ageGateMonth = document.getElementById("ageGateMonth");
+        const ageGateDay = document.getElementById("ageGateDay");
+        const ageGateYear = document.getElementById("ageGateYear");
+        const ageGateHint = document.getElementById("ageGateHint");
+        const ageGateConfirmBtn = document.getElementById("ageGateConfirmBtn");
+        const ageGateCancelBtn = document.getElementById("ageGateCancelBtn");
+
+        let currentUser = null;
+        let homeData = null;
+        let activeChannel = null;
+        let activeBoard = null;
+        let messages = [];
+        let hasMore = false;
+        let messagingEligible = false;
+        let pendingSendBody = "";
+        let realtimeUnsub = null;
+
+        function escapeHtml(value) {
+            return String(value || "")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;");
+        }
+
+        function setThreadStatus(msg, kind = "") {
+            if (!msg) {
+                threadStatus.textContent = "";
+                threadStatus.className = "text-status hidden";
+                return;
+            }
+            threadStatus.textContent = msg;
+            threadStatus.className = "text-status " + (kind || "wait");
+        }
+
+        function formatMessageTime(iso) {
+            if (!iso) return "";
+            try {
+                return new Date(iso).toLocaleString(undefined, {
+                    month: "short",
+                    day: "numeric",
+                    hour: "numeric",
+                    minute: "2-digit"
+                });
+            } catch {
+                return "";
+            }
+        }
+
+        function allBoards() {
+            const boards = [];
+            for (const cat of homeData?.categories || []) {
+                for (const board of cat.boards || []) {
+                    boards.push({ ...board, categoryTitle: cat.title });
+                }
+            }
+            return boards;
+        }
+
+        function findBoard(slug) {
+            return allBoards().find((b) => b.slug === slug) || null;
+        }
+
+        function renderChannelList() {
+            const activeSlug = activeChannel;
+            const parts = [];
+
+            for (const cat of homeData?.categories || []) {
+                parts.push(`<div class="lounge-category-label">${escapeHtml(cat.title)}</div>`);
+                for (const board of cat.boards || []) {
+                    const active = board.slug === activeSlug ? " is-active" : "";
+                    const preview = board.lastMessage?.body
+                        ? `${board.lastMessage.senderName}: ${board.lastMessage.body}`
+                        : board.description || "No messages yet";
+                    const lock = board.isLocked ? '<span class="lounge-channel-lock" title="Staff only">🔒</span>' : "";
+                    parts.push(
+                        `<button type="button" class="lounge-channel-btn${active}" data-slug="${escapeHtml(board.slug)}">` +
+                        `<span class="lounge-channel-hash">#</span>` +
+                        `<span class="lounge-channel-main">` +
+                        `<div class="lounge-channel-name">${escapeHtml(board.title)}</div>` +
+                        `<div class="lounge-channel-preview">${escapeHtml(preview)}</div>` +
+                        `</span>` +
+                        lock +
+                        `</button>`
+                    );
+                }
+            }
+
+            channelList.innerHTML = parts.join("") || '<div class="text-empty">No channels yet.</div>';
+        }
+
+        function renderMembers(members) {
+            const rows = members || [];
+            onlineCount.textContent = rows.length
+                ? `${rows.length} writer${rows.length === 1 ? "" : "s"} active now`
+                : "Writers active now";
+
+            if (!rows.length) {
+                memberList.innerHTML = '<div class="text-empty">No one else online right now.</div>';
+                return;
+            }
+
+            memberList.innerHTML = rows.map((m) =>
+                `<div class="lounge-member-row">` +
+                `<span class="lounge-member-dot" aria-hidden="true"></span>` +
+                `<span class="lounge-member-avatar" aria-hidden="true">${escapeHtml(m.initials || "?")}</span>` +
+                `<span class="lounge-member-name">${escapeHtml(m.name || "Writer")}</span>` +
+                `</div>`
+            ).join("");
+        }
+
+        function renderMessages() {
+            if (!activeBoard) {
+                msgList.innerHTML = '<div class="text-empty">Choose a channel to see messages.</div>';
+                return;
+            }
+
+            if (!messages.length) {
+                const emptyCopy = activeBoard.canPost
+                    ? `Be the first to text in #${activeBoard.title}. Say hi, share a word count, or ask for help.`
+                    : "No messages in this channel yet.";
+                msgList.innerHTML = `<div class="text-empty">${escapeHtml(emptyCopy)}</div>`;
+                return;
+            }
+
+            const parts = [];
+            if (hasMore) {
+                parts.push('<button type="button" class="load-older-btn" id="loadOlderBtn">Load earlier messages</button>');
+            }
+
+            let lastSender = "";
+            for (const row of messages) {
+                const mine = row.senderId === currentUser?.id;
+                const showSender = !mine && row.senderId !== lastSender;
+                lastSender = row.senderId;
+                const when = formatMessageTime(row.createdAt);
+                parts.push(
+                    `<div class="text-bubble-wrap ${mine ? "sent" : "recv"}">` +
+                    (showSender ? `<div class="text-bubble-sender">${escapeHtml(row.senderName || "Writer")}</div>` : "") +
+                    `<div class="text-bubble ${mine ? "sent" : "recv"}">` +
+                    `${escapeHtml(row.body)}` +
+                    `<div class="text-bubble-time">${escapeHtml(when)}</div>` +
+                    `</div></div>`
+                );
+            }
+
+            msgList.innerHTML = parts.join("");
+            msgList.scrollTop = msgList.scrollHeight;
+
+            const loadBtn = document.getElementById("loadOlderBtn");
+            if (loadBtn) {
+                loadBtn.addEventListener("click", () => loadOlderMessages().catch(console.error));
+            }
+        }
+
+        function updateComposerState() {
+            const canPost = activeBoard?.canPost && messagingEligible;
+            composer.classList.toggle("hidden", !activeBoard);
+            msgInput.disabled = !canPost;
+            sendBtn.disabled = !canPost;
+
+            if (!activeBoard) {
+                msgInput.placeholder = "Text the channel…";
+            } else if (!activeBoard.canPost) {
+                msgInput.placeholder = "Staff-only channel";
+                setThreadStatus("Only Alysum staff can post in this channel.", "wait");
+            } else if (!messagingEligible) {
+                msgInput.placeholder = "Confirm age to text…";
+            } else {
+                msgInput.placeholder = `Text #${activeBoard.title}…`;
+            }
+        }
+
+        function stopRealtime() {
+            realtimeUnsub?.();
+            realtimeUnsub = null;
+        }
+
+        function startRealtime() {
+            stopRealtime();
+            if (!activeBoard?.id) return;
+            realtimeUnsub = subscribeLoungeChannel(activeBoard.id, {
+                onMessage: () => {
+                    refreshMessages(false).catch(console.error);
+                    refreshHome(false).catch(console.error);
+                }
+            });
+        }
+
+        async function refreshHome(rerenderList = true) {
+            homeData = await listLoungeHome();
+            const stats = homeData?.stats || {};
+            loungeStats.textContent = `${stats.channelCount || 0} channels · ${stats.messageCount || 0} texts`;
+            if (rerenderList) renderChannelList();
+        }
+
+        async function refreshMessages(scroll = true) {
+            if (!activeChannel) return;
+            const data = await listLoungeMessages(activeChannel, { limit: 50 });
+            activeBoard = data.board || findBoard(activeChannel);
+            const rows = (data.messages || []).slice().reverse();
+            messages = rows.map((m) => ({
+                id: m.id,
+                senderId: m.senderId,
+                senderName: m.senderName,
+                body: m.body,
+                createdAt: m.createdAt
+            }));
+            hasMore = (data.messages || []).length >= 50;
+            renderMessages();
+            updateComposerState();
+            if (scroll) msgList.scrollTop = msgList.scrollHeight;
+        }
+
+        async function loadOlderMessages() {
+            if (!activeChannel || !messages.length) return;
+            const oldest = messages[0]?.createdAt;
+            const data = await listLoungeMessages(activeChannel, { before: oldest, limit: 50 });
+            const older = (data.messages || []).slice().reverse().map((m) => ({
+                id: m.id,
+                senderId: m.senderId,
+                senderName: m.senderName,
+                body: m.body,
+                createdAt: m.createdAt
+            }));
+            hasMore = (data.messages || []).length >= 50;
+            const prevHeight = msgList.scrollHeight;
+            messages = [...older, ...messages];
+            renderMessages();
+            msgList.scrollTop = msgList.scrollHeight - prevHeight;
+        }
+
+        async function openChannel(slug) {
+            if (!slug) return;
+            activeChannel = slug;
+            activeBoard = findBoard(slug);
+            setThreadStatus("");
+
+            const url = writersLoungeChannelUrl(slug);
+            if (window.location.pathname + window.location.search !== url) {
+                history.replaceState(null, "", url);
+            }
+
+            channelTitle.textContent = activeBoard?.title || slug;
+            channelSub.textContent = activeBoard?.description || "Writer's Lounge channel";
+            channelAvatar.textContent = "#";
+            renderChannelList();
+
+            if (window.innerWidth <= 720) {
+                channelSidebar.classList.add("is-collapsed");
+            }
+
+            await refreshMessages(true);
+            startRealtime();
+            updateComposerState();
+            msgInput.focus();
+        }
+
+        async function ensureMessagingEligible() {
+            try {
+                messagingEligible = await hasBetaMessagingAttestation();
+            } catch {
+                messagingEligible = false;
+            }
+            updateComposerState();
+            return messagingEligible;
+        }
+
+        function openAgeGate() {
+            populateDobMonthSelect(ageGateMonth);
+            populateDobYearSelect(ageGateYear);
+            populateDobDaySelect(ageGateDay, ageGateMonth, ageGateYear);
+            ageGateHint.classList.add("hidden");
+            ageGateHint.textContent = "";
+            ageGateConfirmBtn.disabled = true;
+            ageGateOverlay.classList.remove("hidden");
+        }
+
+        function closeAgeGate() {
+            ageGateOverlay.classList.add("hidden");
+            pendingSendBody = "";
+        }
+
+        async function submitAgeGate() {
+            const result = evaluateAgeGateDob(ageGateMonth, ageGateDay, ageGateYear);
+            if (!result.ok) {
+                ageGateHint.textContent = result.message;
+                ageGateHint.classList.remove("hidden");
+                ageGateConfirmBtn.disabled = true;
+                return;
+            }
+            try {
+                await attestBetaMessaging18Plus(birthDateIso(ageGateMonth, ageGateDay, ageGateYear));
+                messagingEligible = true;
+                closeAgeGate();
+                updateComposerState();
+                if (pendingSendBody) {
+                    const body = pendingSendBody;
+                    pendingSendBody = "";
+                    await doSend(body);
+                }
+            } catch (err) {
+                ageGateHint.textContent = friendlyBetaSafetyError(err);
+                ageGateHint.classList.remove("hidden");
+            }
+        }
+
+        async function doSend(body) {
+            const trimmed = String(body || "").trim();
+            if (!trimmed || !activeChannel) return;
+
+            sendBtn.disabled = true;
+            try {
+                await sendLoungeMessage(activeChannel, trimmed);
+                msgInput.value = "";
+                setThreadStatus("");
+                await refreshMessages(true);
+                await refreshHome(true);
+            } catch (err) {
+                setThreadStatus(friendlyBetaSafetyError(err), "error");
+            } finally {
+                updateComposerState();
+            }
+        }
+
+        async function handleSend() {
+            const body = msgInput.value.trim();
+            if (!body || !activeChannel) return;
+
+            if (!messagingEligible) {
+                pendingSendBody = body;
+                openAgeGate();
+                return;
+            }
+
+            await doSend(body);
+        }
+
+        channelList.addEventListener("click", (e) => {
+            const btn = e.target.closest("[data-slug]");
+            if (!btn) return;
+            openChannel(btn.dataset.slug).catch(console.error);
+        });
+
+        mobileChannelBtn.addEventListener("click", () => {
+            channelSidebar.classList.toggle("is-collapsed");
+        });
+
+        sendBtn.addEventListener("click", () => handleSend().catch(console.error));
+        msgInput.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleSend().catch(console.error);
+            }
+        });
+
+        ageGateMonth.addEventListener("change", () => {
+            populateDobDaySelect(ageGateDay, ageGateMonth, ageGateYear);
+            const result = evaluateAgeGateDob(ageGateMonth, ageGateDay, ageGateYear);
+            ageGateConfirmBtn.disabled = !result.ok;
+            ageGateHint.classList.toggle("hidden", result.ok);
+            if (!result.ok) ageGateHint.textContent = result.message;
+        });
+        ageGateDay.addEventListener("change", () => {
+            const result = evaluateAgeGateDob(ageGateMonth, ageGateDay, ageGateYear);
+            ageGateConfirmBtn.disabled = !result.ok;
+            ageGateHint.classList.toggle("hidden", result.ok);
+            if (!result.ok) ageGateHint.textContent = result.message;
+        });
+        ageGateYear.addEventListener("change", () => {
+            populateDobDaySelect(ageGateDay, ageGateMonth, ageGateYear);
+            const result = evaluateAgeGateDob(ageGateMonth, ageGateDay, ageGateYear);
+            ageGateConfirmBtn.disabled = !result.ok;
+            ageGateHint.classList.toggle("hidden", result.ok);
+            if (!result.ok) ageGateHint.textContent = result.message;
+        });
+        ageGateConfirmBtn.addEventListener("click", () => submitAgeGate().catch(console.error));
+        ageGateCancelBtn.addEventListener("click", closeAgeGate);
+
+        async function init() {
+            const session = await requireStudioSession(supabase, window.location.pathname + window.location.search);
+            if (!session?.user) return;
+            currentUser = session.user;
+
+            mountWorkspaceNav({
+                mount: "#alysum-workspace-nav",
+                active: "writers-lounge",
+                welcomeTitle: "Writer's Lounge",
+                welcomeSubtitle: "Text with fellow Alysum writers — channels for craft, genres, and community."
+            });
+
+            try {
+                await refreshHome(true);
+                const members = await listLoungeOnlineMembers(50);
+                renderMembers(members);
+                await ensureMessagingEligible();
+
+                loadingPanel.classList.add("hidden");
+                mainLayout.classList.remove("hidden");
+
+                const slug = channelSlugFromLocation();
+                const defaultSlug = slug || "general-chat";
+                if (findBoard(defaultSlug)) {
+                    await openChannel(defaultSlug);
+                } else if (allBoards()[0]) {
+                    await openChannel(allBoards()[0].slug);
+                }
+            } catch (err) {
+                console.error(err);
+                loadingPanel.classList.add("hidden");
+                if (isWriterLoungeSchemaMissing(err)) {
+                    schemaBanner.classList.remove("hidden");
+                } else {
+                    mainLayout.classList.remove("hidden");
+                    setThreadStatus(err?.message || "Could not load Writer's Lounge.", "error");
+                }
+            }
+
+            setInterval(() => {
+                listLoungeOnlineMembers(50)
+                    .then(renderMembers)
+                    .catch(() => {});
+            }, 120_000);
+        }
+
+        init().catch(console.error);
+    </script>
+</body>
+</html>

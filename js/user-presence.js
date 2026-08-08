@@ -30,6 +30,7 @@ const WRITER_PRESENCE_PAGES = new Set([
     "flow-mapper.html",
     "Novel_Exporter.html",
     "pdf-editor.html",
+    "writers-lounge.html",
     "beta-rooms.html",
     "beta-room.html",
     "beta-room-manage.html",

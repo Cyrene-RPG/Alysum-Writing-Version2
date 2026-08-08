@@ -32,6 +32,7 @@ const PATH_TO_ACTIVE = new Map([
     ["studio.html", "studio"],
     ["library.html", "library"],
     ["library-violations.html", "library"],
+    ["writers-lounge.html", "writers-lounge"],
     ["beta-rooms.html", "beta-rooms"],
     ["beta-room.html", "beta-rooms"],
     ["beta-room-manage.html", "beta-rooms"],
@@ -87,6 +88,7 @@ const WELCOME_DEFAULTS = {
     achievements: { title: "Achievements", subtitle: "Track milestones across your writing journey." },
     leaderboards: { title: "Leaderboards", subtitle: "See how you stack up in the Alysum community." },
     "word-wars": { title: "Word Wars", subtitle: "Challenge a friend to a friendly writing spar." },
+    "writers-lounge": { title: "Writer's Lounge", subtitle: "Text with fellow Alysum writers in community channels." },
     "beta-rooms": { title: "Beta rooms", subtitle: "Share draft snapshots with trusted readers." },
     "collab-rooms": { title: "Collab rooms", subtitle: "Invite editors to suggest chapter changes you approve." },
     encyclopedia: { title: "World encyclopedia", subtitle: "Build and browse your story worlds." },
@@ -157,7 +159,7 @@ function renderNavHtml(active) {
                 <span class="wd-nav-divider" aria-hidden="true"></span>
                 <a href="${navHref("writer-dashboard.html")}"${activeClass("studio", active)}>Studio</a>
                 <a href="${navHref("library.html")}"${activeClass("library", active)}>Library</a>
-                <a href="${DISCORD_URL}" class="wd-nav-discord" target="_blank" rel="noopener noreferrer">Discord</a>
+                <a href="${navHref("writers-lounge.html")}"${activeClass("writers-lounge", active)}>Writer's Lounge</a>
                 <a href="${navHref("beta-rooms.html")}"${activeClass("beta-rooms", active)}>Beta rooms</a>
                 <a href="${navHref("collab-rooms.html")}"${activeClass("collab-rooms", active)}>Collab rooms</a>
                 <a href="${navHref("author-dashboard.html")}" id="navAuthorStats"${activeClass("author-stats", active)}>

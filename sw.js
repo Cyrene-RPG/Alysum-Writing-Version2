@@ -23,6 +23,7 @@ const APP_SHELL = [
   'writer-dashboard.html',
   'read.html',
   'beta-read.html',
+  'writers-lounge.html',
   'beta-rooms.html',
   'beta-room.html',
   'beta-room-manage.html',

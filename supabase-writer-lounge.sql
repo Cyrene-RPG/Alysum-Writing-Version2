@@ -1,7 +1,24 @@
 -- Run once in Supabase → SQL Editor (safe to re-run).
--- Writer's Lounge: community forum boards, threads, and posts.
--- Apply after supabase-base-schema.sql (uses public.users).
--- Optional: supabase-library-reports.sql for is_moderation_staff() on locked boards.
+-- Writer's Lounge: channel-based text chat for Alysum writers.
+-- Apply after supabase-base-schema.sql and supabase-beta-rooms.sql (reuses 18+ attestation).
+-- Optional: supabase-staff-users.sql for is_moderation_staff() on locked channels.
+
+-- ---------------------------------------------------------------------------
+-- 0. Drop legacy forum schema (threads, posts, reactions)
+-- ---------------------------------------------------------------------------
+
+DROP TABLE IF EXISTS public.lounge_post_reactions CASCADE;
+DROP TABLE IF EXISTS public.lounge_posts CASCADE;
+DROP TABLE IF EXISTS public.lounge_threads CASCADE;
+
+DROP FUNCTION IF EXISTS public.list_lounge_threads(text, integer, integer);
+DROP FUNCTION IF EXISTS public.get_lounge_thread(uuid, integer, integer);
+DROP FUNCTION IF EXISTS public.create_lounge_thread(text, text, text);
+DROP FUNCTION IF EXISTS public.reply_lounge_thread(uuid, text, uuid);
+DROP FUNCTION IF EXISTS public.get_lounge_post(uuid);
+DROP FUNCTION IF EXISTS public.toggle_lounge_reaction(uuid, text);
+DROP FUNCTION IF EXISTS public.lounge_post_to_json(uuid);
+DROP FUNCTION IF EXISTS public.seed_lounge_general_main_topic();
 
 -- ---------------------------------------------------------------------------
 -- 1. Tables
@@ -22,60 +39,28 @@ CREATE TABLE IF NOT EXISTS public.lounge_boards (
   description text NOT NULL DEFAULT '',
   sort_order integer NOT NULL DEFAULT 0,
   is_locked boolean NOT NULL DEFAULT false,
+  last_message_at timestamptz,
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE TABLE IF NOT EXISTS public.lounge_threads (
+CREATE TABLE IF NOT EXISTS public.lounge_messages (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   board_id uuid NOT NULL REFERENCES public.lounge_boards (id) ON DELETE CASCADE,
-  author_id uuid NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE,
-  title text NOT NULL CHECK (char_length(trim(title)) BETWEEN 1 AND 200),
-  status text NOT NULL DEFAULT 'open'
-    CHECK (status IN ('open', 'locked', 'hidden', 'deleted')),
-  is_sticky boolean NOT NULL DEFAULT false,
-  is_announcement boolean NOT NULL DEFAULT false,
-  view_count integer NOT NULL DEFAULT 0,
-  reply_count integer NOT NULL DEFAULT 0,
-  last_post_at timestamptz,
-  last_post_by uuid REFERENCES auth.users (id),
+  sender_id uuid NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE,
+  body text NOT NULL CHECK (char_length(body) > 0 AND char_length(body) <= 8000),
   created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now()
+  deleted_at timestamptz,
+  deleted_by uuid REFERENCES auth.users (id) ON DELETE SET NULL
 );
 
-CREATE INDEX IF NOT EXISTS lounge_threads_board_idx
-  ON public.lounge_threads (board_id, is_sticky DESC, last_post_at DESC NULLS LAST, created_at DESC);
+CREATE INDEX IF NOT EXISTS lounge_messages_board_idx
+  ON public.lounge_messages (board_id, created_at ASC);
 
-CREATE INDEX IF NOT EXISTS lounge_threads_open_idx
-  ON public.lounge_threads (board_id, status)
-  WHERE status = 'open';
-
-CREATE TABLE IF NOT EXISTS public.lounge_posts (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  thread_id uuid NOT NULL REFERENCES public.lounge_threads (id) ON DELETE CASCADE,
-  board_id uuid NOT NULL REFERENCES public.lounge_boards (id) ON DELETE CASCADE,
-  author_id uuid NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE,
-  quote_post_id uuid REFERENCES public.lounge_posts (id) ON DELETE SET NULL,
-  body text NOT NULL CHECK (char_length(trim(body)) BETWEEN 1 AND 12000),
-  status text NOT NULL DEFAULT 'visible'
-    CHECK (status IN ('visible', 'hidden', 'deleted')),
-  post_number integer NOT NULL CHECK (post_number >= 1),
-  created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now(),
-  edited_at timestamptz,
-  deleted_at timestamptz
-);
-
-CREATE INDEX IF NOT EXISTS lounge_posts_thread_idx
-  ON public.lounge_posts (thread_id, post_number ASC);
-
-CREATE INDEX IF NOT EXISTS lounge_posts_board_idx
-  ON public.lounge_posts (board_id, created_at DESC);
-
-CREATE UNIQUE INDEX IF NOT EXISTS lounge_posts_thread_number_uidx
-  ON public.lounge_posts (thread_id, post_number);
+CREATE INDEX IF NOT EXISTS lounge_boards_last_message_idx
+  ON public.lounge_boards (last_message_at DESC NULLS LAST);
 
 -- ---------------------------------------------------------------------------
--- 2. Seed categories and boards
+-- 2. Seed categories and channels
 -- ---------------------------------------------------------------------------
 
 INSERT INTO public.lounge_categories (slug, title, sort_order)
@@ -208,15 +193,10 @@ DECLARE
   v_categories jsonb;
   v_stats jsonb;
 BEGIN
-  IF auth.uid() IS NULL THEN
-    RAISE EXCEPTION 'not_authenticated';
-  END IF;
-
   SELECT coalesce(jsonb_agg(cat ORDER BY cat->>'sortOrder'), '[]'::jsonb)
   INTO v_categories
   FROM (
     SELECT jsonb_build_object(
-      'id', c.id,
       'slug', c.slug,
       'title', c.title,
       'sortOrder', c.sort_order,
@@ -230,32 +210,18 @@ BEGIN
             'description', b.description,
             'sortOrder', b.sort_order,
             'isLocked', b.is_locked,
-            'topicCount', (
-              SELECT count(*)::integer
-              FROM public.lounge_threads t
-              WHERE t.board_id = b.id
-                AND t.status = 'open'
-            ),
-            'postCount', (
-              SELECT count(*)::integer
-              FROM public.lounge_posts p
-              WHERE p.board_id = b.id
-                AND p.status = 'visible'
-            ),
-            'lastPost', (
+            'canPost', public.can_post_lounge_board(b.id),
+            'lastMessageAt', b.last_message_at,
+            'lastMessage', (
               SELECT jsonb_build_object(
-                'threadId', t.id,
-                'threadTitle', t.title,
-                'authorId', p.author_id,
-                'authorName', public.lounge_display_name(p.author_id),
-                'postedAt', p.created_at
+                'body', left(m.body, 120),
+                'senderName', public.lounge_display_name(m.sender_id),
+                'createdAt', m.created_at
               )
-              FROM public.lounge_posts p
-              JOIN public.lounge_threads t ON t.id = p.thread_id
-              WHERE p.board_id = b.id
-                AND p.status = 'visible'
-                AND t.status = 'open'
-              ORDER BY p.created_at DESC
+              FROM public.lounge_messages m
+              WHERE m.board_id = b.id
+                AND m.deleted_at IS NULL
+              ORDER BY m.created_at DESC
               LIMIT 1
             )
           ) AS board
@@ -265,19 +231,15 @@ BEGIN
       )
     ) AS cat
     FROM public.lounge_categories c
-  ) categories;
+  ) cats;
 
   SELECT jsonb_build_object(
-    'memberCount', (SELECT count(*)::integer FROM public.users),
-    'topicCount', (
-      SELECT count(*)::integer
-      FROM public.lounge_threads t
-      WHERE t.status = 'open'
-    ),
-    'postCount', (
-      SELECT count(*)::integer
-      FROM public.lounge_posts p
-      WHERE p.status = 'visible'
+    'channelCount', (SELECT count(*) FROM public.lounge_boards),
+    'messageCount', (SELECT count(*) FROM public.lounge_messages WHERE deleted_at IS NULL),
+    'onlineCount', (
+      SELECT count(*)
+      FROM public.users u
+      WHERE u.last_seen_at >= now() - interval '5 minutes'
     )
   )
   INTO v_stats;
@@ -289,10 +251,10 @@ BEGIN
 END;
 $$;
 
-CREATE OR REPLACE FUNCTION public.list_lounge_threads(
+CREATE OR REPLACE FUNCTION public.list_lounge_messages(
   p_board_slug text,
-  p_page integer DEFAULT 1,
-  p_limit integer DEFAULT 25
+  p_before timestamptz DEFAULT NULL,
+  p_limit integer DEFAULT 50
 )
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -302,55 +264,34 @@ SET search_path = public
 AS $$
 DECLARE
   v_board public.lounge_boards;
-  v_page integer := greatest(coalesce(p_page, 1), 1);
-  v_limit integer := least(greatest(coalesce(p_limit, 25), 1), 50);
-  v_offset integer;
-  v_total integer;
-  v_threads jsonb;
+  v_limit integer := least(greatest(coalesce(p_limit, 50), 1), 100);
+  v_messages jsonb;
 BEGIN
-  IF auth.uid() IS NULL THEN
-    RAISE EXCEPTION 'not_authenticated';
-  END IF;
-
   SELECT * INTO v_board
   FROM public.lounge_boards b
   WHERE b.slug = p_board_slug;
 
   IF v_board.id IS NULL THEN
-    RAISE EXCEPTION 'board_not_found';
+    RAISE EXCEPTION 'channel_not_found';
   END IF;
 
-  v_offset := (v_page - 1) * v_limit;
-
-  SELECT count(*)::integer INTO v_total
-  FROM public.lounge_threads t
-  WHERE t.board_id = v_board.id
-    AND t.status = 'open';
-
-  SELECT coalesce(jsonb_agg(row ORDER BY row->>'sortKey'), '[]'::jsonb)
-  INTO v_threads
+  SELECT coalesce(jsonb_agg(msg ORDER BY msg->>'createdAt'), '[]'::jsonb)
+  INTO v_messages
   FROM (
     SELECT jsonb_build_object(
-      'id', t.id,
-      'title', t.title,
-      'authorId', t.author_id,
-      'authorName', public.lounge_display_name(t.author_id),
-      'isSticky', t.is_sticky,
-      'isAnnouncement', t.is_announcement,
-      'replyCount', t.reply_count,
-      'viewCount', t.view_count,
-      'createdAt', t.created_at,
-      'lastPostAt', coalesce(t.last_post_at, t.created_at),
-      'lastPostBy', t.last_post_by,
-      'lastPostByName', public.lounge_display_name(t.last_post_by),
-      'sortKey', lpad(CASE WHEN t.is_sticky THEN '0' ELSE '1' END, 1, '0') ||
-        to_char(coalesce(t.last_post_at, t.created_at), 'YYYYMMDDHH24MISSUS')
-    ) AS row
-    FROM public.lounge_threads t
-    WHERE t.board_id = v_board.id
-      AND t.status = 'open'
-    ORDER BY t.is_sticky DESC, coalesce(t.last_post_at, t.created_at) DESC, t.created_at DESC
-    OFFSET v_offset
+      'id', m.id,
+      'boardId', m.board_id,
+      'senderId', m.sender_id,
+      'senderName', public.lounge_display_name(m.sender_id),
+      'senderInitials', public.lounge_user_initials(m.sender_id),
+      'body', m.body,
+      'createdAt', m.created_at
+    ) AS msg
+    FROM public.lounge_messages m
+    WHERE m.board_id = v_board.id
+      AND m.deleted_at IS NULL
+      AND (p_before IS NULL OR m.created_at < p_before)
+    ORDER BY m.created_at DESC
     LIMIT v_limit
   ) rows;
 
@@ -363,165 +304,42 @@ BEGIN
       'isLocked', v_board.is_locked,
       'canPost', public.can_post_lounge_board(v_board.id)
     ),
-    'threads', v_threads,
-    'pagination', jsonb_build_object(
-      'page', v_page,
-      'limit', v_limit,
-      'total', v_total,
-      'totalPages', greatest(ceil(v_total::numeric / v_limit)::integer, 1)
-    )
+    'messages', v_messages
   );
 END;
 $$;
 
-CREATE OR REPLACE FUNCTION public.get_lounge_thread(
-  p_thread_id uuid,
-  p_page integer DEFAULT 1,
-  p_limit integer DEFAULT 20
-)
-RETURNS jsonb
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-DECLARE
-  v_thread public.lounge_threads;
-  v_board public.lounge_boards;
-  v_page integer := greatest(coalesce(p_page, 1), 1);
-  v_limit integer := least(greatest(coalesce(p_limit, 20), 1), 50);
-  v_offset integer;
-  v_total integer;
-  v_posts jsonb;
-BEGIN
-  IF auth.uid() IS NULL THEN
-    RAISE EXCEPTION 'not_authenticated';
-  END IF;
-
-  SELECT * INTO v_thread
-  FROM public.lounge_threads t
-  WHERE t.id = p_thread_id
-    AND t.status = 'open';
-
-  IF v_thread.id IS NULL THEN
-    RAISE EXCEPTION 'thread_not_found';
-  END IF;
-
-  SELECT * INTO v_board
-  FROM public.lounge_boards b
-  WHERE b.id = v_thread.board_id;
-
-  UPDATE public.lounge_threads
-  SET view_count = view_count + 1
-  WHERE id = v_thread.id;
-
-  v_thread.view_count := v_thread.view_count + 1;
-  v_offset := (v_page - 1) * v_limit;
-
-  SELECT count(*)::integer INTO v_total
-  FROM public.lounge_posts p
-  WHERE p.thread_id = v_thread.id
-    AND p.status = 'visible';
-
-  SELECT coalesce(jsonb_agg(row ORDER BY (row->>'postNumber')::integer), '[]'::jsonb)
-  INTO v_posts
-  FROM (
-    SELECT jsonb_build_object(
-      'id', p.id,
-      'threadId', p.thread_id,
-      'authorId', p.author_id,
-      'authorName', public.lounge_display_name(p.author_id),
-      'authorInitials', public.lounge_user_initials(p.author_id),
-      'authorJoinedAt', u.created_at,
-      'authorPostCount', (
-        SELECT count(*)::integer
-        FROM public.lounge_posts ap
-        WHERE ap.author_id = p.author_id
-          AND ap.status = 'visible'
-      ),
-      'authorDailyGoal', coalesce(u.daily_word_goal, 2000),
-      'authorTodayWords', coalesce(
-        nullif(trim(u.writing_day_totals ->> to_char(current_date, 'YYYY-MM-DD')), '')::integer,
-        0
-      ),
-      'quotePostId', p.quote_post_id,
-      'quoteBody', (
-        SELECT left(q.body, 240)
-        FROM public.lounge_posts q
-        WHERE q.id = p.quote_post_id
-      ),
-      'quoteAuthorName', (
-        SELECT public.lounge_display_name(q.author_id)
-        FROM public.lounge_posts q
-        WHERE q.id = p.quote_post_id
-      ),
-      'body', p.body,
-      'postNumber', p.post_number,
-      'createdAt', p.created_at,
-      'editedAt', p.edited_at
-    ) AS row
-    FROM public.lounge_posts p
-    LEFT JOIN public.users u ON u.id = p.author_id
-    WHERE p.thread_id = v_thread.id
-      AND p.status = 'visible'
-    ORDER BY p.post_number ASC
-    OFFSET v_offset
-    LIMIT v_limit
-  ) rows;
-
-  RETURN jsonb_build_object(
-    'board', jsonb_build_object(
-      'id', v_board.id,
-      'slug', v_board.slug,
-      'title', v_board.title,
-      'description', v_board.description,
-      'isLocked', v_board.is_locked,
-      'canPost', public.can_post_lounge_board(v_board.id)
-    ),
-    'thread', jsonb_build_object(
-      'id', v_thread.id,
-      'title', v_thread.title,
-      'authorId', v_thread.author_id,
-      'authorName', public.lounge_display_name(v_thread.author_id),
-      'replyCount', v_thread.reply_count,
-      'viewCount', v_thread.view_count,
-      'postCount', v_total,
-      'isSticky', v_thread.is_sticky,
-      'createdAt', v_thread.created_at,
-      'status', v_thread.status
-    ),
-    'posts', v_posts,
-    'pagination', jsonb_build_object(
-      'page', v_page,
-      'limit', v_limit,
-      'total', v_total,
-      'totalPages', greatest(ceil(v_total::numeric / v_limit)::integer, 1)
-    )
-  );
-END;
-$$;
-
-CREATE OR REPLACE FUNCTION public.create_lounge_thread(
+CREATE OR REPLACE FUNCTION public.send_lounge_message(
   p_board_slug text,
-  p_title text,
   p_body text
 )
-RETURNS uuid
+RETURNS public.lounge_messages
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
+  v_uid uuid := auth.uid();
   v_board public.lounge_boards;
-  v_thread_id uuid;
-  v_title text := left(trim(p_title), 200);
-  v_body text := left(trim(p_body), 12000);
+  v_body text := trim(coalesce(p_body, ''));
+  v_recent_count integer;
+  v_row public.lounge_messages;
 BEGIN
-  IF auth.uid() IS NULL THEN
+  IF v_uid IS NULL THEN
     RAISE EXCEPTION 'not_authenticated';
   END IF;
 
-  IF v_title = '' OR v_body = '' THEN
-    RAISE EXCEPTION 'empty_content';
+  IF char_length(v_body) < 1 OR char_length(v_body) > 8000 THEN
+    RAISE EXCEPTION 'invalid_message_body';
+  END IF;
+
+  IF v_body ~ '<[^>]+>' THEN
+    RAISE EXCEPTION 'text_only_messages';
+  END IF;
+
+  IF to_regprocedure('public.has_beta_messaging_attestation(uuid)') IS NOT NULL
+     AND NOT public.has_beta_messaging_attestation(v_uid) THEN
+    RAISE EXCEPTION 'age_attestation_required';
   END IF;
 
   SELECT * INTO v_board
@@ -529,247 +347,65 @@ BEGIN
   WHERE b.slug = p_board_slug;
 
   IF v_board.id IS NULL THEN
-    RAISE EXCEPTION 'board_not_found';
+    RAISE EXCEPTION 'channel_not_found';
   END IF;
 
   IF NOT public.can_post_lounge_board(v_board.id) THEN
-    RAISE EXCEPTION 'board_locked';
+    RAISE EXCEPTION 'channel_locked';
   END IF;
 
-  INSERT INTO public.lounge_threads (
-    board_id,
-    author_id,
-    title,
-    reply_count,
-    last_post_at,
-    last_post_by
-  )
-  VALUES (
-    v_board.id,
-    auth.uid(),
-    v_title,
-    0,
-    now(),
-    auth.uid()
-  )
-  RETURNING id INTO v_thread_id;
+  SELECT count(*) INTO v_recent_count
+  FROM public.lounge_messages m
+  WHERE m.sender_id = v_uid
+    AND m.created_at >= now() - interval '1 hour';
 
-  INSERT INTO public.lounge_posts (
-    thread_id,
-    board_id,
-    author_id,
-    body,
-    post_number
-  )
-  VALUES (
-    v_thread_id,
-    v_board.id,
-    auth.uid(),
-    v_body,
-    1
-  );
+  IF v_recent_count >= 60 THEN
+    RAISE EXCEPTION 'rate_limit_exceeded';
+  END IF;
 
-  RETURN v_thread_id;
+  INSERT INTO public.lounge_messages (board_id, sender_id, body)
+  VALUES (v_board.id, v_uid, v_body)
+  RETURNING * INTO v_row;
+
+  UPDATE public.lounge_boards
+  SET last_message_at = v_row.created_at
+  WHERE id = v_board.id;
+
+  RETURN v_row;
 END;
 $$;
 
-CREATE OR REPLACE FUNCTION public.reply_lounge_thread(
-  p_thread_id uuid,
-  p_body text,
-  p_quote_post_id uuid DEFAULT NULL
-)
-RETURNS uuid
+CREATE OR REPLACE FUNCTION public.list_lounge_online_members(p_limit integer DEFAULT 50)
+RETURNS jsonb
 LANGUAGE plpgsql
+STABLE
 SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
-  v_thread public.lounge_threads;
-  v_body text := left(trim(p_body), 12000);
-  v_post_number integer;
-  v_post_id uuid;
+  v_limit integer := least(greatest(coalesce(p_limit, 50), 1), 100);
 BEGIN
-  IF auth.uid() IS NULL THEN
-    RAISE EXCEPTION 'not_authenticated';
+  IF to_regprocedure('public.touch_user_presence()') IS NOT NULL THEN
+    PERFORM public.touch_user_presence();
   END IF;
 
-  IF v_body = '' THEN
-    RAISE EXCEPTION 'empty_body';
-  END IF;
-
-  SELECT * INTO v_thread
-  FROM public.lounge_threads t
-  WHERE t.id = p_thread_id
-    AND t.status = 'open';
-
-  IF v_thread.id IS NULL THEN
-    RAISE EXCEPTION 'thread_not_found';
-  END IF;
-
-  IF v_thread.status = 'locked' THEN
-    RAISE EXCEPTION 'thread_locked';
-  END IF;
-
-  IF NOT public.can_post_lounge_board(v_thread.board_id) THEN
-    RAISE EXCEPTION 'board_locked';
-  END IF;
-
-  IF p_quote_post_id IS NOT NULL THEN
-    IF NOT EXISTS (
-      SELECT 1
-      FROM public.lounge_posts q
-      WHERE q.id = p_quote_post_id
-        AND q.thread_id = v_thread.id
-        AND q.status = 'visible'
-    ) THEN
-      RAISE EXCEPTION 'quote_not_found';
-    END IF;
-  END IF;
-
-  SELECT coalesce(max(p.post_number), 0) + 1
-  INTO v_post_number
-  FROM public.lounge_posts p
-  WHERE p.thread_id = v_thread.id;
-
-  INSERT INTO public.lounge_posts (
-    thread_id,
-    board_id,
-    author_id,
-    quote_post_id,
-    body,
-    post_number
-  )
-  VALUES (
-    v_thread.id,
-    v_thread.board_id,
-    auth.uid(),
-    p_quote_post_id,
-    v_body,
-    v_post_number
-  )
-  RETURNING id INTO v_post_id;
-
-  UPDATE public.lounge_threads
-  SET
-    reply_count = greatest(reply_count + 1, v_post_number - 1),
-    last_post_at = now(),
-    last_post_by = auth.uid(),
-    updated_at = now()
-  WHERE id = v_thread.id;
-
-  RETURN v_post_id;
+  RETURN coalesce((
+    SELECT jsonb_agg(row ORDER BY row->>'lastSeenAt' DESC)
+    FROM (
+      SELECT jsonb_build_object(
+        'id', u.id,
+        'name', public.lounge_display_name(u.id),
+        'initials', public.lounge_user_initials(u.id),
+        'lastSeenAt', u.last_seen_at
+      ) AS row
+      FROM public.users u
+      WHERE u.last_seen_at >= now() - interval '5 minutes'
+      ORDER BY u.last_seen_at DESC
+      LIMIT v_limit
+    ) members
+  ), '[]'::jsonb);
 END;
 $$;
-
-CREATE OR REPLACE FUNCTION public.seed_lounge_general_main_topic()
-RETURNS uuid
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-DECLARE
-  v_board_id uuid;
-  v_author_id uuid;
-  v_thread_id uuid;
-  v_body text := $body$
-Welcome to General Chat — the place for off-topic banter, life updates, memes, and anything that doesn't fit the other boards.
-
-Reply here to say hi, share what you're working on, or just hang out. Be kind. No full manuscripts or critique requests — use Beta rooms for that.
-
-This thread stays pinned so newcomers always have a front door.
-$body$;
-BEGIN
-  SELECT b.id INTO v_board_id
-  FROM public.lounge_boards b
-  WHERE b.slug = 'general-chat';
-
-  IF v_board_id IS NULL THEN
-    RETURN NULL;
-  END IF;
-
-  SELECT t.id INTO v_thread_id
-  FROM public.lounge_threads t
-  WHERE t.board_id = v_board_id
-    AND lower(trim(t.title)) = lower('General Main topic')
-    AND t.status <> 'deleted'
-  LIMIT 1;
-
-  IF v_thread_id IS NOT NULL THEN
-    UPDATE public.lounge_threads
-    SET is_sticky = true
-    WHERE id = v_thread_id
-      AND NOT is_sticky;
-    RETURN v_thread_id;
-  END IF;
-
-  IF to_regclass('public.moderation_staff') IS NOT NULL THEN
-    SELECT ms.user_id INTO v_author_id
-    FROM public.moderation_staff ms
-    ORDER BY
-      CASE ms.role
-        WHEN 'admin' THEN 0
-        WHEN 'moderator' THEN 1
-        ELSE 2
-      END,
-      ms.created_at ASC
-    LIMIT 1;
-  END IF;
-
-  IF v_author_id IS NULL THEN
-    SELECT u.id INTO v_author_id
-    FROM public.users u
-    ORDER BY u.created_at ASC
-    LIMIT 1;
-  END IF;
-
-  IF v_author_id IS NULL THEN
-    RETURN NULL;
-  END IF;
-
-  INSERT INTO public.lounge_threads (
-    board_id,
-    author_id,
-    title,
-    status,
-    is_sticky,
-    is_announcement,
-    reply_count,
-    last_post_at,
-    last_post_by
-  )
-  VALUES (
-    v_board_id,
-    v_author_id,
-    'General Main topic',
-    'open',
-    true,
-    false,
-    0,
-    now(),
-    v_author_id
-  )
-  RETURNING id INTO v_thread_id;
-
-  INSERT INTO public.lounge_posts (
-    thread_id,
-    board_id,
-    author_id,
-    body,
-    post_number
-  )
-  VALUES (
-    v_thread_id,
-    v_board_id,
-    v_author_id,
-    trim(v_body),
-    1
-  );
-
-  RETURN v_thread_id;
-END;
-$$;
-
-SELECT public.seed_lounge_general_main_topic();
 
 -- ---------------------------------------------------------------------------
 -- 5. RLS
@@ -777,8 +413,7 @@ SELECT public.seed_lounge_general_main_topic();
 
 ALTER TABLE public.lounge_categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.lounge_boards ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.lounge_threads ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.lounge_posts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.lounge_messages ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "lounge_categories_select_auth" ON public.lounge_categories;
 CREATE POLICY "lounge_categories_select_auth" ON public.lounge_categories
@@ -790,29 +425,38 @@ CREATE POLICY "lounge_boards_select_auth" ON public.lounge_boards
   FOR SELECT TO authenticated
   USING (true);
 
-DROP POLICY IF EXISTS "lounge_threads_select_open" ON public.lounge_threads;
-CREATE POLICY "lounge_threads_select_open" ON public.lounge_threads
+DROP POLICY IF EXISTS "lounge_messages_select_auth" ON public.lounge_messages;
+CREATE POLICY "lounge_messages_select_auth" ON public.lounge_messages
   FOR SELECT TO authenticated
-  USING (status = 'open' OR public.is_lounge_staff());
-
-DROP POLICY IF EXISTS "lounge_posts_select_visible" ON public.lounge_posts;
-CREATE POLICY "lounge_posts_select_visible" ON public.lounge_posts
-  FOR SELECT TO authenticated
-  USING (status = 'visible' OR public.is_lounge_staff());
-
--- Mutations go through SECURITY DEFINER RPCs only.
+  USING (deleted_at IS NULL OR public.is_lounge_staff());
 
 -- ---------------------------------------------------------------------------
--- 6. Grants
+-- 6. Realtime
+-- ---------------------------------------------------------------------------
+
+DO $lounge_realtime$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'supabase_realtime') THEN
+    BEGIN
+      ALTER PUBLICATION supabase_realtime ADD TABLE public.lounge_messages;
+    EXCEPTION WHEN duplicate_object THEN NULL;
+    END;
+  END IF;
+END;
+$lounge_realtime$;
+
+-- ---------------------------------------------------------------------------
+-- 7. Grants
 -- ---------------------------------------------------------------------------
 
 GRANT SELECT ON public.lounge_categories TO authenticated;
 GRANT SELECT ON public.lounge_boards TO authenticated;
-GRANT SELECT ON public.lounge_threads TO authenticated;
-GRANT SELECT ON public.lounge_posts TO authenticated;
+GRANT SELECT ON public.lounge_messages TO authenticated;
 
 GRANT EXECUTE ON FUNCTION public.list_lounge_home() TO authenticated;
-GRANT EXECUTE ON FUNCTION public.list_lounge_threads(text, integer, integer) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.get_lounge_thread(uuid, integer, integer) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.create_lounge_thread(text, text, text) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.reply_lounge_thread(uuid, text, uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.list_lounge_messages(text, timestamptz, integer) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.send_lounge_message(text, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.list_lounge_online_members(integer) TO authenticated;
+
+-- Messages are inserted only through send_lounge_message (SECURITY DEFINER).
+REVOKE INSERT ON public.lounge_messages FROM authenticated;
