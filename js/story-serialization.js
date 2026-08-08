@@ -5,10 +5,18 @@
 export const SERIALIZATION_COMPLETE = "complete";
 export const SERIALIZATION_IN_PROGRESS = "in_progress";
 
-export function normalizeSerializationStatus(value) {
+export function hasExplicitSerializationStatus(value) {
+    return Boolean(String(value ?? "").trim());
+}
+
+export function normalizeSerializationStatus(value, { fallback = SERIALIZATION_IN_PROGRESS } = {}) {
     const raw = String(value ?? "").trim().toLowerCase();
+    if (!raw) return fallback;
     if (raw === SERIALIZATION_IN_PROGRESS || raw === "ongoing") return SERIALIZATION_IN_PROGRESS;
-    return SERIALIZATION_COMPLETE;
+    if (raw === SERIALIZATION_COMPLETE || raw === "complete" || raw === "finished") {
+        return SERIALIZATION_COMPLETE;
+    }
+    return fallback;
 }
 
 export function isSerializationComplete(status) {
@@ -30,6 +38,7 @@ export function normalizePlannedChapterCount(value) {
     return null;
 }
 
+/** @returns {string[] | undefined} undefined when the field is absent (legacy rows). */
 function publishedIdsFromData(data) {
     if (Array.isArray(data.publishedChapterIds)) {
         return data.publishedChapterIds.filter((id) => typeof id === "string" && id.trim());
@@ -37,7 +46,19 @@ function publishedIdsFromData(data) {
     if (Array.isArray(data.published_chapter_ids)) {
         return data.published_chapter_ids.filter((id) => typeof id === "string" && id.trim());
     }
-    return null;
+    return undefined;
+}
+
+function countPublishedChapters(source, chapters, chapterCount) {
+    const publishedIds = publishedIdsFromData(source);
+    if (publishedIds !== undefined) {
+        return Math.max(0, publishedIds.length);
+    }
+    if (chapters.length) {
+        // Legacy rows without publishedChapterIds: everything in chapters was live.
+        return chapters.length;
+    }
+    return Math.max(0, chapterCount);
 }
 
 /**
@@ -56,39 +77,43 @@ export function serializationFromBookData(data) {
         ?? meta?.serializationStatus
         ?? meta?.serialization_status;
 
-    let status = normalizeSerializationStatus(statusRaw);
-    const hasExplicitStatus = Boolean(String(statusRaw ?? "").trim());
+    const hasExplicitStatus = hasExplicitSerializationStatus(statusRaw);
 
     const chapters = Array.isArray(source.chapters) ? source.chapters : [];
     const chapterCount = typeof source.chapterCount === "number" && source.chapterCount > 0
         ? source.chapterCount
         : chapters.length;
 
-    const publishedIds = publishedIdsFromData(source);
-    let publishedCount;
-    if (publishedIds && publishedIds.length) {
-        publishedCount = publishedIds.length;
-    } else if (chapters.length) {
-        publishedCount = chapters.length;
-    } else {
-        publishedCount = chapterCount;
-    }
-
-    publishedCount = Math.max(0, publishedCount);
-
-    if (!hasExplicitStatus && publishedCount < chapterCount) {
-        status = SERIALIZATION_IN_PROGRESS;
-    }
+    const publishedCount = countPublishedChapters(source, chapters, chapterCount);
 
     const plannedChapterCount = normalizePlannedChapterCount(
         source.plannedChapterCount ?? source.planned_chapter_count ?? meta?.plannedChapterCount ?? meta?.planned_chapter_count
     );
+
+    let status;
+    if (hasExplicitStatus) {
+        status = normalizeSerializationStatus(statusRaw, { fallback: SERIALIZATION_IN_PROGRESS });
+    } else if (publishedCount < chapterCount) {
+        status = SERIALIZATION_IN_PROGRESS;
+    } else {
+        // No author status saved yet — default to in progress, not complete.
+        status = SERIALIZATION_IN_PROGRESS;
+    }
+
+    if (
+        status === SERIALIZATION_COMPLETE
+        && (publishedCount < chapterCount
+            || (plannedChapterCount && publishedCount < plannedChapterCount))
+    ) {
+        status = SERIALIZATION_IN_PROGRESS;
+    }
 
     return {
         status,
         plannedChapterCount,
         chapterCount,
         publishedCount,
+        hasExplicitStatus,
     };
 }
 

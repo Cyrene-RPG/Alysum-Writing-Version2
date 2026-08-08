@@ -2892,7 +2892,9 @@ function rememberBookId(id) {
             isAnonymous: !!(meta.isAnonymous ?? meta.is_anonymous),
             serializationStatus: (() => {
                 const raw = String(meta.serializationStatus ?? meta.serialization_status ?? "").trim().toLowerCase();
-                return raw === "in_progress" || raw === "ongoing" ? "in_progress" : "complete";
+                if (raw === "complete" || raw === "finished") return "complete";
+                if (raw === "in_progress" || raw === "ongoing") return "in_progress";
+                return "in_progress";
             })(),
             plannedChapterCount: (() => {
                 const value = meta.plannedChapterCount ?? meta.planned_chapter_count;

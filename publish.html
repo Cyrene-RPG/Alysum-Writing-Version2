@@ -436,7 +436,7 @@
         if (s.startsWith("//")) return "https:" + s;
         return "https://" + s.replace(/^\/+/, "");
     }
-    function normalizePublishMeta(rawPublishMeta) { const meta = safeObject(rawPublishMeta, {}); const rawNotes = meta.chapterAuthorNotes ?? meta.chapter_author_notes; return { genres: safeArray(meta.genres, []).filter(item => typeof item === "string"), rating: safeString(meta.rating, ""), warnings: normalizeWarningData(meta.warnings), summary: safeString(meta.summary, ""), extraTags: safeArray(meta.extraTags || meta.extra_tags, []).filter(item => typeof item === "string"), coverUrl: normalizeCoverUrl(meta.coverUrl || meta.cover_url), isAnonymous: !!(meta.isAnonymous ?? meta.is_anonymous), chapterAuthorNotes: safeObject(rawNotes, {}), serializationStatus: normalizeSerializationStatus(meta.serializationStatus ?? meta.serialization_status), plannedChapterCount: normalizePlannedChapterCount(meta.plannedChapterCount ?? meta.planned_chapter_count) }; }
+    function normalizePublishMeta(rawPublishMeta) { const meta = safeObject(rawPublishMeta, {}); const rawNotes = meta.chapterAuthorNotes ?? meta.chapter_author_notes; const rawStatus = meta.serializationStatus ?? meta.serialization_status; return { genres: safeArray(meta.genres, []).filter(item => typeof item === "string"), rating: safeString(meta.rating, ""), warnings: normalizeWarningData(meta.warnings), summary: safeString(meta.summary, ""), extraTags: safeArray(meta.extraTags || meta.extra_tags, []).filter(item => typeof item === "string"), coverUrl: normalizeCoverUrl(meta.coverUrl || meta.cover_url), isAnonymous: !!(meta.isAnonymous ?? meta.is_anonymous), chapterAuthorNotes: safeObject(rawNotes, {}), serializationStatus: String(rawStatus ?? "").trim() ? normalizeSerializationStatus(rawStatus) : SERIALIZATION_IN_PROGRESS, plannedChapterCount: normalizePlannedChapterCount(meta.plannedChapterCount ?? meta.planned_chapter_count) }; }
     function libraryAuthorName() { return isAnonymousPost ? ANONYMOUS_AUTHOR_LABEL : (authorName || "unknown"); }
     function normalizeBookData(rawData) { const data = safeObject(rawData, {}); return { id: safeString(data.id, bookId), user_id: safeString(data.user_id, currentUser?.id || ""), title: safeString(data.title, "Untitled Book"), sections: normalizeSections(data.sections), words: safeNumber(data.words, 0), updated: safeNumber(data.updated, Date.now()), isPublished: !!(data.isPublished ?? data.is_published), libraryType: safeString(data.libraryType ?? data.library_type, ""), mediaFormat: normalizeMediaFormat(data.mediaFormat ?? data.media_format), publishedChapterIds: safeArray(data.publishedChapterIds ?? data.published_chapter_ids, []).filter(item => typeof item === "string"), publishMeta: normalizePublishMeta(data.publishMeta ?? data.publish_meta) }; }
     function toDbBookPatch(extra = {}) { return { title: bookTitleInput.value.trim() || currentBook.title || "Untitled Book", library_type: libraryShelfSelect.value || null, media_format: currentBook?.mediaFormat || "novel", publish_meta: buildPublishMeta(), published_chapter_ids: selectedChapterObjects.map(ch => ch.id), is_published: !!isPublished, updated: Date.now(), ...extra }; }
@@ -461,7 +461,9 @@
         const meta = safeObject(currentBook?.publishMeta, {});
         if (meta.serializationStatus || meta.serialization_status) return;
         const { scheduled } = buildReleasePlan();
-        const defaultStatus = scheduled.length ? SERIALIZATION_IN_PROGRESS : SERIALIZATION_COMPLETE;
+        const defaultStatus = (!scheduled.length && selectedChapterObjects.length === 1)
+            ? SERIALIZATION_COMPLETE
+            : SERIALIZATION_IN_PROGRESS;
         if (serializationInProgressRadio) serializationInProgressRadio.checked = defaultStatus === SERIALIZATION_IN_PROGRESS;
         if (serializationCompleteRadio) serializationCompleteRadio.checked = defaultStatus === SERIALIZATION_COMPLETE;
         updateSerializationFieldsVisibility();
