@@ -3858,15 +3858,22 @@ function rememberBookId(id) {
         frStatus.textContent = `${frActiveIndex + 1} of ${frMatches.length}`;
     }
 
+    function frFindInputFocused() {
+        const active = document.activeElement;
+        return active === frFindInput || active === frReplaceInput;
+    }
+
     function frScrollToMatch(index) {
         const m = frMatches[index];
         if (!m) return;
         const range = document.createRange();
         range.setStart(m.node, m.start);
         range.setEnd(m.node, m.end);
-        const sel = window.getSelection();
-        sel.removeAllRanges();
-        sel.addRange(range);
+        if (!frFindInputFocused()) {
+            const sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(range);
+        }
         const rects = range.getClientRects();
         const rect = rects.length ? rects[0] : range.getBoundingClientRect();
         if (editorWorkspace && rect) {
@@ -3876,7 +3883,7 @@ function rememberBookId(id) {
         }
     }
 
-    function frRunSearch(keepIndex = false) {
+    function frRunSearch(keepIndex = false, scrollToMatch = true) {
         const query = frFindInput?.value || "";
         const prevIndex = keepIndex ? frActiveIndex : -1;
         frMatches = frCollectMatches(query);
@@ -3897,7 +3904,7 @@ function rememberBookId(id) {
         else frActiveIndex = 0;
         frApplyHighlights();
         frUpdateStatus();
-        frScrollToMatch(frActiveIndex);
+        if (scrollToMatch) frScrollToMatch(frActiveIndex);
     }
 
     function frGo(delta) {
@@ -5105,9 +5112,9 @@ function rememberBookId(id) {
 
     findReplaceBtn?.addEventListener("click", () => frOpen(false));
     frCloseBtn?.addEventListener("click", () => frClose());
-    frFindInput?.addEventListener("input", () => frRunSearch());
-    frMatchCase?.addEventListener("change", () => frRunSearch());
-    frWholeWord?.addEventListener("change", () => frRunSearch());
+    frFindInput?.addEventListener("input", () => frRunSearch(true, false));
+    frMatchCase?.addEventListener("change", () => frRunSearch(false, false));
+    frWholeWord?.addEventListener("change", () => frRunSearch(false, false));
     frPrevBtn?.addEventListener("click", () => frGo(-1));
     frNextBtn?.addEventListener("click", () => frGo(1));
     frReplaceBtn?.addEventListener("click", () => frReplaceCurrent());
