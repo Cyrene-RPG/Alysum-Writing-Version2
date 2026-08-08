@@ -512,7 +512,7 @@
         overflow-y: hidden;
         height: 10px;
         scrollbar-width: thin;
-        scrollbar-color: rgba(124, 58, 237, 0.72) rgba(255, 255, 255, 0.14);
+        scrollbar-color: color-mix(in srgb, var(--theme-header-mid, #7c3aed) 72%, transparent) rgba(255, 255, 255, 0.14);
     }
 
     .wd-books-scroll::-webkit-scrollbar {
@@ -526,12 +526,14 @@
     }
 
     .wd-books-scroll::-webkit-scrollbar-thumb {
-        background: rgba(124, 58, 237, 0.72);
+        background: color-mix(in srgb, var(--theme-header-mid, #7c3aed) 72%, transparent);
         border-radius: 999px;
         min-width: 40px;
     }
 
-    .wd-books-scroll::-webkit-scrollbar-thumb:hover { background: rgba(124, 58, 237, 0.9); }
+    .wd-books-scroll::-webkit-scrollbar-thumb:hover {
+        background: color-mix(in srgb, var(--theme-header-mid, #7c3aed) 90%, transparent);
+    }
 
     .wd-books-scroll-inner {
         height: 1px;

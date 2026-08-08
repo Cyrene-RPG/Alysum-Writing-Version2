@@ -1,6 +1,17 @@
 const RECENT_KEY = "alysum-emoji-recent";
 const RECENT_MAX = 27;
 
+/** Emojis that get a looping sparkle / pulse animation in reactions (Discord-style). */
+export const LOUNGE_ANIMATED_EMOJIS = new Set([
+    "✨", "⭐", "🌟", "💫", "💖", "❤️", "🧡", "💛", "💚", "💙", "💜", "🖤", "🤍", "💔",
+    "🔥", "😂", "🤣", "😭", "🥹", "🎉", "🎊", "💯", "👀", "🫶", "🙌", "👏", "💀", "😍",
+    "🥳", "⚡", "💥", "🌈", "🎆", "💃", "🕺", "🫡", "🤯", "😱", "🤩", "💕", "💞", "💓"
+]);
+
+export function isLoungeAnimatedEmoji(emoji) {
+    return LOUNGE_ANIMATED_EMOJIS.has(String(emoji || "").trim());
+}
+
 const EMOJI_CATEGORIES = [
     {
         id: "smileys",
@@ -1380,16 +1391,17 @@ const SEARCH_INDEX = flattenSearchIndex();
 
 /**
  * Mount a Discord-style emoji picker.
- * @param {{ container: HTMLElement, toggleButton: HTMLElement, onSelect: (emoji: string) => void, onOpen?: () => void, onClose?: () => void }} options
+ * @param {{ container: HTMLElement, toggleButton?: HTMLElement|null, onSelect: (emoji: string) => void, onOpen?: () => void, onClose?: () => void, floating?: boolean }} options
  */
-export function mountEmojiPicker({ container, toggleButton, onSelect, onOpen, onClose }) {
-    if (!container || !toggleButton) return { open: () => {}, close: () => {}, isOpen: () => false };
+export function mountEmojiPicker({ container, toggleButton = null, onSelect, onOpen, onClose, floating = false }) {
+    if (!container) return { open: () => {}, close: () => {}, isOpen: () => false, openAt: () => {} };
 
     let open = false;
     let activeCategory = "smileys";
     let recent = loadRecent();
 
     container.classList.add("emoji-picker");
+    if (floating) container.classList.add("emoji-picker--floating");
     container.innerHTML =
         `<div class="emoji-picker-search-wrap">` +
         `<input type="text" class="emoji-picker-search" placeholder="Search emojis" autocomplete="off" aria-label="Search emojis" />` +
@@ -1408,8 +1420,10 @@ export function mountEmojiPicker({ container, toggleButton, onSelect, onOpen, on
     function setOpen(next) {
         open = next;
         container.classList.toggle("hidden", !open);
-        toggleButton.classList.toggle("is-active", open);
-        toggleButton.setAttribute("aria-expanded", open ? "true" : "false");
+        if (toggleButton) {
+            toggleButton.classList.toggle("is-active", open);
+            toggleButton.setAttribute("aria-expanded", open ? "true" : "false");
+        }
         if (open) {
             onOpen?.();
             searchInput.value = "";
@@ -1417,6 +1431,11 @@ export function mountEmojiPicker({ container, toggleButton, onSelect, onOpen, on
             searchInput.focus();
         } else {
             onClose?.();
+            if (floating) {
+                container.style.left = "";
+                container.style.top = "";
+                container.style.width = "";
+            }
         }
     }
 
@@ -1491,10 +1510,38 @@ export function mountEmojiPicker({ container, toggleButton, onSelect, onOpen, on
         renderGrid(itemsForCategory(activeCategory), label);
     }
 
-    toggleButton.addEventListener("click", (e) => {
-        e.stopPropagation();
-        toggle();
-    });
+    function openAt(anchorEl) {
+        if (!floating || !anchorEl) {
+            openPicker();
+            return;
+        }
+        const rect = anchorEl.getBoundingClientRect();
+        const width = Math.min(352, window.innerWidth - 16);
+        let left = rect.left;
+        if (left + width > window.innerWidth - 8) left = window.innerWidth - width - 8;
+        if (left < 8) left = 8;
+        let top = rect.top - 8;
+        container.style.left = `${left}px`;
+        container.style.width = `${width}px`;
+        container.style.bottom = "auto";
+        container.style.top = "auto";
+        setOpen(true);
+        requestAnimationFrame(() => {
+            const pickerHeight = container.offsetHeight || 380;
+            top = rect.top - pickerHeight - 8;
+            if (top < 8) top = rect.bottom + 8;
+            container.style.top = `${top}px`;
+        });
+    }
+
+    if (toggleButton) {
+        toggleButton.addEventListener("click", (e) => {
+            e.stopPropagation();
+            toggle();
+        });
+        toggleButton.setAttribute("aria-haspopup", "dialog");
+        toggleButton.setAttribute("aria-expanded", "false");
+    }
 
     searchInput.addEventListener("input", render);
 
@@ -1503,7 +1550,7 @@ export function mountEmojiPicker({ container, toggleButton, onSelect, onOpen, on
             e.preventDefault();
             e.stopPropagation();
             close();
-            toggleButton.focus();
+            toggleButton?.focus();
         }
     });
 
@@ -1531,12 +1578,11 @@ export function mountEmojiPicker({ container, toggleButton, onSelect, onOpen, on
 
     document.addEventListener("click", (e) => {
         if (!open) return;
-        if (e.target.closest(".emoji-picker") || e.target.closest(".emoji-toggle")) return;
+        if (e.target.closest(".emoji-picker")) return;
+        if (toggleButton && e.target.closest(".emoji-toggle")) return;
+        if (e.target.closest("[data-msg-action='open-reactions']")) return;
         close();
     });
 
-    toggleButton.setAttribute("aria-haspopup", "dialog");
-    toggleButton.setAttribute("aria-expanded", "false");
-
-    return { open: openPicker, close, isOpen: () => open, toggle };
+    return { open: openPicker, close, isOpen: () => open, toggle, openAt };
 }

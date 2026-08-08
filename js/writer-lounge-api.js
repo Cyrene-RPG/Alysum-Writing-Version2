@@ -74,6 +74,17 @@ export async function deleteLoungeMessage(messageId) {
     if (error) throw error;
 }
 
+export async function toggleLoungeMessageReaction(messageId, emoji) {
+    const trimmed = safeString(emoji).trim();
+    if (!trimmed) throw new Error("Pick an emoji to react.");
+    const { data, error } = await supabase.rpc("toggle_lounge_message_reaction", {
+        p_message_id: messageId,
+        p_emoji: trimmed
+    });
+    if (error) throw error;
+    return Array.isArray(data) ? data : data || [];
+}
+
 export async function listLoungeOnlineMembers(limit = 50) {
     const { data, error } = await supabase.rpc("list_lounge_online_members", {
         p_limit: limit
@@ -155,7 +166,7 @@ export async function attestLoungeMessaging13Plus(birthDate) {
     if (error) throw error;
 }
 
-export function subscribeLoungeChannel(boardId, { onMessage } = {}) {
+export function subscribeLoungeChannel(boardId, { onMessage, onReaction } = {}) {
     if (!boardId) return () => {};
 
     const channel = supabase
@@ -182,6 +193,19 @@ export function subscribeLoungeChannel(boardId, { onMessage } = {}) {
             },
             () => {
                 if (typeof onMessage === "function") onMessage();
+            }
+        )
+        .on(
+            "postgres_changes",
+            {
+                event: "*",
+                schema: "public",
+                table: "lounge_message_reactions",
+                filter: `board_id=eq.${boardId}`
+            },
+            () => {
+                if (typeof onReaction === "function") onReaction();
+                else if (typeof onMessage === "function") onMessage();
             }
         )
         .subscribe();
@@ -216,7 +240,7 @@ export function subscribeLoungePings(userId, { onPing } = {}) {
 export function isWriterLoungeSchemaMissing(error) {
     const msg = String(error?.message || error || "");
     return (
-        /lounge_categories|lounge_boards|lounge_messages|lounge_channel_reads/i.test(msg) ||
-        /list_lounge_home|list_lounge_messages|send_lounge_message|edit_lounge_message|delete_lounge_message|list_lounge_online_members|block_lounge_user|list_my_lounge_blocks|search_lounge_mention_users|ensure_lounge_read_baselines|mark_lounge_channel_read|list_lounge_unread_pings|has_lounge_messaging_attestation|attest_lounge_messaging_13plus/i.test(msg)
+        /lounge_categories|lounge_boards|lounge_messages|lounge_channel_reads|lounge_message_reactions/i.test(msg) ||
+        /list_lounge_home|list_lounge_messages|send_lounge_message|edit_lounge_message|delete_lounge_message|toggle_lounge_message_reaction|list_lounge_online_members|block_lounge_user|list_my_lounge_blocks|search_lounge_mention_users|ensure_lounge_read_baselines|mark_lounge_channel_read|list_lounge_unread_pings|has_lounge_messaging_attestation|attest_lounge_messaging_13plus/i.test(msg)
     );
 }

@@ -138,7 +138,7 @@
     overscroll-behavior-x: contain;
     touch-action: pan-x;
     scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+    scrollbar-color: color-mix(in srgb, var(--theme-header-mid, #7c3aed) 55%, transparent) transparent;
     background: rgba(11, 18, 32, 0.92);
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     backdrop-filter: blur(10px);
@@ -149,7 +149,7 @@
 }
 
 .wd-nav-wrap::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.15);
+    background: color-mix(in srgb, var(--theme-header-mid, #7c3aed) 55%, transparent);
     border-radius: 999px;
 }
 

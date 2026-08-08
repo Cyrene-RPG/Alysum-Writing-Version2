@@ -100,6 +100,22 @@ CREATE TABLE IF NOT EXISTS public.lounge_messaging_attestations (
 CREATE INDEX IF NOT EXISTS lounge_boards_last_message_idx
   ON public.lounge_boards (last_message_at DESC NULLS LAST);
 
+CREATE TABLE IF NOT EXISTS public.lounge_message_reactions (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  message_id uuid NOT NULL REFERENCES public.lounge_messages (id) ON DELETE CASCADE,
+  board_id uuid NOT NULL REFERENCES public.lounge_boards (id) ON DELETE CASCADE,
+  user_id uuid NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE,
+  emoji text NOT NULL CHECK (char_length(emoji) >= 1 AND char_length(emoji) <= 32),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (message_id, user_id, emoji)
+);
+
+CREATE INDEX IF NOT EXISTS lounge_message_reactions_message_idx
+  ON public.lounge_message_reactions (message_id, emoji);
+
+CREATE INDEX IF NOT EXISTS lounge_message_reactions_board_idx
+  ON public.lounge_message_reactions (board_id, created_at DESC);
+
 -- ---------------------------------------------------------------------------
 -- 2. Seed categories and channels
 -- ---------------------------------------------------------------------------
@@ -355,6 +371,45 @@ AS $$
   WHERE r.id = p_reply_id;
 $$;
 
+CREATE OR REPLACE FUNCTION public.lounge_reaction_emoji_valid(p_emoji text)
+RETURNS boolean
+LANGUAGE sql
+IMMUTABLE
+AS $$
+  SELECT
+    coalesce(p_emoji, '') ~ '^[^\s<>&]{1,32}$'
+    AND coalesce(p_emoji, '') !~ '^[A-Za-z0-9_]+$';
+$$;
+
+CREATE OR REPLACE FUNCTION public.lounge_message_reactions_json(p_message_id uuid)
+RETURNS jsonb
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT coalesce(jsonb_agg(row ORDER BY (row->>'count')::int DESC, row->>'emoji'), '[]'::jsonb)
+  FROM (
+    SELECT jsonb_build_object(
+      'emoji', r.emoji,
+      'count', count(*)::int,
+      'reactedByMe', bool_or(r.user_id = auth.uid()),
+      'users', (
+        SELECT coalesce(jsonb_agg(jsonb_build_object(
+          'userId', u.user_id,
+          'name', public.lounge_display_name(u.user_id)
+        ) ORDER BY u.created_at), '[]'::jsonb)
+        FROM public.lounge_message_reactions u
+        WHERE u.message_id = p_message_id
+          AND u.emoji = r.emoji
+      )
+    ) AS row
+    FROM public.lounge_message_reactions r
+    WHERE r.message_id = p_message_id
+    GROUP BY r.emoji
+  ) grouped;
+$$;
+
 CREATE OR REPLACE FUNCTION public.has_lounge_messaging_attestation(p_user_id uuid DEFAULT auth.uid())
 RETURNS boolean
 LANGUAGE sql
@@ -541,7 +596,8 @@ BEGIN
       'createdAt', m.created_at,
       'editedAt', m.edited_at,
       'replyTo', public.lounge_reply_json(m.reply_to_id),
-      'mentionedUserIds', coalesce(m.mentioned_user_ids, '{}'::uuid[])
+      'mentionedUserIds', coalesce(m.mentioned_user_ids, '{}'::uuid[]),
+      'reactions', public.lounge_message_reactions_json(m.id)
     ) AS msg
     FROM public.lounge_messages m
     WHERE m.board_id = v_board.id
@@ -936,6 +992,62 @@ BEGIN
 END;
 $$;
 
+CREATE OR REPLACE FUNCTION public.toggle_lounge_message_reaction(
+  p_message_id uuid,
+  p_emoji text
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+VOLATILE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_uid uuid := auth.uid();
+  v_message public.lounge_messages;
+  v_emoji text := trim(coalesce(p_emoji, ''));
+BEGIN
+  IF v_uid IS NULL THEN
+    RAISE EXCEPTION 'not_authenticated';
+  END IF;
+
+  IF NOT public.lounge_reaction_emoji_valid(v_emoji) THEN
+    RAISE EXCEPTION 'invalid_reaction_emoji';
+  END IF;
+
+  SELECT * INTO v_message
+  FROM public.lounge_messages m
+  WHERE m.id = p_message_id
+    AND m.deleted_at IS NULL;
+
+  IF v_message.id IS NULL THEN
+    RAISE EXCEPTION 'message_not_found';
+  END IF;
+
+  IF public.lounge_users_are_blocked(v_uid, v_message.sender_id) THEN
+    RAISE EXCEPTION 'user_blocked';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1
+    FROM public.lounge_message_reactions r
+    WHERE r.message_id = p_message_id
+      AND r.user_id = v_uid
+      AND r.emoji = v_emoji
+  ) THEN
+    DELETE FROM public.lounge_message_reactions
+    WHERE message_id = p_message_id
+      AND user_id = v_uid
+      AND emoji = v_emoji;
+  ELSE
+    INSERT INTO public.lounge_message_reactions (message_id, board_id, user_id, emoji)
+    VALUES (p_message_id, v_message.board_id, v_uid, v_emoji);
+  END IF;
+
+  RETURN public.lounge_message_reactions_json(p_message_id);
+END;
+$$;
+
 -- ---------------------------------------------------------------------------
 -- 5. RLS
 -- ---------------------------------------------------------------------------
@@ -945,6 +1057,7 @@ ALTER TABLE public.lounge_boards ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.lounge_messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.lounge_channel_reads ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.lounge_messaging_attestations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.lounge_message_reactions ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "lounge_categories_select_auth" ON public.lounge_categories;
 CREATE POLICY "lounge_categories_select_auth" ON public.lounge_categories
@@ -973,6 +1086,22 @@ CREATE POLICY "lounge_messaging_attestations_own" ON public.lounge_messaging_att
   USING (user_id = auth.uid())
   WITH CHECK (user_id = auth.uid());
 
+DROP POLICY IF EXISTS "lounge_message_reactions_select_auth" ON public.lounge_message_reactions;
+CREATE POLICY "lounge_message_reactions_select_auth" ON public.lounge_message_reactions
+  FOR SELECT TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1
+      FROM public.lounge_messages m
+      WHERE m.id = message_id
+        AND m.deleted_at IS NULL
+        AND (
+          m.sender_id = auth.uid()
+          OR NOT public.lounge_users_are_blocked(auth.uid(), m.sender_id)
+        )
+    )
+  );
+
 -- ---------------------------------------------------------------------------
 -- 6. Realtime
 -- ---------------------------------------------------------------------------
@@ -982,6 +1111,10 @@ BEGIN
   IF EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'supabase_realtime') THEN
     BEGIN
       ALTER PUBLICATION supabase_realtime ADD TABLE public.lounge_messages;
+    EXCEPTION WHEN duplicate_object THEN NULL;
+    END;
+    BEGIN
+      ALTER PUBLICATION supabase_realtime ADD TABLE public.lounge_message_reactions;
     EXCEPTION WHEN duplicate_object THEN NULL;
     END;
   END IF;
@@ -997,6 +1130,7 @@ GRANT SELECT ON public.lounge_boards TO authenticated;
 GRANT SELECT ON public.lounge_messages TO authenticated;
 GRANT SELECT, INSERT, UPDATE ON public.lounge_channel_reads TO authenticated;
 GRANT SELECT, INSERT, UPDATE ON public.lounge_messaging_attestations TO authenticated;
+GRANT SELECT ON public.lounge_message_reactions TO authenticated;
 
 GRANT EXECUTE ON FUNCTION public.list_lounge_home() TO authenticated;
 GRANT EXECUTE ON FUNCTION public.list_lounge_messages(text, timestamptz, integer) TO authenticated;
@@ -1014,6 +1148,8 @@ GRANT EXECUTE ON FUNCTION public.mark_lounge_channel_read(text) TO authenticated
 GRANT EXECUTE ON FUNCTION public.list_lounge_unread_pings() TO authenticated;
 GRANT EXECUTE ON FUNCTION public.has_lounge_messaging_attestation(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.attest_lounge_messaging_13plus(date) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.toggle_lounge_message_reaction(uuid, text) TO authenticated;
 
 -- Messages are inserted only through send_lounge_message (SECURITY DEFINER).
 REVOKE INSERT ON public.lounge_messages FROM authenticated;
+REVOKE INSERT, UPDATE, DELETE ON public.lounge_message_reactions FROM authenticated;
