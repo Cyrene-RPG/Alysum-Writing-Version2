@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
     <link rel="stylesheet" href="css/gradient-themes.css?v=5" />
     <link rel="stylesheet" href="css/workspace-nav.css?v=11" />
-    <link rel="stylesheet" href="css/writer-lounge.css?v=5" />
+    <link rel="stylesheet" href="css/writer-lounge.css?v=6" />
     <script src="js/gradient-theme-sync.js" defer></script>
     <script src="js/alysum-appearance-boot.js"></script>
 </head>
@@ -365,9 +365,12 @@
                     parts.push(
                         `<div class="${rowClass}">` +
                         `<div class="sms-stack">` +
+                        (!compact ? `<div class="sms-sender-name">${escapeHtml(row.senderName || "You")}</div>` : "") +
                         renderMessageBody(row, true) +
                         (!compact ? renderTimeLabel(when, row.editedAt) : "") +
-                        `</div></div>`
+                        `</div>` +
+                        avatar +
+                        `</div>`
                     );
                 } else {
                     parts.push(
