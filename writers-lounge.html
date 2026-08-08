@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
     <link rel="stylesheet" href="css/gradient-themes.css?v=5" />
     <link rel="stylesheet" href="css/workspace-nav.css?v=11" />
-    <link rel="stylesheet" href="css/writer-lounge.css?v=4" />
+    <link rel="stylesheet" href="css/writer-lounge.css?v=5" />
     <script src="js/gradient-theme-sync.js" defer></script>
     <script src="js/alysum-appearance-boot.js"></script>
 </head>
@@ -257,17 +257,17 @@
             return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
         }
 
-        function renderAvatarHtml({ initials, imageUrl }) {
+        function renderAvatarHtml({ initials, imageUrl, className = "sms-avatar" }) {
             const label = escapeHtml(initials || "?");
             if (imageUrl) {
                 return (
-                    `<span class="lounge-msg-avatar">` +
+                    `<span class="${className}">` +
                     `<img src="${escapeHtml(imageUrl)}" alt="" loading="lazy" ` +
                     `onerror="this.remove(); this.parentElement.textContent='${label}';" />` +
                     `</span>`
                 );
             }
-            return `<span class="lounge-msg-avatar" aria-hidden="true">${label}</span>`;
+            return `<span class="${className}" aria-hidden="true">${label}</span>`;
         }
 
         function messageGroupCompact(prev, row) {
@@ -296,28 +296,33 @@
         function renderMessageBody(row, mine) {
             if (editingMessageId === row.id) {
                 return (
-                    `<div class="lounge-msg-edit">` +
-                    `<textarea class="lounge-msg-edit-input" id="editInput-${escapeHtml(row.id)}">${escapeHtml(row.body)}</textarea>` +
-                    `<div class="lounge-msg-edit-actions">` +
-                    `<button type="button" class="lounge-msg-edit-btn primary" data-msg-action="save-edit" data-msg-id="${escapeHtml(row.id)}">Save</button>` +
-                    `<button type="button" class="lounge-msg-edit-btn" data-msg-action="cancel-edit">Cancel</button>` +
+                    `<div class="sms-edit">` +
+                    `<textarea class="sms-edit-input" id="editInput-${escapeHtml(row.id)}">${escapeHtml(row.body)}</textarea>` +
+                    `<div class="sms-edit-actions">` +
+                    `<button type="button" class="sms-edit-btn primary" data-msg-action="save-edit" data-msg-id="${escapeHtml(row.id)}">Save</button>` +
+                    `<button type="button" class="sms-edit-btn" data-msg-action="cancel-edit">Cancel</button>` +
                     `</div></div>`
                 );
             }
 
             const actions = mine
-                ? `<div class="lounge-msg-actions">` +
-                  `<button type="button" class="lounge-msg-action" data-msg-action="edit" data-msg-id="${escapeHtml(row.id)}" aria-label="Edit message" title="Edit">✎</button>` +
-                  `<button type="button" class="lounge-msg-action danger" data-msg-action="delete" data-msg-id="${escapeHtml(row.id)}" aria-label="Delete message" title="Delete">🗑</button>` +
+                ? `<div class="sms-actions">` +
+                  `<button type="button" class="sms-action" data-msg-action="edit" data-msg-id="${escapeHtml(row.id)}" aria-label="Edit message" title="Edit">✎</button>` +
+                  `<button type="button" class="sms-action danger" data-msg-action="delete" data-msg-id="${escapeHtml(row.id)}" aria-label="Delete message" title="Delete">🗑</button>` +
                   `</div>`
                 : "";
 
             return (
-                `<div class="lounge-msg-body-wrap">` +
-                `<div class="lounge-msg-bubble">${escapeHtml(row.body)}</div>` +
+                `<div class="sms-bubble-wrap">` +
                 actions +
+                `<div class="sms-bubble">${escapeHtml(row.body)}</div>` +
                 `</div>`
             );
+        }
+
+        function renderTimeLabel(when, editedAt) {
+            const edited = editedAt ? ' <span class="sms-edited">edited</span>' : "";
+            return `<div class="sms-time">${escapeHtml(when)}${edited}</div>`;
         }
 
         function renderMessages() {
@@ -347,30 +352,34 @@
                 prev = row;
                 const when = formatMessageTime(row.createdAt);
                 const avatar = compact
-                    ? '<span class="lounge-msg-avatar is-spacer" aria-hidden="true"></span>'
+                    ? renderAvatarHtml({ initials: "?", imageUrl: "", className: "sms-avatar is-spacer" })
                     : renderAvatarHtml({
                         initials: row.senderInitials || initialsFromName(row.senderName),
                         imageUrl: row.senderAvatarUrl || ""
                     });
 
-                const editedLabel = row.editedAt ? `<span class="lounge-msg-edited">edited</span>` : "";
-                const metaBlock = compact && editingMessageId !== row.id
-                    ? ""
-                    : `<div class="lounge-msg-meta">` +
-                      `<div class="lounge-msg-meta-main">` +
-                      `<span class="lounge-msg-name">${escapeHtml(row.senderName || "Writer")}</span>` +
-                      `<span class="lounge-msg-time">${escapeHtml(when)}</span>` +
-                      editedLabel +
-                      `</div></div>`;
+                const rowClass =
+                    `sms-row ${mine ? "sent" : "recv"}${compact ? " is-compact" : ""}${editingMessageId === row.id ? " is-editing" : ""}`;
 
-                parts.push(
-                    `<div class="lounge-msg-row${compact ? " is-compact" : ""}${mine ? " is-mine" : ""}${editingMessageId === row.id ? " is-editing" : ""}">` +
-                    avatar +
-                    `<div class="lounge-msg-content">` +
-                    metaBlock +
-                    renderMessageBody(row, mine) +
-                    `</div></div>`
-                );
+                if (mine) {
+                    parts.push(
+                        `<div class="${rowClass}">` +
+                        `<div class="sms-stack">` +
+                        renderMessageBody(row, true) +
+                        (!compact ? renderTimeLabel(when, row.editedAt) : "") +
+                        `</div></div>`
+                    );
+                } else {
+                    parts.push(
+                        `<div class="${rowClass}">` +
+                        avatar +
+                        `<div class="sms-stack">` +
+                        (!compact ? `<div class="sms-sender-name">${escapeHtml(row.senderName || "Writer")}</div>` : "") +
+                        renderMessageBody(row, false) +
+                        (!compact ? renderTimeLabel(when, row.editedAt) : "") +
+                        `</div></div>`
+                    );
+                }
             }
 
             msgList.innerHTML = parts.join("");
