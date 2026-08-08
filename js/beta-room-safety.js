@@ -124,7 +124,7 @@ export function evaluateAgeGateDob(month, day, year) {
             complete: true,
             valid: true,
             adult: false,
-            message: "You must be 18 or older to use beta texting."
+            message: "You must be 18 or older to continue."
         };
     }
     return { complete: true, valid: true, adult: true, message: "" };
@@ -133,10 +133,10 @@ export function evaluateAgeGateDob(month, day, year) {
 export function friendlyBetaSafetyError(err) {
     const msg = String(err?.message || err || "");
     if (/underage|birth_date_required|invalid_birth_date/i.test(msg)) {
-        return "You must be 18 or older to use beta texting.";
+        return "You must be 18 or older to use Writer's Lounge texting.";
     }
     if (/age_attestation_required/i.test(msg)) {
-        return "Confirm you are 18 or older before sending beta texts.";
+        return "Confirm you are 18 or older before texting in Writer's Lounge.";
     }
     if (/user_blocked/i.test(msg)) {
         return "Messaging is unavailable because someone in this conversation is blocked.";

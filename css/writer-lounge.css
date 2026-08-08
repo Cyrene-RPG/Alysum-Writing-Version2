@@ -577,6 +577,10 @@ body.light .sms-edit-btn.primary {
     background: color-mix(in srgb, var(--panel) 92%, var(--bg));
 }
 
+.text-composer:has(.text-input:disabled) {
+    cursor: pointer;
+}
+
 body.light .text-composer {
     background: #f7f7fb;
 }

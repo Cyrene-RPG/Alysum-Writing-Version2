@@ -118,8 +118,10 @@
             populateDobYearSelect,
             populateDobDaySelect,
             evaluateAgeGateDob,
-            birthDateIso
-        } from "./js/beta-room-safety.js?v=2";
+            birthDateIso,
+            isBetaAgeVerifiedLocally,
+            setBetaAgeVerifiedLocally
+        } from "./js/beta-room-safety.js?v=3";
 
         const loadingPanel = document.getElementById("loadingPanel");
         const mainLayout = document.getElementById("mainLayout");
@@ -457,8 +459,12 @@
                 setThreadStatus("Only Alysum staff can post in this channel.", "wait");
             } else if (!messagingEligible) {
                 msgInput.placeholder = "Confirm age to text…";
+                setThreadStatus("Confirm you are 18 or older to text in Writer's Lounge.", "wait");
             } else {
                 msgInput.placeholder = `Text #${activeBoard.title}…`;
+                if (threadStatus.textContent === "Confirm you are 18 or older to text in Writer's Lounge.") {
+                    setThreadStatus("");
+                }
             }
         }
 
@@ -554,24 +560,61 @@
             msgInput.focus();
         }
 
-        async function ensureMessagingEligible() {
-            try {
-                messagingEligible = await hasBetaMessagingAttestation();
-            } catch {
-                messagingEligible = false;
+        function readAgeGateDob() {
+            return evaluateAgeGateDob(
+                ageGateMonth.value,
+                ageGateDay.value,
+                ageGateYear.value
+            );
+        }
+
+        function updateAgeGateState() {
+            const result = readAgeGateDob();
+            const canContinue = result.complete && result.valid && result.adult;
+            ageGateConfirmBtn.disabled = !canContinue;
+            if (result.complete && result.message) {
+                ageGateHint.textContent = result.message;
+                ageGateHint.classList.remove("hidden");
+            } else {
+                ageGateHint.textContent = "";
+                ageGateHint.classList.add("hidden");
             }
+        }
+
+        async function syncMessagingEligibility({ promptIfNeeded = false } = {}) {
+            let serverOk = false;
+            try {
+                serverOk = await hasBetaMessagingAttestation();
+            } catch {
+                serverOk = false;
+            }
+
+            if (serverOk || isBetaAgeVerifiedLocally()) {
+                messagingEligible = true;
+                closeAgeGate();
+                updateComposerState();
+                return true;
+            }
+
+            messagingEligible = false;
             updateComposerState();
-            return messagingEligible;
+            if (promptIfNeeded) openAgeGate();
+            return false;
+        }
+
+        async function ensureMessagingEligible() {
+            return syncMessagingEligibility({ promptIfNeeded: false });
         }
 
         function openAgeGate() {
             populateDobMonthSelect(ageGateMonth);
             populateDobYearSelect(ageGateYear);
-            populateDobDaySelect(ageGateDay, ageGateMonth, ageGateYear);
+            populateDobDaySelect(ageGateDay, "", "");
             ageGateHint.classList.add("hidden");
             ageGateHint.textContent = "";
             ageGateConfirmBtn.disabled = true;
             ageGateOverlay.classList.remove("hidden");
+            ageGateMonth.focus();
         }
 
         function closeAgeGate() {
@@ -580,18 +623,20 @@
         }
 
         async function submitAgeGate() {
-            const result = evaluateAgeGateDob(ageGateMonth, ageGateDay, ageGateYear);
-            if (!result.ok) {
-                ageGateHint.textContent = result.message;
-                ageGateHint.classList.remove("hidden");
-                ageGateConfirmBtn.disabled = true;
+            const result = readAgeGateDob();
+            if (!result.adult) {
+                updateAgeGateState();
                 return;
             }
             try {
-                await attestBetaMessaging18Plus(birthDateIso(ageGateMonth, ageGateDay, ageGateYear));
+                await attestBetaMessaging18Plus(
+                    birthDateIso(ageGateMonth.value, ageGateDay.value, ageGateYear.value)
+                );
+                setBetaAgeVerifiedLocally();
                 messagingEligible = true;
                 closeAgeGate();
                 updateComposerState();
+                setThreadStatus("");
                 if (pendingSendBody) {
                     const body = pendingSendBody;
                     pendingSendBody = "";
@@ -724,28 +769,30 @@
             }
         });
 
+        composer.addEventListener("click", () => {
+            if (!messagingEligible) openAgeGate();
+        });
+        msgInput.addEventListener("focus", () => {
+            if (!messagingEligible) {
+                msgInput.blur();
+                openAgeGate();
+            }
+        });
+
         ageGateMonth.addEventListener("change", () => {
-            populateDobDaySelect(ageGateDay, ageGateMonth, ageGateYear);
-            const result = evaluateAgeGateDob(ageGateMonth, ageGateDay, ageGateYear);
-            ageGateConfirmBtn.disabled = !result.ok;
-            ageGateHint.classList.toggle("hidden", result.ok);
-            if (!result.ok) ageGateHint.textContent = result.message;
+            populateDobDaySelect(ageGateDay, ageGateMonth.value, ageGateYear.value);
+            updateAgeGateState();
         });
-        ageGateDay.addEventListener("change", () => {
-            const result = evaluateAgeGateDob(ageGateMonth, ageGateDay, ageGateYear);
-            ageGateConfirmBtn.disabled = !result.ok;
-            ageGateHint.classList.toggle("hidden", result.ok);
-            if (!result.ok) ageGateHint.textContent = result.message;
-        });
+        ageGateDay.addEventListener("change", updateAgeGateState);
         ageGateYear.addEventListener("change", () => {
-            populateDobDaySelect(ageGateDay, ageGateMonth, ageGateYear);
-            const result = evaluateAgeGateDob(ageGateMonth, ageGateDay, ageGateYear);
-            ageGateConfirmBtn.disabled = !result.ok;
-            ageGateHint.classList.toggle("hidden", result.ok);
-            if (!result.ok) ageGateHint.textContent = result.message;
+            populateDobDaySelect(ageGateDay, ageGateMonth.value, ageGateYear.value);
+            updateAgeGateState();
         });
         ageGateConfirmBtn.addEventListener("click", () => submitAgeGate().catch(console.error));
-        ageGateCancelBtn.addEventListener("click", closeAgeGate);
+        ageGateCancelBtn.addEventListener("click", () => {
+            closeAgeGate();
+            setThreadStatus("You can read channels, but you must confirm your age before texting.", "wait");
+        });
 
         async function init() {
             const session = await requireStudioSession(supabase, window.location.pathname + window.location.search);
@@ -771,7 +818,6 @@
                 await refreshHome(true);
                 const members = await listLoungeOnlineMembers(50);
                 renderMembers(members);
-                await ensureMessagingEligible();
 
                 loadingPanel.classList.add("hidden");
                 mainLayout.classList.remove("hidden");
@@ -783,6 +829,8 @@
                 } else if (allBoards()[0]) {
                     await openChannel(allBoards()[0].slug);
                 }
+
+                await syncMessagingEligibility({ promptIfNeeded: true });
             } catch (err) {
                 console.error(err);
                 loadingPanel.classList.add("hidden");
