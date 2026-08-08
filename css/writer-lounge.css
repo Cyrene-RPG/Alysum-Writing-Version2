@@ -44,7 +44,7 @@ body.lounge-viewport {
 }
 
 body.lounge-viewport > .wd-welcome-bar {
-    display: none;
+    flex-shrink: 0;
 }
 
 body.lounge-viewport > .wd-nav-wrap {
