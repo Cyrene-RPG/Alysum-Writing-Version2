@@ -1298,7 +1298,7 @@
     <button class="tool-btn" type="button" id="insertImageBtn" data-tip="Insert image at cursor">＋ Image</button>
     <input id="inlineImageUploadInput" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden />
     <button class="tool-btn" type="button" id="insertSceneBreakBtn" data-tip="Insert scene break">✦ Break</button>
-    <button class="tool-btn" type="button" id="pageLayoutBtn" data-tip="Paginated pages — click for infinite scroll" aria-pressed="true">Pages</button>
+    <button class="tool-btn" type="button" id="pageLayoutBtn" data-tip="Infinite scroll — click for paginated pages" aria-pressed="false">Scroll</button>
     <button class="tool-btn" type="button" id="backgroundBtn" data-tip="Set editor background image">Background</button>
     <div class="toolbar-spacer"></div>
     <div class="toolbar-wordcount bottom-meta" aria-live="polite"><span id="chapterWords">0</span> <span id="bottomMetaLabel">chapter words</span> · <span id="bottomTotalWords">0</span> <span id="bottomTotalLabel">total words</span></div>
@@ -1612,7 +1612,7 @@
     } from "./js/content-warnings.js?v=1";
     import { mountWarningPicker } from "./js/chapter-warnings-ui.js?v=1";
     import { normalizeAuthorNotes } from "./js/chapter-author-notes.js?v=1";
-    import { mountEditorPagination, stripEditorPageGapsFromHtml } from "./js/editor-pagination.js?v=7";
+    import { mountEditorPagination, stripEditorPageGapsFromHtml } from "./js/editor-pagination.js?v=8";
     import {
         saveBookShadow,
         getBookShadow,
@@ -1933,7 +1933,8 @@ function rememberBookId(id) {
 
     function getEditorPageLayout() {
         const stored = localStorage.getItem(EDITOR_PAGE_LAYOUT_KEY);
-        return stored === "scroll" ? "scroll" : "pages";
+        if (stored === "pages") return "pages";
+        return "scroll";
     }
 
     function setEditorPageLayout(mode) {
@@ -1953,8 +1954,13 @@ function rememberBookId(id) {
                 ? "Paginated pages — click for infinite scroll"
                 : "Infinite scroll — click for paginated pages";
         }
-        if (pagesMode) scheduleEditorPagination();
+        if (pagesMode) scheduleEditorPagination(true);
         else editorPagination.disableLayout();
+    }
+
+    function flushEditorPagination() {
+        if (isEditorPaginationDisabled()) return;
+        editorPagination.flushLayout();
     }
 
     function toggleEditorPageLayout() {
@@ -1970,8 +1976,9 @@ function rememberBookId(id) {
         getDisabled: isEditorPaginationDisabled,
     });
 
-    function scheduleEditorPagination() {
-        editorPagination.scheduleLayout();
+    function scheduleEditorPagination(immediate = false) {
+        if (immediate) editorPagination.flushLayout();
+        else editorPagination.scheduleLayout();
     }
 
     /** @type {ReturnType<typeof mountWarningPicker> | null} */
@@ -3780,7 +3787,7 @@ function rememberBookId(id) {
         frOnChapterChanged();
         scheduleWordWarDraft();
         applyEditorBetaLinks();
-        scheduleEditorPagination();
+        scheduleEditorPagination(true);
     }
 
     function frIsWholeWordMatch(text, start, length) {
@@ -4995,6 +5002,7 @@ function rememberBookId(id) {
     });
     editor.addEventListener("blur", () => {
         flushEditorChapterSync();
+        flushEditorPagination();
     });
     editor.addEventListener("keyup", () => scheduleWriterResumeSave());
     editor.addEventListener("click", (e) => {

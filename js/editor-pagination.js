@@ -18,6 +18,10 @@ export const EDITOR_PAGE = {
 const GAP_CLASS = "editor-page-gap";
 const SPLIT_CLASS = "editor-page-split-cont";
 const TEXT_BLOCK_TAGS = new Set(["P", "DIV"]);
+/** Debounced pagination while typing (ms). */
+const LAYOUT_DEBOUNCE_MS = 200;
+/** Skip relayout when editor height change is smaller than this (px). */
+const LAYOUT_HEIGHT_SKIP_PX = 3;
 
 function topWithin(el, ancestor) {
     let top = 0;
@@ -259,6 +263,7 @@ export function mountEditorPagination(options) {
     const { pageFlow, pageBackgrounds, pageContent, editor, editorWorkspace, getDisabled } = options;
     let raf = 0;
     let timer = 0;
+    let lastLayoutHeight = -1;
 
     function disableLayout() {
         clearEditorPageGaps(editor);
@@ -268,24 +273,52 @@ export function mountEditorPagination(options) {
             pageFlow.classList.remove("is-paginated");
         }
         editorWorkspace?.classList.remove("is-docs-pages");
+        lastLayoutHeight = -1;
     }
 
-    function layout() {
+    function currentEditorHeight() {
+        if (!editor) return 0;
+        return Math.max(editor.scrollHeight || 0, editor.offsetHeight || 0);
+    }
+
+    function layout(layoutOptions = {}) {
+        const force = !!layoutOptions.force;
         if (getDisabled?.()) {
             disableLayout();
+            return;
+        }
+        const height = currentEditorHeight();
+        if (
+            !force &&
+            lastLayoutHeight >= 0 &&
+            Math.abs(height - lastLayoutHeight) <= LAYOUT_HEIGHT_SKIP_PX
+        ) {
             return;
         }
         pageFlow?.classList.add("is-paginated");
         editorWorkspace?.classList.add("is-docs-pages");
         layoutEditorPages({ pageFlow, pageBackgrounds, pageContent, editor });
+        lastLayoutHeight = currentEditorHeight();
     }
 
-    function scheduleLayout() {
+    function scheduleLayout(scheduleOptions = {}) {
+        if (scheduleOptions.immediate) {
+            cancelAnimationFrame(raf);
+            clearTimeout(timer);
+            raf = 0;
+            timer = 0;
+            layout({ force: true });
+            return;
+        }
         cancelAnimationFrame(raf);
         raf = requestAnimationFrame(() => {
             clearTimeout(timer);
-            timer = setTimeout(layout, 80);
+            timer = setTimeout(() => layout(), LAYOUT_DEBOUNCE_MS);
         });
+    }
+
+    function flushLayout() {
+        scheduleLayout({ immediate: true });
     }
 
     if (typeof ResizeObserver !== "undefined") {
@@ -298,5 +331,5 @@ export function mountEditorPagination(options) {
         document.fonts.ready.then(() => scheduleLayout()).catch(() => {});
     }
 
-    return { scheduleLayout, layout, disableLayout };
+    return { scheduleLayout, layout, flushLayout, disableLayout };
 }
