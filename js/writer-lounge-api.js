@@ -38,7 +38,7 @@ export async function listLoungeMessages(channelSlug, { before = null, limit = 5
     return data || { board: null, messages: [] };
 }
 
-export async function sendLoungeMessage(channelSlug, body) {
+export async function sendLoungeMessage(channelSlug, body, { replyToId = null } = {}) {
     const trimmed = safeString(body).trim();
     if (!trimmed) throw new Error("Message cannot be empty.");
     if (trimmed.length > 8000) throw new Error("Message is too long.");
@@ -46,7 +46,8 @@ export async function sendLoungeMessage(channelSlug, body) {
 
     const { data, error } = await supabase.rpc("send_lounge_message", {
         p_board_slug: channelSlug,
-        p_body: trimmed
+        p_body: trimmed,
+        p_reply_to_id: replyToId || null
     });
     if (error) throw error;
     return data;

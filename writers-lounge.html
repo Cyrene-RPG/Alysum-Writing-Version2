@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
     <link rel="stylesheet" href="css/gradient-themes.css?v=5" />
     <link rel="stylesheet" href="css/workspace-nav.css?v=11" />
-    <link rel="stylesheet" href="css/writer-lounge.css?v=12" />
+    <link rel="stylesheet" href="css/writer-lounge.css?v=13" />
     <script src="js/gradient-theme-sync.js" defer></script>
     <script src="js/alysum-appearance-boot.js"></script>
 </head>
@@ -51,8 +51,20 @@
                         </div>
                     </div>
                     <div class="text-composer hidden" id="composer">
-                        <input type="text" class="text-input" id="msgInput" placeholder="Text the channel…" maxlength="8000" autocomplete="off" />
-                        <button type="button" class="text-send" id="sendBtn" aria-label="Send message">↑</button>
+                        <div class="composer-reply hidden" id="composerReply">
+                            <div class="composer-reply-main">
+                                <div class="composer-reply-label">Replying to <strong id="composerReplyName"></strong></div>
+                                <div class="composer-reply-preview" id="composerReplyPreview"></div>
+                            </div>
+                            <button type="button" class="composer-reply-cancel" id="composerReplyCancel" aria-label="Cancel reply">×</button>
+                        </div>
+                        <div class="composer-input-row">
+                            <div class="composer-input-wrap">
+                                <input type="text" class="text-input" id="msgInput" placeholder="Text the channel…" maxlength="8000" autocomplete="off" />
+                                <div class="mention-menu hidden" id="mentionMenu" role="listbox"></div>
+                            </div>
+                            <button type="button" class="text-send" id="sendBtn" aria-label="Send message">↑</button>
+                        </div>
                     </div>
                 </section>
 
@@ -109,7 +121,7 @@
             channelSlugFromLocation,
             writersLoungeChannelUrl,
             isWriterLoungeSchemaMissing
-        } from "./js/writer-lounge-api.js?v=7";
+        } from "./js/writer-lounge-api.js?v=8";
         import {
             attestBetaMessaging18Plus,
             hasBetaMessagingAttestation
@@ -140,6 +152,11 @@
         const msgInput = document.getElementById("msgInput");
         const sendBtn = document.getElementById("sendBtn");
         const composer = document.getElementById("composer");
+        const composerReply = document.getElementById("composerReply");
+        const composerReplyName = document.getElementById("composerReplyName");
+        const composerReplyPreview = document.getElementById("composerReplyPreview");
+        const composerReplyCancel = document.getElementById("composerReplyCancel");
+        const mentionMenu = document.getElementById("mentionMenu");
         const memberList = document.getElementById("memberList");
         const onlineCount = document.getElementById("onlineCount");
         const ageGateOverlay = document.getElementById("ageGateOverlay");
@@ -162,6 +179,10 @@
         let realtimeUnsub = null;
         let editingMessageId = null;
         let blockedUserIds = new Set();
+        let replyTarget = null;
+        let onlineMembers = [];
+        let mentionQuery = null;
+        let mentionStart = -1;
 
         function escapeHtml(value) {
             return String(value || "")
@@ -238,7 +259,8 @@
         }
 
         function renderMembers(members) {
-            const rows = members || [];
+            onlineMembers = members || [];
+            const rows = onlineMembers;
             onlineCount.textContent = rows.length
                 ? `${rows.length} writer${rows.length === 1 ? "" : "s"} active now`
                 : "Writers active now";
@@ -250,6 +272,9 @@
 
             memberList.innerHTML = rows.map((m) => {
                 const isSelf = m.id === currentUser?.id;
+                const pingBtn = isSelf
+                    ? ""
+                    : `<button type="button" class="lounge-member-ping" data-member-action="ping" data-user-name="${escapeHtml(m.username || "writer")}" data-user-label="${escapeHtml(m.name || "Writer")}" aria-label="Ping ${escapeHtml(m.name || "Writer")}" title="Ping @${escapeHtml(m.username || "writer")}">@</button>`;
                 const blockBtn = isSelf
                     ? ""
                     : `<button type="button" class="lounge-member-block" data-member-action="block" data-user-id="${escapeHtml(m.id)}" data-user-name="${escapeHtml(m.name || "Writer")}" aria-label="Block ${escapeHtml(m.name || "Writer")}" title="Block user">🚫</button>`;
@@ -258,6 +283,7 @@
                     `<span class="lounge-member-dot" aria-hidden="true"></span>` +
                     `<span class="lounge-member-avatar" aria-hidden="true">${escapeHtml(m.initials || "?")}</span>` +
                     `<span class="lounge-member-name">${escapeHtml(m.name || "Writer")}</span>` +
+                    pingBtn +
                     blockBtn +
                     `</div>`
                 );
@@ -323,10 +349,157 @@
                     senderInitials: initialsFromName(
                         publicDisplayNameFromUserData(currentProfile) || row.senderName || "You"
                     ),
-                    senderAvatarUrl: currentProfile.profile_image_url || currentProfile.profileImageUrl || row.senderAvatarUrl || ""
+                    senderAvatarUrl: currentProfile.profile_image_url || currentProfile.profileImageUrl || row.senderAvatarUrl || "",
+                    senderUsername: currentProfile.username || row.senderUsername || ""
                 };
             }
             return row;
+        }
+
+        function mentionHandleForUser(row) {
+            const handle = String(row?.senderUsername || row?.username || "").trim();
+            if (handle) return handle.replace(/^@+/, "");
+            return String(row?.senderName || "writer")
+                .trim()
+                .toLowerCase()
+                .replace(/[^a-z0-9_]+/g, "")
+                .slice(0, 32) || "writer";
+        }
+
+        function mentionCandidates() {
+            const byId = new Map();
+            for (const m of onlineMembers) {
+                if (m.id && m.id !== currentUser?.id) byId.set(m.id, m);
+            }
+            for (const m of messages) {
+                if (m.senderId && m.senderId !== currentUser?.id && !byId.has(m.senderId)) {
+                    byId.set(m.senderId, {
+                        id: m.senderId,
+                        name: m.senderName,
+                        username: m.senderUsername
+                    });
+                }
+            }
+            return [...byId.values()].sort((a, b) =>
+                String(a.name || "").localeCompare(String(b.name || ""))
+            );
+        }
+
+        function formatMessageHtml(body) {
+            const escaped = escapeHtml(body);
+            return escaped.replace(
+                /@([A-Za-z0-9_]{2,32})/g,
+                '<span class="sms-mention">@$1</span>'
+            );
+        }
+
+        function renderReplyQuote(row) {
+            if (!row.replyTo?.id) return "";
+            const preview = escapeHtml(row.replyTo.body || "");
+            const name = escapeHtml(row.replyTo.senderName || "Writer");
+            return (
+                `<div class="sms-reply-quote" data-msg-action="jump-reply" data-msg-id="${escapeHtml(row.replyTo.id)}">` +
+                `<span class="sms-reply-quote-name">${name}</span>` +
+                `<span class="sms-reply-quote-body">${preview}</span>` +
+                `</div>`
+            );
+        }
+
+        function setReplyTarget(row) {
+            if (!row?.id) return;
+            replyTarget = {
+                id: row.id,
+                senderName: row.senderName || "Writer",
+                body: row.body || ""
+            };
+            composerReplyName.textContent = replyTarget.senderName;
+            composerReplyPreview.textContent = replyTarget.body;
+            composerReply.classList.remove("hidden");
+            if (messagingEligible) msgInput.focus();
+        }
+
+        function clearReplyTarget() {
+            replyTarget = null;
+            composerReply.classList.add("hidden");
+            composerReplyName.textContent = "";
+            composerReplyPreview.textContent = "";
+        }
+
+        function insertAtCursor(text) {
+            const start = msgInput.selectionStart ?? msgInput.value.length;
+            const end = msgInput.selectionEnd ?? msgInput.value.length;
+            const before = msgInput.value.slice(0, start);
+            const after = msgInput.value.slice(end);
+            msgInput.value = before + text + after;
+            const nextPos = start + text.length;
+            msgInput.setSelectionRange(nextPos, nextPos);
+            msgInput.focus();
+            hideMentionMenu();
+            updateMentionMenu();
+        }
+
+        function pingUser(row) {
+            if (!row || row.senderId === currentUser?.id) return;
+            if (!messagingEligible) {
+                openAgeGate();
+                return;
+            }
+            insertAtCursor(`@${mentionHandleForUser(row)} `);
+        }
+
+        function hideMentionMenu() {
+            mentionMenu.classList.add("hidden");
+            mentionMenu.innerHTML = "";
+            mentionQuery = null;
+            mentionStart = -1;
+        }
+
+        function updateMentionMenu() {
+            const value = msgInput.value;
+            const caret = msgInput.selectionStart ?? value.length;
+            const before = value.slice(0, caret);
+            const match = before.match(/(^|\s)@([A-Za-z0-9_]*)$/);
+            if (!match) {
+                hideMentionMenu();
+                return;
+            }
+
+            mentionStart = caret - match[2].length - 1;
+            mentionQuery = match[2].toLowerCase();
+            const candidates = mentionCandidates().filter((m) => {
+                const handle = mentionHandleForUser(m).toLowerCase();
+                const name = String(m.name || "").toLowerCase();
+                return handle.includes(mentionQuery) || name.includes(mentionQuery);
+            }).slice(0, 8);
+
+            if (!candidates.length) {
+                hideMentionMenu();
+                return;
+            }
+
+            mentionMenu.innerHTML = candidates.map((m) => {
+                const handle = mentionHandleForUser(m);
+                return (
+                    `<button type="button" class="mention-option" data-mention="${escapeHtml(handle)}" role="option">` +
+                    `<span class="mention-option-name">${escapeHtml(m.name || handle)}</span>` +
+                    `<span class="mention-option-handle">@${escapeHtml(handle)}</span>` +
+                    `</button>`
+                );
+            }).join("");
+            mentionMenu.classList.remove("hidden");
+        }
+
+        function applyMention(handle) {
+            if (mentionStart < 0) return;
+            const caret = msgInput.selectionStart ?? msgInput.value.length;
+            const before = msgInput.value.slice(0, mentionStart);
+            const after = msgInput.value.slice(caret);
+            const next = `${before}@${handle} ${after}`;
+            msgInput.value = next;
+            const nextPos = mentionStart + handle.length + 2;
+            msgInput.setSelectionRange(nextPos, nextPos);
+            hideMentionMenu();
+            msgInput.focus();
         }
 
         function renderMessageBody(row, mine, when = "") {
@@ -343,20 +516,31 @@
 
             const edited = row.editedAt ? " (edited)" : "";
             const tip = when ? `${when}${edited}` : "";
+            const replyBtn =
+                `<button type="button" class="sms-action" data-msg-action="reply" data-msg-id="${escapeHtml(row.id)}" aria-label="Reply" title="Reply">↩</button>`;
+            const pingBtn = mine
+                ? ""
+                : `<button type="button" class="sms-action" data-msg-action="ping" data-msg-id="${escapeHtml(row.id)}" aria-label="Ping user" title="Ping @${escapeHtml(mentionHandleForUser(row))}">@</button>`;
             const actions = mine
                 ? `<div class="sms-actions">` +
+                  replyBtn +
+                  pingBtn +
                   `<button type="button" class="sms-action" data-msg-action="edit" data-msg-id="${escapeHtml(row.id)}" aria-label="Edit message" title="Edit">✎</button>` +
                   `<button type="button" class="sms-action danger" data-msg-action="delete" data-msg-id="${escapeHtml(row.id)}" aria-label="Delete message" title="Delete">🗑</button>` +
                   `</div>`
                 : `<div class="sms-actions">` +
+                  replyBtn +
+                  pingBtn +
                   `<button type="button" class="sms-action danger" data-msg-action="block" data-user-id="${escapeHtml(row.senderId)}" data-user-name="${escapeHtml(row.senderName || "Writer")}" aria-label="Block user" title="Block user">🚫</button>` +
                   `</div>`;
 
             return (
                 `<div class="sms-bubble-wrap">` +
                 actions +
-                `<div class="sms-bubble"${tip ? ` title="${escapeHtml(tip)}"` : ""}>${escapeHtml(row.body)}</div>` +
-                `</div>`
+                `<div class="sms-bubble-stack">` +
+                renderReplyQuote(row) +
+                `<div class="sms-bubble"${tip ? ` title="${escapeHtml(tip)}"` : ""}>${formatMessageHtml(row.body)}</div>` +
+                `</div></div>`
             );
         }
 
@@ -411,7 +595,7 @@
 
                 if (mine) {
                     parts.push(
-                        `<div class="${rowClass}">` +
+                        `<div class="${rowClass}" data-msg-id="${escapeHtml(row.id)}">` +
                         `<div class="sms-sent-body">` +
                         (groupStart ? `<div class="sms-sender-name">${escapeHtml(row.senderName || "You")}</div>` : "") +
                         renderMessageBody(row, true, when) +
@@ -425,7 +609,7 @@
                         })
                         : `<div class="sms-avatar-col is-empty" aria-hidden="true"></div>`;
                     parts.push(
-                        `<div class="${rowClass}">` +
+                        `<div class="${rowClass}" data-msg-id="${escapeHtml(row.id)}">` +
                         avatarCol +
                         `<div class="sms-body">` +
                         (groupStart ? `<div class="sms-sender-name">${escapeHtml(row.senderName || "Writer")}</div>` : "") +
@@ -509,11 +693,14 @@
                 id: m.id,
                 senderId: m.senderId,
                 senderName: m.senderName,
+                senderUsername: m.senderUsername || "",
                 senderInitials: m.senderInitials,
                 senderAvatarUrl: m.senderAvatarUrl || "",
                 body: m.body,
                 createdAt: m.createdAt,
-                editedAt: m.editedAt || null
+                editedAt: m.editedAt || null,
+                replyTo: m.replyTo || null,
+                mentionedUserIds: m.mentionedUserIds || []
             }));
             hasMore = (data.messages || []).length >= 50;
             renderMessages({ stickToBottom: scroll });
@@ -528,11 +715,14 @@
                 id: m.id,
                 senderId: m.senderId,
                 senderName: m.senderName,
+                senderUsername: m.senderUsername || "",
                 senderInitials: m.senderInitials,
                 senderAvatarUrl: m.senderAvatarUrl || "",
                 body: m.body,
                 createdAt: m.createdAt,
-                editedAt: m.editedAt || null
+                editedAt: m.editedAt || null,
+                replyTo: m.replyTo || null,
+                mentionedUserIds: m.mentionedUserIds || []
             }));
             hasMore = (data.messages || []).length >= 50;
             const prevHeight = msgList.scrollHeight;
@@ -548,6 +738,8 @@
             activeChannel = slug;
             activeBoard = findBoard(slug);
             editingMessageId = null;
+            clearReplyTarget();
+            hideMentionMenu();
             setThreadStatus("");
 
             const url = writersLoungeChannelUrl(slug);
@@ -664,8 +856,10 @@
 
             sendBtn.disabled = true;
             try {
-                await sendLoungeMessage(activeChannel, trimmed);
+                await sendLoungeMessage(activeChannel, trimmed, { replyToId: replyTarget?.id || null });
                 msgInput.value = "";
+                clearReplyTarget();
+                hideMentionMenu();
                 setThreadStatus("");
                 await refreshMessages(true);
                 await refreshHome(true);
@@ -750,12 +944,38 @@
                 handleDeleteMessage(messageId).catch(console.error);
                 return;
             }
+            if (action === "reply") {
+                const row = messages.find((m) => m.id === messageId);
+                if (row) setReplyTarget(row);
+                return;
+            }
+            if (action === "ping") {
+                const row = messages.find((m) => m.id === messageId);
+                if (row) pingUser(row);
+                return;
+            }
+            if (action === "jump-reply") {
+                const target = document.querySelector(`.sms-row[data-msg-id="${CSS.escape(messageId)}"]`);
+                target?.scrollIntoView({ behavior: "smooth", block: "center" });
+                target?.classList.add("is-highlight");
+                setTimeout(() => target?.classList.remove("is-highlight"), 1200);
+                return;
+            }
             if (action === "block") {
                 handleBlockUser(btn.dataset.userId, btn.dataset.userName).catch(console.error);
             }
         });
 
         memberList.addEventListener("click", (e) => {
+            const pingBtn = e.target.closest("[data-member-action='ping']");
+            if (pingBtn) {
+                if (!messagingEligible) {
+                    openAgeGate();
+                    return;
+                }
+                insertAtCursor(`@${pingBtn.dataset.userName || "writer"} `);
+                return;
+            }
             const btn = e.target.closest("[data-member-action='block']");
             if (!btn) return;
             handleBlockUser(btn.dataset.userId, btn.dataset.userName).catch(console.error);
@@ -772,11 +992,34 @@
         });
 
         sendBtn.addEventListener("click", () => handleSend().catch(console.error));
+        composerReplyCancel.addEventListener("click", clearReplyTarget);
+        msgInput.addEventListener("input", updateMentionMenu);
         msgInput.addEventListener("keydown", (e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                handleSend().catch(console.error);
+            if (mentionMenu.classList.contains("hidden")) {
+                if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSend().catch(console.error);
+                }
+                return;
             }
+            const first = mentionMenu.querySelector(".mention-option");
+            if (e.key === "Enter" && first) {
+                e.preventDefault();
+                applyMention(first.dataset.mention || "");
+                return;
+            }
+            if (e.key === "Escape") {
+                e.preventDefault();
+                hideMentionMenu();
+            }
+        });
+        mentionMenu.addEventListener("click", (e) => {
+            const btn = e.target.closest(".mention-option");
+            if (!btn) return;
+            applyMention(btn.dataset.mention || "");
+        });
+        document.addEventListener("click", (e) => {
+            if (!e.target.closest(".composer-input-wrap")) hideMentionMenu();
         });
 
         composer.addEventListener("click", () => {

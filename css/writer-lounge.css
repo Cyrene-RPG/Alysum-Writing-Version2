@@ -580,14 +580,179 @@ body.light .sms-edit-btn.primary {
     padding: 12px;
 }
 
+.sms-bubble-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+    max-width: 100%;
+}
+
+.sms-reply-quote {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 6px 10px;
+    border-radius: 12px;
+    background: rgba(127, 127, 127, 0.18);
+    border-left: 3px solid #0a84ff;
+    cursor: pointer;
+    max-width: 100%;
+}
+
+.sms-row.recv .sms-reply-quote {
+    border-left-color: #8e8e93;
+}
+
+.sms-reply-quote-name {
+    font-size: 11px;
+    font-weight: 800;
+    color: #0a84ff;
+}
+
+.sms-row.recv .sms-reply-quote-name {
+    color: #8e8e93;
+}
+
+.sms-reply-quote-body {
+    font-size: 12px;
+    line-height: 1.3;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sms-mention {
+    color: #0a84ff;
+    font-weight: 700;
+}
+
+body.light .sms-mention {
+    color: #007aff;
+}
+
+.sms-row.is-highlight .sms-bubble {
+    outline: 2px solid rgba(10, 132, 255, 0.55);
+}
+
 .text-composer {
     flex-shrink: 0;
     display: flex;
-    align-items: center;
+    flex-direction: column;
     gap: 8px;
     padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px));
     border-top: 1px solid var(--border);
     background: color-mix(in srgb, var(--panel) 92%, var(--bg));
+}
+
+.composer-reply {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 12px;
+    background: rgba(127, 127, 127, 0.12);
+    border-left: 3px solid #0a84ff;
+}
+
+.composer-reply-main {
+    flex: 1;
+    min-width: 0;
+}
+
+.composer-reply-label {
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--muted);
+}
+
+.composer-reply-label strong {
+    color: #0a84ff;
+}
+
+.composer-reply-preview {
+    margin-top: 2px;
+    font-size: 12px;
+    line-height: 1.35;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.composer-reply-cancel {
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(127, 127, 127, 0.18);
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.composer-input-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.composer-input-wrap {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+}
+
+.mention-menu {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: calc(100% + 6px);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    max-height: 220px;
+    overflow-y: auto;
+    padding: 6px;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    box-shadow: var(--shadow);
+    z-index: 20;
+}
+
+.mention-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+    border: none;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--text);
+    padding: 8px 10px;
+    cursor: pointer;
+    font-family: inherit;
+    text-align: left;
+}
+
+.mention-option:hover {
+    background: rgba(127, 127, 127, 0.14);
+}
+
+.mention-option-name {
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.mention-option-handle {
+    font-size: 12px;
+    color: #0a84ff;
+    font-weight: 700;
 }
 
 .text-composer:has(.text-input:disabled) {
@@ -722,6 +887,7 @@ body.light .text-send {
     text-overflow: ellipsis;
 }
 
+.lounge-member-ping,
 .lounge-member-block {
     width: 28px;
     height: 28px;
@@ -741,9 +907,16 @@ body.light .text-send {
     transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
 }
 
+.lounge-member-row:hover .lounge-member-ping,
 .lounge-member-row:hover .lounge-member-block,
+.lounge-member-row:focus-within .lounge-member-ping,
 .lounge-member-row:focus-within .lounge-member-block {
     opacity: 1;
+}
+
+.lounge-member-ping:hover {
+    color: #0a84ff;
+    background: rgba(10, 132, 255, 0.16);
 }
 
 .lounge-member-block:hover {

@@ -57,6 +57,12 @@ CREATE TABLE IF NOT EXISTS public.lounge_messages (
 ALTER TABLE public.lounge_boards ADD COLUMN IF NOT EXISTS last_message_at timestamptz;
 ALTER TABLE public.lounge_boards ADD COLUMN IF NOT EXISTS created_at timestamptz NOT NULL DEFAULT now();
 ALTER TABLE public.lounge_messages ADD COLUMN IF NOT EXISTS edited_at timestamptz;
+ALTER TABLE public.lounge_messages ADD COLUMN IF NOT EXISTS reply_to_id uuid REFERENCES public.lounge_messages (id) ON DELETE SET NULL;
+ALTER TABLE public.lounge_messages ADD COLUMN IF NOT EXISTS mentioned_user_ids uuid[] NOT NULL DEFAULT '{}';
+
+CREATE INDEX IF NOT EXISTS lounge_messages_reply_to_idx
+  ON public.lounge_messages (reply_to_id)
+  WHERE reply_to_id IS NOT NULL;
 
 UPDATE public.lounge_boards b
 SET last_message_at = sub.latest_at
@@ -292,6 +298,41 @@ AS $$
     AND ub.context = 'writer_lounge';
 $$;
 
+CREATE OR REPLACE FUNCTION public.lounge_parse_mentions(p_body text)
+RETURNS uuid[]
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT coalesce(array_agg(DISTINCT u.id), '{}'::uuid[])
+  FROM (
+    SELECT lower(m[1]) AS uname
+    FROM regexp_matches(coalesce(p_body, ''), '@([A-Za-z0-9_]{2,32})', 'g') AS m
+  ) tags
+  JOIN public.users u ON lower(u.username) = tags.uname;
+$$;
+
+CREATE OR REPLACE FUNCTION public.lounge_reply_json(p_reply_id uuid)
+RETURNS jsonb
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT CASE
+    WHEN r.id IS NULL OR r.deleted_at IS NOT NULL THEN NULL
+    ELSE jsonb_build_object(
+      'id', r.id,
+      'senderId', r.sender_id,
+      'senderName', public.lounge_display_name(r.sender_id),
+      'body', left(r.body, 160)
+    )
+  END
+  FROM public.lounge_messages r
+  WHERE r.id = p_reply_id;
+$$;
+
 -- ---------------------------------------------------------------------------
 -- 4. RPCs
 -- ---------------------------------------------------------------------------
@@ -420,9 +461,16 @@ BEGIN
         FROM public.users u
         WHERE u.id = m.sender_id
       ),
+      'senderUsername', (
+        SELECT coalesce(nullif(trim(u.username), ''), 'writer')
+        FROM public.users u
+        WHERE u.id = m.sender_id
+      ),
       'body', m.body,
       'createdAt', m.created_at,
-      'editedAt', m.edited_at
+      'editedAt', m.edited_at,
+      'replyTo', public.lounge_reply_json(m.reply_to_id),
+      'mentionedUserIds', coalesce(m.mentioned_user_ids, '{}'::uuid[])
     ) AS msg
     FROM public.lounge_messages m
     WHERE m.board_id = v_board.id
@@ -451,9 +499,12 @@ BEGIN
 END;
 $$;
 
+DROP FUNCTION IF EXISTS public.send_lounge_message(text, text);
+
 CREATE OR REPLACE FUNCTION public.send_lounge_message(
   p_board_slug text,
-  p_body text
+  p_body text,
+  p_reply_to_id uuid DEFAULT NULL
 )
 RETURNS public.lounge_messages
 LANGUAGE plpgsql
@@ -497,6 +548,18 @@ BEGIN
     RAISE EXCEPTION 'channel_locked';
   END IF;
 
+  IF p_reply_to_id IS NOT NULL THEN
+    IF NOT EXISTS (
+      SELECT 1
+      FROM public.lounge_messages rm
+      WHERE rm.id = p_reply_to_id
+        AND rm.board_id = v_board.id
+        AND rm.deleted_at IS NULL
+    ) THEN
+      RAISE EXCEPTION 'reply_not_found';
+    END IF;
+  END IF;
+
   SELECT count(*) INTO v_recent_count
   FROM public.lounge_messages m
   WHERE m.sender_id = v_uid
@@ -506,8 +569,14 @@ BEGIN
     RAISE EXCEPTION 'rate_limit_exceeded';
   END IF;
 
-  INSERT INTO public.lounge_messages (board_id, sender_id, body)
-  VALUES (v_board.id, v_uid, v_body)
+  INSERT INTO public.lounge_messages (board_id, sender_id, body, reply_to_id, mentioned_user_ids)
+  VALUES (
+    v_board.id,
+    v_uid,
+    v_body,
+    p_reply_to_id,
+    public.lounge_parse_mentions(v_body)
+  )
   RETURNING * INTO v_row;
 
   RETURN v_row;
@@ -542,7 +611,10 @@ BEGIN
   END IF;
 
   UPDATE public.lounge_messages m
-  SET body = v_body, edited_at = now()
+  SET
+    body = v_body,
+    edited_at = now(),
+    mentioned_user_ids = public.lounge_parse_mentions(v_body)
   WHERE m.id = p_message_id
     AND m.sender_id = v_uid
     AND m.deleted_at IS NULL
@@ -603,6 +675,7 @@ BEGIN
       SELECT jsonb_build_object(
         'id', u.id,
         'name', public.lounge_display_name(u.id),
+        'username', coalesce(nullif(trim(u.username), ''), 'writer'),
         'initials', public.lounge_user_initials(u.id),
         'lastSeenAt', u.last_seen_at
       ) AS row
@@ -668,7 +741,7 @@ GRANT SELECT ON public.lounge_messages TO authenticated;
 
 GRANT EXECUTE ON FUNCTION public.list_lounge_home() TO authenticated;
 GRANT EXECUTE ON FUNCTION public.list_lounge_messages(text, timestamptz, integer) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.send_lounge_message(text, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.send_lounge_message(text, text, uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.edit_lounge_message(uuid, text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.delete_lounge_message(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.list_lounge_online_members(integer) TO authenticated;
