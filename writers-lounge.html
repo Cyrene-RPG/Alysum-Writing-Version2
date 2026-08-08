@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
     <link rel="stylesheet" href="css/gradient-themes.css?v=5" />
     <link rel="stylesheet" href="css/workspace-nav.css?v=12" />
-    <link rel="stylesheet" href="css/writer-lounge.css?v=23" />
+    <link rel="stylesheet" href="css/writer-lounge.css?v=25" />
     <script src="js/gradient-theme-sync.js" defer></script>
     <script src="js/alysum-appearance-boot.js"></script>
 </head>
@@ -153,7 +153,12 @@
             setLoungeAgeVerifiedLocally,
             LOUNGE_MIN_AGE
         } from "./js/beta-room-safety.js?v=4";
-        import { mountEmojiPicker, isLoungeAnimatedEmoji } from "./js/emoji-picker.js?v=2";
+        import { mountEmojiPicker } from "./js/emoji-picker.js?v=3";
+        import {
+            renderLoungeReactionEmoji,
+            loungeReactionLabel,
+            normalizeLoungeReactionEmoji
+        } from "./js/lounge-reaction-emojis.js?v=1";
 
         const loadingPanel = document.getElementById("loadingPanel");
         const mainLayout = document.getElementById("mainLayout");
@@ -216,7 +221,9 @@
         let pendingReactionMessageId = null;
         let reactionBusy = false;
 
-        const QUICK_REACTIONS = ["✨", "❤️", "😂", "🔥", "👍", "🎉"];
+        function reactionEmojiHtml(emoji, extraClass = "") {
+            return renderLoungeReactionEmoji(emoji, { className: extraClass });
+        }
 
         function mapMessageRow(m) {
             return {
@@ -816,12 +823,6 @@
             setThreadStatus(`Ping @${handle} added to your message.`, "wait");
         }
 
-        function reactionEmojiHtml(emoji, extraClass = "") {
-            const value = String(emoji || "");
-            const animated = isLoungeAnimatedEmoji(value) ? " is-animated" : "";
-            return `<span class="lounge-reaction-emoji${animated}${extraClass ? ` ${extraClass}` : ""}" data-emoji="${escapeHtml(value)}" aria-hidden="true">${value}</span>`;
-        }
-
         function reactionTooltip(reaction) {
             const users = Array.isArray(reaction.users) ? reaction.users : [];
             const names = users.map((u) => u.name || "Writer").filter(Boolean);
@@ -840,11 +841,12 @@
                     const mine = !!reaction.reactedByMe;
                     const count = Number(reaction.count) || 0;
                     const tip = reactionTooltip(reaction);
+                    const label = loungeReactionLabel(emoji);
                     return (
                         `<button type="button" class="sms-reaction-pill${mine ? " is-mine" : ""}"` +
                         ` data-msg-action="toggle-reaction" data-msg-id="${escapeHtml(row.id)}"` +
                         ` data-emoji="${escapeHtml(encodeURIComponent(emoji))}"` +
-                        ` title="${escapeHtml(tip)}" aria-label="${escapeHtml(`${emoji} ${count} reactions`)}">` +
+                        ` title="${escapeHtml(tip)}" aria-label="${escapeHtml(`${label}, ${count}`)}">` +
                         reactionEmojiHtml(emoji) +
                         `<span class="sms-reaction-count">${count}</span>` +
                         `</button>`
@@ -852,30 +854,19 @@
                 })
                 .join("");
 
-            const quickBtns = canReact
-                ? QUICK_REACTIONS.map(
-                      (emoji) =>
-                          `<button type="button" class="sms-reaction-quick" data-msg-action="toggle-reaction"` +
-                          ` data-msg-id="${escapeHtml(row.id)}" data-emoji="${escapeHtml(encodeURIComponent(emoji))}"` +
-                          ` title="React ${escapeHtml(emoji)}" aria-label="React ${escapeHtml(emoji)}">` +
-                          reactionEmojiHtml(emoji) +
-                          `</button>`
-                  ).join("")
-                : "";
-
             const addBtn = canReact
                 ? `<button type="button" class="sms-reaction-add" data-msg-action="open-reactions" data-msg-id="${escapeHtml(row.id)}"` +
                   ` aria-label="Add reaction" title="Add reaction">` +
-                  `<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false">` +
-                  `<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.75"/>` +
-                  `<circle cx="9" cy="10" r="1.1" fill="currentColor"/>` +
-                  `<circle cx="15" cy="10" r="1.1" fill="currentColor"/>` +
-                  `<path d="M8.5 14.4c1.1 1.2 2.6 1.8 3.5 1.8s2.4-.6 3.5-1.8" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>` +
+                  `<svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" focusable="false">` +
+                  `<circle cx="12" cy="12" r="9.25" fill="none" stroke="currentColor" stroke-width="1.6"/>` +
+                  `<path d="M8 15s1.4 1.6 4 1.6 4-1.6 4-1.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>` +
+                  `<circle cx="9" cy="10" r="1.15" fill="currentColor"/>` +
+                  `<circle cx="15" cy="10" r="1.15" fill="currentColor"/>` +
                   `</svg></button>`
                 : "";
 
-            if (!pills && !addBtn && !quickBtns) return "";
-            return `<div class="sms-reactions">${pills}${quickBtns}${addBtn}</div>`;
+            if (!pills && !addBtn) return "";
+            return `<div class="sms-reactions">${pills}${addBtn}</div>`;
         }
 
         function applyMessageReactions(messageId, reactions) {
@@ -884,26 +875,25 @@
             messages[idx] = { ...messages[idx], reactions: Array.isArray(reactions) ? reactions : [] };
         }
 
-        async function handleToggleReaction(messageId, emoji, { animate = true } = {}) {
+        async function handleToggleReaction(messageId, emoji) {
             if (!messageId || !emoji || reactionBusy) return;
             if (!messagingEligible) {
                 openAgeGate();
                 return;
             }
+            const normalized = normalizeLoungeReactionEmoji(decodeURIComponent(emoji));
             reactionBusy = true;
             try {
-                const reactions = await toggleLoungeMessageReaction(messageId, emoji);
+                const reactions = await toggleLoungeMessageReaction(messageId, normalized);
                 applyMessageReactions(messageId, reactions);
                 renderMessages({ stickToBottom: isChatNearBottom() });
-                if (animate) {
-                    requestAnimationFrame(() => {
-                        const pill = msgList.querySelector(
-                            `.sms-reaction-pill[data-msg-id="${CSS.escape(messageId)}"][data-emoji="${CSS.escape(encodeURIComponent(emoji))}"]`
-                        );
-                        pill?.classList.add("is-pop");
-                        setTimeout(() => pill?.classList.remove("is-pop"), 450);
-                    });
-                }
+                requestAnimationFrame(() => {
+                    const pill = msgList.querySelector(
+                        `.sms-reaction-pill[data-msg-id="${CSS.escape(messageId)}"][data-emoji="${CSS.escape(encodeURIComponent(normalized))}"]`
+                    );
+                    pill?.classList.add("is-bump");
+                    setTimeout(() => pill?.classList.remove("is-bump"), 360);
+                });
             } catch (err) {
                 setThreadStatus(friendlyLoungeSafetyError(err), "error");
             } finally {
@@ -1552,8 +1542,7 @@
                 return;
             }
             if (action === "toggle-reaction") {
-                const emoji = decodeURIComponent(btn.dataset.emoji || "");
-                handleToggleReaction(messageId, emoji).catch(console.error);
+                handleToggleReaction(messageId, btn.dataset.emoji || "").catch(console.error);
                 return;
             }
             if (action === "open-reactions") {
@@ -1651,7 +1640,9 @@
             onSelect: (emoji) => {
                 const messageId = pendingReactionMessageId;
                 pendingReactionMessageId = null;
-                if (messageId) handleToggleReaction(messageId, emoji).catch(console.error);
+                if (messageId) {
+                    handleToggleReaction(messageId, normalizeLoungeReactionEmoji(emoji)).catch(console.error);
+                }
             },
             onClose: () => {
                 pendingReactionMessageId = null;

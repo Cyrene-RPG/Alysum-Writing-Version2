@@ -614,9 +614,10 @@ body.light .sms-row.sent .sms-bubble {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 4px;
-    margin-top: 4px;
-    padding: 0 2px;
+    gap: 3px;
+    margin-top: 2px;
+    padding: 0;
+    min-height: 0;
 }
 
 .sms-row.sent .sms-reactions {
@@ -624,70 +625,93 @@ body.light .sms-row.sent .sms-bubble {
 }
 
 .sms-reaction-pill,
-.sms-reaction-add,
-.sms-reaction-quick {
+.sms-reaction-add {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 4px;
-    min-height: 28px;
-    padding: 2px 8px;
-    border-radius: 999px;
-    border: 1px solid var(--border);
-    background: color-mix(in srgb, var(--panel) 88%, var(--bg));
+    gap: 5px;
+    min-height: 24px;
+    padding: 0 6px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    background: rgba(127, 127, 127, 0.16);
     color: var(--text);
     cursor: pointer;
     font: inherit;
     line-height: 1;
-    transition: transform 0.12s ease, background 0.12s ease, border-color 0.12s ease;
+    transition: background 0.12s ease, border-color 0.12s ease;
 }
 
 .sms-reaction-pill:hover,
-.sms-reaction-add:hover,
-.sms-reaction-quick:hover {
-    transform: translateY(-1px);
-    border-color: rgba(10, 132, 255, 0.35);
-    background: rgba(10, 132, 255, 0.12);
+.sms-reaction-add:hover {
+    background: rgba(127, 127, 127, 0.24);
 }
 
 .sms-reaction-pill.is-mine {
-    border-color: rgba(10, 132, 255, 0.55);
-    background: rgba(10, 132, 255, 0.18);
-}
-
-.sms-reaction-pill.is-pop {
-    animation: lounge-reaction-pop 0.42s ease;
+    background: rgba(10, 132, 255, 0.16);
+    border-color: rgba(10, 132, 255, 0.28);
 }
 
 .sms-reaction-count {
-    font-size: 12px;
-    font-weight: 800;
-    color: var(--text);
-    min-width: 0.75ch;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    min-width: 0.5ch;
+    font-variant-numeric: tabular-nums;
 }
 
-.sms-reaction-add,
-.sms-reaction-quick {
-    width: 28px;
-    min-width: 28px;
+.sms-reaction-pill.is-mine .sms-reaction-count {
+    color: #7ec3ff;
+}
+
+.sms-reaction-pill.is-bump {
+    animation: lounge-reaction-bump 0.34s ease;
+}
+
+.sms-reaction-pill.is-bump .lounge-reaction-emoji,
+.sms-reaction-pill.is-bump .lounge-reaction-icon {
+    animation: lounge-reaction-shake 0.34s ease;
+}
+
+@keyframes lounge-reaction-bump {
+    0% { transform: scale(0.92); }
+    45% { transform: scale(1.06); }
+    100% { transform: scale(1); }
+}
+
+@keyframes lounge-reaction-shake {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(-7deg); }
+    75% { transform: rotate(7deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sms-reaction-pill.is-bump,
+    .sms-reaction-pill.is-bump .lounge-reaction-emoji,
+    .sms-reaction-pill.is-bump .lounge-reaction-icon {
+        animation: none;
+    }
+}
+
+.sms-reaction-add {
+    width: 24px;
+    min-width: 24px;
+    height: 24px;
     padding: 0;
     color: var(--muted);
     opacity: 0;
     pointer-events: none;
-}
-
-.sms-reaction-quick {
-    width: auto;
-    min-width: 28px;
-    padding: 2px 6px;
+    background: transparent;
 }
 
 .sms-row:hover .sms-reaction-add,
-.sms-row:focus-within .sms-reaction-add,
-.sms-row:hover .sms-reaction-quick,
-.sms-row:focus-within .sms-reaction-quick {
+.sms-row:focus-within .sms-reaction-add {
     opacity: 1;
     pointer-events: auto;
+}
+
+.sms-reaction-add:hover {
+    background: rgba(127, 127, 127, 0.16);
 }
 
 .sms-reaction-add svg {
@@ -695,92 +719,53 @@ body.light .sms-row.sent .sms-bubble {
 }
 
 .lounge-reaction-emoji {
-    font-size: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    font-size: 16px;
     line-height: 1;
     font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
 }
 
-.lounge-reaction-emoji.is-animated {
-    display: inline-block;
-    transform-origin: center center;
-    animation: lounge-emoji-sparkle 1.8s ease-in-out infinite;
+.lounge-reaction-emoji--custom {
+    width: 18px;
+    height: 18px;
 }
 
-.lounge-reaction-emoji.is-animated[data-emoji="🔥"] {
-    animation-name: lounge-emoji-fire;
+.lounge-reaction-icon {
+    display: block;
+    width: 100%;
+    height: 100%;
 }
 
-.lounge-reaction-emoji.is-animated[data-emoji="❤️"],
-.lounge-reaction-emoji.is-animated[data-emoji="💖"],
-.lounge-reaction-emoji.is-animated[data-emoji="💕"],
-.lounge-reaction-emoji.is-animated[data-emoji="💓"] {
-    animation-name: lounge-emoji-heartbeat;
+.lounge-reaction-icon--sparkles {
+    overflow: visible;
 }
 
-.lounge-reaction-emoji.is-animated[data-emoji="😂"],
-.lounge-reaction-emoji.is-animated[data-emoji="🤣"],
-.lounge-reaction-emoji.is-animated[data-emoji="😭"] {
-    animation-name: lounge-emoji-shake;
+.emoji-picker-cell .lounge-reaction-emoji,
+.emoji-picker-cell .lounge-reaction-emoji--custom {
+    width: 22px;
+    height: 22px;
+    font-size: 22px;
 }
 
-.lounge-reaction-emoji.is-animated[data-emoji="🎉"],
-.lounge-reaction-emoji.is-animated[data-emoji="🎊"] {
-    animation-name: lounge-emoji-party;
+body.light .sms-reaction-pill {
+    background: rgba(15, 23, 42, 0.06);
 }
 
-@keyframes lounge-reaction-pop {
-    0% { transform: scale(0.82); }
-    55% { transform: scale(1.12); }
-    100% { transform: scale(1); }
-}
-
-@keyframes lounge-emoji-sparkle {
-    0%, 100% { transform: scale(1) rotate(0deg); filter: brightness(1); }
-    35% { transform: scale(1.14) rotate(-8deg); filter: brightness(1.35); }
-    70% { transform: scale(1.08) rotate(8deg); filter: brightness(1.2); }
-}
-
-@keyframes lounge-emoji-fire {
-    0%, 100% { transform: scale(1) translateY(0); filter: brightness(1); }
-    50% { transform: scale(1.12) translateY(-1px); filter: brightness(1.35) saturate(1.2); }
-}
-
-@keyframes lounge-emoji-heartbeat {
-    0%, 100% { transform: scale(1); }
-    25% { transform: scale(1.16); }
-    45% { transform: scale(1.02); }
-    65% { transform: scale(1.12); }
-}
-
-@keyframes lounge-emoji-shake {
-    0%, 100% { transform: rotate(0deg); }
-    25% { transform: rotate(-10deg); }
-    75% { transform: rotate(10deg); }
-}
-
-@keyframes lounge-emoji-party {
-    0%, 100% { transform: translateY(0) rotate(0deg); }
-    50% { transform: translateY(-2px) rotate(8deg); }
-}
-
-.emoji-picker--floating {
-    position: fixed;
-    z-index: 45;
-    width: min(352px, calc(100vw - 16px));
-    max-height: min(420px, 52vh);
-    left: 8px;
-    top: 8px;
-    bottom: auto;
-}
-
-body.light .sms-reaction-pill,
-body.light .sms-reaction-add,
-body.light .sms-reaction-quick {
-    background: #f3f4f8;
+body.light .sms-reaction-pill:hover {
+    background: rgba(15, 23, 42, 0.1);
 }
 
 body.light .sms-reaction-pill.is-mine {
-    background: rgba(0, 122, 255, 0.14);
+    background: rgba(0, 122, 255, 0.12);
+    border-color: rgba(0, 122, 255, 0.22);
+}
+
+body.light .sms-reaction-pill.is-mine .sms-reaction-count {
+    color: #007aff;
 }
 
 .sms-actions {
@@ -1111,6 +1096,16 @@ body.light .sms-row.sent .sms-mention {
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.28);
     overflow: hidden;
     z-index: 25;
+}
+
+.emoji-picker--floating {
+    position: fixed;
+    z-index: 45;
+    left: 8px;
+    top: 8px;
+    right: auto;
+    bottom: auto;
+    width: min(352px, calc(100vw - 16px));
 }
 
 .emoji-picker-search-wrap {

@@ -1,16 +1,7 @@
 const RECENT_KEY = "alysum-emoji-recent";
 const RECENT_MAX = 27;
 
-/** Emojis that get a looping sparkle / pulse animation in reactions (Discord-style). */
-export const LOUNGE_ANIMATED_EMOJIS = new Set([
-    "✨", "⭐", "🌟", "💫", "💖", "❤️", "🧡", "💛", "💚", "💙", "💜", "🖤", "🤍", "💔",
-    "🔥", "😂", "🤣", "😭", "🥹", "🎉", "🎊", "💯", "👀", "🫶", "🙌", "👏", "💀", "😍",
-    "🥳", "⚡", "💥", "🌈", "🎆", "💃", "🕺", "🫡", "🤯", "😱", "🤩", "💕", "💞", "💓"
-]);
-
-export function isLoungeAnimatedEmoji(emoji) {
-    return LOUNGE_ANIMATED_EMOJIS.has(String(emoji || "").trim());
-}
+import { isLoungeSparkles, renderLoungeReactionEmoji } from "./lounge-reaction-emojis.js?v=1";
 
 const EMOJI_CATEGORIES = [
     {
@@ -1475,10 +1466,16 @@ export function mountEmojiPicker({ container, toggleButton = null, onSelect, onO
         }
         grid.innerHTML = items
             .map(
-                (item) =>
-                    `<button type="button" class="emoji-picker-cell" role="gridcell"` +
-                    ` data-emoji="${item.emoji}" title="${item.names || item.emoji}" aria-label="${item.names || item.emoji}">` +
-                    `${item.emoji}</button>`
+                (item) => {
+                    const visual = isLoungeSparkles(item.emoji)
+                        ? renderLoungeReactionEmoji(item.emoji, { className: "emoji-picker-cell-icon" })
+                        : item.emoji;
+                    return (
+                        `<button type="button" class="emoji-picker-cell" role="gridcell"` +
+                        ` data-emoji="${item.emoji}" title="${item.names || item.emoji}" aria-label="${item.names || item.emoji}">` +
+                        `${visual}</button>`
+                    );
+                }
             )
             .join("");
     }

@@ -371,14 +371,26 @@ AS $$
   WHERE r.id = p_reply_id;
 $$;
 
+CREATE OR REPLACE FUNCTION public.lounge_normalize_reaction_emoji(p_emoji text)
+RETURNS text
+LANGUAGE sql
+IMMUTABLE
+AS $$
+  SELECT CASE trim(coalesce(p_emoji, ''))
+    WHEN '⭐' THEN '✨'
+    WHEN '🌟' THEN '✨'
+    WHEN '💫' THEN '✨'
+    ELSE trim(coalesce(p_emoji, ''))
+  END;
+$$;
+
 CREATE OR REPLACE FUNCTION public.lounge_reaction_emoji_valid(p_emoji text)
 RETURNS boolean
 LANGUAGE sql
 IMMUTABLE
 AS $$
-  SELECT
-    coalesce(p_emoji, '') ~ '^[^\s<>&]{1,32}$'
-    AND coalesce(p_emoji, '') !~ '^[A-Za-z0-9_]+$';
+  SELECT public.lounge_normalize_reaction_emoji(p_emoji) ~ '^[^\s<>&]{1,32}$'
+    AND public.lounge_normalize_reaction_emoji(p_emoji) !~ '^[A-Za-z0-9_]+$';
 $$;
 
 CREATE OR REPLACE FUNCTION public.lounge_message_reactions_json(p_message_id uuid)
@@ -1005,7 +1017,7 @@ AS $$
 DECLARE
   v_uid uuid := auth.uid();
   v_message public.lounge_messages;
-  v_emoji text := trim(coalesce(p_emoji, ''));
+  v_emoji text := public.lounge_normalize_reaction_emoji(trim(coalesce(p_emoji, '')));
 BEGIN
   IF v_uid IS NULL THEN
     RAISE EXCEPTION 'not_authenticated';
