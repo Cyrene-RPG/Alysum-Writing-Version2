@@ -22,7 +22,6 @@ import { goToLogin, isDesktopLocalHost } from "./desktop-auth.js?v=3";
 import { bootFeatureHighlights } from "./feature-highlights.js?v=3";
 import { bootFeatureUsageTracking } from "./feature-usage-track.js?v=1";
 import { bootUserPresence } from "./user-presence.js?v=2";
-import { DISCORD_URL } from "./site-links.js?v=1";
 
 const PROFILE_SELECT = "id, username, display_name, account_type, profile_image_url";
 
@@ -186,20 +185,17 @@ function renderNavHtml(active) {
     `;
 }
 
-function wireDiscordNavLink() {
+function wireWritersLoungeNavLink() {
     const nav = document.querySelector(".wd-nav-wrap .wd-nav");
-    if (!nav || nav.querySelector(".wd-nav-discord")) return;
+    if (!nav || nav.querySelector('a[href*="writers-lounge.html"]')) return;
 
-    const discordLink = document.createElement("a");
-    discordLink.href = DISCORD_URL;
-    discordLink.className = "wd-nav-discord";
-    discordLink.target = "_blank";
-    discordLink.rel = "noopener noreferrer";
-    discordLink.textContent = "Discord";
+    const loungeLink = document.createElement("a");
+    loungeLink.href = navHref("writers-lounge.html");
+    loungeLink.textContent = "Writer's Lounge";
 
     const libraryLink = nav.querySelector('a[href*="library.html"]');
-    if (libraryLink) libraryLink.after(discordLink);
-    else nav.prepend(discordLink);
+    if (libraryLink) libraryLink.after(loungeLink);
+    else nav.prepend(loungeLink);
 }
 
 function renderWelcomeProfile(profile, fallbackLabel) {
@@ -371,7 +367,7 @@ export function initWorkspaceNav(options = {}) {
 
     wireLogoutButtons(document);
     wireContinueButton();
-    wireDiscordNavLink();
+    wireWritersLoungeNavLink();
 
     if (!options.skipAuthHydrate) {
         hydrateWelcomeBar({ ...options, active }).catch(console.warn);

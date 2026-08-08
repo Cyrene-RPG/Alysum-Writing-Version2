@@ -53,6 +53,21 @@ CREATE TABLE IF NOT EXISTS public.lounge_messages (
   deleted_by uuid REFERENCES auth.users (id) ON DELETE SET NULL
 );
 
+-- Upgrade tables created by the old forum migration (CREATE TABLE IF NOT EXISTS skips new columns).
+ALTER TABLE public.lounge_boards ADD COLUMN IF NOT EXISTS last_message_at timestamptz;
+ALTER TABLE public.lounge_boards ADD COLUMN IF NOT EXISTS created_at timestamptz NOT NULL DEFAULT now();
+
+UPDATE public.lounge_boards b
+SET last_message_at = sub.latest_at
+FROM (
+  SELECT m.board_id, max(m.created_at) AS latest_at
+  FROM public.lounge_messages m
+  WHERE m.deleted_at IS NULL
+  GROUP BY m.board_id
+) sub
+WHERE b.id = sub.board_id
+  AND (b.last_message_at IS NULL OR b.last_message_at < sub.latest_at);
+
 CREATE INDEX IF NOT EXISTS lounge_messages_board_idx
   ON public.lounge_messages (board_id, created_at ASC);
 
