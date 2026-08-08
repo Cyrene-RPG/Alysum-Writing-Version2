@@ -686,11 +686,42 @@ body.light .text-send {
 }
 
 .lounge-member-name {
+    flex: 1;
+    min-width: 0;
     font-size: 13px;
     font-weight: 700;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.lounge-member-block {
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 13px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    opacity: 0;
+    transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.lounge-member-row:hover .lounge-member-block,
+.lounge-member-row:focus-within .lounge-member-block {
+    opacity: 1;
+}
+
+.lounge-member-block:hover {
+    color: #fecaca;
+    background: rgba(239, 68, 68, 0.18);
 }
 
 .safety-overlay {

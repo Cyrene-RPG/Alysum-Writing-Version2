@@ -194,6 +194,104 @@ AS $$
   WHERE u.id = p_user_id;
 $$;
 
+-- Reuses public.user_blocks from supabase-beta-rooms.sql (context = 'writer_lounge').
+
+CREATE OR REPLACE FUNCTION public.lounge_users_are_blocked(p_user_a uuid, p_user_b uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT
+    p_user_a IS NOT NULL
+    AND p_user_b IS NOT NULL
+    AND p_user_a <> p_user_b
+    AND to_regclass('public.user_blocks') IS NOT NULL
+    AND EXISTS (
+      SELECT 1
+      FROM public.user_blocks ub
+      WHERE ub.context = 'writer_lounge'
+        AND (
+          (ub.blocker_id = p_user_a AND ub.blocked_id = p_user_b)
+          OR (ub.blocker_id = p_user_b AND ub.blocked_id = p_user_a)
+        )
+    );
+$$;
+
+CREATE OR REPLACE FUNCTION public.is_lounge_user_blocked(p_other_id uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT public.lounge_users_are_blocked(auth.uid(), p_other_id);
+$$;
+
+CREATE OR REPLACE FUNCTION public.block_lounge_user(p_blocked_id uuid)
+RETURNS public.user_blocks
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_uid uuid := auth.uid();
+  v_row public.user_blocks;
+BEGIN
+  IF v_uid IS NULL THEN
+    RAISE EXCEPTION 'not_authenticated';
+  END IF;
+  IF to_regclass('public.user_blocks') IS NULL THEN
+    RAISE EXCEPTION 'user_blocks_missing';
+  END IF;
+  IF p_blocked_id IS NULL OR p_blocked_id = v_uid THEN
+    RAISE EXCEPTION 'invalid_block_target';
+  END IF;
+
+  INSERT INTO public.user_blocks (blocker_id, blocked_id, context, share_id)
+  VALUES (v_uid, p_blocked_id, 'writer_lounge', NULL)
+  ON CONFLICT (blocker_id, blocked_id, context) DO UPDATE
+  SET share_id = NULL
+  RETURNING * INTO v_row;
+
+  RETURN v_row;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.unblock_lounge_user(p_blocked_id uuid)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_uid uuid := auth.uid();
+BEGIN
+  IF v_uid IS NULL THEN
+    RAISE EXCEPTION 'not_authenticated';
+  END IF;
+
+  DELETE FROM public.user_blocks
+  WHERE blocker_id = v_uid
+    AND blocked_id = p_blocked_id
+    AND context = 'writer_lounge';
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.list_my_lounge_blocks()
+RETURNS jsonb
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT coalesce(jsonb_agg(ub.blocked_id), '[]'::jsonb)
+  FROM public.user_blocks ub
+  WHERE ub.blocker_id = auth.uid()
+    AND ub.context = 'writer_lounge';
+$$;
+
 -- ---------------------------------------------------------------------------
 -- 4. RPCs
 -- ---------------------------------------------------------------------------
@@ -232,6 +330,11 @@ BEGIN
               FROM public.lounge_messages m
               WHERE m.board_id = b.id
                 AND m.deleted_at IS NULL
+                AND (
+                  auth.uid() IS NULL
+                  OR m.sender_id = auth.uid()
+                  OR NOT public.lounge_users_are_blocked(auth.uid(), m.sender_id)
+                )
               ORDER BY m.created_at DESC
               LIMIT 1
             ),
@@ -244,6 +347,11 @@ BEGIN
               FROM public.lounge_messages m
               WHERE m.board_id = b.id
                 AND m.deleted_at IS NULL
+                AND (
+                  auth.uid() IS NULL
+                  OR m.sender_id = auth.uid()
+                  OR NOT public.lounge_users_are_blocked(auth.uid(), m.sender_id)
+                )
               ORDER BY m.created_at DESC
               LIMIT 1
             )
@@ -320,6 +428,11 @@ BEGIN
     WHERE m.board_id = v_board.id
       AND m.deleted_at IS NULL
       AND (p_before IS NULL OR m.created_at < p_before)
+      AND (
+        auth.uid() IS NULL
+        OR m.sender_id = auth.uid()
+        OR NOT public.lounge_users_are_blocked(auth.uid(), m.sender_id)
+      )
     ORDER BY m.created_at DESC
     LIMIT v_limit
   ) rows;
@@ -495,6 +608,11 @@ BEGIN
       ) AS row
       FROM public.users u
       WHERE u.last_seen_at >= now() - interval '5 minutes'
+        AND (
+          auth.uid() IS NULL
+          OR u.id = auth.uid()
+          OR NOT public.lounge_users_are_blocked(auth.uid(), u.id)
+        )
       ORDER BY u.last_seen_at DESC
       LIMIT v_limit
     ) members
@@ -554,6 +672,10 @@ GRANT EXECUTE ON FUNCTION public.send_lounge_message(text, text) TO authenticate
 GRANT EXECUTE ON FUNCTION public.edit_lounge_message(uuid, text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.delete_lounge_message(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.list_lounge_online_members(integer) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.is_lounge_user_blocked(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.block_lounge_user(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.unblock_lounge_user(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.list_my_lounge_blocks() TO authenticated;
 
 -- Messages are inserted only through send_lounge_message (SECURITY DEFINER).
 REVOKE INSERT ON public.lounge_messages FROM authenticated;

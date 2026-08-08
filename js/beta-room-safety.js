@@ -153,8 +153,11 @@ export function friendlyBetaSafetyError(err) {
     if (/invalid_message_body/i.test(msg)) {
         return "Enter a message between 1 and 8,000 characters.";
     }
-    if (/reason_required/i.test(msg)) {
-        return "Choose a reason for your report.";
+    if (/invalid_block_target/i.test(msg)) {
+        return "You cannot block yourself.";
+    }
+    if (/user_blocks_missing/i.test(msg)) {
+        return "Blocking is not set up yet. Run supabase-writer-lounge.sql in Supabase.";
     }
     return msg || "Could not complete that safety action.";
 }

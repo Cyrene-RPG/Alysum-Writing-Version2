@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
     <link rel="stylesheet" href="css/gradient-themes.css?v=5" />
     <link rel="stylesheet" href="css/workspace-nav.css?v=11" />
-    <link rel="stylesheet" href="css/writer-lounge.css?v=6" />
+    <link rel="stylesheet" href="css/writer-lounge.css?v=7" />
     <script src="js/gradient-theme-sync.js" defer></script>
     <script src="js/alysum-appearance-boot.js"></script>
 </head>
@@ -102,10 +102,12 @@
             deleteLoungeMessage,
             listLoungeOnlineMembers,
             subscribeLoungeChannel,
+            blockLoungeUser,
+            listMyLoungeBlocks,
             channelSlugFromLocation,
             writersLoungeChannelUrl,
             isWriterLoungeSchemaMissing
-        } from "./js/writer-lounge-api.js?v=6";
+        } from "./js/writer-lounge-api.js?v=7";
         import {
             attestBetaMessaging18Plus,
             hasBetaMessagingAttestation
@@ -155,6 +157,7 @@
         let pendingSendBody = "";
         let realtimeUnsub = null;
         let editingMessageId = null;
+        let blockedUserIds = new Set();
 
         function escapeHtml(value) {
             return String(value || "")
@@ -241,13 +244,46 @@
                 return;
             }
 
-            memberList.innerHTML = rows.map((m) =>
-                `<div class="lounge-member-row">` +
-                `<span class="lounge-member-dot" aria-hidden="true"></span>` +
-                `<span class="lounge-member-avatar" aria-hidden="true">${escapeHtml(m.initials || "?")}</span>` +
-                `<span class="lounge-member-name">${escapeHtml(m.name || "Writer")}</span>` +
-                `</div>`
-            ).join("");
+            memberList.innerHTML = rows.map((m) => {
+                const isSelf = m.id === currentUser?.id;
+                const blockBtn = isSelf
+                    ? ""
+                    : `<button type="button" class="lounge-member-block" data-member-action="block" data-user-id="${escapeHtml(m.id)}" data-user-name="${escapeHtml(m.name || "Writer")}" aria-label="Block ${escapeHtml(m.name || "Writer")}" title="Block user">🚫</button>`;
+                return (
+                    `<div class="lounge-member-row">` +
+                    `<span class="lounge-member-dot" aria-hidden="true"></span>` +
+                    `<span class="lounge-member-avatar" aria-hidden="true">${escapeHtml(m.initials || "?")}</span>` +
+                    `<span class="lounge-member-name">${escapeHtml(m.name || "Writer")}</span>` +
+                    blockBtn +
+                    `</div>`
+                );
+            }).join("");
+        }
+
+        async function refreshBlockedUsers() {
+            try {
+                const ids = await listMyLoungeBlocks();
+                blockedUserIds = new Set(ids);
+            } catch {
+                blockedUserIds = new Set();
+            }
+        }
+
+        async function handleBlockUser(userId, userName) {
+            if (!userId || userId === currentUser?.id) return;
+            const name = userName || "this writer";
+            if (!window.confirm(`Block ${name}? Their messages will be hidden from you in Writer's Lounge.`)) return;
+            try {
+                await blockLoungeUser(userId);
+                blockedUserIds.add(userId);
+                setThreadStatus(`Blocked ${name}. Their messages are hidden.`, "wait");
+                await refreshMessages(false);
+                await refreshHome(true);
+                const members = await listLoungeOnlineMembers(50);
+                renderMembers(members);
+            } catch (err) {
+                setThreadStatus(friendlyBetaSafetyError(err), "error");
+            }
         }
 
         function initialsFromName(name) {
@@ -310,7 +346,9 @@
                   `<button type="button" class="sms-action" data-msg-action="edit" data-msg-id="${escapeHtml(row.id)}" aria-label="Edit message" title="Edit">✎</button>` +
                   `<button type="button" class="sms-action danger" data-msg-action="delete" data-msg-id="${escapeHtml(row.id)}" aria-label="Delete message" title="Delete">🗑</button>` +
                   `</div>`
-                : "";
+                : `<div class="sms-actions">` +
+                  `<button type="button" class="sms-action danger" data-msg-action="block" data-user-id="${escapeHtml(row.senderId)}" data-user-name="${escapeHtml(row.senderName || "Writer")}" aria-label="Block user" title="Block user">🚫</button>` +
+                  `</div>`;
 
             return (
                 `<div class="sms-bubble-wrap">` +
@@ -345,8 +383,11 @@
             }
 
             let prev = null;
+            let renderedCount = 0;
             for (const raw of messages) {
                 const row = enrichMessage(raw);
+                if (row.senderId !== currentUser?.id && blockedUserIds.has(row.senderId)) continue;
+                renderedCount += 1;
                 const mine = row.senderId === currentUser?.id;
                 const compact = messageGroupCompact(prev, row);
                 prev = row;
@@ -383,6 +424,16 @@
                         `</div></div>`
                     );
                 }
+            }
+
+            if (!renderedCount) {
+                const emptyCopy = hasMore
+                    ? "No visible messages here. Try loading earlier messages."
+                    : activeBoard.canPost
+                      ? `Be the first to text in #${activeBoard.title}. Say hi, share a word count, or ask for help.`
+                      : "No messages in this channel yet.";
+                msgList.innerHTML = `<div class="text-empty">${escapeHtml(emptyCopy)}</div>`;
+                return;
             }
 
             msgList.innerHTML = parts.join("");
@@ -643,7 +694,17 @@
             }
             if (action === "delete") {
                 handleDeleteMessage(messageId).catch(console.error);
+                return;
             }
+            if (action === "block") {
+                handleBlockUser(btn.dataset.userId, btn.dataset.userName).catch(console.error);
+            }
+        });
+
+        memberList.addEventListener("click", (e) => {
+            const btn = e.target.closest("[data-member-action='block']");
+            if (!btn) return;
+            handleBlockUser(btn.dataset.userId, btn.dataset.userName).catch(console.error);
         });
 
         channelList.addEventListener("click", (e) => {
@@ -707,6 +768,7 @@
             });
 
             try {
+                await refreshBlockedUsers();
                 await refreshHome(true);
                 const members = await listLoungeOnlineMembers(50);
                 renderMembers(members);

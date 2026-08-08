@@ -81,6 +81,36 @@ export async function listLoungeOnlineMembers(limit = 50) {
     return data || [];
 }
 
+export async function isLoungeUserBlocked(otherUserId) {
+    if (!otherUserId) return false;
+    const { data, error } = await supabase.rpc("is_lounge_user_blocked", {
+        p_other_id: otherUserId
+    });
+    if (error) throw error;
+    return !!data;
+}
+
+export async function blockLoungeUser(blockedUserId) {
+    const { data, error } = await supabase.rpc("block_lounge_user", {
+        p_blocked_id: blockedUserId
+    });
+    if (error) throw error;
+    return data;
+}
+
+export async function unblockLoungeUser(blockedUserId) {
+    const { error } = await supabase.rpc("unblock_lounge_user", {
+        p_blocked_id: blockedUserId
+    });
+    if (error) throw error;
+}
+
+export async function listMyLoungeBlocks() {
+    const { data, error } = await supabase.rpc("list_my_lounge_blocks");
+    if (error) throw error;
+    return Array.isArray(data) ? data.filter(Boolean) : [];
+}
+
 export function subscribeLoungeChannel(boardId, { onMessage } = {}) {
     if (!boardId) return () => {};
 
@@ -121,6 +151,6 @@ export function isWriterLoungeSchemaMissing(error) {
     const msg = String(error?.message || error || "");
     return (
         /lounge_categories|lounge_boards|lounge_messages/i.test(msg) ||
-        /list_lounge_home|list_lounge_messages|send_lounge_message|edit_lounge_message|delete_lounge_message|list_lounge_online_members/i.test(msg)
+        /list_lounge_home|list_lounge_messages|send_lounge_message|edit_lounge_message|delete_lounge_message|list_lounge_online_members|block_lounge_user|list_my_lounge_blocks/i.test(msg)
     );
 }
