@@ -108,7 +108,7 @@
     <script type="module">
         import { supabase } from "./firebase.js";
         import { requireStudioSession } from "./js/studio-session.js?v=3";
-        import { mountWorkspaceNav, refreshLoungeNavBadge } from "./js/workspace-nav.js?v=13";
+        import { mountWorkspaceNav } from "./js/workspace-nav.js?v=13";
         import { publicDisplayNameFromUserData } from "./js/profile-display.js?v=1";
         import {
             listLoungeHome,
@@ -398,6 +398,31 @@
             }, 7000);
         }
 
+        async function refreshNavPingBadge() {
+            const navLoungeBadge = document.getElementById("navLoungeBadge");
+            if (!navLoungeBadge) return;
+            try {
+                const rows = await listLoungeUnreadPings();
+                const total = (Array.isArray(rows) ? rows : []).reduce(
+                    (sum, row) => sum + (Number(row?.count) || 0),
+                    0
+                );
+                navLoungeBadge.textContent = total > 99 ? "99+" : String(total);
+                navLoungeBadge.classList.toggle("is-hidden", total <= 0);
+                navLoungeBadge.setAttribute("aria-hidden", total <= 0 ? "true" : "false");
+                if (total > 0) {
+                    navLoungeBadge.setAttribute(
+                        "aria-label",
+                        `${total} missed ping${total === 1 ? "" : "s"} or repl${total === 1 ? "y" : "ies"} in Writer's Lounge`
+                    );
+                } else {
+                    navLoungeBadge.removeAttribute("aria-label");
+                }
+            } catch {
+                /* ping tracking optional until SQL is applied */
+            }
+        }
+
         async function refreshUnreadPings() {
             try {
                 const rows = await listLoungeUnreadPings();
@@ -411,7 +436,7 @@
             } catch {
                 unreadPingsBySlug = new Map();
             }
-            refreshLoungeNavBadge();
+            refreshNavPingBadge();
         }
 
         async function handleIncomingPing(row) {
