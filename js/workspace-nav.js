@@ -22,6 +22,7 @@ import { goToLogin, isDesktopLocalHost } from "./desktop-auth.js?v=3";
 import { bootFeatureHighlights } from "./feature-highlights.js?v=3";
 import { bootFeatureUsageTracking } from "./feature-usage-track.js?v=1";
 import { bootUserPresence } from "./user-presence.js?v=2";
+import { DISCORD_URL } from "./site-links.js?v=1";
 
 const PROFILE_SELECT = "id, username, display_name, account_type, profile_image_url";
 
@@ -176,10 +177,27 @@ function renderNavHtml(active) {
                 <a href="${navHref("settings.html")}"${activeClass("settings", active)}>Settings</a>
                 <a href="${navHref("reader-home.html")}"${active === "reading" ? ' class="is-active"' : ' class="is-hidden"'} id="navReading">Reading</a>
                 <button type="button" class="wd-nav-logout" data-logout-btn>Log out</button>
+                <a href="${DISCORD_URL}" class="wd-nav-discord" target="_blank" rel="noopener noreferrer">Discord</a>
                 <a href="${navHref("index.html")}">Home</a>
             </div>
         </nav>
     `;
+}
+
+function wireDiscordNavLink() {
+    const nav = document.querySelector(".wd-nav-wrap .wd-nav");
+    if (!nav || nav.querySelector(".wd-nav-discord")) return;
+
+    const discordLink = document.createElement("a");
+    discordLink.href = DISCORD_URL;
+    discordLink.className = "wd-nav-discord";
+    discordLink.target = "_blank";
+    discordLink.rel = "noopener noreferrer";
+    discordLink.textContent = "Discord";
+
+    const homeLink = nav.querySelector('a[href$="index.html"]');
+    if (homeLink) homeLink.before(discordLink);
+    else nav.appendChild(discordLink);
 }
 
 function renderWelcomeProfile(profile, fallbackLabel) {
@@ -351,6 +369,7 @@ export function initWorkspaceNav(options = {}) {
 
     wireLogoutButtons(document);
     wireContinueButton();
+    wireDiscordNavLink();
 
     if (!options.skipAuthHydrate) {
         hydrateWelcomeBar({ ...options, active }).catch(console.warn);
