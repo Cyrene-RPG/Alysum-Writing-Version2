@@ -21,6 +21,7 @@ import {
 import { goToLogin, isDesktopLocalHost } from "./desktop-auth.js?v=3";
 import { bootFeatureHighlights } from "./feature-highlights.js?v=3";
 import { bootFeatureUsageTracking } from "./feature-usage-track.js?v=1";
+import { bootUserPresence } from "./user-presence.js?v=2";
 
 const PROFILE_SELECT = "id, username, display_name, account_type, profile_image_url";
 
@@ -357,6 +358,7 @@ export function initWorkspaceNav(options = {}) {
 
     bootFeatureHighlights({ showSpotlight: options.showFeatureSpotlight !== false });
     bootFeatureUsageTracking();
+    bootUserPresence();
 
     return navWrap;
 }
