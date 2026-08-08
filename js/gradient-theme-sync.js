@@ -210,10 +210,11 @@
     }
 
     function applyChrome(preview) {
-        document.documentElement.style.setProperty(
-            "--alysum-chrome-gradient",
-            preview || CLASSIC_PREVIEW
-        );
+        if (preview) {
+            document.documentElement.style.setProperty("--alysum-chrome-gradient", preview);
+            return;
+        }
+        document.documentElement.style.removeProperty("--alysum-chrome-gradient");
     }
 
     try {
@@ -225,7 +226,7 @@
     try {
         applyChrome(localStorage.getItem(PREVIEW_KEY));
     } catch (e) {
-        applyChrome(CLASSIC_PREVIEW);
+        applyChrome(null);
     }
 
     try {
@@ -247,7 +248,7 @@
             try {
                 applyChrome(localStorage.getItem(PREVIEW_KEY));
             } catch (err) {
-                applyChrome(CLASSIC_PREVIEW);
+                applyChrome(null);
             }
         }
         if (e.key === TEXT_STYLE_KEY) applyTextStyle(e.newValue || "classic");
@@ -262,7 +263,7 @@
             try {
                 applyChrome(localStorage.getItem(PREVIEW_KEY));
             } catch (err) {
-                applyChrome(CLASSIC_PREVIEW);
+                applyChrome(null);
             }
         }
     });
