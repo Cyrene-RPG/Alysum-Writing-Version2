@@ -669,6 +669,15 @@ body.light .sms-edit-btn.primary {
     color: #8e8e93;
 }
 
+.sms-row.sent .sms-reply-quote-name {
+    color: rgba(255, 255, 255, 0.92);
+}
+
+.sms-row.sent .sms-reply-quote {
+    background: rgba(0, 0, 0, 0.18);
+    border-left-color: rgba(255, 255, 255, 0.55);
+}
+
 .sms-reply-quote-body {
     font-size: 12px;
     line-height: 1.3;
@@ -678,13 +687,30 @@ body.light .sms-edit-btn.primary {
     text-overflow: ellipsis;
 }
 
+.sms-row.sent .sms-reply-quote-body {
+    color: rgba(255, 255, 255, 0.72);
+}
+
 .sms-mention {
     color: #0a84ff;
     font-weight: 700;
 }
 
+.sms-row.sent .sms-mention {
+    color: #fff;
+    font-weight: 800;
+    text-decoration: underline;
+    text-decoration-color: rgba(255, 255, 255, 0.55);
+    text-underline-offset: 2px;
+}
+
 body.light .sms-mention {
     color: #007aff;
+}
+
+body.light .sms-row.sent .sms-mention {
+    color: #fff;
+    text-decoration-color: rgba(255, 255, 255, 0.65);
 }
 
 .sms-row.is-highlight .sms-bubble {
