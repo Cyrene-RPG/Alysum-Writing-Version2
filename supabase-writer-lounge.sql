@@ -56,6 +56,7 @@ CREATE TABLE IF NOT EXISTS public.lounge_messages (
 -- Upgrade tables created by the old forum migration (CREATE TABLE IF NOT EXISTS skips new columns).
 ALTER TABLE public.lounge_boards ADD COLUMN IF NOT EXISTS last_message_at timestamptz;
 ALTER TABLE public.lounge_boards ADD COLUMN IF NOT EXISTS created_at timestamptz NOT NULL DEFAULT now();
+ALTER TABLE public.lounge_messages ADD COLUMN IF NOT EXISTS edited_at timestamptz;
 
 UPDATE public.lounge_boards b
 SET last_message_at = sub.latest_at
@@ -312,7 +313,8 @@ BEGIN
         WHERE u.id = m.sender_id
       ),
       'body', m.body,
-      'createdAt', m.created_at
+      'createdAt', m.created_at,
+      'editedAt', m.edited_at
     ) AS msg
     FROM public.lounge_messages m
     WHERE m.board_id = v_board.id
@@ -399,6 +401,76 @@ BEGIN
 END;
 $$;
 
+CREATE OR REPLACE FUNCTION public.edit_lounge_message(
+  p_message_id uuid,
+  p_body text
+)
+RETURNS public.lounge_messages
+LANGUAGE plpgsql
+VOLATILE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_uid uuid := auth.uid();
+  v_body text := trim(coalesce(p_body, ''));
+  v_row public.lounge_messages;
+BEGIN
+  IF v_uid IS NULL THEN
+    RAISE EXCEPTION 'not_authenticated';
+  END IF;
+
+  IF char_length(v_body) < 1 OR char_length(v_body) > 8000 THEN
+    RAISE EXCEPTION 'invalid_message_body';
+  END IF;
+
+  IF v_body ~ '<[^>]+>' THEN
+    RAISE EXCEPTION 'text_only_messages';
+  END IF;
+
+  UPDATE public.lounge_messages m
+  SET body = v_body, edited_at = now()
+  WHERE m.id = p_message_id
+    AND m.sender_id = v_uid
+    AND m.deleted_at IS NULL
+  RETURNING * INTO v_row;
+
+  IF v_row.id IS NULL THEN
+    RAISE EXCEPTION 'message_not_found';
+  END IF;
+
+  RETURN v_row;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.delete_lounge_message(p_message_id uuid)
+RETURNS void
+LANGUAGE plpgsql
+VOLATILE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_uid uuid := auth.uid();
+  v_updated integer;
+BEGIN
+  IF v_uid IS NULL THEN
+    RAISE EXCEPTION 'not_authenticated';
+  END IF;
+
+  UPDATE public.lounge_messages m
+  SET deleted_at = now(), deleted_by = v_uid
+  WHERE m.id = p_message_id
+    AND m.deleted_at IS NULL
+    AND (m.sender_id = v_uid OR public.is_lounge_staff());
+
+  GET DIAGNOSTICS v_updated = ROW_COUNT;
+  IF v_updated = 0 THEN
+    RAISE EXCEPTION 'message_not_found';
+  END IF;
+END;
+$$;
+
 CREATE OR REPLACE FUNCTION public.list_lounge_online_members(p_limit integer DEFAULT 50)
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -479,6 +551,8 @@ GRANT SELECT ON public.lounge_messages TO authenticated;
 GRANT EXECUTE ON FUNCTION public.list_lounge_home() TO authenticated;
 GRANT EXECUTE ON FUNCTION public.list_lounge_messages(text, timestamptz, integer) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.send_lounge_message(text, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.edit_lounge_message(uuid, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.delete_lounge_message(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.list_lounge_online_members(integer) TO authenticated;
 
 -- Messages are inserted only through send_lounge_message (SECURITY DEFINER).

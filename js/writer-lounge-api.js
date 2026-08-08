@@ -52,6 +52,27 @@ export async function sendLoungeMessage(channelSlug, body) {
     return data;
 }
 
+export async function editLoungeMessage(messageId, body) {
+    const trimmed = safeString(body).trim();
+    if (!trimmed) throw new Error("Message cannot be empty.");
+    if (trimmed.length > 8000) throw new Error("Message is too long.");
+    if (/<[^>]+>/.test(trimmed)) throw new Error("text_only_messages");
+
+    const { data, error } = await supabase.rpc("edit_lounge_message", {
+        p_message_id: messageId,
+        p_body: trimmed
+    });
+    if (error) throw error;
+    return data;
+}
+
+export async function deleteLoungeMessage(messageId) {
+    const { error } = await supabase.rpc("delete_lounge_message", {
+        p_message_id: messageId
+    });
+    if (error) throw error;
+}
+
 export async function listLoungeOnlineMembers(limit = 50) {
     const { data, error } = await supabase.rpc("list_lounge_online_members", {
         p_limit: limit
@@ -77,6 +98,18 @@ export function subscribeLoungeChannel(boardId, { onMessage } = {}) {
                 if (typeof onMessage === "function") onMessage();
             }
         )
+        .on(
+            "postgres_changes",
+            {
+                event: "UPDATE",
+                schema: "public",
+                table: "lounge_messages",
+                filter: `board_id=eq.${boardId}`
+            },
+            () => {
+                if (typeof onMessage === "function") onMessage();
+            }
+        )
         .subscribe();
 
     return () => {
@@ -88,6 +121,6 @@ export function isWriterLoungeSchemaMissing(error) {
     const msg = String(error?.message || error || "");
     return (
         /lounge_categories|lounge_boards|lounge_messages/i.test(msg) ||
-        /list_lounge_home|list_lounge_messages|send_lounge_message|list_lounge_online_members/i.test(msg)
+        /list_lounge_home|list_lounge_messages|send_lounge_message|edit_lounge_message|delete_lounge_message|list_lounge_online_members/i.test(msg)
     );
 }

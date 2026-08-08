@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
     <link rel="stylesheet" href="css/gradient-themes.css?v=5" />
     <link rel="stylesheet" href="css/workspace-nav.css?v=11" />
-    <link rel="stylesheet" href="css/writer-lounge.css?v=3" />
+    <link rel="stylesheet" href="css/writer-lounge.css?v=4" />
     <script src="js/gradient-theme-sync.js" defer></script>
     <script src="js/alysum-appearance-boot.js"></script>
 </head>
@@ -98,12 +98,14 @@
             listLoungeHome,
             listLoungeMessages,
             sendLoungeMessage,
+            editLoungeMessage,
+            deleteLoungeMessage,
             listLoungeOnlineMembers,
             subscribeLoungeChannel,
             channelSlugFromLocation,
             writersLoungeChannelUrl,
             isWriterLoungeSchemaMissing
-        } from "./js/writer-lounge-api.js?v=5";
+        } from "./js/writer-lounge-api.js?v=6";
         import {
             attestBetaMessaging18Plus,
             hasBetaMessagingAttestation
@@ -152,6 +154,7 @@
         let messagingEligible = false;
         let pendingSendBody = "";
         let realtimeUnsub = null;
+        let editingMessageId = null;
 
         function escapeHtml(value) {
             return String(value || "")
@@ -290,6 +293,33 @@
             return row;
         }
 
+        function renderMessageBody(row, mine) {
+            if (editingMessageId === row.id) {
+                return (
+                    `<div class="lounge-msg-edit">` +
+                    `<textarea class="lounge-msg-edit-input" id="editInput-${escapeHtml(row.id)}">${escapeHtml(row.body)}</textarea>` +
+                    `<div class="lounge-msg-edit-actions">` +
+                    `<button type="button" class="lounge-msg-edit-btn primary" data-msg-action="save-edit" data-msg-id="${escapeHtml(row.id)}">Save</button>` +
+                    `<button type="button" class="lounge-msg-edit-btn" data-msg-action="cancel-edit">Cancel</button>` +
+                    `</div></div>`
+                );
+            }
+
+            const actions = mine
+                ? `<div class="lounge-msg-actions">` +
+                  `<button type="button" class="lounge-msg-action" data-msg-action="edit" data-msg-id="${escapeHtml(row.id)}" aria-label="Edit message" title="Edit">✎</button>` +
+                  `<button type="button" class="lounge-msg-action danger" data-msg-action="delete" data-msg-id="${escapeHtml(row.id)}" aria-label="Delete message" title="Delete">🗑</button>` +
+                  `</div>`
+                : "";
+
+            return (
+                `<div class="lounge-msg-body-wrap">` +
+                `<div class="lounge-msg-bubble">${escapeHtml(row.body)}</div>` +
+                actions +
+                `</div>`
+            );
+        }
+
         function renderMessages() {
             if (!activeBoard) {
                 msgList.innerHTML = '<div class="text-empty">Choose a channel to see messages.</div>';
@@ -323,17 +353,22 @@
                         imageUrl: row.senderAvatarUrl || ""
                     });
 
+                const editedLabel = row.editedAt ? `<span class="lounge-msg-edited">edited</span>` : "";
+                const metaBlock = compact && editingMessageId !== row.id
+                    ? ""
+                    : `<div class="lounge-msg-meta">` +
+                      `<div class="lounge-msg-meta-main">` +
+                      `<span class="lounge-msg-name">${escapeHtml(row.senderName || "Writer")}</span>` +
+                      `<span class="lounge-msg-time">${escapeHtml(when)}</span>` +
+                      editedLabel +
+                      `</div></div>`;
+
                 parts.push(
-                    `<div class="lounge-msg-row${compact ? " is-compact" : ""}${mine ? " is-mine" : ""}">` +
+                    `<div class="lounge-msg-row${compact ? " is-compact" : ""}${mine ? " is-mine" : ""}${editingMessageId === row.id ? " is-editing" : ""}">` +
                     avatar +
                     `<div class="lounge-msg-content">` +
-                    (compact
-                        ? ""
-                        : `<div class="lounge-msg-meta">` +
-                          `<span class="lounge-msg-name">${escapeHtml(row.senderName || "Writer")}</span>` +
-                          `<span class="lounge-msg-time">${escapeHtml(when)}</span>` +
-                          `</div>`) +
-                    `<div class="lounge-msg-text">${escapeHtml(row.body)}</div>` +
+                    metaBlock +
+                    renderMessageBody(row, mine) +
                     `</div></div>`
                 );
             }
@@ -400,7 +435,8 @@
                 senderInitials: m.senderInitials,
                 senderAvatarUrl: m.senderAvatarUrl || "",
                 body: m.body,
-                createdAt: m.createdAt
+                createdAt: m.createdAt,
+                editedAt: m.editedAt || null
             }));
             hasMore = (data.messages || []).length >= 50;
             renderMessages();
@@ -419,7 +455,8 @@
                 senderInitials: m.senderInitials,
                 senderAvatarUrl: m.senderAvatarUrl || "",
                 body: m.body,
-                createdAt: m.createdAt
+                createdAt: m.createdAt,
+                editedAt: m.editedAt || null
             }));
             hasMore = (data.messages || []).length >= 50;
             const prevHeight = msgList.scrollHeight;
@@ -432,6 +469,7 @@
             if (!slug) return;
             activeChannel = slug;
             activeBoard = findBoard(slug);
+            editingMessageId = null;
             setThreadStatus("");
 
             const url = writersLoungeChannelUrl(slug);
@@ -533,6 +571,68 @@
 
             await doSend(body);
         }
+
+        async function handleDeleteMessage(messageId) {
+            if (!messageId) return;
+            if (!window.confirm("Delete this message?")) return;
+            try {
+                await deleteLoungeMessage(messageId);
+                if (editingMessageId === messageId) editingMessageId = null;
+                setThreadStatus("");
+                await refreshMessages(false);
+                await refreshHome(true);
+            } catch (err) {
+                setThreadStatus(friendlyBetaSafetyError(err), "error");
+            }
+        }
+
+        async function handleSaveEdit(messageId) {
+            const input = document.getElementById(`editInput-${messageId}`);
+            const nextBody = input?.value?.trim() || "";
+            if (!nextBody) {
+                setThreadStatus("Message cannot be empty.", "error");
+                return;
+            }
+            try {
+                await editLoungeMessage(messageId, nextBody);
+                editingMessageId = null;
+                setThreadStatus("");
+                await refreshMessages(false);
+            } catch (err) {
+                setThreadStatus(friendlyBetaSafetyError(err), "error");
+            }
+        }
+
+        msgList.addEventListener("click", (e) => {
+            const btn = e.target.closest("[data-msg-action]");
+            if (!btn) return;
+            const action = btn.dataset.msgAction;
+            const messageId = btn.dataset.msgId || "";
+
+            if (action === "edit") {
+                editingMessageId = messageId;
+                renderMessages();
+                const input = document.getElementById(`editInput-${messageId}`);
+                input?.focus();
+                if (input) {
+                    input.selectionStart = input.value.length;
+                    input.selectionEnd = input.value.length;
+                }
+                return;
+            }
+            if (action === "cancel-edit") {
+                editingMessageId = null;
+                renderMessages();
+                return;
+            }
+            if (action === "save-edit") {
+                handleSaveEdit(messageId).catch(console.error);
+                return;
+            }
+            if (action === "delete") {
+                handleDeleteMessage(messageId).catch(console.error);
+            }
+        });
 
         channelList.addEventListener("click", (e) => {
             const btn = e.target.closest("[data-slug]");
