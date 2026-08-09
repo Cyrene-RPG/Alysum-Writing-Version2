@@ -411,3 +411,93 @@ $$;
 GRANT EXECUTE ON FUNCTION public.list_open_word_war_lobbies(integer) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.join_word_war_room(text, text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.join_word_war_room_by_id(uuid, text) TO authenticated;
+
+DROP FUNCTION IF EXISTS public.leave_word_war_room(uuid);
+
+CREATE OR REPLACE FUNCTION public.leave_word_war_room(p_room_id uuid)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_uid uuid := auth.uid();
+  v_was_host boolean;
+  v_status text;
+  v_remaining integer;
+  v_new_host uuid;
+BEGIN
+  IF v_uid IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1
+    FROM public.word_wars_participants wp
+    WHERE wp.room_id = p_room_id AND wp.user_id = v_uid
+  ) THEN
+    RAISE EXCEPTION 'Not a participant';
+  END IF;
+
+  SELECT wp.is_host, wr.status
+  INTO v_was_host, v_status
+  FROM public.word_wars_participants wp
+  JOIN public.word_wars_rooms wr ON wr.id = wp.room_id
+  WHERE wp.room_id = p_room_id AND wp.user_id = v_uid;
+
+  DELETE FROM public.word_wars_participants
+  WHERE room_id = p_room_id AND user_id = v_uid;
+
+  SELECT count(*)::integer INTO v_remaining
+  FROM public.word_wars_participants wp
+  WHERE wp.room_id = p_room_id;
+
+  IF v_remaining = 0 THEN
+    UPDATE public.word_wars_rooms
+    SET status = 'cancelled'
+    WHERE id = p_room_id AND status IN ('lobby', 'active');
+
+    RETURN jsonb_build_object('left', true, 'roomCancelled', true, 'roomId', p_room_id);
+  END IF;
+
+  IF v_status IN ('lobby', 'active') THEN
+    UPDATE public.word_wars_rooms
+    SET status = v_status
+    WHERE id = p_room_id AND status = 'cancelled';
+  END IF;
+
+  IF v_was_host THEN
+    SELECT wp.user_id
+    INTO v_new_host
+    FROM public.word_wars_participants wp
+    WHERE wp.room_id = p_room_id
+    ORDER BY wp.joined_at ASC
+    LIMIT 1;
+
+    UPDATE public.word_wars_participants
+    SET is_host = (user_id = v_new_host)
+    WHERE room_id = p_room_id;
+
+    UPDATE public.word_wars_rooms
+    SET host_id = v_new_host
+    WHERE id = p_room_id;
+  END IF;
+
+  IF v_status = 'active' AND v_remaining >= 1 THEN
+    UPDATE public.word_wars_rooms
+    SET status = 'active'
+    WHERE id = p_room_id AND status IN ('finished', 'cancelled');
+  END IF;
+
+  RETURN jsonb_build_object(
+    'left', true,
+    'roomCancelled', false,
+    'roomId', p_room_id,
+    'roomStatus', (
+      SELECT wr.status FROM public.word_wars_rooms wr WHERE wr.id = p_room_id
+    )
+  );
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.leave_word_war_room(uuid) TO authenticated;

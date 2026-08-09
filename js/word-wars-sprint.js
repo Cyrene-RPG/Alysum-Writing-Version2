@@ -17,7 +17,7 @@ import {
     enrichWordWarParticipantProfiles,
     leaveWordWarRoom,
     WORD_WAR_DURATION_UNLIMITED,
-} from "./word-wars-api.js?v=16";
+} from "./word-wars-api.js?v=20";
 import { renderWriterDock } from "./word-wars-call.js?v=4";
 import { sanitizeChapterHtml } from "./book-html-sanitize.js?v=1";
 
@@ -963,7 +963,6 @@ function describeWritersWhoLeft(before = [], after = []) {
 async function refreshLobbyNow() {
     const previousParticipants = lobby?.participants || [];
     const prevCount = previousParticipants.length || lastParticipantCount;
-    const prevStatus = lobby?.status || "active";
 
     try {
         const next = await fetchWordWarLobby({ roomId }, { retry: 1 });
@@ -994,14 +993,22 @@ async function refreshLobbyNow() {
         renderOpponentMirror();
 
         if (lobby.status === "finished" && !sprintEnded) {
-            // A departure must never force recap on writers still in the room.
-            if (prevStatus === "active" && someoneLeft && nextCount >= 1) {
+            // Leaving must never force recap for writers still in the room.
+            // Also repair local state — a prior refresh may have stored finished incorrectly.
+            if (someoneLeft && nextCount >= 1) {
+                lobby = { ...lobby, status: "active" };
+                renderOpponentMirror();
                 return;
             }
             await endSprint("Sprint finished", { publishFinish: false });
             return;
         }
-        if (lobby.status === "cancelled" && !(lobby.participants?.length > 0)) {
+        if (lobby.status === "cancelled" && (lobby.participants?.length || 0) > 0) {
+            lobby = { ...lobby, status: "active" };
+            renderOpponentMirror();
+            return;
+        }
+        if (lobby.status === "cancelled") {
             redirectToHub("That Word War was cancelled.", true);
             return;
         }

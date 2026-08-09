@@ -567,7 +567,10 @@ async function refreshLobby() {
             await dismissLobbyView("You are no longer in that Word War.", true);
             return;
         }
-        if (lobby.status === "cancelled" && !(lobby.participants?.length > 0)) {
+        if (lobby.status === "cancelled" && lobby.participants?.length > 0) {
+            lobby = { ...lobby, status: "lobby" };
+        }
+        if (lobby.status === "cancelled") {
             await dismissLobbyView("That Word War was cancelled.", true);
             return;
         }

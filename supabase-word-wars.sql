@@ -1093,6 +1093,8 @@ BEGIN
 END;
 $$;
 
+DROP FUNCTION IF EXISTS public.leave_word_war_room(uuid);
+
 CREATE OR REPLACE FUNCTION public.leave_word_war_room(p_room_id uuid)
 RETURNS jsonb
 LANGUAGE plpgsql
