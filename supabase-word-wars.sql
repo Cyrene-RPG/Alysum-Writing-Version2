@@ -422,16 +422,26 @@ BEGIN
   FROM public.word_wars_rooms wr
   WHERE wr.id = v_room_id;
 
-  IF v_status = 'active' OR (v_status = 'finished' AND v_started_at IS NOT NULL) THEN
-    RAISE EXCEPTION 'This Word War already started — ask the host for a fresh invite';
+  IF v_status = 'finished' THEN
+    RAISE EXCEPTION 'That Word War has ended';
   END IF;
 
-  IF v_status <> 'lobby' THEN
+  IF v_status = 'cancelled' THEN
     RAISE EXCEPTION 'Room not found or no longer open';
   END IF;
 
-  IF coalesce(v_is_locked, false) AND v_expires_at <= now() THEN
+  IF v_status NOT IN ('lobby', 'active') THEN
     RAISE EXCEPTION 'Room not found or no longer open';
+  END IF;
+
+  IF coalesce(v_is_locked, false) AND v_expires_at <= now() AND v_status = 'lobby' THEN
+    RAISE EXCEPTION 'Room not found or no longer open';
+  END IF;
+
+  IF v_status = 'active' THEN
+    UPDATE public.word_wars_rooms
+    SET expires_at = greatest(expires_at, now() + interval '12 hours')
+    WHERE id = v_room_id;
   END IF;
 
   v_max_writers := public.word_war_joinable_max_writers(v_max_writers, v_is_locked);
@@ -448,7 +458,7 @@ BEGIN
       UPDATE public.word_wars_participants
       SET book_id = v_book_id,
           book_title = v_book_title,
-          is_ready = false
+          is_ready = CASE WHEN v_status = 'active' THEN true ELSE false END
       WHERE room_id = v_room_id AND user_id = v_uid;
     END IF;
     RETURN public.word_war_lobby_json(v_room_id);
@@ -490,7 +500,7 @@ BEGIN
     coalesce(v_book_title, 'Untitled'),
     coalesce(v_display_name, 'Writer'),
     false,
-    false
+    v_status = 'active'
   );
 
   RETURN public.word_war_lobby_json(v_room_id);
@@ -929,10 +939,11 @@ BEGIN
           WHERE wp.room_id = wr.id AND wp.is_host
           LIMIT 1
         ), 'Writer'),
+        'status', wr.status,
         'createdAt', wr.created_at
       ) AS row_data
       FROM public.word_wars_rooms wr
-      WHERE wr.status = 'lobby'
+      WHERE wr.status IN ('lobby', 'active')
         AND coalesce(wr.is_locked, false) = false
         AND wr.expires_at > now()
         AND EXISTS (
@@ -997,16 +1008,26 @@ BEGIN
   FROM public.word_wars_rooms wr
   WHERE wr.id = p_room_id;
 
-  IF v_status = 'active' OR (v_status = 'finished' AND v_started_at IS NOT NULL) THEN
-    RAISE EXCEPTION 'This Word War already started — ask the host for a fresh invite';
+  IF v_status = 'finished' THEN
+    RAISE EXCEPTION 'That Word War has ended';
   END IF;
 
-  IF v_status <> 'lobby' THEN
+  IF v_status = 'cancelled' THEN
+    RAISE EXCEPTION 'Room not found or no longer open';
+  END IF;
+
+  IF v_status NOT IN ('lobby', 'active') THEN
     RAISE EXCEPTION 'Room not found or no longer open';
   END IF;
 
   IF coalesce(v_is_locked, false) THEN
     RAISE EXCEPTION 'This lobby is invite-only — use the room code';
+  END IF;
+
+  IF v_status = 'active' THEN
+    UPDATE public.word_wars_rooms
+    SET expires_at = greatest(expires_at, now() + interval '12 hours')
+    WHERE id = p_room_id;
   END IF;
 
   v_max_writers := public.word_war_joinable_max_writers(v_max_writers, v_is_locked);
@@ -1023,7 +1044,7 @@ BEGIN
       UPDATE public.word_wars_participants
       SET book_id = v_book_id,
           book_title = v_book_title,
-          is_ready = false
+          is_ready = CASE WHEN v_status = 'active' THEN true ELSE false END
       WHERE room_id = p_room_id AND user_id = v_uid;
     END IF;
     RETURN public.word_war_lobby_json(p_room_id);
@@ -1065,7 +1086,7 @@ BEGIN
     coalesce(v_book_title, 'Untitled'),
     coalesce(v_display_name, 'Writer'),
     false,
-    false
+    v_status = 'active'
   );
 
   RETURN public.word_war_lobby_json(p_room_id);

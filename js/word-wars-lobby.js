@@ -29,7 +29,7 @@ import {
     wordWarLobbyUrl,
     wordWarSprintUrl,
     isUsingLocalWordWarsFallback,
-} from "./word-wars-api.js?v=19";
+} from "./word-wars-api.js?v=20";
 import { playWordWarJoinSound, primeWordWarSounds } from "./word-wars-sounds.js?v=2";
 
 const params = new URLSearchParams(window.location.search);
@@ -294,18 +294,20 @@ function renderOpenLobbies(rows = []) {
             const count = Number(row.participantCount) || 0;
             const max = WORD_WAR_MAX_WRITERS;
             const full = count >= max;
+            const inProgress = String(row.status || "lobby") === "active";
+            const detailSuffix = inProgress ? " · In progress" : "";
             return `
                 <article class="ww-open-lobby-row">
                     <div class="ww-open-lobby-meta">
                         <p class="ww-open-lobby-host">${escapeHtml(row.hostDisplayName || "Writer")}'s Word War</p>
-                        <p class="ww-open-lobby-detail">${escapeHtml(formatWordWarDuration(row.durationMin))} · ${count}/${max} writers · code ${escapeHtml(String(row.code || "------"))}</p>
+                        <p class="ww-open-lobby-detail">${escapeHtml(formatWordWarDuration(row.durationMin))}${detailSuffix} · ${count}/${max} writers · code ${escapeHtml(String(row.code || "------"))}</p>
                     </div>
                     <button
                         type="button"
                         class="btn primary"
                         data-join-room="${escapeHtml(String(row.roomId || ""))}"
                         ${full ? "disabled" : ""}
-                    >${full ? "Full" : "Join"}</button>
+                    >${full ? "Full" : inProgress ? "Join sprint" : "Join"}</button>
                 </article>
             `;
         })
