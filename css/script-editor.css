@@ -67,13 +67,13 @@ body.script-mode .editor p.script-action {
   margin-right: -1in;
 }
 
-/* Character — centered block, ALL CAPS */
+/* Character — name block, ALL CAPS (left-aligned at 3.7in, not squeezed to center) */
 body.script-mode .editor p.script-character {
   text-transform: uppercase;
   margin-top: 1em;
   margin-bottom: 0;
   padding-left: 3.7in;
-  padding-right: 3.7in;
+  padding-right: 1in;
   margin-left: -1.5in;
   margin-right: -1in;
 }
@@ -88,12 +88,12 @@ body.script-mode .editor p.script-dialogue {
   margin-right: -1in;
 }
 
-/* Parenthetical — under character name */
+/* Parenthetical — under character name, within dialogue column */
 body.script-mode .editor p.script-parenthetical {
   margin-top: 0;
   margin-bottom: 0;
   padding-left: 3.1in;
-  padding-right: 3.6in;
+  padding-right: 2.5in;
   margin-left: -1.5in;
   margin-right: -1in;
   font-style: normal;

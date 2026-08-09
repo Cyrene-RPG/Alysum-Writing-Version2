@@ -26,7 +26,7 @@
     <link rel="stylesheet" href="css/accessibility-fonts.css?v=1" />
     <link rel="stylesheet" href="css/book-inline-fonts.css?v=4" />
     <link rel="stylesheet" href="css/scene-breaks.css?v=8" />
-    <link rel="stylesheet" href="css/script-editor.css?v=1" />
+    <link rel="stylesheet" href="css/script-editor.css?v=2" />
 <link rel="stylesheet" href="css/book-version.css?v=8" />
     <link rel="stylesheet" href="css/collab-room.css?v=4" />
     <script src="js/gradient-theme-sync.js" defer></script>
@@ -1552,7 +1552,8 @@
         initScriptEditor,
         isScriptParagraph,
         normalizeScriptParagraphAttributes,
-    } from "./js/script-editor.js?v=1";
+        scriptHtmlToPlainText,
+    } from "./js/script-editor.js?v=2";
     import {
         LOCAL_GUEST_USER,
         LOCAL_VAULT_STORAGE_KEY,
@@ -2045,6 +2046,7 @@ function rememberBookId(id) {
     const comicCaptionInput = document.getElementById("comicCaptionInput");
     const comicUploadStatus = document.getElementById("comicUploadStatus");
     const scriptToolbar = document.getElementById("scriptToolbar");
+    const scriptToolbarHint = document.getElementById("scriptToolbarHint");
     const scriptFindReplaceBtn = document.getElementById("scriptFindReplaceBtn");
     const bottomMetaLabel = document.getElementById("bottomMetaLabel");
     const bottomTotalLabel = document.getElementById("bottomTotalLabel");
@@ -3486,7 +3488,7 @@ function rememberBookId(id) {
         stripEditorPageGapsFromHtml(holder);
 
         return holder.innerHTML
-            .replace(/<p(?![^>]*scene-break)(?![^>]*scene-spacer)>(\s|&nbsp;)*<\/p>/gi, "")
+            .replace(/<p(?![^>]*scene-break)(?![^>]*scene-spacer)(?![^>]*script-)>(\s|&nbsp;)*<\/p>/gi, "")
             .replace(/<div>(\s|&nbsp;|<br\s*\/?>)*<\/div>/gi, "")
             .trim();
     }
@@ -5170,7 +5172,7 @@ function rememberBookId(id) {
             container.appendChild(selection.getRangeAt(i).cloneContents());
         }
         const html = cleanEditorHtml(container.innerHTML);
-        const text = stripHtmlToText(html);
+        const text = isCurrentBookScript() ? scriptHtmlToPlainText(html) : stripHtmlToText(html);
         e.clipboardData.setData("text/html", html);
         e.clipboardData.setData("text/plain", text);
         e.preventDefault();
@@ -5214,6 +5216,7 @@ function rememberBookId(id) {
     initScriptEditor({
         editor,
         toolbar: scriptToolbar,
+        hintEl: scriptToolbarHint,
         onChange: () => {
             markEditorChapterDirty();
             syncStats();

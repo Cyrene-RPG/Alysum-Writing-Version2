@@ -22,8 +22,18 @@ const ENTER_NEXT = {
   scene: "action",
   action: "action",
   character: "dialogue",
-  dialogue: "action",
+  dialogue: "dialogue",
   parenthetical: "dialogue",
+  transition: "scene",
+  shot: "action",
+};
+
+const EMPTY_ENTER_NEXT = {
+  scene: "action",
+  action: "action",
+  character: "action",
+  dialogue: "action",
+  parenthetical: "action",
   transition: "scene",
   shot: "action",
 };
@@ -139,15 +149,14 @@ export function handleScriptEnterKey(event, editor) {
   const currentType = getScriptElementType(paragraph);
   const isEmpty = isEmptyParagraph(paragraph);
 
-  if (isEmpty && currentType === "action") {
-    setScriptElementType(paragraph, "character");
-    placeCaretIn(paragraph, false);
-    return true;
-  }
-
-  if (isEmpty && currentType === "character") {
-    setScriptElementType(paragraph, "scene");
-    placeCaretIn(paragraph, false);
+  if (isEmpty) {
+    const nextType = EMPTY_ENTER_NEXT[currentType] || "action";
+    if (currentType === "dialogue" || currentType === "parenthetical") {
+      setScriptElementType(paragraph, nextType);
+      placeCaretIn(paragraph, false);
+      return true;
+    }
+    insertParagraphAfter(paragraph, nextType, editor);
     return true;
   }
 
@@ -156,9 +165,6 @@ export function handleScriptEnterKey(event, editor) {
 
   if (after) {
     setScriptElementType(after, nextType);
-    if (isEmptyParagraph(before) && currentType === "dialogue") {
-      setScriptElementType(before, "character");
-    }
     placeCaretIn(after, false);
   } else {
     insertParagraphAfter(before, nextType, editor);
@@ -280,22 +286,54 @@ export function ensureScriptEditorContent(editor) {
 
 /**
  * Wire script toolbar buttons and keyboard handlers.
- * @param {{ editor: HTMLElement, toolbar: HTMLElement|null, onChange?: () => void }} options
+ * @param {{ editor: HTMLElement, toolbar: HTMLElement|null, onChange?: () => void, hintEl?: HTMLElement|null }} options
  */
-export function initScriptEditor({ editor, toolbar, onChange }) {
+export function initScriptEditor({ editor, toolbar, onChange, hintEl }) {
   if (!editor) return () => {};
 
   const notify = () => { onChange?.(); };
 
-  const onKeyDown = (e) => {
-    if (handleScriptTabKey(e, editor)) notify();
-    else if (handleScriptEnterKey(e, editor)) notify();
+  const syncToolbarState = () => {
+    if (!toolbar && !hintEl) return;
+    const paragraph = getBlockParagraph(window.getSelection()?.anchorNode, editor);
+    const currentType = paragraph && editor.contains(paragraph)
+      ? getScriptElementType(paragraph)
+      : null;
+
+    toolbar?.querySelectorAll("[data-script-element]").forEach((btn) => {
+      btn.classList.toggle("is-active", btn.dataset.scriptElement === currentType);
+    });
+
+    if (hintEl && currentType) {
+      hintEl.textContent = scriptElementHint(currentType);
+    }
   };
 
-  const onInput = () => notify();
+  const onKeyDown = (e) => {
+    if (handleScriptTabKey(e, editor)) {
+      notify();
+      syncToolbarState();
+    } else if (handleScriptEnterKey(e, editor)) {
+      notify();
+      syncToolbarState();
+    }
+  };
+
+  const onInput = () => {
+    notify();
+    syncToolbarState();
+  };
+
+  const onSelectionChange = () => {
+    if (!editor.contains(document.activeElement) && document.activeElement !== editor) return;
+    syncToolbarState();
+  };
 
   editor.addEventListener("keydown", onKeyDown);
   editor.addEventListener("input", onInput);
+  editor.addEventListener("keyup", onSelectionChange);
+  editor.addEventListener("click", onSelectionChange);
+  document.addEventListener("selectionchange", onSelectionChange);
 
   const toolbarClick = (e) => {
     const btn = e.target.closest("[data-script-element]");
@@ -303,6 +341,7 @@ export function initScriptEditor({ editor, toolbar, onChange }) {
     e.preventDefault();
     applyScriptElementToSelection(editor, btn.dataset.scriptElement);
     notify();
+    syncToolbarState();
   };
 
   toolbar?.addEventListener("click", toolbarClick);
@@ -315,16 +354,31 @@ export function initScriptEditor({ editor, toolbar, onChange }) {
     e.preventDefault();
     applyScriptElementToSelection(editor, match.id);
     notify();
+    syncToolbarState();
   };
 
   document.addEventListener("keydown", onShortcut);
+  syncToolbarState();
 
   return () => {
     editor.removeEventListener("keydown", onKeyDown);
     editor.removeEventListener("input", onInput);
+    editor.removeEventListener("keyup", onSelectionChange);
+    editor.removeEventListener("click", onSelectionChange);
+    document.removeEventListener("selectionchange", onSelectionChange);
     toolbar?.removeEventListener("click", toolbarClick);
     document.removeEventListener("keydown", onShortcut);
   };
+}
+
+export function scriptHtmlToPlainText(html) {
+  const holder = document.createElement("div");
+  holder.innerHTML = String(html || "");
+  const lines = [];
+  holder.querySelectorAll("p").forEach((p) => {
+    lines.push((p.textContent || "").replace(/\u00a0/g, " "));
+  });
+  return lines.join("\n").replace(/\n+$/, "");
 }
 
 export function scriptElementHint(typeId) {
@@ -332,5 +386,5 @@ export function scriptElementHint(typeId) {
   if (!def) return "";
   const enterNext = ENTER_NEXT[typeId];
   const nextLabel = SCRIPT_ELEMENT_BY_ID[enterNext]?.label || "";
-  return `Tab — cycle elements · Enter — next ${nextLabel || "line"}`;
+  return `Tab — cycle · Enter — ${nextLabel || "next line"} · empty line — exit block`;
 }
