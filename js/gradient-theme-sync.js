@@ -11,6 +11,7 @@
     var TEXT_COLOR_ACCENT_KEY = "alysum-display-text-color-accent";
     var BODY_BG_KEY = "alysum-body-bg";
     var BODY_BG_CUSTOM_KEY = "alysum-body-bg-custom";
+    var APPEARANCE_MIX_KEY = "alysum-appearance-mix";
     var CLASSIC_PREVIEW = "linear-gradient(135deg, #4c1d95 0%, #7c3aed 50%, #ec4899 100%)";
     var LEGACY_FONT = {
         chrome: "rajdhani",
@@ -220,12 +221,86 @@
     }
 
     var BODY_BG_PRESETS = {
-        deep: "#020b18",
-        midnight: "#0a0e14",
-        charcoal: "#111827",
-        navy: "#0f172a",
-        slate: "#1e293b",
-        ink: "#070b14"
+        violet: "#120a22",
+        aurora: "#0a1628",
+        twilight: "#100818",
+        lavender: "#120a20",
+        plum: "#120818",
+        cosmic: "#080818",
+        galaxy: "#0c0820",
+        neon: "#0a1020",
+        opal: "#0a1018",
+        ocean: "#0c1324",
+        arctic: "#020617",
+        midnight: "#020a1a",
+        profilewave: "#0a1520",
+        lagoon: "#041612",
+        tide: "#061814",
+        rose: "#1f0a12",
+        wine: "#1a0508",
+        sakura: "#180810",
+        cotton: "#100818",
+        bloodmoon: "#140505",
+        ember: "#1a0a08",
+        inferno: "#1a0808",
+        volcano: "#120808",
+        sunset: "#120818",
+        peach: "#181008",
+        forest: "#071612",
+        forest2: "#101808",
+        mint: "#061612",
+        citrus: "#0a1408",
+        gold: "#1a1208",
+        copper: "#141008",
+        honey: "#181006",
+        mocha: "#121010",
+        silver: "#0f1419",
+        noir: "#09090b",
+        deep: "#09090b",
+        charcoal: "#09090b",
+        navy: "#0c1324",
+        slate: "#0f1419",
+        ink: "#09090b"
+    };
+
+    var ACCENT_COMPLEMENT_BG = {
+        classic: "#0b1220",
+        vivid: "#0f0a1a",
+        profilewave: "#0a1520",
+        midnight: "#020a1a",
+        ocean: "#0c1324",
+        arctic: "#020617",
+        sunset: "#120818",
+        inferno: "#1a0808",
+        ember: "#1a0a08",
+        rose: "#1f0a12",
+        wine: "#1a0508",
+        gold: "#1a1208",
+        aurora: "#0a1628",
+        forest: "#071612",
+        forest2: "#101808",
+        neon: "#0a1020",
+        silver: "#0f1419",
+        lavender: "#120a20",
+        mint: "#061612",
+        peach: "#181008",
+        plum: "#120818",
+        copper: "#141008",
+        sakura: "#180810",
+        cosmic: "#080818",
+        citrus: "#0a1408",
+        bloodmoon: "#140505",
+        mocha: "#121010",
+        prism: "#0b1220",
+        twilight: "#100818",
+        lagoon: "#061412",
+        galaxy: "#080818",
+        cotton: "#100818",
+        honey: "#141008",
+        tide: "#061612",
+        volcano: "#120808",
+        opal: "#0a1018",
+        noir: "#09090b"
     };
 
     function applyBodyBgFromStorage() {
@@ -236,6 +311,13 @@
         } catch (e) {
             id = "default";
         }
+        var mixFree = false;
+        try {
+            mixFree = localStorage.getItem(APPEARANCE_MIX_KEY) === "free";
+        } catch (e) {
+            mixFree = false;
+        }
+        if (!mixFree && id !== "default" && id !== "theme") id = "theme";
         if (!id || id === "default") {
             root.style.removeProperty("--bg");
             root.style.removeProperty("--bg-gradient-top");
@@ -245,10 +327,18 @@
             }
             return;
         }
+        var accentId = "classic";
+        try {
+            accentId = localStorage.getItem(KEY) || "classic";
+        } catch (e) {
+            accentId = "classic";
+        }
         var bg =
-            id === "custom"
-                ? localStorage.getItem(BODY_BG_CUSTOM_KEY) || "#0b1220"
-                : BODY_BG_PRESETS[id];
+            id === "theme"
+                ? ACCENT_COMPLEMENT_BG[accentId] || "#0b1220"
+                : id === "custom"
+                  ? localStorage.getItem(BODY_BG_CUSTOM_KEY) || "#0b1220"
+                  : BODY_BG_PRESETS[id];
         if (bg && parseHex(bg)) {
             root.style.setProperty("--bg", bg);
             root.style.setProperty("--bg-gradient-top", lighten(bg, 0.08));
@@ -293,6 +383,7 @@
         if (e.key === KEY) {
             applyTheme(e.newValue || "classic");
             applyTextColorFromStorage();
+            applyBodyBgFromStorage();
             try {
                 applyChrome(localStorage.getItem(PREVIEW_KEY));
             } catch (err) {
@@ -317,11 +408,15 @@
         if (e.key === BODY_BG_KEY || e.key === BODY_BG_CUSTOM_KEY) {
             applyBodyBgFromStorage();
         }
+        if (e.key === APPEARANCE_MIX_KEY) {
+            applyBodyBgFromStorage();
+        }
     });
 
     window.addEventListener("alysum-gradient-theme", function (e) {
         if (e.detail && e.detail.id) applyTheme(e.detail.id);
         if (e.detail && e.detail.preview) applyChrome(e.detail.preview);
+        applyBodyBgFromStorage();
     });
 
     window.addEventListener("alysum-display-text-style", function (e) {
@@ -334,6 +429,7 @@
 
     window.addEventListener("alysum-gradient-theme", function () {
         applyTextColorFromStorage();
+        applyBodyBgFromStorage();
     });
 
     window.addEventListener("alysum-body-bg", function () {

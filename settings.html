@@ -449,6 +449,83 @@
         text-transform: uppercase;
     }
 
+    .appearance-mix-controls {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px 14px;
+        margin: 0 0 14px;
+        padding: 12px 14px;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.03);
+    }
+
+    .appearance-mix-mode {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 16px;
+        flex: 1 1 220px;
+    }
+
+    .appearance-mix-option {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--muted);
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .appearance-mix-option input {
+        accent-color: var(--purple-bright, #9333ea);
+        width: 16px;
+        height: 16px;
+        margin: 0;
+        cursor: pointer;
+    }
+
+    .appearance-mix-option:has(input:checked) {
+        color: #fff;
+    }
+
+    .appearance-mix-shuffle {
+        flex: 0 0 auto;
+        padding: 9px 16px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        background: linear-gradient(135deg, rgba(124, 58, 237, 0.45), rgba(236, 72, 153, 0.28));
+        color: #fff;
+        font-size: 13px;
+        font-weight: 800;
+        cursor: pointer;
+        transition: transform 0.12s ease, filter 0.15s ease, border-color 0.15s ease;
+    }
+
+    .appearance-mix-shuffle:hover {
+        filter: brightness(1.1);
+        border-color: rgba(255, 255, 255, 0.32);
+        transform: translateY(-1px);
+    }
+
+    .appearance-mix-shuffle:active {
+        transform: translateY(0);
+    }
+
+    .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+
     #appearancePanel .appearance-grid {
         display: grid;
         gap: 10px;
@@ -469,7 +546,7 @@
     }
 
     #appearancePanel .appearance-grid--bg {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
     }
 
     @media (min-width: 900px) {
@@ -480,6 +557,10 @@
         #appearancePanel .appearance-grid--fonts {
             grid-template-columns: repeat(2, minmax(0, 1fr));
         }
+
+        #appearancePanel .appearance-grid--bg {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
     }
 
     @media (min-width: 1200px) {
@@ -489,6 +570,10 @@
 
         #appearancePanel .appearance-grid--fonts {
             grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        #appearancePanel .appearance-grid--bg {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
         }
     }
 
@@ -1283,10 +1368,24 @@
     <div class="panel hidden settings-tab-panel" id="appearancePanel" role="tabpanel" aria-labelledby="tab-appearance">
         <h2>Appearance</h2>
         <p class="hint">Accent colors for the UI, plus a title font and color for headings.</p>
+        <div class="appearance-mix-controls" aria-labelledby="appearance-mix-heading">
+            <span class="sr-only" id="appearance-mix-heading">Accent and background coordination</span>
+            <div class="appearance-mix-mode" role="radiogroup" aria-label="Accent and background">
+                <label class="appearance-mix-option">
+                    <input type="radio" name="appearanceMixMode" value="linked" id="appearanceMixLinked" />
+                    Linked — background follows accent
+                </label>
+                <label class="appearance-mix-option">
+                    <input type="radio" name="appearanceMixMode" value="free" id="appearanceMixFree" />
+                    Mix freely — combine any accent &amp; background
+                </label>
+            </div>
+            <button type="button" class="appearance-mix-shuffle" id="appearanceMixShuffle" title="Random accent and background combo">Mix it up ↻</button>
+        </div>
         <div class="appearance-layout">
             <section class="appearance-block appearance-block--bg" aria-labelledby="appearance-bg-heading">
                 <h3 class="appearance-subhead" id="appearance-bg-heading">Page background</h3>
-                <p class="hint">The dark space behind panels and content.</p>
+                <p class="hint">The dark space behind panels and content. Choose <strong>Site default</strong> for the original look, or pick a tint that pairs with your accents.</p>
                 <div class="theme-grid appearance-grid appearance-grid--bg" id="bodyBgChipRow" aria-label="Page background colors"></div>
                 <div class="display-color-custom" id="bodyBgCustom" hidden>
                     <div class="display-color-field">
@@ -1658,8 +1757,12 @@
         getStoredBodyBgId,
         getStoredCustomBodyBg,
         initBodyBackgroundOnPage,
-        getBodyBgPreview
-    } from "./js/body-background.js?v=1";
+        getBodyBgPreview,
+        getAppearanceMixMode,
+        setAppearanceMixMode,
+        isAppearanceLinked,
+        getMixableBodyBgPresets
+    } from "./js/body-background.js?v=5";
     import { normalizeAccountType, ACCOUNT_AUTHOR, ACCOUNT_READER, ACCOUNT_BOTH, homeUrlForUserData } from "./js/account-mode.js?v=1";
     import {
         exportUserBackup,
@@ -1703,6 +1806,9 @@
     const bodyBgChipRow = document.getElementById("bodyBgChipRow");
     const bodyBgCustom = document.getElementById("bodyBgCustom");
     const bodyBgColor = document.getElementById("bodyBgColor");
+    const appearanceMixLinked = document.getElementById("appearanceMixLinked");
+    const appearanceMixFree = document.getElementById("appearanceMixFree");
+    const appearanceMixShuffle = document.getElementById("appearanceMixShuffle");
     const accountModePanel = document.getElementById("accountModePanel");
     const saveAccountTypeBtn = document.getElementById("saveAccountTypeBtn");
     const accountTypeMsg = document.getElementById("accountTypeMsg");
@@ -1878,13 +1984,26 @@
                 b.style.background = t.preview;
             }
             b.className = cls;
+            b.dataset.theme = t.id;
             b.textContent = t.label;
             b.title = t.hint || "";
             b.addEventListener("click", () => {
                 applyGradientTheme(t.id);
                 applyChromeGradient(t.preview || getThemePreview(t.id));
-                if (getStoredDisplayTextColorId() === "theme") {
+                if (isAppearanceLinked()) {
+                    applyBodyBackground("theme");
+                    refreshBodyBgThemeChip();
+                    setBodyBgChipActive("theme");
                     applyDisplayTextColor("theme");
+                    setTextColorChipActive("theme");
+                } else {
+                    if (getStoredDisplayTextColorId() === "theme") {
+                        applyDisplayTextColor("theme");
+                    }
+                    if (getStoredBodyBgId() === "theme") {
+                        applyBodyBackground("theme");
+                        refreshBodyBgThemeChip();
+                    }
                 }
                 themeChipRow.querySelectorAll(".theme-chip").forEach((x) => {
                     x.classList.remove("active");
@@ -1961,10 +2080,12 @@
 
     function initAppearancePickers() {
         try {
+            bindAppearanceMixControls();
             initThemePicker();
             initBodyBgPicker();
             initTextStylePicker();
             initTextColorPicker();
+            syncAppearanceMixModeUi();
         } catch (err) {
             console.error("Appearance pickers failed:", err);
         }
@@ -2079,6 +2200,76 @@
         });
     }
 
+    function syncAppearanceMixModeUi() {
+        const linked = isAppearanceLinked();
+        if (appearanceMixLinked) appearanceMixLinked.checked = linked;
+        if (appearanceMixFree) appearanceMixFree.checked = !linked;
+    }
+
+    function bindAppearanceMixControls() {
+        if (appearanceMixLinked?.dataset.bound === "1") return;
+        if (appearanceMixLinked) appearanceMixLinked.dataset.bound = "1";
+        syncAppearanceMixModeUi();
+
+        appearanceMixLinked?.addEventListener("change", () => {
+            if (!appearanceMixLinked.checked) return;
+            setAppearanceMixMode("linked");
+            applyBodyBackground("theme");
+            applyDisplayTextColor("theme");
+            setBodyBgChipActive("theme");
+            setTextColorChipActive("theme");
+            syncBodyBgCustomPanelVisibility("theme");
+            syncCustomColorPanelVisibility("theme");
+            refreshBodyBgThemeChip();
+        });
+
+        appearanceMixFree?.addEventListener("change", () => {
+            if (!appearanceMixFree?.checked) return;
+            setAppearanceMixMode("free");
+        });
+
+        appearanceMixShuffle?.addEventListener("click", () => {
+            setAppearanceMixMode("free");
+            syncAppearanceMixModeUi();
+            const accents = GRADIENT_THEMES;
+            const bgs = getMixableBodyBgPresets();
+            const accent = accents[Math.floor(Math.random() * accents.length)];
+            let bg = bgs[Math.floor(Math.random() * bgs.length)];
+            if (bgs.length > 1 && bg.id === accent.id) {
+                bg = bgs[(bgs.indexOf(bg) + 1) % bgs.length];
+            }
+            applyGradientTheme(accent.id);
+            applyChromeGradient(accent.preview || getThemePreview(accent.id));
+            applyBodyBackground(bg.id);
+            applyDisplayTextColor("theme");
+            themeChipRow?.querySelectorAll(".theme-chip").forEach((x) => {
+                x.classList.toggle("active", x.dataset.theme === accent.id);
+            });
+            setBodyBgChipActive(bg.id);
+            setTextColorChipActive("theme");
+            syncBodyBgCustomPanelVisibility(bg.id);
+            syncCustomColorPanelVisibility("theme");
+        });
+    }
+
+    function setBodyBgChipActive(id) {
+        bodyBgChipRow?.querySelectorAll(".theme-chip").forEach((x) => {
+            x.classList.toggle("active", x.dataset.style === id);
+        });
+    }
+
+    function setTextColorChipActive(id) {
+        textColorChipRow?.querySelectorAll(".theme-chip").forEach((x) => {
+            x.classList.toggle("active", x.dataset.style === id);
+        });
+    }
+
+    function refreshBodyBgThemeChip() {
+        const themeBtn = bodyBgChipRow?.querySelector('[data-style="theme"]');
+        if (!themeBtn) return;
+        themeBtn.style.background = getBodyBgPreview("theme");
+    }
+
     function initBodyBgPicker() {
         if (!bodyBgChipRow || bodyBgChipRow.dataset.ready === "1") return;
         bodyBgChipRow.dataset.ready = "1";
@@ -2104,8 +2295,18 @@
                 if (p.id === "custom") {
                     const color = bodyBgColor?.value || getStoredCustomBodyBg();
                     applyBodyBackground("custom", color);
+                    setAppearanceMixMode("free");
+                    syncAppearanceMixModeUi();
+                } else if (p.id === "theme") {
+                    applyBodyBackground("theme");
+                    setAppearanceMixMode("linked");
+                    syncAppearanceMixModeUi();
+                } else if (p.id === "default") {
+                    applyBodyBackground("default");
                 } else {
                     applyBodyBackground(p.id);
+                    setAppearanceMixMode("free");
+                    syncAppearanceMixModeUi();
                 }
                 bodyBgChipRow.querySelectorAll(".theme-chip").forEach((x) => {
                     x.classList.remove("active");

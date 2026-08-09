@@ -58,6 +58,7 @@ const DEVICE_PREFERENCE_KEYS = [
   "alysum-display-text-color-accent",
   "alysum-body-bg",
   "alysum-body-bg-custom",
+  "alysum-appearance-mix",
   "alysum-theme",
   "alysum-font",
   "alysum-fontSize",
