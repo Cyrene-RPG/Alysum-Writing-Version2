@@ -54,6 +54,13 @@ function compactDateLabel(dayKey) {
     return dt.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
+function fullDateLabel(dayKey, todayKey) {
+    const [y, m, d] = dayKey.split("-").map(Number);
+    const dt = new Date(y, m - 1, d);
+    if (dayKey === todayKey) return "Today";
+    return dt.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+}
+
 /** Build 0-based tick marks (0, 100, 200, …) up to a readable ceiling. */
 function computeYAxisScale(maxValue) {
     const dataMax = Math.max(1, maxValue);
@@ -84,6 +91,50 @@ function renderGridLines(ticks, scaleMax, chartHeight, labelGap = 20) {
         const bottomPx = labelGap + Math.round((value / scaleMax) * chartHeight);
         return `<div class="writing-trend-grid-line" style="bottom:${bottomPx}px"></div>`;
     }).join("");
+}
+
+function bindWritingTrendTooltips(wrapEl) {
+    const chartArea = wrapEl?.querySelector(".writing-trend-chart-area");
+    if (!chartArea) return;
+
+    let tip = chartArea.querySelector(".writing-trend-hover-tip");
+    if (!tip) {
+        tip = document.createElement("div");
+        tip.className = "writing-trend-hover-tip";
+        tip.hidden = true;
+        chartArea.appendChild(tip);
+    }
+
+    const hideTip = () => {
+        tip.hidden = true;
+    };
+
+    const showTipForBar = (bar) => {
+        const date = bar.getAttribute("data-day-label") || "";
+        const words = Number(bar.getAttribute("data-day-words")) || 0;
+        tip.innerHTML = `
+            <span class="writing-trend-hover-tip-date">${escapeHtml(date)}</span>
+            <span class="writing-trend-hover-tip-count">${formatCount(words)} words</span>
+        `;
+
+        const areaRect = chartArea.getBoundingClientRect();
+        const barRect = bar.getBoundingClientRect();
+        const barEl = bar.querySelector(".writing-trend-bar");
+        const barTopRect = barEl?.getBoundingClientRect() || barRect;
+        const left = barRect.left - areaRect.left + barRect.width / 2;
+        const top = barTopRect.top - areaRect.top - 8;
+
+        tip.style.left = `${left}px`;
+        tip.style.top = `${top}px`;
+        tip.hidden = false;
+    };
+
+    wrapEl.querySelectorAll(".writing-trend-bar-wrap[data-day-words]").forEach((bar) => {
+        bar.addEventListener("mouseenter", () => showTipForBar(bar));
+        bar.addEventListener("mouseleave", hideTip);
+        bar.addEventListener("focus", () => showTipForBar(bar));
+        bar.addEventListener("blur", hideTip);
+    });
 }
 
 /**
@@ -143,7 +194,13 @@ export function renderWritingDayTrendChart(container, writingDayTotals, options 
             : "";
 
         return `
-            <div class="writing-trend-bar-wrap${isToday ? " is-today" : ""}" title="${escapeHtml(compactDateLabel(row.dayKey))}: ${formatCount(row.words)} words">
+            <div
+                class="writing-trend-bar-wrap${isToday ? " is-today" : ""}"
+                data-day-label="${escapeHtml(fullDateLabel(row.dayKey, todayKey))}"
+                data-day-words="${row.words}"
+                tabindex="0"
+                aria-label="${escapeHtml(fullDateLabel(row.dayKey, todayKey))}: ${formatCount(row.words)} words"
+            >
                 <div class="writing-trend-bar-track" style="height:${chartHeight}px">
                     <div class="writing-trend-bar ${tone}" style="height:${barHeight}px"></div>
                 </div>
@@ -182,4 +239,8 @@ export function renderWritingDayTrendChart(container, writingDayTotals, options 
             </div>
         `
         : `<p class="writing-trend-empty">No typed words recorded yet. Open the editor and start writing to see your daily trend here.</p>`;
+
+    if (hasAnyWords) {
+        bindWritingTrendTooltips(container.querySelector(".writing-trend-wrap"));
+    }
 }
