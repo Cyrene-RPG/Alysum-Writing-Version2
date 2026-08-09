@@ -29,7 +29,7 @@ import {
     wordWarLobbyUrl,
     wordWarSprintUrl,
     isUsingLocalWordWarsFallback,
-} from "./word-wars-api.js?v=18";
+} from "./word-wars-api.js?v=19";
 import { playWordWarJoinSound, primeWordWarSounds } from "./word-wars-sounds.js?v=2";
 
 const params = new URLSearchParams(window.location.search);

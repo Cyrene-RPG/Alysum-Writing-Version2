@@ -531,6 +531,9 @@ export function formatWordWarError(error) {
     if (/Room not found|no longer open/i.test(message)) {
         return "That lobby is closed or expired.";
     }
+    if (/already started/i.test(message)) {
+        return "That Word War already started — ask the host for a new lobby.";
+    }
     if (/Room is full/i.test(message)) {
         return "That lobby is full.";
     }

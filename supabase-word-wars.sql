@@ -346,25 +346,33 @@ BEGIN
     RETURN;
   END IF;
 
+  -- Waiting lobbies were sometimes marked cancelled by leave bugs — reopen them.
   UPDATE public.word_wars_rooms wr
   SET status = 'lobby',
       expires_at = greatest(wr.expires_at, now() + interval '4 hours'),
-      max_writers = 16
+      max_writers = CASE
+        WHEN coalesce(wr.is_locked, false) THEN wr.max_writers
+        ELSE 16
+      END
   WHERE wr.id = p_room_id
-    AND coalesce(wr.is_locked, false) = false
     AND wr.status = 'cancelled'
+    AND wr.started_at IS NULL
     AND EXISTS (
       SELECT 1 FROM public.word_wars_participants wp WHERE wp.room_id = wr.id
     );
 
   UPDATE public.word_wars_rooms wr
   SET expires_at = greatest(wr.expires_at, now() + interval '4 hours'),
-      max_writers = 16
+      max_writers = CASE
+        WHEN coalesce(wr.is_locked, false) THEN wr.max_writers
+        ELSE 16
+      END
   WHERE wr.id = p_room_id
-    AND coalesce(wr.is_locked, false) = false
     AND wr.status = 'lobby';
 END;
 $$;
+
+DROP FUNCTION IF EXISTS public.join_word_war_room(text, text);
 
 CREATE OR REPLACE FUNCTION public.join_word_war_room(
   p_code text,
@@ -387,6 +395,7 @@ DECLARE
   v_is_locked boolean;
   v_status text;
   v_expires_at timestamptz;
+  v_started_at timestamptz;
 BEGIN
   IF v_uid IS NULL THEN
     RAISE EXCEPTION 'Not authenticated';
@@ -408,16 +417,20 @@ BEGIN
 
   PERFORM public.word_war_repair_open_lobby(v_room_id);
 
-  SELECT wr.max_writers, wr.is_locked, wr.status, wr.expires_at
-  INTO v_max_writers, v_is_locked, v_status, v_expires_at
+  SELECT wr.max_writers, wr.is_locked, wr.status, wr.expires_at, wr.started_at
+  INTO v_max_writers, v_is_locked, v_status, v_expires_at, v_started_at
   FROM public.word_wars_rooms wr
   WHERE wr.id = v_room_id;
+
+  IF v_status = 'active' OR (v_status = 'finished' AND v_started_at IS NOT NULL) THEN
+    RAISE EXCEPTION 'This Word War already started — ask the host for a fresh invite';
+  END IF;
 
   IF v_status <> 'lobby' THEN
     RAISE EXCEPTION 'Room not found or no longer open';
   END IF;
 
-  IF v_is_locked AND v_expires_at <= now() THEN
+  IF coalesce(v_is_locked, false) AND v_expires_at <= now() THEN
     RAISE EXCEPTION 'Room not found or no longer open';
   END IF;
 
@@ -936,6 +949,8 @@ BEGIN
 END;
 $$;
 
+DROP FUNCTION IF EXISTS public.join_word_war_room_by_id(uuid, text);
+
 CREATE OR REPLACE FUNCTION public.join_word_war_room_by_id(
   p_room_id uuid,
   p_book_id text DEFAULT NULL
@@ -955,6 +970,7 @@ DECLARE
   v_is_locked boolean;
   v_status text;
   v_expires_at timestamptz;
+  v_started_at timestamptz;
 BEGIN
   IF v_uid IS NULL THEN
     RAISE EXCEPTION 'Not authenticated';
@@ -964,8 +980,8 @@ BEGIN
     RAISE EXCEPTION 'Invalid room';
   END IF;
 
-  SELECT wr.max_writers, wr.is_locked, wr.status, wr.expires_at
-  INTO v_max_writers, v_is_locked, v_status, v_expires_at
+  SELECT wr.max_writers, wr.is_locked, wr.status, wr.expires_at, wr.started_at
+  INTO v_max_writers, v_is_locked, v_status, v_expires_at, v_started_at
   FROM public.word_wars_rooms wr
   WHERE wr.id = p_room_id
   FOR UPDATE;
@@ -976,16 +992,20 @@ BEGIN
 
   PERFORM public.word_war_repair_open_lobby(p_room_id);
 
-  SELECT wr.max_writers, wr.is_locked, wr.status, wr.expires_at
-  INTO v_max_writers, v_is_locked, v_status, v_expires_at
+  SELECT wr.max_writers, wr.is_locked, wr.status, wr.expires_at, wr.started_at
+  INTO v_max_writers, v_is_locked, v_status, v_expires_at, v_started_at
   FROM public.word_wars_rooms wr
   WHERE wr.id = p_room_id;
+
+  IF v_status = 'active' OR (v_status = 'finished' AND v_started_at IS NOT NULL) THEN
+    RAISE EXCEPTION 'This Word War already started — ask the host for a fresh invite';
+  END IF;
 
   IF v_status <> 'lobby' THEN
     RAISE EXCEPTION 'Room not found or no longer open';
   END IF;
 
-  IF v_is_locked THEN
+  IF coalesce(v_is_locked, false) THEN
     RAISE EXCEPTION 'This lobby is invite-only — use the room code';
   END IF;
 
@@ -1198,8 +1218,11 @@ WHERE status = 'lobby'
   AND max_writers < 16;
 
 UPDATE public.word_wars_rooms wr
-SET status = 'lobby'
+SET status = 'lobby',
+    expires_at = greatest(wr.expires_at, now() + interval '4 hours'),
+    max_writers = CASE WHEN coalesce(wr.is_locked, false) THEN wr.max_writers ELSE 16 END
 WHERE wr.status = 'cancelled'
+  AND wr.started_at IS NULL
   AND EXISTS (
     SELECT 1
     FROM public.word_wars_participants wp
