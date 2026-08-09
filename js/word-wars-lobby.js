@@ -13,6 +13,7 @@ import {
     isWordWarWriterCount,
     normalizeWordWarWriterCount,
     lobbyMaxWriters,
+    wordWarSameUserId,
     createWordWarRoom,
     fetchWordWarLobby,
     joinWordWarRoom,
@@ -26,7 +27,7 @@ import {
     wordWarLobbyUrl,
     wordWarSprintUrl,
     isUsingLocalWordWarsFallback,
-} from "./word-wars-api.js?v=12";
+} from "./word-wars-api.js?v=14";
 
 const params = new URLSearchParams(window.location.search);
 const initialCode = String(params.get("code") || "").trim().toUpperCase();
@@ -202,12 +203,12 @@ async function leaveCurrentLobby() {
 function meInLobby(lobby) {
     const uid = sessionCtx?.uid;
     if (!uid) return null;
-    return lobby?.participants?.find((p) => String(p.userId) === String(uid)) || null;
+    return lobby?.participants?.find((p) => wordWarSameUserId(p.userId, uid)) || null;
 }
 
 function othersInLobby(lobby) {
     const uid = sessionCtx?.uid;
-    return (lobby?.participants || []).filter((p) => String(p.userId) !== String(uid));
+    return (lobby?.participants || []).filter((p) => !wordWarSameUserId(p.userId, uid));
 }
 
 function renderDurationPicker(lobby) {
@@ -314,7 +315,11 @@ function renderLobbyCapacity(lobby) {
 function renderLobbyWriterCount(lobby) {
     if (!lobbyWriterCount) return;
     const maxWriters = lobbyMaxWriters(lobby);
-    lobbyWriterCount.textContent = `${maxWriters} writers`;
+    if (lobby.isLocked) {
+        lobbyWriterCount.textContent = `Invite-only · ${maxWriters} writers max`;
+    } else {
+        lobbyWriterCount.textContent = `Open · up to ${maxWriters} writers`;
+    }
 }
 
 function renderLobbyActions(lobby) {
@@ -406,17 +411,20 @@ async function dismissLobbyView(message = "", isError = false) {
 
 async function refreshLobby() {
     if (!currentLobby?.roomId) return;
+    const roomId = currentLobby.roomId;
     try {
-        const lobby = await fetchWordWarLobby({ roomId: currentLobby.roomId });
+        const lobby = await fetchWordWarLobby({ roomId }, { retry: 1 });
         if (!lobby) {
+            if (meInLobby(currentLobby)) return;
             await dismissLobbyView("That Word War is no longer available.", true);
             return;
         }
         if (!meInLobby(lobby)) {
+            if (meInLobby(currentLobby)) return;
             await dismissLobbyView("You are no longer in that Word War.", true);
             return;
         }
-        if (lobby.status === "cancelled") {
+        if (lobby.status === "cancelled" && !(lobby.participants?.length > 0)) {
             await dismissLobbyView("That Word War was cancelled.", true);
             return;
         }
@@ -426,6 +434,7 @@ async function refreshLobby() {
         console.warn(err);
         const message = String(err?.message || "");
         if (/not accessible|not a participant|not found/i.test(message)) {
+            if (meInLobby(currentLobby)) return;
             await dismissLobbyView(message, true);
         }
     }
@@ -453,8 +462,8 @@ async function bootHub() {
         try {
             const lobby = await fetchWordWarLobby({ roomId: initialRoomId, code: initialCode });
             if (lobby) {
-                const alreadyJoined = lobby.participants.some(
-                    (p) => String(p.userId) === String(sessionCtx?.uid)
+                const alreadyJoined = lobby.participants.some((p) =>
+                    wordWarSameUserId(p.userId, sessionCtx?.uid)
                 );
                 if (!alreadyJoined && initialCode) {
                     const joined = await joinWordWarRoom(

@@ -32,7 +32,13 @@ export function isWordWarWriterPreset(value) {
 }
 
 export function lobbyMaxWriters(lobby) {
-    return normalizeWordWarWriterCount(lobby?.maxWriters ?? lobby?.max_writers, WORD_WAR_MAX_WRITERS);
+    return normalizeWordWarWriterCount(lobby?.maxWriters ?? lobby?.max_writers, 4);
+}
+
+/** Open lobbies accept the full room cap; locked lobbies use the host's chosen limit. */
+export function resolveWordWarMaxWriters(maxWriters, isLocked = false) {
+    if (!isLocked) return WORD_WAR_MAX_WRITERS;
+    return normalizeWordWarWriterCount(maxWriters, 4);
 }
 
 export function canStartWordWar(lobby) {
@@ -86,6 +92,10 @@ function sameUserId(a, b) {
     return safeString(a).toLowerCase() === safeString(b).toLowerCase();
 }
 
+export function wordWarSameUserId(a, b) {
+    return sameUserId(a, b);
+}
+
 function normalizeLobby(raw) {
     if (!raw || typeof raw !== "object") return null;
     const participants = Array.isArray(raw.participants)
@@ -102,7 +112,7 @@ function normalizeLobby(raw) {
             const parsed = Number(raw.durationMin ?? raw.duration_min ?? 15);
             return isWordWarDuration(parsed) ? parsed : 15;
         })(),
-        maxWriters: normalizeWordWarWriterCount(raw.maxWriters ?? raw.max_writers, WORD_WAR_MAX_WRITERS),
+        maxWriters: normalizeWordWarWriterCount(raw.maxWriters ?? raw.max_writers, 4),
         status: safeString(raw.status, "lobby"),
         createdAt: raw.createdAt || raw.created_at || null,
         startedAt: raw.startedAt || raw.started_at || null,
@@ -215,7 +225,7 @@ function createLocalRoom(uid, profile, durationMin, maxWriters, bookId, bookTitl
         code,
         hostId: uid,
         durationMin,
-        maxWriters: normalizeWordWarWriterCount(maxWriters),
+        maxWriters: resolveWordWarMaxWriters(maxWriters, isLocked),
         status: "lobby",
         isLocked: Boolean(isLocked),
         createdAt: new Date().toISOString(),
@@ -363,6 +373,9 @@ function updateLocalLobby(roomId, uid, { durationMin, bookId, bookTitle, isReady
     if (typeof isLocked === "boolean") {
         if (!me.isHost) throw new Error("Only the host can lock the lobby");
         lobby.isLocked = isLocked;
+        if (!isLocked) {
+            lobby.maxWriters = WORD_WAR_MAX_WRITERS;
+        }
     }
 
     if (bookId) {
@@ -508,7 +521,7 @@ export async function createWordWarRoom(
     bookTitle = "",
     isLocked = false
 ) {
-    const writerCount = normalizeWordWarWriterCount(maxWriters);
+    const writerCount = resolveWordWarMaxWriters(maxWriters, isLocked);
     if (await probeCloudSchema()) {
         const { data, error } = await supabase.rpc("create_word_war_room", {
             p_duration_min: durationMin,
@@ -627,19 +640,31 @@ export async function leaveWordWarRoom(roomId) {
 }
 
 /** @param {{ code?: string, roomId?: string }} query */
-export async function fetchWordWarLobby(query = {}) {
+export async function fetchWordWarLobby(query = {}, { retry = 0 } = {}) {
     const code = String(query.code || "").trim().toUpperCase();
     const roomId = String(query.roomId || "").trim();
 
-    if (await probeCloudSchema()) {
-        const { data, error } = await supabase.rpc("get_word_war_lobby", {
-            p_code: code || null,
-            p_room_id: roomId || null,
-        });
-        if (error) throw error;
-        return normalizeLobby(data);
+    const load = async () => {
+        if (await probeCloudSchema()) {
+            const { data, error } = await supabase.rpc("get_word_war_lobby", {
+                p_code: code || null,
+                p_room_id: roomId || null,
+            });
+            if (error) throw error;
+            return normalizeLobby(data);
+        }
+        return loadLocalLobby({ code, roomId });
+    };
+
+    try {
+        return await load();
+    } catch (err) {
+        if (retry > 0) {
+            await new Promise((resolve) => window.setTimeout(resolve, 350));
+            return fetchWordWarLobby(query, { retry: retry - 1 });
+        }
+        throw err;
     }
-    return loadLocalLobby({ code, roomId });
 }
 
 /**

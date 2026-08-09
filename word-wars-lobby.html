@@ -310,6 +310,12 @@
             text-transform: uppercase;
             color: var(--muted-2);
         }
+        .ww-label-note {
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            text-transform: none;
+            color: var(--muted);
+        }
         .ww-chip-grid,
         .ww-chip-row {
             display: grid;
@@ -840,7 +846,7 @@
                             <h2>Start a Word War</h2>
                             <p>Create a lobby, choose how many writers, share the code, and pick a sprint length.</p>
                             <form id="createForm">
-                                <span class="ww-label">Writers in this war</span>
+                                <span class="ww-label">Max writers <span class="ww-label-note">(invite-only lobbies)</span></span>
                                 <div class="ww-chip-grid ww-chip-grid--writers" id="hubWriterPicker">
                                     <button type="button" class="ww-chip is-active" data-writers="2">2</button>
                                     <button type="button" class="ww-chip" data-writers="3">3</button>
@@ -869,7 +875,7 @@
                                     <input type="checkbox" id="createLockInput" />
                                     <div>
                                         <span>Locked lobby (invite only)</span>
-                                        <small>Hidden from the open lobby list — friends need your room code.</small>
+                                        <small id="createLockHint">Open lobbies accept up to 16 writers from the public list. Lock to cap the group at your chosen size.</small>
                                     </div>
                                 </label>
                                 <button type="submit" class="btn primary block">Create lobby</button>
@@ -965,6 +971,6 @@
         </div>
     </main>
 
-    <script type="module" src="js/word-wars-lobby.js?v=13"></script>
+    <script type="module" src="js/word-wars-lobby.js?v=15"></script>
 </body>
 </html>

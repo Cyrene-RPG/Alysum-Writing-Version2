@@ -91,6 +91,21 @@ BEGIN
 END;
 $$;
 
+CREATE OR REPLACE FUNCTION public.is_word_war_member(p_room_id uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.word_wars_participants wp
+    WHERE wp.room_id = p_room_id
+      AND wp.user_id = auth.uid()
+  );
+$$;
+
 CREATE OR REPLACE FUNCTION public.is_word_war_participant(p_room_id uuid)
 RETURNS boolean
 LANGUAGE sql
@@ -228,6 +243,11 @@ BEGIN
 
   IF v_max_writers < 2 OR v_max_writers > 16 THEN
     RAISE EXCEPTION 'Invalid writer count';
+  END IF;
+
+  -- Public/open lobbies use the full room cap; writer count only limits invite-only rooms.
+  IF NOT coalesce(p_is_locked, false) THEN
+    v_max_writers := 16;
   END IF;
 
   IF v_book_id IS NOT NULL THEN
@@ -419,6 +439,11 @@ BEGIN
     RETURN NULL;
   END IF;
 
+  -- Writers already in the room always get the snapshot (even if expired/cancelled).
+  IF auth.uid() IS NOT NULL AND public.is_word_war_member(v_room_id) THEN
+    RETURN public.word_war_lobby_json(v_room_id);
+  END IF;
+
   IF auth.uid() IS NOT NULL AND NOT public.is_word_war_participant(v_room_id) THEN
     IF EXISTS (
       SELECT 1 FROM public.word_wars_rooms wr
@@ -505,7 +530,12 @@ BEGIN
       RAISE EXCEPTION 'Only the host can lock the lobby';
     END IF;
     UPDATE public.word_wars_rooms
-    SET is_locked = coalesce(p_is_locked, false)
+    SET
+      is_locked = coalesce(p_is_locked, false),
+      max_writers = CASE
+        WHEN coalesce(p_is_locked, false) = false THEN 16
+        ELSE max_writers
+      END
     WHERE id = p_room_id;
   END IF;
 
@@ -917,7 +947,11 @@ BEGIN
     RAISE EXCEPTION 'Not authenticated';
   END IF;
 
-  IF NOT public.is_word_war_participant(p_room_id) THEN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM public.word_wars_participants wp
+    WHERE wp.room_id = p_room_id AND wp.user_id = v_uid
+  ) THEN
     RAISE EXCEPTION 'Not a participant';
   END IF;
 
@@ -940,6 +974,13 @@ BEGIN
     WHERE id = p_room_id AND status IN ('lobby', 'active');
 
     RETURN jsonb_build_object('left', true, 'roomCancelled', true, 'roomId', p_room_id);
+  END IF;
+
+  -- Repair accidental cancelled status while writers remain.
+  IF v_status IN ('lobby', 'active') THEN
+    UPDATE public.word_wars_rooms
+    SET status = v_status
+    WHERE id = p_room_id AND status = 'cancelled';
   END IF;
 
   IF v_was_host THEN
@@ -1017,6 +1058,25 @@ CREATE POLICY word_wars_participants_select ON public.word_wars_participants
   );
 
 -- Mutations go through SECURITY DEFINER RPCs only.
+
+-- ---------------------------------------------------------------------------
+-- 4b. One-time data fixes (safe to re-run)
+-- ---------------------------------------------------------------------------
+
+UPDATE public.word_wars_rooms
+SET max_writers = 16
+WHERE status = 'lobby'
+  AND is_locked = false
+  AND max_writers < 16;
+
+UPDATE public.word_wars_rooms wr
+SET status = 'lobby'
+WHERE wr.status = 'cancelled'
+  AND EXISTS (
+    SELECT 1
+    FROM public.word_wars_participants wp
+    WHERE wp.room_id = wr.id
+  );
 
 -- ---------------------------------------------------------------------------
 -- 5. Realtime

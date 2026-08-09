@@ -12,10 +12,11 @@ import {
     updateWordWarProgress,
     listMyBooks,
     wordWarLobbyUrl,
+    wordWarSameUserId,
     enrichWordWarParticipantProfiles,
     leaveWordWarRoom,
     WORD_WAR_DURATION_UNLIMITED,
-} from "./word-wars-api.js?v=12";
+} from "./word-wars-api.js?v=14";
 import { renderWriterDock } from "./word-wars-call.js?v=4";
 import { sanitizeChapterHtml } from "./book-html-sanitize.js?v=1";
 
@@ -110,7 +111,7 @@ function setPageStatus(message, isError = false) {
 }
 
 function meInLobby() {
-    return lobby?.participants?.find((p) => String(p.userId) === String(uid)) || null;
+    return lobby?.participants?.find((p) => wordWarSameUserId(p.userId, uid)) || null;
 }
 
 function getShareDraftState() {
@@ -949,13 +950,16 @@ function redirectToHub(message = "", isError = false) {
 
 async function refreshLobby() {
     try {
-        const next = await fetchWordWarLobby({ roomId });
+        const next = await fetchWordWarLobby({ roomId }, { retry: 1 });
         if (!next) {
+            if (meInLobby()) return;
             redirectToHub("That Word War is no longer available.", true);
             return;
         }
+        const stillMember = (next.participants || []).some((p) => wordWarSameUserId(p.userId, uid));
         lobby = await enrichWordWarParticipantProfiles(next);
         if (!meInLobby()) {
+            if (stillMember || meInLobby()) return;
             redirectToHub("You are no longer in that Word War.", true);
             return;
         }
@@ -964,11 +968,16 @@ async function refreshLobby() {
         renderOpponentMirror();
         if (lobby.status === "finished" && !sprintEnded) {
             await endSprint("Sprint finished");
+            return;
+        }
+        if (lobby.status === "cancelled") {
+            redirectToHub("That Word War was cancelled.", true);
         }
     } catch (err) {
         console.warn(err);
         const message = String(err?.message || "");
         if (/not accessible|not a participant|not found/i.test(message)) {
+            if (meInLobby()) return;
             redirectToHub(message, true);
         }
     }
