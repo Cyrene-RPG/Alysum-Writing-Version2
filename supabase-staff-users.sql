@@ -58,16 +58,21 @@ $$;
 CREATE TABLE IF NOT EXISTS public.comments (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   book_id text NOT NULL,
+  chapter_id text NOT NULL DEFAULT '',
   user_id uuid NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE,
   username text NOT NULL DEFAULT '',
   display_name text NOT NULL DEFAULT '',
   text text NOT NULL DEFAULT '',
+  parent_id uuid REFERENCES public.comments (id) ON DELETE CASCADE,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz
 );
 
 CREATE INDEX IF NOT EXISTS comments_book_id_idx ON public.comments (book_id);
 CREATE INDEX IF NOT EXISTS comments_user_id_idx ON public.comments (user_id);
+CREATE INDEX IF NOT EXISTS comments_book_chapter_idx ON public.comments (book_id, chapter_id);
+CREATE INDEX IF NOT EXISTS comments_book_chapter_created_idx ON public.comments (book_id, chapter_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS comments_parent_id_idx ON public.comments (parent_id) WHERE parent_id IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS public.likes (
   id text PRIMARY KEY,
@@ -655,7 +660,7 @@ BEGIN
   SELECT COALESCE(jsonb_agg(row_to_json(t)::jsonb ORDER BY t.created_at DESC), '[]'::jsonb)
   INTO v_comments
   FROM (
-    SELECT c.id, c.book_id, c.text, c.created_at, c.updated_at
+    SELECT c.id, c.book_id, c.text, c.chapter_id, c.parent_id, c.created_at, c.updated_at
     FROM public.comments c
     WHERE c.user_id = p_user_id
     ORDER BY c.created_at DESC

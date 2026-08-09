@@ -955,8 +955,9 @@
     }
 
     async function getRecentComments(bookIds) {
-        const rows = await queryRowsByBookIds("comments", bookIds, "id, text, display_name, username, created_at");
+        const rows = await queryRowsByBookIds("comments", bookIds, "id, text, display_name, username, chapter_id, parent_id, created_at");
         return rows
+            .filter((row) => !row.parent_id)
             .sort((a, b) => {
                 const ta = typeof a.created_at === "number" ? a.created_at : Date.parse(String(a.created_at || "")) || 0;
                 const tb = typeof b.created_at === "number" ? b.created_at : Date.parse(String(b.created_at || "")) || 0;
@@ -967,8 +968,16 @@
                 id: row.id,
                 displayLabel: safeString(row.display_name || row.username || "", "reader"),
                 text: safeString(row.text, ""),
+                chapterId: safeString(row.chapter_id, ""),
                 createdAt: row.created_at || 0
             }));
+    }
+
+    function chapterTitleForBook(book, chapterId) {
+        const id = safeString(chapterId, "");
+        if (!id) return "";
+        const chapter = (book.chapters || []).find((ch) => safeString(ch.id, "") === id);
+        return chapter ? safeString(chapter.title, id) : id;
     }
 
     async function loadPublishedBooks(uid) {
@@ -1082,7 +1091,7 @@
             const commentsHtml = book.recentComments.length
                 ? book.recentComments.map(comment => `
                     <div class="comment-item">
-                        <div class="comment-meta">${escapeHtml(comment.displayLabel)} — ${escapeHtml(formatDate(comment.createdAt))}</div>
+                        <div class="comment-meta">${escapeHtml(comment.displayLabel)} — ${escapeHtml(formatDate(comment.createdAt))}${comment.chapterId ? ` · ${escapeHtml(chapterTitleForBook(book, comment.chapterId))}` : ""}</div>
                         <div class="comment-text">${escapeHtml(comment.text || "(empty comment)")}</div>
                         <div class="comment-row-actions">
                             <button type="button" class="mini-btn danger-outline" data-remove-comment-id="${escapeHtml(comment.id)}">Remove comment</button>

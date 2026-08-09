@@ -210,6 +210,7 @@
         @media (max-width: 760px) { .chapter-reactions-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
         .comment-list { display: grid; gap: 10px; margin-bottom: 12px; }
         .comment-item { border: 1px solid var(--border); background: var(--panel-2); border-radius: 16px; padding: 12px; }
+        .comment-item.is-replying { border-color: rgba(167,139,250,0.45); }
         .comment-user { font-size: 13px; font-weight: 900; margin-bottom: 6px; }
         .comment-text { font-size: 14px; line-height: 1.6; color: var(--text); white-space: pre-wrap; }
         .comment-item-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
@@ -218,8 +219,16 @@
         .comment-action-btn { font: inherit; font-size: 12px; font-weight: 800; padding: 5px 10px; border-radius: 10px; border: 1px solid var(--border); background: var(--panel); color: var(--muted); cursor: pointer; }
         .comment-edit-area { width: 100%; min-height: 88px; margin-top: 8px; resize: vertical; border-radius: 12px; border: 1px solid var(--border); background: var(--panel); color: var(--text); padding: 10px; font: inherit; font-size: 14px; line-height: 1.55; }
         .comment-edit-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+        .comment-replies { display: grid; gap: 8px; margin-top: 10px; padding-left: 14px; border-left: 2px solid var(--border); }
+        .comment-reply { border: 1px solid var(--border); background: var(--panel); border-radius: 14px; padding: 10px 12px; }
+        .comment-reply .comment-user { font-size: 12px; margin-bottom: 4px; }
+        .comment-reply .comment-text { font-size: 13px; }
+        .comment-inline-reply { display: grid; gap: 8px; margin-top: 10px; }
+        .comment-reply-input { width: 100%; min-height: 72px; resize: vertical; border-radius: 12px; border: 1px solid var(--border); background: var(--panel); color: var(--text); padding: 10px; font: inherit; font-size: 14px; line-height: 1.55; }
+        .comment-reply-actions { display: flex; flex-wrap: wrap; gap: 8px; }
         .comment-form { display: grid; gap: 10px; }
         .comment-input { width: 100%; min-height: 110px; resize: vertical; border-radius: 16px; border: 1px solid var(--border); background: var(--panel-2); color: var(--text); padding: 12px; outline: none; font-family: inherit; font-size: 15px; line-height: 1.6; }
+        .comments-subtitle { font-size: 13px; font-weight: 700; color: var(--muted); margin: -6px 0 12px; line-height: 1.45; }
         .footer-space { height: 40px; }
         @media (min-width: 1080px) { .hero { display: none; } .page-main { min-width: 0; } .reader-card, .nav-row, .reader-tools, .likes-card, .comments-card, .author-end-card, .status, .error-box { max-width: none; } }
         @media (max-width: 1079px) { .reader-layout { grid-template-columns: 1fr; } }
@@ -314,7 +323,7 @@
             <div class="reader-card"><div class="reader-head"><h2 class="chapter-title" id="chapterTitle">Loading…</h2><div class="chapter-meta" id="chapterMeta"></div><div class="chapter-warnings hidden" id="chapterWarningsBlock"><div class="chip-label">Chapter warnings</div><div class="chip-row" id="chapterWarningList"></div></div></div><div class="reader-chapter-wrap alysum-rw-wrap"><div class="alysum-rw-sheet" id="readerWatermarkSheet" aria-hidden="true"></div><div class="reader-body alysum-rw-body"><aside class="author-notes-block hidden" id="authorNotesBlock" aria-label="Author's note"><div class="author-notes-kicker">Author's note</div><div class="author-notes-text" id="authorNotesText"></div></aside><div class="content" id="content"></div></div><div class="alysum-rw-footer" id="readerWatermarkFooter"></div></div><div class="reader-next-chapter-wrap"><div class="reader-next-chapter-inner"><button class="btn primary reader-next-chapter-btn" id="nextChapterBottomBtn" type="button">Next Chapter →</button><p class="reader-next-chapter-release-note hidden" id="nextChapterReleaseNote"></p></div></div><div class="chapter-reactions" id="chapterReactions"><div class="chapter-reactions-title" id="chapterReactionsTitle">Let the author know what you thought about this chapter!</div><div class="chapter-reactions-grid" id="chapterReactionsGrid"></div></div></div>
             <div class="reader-tools"><button class="btn primary" id="bookmarkBtn">Bookmark This Chapter</button><button class="btn" id="resumeBtn">Resume Where I Left Off</button><button class="btn btn-report hidden" id="reportBookBtn" type="button">Report Book</button></div>
             <div class="likes-card"><div class="likes-title">Kudos</div><div class="likes-row"><button class="btn primary" id="likeBtn">❤️ Leave Kudos</button><div class="kudos-note">One Per User.</div></div><div class="kudos-count" id="likeCount">0 kudos</div></div>
-            <div class="comments-card"><div class="comments-title">Comments</div><div class="comment-list" id="commentList"></div><div class="comment-form"><textarea class="comment-input" id="commentInput" placeholder="Write a comment…"></textarea><button class="btn primary" id="postCommentBtn">Post Comment</button></div></div>
+            <div class="comments-card"><div class="comments-title">Comments</div><div class="comments-subtitle" id="commentsSubtitle">Comments on this chapter</div><div class="comment-list" id="commentList"></div><div class="comment-form"><textarea class="comment-input" id="commentInput" placeholder="Write a comment on this chapter…"></textarea><button class="btn primary" id="postCommentBtn">Post Comment</button></div></div>
             <div class="author-end-card hidden" id="authorEndCard" aria-labelledby="authorEndTitle">
                 <div class="author-end-header">
                     <div class="author-end-avatar" id="authorEndAvatar" aria-hidden="true">
@@ -393,9 +402,9 @@
         localStorage.getItem("alysum-last-book") ||
         "";
 
-    const backBtn = document.getElementById("backBtn"), themeBtn = document.getElementById("themeBtn"), fontMinusBtn = document.getElementById("fontMinusBtn"), fontPlusBtn = document.getElementById("fontPlusBtn"), menuBtn = document.getElementById("menuBtn"), mobileDrawer = document.getElementById("mobileDrawer"), drawerBackdrop = document.getElementById("drawerBackdrop"), closeDrawerBtn = document.getElementById("closeDrawerBtn"), topbarTitle = document.getElementById("topbarTitle"), topbarSubtitle = document.getElementById("topbarSubtitle"), betaReadTopBtn = document.getElementById("betaReadTopBtn"), readerProfileTopBtn = document.getElementById("readerProfileTopBtn"), allNotesTopBtn = document.getElementById("allNotesTopBtn"), statusBox = document.getElementById("statusBox"), errorBox = document.getElementById("errorBox"), bookTitle = document.getElementById("bookTitle"), bookAuthor = document.getElementById("bookAuthor"), bookSummary = document.getElementById("bookSummary"), serializationBadge = document.getElementById("serializationBadge"), statChapters = document.getElementById("statChapters"), statWords = document.getElementById("statWords"), statReads = document.getElementById("statReads"), statType = document.getElementById("statType"), statRating = document.getElementById("statRating"), tagList = document.getElementById("tagList"), warningList = document.getElementById("warningList"), sideBookTitle = document.getElementById("sideBookTitle"), sideBookAuthor = document.getElementById("sideBookAuthor"), sideBookSummary = document.getElementById("sideBookSummary"), sideTagList = document.getElementById("sideTagList"), sideWarningList = document.getElementById("sideWarningList"), drawerBookTitle = document.getElementById("drawerBookTitle"), drawerBookAuthor = document.getElementById("drawerBookAuthor"), drawerBookSummary = document.getElementById("drawerBookSummary"), drawerTagList = document.getElementById("drawerTagList"), drawerWarningList = document.getElementById("drawerWarningList"), prevBtn = document.getElementById("prevBtn"), nextBtn = document.getElementById("nextBtn"), nextChapterBottomBtn = document.getElementById("nextChapterBottomBtn"), nextChapterReleaseNote = document.getElementById("nextChapterReleaseNote"), chapterIndicator = document.getElementById("chapterIndicator"), chapterTitle = document.getElementById("chapterTitle"), chapterMeta = document.getElementById("chapterMeta"), chapterWarningsBlock = document.getElementById("chapterWarningsBlock"), chapterWarningList = document.getElementById("chapterWarningList"), authorNotesBlock = document.getElementById("authorNotesBlock"), authorNotesText = document.getElementById("authorNotesText"), content = document.getElementById("content"), bookmarkBtn = document.getElementById("bookmarkBtn"), resumeBtn = document.getElementById("resumeBtn"), reportBookBtn = document.getElementById("reportBookBtn"), likeBtn = document.getElementById("likeBtn"), likeCount = document.getElementById("likeCount"), chapterReactionsTitle = document.getElementById("chapterReactionsTitle"), chapterReactionsGrid = document.getElementById("chapterReactionsGrid"), commentList = document.getElementById("commentList"), commentInput = document.getElementById("commentInput"), postCommentBtn = document.getElementById("postCommentBtn"), authorEndCard = document.getElementById("authorEndCard"), authorEndAvatarInitial = document.getElementById("authorEndAvatarInitial"), authorEndAvatarImg = document.getElementById("authorEndAvatarImg"), authorEndName = document.getElementById("authorEndName"), authorEndBio = document.getElementById("authorEndBio"), authorEndWorks = document.getElementById("authorEndWorks"), authorEndWorksTitle = document.getElementById("authorEndWorksTitle"), authorWorksGrid = document.getElementById("authorWorksGrid"), authorEndProfileLink = document.getElementById("authorEndProfileLink");
+    const backBtn = document.getElementById("backBtn"), themeBtn = document.getElementById("themeBtn"), fontMinusBtn = document.getElementById("fontMinusBtn"), fontPlusBtn = document.getElementById("fontPlusBtn"), menuBtn = document.getElementById("menuBtn"), mobileDrawer = document.getElementById("mobileDrawer"), drawerBackdrop = document.getElementById("drawerBackdrop"), closeDrawerBtn = document.getElementById("closeDrawerBtn"), topbarTitle = document.getElementById("topbarTitle"), topbarSubtitle = document.getElementById("topbarSubtitle"), betaReadTopBtn = document.getElementById("betaReadTopBtn"), readerProfileTopBtn = document.getElementById("readerProfileTopBtn"), allNotesTopBtn = document.getElementById("allNotesTopBtn"), statusBox = document.getElementById("statusBox"), errorBox = document.getElementById("errorBox"), bookTitle = document.getElementById("bookTitle"), bookAuthor = document.getElementById("bookAuthor"), bookSummary = document.getElementById("bookSummary"), serializationBadge = document.getElementById("serializationBadge"), statChapters = document.getElementById("statChapters"), statWords = document.getElementById("statWords"), statReads = document.getElementById("statReads"), statType = document.getElementById("statType"), statRating = document.getElementById("statRating"), tagList = document.getElementById("tagList"), warningList = document.getElementById("warningList"), sideBookTitle = document.getElementById("sideBookTitle"), sideBookAuthor = document.getElementById("sideBookAuthor"), sideBookSummary = document.getElementById("sideBookSummary"), sideTagList = document.getElementById("sideTagList"), sideWarningList = document.getElementById("sideWarningList"), drawerBookTitle = document.getElementById("drawerBookTitle"), drawerBookAuthor = document.getElementById("drawerBookAuthor"), drawerBookSummary = document.getElementById("drawerBookSummary"), drawerTagList = document.getElementById("drawerTagList"), drawerWarningList = document.getElementById("drawerWarningList"), prevBtn = document.getElementById("prevBtn"), nextBtn = document.getElementById("nextBtn"), nextChapterBottomBtn = document.getElementById("nextChapterBottomBtn"), nextChapterReleaseNote = document.getElementById("nextChapterReleaseNote"), chapterIndicator = document.getElementById("chapterIndicator"), chapterTitle = document.getElementById("chapterTitle"), chapterMeta = document.getElementById("chapterMeta"), chapterWarningsBlock = document.getElementById("chapterWarningsBlock"), chapterWarningList = document.getElementById("chapterWarningList"), authorNotesBlock = document.getElementById("authorNotesBlock"), authorNotesText = document.getElementById("authorNotesText"), content = document.getElementById("content"), bookmarkBtn = document.getElementById("bookmarkBtn"), resumeBtn = document.getElementById("resumeBtn"), reportBookBtn = document.getElementById("reportBookBtn"), likeBtn = document.getElementById("likeBtn"), likeCount = document.getElementById("likeCount"), chapterReactionsTitle = document.getElementById("chapterReactionsTitle"), chapterReactionsGrid = document.getElementById("chapterReactionsGrid"), commentList = document.getElementById("commentList"), commentsSubtitle = document.getElementById("commentsSubtitle"), commentInput = document.getElementById("commentInput"), postCommentBtn = document.getElementById("postCommentBtn"), authorEndCard = document.getElementById("authorEndCard"), authorEndAvatarInitial = document.getElementById("authorEndAvatarInitial"), authorEndAvatarImg = document.getElementById("authorEndAvatarImg"), authorEndName = document.getElementById("authorEndName"), authorEndBio = document.getElementById("authorEndBio"), authorEndWorks = document.getElementById("authorEndWorks"), authorEndWorksTitle = document.getElementById("authorEndWorksTitle"), authorWorksGrid = document.getElementById("authorWorksGrid"), authorEndProfileLink = document.getElementById("authorEndProfileLink");
 
-    let currentUser = null, currentBook = null, librarySourceRow = null, currentChapterIndex = 0, isLoaded = false, currentFontSize = 22, hasLikedThisBook = false, readerWatermarkProfileUser = null, bookOwnerHandle = null, authorOwnerProfile = null, chapterReactionBusy = false, userChapterReactionTypes = new Set(), nextPendingRelease = null;
+    let currentUser = null, currentBook = null, librarySourceRow = null, currentChapterIndex = 0, isLoaded = false, currentFontSize = 22, hasLikedThisBook = false, readerWatermarkProfileUser = null, bookOwnerHandle = null, authorOwnerProfile = null, chapterReactionBusy = false, userChapterReactionTypes = new Set(), nextPendingRelease = null, commentReplyTargetId = "", commentReplyDraftText = "";
 
     installReaderCopyGuards(content, { isActive: () => isLoaded && !!currentBook });
 
@@ -759,6 +768,8 @@
         }
         saveResumePosition();
         chapterTitle.scrollIntoView({ behavior: "smooth", block: "start" });
+        commentReplyTargetId = "";
+        commentReplyDraftText = "";
         loadComments();
         void loadChapterReactions();
     }
@@ -1069,28 +1080,148 @@
         });
     });
 
-    function buildCommentRow(comment) {
-        const item = document.createElement("div"); item.className = "comment-item"; item.dataset.commentId = comment.id;
-        const head = document.createElement("div"); head.className = "comment-item-head";
-        const userEl = document.createElement("div"); userEl.className = "comment-user"; userEl.textContent = getBestUsername(comment); head.appendChild(userEl);
-        const authorUid = safeString(comment.user_id, ""); const canEdit = !!(currentUser && authorUid && currentUser.id === authorUid); const canModRemove = !!(currentUser && authorUid && currentUser.id !== authorUid && isBookOwnerModerator());
-        if (canEdit || canModRemove) { const actions = document.createElement("div"); actions.className = "comment-actions"; if (canEdit) { const editBtn = document.createElement("button"); editBtn.type = "button"; editBtn.className = "comment-action-btn"; editBtn.textContent = "Edit"; editBtn.addEventListener("click", () => startCommentEdit(item, comment.id, safeString(comment.text, ""))); actions.appendChild(editBtn); const delBtn = document.createElement("button"); delBtn.type = "button"; delBtn.className = "comment-action-btn danger"; delBtn.textContent = "Delete"; delBtn.addEventListener("click", () => removeComment(comment.id, "Delete your comment?")); actions.appendChild(delBtn); } if (canModRemove) { const modBtn = document.createElement("button"); modBtn.type = "button"; modBtn.className = "comment-action-btn danger"; modBtn.textContent = "Remove"; modBtn.title = "Remove as the author of this book"; modBtn.addEventListener("click", () => removeComment(comment.id, "Remove this comment from your story?")); actions.appendChild(modBtn); } head.appendChild(actions); }
-        item.appendChild(head); const body = document.createElement("div"); body.className = "comment-body"; const textEl = document.createElement("div"); textEl.className = "comment-text"; textEl.textContent = safeString(comment.text, ""); body.appendChild(textEl); item.appendChild(body); return item;
+    function currentChapterId() { return safeString(currentChapter()?.id, ""); }
+
+    function captureCommentReplyDraft() {
+        if (!commentReplyTargetId || !commentList) return;
+        const box = commentList.querySelector(`.comment-reply-input[data-parent-id="${commentReplyTargetId}"]`);
+        if (box) commentReplyDraftText = String(box.value || "");
+    }
+
+    function commentActionButtons(comment, { allowReply = false } = {}) {
+        const actions = document.createElement("div");
+        actions.className = "comment-actions";
+        const authorUid = safeString(comment.user_id, "");
+        const canEdit = !!(currentUser && authorUid && currentUser.id === authorUid);
+        const canModRemove = !!(currentUser && authorUid && currentUser.id !== authorUid && isBookOwnerModerator());
+        if (canEdit) {
+            const editBtn = document.createElement("button");
+            editBtn.type = "button";
+            editBtn.className = "comment-action-btn";
+            editBtn.textContent = "Edit";
+            editBtn.addEventListener("click", () => startCommentEdit(actions.closest(".comment-item, .comment-reply"), comment.id, safeString(comment.text, "")));
+            actions.appendChild(editBtn);
+            const delBtn = document.createElement("button");
+            delBtn.type = "button";
+            delBtn.className = "comment-action-btn danger";
+            delBtn.textContent = "Delete";
+            delBtn.addEventListener("click", () => removeComment(comment.id, "Delete your comment?"));
+            actions.appendChild(delBtn);
+        }
+        if (canModRemove) {
+            const modBtn = document.createElement("button");
+            modBtn.type = "button";
+            modBtn.className = "comment-action-btn danger";
+            modBtn.textContent = "Remove";
+            modBtn.title = "Remove as the author of this book";
+            modBtn.addEventListener("click", () => removeComment(comment.id, "Remove this comment from your story?"));
+            actions.appendChild(modBtn);
+        }
+        if (allowReply && currentUser) {
+            const replyBtn = document.createElement("button");
+            replyBtn.type = "button";
+            replyBtn.className = "comment-action-btn";
+            replyBtn.textContent = commentReplyTargetId === comment.id ? "Cancel reply" : "Reply";
+            replyBtn.addEventListener("click", () => {
+                captureCommentReplyDraft();
+                commentReplyTargetId = commentReplyTargetId === comment.id ? "" : comment.id;
+                if (commentReplyTargetId) commentReplyDraftText = "";
+                void loadComments();
+            });
+            actions.appendChild(replyBtn);
+        }
+        return actions;
+    }
+
+    function buildCommentBody(comment, itemClassName) {
+        const item = document.createElement("div");
+        item.className = itemClassName;
+        item.dataset.commentId = comment.id;
+        const head = document.createElement("div");
+        head.className = "comment-item-head";
+        const userEl = document.createElement("div");
+        userEl.className = "comment-user";
+        userEl.textContent = getBestUsername(comment);
+        head.appendChild(userEl);
+        const isTopLevel = itemClassName === "comment-item";
+        const actions = commentActionButtons(comment, { allowReply: isTopLevel });
+        if (actions.childElementCount) head.appendChild(actions);
+        item.appendChild(head);
+        const body = document.createElement("div");
+        body.className = "comment-body";
+        const textEl = document.createElement("div");
+        textEl.className = "comment-text";
+        textEl.textContent = safeString(comment.text, "");
+        body.appendChild(textEl);
+        item.appendChild(body);
+        return item;
+    }
+
+    function buildCommentReplyForm(parentId) {
+        const wrap = document.createElement("div");
+        wrap.className = "comment-inline-reply";
+        const ta = document.createElement("textarea");
+        ta.className = "comment-reply-input";
+        ta.dataset.parentId = parentId;
+        ta.placeholder = currentUser && isBookOwnerModerator() ? "Reply as author…" : "Write a reply…";
+        ta.value = commentReplyDraftText;
+        wrap.appendChild(ta);
+        const row = document.createElement("div");
+        row.className = "comment-reply-actions";
+        const cancelBtn = document.createElement("button");
+        cancelBtn.type = "button";
+        cancelBtn.className = "btn";
+        cancelBtn.textContent = "Cancel";
+        cancelBtn.addEventListener("click", () => {
+            commentReplyTargetId = "";
+            commentReplyDraftText = "";
+            void loadComments();
+        });
+        const postBtn = document.createElement("button");
+        postBtn.type = "button";
+        postBtn.className = "btn primary";
+        postBtn.textContent = "Post reply";
+        postBtn.addEventListener("click", () => void postCommentReply(parentId, ta.value));
+        row.appendChild(cancelBtn);
+        row.appendChild(postBtn);
+        wrap.appendChild(row);
+        return wrap;
+    }
+
+    function buildCommentThread(comment, replies) {
+        const thread = buildCommentBody(comment, "comment-item");
+        if (commentReplyTargetId === comment.id) thread.classList.add("is-replying");
+        if (replies.length) {
+            const repliesWrap = document.createElement("div");
+            repliesWrap.className = "comment-replies";
+            replies.forEach((reply) => repliesWrap.appendChild(buildCommentBody(reply, "comment-reply")));
+            thread.appendChild(repliesWrap);
+        }
+        if (commentReplyTargetId === comment.id) thread.appendChild(buildCommentReplyForm(comment.id));
+        return thread;
     }
 
     function startCommentEdit(item, commentId, initialText) { const body = item.querySelector(".comment-body"); if (!body) return; const head = item.querySelector(".comment-item-head"); const actionBar = head?.querySelector(".comment-actions"); if (actionBar) actionBar.querySelectorAll("button").forEach(b => { b.disabled = true; }); body.innerHTML = ""; const ta = document.createElement("textarea"); ta.className = "comment-edit-area"; ta.value = initialText; body.appendChild(ta); const row = document.createElement("div"); row.className = "comment-edit-row"; const saveBtn = document.createElement("button"); saveBtn.type = "button"; saveBtn.className = "btn primary"; saveBtn.textContent = "Save"; const cancelBtn = document.createElement("button"); cancelBtn.type = "button"; cancelBtn.className = "btn"; cancelBtn.textContent = "Cancel"; saveBtn.addEventListener("click", async () => { const next = ta.value.trim(); if (!next) { showStatus("Comment cannot be empty."); setTimeout(hideStatus, 1400); return; } saveBtn.disabled = true; cancelBtn.disabled = true; try { const { error } = await supabase.from("comments").update({ text: next, updated_at: new Date().toISOString() }).eq("id", commentId).eq("user_id", currentUser.id); if (error) throw error; showStatus("Comment updated."); setTimeout(hideStatus, 1200); await loadComments(); } catch (err) { console.error(err); showError("Could not update comment."); saveBtn.disabled = false; cancelBtn.disabled = false; } }); cancelBtn.addEventListener("click", () => void loadComments()); row.appendChild(saveBtn); row.appendChild(cancelBtn); body.appendChild(row); ta.focus(); }
-    async function removeComment(commentId, confirmMessage) { if (!currentUser || !bookId) return; if (!window.confirm(confirmMessage)) return; try { let q = supabase.from("comments").delete().eq("id", commentId); if (!isBookOwnerModerator()) q = q.eq("user_id", currentUser.id); const { error } = await q; if (error) throw error; showStatus("Comment removed."); setTimeout(hideStatus, 1200); await loadComments(); } catch (err) { console.error(err); showError("Could not remove comment."); } }
+    async function removeComment(commentId, confirmMessage) { if (!currentUser || !bookId) return; if (!window.confirm(confirmMessage)) return; try { let q = supabase.from("comments").delete().eq("id", commentId); if (!isBookOwnerModerator()) q = q.eq("user_id", currentUser.id); const { error } = await q; if (error) throw error; if (commentReplyTargetId === commentId) { commentReplyTargetId = ""; commentReplyDraftText = ""; } showStatus("Comment removed."); setTimeout(hideStatus, 1200); await loadComments(); } catch (err) { console.error(err); showError("Could not remove comment."); } }
     async function loadComments() {
+        captureCommentReplyDraft();
         commentList.innerHTML = "";
         if (!currentBook) return;
+        const chapterId = currentChapterId();
+        const chapter = currentChapter();
+        if (commentsSubtitle) commentsSubtitle.textContent = chapter?.title ? `Comments on “${chapter.title}”` : "Comments on this chapter";
+        if (!chapterId || chapterId === "none") {
+            commentList.innerHTML = `<div class="comment-item"><div class="comment-text">No comments for this chapter.</div></div>`;
+            return;
+        }
         try {
             const eids = [...new Set(engagementBookIdsForReader())];
             const byId = new Map();
             let queryError = null;
             for (const bid of eids) {
-                let { data, error } = await supabase.from("comments").select("*").eq("book_id", bid).order("created_at", { ascending: false });
+                let { data, error } = await supabase.from("comments").select("*").eq("book_id", bid).eq("chapter_id", chapterId).order("created_at", { ascending: false });
                 if (error) {
-                    const r2 = await supabase.from("comments").select("*").eq("book_id", bid);
+                    const r2 = await supabase.from("comments").select("*").eq("book_id", bid).eq("chapter_id", chapterId);
                     data = r2.data;
                     error = r2.error;
                 }
@@ -1100,20 +1231,53 @@
                 }
                 for (const row of data || []) byId.set(row.id, row);
             }
+            if (!byId.size && currentChapterIndex === 0) {
+                for (const bid of eids) {
+                    let { data, error } = await supabase.from("comments").select("*").eq("book_id", bid).eq("chapter_id", "").order("created_at", { ascending: false });
+                    if (error) {
+                        const r2 = await supabase.from("comments").select("*").eq("book_id", bid).eq("chapter_id", "");
+                        data = r2.data;
+                        error = r2.error;
+                    }
+                    if (error) continue;
+                    for (const row of data || []) byId.set(row.id, row);
+                }
+            }
             if (queryError && byId.size === 0) throw queryError;
-            const data = [...byId.values()].sort((a, b) => commentSortKey(b) - commentSortKey(a));
-            if (!data.length) {
-                console.info("[Alysum] comments: 0 rows for book_id candidates:", eids.join(" | "), "(Supabase must contain rows, or run migrate-library-engagement.js from Firestore.)");
-                commentList.innerHTML = `<div class="comment-item"><div class="comment-text">No comments yet.</div></div>`;
+            const all = [...byId.values()];
+            const topLevel = all.filter((row) => !row.parent_id).sort((a, b) => commentSortKey(b) - commentSortKey(a));
+            const repliesByParent = new Map();
+            for (const row of all) {
+                if (!row.parent_id) continue;
+                if (!repliesByParent.has(row.parent_id)) repliesByParent.set(row.parent_id, []);
+                repliesByParent.get(row.parent_id).push(row);
+            }
+            for (const replies of repliesByParent.values()) replies.sort((a, b) => commentSortKey(a) - commentSortKey(b));
+            if (!topLevel.length) {
+                commentList.innerHTML = `<div class="comment-item"><div class="comment-text">No comments yet on this chapter.</div></div>`;
                 return;
             }
-            data.forEach(comment => commentList.appendChild(buildCommentRow(comment)));
+            topLevel.forEach((comment) => commentList.appendChild(buildCommentThread(comment, repliesByParent.get(comment.id) || [])));
+            if (commentReplyTargetId) {
+                const box = commentList.querySelector(`.comment-reply-input[data-parent-id="${commentReplyTargetId}"]`);
+                if (box) {
+                    box.focus();
+                    box.setSelectionRange(box.value.length, box.value.length);
+                }
+            }
         } catch (error) {
             console.error(error);
             commentList.innerHTML = `<div class="comment-item"><div class="comment-text">Could not load comments.</div></div>`;
         }
     }
-    async function postComment() { const text = commentInput.value.trim(); if (!text) { showStatus("Write a comment first."); setTimeout(hideStatus, 1400); return; } if (!currentUser) { showStatus("Log in to post comments."); setTimeout(hideStatus, 1800); return; } try { const { data: profile } = await supabase.from("users").select("username, display_name, email").eq("id", currentUser.id).maybeSingle(); const handle = String(profile?.username || "").trim() || currentUser.email?.split("@")[0] || "reader"; const displayName = String(profile?.display_name || "").trim() || handle; const { error } = await supabase.from("comments").insert({ book_id: bookId, user_id: currentUser.id, username: handle, display_name: displayName, text, created_at: new Date().toISOString() }); if (error) throw error; commentInput.value = ""; showStatus("Comment posted."); setTimeout(hideStatus, 1200); await loadComments(); } catch (error) { console.error(error); showError("Failed to post comment."); } }
+    async function getCommentAuthorProfile() {
+        const { data: profile } = await supabase.from("users").select("username, display_name, email").eq("id", currentUser.id).maybeSingle();
+        const handle = String(profile?.username || "").trim() || currentUser.email?.split("@")[0] || "reader";
+        const displayName = String(profile?.display_name || "").trim() || handle;
+        return { handle, displayName };
+    }
+    async function postComment() { const text = commentInput.value.trim(); if (!text) { showStatus("Write a comment first."); setTimeout(hideStatus, 1400); return; } if (!currentUser) { showStatus("Log in to post comments."); setTimeout(hideStatus, 1800); return; } const chapterId = currentChapterId(); if (!chapterId || chapterId === "none") { showStatus("Cannot comment on this chapter."); setTimeout(hideStatus, 1800); return; } try { const { handle, displayName } = await getCommentAuthorProfile(); const { error } = await supabase.from("comments").insert({ book_id: bookId, chapter_id: chapterId, user_id: currentUser.id, username: handle, display_name: displayName, text, created_at: new Date().toISOString() }); if (error) throw error; commentInput.value = ""; showStatus("Comment posted."); setTimeout(hideStatus, 1200); await loadComments(); } catch (error) { console.error(error); showError("Failed to post comment."); } }
+    async function postCommentReply(parentId, rawText) { const text = String(rawText || "").trim(); if (!text) { showStatus("Write a reply first."); setTimeout(hideStatus, 1400); return; } if (!currentUser) { showStatus("Log in to reply."); setTimeout(hideStatus, 1800); return; } const chapterId = currentChapterId(); if (!chapterId || chapterId === "none") { showStatus("Cannot reply on this chapter."); setTimeout(hideStatus, 1800); return; } try { const { handle, displayName } = await getCommentAuthorProfile(); const { error } = await supabase.from("comments").insert({ book_id: bookId, chapter_id: chapterId, user_id: currentUser.id, username: handle, display_name: displayName, text, parent_id: parentId, created_at: new Date().toISOString() }); if (error) throw error; commentReplyTargetId = ""; commentReplyDraftText = ""; showStatus("Reply posted."); setTimeout(hideStatus, 1200); await loadComments(); } catch (error) { console.error(error); showError("Failed to post reply."); } }
 
     backBtn.addEventListener("click", () => { window.location.href = "library.html"; });
     readerProfileTopBtn?.addEventListener("click", async () => { if (!bookId) return; if (!currentBook) { showStatus("Wait until this story finishes loading."); setTimeout(hideStatus, 2200); return; } if (!currentUser) { window.location.href = "login.html?next=" + encodeURIComponent(READER_HOME_URL); return; } readerProfileTopBtn.disabled = true; try { await ensureBetaReadShelved(); } finally { readerProfileTopBtn.disabled = false; } window.location.href = READER_HOME_URL; });
