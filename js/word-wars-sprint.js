@@ -17,7 +17,7 @@ import {
     enrichWordWarParticipantProfiles,
     leaveWordWarRoom,
     WORD_WAR_DURATION_UNLIMITED,
-} from "./word-wars-api.js?v=15";
+} from "./word-wars-api.js?v=16";
 import { renderWriterDock } from "./word-wars-call.js?v=4";
 import { sanitizeChapterHtml } from "./book-html-sanitize.js?v=1";
 
@@ -77,6 +77,9 @@ let progressTimer = null;
 let timerInterval = null;
 let unsubscribe = null;
 let sprintEnded = false;
+let lastParticipantCount = 0;
+let refreshInFlight = null;
+let refreshQueued = false;
 let syncingShare = false;
 let syncingPause = false;
 let shareDraftOverride = null;
@@ -240,7 +243,7 @@ function renderTimer() {
     timerEl.textContent = formatClock(state.remaining || 0);
     timerModeEl.textContent = `${formatWordWarDuration(lobby?.durationMin)} sprint`;
     timerEl.classList.toggle("is-urgent", (state.remaining || 0) <= 60_000);
-    if (state.ended && !sprintEnded) endSprint("Time's up!");
+    if (state.ended && !sprintEnded) endSprint("Time's up!", { publishFinish: true });
 }
 
 function renderPauseControls() {
@@ -949,7 +952,19 @@ function redirectToHub(message = "", isError = false) {
     window.location.replace(url.pathname + url.search);
 }
 
-async function refreshLobby() {
+function describeWritersWhoLeft(before = [], after = []) {
+    const afterIds = new Set(after.map((p) => String(p.userId || "").toLowerCase()));
+    const left = before.filter((p) => !afterIds.has(String(p.userId || "").toLowerCase()));
+    if (!left.length) return "";
+    if (left.length === 1) return `${left[0].displayName || "A writer"} left — sprint continues.`;
+    return `${left.length} writers left — sprint continues.`;
+}
+
+async function refreshLobbyNow() {
+    const previousParticipants = lobby?.participants || [];
+    const prevCount = previousParticipants.length || lastParticipantCount;
+    const prevStatus = lobby?.status || "active";
+
     try {
         const next = await fetchWordWarLobby({ roomId }, { retry: 1 });
         if (!next) {
@@ -959,16 +974,31 @@ async function refreshLobby() {
         }
         const stillMember = (next.participants || []).some((p) => wordWarSameUserId(p.userId, uid));
         lobby = await enrichWordWarParticipantProfiles(next);
+        lastParticipantCount = lobby.participants?.length || 0;
+
         if (!meInLobby()) {
             if (stillMember || meInLobby()) return;
             redirectToHub("You are no longer in that Word War.", true);
             return;
         }
+
+        const nextCount = lobby.participants?.length || 0;
+        const someoneLeft = nextCount < prevCount;
+        if (someoneLeft) {
+            const notice = describeWritersWhoLeft(previousParticipants, lobby.participants || []);
+            if (notice) setPageStatus(notice, false);
+        }
+
         if (shareDraftOverride === null) renderShareControls();
         renderPauseControls();
         renderOpponentMirror();
+
         if (lobby.status === "finished" && !sprintEnded) {
-            await endSprint("Sprint finished");
+            // A departure must never force recap on writers still in the room.
+            if (prevStatus === "active" && someoneLeft && nextCount >= 1) {
+                return;
+            }
+            await endSprint("Sprint finished", { publishFinish: false });
             return;
         }
         if (lobby.status === "cancelled" && !(lobby.participants?.length > 0)) {
@@ -985,7 +1015,22 @@ async function refreshLobby() {
     }
 }
 
-async function endSprint(reason = "Sprint finished") {
+async function refreshLobby() {
+    if (refreshInFlight) {
+        refreshQueued = true;
+        return refreshInFlight;
+    }
+    refreshInFlight = refreshLobbyNow().finally(() => {
+        refreshInFlight = null;
+        if (refreshQueued) {
+            refreshQueued = false;
+            refreshLobby().catch(console.warn);
+        }
+    });
+    return refreshInFlight;
+}
+
+async function endSprint(reason = "Sprint finished", { publishFinish = false } = {}) {
     if (sprintEnded) return;
     if (isPreviewMode) {
         setPageStatus("Preview only — sprint controls are disabled here.", false);
@@ -995,10 +1040,12 @@ async function endSprint(reason = "Sprint finished") {
     window.clearInterval(timerInterval);
     window.clearTimeout(progressTimer);
     window.clearTimeout(typingIdleTimer);
-    try {
-        lobby = await finishWordWar(roomId);
-    } catch (err) {
-        console.warn(err);
+    if (publishFinish) {
+        try {
+            lobby = await finishWordWar(roomId);
+        } catch (err) {
+            console.warn(err);
+        }
     }
     setPageStatus(reason, false);
     renderRecap();
@@ -1029,6 +1076,7 @@ async function boot() {
         return;
     }
     lobby = await enrichWordWarParticipantProfiles(lobby);
+    lastParticipantCount = lobby.participants?.length || 0;
     if (lobby.status === "lobby") {
         window.location.replace(wordWarLobbyUrl(lobby.roomId, { roomId: true }));
         return;
@@ -1076,7 +1124,7 @@ pauseBtn?.addEventListener("click", () => {
 });
 
 finishBtn?.addEventListener("click", () => {
-    endSprint("Sprint ended").catch(console.error);
+    endSprint("Sprint ended", { publishFinish: true }).catch(console.error);
 });
 
 leaveBtn?.addEventListener("click", () => {

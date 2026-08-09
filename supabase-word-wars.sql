@@ -1022,10 +1022,12 @@ BEGIN
     WHERE id = p_room_id;
   END IF;
 
-  IF v_status = 'active' AND v_remaining < 2 THEN
+  -- Never end the sprint for remaining writers when someone leaves.
+  -- They keep going until the timer runs out or someone clicks Finish.
+  IF v_status = 'active' AND v_remaining >= 1 THEN
     UPDATE public.word_wars_rooms
-    SET status = 'finished'
-    WHERE id = p_room_id AND status = 'active';
+    SET status = 'active'
+    WHERE id = p_room_id AND status IN ('finished', 'cancelled');
   END IF;
 
   RETURN jsonb_build_object(

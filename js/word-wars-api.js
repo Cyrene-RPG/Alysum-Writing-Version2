@@ -309,8 +309,8 @@ function leaveLocalRoom(roomId, uid) {
         lobby.hostId = lobby.participants[0].userId;
     }
 
-    if (wasActive && lobby.participants.length < 2) {
-        lobby.status = "finished";
+    if (wasActive && lobby.participants.length >= 1) {
+        lobby.status = "active";
     }
 
     saveLocalLobby(lobby);
