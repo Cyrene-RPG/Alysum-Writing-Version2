@@ -321,6 +321,51 @@ BEGIN
 END;
 $$;
 
+CREATE OR REPLACE FUNCTION public.word_war_joinable_max_writers(
+  p_max_writers integer,
+  p_is_locked boolean
+)
+RETURNS integer
+LANGUAGE sql
+IMMUTABLE
+AS $$
+  SELECT CASE
+    WHEN coalesce(p_is_locked, false) THEN greatest(2, least(coalesce(p_max_writers, 4), 16))
+    ELSE 16
+  END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.word_war_repair_open_lobby(p_room_id uuid)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF p_room_id IS NULL THEN
+    RETURN;
+  END IF;
+
+  UPDATE public.word_wars_rooms wr
+  SET status = 'lobby',
+      expires_at = greatest(wr.expires_at, now() + interval '4 hours'),
+      max_writers = 16
+  WHERE wr.id = p_room_id
+    AND wr.is_locked = false
+    AND wr.status = 'cancelled'
+    AND EXISTS (
+      SELECT 1 FROM public.word_wars_participants wp WHERE wp.room_id = wr.id
+    );
+
+  UPDATE public.word_wars_rooms wr
+  SET expires_at = greatest(wr.expires_at, now() + interval '4 hours'),
+      max_writers = 16
+  WHERE wr.id = p_room_id
+    AND wr.is_locked = false
+    AND wr.status = 'lobby';
+END;
+$$;
+
 CREATE OR REPLACE FUNCTION public.join_word_war_room(
   p_code text,
   p_book_id text DEFAULT NULL
@@ -339,6 +384,9 @@ DECLARE
   v_max_writers integer;
   v_count integer;
   v_display_name text;
+  v_is_locked boolean;
+  v_status text;
+  v_expires_at timestamptz;
 BEGIN
   IF v_uid IS NULL THEN
     RAISE EXCEPTION 'Not authenticated';
@@ -348,17 +396,32 @@ BEGIN
     RAISE EXCEPTION 'Invalid room code';
   END IF;
 
-  SELECT wr.id, wr.max_writers
-  INTO v_room_id, v_max_writers
+  SELECT wr.id, wr.max_writers, wr.is_locked, wr.status, wr.expires_at
+  INTO v_room_id, v_max_writers, v_is_locked, v_status, v_expires_at
   FROM public.word_wars_rooms wr
   WHERE wr.code = v_code
-    AND wr.status = 'lobby'
-    AND wr.expires_at > now()
   FOR UPDATE;
 
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Room not found or no longer open';
   END IF;
+
+  PERFORM public.word_war_repair_open_lobby(v_room_id);
+
+  SELECT wr.max_writers, wr.is_locked, wr.status, wr.expires_at
+  INTO v_max_writers, v_is_locked, v_status, v_expires_at
+  FROM public.word_wars_rooms wr
+  WHERE wr.id = v_room_id;
+
+  IF v_status <> 'lobby' THEN
+    RAISE EXCEPTION 'Room not found or no longer open';
+  END IF;
+
+  IF v_is_locked AND v_expires_at <= now() THEN
+    RAISE EXCEPTION 'Room not found or no longer open';
+  END IF;
+
+  v_max_writers := public.word_war_joinable_max_writers(v_max_writers, v_is_locked);
 
   IF EXISTS (
     SELECT 1 FROM public.word_wars_participants wp
@@ -812,6 +875,25 @@ BEGIN
     RAISE EXCEPTION 'Not authenticated';
   END IF;
 
+  UPDATE public.word_wars_rooms wr
+  SET status = 'lobby',
+      expires_at = greatest(wr.expires_at, now() + interval '4 hours'),
+      max_writers = 16
+  WHERE wr.is_locked = false
+    AND wr.status = 'cancelled'
+    AND EXISTS (
+      SELECT 1 FROM public.word_wars_participants wp WHERE wp.room_id = wr.id
+    );
+
+  UPDATE public.word_wars_rooms wr
+  SET expires_at = greatest(wr.expires_at, now() + interval '4 hours'),
+      max_writers = 16
+  WHERE wr.is_locked = false
+    AND wr.status = 'lobby'
+    AND EXISTS (
+      SELECT 1 FROM public.word_wars_participants wp WHERE wp.room_id = wr.id
+    );
+
   RETURN coalesce((
     SELECT jsonb_agg(row_data ORDER BY row_data->>'createdAt' DESC)
     FROM (
@@ -819,7 +901,7 @@ BEGIN
         'roomId', wr.id,
         'code', wr.code,
         'durationMin', wr.duration_min,
-        'maxWriters', wr.max_writers,
+        'maxWriters', public.word_war_joinable_max_writers(wr.max_writers, wr.is_locked),
         'participantCount', (
           SELECT count(*)::integer
           FROM public.word_wars_participants wp
@@ -866,6 +948,7 @@ DECLARE
   v_display_name text;
   v_is_locked boolean;
   v_status text;
+  v_expires_at timestamptz;
 BEGIN
   IF v_uid IS NULL THEN
     RAISE EXCEPTION 'Not authenticated';
@@ -875,21 +958,32 @@ BEGIN
     RAISE EXCEPTION 'Invalid room';
   END IF;
 
-  SELECT wr.max_writers, wr.is_locked, wr.status
-  INTO v_max_writers, v_is_locked, v_status
+  SELECT wr.max_writers, wr.is_locked, wr.status, wr.expires_at
+  INTO v_max_writers, v_is_locked, v_status, v_expires_at
   FROM public.word_wars_rooms wr
   WHERE wr.id = p_room_id
-    AND wr.status = 'lobby'
-    AND wr.expires_at > now()
   FOR UPDATE;
 
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Room not found or no longer open';
   END IF;
 
+  PERFORM public.word_war_repair_open_lobby(p_room_id);
+
+  SELECT wr.max_writers, wr.is_locked, wr.status, wr.expires_at
+  INTO v_max_writers, v_is_locked, v_status, v_expires_at
+  FROM public.word_wars_rooms wr
+  WHERE wr.id = p_room_id;
+
+  IF v_status <> 'lobby' THEN
+    RAISE EXCEPTION 'Room not found or no longer open';
+  END IF;
+
   IF v_is_locked THEN
     RAISE EXCEPTION 'This lobby is invite-only — use the room code';
   END IF;
+
+  v_max_writers := public.word_war_joinable_max_writers(v_max_writers, v_is_locked);
 
   IF EXISTS (
     SELECT 1 FROM public.word_wars_participants wp

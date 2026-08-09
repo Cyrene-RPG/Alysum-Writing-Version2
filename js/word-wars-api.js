@@ -32,7 +32,10 @@ export function isWordWarWriterPreset(value) {
 }
 
 export function lobbyMaxWriters(lobby) {
-    return normalizeWordWarWriterCount(lobby?.maxWriters ?? lobby?.max_writers, 4);
+    return resolveWordWarMaxWriters(
+        lobby?.maxWriters ?? lobby?.max_writers,
+        Boolean(lobby?.isLocked ?? lobby?.is_locked)
+    );
 }
 
 /** Open lobbies accept the full room cap; locked lobbies use the host's chosen limit. */
@@ -239,7 +242,10 @@ function createLocalRoom(uid, profile, durationMin, maxWriters, bookId, bookTitl
 function joinLocalRoomById(roomId, uid, profile, bookId, bookTitle) {
     const lobby = loadLocalLobby({ roomId });
     if (!lobby) throw new Error("Room not found or no longer open");
-    if (lobby.status !== "lobby") throw new Error("Lobby is closed");
+    if (lobby.status === "cancelled" && lobby.participants?.length) {
+        lobby.status = "lobby";
+    }
+    if (lobby.status !== "lobby") throw new Error("Room not found or no longer open");
     if (lobby.isLocked) throw new Error("This lobby is invite-only — use the room code");
     if (lobby.participants.some((p) => sameUserId(p.userId, uid))) return lobby;
     const maxWriters = lobbyMaxWriters(lobby);
@@ -262,7 +268,8 @@ function listLocalOpenLobbies(limit = 50, uid = "") {
     Object.values(rooms).forEach((raw) => {
         const lobby = normalizeLobby(raw);
         if (!lobby || lobby.localOnly !== true) return;
-        if (lobby.status !== "lobby" || lobby.isLocked) return;
+        if (lobby.status !== "lobby" && !(lobby.status === "cancelled" && lobby.participants?.length)) return;
+        if (lobby.isLocked) return;
         if (uid && lobby.participants.some((p) => sameUserId(p.userId, uid))) return;
         if (seen.has(lobby.roomId)) return;
         seen.add(lobby.roomId);
@@ -340,7 +347,10 @@ function leaveOtherLocalRooms(keepRoomId, uid) {
 function joinLocalRoom(code, uid, profile, bookId, bookTitle) {
     const lobby = loadLocalLobby({ code });
     if (!lobby) throw new Error("Room not found or no longer open");
-    if (lobby.status !== "lobby") throw new Error("Lobby is closed");
+    if (lobby.status === "cancelled" && lobby.participants?.length) {
+        lobby.status = "lobby";
+    }
+    if (lobby.status !== "lobby") throw new Error("Room not found or no longer open");
     if (lobby.participants.some((p) => sameUserId(p.userId, uid))) return lobby;
     const maxWriters = lobbyMaxWriters(lobby);
     if (lobby.participants.length >= maxWriters) {

@@ -29,7 +29,7 @@ import {
     wordWarLobbyUrl,
     wordWarSprintUrl,
     isUsingLocalWordWarsFallback,
-} from "./word-wars-api.js?v=15";
+} from "./word-wars-api.js?v=17";
 import { playWordWarJoinSound, primeWordWarSounds } from "./word-wars-sounds.js?v=2";
 
 const params = new URLSearchParams(window.location.search);
@@ -770,6 +770,7 @@ openLobbiesList?.addEventListener("click", async (event) => {
     btn.disabled = true;
     setStatus("");
     try {
+        await refreshOpenLobbies();
         const lobby = await joinLobbyWithHubBook({ roomId });
         if (!lobby) {
             btn.disabled = false;
