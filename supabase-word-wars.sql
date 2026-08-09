@@ -98,6 +98,7 @@ STABLE
 SECURITY DEFINER
 SET search_path = public
 AS $$
+  -- Membership is enough; expiry only gates public discovery/join, not existing writers.
   SELECT EXISTS (
     SELECT 1
     FROM public.word_wars_participants wp
@@ -105,10 +106,6 @@ AS $$
     WHERE wp.room_id = p_room_id
       AND wp.user_id = auth.uid()
       AND wr.status IN ('lobby', 'active', 'finished')
-      AND (
-        wr.status IN ('active', 'finished')
-        OR wr.expires_at > now()
-      )
   );
 $$;
 
@@ -294,7 +291,12 @@ BEGIN
       AND wp.room_id <> p_keep_room_id
       AND wr.status IN ('lobby', 'active')
   LOOP
-    PERFORM public.leave_word_war_room(v_other_room_id);
+    BEGIN
+      PERFORM public.leave_word_war_room(v_other_room_id);
+    EXCEPTION WHEN OTHERS THEN
+      DELETE FROM public.word_wars_participants
+      WHERE room_id = v_other_room_id AND user_id = v_uid;
+    END;
   END LOOP;
 END;
 $$;

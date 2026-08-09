@@ -26,7 +26,7 @@ import {
     wordWarLobbyUrl,
     wordWarSprintUrl,
     isUsingLocalWordWarsFallback,
-} from "./word-wars-api.js?v=11";
+} from "./word-wars-api.js?v=12";
 
 const params = new URLSearchParams(window.location.search);
 const initialCode = String(params.get("code") || "").trim().toUpperCase();

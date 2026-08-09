@@ -15,7 +15,7 @@ import {
     enrichWordWarParticipantProfiles,
     leaveWordWarRoom,
     WORD_WAR_DURATION_UNLIMITED,
-} from "./word-wars-api.js?v=11";
+} from "./word-wars-api.js?v=12";
 import { renderWriterDock } from "./word-wars-call.js?v=4";
 import { sanitizeChapterHtml } from "./book-html-sanitize.js?v=1";
 

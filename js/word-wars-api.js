@@ -616,7 +616,13 @@ export async function leaveWordWarRoom(roomId) {
     const { data, error } = await supabase.rpc("leave_word_war_room", {
         p_room_id: normalizedRoomId,
     });
-    if (error) throw error;
+    if (error) {
+        const message = String(error?.message || "");
+        if (/not a participant/i.test(message)) {
+            return { left: true, alreadyLeft: true, roomId: normalizedRoomId };
+        }
+        throw error;
+    }
     return data && typeof data === "object" ? data : { left: true };
 }
 
