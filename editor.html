@@ -5217,6 +5217,7 @@ function rememberBookId(id) {
         editor,
         toolbar: scriptToolbar,
         hintEl: scriptToolbarHint,
+        isActive: () => isCurrentBookScript() && !isCurrentBookComic(),
         onChange: () => {
             markEditorChapterDirty();
             syncStats();

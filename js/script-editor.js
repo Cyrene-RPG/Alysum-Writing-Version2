@@ -286,10 +286,12 @@ export function ensureScriptEditorContent(editor) {
 
 /**
  * Wire script toolbar buttons and keyboard handlers.
- * @param {{ editor: HTMLElement, toolbar: HTMLElement|null, onChange?: () => void, hintEl?: HTMLElement|null }} options
+ * @param {{ editor: HTMLElement, toolbar: HTMLElement|null, onChange?: () => void, hintEl?: HTMLElement|null, isActive?: () => boolean }} options
  */
-export function initScriptEditor({ editor, toolbar, onChange, hintEl }) {
+export function initScriptEditor({ editor, toolbar, onChange, hintEl, isActive }) {
   if (!editor) return () => {};
+
+  const scriptModeActive = () => (isActive ? isActive() : document.body.classList.contains("script-mode"));
 
   const notify = () => { onChange?.(); };
 
@@ -310,6 +312,7 @@ export function initScriptEditor({ editor, toolbar, onChange, hintEl }) {
   };
 
   const onKeyDown = (e) => {
+    if (!scriptModeActive()) return;
     if (handleScriptTabKey(e, editor)) {
       notify();
       syncToolbarState();
@@ -347,6 +350,7 @@ export function initScriptEditor({ editor, toolbar, onChange, hintEl }) {
   toolbar?.addEventListener("click", toolbarClick);
 
   const onShortcut = (e) => {
+    if (!scriptModeActive()) return;
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     if (!editor.contains(document.activeElement) && document.activeElement !== editor) return;
     const match = SCRIPT_ELEMENTS.find((el) => el.shortcut === e.key);
