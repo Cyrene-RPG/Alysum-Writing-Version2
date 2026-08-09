@@ -1,6 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- ALYSUM:SEO:START -->
+    <meta charset="UTF-8">
+    <meta name="description" content="Chronicle codex entry in your Alysum world encyclopedia.">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="canonical" data-seo-path="/history-record.html" href="">
+    <meta property="og:site_name" content="Alysum">
+    <meta property="og:locale" content="en_US">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="History — Chronicle Codex — Alysum">
+    <meta property="og:description" content="Chronicle codex entry in your Alysum world encyclopedia.">
+    <meta property="og:image" content="/Alysum-3.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="History — Chronicle Codex — Alysum">
+    <meta name="twitter:description" content="Chronicle codex entry in your Alysum world encyclopedia.">
+    <meta name="twitter:image" content="/Alysum-3.png">
+    <script src="js/seo-meta.js"></script>
+    <!-- ALYSUM:SEO:END -->
+
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="icon" type="image/png" href="Alysum-3.png">
     <script src="js/pwa-register.js" defer></script>
@@ -111,7 +129,8 @@
             }
             void touchHistoryRecord(encId, recordId);
             document.getElementById("pageTitle").textContent = meta.name;
-            document.title = meta.name + " — Chronicle Codex — Alysum";
+            const pageTitle = meta.name + " — Chronicle Codex — Alysum";
+            window.AlysumSeo?.apply({ title: pageTitle, description: meta.name + " — chronicle codex entry in your Alysum world encyclopedia." });
             document.getElementById("hubBack").href =
                 "histories.html?encyclopedia=" + encodeURIComponent(encId);
             document.getElementById("encBack").href =

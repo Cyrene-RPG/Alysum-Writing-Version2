@@ -1,0 +1,119 @@
+User-agent: *
+Allow: /
+Allow: /index.html
+Allow: /library.html
+Allow: /read.html
+Allow: /author.html
+Allow: /leaderboard.html
+Allow: /badges.html
+Allow: /writer-resources.html
+Allow: /privacy-policy.html
+Allow: /terms-of-service.html
+Allow: /login.html
+Allow: /signup.html
+
+Disallow: /editor.html
+Disallow: /writer-dashboard.html
+Disallow: /author-dashboard.html
+Disallow: /settings.html
+Disallow: /publish.html
+Disallow: /vault.html
+Disallow: /scratch.html
+Disallow: /prompt-notebook.html
+Disallow: /note-graph.html
+Disallow: /plotweave.html
+Disallow: /Novel_Exporter.html
+Disallow: /pdf-editor.html
+Disallow: /worldbuilding.html
+Disallow: /world-encyclopedia.html
+Disallow: /encyclopedia.html
+Disallow: /realm-builder.html
+Disallow: /city-builder.html
+Disallow: /names.html
+Disallow: /geography-worlds.html
+Disallow: /geography-world.html
+Disallow: /histories.html
+Disallow: /history-record.html
+Disallow: /peoples-cultures.html
+Disallow: /peoples-culture.html
+Disallow: /magic-system-
+Disallow: /beta-
+Disallow: /collab-
+Disallow: /writers-lounge.html
+Disallow: /word-wars-
+Disallow: /moderation-
+Disallow: /library-violations.html
+Disallow: /reader-home.html
+Disallow: /reset-password.html
+Disallow: /story-board/
+Disallow: /studio.html
+Disallow: /worldbuilder.html
+Disallow: /flow-mapper.html
+Disallow: /api/book-content
+
+# AI training / scraping crawlers — catalog branding only, no book text
+User-agent: GPTBot
+Disallow: /read.html
+Disallow: /api/book-content
+
+User-agent: ChatGPT-User
+Disallow: /read.html
+Disallow: /api/book-content
+
+User-agent: OAI-SearchBot
+Disallow: /read.html
+Disallow: /api/book-content
+
+User-agent: ClaudeBot
+Disallow: /read.html
+Disallow: /api/book-content
+
+User-agent: anthropic-ai
+Disallow: /read.html
+Disallow: /api/book-content
+
+User-agent: Claude-Web
+Disallow: /read.html
+Disallow: /api/book-content
+
+User-agent: PerplexityBot
+Disallow: /read.html
+Disallow: /api/book-content
+
+User-agent: Perplexity-User
+Disallow: /read.html
+Disallow: /api/book-content
+
+User-agent: Bytespider
+Disallow: /read.html
+Disallow: /api/book-content
+
+User-agent: CCBot
+Disallow: /read.html
+Disallow: /api/book-content
+
+User-agent: cohere-ai
+Disallow: /read.html
+Disallow: /api/book-content
+
+User-agent: Diffbot
+Disallow: /read.html
+Disallow: /api/book-content
+
+User-agent: Meta-ExternalAgent
+Disallow: /read.html
+Disallow: /api/book-content
+
+User-agent: Google-Extended
+Disallow: /read.html
+Disallow: /api/book-content
+
+User-agent: Amazonbot
+Disallow: /read.html
+Disallow: /api/book-content
+
+User-agent: Applebot-Extended
+Disallow: /read.html
+Disallow: /api/book-content
+
+Sitemap: /sitemap.xml

@@ -1,6 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- ALYSUM:SEO:START -->
+    <meta charset="UTF-8">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="canonical" data-seo-path="/moderation-user.html" href="">
+    <meta property="og:site_name" content="Alysum">
+    <meta property="og:locale" content="en_US">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="User — Moderation — Alysum">
+    <meta property="og:image" content="/Alysum-3.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="User — Moderation — Alysum">
+    <meta name="twitter:image" content="/Alysum-3.png">
+    <script src="js/seo-meta.js"></script>
+    <!-- ALYSUM:SEO:END -->
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User — Moderation — Alysum</title>
@@ -52,7 +67,8 @@
         } else {
             try {
                 const data = await mountUserDetail(userId, modUserRoot, { showStatus });
-                document.title = `@${data.detail.profile?.username || "user"} — Moderation`;
+                const pageTitle = `@${data.detail.profile?.username || "user"} — Moderation`;
+                window.AlysumSeo?.apply({ title: pageTitle, robots: "noindex, nofollow" });
             } catch (err) {
                 modUserRoot.innerHTML = `<p class="mod-detail-empty">Could not load user: ${err.message}</p>`;
             }

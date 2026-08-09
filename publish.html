@@ -1,4 +1,4 @@
-<!DOCTYPE html><html>
+<!DOCTYPE html><html lang="en">
 <head>
     <!-- ALYSUM:PWA:START -->
     <link rel="manifest" href="manifest.webmanifest">
@@ -16,8 +16,26 @@
     <!-- ALYSUM:ANALYTICS:START -->
     <script type="module" src="js/vercel-analytics.js"></script>
     <!-- ALYSUM:ANALYTICS:END -->
+    <!-- ALYSUM:SEO:START -->
+    <meta charset="UTF-8">
+    <meta name="description" content="Publish chapters from your Alysum book to the public library.">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="canonical" data-seo-path="/publish.html" href="">
+    <meta property="og:site_name" content="Alysum">
+    <meta property="og:locale" content="en_US">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Publish Story — Alysum">
+    <meta property="og:description" content="Publish chapters from your Alysum book to the public library.">
+    <meta property="og:image" content="/Alysum-3.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Publish Story — Alysum">
+    <meta name="twitter:description" content="Publish chapters from your Alysum book to the public library.">
+    <meta name="twitter:image" content="/Alysum-3.png">
+    <script src="js/seo-meta.js"></script>
+    <!-- ALYSUM:SEO:END -->
 
-<title>Publish Story • Alysum</title>
+
+<title>Publish Story — Alysum</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="stylesheet" href="css/site-responsive.css?v=1" />
 <link rel="stylesheet" href="css/gradient-themes.css?v=4" />
@@ -285,6 +303,7 @@
 
 </div><script type="module">
     import { supabase } from "./firebase.js";
+    import { requestSearchIndexing } from "./js/request-search-index.js?v=1";
     import { publicDisplayNameFromUserData } from "./js/profile-display.js?v=1";
     import {
         getPublishEligibility,
@@ -967,6 +986,10 @@
                 ? ` ${scheduled.length} chapter${scheduled.length === 1 ? "" : "s"} scheduled for later release.`
                 : "";
             setStatus(`Story published successfully.${scheduleNote}`, "success");
+            void requestSearchIndexing({
+                bookId,
+                authorUsername: isAnonymousPost ? "" : String(currentProfile?.username || "").trim(),
+            });
             await refreshPublishEligibility();
         } catch (error) {
             console.error(error);

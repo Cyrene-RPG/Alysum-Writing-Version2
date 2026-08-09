@@ -1,6 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- ALYSUM:SEO:START -->
+    <meta charset="UTF-8">
+    <meta name="description" content="Invite collaborators to your Alysum chapter.">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="canonical" data-seo-path="/collab-room-manage.html" href="">
+    <meta property="og:site_name" content="Alysum">
+    <meta property="og:locale" content="en_US">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Collab invite — Alysum">
+    <meta property="og:description" content="Invite collaborators to your Alysum chapter.">
+    <meta property="og:image" content="/Alysum-3.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Collab invite — Alysum">
+    <meta name="twitter:description" content="Invite collaborators to your Alysum chapter.">
+    <meta name="twitter:image" content="/Alysum-3.png">
+    <script src="js/seo-meta.js"></script>
+    <!-- ALYSUM:SEO:END -->
+
     <link rel="manifest" href="manifest.webmanifest">
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -392,7 +410,8 @@
                 const title = book.title || "Untitled";
                 pageTitle.textContent = `Collab invite · ${title}`;
                 pageSub.textContent = `Invite editors to suggest changes on chapters in "${title}".`;
-                document.title = `Collab invite · ${title} — Alysum`;
+                const pageTitle = `Collab invite · ${title} — Alysum`;
+                window.AlysumSeo?.apply({ title: pageTitle, description: `Invite editors to suggest changes on chapters in "${title}".` });
                 if (editorBtn) {
                     editorBtn.href = `editor.html?book=${encodeURIComponent(bookId)}`;
                     editorBtn.hidden = false;

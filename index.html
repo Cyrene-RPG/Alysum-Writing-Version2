@@ -16,11 +16,31 @@
     <!-- ALYSUM:ANALYTICS:START -->
     <script type="module" src="js/vercel-analytics.js"></script>
     <!-- ALYSUM:ANALYTICS:END -->
+    <!-- ALYSUM:SEO:START -->
+    <meta charset="UTF-8">
+    <meta name="description" content="Write and publish stories online for free. Alysum is a writing studio and reading library for fiction, fanfiction, nonfiction, and comics.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" data-seo-path="/" href="">
+    <meta property="og:site_name" content="Alysum">
+    <meta property="og:locale" content="en_US">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Alysum — Free online writing platform &amp; story library">
+    <meta property="og:description" content="Write and publish stories online for free. Alysum is a writing studio and reading library for fiction, fanfiction, nonfiction, and comics.">
+    <meta property="og:image" content="/Alysum-3.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Alysum — Free online writing platform &amp; story library">
+    <meta name="twitter:description" content="Write and publish stories online for free. Alysum is a writing studio and reading library for fiction, fanfiction, nonfiction, and comics.">
+    <meta name="twitter:image" content="/Alysum-3.png">
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Organization","name":"Alysum","url":"/","logo":"/Alysum-3.png","description":"Free online writing platform and public story library.","sameAs":["https://discord.gg/ue7uSCWU9w"]}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"Alysum","alternateName":"Alysum Writing Studio","url":"/","description":"Write, publish, and read stories online for free.","potentialAction":{"@type":"SearchAction","target":"/library.html","query-input":"required name=search_term_string"}}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Alysum","applicationCategory":"WritingApplication","operatingSystem":"Web","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+    <script src="js/seo-meta.js"></script>
+    <!-- ALYSUM:SEO:END -->
+
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Alysum is a writing studio for any writer — draft chapters, track progress, and share stories in the public library." />
   <link rel="stylesheet" href="css/site-responsive.css?v=1" />
-  <title>Alysum — Writing studio for every writer</title>
+  <title>Alysum — Free online writing platform &amp; story library</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -1414,9 +1434,15 @@
         empty: true
       });
       try {
-        const { data, error } = await supabase.from("library").select("*");
-        if (error) throw error;
-        books = (data || []).map(normalizeBook).filter(b => b.id);
+        const { data, error } = await supabase.from("library_catalog").select("*");
+        if (error && /library_catalog|relation.*does not exist/i.test(String(error.message || error))) {
+          const fallback = await supabase.from("library").select("*");
+          if (fallback.error) throw fallback.error;
+          books = (fallback.data || []).map(normalizeBook).filter(b => b.id);
+        } else {
+          if (error) throw error;
+          books = (data || []).map(normalizeBook).filter(b => b.id);
+        }
         await loadReadAndKudosCounts();
         renderBooks();
       } catch (err) {

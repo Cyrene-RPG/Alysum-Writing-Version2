@@ -16,11 +16,29 @@
     <!-- ALYSUM:ANALYTICS:START -->
     <script type="module" src="js/vercel-analytics.js"></script>
     <!-- ALYSUM:ANALYTICS:END -->
+    <!-- ALYSUM:SEO:START -->
+    <meta charset="UTF-8">
+    <meta name="description" content="Read free stories and books online on Alysum — chapters, kudos, and comments from the writing community.">
+    <meta name="robots" content="index, follow, noai, noimageai">
+    <link rel="canonical" data-seo-path="/read.html" href="">
+    <meta property="og:site_name" content="Alysum">
+    <meta property="og:locale" content="en_US">
+    <meta property="og:type" content="book">
+    <meta property="og:title" content="Read Stories Free Online — Alysum Reader">
+    <meta property="og:description" content="Read free stories and books online on Alysum — chapters, kudos, and comments from the writing community.">
+    <meta property="og:image" content="/Alysum-3.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Read Stories Free Online — Alysum Reader">
+    <meta name="twitter:description" content="Read free stories and books online on Alysum — chapters, kudos, and comments from the writing community.">
+    <meta name="twitter:image" content="/Alysum-3.png">
+    <script src="js/seo-meta.js"></script>
+    <!-- ALYSUM:SEO:END -->
+
 
 
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Alysum Reader</title>
+    <title>Read Stories Free Online — Alysum Reader</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Abril+Fatface&amp;family=Alegreya:wght@400;600&amp;family=Audiowide&amp;family=Bitter:wght@400;600&amp;family=Cardo:wght@400;700&amp;family=Caveat:wght@400;600&amp;family=Cinzel:wght@400;600&amp;family=Cormorant+Garamond:wght@400;600&amp;family=Crimson+Pro:wght@400;600&amp;family=Dancing+Script:wght@400;600&amp;family=DM+Sans:wght@400;600&amp;family=EB+Garamond:wght@400;600&amp;family=Exo+2:wght@400;600&amp;family=IBM+Plex+Mono:wght@400;600&amp;family=IM+Fell+English&amp;family=Inter:wght@400;600&amp;family=JetBrains+Mono:wght@400;600&amp;family=Lato:wght@400;600&amp;family=Libre+Baskerville:wght@400;700&amp;family=Libre+Caslon+Text:wght@400;700&amp;family=Literata:wght@400;600&amp;family=Lora:wght@400;600&amp;family=Merriweather:wght@400;700&amp;family=Michroma&amp;family=Montserrat:wght@400;600&amp;family=Noto+Serif:wght@400;600&amp;family=Nunito:wght@400;600&amp;family=Open+Sans:wght@400;600&amp;family=Orbitron:wght@400;600;700&amp;family=Oxanium:wght@400;600&amp;family=Playfair+Display:wght@400;700&amp;family=Press+Start+2P&amp;family=Quantico:wght@400;700&amp;family=Rajdhani:wght@400;600;700&amp;family=Raleway:wght@400;600&amp;family=Roboto:wght@400;600&amp;family=Share+Tech+Mono&amp;family=Source+Code+Pro:wght@400;600&amp;family=Source+Serif+4:wght@400;600&amp;family=Space+Mono:wght@400;700&amp;family=Spectral:wght@400;600&amp;family=Syncopate:wght@400;700&amp;family=VT323&amp;family=Vollkorn:wght@400;600&amp;family=Work+Sans:wght@400;600&amp;display=swap" rel="stylesheet" />
@@ -357,6 +375,7 @@
     import { applyReaderWatermark } from "./js/reader-watermark.js?v=6";
     import { openLibraryReportModal } from "./js/library-report-modal.js?v=1";
     import { isBookReadable } from "./js/library-reports-api.js?v=1";
+    import { bookPageTitle, bookMetaDescription, buildBookJsonLd } from "./js/book-seo.js?v=1";
     import {
         isComicFormat,
         isScriptFormat,
@@ -449,10 +468,18 @@
         } catch (e) {}
 
         try {
-            const { data, error } = await supabase.from("library").select("id, data").limit(100);
-            if (error) throw error;
+            let rows = null;
+            const catalogResult = await supabase.from("library_catalog").select("id, data").limit(100);
+            if (catalogResult.error && /library_catalog|relation.*does not exist/i.test(String(catalogResult.error.message || catalogResult.error))) {
+                const fallback = await supabase.from("library").select("id, data").limit(100);
+                if (fallback.error) throw fallback.error;
+                rows = fallback.data;
+            } else {
+                if (catalogResult.error) throw catalogResult.error;
+                rows = catalogResult.data;
+            }
 
-            const rows = (data || [])
+            const sorted = (rows || [])
                 .filter(row => row?.id)
                 .map(row => {
                     const payload = safeObject(row.data, {});
@@ -465,7 +492,7 @@
                 .filter(row => row.published)
                 .sort((a, b) => b.updated - a.updated);
 
-            if (rows[0]?.id) return rows[0].id;
+            if (sorted[0]?.id) return sorted[0].id;
         } catch (e) {
             console.warn("Could not find fallback library book.", e);
         }
@@ -513,7 +540,47 @@
         const bookWarnings = chapters.some((ch) => ch.warnings.length)
             ? flattenWarnings(aggregateWarningsFromChapters(chapters))
             : flattenWarnings(data.warnings);
-        return { id: safeString(data.bookId || row?.id, bookId), ownerUid: safeString(data.ownerUid || data.user_id || row?.user_id, ""), title: safeString(data.title, "Untitled"), author: safeString(data.author, "unknown"), isAnonymous: !!(data.isAnonymous ?? data.is_anonymous), summary: safeString(data.summary, ""), rating: safeString(data.rating, ""), type: safeString(data.type, "fiction"), mediaFormat, tags: rawTags.filter(v => typeof v === "string" && v.trim()), warnings: bookWarnings, chapterCount: serialization.chapterCount, publishedChapterCount: serialization.publishedCount, serializationStatus: serialization.status, plannedChapterCount: serialization.plannedChapterCount, words: totalWords, views: safeNumber(data.views, 0), likes: safeNumber(data.likes, 0), chapters };
+        return { id: safeString(data.bookId || row?.id, bookId), ownerUid: safeString(data.ownerUid || data.user_id || row?.user_id, ""), title: safeString(data.title, "Untitled"), author: safeString(data.author, "unknown"), isAnonymous: !!(data.isAnonymous ?? data.is_anonymous), summary: safeString(data.summary, ""), coverUrl: safeString(data.coverUrl || data.cover_url, ""), rating: safeString(data.rating, ""), type: safeString(data.type, "fiction"), mediaFormat, tags: rawTags.filter(v => typeof v === "string" && v.trim()), warnings: bookWarnings, chapterCount: serialization.chapterCount, publishedChapterCount: serialization.publishedCount, serializationStatus: serialization.status, plannedChapterCount: serialization.plannedChapterCount, words: totalWords, views: safeNumber(data.views, 0), likes: safeNumber(data.likes, 0), chapters };
+    }
+
+    function updateBookSeo() {
+        if (!currentBook || !window.AlysumSeo) return;
+        const params = new URLSearchParams(window.location.search);
+        if (bookId) params.set("book", bookId);
+        const pagePath = `${window.location.pathname}?${params.toString()}`;
+        const pageUrl = window.AlysumSeo.absUrl(pagePath);
+        const authorPageUrl =
+            !currentBook.isAnonymous && authorOwnerProfile?.username
+                ? window.AlysumSeo.absUrl(`author.html?u=${encodeURIComponent(authorOwnerProfile.username)}`)
+                : null;
+        const description = bookMetaDescription(
+            currentBook.title,
+            currentBook.author,
+            currentBook.summary,
+            currentBook.isAnonymous
+        );
+        window.AlysumSeo.apply({
+            title: bookPageTitle(currentBook.title, currentBook.author, currentBook.isAnonymous),
+            description,
+            author: currentBook.isAnonymous ? "Anonymous" : currentBook.author,
+            image: currentBook.coverUrl || undefined,
+            url: pagePath,
+            type: "book",
+            canonical: pagePath,
+            jsonLd: buildBookJsonLd({
+                title: currentBook.title,
+                author: currentBook.author,
+                isAnonymous: currentBook.isAnonymous,
+                summary: currentBook.summary,
+                description,
+                pageUrl,
+                imageUrl: currentBook.coverUrl
+                    ? window.AlysumSeo.absUrl(currentBook.coverUrl)
+                    : window.AlysumSeo.absUrl(window.AlysumSeo.defaultImage),
+                authorPageUrl,
+            }),
+            jsonLdId: "alysum-jsonld-book",
+        });
     }
 
     /** All plausible `comments.book_id` / `likes.book_id` keys (URL id, JSON aliases, Firestore-era ids). */
@@ -679,7 +746,7 @@
         }
     }
 
-    function renderMeta() { if (!currentBook) return; const comic = isComicFormat(currentBook.mediaFormat); const script = isScriptFormat(currentBook.mediaFormat); bookTitle.textContent = currentBook.title; renderAuthorLinks(); bookSummary.textContent = currentBook.summary || "No summary yet."; sideBookTitle.textContent = currentBook.title; sideBookSummary.textContent = currentBook.summary || "No summary yet."; drawerBookTitle.textContent = currentBook.title; drawerBookSummary.textContent = currentBook.summary || "No summary yet."; topbarTitle.textContent = currentBook.title; const chapterProgress = formatChapterProgress({ publishedCount: currentBook.publishedChapterCount ?? currentBook.chapters.length, plannedChapterCount: currentBook.plannedChapterCount, chapterCount: currentBook.chapterCount, serializationStatus: currentBook.serializationStatus, comic }); statChapters.textContent = chapterProgress; if (serializationBadge) serializationBadge.innerHTML = `<div class="chip serialization-chip">${escapeHtml(serializationStatusLabel(currentBook.serializationStatus))}</div>`; statWords.textContent = (comic || script) ? mediaFormatLabel(currentBook.mediaFormat) : formatNumber(currentBook.words); statReads.textContent = formatNumber(currentBook.views); statType.textContent = (comic || script) ? mediaFormatLabel(currentBook.mediaFormat) : (currentBook.type || "—"); statRating.textContent = currentBook.rating || "—"; renderChipList(tagList, currentBook.tags, "No tags listed"); renderChipList(warningList, currentBook.warnings, "No warnings listed"); renderChipList(sideTagList, currentBook.tags, "No tags listed"); renderChipList(sideWarningList, currentBook.warnings, "No warnings listed"); renderChipList(drawerTagList, currentBook.tags, "No tags listed"); renderChipList(drawerWarningList, currentBook.warnings, "No warnings listed"); }
+    function renderMeta() { if (!currentBook) return; const comic = isComicFormat(currentBook.mediaFormat); const script = isScriptFormat(currentBook.mediaFormat); bookTitle.textContent = currentBook.title; renderAuthorLinks(); bookSummary.textContent = currentBook.summary || "No summary yet."; sideBookTitle.textContent = currentBook.title; sideBookSummary.textContent = currentBook.summary || "No summary yet."; drawerBookTitle.textContent = currentBook.title; drawerBookSummary.textContent = currentBook.summary || "No summary yet."; topbarTitle.textContent = currentBook.title; const chapterProgress = formatChapterProgress({ publishedCount: currentBook.publishedChapterCount ?? currentBook.chapters.length, plannedChapterCount: currentBook.plannedChapterCount, chapterCount: currentBook.chapterCount, serializationStatus: currentBook.serializationStatus, comic }); statChapters.textContent = chapterProgress; if (serializationBadge) serializationBadge.innerHTML = `<div class="chip serialization-chip">${escapeHtml(serializationStatusLabel(currentBook.serializationStatus))}</div>`; statWords.textContent = (comic || script) ? mediaFormatLabel(currentBook.mediaFormat) : formatNumber(currentBook.words); statReads.textContent = formatNumber(currentBook.views); statType.textContent = (comic || script) ? mediaFormatLabel(currentBook.mediaFormat) : (currentBook.type || "—"); statRating.textContent = currentBook.rating || "—"; renderChipList(tagList, currentBook.tags, "No tags listed"); renderChipList(warningList, currentBook.warnings, "No warnings listed"); renderChipList(sideTagList, currentBook.tags, "No tags listed"); renderChipList(sideWarningList, currentBook.warnings, "No warnings listed"); renderChipList(drawerTagList, currentBook.tags, "No tags listed"); renderChipList(drawerWarningList, currentBook.warnings, "No warnings listed"); updateBookSeo(); }
     function goToNextChapter() {
         if (!currentBook || currentChapterIndex >= currentBook.chapters.length - 1) return;
         currentChapterIndex++;
@@ -941,6 +1008,7 @@
             updateChapterReactionsTitle();
             renderAuthorLinks();
             authorEndCard?.classList.add("hidden");
+            updateBookSeo();
             return;
         }
         const ownerUid = currentBook?.ownerUid;
@@ -951,6 +1019,7 @@
             updateChapterReactionsTitle();
             renderAuthorLinks();
             authorEndCard?.classList.add("hidden");
+            updateBookSeo();
             return;
         }
         try {
@@ -969,6 +1038,7 @@
         updateChapterReactionsTitle();
         renderAuthorLinks();
         void renderAuthorEndSection();
+        updateBookSeo();
     }
 
     async function loadNextChapterRelease() {
@@ -979,6 +1049,18 @@
         } catch (err) {
             console.warn("Could not load next chapter release.", err);
         }
+    }
+
+    async function fetchBookChapters(id) {
+        const res = await fetch(`/api/book-content?book=${encodeURIComponent(id)}`, {
+            credentials: "same-origin",
+            headers: { Accept: "application/json" },
+        });
+        if (!res.ok) {
+            const detail = await res.text().catch(() => "");
+            throw new Error(detail || `Could not load chapters (${res.status})`);
+        }
+        return res.json();
     }
 
     async function loadBook() {
@@ -1000,16 +1082,33 @@
             } catch (releaseErr) {
                 console.warn("Could not process scheduled chapter releases.", releaseErr);
             }
-            const { data, error } = await supabase.from("library").select("*").eq("id", bookId).maybeSingle();
-            if (error) throw error;
-            if (!data) { showError(`Story not found: ${bookId}`); topbarTitle.textContent = "Story not found"; hideStatus(); updateReaderWatermark(); return; }
+            const { data, error } = await supabase.from("library_catalog").select("*").eq("id", bookId).maybeSingle();
+            if (error && /library_catalog|relation.*does not exist/i.test(String(error.message || error))) {
+                const fallback = await supabase.from("library").select("*").eq("id", bookId).maybeSingle();
+                if (fallback.error) throw fallback.error;
+                if (!fallback.data) { showError(`Story not found: ${bookId}`); topbarTitle.textContent = "Story not found"; hideStatus(); updateReaderWatermark(); return; }
+                librarySourceRow = fallback.data;
+            } else {
+                if (error) throw error;
+                if (!data) { showError(`Story not found: ${bookId}`); topbarTitle.textContent = "Story not found"; hideStatus(); updateReaderWatermark(); return; }
+                const chapterPayload = await fetchBookChapters(bookId);
+                const catalogData = libraryRowData(data);
+                librarySourceRow = {
+                    ...data,
+                    data: {
+                        ...catalogData,
+                        chapters: safeArray(chapterPayload?.chapters, []),
+                        publishedChapterIds: safeArray(chapterPayload?.publishedChapterIds, catalogData.publishedChapterIds),
+                    },
+                };
+            }
 
+            if (!librarySourceRow) { showError(`Story not found: ${bookId}`); topbarTitle.textContent = "Story not found"; hideStatus(); updateReaderWatermark(); return; }
             localStorage.setItem("alysum-last-read-book", bookId);
             localStorage.setItem("alysum-last-book", bookId);
             sessionStorage.setItem("alysum-open-book", bookId);
 
-            librarySourceRow = data;
-            currentBook = normalizeBook(data);
+            currentBook = normalizeBook(librarySourceRow);
             await loadNextChapterRelease();
 
             const readable = await isBookReadable(bookId);

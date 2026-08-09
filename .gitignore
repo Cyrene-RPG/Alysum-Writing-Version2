@@ -75,3 +75,5 @@ firebase-to-supabase/
 # Local Supabase exports (PII + manuscripts)
 recovery-audit/backups/
 test-output/
+.vercel
+.env*

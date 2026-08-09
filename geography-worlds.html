@@ -1,12 +1,30 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- ALYSUM:SEO:START -->
+    <meta charset="UTF-8">
+    <meta name="description" content="Geography and terrain codex for your Alysum world encyclopedia.">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="canonical" data-seo-path="/geography-worlds.html" href="">
+    <meta property="og:site_name" content="Alysum">
+    <meta property="og:locale" content="en_US">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Geography &amp; World Terrain — Alysum">
+    <meta property="og:description" content="Geography and terrain codex for your Alysum world encyclopedia.">
+    <meta property="og:image" content="/Alysum-3.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Geography &amp; World Terrain — Alysum">
+    <meta name="twitter:description" content="Geography and terrain codex for your Alysum world encyclopedia.">
+    <meta name="twitter:image" content="/Alysum-3.png">
+    <script src="js/seo-meta.js"></script>
+    <!-- ALYSUM:SEO:END -->
+
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="icon" type="image/png" href="Alysum-3.png">
     <script src="js/pwa-register.js" defer></script>
     <script type="module" src="js/vercel-analytics.js"></script>
     <meta charset="UTF-8" />
-    <title>Geography & World Terrain — Alysum</title>
+    <title>Geography &amp; World Terrain — Alysum</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script src="js/body-background-presets-data.js"></script>
 <script src="js/alysum-appearance-boot.js"></script>
@@ -288,7 +306,8 @@
                 return;
             }
             hubMain.hidden = false;
-            document.title = "Geography & World Terrain — " + enc.title + " — Alysum";
+            const pageTitle = "Geography & World Terrain — " + enc.title + " — Alysum";
+            window.AlysumSeo?.apply({ title: pageTitle, description: enc.title + " — geography and terrain in your Alysum world encyclopedia." });
             hubTitle.textContent = enc.title;
             encBack.href = "encyclopedia.html?id=" + encodeURIComponent(enc.id);
             renderGrid();

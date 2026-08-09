@@ -1,12 +1,30 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- ALYSUM:SEO:START -->
+    <meta charset="UTF-8">
+    <meta name="description" content="Culture codex entry in your Alysum world encyclopedia.">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="canonical" data-seo-path="/peoples-culture.html" href="">
+    <meta property="og:site_name" content="Alysum">
+    <meta property="og:locale" content="en_US">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Peoples &amp; Culture — Culture Codex — Alysum">
+    <meta property="og:description" content="Culture codex entry in your Alysum world encyclopedia.">
+    <meta property="og:image" content="/Alysum-3.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Peoples &amp; Culture — Culture Codex — Alysum">
+    <meta name="twitter:description" content="Culture codex entry in your Alysum world encyclopedia.">
+    <meta name="twitter:image" content="/Alysum-3.png">
+    <script src="js/seo-meta.js"></script>
+    <!-- ALYSUM:SEO:END -->
+
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="icon" type="image/png" href="Alysum-3.png">
     <script src="js/pwa-register.js" defer></script>
     <script type="module" src="js/vercel-analytics.js"></script>
     <meta charset="UTF-8" />
-    <title>Peoples & Culture — Culture Codex — Alysum</title>
+    <title>Peoples &amp; Culture — Culture Codex — Alysum</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script src="js/body-background-presets-data.js"></script>
 <script src="js/alysum-appearance-boot.js"></script>
@@ -111,7 +129,8 @@
             }
             void touchPeoplesCulture(encId, cultureId);
             document.getElementById("pageTitle").textContent = meta.name;
-            document.title = meta.name + " — Culture Codex — Alysum";
+            const pageTitle = meta.name + " — Culture Codex — Alysum";
+            window.AlysumSeo?.apply({ title: pageTitle, description: meta.name + " — culture codex entry in your Alysum world encyclopedia." });
             document.getElementById("hubBack").href =
                 "peoples-cultures.html?encyclopedia=" + encodeURIComponent(encId);
             document.getElementById("encBack").href =

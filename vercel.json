@@ -1,4 +1,10 @@
 {
+  "rewrites": [
+    {
+      "source": "/sitemap.xml",
+      "destination": "/api/sitemap.xml"
+    }
+  ],
   "headers": [
     {
       "source": "/firebase.js",
@@ -15,6 +21,24 @@
         {
           "key": "Cache-Control",
           "value": "no-cache, no-store, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/read.html",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noai, noimageai"
+        }
+      ]
+    },
+    {
+      "source": "/api/book-content",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noai, noimageai, noindex, nofollow"
         }
       ]
     },

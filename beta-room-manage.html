@@ -1,6 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- ALYSUM:SEO:START -->
+    <meta charset="UTF-8">
+    <meta name="description" content="Manage beta reader sharing on Alysum.">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="canonical" data-seo-path="/beta-room-manage.html" href="">
+    <meta property="og:site_name" content="Alysum">
+    <meta property="og:locale" content="en_US">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Beta share — Alysum">
+    <meta property="og:description" content="Manage beta reader sharing on Alysum.">
+    <meta property="og:image" content="/Alysum-3.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Beta share — Alysum">
+    <meta name="twitter:description" content="Manage beta reader sharing on Alysum.">
+    <meta name="twitter:image" content="/Alysum-3.png">
+    <script src="js/seo-meta.js"></script>
+    <!-- ALYSUM:SEO:END -->
+
     <link rel="manifest" href="manifest.webmanifest">
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -754,7 +772,8 @@
             const title = data.title || "Untitled";
             pageTitle.textContent = title;
             pageSub.textContent = `Share "${title}" with beta readers via frozen snapshots.`;
-            document.title = `Beta share · ${title} — Alysum`;
+            const pageTitle = `Beta share · ${title} — Alysum`;
+            window.AlysumSeo?.apply({ title: pageTitle, description: `Share "${title}" with beta readers via frozen snapshots.` });
             if (backBtn) backBtn.href = "beta-rooms.html";
             if (editorBtn) {
                 editorBtn.href = `editor.html?book=${encodeURIComponent(bookId)}`;

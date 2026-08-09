@@ -1,4 +1,4 @@
-<!DOCTYPE html><html>
+<!DOCTYPE html><html lang="en">
 <head>
     <!-- ALYSUM:PWA:START -->
     <link rel="manifest" href="manifest.webmanifest">
@@ -16,8 +16,27 @@
     <!-- ALYSUM:ANALYTICS:START -->
     <script type="module" src="js/vercel-analytics.js"></script>
     <!-- ALYSUM:ANALYTICS:END -->
+    <!-- ALYSUM:SEO:START -->
+    <meta charset="UTF-8">
+    <meta name="description" content="Browse and read free stories online — fiction, fanfiction, nonfiction, and comics published by writers on Alysum.">
+    <meta name="robots" content="index, follow, noai, noimageai">
+    <link rel="canonical" data-seo-path="/library.html" href="">
+    <meta property="og:site_name" content="Alysum">
+    <meta property="og:locale" content="en_US">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Read Free Stories Online — Alysum Library">
+    <meta property="og:description" content="Browse and read free stories online — fiction, fanfiction, nonfiction, and comics published by writers on Alysum.">
+    <meta property="og:image" content="/Alysum-3.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Read Free Stories Online — Alysum Library">
+    <meta name="twitter:description" content="Browse and read free stories online — fiction, fanfiction, nonfiction, and comics published by writers on Alysum.">
+    <meta name="twitter:image" content="/Alysum-3.png">
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"CollectionPage","name":"Alysum Library","description":"Free online story library with fiction, fanfiction, nonfiction, and comics.","url":"/library.html","isPartOf":{"@type":"WebSite","name":"Alysum","url":"/"}}</script>
+    <script src="js/seo-meta.js"></script>
+    <!-- ALYSUM:SEO:END -->
 
-<title>Alysum Library</title>
+
+<title>Read Free Stories Online — Alysum Library</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="stylesheet" href="css/site-responsive.css?v=1" />
 <link rel="stylesheet" href="css/gradient-themes.css?v=5" />
@@ -512,11 +531,17 @@
         resultsText.textContent = "Loading stories...";
         try {
             const { data, error } = await supabase
-                .from("library")
+                .from("library_catalog")
                 .select("*");
 
-            if (error) throw error;
-            allBooks = (data || []).map(normalizeBook).filter(book => book.id);
+            if (error && /library_catalog|relation.*does not exist/i.test(String(error.message || error))) {
+                const fallback = await supabase.from("library").select("*");
+                if (fallback.error) throw fallback.error;
+                allBooks = (fallback.data || []).map(normalizeBook).filter(book => book.id);
+            } else {
+                if (error) throw error;
+                allBooks = (data || []).map(normalizeBook).filter(book => book.id);
+            }
             await Promise.all([loadReadCounts(), loadAuthorUsernames()]);
             renderBooks();
         } catch (error) {

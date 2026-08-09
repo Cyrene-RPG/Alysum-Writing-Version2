@@ -13,6 +13,24 @@
     <!-- ALYSUM:ANALYTICS:START -->
     <script type="module" src="js/vercel-analytics.js"></script>
     <!-- ALYSUM:ANALYTICS:END -->
+    <!-- ALYSUM:SEO:START -->
+    <meta charset="UTF-8">
+    <meta name="description" content="Your world encyclopedia in Alysum.">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="canonical" data-seo-path="/encyclopedia.html" href="">
+    <meta property="og:site_name" content="Alysum">
+    <meta property="og:locale" content="en_US">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Encyclopedia — Alysum">
+    <meta property="og:description" content="Your world encyclopedia in Alysum.">
+    <meta property="og:image" content="/Alysum-3.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Encyclopedia — Alysum">
+    <meta name="twitter:description" content="Your world encyclopedia in Alysum.">
+    <meta name="twitter:image" content="/Alysum-3.png">
+    <script src="js/seo-meta.js"></script>
+    <!-- ALYSUM:SEO:END -->
+
 
     <meta charset="UTF-8" />
     <title>Encyclopedia — Alysum</title>
@@ -415,7 +433,8 @@
         toolsEl.replaceChildren();
 
         void touchEncyclopedia(enc.id);
-        document.title = enc.title + " — World Encyclopedia — Alysum";
+        const pageTitle = enc.title + " — World Encyclopedia — Alysum";
+        window.AlysumSeo?.apply({ title: pageTitle, description: enc.title + " — world encyclopedia on Alysum." });
         titleEl.textContent = enc.title;
         const updated = formatEncyclopediaDate(enc.updatedAt);
         const cloud = getWorldEncyclopediaStorageMode() === "cloud";
