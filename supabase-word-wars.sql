@@ -861,6 +861,9 @@ BEGIN
 END;
 $$;
 
+-- CREATE OR REPLACE cannot change STABLE → VOLATILE; must DROP first.
+DROP FUNCTION IF EXISTS public.list_open_word_war_lobbies(integer);
+
 CREATE OR REPLACE FUNCTION public.list_open_word_war_lobbies(p_limit integer DEFAULT 50)
 RETURNS jsonb
 LANGUAGE plpgsql
