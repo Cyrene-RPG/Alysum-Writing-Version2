@@ -52,6 +52,10 @@
             backdrop-filter: blur(10px);
             z-index: 20;
         }
+        .ww-sprint-hud .ww-sprint-status {
+            flex: 1 1 100%;
+            margin: 0;
+        }
         .ww-sprint-meta {
             display: flex;
             flex-wrap: wrap;
@@ -166,6 +170,8 @@
             background: rgba(4,8,18,0.96);
             backdrop-filter: blur(10px);
             min-height: 0;
+            max-height: 168px;
+            flex-shrink: 0;
             z-index: 18;
         }
         .ww-call-dock-head {
@@ -189,6 +195,9 @@
         }
         .ww-call-dock {
             display: flex;
+            flex-direction: row;
+            flex-wrap: nowrap;
+            align-items: stretch;
             gap: 10px;
             padding: 10px 14px 14px;
             overflow-x: auto;
@@ -204,10 +213,11 @@
         }
         .ww-dock-tile {
             flex: 0 0 clamp(148px, 16vw, 204px);
+            width: clamp(148px, 16vw, 204px);
+            height: 132px;
             scroll-snap-align: start;
             display: grid;
-            grid-template-rows: minmax(0, 1fr) auto;
-            min-height: 128px;
+            grid-template-rows: 84px auto;
             border: 2px solid var(--border);
             border-radius: 14px;
             overflow: hidden;
@@ -234,7 +244,8 @@
         }
         .ww-dock-preview {
             position: relative;
-            min-height: 88px;
+            height: 84px;
+            max-height: 84px;
             background: #0b1220;
             overflow: hidden;
         }
@@ -268,23 +279,19 @@
             background: linear-gradient(135deg, rgba(124,58,237,0.55), rgba(59,130,246,0.35));
             border: 2px solid rgba(255,255,255,0.12);
         }
-        .ww-dock-preview-scale {
-            transform: scale(0.19);
-            transform-origin: top left;
-            width: 526%;
-            pointer-events: none;
-            user-select: none;
-        }
-        .ww-dock-preview-html {
-            padding: 28px 32px;
-            min-height: 420px;
-            background: var(--editor-page-bg);
-            color: var(--editor-page-text);
+        .ww-dock-preview-text {
+            margin: 0;
+            padding: 22px 10px 8px;
             font-family: Georgia, "Times New Roman", serif;
-            font-size: 18px;
-            line-height: 1.65;
+            font-size: 10px;
+            line-height: 1.45;
+            color: #cbd5e1;
+            display: -webkit-box;
+            -webkit-line-clamp: 4;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
-        .ww-dock-preview-html p { margin: 0 0 0.85em; }
         .ww-dock-live {
             position: absolute;
             top: 6px;
@@ -547,9 +554,8 @@
                 <button type="button" class="btn gold" id="finishBtn">End sprint</button>
                 <button type="button" class="btn" id="leaveBtn">Lobby</button>
             </div>
+            <div id="pageStatus" class="ww-sprint-status hidden"></div>
         </header>
-
-        <div id="pageStatus" class="ww-sprint-status hidden"></div>
 
         <div class="ww-sprint-stage" id="sprintStage">
             <section class="ww-main-pane is-you" id="mainPaneYou">
@@ -605,6 +611,6 @@
         </div>
     </div>
 
-    <script type="module" src="js/word-wars-sprint.js?v=18"></script>
+    <script type="module" src="js/word-wars-sprint.js?v=19"></script>
 </body>
 </html>

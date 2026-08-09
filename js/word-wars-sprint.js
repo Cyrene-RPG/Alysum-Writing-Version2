@@ -15,7 +15,7 @@ import {
     enrichWordWarParticipantProfiles,
     WORD_WAR_DURATION_UNLIMITED,
 } from "./word-wars-api.js?v=9";
-import { renderWriterDock } from "./word-wars-call.js?v=3";
+import { renderWriterDock } from "./word-wars-call.js?v=4";
 import { sanitizeChapterHtml } from "./book-html-sanitize.js?v=1";
 
 const params = new URLSearchParams(window.location.search);
@@ -363,11 +363,14 @@ function setFocusedParticipant(participantId) {
 function getDockPreview(participant) {
     const isYou = participant.userId === uid;
     if (isYou) {
-        if (getShareDraftState() && latestDraft.chapterHtml) {
-            return {
-                html: sanitizeChapterHtml(latestDraft.chapterHtml),
-                live: true,
-            };
+        if (getShareDraftState()) {
+            if (latestDraft.chapterHtml) {
+                return {
+                    html: latestDraft.chapterHtml,
+                    live: true,
+                };
+            }
+            return { empty: true, label: "Sharing live…", live: true };
         }
         return { empty: true, label: meInLobby()?.bookTitle || "Your manuscript" };
     }
@@ -375,11 +378,11 @@ function getDockPreview(participant) {
         return { hidden: true, displayName: participant.displayName || "Writer" };
     }
     if (!participant.liveChapterHtml) {
-        return { empty: true, label: "Nothing shared yet" };
+        return { empty: true, label: "Nothing shared yet", live: true };
     }
     return {
-        html: sanitizeChapterHtml(participant.liveChapterHtml),
-        live: Boolean(participant.isTyping),
+        html: participant.liveChapterHtml,
+        live: true,
     };
 }
 
@@ -842,8 +845,9 @@ async function setShareDraft(next) {
         shareDraft = next;
         const me = meInLobby();
         if (me) me.shareDraft = next;
+        focusedParticipantId = uid;
         renderShareControls();
-        renderOpponentMirror();
+        renderSprintUI();
         if (next) {
             requestEditorDraftPing();
             await flushSharedDraftNow();
@@ -865,8 +869,9 @@ async function setShareDraft(next) {
         lobby = await updateWordWarProgress(roomId, buildSharePatch(next));
         shareDraftOverride = null;
         shareDraft = Boolean(meInLobby()?.shareDraft);
+        focusedParticipantId = uid;
         renderShareControls();
-        renderOpponentMirror();
+        renderSprintUI();
         if (next) {
             await flushSharedDraftNow();
         }

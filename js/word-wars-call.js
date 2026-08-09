@@ -14,6 +14,15 @@ function avatarInitial(name) {
     return String(name || "W").trim().charAt(0).toUpperCase() || "W";
 }
 
+function draftPreviewExcerpt(html, maxLen = 120) {
+    const text = String(html || "")
+        .replace(/<[^>]+>/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+    if (!text) return "";
+    return text.length > maxLen ? `${text.slice(0, maxLen)}…` : text;
+}
+
 /**
  * @param {{
  *   html?: string,
@@ -36,19 +45,20 @@ function renderDockPreview(preview) {
         `;
     }
     if (preview.empty) {
+        const liveBadge = preview.live ? '<span class="ww-dock-live">Live</span>' : "";
         return `
-            <div class="ww-dock-preview is-empty">
+            <div class="ww-dock-preview is-empty${preview.live ? " is-sharing" : ""}">
+                ${liveBadge}
                 <span class="ww-dock-preview-placeholder">${escapeHtml(preview.label || "Your manuscript")}</span>
             </div>
         `;
     }
     const liveBadge = preview.live ? '<span class="ww-dock-live">Live</span>' : "";
+    const excerpt = escapeHtml(draftPreviewExcerpt(preview.html));
     return `
         <div class="ww-dock-preview is-live">
             ${liveBadge}
-            <div class="ww-dock-preview-scale">
-                <div class="ww-dock-preview-html">${preview.html || ""}</div>
-            </div>
+            <p class="ww-dock-preview-text">${excerpt || "Writing…"}</p>
         </div>
     `;
 }
