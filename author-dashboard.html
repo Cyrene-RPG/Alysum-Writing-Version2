@@ -437,6 +437,183 @@
         font-size: 13px;
     }
 
+    .trend-range-toggle {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .trend-range-btn {
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        background: rgba(255,255,255,0.04);
+        color: var(--muted-2);
+        padding: 8px 14px;
+        font: inherit;
+        font-size: 12px;
+        font-weight: 900;
+        cursor: pointer;
+    }
+
+    .trend-range-btn.is-active {
+        background: linear-gradient(135deg, var(--purple-dark), var(--purple));
+        border-color: transparent;
+        color: white;
+    }
+
+    .trend-summary {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+
+    .trend-summary-item {
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 16px;
+        background: rgba(0,0,0,0.16);
+        padding: 14px;
+        min-width: 0;
+    }
+
+    .trend-summary-value {
+        display: block;
+        font-size: 22px;
+        font-weight: 900;
+        color: var(--gold);
+        line-height: 1;
+    }
+
+    .trend-summary-label {
+        display: block;
+        margin-top: 6px;
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .writing-trend-wrap { display: grid; gap: 12px; }
+
+    .writing-trend-chart-area {
+        position: relative;
+        padding-top: 8px;
+    }
+
+    .writing-trend-bars {
+        display: flex;
+        align-items: flex-end;
+        gap: 6px;
+        overflow-x: auto;
+        padding-bottom: 4px;
+    }
+
+    .writing-trend-bar-wrap {
+        flex: 1 0 24px;
+        min-width: 24px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .writing-trend-bar-wrap.is-today .writing-trend-bar-label {
+        color: var(--theme-brand-kicker, #a7f3d0);
+    }
+
+    .writing-trend-bar-track {
+        width: 100%;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+    }
+
+    .writing-trend-bar {
+        width: 100%;
+        max-width: 34px;
+        border-radius: 6px 6px 2px 2px;
+        background: linear-gradient(180deg, rgba(167,139,250,0.95), rgba(109,40,217,0.95));
+    }
+
+    .writing-trend-bar.is-met {
+        background: linear-gradient(180deg, #86efac, var(--green));
+    }
+
+    .writing-trend-bar.is-empty {
+        background: rgba(255,255,255,0.08);
+    }
+
+    .writing-trend-bar-label {
+        font-size: 10px;
+        font-weight: 800;
+        color: var(--muted);
+        min-height: 14px;
+        text-align: center;
+        white-space: nowrap;
+    }
+
+    .writing-trend-goal-line {
+        position: absolute;
+        left: 0;
+        right: 0;
+        border-top: 1px dashed rgba(245,212,137,0.55);
+        pointer-events: none;
+        z-index: 1;
+    }
+
+    .writing-trend-goal-tag {
+        position: absolute;
+        right: 0;
+        top: -10px;
+        font-size: 10px;
+        font-weight: 800;
+        color: var(--gold);
+        background: rgba(17,24,39,0.92);
+        padding: 2px 6px;
+        border-radius: 999px;
+    }
+
+    .writing-trend-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px 16px;
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 800;
+    }
+
+    .writing-trend-legend-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .writing-trend-legend-swatch {
+        width: 12px;
+        height: 12px;
+        border-radius: 3px;
+        flex-shrink: 0;
+    }
+
+    .writing-trend-legend-swatch.is-active {
+        background: linear-gradient(180deg, rgba(167,139,250,0.95), rgba(109,40,217,0.95));
+    }
+
+    .writing-trend-legend-swatch.is-met { background: var(--green); }
+    .writing-trend-legend-swatch.is-goal { background: var(--gold); }
+
+    .writing-trend-empty {
+        margin: 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.5;
+    }
+
+    @media (max-width: 900px) {
+        .trend-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
     @media (max-width: 900px) {
         .reaction-totals-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
     }
@@ -674,6 +851,22 @@
         </div>
     </section>
 
+    <section class="panel" id="writingTrendPanel">
+        <div class="panel-head">
+            <div>
+                <h2>Daily word count</h2>
+                <p>Words typed in the editor, grouped by your local day. Green bars mean you hit your daily goal.</p>
+            </div>
+            <div class="trend-range-toggle" role="group" aria-label="Trend range">
+                <button class="trend-range-btn" type="button" data-trend-range="7">7 days</button>
+                <button class="trend-range-btn is-active" type="button" data-trend-range="14">14 days</button>
+                <button class="trend-range-btn" type="button" data-trend-range="30">30 days</button>
+            </div>
+        </div>
+        <div class="trend-summary" id="writingTrendSummary" aria-live="polite"></div>
+        <div id="writingTrendChart"></div>
+    </section>
+
     <section class="panel" id="notifPanel">
         <div class="panel-head">
             <div>
@@ -728,6 +921,12 @@
         cancelScheduledChapterRelease,
         listScheduledChapterReleases,
     } from "./js/scheduled-chapter-releases.js?v=1";
+    import {
+        clampDailyWordGoal,
+        DEFAULT_DAILY_WORD_GOAL,
+        normalizeWritingDayTotals,
+    } from "./js/writing-day-stats.js?v=1";
+    import { renderWritingDayTrendChart } from "./js/writing-day-chart.js?v=1";
 
     const navReading = document.getElementById("navReading");
     const navDashBadge = document.getElementById("navDashBadge");
@@ -750,8 +949,16 @@
     const markAllNotifsRead = document.getElementById("markAllNotifsRead");
     const schedulePanel = document.getElementById("schedulePanel");
     const scheduleGrid = document.getElementById("scheduleGrid");
+    const writingTrendSummary = document.getElementById("writingTrendSummary");
+    const writingTrendChart = document.getElementById("writingTrendChart");
+    const trendRangeButtons = Array.from(document.querySelectorAll("[data-trend-range]"));
 
     let currentUser = null;
+    let writingTrendRange = 14;
+    let writingTrendData = {
+        writingDayTotals: {},
+        dailyWordGoal: DEFAULT_DAILY_WORD_GOAL,
+    };
     let notifChannel = null;
     let libraryChannel = null;
     let readsChannel = null;
@@ -817,7 +1024,36 @@
             ...row,
             displayName: row.display_name ?? row.displayName,
             profileImageUrl: row.profile_image_url ?? row.profileImageUrl ?? "",
+            writingDayTotals: normalizeWritingDayTotals(
+                row.writing_day_totals ?? row.writingDayTotals ?? {}
+            ),
+            dailyWordGoal: clampDailyWordGoal(
+                row.daily_word_goal ?? row.dailyWordGoal ?? DEFAULT_DAILY_WORD_GOAL
+            ),
         };
+    }
+
+    function setWritingTrendProfile(profile) {
+        const normalized = normalizeProfile(profile);
+        writingTrendData = {
+            writingDayTotals: normalized.writingDayTotals || {},
+            dailyWordGoal: normalized.dailyWordGoal ?? DEFAULT_DAILY_WORD_GOAL,
+        };
+        renderWritingTrendPanel();
+    }
+
+    function renderWritingTrendPanel() {
+        trendRangeButtons.forEach((btn) => {
+            btn.classList.toggle(
+                "is-active",
+                Number(btn.getAttribute("data-trend-range")) === writingTrendRange
+            );
+        });
+        renderWritingDayTrendChart(writingTrendChart, writingTrendData.writingDayTotals, {
+            days: writingTrendRange,
+            dailyGoal: writingTrendData.dailyWordGoal,
+            summaryEl: writingTrendSummary,
+        });
     }
 
     function renderWelcomeProfile(profile, fallbackLabel) {
@@ -1345,6 +1581,7 @@
                 words: typeof b.words === "number" ? b.words : 0,
                 recentComments: [],
             }));
+            setWritingTrendProfile(profile);
             renderDashboard(books);
         } catch (error) {
             console.error(error);
@@ -1397,6 +1634,7 @@
                 };
             }));
 
+            setWritingTrendProfile(normalizedProfile);
             renderDashboard(enriched);
             await loadUpcomingSchedules(currentUser.id, enriched);
         } catch (error) {
@@ -1404,6 +1642,15 @@
             showState("error");
         }
     }
+
+    trendRangeButtons.forEach((btn) => {
+        btn.addEventListener("click", () => {
+            const nextRange = Number(btn.getAttribute("data-trend-range"));
+            if (!Number.isFinite(nextRange) || nextRange === writingTrendRange) return;
+            writingTrendRange = nextRange;
+            renderWritingTrendPanel();
+        });
+    });
 
     refreshBtn.addEventListener("click", () => loadDashboard().catch(console.error));
 
