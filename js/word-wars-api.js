@@ -78,7 +78,12 @@ export function isWordWarsSchemaMissing(error) {
 }
 
 function safeString(value, fallback = "") {
-    return typeof value === "string" ? value : fallback;
+    if (value == null || value === "") return fallback;
+    return String(value).trim();
+}
+
+function sameUserId(a, b) {
+    return safeString(a).toLowerCase() === safeString(b).toLowerCase();
 }
 
 function normalizeLobby(raw) {
@@ -197,7 +202,7 @@ function localParticipant(uid, profile, bookId, bookTitle, isHost) {
 }
 
 function upsertLocalParticipant(lobby, participant) {
-    const idx = lobby.participants.findIndex((p) => p.userId === participant.userId);
+    const idx = lobby.participants.findIndex((p) => sameUserId(p.userId, participant.userId));
     if (idx >= 0) lobby.participants[idx] = { ...lobby.participants[idx], ...participant };
     else lobby.participants.push(participant);
 }
@@ -217,6 +222,7 @@ function createLocalRoom(uid, profile, durationMin, maxWriters, bookId, bookTitl
         participants: [localParticipant(uid, profile, bookId, bookTitle, true)],
         localOnly: true,
     });
+    leaveOtherLocalRooms(roomId, uid);
     return saveLocalLobby(lobby);
 }
 
@@ -225,11 +231,12 @@ function joinLocalRoomById(roomId, uid, profile, bookId, bookTitle) {
     if (!lobby) throw new Error("Room not found or no longer open");
     if (lobby.status !== "lobby") throw new Error("Lobby is closed");
     if (lobby.isLocked) throw new Error("This lobby is invite-only — use the room code");
-    if (lobby.participants.some((p) => p.userId === uid)) return lobby;
+    if (lobby.participants.some((p) => sameUserId(p.userId, uid))) return lobby;
     const maxWriters = lobbyMaxWriters(lobby);
     if (lobby.participants.length >= maxWriters) {
         throw new Error(`Room is full (${maxWriters} writers max)`);
     }
+    leaveOtherLocalRooms(lobby.roomId, uid);
     upsertLocalParticipant(
         lobby,
         localParticipant(uid, profile, bookId, bookTitle, false)
@@ -246,7 +253,7 @@ function listLocalOpenLobbies(limit = 50, uid = "") {
         const lobby = normalizeLobby(raw);
         if (!lobby || lobby.localOnly !== true) return;
         if (lobby.status !== "lobby" || lobby.isLocked) return;
-        if (uid && lobby.participants.some((p) => p.userId === uid)) return;
+        if (uid && lobby.participants.some((p) => sameUserId(p.userId, uid))) return;
         if (seen.has(lobby.roomId)) return;
         seen.add(lobby.roomId);
         const host = lobby.participants.find((p) => p.isHost) || lobby.participants[0];
@@ -269,12 +276,12 @@ function listLocalOpenLobbies(limit = 50, uid = "") {
 function leaveLocalRoom(roomId, uid) {
     const lobby = loadLocalLobby({ roomId });
     if (!lobby) throw new Error("Room not found");
-    const me = lobby.participants.find((p) => p.userId === uid);
+    const me = lobby.participants.find((p) => sameUserId(p.userId, uid));
     if (!me) throw new Error("Not a participant");
 
     const wasHost = Boolean(me.isHost);
     const wasActive = lobby.status === "active";
-    lobby.participants = lobby.participants.filter((p) => p.userId !== uid);
+    lobby.participants = lobby.participants.filter((p) => !sameUserId(p.userId, uid));
 
     if (!lobby.participants.length) {
         lobby.status = "cancelled";
@@ -305,15 +312,31 @@ function leaveLocalRoom(roomId, uid) {
     };
 }
 
+function leaveOtherLocalRooms(keepRoomId, uid) {
+    const rooms = readLocalRooms();
+    Object.values(rooms).forEach((raw) => {
+        const lobby = normalizeLobby(raw);
+        if (!lobby?.roomId || lobby.roomId === keepRoomId) return;
+        if (!lobby.participants.some((p) => sameUserId(p.userId, uid))) return;
+        if (!["lobby", "active"].includes(lobby.status)) return;
+        try {
+            leaveLocalRoom(lobby.roomId, uid);
+        } catch (err) {
+            console.warn(err);
+        }
+    });
+}
+
 function joinLocalRoom(code, uid, profile, bookId, bookTitle) {
     const lobby = loadLocalLobby({ code });
     if (!lobby) throw new Error("Room not found or no longer open");
     if (lobby.status !== "lobby") throw new Error("Lobby is closed");
-    if (lobby.participants.some((p) => p.userId === uid)) return lobby;
+    if (lobby.participants.some((p) => sameUserId(p.userId, uid))) return lobby;
     const maxWriters = lobbyMaxWriters(lobby);
     if (lobby.participants.length >= maxWriters) {
         throw new Error(`Room is full (${maxWriters} writers max)`);
     }
+    leaveOtherLocalRooms(lobby.roomId, uid);
     upsertLocalParticipant(
         lobby,
         localParticipant(uid, profile, bookId, bookTitle, false)
@@ -326,7 +349,7 @@ function updateLocalLobby(roomId, uid, { durationMin, bookId, bookTitle, isReady
     if (!lobby) throw new Error("Room not found");
     if (lobby.status !== "lobby") throw new Error("Lobby is closed");
 
-    const me = lobby.participants.find((p) => p.userId === uid);
+    const me = lobby.participants.find((p) => sameUserId(p.userId, uid));
     if (!me) throw new Error("Not a participant");
 
     if (typeof durationMin === "number") {
@@ -356,7 +379,7 @@ function updateLocalLobby(roomId, uid, { durationMin, bookId, bookTitle, isReady
 function startLocalWar(roomId, uid) {
     const lobby = loadLocalLobby({ roomId });
     if (!lobby) throw new Error("Room not found");
-    if (lobby.hostId !== uid) throw new Error("Only the host can start");
+    if (!sameUserId(lobby.hostId, uid)) throw new Error("Only the host can start");
     if (lobby.participants.length < WORD_WAR_MIN_WRITERS) {
         throw new Error("Need at least 2 writers in the lobby");
     }
@@ -384,7 +407,7 @@ function startLocalWar(roomId, uid) {
 function updateLocalProgress(roomId, uid, patch = {}) {
     const lobby = loadLocalLobby({ roomId });
     if (!lobby) throw new Error("Room not found");
-    const me = lobby.participants.find((p) => p.userId === uid);
+    const me = lobby.participants.find((p) => sameUserId(p.userId, uid));
     if (!me) throw new Error("Not a participant");
     if (typeof patch.sprintWords === "number") me.sprintWords = Math.max(0, patch.sprintWords);
     if (typeof patch.wordsAtStart === "number" && !me.wordsAtStart) {
@@ -416,7 +439,7 @@ function updateLocalPause(roomId, uid, pauseRequested) {
     const lobby = loadLocalLobby({ roomId });
     if (!lobby) throw new Error("Room not found");
     if (lobby.status !== "active") throw new Error("Word War is not active");
-    const me = lobby.participants.find((p) => p.userId === uid);
+    const me = lobby.participants.find((p) => sameUserId(p.userId, uid));
     if (!me) throw new Error("Not a participant");
 
     me.pauseRequested = Boolean(pauseRequested);
@@ -557,7 +580,18 @@ export async function listOpenWordWarLobbies(limit = 50) {
                 if (isWordWarsSchemaMissing(error)) return listLocalOpenLobbies(limit, uid);
                 throw error;
             }
-            return Array.isArray(data) ? data : [];
+            return Array.isArray(data)
+                ? data.map((row) => ({
+                      ...row,
+                      roomId: safeString(row?.roomId || row?.room_id),
+                      code: safeString(row?.code).toUpperCase(),
+                      hostDisplayName: safeString(row?.hostDisplayName || row?.host_display_name, "Writer"),
+                      durationMin: Number(row?.durationMin ?? row?.duration_min ?? 15) || 15,
+                      maxWriters: normalizeWordWarWriterCount(row?.maxWriters ?? row?.max_writers, 4),
+                      participantCount: Number(row?.participantCount ?? row?.participant_count ?? 0) || 0,
+                      createdAt: row?.createdAt || row?.created_at || null,
+                  }))
+                : [];
         } catch (err) {
             if (isWordWarsSchemaMissing(err)) return listLocalOpenLobbies(limit, uid);
             throw err;

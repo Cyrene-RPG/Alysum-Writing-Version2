@@ -26,11 +26,13 @@ import {
     wordWarLobbyUrl,
     wordWarSprintUrl,
     isUsingLocalWordWarsFallback,
-} from "./word-wars-api.js?v=10";
+} from "./word-wars-api.js?v=11";
 
 const params = new URLSearchParams(window.location.search);
 const initialCode = String(params.get("code") || "").trim().toUpperCase();
 const initialRoomId = String(params.get("room") || "").trim();
+const initialStatus = String(params.get("status") || "").trim();
+const initialStatusIsError = params.get("error") === "1";
 const isDemoMode = params.get("demo") === "4";
 /** @type {boolean} */
 let isLayoutPreview = isDemoMode;
@@ -198,11 +200,14 @@ async function leaveCurrentLobby() {
 }
 
 function meInLobby(lobby) {
-    return lobby?.participants?.find((p) => p.userId === sessionCtx?.uid) || null;
+    const uid = sessionCtx?.uid;
+    if (!uid) return null;
+    return lobby?.participants?.find((p) => String(p.userId) === String(uid)) || null;
 }
 
 function othersInLobby(lobby) {
-    return (lobby?.participants || []).filter((p) => p.userId !== sessionCtx?.uid);
+    const uid = sessionCtx?.uid;
+    return (lobby?.participants || []).filter((p) => String(p.userId) !== String(uid));
 }
 
 function renderDurationPicker(lobby) {
@@ -387,14 +392,42 @@ function renderLobby(lobby) {
     window.history.replaceState({}, "", url.pathname + url.search);
 }
 
+async function dismissLobbyView(message = "", isError = false) {
+    unsubscribe?.();
+    unsubscribe = null;
+    currentLobby = null;
+    const url = new URL(window.location.href);
+    url.searchParams.delete("room");
+    url.searchParams.delete("code");
+    window.history.replaceState({}, "", url.pathname);
+    showView("hub");
+    if (message) setStatus(message, isError);
+}
+
 async function refreshLobby() {
     if (!currentLobby?.roomId) return;
     try {
         const lobby = await fetchWordWarLobby({ roomId: currentLobby.roomId });
-        if (lobby && maybeRedirectToSprint(lobby)) return;
-        if (lobby) renderLobby(lobby);
+        if (!lobby) {
+            await dismissLobbyView("That Word War is no longer available.", true);
+            return;
+        }
+        if (!meInLobby(lobby)) {
+            await dismissLobbyView("You are no longer in that Word War.", true);
+            return;
+        }
+        if (lobby.status === "cancelled") {
+            await dismissLobbyView("That Word War was cancelled.", true);
+            return;
+        }
+        if (maybeRedirectToSprint(lobby)) return;
+        renderLobby(lobby);
     } catch (err) {
         console.warn(err);
+        const message = String(err?.message || "");
+        if (/not accessible|not a participant|not found/i.test(message)) {
+            await dismissLobbyView(message, true);
+        }
     }
 }
 
@@ -420,7 +453,9 @@ async function bootHub() {
         try {
             const lobby = await fetchWordWarLobby({ roomId: initialRoomId, code: initialCode });
             if (lobby) {
-                const alreadyJoined = lobby.participants.some((p) => p.userId === sessionCtx?.uid);
+                const alreadyJoined = lobby.participants.some(
+                    (p) => String(p.userId) === String(sessionCtx?.uid)
+                );
                 if (!alreadyJoined && initialCode) {
                     const joined = await joinWordWarRoom(
                         initialCode,
@@ -431,6 +466,28 @@ async function bootHub() {
                     );
                     if (maybeRedirectToSprint(joined)) return;
                     await enterLobby(joined);
+                    return;
+                }
+                if (!alreadyJoined && initialRoomId) {
+                    if (lobby.isLocked || lobby.status !== "lobby") {
+                        setStatus("That lobby is invite-only or no longer open.", true);
+                        showView("hub");
+                        return;
+                    }
+                    const joined = await joinWordWarRoomById(
+                        initialRoomId,
+                        sessionCtx.uid,
+                        sessionCtx.profile,
+                        "",
+                        ""
+                    );
+                    if (maybeRedirectToSprint(joined)) return;
+                    await enterLobby(joined);
+                    return;
+                }
+                if (!alreadyJoined) {
+                    setStatus("You are not in that Word War.", true);
+                    showView("hub");
                     return;
                 }
                 if (maybeRedirectToSprint(lobby)) return;
@@ -745,11 +802,15 @@ async function boot() {
 
     if (joinCodeInput && initialCode) joinCodeInput.value = initialCode;
 
-    await bootHub();
-    if (!currentLobby) {
-        await refreshOpenLobbies();
-        startOpenLobbiesPolling();
+    if (initialStatus) {
+        setStatus(initialStatus, initialStatusIsError);
+        const url = new URL(window.location.href);
+        url.searchParams.delete("status");
+        url.searchParams.delete("error");
+        window.history.replaceState({}, "", url.pathname + url.search);
     }
+
+    await bootHub();
 }
 
 boot().catch((err) => {

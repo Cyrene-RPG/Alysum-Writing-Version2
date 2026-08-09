@@ -105,7 +105,10 @@ AS $$
     WHERE wp.room_id = p_room_id
       AND wp.user_id = auth.uid()
       AND wr.status IN ('lobby', 'active', 'finished')
-      AND wr.expires_at > now()
+      AND (
+        wr.status IN ('active', 'finished')
+        OR wr.expires_at > now()
+      )
   );
 $$;
 
@@ -263,7 +266,36 @@ BEGIN
   )
   VALUES (v_room_id, v_uid, v_book_id, coalesce(v_book_title, 'Untitled'), coalesce(v_display_name, 'Writer'), true, false);
 
+  PERFORM public.word_war_leave_other_rooms(v_room_id);
+
   RETURN public.word_war_lobby_json(v_room_id);
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.word_war_leave_other_rooms(p_keep_room_id uuid)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_uid uuid := auth.uid();
+  v_other_room_id uuid;
+BEGIN
+  IF v_uid IS NULL OR p_keep_room_id IS NULL THEN
+    RETURN;
+  END IF;
+
+  FOR v_other_room_id IN
+    SELECT wp.room_id
+    FROM public.word_wars_participants wp
+    JOIN public.word_wars_rooms wr ON wr.id = wp.room_id
+    WHERE wp.user_id = v_uid
+      AND wp.room_id <> p_keep_room_id
+      AND wr.status IN ('lobby', 'active')
+  LOOP
+    PERFORM public.leave_word_war_room(v_other_room_id);
+  END LOOP;
 END;
 $$;
 
@@ -321,6 +353,8 @@ BEGIN
     RAISE EXCEPTION 'Room is full';
   END IF;
 
+  PERFORM public.word_war_leave_other_rooms(v_room_id);
+
   IF v_book_id IS NOT NULL THEN
     v_book_title := public.word_war_book_title(v_book_id);
     IF v_book_title IS NULL THEN
@@ -371,7 +405,11 @@ BEGIN
     SELECT wr.id INTO v_room_id
     FROM public.word_wars_rooms wr
     WHERE wr.code = v_code
-      AND wr.expires_at > now()
+      AND wr.status IN ('lobby', 'active', 'finished')
+      AND (
+        wr.expires_at > now()
+        OR wr.status IN ('active', 'finished')
+      )
     LIMIT 1;
   END IF;
 
@@ -454,6 +492,10 @@ BEGIN
     UPDATE public.word_wars_rooms
     SET duration_min = p_duration_min
     WHERE id = p_room_id;
+
+    UPDATE public.word_wars_participants
+    SET is_ready = false
+    WHERE room_id = p_room_id;
   END IF;
 
   IF p_is_locked IS NOT NULL THEN
@@ -525,6 +567,7 @@ BEGIN
   UPDATE public.word_wars_rooms
   SET status = 'active',
       started_at = now(),
+      expires_at = greatest(expires_at, now() + interval '12 hours'),
       is_paused = false,
       paused_at = NULL,
       pause_ms_total = 0
@@ -819,6 +862,8 @@ BEGIN
   IF v_count >= v_max_writers THEN
     RAISE EXCEPTION 'Room is full';
   END IF;
+
+  PERFORM public.word_war_leave_other_rooms(p_room_id);
 
   IF v_book_id IS NOT NULL THEN
     v_book_title := public.word_war_book_title(v_book_id);

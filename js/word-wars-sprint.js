@@ -15,7 +15,7 @@ import {
     enrichWordWarParticipantProfiles,
     leaveWordWarRoom,
     WORD_WAR_DURATION_UNLIMITED,
-} from "./word-wars-api.js?v=10";
+} from "./word-wars-api.js?v=11";
 import { renderWriterDock } from "./word-wars-call.js?v=4";
 import { sanitizeChapterHtml } from "./book-html-sanitize.js?v=1";
 
@@ -110,7 +110,7 @@ function setPageStatus(message, isError = false) {
 }
 
 function meInLobby() {
-    return lobby?.participants?.find((p) => p.userId === uid) || null;
+    return lobby?.participants?.find((p) => String(p.userId) === String(uid)) || null;
 }
 
 function getShareDraftState() {
@@ -938,15 +938,39 @@ function handleEditorMessage(event) {
     pushDraftProgress();
 }
 
+function redirectToHub(message = "", isError = false) {
+    unsubscribe?.();
+    unsubscribe = null;
+    const url = new URL("word-wars-lobby.html", window.location.href);
+    if (message) url.searchParams.set("status", message);
+    if (isError) url.searchParams.set("error", "1");
+    window.location.replace(url.pathname + url.search);
+}
+
 async function refreshLobby() {
-    const next = await fetchWordWarLobby({ roomId });
-    if (!next) return;
-    lobby = await enrichWordWarParticipantProfiles(next);
-    if (shareDraftOverride === null) renderShareControls();
-    renderPauseControls();
-    renderOpponentMirror();
-    if (lobby.status === "finished" && !sprintEnded) {
-        await endSprint("Sprint finished");
+    try {
+        const next = await fetchWordWarLobby({ roomId });
+        if (!next) {
+            redirectToHub("That Word War is no longer available.", true);
+            return;
+        }
+        lobby = await enrichWordWarParticipantProfiles(next);
+        if (!meInLobby()) {
+            redirectToHub("You are no longer in that Word War.", true);
+            return;
+        }
+        if (shareDraftOverride === null) renderShareControls();
+        renderPauseControls();
+        renderOpponentMirror();
+        if (lobby.status === "finished" && !sprintEnded) {
+            await endSprint("Sprint finished");
+        }
+    } catch (err) {
+        console.warn(err);
+        const message = String(err?.message || "");
+        if (/not accessible|not a participant|not found/i.test(message)) {
+            redirectToHub(message, true);
+        }
     }
 }
 
@@ -989,10 +1013,17 @@ async function boot() {
     if (!uid) return;
 
     lobby = await fetchWordWarLobby({ roomId });
-    if (!lobby) throw new Error("Word War room not found");
+    if (!lobby) {
+        redirectToHub("Word War room not found.", true);
+        return;
+    }
     lobby = await enrichWordWarParticipantProfiles(lobby);
     if (lobby.status === "lobby") {
         window.location.replace(wordWarLobbyUrl(lobby.roomId, { roomId: true }));
+        return;
+    }
+    if (!meInLobby()) {
+        redirectToHub("You are no longer in that Word War.", true);
         return;
     }
     if (lobby.status === "finished") {
