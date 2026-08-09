@@ -504,6 +504,38 @@ async function probeCloudSchema() {
     return cloudSchemaAvailable;
 }
 
+function isLocalWordWarRoomId(roomId = "") {
+    return String(roomId || "").startsWith("local-");
+}
+
+async function shouldUseLocalWordWarBackend(roomId = "") {
+    if (isLocalWordWarRoomId(roomId)) return true;
+    return !(await probeCloudSchema());
+}
+
+export function formatWordWarError(error) {
+    const message = String(error?.message || error || "Something went wrong");
+    if (/Book not found/i.test(message)) {
+        return "That book could not be found. Pick a book you own in Studio.";
+    }
+    if (/Room not found|no longer open/i.test(message)) {
+        return "That lobby is closed or expired.";
+    }
+    if (/Room is full/i.test(message)) {
+        return "That lobby is full.";
+    }
+    if (/Not a participant/i.test(message)) {
+        return "You are not in that Word War.";
+    }
+    if (/invite-only/i.test(message)) {
+        return "That lobby is invite-only — use the room code.";
+    }
+    if (/function.*does not exist|Could not find the function/i.test(message)) {
+        return "Word Wars cloud sync is not set up yet. Run supabase-word-wars.sql in Supabase.";
+    }
+    return message;
+}
+
 /**
  * @param {string} uid
  * @param {{ displayName?: string }} profile
@@ -557,6 +589,30 @@ export async function joinWordWarRoom(code, uid, profile, bookId = "", bookTitle
     return joinLocalRoom(normalizedCode, uid, profile, bookId, bookTitle);
 }
 
+async function applyJoinBookToLobby(lobby, uid, bookId, bookTitle) {
+    if (!lobby?.roomId || !bookId || !uid) return lobby;
+    const me = lobby.participants?.find((p) => sameUserId(p.userId, uid));
+    if (me?.bookId && String(me.bookId) === String(bookId)) return lobby;
+    if (await shouldUseLocalWordWarBackend(lobby.roomId)) {
+        return updateLocalLobby(lobby.roomId, uid, { bookId, bookTitle: bookTitle || "Untitled" });
+    }
+    const { data, error } = await supabase.rpc("update_word_war_lobby", {
+        p_room_id: lobby.roomId,
+        p_book_id: bookId,
+        p_duration_min: null,
+        p_is_ready: null,
+        p_is_locked: null,
+    });
+    if (error) throw error;
+    return normalizeLobby(data);
+}
+
+/** Join and guarantee the chosen book is saved on the participant row. */
+export async function joinWordWarRoomWithBook(code, uid, profile, bookId = "", bookTitle = "") {
+    const lobby = await joinWordWarRoom(code, uid, profile, bookId, bookTitle);
+    return applyJoinBookToLobby(lobby, uid, bookId, bookTitle);
+}
+
 /**
  * @param {string} roomId
  * @param {string} uid
@@ -577,6 +633,12 @@ export async function joinWordWarRoomById(roomId, uid, profile, bookId = "", boo
         return normalizeLobby(data);
     }
     return joinLocalRoomById(normalizedRoomId, uid, profile, bookId, bookTitle);
+}
+
+/** Join by room id and guarantee the chosen book is saved on the participant row. */
+export async function joinWordWarRoomByIdWithBook(roomId, uid, profile, bookId = "", bookTitle = "") {
+    const lobby = await joinWordWarRoomById(roomId, uid, profile, bookId, bookTitle);
+    return applyJoinBookToLobby(lobby, uid, bookId, bookTitle);
 }
 
 /** @param {number} [limit] */
@@ -618,8 +680,7 @@ export async function leaveWordWarRoom(roomId) {
     const normalizedRoomId = String(roomId || "").trim();
     if (!normalizedRoomId) throw new Error("Invalid room");
 
-    const localLobby = loadLocalLobby({ roomId: normalizedRoomId });
-    if (localLobby?.localOnly || !(await probeCloudSchema())) {
+    if (await shouldUseLocalWordWarBackend(normalizedRoomId)) {
         const { data: authData } = await supabase.auth.getUser();
         const uid = authData?.user?.id;
         if (!uid) throw new Error("Not authenticated");
@@ -672,8 +733,7 @@ export async function fetchWordWarLobby(query = {}, { retry = 0 } = {}) {
  * @param {{ durationMin?: number, bookId?: string, bookTitle?: string, isReady?: boolean, isLocked?: boolean }} patch
  */
 export async function updateWordWarLobby(roomId, patch = {}) {
-    const localLobby = loadLocalLobby({ roomId });
-    if (localLobby?.localOnly || !(await probeCloudSchema())) {
+    if (await shouldUseLocalWordWarBackend(roomId)) {
         const { data: authData } = await supabase.auth.getUser();
         const uid = authData?.user?.id;
         if (!uid) throw new Error("Not authenticated");
@@ -693,8 +753,7 @@ export async function updateWordWarLobby(roomId, patch = {}) {
 
 /** @param {string} roomId */
 export async function startWordWar(roomId) {
-    const localLobby = loadLocalLobby({ roomId });
-    if (localLobby?.localOnly || !(await probeCloudSchema())) {
+    if (await shouldUseLocalWordWarBackend(roomId)) {
         const { data: authData } = await supabase.auth.getUser();
         const uid = authData?.user?.id;
         if (!uid) throw new Error("Not authenticated");
@@ -719,8 +778,7 @@ export async function startWordWar(roomId) {
  * }} patch
  */
 export async function updateWordWarProgress(roomId, patch = {}) {
-    const localLobby = loadLocalLobby({ roomId });
-    if (localLobby?.localOnly || !(await probeCloudSchema())) {
+    if (await shouldUseLocalWordWarBackend(roomId)) {
         const { data: authData } = await supabase.auth.getUser();
         const uid = authData?.user?.id;
         if (!uid) throw new Error("Not authenticated");
@@ -744,8 +802,7 @@ export async function updateWordWarProgress(roomId, patch = {}) {
 
 /** @param {string} roomId @param {boolean} pauseRequested */
 export async function updateWordWarPause(roomId, pauseRequested) {
-    const localLobby = loadLocalLobby({ roomId });
-    if (localLobby?.localOnly || !(await probeCloudSchema())) {
+    if (await shouldUseLocalWordWarBackend(roomId)) {
         const { data: authData } = await supabase.auth.getUser();
         const uid = authData?.user?.id;
         if (!uid) throw new Error("Not authenticated");
@@ -762,8 +819,7 @@ export async function updateWordWarPause(roomId, pauseRequested) {
 
 /** @param {string} roomId */
 export async function finishWordWar(roomId) {
-    const localLobby = loadLocalLobby({ roomId });
-    if (localLobby?.localOnly || !(await probeCloudSchema())) {
+    if (await shouldUseLocalWordWarBackend(roomId)) {
         return finishLocalWar(roomId);
     }
 

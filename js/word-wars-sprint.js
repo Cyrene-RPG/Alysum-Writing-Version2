@@ -7,6 +7,7 @@ import {
     fetchWordWarLobby,
     finishWordWar,
     formatWordWarDuration,
+    formatWordWarError,
     subscribeWordWarLobby,
     updateWordWarPause,
     updateWordWarProgress,
@@ -16,7 +17,7 @@ import {
     enrichWordWarParticipantProfiles,
     leaveWordWarRoom,
     WORD_WAR_DURATION_UNLIMITED,
-} from "./word-wars-api.js?v=14";
+} from "./word-wars-api.js?v=15";
 import { renderWriterDock } from "./word-wars-call.js?v=4";
 import { sanitizeChapterHtml } from "./book-html-sanitize.js?v=1";
 
@@ -970,15 +971,16 @@ async function refreshLobby() {
             await endSprint("Sprint finished");
             return;
         }
-        if (lobby.status === "cancelled") {
+        if (lobby.status === "cancelled" && !(lobby.participants?.length > 0)) {
             redirectToHub("That Word War was cancelled.", true);
+            return;
         }
     } catch (err) {
         console.warn(err);
         const message = String(err?.message || "");
         if (/not accessible|not a participant|not found/i.test(message)) {
             if (meInLobby()) return;
-            redirectToHub(message, true);
+            redirectToHub(formatWordWarError(err), true);
         }
     }
 }

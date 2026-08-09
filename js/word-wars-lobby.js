@@ -7,8 +7,10 @@ import { publicDisplayNameFromUserData } from "./profile-display.js?v=1";
 import {
     WORD_WAR_DURATIONS,
     WORD_WAR_MIN_WRITERS,
+    WORD_WAR_MAX_WRITERS,
     canStartWordWar,
     formatWordWarDuration,
+    formatWordWarError,
     isWordWarDuration,
     isWordWarWriterCount,
     normalizeWordWarWriterCount,
@@ -16,8 +18,8 @@ import {
     wordWarSameUserId,
     createWordWarRoom,
     fetchWordWarLobby,
-    joinWordWarRoom,
-    joinWordWarRoomById,
+    joinWordWarRoomWithBook,
+    joinWordWarRoomByIdWithBook,
     leaveWordWarRoom,
     listOpenWordWarLobbies,
     listMyBooks,
@@ -27,7 +29,8 @@ import {
     wordWarLobbyUrl,
     wordWarSprintUrl,
     isUsingLocalWordWarsFallback,
-} from "./word-wars-api.js?v=14";
+} from "./word-wars-api.js?v=15";
+import { playWordWarJoinSound, primeWordWarSounds } from "./word-wars-sounds.js?v=2";
 
 const params = new URLSearchParams(window.location.search);
 const initialCode = String(params.get("code") || "").trim().toUpperCase();
@@ -56,6 +59,7 @@ const copyLinkBtn = document.getElementById("copyLinkBtn");
 const createForm = document.getElementById("createForm");
 const joinForm = document.getElementById("joinForm");
 const joinCodeInput = document.getElementById("joinCodeInput");
+const joinBookSelect = document.getElementById("joinBookSelect");
 const lobbyStatusBadge = document.getElementById("lobbyStatusBadge");
 const lobbyCapacity = document.getElementById("lobbyCapacity");
 const lobbyWriterCount = document.getElementById("lobbyWriterCount");
@@ -78,9 +82,111 @@ let selectedMaxWriters = 2;
 let refreshTimer = null;
 /** @type {ReturnType<typeof setInterval> | null} */
 let openLobbiesTimer = null;
+/** @type {Set<string>} */
+let knownParticipantIds = new Set();
 
 const hubCustomWritersInput = document.getElementById("hubCustomWritersInput");
 
+function renderHubBookSelect() {
+    if (!joinBookSelect || !sessionCtx) return;
+    const previous = joinBookSelect.value;
+    joinBookSelect.innerHTML = ['<option value="">Choose a book…</option>']
+        .concat(
+            sessionCtx.books.map(
+                (book) =>
+                    `<option value="${escapeHtml(book.id)}">${escapeHtml(book.title)}</option>`
+            )
+        )
+        .join("");
+    if (previous && sessionCtx.books.some((book) => book.id === previous)) {
+        joinBookSelect.value = previous;
+    } else if (sessionCtx.books.length === 1) {
+        joinBookSelect.value = sessionCtx.books[0].id;
+    }
+}
+
+function getHubJoinBook() {
+    const bookId = String(joinBookSelect?.value || "").trim();
+    const book = sessionCtx?.books.find((row) => row.id === bookId);
+    return {
+        bookId,
+        bookTitle: book?.title || "",
+    };
+}
+
+function requireHubJoinBook() {
+    primeWordWarSounds();
+    let picked = getHubJoinBook();
+    if (!picked.bookId && sessionCtx?.books?.length === 1) {
+        const only = sessionCtx.books[0];
+        if (joinBookSelect) joinBookSelect.value = only.id;
+        picked = { bookId: only.id, bookTitle: only.title };
+    }
+    if (!picked.bookId) {
+        setStatus("Choose your book before joining.", true);
+        joinBookSelect?.focus();
+        return null;
+    }
+    return picked;
+}
+
+function seedParticipantIds(lobby) {
+    knownParticipantIds = new Set(
+        (lobby?.participants || []).map((p) => String(p.userId || "").toLowerCase())
+    );
+}
+
+function resetParticipantTracking() {
+    knownParticipantIds = new Set();
+}
+
+function notifyIfWriterJoined(lobby) {
+    if (isLayoutPreview || !sessionCtx?.uid || !lobby) return;
+    const uid = sessionCtx.uid;
+    const nextIds = new Set(
+        (lobby.participants || []).map((p) => String(p.userId || "").toLowerCase())
+    );
+    if (!knownParticipantIds.size) {
+        knownParticipantIds = nextIds;
+        return;
+    }
+    for (const id of nextIds) {
+        if (!knownParticipantIds.has(id) && !wordWarSameUserId(id, uid)) {
+            playWordWarJoinSound();
+            break;
+        }
+    }
+    knownParticipantIds = nextIds;
+}
+
+async function joinLobbyWithHubBook({ code = "", roomId = "" } = {}) {
+    if (!sessionCtx) return null;
+    const book = requireHubJoinBook();
+    if (!book) return null;
+    const normalizedCode = String(code || "").trim().toUpperCase();
+    const normalizedRoomId = String(roomId || "").trim();
+    if (normalizedRoomId) {
+        return joinWordWarRoomByIdWithBook(
+            normalizedRoomId,
+            sessionCtx.uid,
+            sessionCtx.profile,
+            book.bookId,
+            book.bookTitle
+        );
+    }
+    if (normalizedCode.length !== 6) {
+        setStatus("Enter a 6-character room code.", true);
+        joinCodeInput?.focus();
+        return null;
+    }
+    return joinWordWarRoomWithBook(
+        normalizedCode,
+        sessionCtx.uid,
+        sessionCtx.profile,
+        book.bookId,
+        book.bookTitle
+    );
+}
 function syncWriterPickerUi() {
     selectedMaxWriters = normalizeWordWarWriterCount(selectedMaxWriters, 2);
     if (hubCustomWritersInput) {
@@ -154,7 +260,7 @@ function renderOpenLobbies(rows = []) {
     openLobbiesList.innerHTML = rows
         .map((row) => {
             const count = Number(row.participantCount) || 0;
-            const max = normalizeWordWarWriterCount(row.maxWriters, 4);
+            const max = WORD_WAR_MAX_WRITERS;
             const full = count >= max;
             return `
                 <article class="ww-open-lobby-row">
@@ -192,6 +298,7 @@ async function leaveCurrentLobby() {
     unsubscribe?.();
     unsubscribe = null;
     currentLobby = null;
+    resetParticipantTracking();
     const url = new URL(window.location.href);
     url.searchParams.delete("room");
     url.searchParams.delete("code");
@@ -387,6 +494,7 @@ function renderLobby(lobby) {
     renderBookSelect(lobby);
     renderFighters(lobby);
     renderLobbyActions(lobby);
+    notifyIfWriterJoined(lobby);
     showView("lobby");
 
     if (isLayoutPreview) return;
@@ -401,6 +509,7 @@ async function dismissLobbyView(message = "", isError = false) {
     unsubscribe?.();
     unsubscribe = null;
     currentLobby = null;
+    resetParticipantTracking();
     const url = new URL(window.location.href);
     url.searchParams.delete("room");
     url.searchParams.delete("code");
@@ -435,7 +544,7 @@ async function refreshLobby() {
         const message = String(err?.message || "");
         if (/not accessible|not a participant|not found/i.test(message)) {
             if (meInLobby(currentLobby)) return;
-            await dismissLobbyView(message, true);
+            await dismissLobbyView(formatWordWarError(err), true);
         }
     }
 }
@@ -448,8 +557,10 @@ function bindLobbySubscription(roomId) {
 }
 
 async function enterLobby(lobby) {
+    seedParticipantIds(lobby);
     renderLobby(lobby);
     bindLobbySubscription(lobby.roomId);
+    setStatus("");
 }
 
 async function bootHub() {
@@ -466,13 +577,11 @@ async function bootHub() {
                     wordWarSameUserId(p.userId, sessionCtx?.uid)
                 );
                 if (!alreadyJoined && initialCode) {
-                    const joined = await joinWordWarRoom(
-                        initialCode,
-                        sessionCtx.uid,
-                        sessionCtx.profile,
-                        "",
-                        ""
-                    );
+                    const joined = await joinLobbyWithHubBook({ code: initialCode });
+                    if (!joined) {
+                        showView("hub");
+                        return;
+                    }
                     if (maybeRedirectToSprint(joined)) return;
                     await enterLobby(joined);
                     return;
@@ -483,13 +592,11 @@ async function bootHub() {
                         showView("hub");
                         return;
                     }
-                    const joined = await joinWordWarRoomById(
-                        initialRoomId,
-                        sessionCtx.uid,
-                        sessionCtx.profile,
-                        "",
-                        ""
-                    );
+                    const joined = await joinLobbyWithHubBook({ roomId: initialRoomId });
+                    if (!joined) {
+                        showView("hub");
+                        return;
+                    }
                     if (maybeRedirectToSprint(joined)) return;
                     await enterLobby(joined);
                     return;
@@ -504,7 +611,7 @@ async function bootHub() {
                 return;
             }
         } catch (err) {
-            setStatus(err?.message || "Could not open that lobby.", true);
+            setStatus(formatWordWarError(err), true);
         }
     }
 
@@ -529,7 +636,7 @@ createForm?.addEventListener("submit", async (event) => {
         );
         await enterLobby(lobby);
     } catch (err) {
-        setStatus(err?.message || "Could not create a Word War.", true);
+        setStatus(formatWordWarError(err), true);
     } finally {
         createForm.querySelector("button[type=submit]")?.removeAttribute("disabled");
     }
@@ -543,13 +650,19 @@ joinForm?.addEventListener("submit", async (event) => {
     const code = String(joinCodeInput?.value || "").trim().toUpperCase();
     joinForm.querySelector("button[type=submit]")?.setAttribute("disabled", "true");
     try {
-        const lobby = await joinWordWarRoom(code, sessionCtx.uid, sessionCtx.profile, "", "");
+        const lobby = await joinLobbyWithHubBook({ code });
+        if (!lobby) return;
         await enterLobby(lobby);
     } catch (err) {
-        setStatus(err?.message || "Could not join that room.", true);
+        setStatus(formatWordWarError(err), true);
     } finally {
         joinForm.querySelector("button[type=submit]")?.removeAttribute("disabled");
     }
+});
+
+joinBookSelect?.addEventListener("change", () => {
+    primeWordWarSounds();
+    setStatus("");
 });
 
 document.getElementById("hubDurationPicker")?.addEventListener("click", (event) => {
@@ -640,7 +753,7 @@ leaveBtn?.addEventListener("click", () => {
         return;
     }
     leaveCurrentLobby().catch((err) => {
-        setStatus(err?.message || "Could not leave the lobby.", true);
+        setStatus(formatWordWarError(err), true);
     });
 });
 
@@ -657,10 +770,14 @@ openLobbiesList?.addEventListener("click", async (event) => {
     btn.disabled = true;
     setStatus("");
     try {
-        const lobby = await joinWordWarRoomById(roomId, sessionCtx.uid, sessionCtx.profile, "", "");
+        const lobby = await joinLobbyWithHubBook({ roomId });
+        if (!lobby) {
+            btn.disabled = false;
+            return;
+        }
         await enterLobby(lobby);
     } catch (err) {
-        setStatus(err?.message || "Could not join that lobby.", true);
+        setStatus(formatWordWarError(err), true);
         btn.disabled = false;
         refreshOpenLobbies().catch(console.warn);
     }
@@ -805,6 +922,8 @@ async function boot() {
         books,
     };
 
+    renderHubBookSelect();
+
     document.querySelectorAll("#hubDurationPicker .ww-chip").forEach((chip) => {
         chip.classList.toggle("is-active", Number(chip.dataset.duration) === selectedDuration);
     });
@@ -824,7 +943,7 @@ async function boot() {
 
 boot().catch((err) => {
     console.error(err);
-    setStatus(err?.message || "Could not load Word Wars.", true);
+    setStatus(formatWordWarError(err), true);
 });
 
 window.addEventListener("beforeunload", () => {

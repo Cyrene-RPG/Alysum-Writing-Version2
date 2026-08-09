@@ -889,8 +889,12 @@
                         <article class="ww-gate-card ww-gate-card--guest">
                             <div class="ww-card-icon" aria-hidden="true">🛡</div>
                             <h2>Join a friend</h2>
-                            <p>Enter their 6-character room code to join their lobby.</p>
+                            <p>Pick your book, enter a room code, and jump straight into the lobby.</p>
                             <form id="joinForm">
+                                <label class="ww-label" for="joinBookSelect">Your book for this spar</label>
+                                <select id="joinBookSelect" class="ww-select" required>
+                                    <option value="">Choose a book…</option>
+                                </select>
                                 <label class="ww-label" for="joinCodeInput">Room code</label>
                                 <input id="joinCodeInput" class="ww-input" maxlength="6" autocomplete="off" placeholder="ABC123" />
                                 <button type="submit" class="btn primary block" style="margin-top:16px;">Join lobby</button>
@@ -903,7 +907,7 @@
                             <h2>Open lobbies</h2>
                             <button type="button" class="btn" id="refreshOpenLobbiesBtn">Refresh</button>
                         </div>
-                        <p class="ww-open-lobbies-sub">Browse public Word Wars and jump in — or lock yours so only people with your code can join.</p>
+                        <p class="ww-open-lobbies-sub">Browse public Word Wars and jump in — pick your book above first, then hit Join. Lock yours so only people with your code can enter.</p>
                         <div id="openLobbiesList" class="ww-open-lobbies-list">
                             <p class="ww-open-lobbies-empty">Loading open lobbies…</p>
                         </div>
@@ -971,6 +975,6 @@
         </div>
     </main>
 
-    <script type="module" src="js/word-wars-lobby.js?v=15"></script>
+    <script type="module" src="js/word-wars-lobby.js?v=17"></script>
 </body>
 </html>

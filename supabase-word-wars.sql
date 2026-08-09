@@ -136,7 +136,7 @@ AS $$
     'Untitled'
   )
   FROM public.books b
-  WHERE b.id = p_book_id
+  WHERE b.id::text = nullif(trim(coalesce(p_book_id, '')), '')
     AND b.user_id = auth.uid()
   LIMIT 1;
 $$;
@@ -364,6 +364,17 @@ BEGIN
     SELECT 1 FROM public.word_wars_participants wp
     WHERE wp.room_id = v_room_id AND wp.user_id = v_uid
   ) THEN
+    IF v_book_id IS NOT NULL THEN
+      v_book_title := public.word_war_book_title(v_book_id);
+      IF v_book_title IS NULL THEN
+        RAISE EXCEPTION 'Book not found';
+      END IF;
+      UPDATE public.word_wars_participants
+      SET book_id = v_book_id,
+          book_title = v_book_title,
+          is_ready = false
+      WHERE room_id = v_room_id AND user_id = v_uid;
+    END IF;
     RETURN public.word_war_lobby_json(v_room_id);
   END IF;
 
@@ -884,6 +895,17 @@ BEGIN
     SELECT 1 FROM public.word_wars_participants wp
     WHERE wp.room_id = p_room_id AND wp.user_id = v_uid
   ) THEN
+    IF v_book_id IS NOT NULL THEN
+      v_book_title := public.word_war_book_title(v_book_id);
+      IF v_book_title IS NULL THEN
+        RAISE EXCEPTION 'Book not found';
+      END IF;
+      UPDATE public.word_wars_participants
+      SET book_id = v_book_id,
+          book_title = v_book_title,
+          is_ready = false
+      WHERE room_id = p_room_id AND user_id = v_uid;
+    END IF;
     RETURN public.word_war_lobby_json(p_room_id);
   END IF;
 
