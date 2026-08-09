@@ -468,6 +468,10 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
+    #appearancePanel .appearance-grid--bg {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
     @media (min-width: 900px) {
         #appearancePanel .appearance-grid--accent {
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1280,6 +1284,17 @@
         <h2>Appearance</h2>
         <p class="hint">Accent colors for the UI, plus a title font and color for headings.</p>
         <div class="appearance-layout">
+            <section class="appearance-block appearance-block--bg" aria-labelledby="appearance-bg-heading">
+                <h3 class="appearance-subhead" id="appearance-bg-heading">Page background</h3>
+                <p class="hint">The dark space behind panels and content.</p>
+                <div class="theme-grid appearance-grid appearance-grid--bg" id="bodyBgChipRow" aria-label="Page background colors"></div>
+                <div class="display-color-custom" id="bodyBgCustom" hidden>
+                    <div class="display-color-field">
+                        <label for="bodyBgColor">Background color</label>
+                        <input type="color" id="bodyBgColor" value="#0b1220" />
+                    </div>
+                </div>
+            </section>
             <section class="appearance-block appearance-block--accent" aria-labelledby="appearance-colors-heading">
                 <h3 class="appearance-subhead" id="appearance-colors-heading">Site accent</h3>
                 <p class="hint">Buttons, chrome, and highlights.</p>
@@ -1637,6 +1652,14 @@
         getColorPreviewTextColor,
         resolveDisplayColorPair
     } from "./js/display-text-color.js?v=4";
+    import {
+        BODY_BG_PRESETS,
+        applyBodyBackground,
+        getStoredBodyBgId,
+        getStoredCustomBodyBg,
+        initBodyBackgroundOnPage,
+        getBodyBgPreview
+    } from "./js/body-background.js?v=1";
     import { normalizeAccountType, ACCOUNT_AUTHOR, ACCOUNT_READER, ACCOUNT_BOTH, homeUrlForUserData } from "./js/account-mode.js?v=1";
     import {
         exportUserBackup,
@@ -1677,6 +1700,9 @@
     const displayColorCustom = document.getElementById("displayColorCustom");
     const displayColorMain = document.getElementById("displayColorMain");
     const displayColorAccent = document.getElementById("displayColorAccent");
+    const bodyBgChipRow = document.getElementById("bodyBgChipRow");
+    const bodyBgCustom = document.getElementById("bodyBgCustom");
+    const bodyBgColor = document.getElementById("bodyBgColor");
     const accountModePanel = document.getElementById("accountModePanel");
     const saveAccountTypeBtn = document.getElementById("saveAccountTypeBtn");
     const accountTypeMsg = document.getElementById("accountTypeMsg");
@@ -1936,6 +1962,7 @@
     function initAppearancePickers() {
         try {
             initThemePicker();
+            initBodyBgPicker();
             initTextStylePicker();
             initTextColorPicker();
         } catch (err) {
@@ -2029,8 +2056,72 @@
         bindCustomColorInputs();
     }
 
+    function syncBodyBgCustomPanelVisibility(bgId) {
+        if (!bodyBgCustom) return;
+        const show = bgId === "custom";
+        bodyBgCustom.hidden = !show;
+        bodyBgCustom.classList.toggle("is-visible", show);
+    }
+
+    function bindBodyBgCustomInput() {
+        if (!bodyBgColor || bodyBgColor.dataset.bound === "1") return;
+        bodyBgColor.dataset.bound = "1";
+        bodyBgColor.value = getStoredCustomBodyBg();
+        const refreshCustomBgChip = () => {
+            const customBtn = bodyBgChipRow?.querySelector('[data-style="custom"]');
+            if (!customBtn) return;
+            customBtn.style.background = getBodyBgPreview("custom");
+        };
+        bodyBgColor.addEventListener("input", () => {
+            if (getStoredBodyBgId() !== "custom") return;
+            applyBodyBackground("custom", bodyBgColor.value);
+            refreshCustomBgChip();
+        });
+    }
+
+    function initBodyBgPicker() {
+        if (!bodyBgChipRow || bodyBgChipRow.dataset.ready === "1") return;
+        bodyBgChipRow.dataset.ready = "1";
+        bodyBgChipRow.innerHTML = "";
+        const cur = getStoredBodyBgId();
+        BODY_BG_PRESETS.forEach((p) => {
+            const b = document.createElement("button");
+            b.type = "button";
+            let cls = "theme-chip title-color-chip" + (p.id === cur ? " active" : "");
+            const preview = getBodyBgPreview(p.id);
+            if (preview) {
+                cls += " has-preview";
+                b.style.background = preview;
+            }
+            b.className = cls;
+            b.dataset.style = p.id;
+            b.title = p.hint || "";
+            const labelEl = document.createElement("span");
+            labelEl.className = "text-style-chip-label";
+            labelEl.textContent = p.label;
+            b.append(labelEl);
+            b.addEventListener("click", () => {
+                if (p.id === "custom") {
+                    const color = bodyBgColor?.value || getStoredCustomBodyBg();
+                    applyBodyBackground("custom", color);
+                } else {
+                    applyBodyBackground(p.id);
+                }
+                bodyBgChipRow.querySelectorAll(".theme-chip").forEach((x) => {
+                    x.classList.remove("active");
+                });
+                b.classList.add("active");
+                syncBodyBgCustomPanelVisibility(p.id);
+            });
+            bodyBgChipRow.appendChild(b);
+        });
+        syncBodyBgCustomPanelVisibility(cur);
+        bindBodyBgCustomInput();
+    }
+
     initDisplayTextStyleOnPage();
     initDisplayTextColorOnPage();
+    initBodyBackgroundOnPage();
     initAppearancePickers();
 
     function showMsg(el, text, ok) {

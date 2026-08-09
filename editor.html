@@ -26,6 +26,7 @@
     <link rel="stylesheet" href="css/accessibility-fonts.css?v=1" />
     <link rel="stylesheet" href="css/book-inline-fonts.css?v=4" />
     <link rel="stylesheet" href="css/scene-breaks.css?v=8" />
+    <link rel="stylesheet" href="css/script-editor.css?v=1" />
 <link rel="stylesheet" href="css/book-version.css?v=8" />
     <link rel="stylesheet" href="css/collab-room.css?v=4" />
     <script src="js/gradient-theme-sync.js" defer></script>
@@ -1310,6 +1311,17 @@
     <button type="button" class="comic-action-btn danger" id="comicRemoveImageBtn">Clear all images</button>
     <span class="comic-upload-status" id="comicUploadStatus" aria-live="polite"></span>
 </div>
+<div class="script-toolbar" id="scriptToolbar" aria-label="Script formatting tools">
+    <button type="button" class="script-element-btn" data-script-element="scene" data-tip="Scene Heading — INT./EXT. location">Scene <kbd>1</kbd></button>
+    <button type="button" class="script-element-btn" data-script-element="action" data-tip="Action — describe what happens">Action <kbd>2</kbd></button>
+    <button type="button" class="script-element-btn" data-script-element="character" data-tip="Character — who is speaking">Character <kbd>3</kbd></button>
+    <button type="button" class="script-element-btn" data-script-element="dialogue" data-tip="Dialogue — character speech">Dialogue <kbd>4</kbd></button>
+    <button type="button" class="script-element-btn" data-script-element="parenthetical" data-tip="Parenthetical — (beat) or (direction)">Paren <kbd>5</kbd></button>
+    <button type="button" class="script-element-btn" data-script-element="transition" data-tip="Transition — FADE IN:, CUT TO:">Trans <kbd>6</kbd></button>
+    <button type="button" class="script-element-btn" data-script-element="shot" data-tip="Shot — camera direction">Shot <kbd>7</kbd></button>
+    <button class="tool-btn" type="button" id="scriptFindReplaceBtn" data-tip="Find and replace (Ctrl+F)" aria-label="Find and replace">🔍</button>
+    <span class="script-toolbar-hint" id="scriptToolbarHint">Tab — cycle elements · Enter — next line type</span>
+</div>
 <div class="bg-bar" id="backgroundBar" aria-label="Editor background image">
     <label class="bg-field" style="flex:0 1 180px;"><span class="bg-label">Fit</span><select class="bg-input" id="backgroundFitSelect" aria-label="Background image fit"><option value="cover">Cover</option><option value="contain">Contain</option><option value="original">Original</option><option value="tile">Tile</option></select></label>
     <div class="bg-actions">
@@ -1397,7 +1409,7 @@
                     <div class="copyright-preview-body" id="copyrightPreview"></div>
                 </div>
             </div>
-            <div class="editor" id="editor" contenteditable="true" data-placeholder="Begin writing here..."></div>
+            <div class="editor" id="editor" contenteditable="true" data-placeholder="Begin writing here..." data-script-placeholder="Start with a scene heading — INT. LOCATION - DAY"></div>
             <div class="comic-workspace" id="comicWorkspace">
                 <div class="comic-page-panel">
                     <p class="comic-strip-hint">Add multiple images to this chapter — they stack and scroll vertically for readers (webtoon-style).</p>
@@ -1522,6 +1534,7 @@
     import { alysumPrompt } from "./js/alysum-prompt.js?v=1";
     import {
         isComicFormat,
+        isScriptFormat,
         mediaFormatLabel,
         normalizeMediaFormat,
         normalizeComicImageUrls,
@@ -1530,7 +1543,14 @@
         countComicPages,
         countComicPagesWithImages,
         countComicStripImages,
-    } from "./js/book-media-format.js?v=2";
+    } from "./js/book-media-format.js?v=3";
+    import {
+        normalizeScriptHtml,
+        ensureScriptEditorContent,
+        initScriptEditor,
+        isScriptParagraph,
+        normalizeScriptParagraphAttributes,
+    } from "./js/script-editor.js?v=1";
     import {
         LOCAL_GUEST_USER,
         LOCAL_VAULT_STORAGE_KEY,
@@ -1946,6 +1966,7 @@ function rememberBookId(id) {
     function applyEditorPageLayoutUI() {
         const pagesMode = getEditorPageLayout() === "pages"
             && !isCurrentBookComic()
+            && !isCurrentBookScript()
             && !document.body.classList.contains("copyright-template-mode");
         document.body.classList.toggle("editor-scroll-mode", !pagesMode);
         if (pageLayoutBtn) {
@@ -2021,6 +2042,8 @@ function rememberBookId(id) {
     const comicPageEmpty = document.getElementById("comicPageEmpty");
     const comicCaptionInput = document.getElementById("comicCaptionInput");
     const comicUploadStatus = document.getElementById("comicUploadStatus");
+    const scriptToolbar = document.getElementById("scriptToolbar");
+    const scriptFindReplaceBtn = document.getElementById("scriptFindReplaceBtn");
     const bottomMetaLabel = document.getElementById("bottomMetaLabel");
     const bottomTotalLabel = document.getElementById("bottomTotalLabel");
     const sidebarMetaPrimaryLabel = document.getElementById("sidebarMetaPrimaryLabel");
@@ -2233,11 +2256,19 @@ function rememberBookId(id) {
         return isComicFormat(currentBook?.mediaFormat);
     }
 
+    function isCurrentBookScript() {
+        return isScriptFormat(currentBook?.mediaFormat);
+    }
+
     function applyComicModeUI() {
         const comic = isCurrentBookComic();
+        const script = isCurrentBookScript();
         document.body.classList.toggle("comic-mode", comic);
-        if (addChapterBtn) addChapterBtn.textContent = comic ? "Add Page" : "Add Chapter";
-        if (deleteChapterBtn) deleteChapterBtn.textContent = comic ? "Delete Page" : "Delete Chapter";
+        document.body.classList.toggle("script-mode", script && !comic);
+        if (addChapterBtn) {
+            addChapterBtn.textContent = comic ? "Add Page" : (script ? "Add Scene" : "Add Chapter");
+        }
+        if (deleteChapterBtn) deleteChapterBtn.textContent = comic ? "Delete Page" : (script ? "Delete Scene" : "Delete Chapter");
         document.querySelectorAll(".group[data-group-section]").forEach((group) => {
             const section = group.dataset.groupSection;
             group.classList.toggle("hidden", comic && section !== "body");
@@ -2247,20 +2278,23 @@ function rememberBookId(id) {
             const caret = bodyHeader.querySelector(".caret");
             bodyHeader.innerHTML = "";
             if (caret) bodyHeader.appendChild(caret);
-            bodyHeader.append(comic ? "Pages" : "Body");
+            bodyHeader.append(comic ? "Pages" : (script ? "Scenes" : "Body"));
         }
         const footer = document.querySelector(".side-footer");
         if (footer && !footer.dataset.baseText) footer.dataset.baseText = footer.innerHTML;
         if (footer) {
-            const uploaded = countComicPagesWithImages(currentBook?.sections);
-            const pageCount = countComicPages(currentBook?.sections);
-            const strips = countComicStripImages(currentBook?.sections);
-            footer.innerHTML = comic
-                ? `${uploaded} of ${pageCount} pages · ${strips} image${strips === 1 ? "" : "s"}`
-                : (footer.dataset.baseText || `<span id="footerWords">0</span> words`);
+            if (comic) {
+                const uploaded = countComicPagesWithImages(currentBook?.sections);
+                const pageCount = countComicPages(currentBook?.sections);
+                const strips = countComicStripImages(currentBook?.sections);
+                footer.innerHTML = `${uploaded} of ${pageCount} pages · ${strips} image${strips === 1 ? "" : "s"}`;
+            } else {
+                footer.innerHTML = footer.dataset.baseText || `<span id="footerWords">0</span> words`;
+            }
         }
         if (sidebarMetaPrimaryLabel) sidebarMetaPrimaryLabel.textContent = comic ? "pages uploaded" : "words";
-        if (sidebarMetaSecondaryLabel) sidebarMetaSecondaryLabel.textContent = comic ? "pages" : "chapters";
+        if (sidebarMetaSecondaryLabel) sidebarMetaSecondaryLabel.textContent = comic ? "pages" : (script ? "scenes" : "chapters");
+        if (bottomMetaLabel) bottomMetaLabel.textContent = script ? "scene words" : "chapter words";
         applyEditorPageLayoutUI();
     }
 
@@ -2269,7 +2303,7 @@ function rememberBookId(id) {
     }
 
     function isOnCopyrightChapter() {
-        if (!currentBook?.sections || isCurrentBookComic()) return false;
+        if (!currentBook?.sections || isCurrentBookComic() || isCurrentBookScript()) return false;
         return isCopyrightChapter(currentSection, currentChapterIndex, currentChapter());
     }
 
@@ -2838,6 +2872,7 @@ function rememberBookId(id) {
             return;
         }
         if (normalizeSceneBreakAttributes(el)) return;
+        if (el.tagName === "P" && normalizeScriptParagraphAttributes(el)) return;
         if (el.tagName === "SPAN") {
             if (el.classList.contains("scene-break-glyph")) {
                 [...el.attributes].forEach((attr) => {
@@ -3425,8 +3460,13 @@ function rememberBookId(id) {
 
         holder.querySelectorAll("p").forEach(p => {
             if (isSceneBreakParagraph(p)) return;
+            if (isScriptParagraph(p)) return;
             if (isCaretParagraph(p) || (!p.textContent.trim() && !p.querySelector("img, br, figure"))) p.remove();
         });
+
+        if (isCurrentBookScript()) {
+            holder.innerHTML = normalizeScriptHtml(holder.innerHTML);
+        }
 
         holder.querySelectorAll("span").forEach((span) => {
             if (span.classList.length) return;
@@ -3513,7 +3553,7 @@ function rememberBookId(id) {
         }
         flushEditorChapterSync();
         const cleaned = cleanEditorHtml(editor.innerHTML);
-        currentChapter().content = cleaned;
+        currentChapter().content = isCurrentBookScript() ? normalizeScriptHtml(cleaned) : cleaned;
         editorChapterDirty = false;
         return cleaned;
     }
@@ -3787,9 +3827,11 @@ function rememberBookId(id) {
             editorLoadedChapterKey = chapterLoadKey(section, index);
         } else {
             chapterNumber.textContent = section === "body" ? index + 1 : "";
-            chapterTitle.textContent = ch.title || "Untitled";
-            editor.innerHTML = cleanEditorHtml(ch.content || "");
-            ensureEditorTailAfterSceneBreaks(editor);
+            chapterTitle.textContent = ch.title || (isCurrentBookScript() ? `Scene ${index + 1}` : "Untitled");
+            const rawHtml = cleanEditorHtml(ch.content || "");
+            editor.innerHTML = isCurrentBookScript() ? normalizeScriptHtml(rawHtml) : rawHtml;
+            if (isCurrentBookScript()) ensureScriptEditorContent(editor);
+            else ensureEditorTailAfterSceneBreaks(editor);
             applyEditorStyle();
             normalizeInlineImagesInEditor();
             editorLoadedChapterKey = chapterLoadKey(section, index);
@@ -4603,7 +4645,24 @@ function rememberBookId(id) {
             try { await saveBook("Saved"); notifyStructuralVersion("Chapter added"); } catch (e) { console.error(e); setSaveStatus("Save failed"); }
             return;
         }
-        const label = section === "body" ? "Chapter name?" : "Section name?";
+        if (isCurrentBookScript() && section === "body") {
+            const nextIndex = currentBook.sections.body.length + 1;
+            currentBook.sections[section].push({
+                id: generateId(),
+                title: `Scene ${nextIndex}`,
+                content: "",
+                imageUrl: "",
+                imageUrls: [],
+            });
+            registerEmptyChapterInWordCache(currentBook.sections[section][currentBook.sections[section].length - 1]);
+            renderAllSections();
+            loadChapter(section, currentBook.sections[section].length - 1, false);
+            try { await saveBook("Saved"); notifyStructuralVersion("Scene added"); } catch (e) { console.error(e); setSaveStatus("Save failed"); }
+            return;
+        }
+        const label = section === "body"
+            ? (isCurrentBookScript() ? "Scene name?" : "Chapter name?")
+            : "Section name?";
         const name = await alysumPrompt(label);
         if (!name) return;
         currentBook.sections[section].push({ id: generateId(), title: name, content: "", imageUrl: "", imageUrls: [] });
@@ -4763,6 +4822,14 @@ function rememberBookId(id) {
     }
 
     function applyEditorStyle() {
+        if (isCurrentBookScript()) {
+            editor.style.fontFamily = "";
+            editor.style.fontSize = "";
+            editor.style.lineHeight = "";
+            if (chapterTitle) chapterTitle.style.fontFamily = "";
+            scheduleEditorPagination();
+            return;
+        }
         const ch = currentChapter();
         const fontId = resolveEditorChapterFontId(ch, getEditorTypographyFallbackFontId());
         const size = resolveEditorChapterFontSize(ch, getEditorTypographyFallbackFontSize());
@@ -5068,10 +5135,21 @@ function rememberBookId(id) {
 
         if (plainText.trim()) {
             const normalized = plainText.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
-            const paragraphs = normalized.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
-            html = paragraphs.map(p => `<p>${escapeHtml(p).replace(/\n/g, "<br>")}</p>`).join("");
+            if (isCurrentBookScript()) {
+                const lines = normalized.split(/\n/);
+                html = lines.map((line) => {
+                    const trimmed = line.trim();
+                    if (!trimmed) return `<p class="script-action"></p>`;
+                    return `<p class="script-action">${escapeHtml(trimmed)}</p>`;
+                }).join("");
+                html = normalizeScriptHtml(html);
+            } else {
+                const paragraphs = normalized.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
+                html = paragraphs.map(p => `<p>${escapeHtml(p).replace(/\n/g, "<br>")}</p>`).join("");
+            }
         } else if (htmlText.trim()) {
             html = cleanEditorHtml(htmlText);
+            if (isCurrentBookScript()) html = normalizeScriptHtml(html);
         }
 
         if (!html) return;
@@ -5129,6 +5207,17 @@ function rememberBookId(id) {
     });
 
     findReplaceBtn?.addEventListener("click", () => frOpen(false));
+    scriptFindReplaceBtn?.addEventListener("click", () => frOpen(false));
+
+    initScriptEditor({
+        editor,
+        toolbar: scriptToolbar,
+        onChange: () => {
+            markEditorChapterDirty();
+            syncStats();
+            scheduleSave();
+        },
+    });
     frCloseBtn?.addEventListener("click", () => frClose());
     frFindInput?.addEventListener("input", () => frRunSearch(true, false));
     frMatchCase?.addEventListener("change", () => frRunSearch(false, false));

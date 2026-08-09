@@ -183,6 +183,27 @@
         var p = localStorage.getItem("alysum-gradient-theme-preview");
         if (p) root.style.setProperty("--alysum-chrome-gradient", p);
         else root.style.removeProperty("--alysum-chrome-gradient");
+
+        var bodyBgPresets = {
+            deep: "#020b18",
+            midnight: "#0a0e14",
+            charcoal: "#111827",
+            navy: "#0f172a",
+            slate: "#1e293b",
+            ink: "#070b14"
+        };
+        var bodyBgId = localStorage.getItem("alysum-body-bg") || "default";
+        if (bodyBgId && bodyBgId !== "default") {
+            var bodyBg =
+                bodyBgId === "custom"
+                    ? localStorage.getItem("alysum-body-bg-custom") || "#0b1220"
+                    : bodyBgPresets[bodyBgId] || null;
+            if (bodyBg && parseHex(bodyBg)) {
+                root.style.setProperty("--bg", bodyBg);
+                root.style.setProperty("--bg-gradient-top", lighten(bodyBg, 0.08));
+                root.setAttribute("data-body-bg", bodyBgId);
+            }
+        }
     } catch (e) {
         /* ignore */
     }

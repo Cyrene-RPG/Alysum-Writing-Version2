@@ -5,7 +5,7 @@ import {
   MEDIA_FORMAT_NOVEL,
   MEDIA_FORMAT_OPTIONS,
   isComicFormat,
-} from "./book-media-format.js?v=2";
+} from "./book-media-format.js?v=3";
 import {
   importManuscriptFile,
   isAcceptedImportFile,

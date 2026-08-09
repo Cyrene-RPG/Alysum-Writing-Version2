@@ -1,11 +1,12 @@
 /**
- * Book media format helpers — novel vs manga/comic/manhwa.
+ * Book media format helpers — novel vs manga/comic/manhwa vs screenplay.
  */
 
 export const MEDIA_FORMAT_NOVEL = "novel";
 export const MEDIA_FORMAT_MANGA = "manga";
 export const MEDIA_FORMAT_COMIC = "comic";
 export const MEDIA_FORMAT_MANHWA = "manhwa";
+export const MEDIA_FORMAT_SCREENPLAY = "screenplay";
 
 export const COMIC_MEDIA_FORMATS = new Set([
   MEDIA_FORMAT_MANGA,
@@ -13,8 +14,13 @@ export const COMIC_MEDIA_FORMATS = new Set([
   MEDIA_FORMAT_MANHWA,
 ]);
 
+export const SCRIPT_MEDIA_FORMATS = new Set([
+  MEDIA_FORMAT_SCREENPLAY,
+]);
+
 export const MEDIA_FORMAT_OPTIONS = [
   { value: MEDIA_FORMAT_NOVEL, label: "Novel", description: "Prose chapters with rich text editing" },
+  { value: MEDIA_FORMAT_SCREENPLAY, label: "Screenplay", description: "Industry-standard script formatting with scene headings, action, and dialogue" },
   { value: MEDIA_FORMAT_MANGA, label: "Manga", description: "Upload one or more page images per chapter" },
   { value: MEDIA_FORMAT_COMIC, label: "Comic", description: "Upload comic page images (multi-page chapters)" },
   { value: MEDIA_FORMAT_MANHWA, label: "Manhwa", description: "Upload vertical-scroll strip images per chapter" },
@@ -27,11 +33,16 @@ export function newChapterId() {
 export function normalizeMediaFormat(raw) {
   const value = typeof raw === "string" ? raw.trim().toLowerCase() : "";
   if (COMIC_MEDIA_FORMATS.has(value)) return value;
+  if (SCRIPT_MEDIA_FORMATS.has(value)) return value;
   return MEDIA_FORMAT_NOVEL;
 }
 
 export function isComicFormat(format) {
   return COMIC_MEDIA_FORMATS.has(normalizeMediaFormat(format));
+}
+
+export function isScriptFormat(format) {
+  return SCRIPT_MEDIA_FORMATS.has(normalizeMediaFormat(format));
 }
 
 export function mediaFormatLabel(format) {
@@ -76,6 +87,13 @@ export function defaultSectionsForFormat(format) {
     return {
       front: [],
       body: [{ id: newChapterId(), title: "Page 1", content: "", imageUrl: "", imageUrls: [] }],
+      back: [],
+    };
+  }
+  if (isScriptFormat(format)) {
+    return {
+      front: [{ id: newChapterId(), title: "Title Page", content: "" }],
+      body: [{ id: newChapterId(), title: "Scene 1", content: "" }],
       back: [],
     };
   }

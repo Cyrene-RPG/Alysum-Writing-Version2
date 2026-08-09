@@ -9,6 +9,27 @@ const INLINE_IMAGE_DEFAULT_SIZE = "img-medium";
 const INLINE_IMAGE_DEFAULT_FRAME = "frame-plain";
 const INLINE_IMAGE_DEFAULT_ALIGN = "align-center";
 
+const SCRIPT_ELEMENT_CLASSES = new Set([
+  "script-scene",
+  "script-action",
+  "script-character",
+  "script-dialogue",
+  "script-parenthetical",
+  "script-transition",
+  "script-shot",
+]);
+
+function normalizeScriptParagraphAttributes(el) {
+  if (el.tagName !== "P") return false;
+  const scriptClass = [...el.classList].find((c) => SCRIPT_ELEMENT_CLASSES.has(c));
+  if (!scriptClass) return false;
+  [...el.attributes].forEach((attr) => {
+    if (/^on/i.test(attr.name) || attr.name === "style") el.removeAttribute(attr.name);
+  });
+  el.className = scriptClass;
+  return true;
+}
+
 function normalizeChapterElementAttributes(el) {
   if (el.tagName === "FIGURE") {
     const isInlineImage = el.classList.contains(INLINE_IMAGE_FIGURE_CLASS);
@@ -49,6 +70,7 @@ function normalizeChapterElementAttributes(el) {
     return;
   }
   if (el.tagName === "P") {
+    if (normalizeScriptParagraphAttributes(el)) return;
     const isSpacer = el.classList.contains("scene-spacer");
     const isBreak = el.classList.contains("scene-break");
     if (isSpacer || isBreak) {
@@ -150,6 +172,7 @@ export function cleanImportHtml(html) {
 
   holder.querySelectorAll("p").forEach((p) => {
     if (p.classList.contains("scene-break") || p.classList.contains("scene-spacer")) return;
+    if ([...p.classList].some((c) => SCRIPT_ELEMENT_CLASSES.has(c))) return;
     const isCaretOnly = !p.textContent.replace(/\u200B/g, "").trim() &&
       !p.querySelector("img, figure") &&
       (p.querySelector("br") || p.textContent.includes("\u200B"));

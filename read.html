@@ -30,6 +30,7 @@
     <link rel="stylesheet" href="css/accessibility-fonts.css?v=1" />
     <link rel="stylesheet" href="css/book-inline-fonts.css?v=4" />
     <link rel="stylesheet" href="css/scene-breaks.css?v=8" />
+    <link rel="stylesheet" href="css/script-editor.css?v=1" />
     <link rel="stylesheet" href="css/workspace-nav.css?v=11" />
     <link rel="stylesheet" href="css/library-reports.css?v=1" />
     <script src="js/gradient-theme-sync.js" defer></script>
@@ -347,10 +348,11 @@
     import { isBookReadable } from "./js/library-reports-api.js?v=1";
     import {
         isComicFormat,
+        isScriptFormat,
         mediaFormatLabel,
         normalizeMediaFormat,
         normalizeComicImageUrls,
-    } from "./js/book-media-format.js?v=2";
+    } from "./js/book-media-format.js?v=3";
     import {
         CHAPTER_REACTIONS,
         chapterReactionId,
@@ -666,7 +668,7 @@
         }
     }
 
-    function renderMeta() { if (!currentBook) return; const comic = isComicFormat(currentBook.mediaFormat); bookTitle.textContent = currentBook.title; renderAuthorLinks(); bookSummary.textContent = currentBook.summary || "No summary yet."; sideBookTitle.textContent = currentBook.title; sideBookSummary.textContent = currentBook.summary || "No summary yet."; drawerBookTitle.textContent = currentBook.title; drawerBookSummary.textContent = currentBook.summary || "No summary yet."; topbarTitle.textContent = currentBook.title; const chapterProgress = formatChapterProgress({ publishedCount: currentBook.publishedChapterCount ?? currentBook.chapters.length, plannedChapterCount: currentBook.plannedChapterCount, chapterCount: currentBook.chapterCount, serializationStatus: currentBook.serializationStatus, comic }); statChapters.textContent = chapterProgress; if (serializationBadge) serializationBadge.innerHTML = `<div class="chip serialization-chip">${escapeHtml(serializationStatusLabel(currentBook.serializationStatus))}</div>`; statWords.textContent = comic ? mediaFormatLabel(currentBook.mediaFormat) : formatNumber(currentBook.words); statReads.textContent = formatNumber(currentBook.views); statType.textContent = comic ? mediaFormatLabel(currentBook.mediaFormat) : (currentBook.type || "—"); statRating.textContent = currentBook.rating || "—"; renderChipList(tagList, currentBook.tags, "No tags listed"); renderChipList(warningList, currentBook.warnings, "No warnings listed"); renderChipList(sideTagList, currentBook.tags, "No tags listed"); renderChipList(sideWarningList, currentBook.warnings, "No warnings listed"); renderChipList(drawerTagList, currentBook.tags, "No tags listed"); renderChipList(drawerWarningList, currentBook.warnings, "No warnings listed"); }
+    function renderMeta() { if (!currentBook) return; const comic = isComicFormat(currentBook.mediaFormat); const script = isScriptFormat(currentBook.mediaFormat); bookTitle.textContent = currentBook.title; renderAuthorLinks(); bookSummary.textContent = currentBook.summary || "No summary yet."; sideBookTitle.textContent = currentBook.title; sideBookSummary.textContent = currentBook.summary || "No summary yet."; drawerBookTitle.textContent = currentBook.title; drawerBookSummary.textContent = currentBook.summary || "No summary yet."; topbarTitle.textContent = currentBook.title; const chapterProgress = formatChapterProgress({ publishedCount: currentBook.publishedChapterCount ?? currentBook.chapters.length, plannedChapterCount: currentBook.plannedChapterCount, chapterCount: currentBook.chapterCount, serializationStatus: currentBook.serializationStatus, comic }); statChapters.textContent = chapterProgress; if (serializationBadge) serializationBadge.innerHTML = `<div class="chip serialization-chip">${escapeHtml(serializationStatusLabel(currentBook.serializationStatus))}</div>`; statWords.textContent = (comic || script) ? mediaFormatLabel(currentBook.mediaFormat) : formatNumber(currentBook.words); statReads.textContent = formatNumber(currentBook.views); statType.textContent = (comic || script) ? mediaFormatLabel(currentBook.mediaFormat) : (currentBook.type || "—"); statRating.textContent = currentBook.rating || "—"; renderChipList(tagList, currentBook.tags, "No tags listed"); renderChipList(warningList, currentBook.warnings, "No warnings listed"); renderChipList(sideTagList, currentBook.tags, "No tags listed"); renderChipList(sideWarningList, currentBook.warnings, "No warnings listed"); renderChipList(drawerTagList, currentBook.tags, "No tags listed"); renderChipList(drawerWarningList, currentBook.warnings, "No warnings listed"); }
     function goToNextChapter() {
         if (!currentBook || currentChapterIndex >= currentBook.chapters.length - 1) return;
         currentChapterIndex++;
@@ -676,7 +678,8 @@
         if (!currentBook) return;
         const chapter = currentChapter();
         const comic = isComicFormat(currentBook.mediaFormat);
-        const unit = comic ? "Page" : "Chapter";
+        const script = isScriptFormat(currentBook.mediaFormat);
+        const unit = comic ? "Page" : (script ? "Scene" : "Chapter");
         chapterTitle.textContent = chapter.title;
         chapterMeta.textContent = formatChapterPositionMeta({
             currentIndex: currentChapterIndex,
@@ -713,8 +716,15 @@
             content.style.removeProperty("font-family");
             content.style.removeProperty("font-size");
             content.style.removeProperty("line-height");
-        } else {
+        } else if (script) {
             content.classList.remove("comic-reader");
+            content.classList.add("script-reader");
+            content.innerHTML = sanitizeChapterHtml(chapter.content) || "<p class=\"script-scene\">No script content yet.</p>";
+            content.style.removeProperty("font-family");
+            content.style.removeProperty("font-size");
+            content.style.removeProperty("line-height");
+        } else {
+            content.classList.remove("comic-reader", "script-reader");
             content.innerHTML = sanitizeChapterHtml(chapter.content) || "<p>No chapter text yet.</p>";
             applyChapterTypographyStyles(content, chapter);
         }
@@ -723,7 +733,7 @@
         const isLastChapter = currentChapterIndex >= currentBook.chapters.length - 1;
         if (nextChapterBottomBtn) {
             const nextChapter = !isLastChapter ? currentBook.chapters[currentChapterIndex + 1] : null;
-            const nextLabel = comic ? "Next Page" : "Next Chapter";
+            const nextLabel = comic ? "Next Page" : (script ? "Next Scene" : "Next Chapter");
             if (nextChapter) {
                 nextChapterBottomBtn.disabled = false;
                 nextChapterBottomBtn.textContent = `${nextLabel}: ${nextChapter.title} →`;

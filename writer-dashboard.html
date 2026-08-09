@@ -24,7 +24,7 @@
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         background:
             radial-gradient(ellipse 120% 60% at 50% -10%, var(--theme-body-spot, rgba(124, 58, 237, 0.35)) 0%, transparent 55%),
-            linear-gradient(180deg, #0d1426 0%, #0b1220 42%);
+            linear-gradient(180deg, var(--bg-gradient-top, #0d1426) 0%, var(--bg, #0b1220) 42%);
         color: #fff;
     }
 
@@ -995,7 +995,7 @@
         defaultSectionsForFormat,
         mediaFormatLabel,
         normalizeMediaFormat,
-    } from "./js/book-media-format.js?v=2";
+    } from "./js/book-media-format.js?v=3";
 
     const welcomeTitle = document.getElementById("welcomeTitle");
     const welcomePfpImg = document.getElementById("welcomePfpImg");

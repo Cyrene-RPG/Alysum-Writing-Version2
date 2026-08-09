@@ -9,6 +9,8 @@
     var TEXT_COLOR_KEY = "alysum-display-text-color";
     var TEXT_COLOR_MAIN_KEY = "alysum-display-text-color-main";
     var TEXT_COLOR_ACCENT_KEY = "alysum-display-text-color-accent";
+    var BODY_BG_KEY = "alysum-body-bg";
+    var BODY_BG_CUSTOM_KEY = "alysum-body-bg-custom";
     var CLASSIC_PREVIEW = "linear-gradient(135deg, #4c1d95 0%, #7c3aed 50%, #ec4899 100%)";
     var LEGACY_FONT = {
         chrome: "rajdhani",
@@ -217,6 +219,46 @@
         document.documentElement.style.removeProperty("--alysum-chrome-gradient");
     }
 
+    var BODY_BG_PRESETS = {
+        deep: "#020b18",
+        midnight: "#0a0e14",
+        charcoal: "#111827",
+        navy: "#0f172a",
+        slate: "#1e293b",
+        ink: "#070b14"
+    };
+
+    function applyBodyBgFromStorage() {
+        var root = document.documentElement;
+        var id = "default";
+        try {
+            id = localStorage.getItem(BODY_BG_KEY) || "default";
+        } catch (e) {
+            id = "default";
+        }
+        if (!id || id === "default") {
+            root.style.removeProperty("--bg");
+            root.style.removeProperty("--bg-gradient-top");
+            root.removeAttribute("data-body-bg");
+            if (typeof window.__alysumApplyBodyBackground === "function") {
+                window.__alysumApplyBodyBackground();
+            }
+            return;
+        }
+        var bg =
+            id === "custom"
+                ? localStorage.getItem(BODY_BG_CUSTOM_KEY) || "#0b1220"
+                : BODY_BG_PRESETS[id];
+        if (bg && parseHex(bg)) {
+            root.style.setProperty("--bg", bg);
+            root.style.setProperty("--bg-gradient-top", lighten(bg, 0.08));
+            root.setAttribute("data-body-bg", id);
+        }
+        if (typeof window.__alysumApplyBodyBackground === "function") {
+            window.__alysumApplyBodyBackground();
+        }
+    }
+
     try {
         applyTheme(localStorage.getItem(KEY) || "classic");
     } catch (e) {
@@ -237,6 +279,12 @@
 
     try {
         applyTextColorFromStorage();
+    } catch (e) {
+        /* module may load later */
+    }
+
+    try {
+        applyBodyBgFromStorage();
     } catch (e) {
         /* module may load later */
     }
@@ -266,6 +314,9 @@
                 applyChrome(null);
             }
         }
+        if (e.key === BODY_BG_KEY || e.key === BODY_BG_CUSTOM_KEY) {
+            applyBodyBgFromStorage();
+        }
     });
 
     window.addEventListener("alysum-gradient-theme", function (e) {
@@ -283,5 +334,9 @@
 
     window.addEventListener("alysum-gradient-theme", function () {
         applyTextColorFromStorage();
+    });
+
+    window.addEventListener("alysum-body-bg", function () {
+        applyBodyBgFromStorage();
     });
 })();

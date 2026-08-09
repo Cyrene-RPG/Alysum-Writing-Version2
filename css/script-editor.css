@@ -1,0 +1,328 @@
+/**
+ * Screenplay editor & reader — US Letter layout (Courier 12pt, industry margins).
+ */
+
+@import url("https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap");
+
+/* ── Editor script mode ── */
+
+body.script-mode .chapter-number {
+  font-family: "Courier Prime", "Courier New", Courier, monospace;
+  font-size: 12pt;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+body.script-mode .chapter-title {
+  font-family: "Courier Prime", "Courier New", Courier, monospace;
+  font-size: 14pt;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+body.script-mode .page-content {
+  max-width: 8.5in;
+}
+
+body.script-mode .editor {
+  font-family: "Courier Prime", "Courier New", Courier, monospace;
+  font-size: 12pt;
+  line-height: 1;
+  letter-spacing: 0;
+  min-height: 9in;
+  padding: 0;
+  color: var(--page-text);
+}
+
+body.script-mode .editor p {
+  margin: 0 0 1em;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Scene Heading — full width, ALL CAPS */
+body.script-mode .editor p.script-scene {
+  text-transform: uppercase;
+  font-weight: 700;
+  margin-top: 1.5em;
+  margin-bottom: 0.75em;
+  padding-left: 1.5in;
+  padding-right: 1in;
+  margin-left: -1.5in;
+  margin-right: -1in;
+}
+
+body.script-mode .editor p.script-scene:first-child {
+  margin-top: 0;
+}
+
+/* Action — full width */
+body.script-mode .editor p.script-action {
+  padding-left: 1.5in;
+  padding-right: 1in;
+  margin-left: -1.5in;
+  margin-right: -1in;
+}
+
+/* Character — centered block, ALL CAPS */
+body.script-mode .editor p.script-character {
+  text-transform: uppercase;
+  margin-top: 1em;
+  margin-bottom: 0;
+  padding-left: 3.7in;
+  padding-right: 3.7in;
+  margin-left: -1.5in;
+  margin-right: -1in;
+}
+
+/* Dialogue — narrower column */
+body.script-mode .editor p.script-dialogue {
+  margin-top: 0;
+  margin-bottom: 0;
+  padding-left: 2.5in;
+  padding-right: 2.5in;
+  margin-left: -1.5in;
+  margin-right: -1in;
+}
+
+/* Parenthetical — under character name */
+body.script-mode .editor p.script-parenthetical {
+  margin-top: 0;
+  margin-bottom: 0;
+  padding-left: 3.1in;
+  padding-right: 3.6in;
+  margin-left: -1.5in;
+  margin-right: -1in;
+  font-style: normal;
+}
+
+/* Transition — right-aligned, ALL CAPS */
+body.script-mode .editor p.script-transition {
+  text-transform: uppercase;
+  text-align: right;
+  margin-top: 1em;
+  padding-left: 1.5in;
+  padding-right: 1in;
+  margin-left: -1.5in;
+  margin-right: -1in;
+}
+
+/* Shot — full width, ALL CAPS (optional element) */
+body.script-mode .editor p.script-shot {
+  text-transform: uppercase;
+  padding-left: 1.5in;
+  padding-right: 1in;
+  margin-left: -1.5in;
+  margin-right: -1in;
+}
+
+body.script-mode .editor:empty::before {
+  content: attr(data-script-placeholder);
+  color: var(--page-subtle, #94a3b8);
+  font-style: italic;
+  text-transform: none;
+  display: block;
+  padding-left: 1.5in;
+}
+
+/* Script toolbar */
+.script-toolbar {
+  display: none;
+  min-height: 54px;
+  background: var(--toolbar-bg);
+  border-bottom: 1px solid var(--border);
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  flex-wrap: wrap;
+}
+
+body.script-mode .script-toolbar {
+  display: flex;
+}
+
+body.script-mode #toolbar,
+body.script-mode .bg-bar,
+body.script-mode #insertSceneBreakBtn,
+body.script-mode #insertImageBtn,
+body.script-mode #pageLayoutBtn,
+body.script-mode #backgroundBtn,
+body.script-mode #fontSelect,
+body.script-mode #fontSizeSelect,
+body.script-mode #formatSelect,
+body.script-mode #quoteBtn {
+  display: none !important;
+}
+
+body.script-mode #toolbar .toolbar-wordcount,
+body.script-mode #findReplaceBtn {
+  display: inline-flex !important;
+}
+
+.script-element-btn {
+  height: 34px;
+  border: 1px solid var(--border);
+  background: var(--topbar-bg);
+  border-radius: 8px;
+  color: var(--page-text);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 0 10px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  transition: border-color 0.12s ease, background 0.12s ease;
+}
+
+.script-element-btn:hover {
+  border-color: rgba(124, 58, 237, 0.5);
+  background: rgba(124, 58, 237, 0.08);
+}
+
+.script-element-btn.is-active {
+  border-color: rgba(124, 58, 237, 0.75);
+  background: rgba(124, 58, 237, 0.18);
+  color: #fff;
+}
+
+.script-element-btn kbd {
+  font-size: 10px;
+  font-weight: 600;
+  opacity: 0.55;
+  font-family: inherit;
+}
+
+.script-toolbar-hint {
+  font-size: 11px;
+  color: var(--page-subtle, #94a3b8);
+  font-weight: 600;
+  margin-left: 4px;
+  white-space: nowrap;
+}
+
+body.script-mode .copyright-mode-bar {
+  display: none !important;
+}
+
+body.script-mode .copyright-builder {
+  display: none !important;
+}
+
+@media (max-width: 900px) {
+  body.script-mode .editor p.script-scene,
+  body.script-mode .editor p.script-action,
+  body.script-mode .editor p.script-character,
+  body.script-mode .editor p.script-dialogue,
+  body.script-mode .editor p.script-parenthetical,
+  body.script-mode .editor p.script-transition,
+  body.script-mode .editor p.script-shot {
+    padding-left: 0;
+    padding-right: 0;
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  body.script-mode .editor p.script-character {
+    padding-left: 22%;
+  }
+
+  body.script-mode .editor p.script-dialogue {
+    padding-left: 10%;
+    padding-right: 10%;
+  }
+
+  body.script-mode .editor p.script-parenthetical {
+    padding-left: 14%;
+    padding-right: 14%;
+  }
+
+  .script-toolbar-hint {
+    display: none;
+  }
+}
+
+@media (max-width: 600px) {
+  body:not(.toolbar-mobile-open).script-mode .script-toolbar {
+    display: none !important;
+  }
+
+  body.toolbar-mobile-open.script-mode .script-toolbar {
+    display: flex !important;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    min-height: 0;
+    padding: 8px 10px;
+  }
+
+  body.toolbar-mobile-open.script-mode .script-element-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ── Reader script mode ── */
+
+.script-reader {
+  font-family: "Courier Prime", "Courier New", Courier, monospace !important;
+  font-size: 12pt !important;
+  line-height: 1 !important;
+  max-width: 8.5in;
+  margin: 0 auto;
+}
+
+.script-reader p {
+  margin: 0 0 1em;
+  white-space: pre-wrap;
+}
+
+.script-reader p.script-scene {
+  text-transform: uppercase;
+  font-weight: 700;
+  margin-top: 1.5em;
+}
+
+.script-reader p.script-action {
+  /* full width */
+}
+
+.script-reader p.script-character {
+  text-transform: uppercase;
+  margin-top: 1em;
+  margin-bottom: 0;
+  padding-left: 22%;
+}
+
+.script-reader p.script-dialogue {
+  margin-top: 0;
+  padding-left: 10%;
+  padding-right: 10%;
+}
+
+.script-reader p.script-parenthetical {
+  margin-top: 0;
+  padding-left: 14%;
+  padding-right: 14%;
+}
+
+.script-reader p.script-transition {
+  text-transform: uppercase;
+  text-align: right;
+  margin-top: 1em;
+}
+
+.script-reader p.script-shot {
+  text-transform: uppercase;
+}
+
+@media print {
+  body.script-mode .editor,
+  .script-reader {
+    font-size: 12pt;
+  }
+}
