@@ -54,6 +54,38 @@ function compactDateLabel(dayKey) {
     return dt.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
+/** Build 0-based tick marks (0, 100, 200, …) up to a readable ceiling. */
+function computeYAxisScale(maxValue) {
+    const dataMax = Math.max(1, maxValue);
+    let step = 100;
+    if (dataMax > 1200) step = 250;
+    if (dataMax > 3000) step = 500;
+    if (dataMax > 6000) step = 1000;
+    if (dataMax > 12000) step = 2000;
+
+    const ceiling = Math.ceil(dataMax / step) * step;
+    const ticks = [];
+    for (let value = 0; value <= ceiling; value += step) {
+        ticks.push(value);
+    }
+    return { max: ceiling, ticks, step };
+}
+
+function renderYAxisLabels(ticks, scaleMax) {
+    return ticks.map((value) => {
+        const pct = scaleMax ? (value / scaleMax) * 100 : 0;
+        const anchor = value >= scaleMax ? " is-top" : "";
+        return `<span class="writing-trend-y-label${anchor}" style="bottom:${pct}%">${formatCount(value)}</span>`;
+    }).join("");
+}
+
+function renderGridLines(ticks, scaleMax, chartHeight, labelGap = 20) {
+    return ticks.map((value) => {
+        const bottomPx = labelGap + Math.round((value / scaleMax) * chartHeight);
+        return `<div class="writing-trend-grid-line" style="bottom:${bottomPx}px"></div>`;
+    }).join("");
+}
+
 /**
  * Daily typed-word bar chart (local calendar days).
  * @param {HTMLElement} container
@@ -92,15 +124,16 @@ export function renderWritingDayTrendChart(container, writingDayTotals, options 
         `;
     }
 
-    const maxWords = Math.max(goal, 1, ...rows.map((row) => row.words));
+    const peakWords = Math.max(goal, 1, ...rows.map((row) => row.words));
+    const { max: scaleMax, ticks } = computeYAxisScale(peakWords);
     const chartHeight = 180;
     const labelEvery = days <= 7 ? 1 : days <= 14 ? 2 : days <= 21 ? 3 : 4;
 
-    const goalLinePct = Math.min(100, Math.round((goal / maxWords) * 100));
+    const goalLineBottomPx = 20 + Math.round((goal / scaleMax) * chartHeight);
 
     const barsHtml = rows.map((row, index) => {
         const barHeight = row.words
-            ? Math.max(8, Math.round((row.words / maxWords) * chartHeight))
+            ? Math.max(8, Math.round((row.words / scaleMax) * chartHeight))
             : 4;
         const tone = row.metGoal ? "is-met" : row.words ? "is-active" : "is-empty";
         const isToday = row.dayKey === todayKey;
@@ -124,11 +157,22 @@ export function renderWritingDayTrendChart(container, writingDayTotals, options 
     container.innerHTML = hasAnyWords
         ? `
             <div class="writing-trend-wrap" role="img" aria-label="Daily word count trend for the last ${days} days">
-                <div class="writing-trend-chart-area">
-                    <div class="writing-trend-goal-line" style="bottom:${goalLinePct}%" title="Daily goal: ${formatCount(goal)} words">
-                        <span class="writing-trend-goal-tag">${formatCount(goal)} goal</span>
+                <div class="writing-trend-plot">
+                    <div class="writing-trend-y-axis" aria-hidden="true">
+                        <div class="writing-trend-y-axis-inner" style="height:${chartHeight}px">
+                            ${renderYAxisLabels(ticks, scaleMax)}
+                        </div>
+                        <div class="writing-trend-y-gap"></div>
                     </div>
-                    <div class="writing-trend-bars">${barsHtml}</div>
+                    <div class="writing-trend-chart-area">
+                        <div class="writing-trend-grid">
+                            ${renderGridLines(ticks, scaleMax, chartHeight)}
+                        </div>
+                        <div class="writing-trend-goal-line" style="bottom:${goalLineBottomPx}px" title="Daily goal: ${formatCount(goal)} words">
+                            <span class="writing-trend-goal-tag">${formatCount(goal)} goal</span>
+                        </div>
+                        <div class="writing-trend-bars">${barsHtml}</div>
+                    </div>
                 </div>
                 <div class="writing-trend-legend">
                     <span class="writing-trend-legend-item"><span class="writing-trend-legend-swatch is-active"></span>Words typed</span>
