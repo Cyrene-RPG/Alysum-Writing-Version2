@@ -64,6 +64,11 @@ ALTER TABLE public.word_wars_participants ADD COLUMN IF NOT EXISTS live_chapter_
 ALTER TABLE public.word_wars_participants ADD COLUMN IF NOT EXISTS live_chapter_html text NOT NULL DEFAULT '';
 ALTER TABLE public.word_wars_participants ADD COLUMN IF NOT EXISTS live_chapter_id text;
 ALTER TABLE public.word_wars_participants ADD COLUMN IF NOT EXISTS pause_requested boolean NOT NULL DEFAULT false;
+ALTER TABLE public.word_wars_rooms ADD COLUMN IF NOT EXISTS is_locked boolean NOT NULL DEFAULT false;
+
+CREATE INDEX IF NOT EXISTS word_wars_rooms_open_lobby_idx
+  ON public.word_wars_rooms (created_at DESC)
+  WHERE status = 'lobby' AND is_locked = false;
 
 -- ---------------------------------------------------------------------------
 -- 2. Helpers
@@ -180,6 +185,7 @@ BEGIN
     'isPaused', v_room.is_paused,
     'pausedAt', v_room.paused_at,
     'pauseMsTotal', v_room.pause_ms_total,
+    'isLocked', v_room.is_locked,
     'participants', v_participants
   );
 END;
@@ -189,10 +195,13 @@ $$;
 -- 3. RPCs
 -- ---------------------------------------------------------------------------
 
+DROP FUNCTION IF EXISTS public.create_word_war_room(integer, integer, text);
+
 CREATE OR REPLACE FUNCTION public.create_word_war_room(
   p_duration_min integer DEFAULT 15,
   p_max_writers integer DEFAULT 4,
-  p_book_id text DEFAULT NULL
+  p_book_id text DEFAULT NULL,
+  p_is_locked boolean DEFAULT false
 )
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -240,8 +249,8 @@ BEGIN
   LOOP
     v_code := public.gen_word_war_code();
     BEGIN
-      INSERT INTO public.word_wars_rooms (code, host_id, duration_min, max_writers)
-      VALUES (v_code, v_uid, v_duration, v_max_writers)
+      INSERT INTO public.word_wars_rooms (code, host_id, duration_min, max_writers, is_locked)
+      VALUES (v_code, v_uid, v_duration, v_max_writers, coalesce(p_is_locked, false))
       RETURNING id INTO v_room_id;
       EXIT;
     EXCEPTION WHEN unique_violation THEN
@@ -371,6 +380,13 @@ BEGIN
   END IF;
 
   IF auth.uid() IS NOT NULL AND NOT public.is_word_war_participant(v_room_id) THEN
+    IF EXISTS (
+      SELECT 1 FROM public.word_wars_rooms wr
+      WHERE wr.id = v_room_id AND wr.is_locked
+    ) AND v_code = '' THEN
+      RAISE EXCEPTION 'Room not accessible';
+    END IF;
+
     SELECT wr.id INTO v_room_id
     FROM public.word_wars_rooms wr
     WHERE wr.id = v_room_id
@@ -387,11 +403,14 @@ BEGIN
 END;
 $$;
 
+DROP FUNCTION IF EXISTS public.update_word_war_lobby(uuid, integer, text, boolean);
+
 CREATE OR REPLACE FUNCTION public.update_word_war_lobby(
   p_room_id uuid,
   p_duration_min integer DEFAULT NULL,
   p_book_id text DEFAULT NULL,
-  p_is_ready boolean DEFAULT NULL
+  p_is_ready boolean DEFAULT NULL,
+  p_is_locked boolean DEFAULT NULL
 )
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -434,6 +453,15 @@ BEGIN
     END IF;
     UPDATE public.word_wars_rooms
     SET duration_min = p_duration_min
+    WHERE id = p_room_id;
+  END IF;
+
+  IF p_is_locked IS NOT NULL THEN
+    IF NOT coalesce(v_is_host, false) THEN
+      RAISE EXCEPTION 'Only the host can lock the lobby';
+    END IF;
+    UPDATE public.word_wars_rooms
+    SET is_locked = coalesce(p_is_locked, false)
     WHERE id = p_room_id;
   END IF;
 
@@ -684,10 +712,230 @@ BEGIN
 END;
 $$;
 
-GRANT EXECUTE ON FUNCTION public.create_word_war_room(integer, integer, text) TO authenticated;
+CREATE OR REPLACE FUNCTION public.list_open_word_war_lobbies(p_limit integer DEFAULT 50)
+RETURNS jsonb
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_limit integer := greatest(1, least(coalesce(p_limit, 50), 100));
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+
+  RETURN coalesce((
+    SELECT jsonb_agg(row_data ORDER BY row_data->>'createdAt' DESC)
+    FROM (
+      SELECT jsonb_build_object(
+        'roomId', wr.id,
+        'code', wr.code,
+        'durationMin', wr.duration_min,
+        'maxWriters', wr.max_writers,
+        'participantCount', (
+          SELECT count(*)::integer
+          FROM public.word_wars_participants wp
+          WHERE wp.room_id = wr.id
+        ),
+        'hostDisplayName', coalesce((
+          SELECT nullif(trim(wp.display_name), '')
+          FROM public.word_wars_participants wp
+          WHERE wp.room_id = wr.id AND wp.is_host
+          LIMIT 1
+        ), 'Writer'),
+        'createdAt', wr.created_at
+      ) AS row_data
+      FROM public.word_wars_rooms wr
+      WHERE wr.status = 'lobby'
+        AND wr.is_locked = false
+        AND wr.expires_at > now()
+        AND NOT EXISTS (
+          SELECT 1 FROM public.word_wars_participants wp
+          WHERE wp.room_id = wr.id AND wp.user_id = auth.uid()
+        )
+      ORDER BY wr.created_at DESC
+      LIMIT v_limit
+    ) rows
+  ), '[]'::jsonb);
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.join_word_war_room_by_id(
+  p_room_id uuid,
+  p_book_id text DEFAULT NULL
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_uid uuid := auth.uid();
+  v_book_id text := nullif(trim(coalesce(p_book_id, '')), '');
+  v_book_title text := 'Untitled';
+  v_max_writers integer;
+  v_count integer;
+  v_display_name text;
+  v_is_locked boolean;
+  v_status text;
+BEGIN
+  IF v_uid IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+
+  IF p_room_id IS NULL THEN
+    RAISE EXCEPTION 'Invalid room';
+  END IF;
+
+  SELECT wr.max_writers, wr.is_locked, wr.status
+  INTO v_max_writers, v_is_locked, v_status
+  FROM public.word_wars_rooms wr
+  WHERE wr.id = p_room_id
+    AND wr.status = 'lobby'
+    AND wr.expires_at > now()
+  FOR UPDATE;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Room not found or no longer open';
+  END IF;
+
+  IF v_is_locked THEN
+    RAISE EXCEPTION 'This lobby is invite-only — use the room code';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM public.word_wars_participants wp
+    WHERE wp.room_id = p_room_id AND wp.user_id = v_uid
+  ) THEN
+    RETURN public.word_war_lobby_json(p_room_id);
+  END IF;
+
+  SELECT count(*)::integer INTO v_count
+  FROM public.word_wars_participants wp
+  WHERE wp.room_id = p_room_id;
+
+  IF v_count >= v_max_writers THEN
+    RAISE EXCEPTION 'Room is full';
+  END IF;
+
+  IF v_book_id IS NOT NULL THEN
+    v_book_title := public.word_war_book_title(v_book_id);
+    IF v_book_title IS NULL THEN
+      RAISE EXCEPTION 'Book not found';
+    END IF;
+  END IF;
+
+  SELECT coalesce(
+    nullif(trim(u.display_name), ''),
+    nullif(trim(u.username), ''),
+    'Writer'
+  )
+  INTO v_display_name
+  FROM public.users u
+  WHERE u.id = v_uid;
+
+  INSERT INTO public.word_wars_participants (
+    room_id, user_id, book_id, book_title, display_name, is_host, is_ready
+  )
+  VALUES (
+    p_room_id,
+    v_uid,
+    v_book_id,
+    coalesce(v_book_title, 'Untitled'),
+    coalesce(v_display_name, 'Writer'),
+    false,
+    false
+  );
+
+  RETURN public.word_war_lobby_json(p_room_id);
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.leave_word_war_room(p_room_id uuid)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_uid uuid := auth.uid();
+  v_was_host boolean;
+  v_status text;
+  v_remaining integer;
+  v_new_host uuid;
+BEGIN
+  IF v_uid IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+
+  IF NOT public.is_word_war_participant(p_room_id) THEN
+    RAISE EXCEPTION 'Not a participant';
+  END IF;
+
+  SELECT wp.is_host, wr.status
+  INTO v_was_host, v_status
+  FROM public.word_wars_participants wp
+  JOIN public.word_wars_rooms wr ON wr.id = wp.room_id
+  WHERE wp.room_id = p_room_id AND wp.user_id = v_uid;
+
+  DELETE FROM public.word_wars_participants
+  WHERE room_id = p_room_id AND user_id = v_uid;
+
+  SELECT count(*)::integer INTO v_remaining
+  FROM public.word_wars_participants wp
+  WHERE wp.room_id = p_room_id;
+
+  IF v_remaining = 0 THEN
+    UPDATE public.word_wars_rooms
+    SET status = 'cancelled'
+    WHERE id = p_room_id AND status IN ('lobby', 'active');
+
+    RETURN jsonb_build_object('left', true, 'roomCancelled', true, 'roomId', p_room_id);
+  END IF;
+
+  IF v_was_host THEN
+    SELECT wp.user_id
+    INTO v_new_host
+    FROM public.word_wars_participants wp
+    WHERE wp.room_id = p_room_id
+    ORDER BY wp.joined_at ASC
+    LIMIT 1;
+
+    UPDATE public.word_wars_participants
+    SET is_host = (user_id = v_new_host)
+    WHERE room_id = p_room_id;
+
+    UPDATE public.word_wars_rooms
+    SET host_id = v_new_host
+    WHERE id = p_room_id;
+  END IF;
+
+  IF v_status = 'active' AND v_remaining < 2 THEN
+    UPDATE public.word_wars_rooms
+    SET status = 'finished'
+    WHERE id = p_room_id AND status = 'active';
+  END IF;
+
+  RETURN jsonb_build_object(
+    'left', true,
+    'roomCancelled', false,
+    'roomId', p_room_id,
+    'roomStatus', (
+      SELECT wr.status FROM public.word_wars_rooms wr WHERE wr.id = p_room_id
+    )
+  );
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.create_word_war_room(integer, integer, text, boolean) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.join_word_war_room(text, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.join_word_war_room_by_id(uuid, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.list_open_word_war_lobbies(integer) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.leave_word_war_room(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_word_war_lobby(text, uuid) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.update_word_war_lobby(uuid, integer, text, boolean) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.update_word_war_lobby(uuid, integer, text, boolean, boolean) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.start_word_war(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.update_word_war_progress(uuid, integer, integer, boolean, boolean, text, text, text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.update_word_war_pause(uuid, boolean) TO authenticated;

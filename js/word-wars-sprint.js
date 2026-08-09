@@ -13,8 +13,9 @@ import {
     listMyBooks,
     wordWarLobbyUrl,
     enrichWordWarParticipantProfiles,
+    leaveWordWarRoom,
     WORD_WAR_DURATION_UNLIMITED,
-} from "./word-wars-api.js?v=9";
+} from "./word-wars-api.js?v=10";
 import { renderWriterDock } from "./word-wars-call.js?v=4";
 import { sanitizeChapterHtml } from "./book-html-sanitize.js?v=1";
 
@@ -1041,7 +1042,14 @@ leaveBtn?.addEventListener("click", () => {
         window.location.href = "word-wars-lobby.html";
         return;
     }
-    window.location.href = wordWarLobbyUrl(lobby?.code || "", { roomId: false });
+    const targetRoomId = lobby?.roomId || roomId;
+    leaveWordWarRoom(targetRoomId)
+        .catch((err) => {
+            console.warn(err);
+        })
+        .finally(() => {
+            window.location.href = "word-wars-lobby.html";
+        });
 });
 
 document.getElementById("recapLobbyBtn")?.addEventListener("click", () => {

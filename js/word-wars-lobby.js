@@ -16,6 +16,9 @@ import {
     createWordWarRoom,
     fetchWordWarLobby,
     joinWordWarRoom,
+    joinWordWarRoomById,
+    leaveWordWarRoom,
+    listOpenWordWarLobbies,
     listMyBooks,
     startWordWar,
     subscribeWordWarLobby,
@@ -23,7 +26,7 @@ import {
     wordWarLobbyUrl,
     wordWarSprintUrl,
     isUsingLocalWordWarsFallback,
-} from "./word-wars-api.js?v=8";
+} from "./word-wars-api.js?v=10";
 
 const params = new URLSearchParams(window.location.search);
 const initialCode = String(params.get("code") || "").trim().toUpperCase();
@@ -53,6 +56,12 @@ const joinCodeInput = document.getElementById("joinCodeInput");
 const lobbyStatusBadge = document.getElementById("lobbyStatusBadge");
 const lobbyCapacity = document.getElementById("lobbyCapacity");
 const lobbyWriterCount = document.getElementById("lobbyWriterCount");
+const lobbyLockBadge = document.getElementById("lobbyLockBadge");
+const hostLockToggleWrap = document.getElementById("hostLockToggleWrap");
+const hostLockInput = document.getElementById("hostLockInput");
+const createLockInput = document.getElementById("createLockInput");
+const openLobbiesList = document.getElementById("openLobbiesList");
+const refreshOpenLobbiesBtn = document.getElementById("refreshOpenLobbiesBtn");
 const wwHero = document.querySelector(".ww-hero");
 
 /** @type {{ uid: string, profile: { displayName: string }, books: Array<{ id: string, title: string }> } | null} */
@@ -64,6 +73,8 @@ let unsubscribe = null;
 let selectedDuration = 15;
 let selectedMaxWriters = 2;
 let refreshTimer = null;
+/** @type {ReturnType<typeof setInterval> | null} */
+let openLobbiesTimer = null;
 
 const hubCustomWritersInput = document.getElementById("hubCustomWritersInput");
 
@@ -107,6 +118,83 @@ function showView(view) {
     hubView?.classList.toggle("hidden", view !== "hub");
     lobbyView?.classList.toggle("hidden", view !== "lobby");
     wwHero?.classList.toggle("hidden", isLayoutPreview && view === "lobby");
+    if (view === "hub" && !isLayoutPreview) {
+        refreshOpenLobbies().catch(console.warn);
+        startOpenLobbiesPolling();
+    } else {
+        stopOpenLobbiesPolling();
+    }
+}
+
+function stopOpenLobbiesPolling() {
+    if (openLobbiesTimer) {
+        window.clearInterval(openLobbiesTimer);
+        openLobbiesTimer = null;
+    }
+}
+
+function startOpenLobbiesPolling() {
+    stopOpenLobbiesPolling();
+    openLobbiesTimer = window.setInterval(() => {
+        refreshOpenLobbies().catch(console.warn);
+    }, 30_000);
+}
+
+function renderOpenLobbies(rows = []) {
+    if (!openLobbiesList) return;
+    if (!rows.length) {
+        openLobbiesList.innerHTML =
+            '<p class="ww-open-lobbies-empty">No open lobbies right now. Create one above or ask a friend for their code.</p>';
+        return;
+    }
+
+    openLobbiesList.innerHTML = rows
+        .map((row) => {
+            const count = Number(row.participantCount) || 0;
+            const max = normalizeWordWarWriterCount(row.maxWriters, 4);
+            const full = count >= max;
+            return `
+                <article class="ww-open-lobby-row">
+                    <div class="ww-open-lobby-meta">
+                        <p class="ww-open-lobby-host">${escapeHtml(row.hostDisplayName || "Writer")}'s Word War</p>
+                        <p class="ww-open-lobby-detail">${escapeHtml(formatWordWarDuration(row.durationMin))} · ${count}/${max} writers · code ${escapeHtml(String(row.code || "------"))}</p>
+                    </div>
+                    <button
+                        type="button"
+                        class="btn primary"
+                        data-join-room="${escapeHtml(String(row.roomId || ""))}"
+                        ${full ? "disabled" : ""}
+                    >${full ? "Full" : "Join"}</button>
+                </article>
+            `;
+        })
+        .join("");
+}
+
+async function refreshOpenLobbies() {
+    if (!openLobbiesList || isLayoutPreview) return;
+    try {
+        const rows = await listOpenWordWarLobbies(50);
+        renderOpenLobbies(rows);
+    } catch (err) {
+        console.warn(err);
+        openLobbiesList.innerHTML =
+            '<p class="ww-open-lobbies-empty">Could not load open lobbies. Try refresh.</p>';
+    }
+}
+
+async function leaveCurrentLobby() {
+    if (!currentLobby?.roomId || isLayoutPreview) return;
+    await leaveWordWarRoom(currentLobby.roomId);
+    unsubscribe?.();
+    unsubscribe = null;
+    currentLobby = null;
+    const url = new URL(window.location.href);
+    url.searchParams.delete("room");
+    url.searchParams.delete("code");
+    window.history.replaceState({}, "", url.pathname);
+    showView("hub");
+    setStatus("");
 }
 
 function meInLobby(lobby) {
@@ -252,6 +340,17 @@ function renderLobbyActions(lobby) {
         lobbyStatusBadge.className = "ww-badge " + escapeHtml(lobby.status);
     }
 
+    if (lobbyLockBadge) {
+        lobbyLockBadge.classList.toggle("hidden", !lobby.isLocked || lobby.status !== "lobby");
+    }
+
+    if (hostLockToggleWrap && hostLockInput) {
+        const canEditLock = Boolean(me?.isHost) && lobby.status === "lobby" && !isLayoutPreview;
+        hostLockToggleWrap.classList.toggle("hidden", !canEditLock);
+        hostLockInput.disabled = !canEditLock;
+        hostLockInput.checked = Boolean(lobby.isLocked);
+    }
+
     renderLobbyCapacity(lobby);
     renderLobbyWriterCount(lobby);
 }
@@ -359,7 +458,8 @@ createForm?.addEventListener("submit", async (event) => {
             selectedDuration,
             selectedMaxWriters,
             "",
-            ""
+            "",
+            Boolean(createLockInput?.checked)
         );
         await enterLobby(lobby);
     } catch (err) {
@@ -473,15 +573,51 @@ leaveBtn?.addEventListener("click", () => {
         window.location.href = window.location.pathname;
         return;
     }
-    unsubscribe?.();
-    unsubscribe = null;
-    currentLobby = null;
-    const url = new URL(window.location.href);
-    url.searchParams.delete("room");
-    url.searchParams.delete("code");
-    window.history.replaceState({}, "", url.pathname);
-    showView("hub");
+    leaveCurrentLobby().catch((err) => {
+        setStatus(err?.message || "Could not leave the lobby.", true);
+    });
+});
+
+refreshOpenLobbiesBtn?.addEventListener("click", () => {
+    refreshOpenLobbies().catch(console.warn);
+});
+
+openLobbiesList?.addEventListener("click", async (event) => {
+    if (isLayoutPreview || !sessionCtx) return;
+    const btn = event.target.closest("[data-join-room]");
+    if (!btn || btn.disabled) return;
+    const roomId = btn.getAttribute("data-join-room");
+    if (!roomId) return;
+    btn.disabled = true;
     setStatus("");
+    try {
+        const lobby = await joinWordWarRoomById(roomId, sessionCtx.uid, sessionCtx.profile, "", "");
+        await enterLobby(lobby);
+    } catch (err) {
+        setStatus(err?.message || "Could not join that lobby.", true);
+        btn.disabled = false;
+        refreshOpenLobbies().catch(console.warn);
+    }
+});
+
+hostLockInput?.addEventListener("change", async () => {
+    if (isLayoutPreview || !currentLobby) return;
+    const me = meInLobby(currentLobby);
+    if (!me?.isHost || currentLobby.status !== "lobby") return;
+    const nextLocked = Boolean(hostLockInput.checked);
+    hostLockInput.disabled = true;
+    try {
+        const lobby = await updateWordWarLobby(currentLobby.roomId, { isLocked: nextLocked });
+        renderLobby(lobby);
+        setStatus(nextLocked ? "Lobby locked — invite code required." : "Lobby is open in the public list.", false);
+        window.clearTimeout(refreshTimer);
+        refreshTimer = window.setTimeout(() => setStatus(""), 2600);
+    } catch (err) {
+        hostLockInput.checked = Boolean(currentLobby.isLocked);
+        setStatus(err?.message || "Could not update lobby lock.", true);
+    } finally {
+        hostLockInput.disabled = false;
+    }
 });
 
 async function copyText(text, successMessage) {
@@ -610,6 +746,10 @@ async function boot() {
     if (joinCodeInput && initialCode) joinCodeInput.value = initialCode;
 
     await bootHub();
+    if (!currentLobby) {
+        await refreshOpenLobbies();
+        startOpenLobbiesPolling();
+    }
 }
 
 boot().catch((err) => {
@@ -619,4 +759,5 @@ boot().catch((err) => {
 
 window.addEventListener("beforeunload", () => {
     unsubscribe?.();
+    stopOpenLobbiesPolling();
 });

@@ -714,6 +714,100 @@
             background: linear-gradient(90deg, transparent, var(--border), transparent);
             margin: 4px 0 20px;
         }
+        .ww-open-lobbies {
+            margin-top: 28px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border);
+        }
+        .ww-open-lobbies-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+        .ww-open-lobbies-head h2 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 900;
+            letter-spacing: -0.02em;
+        }
+        .ww-open-lobbies-sub {
+            margin: 0 0 14px;
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.45;
+        }
+        .ww-open-lobbies-list {
+            display: grid;
+            gap: 10px;
+        }
+        .ww-open-lobby-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 14px 16px;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            background: rgba(255,255,255,0.03);
+        }
+        .ww-open-lobby-meta {
+            min-width: 0;
+        }
+        .ww-open-lobby-host {
+            margin: 0 0 4px;
+            font-size: 15px;
+            font-weight: 900;
+        }
+        .ww-open-lobby-detail {
+            margin: 0;
+            color: var(--muted);
+            font-size: 12px;
+        }
+        .ww-open-lobbies-empty {
+            margin: 0;
+            padding: 18px;
+            border: 1px dashed var(--border);
+            border-radius: 14px;
+            color: var(--muted);
+            font-size: 13px;
+            text-align: center;
+        }
+        .ww-lock-toggle {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin: 0 0 16px;
+            padding: 12px 14px;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            background: rgba(255,255,255,0.02);
+            cursor: pointer;
+        }
+        .ww-lock-toggle input {
+            margin-top: 2px;
+            accent-color: var(--purple);
+        }
+        .ww-lock-toggle span {
+            display: block;
+            font-size: 13px;
+            font-weight: 800;
+        }
+        .ww-lock-toggle small {
+            display: block;
+            margin-top: 4px;
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 500;
+            line-height: 1.4;
+        }
+        .ww-badge.locked {
+            color: #fde68a;
+            border-color: rgba(251,191,36,0.28);
+            background: rgba(251,191,36,0.1);
+        }
     </style>
 </head>
 <body>
@@ -771,6 +865,13 @@
                                     <button type="button" class="ww-chip" data-duration="45">45 min</button>
                                     <button type="button" class="ww-chip" data-duration="0">Unlimited</button>
                                 </div>
+                                <label class="ww-lock-toggle" for="createLockInput">
+                                    <input type="checkbox" id="createLockInput" />
+                                    <div>
+                                        <span>Locked lobby (invite only)</span>
+                                        <small>Hidden from the open lobby list — friends need your room code.</small>
+                                    </div>
+                                </label>
                                 <button type="submit" class="btn primary block">Create lobby</button>
                             </form>
                         </article>
@@ -790,6 +891,17 @@
                             </form>
                         </article>
                     </div>
+
+                    <section class="ww-open-lobbies" id="openLobbiesSection">
+                        <div class="ww-open-lobbies-head">
+                            <h2>Open lobbies</h2>
+                            <button type="button" class="btn" id="refreshOpenLobbiesBtn">Refresh</button>
+                        </div>
+                        <p class="ww-open-lobbies-sub">Browse public Word Wars and jump in — or lock yours so only people with your code can join.</p>
+                        <div id="openLobbiesList" class="ww-open-lobbies-list">
+                            <p class="ww-open-lobbies-empty">Loading open lobbies…</p>
+                        </div>
+                    </section>
                 </section>
 
                 <section id="lobbyView" class="hidden">
@@ -800,6 +912,7 @@
                         </div>
                         <div class="ww-lobby-badges">
                             <span id="lobbyCapacity" class="ww-badge capacity">0/4 writers</span>
+                            <span id="lobbyLockBadge" class="ww-badge locked hidden">Locked</span>
                             <span id="lobbyStatusBadge" class="ww-badge">lobby</span>
                         </div>
                     </div>
@@ -831,6 +944,14 @@
                             <select id="bookSelect" class="ww-select"></select>
                         </div>
 
+                        <label class="ww-lock-toggle hidden" id="hostLockToggleWrap" for="hostLockInput">
+                            <input type="checkbox" id="hostLockInput" />
+                            <div>
+                                <span>Locked lobby (invite only)</span>
+                                <small>When locked, your lobby won't appear in the open list — share the code instead.</small>
+                            </div>
+                        </label>
+
                         <div class="ww-arena-fighters" id="fighterSlots"></div>
 
                         <div class="ww-actions">
@@ -844,6 +965,6 @@
         </div>
     </main>
 
-    <script type="module" src="js/word-wars-lobby.js?v=10"></script>
+    <script type="module" src="js/word-wars-lobby.js?v=11"></script>
 </body>
 </html>

@@ -41,19 +41,24 @@
             min-height: 0;
         }
         .ww-sprint-hud {
-            display: flex;
-            flex-wrap: wrap;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            grid-template-areas:
+                "meta timer"
+                "actions actions"
+                "status status";
             align-items: center;
-            justify-content: space-between;
-            gap: 12px;
+            gap: 10px 12px;
             padding: 12px 16px;
             border-bottom: 1px solid var(--border);
             background: rgba(8,12,22,0.94);
             backdrop-filter: blur(10px);
             z-index: 20;
         }
+        .ww-sprint-meta { grid-area: meta; }
+        .ww-sprint-timer-wrap { grid-area: timer; }
         .ww-sprint-hud .ww-sprint-status {
-            flex: 1 1 100%;
+            grid-area: status;
             margin: 0;
         }
         .ww-sprint-meta {
@@ -113,11 +118,43 @@
             color: var(--muted);
         }
         .ww-sprint-actions {
+            grid-area: actions;
             display: flex;
             flex-wrap: wrap;
             gap: 8px;
-            justify-content: flex-end;
+            justify-content: center;
+            width: 100%;
             min-width: 0;
+        }
+        .ww-sprint-actions .btn {
+            flex: 1 1 120px;
+            min-width: 0;
+            max-width: 100%;
+            justify-content: center;
+        }
+        #shareBtn {
+            flex: 1 1 140px;
+        }
+        @media (max-width: 720px) {
+            .ww-sprint-hud {
+                grid-template-columns: 1fr;
+                grid-template-areas:
+                    "meta"
+                    "timer"
+                    "actions"
+                    "status";
+                text-align: center;
+            }
+            .ww-sprint-meta { justify-content: center; }
+        }
+        @media (max-width: 480px) {
+            .ww-sprint-actions {
+                flex-direction: column;
+            }
+            .ww-sprint-actions .btn {
+                width: 100%;
+                flex-basis: auto;
+            }
         }
         .btn {
             border: 1px solid var(--border);
@@ -611,6 +648,6 @@
         </div>
     </div>
 
-    <script type="module" src="js/word-wars-sprint.js?v=19"></script>
+    <script type="module" src="js/word-wars-sprint.js?v=21"></script>
 </body>
 </html>

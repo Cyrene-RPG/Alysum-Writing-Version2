@@ -105,6 +105,7 @@ function normalizeLobby(raw) {
         isPaused: Boolean(raw.isPaused ?? raw.is_paused),
         pausedAt: raw.pausedAt || raw.paused_at || null,
         pauseMsTotal: Number(raw.pauseMsTotal ?? raw.pause_ms_total ?? 0) || 0,
+        isLocked: Boolean(raw.isLocked ?? raw.is_locked),
         participants: participants.map((p) => ({
             userId: safeString(p.userId || p.user_id),
             displayName: safeString(p.displayName || p.display_name, "Writer"),
@@ -201,7 +202,7 @@ function upsertLocalParticipant(lobby, participant) {
     else lobby.participants.push(participant);
 }
 
-function createLocalRoom(uid, profile, durationMin, maxWriters, bookId, bookTitle) {
+function createLocalRoom(uid, profile, durationMin, maxWriters, bookId, bookTitle, isLocked = false) {
     const roomId = genLocalRoomId();
     const code = genLocalCode();
     const lobby = normalizeLobby({
@@ -211,11 +212,97 @@ function createLocalRoom(uid, profile, durationMin, maxWriters, bookId, bookTitl
         durationMin,
         maxWriters: normalizeWordWarWriterCount(maxWriters),
         status: "lobby",
+        isLocked: Boolean(isLocked),
         createdAt: new Date().toISOString(),
         participants: [localParticipant(uid, profile, bookId, bookTitle, true)],
         localOnly: true,
     });
     return saveLocalLobby(lobby);
+}
+
+function joinLocalRoomById(roomId, uid, profile, bookId, bookTitle) {
+    const lobby = loadLocalLobby({ roomId });
+    if (!lobby) throw new Error("Room not found or no longer open");
+    if (lobby.status !== "lobby") throw new Error("Lobby is closed");
+    if (lobby.isLocked) throw new Error("This lobby is invite-only — use the room code");
+    if (lobby.participants.some((p) => p.userId === uid)) return lobby;
+    const maxWriters = lobbyMaxWriters(lobby);
+    if (lobby.participants.length >= maxWriters) {
+        throw new Error(`Room is full (${maxWriters} writers max)`);
+    }
+    upsertLocalParticipant(
+        lobby,
+        localParticipant(uid, profile, bookId, bookTitle, false)
+    );
+    return saveLocalLobby(lobby);
+}
+
+function listLocalOpenLobbies(limit = 50, uid = "") {
+    const rooms = readLocalRooms();
+    const seen = new Set();
+    const rows = [];
+
+    Object.values(rooms).forEach((raw) => {
+        const lobby = normalizeLobby(raw);
+        if (!lobby || lobby.localOnly !== true) return;
+        if (lobby.status !== "lobby" || lobby.isLocked) return;
+        if (uid && lobby.participants.some((p) => p.userId === uid)) return;
+        if (seen.has(lobby.roomId)) return;
+        seen.add(lobby.roomId);
+        const host = lobby.participants.find((p) => p.isHost) || lobby.participants[0];
+        rows.push({
+            roomId: lobby.roomId,
+            code: lobby.code,
+            durationMin: lobby.durationMin,
+            maxWriters: lobbyMaxWriters(lobby),
+            participantCount: lobby.participants.length,
+            hostDisplayName: host?.displayName || "Writer",
+            createdAt: lobby.createdAt || null,
+        });
+    });
+
+    return rows
+        .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")))
+        .slice(0, Math.max(1, Math.min(limit, 100)));
+}
+
+function leaveLocalRoom(roomId, uid) {
+    const lobby = loadLocalLobby({ roomId });
+    if (!lobby) throw new Error("Room not found");
+    const me = lobby.participants.find((p) => p.userId === uid);
+    if (!me) throw new Error("Not a participant");
+
+    const wasHost = Boolean(me.isHost);
+    const wasActive = lobby.status === "active";
+    lobby.participants = lobby.participants.filter((p) => p.userId !== uid);
+
+    if (!lobby.participants.length) {
+        lobby.status = "cancelled";
+        saveLocalLobby(lobby);
+        return { left: true, roomCancelled: true, roomId };
+    }
+
+    if (wasHost) {
+        lobby.participants.sort(
+            (a, b) => String(a.joinedAt || "").localeCompare(String(b.joinedAt || ""))
+        );
+        lobby.participants.forEach((p, index) => {
+            p.isHost = index === 0;
+        });
+        lobby.hostId = lobby.participants[0].userId;
+    }
+
+    if (wasActive && lobby.participants.length < 2) {
+        lobby.status = "finished";
+    }
+
+    saveLocalLobby(lobby);
+    return {
+        left: true,
+        roomCancelled: false,
+        roomId,
+        roomStatus: lobby.status,
+    };
 }
 
 function joinLocalRoom(code, uid, profile, bookId, bookTitle) {
@@ -234,7 +321,7 @@ function joinLocalRoom(code, uid, profile, bookId, bookTitle) {
     return saveLocalLobby(lobby);
 }
 
-function updateLocalLobby(roomId, uid, { durationMin, bookId, bookTitle, isReady } = {}) {
+function updateLocalLobby(roomId, uid, { durationMin, bookId, bookTitle, isReady, isLocked } = {}) {
     const lobby = loadLocalLobby({ roomId });
     if (!lobby) throw new Error("Room not found");
     if (lobby.status !== "lobby") throw new Error("Lobby is closed");
@@ -248,6 +335,11 @@ function updateLocalLobby(roomId, uid, { durationMin, bookId, bookTitle, isReady
         lobby.participants.forEach((p) => {
             p.isReady = false;
         });
+    }
+
+    if (typeof isLocked === "boolean") {
+        if (!me.isHost) throw new Error("Only the host can lock the lobby");
+        lobby.isLocked = isLocked;
     }
 
     if (bookId) {
@@ -390,7 +482,8 @@ export async function createWordWarRoom(
     durationMin = 15,
     maxWriters = 4,
     bookId = "",
-    bookTitle = ""
+    bookTitle = "",
+    isLocked = false
 ) {
     const writerCount = normalizeWordWarWriterCount(maxWriters);
     if (await probeCloudSchema()) {
@@ -398,11 +491,12 @@ export async function createWordWarRoom(
             p_duration_min: durationMin,
             p_max_writers: writerCount,
             p_book_id: bookId || null,
+            p_is_locked: Boolean(isLocked),
         });
         if (error) throw error;
         return normalizeLobby(data);
     }
-    return createLocalRoom(uid, profile, durationMin, writerCount, bookId, bookTitle);
+    return createLocalRoom(uid, profile, durationMin, writerCount, bookId, bookTitle, isLocked);
 }
 
 /**
@@ -427,6 +521,71 @@ export async function joinWordWarRoom(code, uid, profile, bookId = "", bookTitle
     return joinLocalRoom(normalizedCode, uid, profile, bookId, bookTitle);
 }
 
+/**
+ * @param {string} roomId
+ * @param {string} uid
+ * @param {{ displayName?: string }} profile
+ * @param {string} [bookId]
+ * @param {string} [bookTitle]
+ */
+export async function joinWordWarRoomById(roomId, uid, profile, bookId = "", bookTitle = "") {
+    const normalizedRoomId = String(roomId || "").trim();
+    if (!normalizedRoomId) throw new Error("Invalid room");
+
+    if (await probeCloudSchema()) {
+        const { data, error } = await supabase.rpc("join_word_war_room_by_id", {
+            p_room_id: normalizedRoomId,
+            p_book_id: bookId || null,
+        });
+        if (error) throw error;
+        return normalizeLobby(data);
+    }
+    return joinLocalRoomById(normalizedRoomId, uid, profile, bookId, bookTitle);
+}
+
+/** @param {number} [limit] */
+export async function listOpenWordWarLobbies(limit = 50) {
+    const { data: authData } = await supabase.auth.getUser();
+    const uid = authData?.user?.id || "";
+
+    if (await probeCloudSchema()) {
+        try {
+            const { data, error } = await supabase.rpc("list_open_word_war_lobbies", {
+                p_limit: limit,
+            });
+            if (error) {
+                if (isWordWarsSchemaMissing(error)) return listLocalOpenLobbies(limit, uid);
+                throw error;
+            }
+            return Array.isArray(data) ? data : [];
+        } catch (err) {
+            if (isWordWarsSchemaMissing(err)) return listLocalOpenLobbies(limit, uid);
+            throw err;
+        }
+    }
+    return listLocalOpenLobbies(limit, uid);
+}
+
+/** @param {string} roomId */
+export async function leaveWordWarRoom(roomId) {
+    const normalizedRoomId = String(roomId || "").trim();
+    if (!normalizedRoomId) throw new Error("Invalid room");
+
+    const localLobby = loadLocalLobby({ roomId: normalizedRoomId });
+    if (localLobby?.localOnly || !(await probeCloudSchema())) {
+        const { data: authData } = await supabase.auth.getUser();
+        const uid = authData?.user?.id;
+        if (!uid) throw new Error("Not authenticated");
+        return leaveLocalRoom(normalizedRoomId, uid);
+    }
+
+    const { data, error } = await supabase.rpc("leave_word_war_room", {
+        p_room_id: normalizedRoomId,
+    });
+    if (error) throw error;
+    return data && typeof data === "object" ? data : { left: true };
+}
+
 /** @param {{ code?: string, roomId?: string }} query */
 export async function fetchWordWarLobby(query = {}) {
     const code = String(query.code || "").trim().toUpperCase();
@@ -445,7 +604,7 @@ export async function fetchWordWarLobby(query = {}) {
 
 /**
  * @param {string} roomId
- * @param {{ durationMin?: number, bookId?: string, bookTitle?: string, isReady?: boolean }} patch
+ * @param {{ durationMin?: number, bookId?: string, bookTitle?: string, isReady?: boolean, isLocked?: boolean }} patch
  */
 export async function updateWordWarLobby(roomId, patch = {}) {
     const localLobby = loadLocalLobby({ roomId });
@@ -461,6 +620,7 @@ export async function updateWordWarLobby(roomId, patch = {}) {
         p_duration_min: typeof patch.durationMin === "number" ? patch.durationMin : null,
         p_book_id: patch.bookId || null,
         p_is_ready: typeof patch.isReady === "boolean" ? patch.isReady : null,
+        p_is_locked: typeof patch.isLocked === "boolean" ? patch.isLocked : null,
     });
     if (error) throw error;
     return normalizeLobby(data);
