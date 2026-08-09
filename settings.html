@@ -18,7 +18,9 @@
     <!-- ALYSUM:ANALYTICS:END --><meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Account settings - Alysum</title>
+<script src="js/body-background-presets-data.js"></script>
 <script src="js/alysum-appearance-boot.js"></script>
+<script src="js/body-background-sync.js"></script>
 <link rel="stylesheet" href="css/site-responsive.css?v=1" />
 <style>
     * { box-sizing: border-box; }
@@ -1385,7 +1387,7 @@
         <div class="appearance-layout">
             <section class="appearance-block appearance-block--bg" aria-labelledby="appearance-bg-heading">
                 <h3 class="appearance-subhead" id="appearance-bg-heading">Page background</h3>
-                <p class="hint">The dark space behind panels and content. Choose <strong>Site default</strong> for the original look, or pick a tint that pairs with your accents.</p>
+                <p class="hint">The dark space behind panels and content. Muted tints pair with accents; <strong>glow</strong> options add a slightly richer color.</p>
                 <div class="theme-grid appearance-grid appearance-grid--bg" id="bodyBgChipRow" aria-label="Page background colors"></div>
                 <div class="display-color-custom" id="bodyBgCustom" hidden>
                     <div class="display-color-field">
@@ -1762,7 +1764,7 @@
         setAppearanceMixMode,
         isAppearanceLinked,
         getMixableBodyBgPresets
-    } from "./js/body-background.js?v=5";
+    } from "./js/body-background.js?v=7";
     import { normalizeAccountType, ACCOUNT_AUTHOR, ACCOUNT_READER, ACCOUNT_BOTH, homeUrlForUserData } from "./js/account-mode.js?v=1";
     import {
         exportUserBackup,

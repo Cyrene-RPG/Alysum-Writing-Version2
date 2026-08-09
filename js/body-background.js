@@ -86,6 +86,20 @@ export const BODY_BG_PRESETS = [
     { id: "mocha", label: "Mocha", bg: "#121010", hint: "Mocha accent" },
     { id: "silver", label: "Silver slate", bg: "#0f1419", hint: "Silver accent" },
     { id: "noir", label: "Noir", bg: "#09090b", hint: "Noir accent" },
+    { id: "glow-violet", label: "Violet glow", bg: "#1a1038", vibrant: true, hint: "Brighter violet tint" },
+    { id: "glow-aurora", label: "Aurora glow", bg: "#102040", vibrant: true, hint: "Brighter aurora blue" },
+    { id: "glow-ocean", label: "Ocean vivid", bg: "#0c2240", vibrant: true, hint: "Richer ocean blue" },
+    { id: "glow-teal", label: "Teal surge", bg: "#0a2e2e", vibrant: true, hint: "Bright teal depth" },
+    { id: "glow-lagoon", label: "Lagoon glow", bg: "#0a2828", vibrant: true, hint: "Vivid lagoon teal" },
+    { id: "glow-rose", label: "Rose vivid", bg: "#301018", vibrant: true, hint: "Warmer rose tint" },
+    { id: "glow-ember", label: "Ember bright", bg: "#301008", vibrant: true, hint: "Warm ember glow" },
+    { id: "glow-sunset", label: "Sunset vivid", bg: "#201028", vibrant: true, hint: "Purple-pink sunset" },
+    { id: "glow-wine", label: "Wine vivid", bg: "#280818", vibrant: true, hint: "Rich burgundy tint" },
+    { id: "glow-forest", label: "Forest vivid", bg: "#0c3020", vibrant: true, hint: "Livelier green shade" },
+    { id: "glow-mint", label: "Mint glow", bg: "#0a2820", vibrant: true, hint: "Fresh mint depth" },
+    { id: "glow-gold", label: "Gold glow", bg: "#2a1808", vibrant: true, hint: "Warm amber depth" },
+    { id: "glow-neon", label: "Neon pulse", bg: "#180a30", vibrant: true, hint: "Electric purple-pink" },
+    { id: "glow-cosmic", label: "Cosmic bright", bg: "#120a30", vibrant: true, hint: "Brighter nebula tone" },
     { id: "custom", label: "Custom", hint: "Pick your own background color" }
 ];
 
@@ -134,8 +148,8 @@ function lighten(hex, amount) {
     );
 }
 
-export function computeGradientTop(bg) {
-    return lighten(bg, 0.08);
+export function computeGradientTop(bg, vibrant) {
+    return lighten(bg, vibrant ? 0.14 : 0.08);
 }
 
 export function getStoredAccentThemeId() {
@@ -225,13 +239,13 @@ export function resolveBodyBgColor(id) {
     return DEFAULT_BG;
 }
 
-export function applyBodyBgVars(bg) {
+export function applyBodyBgVars(bg, vibrant) {
     if (typeof document === "undefined") return;
     const root = document.documentElement;
     const hex = parseHex(bg);
     if (!hex) return;
     root.style.setProperty("--bg", bg);
-    root.style.setProperty("--bg-gradient-top", computeGradientTop(bg));
+    root.style.setProperty("--bg-gradient-top", computeGradientTop(bg, vibrant));
 }
 
 export function clearBodyBgVars() {
@@ -269,7 +283,8 @@ export function applyBodyBackground(id, customBg) {
     if (bgId === "default") {
         clearBodyBgVars();
     } else {
-        applyBodyBgVars(resolveBodyBgColor(bgId));
+        const preset = PRESET_BY_ID.get(bgId);
+        applyBodyBgVars(resolveBodyBgColor(bgId), preset?.vibrant);
     }
     syncBodyBgAttribute(bgId);
 
@@ -285,35 +300,24 @@ export function applyBodyBackground(id, customBg) {
 export function initBodyBackgroundOnPage() {
     if (typeof window === "undefined") return;
     window.__alysumApplyBodyBackground = () => {
-        applyBodyBackground(getStoredBodyBgId());
-    };
-    applyBodyBackground(getStoredBodyBgId());
-    window.addEventListener("storage", (e) => {
-        if (
-            e.key === BODY_BG_KEY ||
-            e.key === BODY_BG_CUSTOM_KEY ||
-            e.key === GRADIENT_THEME_KEY ||
-            e.key === APPEARANCE_MIX_KEY
-        ) {
+        if (typeof window.__alysumApplyBodyBgFromStorage === "function") {
+            window.__alysumApplyBodyBgFromStorage();
+        } else {
             applyBodyBackground(getStoredBodyBgId());
         }
-    });
-    window.addEventListener("alysum-gradient-theme", () => {
-        if (getStoredBodyBgId() === "theme") {
-            applyBodyBackground("theme");
-        }
-    });
-    window.addEventListener("alysum-appearance-mix", () => {
-        if (isAppearanceLinked() && getStoredBodyBgId() !== "theme" && getStoredBodyBgId() !== "default") {
-            applyBodyBackground("theme");
-        }
-    });
+    };
+    if (typeof window.__alysumApplyBodyBgFromStorage === "function") {
+        window.__alysumApplyBodyBgFromStorage();
+    } else {
+        applyBodyBackground(getStoredBodyBgId());
+    }
 }
 
 export function getBodyBgPreview(id) {
     const bgId = normalizeBodyBgId(id);
+    const preset = PRESET_BY_ID.get(bgId);
     const bg = resolveBodyBgColor(bgId);
-    const top = computeGradientTop(bg);
+    const top = computeGradientTop(bg, preset?.vibrant);
     return `linear-gradient(180deg, ${top} 0%, ${bg} 100%)`;
 }
 

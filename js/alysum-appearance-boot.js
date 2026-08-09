@@ -184,87 +184,9 @@
         if (p) root.style.setProperty("--alysum-chrome-gradient", p);
         else root.style.removeProperty("--alysum-chrome-gradient");
 
-        var bodyBgPresets = {
-            violet: "#120a22",
-            aurora: "#0a1628",
-            twilight: "#100818",
-            lavender: "#120a20",
-            plum: "#120818",
-            cosmic: "#080818",
-            galaxy: "#0c0820",
-            neon: "#0a1020",
-            opal: "#0a1018",
-            ocean: "#0c1324",
-            arctic: "#020617",
-            midnight: "#020a1a",
-            profilewave: "#0a1520",
-            lagoon: "#041612",
-            tide: "#061814",
-            rose: "#1f0a12",
-            wine: "#1a0508",
-            sakura: "#180810",
-            cotton: "#100818",
-            bloodmoon: "#140505",
-            ember: "#1a0a08",
-            inferno: "#1a0808",
-            volcano: "#120808",
-            sunset: "#120818",
-            peach: "#181008",
-            forest: "#071612",
-            forest2: "#101808",
-            mint: "#061612",
-            citrus: "#0a1408",
-            gold: "#1a1208",
-            copper: "#141008",
-            honey: "#181006",
-            mocha: "#121010",
-            silver: "#0f1419",
-            noir: "#09090b",
-            deep: "#09090b",
-            charcoal: "#09090b",
-            navy: "#0c1324",
-            slate: "#0f1419",
-            ink: "#09090b"
-        };
-        var accentComplementBg = {
-            classic: "#0b1220",
-            vivid: "#0f0a1a",
-            profilewave: "#0a1520",
-            midnight: "#020a1a",
-            ocean: "#0c1324",
-            arctic: "#020617",
-            sunset: "#120818",
-            inferno: "#1a0808",
-            ember: "#1a0a08",
-            rose: "#1f0a12",
-            wine: "#1a0508",
-            gold: "#1a1208",
-            aurora: "#0a1628",
-            forest: "#071612",
-            forest2: "#101808",
-            neon: "#0a1020",
-            silver: "#0f1419",
-            lavender: "#120a20",
-            mint: "#061612",
-            peach: "#181008",
-            plum: "#120818",
-            copper: "#141008",
-            sakura: "#180810",
-            cosmic: "#080818",
-            citrus: "#0a1408",
-            bloodmoon: "#140505",
-            mocha: "#121010",
-            prism: "#0b1220",
-            twilight: "#100818",
-            lagoon: "#061412",
-            galaxy: "#080818",
-            cotton: "#100818",
-            honey: "#141008",
-            tide: "#061612",
-            volcano: "#120808",
-            opal: "#0a1018",
-            noir: "#09090b"
-        };
+        var bodyBgPresets = window.__ALYSUM_BODY_BG_PRESET_COLORS || {};
+        var bodyBgVibrant = window.__ALYSUM_BODY_BG_VIBRANT || {};
+        var accentComplementBg = window.__ALYSUM_ACCENT_COMPLEMENT_BG || { classic: "#0b1220" };
         var mixFree = localStorage.getItem("alysum-appearance-mix") === "free";
         var bodyBgId = localStorage.getItem("alysum-body-bg") || "default";
         if (!mixFree && bodyBgId !== "default" && bodyBgId !== "theme") bodyBgId = "theme";
@@ -277,8 +199,9 @@
                       ? localStorage.getItem("alysum-body-bg-custom") || "#0b1220"
                       : bodyBgPresets[bodyBgId] || null;
             if (bodyBg && parseHex(bodyBg)) {
+                var topLift = bodyBgVibrant[bodyBgId] ? 0.14 : 0.08;
                 root.style.setProperty("--bg", bodyBg);
-                root.style.setProperty("--bg-gradient-top", lighten(bodyBg, 0.08));
+                root.style.setProperty("--bg-gradient-top", lighten(bodyBg, topLift));
                 root.setAttribute("data-body-bg", bodyBgId);
             }
         }
