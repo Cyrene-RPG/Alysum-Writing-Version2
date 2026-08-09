@@ -82,6 +82,8 @@ let selectedMaxWriters = 2;
 let refreshTimer = null;
 /** @type {ReturnType<typeof setInterval> | null} */
 let openLobbiesTimer = null;
+/** @type {ReturnType<typeof setTimeout> | null} */
+let openLobbiesRefreshTimer = null;
 /** @type {import("@supabase/supabase-js").RealtimeChannel | null} */
 let openLobbiesChannel = null;
 /** @type {Set<string>} */
@@ -244,6 +246,10 @@ function stopOpenLobbiesPolling() {
         window.clearInterval(openLobbiesTimer);
         openLobbiesTimer = null;
     }
+    if (openLobbiesRefreshTimer) {
+        window.clearTimeout(openLobbiesRefreshTimer);
+        openLobbiesRefreshTimer = null;
+    }
 }
 
 function stopOpenLobbiesRealtime() {
@@ -261,14 +267,14 @@ function startOpenLobbiesRealtime() {
             "postgres_changes",
             { event: "*", schema: "public", table: "word_wars_rooms" },
             () => {
-                refreshOpenLobbies().catch(console.warn);
+                scheduleRefreshOpenLobbies();
             }
         )
         .on(
             "postgres_changes",
             { event: "*", schema: "public", table: "word_wars_participants" },
             () => {
-                refreshOpenLobbies().catch(console.warn);
+                scheduleRefreshOpenLobbies();
             }
         )
         .subscribe();
@@ -312,6 +318,15 @@ function renderOpenLobbies(rows = []) {
             `;
         })
         .join("");
+}
+
+function scheduleRefreshOpenLobbies() {
+    if (!openLobbiesList || isLayoutPreview) return;
+    if (openLobbiesRefreshTimer) window.clearTimeout(openLobbiesRefreshTimer);
+    openLobbiesRefreshTimer = window.setTimeout(() => {
+        openLobbiesRefreshTimer = null;
+        refreshOpenLobbies().catch(console.warn);
+    }, 400);
 }
 
 async function refreshOpenLobbies() {
@@ -508,7 +523,7 @@ function renderLobbyActions(lobby) {
 
 function maybeRedirectToSprint(lobby) {
     if (lobby?.status === "active" && lobby.roomId) {
-        window.location.href = wordWarSprintUrl(lobby.roomId);
+        window.location.replace(wordWarSprintUrl(lobby.roomId));
         return true;
     }
     return false;
@@ -607,46 +622,18 @@ async function bootHub() {
     }
 
     if (initialRoomId || initialCode) {
+        setStatus("Joining…");
         try {
-            const lobby = await fetchWordWarLobby({ roomId: initialRoomId, code: initialCode });
-            if (lobby) {
-                const alreadyJoined = lobby.participants.some((p) =>
-                    wordWarSameUserId(p.userId, sessionCtx?.uid)
-                );
-                if (!alreadyJoined && initialCode) {
-                    const joined = await joinLobbyWithHubBook({ code: initialCode });
-                    if (!joined) {
-                        showView("hub");
-                        return;
-                    }
-                    if (maybeRedirectToSprint(joined)) return;
-                    await enterLobby(joined);
-                    return;
-                }
-                if (!alreadyJoined && initialRoomId) {
-                    if (lobby.isLocked || lobby.status !== "lobby") {
-                        setStatus("That lobby is invite-only or no longer open.", true);
-                        showView("hub");
-                        return;
-                    }
-                    const joined = await joinLobbyWithHubBook({ roomId: initialRoomId });
-                    if (!joined) {
-                        showView("hub");
-                        return;
-                    }
-                    if (maybeRedirectToSprint(joined)) return;
-                    await enterLobby(joined);
-                    return;
-                }
-                if (!alreadyJoined) {
-                    setStatus("You are not in that Word War.", true);
-                    showView("hub");
-                    return;
-                }
-                if (maybeRedirectToSprint(lobby)) return;
-                await enterLobby(lobby);
+            const joined = await joinLobbyWithHubBook(
+                initialCode ? { code: initialCode } : { roomId: initialRoomId }
+            );
+            if (!joined) {
+                showView("hub");
                 return;
             }
+            if (maybeRedirectToSprint(joined)) return;
+            await enterLobby(joined);
+            return;
         } catch (err) {
             setStatus(formatWordWarError(err), true);
         }
@@ -683,12 +670,13 @@ joinForm?.addEventListener("submit", async (event) => {
     event.preventDefault();
     if (isLayoutPreview) return;
     if (!sessionCtx) return;
-    setStatus("");
+    setStatus("Joining…");
     const code = String(joinCodeInput?.value || "").trim().toUpperCase();
     joinForm.querySelector("button[type=submit]")?.setAttribute("disabled", "true");
     try {
         const lobby = await joinLobbyWithHubBook({ code });
         if (!lobby) return;
+        if (maybeRedirectToSprint(lobby)) return;
         await enterLobby(lobby);
     } catch (err) {
         setStatus(formatWordWarError(err), true);
@@ -805,14 +793,14 @@ openLobbiesList?.addEventListener("click", async (event) => {
     const roomId = btn.getAttribute("data-join-room");
     if (!roomId) return;
     btn.disabled = true;
-    setStatus("");
+    setStatus("Joining…");
     try {
-        await refreshOpenLobbies();
         const lobby = await joinLobbyWithHubBook({ roomId });
         if (!lobby) {
             btn.disabled = false;
             return;
         }
+        if (maybeRedirectToSprint(lobby)) return;
         await enterLobby(lobby);
     } catch (err) {
         setStatus(formatWordWarError(err), true);
