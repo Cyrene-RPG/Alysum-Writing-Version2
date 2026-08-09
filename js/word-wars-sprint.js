@@ -14,9 +14,8 @@ import {
     wordWarLobbyUrl,
     enrichWordWarParticipantProfiles,
     WORD_WAR_DURATION_UNLIMITED,
-    WORD_WAR_FEATURED_GRID_THRESHOLD,
 } from "./word-wars-api.js?v=9";
-import { renderParticipantDock } from "./word-wars-call.js?v=2";
+import { renderWriterDock } from "./word-wars-call.js?v=3";
 import { sanitizeChapterHtml } from "./book-html-sanitize.js?v=1";
 
 const params = new URLSearchParams(window.location.search);
@@ -30,7 +29,15 @@ const timerModeEl = document.getElementById("timerMode");
 const roomCodeEl = document.getElementById("roomCode");
 const myWordsEl = document.getElementById("myWords");
 const myBookTitleEl = document.getElementById("myBookTitle");
-const duelGridEl = document.getElementById("duelGrid");
+const mainPaneYou = document.getElementById("mainPaneYou");
+const mainPaneReader = document.getElementById("mainPaneReader");
+const readerPaneLabel = document.getElementById("readerPaneLabel");
+const readerPaneTitle = document.getElementById("readerPaneTitle");
+const readerPaneBook = document.getElementById("readerPaneBook");
+const readerPaneWords = document.getElementById("readerPaneWords");
+const mainReaderScroll = document.getElementById("mainReaderScroll");
+const mainReaderEditor = document.getElementById("mainReaderEditor");
+const mainReaderChapterTitle = document.getElementById("mainReaderChapterTitle");
 const shareBtn = document.getElementById("shareBtn");
 const sharePill = document.getElementById("sharePill");
 const pauseBtn = document.getElementById("pauseBtn");
@@ -41,86 +48,18 @@ const recapBody = document.getElementById("recapBody");
 const finishBtn = document.getElementById("finishBtn");
 const leaveBtn = document.getElementById("leaveBtn");
 const previewBanner = document.getElementById("previewBanner");
-const expandEditorBtn = document.getElementById("expandEditorBtn");
 const callDockEl = document.getElementById("callDock");
 const callDockNoteEl = document.getElementById("callDockNote");
-const sprintShellEl = document.querySelector(".ww-sprint-shell");
-const EXPAND_EDITOR_KEY = "alysum-word-wars:editor-expanded";
 
 function formatSprintWords(count) {
     const value = Math.max(0, Number(count) || 0);
     return `${value} word${value === 1 ? "" : "s"}`;
 }
 
-function duelParticipantCount() {
-    return lobby?.participants?.length || 2;
-}
-
-function duelGridCount() {
-    const count = duelParticipantCount();
-    if (count >= WORD_WAR_FEATURED_GRID_THRESHOLD) return "featured";
-    return Math.max(2, Math.min(8, count));
-}
-
-function applyDuelGridClasses() {
-    if (!duelGridEl) return;
-    const mode = duelGridCount();
-    duelGridEl.className = mode === "featured" ? "ww-duel-grid is-featured" : `ww-duel-grid is-count-${mode}`;
-}
-
-function renderParticipantStrip() {
-    if (!callDockEl || !lobby) return;
-    const participantCount = lobby.participants?.length || 0;
-    if (callDockNoteEl) {
-        callDockNoteEl.textContent =
-            participantCount > 1
-                ? `${participantCount} writers in this sprint`
-                : "Waiting for writers";
-    }
-    renderParticipantDock(callDockEl, {
-        participants: lobby.participants || [],
-        userId: uid,
-    });
-}
-
-function readEditorExpanded() {
-    try {
-        return localStorage.getItem(EXPAND_EDITOR_KEY) === "1";
-    } catch {
-        return false;
-    }
-}
-
-function writeEditorExpanded(expanded) {
-    try {
-        localStorage.setItem(EXPAND_EDITOR_KEY, expanded ? "1" : "0");
-    } catch {
-        /* ignore */
-    }
-}
-
-function renderExpandEditorToggle(expanded = sprintShellEl?.classList.contains("is-editor-expanded")) {
-    if (!expandEditorBtn) return;
-    expandEditorBtn.textContent = expanded ? "Show writers" : "Expand editor";
-    expandEditorBtn.classList.toggle("is-active", expanded);
-    expandEditorBtn.setAttribute("aria-pressed", expanded ? "true" : "false");
-}
-
-function setEditorExpanded(expanded) {
-    sprintShellEl?.classList.toggle("is-editor-expanded", expanded);
-    renderExpandEditorToggle(expanded);
-    writeEditorExpanded(expanded);
-}
-
-function initExpandEditorToggle() {
-    setEditorExpanded(readEditorExpanded());
-    expandEditorBtn?.addEventListener("click", () => {
-        setEditorExpanded(!sprintShellEl?.classList.contains("is-editor-expanded"));
-    });
-}
-
 /** @type {string} */
 let uid = "";
+/** @type {string} */
+let focusedParticipantId = "";
 /** @type {ReturnType<typeof import("./word-wars-api.js").fetchWordWarLobby> extends Promise<infer R> ? R : null} */
 let lobby = null;
 let shareDraft = false;
@@ -407,75 +346,41 @@ function renderShareControls() {
     }
 }
 
-function renderOpponentPaneBody(opponent) {
-    const sharing = opponentSharingEnabled(opponent);
-    if (!sharing) {
-        const hiddenText = "Draft hidden — they can turn on Share draft live.";
-        return `
-            <div class="ww-duel-frame-wrap">
-                <div class="ww-opponent-empty">
-                    <div>
-                        <strong>${escapeHtml(opponent.displayName || "Writer")}</strong>
-                        ${escapeHtml(hiddenText)}
-                    </div>
-                </div>
-            </div>
-        `;
-    }
-
-    return `
-        <div class="ww-duel-frame-wrap">
-            <div class="ww-opponent-scroll">
-                <article class="ww-opponent-page">
-                    <h3 class="ww-opponent-chapter-title">${escapeHtml(opponent.liveChapterTitle || "Untitled chapter")}</h3>
-                    <div class="ww-opponent-editor" data-opponent-id="${escapeHtml(opponent.userId)}"></div>
-                </article>
-            </div>
-        </div>
-    `;
-}
-
-function renderOpponentPane(opponent, index, opponentCount) {
-    const label = opponentCount === 1 ? "Opponent" : `Writer ${index + 2}`;
-    return `
-        <section class="ww-duel-pane is-opponent" data-opponent-pane="${escapeHtml(opponent.userId)}">
-            <div class="ww-duel-pane-head">
-                <div>
-                    <p class="ww-duel-label">${escapeHtml(label)}</p>
-                    <p class="ww-duel-title">${escapeHtml(opponent.displayName || "Writer")}</p>
-                    <p class="ww-duel-sub">${escapeHtml(opponent.bookTitle || "Untitled")}</p>
-                </div>
-                <div class="ww-duel-score">${escapeHtml(formatSprintWords(opponent.sprintWords || 0))} this sprint</div>
-            </div>
-            ${renderOpponentPaneBody(opponent)}
-        </section>
-    `;
-}
-
-function renderEmptyOpponentPane() {
-    return `
-        <section class="ww-duel-pane is-opponent is-empty">
-            <div class="ww-duel-pane-head">
-                <div>
-                    <p class="ww-duel-label">Opponent</p>
-                    <p class="ww-duel-title">Waiting…</p>
-                </div>
-            </div>
-            <div class="ww-duel-frame-wrap">
-                <div class="ww-opponent-empty">
-                    <div>Waiting for other writers to join this sprint.</div>
-                </div>
-            </div>
-        </section>
-    `;
-}
-
 function opponentSharingEnabled(opponent) {
     return Boolean(opponent.shareDraft);
 }
 
-function getOpponentScrollEl(pane) {
-    return pane?.querySelector(".ww-opponent-scroll") || null;
+function participantById(participantId) {
+    return lobby?.participants?.find((p) => p.userId === participantId) || null;
+}
+
+function setFocusedParticipant(participantId) {
+    if (!participantId || !participantById(participantId)) return;
+    focusedParticipantId = participantId;
+    renderSprintUI();
+}
+
+function getDockPreview(participant) {
+    const isYou = participant.userId === uid;
+    if (isYou) {
+        if (getShareDraftState() && latestDraft.chapterHtml) {
+            return {
+                html: sanitizeChapterHtml(latestDraft.chapterHtml),
+                live: true,
+            };
+        }
+        return { empty: true, label: meInLobby()?.bookTitle || "Your manuscript" };
+    }
+    if (!opponentSharingEnabled(participant)) {
+        return { hidden: true, displayName: participant.displayName || "Writer" };
+    }
+    if (!participant.liveChapterHtml) {
+        return { empty: true, label: "Nothing shared yet" };
+    }
+    return {
+        html: sanitizeChapterHtml(participant.liveChapterHtml),
+        live: Boolean(participant.isTyping),
+    };
 }
 
 function opponentScrollNearBottom(scrollEl) {
@@ -533,206 +438,113 @@ function restoreOpponentScrollSoon(scrollEl, anchor) {
     });
 }
 
-function bindOpponentScroll(pane, userId) {
-    if (pane.dataset.scrollBound === userId) return;
-    pane.dataset.scrollBound = userId;
+function bindMainReaderScroll(userId) {
+    if (!mainPaneReader || mainPaneReader.dataset.scrollBound === userId) return;
+    mainPaneReader.dataset.scrollBound = userId;
 
     const markInteracting = () => {
-        const scrollEl = getOpponentScrollEl(pane);
         const prev = opponentScrollState.get(userId) || {};
         opponentScrollState.set(userId, {
             interactingUntil: Date.now() + OPPONENT_SCROLL_IDLE_MS,
-            followTail: scrollEl ? opponentScrollNearBottom(scrollEl) : prev.followTail ?? false,
+            followTail: mainReaderScroll ? opponentScrollNearBottom(mainReaderScroll) : prev.followTail ?? false,
         });
     };
 
-    const markScroll = () => {
-        const scrollEl = getOpponentScrollEl(pane);
-        const prev = opponentScrollState.get(userId) || {};
-        opponentScrollState.set(userId, {
-            interactingUntil: Date.now() + OPPONENT_SCROLL_IDLE_MS,
-            followTail: scrollEl ? opponentScrollNearBottom(scrollEl) : prev.followTail ?? false,
-        });
-    };
-
-    pane.addEventListener("wheel", markInteracting, { passive: true, capture: true });
-    pane.addEventListener("touchstart", markInteracting, { passive: true, capture: true });
-    pane.addEventListener("touchmove", markInteracting, { passive: true, capture: true });
-    pane.addEventListener("pointerdown", markInteracting, { passive: true, capture: true });
-    const scrollEl = getOpponentScrollEl(pane);
-    scrollEl?.addEventListener("scroll", markScroll, { passive: true });
-    scrollEl?.addEventListener("wheel", markInteracting, { passive: true });
+    mainPaneReader.addEventListener("wheel", markInteracting, { passive: true, capture: true });
+    mainPaneReader.addEventListener("touchstart", markInteracting, { passive: true, capture: true });
+    mainPaneReader.addEventListener("pointerdown", markInteracting, { passive: true, capture: true });
+    mainReaderScroll?.addEventListener("scroll", markInteracting, { passive: true });
 }
 
-function applyOpponentDraftHtml(editorEl, scrollEl, userId, nextHtml) {
+function applyFocusedDraftHtml(userId, nextHtml, nextTitle) {
+    if (!mainReaderEditor || !mainReaderScroll) return;
+    if (mainReaderChapterTitle && mainReaderChapterTitle.textContent !== nextTitle) {
+        mainReaderChapterTitle.textContent = nextTitle;
+    }
     if (opponentDraftHtmlCache.get(userId) === nextHtml) return;
-    const anchor = captureOpponentScrollAnchor(scrollEl, userId);
-    editorEl.innerHTML = sanitizeChapterHtml(nextHtml);
+    const anchor = captureOpponentScrollAnchor(mainReaderScroll, userId);
+    mainReaderEditor.innerHTML = sanitizeChapterHtml(nextHtml);
     opponentDraftHtmlCache.set(userId, nextHtml);
-    restoreOpponentScrollSoon(scrollEl, anchor);
+    restoreOpponentScrollSoon(mainReaderScroll, anchor);
 }
 
-function queueOpponentDraftHtmlUpdate(pane, opponent) {
-    const userId = opponent.userId;
-    const scrollEl = getOpponentScrollEl(pane);
-    const nextHtml = opponent.liveChapterHtml || "";
-    const nextTitle = opponent.liveChapterTitle || "Untitled chapter";
-    bindOpponentScroll(pane, userId);
+function renderMainStage() {
+    if (!focusedParticipantId) focusedParticipantId = uid;
+    if (!participantById(focusedParticipantId)) focusedParticipantId = uid;
 
-    const titleEl = scrollEl?.querySelector(".ww-opponent-chapter-title");
-    if (titleEl && titleEl.textContent !== nextTitle) titleEl.textContent = nextTitle;
+    const viewingSelf = focusedParticipantId === uid;
+    mainPaneYou?.classList.toggle("hidden", !viewingSelf);
+    mainPaneReader?.classList.toggle("hidden", viewingSelf);
 
-    const editorEl = pane.querySelector(`[data-opponent-id="${CSS.escape(userId)}"]`);
-    if (editorEl) {
-        applyOpponentDraftHtml(editorEl, scrollEl, userId, nextHtml);
-    }
-}
-
-function updateOpponentPaneHead(pane, opponent, label) {
-    const labelEl = pane.querySelector(".ww-duel-label");
-    const titleEl = pane.querySelector(".ww-duel-title");
-    const subEl = pane.querySelector(".ww-duel-sub");
-    const scoreEl = pane.querySelector(".ww-duel-score");
-    if (labelEl) labelEl.textContent = label;
-    if (titleEl) titleEl.textContent = opponent.displayName || "Writer";
-    if (subEl) subEl.textContent = opponent.bookTitle || "Untitled";
-    if (scoreEl) {
-        scoreEl.textContent = `${formatSprintWords(opponent.sprintWords || 0)} this sprint`;
-    }
-}
-
-function mountOpponentHiddenBody(pane, opponent) {
-    const hiddenText = opponent.shareDraft
-        ? "Sharing is on, but nothing is in this chapter yet."
-        : "Draft hidden — they can turn on Share draft live.";
-    const frameWrap = pane.querySelector(".ww-duel-frame-wrap");
-    if (!frameWrap) return;
-    frameWrap.innerHTML = `
-        <div class="ww-opponent-empty">
-            <div>
-                <strong>${escapeHtml(opponent.displayName || "Writer")}</strong>
-                ${escapeHtml(hiddenText)}
-            </div>
-        </div>
-    `;
-    opponentDraftHtmlCache.delete(opponent.userId);
-    opponentScrollState.delete(opponent.userId);
-}
-
-function mountOpponentDraftBody(pane, opponent) {
-    const frameWrap = pane.querySelector(".ww-duel-frame-wrap");
-    if (!frameWrap) return;
-
-    const nextHtml = opponent.liveChapterHtml || "";
-    const nextTitle = opponent.liveChapterTitle || "Untitled chapter";
-    const scrollEl = frameWrap.querySelector(".ww-opponent-scroll");
-
-    if (!scrollEl) {
-        frameWrap.innerHTML = `
-            <div class="ww-opponent-scroll">
-                <article class="ww-opponent-page">
-                    <h3 class="ww-opponent-chapter-title">${escapeHtml(nextTitle)}</h3>
-                    <div class="ww-opponent-editor" data-opponent-id="${escapeHtml(opponent.userId)}"></div>
-                </article>
-            </div>
-        `;
-        const editorEl = frameWrap.querySelector(".ww-opponent-editor");
-        if (editorEl && nextHtml) {
-            editorEl.innerHTML = nextHtml;
-            opponentDraftHtmlCache.set(opponent.userId, nextHtml);
-        }
-        bindOpponentScroll(pane, opponent.userId);
+    if (viewingSelf) {
+        if (callDockNoteEl) callDockNoteEl.textContent = "You're writing — click another writer below to read their draft";
         return;
     }
 
-    queueOpponentDraftHtmlUpdate(pane, opponent);
-}
+    const opponent = participantById(focusedParticipantId);
+    if (!opponent) return;
 
-function syncOpponentPaneBody(pane, opponent) {
-    const sharing = opponentSharingEnabled(opponent);
-    const hasDraftView = Boolean(pane.querySelector(".ww-opponent-scroll"));
-
-    if (sharing && !hasDraftView) {
-        mountOpponentDraftBody(pane, opponent);
-        return;
-    }
-    if (!sharing && hasDraftView) {
-        mountOpponentHiddenBody(pane, opponent);
-        return;
-    }
-    if (sharing) {
-        queueOpponentDraftHtmlUpdate(pane, opponent);
-    }
-}
-
-function ensureOpponentPane(opponent, index, opponentCount) {
-    let pane = duelGridEl.querySelector(
-        `[data-opponent-pane="${CSS.escape(opponent.userId)}"]`
-    );
-    if (pane) return pane;
-
-    duelGridEl.insertAdjacentHTML("beforeend", renderOpponentPane(opponent, index, opponentCount));
-    pane = duelGridEl.querySelector(`[data-opponent-pane="${CSS.escape(opponent.userId)}"]`);
-    if (!pane) return null;
-
-    if (opponentSharingEnabled(opponent)) {
-        const editorEl = pane.querySelector(
-            `[data-opponent-id="${CSS.escape(opponent.userId)}"]`
-        );
-        if (editorEl && opponent.liveChapterHtml) {
-            editorEl.innerHTML = sanitizeChapterHtml(opponent.liveChapterHtml);
-            opponentDraftHtmlCache.set(opponent.userId, opponent.liveChapterHtml);
-        }
-        bindOpponentScroll(pane, opponent.userId);
-    }
-    return pane;
-}
-
-function renderOpponentMirror() {
-    const me = meInLobby();
     const opponents = othersInLobby();
+    const index = opponents.findIndex((row) => row.userId === opponent.userId);
+    const label = opponents.length === 1 ? "Reading opponent" : `Reading writer ${index + 2}`;
+
+    if (readerPaneLabel) readerPaneLabel.textContent = label;
+    if (readerPaneTitle) readerPaneTitle.textContent = opponent.displayName || "Writer";
+    if (readerPaneBook) readerPaneBook.textContent = opponent.bookTitle || "Untitled";
+    if (readerPaneWords) {
+        readerPaneWords.textContent = `${formatSprintWords(opponent.sprintWords || 0)} this sprint`;
+    }
+    if (callDockNoteEl) {
+        callDockNoteEl.textContent = `Reading ${opponent.displayName || "writer"} — click You to return to your manuscript`;
+    }
+
+    bindMainReaderScroll(opponent.userId);
+
+    if (!opponentSharingEnabled(opponent)) {
+        if (mainReaderEditor) {
+            mainReaderEditor.innerHTML = `
+                <div class="ww-opponent-empty">
+                    <div>
+                        <strong>${escapeHtml(opponent.displayName || "Writer")}</strong>
+                        Draft hidden — they can turn on Share draft live.
+                    </div>
+                </div>
+            `;
+        }
+        if (mainReaderChapterTitle) mainReaderChapterTitle.textContent = "Draft hidden";
+        opponentDraftHtmlCache.delete(opponent.userId);
+        return;
+    }
+
+    applyFocusedDraftHtml(
+        opponent.userId,
+        opponent.liveChapterHtml || "",
+        opponent.liveChapterTitle || "Untitled chapter"
+    );
+}
+
+function renderWriterDockStrip() {
+    if (!callDockEl || !lobby) return;
+    renderWriterDock(callDockEl, {
+        participants: lobby.participants || [],
+        userId: uid,
+        focusedUserId: focusedParticipantId || uid,
+        getPreview: getDockPreview,
+        onSelect: setFocusedParticipant,
+    });
+}
+
+function renderSprintUI() {
+    const me = meInLobby();
     if (roomCodeEl) roomCodeEl.textContent = lobby?.code || "------";
     if (myBookTitleEl) myBookTitleEl.textContent = me?.bookTitle || "Untitled";
     if (myWordsEl) myWordsEl.textContent = formatSprintWords(me?.sprintWords ?? latestDraft.sprintWords ?? 0);
+    renderMainStage();
+    renderWriterDockStrip();
+}
 
-    if (!duelGridEl) return;
-
-    const gridScrollTop = duelGridEl.scrollTop;
-    applyDuelGridClasses();
-
-    if (opponents.length) {
-        duelGridEl.querySelector(".ww-duel-pane.is-opponent.is-empty")?.remove();
-    }
-
-    const seenIds = new Set();
-
-    opponents.forEach((opponent, index) => {
-        seenIds.add(opponent.userId);
-        const label = opponents.length === 1 ? "Opponent" : `Writer ${index + 2}`;
-        const pane = ensureOpponentPane(opponent, index, opponents.length);
-        if (!pane) return;
-        updateOpponentPaneHead(pane, opponent, label);
-        syncOpponentPaneBody(pane, opponent);
-    });
-
-    duelGridEl.querySelectorAll(".ww-duel-pane.is-opponent:not(.is-empty)").forEach((pane) => {
-        const id = pane.getAttribute("data-opponent-pane");
-        if (id && !seenIds.has(id)) {
-            opponentDraftHtmlCache.delete(id);
-            opponentScrollState.delete(id);
-            pane.remove();
-        }
-    });
-
-    if (!opponents.length && !duelGridEl.querySelector(".ww-duel-pane.is-opponent")) {
-        duelGridEl.insertAdjacentHTML("beforeend", renderEmptyOpponentPane());
-    }
-
-    requestAnimationFrame(() => {
-        duelGridEl.scrollTop = gridScrollTop;
-    });
-
-    renderParticipantStrip();
+function renderOpponentMirror() {
+    renderSprintUI();
 }
 
 function renderRecap() {
@@ -930,7 +742,7 @@ async function bootPreview() {
     }
     if (myBookTitleEl) myBookTitleEl.textContent = book.title || "Your manuscript";
 
-    initExpandEditorToggle();
+    focusedParticipantId = uid;
     renderShareControls();
     renderPauseControls();
     renderOpponentMirror();
@@ -1095,6 +907,9 @@ function handleEditorMessage(event) {
     };
     resolveEditorDraftPing();
     if (myWordsEl) myWordsEl.textContent = formatSprintWords(latestDraft.sprintWords);
+    if (getShareDraftState() || isPreviewMode) {
+        renderWriterDockStrip();
+    }
     if (isPreviewMode && getShareDraftState()) {
         scheduleProgressPatch({
             sprintWords: latestDraft.sprintWords,
@@ -1191,7 +1006,8 @@ async function boot() {
         myEditorFrame.src = buildEditorFrameUrl(me.bookId);
     }
 
-    initExpandEditorToggle();
+    focusedParticipantId = uid;
+
     renderShareControls();
     renderPauseControls();
     renderOpponentMirror();

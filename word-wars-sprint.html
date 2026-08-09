@@ -196,62 +196,138 @@
             scroll-snap-type: x proximity;
             -webkit-overflow-scrolling: touch;
         }
-        .ww-call-dock.is-many .ww-call-tile {
-            flex: 0 0 clamp(120px, 14vw, 168px);
+        .ww-call-dock.is-many .ww-dock-tile {
+            flex: 0 0 clamp(128px, 14vw, 176px);
         }
-        .ww-call-dock.is-crowded .ww-call-tile {
-            flex: 0 0 clamp(108px, 12vw, 140px);
+        .ww-call-dock.is-crowded .ww-dock-tile {
+            flex: 0 0 clamp(112px, 12vw, 148px);
         }
-        .ww-call-tile {
-            flex: 0 0 clamp(140px, 16vw, 196px);
+        .ww-dock-tile {
+            flex: 0 0 clamp(148px, 16vw, 204px);
             scroll-snap-align: start;
             display: grid;
             grid-template-rows: minmax(0, 1fr) auto;
-            min-height: 118px;
-            border: 1px solid var(--border);
-            border-radius: 16px;
+            min-height: 128px;
+            border: 2px solid var(--border);
+            border-radius: 14px;
             overflow: hidden;
             background: rgba(255,255,255,0.03);
             padding: 0;
             color: inherit;
             text-align: left;
+            cursor: pointer;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.12s ease;
         }
-        .ww-call-tile.is-you {
-            border-color: rgba(124,58,237,0.45);
-            box-shadow: inset 0 0 0 1px rgba(124,58,237,0.18);
+        .ww-dock-tile:hover {
+            border-color: rgba(167,139,250,0.45);
+            transform: translateY(-2px);
         }
-        .ww-call-tile.is-typing {
+        .ww-dock-tile.is-you {
+            border-color: rgba(124,58,237,0.35);
+        }
+        .ww-dock-tile.is-focused {
+            border-color: rgba(56,189,248,0.85);
+            box-shadow: 0 0 0 1px rgba(56,189,248,0.35), 0 8px 24px rgba(56,189,248,0.12);
+        }
+        .ww-dock-tile.is-typing:not(.is-focused) {
             border-color: rgba(167,139,250,0.45);
         }
-        .ww-call-tile-media {
+        .ww-dock-preview {
             position: relative;
-            min-height: 84px;
-            background:
-                radial-gradient(circle at 20% 20%, rgba(124,58,237,0.18), transparent 55%),
-                rgba(0,0,0,0.35);
+            min-height: 88px;
+            background: #0b1220;
             overflow: hidden;
+        }
+        .ww-dock-preview.is-empty,
+        .ww-dock-preview.is-hidden {
             display: grid;
             place-items: center;
+            padding: 10px;
+            text-align: center;
+            background:
+                radial-gradient(circle at 20% 20%, rgba(124,58,237,0.16), transparent 55%),
+                rgba(0,0,0,0.35);
         }
-        .ww-call-avatar {
+        .ww-dock-preview-placeholder,
+        .ww-dock-preview-mask {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--muted);
+            line-height: 1.35;
+        }
+        .ww-dock-preview-avatar {
             display: grid;
             place-items: center;
-        }
-        .ww-call-avatar-fallback,
-        .ww-call-avatar-img {
-            width: 56px;
-            height: 56px;
+            width: 44px;
+            height: 44px;
             border-radius: 999px;
-            object-fit: cover;
-            display: grid;
-            place-items: center;
-            font-size: 22px;
+            margin-bottom: 6px;
+            font-size: 18px;
             font-weight: 900;
             color: #ede9fe;
             background: linear-gradient(135deg, rgba(124,58,237,0.55), rgba(59,130,246,0.35));
             border: 2px solid rgba(255,255,255,0.12);
         }
-        .ww-call-typing {
+        .ww-dock-preview-scale {
+            transform: scale(0.19);
+            transform-origin: top left;
+            width: 526%;
+            pointer-events: none;
+            user-select: none;
+        }
+        .ww-dock-preview-html {
+            padding: 28px 32px;
+            min-height: 420px;
+            background: var(--editor-page-bg);
+            color: var(--editor-page-text);
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: 18px;
+            line-height: 1.65;
+        }
+        .ww-dock-preview-html p { margin: 0 0 0.85em; }
+        .ww-dock-live {
+            position: absolute;
+            top: 6px;
+            left: 6px;
+            z-index: 2;
+            font-size: 9px;
+            font-weight: 900;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            padding: 3px 7px;
+            border-radius: 999px;
+            color: #fecaca;
+            background: rgba(220,38,38,0.88);
+        }
+        .ww-dock-meta {
+            padding: 8px 10px 10px;
+            min-width: 0;
+        }
+        .ww-dock-name,
+        .ww-dock-words {
+            display: block;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .ww-dock-name {
+            font-size: 12px;
+            font-weight: 800;
+        }
+        .ww-dock-host {
+            margin-left: 6px;
+            font-size: 9px;
+            font-weight: 900;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--gold);
+        }
+        .ww-dock-words {
+            margin-top: 2px;
+            font-size: 11px;
+            color: var(--muted);
+        }
+        .ww-dock-typing {
             margin-left: 6px;
             font-size: 9px;
             font-weight: 900;
@@ -263,37 +339,6 @@
             background: rgba(124,58,237,0.18);
             border: 1px solid rgba(124,58,237,0.28);
             vertical-align: middle;
-        }
-        .ww-call-tile-meta {
-            padding: 8px 10px 10px;
-            min-width: 0;
-        }
-        .ww-call-name,
-        .ww-call-words {
-            display: block;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-        .ww-call-name {
-            font-size: 12px;
-            font-weight: 800;
-        }
-        .ww-call-host {
-            margin-left: 6px;
-            font-size: 9px;
-            font-weight: 900;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            color: var(--gold);
-        }
-        .ww-call-words {
-            margin-top: 2px;
-            font-size: 11px;
-            color: var(--muted);
-        }
-        .ww-sprint-shell.is-editor-expanded .ww-call-dock-wrap {
-            display: none;
         }
         .ww-sprint-status {
             margin: 0 16px;
@@ -309,122 +354,22 @@
             border-color: rgba(239,68,68,0.35);
             background: rgba(127,29,29,0.2);
         }
-        .ww-duel-grid {
-            display: grid;
+        .ww-sprint-stage {
             min-height: 0;
             height: 100%;
-        }
-        .ww-duel-grid.is-count-2 {
-            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            display: grid;
             grid-template-rows: minmax(0, 1fr);
+            overflow: hidden;
         }
-        .ww-duel-grid.is-count-3 {
-            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-            grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
-        }
-        .ww-duel-grid.is-count-3 .ww-duel-pane.is-you {
-            grid-column: 1;
-            grid-row: 1 / span 2;
-        }
-        .ww-duel-grid.is-count-4 {
-            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-            grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
-        }
-        .ww-duel-grid.is-count-5 {
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
-        }
-        .ww-duel-grid.is-count-5 .ww-duel-pane.is-you {
-            grid-column: 1;
-            grid-row: 1 / span 2;
-        }
-        .ww-duel-grid.is-count-6 {
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
-        }
-        .ww-duel-grid.is-count-7,
-        .ww-duel-grid.is-count-8 {
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
-        }
-        .ww-duel-grid.is-featured {
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            grid-template-rows: minmax(0, 2.15fr) minmax(120px, 1fr);
-            overflow: auto;
-            align-content: start;
-        }
-        .ww-duel-grid.is-featured .ww-duel-pane.is-you {
-            grid-column: 1 / -1;
-            grid-row: 1;
-        }
-        .ww-duel-grid.is-count-5 .ww-duel-pane-head,
-        .ww-duel-grid.is-count-6 .ww-duel-pane-head,
-        .ww-duel-grid.is-count-7 .ww-duel-pane-head,
-        .ww-duel-grid.is-count-8 .ww-duel-pane-head,
-        .ww-duel-grid.is-featured .ww-duel-pane.is-opponent .ww-duel-pane-head {
-            padding: 8px 10px;
-        }
-        .ww-duel-grid.is-count-5 .ww-duel-title,
-        .ww-duel-grid.is-count-6 .ww-duel-title,
-        .ww-duel-grid.is-count-7 .ww-duel-title,
-        .ww-duel-grid.is-count-8 .ww-duel-title,
-        .ww-duel-grid.is-featured .ww-duel-pane.is-opponent .ww-duel-title {
-            font-size: 13px;
-        }
-        .ww-duel-grid.is-count-5 .ww-duel-sub,
-        .ww-duel-grid.is-count-6 .ww-duel-sub,
-        .ww-duel-grid.is-count-7 .ww-duel-sub,
-        .ww-duel-grid.is-count-8 .ww-duel-sub,
-        .ww-duel-grid.is-featured .ww-duel-pane.is-opponent .ww-duel-sub,
-        .ww-duel-grid.is-count-5 .ww-duel-score,
-        .ww-duel-grid.is-count-6 .ww-duel-score,
-        .ww-duel-grid.is-count-7 .ww-duel-score,
-        .ww-duel-grid.is-count-8 .ww-duel-score,
-        .ww-duel-grid.is-featured .ww-duel-pane.is-opponent .ww-duel-score {
-            font-size: 11px;
-        }
-        .ww-duel-grid.is-featured .ww-duel-pane.is-opponent {
-            min-height: 0;
-        }
-        .ww-sprint-shell.is-editor-expanded .ww-duel-pane.is-opponent {
-            display: none;
-        }
-        .ww-sprint-shell.is-editor-expanded .ww-duel-pane.is-you {
-            grid-column: 1 / -1;
-            grid-row: 1 / -1;
-        }
-        .ww-sprint-shell.is-editor-expanded .ww-duel-grid {
-            grid-template-columns: minmax(0, 1fr) !important;
-            grid-template-rows: minmax(0, 1fr) !important;
-        }
-        @media (max-width: 1100px) {
-            .ww-duel-grid.is-count-2,
-            .ww-duel-grid.is-count-3,
-            .ww-duel-grid.is-count-4,
-            .ww-duel-grid.is-count-5,
-            .ww-duel-grid.is-count-6,
-            .ww-duel-grid.is-count-7,
-            .ww-duel-grid.is-count-8,
-            .ww-duel-grid.is-featured {
-                grid-template-columns: minmax(0, 1fr);
-                grid-template-rows: none;
-                grid-auto-rows: minmax(42vh, 1fr);
-                overflow: auto;
-            }
-            .ww-duel-grid.is-count-3 .ww-duel-pane.is-you,
-            .ww-duel-grid.is-count-5 .ww-duel-pane.is-you,
-            .ww-duel-grid.is-featured .ww-duel-pane.is-you {
-                grid-column: auto;
-                grid-row: auto;
-            }
-        }
-        .ww-duel-pane {
+        .ww-main-pane {
             min-width: 0;
             min-height: 0;
             display: grid;
             grid-template-rows: auto minmax(0, 1fr);
-            border-right: 1px solid var(--border);
-            border-bottom: 1px solid var(--border);
+            overflow: hidden;
+        }
+        .ww-main-pane.hidden {
+            display: none !important;
         }
         .ww-duel-pane-head {
             display: flex;
@@ -436,11 +381,11 @@
             border-bottom: 1px solid var(--border);
             background: rgba(0,0,0,0.22);
         }
-        .ww-duel-pane.is-you .ww-duel-pane-head {
+        .ww-main-pane.is-you .ww-duel-pane-head {
             border-top: 2px solid rgba(124,58,237,0.55);
         }
-        .ww-duel-pane.is-opponent .ww-duel-pane-head {
-            border-top: 2px solid rgba(251,191,36,0.45);
+        .ww-main-pane.is-reader .ww-duel-pane-head {
+            border-top: 2px solid rgba(56,189,248,0.55);
         }
         .ww-duel-label {
             margin: 0;
@@ -597,7 +542,6 @@
                 <div id="timerMode" class="ww-sprint-timer-mode">Sprint</div>
             </div>
             <div class="ww-sprint-actions">
-                <button type="button" class="btn ghost" id="expandEditorBtn" aria-pressed="false">Expand editor</button>
                 <button type="button" class="btn pause" id="pauseBtn">Request pause</button>
                 <button type="button" class="btn mint" id="shareBtn">Share my draft</button>
                 <button type="button" class="btn gold" id="finishBtn">End sprint</button>
@@ -607,8 +551,8 @@
 
         <div id="pageStatus" class="ww-sprint-status hidden"></div>
 
-        <div class="ww-duel-grid is-count-2" id="duelGrid">
-            <section class="ww-duel-pane is-you">
+        <div class="ww-sprint-stage" id="sprintStage">
+            <section class="ww-main-pane is-you" id="mainPaneYou">
                 <div class="ww-duel-pane-head">
                     <div>
                         <p class="ww-duel-label">Your manuscript</p>
@@ -620,14 +564,33 @@
                     <iframe id="myEditorFrame" class="ww-duel-frame" title="Your editor"></iframe>
                 </div>
             </section>
+
+            <section class="ww-main-pane is-reader hidden" id="mainPaneReader">
+                <div class="ww-duel-pane-head">
+                    <div>
+                        <p class="ww-duel-label" id="readerPaneLabel">Writer</p>
+                        <p class="ww-duel-title" id="readerPaneTitle">—</p>
+                        <p class="ww-duel-sub" id="readerPaneBook">—</p>
+                    </div>
+                    <div class="ww-duel-score" id="readerPaneWords">0 words this sprint</div>
+                </div>
+                <div class="ww-duel-frame-wrap">
+                    <div class="ww-opponent-scroll" id="mainReaderScroll">
+                        <article class="ww-opponent-page">
+                            <h3 class="ww-opponent-chapter-title" id="mainReaderChapterTitle">Untitled chapter</h3>
+                            <div class="ww-opponent-editor" id="mainReaderEditor"></div>
+                        </article>
+                    </div>
+                </div>
+            </section>
         </div>
 
         <div class="ww-call-dock-wrap">
             <div class="ww-call-dock-head">
-                <p class="ww-call-dock-label">Writers in sprint</p>
-                <span class="ww-call-dock-note" id="callDockNote"></span>
+                <p class="ww-call-dock-label">Writers</p>
+                <span class="ww-call-dock-note" id="callDockNote">Click a writer to read their draft up top</span>
             </div>
-            <div class="ww-call-dock" id="callDock" aria-label="Word War participants"></div>
+            <div class="ww-call-dock" id="callDock" aria-label="Word War writers"></div>
         </div>
     </div>
 
@@ -642,6 +605,6 @@
         </div>
     </div>
 
-    <script type="module" src="js/word-wars-sprint.js?v=17"></script>
+    <script type="module" src="js/word-wars-sprint.js?v=18"></script>
 </body>
 </html>
