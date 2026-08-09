@@ -29,7 +29,7 @@ import {
     wordWarLobbyUrl,
     wordWarSprintUrl,
     isUsingLocalWordWarsFallback,
-} from "./word-wars-api.js?v=17";
+} from "./word-wars-api.js?v=18";
 import { playWordWarJoinSound, primeWordWarSounds } from "./word-wars-sounds.js?v=2";
 
 const params = new URLSearchParams(window.location.search);
@@ -82,6 +82,8 @@ let selectedMaxWriters = 2;
 let refreshTimer = null;
 /** @type {ReturnType<typeof setInterval> | null} */
 let openLobbiesTimer = null;
+/** @type {import("@supabase/supabase-js").RealtimeChannel | null} */
+let openLobbiesChannel = null;
 /** @type {Set<string>} */
 let knownParticipantIds = new Set();
 
@@ -230,8 +232,10 @@ function showView(view) {
     if (view === "hub" && !isLayoutPreview) {
         refreshOpenLobbies().catch(console.warn);
         startOpenLobbiesPolling();
+        startOpenLobbiesRealtime();
     } else {
         stopOpenLobbiesPolling();
+        stopOpenLobbiesRealtime();
     }
 }
 
@@ -242,11 +246,39 @@ function stopOpenLobbiesPolling() {
     }
 }
 
+function stopOpenLobbiesRealtime() {
+    if (openLobbiesChannel) {
+        supabase.removeChannel(openLobbiesChannel);
+        openLobbiesChannel = null;
+    }
+}
+
+function startOpenLobbiesRealtime() {
+    if (isLayoutPreview || openLobbiesChannel) return;
+    openLobbiesChannel = supabase
+        .channel("word_wars_open_lobby_feed")
+        .on(
+            "postgres_changes",
+            { event: "*", schema: "public", table: "word_wars_rooms" },
+            () => {
+                refreshOpenLobbies().catch(console.warn);
+            }
+        )
+        .on(
+            "postgres_changes",
+            { event: "*", schema: "public", table: "word_wars_participants" },
+            () => {
+                refreshOpenLobbies().catch(console.warn);
+            }
+        )
+        .subscribe();
+}
+
 function startOpenLobbiesPolling() {
     stopOpenLobbiesPolling();
     openLobbiesTimer = window.setInterval(() => {
         refreshOpenLobbies().catch(console.warn);
-    }, 30_000);
+    }, 10_000);
 }
 
 function renderOpenLobbies(rows = []) {
@@ -288,7 +320,7 @@ async function refreshOpenLobbies() {
     } catch (err) {
         console.warn(err);
         openLobbiesList.innerHTML =
-            '<p class="ww-open-lobbies-empty">Could not load open lobbies. Try refresh.</p>';
+            `<p class="ww-open-lobbies-empty">Could not load open lobbies. ${escapeHtml(formatWordWarError(err))}</p>`;
     }
 }
 
@@ -950,4 +982,5 @@ boot().catch((err) => {
 window.addEventListener("beforeunload", () => {
     unsubscribe?.();
     stopOpenLobbiesPolling();
+    stopOpenLobbiesRealtime();
 });

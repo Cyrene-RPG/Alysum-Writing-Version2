@@ -651,6 +651,21 @@ export async function joinWordWarRoomByIdWithBook(roomId, uid, profile, bookId =
     return applyJoinBookToLobby(lobby, uid, bookId, bookTitle);
 }
 
+/** Normalize jsonb array payloads returned by list_open_word_war_lobbies. */
+function normalizeOpenLobbyRpcRows(data) {
+    if (data == null) return [];
+    if (Array.isArray(data)) return data;
+    if (typeof data === "string") {
+        try {
+            const parsed = JSON.parse(data);
+            return Array.isArray(parsed) ? parsed : [];
+        } catch {
+            return [];
+        }
+    }
+    return [];
+}
+
 /** @param {number} [limit] */
 export async function listOpenWordWarLobbies(limit = 50) {
     const { data: authData } = await supabase.auth.getUser();
@@ -665,18 +680,19 @@ export async function listOpenWordWarLobbies(limit = 50) {
                 if (isWordWarsSchemaMissing(error)) return listLocalOpenLobbies(limit, uid);
                 throw error;
             }
-            return Array.isArray(data)
-                ? data.map((row) => ({
-                      ...row,
-                      roomId: safeString(row?.roomId || row?.room_id),
-                      code: safeString(row?.code).toUpperCase(),
-                      hostDisplayName: safeString(row?.hostDisplayName || row?.host_display_name, "Writer"),
-                      durationMin: Number(row?.durationMin ?? row?.duration_min ?? 15) || 15,
-                      maxWriters: normalizeWordWarWriterCount(row?.maxWriters ?? row?.max_writers, 4),
-                      participantCount: Number(row?.participantCount ?? row?.participant_count ?? 0) || 0,
-                      createdAt: row?.createdAt || row?.created_at || null,
-                  }))
-                : [];
+            return normalizeOpenLobbyRpcRows(data).map((row) => ({
+                ...row,
+                roomId: safeString(row?.roomId || row?.room_id),
+                code: safeString(row?.code).toUpperCase(),
+                hostDisplayName: safeString(row?.hostDisplayName || row?.host_display_name, "Writer"),
+                durationMin: Number(row?.durationMin ?? row?.duration_min ?? 15) || 15,
+                maxWriters: resolveWordWarMaxWriters(
+                    row?.maxWriters ?? row?.max_writers,
+                    row?.isLocked ?? row?.is_locked
+                ),
+                participantCount: Number(row?.participantCount ?? row?.participant_count ?? 0) || 0,
+                createdAt: row?.createdAt || row?.created_at || null,
+            }));
         } catch (err) {
             if (isWordWarsSchemaMissing(err)) return listLocalOpenLobbies(limit, uid);
             throw err;

@@ -351,7 +351,7 @@ BEGIN
       expires_at = greatest(wr.expires_at, now() + interval '4 hours'),
       max_writers = 16
   WHERE wr.id = p_room_id
-    AND wr.is_locked = false
+    AND coalesce(wr.is_locked, false) = false
     AND wr.status = 'cancelled'
     AND EXISTS (
       SELECT 1 FROM public.word_wars_participants wp WHERE wp.room_id = wr.id
@@ -361,7 +361,7 @@ BEGIN
   SET expires_at = greatest(wr.expires_at, now() + interval '4 hours'),
       max_writers = 16
   WHERE wr.id = p_room_id
-    AND wr.is_locked = false
+    AND coalesce(wr.is_locked, false) = false
     AND wr.status = 'lobby';
 END;
 $$;
@@ -864,7 +864,7 @@ $$;
 CREATE OR REPLACE FUNCTION public.list_open_word_war_lobbies(p_limit integer DEFAULT 50)
 RETURNS jsonb
 LANGUAGE plpgsql
-STABLE
+VOLATILE
 SECURITY DEFINER
 SET search_path = public
 AS $$
@@ -879,7 +879,7 @@ BEGIN
   SET status = 'lobby',
       expires_at = greatest(wr.expires_at, now() + interval '4 hours'),
       max_writers = 16
-  WHERE wr.is_locked = false
+  WHERE coalesce(wr.is_locked, false) = false
     AND wr.status = 'cancelled'
     AND EXISTS (
       SELECT 1 FROM public.word_wars_participants wp WHERE wp.room_id = wr.id
@@ -888,7 +888,7 @@ BEGIN
   UPDATE public.word_wars_rooms wr
   SET expires_at = greatest(wr.expires_at, now() + interval '4 hours'),
       max_writers = 16
-  WHERE wr.is_locked = false
+  WHERE coalesce(wr.is_locked, false) = false
     AND wr.status = 'lobby'
     AND EXISTS (
       SELECT 1 FROM public.word_wars_participants wp WHERE wp.room_id = wr.id
@@ -917,8 +917,11 @@ BEGIN
       ) AS row_data
       FROM public.word_wars_rooms wr
       WHERE wr.status = 'lobby'
-        AND wr.is_locked = false
+        AND coalesce(wr.is_locked, false) = false
         AND wr.expires_at > now()
+        AND EXISTS (
+          SELECT 1 FROM public.word_wars_participants wp WHERE wp.room_id = wr.id
+        )
         AND NOT EXISTS (
           SELECT 1 FROM public.word_wars_participants wp
           WHERE wp.room_id = wr.id AND wp.user_id = auth.uid()
@@ -1182,9 +1185,13 @@ CREATE POLICY word_wars_participants_select ON public.word_wars_participants
 -- ---------------------------------------------------------------------------
 
 UPDATE public.word_wars_rooms
+SET is_locked = coalesce(is_locked, false)
+WHERE is_locked IS NULL;
+
+UPDATE public.word_wars_rooms
 SET max_writers = 16
 WHERE status = 'lobby'
-  AND is_locked = false
+  AND coalesce(is_locked, false) = false
   AND max_writers < 16;
 
 UPDATE public.word_wars_rooms wr
