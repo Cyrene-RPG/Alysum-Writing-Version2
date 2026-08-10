@@ -375,7 +375,7 @@ function createAssistController(editor, assistEl) {
 /** Keep uppercase elements capped while typing (Celtx auto-format). */
 export function handleScriptUppercaseInput(editor) {
   const paragraph = getBlockParagraph(window.getSelection()?.anchorNode, editor);
-  if (!paragraph || !editor.contains(paragraph)) return;
+  if (!paragraph || !editor.contains(paragraph) || !isScriptParagraph(paragraph)) return;
   const def = SCRIPT_ELEMENT_BY_ID[getScriptElementType(paragraph)];
   if (!def?.uppercase) return;
   const text = paragraph.textContent || "";
@@ -413,7 +413,7 @@ export function applyScriptElementToSelection(editor, typeId) {
 }
 
 export function normalizeScriptParagraphAttributes(el) {
-  if (el.tagName !== "P") return false;
+  if (el.tagName !== "P" || !isScriptParagraph(el)) return false;
   const typeId = getScriptElementType(el);
   const def = SCRIPT_ELEMENT_BY_ID[typeId] || SCRIPT_ELEMENT_BY_ID[DEFAULT_SCRIPT_ELEMENT];
   [...el.attributes].forEach((attr) => {
@@ -564,6 +564,11 @@ export function initScriptEditor({
   const notify = () => { onChange?.(); };
 
   const syncToolbarState = () => {
+    if (!scriptModeActive()) {
+      assist.hide();
+      return;
+    }
+
     const paragraph = getBlockParagraph(window.getSelection()?.anchorNode, editor);
     const currentType = paragraph && editor.contains(paragraph)
       ? getScriptElementType(paragraph)
@@ -609,12 +614,14 @@ export function initScriptEditor({
   };
 
   const onInput = () => {
+    if (!scriptModeActive()) return;
     handleScriptUppercaseInput(editor);
     notify();
     syncToolbarState();
   };
 
   const onSelectionChange = () => {
+    if (!scriptModeActive()) return;
     if (!editor.contains(document.activeElement) && document.activeElement !== editor) return;
     syncToolbarState();
   };
