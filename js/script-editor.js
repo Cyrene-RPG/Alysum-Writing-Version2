@@ -182,8 +182,10 @@ export function handleScriptEnterKey(event, editor) {
 
   if (after) {
     setScriptElementType(after, nextType);
+    setScriptElementType(before, currentType);
     placeCaretIn(after, false);
   } else {
+    setScriptElementType(before, currentType);
     insertParagraphAfter(before, nextType, editor);
   }
 
@@ -240,9 +242,12 @@ function getAssistSuggestions(paragraph, editor) {
     if (prefixMatch && upper.length < prefixMatch.length) {
       return SCENE_PREFIXES.filter((p) => p.startsWith(upper));
     }
-    if (/ - ?$/.test(trimmed) || (trimmed.includes(" - ") && !/\s-\s\S+$/.test(trimmed))) {
-      const base = trimmed.replace(/\s*-\s*$/, "").trim();
-      return SCENE_TIME_SUGGESTIONS.map((time) => `${base} - ${time}`);
+    if (/^(INT\.|EXT\.|INT\.\/EXT\.|EXT\.\/INT\.|I\/E\.|EST\.)\s*/i.test(trimmed)) {
+      if (/ - ?$/.test(trimmed) || (trimmed.includes(" - ") && !/\s-\s*\S/.test(trimmed))) {
+        const base = trimmed.replace(/\s*-\s*$/, "").trim();
+        return SCENE_TIME_SUGGESTIONS.map((time) => `${base} - ${time}`);
+      }
+      return [];
     }
   }
 
@@ -367,6 +372,10 @@ function createAssistController(editor, assistEl) {
       return true;
     }
     if (e.key === "Tab") {
+      if (!assistNavigated) {
+        hide();
+        return false;
+      }
       e.preventDefault();
       const paragraph = getBlockParagraph(window.getSelection()?.anchorNode, editor);
       if (paragraph) applyAssistSuggestion(paragraph, suggestions[activeIndex]);
@@ -635,7 +644,6 @@ export function initScriptEditor({
 
   const onInput = () => {
     if (!scriptModeActive()) return;
-    handleScriptUppercaseInput(editor);
     notify();
     syncToolbarState();
   };
