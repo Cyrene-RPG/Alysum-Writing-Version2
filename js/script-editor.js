@@ -135,26 +135,36 @@ function insertParagraphAfter(reference, typeId, root) {
   return p;
 }
 
-function isCaretAtEndOfParagraph(paragraph) {
-  const sel = window.getSelection();
-  if (!sel?.rangeCount) return true;
-  const range = sel.getRangeAt(0);
-  if (!range.collapsed || !paragraph.contains(range.startContainer)) return false;
-  const tail = document.createRange();
-  tail.selectNodeContents(paragraph);
-  tail.setStart(range.startContainer, range.startOffset);
-  return tail.toString().length === 0;
+function isIgnorableScriptWhitespace(text) {
+  return !String(text || "").replace(/[\u00a0\u200B\s]/g, "").length;
 }
 
-function isCaretAtStartOfParagraph(paragraph) {
+function getParagraphTextBeforeCaret(paragraph) {
   const sel = window.getSelection();
-  if (!sel?.rangeCount) return false;
+  if (!sel?.rangeCount) return "";
   const range = sel.getRangeAt(0);
-  if (!range.collapsed || !paragraph.contains(range.startContainer)) return false;
+  if (!range.collapsed || !paragraph.contains(range.startContainer)) return "";
   const head = document.createRange();
   head.selectNodeContents(paragraph);
   head.setEnd(range.startContainer, range.startOffset);
-  return head.toString().length === 0;
+  return head.toString();
+}
+
+function getParagraphTextAfterCaret(paragraph) {
+  const sel = window.getSelection();
+  if (!sel?.rangeCount) return "";
+  const range = sel.getRangeAt(0);
+  if (!range.collapsed || !paragraph.contains(range.startContainer)) return "";
+  const tail = document.createRange();
+  tail.selectNodeContents(paragraph);
+  tail.setStart(range.startContainer, range.startOffset);
+  return tail.toString();
+}
+
+function isCaretMidLineInParagraph(paragraph) {
+  const before = getParagraphTextBeforeCaret(paragraph);
+  const after = getParagraphTextAfterCaret(paragraph);
+  return !isIgnorableScriptWhitespace(before) && !isIgnorableScriptWhitespace(after);
 }
 
 function normalizeParagraphCase(paragraph, typeId) {
@@ -215,7 +225,7 @@ export function handleScriptEnterKey(event, editor) {
   const nextType = ENTER_NEXT[currentType] || "action";
   normalizeParagraphCase(paragraph, currentType);
 
-  if (isCaretAtEndOfParagraph(paragraph) || isCaretAtStartOfParagraph(paragraph)) {
+  if (!isCaretMidLineInParagraph(paragraph)) {
     insertParagraphAfter(paragraph, nextType, editor);
     return true;
   }
@@ -663,6 +673,7 @@ export function initScriptEditor({
     if (e.key === "Enter" && !e.shiftKey) {
       assist.hide();
       if (handleScriptEnterKey(e, editor)) {
+        e.stopImmediatePropagation();
         notify();
         syncToolbarState();
       }
@@ -691,7 +702,7 @@ export function initScriptEditor({
     syncToolbarState();
   };
 
-  editor.addEventListener("keydown", onKeyDown);
+  editor.addEventListener("keydown", onKeyDown, true);
   editor.addEventListener("input", onInput);
   editor.addEventListener("keyup", onSelectionChange);
   editor.addEventListener("click", onSelectionChange);
@@ -754,7 +765,7 @@ export function initScriptEditor({
   syncToolbarState();
 
   return () => {
-    editor.removeEventListener("keydown", onKeyDown);
+    editor.removeEventListener("keydown", onKeyDown, true);
     editor.removeEventListener("input", onInput);
     editor.removeEventListener("keyup", onSelectionChange);
     editor.removeEventListener("click", onSelectionChange);
