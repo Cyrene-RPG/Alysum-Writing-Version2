@@ -47,6 +47,9 @@ const EMPTY_ENTER_NEXT = {
   text: "action",
 };
 
+/** Celtx empty-line Enter: only these blocks switch type in place (exit block). */
+const EMPTY_IN_PLACE = new Set(["action", "dialogue", "parenthetical", "character"]);
+
 const TAB_CYCLE = ["act", "scene", "action", "character", "dialogue", "parenthetical", "transition", "shot", "text"];
 
 const SCENE_PREFIXES = ["INT.", "EXT.", "INT./EXT.", "EXT./INT.", "I/E.", "EST."];
@@ -165,8 +168,12 @@ export function handleScriptEnterKey(event, editor) {
 
   if (isEmpty) {
     const nextType = EMPTY_ENTER_NEXT[currentType] || "action";
-    setScriptElementType(paragraph, nextType);
-    placeCaretIn(paragraph, false);
+    if (EMPTY_IN_PLACE.has(currentType)) {
+      setScriptElementType(paragraph, nextType);
+      placeCaretIn(paragraph, false);
+    } else {
+      insertParagraphAfter(paragraph, nextType, editor);
+    }
     return true;
   }
 
@@ -288,12 +295,14 @@ function createAssistController(editor, assistEl) {
 
   let activeIndex = 0;
   let suggestions = [];
+  let assistNavigated = false;
 
   const hide = () => {
     assistEl.classList.add("hidden");
     assistEl.replaceChildren();
     suggestions = [];
     activeIndex = 0;
+    assistNavigated = false;
   };
 
   const render = () => {
@@ -334,6 +343,7 @@ function createAssistController(editor, assistEl) {
       hide();
       return;
     }
+    if (!assistNavigated) activeIndex = 0;
     activeIndex = Math.min(activeIndex, suggestions.length - 1);
     assistEl.classList.remove("hidden");
     positionNearSelection();
@@ -344,17 +354,26 @@ function createAssistController(editor, assistEl) {
     if (assistEl.classList.contains("hidden") || !suggestions.length) return false;
     if (e.key === "ArrowDown") {
       e.preventDefault();
+      assistNavigated = true;
       activeIndex = (activeIndex + 1) % suggestions.length;
       render();
       return true;
     }
     if (e.key === "ArrowUp") {
       e.preventDefault();
+      assistNavigated = true;
       activeIndex = activeIndex <= 0 ? suggestions.length - 1 : activeIndex - 1;
       render();
       return true;
     }
-    if (e.key === "Enter" || e.key === "Tab") {
+    if (e.key === "Tab") {
+      e.preventDefault();
+      const paragraph = getBlockParagraph(window.getSelection()?.anchorNode, editor);
+      if (paragraph) applyAssistSuggestion(paragraph, suggestions[activeIndex]);
+      hide();
+      return true;
+    }
+    if (e.key === "Enter" && assistNavigated) {
       e.preventDefault();
       const paragraph = getBlockParagraph(window.getSelection()?.anchorNode, editor);
       if (paragraph) applyAssistSuggestion(paragraph, suggestions[activeIndex]);
@@ -604,6 +623,7 @@ export function initScriptEditor({
       syncToolbarState();
       return;
     }
+    if (e.key === "Enter") assist.hide();
     if (handleScriptTabKey(e, editor)) {
       notify();
       syncToolbarState();
@@ -718,7 +738,7 @@ export function scriptElementHint(typeId) {
   if (!def) return "";
   const enterNext = ENTER_NEXT[typeId];
   const nextLabel = SCRIPT_ELEMENT_BY_ID[enterNext]?.menuLabel || "";
-  return `Tab — switch · Enter — ${nextLabel || "next"} · ↑↓ — suggestions`;
+  return `Tab — switch · Enter — ${nextLabel || "next"} · empty line — exit block · ↑↓ Tab — suggestions`;
 }
 
 export { SCENE_PREFIXES, SCENE_TIME_SUGGESTIONS, CHARACTER_EXTENSIONS, TRANSITION_SUGGESTIONS };
