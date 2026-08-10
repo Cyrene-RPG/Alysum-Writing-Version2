@@ -44,7 +44,7 @@
     <link rel="stylesheet" href="css/accessibility-fonts.css?v=1" />
     <link rel="stylesheet" href="css/book-inline-fonts.css?v=4" />
     <link rel="stylesheet" href="css/scene-breaks.css?v=8" />
-    <link rel="stylesheet" href="css/script-editor.css?v=3" />
+    <link rel="stylesheet" href="css/script-editor.css?v=5" />
 <link rel="stylesheet" href="css/book-version.css?v=8" />
     <link rel="stylesheet" href="css/collab-room.css?v=4" />
     <script src="js/gradient-theme-sync.js" defer></script>
@@ -407,7 +407,8 @@
     body.topbar-collapsed .topbar-actions { display: none; }
     body.topbar-collapsed .topbar { min-height: 44px; padding-top: 4px; padding-bottom: 4px; }
     body.topbar-collapsed #toolbar,
-    body.topbar-collapsed .comic-toolbar { display: none !important; }
+    body.topbar-collapsed .comic-toolbar,
+    body.topbar-collapsed .script-toolbar { display: none !important; }
     body.topbar-collapsed .sprint-float { top: 56px; }
     @media (min-width: 761px) {
         .topbar { min-height: 72px; }
@@ -1045,6 +1046,7 @@
         .toolbar-mobile-toggle.is-active { background: linear-gradient(135deg, var(--theme-header-mid, var(--alysum-purple-dark)), var(--theme-header-end, var(--alysum-purple))); border-color: var(--theme-header-mid, var(--alysum-purple)); color: #fff; }
         body:not(.toolbar-mobile-open) #toolbar { display: none !important; }
         body:not(.toolbar-mobile-open).comic-mode .comic-toolbar { display: none !important; }
+        body.toolbar-mobile-open.script-mode #toolbar { display: none !important; }
         body.toolbar-mobile-open #toolbar {
             display: grid !important;
             grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1077,6 +1079,21 @@
         }
         body.toolbar-mobile-open.comic-mode .comic-upload-btn,
         body.toolbar-mobile-open.comic-mode .comic-action-btn { width: 100%; justify-content: center; }
+        body.toolbar-mobile-open.script-mode .script-toolbar {
+            display: flex !important;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 8px;
+            min-height: 0;
+            padding: 8px 10px;
+        }
+        body.toolbar-mobile-open.script-mode .script-element-picker,
+        body.toolbar-mobile-open.script-mode .script-element-picker-btn,
+        body.toolbar-mobile-open.script-mode .script-format-group .tool-btn,
+        body.toolbar-mobile-open.script-mode #scriptFindReplaceBtn { width: 100%; justify-content: center; }
+        body.toolbar-mobile-open.script-mode .script-format-group { width: 100%; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+        body.toolbar-mobile-open.script-mode .script-toolbar-spacer { display: none; }
+        body.toolbar-mobile-open.script-mode .script-toolbar-meta { width: 100%; justify-content: center; }
         body:not(.toolbar-mobile-open) .sprint-float { top: 72px; }
     }
     @media (max-width: 480px) {
@@ -1239,6 +1256,10 @@
         </div>
     </div>
     <div class="manuscript">
+        <div class="script-scene-nav" id="scriptSceneNav" aria-label="Scene navigation">
+            <div class="script-scene-nav-title">Scenes</div>
+            <div class="script-scene-nav-list" id="scriptSceneNavList"></div>
+        </div>
         <div class="group" data-group-section="front"><div class="group-header" data-group="front" data-tip="Collapse or expand front matter"><div class="left"><span class="caret" id="caret-front">▼</span>Front matter</div><div>edit</div></div><div class="group-body" id="group-front"></div></div>
         <div class="group" data-group-section="body"><div class="group-header" data-group="body" data-tip="Collapse or expand body chapters"><div class="left"><span class="caret" id="caret-body">▼</span>Body</div><div>edit</div></div><div class="group-body" id="group-body"></div></div>
         <div class="group" data-group-section="back"><div class="group-header" data-group="back" data-tip="Collapse or expand back matter"><div class="left"><span class="caret" id="caret-back">▼</span>Back matter</div><div>edit</div></div><div class="group-body" id="group-back"></div></div>
@@ -1249,7 +1270,7 @@
         <div class="topbar-left">
             <span class="topbar-tip" data-tip="Sidebar on / off"><button class="icon-btn" id="toggleSidebarBtn" type="button" aria-label="Toggle sidebar">☰</button></span>
             <span class="topbar-tip" data-tip="Studio — your books"><button class="icon-btn" id="homeBtn" type="button" aria-label="Back to Studio">🏠</button></span>
-            <span class="topbar-tip toolbar-mobile-toggle-wrap" data-tip="Show formatting tools"><button class="icon-btn toolbar-mobile-toggle" id="toggleToolbarBtn" type="button" aria-label="Show formatting tools" aria-expanded="false" aria-controls="toolbar">Aa</button></span>
+            <span class="topbar-tip toolbar-mobile-toggle-wrap" data-tip="Show formatting tools"><button class="icon-btn toolbar-mobile-toggle" id="toggleToolbarBtn" type="button" aria-label="Show formatting tools" aria-expanded="false" aria-controls="toolbar comicToolbar scriptToolbar">Aa</button></span>
             <div class="top-title" id="topBookTitle">Loading...</div>
         </div>
         <div class="topbar-right">
@@ -1296,7 +1317,7 @@
                     </div>
                 </div>
             </div>
-            <span class="topbar-tip topbar-collapse-wrap" data-tip="Hide toolbar"><button class="icon-btn topbar-collapse-btn" id="toggleTopbarBtn" type="button" aria-label="Hide toolbar" aria-expanded="true" aria-controls="topbarActions toolbar">▲</button></span>
+            <span class="topbar-tip topbar-collapse-wrap" data-tip="Hide toolbar"><button class="icon-btn topbar-collapse-btn" id="toggleTopbarBtn" type="button" aria-label="Hide toolbar" aria-expanded="true" aria-controls="topbarActions toolbar comicToolbar scriptToolbar">▲</button></span>
             <div class="save-status" id="saveStatus" data-tip="Save status" aria-live="polite">Loading...</div>
         </div>
     </div>
@@ -1340,8 +1361,16 @@
         </button>
         <div class="script-element-menu hidden" id="scriptElementMenu" role="listbox" aria-label="Script element types"></div>
     </div>
+    <div class="script-format-group" aria-label="Line formatting">
+        <button class="tool-btn" type="button" data-script-cmd="bold" data-tip="Bold (Ctrl+B)">B</button>
+        <button class="tool-btn" type="button" data-script-cmd="italic" data-tip="Italic (Ctrl+I)"><em>I</em></button>
+        <button class="tool-btn" type="button" data-script-cmd="underline" data-tip="Underline (Ctrl+U)"><u>U</u></button>
+    </div>
     <button class="tool-btn" type="button" id="scriptFindReplaceBtn" data-tip="Find and replace (Ctrl+F)" aria-label="Find and replace">🔍</button>
     <span class="script-toolbar-hint" id="scriptToolbarHint">Tab — switch element · Enter — next line type</span>
+    <div class="toolbar-spacer script-toolbar-spacer"></div>
+    <div class="toolbar-wordcount bottom-meta script-toolbar-meta" aria-live="polite"></div>
+    <span class="sprint-anchor script-toolbar-meta" id="scriptSprintAnchor"></span>
 </div>
 <div class="bg-bar" id="backgroundBar" aria-label="Editor background image">
     <label class="bg-field" style="flex:0 1 180px;"><span class="bg-label">Fit</span><select class="bg-input" id="backgroundFitSelect" aria-label="Background image fit"><option value="cover">Cover</option><option value="contain">Contain</option><option value="original">Original</option><option value="tile">Tile</option></select></label>
@@ -1382,6 +1411,17 @@
             </div>
             <div class="chapter-number" id="chapterNumber">1</div>
             <div class="chapter-title" id="chapterTitle" contenteditable="true">Chapter 1</div>
+            <div class="script-title-builder hidden" id="scriptTitleBuilder" aria-label="Title page">
+                <input type="text" class="script-title-field script-title-field--title" id="scriptTitleField" spellcheck="false" placeholder="SCRIPT TITLE" aria-label="Script title" />
+                <span class="script-title-label">Written by</span>
+                <input type="text" class="script-title-field" id="scriptAuthorField" spellcheck="false" placeholder="Author name" aria-label="Author name" />
+                <div class="script-title-spacer" aria-hidden="true"></div>
+                <input type="text" class="script-title-field" id="scriptContactField" spellcheck="false" placeholder="Contact email or phone" aria-label="Contact information" />
+            </div>
+            <div class="script-editor-wrap" id="scriptEditorWrap">
+                <div class="editor" id="editor" contenteditable="true" data-placeholder="Begin writing here..." data-script-placeholder="Start with FADE IN: or a scene heading — INT. LOCATION - DAY"></div>
+                <div class="script-assist hidden" id="scriptAssist" role="listbox" aria-label="Formatting suggestions"></div>
+            </div>
             <div class="copyright-builder hidden" id="copyrightBuilder" role="tabpanel" aria-label="Copyright page template">
                 <p class="copyright-builder-hint">Fill in the fields below. Your copyright page updates automatically as you type.</p>
                 <div class="copyright-builder-scroll">
@@ -1430,7 +1470,6 @@
                     <div class="copyright-preview-body" id="copyrightPreview"></div>
                 </div>
             </div>
-            <div class="editor" id="editor" contenteditable="true" data-placeholder="Begin writing here..." data-script-placeholder="Start with FADE IN: or a scene heading — INT. LOCATION - DAY"></div>
             <div class="comic-workspace" id="comicWorkspace">
                 <div class="comic-page-panel">
                     <p class="comic-strip-hint">Add multiple images to this chapter — they stack and scroll vertically for readers (webtoon-style).</p>
@@ -1572,7 +1611,8 @@
         isScriptParagraph,
         normalizeScriptParagraphAttributes,
         scriptHtmlToPlainText,
-    } from "./js/script-editor.js?v=3";
+        collectScriptSceneHeadings,
+    } from "./js/script-editor.js?v=4";
     import {
         LOCAL_GUEST_USER,
         LOCAL_VAULT_STORAGE_KEY,
@@ -2070,6 +2110,16 @@ function rememberBookId(id) {
     const scriptElementPickerBtn = document.getElementById("scriptElementPickerBtn");
     const scriptElementPickerLabel = document.getElementById("scriptElementPickerLabel");
     const scriptElementMenu = document.getElementById("scriptElementMenu");
+    const scriptAssist = document.getElementById("scriptAssist");
+    const scriptSceneNavList = document.getElementById("scriptSceneNavList");
+    const scriptTitleBuilder = document.getElementById("scriptTitleBuilder");
+    const scriptTitleField = document.getElementById("scriptTitleField");
+    const scriptAuthorField = document.getElementById("scriptAuthorField");
+    const scriptContactField = document.getElementById("scriptContactField");
+    const toolbarWordcount = document.querySelector("#toolbar .toolbar-wordcount");
+    const sprintAnchor = document.getElementById("sprintAnchor");
+    const scriptToolbarMetaWordcount = document.querySelector("#scriptToolbar .toolbar-wordcount");
+    const scriptSprintAnchor = document.getElementById("scriptSprintAnchor");
     const bottomMetaLabel = document.getElementById("bottomMetaLabel");
     const bottomTotalLabel = document.getElementById("bottomTotalLabel");
     const sidebarMetaPrimaryLabel = document.getElementById("sidebarMetaPrimaryLabel");
@@ -2321,8 +2371,88 @@ function rememberBookId(id) {
         if (sidebarMetaPrimaryLabel) sidebarMetaPrimaryLabel.textContent = comic ? "pages uploaded" : "words";
         if (sidebarMetaSecondaryLabel) sidebarMetaSecondaryLabel.textContent = comic ? "pages" : (script ? "scenes" : "chapters");
         if (bottomMetaLabel) bottomMetaLabel.textContent = script ? "scene words" : "chapter words";
+        applyScriptToolbarMeta();
         applyScriptTitlePageUI();
+        renderScriptSceneNav();
         applyEditorPageLayoutUI();
+    }
+
+    function applyScriptToolbarMeta() {
+        const script = isCurrentBookScript() && !isCurrentBookComic();
+        if (!toolbarWordcount || !scriptToolbarMetaWordcount || !sprintAnchor || !scriptSprintAnchor) return;
+        if (script) {
+            if (scriptToolbarMetaWordcount.childNodes.length === 0 && toolbarWordcount.childNodes.length) {
+                scriptToolbarMetaWordcount.replaceChildren(...toolbarWordcount.childNodes);
+            }
+            if (scriptSprintAnchor.childNodes.length === 0 && sprintAnchor.childNodes.length) {
+                scriptSprintAnchor.replaceChildren(...sprintAnchor.childNodes);
+            }
+        } else {
+            if (toolbarWordcount.childNodes.length === 0 && scriptToolbarMetaWordcount.childNodes.length) {
+                toolbarWordcount.replaceChildren(...scriptToolbarMetaWordcount.childNodes);
+            }
+            if (sprintAnchor.childNodes.length === 0 && scriptSprintAnchor.childNodes.length) {
+                sprintAnchor.replaceChildren(...scriptSprintAnchor.childNodes);
+            }
+        }
+    }
+
+    function parseScriptTitlePageContent(html) {
+        const holder = document.createElement("div");
+        holder.innerHTML = String(html || "");
+        const lines = [...holder.querySelectorAll("p")].map((p) => (p.textContent || "").trim()).filter(Boolean);
+        let title = "";
+        let author = "";
+        let contact = "";
+        let idx = 0;
+        if (lines[idx]) title = lines[idx++];
+        if ((lines[idx] || "").toLowerCase() === "written by") idx += 1;
+        if (lines[idx] && !/^contact:/i.test(lines[idx])) {
+            author = lines[idx++];
+        }
+        const contactLine = lines.find((line) => /^contact:/i.test(line));
+        if (contactLine) contact = contactLine.replace(/^contact:\s*/i, "").trim();
+        return { title, author, contact };
+    }
+
+    function buildScriptTitlePageHtml({ title, author, contact }) {
+        const safeTitle = escapeHtml((title || "").trim() || "UNTITLED");
+        const safeAuthor = escapeHtml((author || "").trim() || "Author Name");
+        const safeContact = escapeHtml((contact || "").trim());
+        const contactBlock = safeContact
+            ? `<p class="script-text">Contact: ${safeContact}</p>`
+            : `<p class="script-text">Contact:</p>`;
+        return [
+            `<p class="script-scene">${safeTitle}</p>`,
+            `<p class="script-action">Written by</p>`,
+            `<p class="script-character">${safeAuthor}</p>`,
+            contactBlock,
+        ].join("");
+    }
+
+    function syncScriptTitlePageFromFields({ persist = true } = {}) {
+        if (!isCurrentBookScript() || !document.body.classList.contains("is-title-page")) return;
+        const ch = currentChapter();
+        if (!ch) return;
+        const html = buildScriptTitlePageHtml({
+            title: scriptTitleField?.value || "",
+            author: scriptAuthorField?.value || defaultCopyrightAuthorName(),
+            contact: scriptContactField?.value || "",
+        });
+        ch.content = html;
+        if (persist) {
+            if (scriptTitleField?.value.trim()) ch.title = "Title Page";
+            markEditorChapterDirty();
+            scheduleSave();
+        }
+    }
+
+    function syncScriptTitlePageToFields() {
+        if (!scriptTitleField || !scriptAuthorField || !scriptContactField) return;
+        const parsed = parseScriptTitlePageContent(currentChapter()?.content || "");
+        scriptTitleField.value = parsed.title || currentBook?.title || "";
+        scriptAuthorField.value = parsed.author || defaultCopyrightAuthorName();
+        scriptContactField.value = parsed.contact || "";
     }
 
     function applyScriptTitlePageUI() {
@@ -2331,6 +2461,53 @@ function rememberBookId(id) {
         const title = String(ch?.title || "").trim().toLowerCase();
         const isTitlePage = script && currentSection === "front" && title === "title page";
         document.body.classList.toggle("is-title-page", isTitlePage);
+        scriptTitleBuilder?.classList.toggle("hidden", !isTitlePage);
+        if (isTitlePage) syncScriptTitlePageToFields();
+    }
+
+    function renderScriptSceneNav() {
+        if (!scriptSceneNavList) return;
+        scriptSceneNavList.replaceChildren();
+        if (!isCurrentBookScript() || isCurrentBookComic()) return;
+        const scenes = collectScriptSceneHeadings(currentBook?.sections);
+        if (!scenes.length) {
+            const empty = document.createElement("div");
+            empty.className = "empty-slot";
+            empty.textContent = "Scene headings appear here.";
+            scriptSceneNavList.appendChild(empty);
+            return;
+        }
+        scenes.forEach((scene, index) => {
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "script-scene-nav-item"
+                + (currentSection === "body" && currentChapterIndex === scene.chapterIndex ? " is-active" : "");
+            btn.innerHTML = `${escapeHtml(scene.label)}<small>${escapeHtml(scene.chapterTitle)}</small>`;
+            btn.addEventListener("click", () => {
+                loadChapter("body", scene.chapterIndex);
+                if (!scene.isChapterFallback) {
+                    setTimeout(() => {
+                        const target = editor.querySelectorAll("p.script-scene")[scene.sceneIndex];
+                        if (target) {
+                            target.scrollIntoView({ block: "center", behavior: "smooth" });
+                            placeCaretInScriptParagraph(target);
+                        }
+                    }, 0);
+                }
+            });
+            scriptSceneNavList.appendChild(btn);
+        });
+    }
+
+    function placeCaretInScriptParagraph(paragraph) {
+        if (!paragraph) return;
+        editor.focus();
+        const range = document.createRange();
+        const sel = window.getSelection();
+        range.selectNodeContents(paragraph);
+        range.collapse(false);
+        sel?.removeAllRanges();
+        sel?.addRange(range);
     }
 
     function defaultCopyrightAuthorName() {
@@ -3581,6 +3758,11 @@ function rememberBookId(id) {
     }
 
     function cleanAndStoreCurrentChapterFromEditor() {
+        if (document.body.classList.contains("is-title-page")) {
+            syncScriptTitlePageFromFields({ persist: false });
+            editorChapterDirty = false;
+            return currentChapter().content || "";
+        }
         if (isOnCopyrightChapter() && getCopyrightEditorMode() === "template") {
             syncCopyrightTemplateToChapter(false);
             editorChapterDirty = false;
@@ -3863,10 +4045,17 @@ function rememberBookId(id) {
         } else {
             chapterNumber.textContent = section === "body" ? index + 1 : "";
             chapterTitle.textContent = ch.title || (isCurrentBookScript() ? `Scene ${index + 1}` : "Untitled");
+            const isScriptTitlePage = isCurrentBookScript()
+                && section === "front"
+                && String(ch.title || "").trim().toLowerCase() === "title page";
             const rawHtml = cleanEditorHtml(ch.content || "");
-            editor.innerHTML = isCurrentBookScript() ? normalizeScriptHtml(rawHtml) : rawHtml;
-            if (isCurrentBookScript()) ensureScriptEditorContent(editor);
-            else ensureEditorTailAfterSceneBreaks(editor);
+            if (isScriptTitlePage) {
+                editor.innerHTML = "";
+            } else {
+                editor.innerHTML = isCurrentBookScript() ? normalizeScriptHtml(rawHtml) : rawHtml;
+                if (isCurrentBookScript()) ensureScriptEditorContent(editor);
+                else ensureEditorTailAfterSceneBreaks(editor);
+            }
             applyEditorStyle();
             normalizeInlineImagesInEditor();
             editorLoadedChapterKey = chapterLoadKey(section, index);
@@ -5250,13 +5439,19 @@ function rememberBookId(id) {
         pickerBtn: scriptElementPickerBtn,
         pickerLabel: scriptElementPickerLabel,
         elementMenu: scriptElementMenu,
+        assistEl: scriptAssist,
         hintEl: scriptToolbarHint,
         isActive: () => isCurrentBookScript() && !isCurrentBookComic(),
         onChange: () => {
             markEditorChapterDirty();
             syncStats();
             scheduleSave();
+            renderScriptSceneNav();
         },
+    });
+
+    [scriptTitleField, scriptAuthorField, scriptContactField].forEach((field) => {
+        field?.addEventListener("input", () => syncScriptTitlePageFromFields());
     });
     frCloseBtn?.addEventListener("click", () => frClose());
     frFindInput?.addEventListener("input", () => frRunSearch(true, false));

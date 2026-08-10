@@ -19,6 +19,10 @@ body.script-mode .chapter-number {
   display: none;
 }
 
+body.script-mode:not(.is-title-page) .chapter-title {
+  display: none;
+}
+
 body.script-mode .chapter-title {
   font-family: "Courier New", Courier, monospace;
   font-size: 12pt;
@@ -153,9 +157,161 @@ body.script-mode .editor:empty::before {
 
 /* Title page (front matter) — Celtx centered layout */
 body.script-mode.is-title-page .chapter-title {
+  display: block;
   margin-top: 3in;
   margin-bottom: 0.5in;
   font-size: 14pt;
+}
+
+.script-title-builder {
+  display: none;
+  font-family: "Courier New", Courier, monospace;
+  font-size: 12pt;
+  line-height: 1.4;
+  text-align: center;
+  padding: 2.5in 0 1in;
+}
+
+body.script-mode.is-title-page .script-title-builder {
+  display: block;
+}
+
+body.script-mode.is-title-page .script-editor-wrap {
+  display: none;
+}
+
+.script-editor-wrap {
+  position: relative;
+}
+
+.script-title-field {
+  display: block;
+  width: min(100%, 5.5in);
+  margin: 0 auto 0.75em;
+  border: none;
+  border-bottom: 1px dashed rgba(148, 163, 184, 0.45);
+  background: transparent;
+  color: var(--page-text);
+  font: inherit;
+  text-align: center;
+  outline: none;
+  padding: 4px 8px;
+}
+
+.script-title-field::placeholder {
+  color: var(--page-subtle, #94a3b8);
+  opacity: 0.85;
+}
+
+.script-title-field--title {
+  font-size: 14pt;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-bottom: 1.25em;
+}
+
+.script-title-label {
+  display: block;
+  margin: 1.5em auto 0.35em;
+  font-size: 12pt;
+}
+
+.script-title-spacer {
+  height: 2.5in;
+}
+
+.script-assist {
+  position: absolute;
+  z-index: 30;
+  min-width: 180px;
+  max-width: 320px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--topbar-bg);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.24);
+  padding: 4px;
+}
+
+.script-assist.hidden {
+  display: none;
+}
+
+.script-assist-item {
+  display: block;
+  width: 100%;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  color: var(--page-text);
+  font-family: "Courier New", Courier, monospace;
+  font-size: 11pt;
+  text-align: left;
+  padding: 6px 8px;
+  cursor: pointer;
+}
+
+.script-assist-item:hover,
+.script-assist-item.is-active {
+  background: rgba(124, 58, 237, 0.16);
+}
+
+.script-format-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.script-scene-nav {
+  display: none;
+  border-bottom: 1px solid var(--border);
+  padding: 10px 12px 12px;
+}
+
+body.script-mode .script-scene-nav {
+  display: block;
+}
+
+.script-scene-nav-title {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--page-subtle, #94a3b8);
+  margin-bottom: 8px;
+}
+
+.script-scene-nav-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 220px;
+  overflow: auto;
+}
+
+.script-scene-nav-item {
+  border: none;
+  background: transparent;
+  color: var(--page-text);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: left;
+  padding: 6px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  line-height: 1.35;
+}
+
+.script-scene-nav-item:hover,
+.script-scene-nav-item.is-active {
+  background: rgba(124, 58, 237, 0.14);
+}
+
+.script-scene-nav-item small {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  opacity: 0.55;
+  margin-top: 2px;
 }
 
 body.script-mode.is-title-page .editor p {
@@ -203,7 +359,10 @@ body.script-mode .script-toolbar {
   display: flex;
 }
 
-body.script-mode #toolbar,
+body.script-mode #toolbar {
+  display: none !important;
+}
+
 body.script-mode .bg-bar,
 body.script-mode #insertSceneBreakBtn,
 body.script-mode #insertImageBtn,
@@ -216,9 +375,19 @@ body.script-mode #quoteBtn {
   display: none !important;
 }
 
-body.script-mode #toolbar .toolbar-wordcount,
-body.script-mode #findReplaceBtn {
-  display: inline-flex !important;
+.script-toolbar-spacer {
+  flex: 1 1 auto;
+  min-width: 12px;
+}
+
+.script-toolbar-meta.sprint-anchor {
+  display: inline-flex;
+}
+
+.script-toolbar-meta.toolbar-wordcount {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
 }
 
 .script-element-picker {
@@ -376,8 +545,11 @@ body.script-mode .copyright-builder {
 }
 
 @media (max-width: 600px) {
-  body:not(.toolbar-mobile-open).script-mode .script-toolbar {
-    display: none !important;
+  body.script-mode .script-toolbar {
+    display: flex !important;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px 10px;
   }
 
   body.toolbar-mobile-open.script-mode .script-toolbar {

@@ -93,7 +93,7 @@ export function defaultSectionsForFormat(format) {
   if (isScriptFormat(format)) {
     return {
       front: [{ id: newChapterId(), title: "Title Page", content: "" }],
-      body: [{ id: newChapterId(), title: "Scene 1", content: "" }],
+      body: [{ id: newChapterId(), title: "Scene 1", content: '<p class="script-transition">FADE IN:</p>' }],
       back: [],
     };
   }

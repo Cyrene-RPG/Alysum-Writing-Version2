@@ -19,6 +19,7 @@ export const SCRIPT_ELEMENT_BY_ID = Object.fromEntries(SCRIPT_ELEMENTS.map((el) 
 export const SCRIPT_CLASS_TO_ID = Object.fromEntries(SCRIPT_ELEMENTS.map((el) => [el.className, el.id]));
 export const SCRIPT_ELEMENT_CLASSES = new Set(SCRIPT_ELEMENTS.map((el) => el.className));
 export const DEFAULT_SCRIPT_ELEMENT = "scene";
+export const DEFAULT_SCRIPT_OPENING = { typeId: "transition", text: "FADE IN:" };
 
 /** Celtx Enter flow: after dialogue → next character; after transition → scene heading. */
 const ENTER_NEXT = {
@@ -53,6 +54,8 @@ const SCENE_PREFIXES = ["INT.", "EXT.", "INT./EXT.", "EXT./INT.", "I/E.", "EST."
 const SCENE_TIME_SUGGESTIONS = ["DAY", "NIGHT", "MORNING", "AFTERNOON", "EVENING", "LATER", "CONTINUOUS", "SAME"];
 
 const CHARACTER_EXTENSIONS = ["(V.O.)", "(O.S.)", "(O.C.)", "(CONT'D)", "(PRE-LAP)"];
+
+const TRANSITION_SUGGESTIONS = ["FADE IN:", "FADE OUT.", "CUT TO:", "DISSOLVE TO:", "SMASH CUT TO:", "MATCH CUT TO:"];
 
 function stripTags(html) {
   return String(html || "").replace(/<[^>]+>/g, "");
@@ -207,18 +210,191 @@ export function handleScriptTabKey(event, editor) {
   return true;
 }
 
-/** Celtx: typing "(" on a character line switches to parenthetical. */
-export function handleScriptInputAssist(event, editor) {
-  if (!editor || event.inputType !== "insertText" || event.data !== "(") return false;
+function collectCharacterNames(editor) {
+  const names = new Set();
+  editor?.querySelectorAll("p.script-character").forEach((p) => {
+    const text = (p.textContent || "").trim().toUpperCase();
+    const base = text.replace(/\s*\([^)]*\)\s*$/, "").trim();
+    if (base) names.add(base);
+  });
+  return [...names];
+}
 
+function getAssistSuggestions(paragraph, editor) {
+  if (!paragraph) return [];
+  const typeId = getScriptElementType(paragraph);
+  const text = paragraph.textContent || "";
+  const trimmed = text.trim();
+  const upper = trimmed.toUpperCase();
+
+  if (typeId === "scene") {
+    if (!trimmed) return [...SCENE_PREFIXES];
+    const prefixMatch = SCENE_PREFIXES.find((p) => upper === p.slice(0, upper.length) && upper.length <= p.length);
+    if (prefixMatch && upper.length < prefixMatch.length) {
+      return SCENE_PREFIXES.filter((p) => p.startsWith(upper));
+    }
+    if (/ - ?$/.test(trimmed) || (trimmed.includes(" - ") && !/\s-\s\S+$/.test(trimmed))) {
+      const base = trimmed.replace(/\s*-\s*$/, "").trim();
+      return SCENE_TIME_SUGGESTIONS.map((time) => `${base} - ${time}`);
+    }
+  }
+
+  if (typeId === "character") {
+    if (trimmed.endsWith("(") || /\([^)]*$/.test(trimmed)) {
+      const openIdx = trimmed.lastIndexOf("(");
+      const partial = trimmed.slice(openIdx).toUpperCase();
+      return CHARACTER_EXTENSIONS.filter((ext) => ext.startsWith(partial));
+    }
+    const basePartial = trimmed.toUpperCase();
+    if (basePartial.length >= 1) {
+      return collectCharacterNames(editor)
+        .filter((name) => name.startsWith(basePartial) && name !== basePartial)
+        .slice(0, 6);
+    }
+  }
+
+  if (typeId === "transition") {
+    if (!trimmed) return [...TRANSITION_SUGGESTIONS];
+    return TRANSITION_SUGGESTIONS.filter((t) => t.startsWith(upper) && t !== upper);
+  }
+
+  if (typeId === "parenthetical" && trimmed === "(") {
+    return ["(beat)", "(whispering)", "(to himself)", "(sarcastic)"];
+  }
+
+  return [];
+}
+
+function applyAssistSuggestion(paragraph, suggestion) {
+  if (!paragraph || suggestion == null) return;
+  const typeId = getScriptElementType(paragraph);
+  const text = paragraph.textContent || "";
+
+  if (typeId === "character" && /\([^)]*$/.test(text)) {
+    const openIdx = text.lastIndexOf("(");
+    paragraph.textContent = text.slice(0, openIdx) + suggestion;
+  } else if (typeId === "scene" && SCENE_TIME_SUGGESTIONS.some((t) => suggestion.endsWith(` - ${t}`))) {
+    paragraph.textContent = suggestion;
+  } else {
+    paragraph.textContent = suggestion;
+  }
+
+  setScriptElementType(paragraph, typeId);
+  placeCaretIn(paragraph, true);
+}
+
+function createAssistController(editor, assistEl) {
+  if (!assistEl) return { sync: () => {}, hide: () => {}, destroy: () => {} };
+
+  let activeIndex = 0;
+  let suggestions = [];
+
+  const hide = () => {
+    assistEl.classList.add("hidden");
+    assistEl.replaceChildren();
+    suggestions = [];
+    activeIndex = 0;
+  };
+
+  const render = () => {
+    assistEl.replaceChildren();
+    suggestions.forEach((label, index) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "script-assist-item" + (index === activeIndex ? " is-active" : "");
+      btn.textContent = label;
+      btn.addEventListener("mousedown", (e) => {
+        e.preventDefault();
+        const paragraph = getBlockParagraph(window.getSelection()?.anchorNode, editor);
+        if (paragraph) applyAssistSuggestion(paragraph, label);
+        hide();
+      });
+      assistEl.appendChild(btn);
+    });
+  };
+
+  const positionNearSelection = () => {
+    const sel = window.getSelection();
+    if (!sel?.rangeCount) return;
+    const rect = sel.getRangeAt(0).getBoundingClientRect();
+    const host = editor.parentElement || editor;
+    const hostRect = host.getBoundingClientRect();
+    assistEl.style.left = `${Math.max(8, rect.left - hostRect.left)}px`;
+    assistEl.style.top = `${Math.max(8, rect.bottom - hostRect.top + 6)}px`;
+  };
+
+  const sync = () => {
+    const paragraph = getBlockParagraph(window.getSelection()?.anchorNode, editor);
+    if (!paragraph || !editor.contains(paragraph)) {
+      hide();
+      return;
+    }
+    suggestions = getAssistSuggestions(paragraph, editor);
+    if (!suggestions.length) {
+      hide();
+      return;
+    }
+    activeIndex = Math.min(activeIndex, suggestions.length - 1);
+    assistEl.classList.remove("hidden");
+    positionNearSelection();
+    render();
+  };
+
+  const onAssistKeyDown = (e) => {
+    if (assistEl.classList.contains("hidden") || !suggestions.length) return false;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      activeIndex = (activeIndex + 1) % suggestions.length;
+      render();
+      return true;
+    }
+    if (e.key === "ArrowUp") {
+      e.preventDefault();
+      activeIndex = activeIndex <= 0 ? suggestions.length - 1 : activeIndex - 1;
+      render();
+      return true;
+    }
+    if (e.key === "Enter" || e.key === "Tab") {
+      e.preventDefault();
+      const paragraph = getBlockParagraph(window.getSelection()?.anchorNode, editor);
+      if (paragraph) applyAssistSuggestion(paragraph, suggestions[activeIndex]);
+      hide();
+      return true;
+    }
+    if (e.key === "Escape") {
+      e.preventDefault();
+      hide();
+      return true;
+    }
+    return false;
+  };
+
+  return { sync, hide, onAssistKeyDown, destroy: hide };
+}
+
+/** Keep uppercase elements capped while typing (Celtx auto-format). */
+export function handleScriptUppercaseInput(editor) {
   const paragraph = getBlockParagraph(window.getSelection()?.anchorNode, editor);
-  if (!paragraph || !editor.contains(paragraph)) return false;
-
-  const currentType = getScriptElementType(paragraph);
-  if (currentType !== "character") return false;
-
-  setScriptElementType(paragraph, "parenthetical");
-  return true;
+  if (!paragraph || !editor.contains(paragraph)) return;
+  const def = SCRIPT_ELEMENT_BY_ID[getScriptElementType(paragraph)];
+  if (!def?.uppercase) return;
+  const text = paragraph.textContent || "";
+  const upper = text.toUpperCase();
+  if (text === upper) return;
+  const sel = window.getSelection();
+  const offset = sel?.anchorOffset ?? upper.length;
+  paragraph.textContent = upper;
+  placeCaretIn(paragraph, false);
+  try {
+    const range = document.createRange();
+    const node = paragraph.firstChild;
+    if (node) {
+      range.setStart(node, Math.min(offset, upper.length));
+      range.collapse(true);
+      sel?.removeAllRanges();
+      sel?.addRange(range);
+    }
+  } catch (_) { /* ignore caret restore */ }
 }
 
 export function applyScriptElementToSelection(editor, typeId) {
@@ -259,7 +435,7 @@ export function normalizeScriptHtml(html) {
 
   const paragraphs = holder.querySelectorAll("p");
   if (!paragraphs.length) {
-    holder.appendChild(createScriptParagraph(DEFAULT_SCRIPT_ELEMENT));
+    holder.appendChild(createScriptParagraph(DEFAULT_SCRIPT_OPENING.typeId, DEFAULT_SCRIPT_OPENING.text));
     return holder.innerHTML;
   }
 
@@ -306,6 +482,39 @@ export function ensureScriptEditorContent(editor) {
   ensureScriptEditorTail(editor);
 }
 
+/** Collect scene headings from all body chapters for scene navigation. */
+export function collectScriptSceneHeadings(sections) {
+  if (!sections || typeof sections !== "object") return [];
+  const body = Array.isArray(sections.body) ? sections.body : [];
+  const scenes = [];
+  body.forEach((chapter, chapterIndex) => {
+    const holder = document.createElement("div");
+    holder.innerHTML = String(chapter?.content || "");
+    let sceneInChapter = 0;
+    holder.querySelectorAll("p").forEach((p) => {
+      if (!p.classList.contains("script-scene")) return;
+      sceneInChapter += 1;
+      const label = (p.textContent || "").trim() || `Scene ${chapterIndex + 1}.${sceneInChapter}`;
+      scenes.push({
+        chapterIndex,
+        sceneIndex: sceneInChapter - 1,
+        label,
+        chapterTitle: chapter?.title || `Scene ${chapterIndex + 1}`,
+      });
+    });
+    if (!sceneInChapter) {
+      scenes.push({
+        chapterIndex,
+        sceneIndex: 0,
+        label: chapter?.title || `Scene ${chapterIndex + 1}`,
+        chapterTitle: chapter?.title || `Scene ${chapterIndex + 1}`,
+        isChapterFallback: true,
+      });
+    }
+  });
+  return scenes;
+}
+
 function renderScriptElementMenu(menu) {
   if (!menu || menu.dataset.rendered === "1") return;
   menu.dataset.rendered = "1";
@@ -333,12 +542,22 @@ function openScriptElementMenu(menu, pickerBtn) {
 
 /**
  * Wire script toolbar and keyboard handlers (Celtx-compatible).
- * @param {{ editor: HTMLElement, toolbar: HTMLElement|null, pickerBtn?: HTMLElement|null, pickerLabel?: HTMLElement|null, elementMenu?: HTMLElement|null, onChange?: () => void, hintEl?: HTMLElement|null, isActive?: () => boolean }} options
  */
-export function initScriptEditor({ editor, toolbar, pickerBtn, pickerLabel, elementMenu, onChange, hintEl, isActive }) {
+export function initScriptEditor({
+  editor,
+  toolbar,
+  pickerBtn,
+  pickerLabel,
+  elementMenu,
+  assistEl,
+  onChange,
+  hintEl,
+  isActive,
+}) {
   if (!editor) return () => {};
 
   const scriptModeActive = () => (isActive ? isActive() : document.body.classList.contains("script-mode"));
+  const assist = createAssistController(editor, assistEl);
 
   renderScriptElementMenu(elementMenu);
 
@@ -369,10 +588,17 @@ export function initScriptEditor({ editor, toolbar, pickerBtn, pickerLabel, elem
     if (hintEl && currentType) {
       hintEl.textContent = scriptElementHint(currentType);
     }
+
+    assist.sync();
   };
 
   const onKeyDown = (e) => {
     if (!scriptModeActive()) return;
+    if (assist.onAssistKeyDown(e)) {
+      notify();
+      syncToolbarState();
+      return;
+    }
     if (handleScriptTabKey(e, editor)) {
       notify();
       syncToolbarState();
@@ -382,14 +608,8 @@ export function initScriptEditor({ editor, toolbar, pickerBtn, pickerLabel, elem
     }
   };
 
-  const onBeforeInput = (e) => {
-    if (!scriptModeActive()) return;
-    if (handleScriptInputAssist(e, editor)) {
-      syncToolbarState();
-    }
-  };
-
   const onInput = () => {
+    handleScriptUppercaseInput(editor);
     notify();
     syncToolbarState();
   };
@@ -400,13 +620,21 @@ export function initScriptEditor({ editor, toolbar, pickerBtn, pickerLabel, elem
   };
 
   editor.addEventListener("keydown", onKeyDown);
-  editor.addEventListener("beforeinput", onBeforeInput);
   editor.addEventListener("input", onInput);
   editor.addEventListener("keyup", onSelectionChange);
   editor.addEventListener("click", onSelectionChange);
+  editor.addEventListener("blur", () => assist.hide(), true);
   document.addEventListener("selectionchange", onSelectionChange);
 
   const toolbarClick = (e) => {
+    const formatBtn = e.target.closest("[data-script-cmd]");
+    if (formatBtn && toolbar?.contains(formatBtn)) {
+      e.preventDefault();
+      document.execCommand(formatBtn.dataset.scriptCmd, false, null);
+      editor.focus();
+      notify();
+      return;
+    }
     const btn = e.target.closest("[data-script-element]");
     if (!btn || !toolbar?.contains(btn)) return;
     e.preventDefault();
@@ -455,15 +683,16 @@ export function initScriptEditor({ editor, toolbar, pickerBtn, pickerLabel, elem
 
   return () => {
     editor.removeEventListener("keydown", onKeyDown);
-    editor.removeEventListener("beforeinput", onBeforeInput);
     editor.removeEventListener("input", onInput);
     editor.removeEventListener("keyup", onSelectionChange);
     editor.removeEventListener("click", onSelectionChange);
+    editor.removeEventListener("blur", () => assist.hide(), true);
     document.removeEventListener("selectionchange", onSelectionChange);
     toolbar?.removeEventListener("click", toolbarClick);
     pickerBtn?.removeEventListener("click", onPickerToggle);
     document.removeEventListener("click", onDocumentClick);
     document.removeEventListener("keydown", onShortcut);
+    assist.destroy();
   };
 }
 
@@ -482,7 +711,7 @@ export function scriptElementHint(typeId) {
   if (!def) return "";
   const enterNext = ENTER_NEXT[typeId];
   const nextLabel = SCRIPT_ELEMENT_BY_ID[enterNext]?.menuLabel || "";
-  return `Tab — switch element · Enter — ${nextLabel || "next line"} · empty line — exit block`;
+  return `Tab — switch · Enter — ${nextLabel || "next"} · ↑↓ — suggestions`;
 }
 
-export { SCENE_PREFIXES, SCENE_TIME_SUGGESTIONS, CHARACTER_EXTENSIONS };
+export { SCENE_PREFIXES, SCENE_TIME_SUGGESTIONS, CHARACTER_EXTENSIONS, TRANSITION_SUGGESTIONS };
