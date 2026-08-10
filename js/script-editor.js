@@ -135,6 +135,37 @@ function insertParagraphAfter(reference, typeId, root) {
   return p;
 }
 
+function isCaretAtEndOfParagraph(paragraph) {
+  const sel = window.getSelection();
+  if (!sel?.rangeCount) return true;
+  const range = sel.getRangeAt(0);
+  if (!range.collapsed || !paragraph.contains(range.startContainer)) return false;
+  const tail = document.createRange();
+  tail.selectNodeContents(paragraph);
+  tail.setStart(range.startContainer, range.startOffset);
+  return tail.toString().length === 0;
+}
+
+function isCaretAtStartOfParagraph(paragraph) {
+  const sel = window.getSelection();
+  if (!sel?.rangeCount) return false;
+  const range = sel.getRangeAt(0);
+  if (!range.collapsed || !paragraph.contains(range.startContainer)) return false;
+  const head = document.createRange();
+  head.selectNodeContents(paragraph);
+  head.setEnd(range.startContainer, range.startOffset);
+  return head.toString().length === 0;
+}
+
+function normalizeParagraphCase(paragraph, typeId) {
+  const def = SCRIPT_ELEMENT_BY_ID[typeId];
+  if (!def?.uppercase) return;
+  const text = paragraph.textContent || "";
+  const upper = text.toUpperCase();
+  if (text === upper) return;
+  paragraph.textContent = upper;
+}
+
 function splitParagraphAtCaret(paragraph) {
   const sel = window.getSelection();
   if (!sel?.rangeCount) return { before: paragraph, after: null };
@@ -157,11 +188,15 @@ function splitParagraphAtCaret(paragraph) {
 
 export function handleScriptEnterKey(event, editor) {
   if (!editor || event.key !== "Enter" || event.shiftKey) return false;
-
-  const paragraph = getBlockParagraph(window.getSelection()?.anchorNode, editor);
-  if (!paragraph) return false;
+  if (!editor.contains(document.activeElement) && document.activeElement !== editor) return false;
 
   event.preventDefault();
+
+  const paragraph = getBlockParagraph(window.getSelection()?.anchorNode, editor);
+  if (!paragraph) {
+    insertParagraphAfter(editor.querySelector("p:last-of-type"), "action", editor);
+    return true;
+  }
 
   const currentType = getScriptElementType(paragraph);
   const isEmpty = isEmptyParagraph(paragraph);
@@ -177,15 +212,20 @@ export function handleScriptEnterKey(event, editor) {
     return true;
   }
 
-  const { before, after } = splitParagraphAtCaret(paragraph);
   const nextType = ENTER_NEXT[currentType] || "action";
+  normalizeParagraphCase(paragraph, currentType);
 
+  if (isCaretAtEndOfParagraph(paragraph) || isCaretAtStartOfParagraph(paragraph)) {
+    insertParagraphAfter(paragraph, nextType, editor);
+    return true;
+  }
+
+  const { before, after } = splitParagraphAtCaret(paragraph);
   if (after) {
     setScriptElementType(after, nextType);
-    setScriptElementType(before, currentType);
+    normalizeParagraphCase(before, currentType);
     placeCaretIn(after, false);
   } else {
-    setScriptElementType(before, currentType);
     insertParagraphAfter(before, nextType, editor);
   }
 
@@ -376,13 +416,6 @@ function createAssistController(editor, assistEl) {
         hide();
         return false;
       }
-      e.preventDefault();
-      const paragraph = getBlockParagraph(window.getSelection()?.anchorNode, editor);
-      if (paragraph) applyAssistSuggestion(paragraph, suggestions[activeIndex]);
-      hide();
-      return true;
-    }
-    if (e.key === "Enter" && assistNavigated) {
       e.preventDefault();
       const paragraph = getBlockParagraph(window.getSelection()?.anchorNode, editor);
       if (paragraph) applyAssistSuggestion(paragraph, suggestions[activeIndex]);
@@ -627,16 +660,20 @@ export function initScriptEditor({
 
   const onKeyDown = (e) => {
     if (!scriptModeActive()) return;
+    if (e.key === "Enter" && !e.shiftKey) {
+      assist.hide();
+      if (handleScriptEnterKey(e, editor)) {
+        notify();
+        syncToolbarState();
+      }
+      return;
+    }
     if (assist.onAssistKeyDown(e)) {
       notify();
       syncToolbarState();
       return;
     }
-    if (e.key === "Enter") assist.hide();
     if (handleScriptTabKey(e, editor)) {
-      notify();
-      syncToolbarState();
-    } else if (handleScriptEnterKey(e, editor)) {
       notify();
       syncToolbarState();
     }
