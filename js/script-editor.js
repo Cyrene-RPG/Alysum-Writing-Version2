@@ -1,16 +1,18 @@
 /**
- * Screenplay / script editor — element types, keyboard flow, and HTML normalization.
+ * Screenplay / script editor — Celtx-compatible element types, keyboard flow, and HTML normalization.
  * Uses semantic <p class="script-*"> blocks stored in chapter HTML (same model as prose).
  */
 
 export const SCRIPT_ELEMENTS = [
-  { id: "scene", label: "Scene", className: "script-scene", shortcut: "1", uppercase: true },
-  { id: "action", label: "Action", className: "script-action", shortcut: "2", uppercase: false },
-  { id: "character", label: "Character", className: "script-character", shortcut: "3", uppercase: true },
-  { id: "dialogue", label: "Dialogue", className: "script-dialogue", shortcut: "4", uppercase: false },
-  { id: "parenthetical", label: "Paren", className: "script-parenthetical", shortcut: "5", uppercase: false },
-  { id: "transition", label: "Trans", className: "script-transition", shortcut: "6", uppercase: true },
-  { id: "shot", label: "Shot", className: "script-shot", shortcut: "7", uppercase: true },
+  { id: "act", label: "Act", menuLabel: "Act", className: "script-act", shortcut: "0", uppercase: true },
+  { id: "scene", label: "Scene", menuLabel: "Scene Heading", className: "script-scene", shortcut: "1", uppercase: true },
+  { id: "action", label: "Action", menuLabel: "Action", className: "script-action", shortcut: "2", uppercase: false },
+  { id: "character", label: "Character", menuLabel: "Character", className: "script-character", shortcut: "3", uppercase: true },
+  { id: "dialogue", label: "Dialogue", menuLabel: "Dialogue", className: "script-dialogue", shortcut: "4", uppercase: false },
+  { id: "parenthetical", label: "Paren", menuLabel: "Parenthetical", className: "script-parenthetical", shortcut: "5", uppercase: false },
+  { id: "transition", label: "Trans", menuLabel: "Transition", className: "script-transition", shortcut: "6", uppercase: true },
+  { id: "shot", label: "Shot", menuLabel: "Shot", className: "script-shot", shortcut: "7", uppercase: true },
+  { id: "text", label: "Text", menuLabel: "Text", className: "script-text", shortcut: "8", uppercase: false },
 ];
 
 export const SCRIPT_ELEMENT_BY_ID = Object.fromEntries(SCRIPT_ELEMENTS.map((el) => [el.id, el]));
@@ -18,29 +20,39 @@ export const SCRIPT_CLASS_TO_ID = Object.fromEntries(SCRIPT_ELEMENTS.map((el) =>
 export const SCRIPT_ELEMENT_CLASSES = new Set(SCRIPT_ELEMENTS.map((el) => el.className));
 export const DEFAULT_SCRIPT_ELEMENT = "scene";
 
+/** Celtx Enter flow: after dialogue → next character; after transition → scene heading. */
 const ENTER_NEXT = {
+  act: "scene",
   scene: "action",
   action: "action",
   character: "dialogue",
-  dialogue: "dialogue",
+  dialogue: "character",
   parenthetical: "dialogue",
   transition: "scene",
   shot: "action",
+  text: "action",
 };
 
+/** Celtx empty-line Enter: empty action → scene heading; empty dialogue → action. */
 const EMPTY_ENTER_NEXT = {
+  act: "scene",
   scene: "action",
-  action: "action",
+  action: "scene",
   character: "action",
   dialogue: "action",
   parenthetical: "action",
   transition: "scene",
   shot: "action",
+  text: "action",
 };
 
-const TAB_CYCLE = ["scene", "action", "character", "dialogue", "parenthetical", "transition", "shot"];
+const TAB_CYCLE = ["act", "scene", "action", "character", "dialogue", "parenthetical", "transition", "shot", "text"];
 
-const SCENE_PREFIXES = ["INT.", "EXT.", "INT./EXT.", "EXT./INT.", "I/E."];
+const SCENE_PREFIXES = ["INT.", "EXT.", "INT./EXT.", "EXT./INT.", "I/E.", "EST."];
+
+const SCENE_TIME_SUGGESTIONS = ["DAY", "NIGHT", "MORNING", "AFTERNOON", "EVENING", "LATER", "CONTINUOUS", "SAME"];
+
+const CHARACTER_EXTENSIONS = ["(V.O.)", "(O.S.)", "(O.C.)", "(CONT'D)", "(PRE-LAP)"];
 
 function stripTags(html) {
   return String(html || "").replace(/<[^>]+>/g, "");
@@ -110,8 +122,7 @@ function placeCaretIn(paragraph, atEnd = true) {
 }
 
 function insertParagraphAfter(reference, typeId, root) {
-  const nextType = typeId;
-  const p = createScriptParagraph(nextType);
+  const p = createScriptParagraph(typeId);
   if (reference?.nextSibling) reference.parentNode.insertBefore(p, reference.nextSibling);
   else root.appendChild(p);
   placeCaretIn(p, false);
@@ -151,12 +162,8 @@ export function handleScriptEnterKey(event, editor) {
 
   if (isEmpty) {
     const nextType = EMPTY_ENTER_NEXT[currentType] || "action";
-    if (currentType === "dialogue" || currentType === "parenthetical") {
-      setScriptElementType(paragraph, nextType);
-      placeCaretIn(paragraph, false);
-      return true;
-    }
-    insertParagraphAfter(paragraph, nextType, editor);
+    setScriptElementType(paragraph, nextType);
+    placeCaretIn(paragraph, false);
     return true;
   }
 
@@ -197,6 +204,20 @@ export function handleScriptTabKey(event, editor) {
 
   setScriptElementType(paragraph, nextType);
   placeCaretIn(paragraph, true);
+  return true;
+}
+
+/** Celtx: typing "(" on a character line switches to parenthetical. */
+export function handleScriptInputAssist(event, editor) {
+  if (!editor || event.inputType !== "insertText" || event.data !== "(") return false;
+
+  const paragraph = getBlockParagraph(window.getSelection()?.anchorNode, editor);
+  if (!paragraph || !editor.contains(paragraph)) return false;
+
+  const currentType = getScriptElementType(paragraph);
+  if (currentType !== "character") return false;
+
+  setScriptElementType(paragraph, "parenthetical");
   return true;
 }
 
@@ -247,8 +268,9 @@ export function normalizeScriptHtml(html) {
       const text = (p.textContent || "").trim();
       let inferred = DEFAULT_SCRIPT_ELEMENT;
       const upper = text.toUpperCase();
-      if (/^(INT\.|EXT\.|INT\.\/EXT\.|I\/E\.|EST\.)/.test(upper)) inferred = "scene";
-      else if (/^(FADE IN|FADE OUT|CUT TO|DISSOLVE TO|SMASH CUT|MATCH CUT)/.test(upper)) inferred = "transition";
+      if (/^ACT\b/.test(upper)) inferred = "act";
+      else if (/^(INT\.|EXT\.|INT\.\/EXT\.|I\/E\.|EST\.)/.test(upper)) inferred = "scene";
+      else if (/^(FADE IN|FADE OUT|FADE TO|CUT TO|DISSOLVE TO|SMASH CUT|MATCH CUT)/.test(upper)) inferred = "transition";
       else if (/^\(.+\)$/.test(text)) inferred = "parenthetical";
       else if (text === upper && text.length > 0 && text.length < 40 && !text.includes(".")) inferred = "character";
       setScriptElementType(p, inferred);
@@ -284,19 +306,45 @@ export function ensureScriptEditorContent(editor) {
   ensureScriptEditorTail(editor);
 }
 
+function renderScriptElementMenu(menu) {
+  if (!menu || menu.dataset.rendered === "1") return;
+  menu.dataset.rendered = "1";
+  menu.replaceChildren();
+  SCRIPT_ELEMENTS.forEach((el) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "script-element-menu-item";
+    btn.dataset.scriptElement = el.id;
+    btn.setAttribute("role", "option");
+    btn.innerHTML = `<span class="script-element-menu-label">${el.menuLabel}</span><span class="script-element-menu-shortcut">Ctrl+${el.shortcut}</span>`;
+    menu.appendChild(btn);
+  });
+}
+
+function closeScriptElementMenu(menu, pickerBtn) {
+  menu?.classList.add("hidden");
+  pickerBtn?.setAttribute("aria-expanded", "false");
+}
+
+function openScriptElementMenu(menu, pickerBtn) {
+  menu?.classList.remove("hidden");
+  pickerBtn?.setAttribute("aria-expanded", "true");
+}
+
 /**
- * Wire script toolbar buttons and keyboard handlers.
- * @param {{ editor: HTMLElement, toolbar: HTMLElement|null, onChange?: () => void, hintEl?: HTMLElement|null, isActive?: () => boolean }} options
+ * Wire script toolbar and keyboard handlers (Celtx-compatible).
+ * @param {{ editor: HTMLElement, toolbar: HTMLElement|null, pickerBtn?: HTMLElement|null, pickerLabel?: HTMLElement|null, elementMenu?: HTMLElement|null, onChange?: () => void, hintEl?: HTMLElement|null, isActive?: () => boolean }} options
  */
-export function initScriptEditor({ editor, toolbar, onChange, hintEl, isActive }) {
+export function initScriptEditor({ editor, toolbar, pickerBtn, pickerLabel, elementMenu, onChange, hintEl, isActive }) {
   if (!editor) return () => {};
 
   const scriptModeActive = () => (isActive ? isActive() : document.body.classList.contains("script-mode"));
 
+  renderScriptElementMenu(elementMenu);
+
   const notify = () => { onChange?.(); };
 
   const syncToolbarState = () => {
-    if (!toolbar && !hintEl) return;
     const paragraph = getBlockParagraph(window.getSelection()?.anchorNode, editor);
     const currentType = paragraph && editor.contains(paragraph)
       ? getScriptElementType(paragraph)
@@ -305,6 +353,18 @@ export function initScriptEditor({ editor, toolbar, onChange, hintEl, isActive }
     toolbar?.querySelectorAll("[data-script-element]").forEach((btn) => {
       btn.classList.toggle("is-active", btn.dataset.scriptElement === currentType);
     });
+
+    if (pickerLabel) {
+      const def = currentType ? SCRIPT_ELEMENT_BY_ID[currentType] : null;
+      pickerLabel.textContent = def?.menuLabel || "Scene Heading";
+    }
+
+    if (elementMenu) {
+      elementMenu.querySelectorAll("[data-script-element]").forEach((btn) => {
+        btn.classList.toggle("is-active", btn.dataset.scriptElement === currentType);
+        btn.setAttribute("aria-selected", btn.dataset.scriptElement === currentType ? "true" : "false");
+      });
+    }
 
     if (hintEl && currentType) {
       hintEl.textContent = scriptElementHint(currentType);
@@ -322,6 +382,13 @@ export function initScriptEditor({ editor, toolbar, onChange, hintEl, isActive }
     }
   };
 
+  const onBeforeInput = (e) => {
+    if (!scriptModeActive()) return;
+    if (handleScriptInputAssist(e, editor)) {
+      syncToolbarState();
+    }
+  };
+
   const onInput = () => {
     notify();
     syncToolbarState();
@@ -333,6 +400,7 @@ export function initScriptEditor({ editor, toolbar, onChange, hintEl, isActive }
   };
 
   editor.addEventListener("keydown", onKeyDown);
+  editor.addEventListener("beforeinput", onBeforeInput);
   editor.addEventListener("input", onInput);
   editor.addEventListener("keyup", onSelectionChange);
   editor.addEventListener("click", onSelectionChange);
@@ -345,13 +413,34 @@ export function initScriptEditor({ editor, toolbar, onChange, hintEl, isActive }
     applyScriptElementToSelection(editor, btn.dataset.scriptElement);
     notify();
     syncToolbarState();
+    if (elementMenu && btn.closest(".script-element-menu")) {
+      closeScriptElementMenu(elementMenu, pickerBtn);
+    }
   };
 
   toolbar?.addEventListener("click", toolbarClick);
 
+  const onPickerToggle = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!elementMenu) return;
+    if (elementMenu.classList.contains("hidden")) openScriptElementMenu(elementMenu, pickerBtn);
+    else closeScriptElementMenu(elementMenu, pickerBtn);
+  };
+
+  pickerBtn?.addEventListener("click", onPickerToggle);
+
+  const onDocumentClick = (e) => {
+    if (!elementMenu || elementMenu.classList.contains("hidden")) return;
+    if (pickerBtn?.contains(e.target) || elementMenu.contains(e.target)) return;
+    closeScriptElementMenu(elementMenu, pickerBtn);
+  };
+
+  document.addEventListener("click", onDocumentClick);
+
   const onShortcut = (e) => {
     if (!scriptModeActive()) return;
-    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
     if (!editor.contains(document.activeElement) && document.activeElement !== editor) return;
     const match = SCRIPT_ELEMENTS.find((el) => el.shortcut === e.key);
     if (!match) return;
@@ -366,11 +455,14 @@ export function initScriptEditor({ editor, toolbar, onChange, hintEl, isActive }
 
   return () => {
     editor.removeEventListener("keydown", onKeyDown);
+    editor.removeEventListener("beforeinput", onBeforeInput);
     editor.removeEventListener("input", onInput);
     editor.removeEventListener("keyup", onSelectionChange);
     editor.removeEventListener("click", onSelectionChange);
     document.removeEventListener("selectionchange", onSelectionChange);
     toolbar?.removeEventListener("click", toolbarClick);
+    pickerBtn?.removeEventListener("click", onPickerToggle);
+    document.removeEventListener("click", onDocumentClick);
     document.removeEventListener("keydown", onShortcut);
   };
 }
@@ -389,6 +481,8 @@ export function scriptElementHint(typeId) {
   const def = SCRIPT_ELEMENT_BY_ID[typeId];
   if (!def) return "";
   const enterNext = ENTER_NEXT[typeId];
-  const nextLabel = SCRIPT_ELEMENT_BY_ID[enterNext]?.label || "";
-  return `Tab — cycle · Enter — ${nextLabel || "next line"} · empty line — exit block`;
+  const nextLabel = SCRIPT_ELEMENT_BY_ID[enterNext]?.menuLabel || "";
+  return `Tab — switch element · Enter — ${nextLabel || "next line"} · empty line — exit block`;
 }
+
+export { SCENE_PREFIXES, SCENE_TIME_SUGGESTIONS, CHARACTER_EXTENSIONS };

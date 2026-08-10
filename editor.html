@@ -44,7 +44,7 @@
     <link rel="stylesheet" href="css/accessibility-fonts.css?v=1" />
     <link rel="stylesheet" href="css/book-inline-fonts.css?v=4" />
     <link rel="stylesheet" href="css/scene-breaks.css?v=8" />
-    <link rel="stylesheet" href="css/script-editor.css?v=2" />
+    <link rel="stylesheet" href="css/script-editor.css?v=3" />
 <link rel="stylesheet" href="css/book-version.css?v=8" />
     <link rel="stylesheet" href="css/collab-room.css?v=4" />
     <script src="js/gradient-theme-sync.js" defer></script>
@@ -1332,15 +1332,16 @@
     <span class="comic-upload-status" id="comicUploadStatus" aria-live="polite"></span>
 </div>
 <div class="script-toolbar" id="scriptToolbar" aria-label="Script formatting tools">
-    <button type="button" class="script-element-btn" data-script-element="scene" data-tip="Scene Heading — INT./EXT. location">Scene <kbd>1</kbd></button>
-    <button type="button" class="script-element-btn" data-script-element="action" data-tip="Action — describe what happens">Action <kbd>2</kbd></button>
-    <button type="button" class="script-element-btn" data-script-element="character" data-tip="Character — who is speaking">Character <kbd>3</kbd></button>
-    <button type="button" class="script-element-btn" data-script-element="dialogue" data-tip="Dialogue — character speech">Dialogue <kbd>4</kbd></button>
-    <button type="button" class="script-element-btn" data-script-element="parenthetical" data-tip="Parenthetical — (beat) or (direction)">Paren <kbd>5</kbd></button>
-    <button type="button" class="script-element-btn" data-script-element="transition" data-tip="Transition — FADE IN:, CUT TO:">Trans <kbd>6</kbd></button>
-    <button type="button" class="script-element-btn" data-script-element="shot" data-tip="Shot — camera direction">Shot <kbd>7</kbd></button>
+    <div class="script-element-picker">
+        <button type="button" class="script-element-picker-btn" id="scriptElementPickerBtn" aria-haspopup="listbox" aria-expanded="false" aria-controls="scriptElementMenu" data-tip="Element selection — Tab to switch">
+            <span class="script-element-picker-label" id="scriptElementPickerLabel">Scene Heading</span>
+            <span class="script-element-picker-hint">Tab to switch</span>
+            <span class="script-element-picker-caret" aria-hidden="true">▾</span>
+        </button>
+        <div class="script-element-menu hidden" id="scriptElementMenu" role="listbox" aria-label="Script element types"></div>
+    </div>
     <button class="tool-btn" type="button" id="scriptFindReplaceBtn" data-tip="Find and replace (Ctrl+F)" aria-label="Find and replace">🔍</button>
-    <span class="script-toolbar-hint" id="scriptToolbarHint">Tab — cycle elements · Enter — next line type</span>
+    <span class="script-toolbar-hint" id="scriptToolbarHint">Tab — switch element · Enter — next line type</span>
 </div>
 <div class="bg-bar" id="backgroundBar" aria-label="Editor background image">
     <label class="bg-field" style="flex:0 1 180px;"><span class="bg-label">Fit</span><select class="bg-input" id="backgroundFitSelect" aria-label="Background image fit"><option value="cover">Cover</option><option value="contain">Contain</option><option value="original">Original</option><option value="tile">Tile</option></select></label>
@@ -1429,7 +1430,7 @@
                     <div class="copyright-preview-body" id="copyrightPreview"></div>
                 </div>
             </div>
-            <div class="editor" id="editor" contenteditable="true" data-placeholder="Begin writing here..." data-script-placeholder="Start with a scene heading — INT. LOCATION - DAY"></div>
+            <div class="editor" id="editor" contenteditable="true" data-placeholder="Begin writing here..." data-script-placeholder="Start with FADE IN: or a scene heading — INT. LOCATION - DAY"></div>
             <div class="comic-workspace" id="comicWorkspace">
                 <div class="comic-page-panel">
                     <p class="comic-strip-hint">Add multiple images to this chapter — they stack and scroll vertically for readers (webtoon-style).</p>
@@ -1571,7 +1572,7 @@
         isScriptParagraph,
         normalizeScriptParagraphAttributes,
         scriptHtmlToPlainText,
-    } from "./js/script-editor.js?v=2";
+    } from "./js/script-editor.js?v=3";
     import {
         LOCAL_GUEST_USER,
         LOCAL_VAULT_STORAGE_KEY,
@@ -2066,6 +2067,9 @@ function rememberBookId(id) {
     const scriptToolbar = document.getElementById("scriptToolbar");
     const scriptToolbarHint = document.getElementById("scriptToolbarHint");
     const scriptFindReplaceBtn = document.getElementById("scriptFindReplaceBtn");
+    const scriptElementPickerBtn = document.getElementById("scriptElementPickerBtn");
+    const scriptElementPickerLabel = document.getElementById("scriptElementPickerLabel");
+    const scriptElementMenu = document.getElementById("scriptElementMenu");
     const bottomMetaLabel = document.getElementById("bottomMetaLabel");
     const bottomTotalLabel = document.getElementById("bottomTotalLabel");
     const sidebarMetaPrimaryLabel = document.getElementById("sidebarMetaPrimaryLabel");
@@ -2317,7 +2321,16 @@ function rememberBookId(id) {
         if (sidebarMetaPrimaryLabel) sidebarMetaPrimaryLabel.textContent = comic ? "pages uploaded" : "words";
         if (sidebarMetaSecondaryLabel) sidebarMetaSecondaryLabel.textContent = comic ? "pages" : (script ? "scenes" : "chapters");
         if (bottomMetaLabel) bottomMetaLabel.textContent = script ? "scene words" : "chapter words";
+        applyScriptTitlePageUI();
         applyEditorPageLayoutUI();
+    }
+
+    function applyScriptTitlePageUI() {
+        const script = isCurrentBookScript() && !isCurrentBookComic();
+        const ch = currentChapter();
+        const title = String(ch?.title || "").trim().toLowerCase();
+        const isTitlePage = script && currentSection === "front" && title === "title page";
+        document.body.classList.toggle("is-title-page", isTitlePage);
     }
 
     function defaultCopyrightAuthorName() {
@@ -5234,6 +5247,9 @@ function rememberBookId(id) {
     initScriptEditor({
         editor,
         toolbar: scriptToolbar,
+        pickerBtn: scriptElementPickerBtn,
+        pickerLabel: scriptElementPickerLabel,
+        elementMenu: scriptElementMenu,
         hintEl: scriptToolbarHint,
         isActive: () => isCurrentBookScript() && !isCurrentBookComic(),
         onChange: () => {
