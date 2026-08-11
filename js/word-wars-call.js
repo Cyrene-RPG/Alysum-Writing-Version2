@@ -72,11 +72,15 @@ function renderDockPreview(preview) {
  *   speakingIds?: Set<string> | string[],
  *   getPreview: (participant: object) => object,
  *   onSelect: (userId: string) => void,
+ *   canKick?: boolean,
+ *   onKick?: (userId: string) => void,
  * }} opts
  */
 export function renderWriterDock(container, opts) {
     if (!container) return;
+    container._wwDockOpts = opts;
     const { participants = [], userId, focusedUserId, getPreview, onSelect } = opts;
+    const canKick = Boolean(opts.canKick);
     const speakingIds = opts.speakingIds instanceof Set
         ? opts.speakingIds
         : new Set(Array.isArray(opts.speakingIds) ? opts.speakingIds : []);
@@ -91,21 +95,28 @@ export function renderWriterDock(container, opts) {
             const typing = participant.isTyping ? '<span class="ww-dock-typing">Typing</span>' : "";
             const speaking = isSpeaking ? '<span class="ww-dock-speaking">Talking</span>' : "";
             const hostBadge = participant.isHost ? '<span class="ww-dock-host">Host</span>' : "";
+            const showKick = canKick && !isYou && !participant.isHost;
+            const kickBtn = showKick
+                ? `<button type="button" class="ww-dock-kick" data-kick-user="${escapeHtml(participant.userId)}" title="Remove writer from sprint">Kick</button>`
+                : "";
 
             return `
-                <button
-                    type="button"
-                    class="ww-dock-tile${isYou ? " is-you" : ""}${isFocused ? " is-focused" : ""}${participant.isTyping ? " is-typing" : ""}${isSpeaking ? " is-speaking" : ""}"
-                    data-writer-id="${escapeHtml(participant.userId)}"
-                    aria-pressed="${isFocused ? "true" : "false"}"
-                    title="${escapeHtml(isYou ? "Your manuscript" : participant.displayName || "Writer")}"
-                >
-                    ${renderDockPreview(preview)}
-                    <span class="ww-dock-meta">
-                        <span class="ww-dock-name">${escapeHtml(isYou ? "You" : participant.displayName || "Writer")}${hostBadge}</span>
-                        <span class="ww-dock-words">${words} word${words === 1 ? "" : "s"}${typing}${speaking}</span>
-                    </span>
-                </button>
+                <div class="ww-dock-tile-wrap${showKick ? " has-kick" : ""}">
+                    <button
+                        type="button"
+                        class="ww-dock-tile${isYou ? " is-you" : ""}${isFocused ? " is-focused" : ""}${participant.isTyping ? " is-typing" : ""}${isSpeaking ? " is-speaking" : ""}"
+                        data-writer-id="${escapeHtml(participant.userId)}"
+                        aria-pressed="${isFocused ? "true" : "false"}"
+                        title="${escapeHtml(isYou ? "Your manuscript" : participant.displayName || "Writer")}"
+                    >
+                        ${renderDockPreview(preview)}
+                        <span class="ww-dock-meta">
+                            <span class="ww-dock-name">${escapeHtml(isYou ? "You" : participant.displayName || "Writer")}${hostBadge}</span>
+                            <span class="ww-dock-words">${words} word${words === 1 ? "" : "s"}${typing}${speaking}</span>
+                        </span>
+                    </button>
+                    ${kickBtn}
+                </div>
             `;
         })
         .join("");
@@ -116,10 +127,21 @@ export function renderWriterDock(container, opts) {
     if (!container.dataset.dockBound) {
         container.dataset.dockBound = "1";
         container.addEventListener("click", (event) => {
+            const liveOpts = container._wwDockOpts || {};
+            const kickBtn = event.target.closest("[data-kick-user]");
+            if (kickBtn) {
+                event.preventDefault();
+                event.stopPropagation();
+                const targetId = kickBtn.getAttribute("data-kick-user");
+                if (targetId && typeof liveOpts.onKick === "function") {
+                    liveOpts.onKick(targetId);
+                }
+                return;
+            }
             const tile = event.target.closest("[data-writer-id]");
             if (!tile) return;
             const nextId = tile.getAttribute("data-writer-id");
-            if (nextId) onSelect(nextId);
+            if (nextId) (liveOpts.onSelect || onSelect)?.(nextId);
         });
     }
 }

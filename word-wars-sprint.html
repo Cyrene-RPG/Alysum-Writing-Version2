@@ -155,7 +155,26 @@
             padding: 8px 10px;
             font-size: 12px;
         }
-        .ww-voice-remote { position: absolute; width: 0; height: 0; overflow: hidden; }
+        .ww-voice-remote {
+            position: relative;
+            width: 0;
+            height: 0;
+            overflow: visible;
+        }
+        .ww-voice-meter {
+            height: 6px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.08);
+            overflow: hidden;
+        }
+        .ww-voice-meter-fill {
+            display: block;
+            height: 100%;
+            width: 0;
+            border-radius: inherit;
+            background: linear-gradient(90deg, #34d399, #fbbf24);
+            transition: width 80ms linear;
+        }
         .ww-chat {
             min-height: 0;
             display: grid;
@@ -394,8 +413,38 @@
             max-width: 100%;
             justify-content: center;
         }
-        #shareBtn {
+        #shareBtn,
+        .ww-share-toggle {
             flex: 1 1 140px;
+            display: inline-flex !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+        #shareBtn.mint,
+        .ww-share-toggle.mint {
+            background: rgba(52, 211, 153, 0.14);
+            border-color: rgba(52, 211, 153, 0.35);
+            color: #99f6e4;
+        }
+        #shareBtn.is-sharing,
+        .ww-share-toggle.is-sharing {
+            background: rgba(52, 211, 153, 0.22);
+            border-color: rgba(52, 211, 153, 0.5);
+            color: #ecfdf5;
+            box-shadow: 0 0 0 1px rgba(52, 211, 153, 0.18);
+        }
+        .ww-duel-pane-tools {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+        .ww-duel-pane-tools .ww-share-toggle {
+            flex: 0 0 auto;
+            min-width: 132px;
+            padding: 8px 12px;
+            font-size: 12px;
         }
         @media (max-width: 720px) {
             .ww-sprint-hud {
@@ -504,17 +553,27 @@
             scroll-snap-type: x proximity;
             -webkit-overflow-scrolling: touch;
         }
-        .ww-call-dock.is-many .ww-dock-tile {
+        .ww-call-dock.is-many .ww-dock-tile-wrap {
             flex: 0 0 clamp(128px, 14vw, 176px);
+            width: clamp(128px, 14vw, 176px);
         }
-        .ww-call-dock.is-crowded .ww-dock-tile {
+        .ww-call-dock.is-crowded .ww-dock-tile-wrap {
             flex: 0 0 clamp(112px, 12vw, 148px);
+            width: clamp(112px, 12vw, 148px);
         }
-        .ww-dock-tile {
+        .ww-dock-tile-wrap {
+            position: relative;
+            min-width: 0;
             flex: 0 0 clamp(148px, 16vw, 204px);
             width: clamp(148px, 16vw, 204px);
-            height: 132px;
             scroll-snap-align: start;
+        }
+        .ww-dock-tile-wrap.has-kick .ww-dock-tile {
+            padding-bottom: 28px;
+        }
+        .ww-dock-tile {
+            width: 100%;
+            height: 132px;
             display: grid;
             grid-template-rows: 84px auto;
             border: 2px solid var(--border);
@@ -645,6 +704,33 @@
             background: rgba(124,58,237,0.18);
             border: 1px solid rgba(124,58,237,0.28);
             vertical-align: middle;
+        }
+        .ww-dock-tile-wrap.has-kick .ww-dock-tile {
+            height: 148px;
+        }
+        .ww-dock-kick {
+            position: absolute;
+            right: 6px;
+            bottom: 6px;
+            z-index: 2;
+            border: 1px solid rgba(239, 68, 68, 0.35);
+            background: rgba(127, 29, 29, 0.88);
+            color: #fecaca;
+            border-radius: 999px;
+            padding: 4px 8px;
+            font: inherit;
+            font-size: 9px;
+            font-weight: 900;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+        .ww-dock-kick:hover:not(:disabled) {
+            background: rgba(185, 28, 28, 0.95);
+        }
+        .ww-dock-kick:disabled {
+            opacity: 0.55;
+            cursor: wait;
         }
         .ww-sprint-status {
             margin: 0 16px;
@@ -849,7 +935,9 @@
             </div>
             <div class="ww-sprint-actions">
                 <button type="button" class="btn pause" id="pauseBtn">Request pause</button>
-                <button type="button" class="btn mint" id="shareBtn">Share my draft</button>
+                <button type="button" class="btn mint ww-share-toggle" id="shareBtn" data-ww-share-toggle>
+                    Share my draft
+                </button>
                 <button type="button" class="btn gold" id="finishBtn">End sprint</button>
                 <button type="button" class="btn" id="leaveBtn">Lobby</button>
             </div>
@@ -864,7 +952,12 @@
                             <p class="ww-duel-label">Your manuscript</p>
                             <p class="ww-duel-title" id="myBookTitle">Loading…</p>
                         </div>
-                        <div class="ww-duel-score"><span id="myWords">0 words</span> this sprint</div>
+                        <div class="ww-duel-pane-tools">
+                            <div class="ww-duel-score"><span id="myWords">0 words</span> this sprint</div>
+                            <button type="button" class="btn mint ww-share-toggle" id="shareBtnPane" data-ww-share-toggle>
+                                Share my draft
+                            </button>
+                        </div>
                     </div>
                     <div class="ww-duel-frame-wrap">
                         <iframe id="myEditorFrame" class="ww-duel-frame" title="Your editor"></iframe>
@@ -917,6 +1010,6 @@
         </div>
     </div>
 
-    <script type="module" src="js/word-wars-sprint.js?v=27"></script>
+    <script type="module" src="js/word-wars-sprint.js?v=30"></script>
 </body>
 </html>

@@ -331,6 +331,36 @@ function leaveLocalRoom(roomId, uid) {
     };
 }
 
+function kickLocalParticipant(roomId, hostUid, targetUid) {
+    const lobby = loadLocalLobby({ roomId });
+    if (!lobby) throw new Error("Room not found");
+    const host = lobby.participants.find((p) => sameUserId(p.userId, hostUid));
+    if (!host?.isHost) throw new Error("Only the host can remove writers");
+    if (sameUserId(hostUid, targetUid)) throw new Error("Cannot remove yourself");
+    const target = lobby.participants.find((p) => sameUserId(p.userId, targetUid));
+    if (!target) throw new Error("Writer not in this room");
+    if (target.isHost) throw new Error("Cannot remove the host");
+    if (!["lobby", "active"].includes(lobby.status)) {
+        throw new Error("Room not found or no longer open");
+    }
+
+    const wasActive = lobby.status === "active";
+    lobby.participants = lobby.participants.filter((p) => !sameUserId(p.userId, targetUid));
+
+    if (!lobby.participants.length) {
+        lobby.status = "cancelled";
+        saveLocalLobby(lobby);
+        return lobby;
+    }
+
+    if (wasActive && lobby.participants.length >= 1) {
+        lobby.status = "active";
+    }
+
+    saveLocalLobby(lobby);
+    return lobby;
+}
+
 function leaveOtherLocalRooms(keepRoomId, uid) {
     const rooms = readLocalRooms();
     Object.values(rooms).forEach((raw) => {
@@ -543,6 +573,15 @@ export function formatWordWarError(error) {
     if (/Not a participant/i.test(message)) {
         return "You are not in that Word War.";
     }
+    if (/Only the host can remove writers/i.test(message)) {
+        return "Only the host can remove writers from this Word War.";
+    }
+    if (/Cannot remove yourself/i.test(message)) {
+        return "Use Leave to exit this Word War yourself.";
+    }
+    if (/Writer not in this room/i.test(message)) {
+        return "That writer is no longer in this Word War.";
+    }
     if (/invite-only/i.test(message)) {
         return "That lobby is invite-only — use the room code.";
     }
@@ -731,6 +770,32 @@ export async function leaveWordWarRoom(roomId) {
         throw error;
     }
     return data && typeof data === "object" ? data : { left: true };
+}
+
+/**
+ * Host removes another writer from the lobby or sprint.
+ * @param {string} roomId
+ * @param {string} targetUserId
+ */
+export async function kickWordWarParticipant(roomId, targetUserId) {
+    const normalizedRoomId = String(roomId || "").trim();
+    const normalizedTargetId = String(targetUserId || "").trim();
+    if (!normalizedRoomId) throw new Error("Invalid room");
+    if (!normalizedTargetId) throw new Error("Invalid writer");
+
+    if (await shouldUseLocalWordWarBackend(normalizedRoomId)) {
+        const { data: authData } = await supabase.auth.getUser();
+        const uid = authData?.user?.id;
+        if (!uid) throw new Error("Not authenticated");
+        return kickLocalParticipant(normalizedRoomId, uid, normalizedTargetId);
+    }
+
+    const { data, error } = await supabase.rpc("kick_word_war_participant", {
+        p_room_id: normalizedRoomId,
+        p_target_user_id: normalizedTargetId,
+    });
+    if (error) throw error;
+    return normalizeLobby(data);
 }
 
 /** @param {{ code?: string, roomId?: string }} query */

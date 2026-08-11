@@ -16,12 +16,13 @@ import {
     wordWarSameUserId,
     enrichWordWarParticipantProfiles,
     leaveWordWarRoom,
+    kickWordWarParticipant,
     WORD_WAR_DURATION_UNLIMITED,
-} from "./word-wars-api.js?v=20";
-import { renderWriterDock } from "./word-wars-call.js?v=5";
+} from "./word-wars-api.js?v=21";
+import { renderWriterDock } from "./word-wars-call.js?v=6";
 import { sanitizeChapterHtml } from "./book-html-sanitize.js?v=1";
 import { mountWordWarChat } from "./word-wars-chat.js?v=1";
-import { mountWordWarVoice } from "./word-wars-voice.js?v=1";
+import { mountWordWarVoice } from "./word-wars-voice.js?v=3";
 
 const params = new URLSearchParams(window.location.search);
 const previewWritersRaw = params.get("preview");
@@ -43,7 +44,8 @@ const readerPaneWords = document.getElementById("readerPaneWords");
 const mainReaderScroll = document.getElementById("mainReaderScroll");
 const mainReaderEditor = document.getElementById("mainReaderEditor");
 const mainReaderChapterTitle = document.getElementById("mainReaderChapterTitle");
-const shareBtn = document.getElementById("shareBtn");
+const shareToggleButtons = () =>
+    [...document.querySelectorAll("[data-ww-share-toggle]")].filter(Boolean);
 const sharePill = document.getElementById("sharePill");
 const pauseBtn = document.getElementById("pauseBtn");
 const myEditorFrame = document.getElementById("myEditorFrame");
@@ -344,10 +346,21 @@ async function handlePauseClick() {
 
 function renderShareControls() {
     shareDraft = getShareDraftState();
-    if (shareBtn) {
-        shareBtn.textContent = shareDraft ? "Hide my draft" : "Share draft live";
-        shareBtn.classList.toggle("mint", shareDraft);
-        shareBtn.disabled = syncingShare;
+    const label = shareDraft ? "Hide my draft" : "Share my draft";
+    // Every participant gets share/hide controls — never host-gated or layout-hidden.
+    for (const btn of shareToggleButtons()) {
+        btn.hidden = false;
+        btn.classList.remove("hidden");
+        btn.style.display = "";
+        btn.style.visibility = "visible";
+        btn.textContent = label;
+        btn.classList.add("mint", "ww-share-toggle");
+        btn.classList.toggle("is-sharing", shareDraft);
+        btn.setAttribute("aria-pressed", shareDraft ? "true" : "false");
+        btn.title = shareDraft
+            ? "Stop sharing your live draft with the room"
+            : "Share your live draft with everyone in this Word War";
+        btn.disabled = Boolean(syncingShare || sprintEnded);
     }
     if (sharePill) {
         if (lobby?.isPaused) {
@@ -525,7 +538,7 @@ function renderMainStage() {
                 <div class="ww-opponent-empty">
                     <div>
                         <strong>${escapeHtml(opponent.displayName || "Writer")}</strong>
-                        Draft hidden — they can turn on Share draft live.
+                        Draft hidden — they can turn on Share my draft.
                     </div>
                 </div>
             `;
@@ -544,6 +557,7 @@ function renderMainStage() {
 
 function renderWriterDockStrip() {
     if (!callDockEl || !lobby) return;
+    const me = meInLobby();
     renderWriterDock(callDockEl, {
         participants: lobby.participants || [],
         userId: uid,
@@ -551,7 +565,33 @@ function renderWriterDockStrip() {
         speakingIds,
         getPreview: getDockPreview,
         onSelect: setFocusedParticipant,
+        canKick: Boolean(me?.isHost) && !isPreviewMode && lobby.status === "active",
+        onKick: (targetUserId) => {
+            handleKickWriter(targetUserId).catch(console.warn);
+        },
     });
+}
+
+async function handleKickWriter(targetUserId) {
+    if (isPreviewMode || !lobby?.roomId) return;
+    const me = meInLobby();
+    if (!me?.isHost) return;
+    const target = participantById(targetUserId);
+    const name = target?.displayName || "Writer";
+    if (!window.confirm(`Remove ${name} from this sprint?`)) return;
+    try {
+        const next = await kickWordWarParticipant(roomId, targetUserId);
+        lobby = await enrichWordWarParticipantProfiles(next);
+        if (wordWarSameUserId(focusedParticipantId, targetUserId)) {
+            setFocusedParticipant(uid);
+        }
+        opponentDraftHtmlCache.delete(targetUserId);
+        opponentScrollState.delete(targetUserId);
+        setPageStatus(`${name} was removed.`, false);
+        renderOpponentMirror();
+    } catch (err) {
+        setPageStatus(formatWordWarError(err), true);
+    }
 }
 
 function mountRoomComms() {
@@ -1027,7 +1067,7 @@ async function refreshLobbyNow() {
 
         if (!meInLobby()) {
             if (stillMember || meInLobby()) return;
-            redirectToHub("You are no longer in that Word War.", true);
+            redirectToHub("You were removed from this Word War.", true);
             return;
         }
 
@@ -1107,8 +1147,8 @@ async function endSprint(reason = "Sprint finished", { publishFinish = false } =
     setPageStatus(reason, false);
     renderRecap();
     if (finishBtn) finishBtn.disabled = true;
-    if (shareBtn) shareBtn.disabled = true;
     if (pauseBtn) pauseBtn.disabled = true;
+    renderShareControls();
 }
 
 async function boot() {
@@ -1173,9 +1213,18 @@ async function boot() {
     });
 }
 
-shareBtn?.addEventListener("click", () => {
-    setShareDraft(!getShareDraftState()).catch(console.error);
-});
+function bindShareToggleClicks() {
+    for (const btn of shareToggleButtons()) {
+        if (btn.dataset.shareBound === "1") continue;
+        btn.dataset.shareBound = "1";
+        btn.addEventListener("click", () => {
+            setShareDraft(!getShareDraftState()).catch(console.error);
+        });
+    }
+}
+bindShareToggleClicks();
+// Keep labels/visibility correct even if boot is still loading lobby state.
+renderShareControls();
 
 pauseBtn?.addEventListener("click", () => {
     handlePauseClick().catch(console.error);

@@ -676,6 +676,29 @@
             color: #fde68a;
             vertical-align: middle;
         }
+        .ww-kick-btn {
+            margin-left: auto;
+            flex-shrink: 0;
+            border: 1px solid rgba(239, 68, 68, 0.35);
+            background: rgba(127, 29, 29, 0.35);
+            color: #fecaca;
+            border-radius: 999px;
+            padding: 6px 10px;
+            font: inherit;
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+        .ww-kick-btn:hover:not(:disabled) {
+            background: rgba(185, 28, 28, 0.45);
+            border-color: rgba(248, 113, 113, 0.55);
+        }
+        .ww-kick-btn:disabled {
+            opacity: 0.55;
+            cursor: wait;
+        }
         .ww-lobby-layout {
             display: grid;
             grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
@@ -758,7 +781,26 @@
             padding: 8px 10px;
             font-size: 12px;
         }
-        .ww-voice-remote { position: absolute; width: 0; height: 0; overflow: hidden; }
+        .ww-voice-remote {
+            position: relative;
+            width: 0;
+            height: 0;
+            overflow: visible;
+        }
+        .ww-voice-meter {
+            height: 6px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.08);
+            overflow: hidden;
+        }
+        .ww-voice-meter-fill {
+            display: block;
+            height: 100%;
+            width: 0;
+            border-radius: inherit;
+            background: linear-gradient(90deg, #34d399, #fbbf24);
+            transition: width 80ms linear;
+        }
         .ww-chat {
             min-height: 0;
             display: grid;
@@ -1213,6 +1255,6 @@
         </div>
     </main>
 
-    <script type="module" src="js/word-wars-lobby.js?v=25"></script>
+    <script type="module" src="js/word-wars-lobby.js?v=27"></script>
 </body>
 </html>

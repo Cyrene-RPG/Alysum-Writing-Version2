@@ -5,18 +5,10 @@
  */
 import { supabase } from "../firebase.js";
 
-const AUDIO_CONSTRAINTS = {
-    audio: {
-        echoCancellation: true,
-        noiseSuppression: true,
-        autoGainControl: true,
-        channelCount: 1,
-        sampleRate: 48000,
-    },
-    video: false,
-};
-
-const ICE_SERVERS = [{ urls: "stun:stun.l.google.com:19302" }, { urls: "stun:stun1.l.google.com:19302" }];
+const ICE_SERVERS = [
+    { urls: "stun:stun.l.google.com:19302" },
+    { urls: "stun:stun1.l.google.com:19302" },
+];
 
 function safeString(value, fallback = "") {
     return typeof value === "string" ? value : fallback;
@@ -24,6 +16,24 @@ function safeString(value, fallback = "") {
 
 function isLocalRoom(roomId) {
     return String(roomId || "").startsWith("local-") || String(roomId || "").startsWith("preview-");
+}
+
+function micErrorMessage(err) {
+    const name = String(err?.name || "");
+    const message = String(err?.message || err || "");
+    if (name === "NotAllowedError" || /Permission|NotAllowed/i.test(message)) {
+        return "Microphone blocked — allow mic access for this site, then try again.";
+    }
+    if (name === "NotFoundError" || /NotFound|DevicesNotFound/i.test(message)) {
+        return "No microphone found.";
+    }
+    if (name === "NotReadableError" || /NotReadable|Could not start/i.test(message)) {
+        return "Microphone is busy in another app.";
+    }
+    if (name === "OverconstrainedError" || /Overconstrained/i.test(message)) {
+        return "Microphone settings not supported on this device.";
+    }
+    return message || "Could not access microphone.";
 }
 
 async function fetchLiveKitCreds(roomId, displayName) {
@@ -47,6 +57,35 @@ async function fetchLiveKitCreds(roomId, displayName) {
         throw new Error(err.message || err.error || "Could not join voice.");
     }
     return response.json();
+}
+
+async function acquireMicrophone() {
+    if (!navigator.mediaDevices?.getUserMedia) {
+        throw new Error("This browser does not support microphone access.");
+    }
+
+    const attempts = [
+        {
+            audio: {
+                echoCancellation: { ideal: true },
+                noiseSuppression: { ideal: true },
+                autoGainControl: { ideal: true },
+            },
+            video: false,
+        },
+        { audio: true, video: false },
+    ];
+
+    let lastError = null;
+    for (const constraints of attempts) {
+        try {
+            return await navigator.mediaDevices.getUserMedia(constraints);
+        } catch (err) {
+            lastError = err;
+            if (err?.name === "NotAllowedError") break;
+        }
+    }
+    throw lastError || new Error("Could not access microphone.");
 }
 
 /**
@@ -81,6 +120,8 @@ export function mountWordWarVoice(root, opts) {
     let signalBroadcast = null;
     /** @type {Map<string, RTCPeerConnection>} */
     const peers = new Map();
+    /** @type {Set<string>} */
+    const peerSetup = new Set();
     /** @type {Map<string, HTMLAudioElement>} */
     const remoteAudio = new Map();
     /** @type {Set<string>} */
@@ -92,6 +133,7 @@ export function mountWordWarVoice(root, opts) {
     /** @type {AudioContext | null} */
     let audioCtx = null;
     let speakPoll = 0;
+    let micLevel = 0;
 
     root.classList.add("ww-voice");
     root.innerHTML = `
@@ -103,6 +145,9 @@ export function mountWordWarVoice(root, opts) {
                     <p class="ww-voice-status" data-ww-voice-status>Voice ready</p>
                 </div>
             </div>
+            <div class="ww-voice-meter" data-ww-voice-meter hidden aria-hidden="true">
+                <span class="ww-voice-meter-fill" data-ww-voice-meter-fill></span>
+            </div>
             <div class="ww-voice-actions">
                 <button type="button" class="btn mint" data-ww-voice-join>Join voice</button>
                 <button type="button" class="btn ghost hidden" data-ww-voice-mute disabled>Mute</button>
@@ -110,7 +155,7 @@ export function mountWordWarVoice(root, opts) {
                 <button type="button" class="btn ghost hidden" data-ww-voice-leave disabled>Leave</button>
             </div>
         </div>
-        <div class="ww-voice-remote" data-ww-voice-remote hidden></div>
+        <div class="ww-voice-remote" data-ww-voice-remote aria-hidden="true"></div>
     `;
 
     const statusEl = root.querySelector("[data-ww-voice-status]");
@@ -120,22 +165,26 @@ export function mountWordWarVoice(root, opts) {
     const deafenBtn = root.querySelector("[data-ww-voice-deafen]");
     const leaveBtn = root.querySelector("[data-ww-voice-leave]");
     const remoteWrap = root.querySelector("[data-ww-voice-remote]");
+    const meterEl = root.querySelector("[data-ww-voice-meter]");
+    const meterFillEl = root.querySelector("[data-ww-voice-meter-fill]");
 
     function setSpeaking(id, speaking) {
         if (!id) return;
+        const wasSpeaking = speakingIds.has(id);
         if (speaking) speakingIds.add(id);
         else speakingIds.delete(id);
-        onSpeakingChange?.(new Set(speakingIds));
+        if (wasSpeaking !== speaking) onSpeakingChange?.(new Set(speakingIds));
         const timer = speakingTimers.get(id);
         if (timer) window.clearTimeout(timer);
         if (speaking) {
             speakingTimers.set(
                 id,
                 window.setTimeout(() => {
+                    if (!speakingIds.has(id)) return;
                     speakingIds.delete(id);
                     onSpeakingChange?.(new Set(speakingIds));
                     render();
-                }, 900)
+                }, 700)
             );
         }
         render();
@@ -150,6 +199,13 @@ export function mountWordWarVoice(root, opts) {
         if (dotEl) {
             dotEl.classList.toggle("is-live", joined);
             dotEl.classList.toggle("is-speaking", speakingIds.has(userId));
+        }
+        if (meterEl) {
+            meterEl.hidden = !joined;
+            meterEl.setAttribute("aria-hidden", joined ? "false" : "true");
+        }
+        if (meterFillEl) {
+            meterFillEl.style.width = `${Math.round(micLevel * 100)}%`;
         }
         if (joinBtn) joinBtn.classList.toggle("hidden", joined);
         if (muteBtn) {
@@ -175,9 +231,18 @@ export function mountWordWarVoice(root, opts) {
             track.enabled = joined && !muted && !deafened;
         });
         remoteAudio.forEach((audio) => {
-            audio.muted = deafened;
+            audio.muted = !!deafened;
             audio.volume = deafened ? 0 : 1;
         });
+    }
+
+    async function playRemoteAudio(audio) {
+        if (!audio) return;
+        try {
+            await audio.play();
+        } catch (err) {
+            console.warn("Remote voice autoplay blocked; retrying after gesture", err);
+        }
     }
 
     function ensureRemoteAudio(peerId) {
@@ -187,18 +252,27 @@ export function mountWordWarVoice(root, opts) {
         audio = document.createElement("audio");
         audio.autoplay = true;
         audio.playsInline = true;
+        audio.setAttribute("playsinline", "");
         audio.dataset.peerId = peerId;
+        // Keep playable for browsers that skip display:none media.
+        audio.style.cssText = "position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;";
         remoteWrap.appendChild(audio);
         remoteAudio.set(peerId, audio);
         return audio;
     }
 
     function removePeer(peerId) {
+        peerSetup.delete(peerId);
         const pc = peers.get(peerId);
         if (pc) {
             pc.onicecandidate = null;
             pc.ontrack = null;
-            pc.close();
+            pc.onconnectionstatechange = null;
+            try {
+                pc.close();
+            } catch {
+                /* ignore */
+            }
             peers.delete(peerId);
         }
         const audio = remoteAudio.get(peerId);
@@ -210,31 +284,83 @@ export function mountWordWarVoice(root, opts) {
         setSpeaking(peerId, false);
     }
 
-    async function getLocalStream() {
-        if (localStream) return localStream;
-        localStream = await navigator.mediaDevices.getUserMedia(AUDIO_CONSTRAINTS);
+    async function ensureAudioContext() {
+        if (!audioCtx) {
+            const Ctx = window.AudioContext || window.webkitAudioContext;
+            if (!Ctx) return null;
+            audioCtx = new Ctx();
+        }
+        if (audioCtx.state === "suspended") {
+            try {
+                await audioCtx.resume();
+            } catch {
+                /* ignore */
+            }
+        }
+        return audioCtx;
+    }
+
+    async function startMicMeter(stream) {
+        const ctx = await ensureAudioContext();
+        if (!ctx || !stream) return;
         try {
-            audioCtx = new AudioContext();
-            const source = audioCtx.createMediaStreamSource(localStream);
-            localAnalyser = audioCtx.createAnalyser();
-            localAnalyser.fftSize = 512;
+            const source = ctx.createMediaStreamSource(stream);
+            localAnalyser = ctx.createAnalyser();
+            localAnalyser.fftSize = 1024;
+            localAnalyser.smoothingTimeConstant = 0.7;
             source.connect(localAnalyser);
-            const data = new Uint8Array(localAnalyser.frequencyBinCount);
+            const data = new Uint8Array(localAnalyser.fftSize);
+
+            if (speakPoll) window.clearInterval(speakPoll);
             speakPoll = window.setInterval(() => {
-                if (!localAnalyser || muted || deafened || !joined) {
+                if (!localAnalyser || !joined) {
+                    micLevel = 0;
                     setSpeaking(userId, false);
+                    render();
                     return;
                 }
-                localAnalyser.getByteFrequencyData(data);
+                if (muted || deafened) {
+                    micLevel = 0;
+                    setSpeaking(userId, false);
+                    render();
+                    return;
+                }
+                localAnalyser.getByteTimeDomainData(data);
                 let sum = 0;
-                for (let i = 0; i < data.length; i++) sum += data[i];
-                const avg = sum / data.length;
-                setSpeaking(userId, avg > 18);
-            }, 120);
-        } catch {
-            /* analyser optional */
+                for (let i = 0; i < data.length; i++) {
+                    const v = (data[i] - 128) / 128;
+                    sum += v * v;
+                }
+                const rms = Math.sqrt(sum / data.length);
+                micLevel = Math.min(1, rms * 4.5);
+                setSpeaking(userId, rms > 0.02);
+            }, 80);
+        } catch (err) {
+            console.warn("Mic meter unavailable", err);
         }
+    }
+
+    async function getLocalStream() {
+        if (localStream) return localStream;
+        localStream = await acquireMicrophone();
+        await startMicMeter(localStream);
         return localStream;
+    }
+
+    function serializeCandidate(candidate) {
+        if (!candidate) return null;
+        if (typeof candidate.toJSON === "function") return candidate.toJSON();
+        return {
+            candidate: candidate.candidate,
+            sdpMid: candidate.sdpMid,
+            sdpMLineIndex: candidate.sdpMLineIndex,
+            usernameFragment: candidate.usernameFragment,
+        };
+    }
+
+    function serializeDescription(desc) {
+        if (!desc) return null;
+        return { type: desc.type, sdp: desc.sdp };
     }
 
     function broadcastSignal(payload) {
@@ -247,59 +373,87 @@ export function mountWordWarVoice(root, opts) {
             }
         }
         if (signalChannel) {
-            signalChannel.send({
-                type: "broadcast",
-                event: "signal",
-                payload: message,
-            });
+            signalChannel
+                .send({
+                    type: "broadcast",
+                    event: "signal",
+                    payload: message,
+                })
+                .catch((err) => console.warn("Voice signal send failed", err));
         }
     }
 
     async function createPeer(peerId, polite) {
-        if (!peerId || peerId === userId || peers.has(peerId)) return peers.get(peerId);
+        if (!peerId || peerId === userId) return null;
+        if (peers.has(peerId) || peerSetup.has(peerId)) return peers.get(peerId) || null;
+        peerSetup.add(peerId);
+
         const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
         peers.set(peerId, pc);
 
-        const stream = await getLocalStream();
-        stream.getTracks().forEach((track) => pc.addTrack(track, stream));
+        try {
+            const stream = await getLocalStream();
+            stream.getAudioTracks().forEach((track) => {
+                if (!pc.getSenders().some((sender) => sender.track === track)) {
+                    pc.addTrack(track, stream);
+                }
+            });
+        } catch (err) {
+            removePeer(peerId);
+            throw err;
+        }
 
         pc.onicecandidate = (event) => {
-            if (event.candidate) {
-                broadcastSignal({ kind: "ice", to: peerId, candidate: event.candidate });
-            }
+            if (!event.candidate) return;
+            broadcastSignal({
+                kind: "ice",
+                to: peerId,
+                candidate: serializeCandidate(event.candidate),
+            });
         };
 
         pc.ontrack = (event) => {
             const audio = ensureRemoteAudio(peerId);
             if (!audio) return;
-            audio.srcObject = event.streams[0] || new MediaStream([event.track]);
-            audio.muted = deafened;
-            audio.play().catch(() => {});
+            const inbound = event.streams?.[0] || new MediaStream([event.track]);
+            audio.srcObject = inbound;
+            audio.muted = !!deafened;
+            void playRemoteAudio(audio);
         };
 
         pc.onconnectionstatechange = () => {
-            if (["failed", "disconnected", "closed"].includes(pc.connectionState)) {
+            if (pc.connectionState === "failed" || pc.connectionState === "closed") {
                 removePeer(peerId);
             }
         };
 
         if (!polite) {
-            const offer = await pc.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: false });
-            await pc.setLocalDescription(offer);
-            broadcastSignal({ kind: "offer", to: peerId, sdp: pc.localDescription });
+            try {
+                const offer = await pc.createOffer({ offerToReceiveAudio: true });
+                await pc.setLocalDescription(offer);
+                broadcastSignal({
+                    kind: "offer",
+                    to: peerId,
+                    sdp: serializeDescription(pc.localDescription),
+                });
+            } catch (err) {
+                console.warn("Voice offer failed", err);
+                removePeer(peerId);
+            }
         }
 
         return pc;
     }
 
     async function handleSignal(payload) {
-        if (!payload || payload.from === userId) return;
+        if (!joined || !payload || payload.from === userId) return;
         if (payload.to && payload.to !== userId) return;
         const peerId = String(payload.from || "");
         if (!peerId) return;
 
-        if (payload.kind === "hello") {
-            await createPeer(peerId, userId > peerId);
+        if (payload.kind === "hello" || payload.kind === "presence") {
+            // Lower id is polite (answers); higher id offers — avoids glare.
+            await createPeer(peerId, userId < peerId);
             return;
         }
         if (payload.kind === "bye") {
@@ -315,12 +469,19 @@ export function mountWordWarVoice(root, opts) {
 
         try {
             if (payload.kind === "offer" && payload.sdp) {
+                if (pc.signalingState !== "stable" && pc.signalingState !== "have-remote-offer") {
+                    // Ignore glare leftovers.
+                }
                 await pc.setRemoteDescription(payload.sdp);
                 const answer = await pc.createAnswer();
                 await pc.setLocalDescription(answer);
-                broadcastSignal({ kind: "answer", to: peerId, sdp: pc.localDescription });
+                broadcastSignal({
+                    kind: "answer",
+                    to: peerId,
+                    sdp: serializeDescription(pc.localDescription),
+                });
             } else if (payload.kind === "answer" && payload.sdp) {
-                if (pc.signalingState !== "stable") {
+                if (pc.signalingState === "have-local-offer") {
                     await pc.setRemoteDescription(payload.sdp);
                 }
             } else if (payload.kind === "ice" && payload.candidate) {
@@ -341,28 +502,93 @@ export function mountWordWarVoice(root, opts) {
         render();
 
         await getLocalStream();
+        await ensureAudioContext();
 
         if (isLocalRoom(roomId)) {
             signalBroadcast = new BroadcastChannel(`ww-voice-${roomId}`);
-            signalBroadcast.onmessage = (event) => handleSignal(event.data);
+            signalBroadcast.onmessage = (event) => {
+                void handleSignal(event.data);
+            };
+            broadcastSignal({ kind: "hello" });
         } else {
             signalChannel = supabase
                 .channel(`ww_voice_${roomId}`, {
-                    config: { broadcast: { self: false } },
+                    config: {
+                        broadcast: { self: false },
+                        presence: { key: userId },
+                    },
                 })
-                .on("broadcast", { event: "signal" }, ({ payload }) => handleSignal(payload))
-                .subscribe((status) => {
+                .on("broadcast", { event: "signal" }, ({ payload }) => {
+                    void handleSignal(payload);
+                })
+                .on("presence", { event: "sync" }, () => {
+                    const state = signalChannel?.presenceState?.() || {};
+                    Object.keys(state).forEach((peerId) => {
+                        if (peerId && peerId !== userId) {
+                            void handleSignal({ kind: "presence", from: peerId });
+                        }
+                    });
+                })
+                .on("presence", { event: "join" }, ({ key }) => {
+                    if (key && key !== userId) {
+                        void handleSignal({ kind: "presence", from: key });
+                    }
+                })
+                .on("presence", { event: "leave" }, ({ key }) => {
+                    if (key) removePeer(key);
+                });
+
+            await new Promise((resolve) => {
+                signalChannel.subscribe(async (status) => {
                     if (status === "SUBSCRIBED") {
+                        try {
+                            await signalChannel.track({
+                                userId,
+                                displayName,
+                                joinedAt: Date.now(),
+                            });
+                        } catch (err) {
+                            console.warn("Voice presence track failed", err);
+                        }
                         broadcastSignal({ kind: "hello" });
+                        resolve();
+                    } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+                        resolve();
                     }
                 });
+            });
         }
 
-        broadcastSignal({ kind: "hello" });
-        statusText = "In voice · peer audio";
+        statusText = peers.size
+            ? `In voice · ${peers.size + 1} connected`
+            : "In voice · waiting for others";
         joined = true;
         applyMuteState();
         render();
+
+        // Keep status fresh as peers connect.
+        const statusTimer = window.setInterval(() => {
+            if (!joined || provider !== "mesh") {
+                window.clearInterval(statusTimer);
+                return;
+            }
+            const n = peers.size;
+            statusText = n ? `In voice · ${n + 1} connected` : "In voice · waiting for others";
+            render();
+        }, 1500);
+    }
+
+    function releaseLocalStream() {
+        if (speakPoll) {
+            window.clearInterval(speakPoll);
+            speakPoll = 0;
+        }
+        localAnalyser = null;
+        if (localStream) {
+            localStream.getTracks().forEach((track) => track.stop());
+            localStream = null;
+        }
+        micLevel = 0;
     }
 
     async function startLiveKit(creds) {
@@ -370,8 +596,12 @@ export function mountWordWarVoice(root, opts) {
         statusText = "Connecting high-quality voice…";
         render();
 
+        // Free any probe capture so LiveKit can open the mic exclusively.
+        releaseLocalStream();
+
         const mod = await import("https://cdn.jsdelivr.net/npm/livekit-client@2.15.4/dist/livekit-client.esm.mjs");
-        const { Room, RoomEvent, Track } = mod;
+        const { Room, RoomEvent, Track, createLocalAudioTrack } = mod;
+
         livekitRoom = new Room({
             adaptiveStream: true,
             dynacast: true,
@@ -379,7 +609,6 @@ export function mountWordWarVoice(root, opts) {
                 echoCancellation: true,
                 noiseSuppression: true,
                 autoGainControl: true,
-                channelCount: 1,
             },
         });
 
@@ -388,10 +617,13 @@ export function mountWordWarVoice(root, opts) {
             const el = track.attach();
             el.autoplay = true;
             el.playsInline = true;
+            el.setAttribute("playsinline", "");
             el.dataset.peerId = participant.identity;
+            el.style.cssText = "position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;";
             remoteWrap?.appendChild(el);
             remoteAudio.set(participant.identity, el);
-            el.muted = deafened;
+            el.muted = !!deafened;
+            void playRemoteAudio(el);
         });
 
         livekitRoom.on(RoomEvent.TrackUnsubscribed, (track, _publication, participant) => {
@@ -411,12 +643,34 @@ export function mountWordWarVoice(root, opts) {
             if (!destroyed) {
                 joined = false;
                 statusText = "Voice disconnected";
+                micLevel = 0;
                 render();
             }
         });
 
         await livekitRoom.connect(creds.url, creds.token);
-        await livekitRoom.localParticipant.setMicrophoneEnabled(true);
+
+        // Explicit local track publish is more reliable than setMicrophoneEnabled alone.
+        try {
+            const audioTrack = await createLocalAudioTrack({
+                echoCancellation: true,
+                noiseSuppression: true,
+                autoGainControl: true,
+            });
+            await livekitRoom.localParticipant.publishTrack(audioTrack);
+            localStream = new MediaStream([audioTrack.mediaStreamTrack]);
+            await startMicMeter(localStream);
+        } catch (err) {
+            console.warn("LiveKit publishTrack failed, falling back to setMicrophoneEnabled", err);
+            await livekitRoom.localParticipant.setMicrophoneEnabled(true);
+            try {
+                localStream = await acquireMicrophone();
+                await startMicMeter(localStream);
+            } catch {
+                /* optional meter */
+            }
+        }
+
         joined = true;
         muted = false;
         statusText = "In voice · LiveKit";
@@ -426,10 +680,14 @@ export function mountWordWarVoice(root, opts) {
 
     async function joinVoice() {
         if (joined || destroyed || !roomId) return;
-        joinBtn.disabled = true;
+        if (joinBtn) joinBtn.disabled = true;
         statusText = "Requesting microphone…";
+        micLevel = 0;
         render();
         try {
+            // Unlock audio output in the same user gesture as Join.
+            await ensureAudioContext();
+
             let creds = null;
             if (!isLocalRoom(roomId)) {
                 try {
@@ -438,6 +696,10 @@ export function mountWordWarVoice(root, opts) {
                     console.warn("LiveKit token failed, using peer voice", err);
                 }
             }
+
+            // Probe mic early so permission errors are clear before connecting.
+            await getLocalStream();
+
             if (creds?.url && creds?.token) {
                 await startLiveKit(creds);
             } else {
@@ -445,15 +707,16 @@ export function mountWordWarVoice(root, opts) {
             }
         } catch (err) {
             console.error(err);
-            statusText = err?.message || "Could not join voice";
-            await leaveVoice();
+            statusText = micErrorMessage(err);
+            await leaveVoice({ keepStatus: true });
         } finally {
-            joinBtn.disabled = false;
+            if (joinBtn) joinBtn.disabled = false;
             render();
         }
     }
 
-    async function leaveVoice() {
+    async function leaveVoice({ keepStatus = false } = {}) {
+        const previousStatus = statusText;
         joined = false;
         broadcastSignal({ kind: "bye" });
 
@@ -465,8 +728,10 @@ export function mountWordWarVoice(root, opts) {
         speakingTimers.clear();
         speakingIds.clear();
         onSpeakingChange?.(new Set());
+        micLevel = 0;
 
         [...peers.keys()].forEach(removePeer);
+        peerSetup.clear();
 
         if (livekitRoom) {
             try {
@@ -478,6 +743,11 @@ export function mountWordWarVoice(root, opts) {
         }
 
         if (signalChannel) {
+            try {
+                await signalChannel.untrack();
+            } catch {
+                /* ignore */
+            }
             supabase.removeChannel(signalChannel);
             signalChannel = null;
         }
@@ -503,7 +773,7 @@ export function mountWordWarVoice(root, opts) {
         remoteAudio.clear();
 
         provider = "idle";
-        statusText = "Voice ready";
+        statusText = keepStatus ? previousStatus : "Voice ready";
         muted = false;
         deafened = false;
         render();

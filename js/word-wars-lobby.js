@@ -21,6 +21,7 @@ import {
     joinWordWarRoomWithBook,
     joinWordWarRoomByIdWithBook,
     leaveWordWarRoom,
+    kickWordWarParticipant,
     listOpenWordWarLobbies,
     listMyBooks,
     startWordWar,
@@ -29,10 +30,10 @@ import {
     wordWarLobbyUrl,
     wordWarSprintUrl,
     isUsingLocalWordWarsFallback,
-} from "./word-wars-api.js?v=20";
+} from "./word-wars-api.js?v=21";
 import { playWordWarJoinSound, primeWordWarSounds } from "./word-wars-sounds.js?v=2";
 import { mountWordWarChat } from "./word-wars-chat.js?v=1";
-import { mountWordWarVoice } from "./word-wars-voice.js?v=1";
+import { mountWordWarVoice } from "./word-wars-voice.js?v=3";
 
 const params = new URLSearchParams(window.location.search);
 const initialCode = String(params.get("code") || "").trim().toUpperCase();
@@ -448,7 +449,8 @@ function renderBookSelect(lobby) {
     bookSelect.disabled = disabled;
 }
 
-function renderFighterCard(fighter, label, extraClass = "") {
+function renderFighterCard(fighter, label, extraClass = "", options = {}) {
+    const { showKick = false, kickUserId = "" } = options;
     if (!fighter) {
         return `
             <article class="ww-fighter is-empty ${extraClass}">
@@ -462,6 +464,10 @@ function renderFighterCard(fighter, label, extraClass = "") {
     }
     const hostBadge = fighter.isHost ? '<span class="ww-mini-badge">Host</span>' : "";
     const readyLabel = fighter.isReady ? "Ready to spar" : "Still gearing up";
+    const kickBtn =
+        showKick && kickUserId
+            ? `<button type="button" class="ww-kick-btn" data-kick-user="${escapeHtml(kickUserId)}" title="Remove from lobby">Kick</button>`
+            : "";
     return `
         <article class="ww-fighter${fighter.isReady ? " is-ready" : ""} ${extraClass}">
             <p class="ww-fighter-label">${escapeHtml(label)}</p>
@@ -471,6 +477,7 @@ function renderFighterCard(fighter, label, extraClass = "") {
                     <h3 class="ww-fighter-name">${escapeHtml(fighter.displayName || "Writer")}${hostBadge}</h3>
                     <p class="ww-fighter-book">${escapeHtml(fighter.bookTitle || "No book selected")}</p>
                 </div>
+                ${kickBtn}
             </div>
             <p class="ww-fighter-ready">${escapeHtml(readyLabel)}</p>
         </article>
@@ -507,11 +514,25 @@ function buildFighterSlots(lobby) {
 
 function renderFighters(lobby) {
     if (!fighterSlots) return;
+    const me = meInLobby(lobby);
+    const canKick =
+        Boolean(me?.isHost) &&
+        !isLayoutPreview &&
+        (lobby.status === "lobby" || lobby.status === "active");
     const maxWriters = lobbyMaxWriters(lobby);
     fighterSlots.classList.toggle("is-large", maxWriters > 4);
     fighterSlots.classList.toggle("is-xlarge", maxWriters > 8);
     fighterSlots.innerHTML = buildFighterSlots(lobby)
-        .map(({ fighter, label, className }) => renderFighterCard(fighter, label, className))
+        .map(({ fighter, label, className }) =>
+            renderFighterCard(fighter, label, className, {
+                showKick:
+                    canKick &&
+                    fighter &&
+                    !fighter.isHost &&
+                    !wordWarSameUserId(fighter.userId, sessionCtx?.uid),
+                kickUserId: fighter?.userId || "",
+            })
+        )
         .join("");
 }
 
@@ -638,7 +659,7 @@ async function refreshLobby() {
         }
         if (!meInLobby(lobby)) {
             if (meInLobby(currentLobby)) return;
-            await dismissLobbyView("You are no longer in that Word War.", true);
+            await dismissLobbyView("You were removed from this Word War.", true);
             return;
         }
         if (lobby.status === "cancelled" && lobby.participants?.length > 0) {
@@ -885,6 +906,31 @@ hostLockInput?.addEventListener("change", async () => {
         setStatus(err?.message || "Could not update lobby lock.", true);
     } finally {
         hostLockInput.disabled = false;
+    }
+});
+
+fighterSlots?.addEventListener("click", async (event) => {
+    if (isLayoutPreview || !currentLobby) return;
+    const kickBtn = event.target.closest("[data-kick-user]");
+    if (!kickBtn) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const me = meInLobby(currentLobby);
+    if (!me?.isHost) return;
+    const targetId = kickBtn.getAttribute("data-kick-user");
+    if (!targetId) return;
+    const target = currentLobby.participants?.find((p) => wordWarSameUserId(p.userId, targetId));
+    const name = target?.displayName || "Writer";
+    if (!window.confirm(`Remove ${name} from this Word War?`)) return;
+    kickBtn.disabled = true;
+    try {
+        const lobby = await kickWordWarParticipant(currentLobby.roomId, targetId);
+        renderLobby(lobby);
+        setStatus(`${name} was removed.`);
+    } catch (err) {
+        setStatus(formatWordWarError(err), true);
+    } finally {
+        kickBtn.disabled = false;
     }
 });
 
