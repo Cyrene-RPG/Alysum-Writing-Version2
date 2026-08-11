@@ -687,7 +687,9 @@
     }
 
     #accountModePanel > h2,
-    #accountModePanel > .hint {
+    #accountModePanel > .hint,
+    #authorPagePanel > h2,
+    #authorPagePanel > .hint.author-page-intro-hint {
         text-align: center;
         width: 100%;
         max-width: 52rem;
@@ -705,6 +707,53 @@
         max-width: min(1120px, 100%);
         margin: 0 auto;
         padding: 8px clamp(12px, 2vw, 20px) 12px;
+    }
+
+    .author-page-panel-body {
+        display: grid;
+        gap: 18px;
+        width: 100%;
+        max-width: min(1100px, 100%);
+        margin: 0 auto;
+        align-self: center;
+        padding: 0 clamp(12px, 2vw, 20px);
+    }
+
+    .support-links-grid {
+        display: grid;
+        gap: 14px;
+        grid-template-columns: 1fr;
+    }
+
+    @media (min-width: 700px) {
+        .support-links-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    .support-link-field label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .support-link-field .support-link-kind {
+        font-weight: 800;
+    }
+
+    #authorPagePanel input[type="url"],
+    #authorPagePanel textarea {
+        border-width: 1.5px;
+        border-color: color-mix(in srgb, var(--purple-bright) 52%, rgba(255, 255, 255, 0.14));
+        box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--purple) 18%, transparent);
+    }
+
+    #authorPagePanel input[type="url"]:focus,
+    #authorPagePanel textarea:focus {
+        border-color: color-mix(in srgb, var(--purple-bright) 78%, transparent);
+        box-shadow:
+            inset 0 0 0 1px color-mix(in srgb, var(--purple-bright) 35%, transparent),
+            0 0 0 3px color-mix(in srgb, var(--purple-bright) 24%, transparent);
     }
 
     #accountTypeGroup {
@@ -871,7 +920,8 @@
 
     #profilePanel.is-active,
     #securityPanel.is-active,
-    #accountModePanel.is-active {
+    #accountModePanel.is-active,
+    #authorPagePanel.is-active {
         align-items: center;
     }
 
@@ -1376,6 +1426,7 @@
         <nav class="settings-nav" id="settingsNav" role="tablist" aria-label="Settings sections">
             <button type="button" role="tab" id="tab-appearance" data-section="appearancePanel" aria-controls="appearancePanel" aria-selected="true">Appearance</button>
             <button type="button" role="tab" id="tab-account" data-section="accountModePanel" aria-controls="accountModePanel" aria-selected="false">Account focus</button>
+            <button type="button" role="tab" id="tab-author-page" data-section="authorPagePanel" aria-controls="authorPagePanel" aria-selected="false">Author page</button>
             <button type="button" role="tab" id="tab-profile" data-section="profilePanel" aria-controls="profilePanel" aria-selected="false">Profile</button>
             <button type="button" role="tab" id="tab-library" data-section="libraryPanel" aria-controls="libraryPanel" aria-selected="false">Policy &amp; appeals</button>
             <button type="button" role="tab" id="tab-password" data-section="securityPanel" aria-controls="securityPanel" aria-selected="false">Password</button>
@@ -1498,6 +1549,43 @@
         </div>
     </div>
 
+    <div class="panel hidden settings-tab-panel" id="authorPagePanel" role="tabpanel" aria-labelledby="tab-author-page" hidden>
+        <h2>Author page</h2>
+        <p class="hint author-page-intro-hint">
+            Your public biography and tip links — shown on your author page and with published books in the Library.
+        </p>
+
+        <div class="author-page-panel-body">
+            <section class="profile-box profile-bio-box" id="author-bio" aria-labelledby="profileBioTitle">
+                <h3 class="profile-box-title" id="profileBioTitle">Biography</h3>
+                <p class="hint">Tell readers a little about yourself. This appears on your public author page and at the end of your published books.</p>
+                <div class="field">
+                    <label for="authorBioInput">About me</label>
+                    <textarea id="authorBioInput" maxlength="2000" rows="8" placeholder="Share your writing background, interests, or what readers can expect from your work…"></textarea>
+                    <p class="hint" style="margin-top:8px;margin-bottom:0"><span id="authorBioCount">0</span> / 2000 characters</p>
+                </div>
+                <div class="profile-box-actions">
+                    <button type="button" class="btn btn-primary" id="saveBioBtn">Save biography</button>
+                    <a class="btn" id="authorBioPreviewLink" href="author.html" target="_blank" rel="noopener">Preview author page</a>
+                    <div class="msg" id="bioMsg" role="status"></div>
+                </div>
+            </section>
+
+            <section class="profile-box profile-support-box" id="author-support" aria-labelledby="profileSupportTitle">
+                <h3 class="profile-box-title" id="profileSupportTitle">Support &amp; tip links</h3>
+                <p class="hint">
+                    Optional links so readers can tip you or buy your work. Empty fields stay hidden on your public page.
+                    Use full https:// URLs (PayPal, Ko-fi, Cash App, Patreon, social, store, etc.).
+                </p>
+                <div class="support-links-grid" id="supportLinksGrid"></div>
+                <div class="profile-box-actions">
+                    <button type="button" class="btn btn-primary" id="saveSupportLinksBtn">Save support links</button>
+                    <div class="msg" id="supportLinksMsg" role="status"></div>
+                </div>
+            </section>
+        </div>
+    </div>
+
     <div class="panel hidden settings-tab-panel" id="profilePanel" role="tabpanel" aria-labelledby="tab-profile" hidden>
         <h2>Profile</h2>
         <p class="hint profile-intro-hint">Your permanent handle is like a Discord tag: it never changes and identifies you. Your display name is what others see next to comments and on your studio home.</p>
@@ -1548,21 +1636,6 @@
             </div>
 
             <div class="msg" id="avatarMsg" role="status"></div>
-        </section>
-
-        <section class="profile-box profile-bio-box" id="author-bio" aria-labelledby="profileBioTitle">
-            <h3 class="profile-box-title" id="profileBioTitle">Author biography</h3>
-            <p class="hint">Tell readers a little about yourself. This appears on your public author page and at the end of your published books in the library.</p>
-            <div class="field">
-                <label for="authorBioInput">About me</label>
-                <textarea id="authorBioInput" maxlength="2000" rows="8" placeholder="Share your writing background, interests, or what readers can expect from your work…"></textarea>
-                <p class="hint" style="margin-top:8px;margin-bottom:0"><span id="authorBioCount">0</span> / 2000 characters</p>
-            </div>
-            <div class="profile-box-actions">
-                <button type="button" class="btn btn-primary" id="saveBioBtn">Save biography</button>
-                <a class="btn" id="authorBioPreviewLink" href="author.html" target="_blank" rel="noopener">Preview author page</a>
-                <div class="msg" id="bioMsg" role="status"></div>
-            </div>
         </section>
 
         <section class="profile-box profile-danger-box hidden" id="deleteAccountSection" aria-labelledby="deleteAccountTitle">
@@ -1745,7 +1818,15 @@
     import { resolveStudioSession } from "./js/studio-session.js?v=1";
     import { getProfileRow, updateProfileRow, LOCAL_GUEST_USER_ID } from "./js/local-studio-store.js?v=1";
     import { permanentHandleFromUserData } from "./js/profile-display.js?v=1";
-    import { AUTHOR_BIO_MAX_LENGTH, authorPageUrl } from "./js/author-profile.js?v=1";
+    import {
+        AUTHOR_BIO_MAX_LENGTH,
+        AUTHOR_SUPPORT_LINK_KINDS,
+        AUTHOR_SUPPORT_URL_MAX_LENGTH,
+        authorPageUrl,
+        escapeAttribute,
+        normalizeSupportLinks,
+        supportLinksPayloadFromDraft,
+    } from "./js/author-profile.js?v=3";
     import {
         GRADIENT_THEMES,
         applyGradientTheme,
@@ -1811,6 +1892,9 @@
     const saveBioBtn = document.getElementById("saveBioBtn");
     const authorBioPreviewLink = document.getElementById("authorBioPreviewLink");
     const bioMsg = document.getElementById("bioMsg");
+    const supportLinksGrid = document.getElementById("supportLinksGrid");
+    const saveSupportLinksBtn = document.getElementById("saveSupportLinksBtn");
+    const supportLinksMsg = document.getElementById("supportLinksMsg");
     const currentPw = document.getElementById("currentPw");
     const newPw = document.getElementById("newPw");
     const confirmPw = document.getElementById("confirmPw");
@@ -1868,9 +1952,18 @@
     let settingsSessionUser = null;
     let selectedRestoreFile = null;
 
-    const TAB_PANEL_IDS = ["appearancePanel", "accountModePanel", "profilePanel", "libraryPanel", "securityPanel", "backupPanel"];
+    const TAB_PANEL_IDS = [
+        "appearancePanel",
+        "accountModePanel",
+        "authorPagePanel",
+        "profilePanel",
+        "libraryPanel",
+        "securityPanel",
+        "backupPanel",
+    ];
     const SETTINGS_SECTION_ANCHORS = {
-        "author-bio": { panel: "profilePanel", scrollTo: "#author-bio", hash: "author-bio" },
+        "author-bio": { panel: "authorPagePanel", scrollTo: "#author-bio", hash: "author-bio" },
+        "author-support": { panel: "authorPagePanel", scrollTo: "#author-support", hash: "author-support" },
     };
     const PASSWORD_BLOCKED_OAUTH = new Set(["google", "discord"]);
 
@@ -1955,7 +2048,8 @@
             accountType: row.account_type ?? row.accountType,
             writingDayTotals: row.writing_day_totals ?? row.writingDayTotals,
             profileImageUrl: row.profile_image_url ?? row.profileImageUrl ?? "",
-            bio: row.bio ?? ""
+            bio: row.bio ?? "",
+            supportLinks: normalizeSupportLinks(row.support_links ?? row.supportLinks),
         };
     }
 
@@ -1973,6 +2067,45 @@
         }
         authorBioPreviewLink.href = url;
         authorBioPreviewLink.classList.remove("hidden");
+    }
+
+    function renderSupportLinkFields(links = {}) {
+        if (!supportLinksGrid) return;
+        const cleaned = normalizeSupportLinks(links);
+        supportLinksGrid.innerHTML = AUTHOR_SUPPORT_LINK_KINDS.map((kind) => {
+            const value = cleaned[kind.id] || "";
+            const inputId = `supportLink_${kind.id}`;
+            return `
+                <div class="field support-link-field">
+                    <label for="${inputId}"><span class="support-link-kind">${escapeAttribute(kind.label)}</span></label>
+                    <input
+                        type="url"
+                        id="${inputId}"
+                        data-support-kind="${escapeAttribute(kind.id)}"
+                        maxlength="${AUTHOR_SUPPORT_URL_MAX_LENGTH}"
+                        placeholder="${escapeAttribute(kind.placeholder)}"
+                        value="${escapeAttribute(value)}"
+                        autocomplete="url"
+                    />
+                </div>
+            `;
+        }).join("");
+    }
+
+    function readSupportLinkDraft() {
+        const draft = {};
+        supportLinksGrid?.querySelectorAll("input[data-support-kind]").forEach((input) => {
+            const kind = input.getAttribute("data-support-kind");
+            if (kind) draft[kind] = input.value;
+        });
+        return draft;
+    }
+
+    function setSupportLinksDisabled(disabled) {
+        supportLinksGrid?.querySelectorAll("input[data-support-kind]").forEach((input) => {
+            input.disabled = disabled;
+        });
+        if (saveSupportLinksBtn) saveSupportLinksBtn.disabled = disabled;
     }
 
     function setAvatarPreview(imageUrl, label) {
@@ -2470,6 +2603,8 @@
             authorBioInput.disabled = true;
         }
         if (saveBioBtn) saveBioBtn.disabled = true;
+        renderSupportLinkFields({});
+        setSupportLinksDisabled(true);
         updateAuthorBioCount();
         setAuthorBioPreviewLink("");
         settingsHomeUrl = "writer-dashboard.html";
@@ -2583,6 +2718,8 @@
                 authorBioInput.disabled = false;
             }
             if (saveBioBtn) saveBioBtn.disabled = false;
+            renderSupportLinkFields(data.supportLinks || {});
+            setSupportLinksDisabled(false);
             updateAuthorBioCount();
             setAuthorBioPreviewLink(handle);
 
@@ -2764,6 +2901,8 @@
     });
 
     authorBioInput?.addEventListener("input", updateAuthorBioCount);
+    renderSupportLinkFields({});
+    setSupportLinksDisabled(true);
 
     saveBioBtn?.addEventListener("click", async () => {
         hideMsg(bioMsg);
@@ -2790,6 +2929,54 @@
             showMsg(bioMsg, e?.message || "Could not save biography.", false);
         } finally {
             saveBioBtn.disabled = false;
+        }
+    });
+
+    saveSupportLinksBtn?.addEventListener("click", async () => {
+        hideMsg(supportLinksMsg);
+        if (isLocalSettings) {
+            showMsg(supportLinksMsg, "Sign in to save tip links to your public author page.", false);
+            return;
+        }
+
+        const payload = supportLinksPayloadFromDraft(readSupportLinkDraft());
+        saveSupportLinksBtn.disabled = true;
+        try {
+            const { data: udata } = await supabase.auth.getUser();
+            const user = udata?.user;
+            if (!user) return;
+
+            const { error } = await supabase
+                .from("users")
+                .update({
+                    support_links: payload,
+                    support_links_updated_at: new Date().toISOString(),
+                })
+                .eq("id", user.id);
+            if (error) throw error;
+            renderSupportLinkFields(payload);
+            const count = Object.keys(payload).length;
+            showMsg(
+                supportLinksMsg,
+                count
+                    ? `Saved ${count} support link${count === 1 ? "" : "s"}. They appear on your author page under Support.`
+                    : "Support links cleared. The Support tab stays hidden until you add a link.",
+                true
+            );
+        } catch (e) {
+            console.error(e);
+            const msg = String(e?.message || "");
+            if (/support_links/i.test(msg) && /column|does not exist|schema cache/i.test(msg)) {
+                showMsg(
+                    supportLinksMsg,
+                    "Support links need a quick database update — run supabase-author-support-links.sql in Supabase, then try again.",
+                    false
+                );
+            } else {
+                showMsg(supportLinksMsg, e?.message || "Could not save support links.", false);
+            }
+        } finally {
+            saveSupportLinksBtn.disabled = false;
         }
     });
 

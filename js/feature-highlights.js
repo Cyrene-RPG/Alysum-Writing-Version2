@@ -50,15 +50,15 @@ export const FEATURE_CATALOG = [
     },
     {
         id: "author-bio",
-        title: "Author biography",
+        title: "Author page",
         description:
-            "Tell readers about yourself — your bio appears on your public author page and with published books in the Library.",
-        where: "Settings → Profile tab → Author biography section",
+            "Tell readers about yourself and add tip links (PayPal, Ko-fi, Cash App, and more). Your bio and support links appear on your public author page and with published books.",
+        where: "Settings → Author page tab",
         releasedAt: "2026-07-28T12:00:00.000Z",
         navSelectors: ['a[href*="settings.html"]'],
-        pageTargetSelectors: ["#tab-profile", "#author-bio"],
+        pageTargetSelectors: ["#tab-author-page", "#author-bio"],
         ctaHref: "settings.html#author-bio",
-        ctaLabel: "Go to Author biography",
+        ctaLabel: "Go to Author page",
     },
 ];
 

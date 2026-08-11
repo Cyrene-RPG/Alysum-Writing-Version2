@@ -54,6 +54,7 @@
             --border: rgba(255,255,255,0.08);
             --purple: #6d28d9;
             --purple-dark: #5b21b6;
+            --lavender: #c4b5fd;
             --shadow: 0 14px 34px rgba(0,0,0,0.28);
         }
         html, body {
@@ -146,7 +147,7 @@
             font-weight: 900;
             letter-spacing: 0.08em;
             text-transform: uppercase;
-            color: #c4b5fd;
+            color: var(--lavender);
             margin-bottom: 8px;
         }
         .profile-name {
@@ -161,8 +162,42 @@
             font-weight: 700;
             color: var(--text-soft);
         }
+        .profile-tabs {
+            margin-top: 20px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            padding: 4px;
+            border-radius: 16px;
+            background: rgba(0, 0, 0, 0.22);
+            border: 1px solid var(--border);
+            width: fit-content;
+            max-width: 100%;
+        }
+        .profile-tab {
+            border: 1px solid transparent;
+            background: transparent;
+            color: var(--text-soft);
+            border-radius: 12px;
+            padding: 10px 16px;
+            font-weight: 800;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+        }
+        .profile-tab:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.04);
+        }
+        .profile-tab[aria-selected="true"] {
+            color: #fff;
+            background: linear-gradient(135deg, rgba(91, 33, 182, 0.85), rgba(109, 40, 217, 0.75));
+            border-color: rgba(196, 181, 253, 0.28);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
+        }
+        .profile-tab-panels { margin-top: 18px; }
+        .profile-tab-panel[hidden] { display: none !important; }
         .profile-bio {
-            margin-top: 18px;
             font-size: 16px;
             line-height: 1.7;
             color: #e5e7eb;
@@ -172,12 +207,71 @@
             color: var(--text-soft);
             font-style: italic;
         }
+        .support-hero {
+            margin: 0 0 16px;
+        }
+        .support-hero-title {
+            margin: 0;
+            font-size: clamp(20px, 3.5vw, 26px);
+            font-weight: 900;
+            line-height: 1.2;
+            letter-spacing: -0.01em;
+        }
+        .support-hero-sub {
+            margin: 8px 0 0;
+            font-size: 15px;
+            line-height: 1.55;
+            color: var(--lavender);
+            font-weight: 700;
+        }
+        .support-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 12px;
+        }
+        .support-card {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 4px;
+            min-height: 88px;
+            padding: 16px 18px;
+            border-radius: 18px;
+            text-decoration: none;
+            color: inherit;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background:
+                linear-gradient(165deg, rgba(124, 58, 237, 0.18), rgba(255, 255, 255, 0.03)),
+                var(--panel-soft);
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+            transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+        .support-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(196, 181, 253, 0.4);
+            box-shadow: 0 14px 28px rgba(0, 0, 0, 0.28);
+        }
+        .support-card-label {
+            font-size: 16px;
+            font-weight: 900;
+        }
+        .support-card-cta {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--lavender);
+        }
+        .support-empty {
+            margin: 0;
+            color: var(--text-soft);
+            font-style: italic;
+            line-height: 1.6;
+        }
         .edit-hint {
             margin-top: 16px;
             font-size: 14px;
             color: var(--text-soft);
         }
-        .edit-hint a { color: #c4b5fd; font-weight: 800; }
+        .edit-hint a { color: var(--lavender); font-weight: 800; }
         .works-section { margin-top: 28px; }
         .works-title {
             margin: 0 0 16px;
@@ -253,6 +347,13 @@
         @media (max-width: 700px) {
             .works-grid { grid-template-columns: 1fr; }
             .profile-card { padding: 22px 18px; }
+            .profile-tabs { width: 100%; }
+            .profile-tab { flex: 1; text-align: center; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .profile-tab,
+            .support-card,
+            .work-card { transition: none; }
         }
     </style>
 </head>
@@ -280,11 +381,33 @@
                     <div class="eyebrow">About the Author</div>
                     <h1 class="profile-name" id="authorName">Author</h1>
                     <div class="profile-handle" id="authorHandle">@author</div>
-                    <div class="profile-bio" id="authorBio"></div>
-                    <p class="edit-hint hidden" id="editBioHint">
-                        This is your public author page.
-                        <a href="settings.html">Edit your biography in Settings</a>.
-                    </p>
+
+                    <div class="profile-tabs" role="tablist" aria-label="Author profile sections">
+                        <button type="button" class="profile-tab" role="tab" id="tabBiography" data-panel="biographyPanel" aria-controls="biographyPanel" aria-selected="true">Biography</button>
+                        <button type="button" class="profile-tab" role="tab" id="tabSupport" data-panel="supportPanel" aria-controls="supportPanel" aria-selected="false">Support</button>
+                    </div>
+
+                    <div class="profile-tab-panels">
+                        <div class="profile-tab-panel" id="biographyPanel" role="tabpanel" aria-labelledby="tabBiography">
+                            <div class="profile-bio" id="authorBio"></div>
+                            <p class="edit-hint hidden" id="editBioHint">
+                                This is your public author page.
+                                <a href="settings.html#author-bio">Edit your biography in Settings</a>.
+                            </p>
+                        </div>
+                        <div class="profile-tab-panel" id="supportPanel" role="tabpanel" aria-labelledby="tabSupport" hidden>
+                            <div class="support-hero">
+                                <h2 class="support-hero-title">Want to support this author?</h2>
+                                <p class="support-hero-sub">Tip or buy their book here</p>
+                            </div>
+                            <div class="support-grid" id="supportGrid"></div>
+                            <p class="support-empty hidden" id="supportEmpty">This author hasn’t added tip or store links yet.</p>
+                            <p class="edit-hint hidden" id="editSupportHint">
+                                Add PayPal, Ko-fi, Cash App, and social links in
+                                <a href="settings.html#author-support">Settings → Author page</a>.
+                            </p>
+                        </div>
+                    </div>
                 </div>
             </section>
 
@@ -303,7 +426,8 @@
             escapeHtml,
             fetchAuthorByUsername,
             fetchPublishedWorksForAuthor,
-        } from "./js/author-profile.js?v=2";
+            supportLinksList,
+        } from "./js/author-profile.js?v=3";
 
         const params = new URLSearchParams(window.location.search);
         const usernameParam = params.get("u") || params.get("user") || params.get("username") || "";
@@ -318,14 +442,30 @@
         const authorAvatarImg = document.getElementById("authorAvatarImg");
         const authorAvatarInitial = document.getElementById("authorAvatarInitial");
         const editBioHint = document.getElementById("editBioHint");
+        const editSupportHint = document.getElementById("editSupportHint");
+        const supportGrid = document.getElementById("supportGrid");
+        const supportEmpty = document.getElementById("supportEmpty");
         const worksSection = document.getElementById("worksSection");
         const worksGrid = document.getElementById("worksGrid");
         const worksTitle = document.getElementById("worksTitle");
+        const tabButtons = [...document.querySelectorAll(".profile-tab")];
+        const biographyPanel = document.getElementById("biographyPanel");
+        const supportPanel = document.getElementById("supportPanel");
 
         function showState(state) {
             loadingState.classList.toggle("hidden", state !== "loading");
             errorState.classList.toggle("hidden", state !== "error");
             authorContent.classList.toggle("hidden", state !== "content");
+        }
+
+        function showAuthorTab(panelId) {
+            const id = panelId === "supportPanel" ? "supportPanel" : "biographyPanel";
+            tabButtons.forEach((tab) => {
+                const on = tab.dataset.panel === id;
+                tab.setAttribute("aria-selected", on ? "true" : "false");
+            });
+            biographyPanel.hidden = id !== "biographyPanel";
+            supportPanel.hidden = id !== "supportPanel";
         }
 
         function renderAvatar(profile) {
@@ -345,6 +485,37 @@
                 authorAvatarImg.hidden = true;
                 authorAvatarInitial.hidden = false;
             }
+        }
+
+        function renderSupport(profile, isOwner) {
+            const links = supportLinksList(profile.supportLinks);
+            const supportTab = document.getElementById("tabSupport");
+            const showSupportTab = isOwner || links.length > 0;
+            supportTab?.classList.toggle("hidden", !showSupportTab);
+            if (!showSupportTab) showAuthorTab("biographyPanel");
+
+            supportGrid.innerHTML = "";
+            if (!links.length) {
+                supportEmpty.classList.remove("hidden");
+                supportEmpty.textContent = isOwner
+                    ? "Add tip and store links in Settings so readers can support you here."
+                    : "This author hasn’t added tip or store links yet.";
+            } else {
+                supportEmpty.classList.add("hidden");
+                for (const link of links) {
+                    const a = document.createElement("a");
+                    a.href = link.url;
+                    a.target = "_blank";
+                    a.rel = "noopener noreferrer sponsored";
+                    a.className = "support-card";
+                    a.innerHTML = `
+                        <span class="support-card-label">${escapeHtml(link.label)}</span>
+                        <span class="support-card-cta">Open link →</span>
+                    `;
+                    supportGrid.appendChild(a);
+                }
+            }
+            editSupportHint.classList.toggle("hidden", !isOwner);
         }
 
         function renderWorks(books, authorDisplayName) {
@@ -383,6 +554,10 @@
                 worksGrid.appendChild(card);
             }
         }
+
+        tabButtons.forEach((tab) => {
+            tab.addEventListener("click", () => showAuthorTab(tab.dataset.panel));
+        });
 
         async function init() {
             if (!usernameParam.trim()) {
@@ -445,9 +620,16 @@
 
                 const { data: authData } = await supabase.auth.getUser();
                 const viewerId = authData?.user?.id;
-                if (viewerId && viewerId === profile.id) {
+                const isOwner = Boolean(viewerId && viewerId === profile.id);
+                if (isOwner) {
                     editBioHint.classList.remove("hidden");
                 }
+
+                renderSupport(profile, isOwner);
+                const supportTabVisible = !document.getElementById("tabSupport")?.classList.contains("hidden");
+                showAuthorTab(
+                    params.get("tab") === "support" && supportTabVisible ? "supportPanel" : "biographyPanel"
+                );
 
                 const books = await fetchPublishedWorksForAuthor(supabase, profile.id);
                 renderWorks(books, profile.displayName);

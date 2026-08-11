@@ -200,6 +200,23 @@
         .author-end-name { margin-top: 6px; font-size: 14px; font-weight: 700; color: var(--muted); }
         .author-end-bio { font-size: 15px; line-height: 1.7; color: var(--text); white-space: pre-wrap; }
         .author-end-bio.empty { color: var(--muted); font-style: italic; }
+        .author-end-support { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border); }
+        .author-end-support-title { margin: 0 0 4px; font-size: 16px; font-weight: 900; }
+        .author-end-support-sub { margin: 0 0 12px; font-size: 13px; font-weight: 700; color: #c4b5fd; }
+        .author-end-support-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+        .author-end-support-link {
+            display: inline-flex;
+            align-items: center;
+            padding: 9px 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: linear-gradient(165deg, rgba(109,40,217,0.22), rgba(255,255,255,0.03));
+            color: var(--text);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 800;
+        }
+        .author-end-support-link:hover { border-color: rgba(196,181,253,0.4); }
         .author-end-works { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--border); }
         .author-end-works-title { margin: 0 0 12px; font-size: 17px; font-weight: 900; }
         .author-works-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
@@ -354,6 +371,11 @@
                     </div>
                 </div>
                 <div class="author-end-bio" id="authorEndBio"></div>
+                <div class="author-end-support hidden" id="authorEndSupport">
+                    <h3 class="author-end-support-title">Want to support this author?</h3>
+                    <p class="author-end-support-sub">Tip or buy their book here</p>
+                    <div class="author-end-support-grid" id="authorEndSupportGrid"></div>
+                </div>
                 <div class="author-end-works hidden" id="authorEndWorks">
                     <h3 class="author-end-works-title" id="authorEndWorksTitle">Other works by this author</h3>
                     <div class="author-works-grid" id="authorWorksGrid"></div>
@@ -394,9 +416,10 @@
         authorLinkHtml,
         authorPageUrl,
         escapeHtml,
+        fetchAuthorById,
         fetchPublishedWorksForAuthor,
-        normalizeAuthorProfile,
-    } from "./js/author-profile.js?v=1";
+        supportLinksList,
+    } from "./js/author-profile.js?v=3";
     import { processDueChapterReleases, getNextChapterRelease } from "./js/scheduled-chapter-releases.js?v=2";
     import {
         formatChapterProgress,
@@ -706,6 +729,27 @@
             }
         }
         renderAuthorEndAvatar(profile);
+
+        const supportRoot = document.getElementById("authorEndSupport");
+        const supportGrid = document.getElementById("authorEndSupportGrid");
+        const supportLinks = supportLinksList(profile.supportLinks);
+        if (supportRoot && supportGrid) {
+            supportGrid.innerHTML = "";
+            if (!supportLinks.length) {
+                supportRoot.classList.add("hidden");
+            } else {
+                supportRoot.classList.remove("hidden");
+                for (const link of supportLinks) {
+                    const a = document.createElement("a");
+                    a.className = "author-end-support-link";
+                    a.href = link.url;
+                    a.target = "_blank";
+                    a.rel = "noopener noreferrer sponsored";
+                    a.textContent = link.label;
+                    supportGrid.appendChild(a);
+                }
+            }
+        }
 
         const profileUrl = authorPageUrl(profile.username);
         if (authorEndProfileLink && profileUrl) authorEndProfileLink.href = profileUrl;
@@ -1023,13 +1067,8 @@
             return;
         }
         try {
-            const { data } = await supabase
-                .from("users")
-                .select("id, username, display_name, bio, profile_image_url")
-                .eq("id", ownerUid)
-                .maybeSingle();
-            authorOwnerProfile = normalizeAuthorProfile(data);
-            bookOwnerHandle = authorOwnerProfile?.username || String(data?.username || "").trim() || null;
+            authorOwnerProfile = await fetchAuthorById(supabase, ownerUid);
+            bookOwnerHandle = authorOwnerProfile?.username || null;
         } catch {
             bookOwnerHandle = null;
             authorOwnerProfile = null;

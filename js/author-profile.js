@@ -9,11 +9,81 @@ import {
 } from "./story-serialization.js?v=1";
 
 export const AUTHOR_BIO_MAX_LENGTH = 2000;
+export const AUTHOR_SUPPORT_URL_MAX_LENGTH = 500;
+
+/** Fixed tip / social slots authors can fill in Settings → Author page. */
+export const AUTHOR_SUPPORT_LINK_KINDS = [
+    { id: "paypal", label: "PayPal", placeholder: "https://paypal.me/yourname" },
+    { id: "kofi", label: "Ko-fi", placeholder: "https://ko-fi.com/yourname" },
+    { id: "cashapp", label: "Cash App", placeholder: "https://cash.app/$yourname" },
+    { id: "patreon", label: "Patreon", placeholder: "https://www.patreon.com/yourname" },
+    { id: "website", label: "Website / store", placeholder: "https://your-shop-or-site.com" },
+    { id: "social", label: "Social media", placeholder: "https://…" },
+    { id: "other", label: "Other", placeholder: "https://…" },
+];
+
+const SUPPORT_KIND_IDS = new Set(AUTHOR_SUPPORT_LINK_KINDS.map((k) => k.id));
 
 export function authorPageUrl(username) {
     const handle = String(username ?? "").trim();
     if (!handle) return null;
     return `author.html?u=${encodeURIComponent(handle)}`;
+}
+
+/** Allow only http(s) URLs for public tip/social links. */
+export function sanitizeSupportUrl(raw) {
+    const value = String(raw ?? "").trim().slice(0, AUTHOR_SUPPORT_URL_MAX_LENGTH);
+    if (!value) return "";
+    let url;
+    try {
+        url = new URL(value.includes("://") ? value : `https://${value}`);
+    } catch {
+        return "";
+    }
+    if (url.protocol !== "http:" && url.protocol !== "https:") return "";
+    if (!url.hostname) return "";
+    return url.toString();
+}
+
+export function normalizeSupportLinks(raw) {
+    const out = {};
+    const source =
+        raw && typeof raw === "object" && !Array.isArray(raw)
+            ? raw
+            : typeof raw === "string" && raw.trim()
+              ? (() => {
+                    try {
+                        const parsed = JSON.parse(raw);
+                        return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+                    } catch {
+                        return {};
+                    }
+                })()
+              : {};
+    for (const kind of AUTHOR_SUPPORT_LINK_KINDS) {
+        const url = sanitizeSupportUrl(source[kind.id]);
+        if (url) out[kind.id] = url;
+    }
+    return out;
+}
+
+export function supportLinksList(supportLinks) {
+    const links = normalizeSupportLinks(supportLinks);
+    return AUTHOR_SUPPORT_LINK_KINDS
+        .filter((kind) => links[kind.id])
+        .map((kind) => ({
+            id: kind.id,
+            label: kind.label,
+            url: links[kind.id],
+        }));
+}
+
+export function supportLinkKindLabel(id) {
+    return AUTHOR_SUPPORT_LINK_KINDS.find((k) => k.id === id)?.label || "Link";
+}
+
+export function hasSupportLinks(supportLinks) {
+    return supportLinksList(supportLinks).length > 0;
 }
 
 export function escapeHtml(str) {
@@ -46,8 +116,21 @@ export function normalizeAuthorProfile(row) {
         displayName: publicDisplayNameFromUserData(row),
         profileImageUrl: String(row.profile_image_url ?? row.profileImageUrl ?? "").trim(),
         bio: String(row.bio ?? "").trim(),
+        supportLinks: normalizeSupportLinks(row.support_links ?? row.supportLinks),
         accountType: String(row.account_type ?? row.accountType ?? "").trim(),
     };
+}
+
+/** @param {Record<string, string>} draftMap kind id → raw url from form inputs */
+export function supportLinksPayloadFromDraft(draftMap) {
+    const cleaned = {};
+    const source = draftMap && typeof draftMap === "object" ? draftMap : {};
+    for (const kind of AUTHOR_SUPPORT_LINK_KINDS) {
+        if (!SUPPORT_KIND_IDS.has(kind.id)) continue;
+        const url = sanitizeSupportUrl(source[kind.id]);
+        if (url) cleaned[kind.id] = url;
+    }
+    return cleaned;
 }
 
 function libraryRowData(row) {
@@ -88,14 +171,31 @@ export function normalizePublishedBookPreview(row) {
     };
 }
 
+const AUTHOR_PROFILE_SELECT =
+    "id, username, display_name, profile_image_url, bio, support_links, account_type";
+const AUTHOR_PROFILE_SELECT_LEGACY =
+    "id, username, display_name, profile_image_url, bio, account_type";
+
+function isMissingSupportLinksColumn(error) {
+    const msg = String(error?.message || error || "");
+    return /support_links/i.test(msg) && /column|does not exist|schema cache/i.test(msg);
+}
+
 export async function fetchAuthorByUsername(supabase, username) {
     const handle = String(username ?? "").trim();
     if (!handle) return null;
-    const { data, error } = await supabase
+    let { data, error } = await supabase
         .from("users")
-        .select("id, username, display_name, profile_image_url, bio, account_type")
+        .select(AUTHOR_PROFILE_SELECT)
         .ilike("username", handle)
         .maybeSingle();
+    if (error && isMissingSupportLinksColumn(error)) {
+        ({ data, error } = await supabase
+            .from("users")
+            .select(AUTHOR_PROFILE_SELECT_LEGACY)
+            .ilike("username", handle)
+            .maybeSingle());
+    }
     if (error) throw error;
     return normalizeAuthorProfile(data);
 }
@@ -103,11 +203,18 @@ export async function fetchAuthorByUsername(supabase, username) {
 export async function fetchAuthorById(supabase, userId) {
     const id = String(userId ?? "").trim();
     if (!id) return null;
-    const { data, error } = await supabase
+    let { data, error } = await supabase
         .from("users")
-        .select("id, username, display_name, profile_image_url, bio, account_type")
+        .select(AUTHOR_PROFILE_SELECT)
         .eq("id", id)
         .maybeSingle();
+    if (error && isMissingSupportLinksColumn(error)) {
+        ({ data, error } = await supabase
+            .from("users")
+            .select(AUTHOR_PROFILE_SELECT_LEGACY)
+            .eq("id", id)
+            .maybeSingle());
+    }
     if (error) throw error;
     return normalizeAuthorProfile(data);
 }
@@ -134,11 +241,19 @@ export async function fetchUsernamesByIds(supabase, userIds) {
 export async function fetchPublishedWorksForAuthor(supabase, userId, { excludeBookId } = {}) {
     const id = String(userId ?? "").trim();
     if (!id) return [];
-    const { data, error } = await supabase.from("library").select("*").eq("user_id", id);
+    const { data, error } = await supabase.from("library_catalog").select("*").eq("user_id", id);
+    if (error && /library_catalog|relation.*does not exist/i.test(String(error.message || error))) {
+        const fallback = await supabase.from("library").select("*").eq("user_id", id);
+        if (fallback.error) throw fallback.error;
+        return mapAuthorWorks(fallback.data, excludeBookId);
+    }
     if (error) throw error;
+    return mapAuthorWorks(data, excludeBookId);
+}
 
+function mapAuthorWorks(rows, excludeBookId) {
     const exclude = String(excludeBookId ?? "").trim();
-    return (data || [])
+    return (rows || [])
         .map((row) => normalizePublishedBookPreview(row))
         .filter(Boolean)
         .filter((book) => !exclude || book.id !== exclude)
