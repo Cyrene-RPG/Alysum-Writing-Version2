@@ -381,8 +381,9 @@ import {
     resolveInternalRedirect,
     persistAuthReturnNext,
     isBetaRoomReturnUrl,
+    isCollabRoomReturnUrl,
     LOGIN_RETURN_NEXT_KEY,
-} from "./js/auth-redirect.js?v=5";
+} from "./js/auth-redirect.js?v=6";
 import { wireSupabaseSession } from "./js/supabase-session.js?v=1";
 import { ensureLoginStreakCloud } from "./js/ensure-login-streak.js?v=3";
 
@@ -545,6 +546,14 @@ function applyLoginReturnContext() {
         betaInviteBanner?.classList.add("visible");
         const heading = document.querySelector(".card h2");
         if (heading) heading.textContent = "Sign in to open beta room";
+    } else if (safe && isCollabRoomReturnUrl(safe)) {
+        betaInviteBanner?.classList.add("visible");
+        if (betaInviteBanner) {
+            betaInviteBanner.innerHTML =
+                "<strong>Collab invite</strong> — sign in to open the chapter collaboration room.";
+        }
+        const heading = document.querySelector(".card h2");
+        if (heading) heading.textContent = "Sign in to open collab room";
     }
 
     const wordWarsPreviewStrip = document.getElementById("word-wars-preview-strip");

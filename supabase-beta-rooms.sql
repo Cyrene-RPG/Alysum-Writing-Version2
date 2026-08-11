@@ -51,8 +51,9 @@ CREATE TABLE IF NOT EXISTS public.beta_threads (
   share_id uuid NOT NULL REFERENCES public.manuscript_shares (id) ON DELETE CASCADE,
   book_id text NOT NULL,
   author_id uuid NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE,
+  reader_id uuid REFERENCES auth.users (id) ON DELETE CASCADE,
   thread_type text NOT NULL DEFAULT 'general'
-    CHECK (thread_type IN ('general', 'chapter', 'inline')),
+    CHECK (thread_type IN ('general', 'chapter', 'inline', 'dm')),
   chapter_id text NOT NULL DEFAULT '',
   anchor_quote text NOT NULL DEFAULT '',
   created_at timestamptz NOT NULL DEFAULT now()
@@ -170,7 +171,7 @@ BEGIN
   SELECT * INTO v_book
   FROM public.books
   WHERE id::text = p_book_id
-    AND user_id = v_uid;
+    AND user_id::text = v_uid::text;
 
   IF NOT FOUND THEN
     RAISE EXCEPTION 'book_not_found';

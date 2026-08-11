@@ -51,6 +51,17 @@
             color: var(--text);
         }
         .hidden { display: none !important; }
+        .test-banner {
+            margin: 12px 20px 0;
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(251, 191, 36, 0.35);
+            background: rgba(120, 53, 15, 0.35);
+            color: #fde68a;
+            font-size: 14px;
+            font-weight: 700;
+            line-height: 1.45;
+        }
         .page { max-width: 1320px; margin: 0 auto; padding: 22px 20px 48px; }
         .page-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
         .page-head h2 { margin: 0; font-size: 22px; font-weight: 900; }
@@ -180,6 +191,7 @@
             <a class="btn" href="writer-dashboard.html">Studio → share a draft</a>
         </div>
 
+        <div class="test-banner hidden" id="schemaBanner">Run supabase-beta-rooms.sql in Supabase to enable beta rooms.</div>
         <div id="pageStatus" class="status hidden"></div>
         <div id="loadingState" class="loading">Loading beta rooms…</div>
         <div id="emptyState" class="empty hidden">No beta rooms yet. Open an invite link, or share a draft from Studio → Beta invite.</div>
@@ -190,13 +202,14 @@
         import { supabase } from "./firebase.js";
         import { requireStudioSession } from "./js/studio-session.js?v=3";
         import { publicDisplayNameFromUserData } from "./js/profile-display.js?v=1";
-        import { listMyBetaRooms, betaRoomShareUrl, isBetaRoomsSchemaMissing } from "./js/beta-rooms-api.js?v=2";
+        import { listMyBetaRooms, betaRoomShareUrl, isBetaRoomsSchemaMissing } from "./js/beta-rooms-api.js?v=3";
         import { mergeBetaRoomShelf, betaRoomShelfRows } from "./js/beta-room-shelf.js?v=1";
 
         const loadingState = document.getElementById("loadingState");
         const emptyState = document.getElementById("emptyState");
         const roomGrid = document.getElementById("roomGrid");
         const pageStatus = document.getElementById("pageStatus");
+        const schemaBanner = document.getElementById("schemaBanner");
 
         function escapeHtml(str) {
             return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -292,7 +305,14 @@
                 try {
                     shareRows = await withTimeout(listMyBetaRooms(), 15000, "Loading beta rooms");
                 } catch (err) {
-                    if (!isBetaRoomsSchemaMissing(err)) console.warn(err);
+                    if (isBetaRoomsSchemaMissing(err)) {
+                        loadingState.classList.add("hidden");
+                        schemaBanner?.classList.remove("hidden");
+                        emptyState.textContent = "Beta rooms need supabase-beta-rooms.sql applied first.";
+                        emptyState.classList.remove("hidden");
+                        return;
+                    }
+                    throw err;
                 }
 
                 const authorIds = [...new Set(shareRows.map((s) => s.author_id).filter(Boolean))];
@@ -325,6 +345,12 @@
             } catch (err) {
                 console.error(err);
                 loadingState.classList.add("hidden");
+                if (isBetaRoomsSchemaMissing(err)) {
+                    schemaBanner?.classList.remove("hidden");
+                    emptyState.textContent = "Beta rooms need supabase-beta-rooms.sql applied first.";
+                    emptyState.classList.remove("hidden");
+                    return;
+                }
                 setStatus(err?.message || "Could not load beta rooms.", true);
             }
         }

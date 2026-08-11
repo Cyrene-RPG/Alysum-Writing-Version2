@@ -143,7 +143,7 @@ AS $$
     SELECT 1
     FROM public.books b
     WHERE b.id::text = p_book_id
-      AND b.user_id = auth.uid()
+      AND b.user_id::text = (auth.uid())::text
   );
 $$;
 
@@ -162,6 +162,18 @@ AS $$
       AND m.collaborator_id = auth.uid()
       AND m.status = 'active'
   );
+$$;
+
+-- Defined before live-draft RLS policies that reference it (fresh applies must not fail).
+CREATE OR REPLACE FUNCTION public.can_access_collab_chapter(p_book_id text, p_chapter_id text)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT public.is_collab_chapter_author(p_book_id, p_chapter_id)
+      OR public.is_collab_chapter_member(p_book_id, p_chapter_id);
 $$;
 
 -- ---------------------------------------------------------------------------
@@ -316,17 +328,6 @@ $$;
 -- accept_collab_suggestion / reject_collab_suggestion RPCs:
 -- merge into books.sections JSON on accept; log to collab_audit_log.
 
-CREATE OR REPLACE FUNCTION public.can_access_collab_chapter(p_book_id text, p_chapter_id text)
-RETURNS boolean
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = public
-AS $$
-  SELECT public.is_collab_chapter_author(p_book_id, p_chapter_id)
-      OR public.is_collab_chapter_member(p_book_id, p_chapter_id);
-$$;
-
 CREATE OR REPLACE FUNCTION public.get_collab_chapter(p_book_id text, p_chapter_id text)
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -394,7 +395,7 @@ SET search_path = public
 AS $$
 BEGIN
   IF NOT EXISTS (
-    SELECT 1 FROM public.books b WHERE b.id::text = p_book_id AND b.user_id = auth.uid()
+    SELECT 1 FROM public.books b WHERE b.id::text = p_book_id AND b.user_id::text = (auth.uid())::text
   ) THEN
     RAISE EXCEPTION 'not_author';
   END IF;
@@ -681,7 +682,7 @@ BEGIN
     SELECT * INTO v_book
     FROM public.books b
     WHERE b.id::text = v_s.book_id
-      AND b.user_id = auth.uid()
+      AND b.user_id::text = (auth.uid())::text
     FOR UPDATE;
 
     IF NOT FOUND THEN
@@ -719,7 +720,7 @@ BEGIN
       SET sections = jsonb_set(coalesce(sections, '{}'::jsonb), '{body}', v_new_body, true),
           updated = (extract(epoch from now()) * 1000)::bigint
       WHERE id::text = v_s.book_id
-        AND user_id = auth.uid();
+        AND user_id::text = (auth.uid())::text;
 
       INSERT INTO public.collab_live_drafts (
         book_id, chapter_id, html, base_content_hash, updated_at, updated_by
@@ -1096,7 +1097,7 @@ BEGIN
   SELECT * INTO v_book
   FROM public.books b
   WHERE b.id::text = p_book_id
-    AND b.user_id = auth.uid()
+    AND b.user_id::text = (auth.uid())::text
   FOR UPDATE;
 
   IF NOT FOUND THEN
@@ -1128,7 +1129,7 @@ BEGIN
   SET sections = jsonb_set(coalesce(sections, '{}'::jsonb), '{body}', v_new_body, true),
       updated = (extract(epoch from now()) * 1000)::bigint
   WHERE id::text = p_book_id
-    AND user_id = auth.uid();
+    AND user_id::text = (auth.uid())::text;
 
   INSERT INTO public.collab_live_drafts (
     book_id, chapter_id, html, base_content_hash, updated_at, updated_by

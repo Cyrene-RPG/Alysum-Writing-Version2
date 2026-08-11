@@ -1,25 +1,9 @@
 -- Run once in Supabase → SQL Editor (safe to re-run).
--- Tight library + books RLS, backfill owners, secure view counter RPC.
--- Uses ::text casts so uuid/text column mismatches do not fail.
+-- Fixes: missing users.last_login (studio profile load) + books/library RLS (empty book list).
 
--- ---------------------------------------------------------------------------
--- 1. Backfill library.user_id from books / legacy JSON
--- ---------------------------------------------------------------------------
-UPDATE public.library lib
-SET user_id = b.user_id
-FROM public.books b
-WHERE lib.id::text = b.id::text
-  AND lib.user_id IS NULL
-  AND b.user_id IS NOT NULL;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS last_login text;
 
-UPDATE public.library
-SET user_id = (data->>'ownerUid')::uuid
-WHERE user_id IS NULL
-  AND data->>'ownerUid' ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$';
-
--- ---------------------------------------------------------------------------
--- 2. books — authors only touch their own manuscripts
--- ---------------------------------------------------------------------------
+-- books — authors read/write their own manuscripts
 ALTER TABLE public.books ENABLE ROW LEVEL SECURITY;
 
 DO $$
@@ -54,8 +38,7 @@ CREATE POLICY "books_delete_own" ON public.books
   FOR DELETE TO authenticated
   USING ((auth.uid())::text = user_id::text);
 
--- Collab rooms: invited editors need SELECT on the shared manuscript.
--- Re-create after the wipe above so re-running this file does not break collab.
+-- Collab rooms: restore collaborator read access after the books policy wipe.
 DO $$
 BEGIN
   IF to_regclass('public.collab_memberships') IS NOT NULL THEN
@@ -76,9 +59,7 @@ END $$;
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.books TO authenticated;
 
--- ---------------------------------------------------------------------------
--- 3. library — public catalog reads; owners publish via books ownership
--- ---------------------------------------------------------------------------
+-- library — public reads for homepage catalog
 ALTER TABLE public.library ENABLE ROW LEVEL SECURITY;
 
 DO $$
@@ -144,9 +125,6 @@ CREATE POLICY "library_delete_owner" ON public.library
 GRANT SELECT ON public.library TO anon, authenticated;
 GRANT INSERT, UPDATE, DELETE ON public.library TO authenticated;
 
--- ---------------------------------------------------------------------------
--- 4. View counter — readers bump views only (not data.updated; that is set on publish)
--- ---------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.increment_library_views(p_book_id text)
 RETURNS void
 LANGUAGE plpgsql

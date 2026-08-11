@@ -1717,6 +1717,8 @@
 
 const params = new URLSearchParams(window.location.search);
 const wordWarEmbed = params.get("embed") === "wordWar";
+// Legacy collab invite/review links opened editor.html; send them to the standalone room.
+// Beta invites use beta-room.html directly and never hit this path.
 if ((params.get("collab") || params.get("invite")) && !wordWarEmbed) {
     window.location.replace("collab-room.html" + window.location.search);
 }

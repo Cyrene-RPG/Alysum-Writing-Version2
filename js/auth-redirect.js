@@ -207,6 +207,16 @@ export function isBetaRoomReturnUrl(url) {
     }
 }
 
+/** True when a post-auth redirect should land on a collab room page. */
+export function isCollabRoomReturnUrl(url) {
+    try {
+        const u = typeof url === "string" ? new URL(url, typeof location !== "undefined" ? location.href : PRODUCTION_ORIGIN + "/") : url;
+        return /(^|\/)collab-room\.html$/i.test(u.pathname);
+    } catch {
+        return false;
+    }
+}
+
 /** Query flag when login OAuth succeeded but public.users profile is still missing. */
 export const PROFILE_SETUP_QUERY = "setup";
 export const PROFILE_SETUP_VALUE = "profile";

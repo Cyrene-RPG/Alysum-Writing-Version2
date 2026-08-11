@@ -837,8 +837,9 @@ import {
     persistAuthReturnNext,
     resolveAuthReturnNext,
     isBetaRoomReturnUrl,
+    isCollabRoomReturnUrl,
     SIGNUP_RETURN_NEXT_KEY,
-} from "./js/auth-redirect.js?v=5";
+} from "./js/auth-redirect.js?v=6";
 import { wireSupabaseSession } from "./js/supabase-session.js?v=1";
 import {
     ACCOUNT_AUTHOR,
@@ -966,14 +967,27 @@ function applySignupReturnContext() {
         link.href = safe ? `login.html${nextQs}` : "login.html";
     });
 
-    if (!safe || !isBetaRoomReturnUrl(safe)) return;
+    if (!safe) return;
 
-    document.getElementById("beta-invite-banner")?.classList.add("visible");
+    const banner = document.getElementById("beta-invite-banner");
     const heading = document.querySelector("#signup-card h2");
-    if (heading) heading.textContent = "Create account to open beta room";
 
-    const readerRadio = document.querySelector('input[name="accountType"][value="reader"]');
-    if (readerRadio) readerRadio.checked = true;
+    if (isBetaRoomReturnUrl(safe)) {
+        banner?.classList.add("visible");
+        if (heading) heading.textContent = "Create account to open beta room";
+        const readerRadio = document.querySelector('input[name="accountType"][value="reader"]');
+        if (readerRadio) readerRadio.checked = true;
+        return;
+    }
+
+    if (isCollabRoomReturnUrl(safe)) {
+        banner?.classList.add("visible");
+        if (banner) {
+            banner.innerHTML =
+                "<strong>Collab invite</strong> — create a free account to join the chapter collaboration room.";
+        }
+        if (heading) heading.textContent = "Create account to open collab room";
+    }
 }
 
 function loadSignupFlowState() {
