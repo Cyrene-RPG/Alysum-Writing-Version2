@@ -345,6 +345,7 @@
     import { mountWarningPicker } from "./js/chapter-warnings-ui.js?v=1";
     import { normalizeAuthorNotes, MAX_AUTHOR_NOTES_LENGTH } from "./js/chapter-author-notes.js?v=1";
     import { chapterTypographyPayload } from "./js/chapter-typography.js?v=1";
+    import { shieldLibraryChapters, libraryShieldMeta } from "./js/shieldfont-library.js?v=1";
 
     const WARNING_GROUPS = CONTENT_WARNING_GROUPS;
 
@@ -945,7 +946,7 @@
                 summary: publishMeta.summary,
                 extraTags: publishMeta.extraTags,
                 coverUrl: publishMeta.coverUrl || "",
-                chapters: publishChapters.map((ch, index) => ({
+                chapters: shieldLibraryChapters(publishChapters.map((ch, index) => ({
                     id: ch.id,
                     order: index + 1,
                     title: ch.title || (isComicFormat(currentBook.mediaFormat) ? `Page ${index + 1}` : `Chapter ${index + 1}`),
@@ -956,7 +957,7 @@
                     warnings: cloneWarningData(ch.warnings),
                     authorNotes: normalizeAuthorNotes(ch.authorNotes),
                     ...chapterTypographyPayload(ch),
-                })),
+                }))),
                 publishedChapterIds: immediateChapterIds,
                 chapterCount: publishChapters.length,
                 words: wordCount,
@@ -968,6 +969,7 @@
                 isPublished: true,
                 serializationStatus: publishMeta.serializationStatus,
                 plannedChapterCount: publishMeta.plannedChapterCount,
+                ...libraryShieldMeta(),
             };
             const { error: bookError } = await supabase.from("books").update({ title: payloadTitle, library_type: libraryShelfSelect.value, publish_meta: publishMeta, published_chapter_ids: immediateChapterIds, is_published: true, sections: updatedSections, updated: now }).eq("id", bookId).eq("user_id", currentUser.id);
             if (bookError) throw bookError;

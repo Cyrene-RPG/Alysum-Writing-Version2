@@ -1671,6 +1671,7 @@
         writeChapterTypography,
         chapterTypographyPayload,
     } from "./js/chapter-typography.js?v=1";
+    import { shieldLibraryChapters, libraryShieldMeta } from "./js/shieldfont-library.js?v=1";
     import { mountBookVersionPanel } from "./js/book-version-panel.js?v=8";
     import { hashSnapshot, buildManuscriptSnapshot } from "./js/book-version-api.js?v=3";
     import {
@@ -4539,7 +4540,7 @@ function rememberBookId(id) {
                     summary: publishMeta.summary,
                     extraTags: publishMeta.extraTags,
                     coverUrl: publishMeta.coverUrl || safeString(existingLibrary?.data?.coverUrl || existingLibrary?.data?.cover_url || existingLibrary?.coverUrl, ""),
-                    chapters: publishChapters.map((ch, index) => ({
+                    chapters: shieldLibraryChapters(publishChapters.map((ch, index) => ({
                         id: ch.id,
                         order: index + 1,
                         title: ch.title || (isCurrentBookComic() ? `Page ${index + 1}` : `Chapter ${index + 1}`),
@@ -4550,7 +4551,7 @@ function rememberBookId(id) {
                         warnings: cloneWarningData(ch.warnings),
                         authorNotes: authorNotesByChapterId.get(ch.id) || "",
                         ...chapterTypographyPayload(ch),
-                    })),
+                    }))),
                     publishedChapterIds: immediateChapterIds,
                     chapterCount: selectedChapterObjects.length,
                     words: wordCount,
@@ -4562,6 +4563,7 @@ function rememberBookId(id) {
                     isPublished: true,
                     serializationStatus: publishMeta.serializationStatus,
                     plannedChapterCount: publishMeta.plannedChapterCount,
+                    ...libraryShieldMeta(),
                 }
             };
             currentBook.title = payloadTitle;

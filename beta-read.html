@@ -46,6 +46,7 @@
 <script src="js/alysum-appearance-boot.js"></script>
 <script src="js/body-background-sync.js"></script>
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
+    <link rel="stylesheet" href="css/shieldfont-library.css?v=1" />
     <title>Beta read — Alysum</title>
     <style>
         * { box-sizing: border-box; }
@@ -914,6 +915,12 @@
         import { applyReaderWatermark } from "./js/reader-watermark.js?v=6";
         import { sanitizeChapterHtml } from "./js/book-html-sanitize.js?v=1";
         import { applyChapterTypographyStyles, chapterTypographyPayload } from "./js/chapter-typography.js?v=1";
+        import {
+            applyShieldedChapterView,
+            isLibraryShielded,
+            decodeShieldedPlainText,
+        } from "./js/shieldfont-library.js?v=1";
+        import { ensurePublishedLibraryShielded } from "./js/shieldfont-reprotect.js?v=1";
 
         function resolveBetaReadBookIdFromLocation() {
             const params = new URLSearchParams(window.location.search);
@@ -959,6 +966,7 @@
 
         let currentUser = null;
         let currentBook = null;
+        let libraryShielded = false;
         let currentChapterIndex = 0;
         let readerWatermarkProfileUser = null;
         let bookOwnerHandle = null;
@@ -1108,7 +1116,8 @@
                 chapters,
                 chapterCount: safeNumber(data.chapterCount, chapters.length),
                 words: totalWords,
-                updated: safeNumber(data.updated, 0)
+                updated: safeNumber(data.updated, 0),
+                shielded: isLibraryShielded(data),
             };
         }
 
@@ -1175,6 +1184,8 @@
             }
             betaContent.innerHTML = sanitizeChapterHtml(ch.content) || "<p></p>";
             applyChapterTypographyStyles(betaContent, ch);
+            libraryShielded = !!(currentBook.shielded);
+            void applyShieldedChapterView(betaContent, { shielded: libraryShielded });
             prevBtn.disabled = currentChapterIndex === 0;
             nextBtn.disabled = currentChapterIndex >= currentBook.chapters.length - 1;
             draftQuote.value = "";
@@ -1197,8 +1208,10 @@
             if (!node) return null;
             const el = node.nodeType === 1 ? node : node.parentElement;
             if (!el || !betaContent.contains(el)) return null;
-            const text = sel.toString().trim();
+            let text = sel.toString().trim();
             if (text.length < 2) return null;
+            // DOM holds decoy words; invert mapping so beta notes store real prose.
+            if (libraryShielded) text = decodeShieldedPlainText(text);
             return text.slice(0, 2000);
         }
 
@@ -1470,6 +1483,27 @@
 
                 const inner = libRow.data && typeof libRow.data === "object" ? libRow.data : libRow;
                 currentBook = normalizeBook(inner);
+                libraryShielded = !!currentBook.shielded;
+
+                if (!libraryShielded && user?.id && currentBook.ownerUid && user.id === currentBook.ownerUid) {
+                    try {
+                        const heal = await ensurePublishedLibraryShielded(supabase, {
+                            bookId,
+                            userId: user.id,
+                        });
+                        if (heal.updated) {
+                            const { data: refreshed } = await supabase.from("library").select("*").eq("id", bookId).maybeSingle();
+                            const nextInner = refreshed?.data && typeof refreshed.data === "object" ? refreshed.data : refreshed;
+                            if (nextInner) {
+                                currentBook = normalizeBook(nextInner);
+                                libraryShielded = !!currentBook.shielded;
+                            }
+                        }
+                    } catch (healErr) {
+                        console.warn("Could not auto-shield beta library entry.", healErr);
+                    }
+                }
+
                 if (!currentBook.chapters.length) {
                     hideLoadingPanel();
                     fatalError.textContent = "This story has no published chapters to beta read.";

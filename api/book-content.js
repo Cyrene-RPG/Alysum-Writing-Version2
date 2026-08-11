@@ -1,6 +1,7 @@
 const { createClient } = require("@supabase/supabase-js");
 const { isAiBotUserAgent } = require("../lib/bot-agents.js");
 const { libraryRowData, SUPABASE_URL } = require("../lib/seo-public.js");
+const { shieldBookContentResponse } = require("../lib/shield-book-content.js");
 
 function createServiceClient() {
     const url = String(process.env.SUPABASE_URL || SUPABASE_URL || "").trim();
@@ -52,15 +53,12 @@ module.exports = async function handler(req, res) {
             return;
         }
 
+        const body = await shieldBookContentResponse(supabase, bookId, payload);
+
         res.setHeader("Content-Type", "application/json; charset=utf-8");
         res.setHeader("Cache-Control", "private, no-store");
         res.setHeader("X-Robots-Tag", "noai, noimageai, noindex, nofollow");
-        res.status(200).send(
-            JSON.stringify({
-                chapters: Array.isArray(payload.chapters) ? payload.chapters : [],
-                publishedChapterIds: Array.isArray(payload.publishedChapterIds) ? payload.publishedChapterIds : [],
-            })
-        );
+        res.status(200).send(JSON.stringify(body));
     } catch (err) {
         console.error("book-content error", err);
         res.status(500).setHeader("Content-Type", "application/json").send(JSON.stringify({ error: "Could not load chapters" }));

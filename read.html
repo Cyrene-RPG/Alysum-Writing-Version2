@@ -47,6 +47,7 @@
     <link rel="stylesheet" href="css/book-inline-images.css?v=4" />
     <link rel="stylesheet" href="css/accessibility-fonts.css?v=1" />
     <link rel="stylesheet" href="css/book-inline-fonts.css?v=4" />
+    <link rel="stylesheet" href="css/shieldfont-library.css?v=1" />
     <link rel="stylesheet" href="css/scene-breaks.css?v=8" />
     <link rel="stylesheet" href="css/script-editor.css?v=4" />
     <link rel="stylesheet" href="css/workspace-nav.css?v=11" />
@@ -432,6 +433,8 @@
     import { normalizeAuthorNotes } from "./js/chapter-author-notes.js?v=1";
     import { sanitizeChapterHtml } from "./js/book-html-sanitize.js?v=1";
     import { applyChapterTypographyStyles, chapterTypographyPayload } from "./js/chapter-typography.js?v=1";
+    import { applyShieldedChapterView, isLibraryShielded } from "./js/shieldfont-library.js?v=1";
+    import { ensurePublishedLibraryShielded } from "./js/shieldfont-reprotect.js?v=1";
 
     const params = new URLSearchParams(window.location.search);
     let bookId =
@@ -446,7 +449,7 @@
 
     const backBtn = document.getElementById("backBtn"), themeBtn = document.getElementById("themeBtn"), fontMinusBtn = document.getElementById("fontMinusBtn"), fontPlusBtn = document.getElementById("fontPlusBtn"), menuBtn = document.getElementById("menuBtn"), mobileDrawer = document.getElementById("mobileDrawer"), drawerBackdrop = document.getElementById("drawerBackdrop"), closeDrawerBtn = document.getElementById("closeDrawerBtn"), topbarTitle = document.getElementById("topbarTitle"), topbarSubtitle = document.getElementById("topbarSubtitle"), betaReadTopBtn = document.getElementById("betaReadTopBtn"), readerProfileTopBtn = document.getElementById("readerProfileTopBtn"), allNotesTopBtn = document.getElementById("allNotesTopBtn"), statusBox = document.getElementById("statusBox"), errorBox = document.getElementById("errorBox"), bookTitle = document.getElementById("bookTitle"), bookAuthor = document.getElementById("bookAuthor"), bookSummary = document.getElementById("bookSummary"), serializationBadge = document.getElementById("serializationBadge"), statChapters = document.getElementById("statChapters"), statWords = document.getElementById("statWords"), statReads = document.getElementById("statReads"), statType = document.getElementById("statType"), statRating = document.getElementById("statRating"), tagList = document.getElementById("tagList"), warningList = document.getElementById("warningList"), sideBookTitle = document.getElementById("sideBookTitle"), sideBookAuthor = document.getElementById("sideBookAuthor"), sideBookSummary = document.getElementById("sideBookSummary"), sideTagList = document.getElementById("sideTagList"), sideWarningList = document.getElementById("sideWarningList"), drawerBookTitle = document.getElementById("drawerBookTitle"), drawerBookAuthor = document.getElementById("drawerBookAuthor"), drawerBookSummary = document.getElementById("drawerBookSummary"), drawerTagList = document.getElementById("drawerTagList"), drawerWarningList = document.getElementById("drawerWarningList"), prevBtn = document.getElementById("prevBtn"), nextBtn = document.getElementById("nextBtn"), nextChapterBottomBtn = document.getElementById("nextChapterBottomBtn"), nextChapterReleaseNote = document.getElementById("nextChapterReleaseNote"), chapterIndicator = document.getElementById("chapterIndicator"), chapterTitle = document.getElementById("chapterTitle"), chapterMeta = document.getElementById("chapterMeta"), chapterWarningsBlock = document.getElementById("chapterWarningsBlock"), chapterWarningList = document.getElementById("chapterWarningList"), authorNotesBlock = document.getElementById("authorNotesBlock"), authorNotesText = document.getElementById("authorNotesText"), content = document.getElementById("content"), bookmarkBtn = document.getElementById("bookmarkBtn"), resumeBtn = document.getElementById("resumeBtn"), reportBookBtn = document.getElementById("reportBookBtn"), likeBtn = document.getElementById("likeBtn"), likeCount = document.getElementById("likeCount"), chapterReactionsTitle = document.getElementById("chapterReactionsTitle"), chapterReactionsGrid = document.getElementById("chapterReactionsGrid"), commentList = document.getElementById("commentList"), commentsSubtitle = document.getElementById("commentsSubtitle"), commentInput = document.getElementById("commentInput"), postCommentBtn = document.getElementById("postCommentBtn"), authorEndCard = document.getElementById("authorEndCard"), authorEndAvatarInitial = document.getElementById("authorEndAvatarInitial"), authorEndAvatarImg = document.getElementById("authorEndAvatarImg"), authorEndName = document.getElementById("authorEndName"), authorEndBio = document.getElementById("authorEndBio"), authorEndWorks = document.getElementById("authorEndWorks"), authorEndWorksTitle = document.getElementById("authorEndWorksTitle"), authorWorksGrid = document.getElementById("authorWorksGrid"), authorEndProfileLink = document.getElementById("authorEndProfileLink");
 
-    let currentUser = null, currentBook = null, librarySourceRow = null, currentChapterIndex = 0, isLoaded = false, currentFontSize = 22, hasLikedThisBook = false, readerWatermarkProfileUser = null, bookOwnerHandle = null, authorOwnerProfile = null, chapterReactionBusy = false, userChapterReactionTypes = new Set(), nextPendingRelease = null, commentReplyTargetId = "", commentReplyDraftText = "";
+    let currentUser = null, currentBook = null, librarySourceRow = null, currentChapterIndex = 0, isLoaded = false, currentFontSize = 22, hasLikedThisBook = false, readerWatermarkProfileUser = null, bookOwnerHandle = null, authorOwnerProfile = null, chapterReactionBusy = false, userChapterReactionTypes = new Set(), nextPendingRelease = null, commentReplyTargetId = "", commentReplyDraftText = "", libraryShielded = false;
 
     installReaderCopyGuards(content, { isActive: () => isLoaded && !!currentBook });
 
@@ -563,7 +566,29 @@
         const bookWarnings = chapters.some((ch) => ch.warnings.length)
             ? flattenWarnings(aggregateWarningsFromChapters(chapters))
             : flattenWarnings(data.warnings);
-        return { id: safeString(data.bookId || row?.id, bookId), ownerUid: safeString(data.ownerUid || data.user_id || row?.user_id, ""), title: safeString(data.title, "Untitled"), author: safeString(data.author, "unknown"), isAnonymous: !!(data.isAnonymous ?? data.is_anonymous), summary: safeString(data.summary, ""), coverUrl: safeString(data.coverUrl || data.cover_url, ""), rating: safeString(data.rating, ""), type: safeString(data.type, "fiction"), mediaFormat, tags: rawTags.filter(v => typeof v === "string" && v.trim()), warnings: bookWarnings, chapterCount: serialization.chapterCount, publishedChapterCount: serialization.publishedCount, serializationStatus: serialization.status, plannedChapterCount: serialization.plannedChapterCount, words: totalWords, views: safeNumber(data.views, 0), likes: safeNumber(data.likes, 0), chapters };
+        return {
+            id: safeString(data.bookId || row?.id, bookId),
+            ownerUid: safeString(data.ownerUid || data.user_id || row?.user_id, ""),
+            title: safeString(data.title, "Untitled"),
+            author: safeString(data.author, "unknown"),
+            isAnonymous: !!(data.isAnonymous ?? data.is_anonymous),
+            summary: safeString(data.summary, ""),
+            coverUrl: safeString(data.coverUrl || data.cover_url, ""),
+            rating: safeString(data.rating, ""),
+            type: safeString(data.type, "fiction"),
+            mediaFormat,
+            tags: rawTags.filter(v => typeof v === "string" && v.trim()),
+            warnings: bookWarnings,
+            chapterCount: serialization.chapterCount,
+            publishedChapterCount: serialization.publishedCount,
+            serializationStatus: serialization.status,
+            plannedChapterCount: serialization.plannedChapterCount,
+            words: totalWords,
+            views: safeNumber(data.views, 0),
+            likes: safeNumber(data.likes, 0),
+            chapters,
+            shielded: isLibraryShielded(data),
+        };
     }
 
     function updateBookSeo() {
@@ -850,6 +875,11 @@
             content.innerHTML = sanitizeChapterHtml(chapter.content) || "<p>No chapter text yet.</p>";
             applyChapterTypographyStyles(content, chapter);
         }
+        const shielded = !!(libraryShielded || currentBook.shielded);
+        void applyShieldedChapterView(content, {
+            shielded,
+            notesEl: notes ? authorNotesText : null,
+        });
         prevBtn.disabled = currentChapterIndex === 0;
         nextBtn.disabled = currentChapterIndex === currentBook.chapters.length - 1;
         const isLastChapter = currentChapterIndex >= currentBook.chapters.length - 1;
@@ -1138,6 +1168,9 @@
                         ...catalogData,
                         chapters: safeArray(chapterPayload?.chapters, []),
                         publishedChapterIds: safeArray(chapterPayload?.publishedChapterIds, catalogData.publishedChapterIds),
+                        shielded: chapterPayload?.shielded === true || catalogData.shielded === true,
+                        shieldMapping: chapterPayload?.shieldMapping || catalogData.shieldMapping,
+                        shieldVersion: chapterPayload?.shieldVersion || catalogData.shieldVersion,
                     },
                 };
             }
@@ -1148,6 +1181,23 @@
             sessionStorage.setItem("alysum-open-book", bookId);
 
             currentBook = normalizeBook(librarySourceRow);
+            libraryShielded = !!(currentBook.shielded || isLibraryShielded(libraryRowData(librarySourceRow)));
+
+            // Owner auto-heal: if this library copy was published before ShieldFont, encode from manuscript.
+            if (!libraryShielded && currentUser && currentBook.ownerUid && currentUser.id === currentBook.ownerUid) {
+                try {
+                    const heal = await ensurePublishedLibraryShielded(supabase, {
+                        bookId,
+                        userId: currentUser.id,
+                    });
+                    if (heal.updated) {
+                        return loadBook();
+                    }
+                } catch (healErr) {
+                    console.warn("Could not auto-shield library entry.", healErr);
+                }
+            }
+
             await loadNextChapterRelease();
 
             const readable = await isBookReadable(bookId);
