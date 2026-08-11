@@ -69,6 +69,7 @@ function renderDockPreview(preview) {
  *   participants: Array<{ userId: string, displayName?: string, sprintWords?: number, isTyping?: boolean, isHost?: boolean }>,
  *   userId: string,
  *   focusedUserId: string,
+ *   speakingIds?: Set<string> | string[],
  *   getPreview: (participant: object) => object,
  *   onSelect: (userId: string) => void,
  * }} opts
@@ -76,20 +77,25 @@ function renderDockPreview(preview) {
 export function renderWriterDock(container, opts) {
     if (!container) return;
     const { participants = [], userId, focusedUserId, getPreview, onSelect } = opts;
+    const speakingIds = opts.speakingIds instanceof Set
+        ? opts.speakingIds
+        : new Set(Array.isArray(opts.speakingIds) ? opts.speakingIds : []);
 
     container.innerHTML = participants
         .map((participant) => {
             const isYou = participant.userId === userId;
             const isFocused = participant.userId === focusedUserId;
+            const isSpeaking = speakingIds.has(participant.userId);
             const preview = getPreview(participant) || {};
             const words = Math.max(0, Number(participant.sprintWords) || 0);
             const typing = participant.isTyping ? '<span class="ww-dock-typing">Typing</span>' : "";
+            const speaking = isSpeaking ? '<span class="ww-dock-speaking">Talking</span>' : "";
             const hostBadge = participant.isHost ? '<span class="ww-dock-host">Host</span>' : "";
 
             return `
                 <button
                     type="button"
-                    class="ww-dock-tile${isYou ? " is-you" : ""}${isFocused ? " is-focused" : ""}${participant.isTyping ? " is-typing" : ""}"
+                    class="ww-dock-tile${isYou ? " is-you" : ""}${isFocused ? " is-focused" : ""}${participant.isTyping ? " is-typing" : ""}${isSpeaking ? " is-speaking" : ""}"
                     data-writer-id="${escapeHtml(participant.userId)}"
                     aria-pressed="${isFocused ? "true" : "false"}"
                     title="${escapeHtml(isYou ? "Your manuscript" : participant.displayName || "Writer")}"
@@ -97,7 +103,7 @@ export function renderWriterDock(container, opts) {
                     ${renderDockPreview(preview)}
                     <span class="ww-dock-meta">
                         <span class="ww-dock-name">${escapeHtml(isYou ? "You" : participant.displayName || "Writer")}${hostBadge}</span>
-                        <span class="ww-dock-words">${words} word${words === 1 ? "" : "s"}${typing}</span>
+                        <span class="ww-dock-words">${words} word${words === 1 ? "" : "s"}${typing}${speaking}</span>
                     </span>
                 </button>
             `;

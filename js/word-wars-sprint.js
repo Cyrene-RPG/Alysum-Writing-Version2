@@ -18,8 +18,10 @@ import {
     leaveWordWarRoom,
     WORD_WAR_DURATION_UNLIMITED,
 } from "./word-wars-api.js?v=20";
-import { renderWriterDock } from "./word-wars-call.js?v=4";
+import { renderWriterDock } from "./word-wars-call.js?v=5";
 import { sanitizeChapterHtml } from "./book-html-sanitize.js?v=1";
+import { mountWordWarChat } from "./word-wars-chat.js?v=1";
+import { mountWordWarVoice } from "./word-wars-voice.js?v=1";
 
 const params = new URLSearchParams(window.location.search);
 const previewWritersRaw = params.get("preview");
@@ -53,6 +55,8 @@ const leaveBtn = document.getElementById("leaveBtn");
 const previewBanner = document.getElementById("previewBanner");
 const callDockEl = document.getElementById("callDock");
 const callDockNoteEl = document.getElementById("callDockNote");
+const voiceMountEl = document.getElementById("voiceMount");
+const chatMountEl = document.getElementById("chatMount");
 
 function formatSprintWords(count) {
     const value = Math.max(0, Number(count) || 0);
@@ -90,6 +94,12 @@ let draftPingResolver = null;
 const opponentDraftHtmlCache = new Map();
 /** @type {Map<string, { interactingUntil: number, followTail: boolean }>} */
 const opponentScrollState = new Map();
+/** @type {{ destroy: () => void } | null} */
+let chatSession = null;
+/** @type {{ destroy: () => Promise<void> | void, getSpeakingIds?: () => Set<string> } | null} */
+let voiceSession = null;
+/** @type {Set<string>} */
+let speakingIds = new Set();
 
 const OPPONENT_SCROLL_IDLE_MS = 900;
 const OPPONENT_READING_THRESHOLD_PX = 16;
@@ -538,9 +548,47 @@ function renderWriterDockStrip() {
         participants: lobby.participants || [],
         userId: uid,
         focusedUserId: focusedParticipantId || uid,
+        speakingIds,
         getPreview: getDockPreview,
         onSelect: setFocusedParticipant,
     });
+}
+
+function mountRoomComms() {
+    const me = meInLobby();
+    const name = me?.displayName || "Writer";
+    chatSession?.destroy?.();
+    voiceSession?.destroy?.();
+    chatSession = mountWordWarChat(chatMountEl, {
+        roomId,
+        userId: uid,
+        displayName: name,
+    });
+    voiceSession = mountWordWarVoice(voiceMountEl, {
+        roomId,
+        userId: uid,
+        displayName: name,
+        onSpeakingChange: (ids) => {
+            speakingIds = ids instanceof Set ? ids : new Set(ids || []);
+            renderWriterDockStrip();
+        },
+    });
+}
+
+async function teardownRoomComms() {
+    try {
+        await voiceSession?.destroy?.();
+    } catch {
+        /* ignore */
+    }
+    voiceSession = null;
+    try {
+        chatSession?.destroy?.();
+    } catch {
+        /* ignore */
+    }
+    chatSession = null;
+    speakingIds = new Set();
 }
 
 function renderSprintUI() {
@@ -755,6 +803,7 @@ async function bootPreview() {
     renderShareControls();
     renderPauseControls();
     renderOpponentMirror();
+    mountRoomComms();
     if (timerEl) timerEl.textContent = "08:42";
     if (timerModeEl) timerModeEl.textContent = "15 min sprint";
     if (roomCodeEl) roomCodeEl.textContent = "PREVIEW";
@@ -946,6 +995,7 @@ function handleEditorMessage(event) {
 function redirectToHub(message = "", isError = false) {
     unsubscribe?.();
     unsubscribe = null;
+    void teardownRoomComms();
     const url = new URL("word-wars-lobby.html", window.location.href);
     if (message) url.searchParams.set("status", message);
     if (isError) url.searchParams.set("error", "1");
@@ -1114,6 +1164,7 @@ async function boot() {
     renderShareControls();
     renderPauseControls();
     renderOpponentMirror();
+    mountRoomComms();
     renderTimer();
     timerInterval = window.setInterval(renderTimer, 250);
 
@@ -1136,11 +1187,15 @@ finishBtn?.addEventListener("click", () => {
 
 leaveBtn?.addEventListener("click", () => {
     if (isPreviewMode) {
-        window.location.href = "word-wars-lobby.html";
+        void teardownRoomComms().finally(() => {
+            window.location.href = "word-wars-lobby.html";
+        });
         return;
     }
     const targetRoomId = lobby?.roomId || roomId;
-    leaveWordWarRoom(targetRoomId)
+    Promise.resolve(teardownRoomComms())
+        .catch(() => {})
+        .then(() => leaveWordWarRoom(targetRoomId))
         .catch((err) => {
             console.warn(err);
         })
@@ -1161,4 +1216,5 @@ boot().catch((err) => {
 window.addEventListener("beforeunload", () => {
     unsubscribe?.();
     window.clearInterval(timerInterval);
+    void teardownRoomComms();
 });

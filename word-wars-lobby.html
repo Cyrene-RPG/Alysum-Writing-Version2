@@ -91,7 +91,7 @@
             position: relative;
             z-index: 1;
             width: 100%;
-            max-width: 1080px;
+            max-width: 1240px;
             margin: 0 auto;
             padding: 18px 20px 56px;
             overflow-x: hidden;
@@ -676,6 +676,215 @@
             color: #fde68a;
             vertical-align: middle;
         }
+        .ww-lobby-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
+            gap: 16px;
+            align-items: stretch;
+        }
+        .ww-lobby-main { min-width: 0; }
+        .ww-comms-panel {
+            min-height: 420px;
+            max-height: min(720px, 78dvh);
+            display: grid;
+            grid-template-rows: auto minmax(0, 1fr);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            background: rgba(8, 12, 22, 0.92);
+            overflow: hidden;
+            position: sticky;
+            top: 16px;
+        }
+        .ww-comms-panel.is-collapsed {
+            width: 48px;
+            min-width: 48px;
+            min-height: 180px;
+        }
+        .ww-comms-panel.is-collapsed .ww-chat-messages,
+        .ww-comms-panel.is-collapsed .ww-chat-compose,
+        .ww-comms-panel.is-collapsed .ww-chat-status,
+        .ww-comms-panel.is-collapsed .ww-chat-sub,
+        .ww-comms-panel.is-collapsed .ww-voice {
+            display: none !important;
+        }
+        .ww-comms-panel.is-collapsed .ww-chat-head {
+            writing-mode: vertical-rl;
+            transform: rotate(180deg);
+            justify-content: center;
+            gap: 12px;
+            padding: 12px 8px;
+            height: 100%;
+        }
+        .ww-voice {
+            border-bottom: 1px solid var(--border);
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.18);
+        }
+        .ww-voice-bar { display: flex; flex-direction: column; gap: 10px; }
+        .ww-voice-meta { display: flex; align-items: center; gap: 10px; }
+        .ww-voice-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 999px;
+            background: #64748b;
+            flex-shrink: 0;
+        }
+        .ww-voice-dot.is-live {
+            background: var(--mint);
+            box-shadow: 0 0 12px rgba(52, 211, 153, 0.55);
+        }
+        .ww-voice-dot.is-speaking {
+            background: var(--gold);
+            box-shadow: 0 0 14px rgba(251, 191, 36, 0.65);
+        }
+        .ww-voice-label, .ww-chat-label {
+            margin: 0;
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+        .ww-voice-status, .ww-chat-sub {
+            margin: 2px 0 0;
+            font-size: 12px;
+            color: var(--muted);
+            line-height: 1.35;
+        }
+        .ww-voice-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+        .ww-voice-actions .btn {
+            flex: 1 1 auto;
+            min-width: 0;
+            padding: 8px 10px;
+            font-size: 12px;
+        }
+        .ww-voice-remote { position: absolute; width: 0; height: 0; overflow: hidden; }
+        .ww-chat {
+            min-height: 0;
+            display: grid;
+            grid-template-rows: auto minmax(0, 1fr) auto auto;
+            height: 100%;
+        }
+        .ww-chat-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 12px 12px 8px;
+            border-bottom: 1px solid var(--border);
+        }
+        .ww-chat-collapse {
+            border: 1px solid var(--border);
+            background: rgba(255,255,255,0.04);
+            color: var(--muted);
+            border-radius: 10px;
+            width: 34px;
+            height: 34px;
+            cursor: pointer;
+            font-weight: 900;
+            flex-shrink: 0;
+        }
+        .ww-chat-messages {
+            min-height: 0;
+            overflow: auto;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .ww-chat-empty {
+            margin: auto 0;
+            text-align: center;
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.45;
+            padding: 12px;
+        }
+        .ww-chat-bubble {
+            border: 1px solid var(--border);
+            background: rgba(255,255,255,0.03);
+            border-radius: 12px;
+            padding: 8px 10px;
+        }
+        .ww-chat-bubble.is-mine {
+            border-color: rgba(52, 211, 153, 0.28);
+            background: rgba(52, 211, 153, 0.08);
+            align-self: flex-end;
+        }
+        .ww-chat-meta {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+        .ww-chat-author {
+            font-size: 11px;
+            font-weight: 800;
+            color: #c4b5fd;
+        }
+        .ww-chat-bubble.is-mine .ww-chat-author { color: #99f6e4; }
+        .ww-chat-time {
+            font-size: 10px;
+            color: var(--muted);
+            font-variant-numeric: tabular-nums;
+        }
+        .ww-chat-body {
+            margin: 0;
+            font-size: 13px;
+            line-height: 1.45;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .ww-chat-compose {
+            display: grid;
+            gap: 8px;
+            padding: 10px 12px 12px;
+            border-top: 1px solid var(--border);
+            background: rgba(0,0,0,0.18);
+        }
+        .ww-chat-input {
+            width: 100%;
+            resize: none;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: rgba(15, 22, 40, 0.9);
+            color: var(--text);
+            padding: 10px 12px;
+            font: inherit;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+        .ww-chat-input:focus {
+            outline: none;
+            border-color: rgba(167, 139, 250, 0.45);
+        }
+        .ww-chat-send { width: 100%; }
+        .ww-chat-status {
+            margin: 0 12px 10px;
+            font-size: 12px;
+            color: var(--muted);
+        }
+        .ww-chat-status.error { color: #fecaca; }
+        @media (max-width: 900px) {
+            .ww-lobby-layout { grid-template-columns: 1fr; }
+            .ww-comms-panel {
+                position: static;
+                max-height: 420px;
+                min-height: 320px;
+            }
+            .ww-comms-panel.is-collapsed {
+                width: 100%;
+                min-width: 0;
+                min-height: 48px;
+                max-height: 48px;
+            }
+            .ww-comms-panel.is-collapsed .ww-chat-head {
+                writing-mode: horizontal-tb;
+                transform: none;
+                height: auto;
+                align-items: center;
+            }
+        }
         .ww-actions {
             display: flex;
             flex-wrap: wrap;
@@ -935,66 +1144,75 @@
                 </section>
 
                 <section id="lobbyView" class="hidden">
-                    <div class="ww-lobby-head">
-                        <div>
-                            <h2>War lobby</h2>
-                            <p class="ww-lobby-sub">Pick your book, mark ready, and wait for everyone else.</p>
-                        </div>
-                        <div class="ww-lobby-badges">
-                            <span id="lobbyCapacity" class="ww-badge capacity">0/4 writers</span>
-                            <span id="lobbyLockBadge" class="ww-badge locked hidden">Locked</span>
-                            <span id="lobbyStatusBadge" class="ww-badge">lobby</span>
-                        </div>
-                    </div>
-
-                    <div class="ww-card">
-                        <span class="ww-label">Room code</span>
-                        <div class="ww-code-block">
-                            <div id="roomCode" class="ww-code">------</div>
-                            <button type="button" class="btn" id="copyCodeBtn">Copy code</button>
-                            <button type="button" class="btn" id="copyLinkBtn">Copy link</button>
-                        </div>
-                        <label class="ww-label" for="inviteLink">Invite link</label>
-                        <input id="inviteLink" class="ww-select" readonly />
-
-                        <div class="ww-panel-divider"></div>
-
-                        <div class="ww-section">
-                            <span class="ww-label">Writers in this war</span>
-                            <p id="lobbyWriterCount" class="ww-lobby-meta">4 writers</p>
-                        </div>
-
-                        <div class="ww-section">
-                            <span class="ww-label">Sprint length</span>
-                            <div class="ww-chip-row" id="durationPicker"></div>
-                        </div>
-
-                        <div class="ww-section">
-                            <label class="ww-label" for="bookSelect">Your book for this spar</label>
-                            <select id="bookSelect" class="ww-select"></select>
-                        </div>
-
-                        <label class="ww-lock-toggle hidden" id="hostLockToggleWrap" for="hostLockInput">
-                            <input type="checkbox" id="hostLockInput" />
-                            <div>
-                                <span>Locked lobby (invite only)</span>
-                                <small>When locked, your lobby won't appear in the open list — share the code instead.</small>
+                    <div class="ww-lobby-layout">
+                        <div class="ww-lobby-main">
+                            <div class="ww-lobby-head">
+                                <div>
+                                    <h2>War lobby</h2>
+                                    <p class="ww-lobby-sub">Pick your book, mark ready, and wait for everyone else.</p>
+                                </div>
+                                <div class="ww-lobby-badges">
+                                    <span id="lobbyCapacity" class="ww-badge capacity">0/4 writers</span>
+                                    <span id="lobbyLockBadge" class="ww-badge locked hidden">Locked</span>
+                                    <span id="lobbyStatusBadge" class="ww-badge">lobby</span>
+                                </div>
                             </div>
-                        </label>
 
-                        <div class="ww-arena-fighters" id="fighterSlots"></div>
+                            <div class="ww-card">
+                                <span class="ww-label">Room code</span>
+                                <div class="ww-code-block">
+                                    <div id="roomCode" class="ww-code">------</div>
+                                    <button type="button" class="btn" id="copyCodeBtn">Copy code</button>
+                                    <button type="button" class="btn" id="copyLinkBtn">Copy link</button>
+                                </div>
+                                <label class="ww-label" for="inviteLink">Invite link</label>
+                                <input id="inviteLink" class="ww-select" readonly />
 
-                        <div class="ww-actions">
-                            <button type="button" class="btn" id="readyBtn">I'm ready</button>
-                            <button type="button" class="btn gold hidden" id="startBtn">Start Word War</button>
-                            <button type="button" class="btn" id="leaveBtn">Leave lobby</button>
+                                <div class="ww-panel-divider"></div>
+
+                                <div class="ww-section">
+                                    <span class="ww-label">Writers in this war</span>
+                                    <p id="lobbyWriterCount" class="ww-lobby-meta">4 writers</p>
+                                </div>
+
+                                <div class="ww-section">
+                                    <span class="ww-label">Sprint length</span>
+                                    <div class="ww-chip-row" id="durationPicker"></div>
+                                </div>
+
+                                <div class="ww-section">
+                                    <label class="ww-label" for="bookSelect">Your book for this spar</label>
+                                    <select id="bookSelect" class="ww-select"></select>
+                                </div>
+
+                                <label class="ww-lock-toggle hidden" id="hostLockToggleWrap" for="hostLockInput">
+                                    <input type="checkbox" id="hostLockInput" />
+                                    <div>
+                                        <span>Locked lobby (invite only)</span>
+                                        <small>When locked, your lobby won't appear in the open list — share the code instead.</small>
+                                    </div>
+                                </label>
+
+                                <div class="ww-arena-fighters" id="fighterSlots"></div>
+
+                                <div class="ww-actions">
+                                    <button type="button" class="btn" id="readyBtn">I'm ready</button>
+                                    <button type="button" class="btn gold hidden" id="startBtn">Start Word War</button>
+                                    <button type="button" class="btn" id="leaveBtn">Leave lobby</button>
+                                </div>
+                            </div>
                         </div>
+
+                        <aside class="ww-comms-panel" id="lobbyCommsPanel" aria-label="Voice and room chat">
+                            <div id="lobbyVoiceMount"></div>
+                            <div id="lobbyChatMount"></div>
+                        </aside>
                     </div>
                 </section>
             </div>
         </div>
     </main>
 
-    <script type="module" src="js/word-wars-lobby.js?v=24"></script>
+    <script type="module" src="js/word-wars-lobby.js?v=25"></script>
 </body>
 </html>

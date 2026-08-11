@@ -31,6 +31,8 @@ import {
     isUsingLocalWordWarsFallback,
 } from "./word-wars-api.js?v=20";
 import { playWordWarJoinSound, primeWordWarSounds } from "./word-wars-sounds.js?v=2";
+import { mountWordWarChat } from "./word-wars-chat.js?v=1";
+import { mountWordWarVoice } from "./word-wars-voice.js?v=1";
 
 const params = new URLSearchParams(window.location.search);
 const initialCode = String(params.get("code") || "").trim().toUpperCase();
@@ -70,6 +72,8 @@ const createLockInput = document.getElementById("createLockInput");
 const openLobbiesList = document.getElementById("openLobbiesList");
 const refreshOpenLobbiesBtn = document.getElementById("refreshOpenLobbiesBtn");
 const wwHero = document.querySelector(".ww-hero");
+const lobbyVoiceMount = document.getElementById("lobbyVoiceMount");
+const lobbyChatMount = document.getElementById("lobbyChatMount");
 
 /** @type {{ uid: string, profile: { displayName: string }, books: Array<{ id: string, title: string }> } | null} */
 let sessionCtx = null;
@@ -77,6 +81,12 @@ let sessionCtx = null;
 let currentLobby = null;
 /** @type {(() => void) | null} */
 let unsubscribe = null;
+/** @type {{ destroy: () => void } | null} */
+let lobbyChatSession = null;
+/** @type {{ destroy: () => Promise<void> | void } | null} */
+let lobbyVoiceSession = null;
+/** @type {string} */
+let lobbyCommsRoomId = "";
 let selectedDuration = 15;
 let selectedMaxWriters = 2;
 let refreshTimer = null;
@@ -239,6 +249,49 @@ function showView(view) {
         stopOpenLobbiesPolling();
         stopOpenLobbiesRealtime();
     }
+    if (view !== "lobby") {
+        void teardownLobbyComms();
+    }
+}
+
+function mountLobbyComms(lobby) {
+    const roomId = String(lobby?.roomId || "").trim();
+    if (!roomId || !sessionCtx?.uid) return;
+    if (lobbyCommsRoomId === roomId && lobbyChatSession && lobbyVoiceSession) return;
+
+    void teardownLobbyComms();
+    lobbyCommsRoomId = roomId;
+    const displayName =
+        lobby?.participants?.find((p) => wordWarSameUserId(p.userId, sessionCtx.uid))?.displayName ||
+        sessionCtx.profile?.displayName ||
+        "Writer";
+
+    lobbyChatSession = mountWordWarChat(lobbyChatMount, {
+        roomId,
+        userId: sessionCtx.uid,
+        displayName,
+    });
+    lobbyVoiceSession = mountWordWarVoice(lobbyVoiceMount, {
+        roomId,
+        userId: sessionCtx.uid,
+        displayName,
+    });
+}
+
+async function teardownLobbyComms() {
+    lobbyCommsRoomId = "";
+    try {
+        await lobbyVoiceSession?.destroy?.();
+    } catch {
+        /* ignore */
+    }
+    lobbyVoiceSession = null;
+    try {
+        lobbyChatSession?.destroy?.();
+    } catch {
+        /* ignore */
+    }
+    lobbyChatSession = null;
 }
 
 function stopOpenLobbiesPolling() {
@@ -348,6 +401,7 @@ async function leaveCurrentLobby() {
     unsubscribe = null;
     currentLobby = null;
     resetParticipantTracking();
+    await teardownLobbyComms();
     const url = new URL(window.location.href);
     url.searchParams.delete("room");
     url.searchParams.delete("code");
@@ -523,7 +577,10 @@ function renderLobbyActions(lobby) {
 
 function maybeRedirectToSprint(lobby) {
     if (lobby?.status === "active" && lobby.roomId) {
-        window.location.replace(wordWarSprintUrl(lobby.roomId));
+        const sprintUrl = wordWarSprintUrl(lobby.roomId);
+        void teardownLobbyComms().finally(() => {
+            window.location.replace(sprintUrl);
+        });
         return true;
     }
     return false;
@@ -545,6 +602,7 @@ function renderLobby(lobby) {
     renderLobbyActions(lobby);
     notifyIfWriterJoined(lobby);
     showView("lobby");
+    mountLobbyComms(lobby);
 
     if (isLayoutPreview) return;
 
@@ -559,6 +617,7 @@ async function dismissLobbyView(message = "", isError = false) {
     unsubscribe = null;
     currentLobby = null;
     resetParticipantTracking();
+    await teardownLobbyComms();
     const url = new URL(window.location.href);
     url.searchParams.delete("room");
     url.searchParams.delete("code");
