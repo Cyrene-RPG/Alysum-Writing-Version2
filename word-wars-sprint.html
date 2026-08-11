@@ -433,19 +433,6 @@
             color: #ecfdf5;
             box-shadow: 0 0 0 1px rgba(52, 211, 153, 0.18);
         }
-        .ww-duel-pane-tools {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            justify-content: flex-end;
-            gap: 8px;
-        }
-        .ww-duel-pane-tools .ww-share-toggle {
-            flex: 0 0 auto;
-            min-width: 132px;
-            padding: 8px 12px;
-            font-size: 12px;
-        }
         @media (max-width: 720px) {
             .ww-sprint-hud {
                 grid-template-columns: 1fr;
@@ -952,12 +939,7 @@
                             <p class="ww-duel-label">Your manuscript</p>
                             <p class="ww-duel-title" id="myBookTitle">Loading…</p>
                         </div>
-                        <div class="ww-duel-pane-tools">
-                            <div class="ww-duel-score"><span id="myWords">0 words</span> this sprint</div>
-                            <button type="button" class="btn mint ww-share-toggle" id="shareBtnPane" data-ww-share-toggle>
-                                Share my draft
-                            </button>
-                        </div>
+                        <div class="ww-duel-score"><span id="myWords">0 words</span> this sprint</div>
                     </div>
                     <div class="ww-duel-frame-wrap">
                         <iframe id="myEditorFrame" class="ww-duel-frame" title="Your editor"></iframe>
@@ -1010,6 +992,6 @@
         </div>
     </div>
 
-    <script type="module" src="js/word-wars-sprint.js?v=30"></script>
+    <script type="module" src="js/word-wars-sprint.js?v=31"></script>
 </body>
 </html>
