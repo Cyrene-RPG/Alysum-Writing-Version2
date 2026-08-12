@@ -419,8 +419,10 @@
         escapeHtml,
         fetchAuthorById,
         fetchPublishedWorksForAuthor,
+        isLibraryCatalogMissingError,
+        queryLibraryCatalog,
         supportLinksList,
-    } from "./js/author-profile.js?v=3";
+    } from "./js/author-profile.js?v=4";
     import { processDueChapterReleases, getNextChapterRelease } from "./js/scheduled-chapter-releases.js?v=3";
     import {
         formatChapterProgress,
@@ -499,8 +501,10 @@
 
         try {
             let rows = null;
-            const catalogResult = await supabase.from("library_catalog").select("id, data").limit(100);
-            if (catalogResult.error && /library_catalog|relation.*does not exist/i.test(String(catalogResult.error.message || catalogResult.error))) {
+            const catalogResult = await queryLibraryCatalog(supabase, (table) =>
+                table.select("id, data").limit(100)
+            );
+            if (catalogResult.error && isLibraryCatalogMissingError(catalogResult.error)) {
                 const fallback = await supabase.from("library").select("id, data").limit(100);
                 if (fallback.error) throw fallback.error;
                 rows = fallback.data;
@@ -1172,10 +1176,12 @@
             const apiMeta = safeObject(chapterPayload?.meta, null);
 
             let metaRow = null;
-            const { data, error } = await supabase.from("library_catalog").select("*").eq("id", bookId).maybeSingle();
+            const { data, error } = await queryLibraryCatalog(supabase, (table) =>
+                table.select("*").eq("id", bookId).maybeSingle()
+            );
             if (!error && data) {
                 metaRow = data;
-            } else if (error && !/library_catalog|relation.*does not exist/i.test(String(error.message || error))) {
+            } else if (error && !isLibraryCatalogMissingError(error)) {
                 throw error;
             } else if (apiMeta) {
                 // Catalog missing or empty — use API metadata (no plaintext chapter bodies).

@@ -238,11 +238,41 @@ export async function fetchUsernamesByIds(supabase, userIds) {
     return map;
 }
 
+/** Once PostgREST 404s library_catalog, skip further catalog calls this session. */
+let libraryCatalogMissing = false;
+
+export function isLibraryCatalogMissingError(error) {
+    const msg = String(error?.message || error || "");
+    return /library_catalog|relation.*does not exist|schema cache/i.test(msg);
+}
+
+/**
+ * Query public.library_catalog, remembering a missing-view 404 so the console
+ * is not spammed on every book/author request before the SQL migration is applied.
+ * @param {import("@supabase/supabase-js").SupabaseClient} supabase
+ * @param {(table: any) => any} run chain starting from .from("library_catalog")
+ */
+export async function queryLibraryCatalog(supabase, run) {
+    if (libraryCatalogMissing) {
+        return {
+            data: null,
+            error: { message: "relation \"public.library_catalog\" does not exist" },
+        };
+    }
+    const result = await run(supabase.from("library_catalog"));
+    if (result?.error && isLibraryCatalogMissingError(result.error)) {
+        libraryCatalogMissing = true;
+    }
+    return result;
+}
+
 export async function fetchPublishedWorksForAuthor(supabase, userId, { excludeBookId } = {}) {
     const id = String(userId ?? "").trim();
     if (!id) return [];
-    const { data, error } = await supabase.from("library_catalog").select("*").eq("user_id", id);
-    if (error && /library_catalog|relation.*does not exist/i.test(String(error.message || error))) {
+    const { data, error } = await queryLibraryCatalog(supabase, (table) =>
+        table.select("*").eq("user_id", id)
+    );
+    if (error && isLibraryCatalogMissingError(error)) {
         const fallback = await supabase.from("library").select("*").eq("user_id", id);
         if (fallback.error) throw fallback.error;
         return mapAuthorWorks(fallback.data, excludeBookId);
