@@ -1038,7 +1038,9 @@
     import {
         cancelScheduledChapterRelease,
         listScheduledChapterReleases,
-    } from "./js/scheduled-chapter-releases.js?v=1";
+        formatScheduleDisplay,
+        processDueChapterReleases,
+    } from "./js/scheduled-chapter-releases.js?v=3";
     import {
         clampDailyWordGoal,
         DEFAULT_DAILY_WORD_GOAL,
@@ -1358,7 +1360,7 @@
     function formatScheduleWhen(value) {
         const millis = toMillis(value);
         if (!millis) return "Unknown time";
-        return new Date(millis).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+        return formatScheduleDisplay(new Date(millis).toISOString());
     }
 
     function chapterTitleFromBook(book, chapterId) {
@@ -1370,6 +1372,11 @@
 
     async function loadUpcomingSchedules(uid, books) {
         if (!schedulePanel || !scheduleGrid) return;
+        try {
+            await processDueChapterReleases();
+        } catch (releaseErr) {
+            console.warn("Could not process due chapter releases.", releaseErr);
+        }
         const bookById = new Map(books.map(book => [String(book.id), book]));
         const rows = [];
         for (const book of books) {
@@ -1403,7 +1410,7 @@
                     <div class="schedule-card-meta">Releases ${escapeHtml(formatScheduleWhen(row.scheduledAt))}</div>
                 </div>
                 <div class="book-actions">
-                    <a class="mini-btn" href="publish.html?book=${encodeURIComponent(row.bookId)}&chapters=${encodeURIComponent(row.chapterId)}">Manage</a>
+                    <a class="mini-btn" href="publish.html?book=${encodeURIComponent(row.bookId)}">Manage</a>
                     <button type="button" class="mini-btn danger-outline" data-cancel-schedule="${escapeHtml(row.id)}">Cancel</button>
                 </div>
             `;

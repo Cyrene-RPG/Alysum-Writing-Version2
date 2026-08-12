@@ -275,7 +275,7 @@
 
         <section class="content-card" id="releaseScheduleSection">
             <h2 class="section-title">Chapter Release Schedule</h2>
-            <p class="section-note">Release chapters immediately when you publish, or pick a future date and time for each chapter. Scheduled chapters stay hidden from readers until their release time (at least 5 minutes from now).</p>
+            <p class="section-note">Release chapters immediately when you publish, or pick a future date and time for each chapter. Times use your local timezone (<span id="scheduleTimezoneLabel">local</span>). Scheduled chapters stay hidden from readers until their release time (at least 5 minutes from now).</p>
             <div class="schedule-list" id="releaseScheduleList"></div>
             <div id="pendingSchedulesWrap" hidden>
                 <p class="section-note" style="margin-top:18px;margin-bottom:0;">Already scheduled (not in current selection)</p>
@@ -318,14 +318,19 @@
         isValidFutureSchedule,
         toDatetimeLocalValue,
         fromDatetimeLocalValue,
+        formatUserTimeZoneLabel,
+        formatScheduleDisplay,
+        mergePublishedChapterIds,
+        mergeLibraryChapters,
+        buildScheduleSyncPayload,
         MIN_SCHEDULE_LEAD_MS,
-    } from "./js/scheduled-chapter-releases.js?v=1";
+    } from "./js/scheduled-chapter-releases.js?v=3";
     import {
         SERIALIZATION_COMPLETE,
         SERIALIZATION_IN_PROGRESS,
         normalizeSerializationStatus,
         normalizePlannedChapterCount,
-    } from "./js/story-serialization.js?v=1";
+    } from "./js/story-serialization.js?v=2";
     import {
         isComicFormat,
         normalizeMediaFormat,
@@ -408,6 +413,8 @@
     const submitPublishApprovalBtn = el("submitPublishApprovalBtn");
     const releaseScheduleList = el("releaseScheduleList");
     const pendingSchedulesWrap = el("pendingSchedulesWrap");
+    const scheduleTimezoneLabel = el("scheduleTimezoneLabel");
+    if (scheduleTimezoneLabel) scheduleTimezoneLabel.textContent = formatUserTimeZoneLabel();
     const pendingSchedulesList = el("pendingSchedulesList");
 
     /** @type {Map<string, { mode: 'immediate' | 'scheduled', scheduledAt: string }>} */
@@ -719,9 +726,7 @@
         external.forEach((row) => {
             const item = document.createElement("div");
             item.className = "schedule-pending-item";
-            const when = row.scheduledAt
-                ? new Date(row.scheduledAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })
-                : "Unknown time";
+            const when = formatScheduleDisplay(row.scheduledAt);
             const meta = document.createElement("div");
             meta.className = "schedule-pending-meta";
             meta.innerHTML = `${chapterTitleById(row.chapterId)}<span>Scheduled for ${when}</span>`;
@@ -916,7 +921,7 @@
         const payloadTitle = bookTitleInput.value.trim() || currentBook.title || "Untitled Book";
         const publishMeta = buildPublishMeta();
         const immediateChapterIds = immediate.map(ch => ch.id);
-        const wordCount = chapterWordTotal(selectedChapterObjects);
+        const scheduledChapterIds = scheduled.map(({ chapter }) => chapter.id);
         const now = Date.now();
         const updatedSections = JSON.parse(JSON.stringify(currentBook.sections || {}));
         publishChapters.forEach((chapter) => {
@@ -931,6 +936,40 @@
             if (existingError) throw existingError;
             const existingData = safeObject(existingLibrary?.data ?? existingLibrary, {});
             const firstPublishedAt = safeNumber(existingData.publishedAt ?? existingData.createdAt, now);
+            // Shield only the chapters in this publish action — existing library
+            // chapters are already encoded (ShieldFont is an involution).
+            const shieldedSelectedChapters = shieldLibraryChapters(publishChapters.map((ch) => ({
+                id: ch.id,
+                order: 0,
+                title: ch.title || (isComicFormat(currentBook.mediaFormat) ? "Page" : "Chapter"),
+                content: ch.content || "",
+                imageUrl: comicPrimaryImageUrl(ch),
+                imageUrls: normalizeComicImageUrls(ch),
+                words: countWords(ch.content || ""),
+                warnings: cloneWarningData(ch.warnings),
+                authorNotes: normalizeAuthorNotes(ch.authorNotes),
+                ...chapterTypographyPayload(ch),
+            })));
+            const bodyOrderIds = safeArray(currentBook.sections?.body, []).map((ch) => ch.id);
+            const mergedChapters = mergeLibraryChapters(
+                safeArray(existingData.chapters, []),
+                shieldedSelectedChapters,
+                bodyOrderIds
+            ).map((ch, index) => ({
+                ...ch,
+                order: index + 1,
+                title: ch.title || (isComicFormat(currentBook.mediaFormat) ? `Page ${index + 1}` : `Chapter ${index + 1}`),
+            }));
+            const existingPublishedIds = safeArray(
+                existingData.publishedChapterIds ?? existingData.published_chapter_ids ?? currentBook.publishedChapterIds,
+                []
+            ).filter((id) => typeof id === "string");
+            const publishedChapterIds = mergePublishedChapterIds(
+                existingPublishedIds,
+                immediateChapterIds,
+                scheduledChapterIds
+            );
+            const wordCount = mergedChapters.reduce((sum, ch) => sum + safeNumber(ch.words, 0), 0);
             const libraryData = {
                 bookId,
                 ownerUid: currentUser.id,
@@ -946,20 +985,9 @@
                 summary: publishMeta.summary,
                 extraTags: publishMeta.extraTags,
                 coverUrl: publishMeta.coverUrl || "",
-                chapters: shieldLibraryChapters(publishChapters.map((ch, index) => ({
-                    id: ch.id,
-                    order: index + 1,
-                    title: ch.title || (isComicFormat(currentBook.mediaFormat) ? `Page ${index + 1}` : `Chapter ${index + 1}`),
-                    content: ch.content || "",
-                    imageUrl: comicPrimaryImageUrl(ch),
-                    imageUrls: normalizeComicImageUrls(ch),
-                    words: countWords(ch.content || ""),
-                    warnings: cloneWarningData(ch.warnings),
-                    authorNotes: normalizeAuthorNotes(ch.authorNotes),
-                    ...chapterTypographyPayload(ch),
-                }))),
-                publishedChapterIds: immediateChapterIds,
-                chapterCount: publishChapters.length,
+                chapters: mergedChapters,
+                publishedChapterIds,
+                chapterCount: mergedChapters.length,
                 words: wordCount,
                 createdAt: firstPublishedAt,
                 publishedAt: firstPublishedAt,
@@ -971,18 +999,16 @@
                 plannedChapterCount: publishMeta.plannedChapterCount,
                 ...libraryShieldMeta(),
             };
-            const { error: bookError } = await supabase.from("books").update({ title: payloadTitle, library_type: libraryShelfSelect.value, publish_meta: publishMeta, published_chapter_ids: immediateChapterIds, is_published: true, sections: updatedSections, updated: now }).eq("id", bookId).eq("user_id", currentUser.id);
+            const { error: bookError } = await supabase.from("books").update({ title: payloadTitle, library_type: libraryShelfSelect.value, publish_meta: publishMeta, published_chapter_ids: publishedChapterIds, is_published: true, sections: updatedSections, updated: now }).eq("id", bookId).eq("user_id", currentUser.id);
             if (bookError) throw bookError;
             await upsertLibraryEntry(libraryData);
-            if (scheduled.length) {
-                await syncScheduledChapterReleases(
-                    bookId,
-                    scheduled.map(({ chapter, scheduledAt }) => ({ chapterId: chapter.id, scheduledAt }))
-                );
-            } else {
-                await syncScheduledChapterReleases(bookId, []);
-            }
-            currentBook.title = payloadTitle; currentBook.libraryType = libraryShelfSelect.value; currentBook.publishMeta = publishMeta; currentBook.publishedChapterIds = immediateChapterIds; currentBook.isPublished = true; currentBook.sections = updatedSections; isPublished = true;
+            const schedulePayload = buildScheduleSyncPayload(
+                scheduled.map(({ chapter, scheduledAt }) => ({ chapterId: chapter.id, scheduledAt })),
+                pendingScheduledReleases,
+                selectedChapterObjects.map((ch) => ch.id)
+            );
+            await syncScheduledChapterReleases(bookId, schedulePayload);
+            currentBook.title = payloadTitle; currentBook.libraryType = libraryShelfSelect.value; currentBook.publishMeta = publishMeta; currentBook.publishedChapterIds = publishedChapterIds; currentBook.isPublished = true; currentBook.sections = updatedSections; isPublished = true;
             renderBasicInfo(); renderHero(); renderSidebar(); await refreshPendingSchedules();
             const scheduleNote = scheduled.length
                 ? ` ${scheduled.length} chapter${scheduled.length === 1 ? "" : "s"} scheduled for later release.`

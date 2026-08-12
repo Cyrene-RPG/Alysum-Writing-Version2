@@ -1680,12 +1680,17 @@
         canSubmitPublishApproval,
     } from "./js/publish-cooldown.js?v=2";
     import {
+        listScheduledChapterReleases,
         syncScheduledChapterReleases,
         isValidFutureSchedule,
         toDatetimeLocalValue,
         fromDatetimeLocalValue,
+        formatUserTimeZoneLabel,
+        mergePublishedChapterIds,
+        mergeLibraryChapters,
+        buildScheduleSyncPayload,
         MIN_SCHEDULE_LEAD_MS,
-    } from "./js/scheduled-chapter-releases.js?v=1";
+    } from "./js/scheduled-chapter-releases.js?v=3";
     import {
         CONTENT_WARNING_KEYS,
         normalizeWarningData,
@@ -4332,6 +4337,13 @@ function rememberBookId(id) {
         const selectedChapterObjects = bodyList.filter(ch => wanted.has(ch.id));
         publishQuickSchedule.innerHTML = "";
         publishQuickSchedule.hidden = !selectedChapterObjects.length;
+        if (selectedChapterObjects.length) {
+            const tzNote = document.createElement("p");
+            tzNote.className = "publish-modal-text";
+            tzNote.style.margin = "0 0 8px";
+            tzNote.textContent = `Schedule times use your local timezone (${formatUserTimeZoneLabel()}).`;
+            publishQuickSchedule.appendChild(tzNote);
+        }
         selectedChapterObjects.forEach((chapter) => {
             const modeState = ensureQuickReleaseMode(chapter.id);
             const row = document.createElement("div");
@@ -4510,7 +4522,7 @@ function rememberBookId(id) {
         const publishMeta = normalizePublishMetaForBook(currentBook.publishMeta);
         const payloadTitle = safeString(currentBook.title, "Untitled Book").trim() || "Untitled Book";
         const immediateChapterIds = immediate.map(ch => ch.id);
-        const wordCount = selectedChapterObjects.reduce((sum, ch) => sum + countWords(ch.content || ""), 0);
+        const scheduledChapterIds = scheduled.map(({ chapter }) => chapter.id);
         const now = Date.now();
         publishQuickPublishBtn.disabled = true;
         if (publishQuickStatus) publishQuickStatus.textContent = "Publishing…";
@@ -4519,11 +4531,49 @@ function rememberBookId(id) {
             if (currentProfile) authorName = publicDisplayNameFromUserData(currentProfile);
             const libraryAuthor = publishMeta.isAnonymous ? "Anonymous" : (authorName || "unknown");
             const { data: existingLibrary } = await supabase.from("library").select("*").eq("id", bookId).maybeSingle();
-            const existingLibraryChapters = safeArray(existingLibrary?.data?.chapters, []);
+            const existingData = safeObject(existingLibrary?.data, {});
+            const existingLibraryChapters = safeArray(existingData.chapters, []);
             const authorNotesByChapterId = new Map(
                 existingLibraryChapters.map((item) => [item.id, normalizeAuthorNotes(item.authorNotes ?? item.author_notes)])
             );
-            const firstPublishedAt = safeNumber(existingLibrary?.data?.publishedAt ?? existingLibrary?.publishedAt, safeNumber(existingLibrary?.createdAt, now));
+            const firstPublishedAt = safeNumber(existingData.publishedAt ?? existingLibrary?.publishedAt, safeNumber(existingLibrary?.createdAt, now));
+            // Shield only selected chapters; keep already-encoded library chapters as-is.
+            const shieldedSelectedChapters = shieldLibraryChapters(publishChapters.map((ch) => ({
+                id: ch.id,
+                order: 0,
+                title: ch.title || (isCurrentBookComic() ? "Page" : "Chapter"),
+                content: ch.content || "",
+                imageUrl: comicPrimaryImageUrl(ch),
+                imageUrls: normalizeComicImageUrls(ch),
+                words: countWords(ch.content || ""),
+                warnings: cloneWarningData(ch.warnings),
+                authorNotes: normalizeAuthorNotes(ch.authorNotes),
+                ...chapterTypographyPayload(ch),
+            }))).map((ch) => {
+                if (normalizeAuthorNotes(ch.authorNotes)) return ch;
+                const prevNotes = authorNotesByChapterId.get(ch.id) || "";
+                return prevNotes ? { ...ch, authorNotes: prevNotes } : ch;
+            });
+            const bodyOrderIds = bodyList.map((ch) => ch.id);
+            const mergedChapters = mergeLibraryChapters(
+                existingLibraryChapters,
+                shieldedSelectedChapters,
+                bodyOrderIds
+            ).map((ch, index) => ({
+                ...ch,
+                order: index + 1,
+                title: ch.title || (isCurrentBookComic() ? `Page ${index + 1}` : `Chapter ${index + 1}`),
+            }));
+            const existingPublishedIds = safeArray(
+                existingData.publishedChapterIds ?? existingData.published_chapter_ids ?? currentBook.publishedChapterIds,
+                []
+            ).filter((id) => typeof id === "string");
+            const publishedChapterIds = mergePublishedChapterIds(
+                existingPublishedIds,
+                immediateChapterIds,
+                scheduledChapterIds
+            );
+            const wordCount = mergedChapters.reduce((sum, ch) => sum + safeNumber(ch.words, countWords(ch.content || "")), 0);
             const libraryPayload = {
                 id: bookId,
                 data: {
@@ -4539,27 +4589,16 @@ function rememberBookId(id) {
                     warnings: aggregatedWarnings,
                     summary: publishMeta.summary,
                     extraTags: publishMeta.extraTags,
-                    coverUrl: publishMeta.coverUrl || safeString(existingLibrary?.data?.coverUrl || existingLibrary?.data?.cover_url || existingLibrary?.coverUrl, ""),
-                    chapters: shieldLibraryChapters(publishChapters.map((ch, index) => ({
-                        id: ch.id,
-                        order: index + 1,
-                        title: ch.title || (isCurrentBookComic() ? `Page ${index + 1}` : `Chapter ${index + 1}`),
-                        content: ch.content || "",
-                        imageUrl: comicPrimaryImageUrl(ch),
-                        imageUrls: normalizeComicImageUrls(ch),
-                        words: countWords(ch.content || ""),
-                        warnings: cloneWarningData(ch.warnings),
-                        authorNotes: authorNotesByChapterId.get(ch.id) || "",
-                        ...chapterTypographyPayload(ch),
-                    }))),
-                    publishedChapterIds: immediateChapterIds,
-                    chapterCount: selectedChapterObjects.length,
+                    coverUrl: publishMeta.coverUrl || safeString(existingData.coverUrl || existingData.cover_url || existingLibrary?.coverUrl, ""),
+                    chapters: mergedChapters,
+                    publishedChapterIds,
+                    chapterCount: mergedChapters.length,
                     words: wordCount,
                     createdAt: firstPublishedAt,
                     publishedAt: firstPublishedAt,
                     updated: now,
-                    views: safeNumber(existingLibrary?.data?.views ?? existingLibrary?.views, 0),
-                    likes: safeNumber(existingLibrary?.data?.likes ?? existingLibrary?.likes, 0),
+                    views: safeNumber(existingData.views ?? existingLibrary?.views, 0),
+                    likes: safeNumber(existingData.likes ?? existingLibrary?.likes, 0),
                     isPublished: true,
                     serializationStatus: publishMeta.serializationStatus,
                     plannedChapterCount: publishMeta.plannedChapterCount,
@@ -4568,7 +4607,7 @@ function rememberBookId(id) {
             };
             currentBook.title = payloadTitle;
             currentBook.publishMeta = publishMeta;
-            currentBook.publishedChapterIds = immediateChapterIds;
+            currentBook.publishedChapterIds = publishedChapterIds;
             currentBook.isPublished = true;
             await supabase.from("books").update(toDbBookPatch(currentBook)).eq("id", bookId).eq("user_id", currentUser.id);
             const libRow = { id: bookId, user_id: currentUser.id, data: libraryPayload.data };
@@ -4579,14 +4618,18 @@ function rememberBookId(id) {
                 const { error: libErr } = await supabase.from("library").insert(libRow);
                 if (libErr) throw libErr;
             }
-            if (scheduled.length) {
-                await syncScheduledChapterReleases(
-                    bookId,
-                    scheduled.map(({ chapter, scheduledAt }) => ({ chapterId: chapter.id, scheduledAt }))
-                );
-            } else {
-                await syncScheduledChapterReleases(bookId, []);
+            let pendingReleases = [];
+            try {
+                pendingReleases = await listScheduledChapterReleases(bookId);
+            } catch (scheduleListErr) {
+                console.warn("Could not load pending schedules before sync.", scheduleListErr);
             }
+            const schedulePayload = buildScheduleSyncPayload(
+                scheduled.map(({ chapter, scheduledAt }) => ({ chapterId: chapter.id, scheduledAt })),
+                pendingReleases,
+                selectedIds
+            );
+            await syncScheduledChapterReleases(bookId, schedulePayload);
             const scheduleNote = scheduled.length
                 ? ` ${scheduled.length} chapter${scheduled.length === 1 ? "" : "s"} scheduled.`
                 : "";

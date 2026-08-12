@@ -225,6 +225,7 @@ export function formatNextChapterReleaseNote(release) {
         day: "numeric",
         hour: "numeric",
         minute: "2-digit",
+        timeZoneName: "short",
     });
 
     return `Next chapter: “${title}” — releases ${formatted}`;

@@ -1,6 +1,9 @@
 /**
  * Scheduled chapter releases — queue future chapter drops for published books.
  * Requires supabase-scheduled-chapter-releases.sql applied in Supabase.
+ *
+ * Schedule times are authored in the browser's local timezone (datetime-local),
+ * stored as absolute UTC (timestamptz), and shown back in the viewer's local zone.
  */
 
 import { supabase } from "../firebase.js";
@@ -88,6 +91,37 @@ export async function processDueChapterReleases(bookId) {
 export const MIN_SCHEDULE_LEAD_MS = 5 * 60 * 1000;
 
 /**
+ * IANA timezone for the current user/browser, e.g. "America/Los_Angeles".
+ * @returns {string}
+ */
+export function getUserTimeZone() {
+    try {
+        return Intl.DateTimeFormat().resolvedOptions().timeZone || "local";
+    } catch {
+        return "local";
+    }
+}
+
+/**
+ * Human label for the author schedule UI, e.g. "America/Los Angeles (PDT)".
+ * @returns {string}
+ */
+export function formatUserTimeZoneLabel() {
+    const tz = getUserTimeZone();
+    const pretty = String(tz).replace(/_/g, " ");
+    try {
+        const parts = new Intl.DateTimeFormat(undefined, {
+            timeZone: tz === "local" ? undefined : tz,
+            timeZoneName: "short",
+        }).formatToParts(new Date());
+        const abbr = parts.find((part) => part.type === "timeZoneName")?.value;
+        return abbr ? `${pretty} (${abbr})` : pretty;
+    } catch {
+        return pretty;
+    }
+}
+
+/**
  * @param {string} isoOrLocal
  * @returns {boolean}
  */
@@ -99,7 +133,7 @@ export function isValidFutureSchedule(isoOrLocal) {
 }
 
 /**
- * Format a schedule datetime for datetime-local input value.
+ * Format a schedule datetime for datetime-local input value (user's local wall time).
  * @param {string} iso
  * @returns {string}
  */
@@ -112,15 +146,139 @@ export function toDatetimeLocalValue(iso) {
 }
 
 /**
- * Convert datetime-local value to ISO string for RPC.
+ * Convert datetime-local value (user's local wall time) to UTC ISO for RPC storage.
+ * Parses components explicitly so engines never treat the naïve string as UTC.
  * @param {string} localValue
  * @returns {string}
  */
 export function fromDatetimeLocalValue(localValue) {
     if (!localValue) return "";
-    const d = new Date(localValue);
+    const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?/.exec(String(localValue).trim());
+    if (!match) {
+        const fallback = new Date(localValue);
+        if (!Number.isFinite(fallback.getTime())) return "";
+        return fallback.toISOString();
+    }
+    const d = new Date(
+        Number(match[1]),
+        Number(match[2]) - 1,
+        Number(match[3]),
+        Number(match[4]),
+        Number(match[5]),
+        match[6] ? Number(match[6]) : 0,
+        0
+    );
     if (!Number.isFinite(d.getTime())) return "";
     return d.toISOString();
+}
+
+/**
+ * Format a stored UTC instant for display in the viewer's local timezone.
+ * @param {string} iso
+ * @param {Intl.DateTimeFormatOptions} [options]
+ * @returns {string}
+ */
+export function formatScheduleDisplay(iso, options = {}) {
+    if (!iso) return "Unknown time";
+    const d = new Date(iso);
+    if (!Number.isFinite(d.getTime())) return "Unknown time";
+    return d.toLocaleString(undefined, {
+        dateStyle: "medium",
+        timeStyle: "short",
+        timeZoneName: "short",
+        ...options,
+    });
+}
+
+/**
+ * When republishing a subset of chapters, keep already-live IDs, add new immediate
+ * releases, and hide chapters that are newly scheduled until their release time.
+ * @param {string[]} existingIds
+ * @param {string[]} immediateIds
+ * @param {string[]} [scheduledIds]
+ * @returns {string[]}
+ */
+export function mergePublishedChapterIds(existingIds, immediateIds, scheduledIds = []) {
+    const scheduled = new Set((scheduledIds || []).filter((id) => typeof id === "string" && id));
+    const out = [];
+    const seen = new Set();
+    for (const id of [...(existingIds || []), ...(immediateIds || [])]) {
+        if (typeof id !== "string" || !id || scheduled.has(id) || seen.has(id)) continue;
+        out.push(id);
+        seen.add(id);
+    }
+    return out;
+}
+
+/**
+ * Merge library chapter payloads so a partial republish does not wipe other chapters.
+ * @param {Array<Record<string, unknown>>} existingChapters
+ * @param {Array<Record<string, unknown>>} selectedChapters
+ * @param {string[]} [preferredOrderIds]
+ * @returns {Array<Record<string, unknown>>}
+ */
+export function mergeLibraryChapters(existingChapters, selectedChapters, preferredOrderIds = []) {
+    const byId = new Map();
+    for (const chapter of existingChapters || []) {
+        const id = chapter?.id;
+        if (typeof id === "string" && id) byId.set(id, chapter);
+    }
+    for (const chapter of selectedChapters || []) {
+        const id = chapter?.id;
+        if (typeof id === "string" && id) byId.set(id, chapter);
+    }
+
+    const order = [];
+    const seen = new Set();
+    for (const id of preferredOrderIds || []) {
+        if (!byId.has(id) || seen.has(id)) continue;
+        order.push(id);
+        seen.add(id);
+    }
+    for (const id of byId.keys()) {
+        if (seen.has(id)) continue;
+        order.push(id);
+        seen.add(id);
+    }
+
+    return order.map((id, index) => ({
+        ...byId.get(id),
+        order: index + 1,
+    }));
+}
+
+/**
+ * Build the sync payload for the current selection while keeping schedules for
+ * chapters that are not part of this publish action.
+ * @param {Array<{ chapterId: string, scheduledAt: string }>} selectedSchedules
+ * @param {ScheduledChapterRelease[]} pendingReleases
+ * @param {Iterable<string>} selectedChapterIds
+ */
+export function buildScheduleSyncPayload(selectedSchedules, pendingReleases, selectedChapterIds) {
+    const selected = new Set(
+        [...(selectedChapterIds || [])].filter((id) => typeof id === "string" && id)
+    );
+    const payload = [];
+    const seen = new Set();
+
+    for (const item of selectedSchedules || []) {
+        const chapterId = String(item?.chapterId || "").trim();
+        const scheduledAt = String(item?.scheduledAt || "").trim();
+        if (!chapterId || !scheduledAt || seen.has(chapterId)) continue;
+        payload.push({ chapterId, scheduledAt });
+        seen.add(chapterId);
+    }
+
+    for (const row of pendingReleases || []) {
+        if (row?.status && row.status !== "pending") continue;
+        const chapterId = String(row.chapterId || "").trim();
+        const scheduledAt = String(row.scheduledAt || "").trim();
+        if (!chapterId || !scheduledAt || selected.has(chapterId) || seen.has(chapterId)) continue;
+        payload.push({ chapterId, scheduledAt });
+        seen.add(chapterId);
+    }
+
+    return payload;
 }
 
 /**
