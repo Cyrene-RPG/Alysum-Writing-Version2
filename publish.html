@@ -350,7 +350,6 @@
     import { mountWarningPicker } from "./js/chapter-warnings-ui.js?v=1";
     import { normalizeAuthorNotes, MAX_AUTHOR_NOTES_LENGTH } from "./js/chapter-author-notes.js?v=1";
     import { chapterTypographyPayload } from "./js/chapter-typography.js?v=1";
-    import { shieldLibraryChapters, libraryShieldMeta } from "./js/shieldfont-library.js?v=1";
 
     const WARNING_GROUPS = CONTENT_WARNING_GROUPS;
 
@@ -936,9 +935,8 @@
             if (existingError) throw existingError;
             const existingData = safeObject(existingLibrary?.data ?? existingLibrary, {});
             const firstPublishedAt = safeNumber(existingData.publishedAt ?? existingData.createdAt, now);
-            // Shield only the chapters in this publish action — existing library
-            // chapters are already encoded (ShieldFont is an involution).
-            const shieldedSelectedChapters = shieldLibraryChapters(publishChapters.map((ch) => ({
+            // Store plaintext in library; /api/book-content encodes with ShieldFont at serve time.
+            const selectedChapters = publishChapters.map((ch) => ({
                 id: ch.id,
                 order: 0,
                 title: ch.title || (isComicFormat(currentBook.mediaFormat) ? "Page" : "Chapter"),
@@ -949,11 +947,11 @@
                 warnings: cloneWarningData(ch.warnings),
                 authorNotes: normalizeAuthorNotes(ch.authorNotes),
                 ...chapterTypographyPayload(ch),
-            })));
+            }));
             const bodyOrderIds = safeArray(currentBook.sections?.body, []).map((ch) => ch.id);
             const mergedChapters = mergeLibraryChapters(
                 safeArray(existingData.chapters, []),
-                shieldedSelectedChapters,
+                selectedChapters,
                 bodyOrderIds
             ).map((ch, index) => ({
                 ...ch,
@@ -997,7 +995,9 @@
                 isPublished: true,
                 serializationStatus: publishMeta.serializationStatus,
                 plannedChapterCount: publishMeta.plannedChapterCount,
-                ...libraryShieldMeta(),
+                shielded: false,
+                shieldMapping: null,
+                shieldVersion: null,
             };
             const { error: bookError } = await supabase.from("books").update({ title: payloadTitle, library_type: libraryShelfSelect.value, publish_meta: publishMeta, published_chapter_ids: publishedChapterIds, is_published: true, sections: updatedSections, updated: now }).eq("id", bookId).eq("user_id", currentUser.id);
             if (bookError) throw bookError;

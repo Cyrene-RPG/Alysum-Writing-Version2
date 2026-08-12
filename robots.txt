@@ -50,70 +50,182 @@ Disallow: /studio.html
 Disallow: /worldbuilder.html
 Disallow: /flow-mapper.html
 Disallow: /api/book-content
+Disallow: /fonts/
 
 # AI training / scraping crawlers — catalog branding only, no book text
 User-agent: GPTBot
 Disallow: /read.html
+Disallow: /author.html
+Disallow: /library.html
 Disallow: /api/book-content
+Disallow: /fonts/
 
 User-agent: ChatGPT-User
 Disallow: /read.html
+Disallow: /author.html
+Disallow: /library.html
 Disallow: /api/book-content
+Disallow: /fonts/
 
 User-agent: OAI-SearchBot
 Disallow: /read.html
+Disallow: /author.html
+Disallow: /library.html
 Disallow: /api/book-content
+Disallow: /fonts/
 
 User-agent: ClaudeBot
 Disallow: /read.html
+Disallow: /author.html
+Disallow: /library.html
 Disallow: /api/book-content
+Disallow: /fonts/
 
 User-agent: anthropic-ai
 Disallow: /read.html
+Disallow: /author.html
+Disallow: /library.html
 Disallow: /api/book-content
+Disallow: /fonts/
 
 User-agent: Claude-Web
 Disallow: /read.html
+Disallow: /author.html
+Disallow: /library.html
 Disallow: /api/book-content
+Disallow: /fonts/
 
 User-agent: PerplexityBot
 Disallow: /read.html
+Disallow: /author.html
+Disallow: /library.html
 Disallow: /api/book-content
+Disallow: /fonts/
 
 User-agent: Perplexity-User
 Disallow: /read.html
+Disallow: /author.html
+Disallow: /library.html
 Disallow: /api/book-content
+Disallow: /fonts/
 
 User-agent: Bytespider
 Disallow: /read.html
+Disallow: /author.html
+Disallow: /library.html
 Disallow: /api/book-content
+Disallow: /fonts/
 
 User-agent: CCBot
 Disallow: /read.html
+Disallow: /author.html
+Disallow: /library.html
 Disallow: /api/book-content
+Disallow: /fonts/
 
 User-agent: cohere-ai
 Disallow: /read.html
+Disallow: /author.html
+Disallow: /library.html
 Disallow: /api/book-content
+Disallow: /fonts/
 
 User-agent: Diffbot
 Disallow: /read.html
+Disallow: /author.html
+Disallow: /library.html
 Disallow: /api/book-content
+Disallow: /fonts/
 
 User-agent: Meta-ExternalAgent
 Disallow: /read.html
+Disallow: /author.html
+Disallow: /library.html
 Disallow: /api/book-content
+Disallow: /fonts/
+
+User-agent: Meta-ExternalFetcher
+Disallow: /read.html
+Disallow: /author.html
+Disallow: /library.html
+Disallow: /api/book-content
+Disallow: /fonts/
 
 User-agent: Google-Extended
 Disallow: /read.html
+Disallow: /author.html
+Disallow: /library.html
 Disallow: /api/book-content
+Disallow: /fonts/
 
 User-agent: Amazonbot
 Disallow: /read.html
+Disallow: /author.html
+Disallow: /library.html
 Disallow: /api/book-content
+Disallow: /fonts/
 
 User-agent: Applebot-Extended
 Disallow: /read.html
+Disallow: /author.html
+Disallow: /library.html
 Disallow: /api/book-content
+Disallow: /fonts/
+
+User-agent: YouBot
+Disallow: /read.html
+Disallow: /author.html
+Disallow: /library.html
+Disallow: /api/book-content
+Disallow: /fonts/
+
+User-agent: ImagesiftBot
+Disallow: /read.html
+Disallow: /author.html
+Disallow: /library.html
+Disallow: /api/book-content
+Disallow: /fonts/
+
+User-agent: omgili
+Disallow: /read.html
+Disallow: /author.html
+Disallow: /library.html
+Disallow: /api/book-content
+Disallow: /fonts/
+
+User-agent: Webzio-Extended
+Disallow: /read.html
+Disallow: /author.html
+Disallow: /library.html
+Disallow: /api/book-content
+Disallow: /fonts/
+
+User-agent: Ai2Bot
+Disallow: /read.html
+Disallow: /author.html
+Disallow: /library.html
+Disallow: /api/book-content
+Disallow: /fonts/
+
+User-agent: Timpibot
+Disallow: /read.html
+Disallow: /author.html
+Disallow: /library.html
+Disallow: /api/book-content
+Disallow: /fonts/
+
+User-agent: VelenPublicWebCrawler
+Disallow: /read.html
+Disallow: /author.html
+Disallow: /library.html
+Disallow: /api/book-content
+Disallow: /fonts/
+
+User-agent: IAB-Tech-Lab
+Disallow: /read.html
+Disallow: /author.html
+Disallow: /library.html
+Disallow: /api/book-content
+Disallow: /fonts/
 
 Sitemap: /sitemap.xml

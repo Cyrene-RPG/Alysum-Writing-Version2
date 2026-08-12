@@ -992,7 +992,6 @@
         notifyLocalStudioSync,
     } from "./js/local-studio-store.js?v=1";
     import { countBookWords } from "./js/book-word-count.js?v=3";
-    import { shieldAllOwnedLibraryEntries } from "./js/shieldfont-reprotect.js?v=1";
     import {
         localDayKey,
         clampDailyWordGoal,
@@ -2005,15 +2004,6 @@
         }
 
         if (!isLocalStudio) {
-            void shieldAllOwnedLibraryEntries(supabase, user.id)
-                .then((result) => {
-                    if (result.updated > 0) {
-                        console.info(
-                            `[Alysum] ShieldFont protected ${result.updated} published librar${result.updated === 1 ? "y" : "ies"}.`
-                        );
-                    }
-                })
-                .catch((err) => console.warn("ShieldFont library pass failed.", err));
             void loadDashboardBadge(user.id);
             startBooksRealtime();
             startProfileRealtime();

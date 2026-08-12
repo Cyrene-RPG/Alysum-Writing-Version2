@@ -47,7 +47,7 @@
     <link rel="stylesheet" href="css/book-inline-images.css?v=4" />
     <link rel="stylesheet" href="css/accessibility-fonts.css?v=1" />
     <link rel="stylesheet" href="css/book-inline-fonts.css?v=4" />
-    <link rel="stylesheet" href="css/shieldfont-library.css?v=1" />
+    <link rel="stylesheet" href="css/shieldfont-reader.css?v=1" />
     <link rel="stylesheet" href="css/scene-breaks.css?v=8" />
     <link rel="stylesheet" href="css/script-editor.css?v=4" />
     <link rel="stylesheet" href="css/workspace-nav.css?v=11" />
@@ -421,20 +421,24 @@
         fetchPublishedWorksForAuthor,
         supportLinksList,
     } from "./js/author-profile.js?v=3";
-    import { processDueChapterReleases, getNextChapterRelease } from "./js/scheduled-chapter-releases.js?v=2";
+    import { processDueChapterReleases, getNextChapterRelease } from "./js/scheduled-chapter-releases.js?v=3";
     import {
         formatChapterProgress,
         formatChapterPositionMeta,
         formatNextChapterReleaseNote,
         serializationFromBookData,
         serializationStatusLabel,
-    } from "./js/story-serialization.js?v=1";
+    } from "./js/story-serialization.js?v=2";
     import { flattenWarnings, aggregateWarningsFromChapters } from "./js/content-warnings.js?v=1";
     import { normalizeAuthorNotes } from "./js/chapter-author-notes.js?v=1";
     import { sanitizeChapterHtml } from "./js/book-html-sanitize.js?v=1";
-    import { applyChapterTypographyStyles, chapterTypographyPayload } from "./js/chapter-typography.js?v=1";
-    import { applyShieldedChapterView, isLibraryShielded } from "./js/shieldfont-library.js?v=1";
-    import { ensurePublishedLibraryShielded } from "./js/shieldfont-reprotect.js?v=1";
+    import { applyChapterTypographyStyles, chapterTypography, chapterTypographyPayload } from "./js/chapter-typography.js?v=1";
+    import {
+        normalizeShieldMeta,
+        applyShieldToContent,
+        waitForShieldFont,
+        markShieldUnavailable,
+    } from "./js/shieldfont-reader.js?v=1";
 
     const params = new URLSearchParams(window.location.search);
     let bookId =
@@ -449,7 +453,7 @@
 
     const backBtn = document.getElementById("backBtn"), themeBtn = document.getElementById("themeBtn"), fontMinusBtn = document.getElementById("fontMinusBtn"), fontPlusBtn = document.getElementById("fontPlusBtn"), menuBtn = document.getElementById("menuBtn"), mobileDrawer = document.getElementById("mobileDrawer"), drawerBackdrop = document.getElementById("drawerBackdrop"), closeDrawerBtn = document.getElementById("closeDrawerBtn"), topbarTitle = document.getElementById("topbarTitle"), topbarSubtitle = document.getElementById("topbarSubtitle"), betaReadTopBtn = document.getElementById("betaReadTopBtn"), readerProfileTopBtn = document.getElementById("readerProfileTopBtn"), allNotesTopBtn = document.getElementById("allNotesTopBtn"), statusBox = document.getElementById("statusBox"), errorBox = document.getElementById("errorBox"), bookTitle = document.getElementById("bookTitle"), bookAuthor = document.getElementById("bookAuthor"), bookSummary = document.getElementById("bookSummary"), serializationBadge = document.getElementById("serializationBadge"), statChapters = document.getElementById("statChapters"), statWords = document.getElementById("statWords"), statReads = document.getElementById("statReads"), statType = document.getElementById("statType"), statRating = document.getElementById("statRating"), tagList = document.getElementById("tagList"), warningList = document.getElementById("warningList"), sideBookTitle = document.getElementById("sideBookTitle"), sideBookAuthor = document.getElementById("sideBookAuthor"), sideBookSummary = document.getElementById("sideBookSummary"), sideTagList = document.getElementById("sideTagList"), sideWarningList = document.getElementById("sideWarningList"), drawerBookTitle = document.getElementById("drawerBookTitle"), drawerBookAuthor = document.getElementById("drawerBookAuthor"), drawerBookSummary = document.getElementById("drawerBookSummary"), drawerTagList = document.getElementById("drawerTagList"), drawerWarningList = document.getElementById("drawerWarningList"), prevBtn = document.getElementById("prevBtn"), nextBtn = document.getElementById("nextBtn"), nextChapterBottomBtn = document.getElementById("nextChapterBottomBtn"), nextChapterReleaseNote = document.getElementById("nextChapterReleaseNote"), chapterIndicator = document.getElementById("chapterIndicator"), chapterTitle = document.getElementById("chapterTitle"), chapterMeta = document.getElementById("chapterMeta"), chapterWarningsBlock = document.getElementById("chapterWarningsBlock"), chapterWarningList = document.getElementById("chapterWarningList"), authorNotesBlock = document.getElementById("authorNotesBlock"), authorNotesText = document.getElementById("authorNotesText"), content = document.getElementById("content"), bookmarkBtn = document.getElementById("bookmarkBtn"), resumeBtn = document.getElementById("resumeBtn"), reportBookBtn = document.getElementById("reportBookBtn"), likeBtn = document.getElementById("likeBtn"), likeCount = document.getElementById("likeCount"), chapterReactionsTitle = document.getElementById("chapterReactionsTitle"), chapterReactionsGrid = document.getElementById("chapterReactionsGrid"), commentList = document.getElementById("commentList"), commentsSubtitle = document.getElementById("commentsSubtitle"), commentInput = document.getElementById("commentInput"), postCommentBtn = document.getElementById("postCommentBtn"), authorEndCard = document.getElementById("authorEndCard"), authorEndAvatarInitial = document.getElementById("authorEndAvatarInitial"), authorEndAvatarImg = document.getElementById("authorEndAvatarImg"), authorEndName = document.getElementById("authorEndName"), authorEndBio = document.getElementById("authorEndBio"), authorEndWorks = document.getElementById("authorEndWorks"), authorEndWorksTitle = document.getElementById("authorEndWorksTitle"), authorWorksGrid = document.getElementById("authorWorksGrid"), authorEndProfileLink = document.getElementById("authorEndProfileLink");
 
-    let currentUser = null, currentBook = null, librarySourceRow = null, currentChapterIndex = 0, isLoaded = false, currentFontSize = 22, hasLikedThisBook = false, readerWatermarkProfileUser = null, bookOwnerHandle = null, authorOwnerProfile = null, chapterReactionBusy = false, userChapterReactionTypes = new Set(), nextPendingRelease = null, commentReplyTargetId = "", commentReplyDraftText = "", libraryShielded = false;
+    let currentUser = null, currentBook = null, librarySourceRow = null, currentChapterIndex = 0, isLoaded = false, currentFontSize = 22, hasLikedThisBook = false, readerWatermarkProfileUser = null, bookOwnerHandle = null, authorOwnerProfile = null, chapterReactionBusy = false, userChapterReactionTypes = new Set(), nextPendingRelease = null, commentReplyTargetId = "", commentReplyDraftText = "", currentShield = null, shieldRenderToken = 0;
 
     installReaderCopyGuards(content, { isActive: () => isLoaded && !!currentBook });
 
@@ -566,29 +570,7 @@
         const bookWarnings = chapters.some((ch) => ch.warnings.length)
             ? flattenWarnings(aggregateWarningsFromChapters(chapters))
             : flattenWarnings(data.warnings);
-        return {
-            id: safeString(data.bookId || row?.id, bookId),
-            ownerUid: safeString(data.ownerUid || data.user_id || row?.user_id, ""),
-            title: safeString(data.title, "Untitled"),
-            author: safeString(data.author, "unknown"),
-            isAnonymous: !!(data.isAnonymous ?? data.is_anonymous),
-            summary: safeString(data.summary, ""),
-            coverUrl: safeString(data.coverUrl || data.cover_url, ""),
-            rating: safeString(data.rating, ""),
-            type: safeString(data.type, "fiction"),
-            mediaFormat,
-            tags: rawTags.filter(v => typeof v === "string" && v.trim()),
-            warnings: bookWarnings,
-            chapterCount: serialization.chapterCount,
-            publishedChapterCount: serialization.publishedCount,
-            serializationStatus: serialization.status,
-            plannedChapterCount: serialization.plannedChapterCount,
-            words: totalWords,
-            views: safeNumber(data.views, 0),
-            likes: safeNumber(data.likes, 0),
-            chapters,
-            shielded: isLibraryShielded(data),
-        };
+        return { id: safeString(data.bookId || row?.id, bookId), ownerUid: safeString(data.ownerUid || data.user_id || row?.user_id, ""), title: safeString(data.title, "Untitled"), author: safeString(data.author, "unknown"), isAnonymous: !!(data.isAnonymous ?? data.is_anonymous), summary: safeString(data.summary, ""), coverUrl: safeString(data.coverUrl || data.cover_url, ""), rating: safeString(data.rating, ""), type: safeString(data.type, "fiction"), mediaFormat, tags: rawTags.filter(v => typeof v === "string" && v.trim()), warnings: bookWarnings, chapterCount: serialization.chapterCount, publishedChapterCount: serialization.publishedCount, serializationStatus: serialization.status, plannedChapterCount: serialization.plannedChapterCount, words: totalWords, views: safeNumber(data.views, 0), likes: safeNumber(data.likes, 0), chapters };
     }
 
     function updateBookSeo() {
@@ -821,13 +803,17 @@
         currentChapterIndex++;
         renderChapter();
     }
-    function renderChapter() {
+    async function renderChapter() {
         if (!currentBook) return;
         const chapter = currentChapter();
         const comic = isComicFormat(currentBook.mediaFormat);
         const script = isScriptFormat(currentBook.mediaFormat);
         const unit = comic ? "Page" : (script ? "Scene" : "Chapter");
+        const renderToken = ++shieldRenderToken;
         chapterTitle.textContent = chapter.title;
+        if (chapterTitle) {
+            chapterTitle.classList.toggle("tk9-t", !!currentShield);
+        }
         chapterMeta.textContent = formatChapterPositionMeta({
             currentIndex: currentChapterIndex,
             publishedCount: currentBook.publishedChapterCount ?? currentBook.chapters.length,
@@ -857,29 +843,57 @@
             } else {
                 html += `<p class="comic-strip-empty">No page images uploaded for this chapter yet.</p>`;
             }
-            if (caption) html += `<p class="comic-page-caption">${escapeHtml(caption)}</p>`;
+            if (caption) {
+                const captionClass = currentShield ? `alysum-shielded ${currentShield.className}` : "";
+                const aria = currentShield ? ' aria-hidden="true"' : "";
+                const face = currentShield
+                    ? ` style="font-family: '${currentShield.fontFamily}', Georgia, serif; font-weight: 400; font-synthesis: none;"`
+                    : "";
+                html += `<p class="comic-page-caption ${captionClass}"${aria}${face}>${escapeHtml(caption)}</p>`;
+            }
             content.innerHTML = html;
             content.classList.toggle("comic-reader", true);
+            content.classList.remove("alysum-shielded", "tk9", "tk9-b", "tk9-c", "alysum-shield-unavailable");
+            content.removeAttribute("aria-hidden");
             content.style.removeProperty("font-family");
             content.style.removeProperty("font-size");
             content.style.removeProperty("line-height");
+            if (currentShield && caption) {
+                const ok = await waitForShieldFont(currentShield.fontFamily);
+                if (renderToken !== shieldRenderToken) return;
+                if (!ok) {
+                    const captionEl = content.querySelector(".comic-page-caption");
+                    if (captionEl) {
+                        captionEl.classList.add("alysum-shield-unavailable");
+                        captionEl.removeAttribute("aria-hidden");
+                        captionEl.removeAttribute("style");
+                        captionEl.textContent = "Caption unavailable — reading face failed to load.";
+                    }
+                }
+            }
         } else if (script) {
             content.classList.remove("comic-reader");
             content.classList.add("script-reader");
             content.innerHTML = sanitizeChapterHtml(chapter.content) || "<p class=\"script-scene\">No script content yet.</p>";
-            content.style.removeProperty("font-family");
             content.style.removeProperty("font-size");
             content.style.removeProperty("line-height");
+            applyShieldToContent(content, currentShield);
         } else {
             content.classList.remove("comic-reader", "script-reader");
             content.innerHTML = sanitizeChapterHtml(chapter.content) || "<p>No chapter text yet.</p>";
-            applyChapterTypographyStyles(content, chapter);
+            if (currentShield) {
+                const typography = chapterTypography(chapter);
+                applyShieldToContent(content, currentShield, typography);
+            } else {
+                applyChapterTypographyStyles(content, chapter);
+                applyShieldToContent(content, null);
+            }
         }
-        const shielded = !!(libraryShielded || currentBook.shielded);
-        void applyShieldedChapterView(content, {
-            shielded,
-            notesEl: notes ? authorNotesText : null,
-        });
+        if (currentShield && !comic) {
+            const ok = await waitForShieldFont(currentShield.fontFamily);
+            if (renderToken !== shieldRenderToken) return;
+            if (!ok) markShieldUnavailable(content);
+        }
         prevBtn.disabled = currentChapterIndex === 0;
         nextBtn.disabled = currentChapterIndex === currentBook.chapters.length - 1;
         const isLastChapter = currentChapterIndex >= currentBook.chapters.length - 1;
@@ -1129,7 +1143,9 @@
             const detail = await res.text().catch(() => "");
             throw new Error(detail || `Could not load chapters (${res.status})`);
         }
-        return res.json();
+        const payload = await res.json();
+        currentShield = normalizeShieldMeta(payload?.shield);
+        return payload;
     }
 
     async function loadBook() {
@@ -1151,29 +1167,40 @@
             } catch (releaseErr) {
                 console.warn("Could not process scheduled chapter releases.", releaseErr);
             }
+            // Chapters always come ShieldFont-encoded from the API — never from anon library JSON.
+            const chapterPayload = await fetchBookChapters(bookId);
+            const apiMeta = safeObject(chapterPayload?.meta, null);
+
+            let metaRow = null;
             const { data, error } = await supabase.from("library_catalog").select("*").eq("id", bookId).maybeSingle();
-            if (error && /library_catalog|relation.*does not exist/i.test(String(error.message || error))) {
-                const fallback = await supabase.from("library").select("*").eq("id", bookId).maybeSingle();
-                if (fallback.error) throw fallback.error;
-                if (!fallback.data) { showError(`Story not found: ${bookId}`); topbarTitle.textContent = "Story not found"; hideStatus(); updateReaderWatermark(); return; }
-                librarySourceRow = fallback.data;
+            if (!error && data) {
+                metaRow = data;
+            } else if (error && !/library_catalog|relation.*does not exist/i.test(String(error.message || error))) {
+                throw error;
+            } else if (apiMeta) {
+                // Catalog missing or empty — use API metadata (no plaintext chapter bodies).
+                metaRow = { id: bookId, data: apiMeta, user_id: apiMeta.ownerUid || apiMeta.user_id || null };
             } else {
-                if (error) throw error;
-                if (!data) { showError(`Story not found: ${bookId}`); topbarTitle.textContent = "Story not found"; hideStatus(); updateReaderWatermark(); return; }
-                const chapterPayload = await fetchBookChapters(bookId);
-                const catalogData = libraryRowData(data);
-                librarySourceRow = {
-                    ...data,
-                    data: {
-                        ...catalogData,
-                        chapters: safeArray(chapterPayload?.chapters, []),
-                        publishedChapterIds: safeArray(chapterPayload?.publishedChapterIds, catalogData.publishedChapterIds),
-                        shielded: chapterPayload?.shielded === true || catalogData.shielded === true,
-                        shieldMapping: chapterPayload?.shieldMapping || catalogData.shieldMapping,
-                        shieldVersion: chapterPayload?.shieldVersion || catalogData.shieldVersion,
-                    },
-                };
+                showError(`Story not found: ${bookId}`);
+                topbarTitle.textContent = "Story not found";
+                hideStatus();
+                updateReaderWatermark();
+                return;
             }
+
+            const catalogData = libraryRowData(metaRow);
+            librarySourceRow = {
+                ...metaRow,
+                data: {
+                    ...catalogData,
+                    ...safeObject(apiMeta, {}),
+                    chapters: safeArray(chapterPayload?.chapters, []),
+                    publishedChapterIds: safeArray(
+                        chapterPayload?.publishedChapterIds,
+                        catalogData.publishedChapterIds
+                    ),
+                },
+            };
 
             if (!librarySourceRow) { showError(`Story not found: ${bookId}`); topbarTitle.textContent = "Story not found"; hideStatus(); updateReaderWatermark(); return; }
             localStorage.setItem("alysum-last-read-book", bookId);
@@ -1181,23 +1208,6 @@
             sessionStorage.setItem("alysum-open-book", bookId);
 
             currentBook = normalizeBook(librarySourceRow);
-            libraryShielded = !!(currentBook.shielded || isLibraryShielded(libraryRowData(librarySourceRow)));
-
-            // Owner auto-heal: if this library copy was published before ShieldFont, encode from manuscript.
-            if (!libraryShielded && currentUser && currentBook.ownerUid && currentUser.id === currentBook.ownerUid) {
-                try {
-                    const heal = await ensurePublishedLibraryShielded(supabase, {
-                        bookId,
-                        userId: currentUser.id,
-                    });
-                    if (heal.updated) {
-                        return loadBook();
-                    }
-                } catch (healErr) {
-                    console.warn("Could not auto-shield library entry.", healErr);
-                }
-            }
-
             await loadNextChapterRelease();
 
             const readable = await isBookReadable(bookId);

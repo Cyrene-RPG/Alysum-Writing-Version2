@@ -1671,7 +1671,6 @@
         writeChapterTypography,
         chapterTypographyPayload,
     } from "./js/chapter-typography.js?v=1";
-    import { shieldLibraryChapters, libraryShieldMeta } from "./js/shieldfont-library.js?v=1";
     import { mountBookVersionPanel } from "./js/book-version-panel.js?v=8";
     import { hashSnapshot, buildManuscriptSnapshot } from "./js/book-version-api.js?v=3";
     import {
@@ -4537,8 +4536,8 @@ function rememberBookId(id) {
                 existingLibraryChapters.map((item) => [item.id, normalizeAuthorNotes(item.authorNotes ?? item.author_notes)])
             );
             const firstPublishedAt = safeNumber(existingData.publishedAt ?? existingLibrary?.publishedAt, safeNumber(existingLibrary?.createdAt, now));
-            // Shield only selected chapters; keep already-encoded library chapters as-is.
-            const shieldedSelectedChapters = shieldLibraryChapters(publishChapters.map((ch) => ({
+            // Store plaintext in library; /api/book-content encodes with ShieldFont at serve time.
+            const selectedChapters = publishChapters.map((ch) => ({
                 id: ch.id,
                 order: 0,
                 title: ch.title || (isCurrentBookComic() ? "Page" : "Chapter"),
@@ -4549,7 +4548,7 @@ function rememberBookId(id) {
                 warnings: cloneWarningData(ch.warnings),
                 authorNotes: normalizeAuthorNotes(ch.authorNotes),
                 ...chapterTypographyPayload(ch),
-            }))).map((ch) => {
+            })).map((ch) => {
                 if (normalizeAuthorNotes(ch.authorNotes)) return ch;
                 const prevNotes = authorNotesByChapterId.get(ch.id) || "";
                 return prevNotes ? { ...ch, authorNotes: prevNotes } : ch;
@@ -4557,7 +4556,7 @@ function rememberBookId(id) {
             const bodyOrderIds = bodyList.map((ch) => ch.id);
             const mergedChapters = mergeLibraryChapters(
                 existingLibraryChapters,
-                shieldedSelectedChapters,
+                selectedChapters,
                 bodyOrderIds
             ).map((ch, index) => ({
                 ...ch,
@@ -4602,7 +4601,9 @@ function rememberBookId(id) {
                     isPublished: true,
                     serializationStatus: publishMeta.serializationStatus,
                     plannedChapterCount: publishMeta.plannedChapterCount,
-                    ...libraryShieldMeta(),
+                    shielded: false,
+                    shieldMapping: null,
+                    shieldVersion: null,
                 }
             };
             currentBook.title = payloadTitle;

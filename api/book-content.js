@@ -1,13 +1,19 @@
 const { createClient } = require("@supabase/supabase-js");
 const { isAiBotUserAgent } = require("../lib/bot-agents.js");
 const { libraryRowData, SUPABASE_URL } = require("../lib/seo-public.js");
-const { shieldBookContentResponse } = require("../lib/shield-book-content.js");
+const { encodeLibraryChapters, isAlreadyEncodedAtRest } = require("../lib/shield-encode.js");
 
 function createServiceClient() {
     const url = String(process.env.SUPABASE_URL || SUPABASE_URL || "").trim();
     const key = String(process.env.SUPABASE_SERVICE_ROLE_KEY || "").trim();
     if (!url || !key) return null;
     return createClient(url, key);
+}
+
+function isSuspiciousCrossSite(req) {
+    const site = String(req.headers["sec-fetch-site"] || "").toLowerCase();
+    if (!site) return false;
+    return site === "cross-site";
 }
 
 module.exports = async function handler(req, res) {
@@ -53,12 +59,33 @@ module.exports = async function handler(req, res) {
             return;
         }
 
-        const body = await shieldBookContentResponse(supabase, bookId, payload);
+        const { chapters, shield } = await encodeLibraryChapters(
+            Array.isArray(payload.chapters) ? payload.chapters : [],
+            bookId,
+            { alreadyEncoded: isAlreadyEncodedAtRest(payload) }
+        );
+
+        // Metadata only — never echo unencoded chapter bodies beside the shielded payload.
+        const {
+            chapters: _dropChapters,
+            publishedChapterIds,
+            ...meta
+        } = payload;
 
         res.setHeader("Content-Type", "application/json; charset=utf-8");
         res.setHeader("Cache-Control", "private, no-store");
         res.setHeader("X-Robots-Tag", "noai, noimageai, noindex, nofollow");
-        res.status(200).send(JSON.stringify(body));
+        if (isSuspiciousCrossSite(req)) {
+            res.setHeader("X-Content-Type-Options", "nosniff");
+        }
+        res.status(200).send(
+            JSON.stringify({
+                chapters,
+                publishedChapterIds: Array.isArray(publishedChapterIds) ? publishedChapterIds : [],
+                meta,
+                shield,
+            })
+        );
     } catch (err) {
         console.error("book-content error", err);
         res.status(500).setHeader("Content-Type", "application/json").send(JSON.stringify({ error: "Could not load chapters" }));

@@ -1,3 +1,4 @@
+const { createClient } = require("@supabase/supabase-js");
 const {
     createPublicClient,
     siteOrigin,
@@ -10,8 +11,50 @@ const {
     bookAuthorLabel,
     firstChapterExcerpt,
     buildBookJsonLd,
+    SUPABASE_URL,
 } = require("../lib/seo-public.js");
 const { isAiBotUserAgent } = require("../lib/bot-agents.js");
+
+function createServiceClient() {
+    const url = String(process.env.SUPABASE_URL || SUPABASE_URL || "").trim();
+    const key = String(process.env.SUPABASE_SERVICE_ROLE_KEY || "").trim();
+    if (!url || !key) return null;
+    return createClient(url, key);
+}
+
+async function selectLibraryRow(bookId) {
+    const service = createServiceClient();
+    if (service) {
+        const { data, error } = await service.from("library").select("*").eq("id", bookId).maybeSingle();
+        if (error) throw error;
+        return data;
+    }
+
+    const supabase = createPublicClient();
+    const catalog = await supabase.from("library_catalog").select("*").eq("id", bookId).maybeSingle();
+    if (!catalog.error) return catalog.data;
+    if (!/library_catalog|relation.*does not exist/i.test(String(catalog.error.message || catalog.error))) {
+        throw catalog.error;
+    }
+    const fallback = await supabase.from("library").select("*").eq("id", bookId).maybeSingle();
+    if (fallback.error) throw fallback.error;
+    return fallback.data;
+}
+
+async function selectAuthorWorks(userId) {
+    const supabase = createPublicClient();
+    const catalog = await supabase.from("library_catalog").select("id, data").eq("user_id", userId);
+    if (!catalog.error) return catalog.data || [];
+    if (!/library_catalog|relation.*does not exist/i.test(String(catalog.error.message || catalog.error))) {
+        throw catalog.error;
+    }
+
+    const service = createServiceClient();
+    const client = service || supabase;
+    const fallback = await client.from("library").select("id, data").eq("user_id", userId);
+    if (fallback.error) throw fallback.error;
+    return fallback.data || [];
+}
 
 function metaTag(attr, key, value) {
     if (!value) return "";
@@ -69,9 +112,7 @@ function buildAiLibraryPage({ origin, path, canonical }) {
 }
 
 async function loadBook(bookId) {
-    const supabase = createPublicClient();
-    const { data, error } = await supabase.from("library").select("*").eq("id", bookId).maybeSingle();
-    if (error) throw error;
+    const data = await selectLibraryRow(bookId);
     if (!data) return null;
 
     const payload = libraryRowData(data);
@@ -88,6 +129,7 @@ async function loadBook(bookId) {
     if (!isAnonymous) {
         const ownerId = String(payload.ownerUid || payload.user_id || data.user_id || "").trim();
         if (ownerId) {
+            const supabase = createPublicClient();
             const { data: userRow } = await supabase
                 .from("users")
                 .select("username")
@@ -118,8 +160,7 @@ async function loadAuthor(username) {
     const bio = truncate(data.bio, 320);
     const image = String(data.profile_image_url || "").trim();
 
-    const { data: works, error: worksError } = await supabase.from("library").select("id, data").eq("user_id", data.id);
-    if (worksError) throw worksError;
+    const works = await selectAuthorWorks(data.id);
 
     const books = (works || [])
         .map((row) => {
