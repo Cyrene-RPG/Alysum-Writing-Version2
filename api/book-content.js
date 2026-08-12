@@ -4,10 +4,13 @@ const { libraryRowData, SUPABASE_URL, createPublicClient } = require("../lib/seo
 const { encodeLibraryChapters, isAlreadyEncodedAtRest } = require("../lib/shield-encode.js");
 
 function serviceRoleKey() {
+    // Prefer the standard name. Also accept a misnamed Vercel "Secret" entry
+    // so chapter reads keep working until the env is renamed.
     return String(
         process.env.SUPABASE_SERVICE_ROLE_KEY ||
             process.env.SUPABASE_SECRET_KEY ||
             process.env.SUPABASE_SERVICE_KEY ||
+            process.env.Secret ||
             ""
     ).trim();
 }
