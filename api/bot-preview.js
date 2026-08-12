@@ -17,7 +17,13 @@ const { isAiBotUserAgent } = require("../lib/bot-agents.js");
 
 function createServiceClient() {
     const url = String(process.env.SUPABASE_URL || SUPABASE_URL || "").trim();
-    const key = String(process.env.SUPABASE_SERVICE_ROLE_KEY || "").trim();
+    const key = String(
+        process.env.SUPABASE_SERVICE_ROLE_KEY ||
+            process.env.SUPABASE_SECRET_KEY ||
+            process.env.SUPABASE_SERVICE_KEY ||
+            process.env.Secret ||
+            ""
+    ).trim();
     if (!url || !key) return null;
     return createClient(url, key);
 }
