@@ -238,10 +238,12 @@
     .side-footer { padding: 14px 16px; border-top: 1px solid rgba(255,255,255,0.08); font-size: 13px; color: #dbe3eb; background: #2a3a49; }
     body.dark .side-footer { background: #162132; }
     .main { flex: 1; min-width: 0; display: flex; flex-direction: column; height: 100vh; }
-    .topbar { min-height: 64px; background: var(--topbar-bg); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; gap: 10px; position: relative; z-index: 15; overflow: visible; }
-    .topbar-left, .topbar-right { display: flex; align-items: center; gap: 10px; min-width: 0; overflow: visible; }
-    .topbar-right { justify-content: flex-end; }
-    .icon-btn { width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--border); background: var(--topbar-bg); color: var(--page-text); font-size: 22px; line-height: 1; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
+    .topbar { min-height: 52px; background: var(--topbar-bg); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 6px 12px; gap: 12px; position: relative; z-index: 15; overflow: visible; }
+    .topbar-left, .topbar-right { display: flex; align-items: center; gap: 8px; min-width: 0; flex-shrink: 0; overflow: visible; }
+    .topbar-right { justify-content: flex-end; margin-left: auto; }
+    .topbar-tools { flex: 1; min-width: 0; display: flex; align-items: center; overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; }
+    .topbar-tools::-webkit-scrollbar { height: 4px; }
+    .icon-btn { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border); background: var(--topbar-bg); color: var(--page-text); font-size: 18px; line-height: 1; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
     .topbar .icon-btn:not(.danger) {
         background: linear-gradient(135deg, var(--theme-header-mid, var(--alysum-purple-dark)), var(--theme-header-end, var(--alysum-purple)));
         border-color: var(--theme-header-mid, var(--alysum-purple));
@@ -272,7 +274,7 @@
         box-shadow: 0 0 20px rgba(124, 58, 237, 0.25);
     }
     .icon-btn.danger { background: var(--danger); border-color: var(--danger); color: white; }
-    .top-title { font-size: 18px; font-weight: 700; color: var(--page-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 36vw; }
+    .top-title { font-size: 15px; font-weight: 700; color: var(--page-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 12rem; }
     .save-status { font-size: 13px; color: var(--page-subtle); font-weight: 700; }
     .save-status.is-offline { color: #b45309; }
     .save-status.is-pending-sync { color: #0369a1; }
@@ -403,17 +405,20 @@
     .topbar-more-item .more-icon { width: 22px; text-align: center; font-size: 16px; flex-shrink: 0; }
     .topbar-more-item.danger { color: var(--danger); }
     .topbar-more-item.danger:hover { background: rgba(220, 38, 38, 0.08); }
-    .topbar-collapse-btn { font-size: 14px; font-weight: 900; letter-spacing: -0.04em; flex-shrink: 0; }
-    body.topbar-collapsed .topbar-actions { display: none; }
+    .topbar-collapse-btn { font-size: 13px; font-weight: 900; letter-spacing: -0.04em; flex-shrink: 0; }
+    body.topbar-collapsed .topbar-tools { display: none; }
     body.topbar-collapsed .topbar { min-height: 44px; padding-top: 4px; padding-bottom: 4px; }
-    body.topbar-collapsed #toolbar,
-    body.topbar-collapsed .comic-toolbar,
-    body.topbar-collapsed .script-toolbar { display: none !important; }
     body.topbar-collapsed .sprint-float { top: 56px; }
-    @media (min-width: 761px) {
-        .topbar { min-height: 72px; }
-        .topbar-divider { height: 32px; }
+    .tool-cluster { display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; }
+    .topbar .script-toolbar {
+        min-height: 0;
+        background: transparent;
+        border: none;
+        padding: 0;
+        flex-wrap: nowrap;
+        gap: 8px;
     }
+    .topbar .script-toolbar-hint { display: none; }
     .editor-tooltip {
         position: fixed;
         z-index: 100000;
@@ -435,15 +440,15 @@
     }
     .editor-tooltip.is-visible { opacity: 1; visibility: visible; }
     body.dark .editor-tooltip { background: #0f172a; color: #e2e8f0; border: 1px solid #334155; }
-    .toolbar { min-height: 54px; background: var(--toolbar-bg); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; padding: 8px 12px; overflow-x: auto; flex-wrap: wrap; }
+    .toolbar { min-height: 0; background: transparent; border: none; display: flex; align-items: center; gap: 8px; padding: 0; overflow: visible; flex-wrap: nowrap; }
     .tool-btn, .tool-select { height: 36px; border: 1px solid var(--border); background: var(--topbar-bg); border-radius: 10px; color: var(--page-text); font-size: 14px; font-weight: 700; padding: 0 12px; cursor: pointer; }
     #pageLayoutBtn { min-width: 5.5rem; }
     #fontSelect { min-width: 9.5rem; max-width: 12rem; }
     #fontSizeSelect { min-width: 8.5rem; max-width: 11rem; }
     #findReplaceBtn { font-size: 17px; line-height: 1; padding: 0 11px; }
     .toolbar-spacer { flex: 1; min-width: 8px; }
-    .sprint-btn { height: 36px; border: 1px solid var(--border); background: linear-gradient(135deg, var(--alysum-purple), #a855f7); color: white; border-radius: 999px; padding: 0 14px; font-size: 14px; font-weight: 900; cursor: pointer; white-space: nowrap; }
-    .sprint-float { position: fixed; top: 122px; right: 14px; z-index: 2500; display: none; }
+    .sprint-btn { height: 32px; border: 1px solid var(--border); background: linear-gradient(135deg, var(--alysum-purple), #a855f7); color: white; border-radius: 999px; padding: 0 12px; font-size: 13px; font-weight: 900; cursor: pointer; white-space: nowrap; }
+    .sprint-float { position: fixed; top: 72px; right: 14px; z-index: 2500; display: none; }
     .sprint-float.open { display: block; }
     .sprint-float-box { background: var(--page-bg); color: var(--page-text); border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 18px 46px rgba(0,0,0,0.22); padding: 12px; min-width: 190px; }
     .sprint-float-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
@@ -536,13 +541,13 @@
     body.comic-mode .bottom-meta { margin-top: 18px; }
     .comic-toolbar {
         display: none;
-        min-height: 54px;
-        background: var(--toolbar-bg);
-        border-bottom: 1px solid var(--border);
+        min-height: 0;
+        background: transparent;
+        border: none;
         align-items: center;
-        gap: 10px;
-        padding: 8px 12px;
-        flex-wrap: wrap;
+        gap: 8px;
+        padding: 0;
+        flex-wrap: nowrap;
     }
     body.comic-mode .comic-toolbar { display: flex; }
     .comic-upload-btn, .comic-action-btn {
@@ -825,7 +830,7 @@
     }
     body.comic-mode .toolbar-wordcount { display: none; }
     body.copyright-template-mode .toolbar-wordcount { display: none; }
-    @media (max-width: 900px) {
+    @media (max-width: 1100px) {
         .toolbar-wordcount { display: none; }
     }
     .overlay { display: none; }
@@ -1023,84 +1028,42 @@
             font-size: 12px;
         }
         .sidebar-book-title { font-size: 21px; }
-        .top-title { max-width: 40vw; }
+        .top-title { max-width: 8rem; }
         .page-content { padding: 42px 24px 60px; }
         .chapter-title { font-size: 22px; margin-bottom: 32px; }
         .editor { font-size: 17px; line-height: 1.7; }
-        .topbar { min-height: 52px; flex-wrap: nowrap; row-gap: 0; padding: 6px 8px; gap: 6px; }
-        .topbar-left, .topbar-right { flex-wrap: nowrap; min-width: 0; gap: 6px; }
-        .topbar-right { flex: 1; justify-content: flex-end; min-width: 0; overflow: visible; gap: 6px; }
-        .topbar-actions { flex: 1; justify-content: flex-end; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
-        .topbar-actions::-webkit-scrollbar { display: none; }
-        .topbar-group { gap: 4px; }
-        .topbar-group-label { display: none; }
-        .topbar-group-labeled { flex-direction: row; }
-        .topbar-divider { height: 22px; }
+        .topbar { min-height: 48px; padding: 6px 8px; gap: 8px; }
+        .topbar-left, .topbar-right { gap: 6px; }
         .topbar-right .save-status { display: none; }
-        .topbar-right .pd-toggle { padding: 6px 10px; font-size: 11px; }
     }
-    .toolbar-mobile-toggle-wrap { display: none; }
     @media (max-width: 600px) {
-        .toolbar-mobile-toggle-wrap { display: inline-flex; }
-        .toolbar-mobile-toggle { font-size: 15px; font-weight: 900; letter-spacing: -0.02em; }
-        .toolbar-mobile-toggle.is-active { background: linear-gradient(135deg, var(--theme-header-mid, var(--alysum-purple-dark)), var(--theme-header-end, var(--alysum-purple))); border-color: var(--theme-header-mid, var(--alysum-purple)); color: #fff; }
-        body:not(.toolbar-mobile-open) #toolbar { display: none !important; }
-        body:not(.toolbar-mobile-open).comic-mode .comic-toolbar { display: none !important; }
-        body.toolbar-mobile-open.script-mode #toolbar { display: none !important; }
-        body.toolbar-mobile-open #toolbar {
-            display: grid !important;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: 6px;
-            padding: 8px 10px;
-            min-height: 0;
-            overflow: visible;
-            align-items: stretch;
+        .top-title { max-width: 6.5rem; font-size: 14px; }
+        .topbar-tools {
+            display: flex;
         }
-        body.toolbar-mobile-open #toolbar .tool-btn,
-        body.toolbar-mobile-open #toolbar .tool-select {
-            width: 100%;
-            min-width: 0;
-            max-width: none;
-            padding: 0 6px;
+        .topbar .toolbar,
+        .topbar .comic-toolbar,
+        .topbar .script-toolbar {
+            display: flex;
+            flex-wrap: nowrap;
+        }
+        body.comic-mode .topbar .toolbar,
+        body.script-mode .topbar .toolbar { display: none !important; }
+        body.comic-mode .topbar .comic-toolbar { display: flex; }
+        body.script-mode .topbar .script-toolbar { display: flex; }
+        .topbar .tool-btn,
+        .topbar .tool-select {
+            height: 32px;
             font-size: 12px;
-            height: 34px;
+            padding: 0 8px;
         }
-        body.toolbar-mobile-open #toolbar #fontSelect { min-width: 0; }
-        body.toolbar-mobile-open #toolbar .toolbar-spacer { display: none; }
-        body.toolbar-mobile-open #toolbar .sprint-anchor { grid-column: 1 / -1; }
-        body.toolbar-mobile-open #toolbar .sprint-btn { width: 100%; }
-        body.toolbar-mobile-open.comic-mode .comic-toolbar {
-            display: flex !important;
-            flex-direction: column;
-            align-items: stretch;
-            gap: 8px;
-            min-height: 0;
-            padding: 8px 10px;
-        }
-        body.toolbar-mobile-open.comic-mode .comic-upload-btn,
-        body.toolbar-mobile-open.comic-mode .comic-action-btn { width: 100%; justify-content: center; }
-        body.toolbar-mobile-open.script-mode .script-toolbar {
-            display: flex !important;
-            flex-direction: column;
-            align-items: stretch;
-            gap: 8px;
-            min-height: 0;
-            padding: 8px 10px;
-        }
-        body.toolbar-mobile-open.script-mode .script-element-picker,
-        body.toolbar-mobile-open.script-mode .script-element-picker-btn,
-        body.toolbar-mobile-open.script-mode .script-format-group .tool-btn,
-        body.toolbar-mobile-open.script-mode #scriptFindReplaceBtn { width: 100%; justify-content: center; }
-        body.toolbar-mobile-open.script-mode .script-format-group { width: 100%; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
-        body.toolbar-mobile-open.script-mode .script-toolbar-spacer { display: none; }
-        body.toolbar-mobile-open.script-mode .script-toolbar-meta { width: 100%; justify-content: center; }
-        body:not(.toolbar-mobile-open) .sprint-float { top: 72px; }
+        .sprint-float { top: 64px; }
     }
     @media (max-width: 480px) {
         .workspace { padding: 16px 10px 40px; }
         .page-content { padding: 32px 16px 48px; }
         .sidebar { width: min(300px, 94vw); }
-        .top-title { max-width: 34vw; font-size: 16px; }
+        .top-title { max-width: 5.5rem; font-size: 13px; }
     }
     body.word-war-embed.alysum-with-workspace-nav > .wd-welcome-bar,
     body.word-war-embed.alysum-with-workspace-nav > .wd-nav-wrap { display: none !important; }
@@ -1270,54 +1233,65 @@
         <div class="topbar-left">
             <span class="topbar-tip" data-tip="Sidebar on / off"><button class="icon-btn" id="toggleSidebarBtn" type="button" aria-label="Toggle sidebar">☰</button></span>
             <span class="topbar-tip" data-tip="Studio — your books"><button class="icon-btn" id="homeBtn" type="button" aria-label="Back to Studio">🏠</button></span>
-            <span class="topbar-tip toolbar-mobile-toggle-wrap" data-tip="Show formatting tools"><button class="icon-btn toolbar-mobile-toggle" id="toggleToolbarBtn" type="button" aria-label="Show formatting tools" aria-expanded="false" aria-controls="toolbar comicToolbar scriptToolbar">Aa</button></span>
             <div class="top-title" id="topBookTitle">Loading...</div>
         </div>
-        <div class="topbar-right">
-            <div class="topbar-actions" id="topbarActions">
-                <div class="topbar-group topbar-group-labeled" aria-label="Write">
-                    <span class="topbar-group-label">Write</span>
-                    <div class="topbar-group-row">
-                        <span class="topbar-tip" data-tip="New chapter"><button class="icon-btn" id="quickAddBtn" type="button" aria-label="Add chapter">＋</button></span>
-                        <span class="topbar-tip" data-tip="Notes"><button class="icon-btn" id="nbBtn" type="button" aria-label="Notes">⌘</button></span>
-                        <span class="topbar-tip" data-tip="Story Board (Alt+P)"><a class="pd-toggle" id="storyBoardLink" href="story-board/">Story Board</a></span>
-                    </div>
+        <div class="topbar-tools" id="editorChromeTools">
+            <div class="toolbar" id="toolbar">
+                <div class="tool-cluster" aria-label="Text style">
+                    <button class="tool-btn" type="button" data-cmd="bold" data-tip="Bold">B</button>
+                    <button class="tool-btn" type="button" data-cmd="italic" data-tip="Italic"><em>I</em></button>
+                    <button class="tool-btn" type="button" data-cmd="underline" data-tip="Underline"><u>U</u></button>
                 </div>
                 <span class="topbar-divider" aria-hidden="true"></span>
-                <div class="topbar-group topbar-group-labeled" aria-label="Chapter">
-                    <span class="topbar-group-label">Chapter</span>
-                    <div class="topbar-group-row">
-                        <span class="topbar-tip" data-tip="Rename chapter"><button class="icon-btn" id="renameChapterBtn" type="button" aria-label="Rename chapter">📝</button></span>
-                        <span class="topbar-tip" data-tip="Chapter content warnings"><button class="icon-btn" id="chapterWarningsBtn" type="button" aria-label="Chapter warnings">⚠</button></span>
-                    </div>
+                <div class="tool-cluster" aria-label="Structure">
+                    <button class="tool-btn" type="button" data-cmd="insertUnorderedList" data-tip="Bulleted list">• List</button>
+                    <button class="tool-btn" type="button" data-cmd="insertOrderedList" data-tip="Numbered list">1. List</button>
+                    <button class="tool-btn" type="button" id="quoteBtn" data-tip="Block quote">❝</button>
+                    <button class="tool-btn" type="button" id="findReplaceBtn" data-tip="Find and replace (Ctrl+F)" aria-label="Find and replace">🔍</button>
                 </div>
                 <span class="topbar-divider" aria-hidden="true"></span>
-                <div class="topbar-group topbar-group-labeled" aria-label="Share">
-                    <span class="topbar-group-label">Share</span>
-                    <div class="topbar-group-row">
-                        <span class="topbar-tip" data-tip="Publish to web"><button class="icon-btn" id="publishTopBtn" type="button" aria-label="Publish">🚀</button></span>
-                        <span class="topbar-tip" data-tip="Share unpublished draft with beta readers" id="betaShareTopLinkWrap"><a class="icon-btn" id="betaShareTopLink" href="beta-room-manage.html" aria-label="Beta share">✉</a></span>
-                        <span class="topbar-tip" data-tip="Invite editors to suggest chapter changes" id="collabShareTopLinkWrap"><a class="icon-btn" id="collabShareTopLink" href="collab-room-manage.html" aria-label="Collab invite">👥</a></span>
-                    </div>
+                <div class="tool-cluster" aria-label="Type">
+                    <select class="tool-select" id="formatSelect" data-tip="Paragraph style" aria-label="Paragraph style"><option value="p">Body</option><option value="h2">Heading</option></select>
+                    <select class="tool-select" id="fontSelect" data-tip="Font — highlight text to apply to selection, or sets chapter default" aria-label="Font"></select>
+                    <select class="tool-select" id="fontSizeSelect" data-tip="Editor text size — chapter default" aria-label="Text size"></select>
                 </div>
                 <span class="topbar-divider" aria-hidden="true"></span>
-                <div class="topbar-group topbar-group-labeled" aria-label="Book">
-                    <span class="topbar-group-label">Book</span>
-                    <div class="topbar-group-row">
-                        <span class="topbar-tip" data-tip="Version history (Ctrl+Shift+H)"><button class="icon-btn" id="historyTopBtn" type="button" aria-label="Version history">🕘</button></span>
-                        <span class="topbar-tip" data-tip="Export / print"><button class="icon-btn" id="exportBtn" type="button" aria-label="Export">📄</button></span>
-                    </div>
-                </div>
-                <span class="topbar-divider" aria-hidden="true"></span>
-                <div class="topbar-more-wrap">
-                    <span class="topbar-tip" data-tip="More options"><button class="icon-btn" id="topbarMoreBtn" type="button" aria-label="More options" aria-expanded="false" aria-haspopup="true" aria-controls="topbarMoreMenu">⋯</button></span>
-                    <div class="topbar-more-menu hidden" id="topbarMoreMenu" role="menu">
-                        <button class="topbar-more-item" id="themeTopBtn" type="button" role="menuitem"><span class="more-icon" aria-hidden="true">◐</span>Light / dark</button>
-                        <button class="topbar-more-item danger" id="deleteBookTopBtn" type="button" role="menuitem"><span class="more-icon" aria-hidden="true">🗑</span>Delete book</button>
-                    </div>
+                <div class="tool-cluster" aria-label="Insert">
+                    <button class="tool-btn" type="button" id="insertImageBtn" data-tip="Insert image at cursor">＋ Image</button>
+                    <input id="inlineImageUploadInput" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden />
+                    <button class="tool-btn" type="button" id="insertSceneBreakBtn" data-tip="Insert scene break">✦ Break</button>
+                    <button class="tool-btn" type="button" id="pageLayoutBtn" data-tip="Infinite scroll — click for paginated pages" aria-pressed="false">Scroll</button>
+                    <button class="tool-btn" type="button" id="backgroundBtn" data-tip="Set editor background image">Background</button>
                 </div>
             </div>
-            <span class="topbar-tip topbar-collapse-wrap" data-tip="Hide toolbar"><button class="icon-btn topbar-collapse-btn" id="toggleTopbarBtn" type="button" aria-label="Hide toolbar" aria-expanded="true" aria-controls="topbarActions toolbar comicToolbar scriptToolbar">▲</button></span>
+            <div class="comic-toolbar" id="comicToolbar" aria-label="Comic page tools">
+                <label class="comic-upload-btn" for="comicPageUploadInput">Add images<input id="comicPageUploadInput" type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple /></label>
+                <button type="button" class="comic-action-btn danger" id="comicRemoveImageBtn">Clear all images</button>
+                <span class="comic-upload-status" id="comicUploadStatus" aria-live="polite"></span>
+            </div>
+            <div class="script-toolbar" id="scriptToolbar" aria-label="Script formatting tools">
+                <div class="script-element-picker">
+                    <button type="button" class="script-element-picker-btn" id="scriptElementPickerBtn" aria-haspopup="listbox" aria-expanded="false" aria-controls="scriptElementMenu" data-tip="Element selection — Tab to switch">
+                        <span class="script-element-picker-label" id="scriptElementPickerLabel">Scene Heading</span>
+                        <span class="script-element-picker-hint">Tab to switch</span>
+                        <span class="script-element-picker-caret" aria-hidden="true">▾</span>
+                    </button>
+                    <div class="script-element-menu hidden" id="scriptElementMenu" role="listbox" aria-label="Script element types"></div>
+                </div>
+                <span class="topbar-divider" aria-hidden="true"></span>
+                <div class="script-format-group tool-cluster" aria-label="Line formatting">
+                    <button class="tool-btn" type="button" data-script-cmd="bold" data-tip="Bold (Ctrl+B)">B</button>
+                    <button class="tool-btn" type="button" data-script-cmd="italic" data-tip="Italic (Ctrl+I)"><em>I</em></button>
+                    <button class="tool-btn" type="button" data-script-cmd="underline" data-tip="Underline (Ctrl+U)"><u>U</u></button>
+                </div>
+                <button class="tool-btn" type="button" id="scriptFindReplaceBtn" data-tip="Find and replace (Ctrl+F)" aria-label="Find and replace">🔍</button>
+                <span class="script-toolbar-hint" id="scriptToolbarHint">Tab — switch element · Enter — next line type</span>
+            </div>
+        </div>
+        <div class="topbar-right">
+            <div class="toolbar-wordcount" id="chromeWordcount" aria-live="polite"><span id="chapterWords">0</span> <span id="bottomMetaLabel">chapter words</span> · <span id="bottomTotalWords">0</span> <span id="bottomTotalLabel">total words</span></div>
+            <span class="sprint-anchor" id="sprintAnchor"><button class="sprint-btn" id="sprintToolbarBtn" type="button" data-tip="Writing sprint timer" aria-label="Sprint timer">⏱ Sprint</button></span>
+            <span class="topbar-tip topbar-collapse-wrap" data-tip="Hide formatting tools"><button class="icon-btn topbar-collapse-btn" id="toggleTopbarBtn" type="button" aria-label="Hide formatting tools" aria-expanded="true" aria-controls="editorChromeTools">▲</button></span>
             <div class="save-status" id="saveStatus" data-tip="Save status" aria-live="polite">Loading...</div>
         </div>
     </div>
@@ -1327,51 +1301,7 @@
             <div class="offline-banner-title" id="offlineBannerTitle">Offline mode</div>
             <div class="offline-banner-sub" id="offlineBannerSub">Your writing is saved on this device.</div>
         </div>
-    </div><div class="toolbar" id="toolbar">
-    <button class="tool-btn" type="button" data-cmd="bold" data-tip="Bold">B</button>
-    <button class="tool-btn" type="button" data-cmd="italic" data-tip="Italic"><em>I</em></button>
-    <button class="tool-btn" type="button" data-cmd="underline" data-tip="Underline"><u>U</u></button>
-    <button class="tool-btn" type="button" data-cmd="insertUnorderedList" data-tip="Bulleted list">• List</button>
-    <button class="tool-btn" type="button" data-cmd="insertOrderedList" data-tip="Numbered list">1. List</button>
-    <button class="tool-btn" type="button" id="quoteBtn" data-tip="Block quote">❝</button>
-    <button class="tool-btn" type="button" id="findReplaceBtn" data-tip="Find and replace (Ctrl+F)" aria-label="Find and replace">🔍</button>
-    <select class="tool-select" id="formatSelect" data-tip="Paragraph style" aria-label="Paragraph style"><option value="p">Body</option><option value="h2">Heading</option></select>
-    <select class="tool-select" id="fontSelect" data-tip="Font — highlight text to apply to selection, or sets chapter default" aria-label="Font"></select>
-    <select class="tool-select" id="fontSizeSelect" data-tip="Editor text size — chapter default" aria-label="Text size"></select>
-    <button class="tool-btn" type="button" id="insertImageBtn" data-tip="Insert image at cursor">＋ Image</button>
-    <input id="inlineImageUploadInput" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden />
-    <button class="tool-btn" type="button" id="insertSceneBreakBtn" data-tip="Insert scene break">✦ Break</button>
-    <button class="tool-btn" type="button" id="pageLayoutBtn" data-tip="Infinite scroll — click for paginated pages" aria-pressed="false">Scroll</button>
-    <button class="tool-btn" type="button" id="backgroundBtn" data-tip="Set editor background image">Background</button>
-    <div class="toolbar-spacer"></div>
-    <div class="toolbar-wordcount bottom-meta" aria-live="polite"><span id="chapterWords">0</span> <span id="bottomMetaLabel">chapter words</span> · <span id="bottomTotalWords">0</span> <span id="bottomTotalLabel">total words</span></div>
-    <span class="sprint-anchor" id="sprintAnchor"><button class="sprint-btn" id="sprintToolbarBtn" type="button" data-tip="Writing sprint timer" aria-label="Sprint timer">⏱ Sprint</button></span>
-</div>
-<div class="comic-toolbar" id="comicToolbar" aria-label="Comic page tools">
-    <label class="comic-upload-btn" for="comicPageUploadInput">Add images<input id="comicPageUploadInput" type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple /></label>
-    <button type="button" class="comic-action-btn danger" id="comicRemoveImageBtn">Clear all images</button>
-    <span class="comic-upload-status" id="comicUploadStatus" aria-live="polite"></span>
-</div>
-<div class="script-toolbar" id="scriptToolbar" aria-label="Script formatting tools">
-    <div class="script-element-picker">
-        <button type="button" class="script-element-picker-btn" id="scriptElementPickerBtn" aria-haspopup="listbox" aria-expanded="false" aria-controls="scriptElementMenu" data-tip="Element selection — Tab to switch">
-            <span class="script-element-picker-label" id="scriptElementPickerLabel">Scene Heading</span>
-            <span class="script-element-picker-hint">Tab to switch</span>
-            <span class="script-element-picker-caret" aria-hidden="true">▾</span>
-        </button>
-        <div class="script-element-menu hidden" id="scriptElementMenu" role="listbox" aria-label="Script element types"></div>
     </div>
-    <div class="script-format-group" aria-label="Line formatting">
-        <button class="tool-btn" type="button" data-script-cmd="bold" data-tip="Bold (Ctrl+B)">B</button>
-        <button class="tool-btn" type="button" data-script-cmd="italic" data-tip="Italic (Ctrl+I)"><em>I</em></button>
-        <button class="tool-btn" type="button" data-script-cmd="underline" data-tip="Underline (Ctrl+U)"><u>U</u></button>
-    </div>
-    <button class="tool-btn" type="button" id="scriptFindReplaceBtn" data-tip="Find and replace (Ctrl+F)" aria-label="Find and replace">🔍</button>
-    <span class="script-toolbar-hint" id="scriptToolbarHint">Tab — switch element · Enter — next line type</span>
-    <div class="toolbar-spacer script-toolbar-spacer"></div>
-    <div class="toolbar-wordcount bottom-meta script-toolbar-meta" aria-live="polite"></div>
-    <span class="sprint-anchor script-toolbar-meta" id="scriptSprintAnchor"></span>
-</div>
 <div class="bg-bar" id="backgroundBar" aria-label="Editor background image">
     <label class="bg-field" style="flex:0 1 180px;"><span class="bg-label">Fit</span><select class="bg-input" id="backgroundFitSelect" aria-label="Background image fit"><option value="cover">Cover</option><option value="contain">Contain</option><option value="original">Original</option><option value="tile">Tile</option></select></label>
     <div class="bg-actions">
@@ -2124,10 +2054,6 @@ function rememberBookId(id) {
     const scriptTitleField = document.getElementById("scriptTitleField");
     const scriptAuthorField = document.getElementById("scriptAuthorField");
     const scriptContactField = document.getElementById("scriptContactField");
-    const toolbarWordcount = document.querySelector("#toolbar .toolbar-wordcount");
-    const sprintAnchor = document.getElementById("sprintAnchor");
-    const scriptToolbarMetaWordcount = document.querySelector("#scriptToolbar .toolbar-wordcount");
-    const scriptSprintAnchor = document.getElementById("scriptSprintAnchor");
     const bottomMetaLabel = document.getElementById("bottomMetaLabel");
     const bottomTotalLabel = document.getElementById("bottomTotalLabel");
     const sidebarMetaPrimaryLabel = document.getElementById("sidebarMetaPrimaryLabel");
@@ -2379,30 +2305,9 @@ function rememberBookId(id) {
         if (sidebarMetaPrimaryLabel) sidebarMetaPrimaryLabel.textContent = comic ? "pages uploaded" : "words";
         if (sidebarMetaSecondaryLabel) sidebarMetaSecondaryLabel.textContent = comic ? "pages" : (script ? "scenes" : "chapters");
         if (bottomMetaLabel) bottomMetaLabel.textContent = script ? "scene words" : "chapter words";
-        applyScriptToolbarMeta();
         applyScriptTitlePageUI();
         renderScriptSceneNav();
         applyEditorPageLayoutUI();
-    }
-
-    function applyScriptToolbarMeta() {
-        const script = isCurrentBookScript() && !isCurrentBookComic();
-        if (!toolbarWordcount || !scriptToolbarMetaWordcount || !sprintAnchor || !scriptSprintAnchor) return;
-        if (script) {
-            if (scriptToolbarMetaWordcount.childNodes.length === 0 && toolbarWordcount.childNodes.length) {
-                scriptToolbarMetaWordcount.replaceChildren(...toolbarWordcount.childNodes);
-            }
-            if (scriptSprintAnchor.childNodes.length === 0 && sprintAnchor.childNodes.length) {
-                scriptSprintAnchor.replaceChildren(...sprintAnchor.childNodes);
-            }
-        } else {
-            if (toolbarWordcount.childNodes.length === 0 && scriptToolbarMetaWordcount.childNodes.length) {
-                toolbarWordcount.replaceChildren(...scriptToolbarMetaWordcount.childNodes);
-            }
-            if (sprintAnchor.childNodes.length === 0 && scriptSprintAnchor.childNodes.length) {
-                sprintAnchor.replaceChildren(...scriptSprintAnchor.childNodes);
-            }
-        }
     }
 
     function parseScriptTitlePageContent(html) {
@@ -3250,7 +3155,7 @@ function rememberBookId(id) {
     }
     function toggleTheme() { applyTheme(document.body.classList.contains("dark") ? "light" : "dark"); }
     themeToggleBtn.addEventListener("click", toggleTheme);
-    themeTopBtn.addEventListener("click", toggleTheme);
+    themeTopBtn?.addEventListener("click", toggleTheme);
     homeBtn.onclick = () => { window.location.href = "writer-dashboard.html"; };
 
     function backgroundUploadStorageValue() {
@@ -3471,9 +3376,7 @@ function rememberBookId(id) {
             syncMobileToolbarUi();
             return;
         }
-        let open = false;
-        try { open = sessionStorage.getItem(TOOLBAR_MOBILE_OPEN_KEY) === "1"; } catch (_) {}
-        setMobileToolbarOpen(open, false);
+        setMobileToolbarOpen(true, false);
     }
     toggleToolbarBtn?.addEventListener("click", toggleMobileToolbar);
     window.addEventListener("resize", applyResponsiveMobileToolbar);
@@ -3510,9 +3413,9 @@ function rememberBookId(id) {
         const collapsed = document.body.classList.contains("topbar-collapsed");
         toggleTopbarBtn.textContent = collapsed ? "▼" : "▲";
         toggleTopbarBtn.setAttribute("aria-expanded", collapsed ? "false" : "true");
-        toggleTopbarBtn.setAttribute("aria-label", collapsed ? "Show toolbar" : "Hide toolbar");
+        toggleTopbarBtn.setAttribute("aria-label", collapsed ? "Show formatting tools" : "Hide formatting tools");
         const tip = toggleTopbarBtn.closest(".topbar-tip");
-        if (tip) tip.dataset.tip = collapsed ? "Show toolbar" : "Hide toolbar";
+        if (tip) tip.dataset.tip = collapsed ? "Show formatting tools" : "Hide formatting tools";
     }
     function setTopbarCollapsed(collapsed, persist = true) {
         document.body.classList.toggle("topbar-collapsed", collapsed);
@@ -5198,11 +5101,11 @@ function rememberBookId(id) {
             setSaveStatus("Save failed");
         }
     });
-    quickAddBtn.addEventListener("click", () => addChapterTo("body"));
+    quickAddBtn?.addEventListener("click", () => addChapterTo("body"));
     deleteBookBtn.addEventListener("click", deleteBook);
-    deleteBookTopBtn.addEventListener("click", deleteBook);
+    deleteBookTopBtn?.addEventListener("click", deleteBook);
     publishBtn.addEventListener("click", () => void openPublishModal());
-    publishTopBtn.addEventListener("click", () => void openPublishModal());
+    publishTopBtn?.addEventListener("click", () => void openPublishModal());
     closePublishBtn.addEventListener("click", closePublishModal);
     publishNextBtn.addEventListener("click", onPublishNextClick);
     publishBypassNo?.addEventListener("click", () => { resetPublishBypassUI(); goToPublishPage(); });
@@ -5356,7 +5259,7 @@ function rememberBookId(id) {
         try { await saveBook("Saved"); } catch (e) { console.error(e); setSaveStatus("Save failed"); }
     });
 
-    renameChapterBtn.addEventListener("click", async () => {
+    renameChapterBtn?.addEventListener("click", async () => {
         const ch = currentChapter();
         const name = await alysumPrompt("Rename chapter?", ch.title || "");
         if (!name) return;
