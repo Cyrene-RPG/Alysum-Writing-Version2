@@ -423,7 +423,7 @@
         queryLibraryCatalog,
         supportLinksList,
     } from "./js/author-profile.js?v=4";
-    import { processDueChapterReleases, getNextChapterRelease } from "./js/scheduled-chapter-releases.js?v=3";
+    import { processDueChapterReleases, getNextChapterRelease, livePublishedChapterIds } from "./js/scheduled-chapter-releases.js?v=4";
     import {
         formatChapterProgress,
         formatChapterPositionMeta,
@@ -548,7 +548,7 @@
     function normalizeBook(row) {
         const data = libraryRowData(row);
         const rawChapters = safeArray(data.chapters, []);
-        const publishedIds = safeArray(data.publishedChapterIds, []);
+        const publishedIds = livePublishedChapterIds(data);
         const rawTags = safeArray(data.tags).length ? safeArray(data.tags) : safeArray(data.extraTags);
         let chapters = rawChapters.map((chapter, index) => {
             const item = safeObject(chapter, {});
@@ -566,7 +566,7 @@
                 ...chapterTypographyPayload(item),
             };
         });
-        if (publishedIds.length) chapters = chapters.filter(ch => publishedIds.includes(ch.id));
+        if (publishedIds !== undefined) chapters = chapters.filter(ch => publishedIds.includes(ch.id));
         chapters.sort((a, b) => a.order - b.order);
         const serialization = serializationFromBookData(data);
         const totalWords = safeNumber(data.words, chapters.reduce((sum, ch) => sum + safeNumber(ch.words, 0), 0));
@@ -1227,7 +1227,10 @@
             await recordStoryView();
 
             if (!currentBook.chapters.length) {
-                showError("This story has no readable chapters.");
+                const upcoming = formatNextChapterReleaseNote(nextPendingRelease);
+                showError(upcoming
+                    ? `No chapters are live yet. ${upcoming}`
+                    : "This story has no readable chapters.");
                 topbarTitle.textContent = currentBook.title || "Untitled";
                 renderMeta();
                 await loadLikeState();

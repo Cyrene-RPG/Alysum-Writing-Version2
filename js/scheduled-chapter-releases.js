@@ -191,6 +191,37 @@ export function formatScheduleDisplay(iso, options = {}) {
 }
 
 /**
+ * Published chapter IDs from library payload.
+ * `undefined` means a legacy row with no field (treat every stored chapter as live).
+ * An empty array means nothing is live yet (e.g. first publish is all scheduled).
+ * @param {Record<string, unknown>} [data]
+ * @returns {string[] | undefined}
+ */
+export function livePublishedChapterIds(data) {
+    if (!data || typeof data !== "object") return undefined;
+    if (Array.isArray(data.publishedChapterIds)) {
+        return data.publishedChapterIds.filter((id) => typeof id === "string" && id);
+    }
+    if (Array.isArray(data.published_chapter_ids)) {
+        return data.published_chapter_ids.filter((id) => typeof id === "string" && id);
+    }
+    return undefined;
+}
+
+/**
+ * Hide chapters that are queued for later release. Empty published IDs hide all
+ * chapters; a missing field keeps legacy “everything in chapters is live” behavior.
+ * @param {Array<Record<string, unknown>>} chapters
+ * @param {string[] | undefined} publishedIds
+ */
+export function filterLiveChapters(chapters, publishedIds) {
+    const list = Array.isArray(chapters) ? chapters : [];
+    if (publishedIds === undefined) return list;
+    const allow = new Set(publishedIds);
+    return list.filter((chapter) => chapter && allow.has(chapter.id));
+}
+
+/**
  * When republishing a subset of chapters, keep already-live IDs, add new immediate
  * releases, and hide chapters that are newly scheduled until their release time.
  * @param {string[]} existingIds

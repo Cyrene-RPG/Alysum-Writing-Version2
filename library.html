@@ -216,6 +216,7 @@
         serializationFromBookData,
         serializationStatusLabel,
     } from "./js/story-serialization.js?v=1";
+    import { processDueChapterReleases } from "./js/scheduled-chapter-releases.js?v=4";
 
     const navButtons = document.querySelectorAll(".nav-btn");
     const searchInput = document.getElementById("searchInput");
@@ -530,6 +531,11 @@
         showState("loading");
         resultsText.textContent = "Loading stories...";
         try {
+            try {
+                await processDueChapterReleases();
+            } catch (releaseErr) {
+                console.warn("Could not process scheduled chapter releases.", releaseErr);
+            }
             const { data, error } = await supabase
                 .from("library_catalog")
                 .select("*");

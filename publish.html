@@ -324,7 +324,7 @@
         mergeLibraryChapters,
         buildScheduleSyncPayload,
         MIN_SCHEDULE_LEAD_MS,
-    } from "./js/scheduled-chapter-releases.js?v=3";
+    } from "./js/scheduled-chapter-releases.js?v=4";
     import {
         SERIALIZATION_COMPLETE,
         SERIALIZATION_IN_PROGRESS,
@@ -705,10 +705,13 @@
             const datetimeInput = document.createElement("input");
             datetimeInput.type = "datetime-local";
             datetimeInput.className = "input schedule-datetime";
+            datetimeInput.dataset.chapterId = chapter.id;
             datetimeInput.hidden = modeState.mode !== "scheduled";
             datetimeInput.value = modeState.scheduledAt || defaultScheduleLocalValue();
             datetimeInput.min = toDatetimeLocalValue(new Date(Date.now() + MIN_SCHEDULE_LEAD_MS).toISOString());
-            datetimeInput.addEventListener("change", () => { modeState.scheduledAt = datetimeInput.value; });
+            const persistScheduleTime = () => { modeState.scheduledAt = datetimeInput.value; };
+            datetimeInput.addEventListener("input", persistScheduleTime);
+            datetimeInput.addEventListener("change", persistScheduleTime);
             controls.append(modeWrap, datetimeInput);
             row.append(title, controls);
             releaseScheduleList.appendChild(row);
@@ -752,11 +755,21 @@
         });
     }
 
+    function chapterDatetimeInput(chapterId) {
+        if (!releaseScheduleList) return null;
+        return [...releaseScheduleList.querySelectorAll("input.schedule-datetime")]
+            .find((el) => el.dataset.chapterId === chapterId) || null;
+    }
+
     function buildReleasePlan() {
         const immediate = [];
         const scheduled = [];
         selectedChapterObjects.forEach((chapter) => {
             const modeState = ensureChapterReleaseMode(chapter.id);
+            const datetimeInput = chapterDatetimeInput(chapter.id);
+            if (datetimeInput && modeState.mode === "scheduled") {
+                modeState.scheduledAt = datetimeInput.value;
+            }
             if (modeState.mode === "scheduled") {
                 const iso = fromDatetimeLocalValue(modeState.scheduledAt);
                 scheduled.push({ chapter, scheduledAt: iso });
@@ -1007,7 +1020,15 @@
                 pendingScheduledReleases,
                 selectedChapterObjects.map((ch) => ch.id)
             );
-            await syncScheduledChapterReleases(bookId, schedulePayload);
+            try {
+                await syncScheduledChapterReleases(bookId, schedulePayload);
+            } catch (scheduleErr) {
+                console.error(scheduleErr);
+                currentBook.title = payloadTitle; currentBook.libraryType = libraryShelfSelect.value; currentBook.publishMeta = publishMeta; currentBook.publishedChapterIds = publishedChapterIds; currentBook.isPublished = true; currentBook.sections = updatedSections; isPublished = true;
+                renderBasicInfo(); renderHero(); renderSidebar();
+                setStatus(`Story published, but scheduling failed: ${scheduleErr?.message || "unknown error"}. Click Publish again to retry the schedule.`, "error");
+                return;
+            }
             currentBook.title = payloadTitle; currentBook.libraryType = libraryShelfSelect.value; currentBook.publishMeta = publishMeta; currentBook.publishedChapterIds = publishedChapterIds; currentBook.isPublished = true; currentBook.sections = updatedSections; isPublished = true;
             renderBasicInfo(); renderHero(); renderSidebar(); await refreshPendingSchedules();
             const scheduleNote = scheduled.length

@@ -1174,6 +1174,7 @@
     import { wireHomepageAuth } from "./js/homepage-auth-nav.js?v=1";
     import { homeUrlForUserData } from "./js/account-mode.js?v=1";
     import { formatChapterProgress, serializationFromBookData } from "./js/story-serialization.js?v=1";
+    import { processDueChapterReleases } from "./js/scheduled-chapter-releases.js?v=4";
 
     await wireHomepageAuth(supabase);
 
@@ -1434,6 +1435,11 @@
         empty: true
       });
       try {
+        try {
+          await processDueChapterReleases();
+        } catch (releaseErr) {
+          console.warn("Could not process scheduled chapter releases.", releaseErr);
+        }
         const { data, error } = await supabase.from("library_catalog").select("*");
         if (error && /library_catalog|relation.*does not exist/i.test(String(error.message || error))) {
           const fallback = await supabase.from("library").select("*");

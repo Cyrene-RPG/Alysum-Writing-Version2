@@ -1040,7 +1040,8 @@
         listScheduledChapterReleases,
         formatScheduleDisplay,
         processDueChapterReleases,
-    } from "./js/scheduled-chapter-releases.js?v=3";
+        livePublishedChapterIds,
+    } from "./js/scheduled-chapter-releases.js?v=4";
     import {
         clampDailyWordGoal,
         DEFAULT_DAILY_WORD_GOAL,
@@ -1224,7 +1225,7 @@
     function normalizeBook(id, raw) {
         const data = raw && typeof raw === "object" ? raw : {};
         const rawChapters = safeArray(data.chapters);
-        const publishedIds = safeArray(data.publishedChapterIds);
+        const publishedIds = livePublishedChapterIds(data);
         let chapters = rawChapters.map((chapter, index) => {
             const item = safeObject(chapter, {});
             return {
@@ -1233,7 +1234,7 @@
                 order: typeof item.order === "number" ? item.order : index + 1,
             };
         });
-        if (publishedIds.length) chapters = chapters.filter((ch) => publishedIds.includes(ch.id));
+        if (publishedIds !== undefined) chapters = chapters.filter((ch) => publishedIds.includes(ch.id));
         chapters.sort((a, b) => a.order - b.order);
         return {
             id,

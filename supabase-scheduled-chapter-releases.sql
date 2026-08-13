@@ -2,6 +2,7 @@
 -- Scheduled chapter releases: authors can publish some chapters immediately and
 -- schedule others to go live at a future date/time.
 -- Apply after supabase-library-rls.sql and supabase-publish-cooldown.sql.
+-- Re-run this file after pulling scheduling fixes so process/sync RPCs stay current.
 
 -- ---------------------------------------------------------------------------
 -- 1. Queue table
@@ -194,7 +195,10 @@ BEGIN
     END IF;
 
     v_data := COALESCE(v_lib.data, '{}'::jsonb);
-    v_published_ids := COALESCE(v_data->'publishedChapterIds', '[]'::jsonb);
+    v_published_ids := COALESCE(v_data->'publishedChapterIds', v_data->'published_chapter_ids', '[]'::jsonb);
+    IF jsonb_typeof(v_published_ids) <> 'array' THEN
+      v_published_ids := '[]'::jsonb;
+    END IF;
 
     IF NOT (v_published_ids @> jsonb_build_array(v_row.chapter_id)) THEN
       v_published_ids := v_published_ids || jsonb_build_array(v_row.chapter_id);
@@ -282,13 +286,13 @@ BEGIN
 
   FOR v_item IN SELECT value FROM jsonb_array_elements(p_schedules)
   LOOP
-    v_chapter_id := trim(COALESCE(v_item->>'chapterId', ''));
+    v_chapter_id := trim(COALESCE(v_item->>'chapterId', v_item->>'chapter_id', ''));
     IF v_chapter_id = '' THEN
       CONTINUE;
     END IF;
 
     BEGIN
-      v_scheduled_at := (v_item->>'scheduledAt')::timestamptz;
+      v_scheduled_at := COALESCE(v_item->>'scheduledAt', v_item->>'scheduled_at')::timestamptz;
     EXCEPTION WHEN OTHERS THEN
       RAISE EXCEPTION 'Invalid scheduledAt for chapter %', v_chapter_id;
     END;
@@ -303,12 +307,28 @@ BEGIN
 
     v_keep_ids := array_append(v_keep_ids, v_chapter_id);
 
-    INSERT INTO public.scheduled_chapter_releases (
-      user_id, book_id, chapter_id, scheduled_at, status
-    )
-    VALUES (v_user_id, p_book_id, v_chapter_id, v_scheduled_at, 'pending')
-    ON CONFLICT (book_id, chapter_id) WHERE status = 'pending'
-    DO UPDATE SET scheduled_at = EXCLUDED.scheduled_at;
+    UPDATE public.scheduled_chapter_releases
+    SET scheduled_at = v_scheduled_at
+    WHERE book_id = p_book_id
+      AND chapter_id = v_chapter_id
+      AND user_id = v_user_id
+      AND status = 'pending';
+
+    IF NOT FOUND THEN
+      BEGIN
+        INSERT INTO public.scheduled_chapter_releases (
+          user_id, book_id, chapter_id, scheduled_at, status
+        )
+        VALUES (v_user_id, p_book_id, v_chapter_id, v_scheduled_at, 'pending');
+      EXCEPTION WHEN unique_violation THEN
+        UPDATE public.scheduled_chapter_releases
+        SET scheduled_at = v_scheduled_at
+        WHERE book_id = p_book_id
+          AND chapter_id = v_chapter_id
+          AND user_id = v_user_id
+          AND status = 'pending';
+      END;
+    END IF;
 
     v_inserted := v_inserted + 1;
   END LOOP;
@@ -332,7 +352,8 @@ $$;
 GRANT EXECUTE ON FUNCTION public.sync_scheduled_chapter_releases(text, jsonb) TO authenticated;
 
 -- ---------------------------------------------------------------------------
--- 7. Optional: pg_cron job (enable pg_cron extension in Supabase Dashboard first)
+-- 7. Optional: pg_cron job (enable pg_cron in Supabase Dashboard first)
+--    Releases also run from /api/book-content and /api/process-due-chapter-releases.
 -- ---------------------------------------------------------------------------
 -- SELECT cron.schedule(
 --   'process-due-chapter-releases',

@@ -1,6 +1,6 @@
 const { createClient } = require("@supabase/supabase-js");
 const { isAiBotUserAgent } = require("../lib/bot-agents.js");
-const { libraryRowData, SUPABASE_URL, createPublicClient } = require("../lib/seo-public.js");
+const { libraryRowData, SUPABASE_URL, createPublicClient, livePublishedChapterIds, filterLiveChapters } = require("../lib/seo-public.js");
 const { encodeLibraryChapters, isAlreadyEncodedAtRest } = require("../lib/shield-encode.js");
 
 function serviceRoleKey() {
@@ -50,6 +50,16 @@ async function loadLibraryRow(supabase, bookId) {
     throw primary.error;
 }
 
+async function processDueChapterReleases(supabase, bookId) {
+    const { error } = await supabase.rpc("process_due_chapter_releases", {
+        p_book_id: bookId || null,
+    });
+    if (!error) return;
+    const msg = String(error.message || error);
+    if (/function.*does not exist/i.test(msg)) return;
+    console.warn("process_due_chapter_releases failed", error);
+}
+
 module.exports = async function handler(req, res) {
     if (req.method !== "GET") {
         res.status(405).setHeader("Content-Type", "application/json").send(JSON.stringify({ error: "Method not allowed" }));
@@ -80,6 +90,8 @@ module.exports = async function handler(req, res) {
     }
 
     try {
+        await processDueChapterReleases(supabase, bookId);
+
         const { data, error } = await loadLibraryRow(supabase, bookId);
         if (error) throw error;
         if (!data) {
@@ -93,16 +105,21 @@ module.exports = async function handler(req, res) {
             return;
         }
 
-        const { chapters, shield } = await encodeLibraryChapters(
+        const publishedChapterIds = livePublishedChapterIds(payload);
+        const liveChapters = filterLiveChapters(
             Array.isArray(payload.chapters) ? payload.chapters : [],
-            bookId,
-            { alreadyEncoded: isAlreadyEncodedAtRest(payload) }
+            publishedChapterIds
         );
+
+        const { chapters, shield } = await encodeLibraryChapters(liveChapters, bookId, {
+            alreadyEncoded: isAlreadyEncodedAtRest(payload),
+        });
 
         // Metadata only — never echo unencoded chapter bodies beside the shielded payload.
         const {
             chapters: _dropChapters,
-            publishedChapterIds,
+            publishedChapterIds: _dropPublished,
+            published_chapter_ids: _dropPublishedSnake,
             ...meta
         } = payload;
 
@@ -116,7 +133,9 @@ module.exports = async function handler(req, res) {
         res.status(200).send(
             JSON.stringify({
                 chapters,
-                publishedChapterIds: Array.isArray(publishedChapterIds) ? publishedChapterIds : [],
+                publishedChapterIds: publishedChapterIds === undefined
+                    ? liveChapters.map((ch) => ch && ch.id).filter(Boolean)
+                    : publishedChapterIds,
                 meta,
                 shield,
             })
