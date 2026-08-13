@@ -97,7 +97,7 @@
         width: 320px;
         background: var(--sidebar-bg);
         color: var(--sidebar-text);
-        height: 100vh;
+        height: 100%;
         display: flex;
         flex-direction: column;
         border-right: 1px solid rgba(255,255,255,0.06);
@@ -109,9 +109,49 @@
     .sidebar.mobile-hidden { transform: translateX(-100%); }
     .sidebar-top {
         padding: 18px 16px 14px;
-        border-bottom: 1px solid rgba(255,255,255,0.08);
+        border-bottom: none;
         background: linear-gradient(135deg, var(--alysum-purple-dark), var(--alysum-purple));
+        flex: 0 1 auto;
+        min-height: 88px;
+        overflow: auto;
     }
+    .sidebar.is-split .sidebar-top {
+        flex: 0 0 var(--sidebar-top-height, 280px);
+        height: var(--sidebar-top-height, 280px);
+        max-height: var(--sidebar-top-height, 280px);
+    }
+    .sidebar-split {
+        flex: 0 0 10px;
+        height: 10px;
+        border: none;
+        padding: 0;
+        margin: 0;
+        cursor: ns-resize;
+        background: #2a3a49;
+        position: relative;
+        z-index: 2;
+    }
+    .sidebar-split::after {
+        content: "";
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 36px;
+        height: 3px;
+        border-radius: 999px;
+        background: rgba(255,255,255,0.35);
+        transform: translate(-50%, -50%);
+    }
+    .sidebar-split:hover,
+    .sidebar.is-resizing .sidebar-split {
+        background: #3b5062;
+    }
+    .sidebar-split:hover::after,
+    .sidebar.is-resizing .sidebar-split::after {
+        background: #c4b5fd;
+    }
+    .sidebar.is-resizing,
+    .sidebar.is-resizing * { cursor: ns-resize !important; user-select: none !important; }
     .sidebar-eyebrow {
         font-size: 11px;
         font-weight: 800;
@@ -237,12 +277,56 @@
     .empty-slot { padding: 12px 18px 18px; color: #aeb9c5; font-style: italic; font-size: 14px; }
     .side-footer { padding: 14px 16px; border-top: 1px solid rgba(255,255,255,0.08); font-size: 13px; color: #dbe3eb; background: #2a3a49; }
     body.dark .side-footer { background: #162132; }
-    .main { flex: 1; min-width: 0; display: flex; flex-direction: column; height: 100vh; }
-    .topbar { min-height: 52px; background: var(--topbar-bg); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 6px 12px; gap: 12px; position: relative; z-index: 15; overflow: visible; }
-    .topbar-left, .topbar-right { display: flex; align-items: center; gap: 8px; min-width: 0; flex-shrink: 0; overflow: visible; }
+    body.alysum-with-workspace-nav.alysum-tool-editor > .alysum-tool-root {
+        flex-direction: column;
+    }
+    .editor-body {
+        display: flex;
+        flex: 1;
+        min-width: 0;
+        min-height: 0;
+        overflow: hidden;
+        position: relative;
+    }
+    .main {
+        flex: 1;
+        min-width: 0;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+    .topbar {
+        min-height: 48px;
+        width: 100%;
+        flex-shrink: 0;
+        background: var(--topbar-bg);
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        flex-wrap: nowrap;
+        padding: 6px 10px;
+        gap: 10px;
+        position: relative;
+        z-index: 40;
+        overflow: visible;
+    }
+    .topbar-left, .topbar-right {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex: 0 0 auto;
+        overflow: visible;
+    }
     .topbar-right { justify-content: flex-end; margin-left: auto; }
-    .topbar-tools { flex: 1; min-width: 0; display: flex; align-items: center; overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; }
-    .topbar-tools::-webkit-scrollbar { height: 4px; }
+    .topbar-tools {
+        flex: 1 1 auto;
+        min-width: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: visible;
+    }
     .icon-btn { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border); background: var(--topbar-bg); color: var(--page-text); font-size: 18px; line-height: 1; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
     .topbar .icon-btn:not(.danger) {
         background: linear-gradient(135deg, var(--theme-header-mid, var(--alysum-purple-dark)), var(--theme-header-end, var(--alysum-purple)));
@@ -274,7 +358,7 @@
         box-shadow: 0 0 20px rgba(124, 58, 237, 0.25);
     }
     .icon-btn.danger { background: var(--danger); border-color: var(--danger); color: white; }
-    .top-title { font-size: 15px; font-weight: 700; color: var(--page-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 12rem; }
+    .top-title { font-size: 14px; font-weight: 700; color: var(--page-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 9rem; }
     .save-status { font-size: 13px; color: var(--page-subtle); font-weight: 700; }
     .save-status.is-offline { color: #b45309; }
     .save-status.is-pending-sync { color: #0369a1; }
@@ -367,12 +451,40 @@
         user-select: none;
     }
     .topbar-divider { width: 1px; height: 26px; background: var(--border); opacity: 0.55; flex-shrink: 0; }
-    .topbar-more-wrap { position: relative; flex-shrink: 0; }
+    .topbar-label-btn {
+        height: 32px;
+        border-radius: 999px;
+        padding: 0 12px;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        cursor: pointer;
+        white-space: nowrap;
+        font-family: inherit;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        flex-shrink: 0;
+        border: 1px solid var(--theme-header-mid, var(--alysum-purple));
+        background: linear-gradient(135deg, var(--theme-header-mid, var(--alysum-purple-dark)), var(--theme-header-end, var(--alysum-purple)));
+        color: #fff;
+    }
+    .topbar-label-btn:hover { filter: brightness(1.08); }
+    .topbar-label-btn.secondary {
+        background: var(--topbar-bg);
+        color: var(--page-text);
+        border-color: var(--border);
+    }
+    .topbar-label-btn.secondary:hover { background: rgba(109, 40, 217, 0.08); filter: none; }
+    .topbar-label-caret { font-size: 10px; line-height: 1; opacity: 0.85; }
+    .topbar-more-wrap { position: relative; flex-shrink: 0; z-index: 20; }
     .topbar-more-menu {
         position: absolute;
         top: calc(100% + 8px);
         right: 0;
-        min-width: 210px;
+        min-width: 240px;
+        max-height: min(72vh, 560px);
+        overflow-y: auto;
         padding: 6px;
         border-radius: 12px;
         border: 1px solid var(--border);
@@ -384,12 +496,29 @@
         gap: 2px;
     }
     .topbar-more-menu.hidden { display: none; }
+    .topbar-more-label {
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--page-subtle);
+        padding: 8px 12px 4px;
+        user-select: none;
+    }
+    .topbar-more-label:first-child { padding-top: 4px; }
+    .topbar-more-sep {
+        height: 1px;
+        background: var(--border);
+        margin: 6px 8px;
+        opacity: 0.65;
+        flex-shrink: 0;
+    }
     .topbar-more-item {
         display: flex;
         align-items: center;
         gap: 10px;
         width: 100%;
-        padding: 10px 12px;
+        padding: 9px 12px;
         border: none;
         border-radius: 8px;
         background: transparent;
@@ -400,6 +529,7 @@
         cursor: pointer;
         text-decoration: none;
         font-family: inherit;
+        box-sizing: border-box;
     }
     .topbar-more-item:hover { background: rgba(109, 40, 217, 0.1); }
     .topbar-more-item .more-icon { width: 22px; text-align: center; font-size: 16px; flex-shrink: 0; }
@@ -441,13 +571,13 @@
     .editor-tooltip.is-visible { opacity: 1; visibility: visible; }
     body.dark .editor-tooltip { background: #0f172a; color: #e2e8f0; border: 1px solid #334155; }
     .toolbar { min-height: 0; background: transparent; border: none; display: flex; align-items: center; gap: 8px; padding: 0; overflow: visible; flex-wrap: nowrap; }
-    .tool-btn, .tool-select { height: 36px; border: 1px solid var(--border); background: var(--topbar-bg); border-radius: 10px; color: var(--page-text); font-size: 14px; font-weight: 700; padding: 0 12px; cursor: pointer; }
-    #pageLayoutBtn { min-width: 5.5rem; }
-    #fontSelect { min-width: 9.5rem; max-width: 12rem; }
-    #fontSizeSelect { min-width: 8.5rem; max-width: 11rem; }
+    .tool-btn, .tool-select { height: 32px; border: 1px solid var(--border); background: var(--topbar-bg); border-radius: 8px; color: var(--page-text); font-size: 13px; font-weight: 700; padding: 0 9px; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
+    #pageLayoutBtn { min-width: 4.5rem; }
+    #fontSelect { min-width: 7rem; max-width: 9rem; }
+    #fontSizeSelect { min-width: 6.5rem; max-width: 8.5rem; }
     #findReplaceBtn { font-size: 17px; line-height: 1; padding: 0 11px; }
     .toolbar-spacer { flex: 1; min-width: 8px; }
-    .sprint-btn { height: 32px; border: 1px solid var(--border); background: linear-gradient(135deg, var(--alysum-purple), #a855f7); color: white; border-radius: 999px; padding: 0 12px; font-size: 13px; font-weight: 900; cursor: pointer; white-space: nowrap; }
+    .sprint-btn { height: 32px; border: 1px solid var(--border); background: linear-gradient(135deg, var(--alysum-purple), #a855f7); color: white; border-radius: 999px; padding: 0 12px; font-size: 13px; font-weight: 900; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
     .sprint-float { position: fixed; top: 72px; right: 14px; z-index: 2500; display: none; }
     .sprint-float.open { display: block; }
     .sprint-float-box { background: var(--page-bg); color: var(--page-text); border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 18px 46px rgba(0,0,0,0.22); padding: 12px; min-width: 190px; }
@@ -830,8 +960,16 @@
     }
     body.comic-mode .toolbar-wordcount { display: none; }
     body.copyright-template-mode .toolbar-wordcount { display: none; }
-    @media (max-width: 1100px) {
+    @media (max-width: 1180px) {
         .toolbar-wordcount { display: none; }
+        .topbar-collapse-wrap { display: none; }
+    }
+    @media (max-width: 1400px) {
+        .toolbar-wordcount { display: none; }
+    }
+    @media (max-width: 1100px) {
+        .topbar-collapse-wrap,
+        .topbar-right .save-status { display: none; }
     }
     .overlay { display: none; }
     .publish-modal, .sprint-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.65); display: none; align-items: center; justify-content: center; z-index: 99999; padding: 20px; }
@@ -1035,6 +1173,7 @@
         .topbar { min-height: 48px; padding: 6px 8px; gap: 8px; }
         .topbar-left, .topbar-right { gap: 6px; }
         .topbar-right .save-status { display: none; }
+        .topbar-collapse-wrap { display: none; }
     }
     @media (max-width: 600px) {
         .top-title { max-width: 6.5rem; font-size: 14px; }
@@ -1179,7 +1318,97 @@
                 </div>
             </div>
         </div>
-    </div><div class="alysum-tool-root"><div class="sidebar mobile-hidden" id="sidebar">
+    </div><div class="alysum-tool-root">
+<div class="topbar">
+        <div class="topbar-left">
+            <span class="topbar-tip" data-tip="Sidebar on / off"><button class="icon-btn" id="toggleSidebarBtn" type="button" aria-label="Toggle sidebar">☰</button></span>
+            <div class="top-title" id="topBookTitle">Loading...</div>
+        </div>
+        <div class="topbar-tools" id="editorChromeTools">
+            <div class="toolbar" id="toolbar">
+                <div class="tool-cluster" aria-label="Text style">
+                    <button class="tool-btn" type="button" data-cmd="bold" data-tip="Bold">B</button>
+                    <button class="tool-btn" type="button" data-cmd="italic" data-tip="Italic"><em>I</em></button>
+                    <button class="tool-btn" type="button" data-cmd="underline" data-tip="Underline"><u>U</u></button>
+                </div>
+                <span class="topbar-divider" aria-hidden="true"></span>
+                <div class="tool-cluster" aria-label="Structure">
+                    <button class="tool-btn" type="button" data-cmd="insertUnorderedList" data-tip="Bulleted list">•</button>
+                    <button class="tool-btn" type="button" data-cmd="insertOrderedList" data-tip="Numbered list">1.</button>
+                    <button class="tool-btn" type="button" id="quoteBtn" data-tip="Block quote">❝</button>
+                    <button class="tool-btn" type="button" id="findReplaceBtn" data-tip="Find and replace (Ctrl+F)" aria-label="Find and replace">🔍</button>
+                </div>
+                <span class="topbar-divider" aria-hidden="true"></span>
+                <div class="tool-cluster" aria-label="Type">
+                    <select class="tool-select" id="formatSelect" data-tip="Paragraph style" aria-label="Paragraph style"><option value="p">Body</option><option value="h2">Heading</option></select>
+                    <select class="tool-select" id="fontSelect" data-tip="Font — highlight text to apply to selection, or sets chapter default" aria-label="Font"></select>
+                    <select class="tool-select" id="fontSizeSelect" data-tip="Editor text size — chapter default" aria-label="Text size"></select>
+                </div>
+                <span class="topbar-divider" aria-hidden="true"></span>
+                <div class="tool-cluster" aria-label="Insert">
+                    <button class="tool-btn" type="button" id="insertImageBtn" data-tip="Insert image at cursor">Image</button>
+                    <input id="inlineImageUploadInput" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden />
+                    <button class="tool-btn" type="button" id="insertSceneBreakBtn" data-tip="Insert scene break">Break</button>
+                    <button class="tool-btn" type="button" id="pageLayoutBtn" data-tip="Infinite scroll — click for paginated pages" aria-pressed="false">Scroll</button>
+                    <button class="tool-btn" type="button" id="backgroundBtn" data-tip="Set editor background image">Background</button>
+                </div>
+            </div>
+            <div class="comic-toolbar" id="comicToolbar" aria-label="Comic page tools">
+                <label class="comic-upload-btn" for="comicPageUploadInput">Add images<input id="comicPageUploadInput" type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple /></label>
+                <button type="button" class="comic-action-btn danger" id="comicRemoveImageBtn">Clear all images</button>
+                <span class="comic-upload-status" id="comicUploadStatus" aria-live="polite"></span>
+            </div>
+            <div class="script-toolbar" id="scriptToolbar" aria-label="Script formatting tools">
+                <div class="script-element-picker">
+                    <button type="button" class="script-element-picker-btn" id="scriptElementPickerBtn" aria-haspopup="listbox" aria-expanded="false" aria-controls="scriptElementMenu" data-tip="Element selection — Tab to switch">
+                        <span class="script-element-picker-label" id="scriptElementPickerLabel">Scene Heading</span>
+                        <span class="script-element-picker-hint">Tab to switch</span>
+                        <span class="script-element-picker-caret" aria-hidden="true">▾</span>
+                    </button>
+                    <div class="script-element-menu hidden" id="scriptElementMenu" role="listbox" aria-label="Script element types"></div>
+                </div>
+                <span class="topbar-divider" aria-hidden="true"></span>
+                <div class="script-format-group tool-cluster" aria-label="Line formatting">
+                    <button class="tool-btn" type="button" data-script-cmd="bold" data-tip="Bold (Ctrl+B)">B</button>
+                    <button class="tool-btn" type="button" data-script-cmd="italic" data-tip="Italic (Ctrl+I)"><em>I</em></button>
+                    <button class="tool-btn" type="button" data-script-cmd="underline" data-tip="Underline (Ctrl+U)"><u>U</u></button>
+                </div>
+                <button class="tool-btn" type="button" id="scriptFindReplaceBtn" data-tip="Find and replace (Ctrl+F)" aria-label="Find and replace">🔍</button>
+                <span class="script-toolbar-hint" id="scriptToolbarHint">Tab — switch element · Enter — next line type</span>
+            </div>
+        </div>
+        <div class="topbar-right">
+            <div class="toolbar-wordcount" id="chromeWordcount" aria-live="polite"><span id="chapterWords">0</span> <span id="bottomMetaLabel">chapter words</span> · <span id="bottomTotalWords">0</span> <span id="bottomTotalLabel">total words</span></div>
+            <span class="sprint-anchor" id="sprintAnchor"><button class="sprint-btn" id="sprintToolbarBtn" type="button" data-tip="Writing sprint timer" aria-label="Sprint timer">⏱ Sprint</button></span>
+            <span class="topbar-tip" data-tip="Dark mode"><button class="icon-btn" id="themeTopBtn" type="button" aria-label="Toggle dark mode">◐</button></span>
+            <span class="topbar-tip topbar-collapse-wrap" data-tip="Hide formatting tools"><button class="icon-btn topbar-collapse-btn" id="toggleTopbarBtn" type="button" aria-label="Hide formatting tools" aria-expanded="true" aria-controls="editorChromeTools">▲</button></span>
+            <div class="save-status" id="saveStatus" data-tip="Save status" aria-live="polite">Loading...</div>
+            <span class="topbar-tip" data-tip="Publish to web"><button class="topbar-label-btn" id="publishTopBtn" type="button">Publish</button></span>
+            <div class="topbar-more-wrap">
+                <span class="topbar-tip" data-tip="Chapter, notes, share, and book tools"><button class="topbar-label-btn" id="topbarMoreBtn" type="button" aria-label="Actions" aria-expanded="false" aria-haspopup="true" aria-controls="topbarMoreMenu">Actions <span class="topbar-label-caret" aria-hidden="true">▾</span></button></span>
+                <div class="topbar-more-menu hidden" id="topbarMoreMenu" role="menu">
+                    <div class="topbar-more-label">Write</div>
+                    <button class="topbar-more-item" id="quickAddBtn" type="button" role="menuitem"><span class="more-icon" aria-hidden="true">＋</span>New chapter</button>
+                    <button class="topbar-more-item" id="nbBtn" type="button" role="menuitem"><span class="more-icon" aria-hidden="true">⌘</span>Notes</button>
+                    <a class="topbar-more-item" id="storyBoardLink" href="story-board/" role="menuitem"><span class="more-icon" aria-hidden="true">▦</span>Story Board</a>
+                    <div class="topbar-more-sep" aria-hidden="true"></div>
+                    <div class="topbar-more-label">Chapter</div>
+                    <button class="topbar-more-item" id="renameChapterBtn" type="button" role="menuitem"><span class="more-icon" aria-hidden="true">📝</span>Rename chapter</button>
+                    <button class="topbar-more-item" id="chapterWarningsBtn" type="button" role="menuitem"><span class="more-icon" aria-hidden="true">⚠</span>Content warnings</button>
+                    <div class="topbar-more-sep" aria-hidden="true"></div>
+                    <div class="topbar-more-label">Share</div>
+                    <div id="betaShareTopLinkWrap"><a class="topbar-more-item" id="betaShareTopLink" href="beta-room-manage.html" role="menuitem"><span class="more-icon" aria-hidden="true">✉</span>Beta share</a></div>
+                    <div id="collabShareTopLinkWrap"><a class="topbar-more-item" id="collabShareTopLink" href="collab-room-manage.html" role="menuitem"><span class="more-icon" aria-hidden="true">👥</span>Collab invite</a></div>
+                    <div class="topbar-more-sep" aria-hidden="true"></div>
+                    <div class="topbar-more-label">Book</div>
+                    <button class="topbar-more-item" id="historyTopBtn" type="button" role="menuitem"><span class="more-icon" aria-hidden="true">🕘</span>Version history</button>
+                    <button class="topbar-more-item" id="exportBtn" type="button" role="menuitem"><span class="more-icon" aria-hidden="true">📄</span>Export</button>
+                    <button class="topbar-more-item danger" id="deleteBookTopBtn" type="button" role="menuitem"><span class="more-icon" aria-hidden="true">🗑</span>Delete book</button>
+                </div>
+            </div>
+        </div>
+    </div>
+<div class="editor-body"><div class="sidebar mobile-hidden" id="sidebar">
     <div class="sidebar-top">
         <div class="sidebar-eyebrow">Manuscript</div>
         <div class="sidebar-title-block">
@@ -1218,6 +1447,7 @@
             </section>
         </div>
     </div>
+    <button class="sidebar-split" id="sidebarSplit" type="button" aria-label="Drag to resize chapter list" data-tip="Drag to move book contents up or down"></button>
     <div class="manuscript">
         <div class="script-scene-nav" id="scriptSceneNav" aria-label="Scene navigation">
             <div class="script-scene-nav-title">Scenes</div>
@@ -1229,73 +1459,7 @@
     </div>
     <div class="side-footer"><span id="footerWords">0</span> words</div>
 </div><div class="overlay hidden" id="overlay"></div><div class="main">
-    <div class="topbar">
-        <div class="topbar-left">
-            <span class="topbar-tip" data-tip="Sidebar on / off"><button class="icon-btn" id="toggleSidebarBtn" type="button" aria-label="Toggle sidebar">☰</button></span>
-            <span class="topbar-tip" data-tip="Studio — your books"><button class="icon-btn" id="homeBtn" type="button" aria-label="Back to Studio">🏠</button></span>
-            <div class="top-title" id="topBookTitle">Loading...</div>
-        </div>
-        <div class="topbar-tools" id="editorChromeTools">
-            <div class="toolbar" id="toolbar">
-                <div class="tool-cluster" aria-label="Text style">
-                    <button class="tool-btn" type="button" data-cmd="bold" data-tip="Bold">B</button>
-                    <button class="tool-btn" type="button" data-cmd="italic" data-tip="Italic"><em>I</em></button>
-                    <button class="tool-btn" type="button" data-cmd="underline" data-tip="Underline"><u>U</u></button>
-                </div>
-                <span class="topbar-divider" aria-hidden="true"></span>
-                <div class="tool-cluster" aria-label="Structure">
-                    <button class="tool-btn" type="button" data-cmd="insertUnorderedList" data-tip="Bulleted list">• List</button>
-                    <button class="tool-btn" type="button" data-cmd="insertOrderedList" data-tip="Numbered list">1. List</button>
-                    <button class="tool-btn" type="button" id="quoteBtn" data-tip="Block quote">❝</button>
-                    <button class="tool-btn" type="button" id="findReplaceBtn" data-tip="Find and replace (Ctrl+F)" aria-label="Find and replace">🔍</button>
-                </div>
-                <span class="topbar-divider" aria-hidden="true"></span>
-                <div class="tool-cluster" aria-label="Type">
-                    <select class="tool-select" id="formatSelect" data-tip="Paragraph style" aria-label="Paragraph style"><option value="p">Body</option><option value="h2">Heading</option></select>
-                    <select class="tool-select" id="fontSelect" data-tip="Font — highlight text to apply to selection, or sets chapter default" aria-label="Font"></select>
-                    <select class="tool-select" id="fontSizeSelect" data-tip="Editor text size — chapter default" aria-label="Text size"></select>
-                </div>
-                <span class="topbar-divider" aria-hidden="true"></span>
-                <div class="tool-cluster" aria-label="Insert">
-                    <button class="tool-btn" type="button" id="insertImageBtn" data-tip="Insert image at cursor">＋ Image</button>
-                    <input id="inlineImageUploadInput" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden />
-                    <button class="tool-btn" type="button" id="insertSceneBreakBtn" data-tip="Insert scene break">✦ Break</button>
-                    <button class="tool-btn" type="button" id="pageLayoutBtn" data-tip="Infinite scroll — click for paginated pages" aria-pressed="false">Scroll</button>
-                    <button class="tool-btn" type="button" id="backgroundBtn" data-tip="Set editor background image">Background</button>
-                </div>
-            </div>
-            <div class="comic-toolbar" id="comicToolbar" aria-label="Comic page tools">
-                <label class="comic-upload-btn" for="comicPageUploadInput">Add images<input id="comicPageUploadInput" type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple /></label>
-                <button type="button" class="comic-action-btn danger" id="comicRemoveImageBtn">Clear all images</button>
-                <span class="comic-upload-status" id="comicUploadStatus" aria-live="polite"></span>
-            </div>
-            <div class="script-toolbar" id="scriptToolbar" aria-label="Script formatting tools">
-                <div class="script-element-picker">
-                    <button type="button" class="script-element-picker-btn" id="scriptElementPickerBtn" aria-haspopup="listbox" aria-expanded="false" aria-controls="scriptElementMenu" data-tip="Element selection — Tab to switch">
-                        <span class="script-element-picker-label" id="scriptElementPickerLabel">Scene Heading</span>
-                        <span class="script-element-picker-hint">Tab to switch</span>
-                        <span class="script-element-picker-caret" aria-hidden="true">▾</span>
-                    </button>
-                    <div class="script-element-menu hidden" id="scriptElementMenu" role="listbox" aria-label="Script element types"></div>
-                </div>
-                <span class="topbar-divider" aria-hidden="true"></span>
-                <div class="script-format-group tool-cluster" aria-label="Line formatting">
-                    <button class="tool-btn" type="button" data-script-cmd="bold" data-tip="Bold (Ctrl+B)">B</button>
-                    <button class="tool-btn" type="button" data-script-cmd="italic" data-tip="Italic (Ctrl+I)"><em>I</em></button>
-                    <button class="tool-btn" type="button" data-script-cmd="underline" data-tip="Underline (Ctrl+U)"><u>U</u></button>
-                </div>
-                <button class="tool-btn" type="button" id="scriptFindReplaceBtn" data-tip="Find and replace (Ctrl+F)" aria-label="Find and replace">🔍</button>
-                <span class="script-toolbar-hint" id="scriptToolbarHint">Tab — switch element · Enter — next line type</span>
-            </div>
-        </div>
-        <div class="topbar-right">
-            <div class="toolbar-wordcount" id="chromeWordcount" aria-live="polite"><span id="chapterWords">0</span> <span id="bottomMetaLabel">chapter words</span> · <span id="bottomTotalWords">0</span> <span id="bottomTotalLabel">total words</span></div>
-            <span class="sprint-anchor" id="sprintAnchor"><button class="sprint-btn" id="sprintToolbarBtn" type="button" data-tip="Writing sprint timer" aria-label="Sprint timer">⏱ Sprint</button></span>
-            <span class="topbar-tip topbar-collapse-wrap" data-tip="Hide formatting tools"><button class="icon-btn topbar-collapse-btn" id="toggleTopbarBtn" type="button" aria-label="Hide formatting tools" aria-expanded="true" aria-controls="editorChromeTools">▲</button></span>
-            <div class="save-status" id="saveStatus" data-tip="Save status" aria-live="polite">Loading...</div>
-        </div>
-    </div>
-    <div class="offline-banner hidden" id="offlineBanner" role="status" aria-live="polite" aria-atomic="true">
+        <div class="offline-banner hidden" id="offlineBanner" role="status" aria-live="polite" aria-atomic="true">
         <span class="offline-banner-icon" id="offlineBannerIcon" aria-hidden="true">📡</span>
         <div class="offline-banner-copy">
             <div class="offline-banner-title" id="offlineBannerTitle">Offline mode</div>
@@ -1441,7 +1605,7 @@
             </div>
         </div>
     </div>
-</div><div class="sprint-modal" id="chapterWarningsModal" aria-hidden="true">
+</div></div><div class="sprint-modal" id="chapterWarningsModal" aria-hidden="true">
     <div class="sprint-modal-box chapter-warnings-modal-box">
         <h2 class="sprint-modal-title" id="chapterWarningsModalTitle">Chapter content warnings</h2>
         <p class="sprint-modal-text" id="chapterWarningsModalSubtitle">Tag what appears in this chapter. Every category needs at least one choice.</p>
@@ -1885,7 +2049,6 @@ function rememberBookId(id) {
     const toggleToolbarBtn = document.getElementById("toggleToolbarBtn");
     const TOOLBAR_MOBILE_OPEN_KEY = "alysum-editor-toolbar-open";
     const PHONE_MAX_WIDTH = 600;
-    const homeBtn = document.getElementById("homeBtn");
     const addChapterBtn = document.getElementById("addChapterBtn");
     const deleteChapterBtn = document.getElementById("deleteChapterBtn");
     const renameBookBtn = document.getElementById("renameBookBtn");
@@ -3151,12 +3314,16 @@ function rememberBookId(id) {
         const dark = theme === "dark";
         document.body.classList.toggle("dark", dark);
         localStorage.setItem("alysum-theme", theme);
-        themeToggleBtn.textContent = dark ? "Light Mode" : "Dark Mode";
+        if (themeToggleBtn) themeToggleBtn.textContent = dark ? "Light Mode" : "Dark Mode";
+        if (themeTopBtn) {
+            themeTopBtn.setAttribute("aria-label", dark ? "Switch to light mode" : "Switch to dark mode");
+            const tip = themeTopBtn.closest(".topbar-tip");
+            if (tip) tip.dataset.tip = dark ? "Light mode" : "Dark mode";
+        }
     }
     function toggleTheme() { applyTheme(document.body.classList.contains("dark") ? "light" : "dark"); }
-    themeToggleBtn.addEventListener("click", toggleTheme);
+    themeToggleBtn?.addEventListener("click", toggleTheme);
     themeTopBtn?.addEventListener("click", toggleTheme);
-    homeBtn.onclick = () => { window.location.href = "writer-dashboard.html"; };
 
     function backgroundUploadStorageValue() {
         return `upload:${EDITOR_BACKGROUND_UPLOAD_ID}`;
@@ -3341,6 +3508,57 @@ function rememberBookId(id) {
         else { sidebar.classList.remove("mobile-hidden"); overlay.classList.add("hidden"); }
     }
     window.addEventListener("resize", applyResponsiveSidebar);
+
+    const sidebarSplit = document.getElementById("sidebarSplit");
+    const sidebarTop = sidebar?.querySelector(".sidebar-top");
+    const SIDEBAR_TOP_H_KEY = "alysum-editor-sidebar-top-h";
+    function clampSidebarTopHeight(px) {
+        const total = sidebar?.clientHeight || 0;
+        const footerH = sidebar?.querySelector(".side-footer")?.offsetHeight || 48;
+        const minTop = 88;
+        const minManuscript = 120;
+        const maxTop = Math.max(minTop, total - footerH - minManuscript - 10);
+        return Math.round(Math.max(minTop, Math.min(maxTop, px)));
+    }
+    function applySidebarTopHeight(px, persist = true) {
+        if (!sidebar || !sidebarTop) return;
+        const h = clampSidebarTopHeight(px);
+        sidebar.style.setProperty("--sidebar-top-height", `${h}px`);
+        sidebar.classList.add("is-split");
+        if (persist) {
+            try { localStorage.setItem(SIDEBAR_TOP_H_KEY, String(h)); } catch (_) {}
+        }
+    }
+    function restoreSidebarSplit() {
+        let saved = 0;
+        try { saved = Number(localStorage.getItem(SIDEBAR_TOP_H_KEY) || 0); } catch (_) {}
+        if (saved > 0) applySidebarTopHeight(saved, false);
+    }
+    sidebarSplit?.addEventListener("pointerdown", (e) => {
+        if (!sidebar || !sidebarTop || e.button !== 0) return;
+        e.preventDefault();
+        sidebar.classList.add("is-resizing");
+        const startY = e.clientY;
+        const startH = sidebarTop.getBoundingClientRect().height;
+        const onMove = (ev) => {
+            applySidebarTopHeight(startH + (ev.clientY - startY), false);
+        };
+        const onUp = (ev) => {
+            window.removeEventListener("pointermove", onMove);
+            window.removeEventListener("pointerup", onUp);
+            sidebar.classList.remove("is-resizing");
+            applySidebarTopHeight(startH + (ev.clientY - startY), true);
+        };
+        window.addEventListener("pointermove", onMove);
+        window.addEventListener("pointerup", onUp);
+    });
+    sidebarSplit?.addEventListener("dblclick", () => {
+        if (!sidebar) return;
+        sidebar.classList.remove("is-split");
+        sidebar.style.removeProperty("--sidebar-top-height");
+        try { localStorage.removeItem(SIDEBAR_TOP_H_KEY); } catch (_) {}
+    });
+    restoreSidebarSplit();
 
     function isPhoneLayout() {
         return window.innerWidth <= PHONE_MAX_WIDTH;
