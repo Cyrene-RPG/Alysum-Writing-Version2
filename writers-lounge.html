@@ -254,7 +254,7 @@
                 senderInitials: m.senderInitials,
                 senderAvatarUrl: m.senderAvatarUrl || "",
                 body: m.body,
-                createdAt: m.createdAt,
+                createdAt: m.createdAt || m.created_at,
                 editedAt: m.editedAt || null,
                 replyTo: m.replyTo || null,
                 mentionedUserIds: m.mentionedUserIds || [],
@@ -308,18 +308,40 @@
             }
         }
 
+        function calendarDayOffset(iso) {
+            const d = parseMessageDate(iso);
+            if (!d) return null;
+            const now = new Date();
+            const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const startThat = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+            return Math.round((startToday - startThat) / 86400000);
+        }
+
+        function formatVisibleStamp(iso) {
+            const d = parseMessageDate(iso);
+            const clock = formatMessageClock(iso);
+            if (!d || !clock) return "";
+            const diffDays = calendarDayOffset(iso);
+            if (diffDays === 0) return clock;
+            if (diffDays === 1) return `Yesterday, ${clock}`;
+            try {
+                const opts = { month: "short", day: "numeric" };
+                if (d.getFullYear() !== new Date().getFullYear()) opts.year = "numeric";
+                return `${d.toLocaleDateString(undefined, opts)}, ${clock}`;
+            } catch {
+                return clock;
+            }
+        }
+
         function formatMessageDateLabel(iso) {
             const d = parseMessageDate(iso);
             if (!d) return "";
             try {
-                const now = new Date();
-                const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-                const startThat = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-                const diffDays = Math.round((startToday - startThat) / 86400000);
+                const diffDays = calendarDayOffset(iso);
                 if (diffDays === 0) return "Today";
                 if (diffDays === 1) return "Yesterday";
                 const opts = { weekday: "short", month: "short", day: "numeric" };
-                if (d.getFullYear() !== now.getFullYear()) opts.year = "numeric";
+                if (d.getFullYear() !== new Date().getFullYear()) opts.year = "numeric";
                 return d.toLocaleDateString(undefined, opts);
             } catch {
                 return "";
@@ -1019,10 +1041,10 @@
             }
 
             const edited = row.editedAt ? " · edited" : "";
-            const clock = formatMessageClock(row.createdAt);
+            const stamp = formatVisibleStamp(row.createdAt);
             const tip = when ? `${when}${row.editedAt ? " (edited)" : ""}` : "";
-            const timeHtml = clock
-                ? `<time class="sms-time" datetime="${escapeHtml(row.createdAt || "")}">${escapeHtml(clock)}${edited}</time>`
+            const timeHtml = stamp
+                ? `<time class="sms-time" datetime="${escapeHtml(row.createdAt || "")}">${escapeHtml(stamp)}${edited}</time>`
                 : "";
 
             return (
