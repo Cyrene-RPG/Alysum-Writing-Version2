@@ -523,6 +523,67 @@ body.light .text-chat-msgs {
     min-width: 0;
 }
 
+.sms-day-sep {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    margin: 14px 0 8px;
+    padding: 0 8px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: #8e8e93;
+    text-transform: none;
+}
+
+.sms-day-sep::before,
+.sms-day-sep::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: rgba(142, 142, 147, 0.28);
+}
+
+.sms-day-sep span {
+    flex-shrink: 0;
+}
+
+body.light .sms-day-sep {
+    color: #6c6c70;
+}
+
+body.light .sms-day-sep::before,
+body.light .sms-day-sep::after {
+    background: rgba(60, 60, 67, 0.18);
+}
+
+.load-older-btn + .sms-day-sep {
+    margin-top: 10px;
+}
+
+.sms-time {
+    display: block;
+    padding: 1px 12px 0;
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 1.2;
+    color: #8e8e93;
+    white-space: nowrap;
+}
+
+.sms-row.sent .sms-time {
+    text-align: right;
+}
+
+.sms-row.recv .sms-time {
+    text-align: left;
+}
+
+body.light .sms-time {
+    color: #6c6c70;
+}
+
 .sms-sender-name {
     padding: 0 12px 2px;
     font-size: 11px;

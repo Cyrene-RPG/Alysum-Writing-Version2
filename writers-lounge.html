@@ -28,7 +28,7 @@
     <link rel="stylesheet" href="css/site-responsive.css?v=1" />
     <link rel="stylesheet" href="css/gradient-themes.css?v=5" />
     <link rel="stylesheet" href="css/workspace-nav.css?v=12" />
-    <link rel="stylesheet" href="css/writer-lounge.css?v=25" />
+    <link rel="stylesheet" href="css/writer-lounge.css?v=26" />
     <script src="js/gradient-theme-sync.js" defer></script>
     <script src="js/body-background-presets-data.js"></script>
 <script src="js/alysum-appearance-boot.js"></script>
@@ -280,15 +280,64 @@
             threadStatus.className = "text-status " + (kind || "wait");
         }
 
-        function formatMessageTime(iso) {
-            if (!iso) return "";
+        function parseMessageDate(iso) {
+            if (!iso) return null;
+            const d = new Date(iso);
+            return Number.isFinite(d.getTime()) ? d : null;
+        }
+
+        function sameCalendarDay(a, b) {
+            const da = parseMessageDate(a);
+            const db = parseMessageDate(b);
+            if (!da || !db) return false;
+            return da.getFullYear() === db.getFullYear()
+                && da.getMonth() === db.getMonth()
+                && da.getDate() === db.getDate();
+        }
+
+        function formatMessageClock(iso) {
+            const d = parseMessageDate(iso);
+            if (!d) return "";
             try {
-                return new Date(iso).toLocaleString(undefined, {
+                return d.toLocaleTimeString(undefined, {
+                    hour: "numeric",
+                    minute: "2-digit"
+                });
+            } catch {
+                return "";
+            }
+        }
+
+        function formatMessageDateLabel(iso) {
+            const d = parseMessageDate(iso);
+            if (!d) return "";
+            try {
+                const now = new Date();
+                const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                const startThat = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+                const diffDays = Math.round((startToday - startThat) / 86400000);
+                if (diffDays === 0) return "Today";
+                if (diffDays === 1) return "Yesterday";
+                const opts = { weekday: "short", month: "short", day: "numeric" };
+                if (d.getFullYear() !== now.getFullYear()) opts.year = "numeric";
+                return d.toLocaleDateString(undefined, opts);
+            } catch {
+                return "";
+            }
+        }
+
+        function formatMessageTime(iso) {
+            const d = parseMessageDate(iso);
+            if (!d) return "";
+            try {
+                const opts = {
                     month: "short",
                     day: "numeric",
                     hour: "numeric",
                     minute: "2-digit"
-                });
+                };
+                if (d.getFullYear() !== new Date().getFullYear()) opts.year = "numeric";
+                return d.toLocaleString(undefined, opts);
             } catch {
                 return "";
             }
@@ -710,6 +759,7 @@
 
         function messageGroupCompact(prev, row) {
             if (!prev || !row || prev.senderId !== row.senderId) return false;
+            if (!sameCalendarDay(prev.createdAt, row.createdAt)) return false;
             const prevTime = new Date(prev.createdAt).getTime();
             const rowTime = new Date(row.createdAt).getTime();
             if (!Number.isFinite(prevTime) || !Number.isFinite(rowTime)) return false;
@@ -968,8 +1018,12 @@
                 );
             }
 
-            const edited = row.editedAt ? " (edited)" : "";
-            const tip = when ? `${when}${edited}` : "";
+            const edited = row.editedAt ? " · edited" : "";
+            const clock = formatMessageClock(row.createdAt);
+            const tip = when ? `${when}${row.editedAt ? " (edited)" : ""}` : "";
+            const timeHtml = clock
+                ? `<time class="sms-time" datetime="${escapeHtml(row.createdAt || "")}">${escapeHtml(clock)}${edited}</time>`
+                : "";
 
             return (
                 `<div class="sms-message-stack">` +
@@ -977,6 +1031,7 @@
                 renderReplyQuote(row) +
                 `<div class="sms-bubble"${tip ? ` title="${escapeHtml(tip)}"` : ""}>${formatMessageHtml(row.body)}</div>` +
                 `</div>` +
+                timeHtml +
                 renderMessageReactions(row) +
                 renderMessageActions(row, mine) +
                 `</div>`
@@ -1180,8 +1235,18 @@
                 const compact = messageGroupCompact(prev, row);
                 const groupEnd = !messageGroupCompact(row, next);
                 const groupStart = !compact;
-                prev = row;
                 const when = formatMessageTime(row.createdAt);
+                if (!prev || !sameCalendarDay(prev.createdAt, row.createdAt)) {
+                    const dateLabel = formatMessageDateLabel(row.createdAt);
+                    if (dateLabel) {
+                        parts.push(
+                            `<div class="sms-day-sep" role="separator">` +
+                            `<span>${escapeHtml(dateLabel)}</span>` +
+                            `</div>`
+                        );
+                    }
+                }
+                prev = row;
 
                 const rowClass =
                     `sms-row ${mine ? "sent" : "recv"}` +
