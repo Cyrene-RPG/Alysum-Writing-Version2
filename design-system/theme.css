@@ -1,0 +1,18 @@
+:root {
+  --color-bg: #020b18;
+  --color-surface: #09162c;
+  --color-surface-2: #0b1a33;
+  --color-text: #f8fafc;
+  --color-muted: #94a3b8;
+  --color-accent: #7c3aed;
+
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-display: "Georgia", "Times New Roman", serif;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+}
