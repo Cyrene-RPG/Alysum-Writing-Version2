@@ -6,48 +6,48 @@
     },
     {
       "source": "/",
-      "destination": "/apps/main-site/pages/index.html"
+      "destination": "/applications/main-site/pages/index.html"
     },
     {
       "source": "/index.html",
-      "destination": "/apps/main-site/pages/index.html"
+      "destination": "/applications/main-site/pages/index.html"
     },
     {
       "source": "/sw.js",
-      "destination": "/apps/main-site/public/sw.js"
+      "destination": "/applications/main-site/public/sw.js"
     },
     {
       "source": "/manifest.webmanifest",
-      "destination": "/apps/main-site/public/manifest.webmanifest"
+      "destination": "/applications/main-site/public/manifest.webmanifest"
     },
     {
       "source": "/robots.txt",
-      "destination": "/apps/main-site/public/robots.txt"
+      "destination": "/applications/main-site/public/robots.txt"
     },
     {
       "source": "/Alysum-3.png",
-      "destination": "/apps/main-site/public/Alysum-3.png"
+      "destination": "/applications/main-site/public/Alysum-3.png"
     },
     {
       "source": "/js/:path*",
-      "destination": "/apps/main-site/ui/:path*"
+      "destination": "/applications/main-site/page-ui/:path*"
     },
     {
       "source": "/css/:path*",
-      "destination": "/apps/main-site/css/:path*"
+      "destination": "/applications/main-site/css-styles/:path*"
     },
     {
       "source": "/assets/:path*",
-      "destination": "/apps/main-site/assets/:path*"
+      "destination": "/applications/main-site/assets/:path*"
     },
     {
       "source": "/:page.html",
-      "destination": "/apps/main-site/pages/:page.html"
+      "destination": "/applications/main-site/pages/:page.html"
     }
   ],
   "headers": [
     {
-      "source": "/core/identity/client.js",
+      "source": "/core/authentication/client.js",
       "headers": [
         {
           "key": "Cache-Control",
@@ -65,7 +65,7 @@
       ]
     },
     {
-      "source": "/design-system/fonts/(.*)",
+      "source": "/site-appearance/fonts/(.*)",
       "headers": [
         {
           "key": "Cache-Control",

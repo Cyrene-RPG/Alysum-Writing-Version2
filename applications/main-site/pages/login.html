@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script type="importmap">
+    {
+      "imports": {
+        "@alysum/site-appearance/": "/site-appearance/",
+        "@alysum/writing-engine/": "/core/writing-engine/",
+        "@alysum/synchronization-engine/": "/core/synchronization-engine/",
+        "@alysum/authentication/": "/core/authentication/",
+        "@alysum/account/": "/core/account/",
+        "@alysum/desktop/": "/core/desktop/",
+        "@alysum/library/": "/core/library/",
+        "@alysum/publishing/": "/core/publishing/",
+        "@alysum/encyclopedia/": "/core/encyclopedia/",
+        "@alysum/collaboration/": "/core/collaboration/"
+      }
+    }
+    </script>
+    <link rel="stylesheet" href="/site-appearance/css-styles/theme.css" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/gradient-themes.css" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/typography.css" />
+    <script src="/site-appearance/body-background-presets-data.js"></script>
+    <script src="/site-appearance/boot.js"></script>
+    <script src="/site-appearance/body-background-sync.js"></script>
+    <!-- ALYSUM:PWA:START -->
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta name="theme-color" content="#7c3aed" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#020b18" media="(prefers-color-scheme: dark)">
+    <meta name="color-scheme" content="dark light">
+    <meta name="application-name" content="Alysum">
+    <meta name="msapplication-TileColor" content="#7c3aed">
+    <meta name="msapplication-TileImage" content="/Alysum-3.png">
+    <link rel="icon" type="image/png" sizes="any" href="/Alysum-3.png">
+    <link rel="apple-touch-icon" href="/Alysum-3.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/Alysum-3.png">
+    <script src="/js/pwa-register.js" defer></script>
+    <script>
+    (function () {
+        var dead = "tiqmhozzxhiydjnyuuaw";
+        try {
+            for (var i = localStorage.length - 1; i >= 0; i--) {
+                var key = localStorage.key(i);
+                if (key && key.indexOf("sb-" + dead) === 0) localStorage.removeItem(key);
+            }
+        } catch (e) {}
+    })();
+    </script>
+    <!-- ALYSUM:PWA:END -->
+    <!-- ALYSUM:ANALYTICS:START -->
+    <script type="module" src="/js/vercel-analytics.js"></script>
+    <!-- ALYSUM:ANALYTICS:END -->
+    <!-- ALYSUM:SEO:START -->
+    <meta charset="UTF-8">
+    <meta name="description" content="Sign in to your Alysum account to write, publish, and read stories.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" data-seo-path="/login.html" href="">
+    <meta property="og:site_name" content="Alysum">
+    <meta property="og:locale" content="en_US">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Login — Alysum">
+    <meta property="og:description" content="Sign in to your Alysum account to write, publish, and read stories.">
+    <meta property="og:image" content="/Alysum-3.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Login — Alysum">
+    <meta name="twitter:description" content="Sign in to your Alysum account to write, publish, and read stories.">
+    <meta name="twitter:image" content="/Alysum-3.png">
+    <script src="/js/seo-meta.js"></script>
+    <!-- ALYSUM:SEO:END -->
+
+
+
+
+    <title>Login — Alysum</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+
+    <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
+
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--login-page-bg);
+        }
+
+        .card {
+            background: white;
+            padding: 28px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 380px;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.2);
+        }
+
+        h2 {
+            margin-top: 0;
+            text-align: center;
+            color: #4c1d95;
+        }
+
+        input {
+            width: 100%;
+            padding: 14px;
+            margin: 10px 0;
+            border-radius: 12px;
+            border: 1px solid #ddd;
+            font-size: 15px;
+        }
+
+        button {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 14px;
+            background: #6d28d9;
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+
+        button:active { transform: scale(0.97); }
+
+        .signup-link {
+            text-align: center;
+            margin-top: 14px;
+            font-size: 14px;
+        }
+
+        .signup-link a {
+            color: #6d28d9;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .signup-link a.is-busy {
+            pointer-events: none;
+            opacity: 0.65;
+        }
+
+        #success-msg {
+            display: none;
+            margin-top: 12px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            font-size: 14px;
+            line-height: 1.45;
+            color: #14532d;
+            background: #dcfce7;
+            border: 1px solid #bbf7d0;
+        }
+
+        #success-msg.visible { display: block; }
+
+        #error-msg {
+            display: none;
+            margin-top: 12px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            font-size: 14px;
+            line-height: 1.45;
+            color: #7f1d1d;
+            background: #fee2e2;
+            border: 1px solid #fecaca;
+        }
+
+        #error-msg.visible { display: block; }
+
+        .session-banner {
+            display: none;
+            margin-bottom: 14px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            font-size: 13px;
+            line-height: 1.45;
+            color: #334155;
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+        }
+
+        .session-banner.visible {
+            display: block;
+        }
+
+        .beta-invite-banner {
+            display: none;
+            margin-bottom: 14px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            font-size: 13px;
+            line-height: 1.45;
+            color: #4c1d95;
+            background: #ede9fe;
+            border: 1px solid #c4b5fd;
+        }
+
+        .beta-invite-banner.visible {
+            display: block;
+        }
+
+        .beta-invite-banner strong {
+            color: #312e81;
+        }
+
+        .session-banner strong {
+            color: #0f172a;
+        }
+
+        .session-banner button {
+            margin-top: 10px;
+            padding: 10px 14px;
+            font-size: 14px;
+            background: #fff;
+            color: #334155;
+            border: 1px solid #cbd5e1;
+        }
+
+        button:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+        }
+
+        .auth-divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 18px 0 14px;
+            color: #64748b;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .auth-divider::before,
+        .auth-divider::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: #e2e8f0;
+        }
+
+        .btn-oauth {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+            background: #fff;
+            color: #1e293b;
+            border: 1px solid #e2e8f0;
+            font-weight: 600;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .btn-oauth svg {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+        }
+
+        .btn-oauth-discord svg {
+            fill: #5865f2;
+        }
+
+        .support-footnote {
+            margin: 18px 0 0;
+            text-align: center;
+            font-size: 12px;
+            line-height: 1.45;
+            color: #64748b;
+        }
+
+        .support-footnote a {
+            color: #6d28d9;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .word-wars-preview-strip {
+            display: none;
+            margin: 0 0 18px;
+            padding: 12px 14px;
+            border-radius: 14px;
+            border: 1px solid rgba(124, 58, 237, 0.25);
+            background: rgba(124, 58, 237, 0.08);
+            color: #5b21b6;
+            font-size: 13px;
+            line-height: 1.5;
+            text-align: center;
+        }
+
+        .word-wars-preview-strip.visible {
+            display: block;
+        }
+
+        .word-wars-preview-strip a {
+            color: #6d28d9;
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .word-wars-preview-strip a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 12px;
+                padding-left: max(12px, env(safe-area-inset-left, 0px));
+                padding-right: max(12px, env(safe-area-inset-right, 0px));
+                padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
+            }
+        }
+    </style>
+
+    <script src="/site-appearance/gradient-theme-sync.js" defer></script>
+</head>
+
+<body>
+
+<div class="card">
+    <h2>Welcome Back</h2>
+
+    <div class="beta-invite-banner" id="beta-invite-banner" role="status">
+        <strong>Private beta invite.</strong> Sign in below — we'll bring you back to the draft right after you're in.
+    </div>
+
+    <div class="session-banner" id="session-banner" aria-live="polite">
+        You are still signed in as <strong id="session-label"></strong>.
+        Sign out to use a different account or email instead of Discord or Google.
+        <button type="button" id="sign-out-btn">Sign out</button>
+    </div>
+
+    <button type="button" id="google-btn" class="btn-oauth" aria-label="Sign in with Google">
+        Continue with Google
+    </button>
+
+    <button type="button" id="discord-btn" class="btn-oauth btn-oauth-discord" aria-label="Sign in with Discord">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M20.317 4.369A19.791 19.791 0 0 0 16.558 3a13.74 13.74 0 0 0-.481.974 18.27 18.27 0 0 0-4.154 0A12.64 12.64 0 0 0 11.442 3a19.736 19.736 0 0 0-3.76 1.37C5.303 7.91 4.657 11.36 4.98 14.76a19.9 19.9 0 0 0 4.607 2.339c.37-.504.701-1.04.984-1.602a12.83 12.83 0 0 1-1.55-.744c.13-.095.258-.193.382-.294 2.987 1.38 6.226 1.38 9.177 0 .125.101.253.199.383.294-.494.29-1.013.54-1.553.745.283.56.612 1.097.984 1.601A19.86 19.86 0 0 0 23 14.76c.378-3.953-.646-7.371-2.683-10.391ZM10.19 12.67c-.897 0-1.635-.826-1.635-1.842 0-1.016.723-1.843 1.635-1.843.92 0 1.65.834 1.635 1.843 0 1.016-.723 1.842-1.635 1.842Zm6.19 0c-.897 0-1.635-.826-1.635-1.842 0-1.016.723-1.843 1.635-1.843.92 0 1.65.834 1.635 1.843 0 1.016-.715 1.842-1.635 1.842Z" />
+        </svg>
+        Continue with Discord
+    </button>
+
+    <div class="auth-divider" role="presentation"><span>or with email</span></div>
+
+    <input id="email" type="email" placeholder="Email" autocomplete="username">
+    <input id="password" type="password" placeholder="Password" autocomplete="current-password">
+
+    <button type="button" id="login-btn" onclick="login()">Open Settings</button>
+
+    <p id="success-msg" role="status"></p>
+    <p id="error-msg" role="alert"></p>
+
+    <div class="signup-link">
+        <a href="#" id="forgot-link">Forgot password?</a>
+    </div>
+
+    <div class="signup-link">
+        New here? <a href="signup.html" id="signup-link">Create account</a>
+    </div>
+
+    <p class="support-footnote" id="support-footnote">
+        Questions or no email after a reset?
+        <a href="mailto:alysum.support@gmail.com">alysum.support@gmail.com</a>
+        ·
+        <a href="https://discord.gg/ue7uSCWU9w" target="_blank" rel="noopener noreferrer">Join Discord</a>
+    </p>
+</div>
+
+<script type="module">
+import { supabase } from "@alysum/authentication/client.js";
+import { homeUrlForUserData, WRITER_HOME_URL } from "@alysum/account/mode.js";
+import {
+    authRedirectUrl,
+    buildOAuthSignInOptions,
+    clearAuthCallbackFromUrl,
+    clearLegacyOAuthPending,
+    clearOAuthPending,
+    hasOAuthPending,
+    isOAuthCallbackLanding,
+    oauthAuthMessage,
+    oauthCallbackErrorFromUrl,
+    OAUTH_PENDING_LOGIN_KEY,
+    profileSetupSignupUrl,
+    setOAuthPending,
+    shouldAutoContinueOAuth,
+    resolveInternalRedirect,
+    persistAuthReturnNext,
+    isBetaRoomReturnUrl,
+    isCollabRoomReturnUrl,
+    LOGIN_RETURN_NEXT_KEY,
+} from "@alysum/authentication/redirect.js";
+import { wireSupabaseSession } from "@alysum/authentication/session.js";
+import { ensureLoginStreakCloud } from "@alysum/account/login-streak.js";
+
+let oauthRedirectHandled = false;
+
+const errorEl = document.getElementById("error-msg");
+const successEl = document.getElementById("success-msg");
+const loginBtn = document.getElementById("login-btn");
+const googleBtn = document.getElementById("google-btn");
+const discordBtn = document.getElementById("discord-btn");
+const forgotLink = document.getElementById("forgot-link");
+const sessionBanner = document.getElementById("session-banner");
+const sessionLabel = document.getElementById("session-label");
+const signOutBtn = document.getElementById("sign-out-btn");
+const betaInviteBanner = document.getElementById("beta-invite-banner");
+const signupLink = document.getElementById("signup-link");
+
+const oauthButtons = [googleBtn, discordBtn];
+
+function setOAuthButtonsDisabled(disabled) {
+    for (const btn of oauthButtons) {
+        btn.disabled = disabled;
+    }
+}
+
+function showError(text) {
+    successEl.textContent = "";
+    successEl.classList.remove("visible");
+    errorEl.textContent = text;
+    errorEl.classList.add("visible");
+}
+
+function clearError() {
+    errorEl.textContent = "";
+    errorEl.classList.remove("visible");
+}
+
+function showSuccess(text) {
+    clearError();
+    successEl.textContent = text;
+    successEl.classList.add("visible");
+}
+
+function clearSuccess() {
+    successEl.textContent = "";
+    successEl.classList.remove("visible");
+}
+
+function authMessage(message) {
+    if (!message) return "Sign-in failed.";
+
+    const lower = message.toLowerCase();
+
+    if (lower.includes("invalid login") || lower.includes("invalid credentials")) {
+        return "Email or password is incorrect.";
+    }
+
+    if (lower.includes("email not confirmed")) {
+        return "Check your email and confirm your account before logging in.";
+    }
+
+    if (lower.includes("network") || lower.includes("failed to fetch")) {
+        return "Cannot reach Alysum servers. The live site may still point at the old deleted Supabase project — redeploy the updated Supabase config. Otherwise check your connection.";
+    }
+
+    return message;
+}
+
+/** Prevent accidental double-clicks; Supabase enforces real email rate limits. */
+const RESET_EMAIL_COOLDOWN_MS = 2 * 60 * 1000;
+const RESET_EMAIL_COOLDOWN_PREFIX = "alysum-reset-email-until:";
+
+function isAuthEmailRateLimitError(errorOrMessage) {
+    const err =
+        errorOrMessage && typeof errorOrMessage === "object"
+            ? errorOrMessage
+            : { message: errorOrMessage };
+    if (err.code === "over_email_send_rate_limit") return true;
+    const lower = String(err.message || "").toLowerCase();
+    return (
+        lower.includes("rate limit") ||
+        lower.includes("too many requests") ||
+        lower.includes("email rate") ||
+        lower.includes("rate exceeded")
+    );
+}
+
+function resetCooldownKey(email) {
+    return RESET_EMAIL_COOLDOWN_PREFIX + email.trim().toLowerCase();
+}
+
+function resetEmailCooldownRemainingMs(email) {
+    try {
+        const until = Number(localStorage.getItem(resetCooldownKey(email)) || 0);
+        return Math.max(0, until - Date.now());
+    } catch {
+        return 0;
+    }
+}
+
+function markResetEmailSent(email) {
+    try {
+        localStorage.setItem(
+            resetCooldownKey(email),
+            String(Date.now() + RESET_EMAIL_COOLDOWN_MS)
+        );
+    } catch {
+        /* ignore */
+    }
+}
+
+function resetEmailCooldownMessage(remainingMs) {
+    const seconds = Math.max(1, Math.ceil(remainingMs / 1000));
+    if (seconds <= 90) {
+        return `Please wait ${seconds} seconds before requesting another reset email.`;
+    }
+    const minutes = Math.max(1, Math.ceil(remainingMs / 60000));
+    return `Please wait about ${minutes} minute${minutes === 1 ? "" : "s"} before requesting another reset email.`;
+}
+
+function resetEmailMessage(errorOrMessage) {
+    if (isAuthEmailRateLimitError(errorOrMessage)) {
+        const message =
+            errorOrMessage && typeof errorOrMessage === "object"
+                ? errorOrMessage.message
+                : String(errorOrMessage || "");
+        const secondsMatch = message.match(/after\s+(\d+)\s+seconds?/i);
+        if (secondsMatch) {
+            const seconds = Math.max(1, Number(secondsMatch[1]) || 60);
+            return `Too many reset emails sent. Wait ${seconds} seconds and try again.`;
+        }
+        return "Too many reset emails sent. Wait a few minutes and try again, or email alysum.support@gmail.com for help.";
+    }
+
+    const message =
+        errorOrMessage && typeof errorOrMessage === "object"
+            ? errorOrMessage.message
+            : errorOrMessage;
+    if (!message) return "Could not send reset email.";
+
+    const lower = message.toLowerCase();
+
+    if (lower.includes("redirect") || lower.includes("invalid")) {
+        return "Reset redirect URL is not allowed. In Supabase → Authentication → URL Configuration, add https://www.alysumwriting.com/reset-password.html and https://alysumwriting.com/reset-password.html — or email alysum.support@gmail.com.";
+    }
+
+    return message;
+}
+
+function applyLoginReturnContext() {
+    const params = new URLSearchParams(window.location.search);
+    const next = params.get("next");
+    const safe = persistAuthReturnNext(next, LOGIN_RETURN_NEXT_KEY);
+
+    if (signupLink) {
+        signupLink.href = safe ? `signup.html?next=${encodeURIComponent(safe)}` : "signup.html";
+    }
+
+    if (safe && isBetaRoomReturnUrl(safe)) {
+        betaInviteBanner?.classList.add("visible");
+        const heading = document.querySelector(".card h2");
+        if (heading) heading.textContent = "Sign in to open beta room";
+    } else if (safe && isCollabRoomReturnUrl(safe)) {
+        betaInviteBanner?.classList.add("visible");
+        if (betaInviteBanner) {
+            betaInviteBanner.innerHTML =
+                "<strong>Collab invite</strong> — sign in to open the chapter collaboration room.";
+        }
+        const heading = document.querySelector(".card h2");
+        if (heading) heading.textContent = "Sign in to open collab room";
+    }
+
+    const wordWarsPreviewStrip = document.getElementById("word-wars-preview-strip");
+    if (wordWarsPreviewStrip && safe && /word-wars/i.test(safe)) {
+        wordWarsPreviewStrip.classList.add("visible");
+    }
+}
+
+async function redirectAfterLogin() {
+    const params = new URLSearchParams(window.location.search);
+    let next = params.get("next");
+    const oauthReturn = isOAuthCallbackLanding();
+    if (!next && oauthReturn) {
+        try {
+            next = sessionStorage.getItem(LOGIN_RETURN_NEXT_KEY);
+            if (next) sessionStorage.removeItem(LOGIN_RETURN_NEXT_KEY);
+        } catch {
+            /* ignore */
+        }
+    }
+    const safe = resolveInternalRedirect(next);
+
+    if (safe) {
+        window.location.href = safe;
+        return;
+    }
+
+    const { data: userData } = await supabase.auth.getUser();
+    const user = userData && userData.user;
+
+    if (!user) {
+        window.location.href = WRITER_HOME_URL;
+        return;
+    }
+
+    try {
+        const { data, error } = await supabase
+            .from("users")
+            .select("*")
+            .eq("id", user.id)
+            .single();
+
+        if (error || !data) {
+            const params = new URLSearchParams(window.location.search);
+            window.location.href = profileSetupSignupUrl(params.get("next"));
+            return;
+        }
+
+        const firebaseStyleData = {
+            username: data.username,
+            displayName: data.display_name,
+            accountType: data.account_type,
+            words: data.words,
+            books: data.books,
+            streak: data.streak,
+            dailyWordGoal: data.daily_word_goal,
+            writingDayTotals: data.writing_day_totals || {}
+        };
+
+        try {
+            const { streak } = await ensureLoginStreakCloud(supabase, user.id, data);
+            firebaseStyleData.streak = streak;
+        } catch (e) {
+            console.warn("Login streak update failed:", e);
+        }
+
+        window.location.href = homeUrlForUserData(firebaseStyleData);
+    } catch (e) {
+        console.error(e);
+        window.location.href = WRITER_HOME_URL;
+    }
+}
+
+function sessionLabelForUser(user) {
+    if (!user) return "your account";
+    const providers = (user.identities || [])
+        .map((i) => String(i?.provider || "").toLowerCase())
+        .filter(Boolean);
+    if (user.email) return user.email;
+    if (providers.includes("discord")) return "Discord";
+    if (providers.includes("google")) return "Google";
+    return providers[0] || "your account";
+}
+
+function updateSessionBanner(session) {
+    if (!sessionBanner || !sessionLabel) return;
+    const user = session?.user;
+    if (!user) {
+        sessionBanner.classList.remove("visible");
+        sessionLabel.textContent = "";
+        return;
+    }
+    sessionLabel.textContent = sessionLabelForUser(user);
+    sessionBanner.classList.add("visible");
+}
+
+async function goToStudioAfterAuth() {
+    if (oauthRedirectHandled || isRecoveryLanding) return;
+    oauthRedirectHandled = true;
+    clearOAuthPending(OAUTH_PENDING_LOGIN_KEY);
+    clearAuthCallbackFromUrl();
+    await redirectAfterLogin();
+}
+
+async function startOAuth(provider) {
+    clearSuccess();
+    clearError();
+
+    setOAuthButtonsDisabled(true);
+    loginBtn.disabled = true;
+
+    try {
+        setOAuthPending(OAUTH_PENDING_LOGIN_KEY);
+        const p = new URLSearchParams(window.location.search);
+        const next = p.get("next");
+        persistAuthReturnNext(next, LOGIN_RETURN_NEXT_KEY);
+    } catch {
+        /* ignore */
+    }
+
+    const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: buildOAuthSignInOptions("login.html", provider)
+    });
+
+    if (error) {
+        clearOAuthPending(OAUTH_PENDING_LOGIN_KEY);
+        showError(oauthAuthMessage(error.message, provider));
+        setOAuthButtonsDisabled(false);
+        loginBtn.disabled = false;
+    }
+}
+
+googleBtn.addEventListener("click", () => startOAuth("google"));
+discordBtn.addEventListener("click", () => startOAuth("discord"));
+
+const isRecoveryLanding = (window.location.hash || "").includes("type=recovery");
+if (isRecoveryLanding) {
+    window.location.replace(
+        authRedirectUrl("reset-password.html") + (window.location.hash || "")
+    );
+}
+
+signOutBtn?.addEventListener("click", async () => {
+    clearError();
+    clearSuccess();
+    signOutBtn.disabled = true;
+    try {
+        await supabase.auth.signOut();
+        clearOAuthPending(OAUTH_PENDING_LOGIN_KEY);
+        clearAuthCallbackFromUrl();
+        oauthRedirectHandled = false;
+        updateSessionBanner(null);
+        showSuccess("Signed out. You can sign in with email or another provider.");
+    } catch (err) {
+        showError((err && err.message) || "Could not sign out.");
+    } finally {
+        signOutBtn.disabled = false;
+    }
+});
+
+const resetParams = new URLSearchParams(window.location.search);
+if (resetParams.get("reset") === "success") {
+    showSuccess("Password updated. Sign in with your new password.");
+}
+
+clearLegacyOAuthPending();
+applyLoginReturnContext();
+
+const oauthCallbackError = oauthCallbackErrorFromUrl();
+if (oauthCallbackError) {
+    showError(oauthAuthMessage(oauthCallbackError));
+    clearAuthCallbackFromUrl();
+}
+
+if (!isRecoveryLanding) {
+    if (!isOAuthCallbackLanding()) {
+        clearOAuthPending(OAUTH_PENDING_LOGIN_KEY);
+    }
+
+    wireSupabaseSession(async (session, event) => {
+        updateSessionBanner(session);
+        if (!shouldAutoContinueOAuth(session, event, OAUTH_PENDING_LOGIN_KEY)) return;
+        await goToStudioAfterAuth();
+    });
+
+    if (isOAuthCallbackLanding()) {
+        void (async () => {
+            for (let i = 0; i < 50; i++) {
+                if (oauthRedirectHandled) return;
+                const { data } = await supabase.auth.getSession();
+                if (data.session) {
+                    await goToStudioAfterAuth();
+                    return;
+                }
+                await new Promise((resolve) => setTimeout(resolve, 200));
+            }
+            if (!oauthRedirectHandled) {
+                showError(
+                    "Sign-in did not finish. Try again, or use email login."
+                );
+            }
+        })();
+    }
+}
+
+let resetInFlight = false;
+
+forgotLink.addEventListener("click", async (e) => {
+    e.preventDefault();
+
+    if (resetInFlight) return;
+
+    const email = document.getElementById("email").value.trim();
+
+    if (!email) {
+        showError("Enter your email address, then tap Forgot password.");
+        return;
+    }
+
+    clearError();
+    clearSuccess();
+
+    const cooldownMs = resetEmailCooldownRemainingMs(email);
+    if (cooldownMs > 0) {
+        showError(resetEmailCooldownMessage(cooldownMs));
+        return;
+    }
+
+    resetInFlight = true;
+    forgotLink.classList.add("is-busy");
+
+    try {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: authRedirectUrl("reset-password.html")
+        });
+
+        if (error) {
+            showError(resetEmailMessage(error));
+            return;
+        }
+
+        markResetEmailSent(email);
+        showSuccess("If that address has an account, a reset email was sent. Check spam and Promotions too.");
+    } catch (err) {
+        showError(resetEmailMessage(err));
+    } finally {
+        resetInFlight = false;
+        forgotLink.classList.remove("is-busy");
+    }
+});
+
+let loginInFlight = false;
+
+window.login = async function () {
+    if (loginInFlight) return;
+
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
+
+    if (!email || !password) {
+        showError("Enter email and password.");
+        return;
+    }
+
+    clearSuccess();
+    clearError();
+
+    loginInFlight = true;
+    loginBtn.disabled = true;
+    setOAuthButtonsDisabled(true);
+
+    try {
+        const { error } = await supabase.auth.signInWithPassword({
+            email,
+            password
+        });
+
+        if (error) {
+            showError(authMessage(error.message));
+            return;
+        }
+
+        await redirectAfterLogin();
+    } catch (e) {
+        showError((e && e.message) || "Sign-in failed.");
+    } finally {
+        loginInFlight = false;
+        loginBtn.disabled = false;
+        setOAuthButtonsDisabled(false);
+    }
+};
+
+document.getElementById("password").addEventListener("keydown", (ev) => {
+    if (ev.key === "Enter") {
+        ev.preventDefault();
+        window.login();
+    }
+});
+</script>
+
+</body>
+</html>

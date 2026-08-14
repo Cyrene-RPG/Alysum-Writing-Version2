@@ -1,1 +1,1 @@
-export { default, config } from "./host/middleware.js";
+export { default, config } from "./hosting/middleware.js";

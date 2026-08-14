@@ -26,29 +26,29 @@ TYPES = {
 }
 
 EXACT = {
-    "/sw.js": "apps/main-site/public/sw.js",
-    "/manifest.webmanifest": "apps/main-site/public/manifest.webmanifest",
-    "/robots.txt": "apps/main-site/public/robots.txt",
-    "/Alysum-3.png": "apps/main-site/public/Alysum-3.png",
+    "/sw.js": "applications/main-site/public/sw.js",
+    "/manifest.webmanifest": "applications/main-site/public/manifest.webmanifest",
+    "/robots.txt": "applications/main-site/public/robots.txt",
+    "/Alysum-3.png": "applications/main-site/public/Alysum-3.png",
 }
 
 
 def public_to_file(url_path: str) -> Path:
     clean = unquote(urlparse(url_path).path)
     if clean in ("/", "/index.html"):
-        return ROOT / "apps/main-site/pages/index.html"
+        return ROOT / "applications/main-site/pages/index.html"
     if clean in EXACT:
         return ROOT / EXACT[clean]
     if clean.startswith("/js/"):
-        return ROOT / "apps/main-site/ui" / clean[len("/js/") :]
+        return ROOT / "applications/main-site/page-ui" / clean[len("/js/") :]
     if clean.startswith("/css/"):
-        return ROOT / "apps/main-site/css" / clean[len("/css/") :]
+        return ROOT / "applications/main-site/css-styles" / clean[len("/css/") :]
     if clean.startswith("/assets/"):
-        return ROOT / "apps/main-site/assets" / clean[len("/assets/") :]
-    if clean.startswith(("/design-system/", "/core/")):
+        return ROOT / "applications/main-site/assets" / clean[len("/assets/") :]
+    if clean.startswith(("/site-appearance/", "/core/")):
         return ROOT / clean[1:]
     if clean.endswith(".html") and "/" not in clean[1:]:
-        return ROOT / "apps/main-site/pages" / clean[1:]
+        return ROOT / "applications/main-site/pages" / clean[1:]
     return ROOT / clean[1:]
 
 

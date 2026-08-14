@@ -2,7 +2,7 @@
 
 Public catalog and author profile queries. This is the Royal Road lane in data form.
 
-The reader UI lives in `apps/library/`, not here.
+The reader UI lives in `applications/library/`, not here.
 
 | File | Was |
 | --- | --- |

@@ -1,0 +1,3193 @@
+<!DOCTYPE html><html lang="en">
+<head>
+    <script type="importmap">
+    {
+      "imports": {
+        "@alysum/site-appearance/": "/site-appearance/",
+        "@alysum/writing-engine/": "/core/writing-engine/",
+        "@alysum/synchronization-engine/": "/core/synchronization-engine/",
+        "@alysum/authentication/": "/core/authentication/",
+        "@alysum/account/": "/core/account/",
+        "@alysum/desktop/": "/core/desktop/",
+        "@alysum/library/": "/core/library/",
+        "@alysum/publishing/": "/core/publishing/",
+        "@alysum/encyclopedia/": "/core/encyclopedia/",
+        "@alysum/collaboration/": "/core/collaboration/"
+      }
+    }
+    </script>
+    <link rel="stylesheet" href="/site-appearance/css-styles/theme.css" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/gradient-themes.css" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/typography.css" />
+    <script src="/site-appearance/body-background-presets-data.js"></script>
+    <script src="/site-appearance/boot.js"></script>
+    <script src="/site-appearance/body-background-sync.js"></script>
+    <!-- ALYSUM:PWA:START -->
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta name="theme-color" content="#7c3aed" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#020b18" media="(prefers-color-scheme: dark)">
+    <meta name="color-scheme" content="dark light">
+    <meta name="application-name" content="Alysum">
+    <meta name="msapplication-TileColor" content="#7c3aed">
+    <meta name="msapplication-TileImage" content="/Alysum-3.png">
+    <link rel="icon" type="image/png" sizes="any" href="/Alysum-3.png">
+    <link rel="apple-touch-icon" href="/Alysum-3.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/Alysum-3.png">
+    <script src="/js/pwa-register.js" defer></script>
+    <!-- ALYSUM:PWA:END -->
+    <!-- ALYSUM:ANALYTICS:START -->
+    <script type="module" src="/js/vercel-analytics.js"></script>
+    <!-- ALYSUM:ANALYTICS:END -->
+    <!-- ALYSUM:SEO:START -->
+    <meta charset="UTF-8">
+    <meta name="description" content="Manage your Alysum account settings and profile.">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="canonical" data-seo-path="/settings.html" href="">
+    <meta property="og:site_name" content="Alysum">
+    <meta property="og:locale" content="en_US">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Account settings — Alysum">
+    <meta property="og:description" content="Manage your Alysum account settings and profile.">
+    <meta property="og:image" content="/Alysum-3.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Account settings — Alysum">
+    <meta name="twitter:description" content="Manage your Alysum account settings and profile.">
+    <meta name="twitter:image" content="/Alysum-3.png">
+    <script src="/js/seo-meta.js"></script>
+    <!-- ALYSUM:SEO:END -->
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Account settings — Alysum</title>
+<link rel="stylesheet" href="/css/site-responsive.css?v=1" />
+<style>
+    * { box-sizing: border-box; }
+    :root {
+        --bg: #0b1220;
+        --panel: #111827;
+        --panel-2: #1f2937;
+        --text: #fff;
+        --muted: #9ca3af;
+        --border: rgba(255,255,255,0.1);
+        --danger: #f87171;
+        --ok: #4ade80;
+    }
+    body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: radial-gradient(circle at top, var(--theme-body-spot-strong) 0%, transparent 42%), var(--bg);
+        color: var(--text);
+    }
+    .wrap {
+        flex: 1;
+        width: 100%;
+        max-width: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+    }
+
+    .settings-shell {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+        width: 100%;
+        min-height: 0;
+    }
+
+    .settings-nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 8px clamp(12px, 2vw, 20px);
+        border-radius: 0;
+        border: none;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        background:
+            linear-gradient(180deg, rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.55)),
+            var(--alysum-chrome-gradient, linear-gradient(135deg, #1e1b4b, #312e81));
+        background-size: cover;
+        background-position: center;
+    }
+
+    .settings-nav button {
+        flex: 1 1 0;
+        min-width: 7.5rem;
+        padding: 9px 12px;
+        border-radius: 10px;
+        border: 1px solid transparent;
+        background: transparent;
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 800;
+        font-family: inherit;
+        text-align: center;
+        white-space: nowrap;
+        cursor: pointer;
+        transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .settings-nav button:hover {
+        color: #fff;
+        background: rgba(255, 255, 255, 0.06);
+    }
+
+    .settings-nav button.active,
+    .settings-nav button[aria-selected="true"] {
+        color: #fff;
+        border-color: rgba(255, 255, 255, 0.38);
+        background: var(
+            --alysum-chrome-gradient,
+            linear-gradient(135deg, var(--purple-dark), var(--theme-header-mid), var(--theme-header-end))
+        );
+        background-size: cover;
+        background-position: center;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.85), 0 0 10px rgba(0, 0, 0, 0.35);
+        box-shadow: 0 2px 14px rgba(0, 0, 0, 0.35);
+    }
+
+    .settings-nav-logout,
+    .settings-nav-delete {
+        flex: 1 1 100%;
+        padding: 10px 12px;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 800;
+        font-family: inherit;
+        text-align: center;
+        cursor: pointer;
+        transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    }
+
+    .settings-nav-delete {
+        margin-top: 4px;
+        border: 1px solid rgba(248, 113, 113, 0.28);
+        background: rgba(69, 10, 10, 0.42);
+        color: #fca5a5;
+    }
+
+    .settings-nav-delete:hover:not(:disabled) {
+        color: #fff;
+        border-color: rgba(248, 113, 113, 0.5);
+        background: rgba(127, 29, 29, 0.55);
+    }
+
+    .settings-nav-logout {
+        margin-top: 4px;
+        border: 1px solid rgba(248, 113, 113, 0.35);
+        background: rgba(127, 29, 29, 0.35);
+        color: #fecaca;
+    }
+
+    .settings-nav-logout:hover:not(:disabled) {
+        color: #fff;
+        border-color: rgba(248, 113, 113, 0.55);
+        background: rgba(153, 27, 27, 0.5);
+    }
+
+    .settings-nav-logout:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+    }
+
+    .settings-nav-delete:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+    }
+
+    .settings-nav {
+        position: sticky;
+        top: var(--alysum-nav-sticky-offset, 45px);
+        z-index: 10;
+    }
+
+    .settings-content {
+        flex: 1;
+        width: 100%;
+        max-width: none;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+    }
+
+    .settings-tab-panel {
+        display: none;
+    }
+
+    .settings-tab-panel.is-active {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+    }
+
+    .settings-tab-panel.panel {
+        border-radius: 0;
+        border: none;
+        border-top: none;
+        flex: 1;
+        min-height: calc(100vh - 72px - 52px);
+        padding: clamp(16px, 2vw, 24px) clamp(14px, 2.5vw, 28px) clamp(24px, 4vw, 40px);
+    }
+
+    #loadingPanel.panel {
+        margin: 16px clamp(14px, 2.5vw, 28px);
+        border-radius: 16px;
+        border: 1px solid var(--border);
+    }
+
+    .panel {
+        background: linear-gradient(180deg, rgba(17,24,39,0.98), rgba(15,23,42,0.98));
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        padding: 16px 16px;
+        margin-bottom: 0;
+        box-shadow: 0 16px 40px rgba(0,0,0,0.35);
+    }
+    .panel h2 {
+        margin: 0 0 6px;
+        font-size: 17px;
+        font-weight: 900;
+        color: var(--gold);
+    }
+    .hint {
+        margin: 0 0 12px;
+        font-size: 13px;
+        color: var(--muted);
+        line-height: 1.45;
+    }
+    label {
+        display: block;
+        font-size: 12px;
+        font-weight: 800;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin-bottom: 6px;
+    }
+    .field {
+        margin-bottom: 14px;
+    }
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    textarea {
+        width: 100%;
+        padding: 12px 14px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: rgba(0,0,0,0.25);
+        color: var(--text);
+        font-size: 15px;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        font-family: inherit;
+    }
+
+    textarea {
+        min-height: 140px;
+        resize: vertical;
+        line-height: 1.55;
+    }
+
+    input[type="text"]:focus,
+    input[type="email"]:focus,
+    input[type="password"]:focus,
+    textarea:focus {
+        outline: none;
+        border-color: color-mix(in srgb, var(--purple-bright) 70%, transparent);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--purple-bright) 22%, transparent);
+    }
+
+    input:disabled {
+        opacity: 0.85;
+    }
+
+    input[type="file"] {
+        width: 100%;
+        padding: 12px 14px;
+        border-radius: 12px;
+        border: 1.5px solid color-mix(in srgb, var(--purple-bright) 52%, rgba(255, 255, 255, 0.14));
+        background: rgba(0,0,0,0.25);
+        color: var(--text);
+        font-size: 14px;
+    }
+
+    input[type="file"]::file-selector-button {
+        margin-right: 12px;
+        border: none;
+        border-radius: 10px;
+        padding: 9px 12px;
+        background: var(--alysum-chrome-gradient, linear-gradient(135deg, var(--purple), var(--pink)));
+        color: #fff;
+        font-weight: 900;
+        cursor: pointer;
+    }
+
+    .readonly {
+        padding: 12px 14px;
+        border-radius: 12px;
+        background: rgba(0, 0, 0, 0.2);
+        border: 1px solid var(--border);
+        font-size: 15px;
+        font-weight: 700;
+        color: #e5e7eb;
+    }
+    .mono {
+        font-family: ui-monospace, monospace;
+        font-size: 14px;
+    }
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 12px 20px;
+        border-radius: 12px;
+        border: none;
+        font-size: 14px;
+        font-weight: 900;
+        cursor: pointer;
+        margin-top: 6px;
+    }
+    .btn-primary {
+        background: var(
+            --alysum-chrome-gradient,
+            linear-gradient(135deg, var(--purple), var(--pink))
+        );
+        background-size: cover;
+        background-position: center;
+        color: white;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        box-shadow: 0 4px 18px rgba(0, 0, 0, 0.28);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+        filter: brightness(1.08);
+    }
+    .btn:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+    }
+    .msg {
+        margin-top: 12px;
+        padding: 12px 14px;
+        border-radius: 12px;
+        font-size: 14px;
+        line-height: 1.45;
+        display: none;
+    }
+    .msg.visible { display: block; }
+    .msg.err {
+        background: rgba(248,113,113,0.12);
+        border: 1px solid rgba(248,113,113,0.35);
+        color: var(--danger);
+    }
+    .msg.ok {
+        background: rgba(74,222,128,0.12);
+        border: 1px solid rgba(74,222,128,0.3);
+        color: var(--ok);
+    }
+    .hidden {
+        display: none !important;
+    }
+
+    .theme-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
+        gap: 10px;
+        margin-top: 4px;
+        align-content: start;
+    }
+
+    #appearancePanel .theme-grid {
+        flex: none;
+    }
+
+    @media (min-width: 640px) {
+        .theme-grid {
+            grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+            gap: 12px;
+        }
+    }
+
+    @media (min-width: 1024px) {
+        .theme-grid {
+            grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
+            gap: 14px;
+        }
+    }
+
+    #appearancePanel > h2,
+    #appearancePanel > .hint {
+        text-align: center;
+        width: 100%;
+        max-width: 52rem;
+        margin-left: auto;
+        margin-right: auto;
+        flex-shrink: 0;
+    }
+
+    .appearance-layout {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        width: 100%;
+        max-width: none;
+        margin: 16px 0 0;
+        flex: 1;
+        align-self: stretch;
+    }
+
+    .appearance-text-pair {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 16px;
+        min-width: 0;
+    }
+
+    @media (min-width: 900px) {
+        .appearance-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr) minmax(0, 0.95fr);
+            gap: 16px;
+            align-items: start;
+        }
+
+        .appearance-text-pair {
+            display: contents;
+        }
+    }
+
+    .appearance-block {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        padding: 16px 14px;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(0, 0, 0, 0.22);
+    }
+
+    .appearance-block .hint {
+        margin: 0 0 12px;
+        font-size: 13px;
+        line-height: 1.45;
+    }
+
+    .appearance-subhead {
+        margin: 0 0 6px;
+        font-size: 14px;
+        font-weight: 900;
+        color: var(--gold);
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+    }
+
+    .appearance-mix-controls {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px 14px;
+        margin: 0 0 14px;
+        padding: 12px 14px;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.03);
+    }
+
+    .appearance-mix-mode {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 16px;
+        flex: 1 1 220px;
+    }
+
+    .appearance-mix-option {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--muted);
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .appearance-mix-option input {
+        accent-color: var(--purple-bright, #9333ea);
+        width: 16px;
+        height: 16px;
+        margin: 0;
+        cursor: pointer;
+    }
+
+    .appearance-mix-option:has(input:checked) {
+        color: #fff;
+    }
+
+    .appearance-mix-shuffle {
+        flex: 0 0 auto;
+        padding: 9px 16px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        background: linear-gradient(135deg, rgba(124, 58, 237, 0.45), rgba(236, 72, 153, 0.28));
+        color: #fff;
+        font-size: 13px;
+        font-weight: 800;
+        cursor: pointer;
+        transition: transform 0.12s ease, filter 0.15s ease, border-color 0.15s ease;
+    }
+
+    .appearance-mix-shuffle:hover {
+        filter: brightness(1.1);
+        border-color: rgba(255, 255, 255, 0.32);
+        transform: translateY(-1px);
+    }
+
+    .appearance-mix-shuffle:active {
+        transform: translateY(0);
+    }
+
+    .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+
+    #appearancePanel .appearance-grid {
+        display: grid;
+        gap: 10px;
+        width: 100%;
+        margin: 0;
+    }
+
+    #appearancePanel .appearance-grid--accent {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    }
+
+    #appearancePanel .appearance-grid--fonts {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    #appearancePanel .appearance-grid--colors {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    #appearancePanel .appearance-grid--bg {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    }
+
+    @media (min-width: 900px) {
+        #appearancePanel .appearance-grid--accent {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        #appearancePanel .appearance-grid--fonts {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        #appearancePanel .appearance-grid--bg {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+    }
+
+    @media (min-width: 1200px) {
+        #appearancePanel .appearance-grid--accent {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        #appearancePanel .appearance-grid--fonts {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        #appearancePanel .appearance-grid--bg {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+    }
+
+    #appearancePanel .theme-chip {
+        min-height: 44px;
+        padding: 9px 7px;
+        font-size: 11px;
+        line-height: 1.3;
+        border-radius: 12px;
+    }
+
+    #appearancePanel .theme-chip.text-style-chip,
+    #appearancePanel .theme-chip.title-color-chip {
+        min-height: 72px;
+        padding: 10px 6px;
+    }
+
+    #appearancePanel .text-style-chip-preview {
+        font-size: 24px;
+        margin-bottom: 4px;
+    }
+
+    #appearancePanel .text-style-chip-label {
+        font-size: 10px;
+    }
+
+    .theme-chip {
+        position: relative;
+        min-height: 52px;
+        padding: 12px 10px;
+        border-radius: 14px;
+        text-align: center;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.06);
+        color: #fff;
+        font-weight: 800;
+        font-size: 12px;
+        line-height: 1.3;
+        cursor: pointer;
+        transition: transform 0.12s ease, border-color 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.85), 0 0 10px rgba(0, 0, 0, 0.45);
+    }
+
+    .theme-chip.has-preview {
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+    }
+
+    .theme-chip:hover {
+        filter: brightness(1.12);
+        border-color: rgba(255, 255, 255, 0.28);
+        transform: translateY(-1px);
+    }
+
+    .theme-chip:not(.has-preview):hover {
+        background: color-mix(in srgb, var(--purple-bright) 28%, transparent);
+        border-color: color-mix(in srgb, var(--pink) 35%, transparent);
+        filter: none;
+    }
+
+    .theme-chip.active {
+        border-color: rgba(255, 255, 255, 0.55);
+        box-shadow:
+            0 0 0 2px color-mix(in srgb, var(--pink) 70%, transparent),
+            0 4px 16px rgba(0, 0, 0, 0.35);
+        transform: translateY(-1px);
+    }
+
+    .theme-chip.has-preview.active {
+        filter: brightness(1.08) saturate(1.1);
+    }
+
+    .theme-chip:not(.has-preview).active {
+        background: linear-gradient(135deg, var(--theme-card-a), var(--theme-card-b));
+    }
+
+    @media (min-width: 640px) {
+        .theme-chip {
+            min-height: 58px;
+            padding: 14px 12px;
+            font-size: 13px;
+        }
+    }
+
+    @media (min-width: 1024px) {
+        .theme-chip {
+            min-height: 64px;
+            padding: 15px 12px;
+        }
+    }
+
+    #accountModePanel > h2,
+    #accountModePanel > .hint,
+    #authorPagePanel > h2,
+    #authorPagePanel > .hint.author-page-intro-hint {
+        text-align: center;
+        width: 100%;
+        max-width: 52rem;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .account-focus-body {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 28px;
+        flex: 1;
+        width: 100%;
+        max-width: min(1120px, 100%);
+        margin: 0 auto;
+        padding: 8px clamp(12px, 2vw, 20px) 12px;
+    }
+
+    .author-page-panel-body {
+        display: grid;
+        gap: 18px;
+        width: 100%;
+        max-width: min(1100px, 100%);
+        margin: 0 auto;
+        align-self: center;
+        padding: 0 clamp(12px, 2vw, 20px);
+    }
+
+    .support-links-grid {
+        display: grid;
+        gap: 14px;
+        grid-template-columns: 1fr;
+    }
+
+    @media (min-width: 700px) {
+        .support-links-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    .support-link-field label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .support-link-field .support-link-kind {
+        font-weight: 800;
+    }
+
+    #authorPagePanel input[type="url"],
+    #authorPagePanel textarea {
+        border-width: 1.5px;
+        border-color: color-mix(in srgb, var(--purple-bright) 52%, rgba(255, 255, 255, 0.14));
+        box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--purple) 18%, transparent);
+    }
+
+    #authorPagePanel input[type="url"]:focus,
+    #authorPagePanel textarea:focus {
+        border-color: color-mix(in srgb, var(--purple-bright) 78%, transparent);
+        box-shadow:
+            inset 0 0 0 1px color-mix(in srgb, var(--purple-bright) 35%, transparent),
+            0 0 0 3px color-mix(in srgb, var(--purple-bright) 24%, transparent);
+    }
+
+    #accountTypeGroup {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+        width: 100%;
+        align-items: stretch;
+    }
+
+    @media (max-width: 719px) {
+        #accountTypeGroup {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .account-type-row {
+        position: relative;
+        display: flex;
+        margin: 0;
+        padding: 0;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        height: 100%;
+        min-width: 0;
+    }
+
+    .account-type-row:focus-within .account-type-card {
+        outline: 2px solid color-mix(in srgb, var(--purple-bright) 70%, transparent);
+        outline-offset: 3px;
+    }
+
+    .account-type-card {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        flex: 1;
+        width: 100%;
+        min-height: 17rem;
+        padding: 20px 18px 22px;
+        border-radius: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.04);
+        text-align: left;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    }
+
+    @media (min-width: 720px) {
+        .account-type-card {
+            min-height: 19rem;
+        }
+    }
+
+    .account-type-row:hover .account-type-card {
+        border-color: rgba(255, 255, 255, 0.22);
+        background: rgba(255, 255, 255, 0.07);
+    }
+
+    .account-type-row input {
+        position: absolute;
+        opacity: 0;
+        width: 1px;
+        height: 1px;
+        pointer-events: none;
+    }
+
+    .account-type-icon {
+        flex-shrink: 0;
+        width: 3rem;
+        height: 3rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 14px;
+        font-size: 1.5rem;
+        background: rgba(0, 0, 0, 0.28);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .account-type-copy {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .account-type-row strong {
+        display: block;
+        font-size: 1.125rem;
+        font-weight: 900;
+        letter-spacing: 0.02em;
+        color: #f8fafc;
+        margin: 0;
+    }
+
+    .account-type-tagline {
+        display: block;
+        font-size: 0.9375rem;
+        font-weight: 700;
+        color: color-mix(in srgb, var(--gold) 85%, #fff);
+        line-height: 1.35;
+    }
+
+    .account-type-detail {
+        margin: 0;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--muted);
+        line-height: 1.55;
+    }
+
+    .account-type-row:has(input:checked) .account-type-card {
+        border-color: color-mix(in srgb, var(--purple-bright) 55%, transparent);
+        background:
+            linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03)),
+            color-mix(in srgb, var(--theme-accent-soft-bg) 80%, transparent);
+        box-shadow:
+            0 0 0 1px color-mix(in srgb, var(--pink) 35%, transparent),
+            0 12px 36px rgba(0, 0, 0, 0.32);
+    }
+
+    .account-type-row:has(input:checked) .account-type-icon {
+        border-color: color-mix(in srgb, var(--pink) 40%, transparent);
+        background: color-mix(in srgb, var(--theme-card-a) 70%, rgba(0, 0, 0, 0.35));
+    }
+
+    .account-type-row:has(input:checked) .account-type-detail {
+        color: color-mix(in srgb, #fff 70%, var(--muted));
+    }
+
+    .account-focus-actions {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        width: 100%;
+        padding-top: 4px;
+    }
+
+    .account-focus-actions .btn {
+        margin-top: 0;
+        width: auto;
+        min-width: 11rem;
+        padding: 12px 28px;
+    }
+
+    .account-focus-actions .msg {
+        margin-top: 0;
+        width: 100%;
+        max-width: 28rem;
+        text-align: center;
+    }
+
+    .profile-main > .btn-primary {
+        align-self: flex-start;
+        width: auto;
+    }
+
+    #appearancePanel.is-active {
+        align-items: stretch;
+    }
+
+    #profilePanel.is-active,
+    #securityPanel.is-active,
+    #accountModePanel.is-active,
+    #authorPagePanel.is-active {
+        align-items: center;
+    }
+
+    #profilePanel > h2,
+    #securityPanel > h2 {
+        margin-bottom: 4px;
+    }
+
+    #profilePanel > h2,
+    #profilePanel > .hint.profile-intro-hint,
+    #securityPanel > h2,
+    #securityPanel > .hint.password-intro-hint,
+    #securityPanel > .hint#ssoPasswordNote {
+        text-align: center;
+        width: 100%;
+        max-width: 52rem;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    #securityPanel > .hint#ssoPasswordNote {
+        margin-bottom: 12px;
+        padding: 12px 14px;
+        border-radius: 12px;
+        border: 1px solid color-mix(in srgb, var(--purple-bright) 35%, var(--border));
+        background: color-mix(in srgb, var(--theme-accent-soft-bg) 40%, rgba(0, 0, 0, 0.25));
+    }
+
+    .profile-panel-body {
+        display: grid;
+        gap: 18px;
+        width: 100%;
+        max-width: min(1100px, 100%);
+        margin: 0 auto;
+        align-self: center;
+        padding: 0 clamp(12px, 2vw, 20px);
+    }
+
+    @media (min-width: 768px) {
+        .profile-panel-body {
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            align-items: stretch;
+            gap: 20px;
+        }
+    }
+
+    .profile-box {
+        padding: 20px 18px 22px;
+        border-radius: 18px;
+        border: 1px solid color-mix(in srgb, var(--purple-bright) 38%, rgba(255, 255, 255, 0.1));
+        background: linear-gradient(
+            165deg,
+            color-mix(in srgb, var(--theme-accent-soft-bg) 55%, transparent),
+            rgba(255, 255, 255, 0.02)
+        );
+        box-shadow: 0 0 0 1px color-mix(in srgb, var(--purple) 12%, transparent);
+    }
+
+    .profile-box-title {
+        margin: 0 0 10px;
+        font-size: 14px;
+        font-weight: 900;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: var(--gold);
+    }
+
+    .profile-box .field {
+        margin-bottom: 16px;
+    }
+
+    .profile-box .field:last-of-type {
+        margin-bottom: 0;
+    }
+
+    #profilePanel input[type="text"],
+    #profilePanel input[type="email"],
+    #profilePanel input[type="password"],
+    #profilePanel textarea,
+    #profilePanel .readonly,
+    #securityPanel input[type="password"] {
+        border-width: 1.5px;
+        border-color: color-mix(in srgb, var(--purple-bright) 52%, rgba(255, 255, 255, 0.14));
+        box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--purple) 18%, transparent);
+    }
+
+    #profilePanel input[type="text"]:focus,
+    #profilePanel input[type="email"]:focus,
+    #profilePanel input[type="password"]:focus,
+    #profilePanel textarea:focus,
+    #securityPanel input[type="password"]:focus {
+        border-color: color-mix(in srgb, var(--purple-bright) 78%, transparent);
+        box-shadow:
+            inset 0 0 0 1px color-mix(in srgb, var(--purple-bright) 35%, transparent),
+            0 0 0 3px color-mix(in srgb, var(--purple-bright) 24%, transparent);
+    }
+
+    #profilePanel input[type="email"]:disabled,
+    #profilePanel input[type="password"]:disabled,
+    #securityPanel input[type="password"]:disabled {
+        background: color-mix(in srgb, var(--theme-accent-soft-bg) 35%, rgba(0, 0, 0, 0.35));
+        border-color: color-mix(in srgb, var(--purple-bright) 36%, rgba(255, 255, 255, 0.1));
+    }
+
+    #profilePanel .readonly {
+        background: color-mix(in srgb, var(--theme-accent-soft-bg) 25%, rgba(0, 0, 0, 0.3));
+    }
+
+    .profile-box-actions {
+        margin-top: 18px;
+        padding-top: 16px;
+        border-top: 1px solid color-mix(in srgb, var(--purple-bright) 22%, var(--border));
+    }
+
+    .profile-box-actions .btn {
+        margin-top: 0;
+    }
+
+    .profile-box-actions .msg {
+        margin-top: 12px;
+    }
+
+    .profile-avatar-box {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+    }
+
+    .profile-avatar-layout {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: 16px;
+        align-items: center;
+    }
+
+    .profile-avatar-preview {
+        width: 112px;
+        height: 112px;
+        border-radius: 50%;
+        overflow: hidden;
+        border: 3px solid color-mix(in srgb, var(--purple-bright) 60%, white);
+        background: rgba(0,0,0,0.3);
+        box-shadow: 0 0 28px color-mix(in srgb, var(--purple-bright) 35%, transparent);
+        flex-shrink: 0;
+    }
+
+    .profile-avatar-preview img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    .profile-avatar-preview-initial {
+        width: 100%;
+        height: 100%;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        font-size: 42px;
+        font-weight: 900;
+        color: #fff;
+        background: var(--alysum-chrome-gradient, linear-gradient(135deg, var(--purple), var(--pink)));
+    }
+
+    .profile-avatar-preview.has-initial img {
+        display: none;
+    }
+
+    .profile-avatar-preview.has-initial .profile-avatar-preview-initial {
+        display: flex;
+    }
+
+    .profile-avatar-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .profile-avatar-actions .btn {
+        margin-top: 0;
+    }
+
+    @media (max-width: 520px) {
+        .profile-avatar-layout {
+            grid-template-columns: 1fr;
+            justify-items: start;
+        }
+    }
+
+    .password-panel-body .profile-box-actions {
+        grid-column: 1 / -1;
+    }
+
+    .backup-panel-body {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .backup-status-card {
+        padding: 16px 18px;
+        border-radius: 14px;
+        border: 1px solid color-mix(in srgb, var(--purple-bright, #a78bfa) 35%, var(--border));
+        background: rgba(0, 0, 0, 0.28);
+    }
+
+    .backup-status-label {
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 6px;
+    }
+
+    .backup-status-datetime {
+        font-size: 18px;
+        font-weight: 900;
+        color: #fff;
+        line-height: 1.35;
+    }
+
+    .backup-status-file {
+        margin-top: 8px;
+        margin-bottom: 0;
+        word-break: break-all;
+    }
+
+    .backup-step-num {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 22px;
+        height: 22px;
+        margin-right: 8px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.12);
+        font-size: 12px;
+        font-weight: 900;
+        vertical-align: middle;
+    }
+
+    .backup-path-row {
+        margin-bottom: 14px;
+    }
+
+    .backup-path-row label {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 13px;
+        font-weight: 800;
+        color: var(--muted);
+    }
+
+    .backup-path-field {
+        display: flex;
+        gap: 10px;
+        align-items: stretch;
+    }
+
+    .backup-path-field input {
+        flex: 1;
+        min-width: 0;
+        padding: 12px 14px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: rgba(0, 0, 0, 0.2);
+        color: #e5e7eb;
+        font-size: 14px;
+        font-family: ui-monospace, monospace;
+    }
+
+    .backup-path-field input::placeholder {
+        color: var(--muted);
+        font-family: inherit;
+    }
+
+    .btn-secondary {
+        flex-shrink: 0;
+        margin-top: 0;
+        background: rgba(255, 255, 255, 0.08);
+        color: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        box-shadow: none;
+        text-shadow: none;
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+        background: rgba(255, 255, 255, 0.14);
+        filter: none;
+    }
+
+    .btn-danger {
+        margin-top: 0;
+        background: rgba(127, 29, 29, 0.55);
+        color: #fecaca;
+        border: 1px solid rgba(248, 113, 113, 0.45);
+        box-shadow: none;
+        text-shadow: none;
+    }
+
+    .btn-danger:hover:not(:disabled) {
+        background: rgba(153, 27, 27, 0.72);
+        color: #fff;
+        filter: none;
+    }
+
+    .profile-danger-box {
+        border-color: rgba(248, 113, 113, 0.35);
+        background: rgba(69, 10, 10, 0.28);
+    }
+
+    .profile-danger-box .profile-box-title {
+        color: #fecaca;
+    }
+
+    @media (min-width: 768px) {
+        .profile-danger-box {
+            grid-column: 2;
+            grid-row: 2;
+            align-self: stretch;
+        }
+    }
+
+    .backup-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .backup-actions .msg {
+        flex: 1 1 100%;
+        margin-top: 0;
+    }
+
+    .backup-practice-box {
+        border-color: rgba(96, 165, 250, 0.35);
+        background: rgba(30, 58, 138, 0.2);
+    }
+
+    .backup-practice-box .profile-box-title {
+        color: #bfdbfe;
+    }
+
+    .backup-practice-steps {
+        margin: 0 0 14px;
+        padding-left: 1.2rem;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.55;
+    }
+
+    .backup-practice-steps li {
+        margin-bottom: 6px;
+    }
+
+    .backup-practice-steps strong {
+        color: #e5e7eb;
+    }
+
+    #libraryPanel .library-panel-body {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        max-width: 52rem;
+    }
+
+    .library-settings-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    @media (min-width: 640px) {
+        .library-settings-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    a.library-settings-card {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 18px 16px;
+        border-radius: 16px;
+        border: 1px solid color-mix(in srgb, var(--purple-bright) 32%, rgba(255, 255, 255, 0.1));
+        background: linear-gradient(
+            165deg,
+            color-mix(in srgb, var(--theme-accent-soft-bg) 45%, transparent),
+            rgba(255, 255, 255, 0.02)
+        );
+        text-decoration: none;
+        color: inherit;
+        transition: transform 0.12s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+        min-height: 100%;
+    }
+
+    a.library-settings-card:hover {
+        transform: translateY(-2px);
+        border-color: color-mix(in srgb, var(--purple-bright) 55%, transparent);
+        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
+    }
+
+    a.library-settings-card.is-staff {
+        border-color: color-mix(in srgb, var(--purple-bright) 40%, rgba(255, 255, 255, 0.1));
+    }
+
+    .library-settings-icon {
+        font-size: 22px;
+        line-height: 1;
+    }
+
+    .library-settings-card-title {
+        font-size: 15px;
+        font-weight: 900;
+        color: var(--text);
+        letter-spacing: 0.01em;
+    }
+
+    .library-settings-card-desc {
+        font-size: 13px;
+        line-height: 1.5;
+        color: var(--muted);
+        margin: 0;
+    }
+
+    .library-settings-card-cta {
+        margin-top: auto;
+        padding-top: 6px;
+        font-size: 12px;
+        font-weight: 900;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: color-mix(in srgb, var(--purple-bright) 85%, #fff);
+    }
+
+    .library-staff-tools {
+        margin-top: 18px;
+    }
+
+</style>
+    <link rel="stylesheet" href="/css/workspace-nav.css?v=11" />
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script src="/site-appearance/gradient-theme-sync.js" defer></script>
+
+</head>
+<body>
+    <header class="wd-welcome-bar" aria-label="Welcome">
+            <div class="wd-welcome-inner">
+                <div class="wd-pfp" id="welcomePfp">
+                    <img id="welcomePfpImg" alt="" hidden />
+                    <span class="wd-pfp-initial" id="welcomePfpInitial" aria-hidden="true"></span>
+                </div>
+                <div class="wd-welcome-copy">
+                    <h1 class="wd-welcome-title" id="welcomeTitle">Welcome back.</h1>
+                    <p class="wd-welcome-sub is-hidden" id="welcomeSubtitle"></p>
+                </div>
+            </div>
+        </header>
+        <nav class="wd-nav-wrap" aria-label="Workspace" data-active="settings">
+            <div class="wd-nav">
+                <a href="settings.html" class="is-active">Settings</a>
+                <a href="index.html">Main site</a>
+                <button type="button" class="settings-nav-logout" data-logout-btn>Logout</button>
+            </div>
+        </nav>
+        <script type="module" src="/js/workspace-nav.js?v=14"></script>
+
+    <div class="wrap">
+    <div class="panel" id="loadingPanel">
+        <p class="hint" style="margin:0">Loading your account…</p>
+    </div>
+
+    <div class="settings-shell hidden" id="settingsShell">
+        <nav class="settings-nav" id="settingsNav" role="tablist" aria-label="Settings sections">
+            <button type="button" role="tab" id="tab-appearance" data-section="appearancePanel" aria-controls="appearancePanel" aria-selected="true">Appearance</button>
+            <button type="button" role="tab" id="tab-account" data-section="accountModePanel" aria-controls="accountModePanel" aria-selected="false">Account focus</button>
+            <button type="button" role="tab" id="tab-author-page" data-section="authorPagePanel" aria-controls="authorPagePanel" aria-selected="false">Author page</button>
+            <button type="button" role="tab" id="tab-profile" data-section="profilePanel" aria-controls="profilePanel" aria-selected="false">Profile</button>
+            <button type="button" role="tab" id="tab-library" data-section="libraryPanel" aria-controls="libraryPanel" aria-selected="false">Policy &amp; appeals</button>
+            <button type="button" role="tab" id="tab-password" data-section="securityPanel" aria-controls="securityPanel" aria-selected="false">Password</button>
+            <button type="button" role="tab" id="tab-backup" data-section="backupPanel" aria-controls="backupPanel" aria-selected="false">Backup</button>
+            <button type="button" class="settings-nav-delete hidden" id="deleteAccountNavBtn">Delete account</button>
+            <button type="button" class="settings-nav-logout" id="logoutBtn">Log out</button>
+        </nav>
+
+        <div class="settings-content">
+    <div class="panel hidden settings-tab-panel" id="appearancePanel" role="tabpanel" aria-labelledby="tab-appearance">
+        <h2>Appearance</h2>
+        <p class="hint">Accent colors for the UI, plus a title font and color for headings.</p>
+        <div class="appearance-mix-controls" aria-labelledby="appearance-mix-heading">
+            <span class="sr-only" id="appearance-mix-heading">Accent and background coordination</span>
+            <div class="appearance-mix-mode" role="radiogroup" aria-label="Accent and background">
+                <label class="appearance-mix-option">
+                    <input type="radio" name="appearanceMixMode" value="linked" id="appearanceMixLinked" />
+                    Linked — background follows accent
+                </label>
+                <label class="appearance-mix-option">
+                    <input type="radio" name="appearanceMixMode" value="free" id="appearanceMixFree" />
+                    Mix freely — combine any accent &amp; background
+                </label>
+            </div>
+            <button type="button" class="appearance-mix-shuffle" id="appearanceMixShuffle" title="Random accent and background combo">Mix it up ↻</button>
+        </div>
+        <div class="appearance-layout">
+            <section class="appearance-block appearance-block--bg" aria-labelledby="appearance-bg-heading">
+                <h3 class="appearance-subhead" id="appearance-bg-heading">Page background</h3>
+                <p class="hint">The dark space behind panels and content. Muted tints pair with accents; <strong>glow</strong> options add a slightly richer color.</p>
+                <div class="theme-grid appearance-grid appearance-grid--bg" id="bodyBgChipRow" aria-label="Page background colors"></div>
+                <div class="display-color-custom" id="bodyBgCustom" hidden>
+                    <div class="display-color-field">
+                        <label for="bodyBgColor">Background color</label>
+                        <input type="color" id="bodyBgColor" value="#0b1220" />
+                    </div>
+                </div>
+            </section>
+            <section class="appearance-block appearance-block--accent" aria-labelledby="appearance-colors-heading">
+                <h3 class="appearance-subhead" id="appearance-colors-heading">Site accent</h3>
+                <p class="hint">Buttons, chrome, and highlights.</p>
+                <div class="theme-grid appearance-grid appearance-grid--accent" id="themeChipRow" aria-label="Accent themes"></div>
+            </section>
+            <div class="appearance-text-pair">
+            <section class="appearance-block appearance-block--fonts appearance-block--style" aria-labelledby="appearance-text-heading">
+                <h3 class="appearance-subhead" id="appearance-text-heading">Title font</h3>
+                <p class="hint">Real typefaces — fantasy, serif, sans, and display.</p>
+                <div class="theme-grid appearance-grid appearance-grid--fonts" id="textStyleChipRow" aria-label="Title fonts"></div>
+            </section>
+            <section class="appearance-block appearance-block--colors" aria-labelledby="appearance-colors-text-heading">
+                <h3 class="appearance-subhead" id="appearance-colors-text-heading">Title color</h3>
+                <p class="hint">Heading color — separate from font.</p>
+                <div class="theme-grid appearance-grid appearance-grid--colors" id="textColorChipRow" aria-label="Title colors"></div>
+                <div class="display-color-custom" id="displayColorCustom" hidden>
+                    <div class="display-color-field">
+                        <label for="displayColorMain">Main color</label>
+                        <input type="color" id="displayColorMain" value="#f59e0b" />
+                    </div>
+                    <div class="display-color-field">
+                        <label for="displayColorAccent">Accent / edge</label>
+                        <input type="color" id="displayColorAccent" value="#fde68a" />
+                    </div>
+                </div>
+            </section>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel hidden settings-tab-panel" id="accountModePanel" role="tabpanel" aria-labelledby="tab-account" hidden>
+        <h2>How you use Alysum</h2>
+        <p class="hint">
+            Controls your default home after login and the Studio / Reading switch in the header. Existing accounts without a choice here behave like “Both”.
+        </p>
+        <div class="account-focus-body">
+        <div id="accountTypeGroup" role="radiogroup" aria-label="Account focus">
+            <label class="account-type-row">
+                <input type="radio" name="settingsAccountType" value="author" />
+                <span class="account-type-card">
+                    <span class="account-type-icon" aria-hidden="true">✍️</span>
+                    <span class="account-type-copy">
+                        <strong>Author</strong>
+                        <span class="account-type-tagline">Write, publish, and manage your books.</span>
+                        <p class="account-type-detail">
+                            You land in Studio after sign-in. The editor, worldbuilding, and publish tools stay front and center. Open the Library from the menu when you want to read or leave feedback on someone else’s work.
+                        </p>
+                    </span>
+                </span>
+            </label>
+            <label class="account-type-row">
+                <input type="radio" name="settingsAccountType" value="reader" />
+                <span class="account-type-card">
+                    <span class="account-type-icon" aria-hidden="true">📖</span>
+                    <span class="account-type-copy">
+                        <strong>Reader</strong>
+                        <span class="account-type-tagline">Discover stories and follow what you love.</span>
+                        <p class="account-type-detail">
+                            You land on your Reading home after sign-in. Browse the Library, track beta reads, and comment on chapters. Studio is still one tap away from the menu if you decide to write later.
+                        </p>
+                    </span>
+                </span>
+            </label>
+            <label class="account-type-row">
+                <input type="radio" name="settingsAccountType" value="both" />
+                <span class="account-type-card">
+                    <span class="account-type-icon" aria-hidden="true">↔️</span>
+                    <span class="account-type-copy">
+                        <strong>Both</strong>
+                        <span class="account-type-tagline">Write and read without picking a side.</span>
+                        <p class="account-type-detail">
+                            Switch between Studio and Reading from the top bar on Studio and Library. Sign-in uses this balanced mode by default if you have not chosen before. Best when you regularly draft chapters and browse other authors.
+                        </p>
+                    </span>
+                </span>
+            </label>
+        </div>
+        <div class="account-focus-actions">
+            <button type="button" class="btn btn-primary" id="saveAccountTypeBtn">Save account focus</button>
+            <div class="msg" id="accountTypeMsg" role="status"></div>
+        </div>
+        </div>
+    </div>
+
+    <div class="panel hidden settings-tab-panel" id="authorPagePanel" role="tabpanel" aria-labelledby="tab-author-page" hidden>
+        <h2>Author page</h2>
+        <p class="hint author-page-intro-hint">
+            Your public biography and tip links — shown on your author page and with published books in the Library.
+        </p>
+
+        <div class="author-page-panel-body">
+            <section class="profile-box profile-bio-box" id="author-bio" aria-labelledby="profileBioTitle">
+                <h3 class="profile-box-title" id="profileBioTitle">Biography</h3>
+                <p class="hint">Tell readers a little about yourself. This appears on your public author page and at the end of your published books.</p>
+                <div class="field">
+                    <label for="authorBioInput">About me</label>
+                    <textarea id="authorBioInput" maxlength="2000" rows="8" placeholder="Share your writing background, interests, or what readers can expect from your work…"></textarea>
+                    <p class="hint" style="margin-top:8px;margin-bottom:0"><span id="authorBioCount">0</span> / 2000 characters</p>
+                </div>
+                <div class="profile-box-actions">
+                    <button type="button" class="btn btn-primary" id="saveBioBtn">Save biography</button>
+                    <a class="btn" id="authorBioPreviewLink" href="author.html" target="_blank" rel="noopener">Preview author page</a>
+                    <div class="msg" id="bioMsg" role="status"></div>
+                </div>
+            </section>
+
+            <section class="profile-box profile-support-box" id="author-support" aria-labelledby="profileSupportTitle">
+                <h3 class="profile-box-title" id="profileSupportTitle">Support &amp; tip links</h3>
+                <p class="hint">
+                    Optional links so readers can tip you or buy your work. Empty fields stay hidden on your public page.
+                    Use full https:// URLs (PayPal, Ko-fi, Cash App, Patreon, social, store, etc.).
+                </p>
+                <div class="support-links-grid" id="supportLinksGrid"></div>
+                <div class="profile-box-actions">
+                    <button type="button" class="btn btn-primary" id="saveSupportLinksBtn">Save support links</button>
+                    <div class="msg" id="supportLinksMsg" role="status"></div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <div class="panel hidden settings-tab-panel" id="profilePanel" role="tabpanel" aria-labelledby="tab-profile" hidden>
+        <h2>Profile</h2>
+        <p class="hint profile-intro-hint">Your permanent handle is like a Discord tag: it never changes and identifies you. Your display name is what others see next to comments and on your studio home.</p>
+
+        <div class="profile-panel-body">
+        <section class="profile-box profile-identity-box" aria-labelledby="profileIdentityTitle">
+            <h3 class="profile-box-title" id="profileIdentityTitle">Your identity</h3>
+            <div class="field">
+                <label for="emailField">Email</label>
+                <input type="email" id="emailField" disabled />
+            </div>
+            <div class="field">
+                <label>Permanent handle</label>
+                <div class="readonly mono" id="handleField">@…</div>
+                <p class="hint" style="margin-top:8px;margin-bottom:0">This cannot be changed.</p>
+            </div>
+
+            <div class="field">
+                <label for="displayNameInput">Display name</label>
+                <input type="text" id="displayNameInput" maxlength="40" autocomplete="nickname" placeholder="How your name appears" />
+                <p class="hint" style="margin-top:8px;margin-bottom:0">Leave blank and save to show only your permanent handle everywhere.</p>
+            </div>
+            <div class="profile-box-actions">
+                <button type="button" class="btn btn-primary" id="saveDisplayBtn">Save display name</button>
+                <div class="msg" id="profileMsg" role="status"></div>
+            </div>
+        </section>
+
+        <section class="profile-box profile-avatar-box" aria-labelledby="profileAvatarTitle">
+            <h3 class="profile-box-title" id="profileAvatarTitle">Profile picture</h3>
+            <p class="hint">Upload an image for your account. It will appear in the Studio profile circle.</p>
+
+            <div class="profile-avatar-layout">
+                <div class="profile-avatar-preview has-initial" id="profileAvatarPreviewWrap">
+                    <img id="profileAvatarPreview" src="/Alysum-3.png" alt="Profile picture preview" />
+                    <span class="profile-avatar-preview-initial" id="profileAvatarInitial" aria-hidden="true">A</span>
+                </div>
+                <div>
+                    <div class="field">
+                        <label for="profileAvatarInput">Upload image</label>
+                        <input type="file" id="profileAvatarInput" accept="image/png,image/jpeg,image/webp,image/gif" />
+                        <p class="hint" style="margin-top:8px;margin-bottom:0">PNG, JPG, WEBP, or GIF. Maximum 3MB.</p>
+                    </div>
+                    <div class="profile-avatar-actions">
+                        <button type="button" class="btn btn-primary" id="saveAvatarBtn">Save profile picture</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="msg" id="avatarMsg" role="status"></div>
+        </section>
+
+        <section class="profile-box profile-danger-box hidden" id="deleteAccountSection" aria-labelledby="deleteAccountTitle">
+            <h3 class="profile-box-title" id="deleteAccountTitle">Delete account</h3>
+            <p class="hint" style="margin: 0 0 10px">
+                Permanently removes your Alysum account, books, comments, and profile. Published library entries may remain listed without an author link.
+            </p>
+            <p class="hint" style="margin: 0 0 14px">
+                Download a backup from the Backup tab first if you want to keep your work. This cannot be undone.
+            </p>
+            <div class="field hidden" id="deleteAccountPasswordField">
+                <label for="deleteAccountPassword">Current password</label>
+                <input type="password" id="deleteAccountPassword" autocomplete="current-password" />
+                <p class="hint" style="margin-top:8px;margin-bottom:0">Required to confirm deletion for email sign-in.</p>
+            </div>
+            <div class="profile-box-actions">
+                <button type="button" class="btn btn-danger" id="deleteAccountBtn">Delete my account</button>
+                <div class="msg" id="deleteAccountMsg" role="status"></div>
+            </div>
+        </section>
+        </div>
+    </div>
+
+    <div class="panel hidden settings-tab-panel" id="libraryPanel" role="tabpanel" aria-labelledby="tab-library" hidden>
+        <h2>Policy &amp; appeals</h2>
+        <p class="hint">Policy notices on your published work and how to appeal a decision.</p>
+
+        <div class="library-panel-body">
+            <section class="profile-box" aria-labelledby="libraryAuthorTitle">
+                <h3 class="profile-box-title" id="libraryAuthorTitle">Your published work</h3>
+                <p class="hint" style="margin: 0 0 16px">
+                    Archived features are being kept separately while the live site is reduced to a minimal shell. The active app will restore each feature back in individually when needed.
+                </p>
+            </section>
+        </div>
+    </div>
+
+    <div class="panel hidden settings-tab-panel" id="securityPanel" role="tabpanel" aria-labelledby="tab-password" hidden>
+        <h2>Password</h2>
+        <p class="hint hidden password-intro-hint" id="ssoPasswordNote"></p>
+        <p class="hint password-intro-hint" id="passwordFormHint">Enter your current password, then choose a new one.</p>
+
+        <div class="profile-panel-body password-panel-body">
+            <section class="profile-box password-current-box" aria-labelledby="passwordCurrentTitle">
+                <h3 class="profile-box-title" id="passwordCurrentTitle">Current password</h3>
+                <p class="hint" style="margin: 0 0 14px">Confirm it's you before changing anything.</p>
+                <div class="field">
+                    <label for="currentPw">Current password</label>
+                    <input type="password" id="currentPw" autocomplete="current-password" />
+                </div>
+            </section>
+
+            <section class="profile-box password-new-box" aria-labelledby="passwordNewTitle">
+                <h3 class="profile-box-title" id="passwordNewTitle">New password</h3>
+                <p class="hint" style="margin: 0 0 14px">At least 6 characters. You'll use this next time you sign in.</p>
+                <div class="field">
+                    <label for="newPw">New password</label>
+                    <input type="password" id="newPw" autocomplete="new-password" />
+                </div>
+                <div class="field">
+                    <label for="confirmPw">Confirm new password</label>
+                    <input type="password" id="confirmPw" autocomplete="new-password" />
+                </div>
+            </section>
+
+            <div class="profile-box-actions">
+                <button type="button" class="btn btn-primary" id="savePasswordBtn">Update password</button>
+                <div class="msg" id="passwordMsg" role="status"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel hidden settings-tab-panel" id="backupPanel" role="tabpanel" aria-labelledby="tab-backup" hidden>
+        <h2>Backup</h2>
+        <p class="hint">Save your work to your computer as a ZIP file. Each book becomes an HTML page you can open anywhere. Use Restore to load a ZIP back into Alysum.</p>
+
+        <div class="profile-panel-body backup-panel-body">
+            <section class="backup-status-card" aria-live="polite">
+                <div class="backup-status-label">Last backup on this device</div>
+                <div class="backup-status-datetime" id="lastBackupDateTime">No backup created yet</div>
+                <p class="hint backup-status-file" id="lastBackupFileName" hidden></p>
+            </section>
+
+            <section class="profile-box backup-practice-box" aria-labelledby="backupPracticeTitle">
+                <h3 class="profile-box-title" id="backupPracticeTitle">Try it safely first</h3>
+                <p class="hint" style="margin: 0 0 10px">
+                    Don’t test restore on your main account until you’re comfortable. Use the practice flow below — it never reads or overwrites your real books.
+                </p>
+                <ol class="backup-practice-steps">
+                    <li><strong>Download practice backup</strong> — a ZIP with two fake books.</li>
+                    <li><strong>Preview restore</strong> — see exactly what would change. Nothing is saved.</li>
+                    <li>When you trust it, restore the practice ZIP in <strong>local guest mode</strong> (desktop app → Host Local), or use your real backup on your account.</li>
+                </ol>
+                <div class="backup-actions">
+                    <button type="button" class="btn btn-secondary" id="downloadPracticeBackupBtn">Download practice backup</button>
+                    <button type="button" class="btn btn-secondary" id="previewRestoreBtn" disabled>Preview restore</button>
+                    <div class="msg" id="backupPracticeMsg" role="status"></div>
+                </div>
+            </section>
+
+            <section class="profile-box" aria-labelledby="backupExportTitle">
+                <h3 class="profile-box-title" id="backupExportTitle">
+                    <span class="backup-step-num" aria-hidden="true">1</span>Create backup
+                </h3>
+                <p class="hint" style="margin: 0 0 14px">
+                    Packages your books as HTML pages inside a ZIP file. The filename includes today’s date and time on your computer. Nothing is uploaded to Alysum’s servers.
+                </p>
+                <div class="backup-actions">
+                    <button type="button" class="btn btn-primary" id="saveBackupBtn">Choose save location…</button>
+                    <div class="msg" id="backupExportMsg" role="status"></div>
+                </div>
+            </section>
+
+            <section class="profile-box" aria-labelledby="backupRestoreTitle">
+                <h3 class="profile-box-title" id="backupRestoreTitle">
+                    <span class="backup-step-num" aria-hidden="true">2</span>Restore backup
+                </h3>
+                <p class="hint" style="margin: 0 0 14px">
+                    Select a ZIP you saved earlier and load it back into Alysum. <strong>Preview restore</strong> first if this is your real account. Make a new backup before overwriting anything.
+                </p>
+                <div class="backup-path-row">
+                    <label for="restorePathDisplay">Backup file</label>
+                    <div class="backup-path-field">
+                        <input type="text" id="restorePathDisplay" readonly placeholder="No file selected — click Browse" />
+                        <button type="button" class="btn btn-secondary" id="chooseRestorePathBtn">Browse…</button>
+                    </div>
+                    <input type="file" id="backupFileInput" accept=".zip,.alysum-backup,.json,application/zip" hidden />
+                </div>
+                <div class="backup-actions">
+                    <button type="button" class="btn btn-primary" id="restoreBackupBtn" disabled>Restore backup</button>
+                    <div class="msg" id="backupRestoreMsg" role="status"></div>
+                </div>
+            </section>
+        </div>
+    </div>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { supabase } from "@alysum/authentication/client.js";
+    import { signOutAndGoToHome } from "@alysum/authentication/logout.js";
+    import { deleteOwnAccount } from "@alysum/authentication/delete-account.js";
+    import { goToLogin } from "@alysum/desktop/app.js";
+    import { resolveStudioSession } from "@alysum/desktop/studio-session.js";
+    import { getProfileRow, updateProfileRow, LOCAL_GUEST_USER_ID } from "@alysum/synchronization-engine/local-adapter.js";
+    import { permanentHandleFromUserData } from "@alysum/account/profile-display.js";
+    import {
+        AUTHOR_BIO_MAX_LENGTH,
+        AUTHOR_SUPPORT_LINK_KINDS,
+        AUTHOR_SUPPORT_URL_MAX_LENGTH,
+        authorPageUrl,
+        escapeAttribute,
+        normalizeSupportLinks,
+        supportLinksPayloadFromDraft,
+    } from "@alysum/library/author-profile.js";
+    import {
+        GRADIENT_THEMES,
+        applyGradientTheme,
+        applyChromeGradient,
+        getStoredGradientThemeId,
+        getThemePreview
+    } from "@alysum/site-appearance/gradient-theme.js";
+    import {
+        DISPLAY_TEXT_STYLES,
+        DISPLAY_TEXT_STYLE_META,
+        DISPLAY_TEXT_FONT_GROUPS,
+        applyDisplayTextStyle,
+        getStoredDisplayTextStyleId,
+        initDisplayTextStyleOnPage
+    } from "@alysum/site-appearance/display-text-style.js";
+    import {
+        DISPLAY_TEXT_COLORS,
+        applyDisplayTextColor,
+        getStoredDisplayTextColorId,
+        getStoredCustomDisplayColors,
+        initDisplayTextColorOnPage,
+        getColorPreview,
+        getColorPreviewTextColor,
+        resolveDisplayColorPair
+    } from "@alysum/site-appearance/display-text-color.js";
+    import {
+        BODY_BG_PRESETS,
+        applyBodyBackground,
+        getStoredBodyBgId,
+        getStoredCustomBodyBg,
+        initBodyBackgroundOnPage,
+        getBodyBgPreview,
+        getAppearanceMixMode,
+        setAppearanceMixMode,
+        isAppearanceLinked,
+        getMixableBodyBgPresets
+    } from "@alysum/site-appearance/body-background.js";
+    import { normalizeAccountType, ACCOUNT_AUTHOR, ACCOUNT_READER, ACCOUNT_BOTH, homeUrlForUserData } from "@alysum/account/mode.js";
+    import {
+        exportUserBackup,
+        saveUserBackupToDisk,
+        savePracticeBackupToDisk,
+        pickBackupFileFromDisk,
+        parseBackupFile,
+        restoreUserBackup,
+        previewRestoreBackup,
+        formatRestorePreviewText,
+        summarizeBackup,
+        getLastBackupMeta,
+        formatBackupDateTime
+    } from "/js/user-backup.js";
+
+    const loadingPanel = document.getElementById("loadingPanel");
+    const profilePanel = document.getElementById("profilePanel");
+    const securityPanel = document.getElementById("securityPanel");
+    const emailField = document.getElementById("emailField");
+    const handleField = document.getElementById("handleField");
+    const displayNameInput = document.getElementById("displayNameInput");
+    const saveDisplayBtn = document.getElementById("saveDisplayBtn");
+    const profileMsg = document.getElementById("profileMsg");
+    const authorBioInput = document.getElementById("authorBioInput");
+    const authorBioCount = document.getElementById("authorBioCount");
+    const saveBioBtn = document.getElementById("saveBioBtn");
+    const authorBioPreviewLink = document.getElementById("authorBioPreviewLink");
+    const bioMsg = document.getElementById("bioMsg");
+    const supportLinksGrid = document.getElementById("supportLinksGrid");
+    const saveSupportLinksBtn = document.getElementById("saveSupportLinksBtn");
+    const supportLinksMsg = document.getElementById("supportLinksMsg");
+    const currentPw = document.getElementById("currentPw");
+    const newPw = document.getElementById("newPw");
+    const confirmPw = document.getElementById("confirmPw");
+    const savePasswordBtn = document.getElementById("savePasswordBtn");
+    const passwordMsg = document.getElementById("passwordMsg");
+    const appearancePanel = document.getElementById("appearancePanel");
+    const themeChipRow = document.getElementById("themeChipRow");
+    const textStyleChipRow = document.getElementById("textStyleChipRow");
+    const textColorChipRow = document.getElementById("textColorChipRow");
+    const displayColorCustom = document.getElementById("displayColorCustom");
+    const displayColorMain = document.getElementById("displayColorMain");
+    const displayColorAccent = document.getElementById("displayColorAccent");
+    const bodyBgChipRow = document.getElementById("bodyBgChipRow");
+    const bodyBgCustom = document.getElementById("bodyBgCustom");
+    const bodyBgColor = document.getElementById("bodyBgColor");
+    const appearanceMixLinked = document.getElementById("appearanceMixLinked");
+    const appearanceMixFree = document.getElementById("appearanceMixFree");
+    const appearanceMixShuffle = document.getElementById("appearanceMixShuffle");
+    const accountModePanel = document.getElementById("accountModePanel");
+    const saveAccountTypeBtn = document.getElementById("saveAccountTypeBtn");
+    const accountTypeMsg = document.getElementById("accountTypeMsg");
+    const settingsShell = document.getElementById("settingsShell");
+    const settingsNav = document.getElementById("settingsNav");
+    const logoutBtn = document.getElementById("logoutBtn");
+    const deleteAccountNavBtn = document.getElementById("deleteAccountNavBtn");
+    const profileAvatarInput = document.getElementById("profileAvatarInput");
+    const profileAvatarPreview = document.getElementById("profileAvatarPreview");
+    const profileAvatarPreviewWrap = document.getElementById("profileAvatarPreviewWrap");
+    const profileAvatarInitial = document.getElementById("profileAvatarInitial");
+    const saveAvatarBtn = document.getElementById("saveAvatarBtn");
+    const avatarMsg = document.getElementById("avatarMsg");
+    const downloadBackupBtn = document.getElementById("saveBackupBtn");
+    const backupExportMsg = document.getElementById("backupExportMsg");
+    const backupFileInput = document.getElementById("backupFileInput");
+    const chooseRestorePathBtn = document.getElementById("chooseRestorePathBtn");
+    const restorePathDisplay = document.getElementById("restorePathDisplay");
+    const restoreBackupBtn = document.getElementById("restoreBackupBtn");
+    const backupRestoreMsg = document.getElementById("backupRestoreMsg");
+    const lastBackupDateTime = document.getElementById("lastBackupDateTime");
+    const lastBackupFileName = document.getElementById("lastBackupFileName");
+    const downloadPracticeBackupBtn = document.getElementById("downloadPracticeBackupBtn");
+    const previewRestoreBtn = document.getElementById("previewRestoreBtn");
+    const backupPracticeMsg = document.getElementById("backupPracticeMsg");
+    const deleteAccountSection = document.getElementById("deleteAccountSection");
+    const deleteAccountPasswordField = document.getElementById("deleteAccountPasswordField");
+    const deleteAccountPassword = document.getElementById("deleteAccountPassword");
+    const deleteAccountBtn = document.getElementById("deleteAccountBtn");
+    const deleteAccountMsg = document.getElementById("deleteAccountMsg");
+
+    let settingsHomeUrl = "settings.html";
+    let activeAvatarObjectUrl = "";
+    let isLocalSettings = false;
+    let settingsUserId = "";
+    let settingsUserEmail = "";
+    let settingsSessionUser = null;
+    let selectedRestoreFile = null;
+
+    const TAB_PANEL_IDS = [
+        "appearancePanel",
+        "accountModePanel",
+        "authorPagePanel",
+        "profilePanel",
+        "libraryPanel",
+        "securityPanel",
+        "backupPanel",
+    ];
+    const SETTINGS_SECTION_ANCHORS = {
+        "author-bio": { panel: "authorPagePanel", scrollTo: "#author-bio", hash: "author-bio" },
+        "author-support": { panel: "authorPagePanel", scrollTo: "#author-support", hash: "author-support" },
+    };
+    const PASSWORD_BLOCKED_OAUTH = new Set(["google", "discord"]);
+
+    /** Only Google- or Discord-only sign-in cannot change password here (uses linked identities). */
+    function isPasswordChangeBlocked(user) {
+        const providers = (user?.identities || [])
+            .map((i) => String(i?.provider || "").toLowerCase())
+            .filter(Boolean);
+        if (providers.length === 0) return false;
+        if (providers.includes("email")) return false;
+        return providers.every((p) => PASSWORD_BLOCKED_OAUTH.has(p));
+    }
+
+    function resolveSettingsRoute(rawHash) {
+        const hash = rawHash === "staffPanel" ? "libraryPanel" : rawHash;
+        if (TAB_PANEL_IDS.includes(hash)) {
+            return { panel: hash, scrollTo: null, hash: hash };
+        }
+        const anchor = SETTINGS_SECTION_ANCHORS[hash];
+        if (anchor) return anchor;
+        return { panel: "appearancePanel", scrollTo: null, hash: "appearancePanel" };
+    }
+
+    function spotlightSettingsSection(selector) {
+        const el = document.querySelector(selector);
+        if (!el) return;
+        window.setTimeout(() => {
+            el.scrollIntoView({ behavior: "smooth", block: "start" });
+            el.classList.add("fh-section-spotlight");
+            window.setTimeout(() => el.classList.remove("fh-section-spotlight"), 3500);
+        }, 100);
+    }
+
+    function showSettingsTab(panelId, routeExtras = null) {
+        const id = TAB_PANEL_IDS.includes(panelId) ? panelId : "appearancePanel";
+        const scrollTo = routeExtras?.scrollTo || null;
+        const urlHash = routeExtras?.hash || id;
+        const tabs = settingsNav ? [...settingsNav.querySelectorAll("button[data-section]")] : [];
+        const panels = TAB_PANEL_IDS.map((pid) => document.getElementById(pid)).filter(Boolean);
+
+        tabs.forEach((tab) => {
+            const on = tab.dataset.section === id;
+            tab.classList.toggle("active", on);
+            tab.setAttribute("aria-selected", on ? "true" : "false");
+        });
+
+        panels.forEach((panel) => {
+            const on = panel.id === id;
+            panel.classList.toggle("is-active", on);
+            panel.hidden = !on;
+        });
+
+        try {
+            history.replaceState(null, "", "#" + urlHash);
+        } catch (_) {}
+
+        if (scrollTo) spotlightSettingsSection(scrollTo);
+    }
+
+    function initSettingsNav() {
+        if (!settingsNav || settingsNav.dataset.ready === "1") return;
+        settingsNav.dataset.ready = "1";
+
+        settingsNav.querySelectorAll("button[data-section]").forEach((tab) => {
+            tab.addEventListener("click", () => showSettingsTab(tab.dataset.section));
+        });
+
+        const route = resolveSettingsRoute((location.hash || "").replace(/^#/, ""));
+        showSettingsTab(route.panel, route);
+
+        window.addEventListener("hashchange", () => {
+            const route = resolveSettingsRoute((location.hash || "").replace(/^#/, ""));
+            showSettingsTab(route.panel, route);
+        });
+    }
+
+    function mergeUserRow(row) {
+        if (!row || typeof row !== "object") return {};
+        return {
+            ...row,
+            displayName: row.display_name ?? row.displayName,
+            accountType: row.account_type ?? row.accountType,
+            writingDayTotals: row.writing_day_totals ?? row.writingDayTotals,
+            profileImageUrl: row.profile_image_url ?? row.profileImageUrl ?? "",
+            bio: row.bio ?? "",
+            supportLinks: normalizeSupportLinks(row.support_links ?? row.supportLinks),
+        };
+    }
+
+    function updateAuthorBioCount() {
+        if (!authorBioCount || !authorBioInput) return;
+        authorBioCount.textContent = String(authorBioInput.value.length);
+    }
+
+    function setAuthorBioPreviewLink(handle) {
+        if (!authorBioPreviewLink) return;
+        const url = authorPageUrl(handle);
+        if (!url || isLocalSettings) {
+            authorBioPreviewLink.classList.add("hidden");
+            return;
+        }
+        authorBioPreviewLink.href = url;
+        authorBioPreviewLink.classList.remove("hidden");
+    }
+
+    function renderSupportLinkFields(links = {}) {
+        if (!supportLinksGrid) return;
+        const cleaned = normalizeSupportLinks(links);
+        supportLinksGrid.innerHTML = AUTHOR_SUPPORT_LINK_KINDS.map((kind) => {
+            const value = cleaned[kind.id] || "";
+            const inputId = `supportLink_${kind.id}`;
+            return `
+                <div class="field support-link-field">
+                    <label for="${inputId}"><span class="support-link-kind">${escapeAttribute(kind.label)}</span></label>
+                    <input
+                        type="url"
+                        id="${inputId}"
+                        data-support-kind="${escapeAttribute(kind.id)}"
+                        maxlength="${AUTHOR_SUPPORT_URL_MAX_LENGTH}"
+                        placeholder="${escapeAttribute(kind.placeholder)}"
+                        value="${escapeAttribute(value)}"
+                        autocomplete="url"
+                    />
+                </div>
+            `;
+        }).join("");
+    }
+
+    function readSupportLinkDraft() {
+        const draft = {};
+        supportLinksGrid?.querySelectorAll("input[data-support-kind]").forEach((input) => {
+            const kind = input.getAttribute("data-support-kind");
+            if (kind) draft[kind] = input.value;
+        });
+        return draft;
+    }
+
+    function setSupportLinksDisabled(disabled) {
+        supportLinksGrid?.querySelectorAll("input[data-support-kind]").forEach((input) => {
+            input.disabled = disabled;
+        });
+        if (saveSupportLinksBtn) saveSupportLinksBtn.disabled = disabled;
+    }
+
+    function setAvatarPreview(imageUrl, label) {
+        if (!profileAvatarPreview || !profileAvatarPreviewWrap) return;
+        const cleanUrl = String(imageUrl || "").trim();
+        const initial = String(label || "A").trim()[0]?.toUpperCase() || "A";
+        if (profileAvatarInitial) profileAvatarInitial.textContent = initial;
+
+        if (cleanUrl) {
+            profileAvatarPreview.src = cleanUrl;
+            profileAvatarPreviewWrap.classList.remove("has-initial");
+        } else {
+            profileAvatarPreview.removeAttribute("src");
+            profileAvatarPreviewWrap.classList.add("has-initial");
+        }
+    }
+
+    function initThemePicker() {
+        if (!themeChipRow || themeChipRow.dataset.ready === "1") return;
+        themeChipRow.dataset.ready = "1";
+        themeChipRow.innerHTML = "";
+        const cur = getStoredGradientThemeId();
+        GRADIENT_THEMES.forEach(t => {
+            const b = document.createElement("button");
+            b.type = "button";
+            let cls = "theme-chip" + (t.id === cur ? " active" : "");
+            if (t.preview) {
+                cls += " has-preview";
+                b.style.background = t.preview;
+            }
+            b.className = cls;
+            b.dataset.theme = t.id;
+            b.textContent = t.label;
+            b.title = t.hint || "";
+            b.addEventListener("click", () => {
+                applyGradientTheme(t.id);
+                applyChromeGradient(t.preview || getThemePreview(t.id));
+                if (isAppearanceLinked()) {
+                    applyBodyBackground("theme");
+                    refreshBodyBgThemeChip();
+                    setBodyBgChipActive("theme");
+                    applyDisplayTextColor("theme");
+                    setTextColorChipActive("theme");
+                } else {
+                    if (getStoredDisplayTextColorId() === "theme") {
+                        applyDisplayTextColor("theme");
+                    }
+                    if (getStoredBodyBgId() === "theme") {
+                        applyBodyBackground("theme");
+                        refreshBodyBgThemeChip();
+                    }
+                }
+                themeChipRow.querySelectorAll(".theme-chip").forEach((x) => {
+                    x.classList.remove("active");
+                });
+                b.classList.add("active");
+            });
+            themeChipRow.appendChild(b);
+        });
+    }
+
+    function createFontStyleChip(style, activeId) {
+        const meta = DISPLAY_TEXT_STYLE_META[style.id] || {};
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "theme-chip text-style-chip" + (style.id === activeId ? " active" : "");
+        b.dataset.style = style.id;
+        b.title = style.hint || meta.hint || "";
+
+        const preview = document.createElement("span");
+        preview.className = "text-style-chip-preview";
+        preview.setAttribute("aria-hidden", "true");
+        preview.textContent = "Aa";
+        if (meta.fontFamily) {
+            preview.style.fontFamily = meta.fontFamily;
+            preview.style.fontWeight = String(meta.weight || 700);
+            if (meta.caps) preview.style.textTransform = "uppercase";
+        }
+
+        const label = document.createElement("span");
+        label.className = "text-style-chip-label";
+        label.textContent = style.label;
+
+        b.append(preview, label);
+        b.addEventListener("click", () => {
+            applyDisplayTextStyle(style.id);
+            textStyleChipRow.querySelectorAll(".theme-chip").forEach((x) => {
+                x.classList.remove("active");
+            });
+            b.classList.add("active");
+        });
+        return b;
+    }
+
+    function initTextStylePicker() {
+        if (!textStyleChipRow || textStyleChipRow.dataset.ready === "1") return;
+        textStyleChipRow.dataset.ready = "1";
+        textStyleChipRow.innerHTML = "";
+        const cur = getStoredDisplayTextStyleId();
+
+        const groups = Array.isArray(DISPLAY_TEXT_FONT_GROUPS) && DISPLAY_TEXT_FONT_GROUPS.length
+            ? DISPLAY_TEXT_FONT_GROUPS
+            : [{ id: "all", label: "Title fonts" }];
+
+        groups.forEach((group) => {
+            const styles = group.id === "all"
+                ? DISPLAY_TEXT_STYLES
+                : DISPLAY_TEXT_STYLES.filter(
+                      (s) => (DISPLAY_TEXT_STYLE_META[s.id] || {}).category === group.id
+                  );
+            if (!styles.length) return;
+
+            if (group.id !== "all") {
+                const heading = document.createElement("div");
+                heading.className = "font-group-label";
+                heading.textContent = group.label;
+                textStyleChipRow.appendChild(heading);
+            }
+
+            styles.forEach((s) => {
+                textStyleChipRow.appendChild(createFontStyleChip(s, cur));
+            });
+        });
+    }
+
+    function initAppearancePickers() {
+        try {
+            bindAppearanceMixControls();
+            initThemePicker();
+            initBodyBgPicker();
+            initTextStylePicker();
+            initTextColorPicker();
+            syncAppearanceMixModeUi();
+        } catch (err) {
+            console.error("Appearance pickers failed:", err);
+        }
+    }
+
+    function titleColorPreviewMain(color) {
+        if (color.main) return color.main;
+        if (color.id === "custom") return getStoredCustomDisplayColors().main;
+        if (color.id === "theme") return resolveDisplayColorPair("theme").main;
+        return "#f59e0b";
+    }
+
+    function syncCustomColorPanelVisibility(colorId) {
+        if (!displayColorCustom) return;
+        const show = colorId === "custom";
+        displayColorCustom.hidden = !show;
+        displayColorCustom.classList.toggle("is-visible", show);
+    }
+
+    function bindCustomColorInputs() {
+        if (!displayColorMain || !displayColorAccent || displayColorMain.dataset.bound === "1") return;
+        displayColorMain.dataset.bound = "1";
+        const custom = getStoredCustomDisplayColors();
+        displayColorMain.value = custom.main;
+        displayColorAccent.value = custom.accent;
+        const refreshCustomColorChip = () => {
+            const customBtn = textColorChipRow?.querySelector('[data-style="custom"]');
+            if (!customBtn) return;
+            const main = displayColorMain.value;
+            const accent = displayColorAccent.value;
+            customBtn.style.background = `linear-gradient(145deg, ${accent}, ${main})`;
+            const aa = customBtn.querySelector(".text-style-chip-preview");
+            if (aa) aa.style.color = getColorPreviewTextColor(main);
+        };
+        const onCustomChange = () => {
+            if (getStoredDisplayTextColorId() !== "custom") return;
+            applyDisplayTextColor("custom", displayColorMain.value, displayColorAccent.value);
+            refreshCustomColorChip();
+        };
+        displayColorMain.addEventListener("input", onCustomChange);
+        displayColorAccent.addEventListener("input", onCustomChange);
+    }
+
+    function initTextColorPicker() {
+        if (!textColorChipRow || textColorChipRow.dataset.ready === "1") return;
+        textColorChipRow.dataset.ready = "1";
+        textColorChipRow.innerHTML = "";
+        const cur = getStoredDisplayTextColorId();
+        DISPLAY_TEXT_COLORS.forEach((c) => {
+            const b = document.createElement("button");
+            b.type = "button";
+            let cls = "theme-chip title-color-chip" + (c.id === cur ? " active" : "");
+            const preview = getColorPreview(c.id);
+            if (preview) {
+                cls += " has-preview";
+                b.style.background = preview;
+            }
+            b.className = cls;
+            b.dataset.style = c.id;
+            b.title = c.hint || "";
+            const previewEl = document.createElement("span");
+            previewEl.className = "text-style-chip-preview";
+            previewEl.setAttribute("aria-hidden", "true");
+            previewEl.textContent = "Aa";
+            previewEl.style.color = getColorPreviewTextColor(titleColorPreviewMain(c));
+
+            const labelEl = document.createElement("span");
+            labelEl.className = "text-style-chip-label";
+            labelEl.textContent = c.label;
+
+            b.append(previewEl, labelEl);
+            b.addEventListener("click", () => {
+                if (c.id === "custom") {
+                    const main = displayColorMain?.value || getStoredCustomDisplayColors().main;
+                    const accent = displayColorAccent?.value || getStoredCustomDisplayColors().accent;
+                    applyDisplayTextColor("custom", main, accent);
+                } else {
+                    applyDisplayTextColor(c.id);
+                }
+                textColorChipRow.querySelectorAll(".theme-chip").forEach((x) => {
+                    x.classList.remove("active");
+                });
+                b.classList.add("active");
+                syncCustomColorPanelVisibility(c.id);
+            });
+            textColorChipRow.appendChild(b);
+        });
+        syncCustomColorPanelVisibility(cur);
+        bindCustomColorInputs();
+    }
+
+    function syncBodyBgCustomPanelVisibility(bgId) {
+        if (!bodyBgCustom) return;
+        const show = bgId === "custom";
+        bodyBgCustom.hidden = !show;
+        bodyBgCustom.classList.toggle("is-visible", show);
+    }
+
+    function bindBodyBgCustomInput() {
+        if (!bodyBgColor || bodyBgColor.dataset.bound === "1") return;
+        bodyBgColor.dataset.bound = "1";
+        bodyBgColor.value = getStoredCustomBodyBg();
+        const refreshCustomBgChip = () => {
+            const customBtn = bodyBgChipRow?.querySelector('[data-style="custom"]');
+            if (!customBtn) return;
+            customBtn.style.background = getBodyBgPreview("custom");
+        };
+        bodyBgColor.addEventListener("input", () => {
+            if (getStoredBodyBgId() !== "custom") return;
+            applyBodyBackground("custom", bodyBgColor.value);
+            refreshCustomBgChip();
+        });
+    }
+
+    function syncAppearanceMixModeUi() {
+        const linked = isAppearanceLinked();
+        if (appearanceMixLinked) appearanceMixLinked.checked = linked;
+        if (appearanceMixFree) appearanceMixFree.checked = !linked;
+    }
+
+    function bindAppearanceMixControls() {
+        if (appearanceMixLinked?.dataset.bound === "1") return;
+        if (appearanceMixLinked) appearanceMixLinked.dataset.bound = "1";
+        syncAppearanceMixModeUi();
+
+        appearanceMixLinked?.addEventListener("change", () => {
+            if (!appearanceMixLinked.checked) return;
+            setAppearanceMixMode("linked");
+            applyBodyBackground("theme");
+            applyDisplayTextColor("theme");
+            setBodyBgChipActive("theme");
+            setTextColorChipActive("theme");
+            syncBodyBgCustomPanelVisibility("theme");
+            syncCustomColorPanelVisibility("theme");
+            refreshBodyBgThemeChip();
+        });
+
+        appearanceMixFree?.addEventListener("change", () => {
+            if (!appearanceMixFree?.checked) return;
+            setAppearanceMixMode("free");
+        });
+
+        appearanceMixShuffle?.addEventListener("click", () => {
+            setAppearanceMixMode("free");
+            syncAppearanceMixModeUi();
+            const accents = GRADIENT_THEMES;
+            const bgs = getMixableBodyBgPresets();
+            const accent = accents[Math.floor(Math.random() * accents.length)];
+            let bg = bgs[Math.floor(Math.random() * bgs.length)];
+            if (bgs.length > 1 && bg.id === accent.id) {
+                bg = bgs[(bgs.indexOf(bg) + 1) % bgs.length];
+            }
+            applyGradientTheme(accent.id);
+            applyChromeGradient(accent.preview || getThemePreview(accent.id));
+            applyBodyBackground(bg.id);
+            applyDisplayTextColor("theme");
+            themeChipRow?.querySelectorAll(".theme-chip").forEach((x) => {
+                x.classList.toggle("active", x.dataset.theme === accent.id);
+            });
+            setBodyBgChipActive(bg.id);
+            setTextColorChipActive("theme");
+            syncBodyBgCustomPanelVisibility(bg.id);
+            syncCustomColorPanelVisibility("theme");
+        });
+    }
+
+    function setBodyBgChipActive(id) {
+        bodyBgChipRow?.querySelectorAll(".theme-chip").forEach((x) => {
+            x.classList.toggle("active", x.dataset.style === id);
+        });
+    }
+
+    function setTextColorChipActive(id) {
+        textColorChipRow?.querySelectorAll(".theme-chip").forEach((x) => {
+            x.classList.toggle("active", x.dataset.style === id);
+        });
+    }
+
+    function refreshBodyBgThemeChip() {
+        const themeBtn = bodyBgChipRow?.querySelector('[data-style="theme"]');
+        if (!themeBtn) return;
+        themeBtn.style.background = getBodyBgPreview("theme");
+    }
+
+    function initBodyBgPicker() {
+        if (!bodyBgChipRow || bodyBgChipRow.dataset.ready === "1") return;
+        bodyBgChipRow.dataset.ready = "1";
+        bodyBgChipRow.innerHTML = "";
+        const cur = getStoredBodyBgId();
+        BODY_BG_PRESETS.forEach((p) => {
+            const b = document.createElement("button");
+            b.type = "button";
+            let cls = "theme-chip title-color-chip" + (p.id === cur ? " active" : "");
+            const preview = getBodyBgPreview(p.id);
+            if (preview) {
+                cls += " has-preview";
+                b.style.background = preview;
+            }
+            b.className = cls;
+            b.dataset.style = p.id;
+            b.title = p.hint || "";
+            const labelEl = document.createElement("span");
+            labelEl.className = "text-style-chip-label";
+            labelEl.textContent = p.label;
+            b.append(labelEl);
+            b.addEventListener("click", () => {
+                if (p.id === "custom") {
+                    const color = bodyBgColor?.value || getStoredCustomBodyBg();
+                    applyBodyBackground("custom", color);
+                    setAppearanceMixMode("free");
+                    syncAppearanceMixModeUi();
+                } else if (p.id === "theme") {
+                    applyBodyBackground("theme");
+                    setAppearanceMixMode("linked");
+                    syncAppearanceMixModeUi();
+                } else if (p.id === "default") {
+                    applyBodyBackground("default");
+                } else {
+                    applyBodyBackground(p.id);
+                    setAppearanceMixMode("free");
+                    syncAppearanceMixModeUi();
+                }
+                bodyBgChipRow.querySelectorAll(".theme-chip").forEach((x) => {
+                    x.classList.remove("active");
+                });
+                b.classList.add("active");
+                syncBodyBgCustomPanelVisibility(p.id);
+            });
+            bodyBgChipRow.appendChild(b);
+        });
+        syncBodyBgCustomPanelVisibility(cur);
+        bindBodyBgCustomInput();
+    }
+
+    initDisplayTextStyleOnPage();
+    initDisplayTextColorOnPage();
+    initBodyBackgroundOnPage();
+    initAppearancePickers();
+
+    function showMsg(el, text, ok) {
+        if (!el) return;
+        el.textContent = text;
+        el.classList.remove("err", "ok");
+        el.classList.add("visible", ok ? "ok" : "err");
+    }
+
+    function hideMsg(el) {
+        if (!el) return;
+        el.classList.remove("visible", "err", "ok");
+        el.textContent = "";
+    }
+
+    logoutBtn?.addEventListener("click", async () => {
+        if (logoutBtn.disabled) return;
+        logoutBtn.disabled = true;
+        const result = await signOutAndGoToHome();
+        if (!result.ok) {
+            logoutBtn.disabled = false;
+            showMsg(profileMsg, result.error?.message || "Could not log out.", false);
+            const onProfile = profilePanel && !profilePanel.hidden;
+            if (!onProfile) showSettingsTab("profilePanel");
+        }
+    });
+
+    deleteAccountBtn?.addEventListener("click", () => {
+        runDeleteAccountFlow();
+    });
+
+    deleteAccountNavBtn?.addEventListener("click", () => {
+        showSettingsTab("profilePanel");
+        if (settingsSessionUser) configureDeleteAccountUi(settingsSessionUser);
+        deleteAccountSection?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        deleteAccountBtn?.focus();
+    });
+
+    function normalizeDisplayName(raw) {
+        const s = String(raw ?? "").trim().replace(/\s+/g, " ");
+        if (!s) return "";
+        if (s.length > 40) return s.slice(0, 40);
+        return s;
+    }
+
+    function finishSettingsShell() {
+        loadingPanel.classList.add("hidden");
+        if (settingsShell) settingsShell.classList.remove("hidden");
+        TAB_PANEL_IDS.forEach((pid) => {
+            const panel = document.getElementById(pid);
+            if (panel) panel.classList.remove("hidden");
+        });
+        applyChromeGradient(getThemePreview(getStoredGradientThemeId()));
+        initAppearancePickers();
+        initSettingsNav();
+        import("./js/feature-highlights.js?v=3").then((m) => m.applyFeatureNewBadges()).catch(() => {});
+
+        refreshBackupStatusUi();
+        document.getElementById("libraryStaffTools")?.classList.add("hidden");
+    }
+
+    function refreshBackupStatusUi() {
+        const meta = getLastBackupMeta();
+        if (!lastBackupDateTime) return;
+        if (!meta?.createdAt) {
+            lastBackupDateTime.textContent = "No backup created yet";
+            if (lastBackupFileName) {
+                lastBackupFileName.hidden = true;
+                lastBackupFileName.textContent = "";
+            }
+            return;
+        }
+        lastBackupDateTime.textContent = formatBackupDateTime(meta.createdAt);
+        if (lastBackupFileName) {
+            const parts = [];
+            if (meta.fileName) parts.push(`Saved as ${meta.fileName}`);
+            if (meta.summary) parts.push(meta.summary);
+            lastBackupFileName.textContent = parts.join(" · ");
+            lastBackupFileName.hidden = !parts.length;
+        }
+    }
+
+    function setSelectedRestoreFile(file, displayPath) {
+        selectedRestoreFile = file || null;
+        if (restorePathDisplay) {
+            restorePathDisplay.value = displayPath || (file?.name ?? "");
+        }
+        if (restoreBackupBtn) {
+            restoreBackupBtn.disabled = !selectedRestoreFile;
+        }
+        if (previewRestoreBtn) {
+            previewRestoreBtn.disabled = !selectedRestoreFile;
+        }
+    }
+
+    async function browseForRestoreBackup() {
+        hideMsg(backupRestoreMsg);
+        try {
+            const picked = await pickBackupFileFromDisk();
+            if (picked) {
+                setSelectedRestoreFile(picked.file, picked.fileName);
+                return;
+            }
+        } catch (e) {
+            if (e?.name === "AbortError") return;
+        }
+        backupFileInput?.click();
+    }
+
+    function initLocalSettingsUi() {
+        isLocalSettings = true;
+        settingsUserId = LOCAL_GUEST_USER_ID;
+        settingsUserEmail = "";
+        const profile = getProfileRow();
+        emailField.value = "Local on this device — sign in to sync";
+        handleField.textContent = "@guest";
+        displayNameInput.value = String(profile.display_name ?? "Guest").trim();
+        setAvatarPreview(null, profile.display_name || "Guest");
+        if (authorBioInput) {
+            authorBioInput.value = "";
+            authorBioInput.disabled = true;
+        }
+        if (saveBioBtn) saveBioBtn.disabled = true;
+        renderSupportLinkFields({});
+        setSupportLinksDisabled(true);
+        updateAuthorBioCount();
+        setAuthorBioPreviewLink("");
+        settingsHomeUrl = "settings.html";
+
+        const acct = normalizeAccountType(profile.account_type || "author");
+        document.querySelectorAll('input[name="settingsAccountType"]').forEach((r) => {
+            r.checked = r.value === acct;
+        });
+
+        finishSettingsShell();
+
+        savePasswordBtn.disabled = true;
+        currentPw.disabled = true;
+        newPw.disabled = true;
+        confirmPw.disabled = true;
+        document.querySelector(".password-panel-body")?.classList.add("hidden");
+        const ssoNote = document.getElementById("ssoPasswordNote");
+        if (ssoNote) {
+            ssoNote.textContent =
+                "Password and cloud profile options need an account. Appearance and display name save on this PC.";
+            ssoNote.classList.remove("hidden");
+        }
+        if (saveAvatarBtn) saveAvatarBtn.disabled = true;
+        if (profileAvatarInput) profileAvatarInput.disabled = true;
+        deleteAccountSection?.classList.add("hidden");
+        deleteAccountNavBtn?.classList.add("hidden");
+    }
+
+    function configureDeleteAccountUi(user) {
+        const show = Boolean(user) && !isLocalSettings;
+        deleteAccountSection?.classList.toggle("hidden", !show);
+        deleteAccountNavBtn?.classList.toggle("hidden", !show);
+        if (!show || !deleteAccountSection) return;
+
+        const requirePassword = !isPasswordChangeBlocked(user);
+        if (deleteAccountPasswordField) {
+            deleteAccountPasswordField.classList.toggle("hidden", !requirePassword);
+        }
+        if (deleteAccountPassword) {
+            deleteAccountPassword.value = "";
+            deleteAccountPassword.disabled = !requirePassword;
+        }
+    }
+
+    async function runDeleteAccountFlow() {
+        if (deleteAccountBtn?.disabled || isLocalSettings) return;
+        hideMsg(deleteAccountMsg);
+
+        const requirePassword = deleteAccountPasswordField && !deleteAccountPasswordField.classList.contains("hidden");
+        const confirmText =
+            "Delete your Alysum account permanently?\n\n" +
+            "This removes your profile, books, comments, and other account data. " +
+            "Download a backup from the Backup tab first if you want to keep your work.\n\n" +
+            "This cannot be undone.";
+
+        if (!window.confirm(confirmText)) return;
+
+        if (deleteAccountBtn) deleteAccountBtn.disabled = true;
+        if (deleteAccountNavBtn) deleteAccountNavBtn.disabled = true;
+        try {
+            const result = await deleteOwnAccount({
+                password: deleteAccountPassword?.value || "",
+                userEmail: settingsUserEmail,
+                requirePassword
+            });
+            if (result.cancelled) {
+                showMsg(deleteAccountMsg, "Account deletion cancelled.", false);
+                showSettingsTab("profilePanel");
+                deleteAccountSection?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+                return;
+            }
+        } catch (e) {
+            console.error(e);
+            showMsg(deleteAccountMsg, e?.message || "Could not delete account.", false);
+            showSettingsTab("profilePanel");
+            deleteAccountSection?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        } finally {
+            if (deleteAccountBtn) deleteAccountBtn.disabled = false;
+            if (deleteAccountNavBtn) deleteAccountNavBtn.disabled = false;
+        }
+    }
+
+    (async () => {
+        const session = await resolveStudioSession(supabase);
+        if (session.mode === "none") {
+            goToLogin("settings.html");
+            return;
+        }
+        if (session.mode === "local") {
+            initLocalSettingsUi();
+            return;
+        }
+
+        const user = session.user;
+        settingsSessionUser = user;
+        settingsUserId = user.id;
+        settingsUserEmail = user.email || "";
+
+        try {
+            const { data: row, error } = await supabase.from("users").select("*").eq("id", user.id).maybeSingle();
+            if (error) throw error;
+            const data = mergeUserRow(row || {});
+
+            emailField.value = user.email || "";
+            const handle = permanentHandleFromUserData(data);
+            handleField.textContent = "@" + handle;
+            displayNameInput.value = String(data.displayName ?? "").trim();
+            setAvatarPreview(data.profileImageUrl, data.displayName || handle || user.email || "A");
+            if (authorBioInput) {
+                authorBioInput.value = String(data.bio ?? "").slice(0, AUTHOR_BIO_MAX_LENGTH);
+                authorBioInput.disabled = false;
+            }
+            if (saveBioBtn) saveBioBtn.disabled = false;
+            renderSupportLinkFields(data.supportLinks || {});
+            setSupportLinksDisabled(false);
+            updateAuthorBioCount();
+            setAuthorBioPreviewLink(handle);
+
+            const acct = normalizeAccountType(data.accountType);
+            settingsHomeUrl = homeUrlForUserData({ ...data, accountType: acct });
+            document.querySelectorAll('input[name="settingsAccountType"]').forEach((r) => {
+                r.checked = r.value === acct;
+            });
+
+            finishSettingsShell();
+            configureDeleteAccountUi(user);
+
+            const passwordBlocked = isPasswordChangeBlocked(user);
+            const ssoNote = document.getElementById("ssoPasswordNote");
+            const formHint = document.getElementById("passwordFormHint");
+            const passwordPanelBody = document.querySelector(".password-panel-body");
+            if (passwordBlocked) {
+                savePasswordBtn.disabled = true;
+                currentPw.disabled = true;
+                newPw.disabled = true;
+                confirmPw.disabled = true;
+                passwordPanelBody?.classList.add("hidden");
+                if (ssoNote) {
+                    ssoNote.textContent =
+                        "Password changes aren’t available for accounts that only sign in with Google or Discord. Use that provider to access your account, or contact support if you need help.";
+                    ssoNote.classList.remove("hidden");
+                }
+                if (formHint) formHint.classList.add("hidden");
+            } else {
+                savePasswordBtn.disabled = false;
+                currentPw.disabled = false;
+                newPw.disabled = false;
+                confirmPw.disabled = false;
+                passwordPanelBody?.classList.remove("hidden");
+                ssoNote?.classList.add("hidden");
+                formHint?.classList.remove("hidden");
+            }
+        } catch (e) {
+            console.error(e);
+            loadingPanel.innerHTML = "<p class=\"hint\" style=\"margin:0;color:#f87171\">Could not load profile.</p>";
+        }
+    })();
+
+    profileAvatarInput?.addEventListener("change", () => {
+        hideMsg(avatarMsg);
+        const file = profileAvatarInput.files?.[0];
+        if (!file) return;
+
+        if (!file.type.startsWith("image/")) {
+            showMsg(avatarMsg, "Please choose an image file.", false);
+            profileAvatarInput.value = "";
+            return;
+        }
+
+        if (file.size > 3 * 1024 * 1024) {
+            showMsg(avatarMsg, "Image must be under 3MB.", false);
+            profileAvatarInput.value = "";
+            return;
+        }
+
+        if (activeAvatarObjectUrl) {
+            URL.revokeObjectURL(activeAvatarObjectUrl);
+            activeAvatarObjectUrl = "";
+        }
+
+        activeAvatarObjectUrl = URL.createObjectURL(file);
+        setAvatarPreview(activeAvatarObjectUrl, displayNameInput.value || handleField.textContent || "A");
+    });
+
+    saveAvatarBtn?.addEventListener("click", async () => {
+        hideMsg(avatarMsg);
+
+        const { data: udata } = await supabase.auth.getUser();
+        const user = udata?.user;
+        if (!user) return;
+
+        const file = profileAvatarInput?.files?.[0];
+        if (!file) {
+            showMsg(avatarMsg, "Choose an image first.", false);
+            return;
+        }
+
+        if (!file.type.startsWith("image/")) {
+            showMsg(avatarMsg, "Please upload an image file.", false);
+            return;
+        }
+
+        if (file.size > 3 * 1024 * 1024) {
+            showMsg(avatarMsg, "Image must be under 3MB.", false);
+            return;
+        }
+
+        saveAvatarBtn.disabled = true;
+
+        try {
+            const rawExt = file.name.split(".").pop() || "png";
+            const ext = rawExt.toLowerCase().replace(/[^a-z0-9]/g, "") || "png";
+            const path = `${user.id}/profile-${Date.now()}.${ext}`;
+
+            const { error: uploadError } = await supabase.storage
+                .from("profile-pictures")
+                .upload(path, file, {
+                    cacheControl: "3600",
+                    upsert: true,
+                    contentType: file.type
+                });
+
+            if (uploadError) throw uploadError;
+
+            const { data: publicData } = supabase.storage
+                .from("profile-pictures")
+                .getPublicUrl(path);
+
+            const imageUrl = publicData?.publicUrl || "";
+            if (!imageUrl) throw new Error("Could not create profile image URL.");
+
+            const { error } = await supabase
+                .from("users")
+                .update({ profile_image_url: imageUrl })
+                .eq("id", user.id);
+
+            if (error) throw error;
+
+            const { error: metaErr } = await supabase.auth.updateUser({
+                data: { profile_image_url: imageUrl }
+            });
+            if (metaErr) console.warn(metaErr);
+
+            setAvatarPreview(imageUrl, displayNameInput.value || handleField.textContent || user.email || "A");
+            profileAvatarInput.value = "";
+
+            if (activeAvatarObjectUrl) {
+                URL.revokeObjectURL(activeAvatarObjectUrl);
+                activeAvatarObjectUrl = "";
+            }
+
+            showMsg(avatarMsg, "Profile picture saved. It will show on Studio after refresh.", true);
+        } catch (e) {
+            console.error(e);
+            showMsg(avatarMsg, e?.message || "Could not save profile picture.", false);
+        } finally {
+            saveAvatarBtn.disabled = false;
+        }
+    });
+
+    saveAccountTypeBtn.addEventListener("click", async () => {
+        hideMsg(accountTypeMsg);
+
+        const picked = document.querySelector('input[name="settingsAccountType"]:checked');
+        const v = picked ? picked.value : "";
+        if (v !== ACCOUNT_AUTHOR && v !== ACCOUNT_READER && v !== ACCOUNT_BOTH) {
+            showMsg(accountTypeMsg, "Pick one option.", false);
+            return;
+        }
+
+        saveAccountTypeBtn.disabled = true;
+        try {
+            if (isLocalSettings) {
+                updateProfileRow({ account_type: v });
+                settingsHomeUrl = homeUrlForUserData({ accountType: v });
+                showMsg(accountTypeMsg, "Saved locally on this device.", true);
+                return;
+            }
+
+            const { data: udata } = await supabase.auth.getUser();
+            const user = udata?.user;
+            if (!user) return;
+
+            const { error } = await supabase.from("users").update({ account_type: v }).eq("id", user.id);
+            if (error) throw error;
+            settingsHomeUrl = homeUrlForUserData({ accountType: v });
+            showMsg(accountTypeMsg, "Saved. Sign-in home and header switch update on your next login (or open Studio / Library now).", true);
+        } catch (e) {
+            console.error(e);
+            showMsg(accountTypeMsg, e?.message || "Could not save.", false);
+        } finally {
+            saveAccountTypeBtn.disabled = false;
+        }
+    });
+
+    authorBioInput?.addEventListener("input", updateAuthorBioCount);
+    renderSupportLinkFields({});
+    setSupportLinksDisabled(true);
+
+    saveBioBtn?.addEventListener("click", async () => {
+        hideMsg(bioMsg);
+        if (isLocalSettings) {
+            showMsg(bioMsg, "Sign in to save your biography to your public author page.", false);
+            return;
+        }
+
+        const bio = String(authorBioInput?.value ?? "").trim().slice(0, AUTHOR_BIO_MAX_LENGTH);
+        saveBioBtn.disabled = true;
+        try {
+            const { data: udata } = await supabase.auth.getUser();
+            const user = udata?.user;
+            if (!user) return;
+
+            const { error } = await supabase
+                .from("users")
+                .update({ bio, bio_updated_at: new Date().toISOString() })
+                .eq("id", user.id);
+            if (error) throw error;
+            showMsg(bioMsg, "Biography saved. It will appear on your author page and at the end of your published books.", true);
+        } catch (e) {
+            console.error(e);
+            showMsg(bioMsg, e?.message || "Could not save biography.", false);
+        } finally {
+            saveBioBtn.disabled = false;
+        }
+    });
+
+    saveSupportLinksBtn?.addEventListener("click", async () => {
+        hideMsg(supportLinksMsg);
+        if (isLocalSettings) {
+            showMsg(supportLinksMsg, "Sign in to save tip links to your public author page.", false);
+            return;
+        }
+
+        const payload = supportLinksPayloadFromDraft(readSupportLinkDraft());
+        saveSupportLinksBtn.disabled = true;
+        try {
+            const { data: udata } = await supabase.auth.getUser();
+            const user = udata?.user;
+            if (!user) return;
+
+            const { error } = await supabase
+                .from("users")
+                .update({
+                    support_links: payload,
+                    support_links_updated_at: new Date().toISOString(),
+                })
+                .eq("id", user.id);
+            if (error) throw error;
+            renderSupportLinkFields(payload);
+            const count = Object.keys(payload).length;
+            showMsg(
+                supportLinksMsg,
+                count
+                    ? `Saved ${count} support link${count === 1 ? "" : "s"}. They appear on your author page under Support.`
+                    : "Support links cleared. The Support tab stays hidden until you add a link.",
+                true
+            );
+        } catch (e) {
+            console.error(e);
+            const msg = String(e?.message || "");
+            if (/support_links/i.test(msg) && /column|does not exist|schema cache/i.test(msg)) {
+                showMsg(
+                    supportLinksMsg,
+                    "Support links need a quick database update — run supabase-author-support-links.sql in Supabase, then try again.",
+                    false
+                );
+            } else {
+                showMsg(supportLinksMsg, e?.message || "Could not save support links.", false);
+            }
+        } finally {
+            saveSupportLinksBtn.disabled = false;
+        }
+    });
+
+    saveDisplayBtn.addEventListener("click", async () => {
+        hideMsg(profileMsg);
+
+        const name = normalizeDisplayName(displayNameInput.value);
+
+        saveDisplayBtn.disabled = true;
+        try {
+            if (isLocalSettings) {
+                updateProfileRow({ display_name: name || "Guest" });
+                showMsg(profileMsg, "Display name saved locally.", true);
+                return;
+            }
+
+            const { data: udata } = await supabase.auth.getUser();
+            const user = udata?.user;
+            if (!user) return;
+
+            const fallbackName = String(handleField.textContent || "").replace(/^@/, "") || "user";
+            const patch = { display_name: name || fallbackName };
+            const { error } = await supabase.from("users").update(patch).eq("id", user.id);
+            if (error) throw error;
+            const { error: metaErr } = await supabase.auth.updateUser({ data: { display_name: name || null } });
+            if (metaErr) console.warn(metaErr);
+            if (!name) {
+                displayNameInput.value = "";
+                showMsg(
+                    profileMsg,
+                    "Cosmetic name cleared. Others will see your permanent handle until you set a display name again.",
+                    true
+                );
+            } else {
+                showMsg(profileMsg, "Display name saved. It will show on comments, publish, and your studio page.", true);
+            }
+        } catch (e) {
+            console.error(e);
+            showMsg(profileMsg, e?.message || "Could not save display name.", false);
+        } finally {
+            saveDisplayBtn.disabled = false;
+        }
+    });
+
+    savePasswordBtn.addEventListener("click", async () => {
+        hideMsg(passwordMsg);
+        const { data: udata } = await supabase.auth.getUser();
+        const user = udata?.user;
+        if (!user) return;
+        if (isPasswordChangeBlocked(user)) {
+            showMsg(
+                passwordMsg,
+                "Password changes aren’t available for Google- or Discord-only accounts.",
+                false
+            );
+            return;
+        }
+        if (!user.email) {
+            showMsg(passwordMsg, "Your account needs an email address to change your password.", false);
+            return;
+        }
+
+        const cur = currentPw.value;
+        const next = newPw.value;
+        const again = confirmPw.value;
+
+        if (!cur || !next) {
+            showMsg(passwordMsg, "Fill in all password fields.", false);
+            return;
+        }
+        if (next.length < 6) {
+            showMsg(passwordMsg, "New password must be at least 6 characters.", false);
+            return;
+        }
+        if (next !== again) {
+            showMsg(passwordMsg, "New password and confirmation do not match.", false);
+            return;
+        }
+
+        savePasswordBtn.disabled = true;
+        try {
+            const { error: signErr } = await supabase.auth.signInWithPassword({
+                email: user.email,
+                password: cur
+            });
+            if (signErr) {
+                showMsg(passwordMsg, "Current password is incorrect.", false);
+                return;
+            }
+            const { error } = await supabase.auth.updateUser({ password: next });
+            if (error) throw error;
+            currentPw.value = "";
+            newPw.value = "";
+            confirmPw.value = "";
+            showMsg(passwordMsg, "Password updated successfully.", true);
+        } catch (e) {
+            console.error(e);
+            showMsg(passwordMsg, e?.message || "Could not update password.", false);
+        } finally {
+            savePasswordBtn.disabled = false;
+        }
+    });
+
+    downloadPracticeBackupBtn?.addEventListener("click", async () => {
+        hideMsg(backupPracticeMsg);
+        downloadPracticeBackupBtn.disabled = true;
+        try {
+            const { fileName } = await savePracticeBackupToDisk();
+            showMsg(
+                backupPracticeMsg,
+                `Practice ZIP saved as ${fileName}. Select it with Browse, then click Preview restore.`,
+                true
+            );
+        } catch (e) {
+            if (e?.name === "AbortError") return;
+            console.error(e);
+            showMsg(backupPracticeMsg, e?.message || "Could not create practice backup.", false);
+        } finally {
+            downloadPracticeBackupBtn.disabled = false;
+        }
+    });
+
+    previewRestoreBtn?.addEventListener("click", async () => {
+        hideMsg(backupPracticeMsg);
+        hideMsg(backupRestoreMsg);
+        const file = selectedRestoreFile;
+        if (!file) {
+            showMsg(backupPracticeMsg, "Choose a backup file with Browse first.", false);
+            return;
+        }
+        previewRestoreBtn.disabled = true;
+        try {
+            const backup = await parseBackupFile(file);
+            const mode = isLocalSettings ? "local" : "cloud";
+            const preview = previewRestoreBackup({
+                userId: settingsUserId,
+                mode,
+                backup
+            });
+            window.alert(formatRestorePreviewText(preview));
+            showMsg(backupPracticeMsg, "Preview complete — your account was not changed.", true);
+        } catch (e) {
+            console.error(e);
+            showMsg(backupPracticeMsg, e?.message || "Could not preview that backup.", false);
+        } finally {
+            previewRestoreBtn.disabled = !selectedRestoreFile;
+        }
+    });
+
+    downloadBackupBtn?.addEventListener("click", async () => {
+        hideMsg(backupExportMsg);
+        downloadBackupBtn.disabled = true;
+        try {
+            const mode = isLocalSettings ? "local" : "cloud";
+            const backup = await exportUserBackup({
+                supabase: isLocalSettings ? null : supabase,
+                userId: settingsUserId,
+                mode,
+                email: settingsUserEmail
+            });
+            const { fileName, usedNativePicker } = await saveUserBackupToDisk(backup);
+            refreshBackupStatusUi();
+            const summary = summarizeBackup(backup);
+            let msg = usedNativePicker
+                ? `Backup saved as ${fileName} — ZIP with HTML pages (${summary}).`
+                : `Backup saved as ${fileName} in Downloads — ZIP with HTML pages (${summary}).`;
+            if (backup.skippedTables?.length) {
+                msg += ` Some data was skipped: ${backup.skippedTables.join(", ")}.`;
+            }
+            showMsg(backupExportMsg, msg, true);
+        } catch (e) {
+            if (e?.name === "AbortError") return;
+            console.error(e);
+            showMsg(backupExportMsg, e?.message || "Could not create backup.", false);
+        } finally {
+            downloadBackupBtn.disabled = false;
+        }
+    });
+
+    chooseRestorePathBtn?.addEventListener("click", () => {
+        void browseForRestoreBackup();
+    });
+
+    backupFileInput?.addEventListener("change", () => {
+        hideMsg(backupRestoreMsg);
+        const file = backupFileInput.files?.[0];
+        if (!file) {
+            setSelectedRestoreFile(null, "");
+            return;
+        }
+        setSelectedRestoreFile(file, file.name);
+    });
+
+    restoreBackupBtn?.addEventListener("click", async () => {
+        hideMsg(backupRestoreMsg);
+        const file = selectedRestoreFile;
+        if (!file) {
+            showMsg(backupRestoreMsg, "Choose a backup location first.", false);
+            return;
+        }
+
+        let backup;
+        try {
+            backup = await parseBackupFile(file);
+        } catch (e) {
+            showMsg(backupRestoreMsg, e?.message || "That file is not a valid Alysum backup.", false);
+            return;
+        }
+
+        const summary = summarizeBackup(backup);
+        const backupWhen = backup.exportedAt ? formatBackupDateTime(backup.exportedAt) : "unknown date";
+        const fromOtherAccount =
+            backup.userId && settingsUserId && backup.userId !== settingsUserId && backup.mode === "cloud";
+        const cloudBackupOnLocal = backup.mode === "cloud" && isLocalSettings;
+        const isRealAccountRestore = !backup.isPracticeSample && !isLocalSettings;
+        let confirmText = `Restore this backup?\n\nFrom: ${backupWhen}\nIncludes: ${summary}`;
+        if (isRealAccountRestore) {
+            confirmText +=
+                "\n\nThis will change your signed-in Alysum account. Use Preview restore first if you have not tested yet.";
+        }
+        if (fromOtherAccount) {
+            confirmText += "\n\nThis backup belongs to a different account. Its data will be added to your current account.";
+        }
+        if (cloudBackupOnLocal) {
+            confirmText +=
+                "\n\nThis backup needs a signed-in account to restore books. Only settings will change while you are in local mode.";
+        }
+        confirmText += "\n\nYour current data may be overwritten where IDs match.";
+
+        if (!window.confirm(confirmText)) return;
+
+        restoreBackupBtn.disabled = true;
+        try {
+            const mode = isLocalSettings ? "local" : "cloud";
+            const { restored, warnings } = await restoreUserBackup({
+                supabase: isLocalSettings ? null : supabase,
+                userId: settingsUserId,
+                mode,
+                backup
+            });
+            setSelectedRestoreFile(null, "");
+            if (backupFileInput) backupFileInput.value = "";
+            let msg = restored.length
+                ? `Restore finished. Updated: ${restored.join(", ")}.`
+                : "Nothing in that backup could be restored.";
+            if (warnings.length) msg += " " + warnings.join(" ");
+            showMsg(backupRestoreMsg, msg, true);
+        } catch (e) {
+            console.error(e);
+            showMsg(backupRestoreMsg, e?.message || "Restore failed.", false);
+        } finally {
+            restoreBackupBtn.disabled = !selectedRestoreFile;
+        }
+    });
+</script>
+
+</body>
+</html>

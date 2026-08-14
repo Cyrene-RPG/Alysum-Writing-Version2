@@ -1,7 +1,7 @@
 /**
  * Public author profiles: biography pages and reader/library author links.
  */
-import { publicDisplayNameFromUserData } from "../identity/profile-display.js";
+import { publicDisplayNameFromUserData } from "../account/profile-display.js";
 import { normalizeMediaFormat, isComicFormat } from "../writing-engine/media-format.js";
 import {
     formatChapterProgress,

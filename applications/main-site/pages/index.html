@@ -1,0 +1,1485 @@
+<!DOCTYPE html><html lang="en">
+<head>
+    <script type="importmap">
+    {
+      "imports": {
+        "@alysum/site-appearance/": "/site-appearance/",
+        "@alysum/writing-engine/": "/core/writing-engine/",
+        "@alysum/synchronization-engine/": "/core/synchronization-engine/",
+        "@alysum/authentication/": "/core/authentication/",
+        "@alysum/account/": "/core/account/",
+        "@alysum/desktop/": "/core/desktop/",
+        "@alysum/library/": "/core/library/",
+        "@alysum/publishing/": "/core/publishing/",
+        "@alysum/encyclopedia/": "/core/encyclopedia/",
+        "@alysum/collaboration/": "/core/collaboration/"
+      }
+    }
+    </script>
+    <!-- ALYSUM:PWA:START -->
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta name="theme-color" content="#7c3aed" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#020b18" media="(prefers-color-scheme: dark)">
+    <meta name="color-scheme" content="dark light">
+    <meta name="application-name" content="Alysum">
+    <meta name="msapplication-TileColor" content="#7c3aed">
+    <meta name="msapplication-TileImage" content="/Alysum-3.png">
+    <link rel="icon" type="image/png" sizes="any" href="/Alysum-3.png">
+    <link rel="apple-touch-icon" href="/Alysum-3.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/Alysum-3.png">
+    <script src="/js/pwa-register.js" defer></script>
+    <!-- ALYSUM:PWA:END -->
+    <!-- ALYSUM:ANALYTICS:START -->
+    <script type="module" src="/js/vercel-analytics.js"></script>
+    <!-- ALYSUM:ANALYTICS:END -->
+    <!-- ALYSUM:SEO:START -->
+    <meta charset="UTF-8">
+    <meta name="description" content="Write and publish stories online for free. Alysum is a writing studio and reading library for fiction, fanfiction, nonfiction, and comics.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" data-seo-path="/" href="">
+    <meta property="og:site_name" content="Alysum">
+    <meta property="og:locale" content="en_US">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Alysum — Free online writing platform &amp; story library">
+    <meta property="og:description" content="Write and publish stories online for free. Alysum is a writing studio and reading library for fiction, fanfiction, nonfiction, and comics.">
+    <meta property="og:image" content="/Alysum-3.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Alysum — Free online writing platform &amp; story library">
+    <meta name="twitter:description" content="Write and publish stories online for free. Alysum is a writing studio and reading library for fiction, fanfiction, nonfiction, and comics.">
+    <meta name="twitter:image" content="/Alysum-3.png">
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Organization","name":"Alysum","url":"/","logo":"/Alysum-3.png","description":"Free online writing platform and public story library.","sameAs":["https://discord.gg/ue7uSCWU9w"]}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"Alysum","alternateName":"Alysum Writing Studio","url":"/","description":"Write, publish, and read stories online for free.","potentialAction":{"@type":"SearchAction","target":"/library.html","query-input":"required name=search_term_string"}}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Alysum","applicationCategory":"WritingApplication","operatingSystem":"Web","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+    <script src="/js/seo-meta.js"></script>
+    <!-- ALYSUM:SEO:END -->
+
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
+  <title>Alysum — Free online writing platform &amp; story library</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #041225;
+      --bg-deep: #020b18;
+      --panel: #09162c;
+      --panel-2: #0b1a33;
+      --panel-3: #0e1f3c;
+      --line: rgba(255,255,255,0.10);
+      --text: #f8fafc;
+      --muted: #b8c2d0;
+      --muted-2: #94a3b8;
+      --purple-1: #5b21b6;
+      --purple-2: #7c3aed;
+      --purple-3: #a78bfa;
+      --shadow: 0 24px 60px rgba(0,0,0,0.38);
+      --shadow-soft: 0 18px 40px rgba(0,0,0,0.28);
+      --radius: 24px;
+      --radius-lg: 32px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    html, body {
+      background: var(--bg-deep);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      overflow-x: hidden;
+    }
+
+    body { min-height: 100vh; }
+    a { color: inherit; text-decoration: none; }
+
+    .page {
+      position: relative;
+      isolation: isolate;
+      min-height: 100vh;
+      background: var(--bg-deep);
+    }
+
+    .page-atmosphere {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .page-aurora {
+      position: absolute;
+      inset: -25%;
+      background:
+        radial-gradient(ellipse 42% 38% at 18% 12%, rgba(124, 58, 237, 0.42), transparent 68%),
+        radial-gradient(ellipse 38% 34% at 82% 18%, rgba(167, 139, 250, 0.28), transparent 65%),
+        radial-gradient(ellipse 48% 40% at 55% 88%, rgba(91, 33, 182, 0.32), transparent 70%),
+        radial-gradient(ellipse 30% 28% at 72% 52%, rgba(139, 92, 246, 0.18), transparent 62%);
+      filter: blur(72px) saturate(1.15);
+      opacity: 0.55;
+      animation: aurora-shift 22s ease-in-out infinite alternate;
+    }
+
+    .page-aurora--b {
+      inset: -15%;
+      opacity: 0.35;
+      filter: blur(90px);
+      animation-duration: 28s;
+      animation-direction: alternate-reverse;
+      background:
+        radial-gradient(ellipse 36% 32% at 8% 58%, rgba(196, 181, 253, 0.2), transparent 68%),
+        radial-gradient(ellipse 40% 36% at 92% 72%, rgba(124, 58, 237, 0.26), transparent 65%);
+    }
+
+    @keyframes aurora-shift {
+      0% { transform: translate3d(0, 0, 0) scale(1); }
+      100% { transform: translate3d(2.5%, 1.5%, 0) scale(1.06); }
+    }
+
+    .page-stars {
+      position: absolute;
+      inset: 0;
+      opacity: 0.55;
+      background-image:
+        radial-gradient(1px 1px at 12% 18%, rgba(255,255,255,0.9), transparent),
+        radial-gradient(1px 1px at 28% 42%, rgba(255,255,255,0.55), transparent),
+        radial-gradient(1.5px 1.5px at 44% 12%, rgba(196,181,253,0.85), transparent),
+        radial-gradient(1px 1px at 62% 28%, rgba(255,255,255,0.5), transparent),
+        radial-gradient(1px 1px at 78% 8%, rgba(255,255,255,0.75), transparent),
+        radial-gradient(1.5px 1.5px at 88% 38%, rgba(167,139,250,0.8), transparent),
+        radial-gradient(1px 1px at 6% 62%, rgba(255,255,255,0.45), transparent),
+        radial-gradient(1px 1px at 22% 78%, rgba(255,255,255,0.65), transparent),
+        radial-gradient(1px 1px at 38% 58%, rgba(255,255,255,0.4), transparent),
+        radial-gradient(1.5px 1.5px at 52% 88%, rgba(196,181,253,0.7), transparent),
+        radial-gradient(1px 1px at 68% 68%, rgba(255,255,255,0.55), transparent),
+        radial-gradient(1px 1px at 84% 82%, rgba(255,255,255,0.5), transparent),
+        radial-gradient(1px 1px at 94% 52%, rgba(255,255,255,0.6), transparent),
+        radial-gradient(1px 1px at 16% 92%, rgba(255,255,255,0.35), transparent),
+        radial-gradient(1.5px 1.5px at 72% 48%, rgba(255,255,255,0.8), transparent);
+      background-size: 100% 100%;
+      animation: stars-twinkle 6s ease-in-out infinite alternate;
+    }
+
+    .page-stars::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      opacity: 0.35;
+      background-image:
+        radial-gradient(1px 1px at 18% 32%, rgba(255,255,255,0.6), transparent),
+        radial-gradient(1px 1px at 48% 22%, rgba(255,255,255,0.45), transparent),
+        radial-gradient(1px 1px at 58% 72%, rgba(255,255,255,0.5), transparent),
+        radial-gradient(1.5px 1.5px at 32% 68%, rgba(167,139,250,0.65), transparent),
+        radial-gradient(1px 1px at 92% 24%, rgba(255,255,255,0.55), transparent),
+        radial-gradient(1px 1px at 8% 48%, rgba(255,255,255,0.4), transparent);
+      background-size: 100% 100%;
+      animation: stars-twinkle 8s ease-in-out 1.5s infinite alternate-reverse;
+    }
+
+    @keyframes stars-twinkle {
+      0% { opacity: 0.4; }
+      100% { opacity: 0.7; }
+    }
+
+    .page-vignette {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 90% 70% at 50% 45%, transparent 35%, rgba(2, 11, 24, 0.55) 100%),
+        linear-gradient(180deg, rgba(2, 11, 24, 0.35) 0%, transparent 18%, transparent 82%, rgba(2, 11, 24, 0.5) 100%);
+    }
+
+    .page-grain {
+      position: absolute;
+      inset: 0;
+      opacity: 0.045;
+      mix-blend-mode: soft-light;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+
+    .page > :not(.page-atmosphere) {
+      position: relative;
+      z-index: 1;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .page-aurora,
+      .page-aurora--b,
+      .page-stars,
+      .page-stars::after {
+        animation: none;
+      }
+    }
+
+    .section-wrap {
+      max-width: 1140px;
+      margin: 0 auto;
+      padding-left: 20px;
+      padding-right: 20px;
+    }
+
+    .alert-banner {
+      position: relative;
+      z-index: 5;
+      padding: 14px 16px;
+      background: linear-gradient(135deg, rgba(91,33,182,0.96), rgba(15,23,42,0.96));
+      border-bottom: 1px solid var(--line);
+      color: white;
+    }
+    .alert-banner.hidden { display: none; }
+    .alert-content {
+      max-width: 1140px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+    .alert-message { flex: 1; }
+    .alert-message a:not(.alert-discord) { color: #fff; font-weight: 800; text-decoration: underline; }
+    .alert-discord {
+      display: inline-flex;
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      background: #5865f2;
+      align-items: center;
+      justify-content: center;
+      vertical-align: middle;
+    }
+    .alert-discord svg { width: 21px; height: 21px; fill: currentColor; }
+    .alert-close {
+      width: 36px;
+      height: 36px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.22);
+      background: rgba(255,255,255,0.12);
+      color: white;
+      font-size: 22px;
+      cursor: pointer;
+    }
+
+    /* —— Site nav —— */
+    .site-nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      padding: 16px 20px;
+      background: rgba(2,11,24,0.82);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .site-nav-inner {
+      max-width: 1140px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .nav-brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      font-weight: 900;
+      font-size: 24px;
+      color: #fff;
+      flex-shrink: 0;
+      letter-spacing: -0.02em;
+    }
+
+    .nav-brand-mark {
+      position: relative;
+      display: block;
+      width: 64px;
+      height: 64px;
+      flex-shrink: 0;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow:
+        0 8px 24px rgba(0, 0, 0, 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.14);
+    }
+
+    .nav-brand-mark img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .nav-brand-swirls {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      mix-blend-mode: soft-light;
+      opacity: 0.92;
+    }
+
+    .nav-brand-swirls path {
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .nav-links {
+      display: none;
+      align-items: center;
+      gap: 28px;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .nav-links a:hover { color: #fff; }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .nav-login {
+      padding: 10px 16px;
+      font-size: 14px;
+      font-weight: 800;
+      color: #e9d5ff;
+    }
+
+    .nav-login:hover { color: #fff; }
+
+    body.home-logged-in [data-home-guest] {
+      display: none !important;
+    }
+
+    .nav-cta {
+      padding: 11px 18px;
+      border-radius: 999px;
+      font-size: 14px;
+      font-weight: 900;
+      color: #fff;
+      background: var(--purple-2);
+      box-shadow: 0 8px 22px rgba(124, 58, 237, 0.35);
+      transition: transform 0.15s ease, background 0.15s ease;
+    }
+
+    .nav-cta:hover {
+      background: #8b5cf6;
+    }
+
+    .nav-discord {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 900;
+      color: #fff;
+      background: #5865f2;
+      flex-shrink: 0;
+    }
+
+    .nav-discord:hover {
+      background: #4752c4;
+      color: #fff;
+    }
+
+    .nav-discord svg {
+      width: 18px;
+      height: 18px;
+      fill: currentColor;
+      flex-shrink: 0;
+    }
+
+    .nav-cta:hover { transform: translateY(-1px); }
+
+    /* —— Hero —— */
+    .hero-panel-wrap {
+      padding: 28px 0 0;
+    }
+
+    .hero-panel {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 20px 36px;
+      background: transparent;
+      border: none;
+      border-radius: 0;
+      box-shadow: none;
+      overflow: visible;
+    }
+
+    .hero-panel-inner {
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+    }
+
+    .hero-head {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 22px;
+      max-width: 680px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .hero-head-copy {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+    }
+
+    .hero-eyebrow {
+      display: inline-block;
+      margin-bottom: 12px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(124, 58, 237, 0.12);
+      border: 1px solid rgba(124, 58, 237, 0.28);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #c4b5fd;
+    }
+
+    .hero-title {
+      font-size: clamp(30px, 5vw, 44px);
+      line-height: 1.06;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      color: #fff;
+    }
+
+    .hero-sub {
+      margin-top: 10px;
+      max-width: 46ch;
+      font-size: 16px;
+      line-height: 1.65;
+      color: var(--muted);
+    }
+
+    .hero-buttons {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .hero-head-actions {
+      display: flex;
+      justify-content: center;
+      width: 100%;
+    }
+
+    @media (min-width: 520px) {
+      .hero-buttons {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 15px 22px;
+      border-radius: 14px;
+      font-weight: 900;
+      font-size: 15px;
+      transition: transform 0.15s ease;
+    }
+
+    .btn:hover { transform: translateY(-2px); }
+
+    .btn-primary {
+      background: var(--purple-2);
+      color: #fff;
+      box-shadow: 0 10px 28px rgba(124, 58, 237, 0.32);
+    }
+
+    .btn-primary:hover {
+      background: #8b5cf6;
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--line);
+    }
+
+    .btn-outline:hover {
+      border-color: rgba(167, 139, 250, 0.45);
+      color: #fff;
+    }
+
+    .hero-showcase {
+      margin: 4px auto 0;
+      width: 100%;
+      max-width: min(1040px, 100%);
+      border-radius: 14px;
+      overflow: hidden;
+      line-height: 0;
+      box-shadow:
+        0 20px 50px rgba(0, 0, 0, 0.45),
+        0 0 0 1px rgba(255, 255, 255, 0.06);
+    }
+
+    .hero-showcase img {
+      display: block;
+      width: 100%;
+      height: auto;
+      vertical-align: top;
+    }
+
+    /* —— About —— */
+    .about {
+      padding: 72px 0;
+    }
+
+    .about-grid {
+      display: grid;
+      gap: 28px;
+      align-items: start;
+    }
+
+    .section-kicker {
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--purple-3);
+      margin-bottom: 10px;
+    }
+
+    .section-title {
+      font-size: clamp(26px, 4vw, 36px);
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+    }
+
+    .section-lead {
+      margin-top: 14px;
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.7;
+      max-width: 52ch;
+    }
+
+    .about-stats {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .stat-card {
+      padding: 20px;
+      border-radius: var(--radius);
+      background: var(--panel);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .stat-card strong {
+      display: block;
+      font-size: 15px;
+      font-weight: 900;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+
+    .stat-card span {
+      font-size: 14px;
+      color: var(--muted-2);
+      line-height: 1.5;
+    }
+
+    /* —— Popular stories —— */
+    .arrivals {
+      padding: 0 0 72px;
+    }
+
+    .section-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    .sort-btns {
+      display: flex;
+      gap: 8px;
+    }
+
+    .sort-btn {
+      padding: 10px 16px;
+      border-radius: 999px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .sort-btn.active {
+      background: var(--purple-2);
+      border-color: var(--purple-2);
+      color: #fff;
+    }
+
+    .arrivals-grid {
+      display: grid;
+      gap: 18px;
+    }
+
+    .arrival-card {
+      display: flex;
+      flex-direction: column;
+      padding: 18px;
+      border-radius: var(--radius);
+      background: var(--panel);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow-soft);
+      cursor: pointer;
+      transition: transform 0.15s ease, border-color 0.15s ease;
+    }
+
+    .arrival-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(167,139,250,0.35);
+    }
+
+    .arrival-cover {
+      width: 100%;
+      aspect-ratio: 3 / 4;
+      max-height: 200px;
+      border-radius: 14px;
+      background: var(--panel-3);
+      border: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      font-weight: 900;
+      color: #e9d5ff;
+      margin-bottom: 16px;
+    }
+
+    .arrival-cover.has-img {
+      background-size: cover;
+      background-position: center;
+      color: transparent;
+    }
+
+    .arrival-body h3 {
+      font-size: 18px;
+      font-weight: 900;
+      line-height: 1.25;
+      margin-bottom: 6px;
+    }
+
+    .arrival-author {
+      font-size: 14px;
+      color: var(--muted-2);
+      margin-bottom: 8px;
+    }
+
+    .arrival-meta {
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 700;
+      margin-bottom: 14px;
+    }
+
+    .arrival-link {
+      font-size: 14px;
+      font-weight: 900;
+      color: var(--purple-3);
+    }
+
+    .arrival-card--empty {
+      grid-column: 1 / -1;
+      cursor: default;
+    }
+
+    .arrival-card--empty:hover { transform: none; }
+
+    .library-more {
+      margin-top: 24px;
+      text-align: center;
+    }
+
+    .library-more a {
+      display: inline-flex;
+      padding: 12px 22px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      font-weight: 800;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .library-more a:hover {
+      color: #fff;
+      border-color: rgba(167,139,250,0.4);
+    }
+
+    /* —— Features —— */
+    .features {
+      padding: 72px 0;
+      border-top: 1px solid var(--line);
+    }
+
+    .features-grid {
+      display: grid;
+      gap: 28px;
+      align-items: start;
+    }
+
+    .feature-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-top: 24px;
+    }
+
+    .feature-list li {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      padding: 16px 18px;
+      border-radius: 16px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+    }
+
+    .feature-icon {
+      flex-shrink: 0;
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: rgba(124, 58, 237, 0.18);
+      border: 1px solid rgba(124, 58, 237, 0.32);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .feature-list strong {
+      display: block;
+      font-size: 15px;
+      margin-bottom: 4px;
+    }
+
+    .feature-list span {
+      font-size: 14px;
+      color: var(--muted-2);
+      line-height: 1.5;
+    }
+
+    .quote-card {
+      padding: 28px;
+      border-radius: var(--radius);
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-left: 3px solid var(--purple-2);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .quote-card blockquote {
+      font-size: 18px;
+      line-height: 1.65;
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .quote-card cite {
+      display: block;
+      margin-top: 16px;
+      font-size: 14px;
+      font-style: normal;
+      color: var(--muted-2);
+      font-weight: 700;
+    }
+
+    /* —— CTA band —— */
+    .cta-band {
+      margin: 0 16px 56px;
+      max-width: 1100px;
+      margin-left: auto;
+      margin-right: auto;
+      padding: 48px 28px;
+      text-align: center;
+      border-radius: var(--radius-lg);
+      background: var(--panel);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow-soft);
+      overflow: hidden;
+    }
+
+    .cta-band h2 {
+      font-size: clamp(24px, 4vw, 34px);
+      font-weight: 900;
+      letter-spacing: -0.02em;
+    }
+
+    .cta-band p {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    .cta-band .btn-primary {
+      margin-top: 22px;
+    }
+
+    /* —— Footer —— */
+    .site-footer {
+      padding: 48px 20px 56px;
+      border-top: 1px solid var(--line);
+      background: rgba(0,0,0,0.2);
+    }
+
+    .footer-grid {
+      max-width: 1140px;
+      margin: 0 auto;
+      display: grid;
+      gap: 32px;
+    }
+
+    .footer-brand {
+      font-weight: 900;
+      font-size: 20px;
+      letter-spacing: -0.02em;
+    }
+
+    .footer-cols {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+    }
+
+    .footer-col h4 {
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted-2);
+      margin-bottom: 12px;
+    }
+
+    .footer-col a {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .footer-col a:hover { color: #fff; }
+
+    .footer-bottom {
+      max-width: 1140px;
+      margin: 32px auto 0;
+      padding-top: 24px;
+      border-top: 1px solid var(--line);
+      text-align: center;
+      font-size: 14px;
+      color: var(--muted-2);
+    }
+
+    .footer-bottom a {
+      color: #c4b5fd;
+      font-weight: 700;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    @media (min-width: 768px) {
+      .nav-links { display: flex; }
+
+      .hero-panel {
+        padding: 0 20px 40px;
+      }
+
+      .hero-panel-inner {
+        gap: 26px;
+      }
+
+      .about-grid {
+        grid-template-columns: 1.1fr 1fr;
+        gap: 48px;
+      }
+
+      .features-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 40px;
+      }
+
+      .arrivals-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .footer-grid {
+        grid-template-columns: 1.2fr 2fr;
+        align-items: start;
+      }
+
+      .footer-cols {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    @media (max-width: 767px) {
+      .hero-panel { padding: 0 16px 28px; }
+      .hero-panel-inner { gap: 18px; }
+      .nav-login { display: none; }
+      .nav-brand-mark { width: 56px; height: 56px; border-radius: 14px; }
+      .nav-brand { font-size: 21px; }
+      .hero-eyebrow { margin-bottom: 8px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="page-atmosphere" aria-hidden="true">
+      <div class="page-aurora"></div>
+      <div class="page-aurora page-aurora--b"></div>
+      <div class="page-stars"></div>
+      <div class="page-vignette"></div>
+      <div class="page-grain"></div>
+    </div>
+    <div id="backendAlert" class="alert-banner hidden" role="status" aria-live="polite" hidden>
+      <div class="alert-content section-wrap">
+        <div class="alert-message">
+          <strong>Alysum update:</strong>
+          Backend moved to Supabase. Issues?
+          <a href="mailto:alysum.support@gmail.com">alysum.support@gmail.com</a>
+          <a class="alert-discord" href="https://discord.gg/ue7uSCWU9w" target="_blank" rel="noopener noreferrer" aria-label="Discord">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.317 4.369A19.791 19.791 0 0 0 16.558 3a13.74 13.74 0 0 0-.481.974 18.27 18.27 0 0 0-4.154 0A12.64 12.64 0 0 0 11.442 3a19.736 19.736 0 0 0-3.76 1.37C5.303 7.91 4.657 11.36 4.98 14.76a19.9 19.9 0 0 0 4.607 2.339c.37-.504.701-1.04.984-1.602a12.83 12.83 0 0 1-1.55-.744c.13-.095.258-.193.382-.294 2.987 1.38 6.226 1.38 9.177 0 .125.101.253.199.383.294-.494.29-1.013.54-1.553.745.283.56.612 1.097.984 1.601A19.86 19.86 0 0 0 23 14.76c.378-3.953-.646-7.371-2.683-10.391ZM10.19 12.67c-.897 0-1.635-.826-1.635-1.842 0-1.016.723-1.843 1.635-1.843.92 0 1.65.834 1.635 1.843 0 1.016-.723 1.842-1.635 1.842Zm6.19 0c-.897 0-1.635-.826-1.635-1.842 0-1.016.723-1.843 1.635-1.843.92 0 1.65.834 1.635 1.843 0 1.016-.715 1.842-1.635 1.842Z"/></svg>
+          </a>
+        </div>
+        <button class="alert-close" type="button" aria-label="Dismiss">×</button>
+      </div>
+    </div>
+
+    <header class="site-nav">
+      <div class="site-nav-inner">
+        <a href="index.html" class="nav-brand">
+          <span class="nav-brand-mark">
+            <img src="/Alysum-3.png" alt="" width="64" height="64" />
+            <svg class="nav-brand-swirls" viewBox="0 0 64 64" aria-hidden="true">
+              <defs>
+                <linearGradient id="brand-swirl-a" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#faf5ff" stop-opacity="0.98" />
+                  <stop offset="45%" stop-color="#ddd6fe" stop-opacity="0.82" />
+                  <stop offset="100%" stop-color="#7c3aed" stop-opacity="0.45" />
+                </linearGradient>
+                <linearGradient id="brand-swirl-b" x1="5%" y1="5%" x2="95%" y2="95%">
+                  <stop offset="0%" stop-color="#ede9fe" stop-opacity="0.75" />
+                  <stop offset="100%" stop-color="#a78bfa" stop-opacity="0.25" />
+                </linearGradient>
+              </defs>
+              <!-- Flowing strokes: top-left → bottom-right -->
+              <path stroke="url(#brand-swirl-a)" stroke-width="2.3" d="M4 5 C11 3 15 13 21 17 C27 21 29 29 35 33 C41 37 45 47 51 53 C55 57 58 60 61 62" />
+              <path stroke="url(#brand-swirl-b)" stroke-width="1.5" d="M8 2 C13 8 17 10 23 16 C29 22 31 30 37 36 C43 42 47 48 53 54 C56 57 59 59 62 61" />
+              <!-- Spiral curls spaced along the diagonal -->
+              <path stroke="url(#brand-swirl-a)" stroke-width="1.8" d="M10 8 C5 12 7 20 15 20 C21 20 21 12 16 9 C12 6 10 8 10 8" />
+              <path stroke="url(#brand-swirl-b)" stroke-width="1.5" d="M22 20 C17 24 19 32 27 32 C33 32 33 24 28 21 C23 18 22 20 22 20" />
+              <path stroke="url(#brand-swirl-a)" stroke-width="1.7" d="M34 32 C29 36 31 44 39 44 C45 44 45 36 40 33 C35 30 34 32 34 32" />
+              <path stroke="url(#brand-swirl-b)" stroke-width="1.6" d="M46 44 C41 48 43 56 51 56 C57 56 57 48 52 45 C47 42 46 44 46 44" />
+              <path stroke="#faf5ff" stroke-width="1.1" opacity="0.65" d="M6 14 C10 11 14 15 13 19 C12 23 7 24 5 20 C3 16 6 14 6 14" />
+              <path stroke="#faf5ff" stroke-width="0.95" opacity="0.5" d="M52 50 C48 53 44 50 45 46 C46 42 51 41 53 45 C55 49 52 50 52 50" />
+            </svg>
+          </span>
+          Alysum
+        </a>
+        <nav class="nav-links" aria-label="Main">
+          <a href="#about">About</a>
+          <a href="#features">Features</a>
+          <a href="https://discord.gg/ue7uSCWU9w" target="_blank" rel="noopener noreferrer">Discord</a>
+        </nav>
+        <div class="nav-actions">
+          <a href="https://discord.gg/ue7uSCWU9w" class="nav-discord" target="_blank" rel="noopener noreferrer" aria-label="Join Discord">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.317 4.369A19.791 19.791 0 0 0 16.558 3a13.74 13.74 0 0 0-.481.974 18.27 18.27 0 0 0-4.154 0A12.64 12.64 0 0 0 11.442 3a19.736 19.736 0 0 0-3.76 1.37C5.303 7.91 4.657 11.36 4.98 14.76a19.9 19.9 0 0 0 4.607 2.339c.37-.504.701-1.04.984-1.602a12.83 12.83 0 0 1-1.55-.744c.13-.095.258-.193.382-.294 2.987 1.38 6.226 1.38 9.177 0 .125.101.253.199.383.294-.494.29-1.013.54-1.553.745.283.56.612 1.097.984 1.601A19.86 19.86 0 0 0 23 14.76c.378-3.953-.646-7.371-2.683-10.391ZM10.19 12.67c-.897 0-1.635-.826-1.635-1.842 0-1.016.723-1.843 1.635-1.843.92 0 1.65.834 1.635 1.843 0 1.016-.723 1.842-1.635 1.842Zm6.19 0c-.897 0-1.635-.826-1.635-1.842 0-1.016.723-1.843 1.635-1.843.92 0 1.65.834 1.635 1.843 0 1.016-.715 1.842-1.635 1.842Z"/></svg>
+            Discord
+          </a>
+          <a href="login.html" class="nav-login" data-home-guest data-home-login data-home-login-label>Log in</a>
+          <a href="signup.html" class="nav-cta" data-home-primary>Start writing now</a>
+        </div>
+      </div>
+    </header>
+
+    <div class="hero-panel-wrap">
+      <section class="hero-panel" aria-labelledby="hero-title">
+        <div class="hero-panel-inner">
+          <div class="hero-head">
+            <div class="hero-head-copy">
+              <span class="hero-eyebrow">A writing studio for every writer</span>
+              <h1 id="hero-title" class="hero-title">Every great story starts somewhere.</h1>
+              <p class="hero-sub">
+          Stop juggling Google Docs, character sheets, worldbuilding notes, and random documents. Keep your entire novel in one place..
+              </p>
+            </div>
+            <div class="hero-head-actions">
+              <div class="hero-buttons">
+                <a href="signup.html" class="btn btn-primary" data-home-primary>Start writing now</a>
+                <a href="login.html" class="btn btn-outline">Log in</a>
+              </div>
+            </div>
+          </div>
+          <figure class="hero-showcase">
+            <img
+              src="assets/homepage-editor-preview.png"
+              width="1920"
+              height="1080"
+              alt="Alysum editor with manuscript sidebar, chapter list, and writing page"
+              loading="eager"
+              decoding="async"
+            />
+          </figure>
+        </div>
+      </section>
+    </div>
+
+    <section class="about section-wrap" id="about">
+      <div class="about-grid">
+        <div>
+          <p class="section-kicker">About Alysum</p>
+          <h2 class="section-title">One place to write, organize, and share your work.</h2>
+          <p class="section-lead">
+            Studio keeps your manuscripts and chapters together. World Encyclopedia is for deeper worldbuilding. When you’re ready, publish to the library for readers.
+          </p>
+        </div>
+        <div class="about-stats">
+          <div class="stat-card">
+            <strong>✍️ Editor</strong>
+            <span>Chapters, formatting, focus sessions, and daily goals.</span>
+          </div>
+          <div class="stat-card">
+            <strong>🌍 World tools</strong>
+            <span>Geography, cultures, history, and magic systems.</span>
+          </div>
+          <div class="stat-card">
+            <strong>📚 Public library</strong>
+            <span>Share stories and discover what other writers publish.</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="arrivals section-wrap" id="library">
+      <div class="section-head">
+        <div>
+          <p class="section-kicker">Reader picks</p>
+          <h2 class="section-title">Popular on Alysum</h2>
+        </div>
+        <div class="sort-btns">
+          <button type="button" class="sort-btn active" data-sort="popular">Popular</button>
+          <button type="button" class="sort-btn" data-sort="new">Newest</button>
+        </div>
+      </div>
+      <div id="books" class="arrivals-grid"></div>
+      <p class="library-more"><a href="signup.html">Start writing now →</a></p>
+    </section>
+
+    <section class="features section-wrap" id="features">
+      <div class="features-grid">
+        <div>
+          <p class="section-kicker">Built for writers</p>
+          <h2 class="section-title">Everything you need to keep going.</h2>
+          <ul class="feature-list">
+            <li>
+              <span class="feature-icon">🔥</span>
+              <div>
+                <strong>Streaks &amp; daily goals</strong>
+                <span>Build momentum one writing session at a time.</span>
+              </div>
+            </li>
+            <li>
+              <span class="feature-icon">📂</span>
+              <div>
+                <strong>Manuscript structure</strong>
+                <span>Front matter, chapters, and back matter in one tree.</span>
+              </div>
+            </li>
+            <li>
+              <span class="feature-icon">🌍</span>
+              <div>
+                <strong>World encyclopedia</strong>
+                <span>Build geography, cultures, and magic systems for your stories.</span>
+              </div>
+            </li>
+            <li>
+              <span class="feature-icon">🚀</span>
+              <div>
+                <strong>Publish when ready</strong>
+                <span>Share to the Alysum library on your timeline.</span>
+              </div>
+            </li>
+          </ul>
+        </div>
+        <aside class="quote-card">
+          <blockquote>
+            “I finally know what Alysum is — a writing studio, not just another doc editor.”
+          </blockquote>
+          <cite>— What beta readers are looking for</cite>
+        </aside>
+      </div>
+    </section>
+
+    <section class="cta-band">
+      <h2>Ready to write your next chapter?</h2>
+      <p data-home-cta-copy>Join Alysum free — your studio is waiting.</p>
+      <a href="signup.html" class="btn btn-primary" data-home-cta-band>Create your account</a>
+    </section>
+
+    <footer class="site-footer">
+      <div class="footer-grid section-wrap" style="padding-left:0;padding-right:0;">
+        <div class="footer-brand">Alysum Studio</div>
+        <div class="footer-cols">
+          <div class="footer-col">
+            <h4>Product</h4>
+            <a href="signup.html" data-home-primary>Start writing now</a>
+            <a href="login.html" data-home-guest data-home-login data-home-login-label>Log in</a>
+          </div>
+          <div class="footer-col">
+            <h4>Explore</h4>
+            <a href="#about">About</a>
+            <a href="#features">Features</a>
+            <a href="#library">Popular stories</a>
+          </div>
+          <div class="footer-col">
+            <h4>Support</h4>
+            <a href="mailto:alysum.support@gmail.com">Email support</a>
+            <a href="https://discord.gg/ue7uSCWU9w" target="_blank" rel="noopener noreferrer">Discord</a>
+          </div>
+        </div>
+      </div>
+      <p class="footer-bottom">
+        © 2026 Alysum Studio ·
+        <a href="mailto:alysum.support@gmail.com">alysum.support@gmail.com</a>
+      </p>
+    </footer>
+  </div>
+
+  <script type="module">
+    import { supabase } from "@alysum/authentication/client.js";
+    import { wireHomepageAuth } from "/js/homepage-auth-nav.js";
+    import { homeUrlForUserData } from "@alysum/account/mode.js";
+    import { formatChapterProgress, serializationFromBookData } from "@alysum/publishing/serialization.js";
+    import { processDueChapterReleases } from "@alysum/publishing/scheduled-releases.js";
+
+    await wireHomepageAuth(supabase);
+
+    supabase.auth.onAuthStateChange(() => {
+      void wireHomepageAuth(supabase);
+    });
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+      let profile = {};
+      try {
+        const { data } = await supabase
+          .from("users")
+          .select("account_type, username, display_name")
+          .eq("id", session.user.id)
+          .maybeSingle();
+        if (data) {
+          profile = {
+            accountType: data.account_type,
+            username: data.username,
+            displayName: data.display_name,
+          };
+        }
+      } catch (e) {
+        console.warn(e);
+      }
+      window.location.replace(homeUrlForUserData(profile));
+    }
+
+    const backendAlert = document.getElementById("backendAlert");
+    const backendAlertClose = backendAlert?.querySelector(".alert-close");
+    if (localStorage.getItem("alysumBackendAlertDismissed") === "true") {
+      backendAlert?.classList.add("hidden");
+    }
+    backendAlertClose?.addEventListener("click", () => {
+      backendAlert?.classList.add("hidden");
+      localStorage.setItem("alysumBackendAlertDismissed", "true");
+    });
+
+    let currentSort = "popular";
+    let books = [];
+    const kudosCounts = new Map();
+    const readCounts = new Map();
+
+    function setActiveSortButton() {
+      document.querySelectorAll(".sort-btn").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.sort === currentSort);
+      });
+    }
+
+    document.querySelectorAll(".sort-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        currentSort = btn.dataset.sort;
+        setActiveSortButton();
+        renderBooks();
+      });
+    });
+
+    function safeString(value, fallback = "") {
+      return typeof value === "string" ? value : fallback;
+    }
+    function safeNumber(value, fallback = 0) {
+      return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+    }
+    function safeArray(value, fallback = []) {
+      return Array.isArray(value) ? value : fallback;
+    }
+    function safeObject(value, fallback = {}) {
+      return value && typeof value === "object" && !Array.isArray(value) ? value : fallback;
+    }
+    function escapeHtml(str) {
+      return String(str ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+    function safeCoverUrl(url) {
+      const value = String(url || "").trim();
+      if (!/^https:\/\//i.test(value)) return "";
+      if (/['"\\)]/.test(value)) return "";
+      return value;
+    }
+    function libraryRowData(row) {
+      const data = safeObject(row?.data, {});
+      return Object.keys(data).length ? data : safeObject(row, {});
+    }
+    function normalizeBook(row) {
+      const data = libraryRowData(row);
+      const id = safeString(row?.id || data.id || data.bookId, "");
+      const chapters = safeArray(data.chapters);
+      const serialization = serializationFromBookData(data);
+      return {
+        id,
+        title: safeString(data.title, "Untitled"),
+        author: safeString(data.author, "unknown"),
+        coverUrl: safeString(data.coverUrl, ""),
+        chapterCount: serialization.chapterCount,
+        publishedChapterCount: serialization.publishedCount,
+        serializationStatus: serialization.status,
+        plannedChapterCount: serialization.plannedChapterCount,
+        views: safeNumber(data.views, 0),
+        updated: safeNumber(data.updated, 0),
+        publishedAt: data.publishedAt,
+        createdAt: data.createdAt,
+        isPublished: data.isPublished !== false
+      };
+    }
+    function featuredChapterMeta(book) {
+      return formatChapterProgress({
+        publishedCount: book.publishedChapterCount ?? book.chapterCount,
+        plannedChapterCount: book.plannedChapterCount,
+        chapterCount: book.chapterCount,
+        serializationStatus: book.serializationStatus,
+      });
+    }
+    function toMillis(value) {
+      if (typeof value === "number" && Number.isFinite(value)) return value;
+      if (typeof value === "string" && value) {
+        const t = Date.parse(value);
+        if (Number.isFinite(t)) return t;
+      }
+      if (value && typeof value.seconds === "number") return value.seconds * 1000;
+      return 0;
+    }
+    function realKudosCount(bookId) {
+      return kudosCounts.get(bookId) || 0;
+    }
+    function realReadCount(book) {
+      return Math.max(safeNumber(book.views), readCounts.get(book.id) || 0);
+    }
+    function popularityScore(book) {
+      return (realKudosCount(book.id) * 3) + realReadCount(book);
+    }
+
+    function bookCardHtml({ title, author, meta, badge, coverUrl, empty, error }) {
+      const safeTitle = escapeHtml(title);
+      const safeAuthor = escapeHtml(author);
+      const safeMeta = escapeHtml(meta);
+      const safeBadge = escapeHtml(badge);
+      const validatedCover = safeCoverUrl(coverUrl);
+      const coverStyle = validatedCover
+        ? ` style="background-image:url('${validatedCover.replace(/'/g, "%27")}')"`
+        : "";
+      const coverClass = validatedCover ? "arrival-cover has-img" : "arrival-cover";
+      const extra = empty ? " arrival-card--empty" : "";
+      return `
+        <article class="arrival-card${extra}" tabindex="${empty || error ? "-1" : "0"}" role="${empty || error ? "status" : "link"}">
+          <div class="${coverClass}"${coverStyle}>${validatedCover ? "" : safeBadge}</div>
+          <div class="arrival-body">
+            <h3>${safeTitle}</h3>
+            <p class="arrival-author">${safeAuthor}</p>
+            <p class="arrival-meta">${safeMeta}</p>
+            ${empty || error ? "" : '<span class="arrival-link">Read story →</span>'}
+          </div>
+        </article>`;
+    }
+
+    function renderBooks() {
+      const container = document.getElementById("books");
+      container.innerHTML = "";
+      const sortedBooks = books.filter(b => b.isPublished !== false).slice();
+
+      if (currentSort === "popular") {
+        sortedBooks.sort((a, b) => {
+          const d = popularityScore(b) - popularityScore(a);
+          if (d) return d;
+          return toMillis(b.updated || b.publishedAt || b.createdAt) - toMillis(a.updated || a.publishedAt || a.createdAt);
+        });
+      } else {
+        sortedBooks.sort((a, b) =>
+          toMillis(b.publishedAt || b.createdAt || b.updated) - toMillis(a.publishedAt || a.createdAt || a.updated)
+        );
+      }
+
+      if (!sortedBooks.length) {
+        container.innerHTML = bookCardHtml({
+          title: "No published stories yet",
+          author: "Be the first to share",
+          meta: "Publish from Studio when your draft is ready",
+          badge: "📚",
+          empty: true
+        });
+        const emptyCard = container.querySelector(".arrival-card");
+        if (emptyCard) {
+          const target =
+            document.querySelector("[data-home-primary]")?.href || "signup.html";
+          emptyCard.style.cursor = "pointer";
+          const go = () => { window.location.href = target; };
+          emptyCard.addEventListener("click", go);
+          emptyCard.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              go();
+            }
+          });
+          emptyCard.setAttribute("tabindex", "0");
+          emptyCard.setAttribute("role", "link");
+        }
+        return;
+      }
+
+      sortedBooks.slice(0, 6).forEach(data => {
+        const wrap = document.createElement("div");
+        wrap.innerHTML = bookCardHtml({
+          title: safeString(data.title, "Untitled"),
+          author: `by ${safeString(data.author, "Unknown")}`,
+          meta: `${featuredChapterMeta(data)} · ${realKudosCount(data.id)} kudos · ${realReadCount(data)} reads`,
+          badge: safeString(data.title, "BK").slice(0, 2).toUpperCase(),
+          coverUrl: data.coverUrl || ""
+        });
+        const card = wrap.firstElementChild;
+        const open = () => { window.location.href = "read.html?book=" + encodeURIComponent(data.id); };
+        card.addEventListener("click", open);
+        card.addEventListener("keydown", e => {
+          if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); }
+        });
+        container.appendChild(card);
+      });
+    }
+
+    async function loadReadAndKudosCounts() {
+      readCounts.clear();
+      kudosCounts.clear();
+      const ids = books.map((book) => book.id).filter(Boolean);
+      if (!ids.length) return;
+      try {
+        const [{ data: readRows, error: readErr }, { data: likeRows, error: likeErr }] = await Promise.all([
+          supabase.from("reads").select("book_id").in("book_id", ids),
+          supabase.from("likes").select("book_id").in("book_id", ids),
+        ]);
+        if (readErr) throw readErr;
+        if (likeErr) throw likeErr;
+        for (const id of ids) {
+          readCounts.set(id, 0);
+          kudosCounts.set(id, 0);
+        }
+        for (const row of readRows || []) {
+          const id = row.book_id;
+          if (id) readCounts.set(id, (readCounts.get(id) || 0) + 1);
+        }
+        for (const row of likeRows || []) {
+          const id = row.book_id;
+          if (id) kudosCounts.set(id, (kudosCounts.get(id) || 0) + 1);
+        }
+      } catch (e) {
+        console.warn("Could not load engagement counts", e);
+      }
+    }
+
+    async function loadLibrary() {
+      const container = document.getElementById("books");
+      container.innerHTML = bookCardHtml({
+        title: "Loading stories…",
+        author: "Alysum Library",
+        meta: "Fetching popular books",
+        badge: "…",
+        empty: true
+      });
+      try {
+        try {
+          await processDueChapterReleases();
+        } catch (releaseErr) {
+          console.warn("Could not process scheduled chapter releases.", releaseErr);
+        }
+        const { data, error } = await supabase.from("library_catalog").select("*");
+        if (error && /library_catalog|relation.*does not exist/i.test(String(error.message || error))) {
+          const fallback = await supabase.from("library").select("*");
+          if (fallback.error) throw fallback.error;
+          books = (fallback.data || []).map(normalizeBook).filter(b => b.id);
+        } else {
+          if (error) throw error;
+          books = (data || []).map(normalizeBook).filter(b => b.id);
+        }
+        await loadReadAndKudosCounts();
+        renderBooks();
+      } catch (err) {
+        console.error(err);
+        books = [];
+        container.innerHTML = bookCardHtml({
+          title: "Couldn't load library",
+          author: "Connection issue",
+          meta: "Check Supabase and try again",
+          badge: "!",
+          error: true,
+          empty: true
+        });
+      }
+    }
+
+    setActiveSortButton();
+    loadLibrary();
+  </script>
+</body>
+</html>

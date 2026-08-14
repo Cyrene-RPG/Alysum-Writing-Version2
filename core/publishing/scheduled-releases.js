@@ -6,7 +6,7 @@
  * stored as absolute UTC (timestamptz), and shown back in the viewer's local zone.
  */
 
-import { supabase } from "../identity/client.js";
+import { supabase } from "../authentication/client.js";
 
 /** @typedef {{
  *   id: string,

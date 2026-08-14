@@ -78,4 +78,4 @@ test-output/
 .vercel
 .env*
 !.env.example
-!host/env.example
+!hosting/env.example
