@@ -3,11 +3,51 @@
     {
       "source": "/sitemap.xml",
       "destination": "/api/sitemap.xml"
+    },
+    {
+      "source": "/",
+      "destination": "/apps/main-site/pages/index.html"
+    },
+    {
+      "source": "/index.html",
+      "destination": "/apps/main-site/pages/index.html"
+    },
+    {
+      "source": "/sw.js",
+      "destination": "/apps/main-site/public/sw.js"
+    },
+    {
+      "source": "/manifest.webmanifest",
+      "destination": "/apps/main-site/public/manifest.webmanifest"
+    },
+    {
+      "source": "/robots.txt",
+      "destination": "/apps/main-site/public/robots.txt"
+    },
+    {
+      "source": "/Alysum-3.png",
+      "destination": "/apps/main-site/public/Alysum-3.png"
+    },
+    {
+      "source": "/js/:path*",
+      "destination": "/apps/main-site/ui/:path*"
+    },
+    {
+      "source": "/css/:path*",
+      "destination": "/apps/main-site/css/:path*"
+    },
+    {
+      "source": "/assets/:path*",
+      "destination": "/apps/main-site/assets/:path*"
+    },
+    {
+      "source": "/:page.html",
+      "destination": "/apps/main-site/pages/:page.html"
     }
   ],
   "headers": [
     {
-      "source": "/firebase.js",
+      "source": "/core/identity/client.js",
       "headers": [
         {
           "key": "Cache-Control",
@@ -25,33 +65,11 @@
       ]
     },
     {
-      "source": "/read.html",
-      "headers": [
-        {
-          "key": "X-Robots-Tag",
-          "value": "noai, noimageai"
-        }
-      ]
-    },
-    {
-      "source": "/api/book-content",
-      "headers": [
-        {
-          "key": "X-Robots-Tag",
-          "value": "noai, noimageai, noindex, nofollow"
-        }
-      ]
-    },
-    {
-      "source": "/fonts/(.*)",
+      "source": "/design-system/fonts/(.*)",
       "headers": [
         {
           "key": "Cache-Control",
           "value": "public, max-age=31536000, immutable"
-        },
-        {
-          "key": "X-Robots-Tag",
-          "value": "noai, noimageai, noindex, nofollow"
         }
       ]
     },

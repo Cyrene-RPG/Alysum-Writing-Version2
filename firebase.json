@@ -1,13 +1,14 @@
 {
-  "firestore": {
-    "rules": "firestore.rules"
-  },
   "hosting": {
     "public": ".",
     "ignore": [
       "firebase.json",
       "**/.*",
-      "**/node_modules/**"
+      "**/node_modules/**",
+      "apps/archive/**",
+      "core/server/**",
+      "design-system/docs/**",
+      "core/tests/**"
     ],
     "headers": [
       {
@@ -29,144 +30,11 @@
           {
             "key": "Content-Type",
             "value": "application/manifest+json; charset=utf-8"
-          },
-          {
-            "key": "Cache-Control",
-            "value": "public, max-age=0, must-revalidate"
           }
         ]
       },
       {
-        "source": "/js/pwa-register.js",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "no-store, no-cache, must-revalidate, max-age=0"
-          }
-        ]
-      },
-      {
-        "source": "/js/Novel_Exporter.js",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "public, max-age=0, must-revalidate"
-          }
-        ]
-      },
-      {
-        "source": "/Novel_Exporter.html",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "public, max-age=0, must-revalidate"
-          }
-        ]
-      },
-      {
-        "source": "/css/Novel_Exporter.css",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "public, max-age=0, must-revalidate"
-          }
-        ]
-      },
-      {
-        "source": "/css/pdf-print-fontfaces.css",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "public, max-age=86400, stale-while-revalidate=604800"
-          }
-        ]
-      },
-      {
-        "source": "/notes.html",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "no-store, no-cache, must-revalidate, max-age=0"
-          },
-          {
-            "key": "Pragma",
-            "value": "no-cache"
-          }
-        ]
-      },
-      {
-        "source": "/vault.html",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "no-store, no-cache, must-revalidate, max-age=0"
-          },
-          {
-            "key": "Pragma",
-            "value": "no-cache"
-          }
-        ]
-      },
-      {
-        "source": "/scratch.html",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "no-store, no-cache, must-revalidate, max-age=0"
-          },
-          {
-            "key": "Pragma",
-            "value": "no-cache"
-          }
-        ]
-      },
-      {
-        "source": "/css/notebook.css",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "no-store, no-cache, must-revalidate, max-age=0"
-          }
-        ]
-      },
-      {
-        "source": "/js/nb-app.js",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "no-store, no-cache, must-revalidate, max-age=0"
-          }
-        ]
-      },
-      {
-        "source": "/js/alysum-vault.js",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "no-store, no-cache, must-revalidate, max-age=0"
-          }
-        ]
-      },
-      {
-        "source": "/js/alysum-vault-ui.js",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "no-store, no-cache, must-revalidate, max-age=0"
-          }
-        ]
-      },
-      {
-        "source": "/js/alysum-wikilinks.js",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "no-store, no-cache, must-revalidate, max-age=0"
-          }
-        ]
-      },
-      {
-        "source": "/js/alysum-vault-supabase.js",
+        "source": "/core/identity/client.js",
         "headers": [
           {
             "key": "Cache-Control",
@@ -176,10 +44,28 @@
       }
     ],
     "rewrites": [
-      {
-        "source": "**",
-        "destination": "/index.html"
-      }
+      { "source": "/", "destination": "/apps/main-site/pages/index.html" },
+      { "source": "/index.html", "destination": "/apps/main-site/pages/index.html" },
+      { "source": "/login.html", "destination": "/apps/main-site/pages/login.html" },
+      { "source": "/signup.html", "destination": "/apps/main-site/pages/signup.html" },
+      { "source": "/settings.html", "destination": "/apps/main-site/pages/settings.html" },
+      { "source": "/reset-password.html", "destination": "/apps/main-site/pages/reset-password.html" },
+      { "source": "/privacy-policy.html", "destination": "/apps/main-site/pages/privacy-policy.html" },
+      { "source": "/terms-of-service.html", "destination": "/apps/main-site/pages/terms-of-service.html" },
+      { "source": "/sw.js", "destination": "/apps/main-site/public/sw.js" },
+      { "source": "/manifest.webmanifest", "destination": "/apps/main-site/public/manifest.webmanifest" },
+      { "source": "/robots.txt", "destination": "/apps/main-site/public/robots.txt" },
+      { "source": "/Alysum-3.png", "destination": "/apps/main-site/public/Alysum-3.png" },
+      { "source": "/js/pwa-register.js", "destination": "/apps/main-site/ui/pwa-register.js" },
+      { "source": "/js/vercel-analytics.js", "destination": "/apps/main-site/ui/vercel-analytics.js" },
+      { "source": "/js/seo-meta.js", "destination": "/apps/main-site/ui/seo-meta.js" },
+      { "source": "/js/workspace-nav.js", "destination": "/apps/main-site/ui/workspace-nav.js" },
+      { "source": "/js/homepage-auth-nav.js", "destination": "/apps/main-site/ui/homepage-auth-nav.js" },
+      { "source": "/js/user-backup.js", "destination": "/apps/main-site/ui/user-backup.js" },
+      { "source": "/js/backup-zip.js", "destination": "/apps/main-site/ui/backup-zip.js" },
+      { "source": "/js/prompt.js", "destination": "/apps/main-site/ui/prompt.js" },
+      { "source": "/css/site-responsive.css", "destination": "/apps/main-site/css/site-responsive.css" },
+      { "source": "/css/workspace-nav.css", "destination": "/apps/main-site/css/workspace-nav.css" }
     ]
   }
 }

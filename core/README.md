@@ -1,12 +1,23 @@
 # Core
 
-Framework-agnostic shared logic.
+Feature code shared by every app. No HTML, CSS, or `document`.
 
-Intended modules:
-- writing-engine
-- sync-engine
-- auth
+Apps import these modules. This folder never imports `apps/` or `design-system/`.
 
-Rules:
-- No UI framework assumptions
-- Reused by apps/editor and apps/collab-rooms
+Current files are legacy and will be remade. Do not add UI here.
+
+| Folder | Purpose |
+| --- | --- |
+| writing-engine | Manuscript: chapters, versions, word count, media format |
+| sync-engine | Local and remote persistence |
+| identity | Auth client, session, account types |
+| library | Public catalog and author profiles |
+| publishing | Serialization and scheduled chapter releases |
+| encyclopedia | World Encyclopedia blob store (story bible, not chapter prose) |
+| collab | Beta rooms (live collab rooms later) |
+| community | Later: lounge, word wars, badges |
+| analysis | Later: writing-aid reports |
+| notifications | Later: follows, replies, chapter drops |
+| tests | Engine tests (later) |
+| server | HTTP, jobs, SQL — browsers never load this |
+
