@@ -1387,32 +1387,9 @@
         </header>
         <nav class="wd-nav-wrap" aria-label="Workspace" data-active="settings">
             <div class="wd-nav">
-                <button type="button" id="navContinue">Continue writing</button>
-                <span class="wd-nav-divider" aria-hidden="true"></span>
-                <a href="writer-dashboard.html">Studio</a>
-                <a href="library.html">Library</a>
-                <a href="writers-lounge.html">Writer's Lounge</a>
-                <a href="beta-rooms.html">Beta rooms</a>
-                <a href="collab-rooms.html">Collab rooms</a>
-                <a href="author-dashboard.html" id="navAuthorStats">
-                    Author stats
-                    <span class="wd-nav-badge is-hidden" id="navDashBadge" aria-hidden="true">0</span>
-                </a>
-                <a href="world-encyclopedia.html">Encyclopedia</a>
-                <span class="wd-nav-divider" aria-hidden="true"></span>
-                <a href="vault.html">Notes</a>
-                <a href="note-graph.html">Note Graph</a>
-                <a href="story-board/">Story Board</a>
-                <a href="plotweave.html">Plotweave</a>
-                <a href="Novel_Exporter.html">Exporter</a>
-                <a href="badges.html">Achievements</a>
-                <a href="leaderboard.html">Leaderboards</a>
-                <a href="word-wars-lobby.html">Word Wars</a>
-                <span class="wd-nav-divider" aria-hidden="true"></span>
                 <a href="settings.html" class="is-active">Settings</a>
-                <a href="reader-home.html" class="is-hidden" id="navReading">Reading</a>
-                <button type="button" class="wd-nav-logout" data-logout-btn>Log out</button>
-                <a href="index.html">Home</a>
+                <a href="index.html">Main site</a>
+                <button type="button" class="settings-nav-logout" data-logout-btn>Logout</button>
             </div>
         </nav>
         <script type="module" src="js/workspace-nav.js?v=13"></script>
@@ -1667,43 +1644,8 @@
             <section class="profile-box" aria-labelledby="libraryAuthorTitle">
                 <h3 class="profile-box-title" id="libraryAuthorTitle">Your published work</h3>
                 <p class="hint" style="margin: 0 0 16px">
-                    If Alysum Support confirms a library policy issue on your book, you will be notified with required corrections and a deadline. You may appeal a decision you believe was made in error.
+                    Archived features are being kept separately while the live site is reduced to a minimal shell. The active app will restore each feature back in individually when needed.
                 </p>
-                <div class="library-settings-grid">
-                    <a class="library-settings-card" href="library-violations.html">
-                        <span class="library-settings-icon" aria-hidden="true">⚖️</span>
-                        <span class="library-settings-card-title">Violations &amp; appeals</span>
-                        <p class="library-settings-card-desc">View policy notices, correction deadlines, and submit an appeal.</p>
-                        <span class="library-settings-card-cta">Open →</span>
-                    </a>
-                    <a class="library-settings-card" href="library.html">
-                        <span class="library-settings-icon" aria-hidden="true">📚</span>
-                        <span class="library-settings-card-title">Browse the library</span>
-                        <p class="library-settings-card-desc">Read published stories and report content that violates Alysum guidelines.</p>
-                        <span class="library-settings-card-cta">Open library →</span>
-                    </a>
-                </div>
-            </section>
-
-            <section class="profile-box library-staff-tools hidden" id="libraryStaffTools" aria-labelledby="libraryStaffTitle">
-                <h3 class="profile-box-title" id="libraryStaffTitle">Moderation</h3>
-                <p class="hint" style="margin: 0 0 16px">
-                    Staff tools for reports, account standing, and user lookup.
-                </p>
-                <div class="library-settings-grid">
-                    <a class="library-settings-card" href="moderation-dashboard.html?view=inbox" id="modDashboardLink">
-                        <span class="library-settings-icon" aria-hidden="true">🛡️</span>
-                        <span class="library-settings-card-title">Moderation inbox</span>
-                        <p class="library-settings-card-desc">Review reader reports, confirm violations, and manage book visibility.</p>
-                        <span class="library-settings-card-cta">Open inbox →</span>
-                    </a>
-                    <a class="library-settings-card" href="moderation-dashboard.html?view=people" id="modUsersLink">
-                        <span class="library-settings-icon" aria-hidden="true">👥</span>
-                        <span class="library-settings-card-title">User browser</span>
-                        <p class="library-settings-card-desc">Browse accounts, see who's online, and find users who need attention.</p>
-                        <span class="library-settings-card-cta">Browse users →</span>
-                    </a>
-                </div>
             </section>
         </div>
     </div>
@@ -2534,11 +2476,7 @@
         import("./js/feature-highlights.js?v=3").then((m) => m.applyFeatureNewBadges()).catch(() => {});
 
         refreshBackupStatusUi();
-        void import("./js/moderation-access.js").then(({ isModerationStaffReliable }) => {
-            return isModerationStaffReliable();
-        }).then((staff) => {
-            document.getElementById("libraryStaffTools")?.classList.toggle("hidden", !staff);
-        }).catch(() => { /* staff RPC may be unavailable */ });
+        document.getElementById("libraryStaffTools")?.classList.add("hidden");
     }
 
     function refreshBackupStatusUi() {

@@ -10,10 +10,6 @@ const {
 
 const STATIC_PAGES = [
     { loc: "/", changefreq: "weekly", priority: "1.0" },
-    { loc: "/library.html", changefreq: "daily", priority: "0.9" },
-    { loc: "/leaderboard.html", changefreq: "daily", priority: "0.6" },
-    { loc: "/badges.html", changefreq: "monthly", priority: "0.5" },
-    { loc: "/writer-resources.html", changefreq: "monthly", priority: "0.5" },
     { loc: "/signup.html", changefreq: "yearly", priority: "0.5" },
     { loc: "/login.html", changefreq: "yearly", priority: "0.4" },
     { loc: "/privacy-policy.html", changefreq: "yearly", priority: "0.3" },

@@ -137,9 +137,6 @@ function activeClass(key, current) {
 }
 
 function renderNavHtml(active) {
-    const continueClass =
-        active === "studio" || active === "continue" ? ' class="is-active"' : "";
-
     return `
         <header class="wd-welcome-bar" aria-label="Welcome">
             <div class="wd-welcome-inner">
@@ -155,35 +152,9 @@ function renderNavHtml(active) {
         </header>
         <nav class="wd-nav-wrap" aria-label="Workspace">
             <div class="wd-nav">
-                <button type="button"${continueClass} id="navContinue">Continue writing</button>
-                <span class="wd-nav-divider" aria-hidden="true"></span>
-                <a href="${navHref("writer-dashboard.html")}"${activeClass("studio", active)}>Studio</a>
-                <a href="${navHref("library.html")}"${activeClass("library", active)}>Library</a>
-                <a href="${navHref("writers-lounge.html")}"${activeClass("writers-lounge", active)}>
-                    Writer's Lounge
-                    <span class="wd-nav-badge is-hidden" id="navLoungeBadge" aria-hidden="true">0</span>
-                </a>
-                <a href="${navHref("beta-rooms.html")}"${activeClass("beta-rooms", active)}>Beta rooms</a>
-                <a href="${navHref("collab-rooms.html")}"${activeClass("collab-rooms", active)}>Collab rooms</a>
-                <a href="${navHref("author-dashboard.html")}" id="navAuthorStats"${activeClass("author-stats", active)}>
-                    Author stats
-                    <span class="wd-nav-badge is-hidden" id="navDashBadge" aria-hidden="true">0</span>
-                </a>
-                <a href="${navHref("world-encyclopedia.html")}"${activeClass("encyclopedia", active)}>Encyclopedia</a>
-                <span class="wd-nav-divider" aria-hidden="true"></span>
-                <a href="${navHref("vault.html")}"${activeClass("notes", active)}>Notes</a>
-                <a href="${navHref("note-graph.html")}"${activeClass("note-graph", active)}>Note Graph</a>
-                <a href="${navHref("story-board/")}"${activeClass("story-board", active)}>Story Board</a>
-                <a href="${navHref("plotweave.html")}"${activeClass("plotweave", active)}>Plotweave</a>
-                <a href="${navHref("Novel_Exporter.html")}"${activeClass("exporter", active)}>Exporter</a>
-                <a href="${navHref("badges.html")}"${activeClass("achievements", active)}>Achievements</a>
-                <a href="${navHref("leaderboard.html")}"${activeClass("leaderboards", active)}>Leaderboards</a>
-                <a href="${navHref("word-wars-lobby.html")}"${activeClass("word-wars", active)}>Word Wars</a>
-                <span class="wd-nav-divider" aria-hidden="true"></span>
                 <a href="${navHref("settings.html")}"${activeClass("settings", active)}>Settings</a>
-                <a href="${navHref("reader-home.html")}"${active === "reading" ? ' class="is-active"' : ' class="is-hidden"'} id="navReading">Reading</a>
-                <button type="button" class="wd-nav-logout" data-logout-btn>Log out</button>
-                <a href="${navHref("index.html")}">Home</a>
+                <a href="${navHref("index.html")}"${activeClass("index", active)}>Main site</a>
+                <button type="button" class="settings-nav-logout" data-logout-btn>Logout</button>
             </div>
         </nav>
     `;

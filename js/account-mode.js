@@ -10,7 +10,7 @@ export const ACCOUNT_READER = "reader";
 export const ACCOUNT_BOTH = "both";
 
 /** Logged-in reader hub (profile + shortcuts). */
-export const READER_HOME_URL = "reader-home.html";
+export const READER_HOME_URL = "writer-dashboard.html";
 
 /** Logged-in writer hub (books, stats, prompts). */
 export const WRITER_HOME_URL = "writer-dashboard.html";

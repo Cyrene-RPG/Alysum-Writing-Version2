@@ -6,7 +6,7 @@ const SEARCH_BOT_UA =
 const AI_BOT_UA =
     /GPTBot|ChatGPT-User|OAI-SearchBot|ClaudeBot|anthropic-ai|Claude-Web|PerplexityBot|Perplexity-User|Bytespider|CCBot|cohere-ai|Diffbot|Meta-ExternalAgent|Google-Extended|Amazonbot|YouBot|Applebot-Extended|ImagesiftBot|omgili|Webzio-Extended|Ai2Bot|Meta-ExternalFetcher|Timpibot|VelenPublicWebCrawler|IAB-Tech-Lab/i;
 
-const LIBRARY_PATHS = new Set(["/read.html", "/author.html", "/library.html"]);
+const LIBRARY_PATHS = new Set([]);
 
 export default function middleware(request) {
     const userAgent = request.headers.get("user-agent") || "";
@@ -25,5 +25,5 @@ export default function middleware(request) {
 }
 
 export const config = {
-    matcher: ["/read.html", "/author.html", "/library.html"],
+    matcher: [],
 };
