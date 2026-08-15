@@ -9,12 +9,12 @@ Isolated shell. Not the platform home.
 Layout:
 
 - `pages/` — HTML
-- `page-ui/` — glue for these pages only
-- `pages-css/` — layout for these pages only (look comes from `site-appearance/`)
-- `pages-css/homepage/` — landing page styles, one file per section
-- `pages-css/login/` — login page styles
-- `pages-css/settings/` — settings page styles, one file per section
-- `page-ui/settings/` — settings page glue, one file per concern
+- `homepage/` — landing JS + `homepage-css/`
+- `login/` — login JS + `login-css/`
+- `signup/` — signup JS + `signup-css/`
+- `settings/` — settings JS + `settings-css/`
+- `page-ui/` — shared glue used by more than one page
+- `pages-css/` — shared layout (`site-responsive`, `workspace-nav`)
 - `assets/` — images for these pages
 - `public/` — `sw.js`, manifest, robots, favicon (served at `/` via rewrite)
 

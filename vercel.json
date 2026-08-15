@@ -29,8 +29,56 @@
       "destination": "/applications/main-site/public/Alysum-3.png"
     },
     {
+      "source": "/js/homepage.js",
+      "destination": "/applications/main-site/homepage/homepage.js"
+    },
+    {
+      "source": "/js/homepage-library.js",
+      "destination": "/applications/main-site/homepage/homepage-library.js"
+    },
+    {
+      "source": "/js/homepage-auth-nav.js",
+      "destination": "/applications/main-site/homepage/homepage-auth-nav.js"
+    },
+    {
+      "source": "/js/login.js",
+      "destination": "/applications/main-site/login/login.js"
+    },
+    {
+      "source": "/js/login-ui.js",
+      "destination": "/applications/main-site/login/login-ui.js"
+    },
+    {
+      "source": "/js/login-reset.js",
+      "destination": "/applications/main-site/login/login-reset.js"
+    },
+    {
+      "source": "/js/signup/:path*",
+      "destination": "/applications/main-site/signup/:path*"
+    },
+    {
+      "source": "/js/settings/:path*",
+      "destination": "/applications/main-site/settings/:path*"
+    },
+    {
       "source": "/js/:path*",
       "destination": "/applications/main-site/page-ui/:path*"
+    },
+    {
+      "source": "/css/homepage/:path*",
+      "destination": "/applications/main-site/homepage/homepage-css/:path*"
+    },
+    {
+      "source": "/css/login/:path*",
+      "destination": "/applications/main-site/login/login-css/:path*"
+    },
+    {
+      "source": "/css/signup/:path*",
+      "destination": "/applications/main-site/signup/signup-css/:path*"
+    },
+    {
+      "source": "/css/settings/:path*",
+      "destination": "/applications/main-site/settings/settings-css/:path*"
     },
     {
       "source": "/css/:path*",

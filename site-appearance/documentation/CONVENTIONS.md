@@ -15,7 +15,7 @@ Current modules are **legacy**. They will be remade. New and moved names still f
 
 One or two full English words. The name itself says what the folder is for.
 
-Write the word out: `authentication` not `auth`, `collaboration` not `collab`, `applications` not `apps`, `pages-css` not `css`, `documentation` not `docs`, `page-ui` not `ui`, `site-appearance` for the look folder, `database` not `db`, `utilities` not `lib`, `hosting` not `host`.
+Write the word out: `authentication` not `auth`, `collaboration` not `collab`, `applications` not `apps`, `pages-css` not `css` (shared page layout), `<page>-css` inside that page’s folder, `documentation` not `docs`, `page-ui` not `ui`, `site-appearance` for the look folder, `database` not `db`, `utilities` not `lib`, `hosting` not `host`.
 
 The only abbreviation we keep is root `api/` — Vercel will only run functions from that path.
 

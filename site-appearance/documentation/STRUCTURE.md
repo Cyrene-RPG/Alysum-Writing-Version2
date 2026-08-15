@@ -88,9 +88,9 @@ applications/
   archive/               retired screens — live code never imports this
 ```
 
-`main-site/` is isolated. It is not the house. Layout: `pages/`, `page-ui/`, `pages-css/`, `assets/`, `public/`.
+`main-site/` is isolated. It is not the house. Layout: `pages/`, one folder per big page (`homepage/`, `login/`, `signup/`, `settings/`) with that page’s `*-css/` and JS, plus shared `page-ui/`, `pages-css/`, `assets/`, `public/`.
 
-Public URLs did not change (`/login.html`, `/settings.html`). `/js/` and `/css/` still work; they rewrite into `page-ui/` and `pages-css/`.
+Public URLs did not change (`/login.html`, `/settings.html`). `/js/` and `/css/` still work; they rewrite into the page folders or shared `page-ui/` / `pages-css/`.
 
 ---
 

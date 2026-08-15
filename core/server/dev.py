@@ -39,8 +39,25 @@ def public_to_file(url_path: str) -> Path:
         return ROOT / "applications/main-site/pages/index.html"
     if clean in EXACT:
         return ROOT / EXACT[clean]
+    if clean.startswith("/js/signup/"):
+        return ROOT / "applications/main-site/signup" / clean[len("/js/signup/") :]
+    if clean.startswith("/js/settings/"):
+        return ROOT / "applications/main-site/settings" / clean[len("/js/settings/") :]
     if clean.startswith("/js/"):
-        return ROOT / "applications/main-site/page-ui" / clean[len("/js/") :]
+        name = clean[len("/js/") :]
+        if name.startswith("homepage"):
+            return ROOT / "applications/main-site/homepage" / name
+        if name.startswith("login"):
+            return ROOT / "applications/main-site/login" / name
+        return ROOT / "applications/main-site/page-ui" / name
+    if clean.startswith("/css/homepage/"):
+        return ROOT / "applications/main-site/homepage/homepage-css" / clean[len("/css/homepage/") :]
+    if clean.startswith("/css/login/"):
+        return ROOT / "applications/main-site/login/login-css" / clean[len("/css/login/") :]
+    if clean.startswith("/css/signup/"):
+        return ROOT / "applications/main-site/signup/signup-css" / clean[len("/css/signup/") :]
+    if clean.startswith("/css/settings/"):
+        return ROOT / "applications/main-site/settings/settings-css" / clean[len("/css/settings/") :]
     if clean.startswith("/css/"):
         return ROOT / "applications/main-site/pages-css" / clean[len("/css/") :]
     if clean.startswith("/assets/"):

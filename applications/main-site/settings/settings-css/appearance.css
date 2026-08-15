@@ -309,3 +309,20 @@
 
 #accountModePanel > h2,
 #accountModePanel > .hint,
+#securityPanel > h2,
+#securityPanel > .hint.password-intro-hint,
+#securityPanel > .hint#ssoPasswordNote {
+    text-align: center;
+    width: 100%;
+    max-width: 52rem;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#securityPanel > .hint#ssoPasswordNote {
+    margin-bottom: 12px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid color-mix(in srgb, var(--purple-bright) 35%, var(--border));
+    background: color-mix(in srgb, var(--theme-accent-soft-bg) 40%, rgba(0, 0, 0, 0.25));
+}
