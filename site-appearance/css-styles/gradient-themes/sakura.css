@@ -1,0 +1,42 @@
+/* ——— Sakura (cherry blossom) ——— */
+html[data-gradient-theme="sakura"] {
+    --purple: #ec4899;
+    --purple-dark: #9d174d;
+    --purple-bright: #f9a8d4;
+    --pink: #fda4af;
+    --gold: #fff1f2;
+    --theme-body-spot: rgba(236, 72, 153, 0.2);
+    --theme-body-spot-strong: rgba(249, 168, 212, 0.26);
+    --theme-header-mid: #db2777;
+    --theme-header-end: #fda4af;
+    --theme-card-a: rgba(236, 72, 153, 0.3);
+    --theme-card-b: rgba(253, 164, 175, 0.2);
+    --theme-hero-bg: linear-gradient(135deg, rgba(157, 23, 77, 0.35), rgba(249, 168, 212, 0.16)), var(--panel, #111827);
+    --theme-accent-soft-bg: rgba(236, 72, 153, 0.16);
+    --theme-brand-kicker: #fce7f3;
+    --alysum-purple: #ec4899;
+    --alysum-purple-dark: #9d174d;
+    --accent: #db2777;
+    --accent-hover: #be185d;
+    --accent-soft: #f9a8d4;
+    --accent-muted: rgba(236, 72, 153, 0.22);
+    --btn-primary-bg: #db2777;
+    --btn-primary-bg-hover: #be185d;
+    --link: #f9a8d4;
+    --nb-top-gradient: linear-gradient(135deg, #9d174d, #ec4899 50%, #fda4af);
+    --nb-float-bg: linear-gradient(145deg, #500724 0%, #1f0a14 45%, #0b1220 100%);
+    --nb-tree-active-bg: linear-gradient(90deg, rgba(236, 72, 153, 0.42), rgba(253, 164, 175, 0.18));
+    --vp-r1: rgba(249, 168, 212, 0.22);
+    --vp-r2: rgba(253, 164, 175, 0.14);
+    --vp-hero-bg: linear-gradient(135deg, rgba(157, 23, 77, 0.68), rgba(219, 39, 119, 0.42), rgba(15, 23, 42, 0.65));
+    --vp-primary-fg: #9d174d;
+    --login-page-bg: linear-gradient(135deg, #9d174d, #ec4899, #fda4af);
+    --ne-header-1: #9d174d;
+    --ne-header-2: #db2777;
+    --ne-header-3: #ec4899;
+    --ne-header-4: #fda4af;
+    --ne-body-spot: rgba(249, 168, 212, 0.24);
+    --theme-prompt-topbar: linear-gradient(135deg, rgba(157, 23, 77, 0.5), rgba(236, 72, 153, 0.32), rgba(253, 164, 175, 0.2));
+    --theme-prompt-entry-border: rgba(253, 164, 175, 0.4);
+    --theme-prompt-entry-ring: rgba(236, 72, 153, 0.3);
+}

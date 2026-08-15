@@ -1,0 +1,55 @@
+/**
+ * Alysum accent / gradient themes (all app pages except index.html).
+ * Set on <html data-gradient-theme="…"> via localStorage key alysum-gradient-theme.
+ * "classic" = no attribute (removeItem) — these :root values match the original site.
+ */
+
+:root {
+    --purple: #6d28d9;
+    --purple-dark: #5b21b6;
+    --purple-bright: #9333ea;
+    --pink: #ec4899;
+    --gold: #f5d489;
+
+    --theme-body-spot: rgba(109, 40, 217, 0.18);
+    --theme-body-spot-strong: rgba(109, 40, 217, 0.22);
+    --theme-header-mid: #7c3aed;
+    --theme-header-end: #a855f7;
+    --theme-card-a: rgba(147, 51, 234, 0.34);
+    --theme-card-b: rgba(236, 72, 153, 0.18);
+    --theme-hero-bg: linear-gradient(135deg, rgba(147, 51, 234, 0.28), rgba(236, 72, 153, 0.12)), var(--panel, #111827);
+    --theme-accent-soft-bg: rgba(109, 40, 217, 0.16);
+    --theme-brand-kicker: #c4b5fd;
+
+    --alysum-purple: #6d28d9;
+    --alysum-purple-dark: #5b21b6;
+
+    --accent: #6d28d9;
+    --accent-hover: #5b21b6;
+    --accent-soft: #7c3aed;
+    --accent-muted: rgba(109, 40, 217, 0.18);
+    --btn-primary-bg: #6d28d9;
+    --btn-primary-bg-hover: #5b21b6;
+    --link: #6d28d9;
+
+    --nb-top-gradient: linear-gradient(135deg, #5b21b6, #7c3aed 55%, #a855f7);
+    --nb-float-bg: linear-gradient(145deg, #1e1b4b 0%, #0f172a 42%, #0b1220 100%);
+    --nb-tree-active-bg: linear-gradient(90deg, rgba(124, 58, 237, 0.45), rgba(236, 72, 153, 0.12));
+
+    --vp-r1: rgba(124, 58, 237, 0.2);
+    --vp-r2: rgba(236, 72, 153, 0.12);
+    --vp-hero-bg: linear-gradient(135deg, rgba(91, 33, 182, 0.55), rgba(124, 58, 237, 0.35), rgba(15, 23, 42, 0.65));
+    --vp-primary-fg: #5b21b6;
+
+    --login-page-bg: linear-gradient(135deg, #5b21b6, #7c3aed, #a78bfa);
+
+    --ne-header-1: #5b21b6;
+    --ne-header-2: #6d28d9;
+    --ne-header-3: #7c3aed;
+    --ne-header-4: #a855f7;
+    --ne-body-spot: rgba(109, 40, 217, 0.22);
+
+    --theme-prompt-topbar: linear-gradient(135deg, rgba(109, 40, 217, 0.35), rgba(236, 72, 153, 0.18));
+    --theme-prompt-entry-border: rgba(236, 72, 153, 0.35);
+    --theme-prompt-entry-ring: rgba(109, 40, 217, 0.25);
+}

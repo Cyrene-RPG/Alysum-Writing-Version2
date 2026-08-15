@@ -7,7 +7,7 @@ export const BODY_BG_CUSTOM_KEY = "alysum-body-bg-custom";
 export const GRADIENT_THEME_KEY = "alysum-gradient-theme";
 export const APPEARANCE_MIX_KEY = "alysum-appearance-mix";
 
-/** Complementary dark base for each site accent theme (from gradient-themes.css float panels). */
+/** Complementary dark base for each site accent theme (from gradient-themes/ float panels). */
 export const ACCENT_COMPLEMENT_BG = {
     classic: "#0b1220",
     vivid: "#0f0a1a",

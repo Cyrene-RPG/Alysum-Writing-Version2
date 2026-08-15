@@ -1,5 +1,5 @@
 /**
- * Cross-tab appearance sync (non-module). Pair with early head script + gradient-themes.css.
+ * Cross-tab appearance sync (non-module). Pair with early head script + gradient-themes/.
  */
 (function () {
     "use strict";

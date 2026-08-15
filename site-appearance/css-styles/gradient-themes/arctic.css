@@ -1,0 +1,43 @@
+/* ——— Arctic (frost, ice blue & mint) ——— */
+html[data-gradient-theme="arctic"] {
+    --purple: #0ea5e9;
+    --purple-dark: #0c4a6e;
+    --purple-bright: #67e8f9;
+    --pink: #a5f3fc;
+    --gold: #ecfeff;
+    --theme-body-spot: rgba(14, 165, 233, 0.16);
+    --theme-body-spot-strong: rgba(103, 232, 249, 0.18);
+    --theme-header-mid: #06b6d4;
+    --theme-header-end: #a5f3fc;
+    --theme-card-a: rgba(14, 165, 233, 0.22);
+    --theme-card-b: rgba(165, 243, 252, 0.14);
+    --theme-hero-bg: linear-gradient(135deg, rgba(12, 74, 110, 0.35), rgba(14, 165, 233, 0.14), rgba(165, 243, 252, 0.08)),
+        var(--panel, #111827);
+    --theme-accent-soft-bg: rgba(14, 165, 233, 0.12);
+    --theme-brand-kicker: #bae6fd;
+    --alysum-purple: #0ea5e9;
+    --alysum-purple-dark: #0c4a6e;
+    --accent: #0284c7;
+    --accent-hover: #0369a1;
+    --accent-soft: #22d3ee;
+    --accent-muted: rgba(14, 165, 233, 0.16);
+    --btn-primary-bg: #0284c7;
+    --btn-primary-bg-hover: #0369a1;
+    --link: #06b6d4;
+    --nb-top-gradient: linear-gradient(135deg, #0c4a6e, #0284c7 48%, #67e8f9);
+    --nb-float-bg: linear-gradient(145deg, #082f49 0%, #0f172a 50%, #020617 100%);
+    --nb-tree-active-bg: linear-gradient(90deg, rgba(14, 165, 233, 0.35), rgba(165, 243, 252, 0.14));
+    --vp-r1: rgba(103, 232, 249, 0.18);
+    --vp-r2: rgba(14, 165, 233, 0.1);
+    --vp-hero-bg: linear-gradient(135deg, rgba(12, 74, 110, 0.55), rgba(6, 182, 212, 0.28), rgba(15, 23, 42, 0.65));
+    --vp-primary-fg: #0c4a6e;
+    --login-page-bg: linear-gradient(135deg, #0c4a6e, #0284c7, #a5f3fc);
+    --ne-header-1: #0c4a6e;
+    --ne-header-2: #0284c7;
+    --ne-header-3: #06b6d4;
+    --ne-header-4: #cffafe;
+    --ne-body-spot: rgba(103, 232, 249, 0.18);
+    --theme-prompt-topbar: linear-gradient(135deg, rgba(12, 74, 110, 0.45), rgba(14, 165, 233, 0.28), rgba(165, 243, 252, 0.16));
+    --theme-prompt-entry-border: rgba(103, 232, 249, 0.35);
+    --theme-prompt-entry-ring: rgba(14, 165, 233, 0.28);
+}

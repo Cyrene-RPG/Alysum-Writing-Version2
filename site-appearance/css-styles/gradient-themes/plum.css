@@ -1,0 +1,42 @@
+/* ——— Plum (deep berry) ——— */
+html[data-gradient-theme="plum"] {
+    --purple: #9333ea;
+    --purple-dark: #581c87;
+    --purple-bright: #c084fc;
+    --pink: #e879f9;
+    --gold: #f3e8ff;
+    --theme-body-spot: rgba(147, 51, 234, 0.22);
+    --theme-body-spot-strong: rgba(192, 132, 252, 0.26);
+    --theme-header-mid: #7e22ce;
+    --theme-header-end: #e879f9;
+    --theme-card-a: rgba(147, 51, 234, 0.34);
+    --theme-card-b: rgba(232, 121, 249, 0.18);
+    --theme-hero-bg: linear-gradient(135deg, rgba(88, 28, 135, 0.4), rgba(147, 51, 234, 0.22)), var(--panel, #111827);
+    --theme-accent-soft-bg: rgba(147, 51, 234, 0.18);
+    --theme-brand-kicker: #e9d5ff;
+    --alysum-purple: #9333ea;
+    --alysum-purple-dark: #581c87;
+    --accent: #7e22ce;
+    --accent-hover: #6b21a8;
+    --accent-soft: #c084fc;
+    --accent-muted: rgba(147, 51, 234, 0.22);
+    --btn-primary-bg: #7e22ce;
+    --btn-primary-bg-hover: #6b21a8;
+    --link: #c084fc;
+    --nb-top-gradient: linear-gradient(135deg, #581c87, #7e22ce 45%, #e879f9);
+    --nb-float-bg: linear-gradient(145deg, #3b0764 0%, #1e1033 45%, #0b1220 100%);
+    --nb-tree-active-bg: linear-gradient(90deg, rgba(147, 51, 234, 0.45), rgba(232, 121, 249, 0.16));
+    --vp-r1: rgba(192, 132, 252, 0.22);
+    --vp-r2: rgba(232, 121, 249, 0.14);
+    --vp-hero-bg: linear-gradient(135deg, rgba(88, 28, 135, 0.72), rgba(126, 34, 206, 0.45), rgba(15, 23, 42, 0.65));
+    --vp-primary-fg: #581c87;
+    --login-page-bg: linear-gradient(135deg, #581c87, #9333ea, #e879f9);
+    --ne-header-1: #581c87;
+    --ne-header-2: #7e22ce;
+    --ne-header-3: #a855f7;
+    --ne-header-4: #e879f9;
+    --ne-body-spot: rgba(192, 132, 252, 0.24);
+    --theme-prompt-topbar: linear-gradient(135deg, rgba(88, 28, 135, 0.55), rgba(147, 51, 234, 0.32), rgba(232, 121, 249, 0.18));
+    --theme-prompt-entry-border: rgba(232, 121, 249, 0.38);
+    --theme-prompt-entry-ring: rgba(147, 51, 234, 0.32);
+}

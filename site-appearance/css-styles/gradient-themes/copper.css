@@ -1,0 +1,42 @@
+/* ——— Copper (rust & bronze) ——— */
+html[data-gradient-theme="copper"] {
+    --purple: #b45309;
+    --purple-dark: #78350f;
+    --purple-bright: #f59e0b;
+    --pink: #fbbf24;
+    --gold: #fef3c7;
+    --theme-body-spot: rgba(180, 83, 9, 0.22);
+    --theme-body-spot-strong: rgba(245, 158, 11, 0.24);
+    --theme-header-mid: #92400e;
+    --theme-header-end: #fbbf24;
+    --theme-card-a: rgba(180, 83, 9, 0.32);
+    --theme-card-b: rgba(251, 191, 36, 0.2);
+    --theme-hero-bg: linear-gradient(135deg, rgba(120, 53, 15, 0.4), rgba(245, 158, 11, 0.16)), var(--panel, #111827);
+    --theme-accent-soft-bg: rgba(180, 83, 9, 0.18);
+    --theme-brand-kicker: #fde68a;
+    --alysum-purple: #b45309;
+    --alysum-purple-dark: #78350f;
+    --accent: #92400e;
+    --accent-hover: #78350f;
+    --accent-soft: #f59e0b;
+    --accent-muted: rgba(180, 83, 9, 0.22);
+    --btn-primary-bg: #b45309;
+    --btn-primary-bg-hover: #92400e;
+    --link: #f59e0b;
+    --nb-top-gradient: linear-gradient(135deg, #78350f, #b45309 48%, #fbbf24);
+    --nb-float-bg: linear-gradient(145deg, #451a03 0%, #1c1917 48%, #0b1220 100%);
+    --nb-tree-active-bg: linear-gradient(90deg, rgba(180, 83, 9, 0.45), rgba(251, 191, 36, 0.18));
+    --vp-r1: rgba(245, 158, 11, 0.22);
+    --vp-r2: rgba(251, 191, 36, 0.14);
+    --vp-hero-bg: linear-gradient(135deg, rgba(120, 53, 15, 0.72), rgba(180, 83, 9, 0.42), rgba(15, 23, 42, 0.65));
+    --vp-primary-fg: #78350f;
+    --login-page-bg: linear-gradient(135deg, #78350f, #b45309, #fbbf24);
+    --ne-header-1: #78350f;
+    --ne-header-2: #92400e;
+    --ne-header-3: #d97706;
+    --ne-header-4: #fbbf24;
+    --ne-body-spot: rgba(245, 158, 11, 0.24);
+    --theme-prompt-topbar: linear-gradient(135deg, rgba(120, 53, 15, 0.55), rgba(180, 83, 9, 0.35), rgba(251, 191, 36, 0.2));
+    --theme-prompt-entry-border: rgba(251, 191, 36, 0.4);
+    --theme-prompt-entry-ring: rgba(180, 83, 9, 0.32);
+}

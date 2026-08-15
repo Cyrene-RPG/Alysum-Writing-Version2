@@ -1,0 +1,42 @@
+/* ——— Peach (warm coral) ——— */
+html[data-gradient-theme="peach"] {
+    --purple: #ea580c;
+    --purple-dark: #9a3412;
+    --purple-bright: #fb923c;
+    --pink: #fdba74;
+    --gold: #ffedd5;
+    --theme-body-spot: rgba(234, 88, 12, 0.22);
+    --theme-body-spot-strong: rgba(251, 146, 60, 0.26);
+    --theme-header-mid: #c2410c;
+    --theme-header-end: #fdba74;
+    --theme-card-a: rgba(234, 88, 12, 0.32);
+    --theme-card-b: rgba(253, 186, 116, 0.2);
+    --theme-hero-bg: linear-gradient(135deg, rgba(234, 88, 12, 0.26), rgba(253, 186, 116, 0.14)), var(--panel, #111827);
+    --theme-accent-soft-bg: rgba(251, 146, 60, 0.16);
+    --theme-brand-kicker: #fed7aa;
+    --alysum-purple: #ea580c;
+    --alysum-purple-dark: #9a3412;
+    --accent: #c2410c;
+    --accent-hover: #9a3412;
+    --accent-soft: #fb923c;
+    --accent-muted: rgba(234, 88, 12, 0.22);
+    --btn-primary-bg: #ea580c;
+    --btn-primary-bg-hover: #c2410c;
+    --link: #fb923c;
+    --nb-top-gradient: linear-gradient(135deg, #9a3412, #ea580c 50%, #fdba74);
+    --nb-float-bg: linear-gradient(145deg, #431407 0%, #1c1917 45%, #0b1220 100%);
+    --nb-tree-active-bg: linear-gradient(90deg, rgba(234, 88, 12, 0.45), rgba(253, 186, 116, 0.18));
+    --vp-r1: rgba(251, 146, 60, 0.22);
+    --vp-r2: rgba(253, 186, 116, 0.14);
+    --vp-hero-bg: linear-gradient(135deg, rgba(154, 52, 18, 0.7), rgba(234, 88, 12, 0.4), rgba(15, 23, 42, 0.65));
+    --vp-primary-fg: #9a3412;
+    --login-page-bg: linear-gradient(135deg, #9a3412, #ea580c, #fdba74);
+    --ne-header-1: #9a3412;
+    --ne-header-2: #c2410c;
+    --ne-header-3: #ea580c;
+    --ne-header-4: #fdba74;
+    --ne-body-spot: rgba(251, 146, 60, 0.24);
+    --theme-prompt-topbar: linear-gradient(135deg, rgba(234, 88, 12, 0.4), rgba(253, 186, 116, 0.22));
+    --theme-prompt-entry-border: rgba(253, 186, 116, 0.4);
+    --theme-prompt-entry-ring: rgba(234, 88, 12, 0.3);
+}

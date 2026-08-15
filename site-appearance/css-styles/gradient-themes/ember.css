@@ -1,0 +1,42 @@
+/* ——— Ember (red / orange) ——— */
+html[data-gradient-theme="ember"] {
+    --purple: #dc2626;
+    --purple-dark: #991b1b;
+    --purple-bright: #f97316;
+    --pink: #fb923c;
+    --gold: #fed7aa;
+    --theme-body-spot: rgba(220, 38, 38, 0.22);
+    --theme-body-spot-strong: rgba(249, 115, 22, 0.24);
+    --theme-header-mid: #ea580c;
+    --theme-header-end: #fb7185;
+    --theme-card-a: rgba(220, 38, 38, 0.36);
+    --theme-card-b: rgba(251, 146, 60, 0.2);
+    --theme-hero-bg: linear-gradient(135deg, rgba(220, 38, 38, 0.3), rgba(251, 146, 60, 0.14)), var(--panel, #111827);
+    --theme-accent-soft-bg: rgba(220, 38, 38, 0.18);
+    --theme-brand-kicker: #fecaca;
+    --alysum-purple: #dc2626;
+    --alysum-purple-dark: #991b1b;
+    --accent: #dc2626;
+    --accent-hover: #b91c1c;
+    --accent-soft: #fb923c;
+    --accent-muted: rgba(220, 38, 38, 0.22);
+    --btn-primary-bg: #dc2626;
+    --btn-primary-bg-hover: #b91c1c;
+    --link: #f97316;
+    --nb-top-gradient: linear-gradient(135deg, #991b1b, #dc2626 48%, #fb923c);
+    --nb-float-bg: linear-gradient(145deg, #450a0a 0%, #1a0a08 45%, #0b1220 100%);
+    --nb-tree-active-bg: linear-gradient(90deg, rgba(220, 38, 38, 0.48), rgba(251, 146, 60, 0.16));
+    --vp-r1: rgba(249, 115, 22, 0.22);
+    --vp-r2: rgba(220, 38, 38, 0.12);
+    --vp-hero-bg: linear-gradient(135deg, rgba(153, 27, 27, 0.65), rgba(234, 88, 12, 0.38), rgba(15, 23, 42, 0.65));
+    --vp-primary-fg: #991b1b;
+    --login-page-bg: linear-gradient(135deg, #991b1b, #ea580c, #fb923c);
+    --ne-header-1: #991b1b;
+    --ne-header-2: #dc2626;
+    --ne-header-3: #ea580c;
+    --ne-header-4: #fb923c;
+    --ne-body-spot: rgba(220, 38, 38, 0.24);
+    --theme-prompt-topbar: linear-gradient(135deg, rgba(220, 38, 38, 0.4), rgba(251, 146, 60, 0.22));
+    --theme-prompt-entry-border: rgba(251, 146, 60, 0.38);
+    --theme-prompt-entry-ring: rgba(220, 38, 38, 0.3);
+}

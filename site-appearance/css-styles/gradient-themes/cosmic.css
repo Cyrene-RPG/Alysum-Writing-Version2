@@ -1,0 +1,42 @@
+/* ——— Cosmic (indigo nebula) ——— */
+html[data-gradient-theme="cosmic"] {
+    --purple: #6366f1;
+    --purple-dark: #312e81;
+    --purple-bright: #818cf8;
+    --pink: #c084fc;
+    --gold: #e0e7ff;
+    --theme-body-spot: rgba(99, 102, 241, 0.22);
+    --theme-body-spot-strong: rgba(129, 140, 248, 0.26);
+    --theme-header-mid: #4f46e5;
+    --theme-header-end: #c084fc;
+    --theme-card-a: rgba(99, 102, 241, 0.34);
+    --theme-card-b: rgba(192, 132, 252, 0.18);
+    --theme-hero-bg: linear-gradient(135deg, rgba(49, 46, 129, 0.45), rgba(129, 140, 248, 0.18)), var(--panel, #111827);
+    --theme-accent-soft-bg: rgba(99, 102, 241, 0.18);
+    --theme-brand-kicker: #c7d2fe;
+    --alysum-purple: #6366f1;
+    --alysum-purple-dark: #312e81;
+    --accent: #4f46e5;
+    --accent-hover: #4338ca;
+    --accent-soft: #818cf8;
+    --accent-muted: rgba(99, 102, 241, 0.22);
+    --btn-primary-bg: #4f46e5;
+    --btn-primary-bg-hover: #4338ca;
+    --link: #818cf8;
+    --nb-top-gradient: linear-gradient(135deg, #312e81, #4f46e5 45%, #c084fc);
+    --nb-float-bg: linear-gradient(145deg, #1e1b4b 0%, #0f172a 42%, #020617 100%);
+    --nb-tree-active-bg: linear-gradient(90deg, rgba(99, 102, 241, 0.45), rgba(192, 132, 252, 0.16));
+    --vp-r1: rgba(129, 140, 248, 0.22);
+    --vp-r2: rgba(192, 132, 252, 0.14);
+    --vp-hero-bg: linear-gradient(135deg, rgba(49, 46, 129, 0.72), rgba(79, 70, 229, 0.45), rgba(15, 23, 42, 0.65));
+    --vp-primary-fg: #312e81;
+    --login-page-bg: linear-gradient(135deg, #312e81, #6366f1, #c084fc);
+    --ne-header-1: #312e81;
+    --ne-header-2: #4f46e5;
+    --ne-header-3: #6366f1;
+    --ne-header-4: #c084fc;
+    --ne-body-spot: rgba(129, 140, 248, 0.24);
+    --theme-prompt-topbar: linear-gradient(135deg, rgba(49, 46, 129, 0.55), rgba(99, 102, 241, 0.35), rgba(192, 132, 252, 0.18));
+    --theme-prompt-entry-border: rgba(192, 132, 252, 0.38);
+    --theme-prompt-entry-ring: rgba(99, 102, 241, 0.32);
+}

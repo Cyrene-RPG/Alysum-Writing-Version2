@@ -51,7 +51,7 @@ Every current and future application boots this. Features never pick their own c
 site-appearance/
   documentation/  map — STRUCTURE, CONVENTIONS, ARCHITECTURE, DOMAIN
   tokens/
-  css-styles/     theme.css, gradient-themes.css, typography.css
+  css-styles/     theme.css, gradient-themes/, typography.css
   boot.js         and the rest of the theme runtime
   fonts/
   components/     later — shared chrome
@@ -60,7 +60,7 @@ site-appearance/
 **Skin contract** (every application page except the marketing homepage, which skips gradient theme on purpose):
 
 1. `/site-appearance/css-styles/theme.css`
-2. `/site-appearance/css-styles/gradient-themes.css`
+2. `/site-appearance/css-styles/gradient-themes/index.css`
 3. `/site-appearance/css-styles/typography.css`
 4. `/site-appearance/boot.js` (no defer)
 

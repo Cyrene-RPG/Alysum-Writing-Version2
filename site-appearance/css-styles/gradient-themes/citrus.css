@@ -1,0 +1,42 @@
+/* ——— Citrus (lime & lemon) ——— */
+html[data-gradient-theme="citrus"] {
+    --purple: #65a30d;
+    --purple-dark: #365314;
+    --purple-bright: #a3e635;
+    --pink: #facc15;
+    --gold: #fef9c3;
+    --theme-body-spot: rgba(101, 163, 13, 0.22);
+    --theme-body-spot-strong: rgba(163, 230, 53, 0.24);
+    --theme-header-mid: #4d7c0f;
+    --theme-header-end: #facc15;
+    --theme-card-a: rgba(101, 163, 13, 0.3);
+    --theme-card-b: rgba(250, 204, 21, 0.2);
+    --theme-hero-bg: linear-gradient(135deg, rgba(54, 83, 20, 0.4), rgba(163, 230, 53, 0.14)), var(--panel, #111827);
+    --theme-accent-soft-bg: rgba(101, 163, 13, 0.18);
+    --theme-brand-kicker: #ecfccb;
+    --alysum-purple: #65a30d;
+    --alysum-purple-dark: #365314;
+    --accent: #4d7c0f;
+    --accent-hover: #3f6212;
+    --accent-soft: #a3e635;
+    --accent-muted: rgba(101, 163, 13, 0.22);
+    --btn-primary-bg: #65a30d;
+    --btn-primary-bg-hover: #4d7c0f;
+    --link: #a3e635;
+    --nb-top-gradient: linear-gradient(135deg, #365314, #65a30d 48%, #facc15);
+    --nb-float-bg: linear-gradient(145deg, #1a2e05 0%, #14532d 35%, #0b1220 100%);
+    --nb-tree-active-bg: linear-gradient(90deg, rgba(101, 163, 13, 0.45), rgba(250, 204, 21, 0.18));
+    --vp-r1: rgba(163, 230, 53, 0.22);
+    --vp-r2: rgba(250, 204, 21, 0.14);
+    --vp-hero-bg: linear-gradient(135deg, rgba(54, 83, 20, 0.72), rgba(101, 163, 13, 0.42), rgba(15, 23, 42, 0.65));
+    --vp-primary-fg: #365314;
+    --login-page-bg: linear-gradient(135deg, #365314, #65a30d, #facc15);
+    --ne-header-1: #365314;
+    --ne-header-2: #4d7c0f;
+    --ne-header-3: #84cc16;
+    --ne-header-4: #facc15;
+    --ne-body-spot: rgba(163, 230, 53, 0.24);
+    --theme-prompt-topbar: linear-gradient(135deg, rgba(54, 83, 20, 0.55), rgba(101, 163, 13, 0.35), rgba(250, 204, 21, 0.2));
+    --theme-prompt-entry-border: rgba(250, 204, 21, 0.42);
+    --theme-prompt-entry-ring: rgba(101, 163, 13, 0.3);
+}

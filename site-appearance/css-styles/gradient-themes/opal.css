@@ -1,0 +1,42 @@
+/* ——— Opal ——— */
+html[data-gradient-theme="opal"] {
+    --purple: #a78bfa;
+    --purple-dark: #475569;
+    --purple-bright: #99f6e4;
+    --pink: #fbcfe8;
+    --gold: #fef08a;
+    --theme-body-spot: rgba(167, 139, 250, 0.2);
+    --theme-body-spot-strong: rgba(153, 246, 228, 0.18);
+    --theme-header-mid: #c084fc;
+    --theme-header-end: #99f6e4;
+    --theme-card-a: rgba(167, 139, 250, 0.28);
+    --theme-card-b: rgba(251, 207, 232, 0.18);
+    --theme-hero-bg: linear-gradient(135deg, rgba(165, 243, 252, 0.15), rgba(196, 181, 253, 0.2), rgba(254, 240, 138, 0.1)), var(--panel, #111827);
+    --theme-accent-soft-bg: rgba(167, 139, 250, 0.14);
+    --theme-brand-kicker: #e9d5ff;
+    --alysum-purple: #a78bfa;
+    --alysum-purple-dark: #475569;
+    --accent: #8b5cf6;
+    --accent-hover: #7c3aed;
+    --accent-soft: #99f6e4;
+    --accent-muted: rgba(167, 139, 250, 0.2);
+    --btn-primary-bg: #8b5cf6;
+    --btn-primary-bg-hover: #7c3aed;
+    --link: #99f6e4;
+    --nb-top-gradient: linear-gradient(135deg, #a5f3fc, #c4b5fd, #fbcfe8, #fef08a, #99f6e4);
+    --nb-float-bg: linear-gradient(145deg, #334155 0%, #1e1b4b 45%, #0b1220 100%);
+    --nb-tree-active-bg: linear-gradient(90deg, rgba(167, 139, 250, 0.4), rgba(153, 246, 228, 0.2));
+    --vp-r1: rgba(196, 181, 253, 0.22);
+    --vp-r2: rgba(153, 246, 228, 0.14);
+    --vp-hero-bg: linear-gradient(135deg, rgba(71, 85, 105, 0.55), rgba(139, 92, 246, 0.35), rgba(153, 246, 228, 0.25), rgba(15, 23, 42, 0.65));
+    --vp-primary-fg: #475569;
+    --login-page-bg: linear-gradient(135deg, #a5f3fc, #c4b5fd, #fbcfe8, #99f6e4);
+    --ne-header-1: #475569;
+    --ne-header-2: #8b5cf6;
+    --ne-header-3: #f0abfc;
+    --ne-header-4: #99f6e4;
+    --ne-body-spot: rgba(167, 139, 250, 0.22);
+    --theme-prompt-topbar: linear-gradient(135deg, rgba(165, 243, 252, 0.35), rgba(196, 181, 253, 0.3), rgba(251, 207, 232, 0.25), rgba(254, 240, 138, 0.2));
+    --theme-prompt-entry-border: rgba(153, 246, 228, 0.38);
+    --theme-prompt-entry-ring: rgba(167, 139, 250, 0.28);
+}

@@ -7,7 +7,7 @@ The one look for every Alysum application. Same name as Settings → Appearance.
 Every HTML page loads these **before** application styles, in this order:
 
 1. `/site-appearance/css-styles/theme.css`
-2. `/site-appearance/css-styles/gradient-themes.css`
+2. `/site-appearance/css-styles/gradient-themes/index.css`
 3. `/site-appearance/css-styles/typography.css`
 4. `/site-appearance/boot.js` (no `defer` — prevents flash)
 
