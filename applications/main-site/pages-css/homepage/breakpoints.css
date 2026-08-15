@@ -1,0 +1,43 @@
+@media (min-width: 768px) {
+  .nav-links { display: flex; }
+
+  .hero-panel {
+    padding: 0 20px 40px;
+  }
+
+  .hero-panel-inner {
+    gap: 26px;
+  }
+
+  .about-grid {
+    grid-template-columns: 1.1fr 1fr;
+    gap: 48px;
+  }
+
+  .features-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+  }
+
+  .arrivals-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .footer-grid {
+    grid-template-columns: 1.2fr 2fr;
+    align-items: start;
+  }
+
+  .footer-cols {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 767px) {
+  .hero-panel { padding: 0 16px 28px; }
+  .hero-panel-inner { gap: 18px; }
+  .nav-login { display: none; }
+  .nav-brand-mark { width: 56px; height: 56px; border-radius: 14px; }
+  .nav-brand { font-size: 21px; }
+  .hero-eyebrow { margin-bottom: 8px; }
+}

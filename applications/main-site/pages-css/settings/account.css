@@ -1,0 +1,220 @@
+#authorPagePanel > h2,
+#authorPagePanel > .hint.author-page-intro-hint {
+    text-align: center;
+    width: 100%;
+    max-width: 52rem;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.account-focus-body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 28px;
+    flex: 1;
+    width: 100%;
+    max-width: min(1120px, 100%);
+    margin: 0 auto;
+    padding: 8px clamp(12px, 2vw, 20px) 12px;
+}
+
+.author-page-panel-body {
+    display: grid;
+    gap: 18px;
+    width: 100%;
+    max-width: min(1100px, 100%);
+    margin: 0 auto;
+    align-self: center;
+    padding: 0 clamp(12px, 2vw, 20px);
+}
+
+.support-links-grid {
+    display: grid;
+    gap: 14px;
+    grid-template-columns: 1fr;
+}
+
+@media (min-width: 700px) {
+    .support-links-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+.support-link-field label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.support-link-field .support-link-kind {
+    font-weight: 800;
+}
+
+#authorPagePanel input[type="url"],
+#authorPagePanel textarea {
+    border-width: 1.5px;
+    border-color: color-mix(in srgb, var(--purple-bright) 52%, rgba(255, 255, 255, 0.14));
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--purple) 18%, transparent);
+}
+
+#authorPagePanel input[type="url"]:focus,
+#authorPagePanel textarea:focus {
+    border-color: color-mix(in srgb, var(--purple-bright) 78%, transparent);
+    box-shadow:
+        inset 0 0 0 1px color-mix(in srgb, var(--purple-bright) 35%, transparent),
+        0 0 0 3px color-mix(in srgb, var(--purple-bright) 24%, transparent);
+}
+
+#accountTypeGroup {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+    width: 100%;
+    align-items: stretch;
+}
+
+@media (max-width: 719px) {
+    #accountTypeGroup {
+        grid-template-columns: 1fr;
+    }
+}
+
+.account-type-row {
+    position: relative;
+    display: flex;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    height: 100%;
+    min-width: 0;
+}
+
+.account-type-row:focus-within .account-type-card {
+    outline: 2px solid color-mix(in srgb, var(--purple-bright) 70%, transparent);
+    outline-offset: 3px;
+}
+
+.account-type-card {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    flex: 1;
+    width: 100%;
+    min-height: 17rem;
+    padding: 20px 18px 22px;
+    border-radius: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.04);
+    text-align: left;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+@media (min-width: 720px) {
+    .account-type-card {
+        min-height: 19rem;
+    }
+}
+
+.account-type-row:hover .account-type-card {
+    border-color: rgba(255, 255, 255, 0.22);
+    background: rgba(255, 255, 255, 0.07);
+}
+
+.account-type-row input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+    pointer-events: none;
+}
+
+.account-type-icon {
+    flex-shrink: 0;
+    width: 3rem;
+    height: 3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 14px;
+    font-size: 1.5rem;
+    background: rgba(0, 0, 0, 0.28);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.account-type-copy {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.account-type-row strong {
+    display: block;
+    font-size: 1.125rem;
+    font-weight: 900;
+    letter-spacing: 0.02em;
+    color: #f8fafc;
+    margin: 0;
+}
+
+.account-type-tagline {
+    display: block;
+    font-size: 0.9375rem;
+    font-weight: 700;
+    color: color-mix(in srgb, var(--gold) 85%, #fff);
+    line-height: 1.35;
+}
+
+.account-type-detail {
+    margin: 0;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--muted);
+    line-height: 1.55;
+}
+
+.account-type-row:has(input:checked) .account-type-card {
+    border-color: color-mix(in srgb, var(--purple-bright) 55%, transparent);
+    background:
+        linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03)),
+        color-mix(in srgb, var(--theme-accent-soft-bg) 80%, transparent);
+    box-shadow:
+        0 0 0 1px color-mix(in srgb, var(--pink) 35%, transparent),
+        0 12px 36px rgba(0, 0, 0, 0.32);
+}
+
+.account-type-row:has(input:checked) .account-type-icon {
+    border-color: color-mix(in srgb, var(--pink) 40%, transparent);
+    background: color-mix(in srgb, var(--theme-card-a) 70%, rgba(0, 0, 0, 0.35));
+}
+
+.account-type-row:has(input:checked) .account-type-detail {
+    color: color-mix(in srgb, #fff 70%, var(--muted));
+}
+
+.account-focus-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding-top: 4px;
+}
+
+.account-focus-actions .btn {
+    margin-top: 0;
+    width: auto;
+    min-width: 11rem;
+    padding: 12px 28px;
+}
+
+.account-focus-actions .msg {
+    margin-top: 0;
+    width: 100%;
+    max-width: 28rem;
+    text-align: center;
+}

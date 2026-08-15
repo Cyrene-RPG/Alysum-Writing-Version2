@@ -10,7 +10,11 @@ Layout:
 
 - `pages/` — HTML
 - `page-ui/` — glue for these pages only
-- `css-styles/` — layout for these pages only (look comes from `site-appearance/`)
+- `pages-css/` — layout for these pages only (look comes from `site-appearance/`)
+- `pages-css/homepage/` — landing page styles, one file per section
+- `pages-css/login/` — login page styles
+- `pages-css/settings/` — settings page styles, one file per section
+- `page-ui/settings/` — settings page glue, one file per concern
 - `assets/` — images for these pages
 - `public/` — `sw.js`, manifest, robots, favicon (served at `/` via rewrite)
 

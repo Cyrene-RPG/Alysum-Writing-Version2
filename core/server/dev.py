@@ -42,7 +42,7 @@ def public_to_file(url_path: str) -> Path:
     if clean.startswith("/js/"):
         return ROOT / "applications/main-site/page-ui" / clean[len("/js/") :]
     if clean.startswith("/css/"):
-        return ROOT / "applications/main-site/css-styles" / clean[len("/css/") :]
+        return ROOT / "applications/main-site/pages-css" / clean[len("/css/") :]
     if clean.startswith("/assets/"):
         return ROOT / "applications/main-site/assets" / clean[len("/assets/") :]
     if clean.startswith(("/site-appearance/", "/core/")):

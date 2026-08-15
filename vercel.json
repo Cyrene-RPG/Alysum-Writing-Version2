@@ -34,7 +34,7 @@
     },
     {
       "source": "/css/:path*",
-      "destination": "/applications/main-site/css-styles/:path*"
+      "destination": "/applications/main-site/pages-css/:path*"
     },
     {
       "source": "/assets/:path*",
