@@ -434,13 +434,7 @@ async function savePassword() {
         if (els.newPw) els.newPw.value = "";
         if (els.confirmPw) els.confirmPw.value = "";
         await refreshSecurityUser();
-        showMsg(
-            els.passwordMsg,
-            creating
-                ? "Password added. You can now sign in with email and a password. Your other methods still work."
-                : "Password updated successfully.",
-            true
-        );
+        showMsg(els.passwordMsg, "Saved.", true);
     } catch (e) {
         showMsg(els.passwordMsg, identityLinkMessage(e?.message || "Could not save password.", "email"), false);
     } finally {

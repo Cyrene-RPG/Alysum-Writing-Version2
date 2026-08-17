@@ -1,11 +1,10 @@
 import { els } from "/js/settings/elements.js";
 import { state } from "/js/settings/state.js";
-import { showMsg, mergeUserRow } from "/js/settings/helpers.js";
+import { showMsg, mergeUserRow, aboutMeText, supportLinksFromSources } from "/js/settings/helpers.js";
 import { showSettingsTab } from "/js/settings/nav.js";
 import { setAvatarPreview } from "/js/settings/appearance.js";
 import {
     updateAuthorBioCount,
-    setAuthorBioPreviewLink,
     renderSupportLinkFields,
     setSupportLinksDisabled,
 } from "/js/settings/author-page.js";
@@ -60,14 +59,13 @@ function fillSettingsFromRow(user, row) {
     if (els.displayNameInput) els.displayNameInput.value = String(data.displayName ?? "").trim();
     setAvatarPreview(data.profileImageUrl, data.displayName || handle || user.email || "A");
     if (els.authorBioInput) {
-        els.authorBioInput.value = String(data.bio ?? "").slice(0, AUTHOR_BIO_MAX_LENGTH);
+        els.authorBioInput.value = aboutMeText(row, user).slice(0, AUTHOR_BIO_MAX_LENGTH);
         els.authorBioInput.disabled = false;
     }
     if (els.saveBioBtn) els.saveBioBtn.disabled = false;
-    renderSupportLinkFields(data.supportLinks || {});
+    renderSupportLinkFields(supportLinksFromSources(row, user));
     setSupportLinksDisabled(false);
     updateAuthorBioCount();
-    setAuthorBioPreviewLink(handle);
 
     fillWelcomeBar({
         displayName: data.displayName,

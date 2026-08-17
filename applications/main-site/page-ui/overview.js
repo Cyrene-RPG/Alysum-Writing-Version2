@@ -4,7 +4,8 @@ import { resolveStudioSession } from "@alysum/desktop/studio-session.js";
 import { permanentHandleFromUserData } from "@alysum/account/profile-display.js";
 import { fillWelcomeBar } from "/js/welcome-bar.js";
 import { getProfileRow } from "@alysum/synchronization-engine/local-adapter.js";
-import { mergeUserRow } from "/js/settings/helpers.js";
+import { mergeUserRow, aboutMeText, supportLinksFromSources } from "/js/settings/helpers.js";
+import { supportLinksList } from "@alysum/library/author-profile.js";
 
 function setAvatar(url, label) {
     const wrap = document.getElementById("ovAvatarWrap");
@@ -23,7 +24,7 @@ function setAvatar(url, label) {
     }
 }
 
-function fillOverview(data, fallbackLabel) {
+function fillOverview(data, fallbackLabel, user) {
     const handle = permanentHandleFromUserData(data);
     const name = String(data.displayName || "").trim() || handle || fallbackLabel || "…";
     const nameEl = document.getElementById("ovName");
@@ -31,10 +32,11 @@ function fillOverview(data, fallbackLabel) {
     if (nameEl) nameEl.textContent = name;
     setAvatar(data.profileImageUrl, name);
     if (bioEl) {
-        const bio = String(data.bio || "").trim();
-        bioEl.textContent = bio || "No biography yet.";
+        const bio = aboutMeText(data, user);
+        bioEl.textContent = bio || "Nothing here yet.";
         bioEl.classList.toggle("is-empty", !bio);
     }
+    fillOverviewLinks(data, user);
     fillWelcomeBar({
         displayName: data.displayName,
         username: handle,
@@ -42,24 +44,35 @@ function fillOverview(data, fallbackLabel) {
     });
 }
 
-function initTabs() {
-    const tabs = [...document.querySelectorAll("[data-ov-tab]")];
-    const books = document.getElementById("ovBooks");
-    const reputation = document.getElementById("ovReputation");
-    tabs.forEach((tab) => {
-        tab.addEventListener("click", () => {
-            const onBooks = tab.dataset.ovTab === "books";
-            tabs.forEach((t) => t.classList.toggle("is-active", t === tab));
-            if (books) books.hidden = !onBooks;
-            if (reputation) reputation.hidden = onBooks;
-        });
-    });
+function fillOverviewLinks(data, user) {
+    const list = document.getElementById("ovLinks");
+    const block = document.getElementById("ovLinksBlock");
+    const row = document.querySelector(".ov-about-row");
+    if (!list || !block) return;
+    const links = supportLinksList(supportLinksFromSources(data, user));
+    list.replaceChildren();
+    if (!links.length) {
+        block.hidden = true;
+        row?.classList.remove("has-links");
+        return;
+    }
+    block.hidden = false;
+    row?.classList.add("has-links");
+    for (const link of links) {
+        const item = document.createElement("li");
+        const anchor = document.createElement("a");
+        anchor.href = link.url;
+        anchor.target = "_blank";
+        anchor.rel = "noopener noreferrer";
+        anchor.textContent = link.label;
+        item.append(anchor);
+        list.append(item);
+    }
 }
 
 async function startOverview() {
     const loading = document.getElementById("loadingPanel");
     const shell = document.getElementById("settingsShell");
-    initTabs();
     let session;
     try {
         session = await resolveStudioSession(supabase);
@@ -91,12 +104,19 @@ async function startOverview() {
         goToLogin("overview.html");
         return;
     }
+    let authUser = user;
     try {
-        const { data: row, error } = await supabase.from("users").select("*").eq("id", user.id).maybeSingle();
-        if (error) throw error;
-        fillOverview(mergeUserRow(row || {}), user.email);
+        const { data } = await supabase.auth.getUser();
+        if (data?.user) authUser = data.user;
     } catch {
-        fillOverview({}, user.email);
+        /* use session user */
+    }
+    try {
+        const { data: row, error } = await supabase.from("users").select("*").eq("id", authUser.id).maybeSingle();
+        if (error) throw error;
+        fillOverview(mergeUserRow(row || {}), authUser.email, authUser);
+    } catch {
+        fillOverview({}, authUser.email, authUser);
     }
     loading?.classList.add("hidden");
     shell?.classList.remove("hidden");

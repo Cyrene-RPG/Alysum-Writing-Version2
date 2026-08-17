@@ -30,7 +30,7 @@
     <title>Overview — Alysum</title>
     <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
     <link rel="stylesheet" href="/css/settings/page.css" />
-    <link rel="stylesheet" href="/css/settings/overview.css" />
+    <link rel="stylesheet" href="/css/settings/overview.css?v=3" />
     <link rel="stylesheet" href="/css/workspace-nav.css?v=15" />
     <script src="/site-appearance/gradient-theme-sync.js" defer></script>
 </head>
@@ -90,31 +90,28 @@
                 <div class="ov-meta">
                     <h1 class="ov-name" id="ovName">…</h1>
                     <div class="ov-level">
-                        <span>Level <span id="ovLevel">1</span></span>
+                        <span>Rank <span id="ovLevel">one</span></span>
                         <span class="ov-xp" id="ovXp">0 / 100 XP</span>
                     </div>
                     <div class="ov-level-bar" aria-hidden="true"><span id="ovLevelFill"></span></div>
-                    <div class="ov-stats">
-                        <div>
-                            <span class="ov-stat-value" id="ovFollowers">0</span>
-                            <span class="ov-stat-label">Followers</span>
-                        </div>
-                        <div>
-                            <span class="ov-stat-value" id="ovReviews">0</span>
-                            <span class="ov-stat-label">Reviews</span>
-                        </div>
-                    </div>
+                    <p class="ov-stats">
+                        Followers: <span id="ovFollowers">0</span>
+                        Reviews: <span id="ovReviews">0</span>
+                        Reputation: <span id="ovReputationCount">0</span>
+                    </p>
                 </div>
             </header>
-            <nav class="ov-tabs" aria-label="Overview sections">
-                <button type="button" class="is-active" data-ov-tab="books">Books</button>
-                <button type="button" data-ov-tab="reputation">Reputation</button>
-            </nav>
             <div id="ovBooks">
+            <div class="ov-about-row">
                 <section class="ov-block" aria-labelledby="ovAboutTitle">
                     <h2 class="ov-heading" id="ovAboutTitle">About me</h2>
-                    <p class="ov-bio is-empty" id="ovBio">No biography yet.</p>
+                    <p class="ov-bio is-empty" id="ovBio">Nothing here yet.</p>
                 </section>
+                <section class="ov-block" id="ovLinksBlock" aria-labelledby="ovLinksTitle" hidden>
+                    <h2 class="ov-heading" id="ovLinksTitle">Links</h2>
+                    <ul class="ov-links" id="ovLinks"></ul>
+                </section>
+            </div>
                 <section class="ov-block" aria-labelledby="ovFavTitle">
                     <h2 class="ov-heading" id="ovFavTitle">Favorite Books</h2>
                     <div class="ov-fav-row">
@@ -125,22 +122,10 @@
                     </div>
                 </section>
             </div>
-            <div id="ovReputation" hidden>
-                <section class="ov-block" aria-labelledby="ovReviewsTitle">
-                    <h2 class="ov-heading" id="ovReviewsTitle">Recent Reviews</h2>
-                    <ul class="ov-review-list">
-                        <li>
-                            <span class="ov-stars" aria-label="5 stars">★★★★★</span>
-                            <p class="ov-quote">No reviews yet.</p>
-                            <p class="ov-review-meta">Saved books you review will show up here.</p>
-                        </li>
-                    </ul>
-                </section>
-            </div>
         </article>
         </div>
         </div>
     </div>
-    <script type="module" src="/js/overview.js"></script>
+    <script type="module" src="/js/overview.js?v=6"></script>
 </body>
 </html>

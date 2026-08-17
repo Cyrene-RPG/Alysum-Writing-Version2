@@ -60,10 +60,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Account settings — Alysum</title>
 <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
-<link rel="stylesheet" href="/css/settings/page.css" />
+<link rel="stylesheet" href="/css/settings/page.css?v=2" />
 <link rel="stylesheet" href="/css/settings/appearance.css" />
-<link rel="stylesheet" href="/css/settings/account.css" />
-<link rel="stylesheet" href="/css/settings/profile.css" />
+<link rel="stylesheet" href="/css/settings/account.css?v=2" />
+<link rel="stylesheet" href="/css/settings/profile.css?v=3" />
 <link rel="stylesheet" href="/css/settings/backup.css?v=2" />
 <link rel="stylesheet" href="/css/settings/security.css?v=2" />
 <link rel="stylesheet" href="/css/workspace-nav.css?v=15" />
@@ -226,7 +226,7 @@
             </div>
             <div class="profile-box-actions">
                 <button type="button" class="btn btn-primary" id="saveDisplayBtn">Save display name</button>
-                <div class="msg" id="profileMsg" role="status"></div>
+                <span class="save-prompt" id="profileMsg" role="status"></span>
             </div>
         </section>
 
@@ -246,26 +246,22 @@
                     </div>
                     <div class="profile-avatar-actions">
                         <button type="button" class="btn btn-primary" id="saveAvatarBtn">Save profile picture</button>
+                        <span class="save-prompt" id="avatarMsg" role="status"></span>
                     </div>
                 </div>
             </div>
-            <div class="msg" id="avatarMsg" role="status"></div>
         </section>
 
         <div class="author-page-panel-body">
             <section class="profile-box profile-bio-box" id="author-bio" aria-labelledby="profileBioTitle">
-                <h3 class="profile-box-title" id="profileBioTitle">Biography</h3>
-                <p class="hint">This is the About me text on Overview and on your public author page.</p>
+                <h3 class="profile-box-title" id="profileBioTitle">About me</h3>
                 <div class="field">
-                    <label for="authorBioInput">About me</label>
-                    <textarea id="authorBioInput" maxlength="2000" rows="8" placeholder="Share your writing background, interests, or what readers can expect from your work…"></textarea>
+                    <textarea id="authorBioInput" maxlength="2000" rows="8" placeholder="Share your writing background, interests, or what readers can expect from your work…" aria-labelledby="profileBioTitle"></textarea>
                     <p class="hint" style="margin-top:8px;margin-bottom:0"><span id="authorBioCount">0</span> / 2000 characters</p>
                 </div>
                 <div class="profile-box-actions">
-                    <button type="button" class="btn btn-primary" id="saveBioBtn">Save biography</button>
-                    <a class="btn" href="overview.html">View Overview</a>
-                    <a class="btn" id="authorBioPreviewLink" href="author.html" target="_blank" rel="noopener">Preview author page</a>
-                    <div class="msg" id="bioMsg" role="status"></div>
+                    <button type="button" class="btn btn-primary" id="saveBioBtn">Save</button>
+                    <span class="save-prompt" id="bioMsg" role="status"></span>
                 </div>
             </section>
         </div>
@@ -289,14 +285,14 @@
             </div>
             <div class="account-focus-actions">
                 <button type="button" class="btn btn-primary" id="saveAccountTypeBtn">Save account focus</button>
-                <div class="msg" id="accountTypeMsg" role="status"></div>
+                <span class="save-prompt" id="accountTypeMsg" role="status"></span>
             </div>
             <div class="account-focus-support" id="author-support">
                 <h3 class="profile-box-title" id="profileSupportTitle">Support &amp; tip links</h3>
                 <div class="support-links-grid" id="supportLinksGrid"></div>
                 <div class="profile-box-actions">
                     <button type="button" class="btn btn-primary" id="saveSupportLinksBtn">Save support links</button>
-                    <div class="msg" id="supportLinksMsg" role="status"></div>
+                    <span class="save-prompt" id="supportLinksMsg" role="status"></span>
                 </div>
             </div>
             </div>
@@ -455,7 +451,7 @@
     </div>
 </div>
 
-<script type="module" src="/js/settings/page.js"></script>
+<script type="module" src="/js/settings/page.js?v=6"></script>
 
 </body>
 </html>

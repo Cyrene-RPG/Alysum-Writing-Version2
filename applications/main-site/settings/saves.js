@@ -1,6 +1,6 @@
 import { els } from "/js/settings/elements.js";
 import { state } from "/js/settings/state.js";
-import { showMsg, hideMsg, normalizeDisplayName } from "/js/settings/helpers.js";
+import { showMsg, hideMsg, normalizeDisplayName, writeStoredAboutMe, writeStoredSupportLinks } from "/js/settings/helpers.js";
 import { setAvatarPreview } from "/js/settings/appearance.js";
 import { updateAuthorBioCount, readSupportLinkDraft } from "/js/settings/author-page.js";
 import { supabase } from "@alysum/authentication/client.js";
@@ -12,7 +12,118 @@ import {
 } from "@alysum/library/author-profile.js";
 import { fillWelcomeBar } from "/js/welcome-bar.js";
 
+async function signedInUser() {
+    if (state.settingsSessionUser?.id) return state.settingsSessionUser;
+    try {
+        const { data } = await supabase.auth.getSession();
+        const user = data?.session?.user;
+        if (user?.id) {
+            state.settingsSessionUser = user;
+            return user;
+        }
+    } catch {
+        /* ignore */
+    }
+    return null;
+}
+
+function promptEl(id, btn) {
+    const existing = document.getElementById(id);
+    if (existing) return existing;
+    if (!btn?.parentElement) return null;
+    const span = document.createElement("span");
+    span.className = "save-prompt";
+    span.id = id;
+    span.setAttribute("role", "status");
+    btn.parentElement.appendChild(span);
+    return span;
+}
+
 export function wireSettingsSaves() {
+    const saveBioBtn = document.getElementById("saveBioBtn") || els.saveBioBtn;
+    const saveDisplayBtn = document.getElementById("saveDisplayBtn") || els.saveDisplayBtn;
+    const saveSupportBtn = document.getElementById("saveSupportLinksBtn") || els.saveSupportLinksBtn;
+
+    saveBioBtn?.addEventListener("click", async (event) => {
+        event.preventDefault();
+        const btn = saveBioBtn;
+        const msg = promptEl("bioMsg", btn);
+        hideMsg(msg);
+        const input = document.getElementById("authorBioInput") || els.authorBioInput;
+        const bio = String(input?.value ?? "").trim().slice(0, AUTHOR_BIO_MAX_LENGTH);
+        if (state.isLocalSettings) {
+            showMsg(msg, "Sign in to save.", false);
+            return;
+        }
+        const user = await signedInUser();
+        if (!user?.id) {
+            showMsg(msg, "Sign in to save.", false);
+            return;
+        }
+        writeStoredAboutMe(user.id, bio);
+        showMsg(msg, "Saved.", true);
+        void supabase.from("users").update({ bio }).eq("id", user.id);
+        void supabase.auth.updateUser({ data: { bio } });
+    });
+
+    saveSupportBtn?.addEventListener("click", async (event) => {
+        event.preventDefault();
+        const msg = promptEl("supportLinksMsg", saveSupportBtn);
+        hideMsg(msg);
+        if (state.isLocalSettings) {
+            showMsg(msg, "Sign in to save.", false);
+            return;
+        }
+        const user = await signedInUser();
+        if (!user?.id) {
+            showMsg(msg, "Sign in to save.", false);
+            return;
+        }
+        const payload = supportLinksPayloadFromDraft(readSupportLinkDraft());
+        writeStoredSupportLinks(user.id, payload);
+        showMsg(msg, "Saved.", true);
+        void supabase.from("users").update({ support_links: payload }).eq("id", user.id);
+        void supabase.auth.updateUser({ data: { support_links: payload } });
+    });
+
+    saveDisplayBtn?.addEventListener("click", async (event) => {
+        event.preventDefault();
+        const msg = promptEl("profileMsg", saveDisplayBtn);
+        hideMsg(msg);
+        const name = normalizeDisplayName(
+            (document.getElementById("displayNameInput") || els.displayNameInput)?.value
+        );
+        if (state.isLocalSettings) {
+            updateProfileRow({ display_name: name || "Guest" });
+            fillWelcomeBar({
+                displayName: name || "Guest",
+                username: "guest"
+            }, { refreshLine: false });
+            showMsg(msg, "Saved.", true);
+            return;
+        }
+        const user = await signedInUser();
+        if (!user?.id) {
+            showMsg(msg, "Sign in to save.", false);
+            return;
+        }
+        const fallbackName = String(els.handleField?.textContent || "").replace(/^@/, "") || "user";
+        const patch = { display_name: name || fallbackName };
+        try {
+            const { error } = await supabase.from("users").update(patch).eq("id", user.id);
+            if (error) throw error;
+            void supabase.auth.updateUser({ data: { display_name: name || null } });
+            fillWelcomeBar({
+                displayName: name,
+                username: fallbackName
+            }, { refreshLine: false });
+            if (!name && els.displayNameInput) els.displayNameInput.value = "";
+            showMsg(msg, "Saved.", true);
+        } catch (e) {
+            showMsg(msg, e?.message || "Could not save display name.", false);
+        }
+    });
+
     els.profileAvatarInput?.addEventListener("change", () => {
         hideMsg(els.avatarMsg);
         const file = els.profileAvatarInput.files?.[0];
@@ -40,15 +151,17 @@ export function wireSettingsSaves() {
     });
 
     els.saveAvatarBtn?.addEventListener("click", async () => {
-        hideMsg(els.avatarMsg);
-
-        const { data: udata } = await supabase.auth.getUser();
-        const user = udata?.user;
-        if (!user) return;
+        const msg = promptEl("avatarMsg", els.saveAvatarBtn);
+        hideMsg(msg);
+        const user = await signedInUser();
+        if (!user?.id) {
+            showMsg(msg, "Sign in to save.", false);
+            return;
+        }
 
         const file = els.profileAvatarInput?.files?.[0];
         if (!file) {
-            showMsg(els.avatarMsg, "Choose an image first.", false);
+            showMsg(msg, "Choose an image first.", false);
             return;
         }
 
@@ -111,7 +224,7 @@ export function wireSettingsSaves() {
                 state.activeAvatarObjectUrl = "";
             }
 
-            showMsg(els.avatarMsg, "Profile picture saved. It will show on Studio after refresh.", true);
+            showMsg(els.avatarMsg, "Saved.", true);
         } catch (e) {
             console.error(e);
             showMsg(els.avatarMsg, e?.message || "Could not save profile picture.", false);
@@ -135,18 +248,20 @@ export function wireSettingsSaves() {
             if (state.isLocalSettings) {
                 updateProfileRow({ account_type: v });
                 state.settingsHomeUrl = homeUrlForUserData({ accountType: v });
-                showMsg(els.accountTypeMsg, "Saved locally on this device.", true);
+                showMsg(els.accountTypeMsg, "Saved.", true);
                 return;
             }
 
-            const { data: udata } = await supabase.auth.getUser();
-            const user = udata?.user;
-            if (!user) return;
+            const user = await signedInUser();
+            if (!user?.id) {
+                showMsg(els.accountTypeMsg, "Sign in to save.", false);
+                return;
+            }
 
             const { error } = await supabase.from("users").update({ account_type: v }).eq("id", user.id);
             if (error) throw error;
             state.settingsHomeUrl = homeUrlForUserData({ accountType: v });
-            showMsg(els.accountTypeMsg, "Saved. Sign-in home and header switch update on your next login (or open Studio / Library now).", true);
+            showMsg(els.accountTypeMsg, "Saved.", true);
         } catch (e) {
             console.error(e);
             showMsg(els.accountTypeMsg, e?.message || "Could not save.", false);
@@ -158,129 +273,4 @@ export function wireSettingsSaves() {
     els.authorBioInput?.addEventListener("input", updateAuthorBioCount);
     renderSupportLinkFields({});
     setSupportLinksDisabled(true);
-
-    els.saveBioBtn?.addEventListener("click", async () => {
-        hideMsg(els.bioMsg);
-        if (state.isLocalSettings) {
-            showMsg(els.bioMsg, "Sign in to save your biography to your public author page.", false);
-            return;
-        }
-
-        const bio = String(els.authorBioInput?.value ?? "").trim().slice(0, AUTHOR_BIO_MAX_LENGTH);
-        els.saveBioBtn.disabled = true;
-        try {
-            const { data: udata } = await supabase.auth.getUser();
-            const user = udata?.user;
-            if (!user) return;
-
-            const { error } = await supabase
-                .from("users")
-                .update({ bio, bio_updated_at: new Date().toISOString() })
-                .eq("id", user.id);
-            if (error) throw error;
-            showMsg(els.bioMsg, "Biography saved. It will appear on your author page and at the end of your published books.", true);
-        } catch (e) {
-            console.error(e);
-            showMsg(els.bioMsg, e?.message || "Could not save biography.", false);
-        } finally {
-            els.saveBioBtn.disabled = false;
-        }
-    });
-
-    els.saveSupportLinksBtn?.addEventListener("click", async () => {
-        hideMsg(els.supportLinksMsg);
-        if (state.isLocalSettings) {
-            showMsg(els.supportLinksMsg, "Sign in to save tip links to your public author page.", false);
-            return;
-        }
-
-        const payload = supportLinksPayloadFromDraft(readSupportLinkDraft());
-        els.saveSupportLinksBtn.disabled = true;
-        try {
-            const { data: udata } = await supabase.auth.getUser();
-            const user = udata?.user;
-            if (!user) return;
-
-            const { error } = await supabase
-                .from("users")
-                .update({
-                    support_links: payload,
-                    support_links_updated_at: new Date().toISOString(),
-                })
-                .eq("id", user.id);
-            if (error) throw error;
-            renderSupportLinkFields(payload);
-            const count = Object.keys(payload).length;
-            showMsg(
-                els.supportLinksMsg,
-                count
-                    ? `Saved ${count} support link${count === 1 ? "" : "s"}. They appear on your author page under Support.`
-                    : "Support links cleared. The Support tab stays hidden until you add a link.",
-                true
-            );
-        } catch (e) {
-            console.error(e);
-            const msg = String(e?.message || "");
-            if (/support_links/i.test(msg) && /column|does not exist|schema cache/i.test(msg)) {
-                showMsg(
-                    els.supportLinksMsg,
-                    "Support links need a quick database update — run supabase-author-support-links.sql in Supabase, then try again.",
-                    false
-                );
-            } else {
-                showMsg(els.supportLinksMsg, e?.message || "Could not save support links.", false);
-            }
-        } finally {
-            els.saveSupportLinksBtn.disabled = false;
-        }
-    });
-
-    els.saveDisplayBtn?.addEventListener("click", async () => {
-        hideMsg(els.profileMsg);
-
-        const name = normalizeDisplayName(els.displayNameInput.value);
-
-        els.saveDisplayBtn.disabled = true;
-        try {
-            if (state.isLocalSettings) {
-                updateProfileRow({ display_name: name || "Guest" });
-                fillWelcomeBar({
-                    displayName: name || "Guest",
-                    username: "guest"
-                }, { refreshLine: false });
-                showMsg(els.profileMsg, "Display name saved locally.", true);
-                return;
-            }
-
-            const { data: udata } = await supabase.auth.getUser();
-            const user = udata?.user;
-            if (!user) return;
-
-            const fallbackName = String(els.handleField.textContent || "").replace(/^@/, "") || "user";
-            const patch = { display_name: name || fallbackName };
-            const { error } = await supabase.from("users").update(patch).eq("id", user.id);
-            if (error) throw error;
-            const { error: metaErr } = await supabase.auth.updateUser({ data: { display_name: name || null } });
-            if (metaErr) console.warn(metaErr);
-            fillWelcomeBar({
-                displayName: name,
-                username: fallbackName
-            }, { refreshLine: false });
-            if (!name) {
-                els.displayNameInput.value = "";
-                showMsg(
-                    els.profileMsg,
-                    "Cosmetic name cleared. Others will see your permanent handle until you set a display name again.",
-                    true
-                );
-            } else {
-                showMsg(els.profileMsg, "Display name saved. It will show on comments, publish, and your studio page.", true);
-            }
-        } catch (e) {
-            console.error(e);
-            showMsg(els.profileMsg, e?.message || "Could not save display name.", false);
-        } finally {
-            els.saveDisplayBtn.disabled = false;
-        }
-    });
 }

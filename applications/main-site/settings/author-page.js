@@ -1,9 +1,7 @@
 import { els } from "/js/settings/elements.js";
-import { state } from "/js/settings/state.js";
 import {
     AUTHOR_SUPPORT_LINK_KINDS,
     AUTHOR_SUPPORT_URL_MAX_LENGTH,
-    authorPageUrl,
     escapeAttribute,
     normalizeSupportLinks,
 } from "@alysum/library/author-profile.js";
@@ -11,17 +9,6 @@ import {
 export function updateAuthorBioCount() {
     if (!els.authorBioCount || !els.authorBioInput) return;
     els.authorBioCount.textContent = String(els.authorBioInput.value.length);
-}
-
-export function setAuthorBioPreviewLink(handle) {
-    if (!els.authorBioPreviewLink) return;
-    const url = authorPageUrl(handle);
-    if (!url || state.isLocalSettings) {
-        els.authorBioPreviewLink.classList.add("hidden");
-        return;
-    }
-    els.authorBioPreviewLink.href = url;
-    els.authorBioPreviewLink.classList.remove("hidden");
 }
 
 export function renderSupportLinkFields(links = {}) {

@@ -10,7 +10,6 @@ export const els = {
     authorBioInput: document.getElementById("authorBioInput"),
     authorBioCount: document.getElementById("authorBioCount"),
     saveBioBtn: document.getElementById("saveBioBtn"),
-    authorBioPreviewLink: document.getElementById("authorBioPreviewLink"),
     bioMsg: document.getElementById("bioMsg"),
     supportLinksGrid: document.getElementById("supportLinksGrid"),
     saveSupportLinksBtn: document.getElementById("saveSupportLinksBtn"),

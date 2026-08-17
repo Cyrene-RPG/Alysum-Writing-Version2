@@ -20,22 +20,94 @@ export function mergeUserRow(row) {
         accountType: row.account_type ?? row.accountType,
         writingDayTotals: row.writing_day_totals ?? row.writingDayTotals,
         profileImageUrl: row.profile_image_url ?? row.profileImageUrl ?? "",
-        bio: row.bio ?? "",
+        bio: row.bio ?? row.about_me ?? "",
         supportLinks: normalizeSupportLinks(row.support_links ?? row.supportLinks),
     };
 }
 
+export function aboutMeStorageKey(userId) {
+    return `alysum-about-me:${String(userId || "").trim()}`;
+}
+
+export function readStoredAboutMe(userId) {
+    if (!userId) return "";
+    try {
+        return String(localStorage.getItem(aboutMeStorageKey(userId)) || "").trim();
+    } catch {
+        return "";
+    }
+}
+
+export function writeStoredAboutMe(userId, bio) {
+    if (!userId) return;
+    try {
+        localStorage.setItem(aboutMeStorageKey(userId), String(bio || ""));
+    } catch {
+        /* ignore */
+    }
+}
+
+export function supportLinksStorageKey(userId) {
+    return `alysum-support-links:${String(userId || "").trim()}`;
+}
+
+export function readStoredSupportLinks(userId) {
+    if (!userId) return {};
+    try {
+        const raw = localStorage.getItem(supportLinksStorageKey(userId));
+        if (!raw) return {};
+        return normalizeSupportLinks(JSON.parse(raw));
+    } catch {
+        return {};
+    }
+}
+
+export function writeStoredSupportLinks(userId, links) {
+    if (!userId) return;
+    try {
+        localStorage.setItem(supportLinksStorageKey(userId), JSON.stringify(normalizeSupportLinks(links)));
+    } catch {
+        /* ignore */
+    }
+}
+
+export function supportLinksFromSources(row, user) {
+    const fromRow = normalizeSupportLinks(row?.support_links ?? row?.supportLinks);
+    if (Object.keys(fromRow).length) return fromRow;
+    const meta = user?.user_metadata && typeof user.user_metadata === "object" ? user.user_metadata : {};
+    const fromMeta = normalizeSupportLinks(meta.support_links ?? meta.supportLinks);
+    if (Object.keys(fromMeta).length) return fromMeta;
+    return readStoredSupportLinks(user?.id);
+}
+
+export function aboutMeText(row, user) {
+    const fromRow = String(row?.bio ?? row?.about_me ?? row?.data?.bio ?? "").trim();
+    if (fromRow) return fromRow;
+    const meta = user?.user_metadata && typeof user.user_metadata === "object" ? user.user_metadata : {};
+    const fromMeta = String(meta.bio ?? meta.about ?? "").trim();
+    if (fromMeta) return fromMeta;
+    return readStoredAboutMe(user?.id);
+}
+
 export function showMsg(el, text, ok) {
     if (!el) return;
+    el.hidden = false;
     el.textContent = text;
-    el.classList.remove("err", "ok");
-    el.classList.add("visible", ok ? "ok" : "err");
+    el.classList.remove("err", "ok", "visible");
+    el.classList.add(ok ? "ok" : "err");
+    if (el.classList.contains("save-prompt")) {
+        el.style.display = "inline";
+        return;
+    }
+    el.classList.add("visible");
+    el.style.display = "inline-block";
 }
 
 export function hideMsg(el) {
     if (!el) return;
     el.classList.remove("visible", "err", "ok");
     el.textContent = "";
+    el.style.display = "";
 }
 
 export function normalizeDisplayName(raw) {

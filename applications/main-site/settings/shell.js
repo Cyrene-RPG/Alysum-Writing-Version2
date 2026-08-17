@@ -5,7 +5,6 @@ import { initAppearancePickers, setAvatarPreview } from "/js/settings/appearance
 import { refreshBackupStatusUi } from "/js/settings/backup.js";
 import {
     updateAuthorBioCount,
-    setAuthorBioPreviewLink,
     renderSupportLinkFields,
     setSupportLinksDisabled,
 } from "/js/settings/author-page.js";
@@ -48,7 +47,6 @@ export function initLocalSettingsUi() {
     renderSupportLinkFields({});
     setSupportLinksDisabled(true);
     updateAuthorBioCount();
-    setAuthorBioPreviewLink("");
     fillWelcomeBar({
         displayName: profile.display_name,
         username: "guest",

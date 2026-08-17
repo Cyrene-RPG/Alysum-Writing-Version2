@@ -122,6 +122,10 @@
     margin-top: 18px;
     padding-top: 16px;
     border-top: 1px solid color-mix(in srgb, var(--purple-bright) 22%, var(--border));
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 14px;
 }
 
 .profile-box-actions .btn {
@@ -129,7 +133,31 @@
 }
 
 .profile-box-actions .msg {
-    margin-top: 12px;
+    margin: 0;
+    flex: 1 1 12rem;
+}
+
+.profile-box-actions .msg.visible,
+.profile-avatar-actions .msg.visible {
+    display: inline-block;
+}
+
+.save-prompt {
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 1.3;
+}
+
+.save-prompt:empty {
+    display: none;
+}
+
+.save-prompt.ok {
+    color: #4ade80;
+}
+
+.save-prompt.err {
+    color: #f87171;
 }
 
 .profile-avatar-box {

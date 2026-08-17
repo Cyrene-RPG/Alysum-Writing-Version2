@@ -164,9 +164,10 @@
 
 .account-focus-actions {
     display: flex;
-    flex-direction: column;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 12px;
+    justify-content: center;
+    gap: 10px 14px;
     width: 100%;
     padding-top: 4px;
 }
@@ -179,8 +180,12 @@
 }
 
 .account-focus-actions .msg {
-    margin-top: 0;
-    width: 100%;
+    margin: 0;
+    width: auto;
     max-width: 28rem;
-    text-align: center;
+    text-align: left;
+}
+
+.account-focus-actions .msg.visible {
+    display: inline-block;
 }
