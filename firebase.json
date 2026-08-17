@@ -94,6 +94,7 @@
       { "source": "/js/settings/backup.js", "destination": "/applications/main-site/settings/backup.js" },
       { "source": "/js/settings/shell.js", "destination": "/applications/main-site/settings/shell.js" },
       { "source": "/js/settings/saves.js", "destination": "/applications/main-site/settings/saves.js" },
+      { "source": "/js/settings/security.js", "destination": "/applications/main-site/settings/security.js" },
       { "source": "/css/site-responsive.css", "destination": "/applications/main-site/pages-css/site-responsive.css" },
       { "source": "/css/workspace-nav.css", "destination": "/applications/main-site/pages-css/workspace-nav.css" },
       { "source": "/css/homepage/page.css", "destination": "/applications/main-site/homepage/homepage-css/page.css" },
@@ -111,7 +112,8 @@
       { "source": "/css/settings/account.css", "destination": "/applications/main-site/settings/settings-css/account.css" },
       { "source": "/css/settings/profile.css", "destination": "/applications/main-site/settings/settings-css/profile.css" },
       { "source": "/css/settings/backup.css", "destination": "/applications/main-site/settings/settings-css/backup.css" },
-      { "source": "/css/settings/overview.css", "destination": "/applications/main-site/settings/settings-css/overview.css" }
+      { "source": "/css/settings/overview.css", "destination": "/applications/main-site/settings/settings-css/overview.css" },
+      { "source": "/css/settings/security.css", "destination": "/applications/main-site/settings/settings-css/security.css" }
     ]
   }
 }

@@ -1,0 +1,117 @@
+.security-account-box,
+.security-methods-box,
+.security-password-stack,
+#library-policy {
+    grid-column: 1 / -1;
+    grid-row: auto;
+}
+
+.security-password-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+#deleteAccountSection {
+    grid-column: auto;
+    grid-row: auto;
+}
+
+.security-facts {
+    display: grid;
+    gap: 12px;
+    margin: 0;
+}
+
+@media (min-width: 640px) {
+    .security-facts {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+.security-facts > div {
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+    background: color-mix(in srgb, var(--alysum-ui-raised, #2a2a2a) 70%, transparent);
+}
+
+.security-facts dt {
+    margin: 0 0 4px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted, #9ca3af);
+}
+
+.security-facts dd {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 800;
+    word-break: break-word;
+}
+
+.login-method-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+}
+
+.login-method-row:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+}
+
+.login-method-row:first-child {
+    padding-top: 0;
+}
+
+.login-method-name {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 800;
+}
+
+.login-method-status {
+    margin: 4px 0 0;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--muted, #9ca3af);
+}
+
+.login-method-row.is-connected .login-method-status {
+    color: var(--ok, #4ade80);
+}
+
+.login-method-row .btn {
+    margin: 0;
+    width: auto;
+}
+
+#passwordEmailField.hidden,
+#passwordCurrentField.hidden,
+#deleteAccountSection.hidden,
+#deleteAccountCodeField.hidden,
+#deleteAccountBtn.hidden {
+    display: none;
+}
+
+#deleteAccountCode {
+    letter-spacing: 0.35em;
+    font-size: 20px;
+    font-weight: 800;
+    font-family: ui-monospace, monospace;
+    max-width: 12rem;
+}
+
+#deleteAccountSection .profile-box-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+}

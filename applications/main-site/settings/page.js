@@ -1,6 +1,6 @@
 import { els } from "/js/settings/elements.js";
 import { state } from "/js/settings/state.js";
-import { showMsg, mergeUserRow, isPasswordChangeBlocked } from "/js/settings/helpers.js";
+import { showMsg, mergeUserRow } from "/js/settings/helpers.js";
 import { showSettingsTab } from "/js/settings/nav.js";
 import { setAvatarPreview } from "/js/settings/appearance.js";
 import {
@@ -9,9 +9,10 @@ import {
     renderSupportLinkFields,
     setSupportLinksDisabled,
 } from "/js/settings/author-page.js";
-import { finishSettingsShell, initLocalSettingsUi, configureDeleteAccountUi, runDeleteAccountFlow } from "/js/settings/shell.js";
+import { finishSettingsShell, initLocalSettingsUi, configureDeleteAccountUi } from "/js/settings/shell.js";
 import { wireSettingsSaves } from "/js/settings/saves.js";
 import { wireBackup } from "/js/settings/backup.js";
+import { bootSettingsSecurity, wireSettingsSecurity } from "/js/settings/security.js";
 import { supabase } from "@alysum/authentication/client.js";
 import { signOutAndGoToHome } from "@alysum/authentication/logout.js";
 import { goToLogin } from "@alysum/desktop/app.js";
@@ -49,10 +50,6 @@ function wireLogoutAndDelete() {
             if (!onProfile) showSettingsTab("profilePanel");
         }
     });
-
-    els.deleteAccountBtn?.addEventListener("click", () => {
-        runDeleteAccountFlow();
-    });
 }
 
 function fillSettingsFromRow(user, row) {
@@ -84,34 +81,6 @@ function fillSettingsFromRow(user, row) {
         r.checked = r.value === acct;
     });
     return data;
-}
-
-function applyPasswordGate(user) {
-    const passwordBlocked = isPasswordChangeBlocked(user);
-    const ssoNote = document.getElementById("ssoPasswordNote");
-    const formHint = document.getElementById("passwordFormHint");
-    const passwordPanelBody = document.querySelector(".password-panel-body");
-    if (passwordBlocked) {
-        if (els.savePasswordBtn) els.savePasswordBtn.disabled = true;
-        if (els.currentPw) els.currentPw.disabled = true;
-        if (els.newPw) els.newPw.disabled = true;
-        if (els.confirmPw) els.confirmPw.disabled = true;
-        passwordPanelBody?.classList.add("hidden");
-        if (ssoNote) {
-            ssoNote.textContent =
-                "Password changes aren’t available for accounts that only sign in with Google or Discord. Use that provider to access your account, or contact support if you need help.";
-            ssoNote.classList.remove("hidden");
-        }
-        if (formHint) formHint.classList.add("hidden");
-        return;
-    }
-    if (els.savePasswordBtn) els.savePasswordBtn.disabled = false;
-    if (els.currentPw) els.currentPw.disabled = false;
-    if (els.newPw) els.newPw.disabled = false;
-    if (els.confirmPw) els.confirmPw.disabled = false;
-    passwordPanelBody?.classList.remove("hidden");
-    ssoNote?.classList.add("hidden");
-    formHint?.classList.remove("hidden");
 }
 
 async function startSettingsPage() {
@@ -152,15 +121,16 @@ async function startSettingsPage() {
             "Profile request timed out."
         );
         if (error) throw error;
-        fillSettingsFromRow(user, row);
+        const data = fillSettingsFromRow(user, row);
         finishSettingsShell();
         configureDeleteAccountUi(user);
-        applyPasswordGate(user);
+        await bootSettingsSecurity(user, permanentHandleFromUserData(data));
     } catch (e) {
         console.error(e);
         try {
-            fillSettingsFromRow(user, {});
+            const data = fillSettingsFromRow(user, {});
             finishSettingsShell();
+            await bootSettingsSecurity(user, permanentHandleFromUserData(data));
             showMsg(els.profileMsg, e?.message || "Could not load profile from the server.", false);
             showSettingsTab("profilePanel");
         } catch (inner) {
@@ -173,4 +143,5 @@ async function startSettingsPage() {
 void startSettingsPage();
 try { wireLogoutAndDelete(); } catch (e) { console.error(e); }
 try { wireSettingsSaves(); } catch (e) { console.error(e); }
+try { wireSettingsSecurity(); } catch (e) { console.error(e); }
 try { wireBackup(); } catch (e) { console.error(e); }

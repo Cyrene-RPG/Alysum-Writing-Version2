@@ -2,6 +2,7 @@ import { els } from "/js/signup/elements.js";
 import { state } from "/js/signup/state.js";
 import { supabase } from "@alysum/authentication/client.js";
 import { ACCOUNT_BOTH } from "@alysum/account/mode.js";
+import { formatUsernameError, usernameAlreadyTaken as accountUsernameTaken } from "@alysum/account/username.js";
 import {
     GRADIENT_THEMES,
     applyChromeGradient,
@@ -183,14 +184,7 @@ export function paintFontChoices() {
 }
 
 export async function usernameAlreadyTaken(username, userId) {
-    const { data, error } = await supabase
-        .from("users")
-        .select("id")
-        .eq("username", username)
-        .maybeSingle();
-
-    if (error) throw error;
-    return Boolean(data && data.id !== userId);
+    return accountUsernameTaken(supabase, username, userId);
 }
 
 export async function createProfileAndEnterStudio() {
@@ -244,7 +238,7 @@ export async function createProfileAndEnterStudio() {
         });
 
         if (profileError) {
-            showError(profileError.message);
+            showError(formatUsernameError(profileError));
             return;
         }
 

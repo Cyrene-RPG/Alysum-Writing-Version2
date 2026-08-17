@@ -121,12 +121,9 @@
     color: #fecaca;
 }
 
-@media (min-width: 768px) {
-    .profile-danger-box {
-        grid-column: 2;
-        grid-row: 2;
-        align-self: stretch;
-    }
+#backupPanel .profile-danger-box {
+    grid-column: auto;
+    grid-row: auto;
 }
 
 .backup-actions {

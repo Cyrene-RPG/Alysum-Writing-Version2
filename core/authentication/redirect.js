@@ -31,6 +31,8 @@ export const OAUTH_PENDING_LEGACY_KEY = "alysum-oauth-pending";
 
 export const OAUTH_PENDING_LOGIN_KEY = "alysum-oauth-pending-login";
 export const OAUTH_PENDING_SIGNUP_KEY = "alysum-oauth-pending-signup";
+export const OAUTH_PENDING_LINK_KEY = "alysum-oauth-pending-link";
+export const OAUTH_LINK_PROVIDER_KEY = "alysum-oauth-link-provider";
 
 function hashAuthParams() {
     const hash = typeof location !== "undefined" ? location.hash || "" : "";

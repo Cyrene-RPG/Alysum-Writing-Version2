@@ -64,7 +64,8 @@
 <link rel="stylesheet" href="/css/settings/appearance.css" />
 <link rel="stylesheet" href="/css/settings/account.css" />
 <link rel="stylesheet" href="/css/settings/profile.css" />
-<link rel="stylesheet" href="/css/settings/backup.css" />
+<link rel="stylesheet" href="/css/settings/backup.css?v=2" />
+<link rel="stylesheet" href="/css/settings/security.css?v=2" />
 <link rel="stylesheet" href="/css/workspace-nav.css?v=15" />
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <script src="/site-appearance/gradient-theme-sync.js" defer></script>
@@ -216,7 +217,7 @@
             <div class="field">
                 <label>Permanent handle</label>
                 <div class="readonly mono" id="handleField">@…</div>
-                <p class="hint" style="margin-top:8px;margin-bottom:0">This cannot be changed.</p>
+                <p class="hint" style="margin-top:8px;margin-bottom:0">This cannot be changed. It is unique and separate from your Profile Name.</p>
             </div>
             <div class="field">
                 <label for="displayNameInput">Display name</label>
@@ -305,43 +306,56 @@
 
     <div class="panel hidden settings-tab-panel" id="securityPanel" role="tabpanel" aria-labelledby="tab-security" hidden>
         <h2>Security</h2>
+        <p class="hint password-intro-hint" id="passwordFormHint">Username, email, and every way you can sign in. Adding a method keeps the others.</p>
         <p class="hint hidden password-intro-hint" id="ssoPasswordNote"></p>
-        <p class="hint password-intro-hint" id="passwordFormHint">Change your password, review policy notices, or delete your account.</p>
 
         <div class="profile-panel-body password-panel-body">
-            <section class="profile-box password-current-box" aria-labelledby="passwordCurrentTitle">
-                <h3 class="profile-box-title" id="passwordCurrentTitle">Current password</h3>
-                <p class="hint" style="margin: 0 0 14px">Confirm it's you before changing anything.</p>
-                <div class="field">
+            <section class="profile-box security-account-box" aria-labelledby="securityAccountTitle">
+                <h3 class="profile-box-title" id="securityAccountTitle">Account</h3>
+                <p class="hint" style="margin: 0 0 14px">Username is unique and separate from your Profile Name. CoolUser and cooluser are the same username.</p>
+                <dl class="security-facts">
+                    <div>
+                        <dt>Username</dt>
+                        <dd class="mono" id="securityUsername">@…</dd>
+                    </div>
+                    <div>
+                        <dt>Email</dt>
+                        <dd id="securityEmail">…</dd>
+                    </div>
+                </dl>
+            </section>
+
+            <section class="profile-box security-methods-box" aria-labelledby="loginMethodsTitle">
+                <h3 class="profile-box-title" id="loginMethodsTitle">Login methods</h3>
+                <p class="hint" style="margin: 0 0 14px">Connect Discord, Google, and email to this same account. If a login is already on another account, we will not merge them.</p>
+                <div id="loginMethodsList"></div>
+                <div class="msg" id="loginMethodsMsg" role="status"></div>
+            </section>
+
+            <div class="security-password-stack">
+            <section class="profile-box security-password-box" aria-labelledby="passwordNewTitle">
+                <h3 class="profile-box-title" id="passwordNewTitle">Create a password</h3>
+                <p class="hint" style="margin: 0 0 14px">At least 8 characters. Adding a password does not remove Discord or Google.</p>
+                <div class="field hidden" id="passwordCurrentField">
                     <label for="currentPw">Current password</label>
                     <input type="password" id="currentPw" autocomplete="current-password" />
                 </div>
-            </section>
-
-            <section class="profile-box password-new-box" aria-labelledby="passwordNewTitle">
-                <h3 class="profile-box-title" id="passwordNewTitle">New password</h3>
-                <p class="hint" style="margin: 0 0 14px">At least 6 characters. You'll use this next time you sign in.</p>
-                <div class="field">
-                    <label for="newPw">New password</label>
-                    <input type="password" id="newPw" autocomplete="new-password" />
+                <div class="field hidden" id="passwordEmailField">
+                    <label for="passwordEmail">Email for password login</label>
+                    <input type="email" id="passwordEmail" autocomplete="email" />
                 </div>
                 <div class="field">
-                    <label for="confirmPw">Confirm new password</label>
-                    <input type="password" id="confirmPw" autocomplete="new-password" />
+                    <label for="newPw">Password</label>
+                    <input type="password" id="newPw" autocomplete="new-password" minlength="8" />
                 </div>
-            </section>
-
-            <div class="profile-box-actions">
-                <button type="button" class="btn btn-primary" id="savePasswordBtn">Update password</button>
-                <div class="msg" id="passwordMsg" role="status"></div>
-            </div>
-
-            <section class="profile-box" id="library-policy" aria-labelledby="libraryAuthorTitle">
-                <h3 class="profile-box-title" id="libraryAuthorTitle">Policy &amp; appeals</h3>
-                <p class="hint" style="margin: 0 0 10px">Policy notices on your published work and how to appeal a decision.</p>
-                <p class="hint" style="margin: 0">
-                    Archived features are being kept separately while the live site is reduced to a minimal shell. The active app will restore each feature back in individually when needed.
-                </p>
+                <div class="field">
+                    <label for="confirmPw">Confirm password</label>
+                    <input type="password" id="confirmPw" autocomplete="new-password" minlength="8" />
+                </div>
+                <div class="profile-box-actions">
+                    <button type="button" class="btn btn-primary" id="savePasswordBtn">Create password</button>
+                    <div class="msg" id="passwordMsg" role="status"></div>
+                </div>
             </section>
 
             <section class="profile-box profile-danger-box hidden" id="deleteAccountSection" aria-labelledby="deleteAccountTitle">
@@ -350,17 +364,26 @@
                     Permanently removes your Alysum account, books, comments, and profile. Published library entries may remain listed without an author link.
                 </p>
                 <p class="hint" style="margin: 0 0 14px">
-                    Download a backup from the Backup tab first if you want to keep your work. This cannot be undone.
+                    We email a 6-digit code to the address on this account. Enter that code to delete. Download a backup first if you want to keep your work. This cannot be undone.
                 </p>
-                <div class="field hidden" id="deleteAccountPasswordField">
-                    <label for="deleteAccountPassword">Current password</label>
-                    <input type="password" id="deleteAccountPassword" autocomplete="current-password" />
-                    <p class="hint" style="margin-top:8px;margin-bottom:0">Required to confirm deletion for email sign-in.</p>
-                </div>
                 <div class="profile-box-actions">
-                    <button type="button" class="btn btn-danger" id="deleteAccountBtn">Delete my account</button>
+                    <button type="button" class="btn btn-secondary" id="sendDeleteCodeBtn">Email me a deletion code</button>
+                    <div class="field hidden" id="deleteAccountCodeField">
+                        <label for="deleteAccountCode">6-digit code</label>
+                        <input id="deleteAccountCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]*" spellcheck="false" />
+                    </div>
+                    <button type="button" class="btn btn-danger hidden" id="deleteAccountBtn">Delete my account</button>
                     <div class="msg" id="deleteAccountMsg" role="status"></div>
                 </div>
+            </section>
+            </div>
+
+            <section class="profile-box" id="library-policy" aria-labelledby="libraryAuthorTitle">
+                <h3 class="profile-box-title" id="libraryAuthorTitle">Policy &amp; appeals</h3>
+                <p class="hint" style="margin: 0 0 10px">Policy notices on your published work and how to appeal a decision.</p>
+                <p class="hint" style="margin: 0">
+                    Archived features are being kept separately while the live site is reduced to a minimal shell. The active app will restore each feature back in individually when needed.
+                </p>
             </section>
         </div>
     </div>

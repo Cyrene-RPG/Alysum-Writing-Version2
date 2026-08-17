@@ -2,7 +2,7 @@ import { normalizeSupportLinks } from "@alysum/library/author-profile.js";
 
 const PASSWORD_BLOCKED_OAUTH = new Set(["google", "discord"]);
 
-/** Only Google- or Discord-only sign-in cannot change password here (uses linked identities). */
+/** True when the account has no email/password identity (Google/Discord only). */
 export function isPasswordChangeBlocked(user) {
     const providers = (user?.identities || [])
         .map((i) => String(i?.provider || "").toLowerCase())
