@@ -429,6 +429,7 @@ export function initBodyBgPicker() {
             cls += " has-preview";
             b.style.background = preview;
         }
+        if (p.tone === "light") cls += " is-light";
         b.className = cls;
         b.dataset.style = p.id;
         b.title = p.hint || "";

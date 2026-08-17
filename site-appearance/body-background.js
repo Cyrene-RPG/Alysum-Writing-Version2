@@ -69,7 +69,7 @@ export const BODY_BG_PRESETS = [
     { id: "rose", label: "Rose night", bg: "#1f0a12", hint: "Rose accent" },
     { id: "wine", label: "Wine cellar", bg: "#1a0508", hint: "Wine accent" },
     { id: "sakura", label: "Sakura", bg: "#180810", hint: "Sakura accent" },
-    { id: "cotton", label: "Cotton candy", bg: "#100818", hint: "Cotton accent" },
+    { id: "cotton", label: "Cotton night", bg: "#100818", hint: "Cotton accent" },
     { id: "bloodmoon", label: "Blood moon", bg: "#140505", hint: "Blood moon accent" },
     { id: "ember", label: "Ember glow", bg: "#1a0a08", hint: "Ember accent" },
     { id: "inferno", label: "Inferno", bg: "#1a0808", hint: "Inferno accent" },
@@ -100,6 +100,17 @@ export const BODY_BG_PRESETS = [
     { id: "glow-gold", label: "Gold glow", bg: "#2a1808", vibrant: true, hint: "Warm amber depth" },
     { id: "glow-neon", label: "Neon pulse", bg: "#180a30", vibrant: true, hint: "Electric purple-pink" },
     { id: "glow-cosmic", label: "Cosmic bright", bg: "#120a30", vibrant: true, hint: "Brighter nebula tone" },
+    { id: "candy", label: "Cotton candy", bg: "#f4b8d9", top: "#b9dcff", tone: "light", hint: "Pink-to-blue fluff" },
+    { id: "candy-cloud", label: "Candy cloud", bg: "#d9c4f7", top: "#f7c6e0", tone: "light", hint: "Lilac cotton swirl" },
+    { id: "opal-shine", label: "Opal shine", bg: "#e7eef6", top: "#c8f0e6", tone: "light", hint: "Milky opal with aqua flash" },
+    { id: "opal-iris", label: "Opal iris", bg: "#e5d4f2", top: "#f6e2c4", tone: "light", hint: "Lilac opal with gold fire" },
+    { id: "xp-bliss", label: "XP Bliss", bg: "#5eafd4", top: "#9fd4ee", tone: "light", hint: "Windows XP Bliss sky" },
+    { id: "xp-hills", label: "XP Hills", bg: "#6eab4a", top: "#a8c96e", tone: "light", hint: "Windows XP Bliss hills" },
+    { id: "xp-luna", label: "XP Luna", bg: "#3d7de0", top: "#89b6f5", tone: "light", hint: "Windows XP Luna blue" },
+    { id: "xp-olive", label: "XP Olive", bg: "#9dba6c", top: "#d6d0ae", tone: "light", hint: "Windows XP Olive Green" },
+    { id: "xp-silver", label: "XP Silver", bg: "#c4c8d0", top: "#ece9d8", tone: "light", hint: "Windows XP Silver" },
+    { id: "xp-classic", label: "XP Classic", bg: "#ece9d8", top: "#f7f5ee", tone: "light", hint: "Windows classic beige" },
+    { id: "xp-teal", label: "XP Teal", bg: "#3a6ea5", top: "#7eadd4", tone: "light", hint: "Windows XP desktop teal" },
     { id: "custom", label: "Custom", hint: "Pick your own background color" }
 ];
 
@@ -239,13 +250,16 @@ export function resolveBodyBgColor(id) {
     return DEFAULT_BG;
 }
 
-export function applyBodyBgVars(bg, vibrant) {
+export function applyBodyBgVars(bg, vibrant, top) {
     if (typeof document === "undefined") return;
     const root = document.documentElement;
     const hex = parseHex(bg);
     if (!hex) return;
     root.style.setProperty("--bg", bg);
-    root.style.setProperty("--bg-gradient-top", computeGradientTop(bg, vibrant));
+    root.style.setProperty(
+        "--bg-gradient-top",
+        parseHex(top) ? top : computeGradientTop(bg, vibrant)
+    );
 }
 
 export function clearBodyBgVars() {
@@ -284,9 +298,14 @@ export function applyBodyBackground(id, customBg) {
         clearBodyBgVars();
     } else {
         const preset = PRESET_BY_ID.get(bgId);
-        applyBodyBgVars(resolveBodyBgColor(bgId), preset?.vibrant);
+        applyBodyBgVars(resolveBodyBgColor(bgId), preset?.vibrant, preset?.top);
     }
     syncBodyBgAttribute(bgId);
+    if (typeof document !== "undefined") {
+        const root = document.documentElement;
+        if (PRESET_BY_ID.get(bgId)?.tone === "light") root.setAttribute("data-body-bg-tone", "light");
+        else root.removeAttribute("data-body-bg-tone");
+    }
 
     try {
         document.documentElement.dispatchEvent(
@@ -317,7 +336,7 @@ export function getBodyBgPreview(id) {
     const bgId = normalizeBodyBgId(id);
     const preset = PRESET_BY_ID.get(bgId);
     const bg = resolveBodyBgColor(bgId);
-    const top = computeGradientTop(bg, preset?.vibrant);
+    const top = parseHex(preset?.top) ? preset.top : computeGradientTop(bg, preset?.vibrant);
     return `linear-gradient(180deg, ${top} 0%, ${bg} 100%)`;
 }
 

@@ -1,0 +1,146 @@
+<!DOCTYPE html><html lang="en">
+<head>
+    <script type="importmap">
+    {
+      "imports": {
+        "@alysum/site-appearance/": "/site-appearance/",
+        "@alysum/writing-engine/": "/core/writing-engine/",
+        "@alysum/synchronization-engine/": "/core/synchronization-engine/",
+        "@alysum/authentication/": "/core/authentication/",
+        "@alysum/account/": "/core/account/",
+        "@alysum/desktop/": "/core/desktop/",
+        "@alysum/library/": "/core/library/",
+        "@alysum/publishing/": "/core/publishing/",
+        "@alysum/encyclopedia/": "/core/encyclopedia/",
+        "@alysum/collaboration/": "/core/collaboration/"
+      }
+    }
+    </script>
+    <link rel="stylesheet" href="/site-appearance/css-styles/theme.css" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/gradient-themes/index.css" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/typography.css" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/surface-styles/index.css" />
+    <script src="/site-appearance/body-background-presets-data.js"></script>
+    <script src="/site-appearance/boot.js"></script>
+    <script src="/site-appearance/body-background-sync.js"></script>
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow">
+    <title>Overview — Alysum</title>
+    <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
+    <link rel="stylesheet" href="/css/settings/page.css" />
+    <link rel="stylesheet" href="/css/settings/overview.css" />
+    <link rel="stylesheet" href="/css/workspace-nav.css?v=15" />
+    <script src="/site-appearance/gradient-theme-sync.js" defer></script>
+</head>
+<body>
+    <header class="wd-welcome-bar ui-bar" aria-label="Welcome">
+        <div class="wd-welcome-inner">
+            <div class="wd-pfp-menu" id="welcomePfpMenu">
+                <button type="button" class="wd-pfp-btn" id="welcomePfpBtn" aria-haspopup="menu" aria-expanded="false" aria-controls="welcomePfpDropdown" aria-label="Account menu">
+                    <span class="wd-pfp" id="welcomePfp">
+                        <img id="welcomePfpImg" alt="" hidden />
+                        <span class="wd-pfp-initial" id="welcomePfpInitial" aria-hidden="true"></span>
+                    </span>
+                </button>
+                <div class="wd-pfp-dropdown" id="welcomePfpDropdown" role="menu" hidden>
+                    <a role="menuitem" href="overview.html" data-close-pfp-menu>Overview</a>
+                    <a role="menuitem" href="settings.html#profilePanel" data-close-pfp-menu>Profile Info</a>
+                    <a role="menuitem" href="settings.html" data-close-pfp-menu>Settings</a>
+                    <button type="button" role="menuitem" class="settings-nav-logout" data-logout-btn data-close-pfp-menu>Log out</button>
+                </div>
+            </div>
+            <div class="wd-welcome-copy">
+                <h1 class="wd-welcome-title" id="welcomeTitle">Welcome back.</h1>
+                <p class="wd-welcome-sub" id="welcomeSubtitle"></p>
+            </div>
+        </div>
+    </header>
+    <nav class="wd-nav-wrap ui-bar" aria-label="Workspace">
+        <div class="wd-nav">
+            <a href="settings.html">Settings</a>
+            <button type="button" class="settings-nav-logout" data-logout-btn>Logout</button>
+        </div>
+    </nav>
+    <script type="module" src="/js/workspace-nav.js?v=17"></script>
+
+    <div class="wrap">
+        <div class="panel" id="loadingPanel">
+            <p class="hint" style="margin:0">Loading overview…</p>
+        </div>
+        <div class="settings-shell hidden" id="settingsShell">
+        <nav class="settings-nav" id="settingsNav" aria-label="Settings sections">
+            <p class="settings-nav-heading">Settings</p>
+            <div class="settings-nav-list">
+                <a class="settings-nav-page active" href="overview.html" aria-current="page">Overview</a>
+                <a class="settings-nav-page" href="settings.html#profilePanel">Profile Info</a>
+                <a class="settings-nav-page" href="settings.html#appearancePanel">Appearance</a>
+                <a class="settings-nav-page" href="settings.html#backupPanel">Backup</a>
+                <a class="settings-nav-page" href="settings.html#securityPanel">Security</a>
+            </div>
+        </nav>
+        <div class="settings-content">
+        <article class="panel overview-sheet" id="overviewSheet">
+            <header class="ov-hero">
+                <div class="ov-avatar has-initial" id="ovAvatarWrap">
+                    <img id="ovAvatarImg" alt="" />
+                    <span id="ovAvatarInitial" aria-hidden="true">A</span>
+                </div>
+                <div class="ov-meta">
+                    <h1 class="ov-name" id="ovName">…</h1>
+                    <div class="ov-level">
+                        <span>Level <span id="ovLevel">1</span></span>
+                        <span class="ov-xp" id="ovXp">0 / 100 XP</span>
+                    </div>
+                    <div class="ov-level-bar" aria-hidden="true"><span id="ovLevelFill"></span></div>
+                    <div class="ov-stats">
+                        <div>
+                            <span class="ov-stat-value" id="ovFollowers">0</span>
+                            <span class="ov-stat-label">Followers</span>
+                        </div>
+                        <div>
+                            <span class="ov-stat-value" id="ovReviews">0</span>
+                            <span class="ov-stat-label">Reviews</span>
+                        </div>
+                    </div>
+                </div>
+            </header>
+            <nav class="ov-tabs" aria-label="Overview sections">
+                <button type="button" class="is-active" data-ov-tab="books">Books</button>
+                <button type="button" data-ov-tab="reputation">Reputation</button>
+            </nav>
+            <div id="ovBooks">
+                <section class="ov-block" aria-labelledby="ovAboutTitle">
+                    <h2 class="ov-heading" id="ovAboutTitle">About me</h2>
+                    <p class="ov-bio is-empty" id="ovBio">No biography yet.</p>
+                </section>
+                <section class="ov-block" aria-labelledby="ovFavTitle">
+                    <h2 class="ov-heading" id="ovFavTitle">Favorite Books</h2>
+                    <div class="ov-fav-row">
+                        <article class="ov-book"><div class="ov-cover"><span>Cover</span></div><h3 class="ov-book-title">Title</h3><p class="ov-book-author">Author</p></article>
+                        <article class="ov-book"><div class="ov-cover"><span>Cover</span></div><h3 class="ov-book-title">Title</h3><p class="ov-book-author">Author</p></article>
+                        <article class="ov-book"><div class="ov-cover"><span>Cover</span></div><h3 class="ov-book-title">Title</h3><p class="ov-book-author">Author</p></article>
+                        <article class="ov-book"><div class="ov-cover"><span>Cover</span></div><h3 class="ov-book-title">Title</h3><p class="ov-book-author">Author</p></article>
+                    </div>
+                </section>
+            </div>
+            <div id="ovReputation" hidden>
+                <section class="ov-block" aria-labelledby="ovReviewsTitle">
+                    <h2 class="ov-heading" id="ovReviewsTitle">Recent Reviews</h2>
+                    <ul class="ov-review-list">
+                        <li>
+                            <span class="ov-stars" aria-label="5 stars">★★★★★</span>
+                            <p class="ov-quote">No reviews yet.</p>
+                            <p class="ov-review-meta">Saved books you review will show up here.</p>
+                        </li>
+                    </ul>
+                </section>
+            </div>
+        </article>
+        </div>
+        </div>
+    </div>
+    <script type="module" src="/js/overview.js"></script>
+</body>
+</html>

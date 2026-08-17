@@ -78,6 +78,7 @@ html.surface-glass {
 }
 
 html.surface-glass .panel,
+html.surface-glass .overview-sheet,
 html.surface-glass .card,
 html.surface-glass .legal-card,
 html.surface-glass .appearance-fold,
@@ -107,12 +108,19 @@ html.surface-glass .settings-nav {
     background-color: var(--glass-sheet-chrome);
 }
 
-html.surface-glass .settings-nav button:not(.active):not([aria-selected="true"]) {
+html.surface-glass .settings-nav button:not(.active):not([aria-selected="true"]),
+html.surface-glass .settings-nav a.settings-nav-page:not(.active):not([aria-current="page"]),
+html.surface-glass .wd-pfp-dropdown a,
+html.surface-glass .wd-pfp-dropdown button:not(.settings-nav-logout) {
     background: var(--glass-sheet-raised);
     backdrop-filter: blur(16px) saturate(var(--glass-saturate));
     -webkit-backdrop-filter: blur(16px) saturate(var(--glass-saturate));
     border-color: var(--glass-edge);
     box-shadow: inset 0 1px 1px var(--glass-highlight);
+}
+
+html.surface-glass .wd-pfp-dropdown {
+    background-color: color-mix(in srgb, var(--alysum-ui-panel, #111827) 70%, transparent);
 }
 
 html.surface-glass .wd-welcome-bar,

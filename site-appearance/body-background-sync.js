@@ -11,6 +11,8 @@
 
     var BODY_BG_PRESETS = window.__ALYSUM_BODY_BG_PRESET_COLORS || {};
     var BODY_BG_VIBRANT = window.__ALYSUM_BODY_BG_VIBRANT || {};
+    var BODY_BG_TOPS = window.__ALYSUM_BODY_BG_TOPS || {};
+    var BODY_BG_LIGHT = window.__ALYSUM_BODY_BG_LIGHT || {};
     var ACCENT_COMPLEMENT_BG = window.__ALYSUM_ACCENT_COMPLEMENT_BG || { classic: "#0b1220" };
 
     function parseHex(raw) {
@@ -66,6 +68,7 @@
             root.style.removeProperty("--bg");
             root.style.removeProperty("--bg-gradient-top");
             root.removeAttribute("data-body-bg");
+            root.removeAttribute("data-body-bg-tone");
             return;
         }
 
@@ -86,8 +89,10 @@
         if (bg && parseHex(bg)) {
             var topLift = BODY_BG_VIBRANT[id] ? 0.14 : 0.08;
             root.style.setProperty("--bg", bg);
-            root.style.setProperty("--bg-gradient-top", lighten(bg, topLift));
+            root.style.setProperty("--bg-gradient-top", BODY_BG_TOPS[id] || lighten(bg, topLift));
             root.setAttribute("data-body-bg", id);
+            if (BODY_BG_LIGHT[id]) root.setAttribute("data-body-bg-tone", "light");
+            else root.removeAttribute("data-body-bg-tone");
         }
     }
 

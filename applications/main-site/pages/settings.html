@@ -65,7 +65,7 @@
 <link rel="stylesheet" href="/css/settings/account.css" />
 <link rel="stylesheet" href="/css/settings/profile.css" />
 <link rel="stylesheet" href="/css/settings/backup.css" />
-    <link rel="stylesheet" href="/css/workspace-nav.css?v=13" />
+<link rel="stylesheet" href="/css/workspace-nav.css?v=15" />
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <script src="/site-appearance/gradient-theme-sync.js" defer></script>
 
@@ -81,7 +81,8 @@
                         </span>
                     </button>
                     <div class="wd-pfp-dropdown" id="welcomePfpDropdown" role="menu" hidden>
-                        <a role="menuitem" href="settings.html#profilePanel" data-close-pfp-menu>Profile</a>
+                        <a role="menuitem" href="overview.html" data-close-pfp-menu>Overview</a>
+                        <a role="menuitem" href="settings.html#profilePanel" data-close-pfp-menu>Profile Info</a>
                         <a role="menuitem" href="settings.html" data-close-pfp-menu>Settings</a>
                         <button type="button" role="menuitem" class="settings-nav-logout" data-logout-btn data-close-pfp-menu>Log out</button>
                     </div>
@@ -98,7 +99,7 @@
                 <button type="button" class="settings-nav-logout" data-logout-btn>Logout</button>
             </div>
         </nav>
-        <script type="module" src="/js/workspace-nav.js?v=15"></script>
+        <script type="module" src="/js/workspace-nav.js?v=17"></script>
 
     <div class="wrap">
     <div class="panel" id="loadingPanel">
@@ -109,7 +110,8 @@
         <nav class="settings-nav" id="settingsNav" aria-label="Settings sections">
             <p class="settings-nav-heading">Settings</p>
             <div class="settings-nav-list" role="tablist">
-                <button type="button" role="tab" id="tab-profile" data-section="profilePanel" aria-controls="profilePanel" aria-selected="true">Profile</button>
+                <a class="settings-nav-page" href="overview.html">Overview</a>
+                <button type="button" role="tab" id="tab-profile" data-section="profilePanel" aria-controls="profilePanel" aria-selected="true">Profile Info</button>
                 <button type="button" role="tab" id="tab-appearance" data-section="appearancePanel" aria-controls="appearancePanel" aria-selected="false">Appearance</button>
                 <button type="button" role="tab" id="tab-backup" data-section="backupPanel" aria-controls="backupPanel" aria-selected="false">Backup</button>
                 <button type="button" role="tab" id="tab-security" data-section="securityPanel" aria-controls="securityPanel" aria-selected="false">Security</button>
@@ -143,7 +145,7 @@
             <details class="appearance-fold">
                 <summary>Page background</summary>
                 <div class="appearance-fold-body">
-                    <p class="hint">The dark space behind panels and content. Muted tints pair with accents; <strong>glow</strong> options add a slightly richer color.</p>
+                    <p class="hint">The space behind panels. Dark tints pair with accents; <strong>glow</strong> is richer; cotton candy, opal, and XP skies are the light ones.</p>
                     <div class="theme-grid appearance-grid appearance-grid--bg" id="bodyBgChipRow" aria-label="Page background colors"></div>
                     <div class="display-color-custom" id="bodyBgCustom" hidden>
                         <div class="display-color-field">
@@ -200,9 +202,9 @@
         </div>
     </div>
 
-    <div class="panel hidden settings-tab-panel" id="profilePanel" role="tabpanel" aria-labelledby="tab-profile">
-        <h2>Profile</h2>
-        <p class="hint profile-intro-hint">Your permanent handle is like a Discord tag: it never changes and identifies you. Your display name is what others see next to comments and on your studio home.</p>
+    <div class="panel hidden settings-tab-panel is-active" id="profilePanel" role="tabpanel" aria-labelledby="tab-profile">
+        <h2>Profile Info</h2>
+        <p class="hint profile-intro-hint">Change the photo, display name, and bio people see. Overview is the public preview.</p>
 
         <div class="profile-panel-body">
         <section class="profile-box profile-identity-box" aria-labelledby="profileIdentityTitle">
@@ -216,7 +218,6 @@
                 <div class="readonly mono" id="handleField">@…</div>
                 <p class="hint" style="margin-top:8px;margin-bottom:0">This cannot be changed.</p>
             </div>
-
             <div class="field">
                 <label for="displayNameInput">Display name</label>
                 <input type="text" id="displayNameInput" maxlength="40" autocomplete="nickname" placeholder="How your name appears" />
@@ -230,8 +231,7 @@
 
         <section class="profile-box profile-avatar-box" aria-labelledby="profileAvatarTitle">
             <h3 class="profile-box-title" id="profileAvatarTitle">Profile picture</h3>
-            <p class="hint">Upload an image for your account. It will appear in the Studio profile circle.</p>
-
+            <p class="hint">Upload an image for your account. This is what others see on Overview.</p>
             <div class="profile-avatar-layout">
                 <div class="profile-avatar-preview has-initial" id="profileAvatarPreviewWrap">
                     <img id="profileAvatarPreview" src="/Alysum-3.png" alt="Profile picture preview" />
@@ -248,14 +248,13 @@
                     </div>
                 </div>
             </div>
-
             <div class="msg" id="avatarMsg" role="status"></div>
         </section>
 
         <div class="author-page-panel-body">
             <section class="profile-box profile-bio-box" id="author-bio" aria-labelledby="profileBioTitle">
                 <h3 class="profile-box-title" id="profileBioTitle">Biography</h3>
-                <p class="hint">Tell readers a little about yourself. This appears on your public author page and at the end of your published books.</p>
+                <p class="hint">This is the About me text on Overview and on your public author page.</p>
                 <div class="field">
                     <label for="authorBioInput">About me</label>
                     <textarea id="authorBioInput" maxlength="2000" rows="8" placeholder="Share your writing background, interests, or what readers can expect from your work…"></textarea>
@@ -263,6 +262,7 @@
                 </div>
                 <div class="profile-box-actions">
                     <button type="button" class="btn btn-primary" id="saveBioBtn">Save biography</button>
+                    <a class="btn" href="overview.html">View Overview</a>
                     <a class="btn" id="authorBioPreviewLink" href="author.html" target="_blank" rel="noopener">Preview author page</a>
                     <div class="msg" id="bioMsg" role="status"></div>
                 </div>

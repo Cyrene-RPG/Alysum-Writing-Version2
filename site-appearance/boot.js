@@ -129,6 +129,12 @@
         return "rgba(" + c.r + "," + c.g + "," + c.b + "," + Math.max(0, Math.min(1, alpha)) + ")";
     }
 
+    function isLightHex(hex) {
+        var c = parseHex(hex);
+        if (!c) return false;
+        return (0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b) / 255 > 0.58;
+    }
+
     function applyUiSurfaces(root, hex) {
         if (!parseHex(hex)) return;
         var clean = String(hex).charAt(0) === "#" ? hex : "#" + hex;
@@ -136,6 +142,8 @@
         root.style.setProperty("--alysum-ui-chrome", darken(clean, 0.22));
         root.style.setProperty("--alysum-ui-raised", lighten(clean, 0.14));
         root.style.removeProperty("--alysum-ui-color");
+        if (isLightHex(clean)) root.setAttribute("data-ui-tone", "light");
+        else root.removeAttribute("data-ui-tone");
     }
 
     function clearUiSurfaces(root) {
@@ -144,6 +152,7 @@
         root.style.removeProperty("--alysum-ui-raised");
         root.style.removeProperty("--alysum-ui-color");
         root.removeAttribute("data-ui-color");
+        root.removeAttribute("data-ui-tone");
     }
 
     function applyColorVars(root, main, accent) {
@@ -212,6 +221,8 @@
 
         var bodyBgPresets = window.__ALYSUM_BODY_BG_PRESET_COLORS || {};
         var bodyBgVibrant = window.__ALYSUM_BODY_BG_VIBRANT || {};
+        var bodyBgTops = window.__ALYSUM_BODY_BG_TOPS || {};
+        var bodyBgLight = window.__ALYSUM_BODY_BG_LIGHT || {};
         var accentComplementBg = window.__ALYSUM_ACCENT_COMPLEMENT_BG || { classic: "#0b1220" };
         var mixFree = localStorage.getItem("alysum-appearance-mix") === "free";
         var bodyBgId = localStorage.getItem("alysum-body-bg") || "default";
@@ -227,8 +238,10 @@
             if (bodyBg && parseHex(bodyBg)) {
                 var topLift = bodyBgVibrant[bodyBgId] ? 0.14 : 0.08;
                 root.style.setProperty("--bg", bodyBg);
-                root.style.setProperty("--bg-gradient-top", lighten(bodyBg, topLift));
+                root.style.setProperty("--bg-gradient-top", bodyBgTops[bodyBgId] || lighten(bodyBg, topLift));
                 root.setAttribute("data-body-bg", bodyBgId);
+                if (bodyBgLight[bodyBgId]) root.setAttribute("data-body-bg-tone", "light");
+                else root.removeAttribute("data-body-bg-tone");
             }
         }
 

@@ -11,6 +11,7 @@ function activeClass(key, current) {
 
 function detectActivePage() {
     const file = (window.location.pathname || "").replace(/\\/g, "/").split("/").pop() || "index.html";
+    if (file === "overview.html") return "overview";
     if (file === "settings.html") return "settings";
     if (file === "index.html") return "index";
     if (file === "login.html") return "login";
@@ -29,7 +30,8 @@ function renderNavHtml(active) {
                         </span>
                     </button>
                     <div class="wd-pfp-dropdown" id="welcomePfpDropdown" role="menu" hidden>
-                        <a role="menuitem" href="settings.html#profilePanel" data-close-pfp-menu>Profile</a>
+                        <a role="menuitem" href="overview.html" data-close-pfp-menu>Overview</a>
+                        <a role="menuitem" href="settings.html#profilePanel" data-close-pfp-menu>Profile Info</a>
                         <a role="menuitem" href="settings.html" data-close-pfp-menu>Settings</a>
                         <button type="button" role="menuitem" class="settings-nav-logout" data-logout-btn data-close-pfp-menu>Log out</button>
                     </div>

@@ -21,7 +21,7 @@ body {
         radial-gradient(circle at 20% 18%, color-mix(in srgb, var(--gold, #f5d489) 22%, transparent), transparent 28%),
         radial-gradient(circle at 80% 12%, color-mix(in srgb, var(--pink, #ec4899) 18%, transparent), transparent 24%),
         radial-gradient(circle at 50% 105%, var(--theme-body-spot-strong, transparent), transparent 34%),
-        var(--bg, var(--login-page-bg));
+        linear-gradient(180deg, var(--bg-gradient-top, var(--bg, var(--login-page-bg))) 0%, var(--bg, var(--login-page-bg)) 100%);
 }
 
 .auth-shell {

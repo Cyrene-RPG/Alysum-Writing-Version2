@@ -54,6 +54,17 @@
         "glow-wine": "#280818",
         "glow-lagoon": "#0a2828",
         "glow-mint": "#0a2820",
+        candy: "#f4b8d9",
+        "candy-cloud": "#d9c4f7",
+        "opal-shine": "#e7eef6",
+        "opal-iris": "#e5d4f2",
+        "xp-bliss": "#5eafd4",
+        "xp-hills": "#6eab4a",
+        "xp-luna": "#3d7de0",
+        "xp-olive": "#9dba6c",
+        "xp-silver": "#c4c8d0",
+        "xp-classic": "#ece9d8",
+        "xp-teal": "#3a6ea5",
         deep: "#09090b",
         charcoal: "#09090b",
         navy: "#0c1324",
@@ -76,6 +87,34 @@
         "glow-wine": 1,
         "glow-lagoon": 1,
         "glow-mint": 1
+    };
+
+    global.__ALYSUM_BODY_BG_TOPS = {
+        candy: "#b9dcff",
+        "candy-cloud": "#f7c6e0",
+        "opal-shine": "#c8f0e6",
+        "opal-iris": "#f6e2c4",
+        "xp-bliss": "#9fd4ee",
+        "xp-hills": "#a8c96e",
+        "xp-luna": "#89b6f5",
+        "xp-olive": "#d6d0ae",
+        "xp-silver": "#ece9d8",
+        "xp-classic": "#f7f5ee",
+        "xp-teal": "#7eadd4"
+    };
+
+    global.__ALYSUM_BODY_BG_LIGHT = {
+        candy: 1,
+        "candy-cloud": 1,
+        "opal-shine": 1,
+        "opal-iris": 1,
+        "xp-bliss": 1,
+        "xp-hills": 1,
+        "xp-luna": 1,
+        "xp-olive": 1,
+        "xp-silver": 1,
+        "xp-classic": 1,
+        "xp-teal": 1
     };
 
     global.__ALYSUM_ACCENT_COMPLEMENT_BG = {

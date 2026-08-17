@@ -315,6 +315,12 @@
     filter: brightness(1.08) saturate(1.1);
 }
 
+.theme-chip.is-light {
+    color: #1c1917;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.55);
+    border-color: rgba(28, 25, 23, 0.16);
+}
+
 .theme-chip:not(.has-preview).active {
     background: linear-gradient(135deg, var(--theme-card-a), var(--theme-card-b));
 }

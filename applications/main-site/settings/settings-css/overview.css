@@ -1,0 +1,237 @@
+.overview-sheet {
+    width: 100%;
+    margin: 0;
+    padding: 28px clamp(18px, 4vw, 36px) 36px;
+}
+
+.ov-hero {
+    display: grid;
+    grid-template-columns: 112px minmax(0, 1fr);
+    gap: 22px 28px;
+    align-items: start;
+    padding-bottom: 22px;
+    border-bottom: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+}
+
+.ov-avatar {
+    width: 112px;
+    height: 112px;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.12);
+    background: rgba(0, 0, 0, 0.28);
+}
+
+.ov-avatar img,
+.ov-avatar span {
+    width: 100%;
+    height: 100%;
+    display: none;
+}
+
+.ov-avatar img {
+    object-fit: cover;
+}
+
+.ov-avatar:not(.has-initial) img {
+    display: block;
+}
+
+.ov-avatar.has-initial span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    font-weight: 800;
+    color: #fff;
+    background: var(--alysum-chrome-gradient, linear-gradient(135deg, var(--purple), var(--pink)));
+}
+
+.ov-name {
+    margin: 0 0 10px;
+    font-size: clamp(28px, 4vw, 40px);
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--alysum-display-mid, var(--gold, #f5d489));
+}
+
+.ov-level {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted, #9ca3af);
+}
+
+.ov-level-bar {
+    height: 6px;
+    margin: 8px 0 16px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+    overflow: hidden;
+}
+
+.ov-level-bar > span {
+    display: block;
+    width: 0%;
+    height: 100%;
+    background: var(--accent, #6d28d9);
+}
+
+.ov-stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.ov-stat-value {
+    display: block;
+    font-size: 22px;
+    font-weight: 800;
+}
+
+.ov-stat-label {
+    display: block;
+    margin-top: 2px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted, #9ca3af);
+}
+
+.ov-tabs {
+    display: flex;
+    gap: 28px;
+    margin: 0;
+    padding: 14px 0 0;
+    border-bottom: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+}
+
+.ov-tabs button {
+    padding: 8px 0 12px;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    background: none;
+    color: var(--muted, #9ca3af);
+    font: inherit;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.ov-tabs button.is-active {
+    color: var(--text, #fff);
+    border-bottom-color: var(--accent, #6d28d9);
+}
+
+.ov-block {
+    padding: 22px 0;
+    border-bottom: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+}
+
+.ov-block:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+}
+
+.ov-heading {
+    margin: 0 0 12px;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted, #9ca3af);
+}
+
+.ov-bio {
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.6;
+    font-style: italic;
+    color: var(--text, #fff);
+    white-space: pre-wrap;
+}
+
+.ov-bio.is-empty {
+    color: var(--muted, #9ca3af);
+}
+
+.ov-fav-row {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.ov-cover {
+    position: relative;
+    aspect-ratio: 2 / 3;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: color-mix(in srgb, var(--alysum-ui-raised, #2a2a2a) 70%, black);
+    box-shadow: inset 4px 0 0 var(--accent, #6d28d9);
+    color: var(--muted, #9ca3af);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 8px;
+}
+
+.ov-book-title {
+    margin: 10px 0 2px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--alysum-display-mid, var(--gold, #f5d489));
+}
+
+.ov-book-author,
+.ov-review-meta {
+    margin: 0;
+    font-size: 12px;
+    color: var(--muted, #9ca3af);
+}
+
+.ov-review-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.ov-stars {
+    color: var(--alysum-display-mid, var(--gold, #f5d489));
+    letter-spacing: 0.08em;
+}
+
+.ov-quote {
+    margin: 6px 0 4px;
+    font-style: italic;
+    line-height: 1.5;
+}
+
+@media (max-width: 640px) {
+    .ov-hero {
+        grid-template-columns: 1fr;
+        justify-items: center;
+        text-align: center;
+    }
+
+    .ov-tabs {
+        justify-content: center;
+    }
+
+    .ov-fav-row {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}

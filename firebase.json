@@ -49,6 +49,7 @@
       { "source": "/login.html", "destination": "/applications/main-site/pages/login.html" },
       { "source": "/signup.html", "destination": "/applications/main-site/pages/signup.html" },
       { "source": "/settings.html", "destination": "/applications/main-site/pages/settings.html" },
+      { "source": "/overview.html", "destination": "/applications/main-site/pages/overview.html" },
       { "source": "/reset-password.html", "destination": "/applications/main-site/pages/reset-password.html" },
       { "source": "/privacy-policy.html", "destination": "/applications/main-site/pages/privacy-policy.html" },
       { "source": "/terms-of-service.html", "destination": "/applications/main-site/pages/terms-of-service.html" },
@@ -74,6 +75,7 @@
       { "source": "/js/login-ui.js", "destination": "/applications/main-site/login/login-ui.js" },
       { "source": "/js/login-reset.js", "destination": "/applications/main-site/login/login-reset.js" },
       { "source": "/js/feature-highlights.js", "destination": "/applications/main-site/page-ui/feature-highlights.js" },
+      { "source": "/js/overview.js", "destination": "/applications/main-site/page-ui/overview.js" },
       { "source": "/js/signup/signup.js", "destination": "/applications/main-site/signup/signup.js" },
       { "source": "/js/signup/elements.js", "destination": "/applications/main-site/signup/elements.js" },
       { "source": "/js/signup/state.js", "destination": "/applications/main-site/signup/state.js" },
@@ -108,7 +110,8 @@
       { "source": "/css/settings/appearance.css", "destination": "/applications/main-site/settings/settings-css/appearance.css" },
       { "source": "/css/settings/account.css", "destination": "/applications/main-site/settings/settings-css/account.css" },
       { "source": "/css/settings/profile.css", "destination": "/applications/main-site/settings/settings-css/profile.css" },
-      { "source": "/css/settings/backup.css", "destination": "/applications/main-site/settings/settings-css/backup.css" }
+      { "source": "/css/settings/backup.css", "destination": "/applications/main-site/settings/settings-css/backup.css" },
+      { "source": "/css/settings/overview.css", "destination": "/applications/main-site/settings/settings-css/overview.css" }
     ]
   }
 }

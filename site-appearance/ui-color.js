@@ -19,7 +19,7 @@ const DEFAULT_PANEL = "#111827";
 const DEFAULT_CHROME = "#141414";
 const DEFAULT_RAISED = "#2a2a2a";
 
-export const UI_COLORS = BODY_BG_PRESETS.map((p) => ({
+export const UI_COLORS = BODY_BG_PRESETS.filter((p) => p.tone !== "light").map((p) => ({
     id: p.id,
     label: p.id === "theme" ? "Match page" : p.label,
     hint:
@@ -112,6 +112,12 @@ export function resolveUiColorHex(colorId) {
     return parseHex(row?.color) || DEFAULT_PANEL;
 }
 
+function isLightHex(hex) {
+    const c = hexToRgb(hex);
+    if (!c) return false;
+    return (0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b) / 255 > 0.58;
+}
+
 export function applyUiColorVars(hex) {
     if (typeof document === "undefined") return;
     const root = document.documentElement;
@@ -123,6 +129,8 @@ export function applyUiColorVars(hex) {
     root.style.setProperty("--alysum-ui-panel", clean);
     root.style.setProperty("--alysum-ui-chrome", darken(clean, 0.22));
     root.style.setProperty("--alysum-ui-raised", lighten(clean, 0.14));
+    if (isLightHex(clean)) root.setAttribute("data-ui-tone", "light");
+    else root.removeAttribute("data-ui-tone");
 }
 
 export function clearUiColorVars() {
@@ -132,6 +140,7 @@ export function clearUiColorVars() {
     root.style.removeProperty("--alysum-ui-chrome");
     root.style.removeProperty("--alysum-ui-raised");
     root.style.removeProperty("--alysum-ui-color");
+    root.removeAttribute("data-ui-tone");
 }
 
 export function applyUiColor(colorId, customHex) {

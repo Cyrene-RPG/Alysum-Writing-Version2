@@ -23,7 +23,7 @@ body {
     min-height: 100vh;
     background:
         radial-gradient(ellipse 80% 50% at 50% -10%, color-mix(in srgb, var(--purple, #8b5cf6) 22%, transparent), transparent 55%),
-        var(--bg, var(--bg-page));
+        linear-gradient(180deg, var(--bg-gradient-top, var(--bg, var(--bg-page))) 0%, var(--bg, var(--bg-page)) 100%);
     color: var(--text-primary);
     font-family: var(--font-body);
 }
