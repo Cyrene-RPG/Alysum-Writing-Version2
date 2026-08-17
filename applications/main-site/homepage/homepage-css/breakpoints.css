@@ -1,43 +1,40 @@
-@media (min-width: 768px) {
-  .nav-links { display: flex; }
+@media (max-width: 900px) {
+    .site-header {
+        padding: 16px 20px;
+    }
 
-  .hero-panel {
-    padding: 0 20px 40px;
-  }
+    .btn-discord {
+        right: 16px;
+    }
 
-  .hero-panel-inner {
-    gap: 26px;
-  }
+    .hero-frame {
+        padding: 48px 20px 64px;
+    }
 
-  .about-grid {
-    grid-template-columns: 1.1fr 1fr;
-    gap: 48px;
-  }
+    .feature-grid {
+        grid-template-columns: 1fr;
+        padding: 0 16px;
+    }
 
-  .features-grid {
-    grid-template-columns: 1fr 1fr;
-    gap: 40px;
-  }
-
-  .arrivals-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-
-  .footer-grid {
-    grid-template-columns: 1.2fr 2fr;
-    align-items: start;
-  }
-
-  .footer-cols {
-    grid-template-columns: repeat(3, 1fr);
-  }
+    .book-bar-track .book {
+        width: clamp(100px, 26vw, 180px);
+    }
 }
 
-@media (max-width: 767px) {
-  .hero-panel { padding: 0 16px 28px; }
-  .hero-panel-inner { gap: 18px; }
-  .nav-login { display: none; }
-  .nav-brand-mark { width: 56px; height: 56px; border-radius: 14px; }
-  .nav-brand { font-size: 21px; }
-  .hero-eyebrow { margin-bottom: 8px; }
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+
+    .book-bar-track {
+        animation: none;
+    }
+
+    .btn-discord:hover {
+        transform: translateY(-50%);
+    }
+
+    .glass-button:hover {
+        transform: none;
+    }
 }

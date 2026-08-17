@@ -9,6 +9,9 @@
     var TEXT_COLOR_KEY = "alysum-display-text-color";
     var TEXT_COLOR_MAIN_KEY = "alysum-display-text-color-main";
     var TEXT_COLOR_ACCENT_KEY = "alysum-display-text-color-accent";
+    var SURFACE_STYLE_KEY = "alysum-surface-style";
+    var UI_COLOR_KEY = "alysum-ui-color";
+    var UI_COLOR_HEX_KEY = "alysum-ui-color-hex";
     var CLASSIC_PREVIEW = "linear-gradient(135deg, #4c1d95 0%, #7c3aed 50%, #ec4899 100%)";
     var LEGACY_FONT = {
         chrome: "rajdhani",
@@ -223,6 +226,61 @@
         }
     }
 
+    function applyUiColorFromStorage() {
+        var root = document.documentElement;
+        var id = "default";
+        var hex = null;
+        try {
+            id = localStorage.getItem(UI_COLOR_KEY) || "default";
+            hex = localStorage.getItem(UI_COLOR_HEX_KEY);
+        } catch (e) {
+            id = "default";
+        }
+        if (!id || id === "default") {
+            root.style.removeProperty("--alysum-ui-panel");
+            root.style.removeProperty("--alysum-ui-chrome");
+            root.style.removeProperty("--alysum-ui-raised");
+            root.style.removeProperty("--alysum-ui-color");
+            root.removeAttribute("data-ui-color");
+            return;
+        }
+        if (id === "theme") {
+            hex = root.style.getPropertyValue("--bg") || getComputedStyle(root).getPropertyValue("--bg").trim() || hex;
+        }
+        if (id === "custom") {
+            try {
+                hex = localStorage.getItem("alysum-ui-color-custom") || hex;
+            } catch (e) {
+                /* ignore */
+            }
+        }
+        if (parseHex(hex)) {
+            var clean = String(hex).charAt(0) === "#" ? hex : "#" + hex;
+            root.style.setProperty("--alysum-ui-panel", clean);
+            root.style.setProperty("--alysum-ui-chrome", darken(clean, 0.22));
+            root.style.setProperty("--alysum-ui-raised", lighten(clean, 0.14));
+            root.style.removeProperty("--alysum-ui-color");
+            root.setAttribute("data-ui-color", id);
+        } else {
+            root.style.removeProperty("--alysum-ui-panel");
+            root.style.removeProperty("--alysum-ui-chrome");
+            root.style.removeProperty("--alysum-ui-raised");
+            root.style.removeProperty("--alysum-ui-color");
+            root.removeAttribute("data-ui-color");
+        }
+    }
+
+    function applySurfaceStyle(id) {
+        var root = document.documentElement;
+        if (id === "glass") {
+            root.setAttribute("data-surface-style", "glass");
+            root.classList.add("surface-glass");
+        } else {
+            root.removeAttribute("data-surface-style");
+            root.classList.remove("surface-glass");
+        }
+    }
+
     try {
         applyTheme(localStorage.getItem(KEY) || "classic");
     } catch (e) {
@@ -253,11 +311,24 @@
         /* module may load later */
     }
 
+    try {
+        applySurfaceStyle(localStorage.getItem(SURFACE_STYLE_KEY) || "solid");
+    } catch (e) {
+        applySurfaceStyle("solid");
+    }
+
+    try {
+        applyUiColorFromStorage();
+    } catch (e) {
+        /* module may load later */
+    }
+
     window.addEventListener("storage", function (e) {
         if (e.key === KEY) {
             applyTheme(e.newValue || "classic");
             applyTextColorFromStorage();
             applyBodyBgFromStorage();
+            applyUiColorFromStorage();
             try {
                 applyChrome(localStorage.getItem(PREVIEW_KEY));
             } catch (err) {
@@ -279,6 +350,12 @@
                 applyChrome(null);
             }
         }
+        if (e.key === SURFACE_STYLE_KEY) applySurfaceStyle(e.newValue || "solid");
+        if (e.key === UI_COLOR_KEY || e.key === UI_COLOR_HEX_KEY) applyUiColorFromStorage();
+    });
+
+    window.addEventListener("alysum-surface-style", function (e) {
+        if (e.detail && e.detail.id) applySurfaceStyle(e.detail.id);
     });
 
     window.addEventListener("alysum-gradient-theme", function (e) {
@@ -298,5 +375,10 @@
     window.addEventListener("alysum-gradient-theme", function () {
         applyTextColorFromStorage();
         applyBodyBgFromStorage();
+        applyUiColorFromStorage();
+    });
+
+    window.addEventListener("alysum-body-bg", function () {
+        applyUiColorFromStorage();
     });
 })();

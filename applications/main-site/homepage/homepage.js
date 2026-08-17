@@ -41,4 +41,6 @@ backendAlertClose?.addEventListener("click", () => {
     localStorage.setItem("alysumBackendAlertDismissed", "true");
 });
 
-startHomepageLibrary(supabase);
+if (document.getElementById("books")) {
+    startHomepageLibrary(supabase);
+}

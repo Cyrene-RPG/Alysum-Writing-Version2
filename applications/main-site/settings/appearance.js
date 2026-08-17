@@ -36,6 +36,23 @@ import {
     isAppearanceLinked,
     getMixableBodyBgPresets
 } from "@alysum/site-appearance/body-background.js";
+import {
+    SURFACE_STYLES,
+    applySurfaceStyle,
+    getStoredSurfaceStyleId,
+    initSurfaceStyleOnPage
+} from "@alysum/site-appearance/surface-style.js";
+import {
+    applyUiColor,
+    getStoredUiColorId,
+    initUiColorOnPage
+} from "@alysum/site-appearance/ui-color.js";
+import {
+    initUiColorPicker,
+    setUiColorChipActive,
+    refreshUiColorThemeChip,
+    syncUiColorCustomPanelVisibility
+} from "/js/settings/ui-colors.js";
 
 export function setAvatarPreview(imageUrl, label) {
     if (!els.profileAvatarPreview || !els.profileAvatarPreviewWrap) return;
@@ -50,6 +67,35 @@ export function setAvatarPreview(imageUrl, label) {
         els.profileAvatarPreview.removeAttribute("src");
         els.profileAvatarPreviewWrap.classList.add("has-initial");
     }
+}
+
+export function initSurfaceStylePicker() {
+    if (!els.glassChipRow || els.glassChipRow.dataset.ready === "1") return;
+    els.glassChipRow.dataset.ready = "1";
+    els.glassChipRow.innerHTML = "";
+    const cur = getStoredSurfaceStyleId();
+    SURFACE_STYLES.forEach((style) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        let cls = "theme-chip" + (style.id === cur ? " active" : "");
+        if (style.preview) {
+            cls += " has-preview";
+            b.style.background = style.preview;
+        }
+        if (style.id === "glass") cls += " surface-chip--glass";
+        b.className = cls;
+        b.dataset.surface = style.id;
+        b.textContent = style.label;
+        b.title = style.hint || "";
+        b.addEventListener("click", () => {
+            applySurfaceStyle(style.id);
+            els.glassChipRow.querySelectorAll(".theme-chip").forEach((x) => {
+                x.classList.remove("active");
+            });
+            b.classList.add("active");
+        });
+        els.glassChipRow.appendChild(b);
+    });
 }
 
 export function initThemePicker() {
@@ -78,6 +124,9 @@ export function initThemePicker() {
                 setBodyBgChipActive("theme");
                 applyDisplayTextColor("theme");
                 setTextColorChipActive("theme");
+                applyUiColor("theme");
+                setUiColorChipActive("theme");
+                refreshUiColorThemeChip();
             } else {
                 if (getStoredDisplayTextColorId() === "theme") {
                     applyDisplayTextColor("theme");
@@ -85,6 +134,10 @@ export function initThemePicker() {
                 if (getStoredBodyBgId() === "theme") {
                     applyBodyBackground("theme");
                     refreshBodyBgThemeChip();
+                }
+                if (getStoredUiColorId() === "theme") {
+                    applyUiColor("theme");
+                    refreshUiColorThemeChip();
                 }
             }
             els.themeChipRow.querySelectorAll(".theme-chip").forEach((x) => {
@@ -163,8 +216,10 @@ export function initTextStylePicker() {
 export function initAppearancePickers() {
     try {
         bindAppearanceMixControls();
+        initSurfaceStylePicker();
         initThemePicker();
         initBodyBgPicker();
+        initUiColorPicker();
         initTextStylePicker();
         initTextColorPicker();
         syncAppearanceMixModeUi();
@@ -300,9 +355,13 @@ export function bindAppearanceMixControls() {
         applyDisplayTextColor("theme");
         setBodyBgChipActive("theme");
         setTextColorChipActive("theme");
+        applyUiColor("theme");
+        setUiColorChipActive("theme");
         syncBodyBgCustomPanelVisibility("theme");
         syncCustomColorPanelVisibility("theme");
+        syncUiColorCustomPanelVisibility("theme");
         refreshBodyBgThemeChip();
+        refreshUiColorThemeChip();
     });
 
     els.appearanceMixFree?.addEventListener("change", () => {
@@ -329,8 +388,12 @@ export function bindAppearanceMixControls() {
         });
         setBodyBgChipActive(bg.id);
         setTextColorChipActive("theme");
+        setUiColorChipActive("theme");
+        applyUiColor("theme");
         syncBodyBgCustomPanelVisibility(bg.id);
         syncCustomColorPanelVisibility("theme");
+        syncUiColorCustomPanelVisibility("theme");
+        refreshUiColorThemeChip();
     });
 }
 
@@ -405,4 +468,6 @@ export function initBodyBgPicker() {
 initDisplayTextStyleOnPage();
 initDisplayTextColorOnPage();
 initBodyBackgroundOnPage();
+initSurfaceStyleOnPage();
+initUiColorOnPage();
 initAppearancePickers();

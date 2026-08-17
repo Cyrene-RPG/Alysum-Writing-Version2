@@ -19,6 +19,7 @@
     <link rel="stylesheet" href="/site-appearance/css-styles/theme.css" />
     <link rel="stylesheet" href="/site-appearance/css-styles/gradient-themes/index.css" />
     <link rel="stylesheet" href="/site-appearance/css-styles/typography.css" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/surface-styles/index.css" />
     <script src="/site-appearance/body-background-presets-data.js"></script>
     <script src="/site-appearance/boot.js"></script>
     <script src="/site-appearance/body-background-sync.js"></script>
@@ -64,32 +65,40 @@
 <link rel="stylesheet" href="/css/settings/account.css" />
 <link rel="stylesheet" href="/css/settings/profile.css" />
 <link rel="stylesheet" href="/css/settings/backup.css" />
-    <link rel="stylesheet" href="/css/workspace-nav.css?v=11" />
+    <link rel="stylesheet" href="/css/workspace-nav.css?v=13" />
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <script src="/site-appearance/gradient-theme-sync.js" defer></script>
 
 </head>
 <body>
-    <header class="wd-welcome-bar" aria-label="Welcome">
+    <header class="wd-welcome-bar ui-bar" aria-label="Welcome">
             <div class="wd-welcome-inner">
-                <div class="wd-pfp" id="welcomePfp">
-                    <img id="welcomePfpImg" alt="" hidden />
-                    <span class="wd-pfp-initial" id="welcomePfpInitial" aria-hidden="true"></span>
+                <div class="wd-pfp-menu" id="welcomePfpMenu">
+                    <button type="button" class="wd-pfp-btn" id="welcomePfpBtn" aria-haspopup="menu" aria-expanded="false" aria-controls="welcomePfpDropdown" aria-label="Account menu">
+                        <span class="wd-pfp" id="welcomePfp">
+                            <img id="welcomePfpImg" alt="" hidden />
+                            <span class="wd-pfp-initial" id="welcomePfpInitial" aria-hidden="true"></span>
+                        </span>
+                    </button>
+                    <div class="wd-pfp-dropdown" id="welcomePfpDropdown" role="menu" hidden>
+                        <a role="menuitem" href="settings.html#profilePanel" data-close-pfp-menu>Profile</a>
+                        <a role="menuitem" href="settings.html" data-close-pfp-menu>Settings</a>
+                        <button type="button" role="menuitem" class="settings-nav-logout" data-logout-btn data-close-pfp-menu>Log out</button>
+                    </div>
                 </div>
                 <div class="wd-welcome-copy">
                     <h1 class="wd-welcome-title" id="welcomeTitle">Welcome back.</h1>
-                    <p class="wd-welcome-sub is-hidden" id="welcomeSubtitle"></p>
+                    <p class="wd-welcome-sub" id="welcomeSubtitle"></p>
                 </div>
             </div>
         </header>
-        <nav class="wd-nav-wrap" aria-label="Workspace" data-active="settings">
+        <nav class="wd-nav-wrap ui-bar" aria-label="Workspace" data-active="settings">
             <div class="wd-nav">
                 <a href="settings.html" class="is-active">Settings</a>
-                <a href="index.html">Main site</a>
                 <button type="button" class="settings-nav-logout" data-logout-btn>Logout</button>
             </div>
         </nav>
-        <script type="module" src="/js/workspace-nav.js?v=14"></script>
+        <script type="module" src="/js/workspace-nav.js?v=15"></script>
 
     <div class="wrap">
     <div class="panel" id="loadingPanel">
@@ -97,20 +106,18 @@
     </div>
 
     <div class="settings-shell hidden" id="settingsShell">
-        <nav class="settings-nav" id="settingsNav" role="tablist" aria-label="Settings sections">
-            <button type="button" role="tab" id="tab-appearance" data-section="appearancePanel" aria-controls="appearancePanel" aria-selected="true">Appearance</button>
-            <button type="button" role="tab" id="tab-account" data-section="accountModePanel" aria-controls="accountModePanel" aria-selected="false">Account focus</button>
-            <button type="button" role="tab" id="tab-author-page" data-section="authorPagePanel" aria-controls="authorPagePanel" aria-selected="false">Author page</button>
-            <button type="button" role="tab" id="tab-profile" data-section="profilePanel" aria-controls="profilePanel" aria-selected="false">Profile</button>
-            <button type="button" role="tab" id="tab-library" data-section="libraryPanel" aria-controls="libraryPanel" aria-selected="false">Policy &amp; appeals</button>
-            <button type="button" role="tab" id="tab-password" data-section="securityPanel" aria-controls="securityPanel" aria-selected="false">Password</button>
-            <button type="button" role="tab" id="tab-backup" data-section="backupPanel" aria-controls="backupPanel" aria-selected="false">Backup</button>
-            <button type="button" class="settings-nav-delete hidden" id="deleteAccountNavBtn">Delete account</button>
-            <button type="button" class="settings-nav-logout" id="logoutBtn">Log out</button>
+        <nav class="settings-nav" id="settingsNav" aria-label="Settings sections">
+            <p class="settings-nav-heading">Settings</p>
+            <div class="settings-nav-list" role="tablist">
+                <button type="button" role="tab" id="tab-profile" data-section="profilePanel" aria-controls="profilePanel" aria-selected="true">Profile</button>
+                <button type="button" role="tab" id="tab-appearance" data-section="appearancePanel" aria-controls="appearancePanel" aria-selected="false">Appearance</button>
+                <button type="button" role="tab" id="tab-backup" data-section="backupPanel" aria-controls="backupPanel" aria-selected="false">Backup</button>
+                <button type="button" role="tab" id="tab-security" data-section="securityPanel" aria-controls="securityPanel" aria-selected="false">Security</button>
+            </div>
         </nav>
 
         <div class="settings-content">
-    <div class="panel hidden settings-tab-panel" id="appearancePanel" role="tabpanel" aria-labelledby="tab-appearance">
+    <div class="panel hidden settings-tab-panel" id="appearancePanel" role="tabpanel" aria-labelledby="tab-appearance" hidden>
         <h2>Appearance</h2>
         <p class="hint">Accent colors for the UI, plus a title font and color for headings.</p>
         <div class="appearance-mix-controls" aria-labelledby="appearance-mix-heading">
@@ -128,139 +135,72 @@
             <button type="button" class="appearance-mix-shuffle" id="appearanceMixShuffle" title="Random accent and background combo">Mix it up ↻</button>
         </div>
         <div class="appearance-layout">
-            <section class="appearance-block appearance-block--bg" aria-labelledby="appearance-bg-heading">
-                <h3 class="appearance-subhead" id="appearance-bg-heading">Page background</h3>
-                <p class="hint">The dark space behind panels and content. Muted tints pair with accents; <strong>glow</strong> options add a slightly richer color.</p>
-                <div class="theme-grid appearance-grid appearance-grid--bg" id="bodyBgChipRow" aria-label="Page background colors"></div>
-                <div class="display-color-custom" id="bodyBgCustom" hidden>
-                    <div class="display-color-field">
-                        <label for="bodyBgColor">Background color</label>
-                        <input type="color" id="bodyBgColor" value="#0b1220" />
+            <section class="appearance-block appearance-block--glass" aria-labelledby="appearance-glass-heading">
+                <h3 class="appearance-subhead" id="appearance-glass-heading">Glass</h3>
+                <p class="hint">Frost finish on your current accent. Page background, site accent, and titles stay the same.</p>
+                <div class="theme-grid appearance-grid appearance-grid--glass" id="glassChipRow" aria-label="Glass surface style"></div>
+            </section>
+            <details class="appearance-fold">
+                <summary>Page background</summary>
+                <div class="appearance-fold-body">
+                    <p class="hint">The dark space behind panels and content. Muted tints pair with accents; <strong>glow</strong> options add a slightly richer color.</p>
+                    <div class="theme-grid appearance-grid appearance-grid--bg" id="bodyBgChipRow" aria-label="Page background colors"></div>
+                    <div class="display-color-custom" id="bodyBgCustom" hidden>
+                        <div class="display-color-field">
+                            <label for="bodyBgColor">Background color</label>
+                            <input type="color" id="bodyBgColor" value="#0b1220" />
+                        </div>
                     </div>
                 </div>
-            </section>
-            <section class="appearance-block appearance-block--accent" aria-labelledby="appearance-colors-heading">
-                <h3 class="appearance-subhead" id="appearance-colors-heading">Site accent</h3>
-                <p class="hint">Buttons, chrome, and highlights.</p>
-                <div class="theme-grid appearance-grid appearance-grid--accent" id="themeChipRow" aria-label="Accent themes"></div>
-            </section>
-            <div class="appearance-text-pair">
-            <section class="appearance-block appearance-block--fonts appearance-block--style" aria-labelledby="appearance-text-heading">
-                <h3 class="appearance-subhead" id="appearance-text-heading">Title font</h3>
-                <p class="hint">Real typefaces — fantasy, serif, sans, and display.</p>
-                <div class="theme-grid appearance-grid appearance-grid--fonts" id="textStyleChipRow" aria-label="Title fonts"></div>
-            </section>
-            <section class="appearance-block appearance-block--colors" aria-labelledby="appearance-colors-text-heading">
-                <h3 class="appearance-subhead" id="appearance-colors-text-heading">Title color</h3>
-                <p class="hint">Heading color — separate from font.</p>
-                <div class="theme-grid appearance-grid appearance-grid--colors" id="textColorChipRow" aria-label="Title colors"></div>
-                <div class="display-color-custom" id="displayColorCustom" hidden>
-                    <div class="display-color-field">
-                        <label for="displayColorMain">Main color</label>
-                        <input type="color" id="displayColorMain" value="#f59e0b" />
-                    </div>
-                    <div class="display-color-field">
-                        <label for="displayColorAccent">Accent / edge</label>
-                        <input type="color" id="displayColorAccent" value="#fde68a" />
+            </details>
+            <details class="appearance-fold">
+                <summary>Site accent</summary>
+                <div class="appearance-fold-body">
+                    <p class="hint">Welcome bar, primary buttons, and chrome gradients.</p>
+                    <div class="theme-grid appearance-grid appearance-grid--accent" id="themeChipRow" aria-label="Accent themes"></div>
+                </div>
+            </details>
+            <details class="appearance-fold">
+                <summary>UI colors</summary>
+                <div class="appearance-fold-body">
+                    <p class="hint">Sidebar and panels — the black and navy surfaces. Same palette as Page background.</p>
+                    <div class="theme-grid appearance-grid appearance-grid--bg" id="uiColorChipRow" aria-label="UI colors"></div>
+                    <div class="display-color-custom" id="uiColorCustom" hidden>
+                        <div class="display-color-field">
+                            <label for="uiColorPicker">Panel color</label>
+                            <input type="color" id="uiColorPicker" value="#111827" />
+                        </div>
                     </div>
                 </div>
-            </section>
-            </div>
+            </details>
+            <details class="appearance-fold">
+                <summary>Title fonts</summary>
+                <div class="appearance-fold-body">
+                    <p class="hint">Real typefaces — fantasy, serif, sans, and display.</p>
+                    <div class="theme-grid appearance-grid appearance-grid--fonts" id="textStyleChipRow" aria-label="Title fonts"></div>
+                </div>
+            </details>
+            <details class="appearance-fold">
+                <summary>Title colors</summary>
+                <div class="appearance-fold-body">
+                    <p class="hint">Heading color — separate from font.</p>
+                    <div class="theme-grid appearance-grid appearance-grid--colors" id="textColorChipRow" aria-label="Title colors"></div>
+                    <div class="display-color-custom" id="displayColorCustom" hidden>
+                        <div class="display-color-field">
+                            <label for="displayColorMain">Main color</label>
+                            <input type="color" id="displayColorMain" value="#f59e0b" />
+                        </div>
+                        <div class="display-color-field">
+                            <label for="displayColorAccent">Accent / edge</label>
+                            <input type="color" id="displayColorAccent" value="#fde68a" />
+                        </div>
+                    </div>
+                </div>
+            </details>
         </div>
     </div>
 
-    <div class="panel hidden settings-tab-panel" id="accountModePanel" role="tabpanel" aria-labelledby="tab-account" hidden>
-        <h2>How you use Alysum</h2>
-        <p class="hint">
-            Controls your default home after login and the Studio / Reading switch in the header. Existing accounts without a choice here behave like “Both”.
-        </p>
-        <div class="account-focus-body">
-        <div id="accountTypeGroup" role="radiogroup" aria-label="Account focus">
-            <label class="account-type-row">
-                <input type="radio" name="settingsAccountType" value="author" />
-                <span class="account-type-card">
-                    <span class="account-type-icon" aria-hidden="true">✍️</span>
-                    <span class="account-type-copy">
-                        <strong>Author</strong>
-                        <span class="account-type-tagline">Write, publish, and manage your books.</span>
-                        <p class="account-type-detail">
-                            You land in Studio after sign-in. The editor, worldbuilding, and publish tools stay front and center. Open the Library from the menu when you want to read or leave feedback on someone else’s work.
-                        </p>
-                    </span>
-                </span>
-            </label>
-            <label class="account-type-row">
-                <input type="radio" name="settingsAccountType" value="reader" />
-                <span class="account-type-card">
-                    <span class="account-type-icon" aria-hidden="true">📖</span>
-                    <span class="account-type-copy">
-                        <strong>Reader</strong>
-                        <span class="account-type-tagline">Discover stories and follow what you love.</span>
-                        <p class="account-type-detail">
-                            You land on your Reading home after sign-in. Browse the Library, track beta reads, and comment on chapters. Studio is still one tap away from the menu if you decide to write later.
-                        </p>
-                    </span>
-                </span>
-            </label>
-            <label class="account-type-row">
-                <input type="radio" name="settingsAccountType" value="both" />
-                <span class="account-type-card">
-                    <span class="account-type-icon" aria-hidden="true">↔️</span>
-                    <span class="account-type-copy">
-                        <strong>Both</strong>
-                        <span class="account-type-tagline">Write and read without picking a side.</span>
-                        <p class="account-type-detail">
-                            Switch between Studio and Reading from the top bar on Studio and Library. Sign-in uses this balanced mode by default if you have not chosen before. Best when you regularly draft chapters and browse other authors.
-                        </p>
-                    </span>
-                </span>
-            </label>
-        </div>
-        <div class="account-focus-actions">
-            <button type="button" class="btn btn-primary" id="saveAccountTypeBtn">Save account focus</button>
-            <div class="msg" id="accountTypeMsg" role="status"></div>
-        </div>
-        </div>
-    </div>
-
-    <div class="panel hidden settings-tab-panel" id="authorPagePanel" role="tabpanel" aria-labelledby="tab-author-page" hidden>
-        <h2>Author page</h2>
-        <p class="hint author-page-intro-hint">
-            Your public biography and tip links — shown on your author page and with published books in the Library.
-        </p>
-
-        <div class="author-page-panel-body">
-            <section class="profile-box profile-bio-box" id="author-bio" aria-labelledby="profileBioTitle">
-                <h3 class="profile-box-title" id="profileBioTitle">Biography</h3>
-                <p class="hint">Tell readers a little about yourself. This appears on your public author page and at the end of your published books.</p>
-                <div class="field">
-                    <label for="authorBioInput">About me</label>
-                    <textarea id="authorBioInput" maxlength="2000" rows="8" placeholder="Share your writing background, interests, or what readers can expect from your work…"></textarea>
-                    <p class="hint" style="margin-top:8px;margin-bottom:0"><span id="authorBioCount">0</span> / 2000 characters</p>
-                </div>
-                <div class="profile-box-actions">
-                    <button type="button" class="btn btn-primary" id="saveBioBtn">Save biography</button>
-                    <a class="btn" id="authorBioPreviewLink" href="author.html" target="_blank" rel="noopener">Preview author page</a>
-                    <div class="msg" id="bioMsg" role="status"></div>
-                </div>
-            </section>
-
-            <section class="profile-box profile-support-box" id="author-support" aria-labelledby="profileSupportTitle">
-                <h3 class="profile-box-title" id="profileSupportTitle">Support &amp; tip links</h3>
-                <p class="hint">
-                    Optional links so readers can tip you or buy your work. Empty fields stay hidden on your public page.
-                    Use full https:// URLs (PayPal, Ko-fi, Cash App, Patreon, social, store, etc.).
-                </p>
-                <div class="support-links-grid" id="supportLinksGrid"></div>
-                <div class="profile-box-actions">
-                    <button type="button" class="btn btn-primary" id="saveSupportLinksBtn">Save support links</button>
-                    <div class="msg" id="supportLinksMsg" role="status"></div>
-                </div>
-            </section>
-        </div>
-    </div>
-
-    <div class="panel hidden settings-tab-panel" id="profilePanel" role="tabpanel" aria-labelledby="tab-profile" hidden>
+    <div class="panel hidden settings-tab-panel" id="profilePanel" role="tabpanel" aria-labelledby="tab-profile">
         <h2>Profile</h2>
         <p class="hint profile-intro-hint">Your permanent handle is like a Discord tag: it never changes and identifies you. Your display name is what others see next to comments and on your studio home.</p>
 
@@ -312,45 +252,61 @@
             <div class="msg" id="avatarMsg" role="status"></div>
         </section>
 
-        <section class="profile-box profile-danger-box hidden" id="deleteAccountSection" aria-labelledby="deleteAccountTitle">
-            <h3 class="profile-box-title" id="deleteAccountTitle">Delete account</h3>
-            <p class="hint" style="margin: 0 0 10px">
-                Permanently removes your Alysum account, books, comments, and profile. Published library entries may remain listed without an author link.
-            </p>
-            <p class="hint" style="margin: 0 0 14px">
-                Download a backup from the Backup tab first if you want to keep your work. This cannot be undone.
-            </p>
-            <div class="field hidden" id="deleteAccountPasswordField">
-                <label for="deleteAccountPassword">Current password</label>
-                <input type="password" id="deleteAccountPassword" autocomplete="current-password" />
-                <p class="hint" style="margin-top:8px;margin-bottom:0">Required to confirm deletion for email sign-in.</p>
+        <div class="author-page-panel-body">
+            <section class="profile-box profile-bio-box" id="author-bio" aria-labelledby="profileBioTitle">
+                <h3 class="profile-box-title" id="profileBioTitle">Biography</h3>
+                <p class="hint">Tell readers a little about yourself. This appears on your public author page and at the end of your published books.</p>
+                <div class="field">
+                    <label for="authorBioInput">About me</label>
+                    <textarea id="authorBioInput" maxlength="2000" rows="8" placeholder="Share your writing background, interests, or what readers can expect from your work…"></textarea>
+                    <p class="hint" style="margin-top:8px;margin-bottom:0"><span id="authorBioCount">0</span> / 2000 characters</p>
+                </div>
+                <div class="profile-box-actions">
+                    <button type="button" class="btn btn-primary" id="saveBioBtn">Save biography</button>
+                    <a class="btn" id="authorBioPreviewLink" href="author.html" target="_blank" rel="noopener">Preview author page</a>
+                    <div class="msg" id="bioMsg" role="status"></div>
+                </div>
+            </section>
+        </div>
+
+        <section class="profile-box profile-account-focus-box" id="account-focus" aria-labelledby="accountFocusTitle">
+            <h3 class="profile-box-title" id="accountFocusTitle">Account focus</h3>
+            <div class="account-focus-body">
+            <div id="accountTypeGroup" role="radiogroup" aria-label="Account focus">
+                <label class="account-type-row">
+                    <input type="radio" name="settingsAccountType" value="author" />
+                    <span class="account-type-card">Author</span>
+                </label>
+                <label class="account-type-row">
+                    <input type="radio" name="settingsAccountType" value="reader" />
+                    <span class="account-type-card">Reader</span>
+                </label>
+                <label class="account-type-row">
+                    <input type="radio" name="settingsAccountType" value="both" />
+                    <span class="account-type-card">Both</span>
+                </label>
             </div>
-            <div class="profile-box-actions">
-                <button type="button" class="btn btn-danger" id="deleteAccountBtn">Delete my account</button>
-                <div class="msg" id="deleteAccountMsg" role="status"></div>
+            <div class="account-focus-actions">
+                <button type="button" class="btn btn-primary" id="saveAccountTypeBtn">Save account focus</button>
+                <div class="msg" id="accountTypeMsg" role="status"></div>
+            </div>
+            <div class="account-focus-support" id="author-support">
+                <h3 class="profile-box-title" id="profileSupportTitle">Support &amp; tip links</h3>
+                <div class="support-links-grid" id="supportLinksGrid"></div>
+                <div class="profile-box-actions">
+                    <button type="button" class="btn btn-primary" id="saveSupportLinksBtn">Save support links</button>
+                    <div class="msg" id="supportLinksMsg" role="status"></div>
+                </div>
+            </div>
             </div>
         </section>
         </div>
     </div>
 
-    <div class="panel hidden settings-tab-panel" id="libraryPanel" role="tabpanel" aria-labelledby="tab-library" hidden>
-        <h2>Policy &amp; appeals</h2>
-        <p class="hint">Policy notices on your published work and how to appeal a decision.</p>
-
-        <div class="library-panel-body">
-            <section class="profile-box" aria-labelledby="libraryAuthorTitle">
-                <h3 class="profile-box-title" id="libraryAuthorTitle">Your published work</h3>
-                <p class="hint" style="margin: 0 0 16px">
-                    Archived features are being kept separately while the live site is reduced to a minimal shell. The active app will restore each feature back in individually when needed.
-                </p>
-            </section>
-        </div>
-    </div>
-
-    <div class="panel hidden settings-tab-panel" id="securityPanel" role="tabpanel" aria-labelledby="tab-password" hidden>
-        <h2>Password</h2>
+    <div class="panel hidden settings-tab-panel" id="securityPanel" role="tabpanel" aria-labelledby="tab-security" hidden>
+        <h2>Security</h2>
         <p class="hint hidden password-intro-hint" id="ssoPasswordNote"></p>
-        <p class="hint password-intro-hint" id="passwordFormHint">Enter your current password, then choose a new one.</p>
+        <p class="hint password-intro-hint" id="passwordFormHint">Change your password, review policy notices, or delete your account.</p>
 
         <div class="profile-panel-body password-panel-body">
             <section class="profile-box password-current-box" aria-labelledby="passwordCurrentTitle">
@@ -379,6 +335,33 @@
                 <button type="button" class="btn btn-primary" id="savePasswordBtn">Update password</button>
                 <div class="msg" id="passwordMsg" role="status"></div>
             </div>
+
+            <section class="profile-box" id="library-policy" aria-labelledby="libraryAuthorTitle">
+                <h3 class="profile-box-title" id="libraryAuthorTitle">Policy &amp; appeals</h3>
+                <p class="hint" style="margin: 0 0 10px">Policy notices on your published work and how to appeal a decision.</p>
+                <p class="hint" style="margin: 0">
+                    Archived features are being kept separately while the live site is reduced to a minimal shell. The active app will restore each feature back in individually when needed.
+                </p>
+            </section>
+
+            <section class="profile-box profile-danger-box hidden" id="deleteAccountSection" aria-labelledby="deleteAccountTitle">
+                <h3 class="profile-box-title" id="deleteAccountTitle">Delete account</h3>
+                <p class="hint" style="margin: 0 0 10px">
+                    Permanently removes your Alysum account, books, comments, and profile. Published library entries may remain listed without an author link.
+                </p>
+                <p class="hint" style="margin: 0 0 14px">
+                    Download a backup from the Backup tab first if you want to keep your work. This cannot be undone.
+                </p>
+                <div class="field hidden" id="deleteAccountPasswordField">
+                    <label for="deleteAccountPassword">Current password</label>
+                    <input type="password" id="deleteAccountPassword" autocomplete="current-password" />
+                    <p class="hint" style="margin-top:8px;margin-bottom:0">Required to confirm deletion for email sign-in.</p>
+                </div>
+                <div class="profile-box-actions">
+                    <button type="button" class="btn btn-danger" id="deleteAccountBtn">Delete my account</button>
+                    <div class="msg" id="deleteAccountMsg" role="status"></div>
+                </div>
+            </section>
         </div>
     </div>
 

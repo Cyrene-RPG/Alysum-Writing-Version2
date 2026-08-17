@@ -7,22 +7,27 @@ body {
     justify-content: center;
     align-items: center;
     font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-    background: var(--login-page-bg);
+    color: var(--text, #f8fafc);
+    background:
+        radial-gradient(circle at top, var(--theme-body-spot-strong, transparent) 0%, transparent 42%),
+        var(--bg, var(--login-page-bg));
 }
 
 .card {
-    background: white;
+    background: var(--alysum-ui-panel, #111827);
+    color: var(--text, #fff);
     padding: 28px;
     border-radius: 20px;
     width: 90%;
     max-width: 380px;
+    border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
     box-shadow: 0 12px 30px rgba(0,0,0,0.2);
 }
 
 h2 {
     margin-top: 0;
     text-align: center;
-    color: #4c1d95;
+    color: var(--alysum-display-mid, var(--gold, #f5d489));
 }
 
 input {
@@ -30,7 +35,9 @@ input {
     padding: 14px;
     margin: 10px 0;
     border-radius: 12px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border, rgba(255, 255, 255, 0.14));
+    background: rgba(0, 0, 0, 0.25);
+    color: var(--text, #fff);
     font-size: 15px;
 }
 
@@ -39,7 +46,10 @@ button {
     padding: 16px;
     border: none;
     border-radius: 14px;
-    background: #6d28d9;
+    background: var(
+        --alysum-chrome-gradient,
+        linear-gradient(135deg, var(--purple, #6d28d9), var(--pink, #ec4899))
+    );
     color: white;
     font-weight: bold;
     font-size: 16px;
@@ -55,7 +65,7 @@ button:active { transform: scale(0.97); }
 }
 
 .signup-link a {
-    color: #6d28d9;
+    color: var(--accent-soft, var(--purple, #6d28d9));
     text-decoration: none;
     font-weight: 600;
 }

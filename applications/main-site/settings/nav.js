@@ -1,26 +1,31 @@
 import { els } from "/js/settings/elements.js";
 
 export const TAB_PANEL_IDS = [
-    "appearancePanel",
-    "accountModePanel",
-    "authorPagePanel",
     "profilePanel",
-    "libraryPanel",
-    "securityPanel",
+    "appearancePanel",
     "backupPanel",
+    "securityPanel"
 ];
+
 const SETTINGS_SECTION_ANCHORS = {
-    "author-bio": { panel: "authorPagePanel", scrollTo: "#author-bio", hash: "author-bio" },
-    "author-support": { panel: "authorPagePanel", scrollTo: "#author-support", hash: "author-support" },
+    accountModePanel: { panel: "profilePanel", scrollTo: "#account-focus", hash: "account-focus" },
+    "account-focus": { panel: "profilePanel", scrollTo: "#account-focus", hash: "account-focus" },
+    authorPagePanel: { panel: "profilePanel", scrollTo: "#author-bio", hash: "author-bio" },
+    "author-bio": { panel: "profilePanel", scrollTo: "#author-bio", hash: "author-bio" },
+    "author-support": { panel: "profilePanel", scrollTo: "#author-support", hash: "author-support" },
+    libraryPanel: { panel: "securityPanel", scrollTo: "#library-policy", hash: "library-policy" },
+    staffPanel: { panel: "securityPanel", scrollTo: "#library-policy", hash: "library-policy" },
+    "library-policy": { panel: "securityPanel", scrollTo: "#library-policy", hash: "library-policy" }
 };
+
 export function resolveSettingsRoute(rawHash) {
-    const hash = rawHash === "staffPanel" ? "libraryPanel" : rawHash;
+    const hash = String(rawHash || "").trim();
     if (TAB_PANEL_IDS.includes(hash)) {
-        return { panel: hash, scrollTo: null, hash: hash };
+        return { panel: hash, scrollTo: null, hash };
     }
     const anchor = SETTINGS_SECTION_ANCHORS[hash];
-    if (anchor) return anchor;
-    return { panel: "appearancePanel", scrollTo: null, hash: "appearancePanel" };
+    if (anchor) return { ...anchor };
+    return { panel: "profilePanel", scrollTo: null, hash: "profilePanel" };
 }
 
 export function spotlightSettingsSection(selector) {
@@ -34,7 +39,7 @@ export function spotlightSettingsSection(selector) {
 }
 
 export function showSettingsTab(panelId, routeExtras = null) {
-    const id = TAB_PANEL_IDS.includes(panelId) ? panelId : "appearancePanel";
+    const id = TAB_PANEL_IDS.includes(panelId) ? panelId : "profilePanel";
     const scrollTo = routeExtras?.scrollTo || null;
     const urlHash = routeExtras?.hash || id;
     const tabs = els.settingsNav ? [...els.settingsNav.querySelectorAll("button[data-section]")] : [];
@@ -71,7 +76,7 @@ export function initSettingsNav() {
     showSettingsTab(route.panel, route);
 
     window.addEventListener("hashchange", () => {
-        const route = resolveSettingsRoute((location.hash || "").replace(/^#/, ""));
-        showSettingsTab(route.panel, route);
+        const next = resolveSettingsRoute((location.hash || "").replace(/^#/, ""));
+        showSettingsTab(next.panel, next);
     });
 }

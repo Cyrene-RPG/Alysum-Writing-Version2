@@ -51,7 +51,7 @@ Every current and future application boots this. Features never pick their own c
 site-appearance/
   documentation/  map — STRUCTURE, CONVENTIONS, ARCHITECTURE, DOMAIN
   tokens/
-  css-styles/     theme.css, gradient-themes/, typography.css
+  css-styles/     theme.css, gradient-themes/, typography.css, surface-styles/
   boot.js         and the rest of the theme runtime
   fonts/
   components/     later — shared chrome
@@ -62,7 +62,8 @@ site-appearance/
 1. `/site-appearance/css-styles/theme.css`
 2. `/site-appearance/css-styles/gradient-themes/index.css`
 3. `/site-appearance/css-styles/typography.css`
-4. `/site-appearance/boot.js` (no defer)
+4. `/site-appearance/css-styles/surface-styles/index.css`
+5. `/site-appearance/boot.js` (no defer)
 
 Settings on main-site is the **picker**. Every other application only **applies** what was saved.
 

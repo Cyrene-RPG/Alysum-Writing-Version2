@@ -129,6 +129,23 @@
         return "rgba(" + c.r + "," + c.g + "," + c.b + "," + Math.max(0, Math.min(1, alpha)) + ")";
     }
 
+    function applyUiSurfaces(root, hex) {
+        if (!parseHex(hex)) return;
+        var clean = String(hex).charAt(0) === "#" ? hex : "#" + hex;
+        root.style.setProperty("--alysum-ui-panel", clean);
+        root.style.setProperty("--alysum-ui-chrome", darken(clean, 0.22));
+        root.style.setProperty("--alysum-ui-raised", lighten(clean, 0.14));
+        root.style.removeProperty("--alysum-ui-color");
+    }
+
+    function clearUiSurfaces(root) {
+        root.style.removeProperty("--alysum-ui-panel");
+        root.style.removeProperty("--alysum-ui-chrome");
+        root.style.removeProperty("--alysum-ui-raised");
+        root.style.removeProperty("--alysum-ui-color");
+        root.removeAttribute("data-ui-color");
+    }
+
     function applyColorVars(root, main, accent) {
         root.style.setProperty("--alysum-display-top", lighten(accent, 0.72));
         root.style.setProperty("--alysum-display-mid", main);
@@ -184,6 +201,15 @@
         if (p) root.style.setProperty("--alysum-chrome-gradient", p);
         else root.style.removeProperty("--alysum-chrome-gradient");
 
+        var surfaceStyle = localStorage.getItem("alysum-surface-style");
+        if (surfaceStyle === "glass") {
+            root.setAttribute("data-surface-style", "glass");
+            root.classList.add("surface-glass");
+        } else {
+            root.removeAttribute("data-surface-style");
+            root.classList.remove("surface-glass");
+        }
+
         var bodyBgPresets = window.__ALYSUM_BODY_BG_PRESET_COLORS || {};
         var bodyBgVibrant = window.__ALYSUM_BODY_BG_VIBRANT || {};
         var accentComplementBg = window.__ALYSUM_ACCENT_COMPLEMENT_BG || { classic: "#0b1220" };
@@ -203,6 +229,23 @@
                 root.style.setProperty("--bg", bodyBg);
                 root.style.setProperty("--bg-gradient-top", lighten(bodyBg, topLift));
                 root.setAttribute("data-body-bg", bodyBgId);
+            }
+        }
+
+        var uiColorId = localStorage.getItem("alysum-ui-color") || "default";
+        var uiColorHex = localStorage.getItem("alysum-ui-color-hex");
+        if (!uiColorId || uiColorId === "default") {
+            clearUiSurfaces(root);
+        } else {
+            var uiHex = uiColorId === "theme"
+                ? (root.style.getPropertyValue("--bg") || "#0b1220")
+                : uiColorHex;
+            if (uiColorId === "custom") uiHex = localStorage.getItem("alysum-ui-color-custom") || uiHex;
+            if (parseHex(uiHex)) {
+                applyUiSurfaces(root, uiHex);
+                root.setAttribute("data-ui-color", uiColorId);
+            } else {
+                clearUiSurfaces(root);
             }
         }
     } catch (e) {

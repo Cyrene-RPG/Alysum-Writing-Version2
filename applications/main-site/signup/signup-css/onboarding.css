@@ -33,7 +33,7 @@
 
 .choice-title {
     margin: 0 0 10px;
-    color: #4c1d95;
+    color: var(--alysum-display-mid, var(--gold, #f5d489));
     font-size: 13px;
     font-weight: 900;
     letter-spacing: 0.05em;

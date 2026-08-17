@@ -1,4 +1,5 @@
 import { wireLogoutButtons } from "@alysum/authentication/logout.js";
+import { initWelcomePfpMenu } from "/js/welcome-bar.js";
 
 function navHref(page) {
     return page;
@@ -18,17 +19,30 @@ function detectActivePage() {
 
 function renderNavHtml(active) {
     return `
-        <header class="wd-welcome-bar" aria-label="Welcome">
+        <header class="wd-welcome-bar ui-bar" aria-label="Welcome">
             <div class="wd-welcome-inner">
+                <div class="wd-pfp-menu" id="welcomePfpMenu">
+                    <button type="button" class="wd-pfp-btn" id="welcomePfpBtn" aria-haspopup="menu" aria-expanded="false" aria-controls="welcomePfpDropdown" aria-label="Account menu">
+                        <span class="wd-pfp" id="welcomePfp">
+                            <img id="welcomePfpImg" alt="" hidden />
+                            <span class="wd-pfp-initial" id="welcomePfpInitial" aria-hidden="true"></span>
+                        </span>
+                    </button>
+                    <div class="wd-pfp-dropdown" id="welcomePfpDropdown" role="menu" hidden>
+                        <a role="menuitem" href="settings.html#profilePanel" data-close-pfp-menu>Profile</a>
+                        <a role="menuitem" href="settings.html" data-close-pfp-menu>Settings</a>
+                        <button type="button" role="menuitem" class="settings-nav-logout" data-logout-btn data-close-pfp-menu>Log out</button>
+                    </div>
+                </div>
                 <div class="wd-welcome-copy">
                     <h1 class="wd-welcome-title" id="welcomeTitle">Welcome back.</h1>
+                    <p class="wd-welcome-sub" id="welcomeSubtitle"></p>
                 </div>
             </div>
         </header>
-        <nav class="wd-nav-wrap" aria-label="Workspace">
+        <nav class="wd-nav-wrap ui-bar" aria-label="Workspace">
             <div class="wd-nav">
                 <a href="${navHref("settings.html")}"${activeClass("settings", active)}>Settings</a>
-                <a href="${navHref("index.html")}"${activeClass("index", active)}>Main site</a>
                 <a href="${navHref("login.html")}"${activeClass("login", active)}>Login</a>
                 <button type="button" class="settings-nav-logout" data-logout-btn>Logout</button>
             </div>
@@ -55,6 +69,7 @@ export function initWorkspaceNav() {
     const navWrap = document.querySelector(".wd-nav-wrap");
     if (!navWrap) return null;
     wireLogoutButtons(document);
+    initWelcomePfpMenu();
     return navWrap;
 }
 

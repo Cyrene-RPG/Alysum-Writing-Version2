@@ -8,7 +8,7 @@
  * Bump SW_VERSION when shipping breaking shell changes to force a refresh.
  */
 
-const SW_VERSION = 'v2.12.0';
+const SW_VERSION = 'v2.22.0';
 const SHELL_CACHE = `alysum-shell-${SW_VERSION}`;
 const ASSET_CACHE = `alysum-assets-${SW_VERSION}`;
 
@@ -28,6 +28,8 @@ const APP_SHELL = [
   '/site-appearance/css-styles/theme.css',
   '/site-appearance/css-styles/gradient-themes/index.css',
   '/site-appearance/css-styles/typography.css',
+  '/site-appearance/css-styles/surface-styles/index.css',
+  '/site-appearance/css-styles/surface-styles/glass.css',
   '/js/workspace-nav.js',
   '/site-appearance/gradient-theme-sync.js',
   '/site-appearance/boot.js'

@@ -1,8 +1,8 @@
 * { box-sizing: border-box; }
 :root {
     --bg: #0b1220;
-    --panel: #111827;
-    --panel-2: #1f2937;
+    --panel: var(--alysum-ui-panel, #111827);
+    --panel-2: var(--alysum-ui-raised, #1f2937);
     --text: #fff;
     --muted: #9ca3af;
     --border: rgba(255,255,255,0.1);
@@ -32,39 +32,56 @@ body {
 .settings-shell {
     flex: 1;
     display: flex;
-    flex-direction: column;
-    gap: 0;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 16px;
     width: 100%;
     min-height: 0;
+    padding: 16px clamp(12px, 2vw, 24px) 24px;
 }
 
 .settings-nav {
+    flex: 0 0 220px;
+    width: 220px;
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: column;
+    gap: 0;
+    padding: 16px 12px 14px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--alysum-ui-chrome, #141414);
+    position: sticky;
+    top: calc(var(--alysum-nav-sticky-offset, 45px) + 12px);
+    z-index: 10;
+}
+
+.settings-nav-heading {
+    margin: 0 0 12px;
+    text-align: center;
+    font-size: 15px;
+    font-weight: 800;
+    color: #fff;
+}
+
+.settings-nav-list {
+    display: flex;
+    flex-direction: column;
     gap: 8px;
-    padding: 8px clamp(12px, 2vw, 20px);
-    border-radius: 0;
-    border: none;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    background:
-        linear-gradient(180deg, rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.55)),
-        var(--alysum-chrome-gradient, linear-gradient(135deg, #1e1b4b, #312e81));
-    background-size: cover;
-    background-position: center;
 }
 
 .settings-nav button {
-    flex: 1 1 0;
-    min-width: 7.5rem;
-    padding: 9px 12px;
-    border-radius: 10px;
+    flex: none;
+    width: 100%;
+    min-width: 0;
+    padding: 10px 12px;
+    border-radius: 8px;
     border: 1px solid transparent;
-    background: transparent;
-    color: var(--muted);
+    background: var(--alysum-ui-raised, #2a2a2a);
+    color: #c5c5c5;
     font-size: 13px;
     font-weight: 800;
     font-family: inherit;
-    text-align: center;
+    text-align: left;
     white-space: nowrap;
     cursor: pointer;
     transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
@@ -72,21 +89,16 @@ body {
 
 .settings-nav button:hover {
     color: #fff;
-    background: rgba(255, 255, 255, 0.06);
+    background: color-mix(in srgb, var(--alysum-ui-raised, #2a2a2a) 82%, white);
 }
 
 .settings-nav button.active,
 .settings-nav button[aria-selected="true"] {
     color: #fff;
-    border-color: rgba(255, 255, 255, 0.38);
-    background: var(
-        --alysum-chrome-gradient,
-        linear-gradient(135deg, var(--purple-dark), var(--theme-header-mid), var(--theme-header-end))
-    );
-    background-size: cover;
-    background-position: center;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.85), 0 0 10px rgba(0, 0, 0, 0.35);
-    box-shadow: 0 2px 14px rgba(0, 0, 0, 0.35);
+    border-color: transparent;
+    background: var(--accent, #6d28d9);
+    text-shadow: none;
+    box-shadow: none;
 }
 
 .settings-nav-logout,
@@ -138,15 +150,10 @@ body {
     cursor: not-allowed;
 }
 
-.settings-nav {
-    position: sticky;
-    top: var(--alysum-nav-sticky-offset, 45px);
-    z-index: 10;
-}
-
 .settings-content {
     flex: 1;
     width: 100%;
+    min-width: 0;
     max-width: none;
     margin: 0;
     display: flex;
@@ -165,11 +172,10 @@ body {
 }
 
 .settings-tab-panel.panel {
-    border-radius: 0;
-    border: none;
-    border-top: none;
+    border-radius: 16px;
+    border: 1px solid var(--border);
     flex: 1;
-    min-height: calc(100vh - 72px - 52px);
+    min-height: 0;
     padding: clamp(16px, 2vw, 24px) clamp(14px, 2.5vw, 28px) clamp(24px, 4vw, 40px);
 }
 
@@ -180,7 +186,11 @@ body {
 }
 
 .panel {
-    background: linear-gradient(180deg, rgba(17,24,39,0.98), rgba(15,23,42,0.98));
+    background: linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--alysum-ui-panel, #111827) 88%, white),
+        var(--alysum-ui-panel, #111827)
+    );
     border: 1px solid var(--border);
     border-radius: 18px;
     padding: 16px 16px;
@@ -257,13 +267,16 @@ input[type="file"] {
 
 input[type="file"]::file-selector-button {
     margin-right: 12px;
-    border: none;
+    appearance: none;
+    -webkit-appearance: none;
+    border: 1px solid color-mix(in srgb, var(--purple-dark, #5b21b6) 40%, transparent);
     border-radius: 10px;
     padding: 9px 12px;
     background: var(--alysum-chrome-gradient, linear-gradient(135deg, var(--purple), var(--pink)));
     color: #fff;
     font-weight: 900;
     cursor: pointer;
+    box-shadow: none;
 }
 
 .readonly {
@@ -300,7 +313,7 @@ input[type="file"]::file-selector-button {
     background-position: center;
     color: white;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
-    border: 1px solid rgba(255, 255, 255, 0.14);
+    border: 1px solid color-mix(in srgb, var(--purple-dark, #5b21b6) 40%, transparent);
     box-shadow: 0 4px 18px rgba(0, 0, 0, 0.28);
 }
 
@@ -332,4 +345,18 @@ input[type="file"]::file-selector-button {
 }
 .hidden {
     display: none !important;
+}
+
+@media (max-width: 800px) {
+    .settings-shell {
+        flex-direction: column;
+        padding: 12px;
+    }
+
+    .settings-nav {
+        flex: none;
+        width: 100%;
+        position: relative;
+        top: auto;
+    }
 }

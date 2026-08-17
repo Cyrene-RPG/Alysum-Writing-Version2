@@ -79,6 +79,10 @@ export async function wireHomepageAuth(supabase) {
         }
     });
 
+    document.querySelectorAll("[data-home-library]").forEach((el) => {
+        el.href = user ? homeHref : "signup.html";
+    });
+
     const ctaBandCopy = document.querySelector("[data-home-cta-copy]");
     if (ctaBandCopy) {
         ctaBandCopy.textContent = user

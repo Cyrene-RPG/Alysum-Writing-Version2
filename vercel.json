@@ -29,6 +29,10 @@
       "destination": "/applications/main-site/public/Alysum-3.png"
     },
     {
+      "source": "/discord-logo.png",
+      "destination": "/applications/main-site/public/discord-logo.png"
+    },
+    {
       "source": "/js/homepage.js",
       "destination": "/applications/main-site/homepage/homepage.js"
     },

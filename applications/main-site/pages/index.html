@@ -40,11 +40,11 @@
     <meta property="og:site_name" content="Alysum">
     <meta property="og:locale" content="en_US">
     <meta property="og:type" content="website">
-    <meta property="og:title" content="Alysum — Free online writing platform &amp; story library">
+    <meta property="og:title" content="Alysum — A writing studio for every writer">
     <meta property="og:description" content="Write and publish stories online for free. Alysum is a writing studio and reading library for fiction, fanfiction, nonfiction, and comics.">
     <meta property="og:image" content="/Alysum-3.png">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Alysum — Free online writing platform &amp; story library">
+    <meta name="twitter:title" content="Alysum — A writing studio for every writer">
     <meta name="twitter:description" content="Write and publish stories online for free. Alysum is a writing studio and reading library for fiction, fanfiction, nonfiction, and comics.">
     <meta name="twitter:image" content="/Alysum-3.png">
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"Organization","name":"Alysum","url":"/","logo":"/Alysum-3.png","description":"Free online writing platform and public story library.","sameAs":["https://discord.gg/ue7uSCWU9w"]}</script>
@@ -53,242 +53,133 @@
     <script src="/js/seo-meta.js"></script>
     <!-- ALYSUM:SEO:END -->
 
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
-  <title>Alysum — Free online writing platform &amp; story library</title>
-  <link rel="stylesheet" href="/css/homepage/page.css" />
-  <link rel="stylesheet" href="/css/homepage/navigation.css" />
-  <link rel="stylesheet" href="/css/homepage/hero.css" />
-  <link rel="stylesheet" href="/css/homepage/about.css" />
-  <link rel="stylesheet" href="/css/homepage/library.css" />
-  <link rel="stylesheet" href="/css/homepage/features.css" />
-  <link rel="stylesheet" href="/css/homepage/footer.css" />
-  <link rel="stylesheet" href="/css/homepage/breakpoints.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Alysum — A writing studio for every writer</title>
+    <link rel="stylesheet" href="/site-appearance/css-styles/theme.css" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/gradient-themes/index.css" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/typography.css" />
+    <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/surface-styles/index.css" />
+    <script src="/site-appearance/body-background-presets-data.js"></script>
+    <script src="/site-appearance/boot.js"></script>
+    <script src="/site-appearance/body-background-sync.js"></script>
+    <script src="/site-appearance/gradient-theme-sync.js" defer></script>
+    <link rel="stylesheet" href="/css/homepage/page.css" />
+    <link rel="stylesheet" href="/css/homepage/navigation.css" />
+    <link rel="stylesheet" href="/css/homepage/hero.css" />
+    <link rel="stylesheet" href="/css/homepage/features.css" />
+    <link rel="stylesheet" href="/css/homepage/footer.css" />
+    <link rel="stylesheet" href="/css/homepage/breakpoints.css" />
 </head>
 <body>
-  <div class="page">
-    <div class="page-atmosphere" aria-hidden="true">
-      <div class="page-aurora"></div>
-      <div class="page-aurora page-aurora--b"></div>
-      <div class="page-stars"></div>
-      <div class="page-vignette"></div>
-      <div class="page-grain"></div>
-    </div>
     <div id="backendAlert" class="alert-banner hidden" role="status" aria-live="polite" hidden>
-      <div class="alert-content section-wrap">
-        <div class="alert-message">
-          <strong>Alysum update:</strong>
-          Backend moved to Supabase. Issues?
-          <a href="mailto:alysum.support@gmail.com">alysum.support@gmail.com</a>
-          <a class="alert-discord" href="https://discord.gg/ue7uSCWU9w" target="_blank" rel="noopener noreferrer" aria-label="Discord">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.317 4.369A19.791 19.791 0 0 0 16.558 3a13.74 13.74 0 0 0-.481.974 18.27 18.27 0 0 0-4.154 0A12.64 12.64 0 0 0 11.442 3a19.736 19.736 0 0 0-3.76 1.37C5.303 7.91 4.657 11.36 4.98 14.76a19.9 19.9 0 0 0 4.607 2.339c.37-.504.701-1.04.984-1.602a12.83 12.83 0 0 1-1.55-.744c.13-.095.258-.193.382-.294 2.987 1.38 6.226 1.38 9.177 0 .125.101.253.199.383.294-.494.29-1.013.54-1.553.745.283.56.612 1.097.984 1.601A19.86 19.86 0 0 0 23 14.76c.378-3.953-.646-7.371-2.683-10.391ZM10.19 12.67c-.897 0-1.635-.826-1.635-1.842 0-1.016.723-1.843 1.635-1.843.92 0 1.65.834 1.635 1.843 0 1.016-.723 1.842-1.635 1.842Zm6.19 0c-.897 0-1.635-.826-1.635-1.842 0-1.016.723-1.843 1.635-1.843.92 0 1.65.834 1.635 1.843 0 1.016-.715 1.842-1.635 1.842Z"/></svg>
-          </a>
+        <div class="alert-content">
+            <span>
+                <strong>Alysum update:</strong>
+                Backend moved to Supabase. Issues?
+                <a href="mailto:alysum.support@gmail.com">alysum.support@gmail.com</a>
+            </span>
+            <button class="alert-close" type="button" aria-label="Dismiss">×</button>
         </div>
-        <button class="alert-close" type="button" aria-label="Dismiss">×</button>
-      </div>
     </div>
 
-    <header class="site-nav">
-      <div class="site-nav-inner">
-        <a href="index.html" class="nav-brand">
-          <span class="nav-brand-mark">
-            <img src="/Alysum-3.png" alt="" width="64" height="64" />
-            <svg class="nav-brand-swirls" viewBox="0 0 64 64" aria-hidden="true">
-              <defs>
-                <linearGradient id="brand-swirl-a" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stop-color="#faf5ff" stop-opacity="0.98" />
-                  <stop offset="45%" stop-color="#ddd6fe" stop-opacity="0.82" />
-                  <stop offset="100%" stop-color="#7c3aed" stop-opacity="0.45" />
-                </linearGradient>
-                <linearGradient id="brand-swirl-b" x1="5%" y1="5%" x2="95%" y2="95%">
-                  <stop offset="0%" stop-color="#ede9fe" stop-opacity="0.75" />
-                  <stop offset="100%" stop-color="#a78bfa" stop-opacity="0.25" />
-                </linearGradient>
-              </defs>
-              <!-- Flowing strokes: top-left → bottom-right -->
-              <path stroke="url(#brand-swirl-a)" stroke-width="2.3" d="M4 5 C11 3 15 13 21 17 C27 21 29 29 35 33 C41 37 45 47 51 53 C55 57 58 60 61 62" />
-              <path stroke="url(#brand-swirl-b)" stroke-width="1.5" d="M8 2 C13 8 17 10 23 16 C29 22 31 30 37 36 C43 42 47 48 53 54 C56 57 59 59 62 61" />
-              <!-- Spiral curls spaced along the diagonal -->
-              <path stroke="url(#brand-swirl-a)" stroke-width="1.8" d="M10 8 C5 12 7 20 15 20 C21 20 21 12 16 9 C12 6 10 8 10 8" />
-              <path stroke="url(#brand-swirl-b)" stroke-width="1.5" d="M22 20 C17 24 19 32 27 32 C33 32 33 24 28 21 C23 18 22 20 22 20" />
-              <path stroke="url(#brand-swirl-a)" stroke-width="1.7" d="M34 32 C29 36 31 44 39 44 C45 44 45 36 40 33 C35 30 34 32 34 32" />
-              <path stroke="url(#brand-swirl-b)" stroke-width="1.6" d="M46 44 C41 48 43 56 51 56 C57 56 57 48 52 45 C47 42 46 44 46 44" />
-              <path stroke="#faf5ff" stroke-width="1.1" opacity="0.65" d="M6 14 C10 11 14 15 13 19 C12 23 7 24 5 20 C3 16 6 14 6 14" />
-              <path stroke="#faf5ff" stroke-width="0.95" opacity="0.5" d="M52 50 C48 53 44 50 45 46 C46 42 51 41 53 45 C55 49 52 50 52 50" />
-            </svg>
-          </span>
-          Alysum
+    <header class="site-header">
+        <a class="brand" href="index.html" aria-label="Alysum home">
+            <img class="brand-logo" src="/Alysum-3.png" alt="" width="36" height="36" />
+            <span class="brand-wordmark">
+                <span class="brand-initial">A</span><span class="brand-name">lysum</span>
+            </span>
         </a>
-        <nav class="nav-links" aria-label="Main">
-          <a href="#about">About</a>
-          <a href="#features">Features</a>
-          <a href="https://discord.gg/ue7uSCWU9w" target="_blank" rel="noopener noreferrer">Discord</a>
-        </nav>
-        <div class="nav-actions">
-          <a href="https://discord.gg/ue7uSCWU9w" class="nav-discord" target="_blank" rel="noopener noreferrer" aria-label="Join Discord">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.317 4.369A19.791 19.791 0 0 0 16.558 3a13.74 13.74 0 0 0-.481.974 18.27 18.27 0 0 0-4.154 0A12.64 12.64 0 0 0 11.442 3a19.736 19.736 0 0 0-3.76 1.37C5.303 7.91 4.657 11.36 4.98 14.76a19.9 19.9 0 0 0 4.607 2.339c.37-.504.701-1.04.984-1.602a12.83 12.83 0 0 1-1.55-.744c.13-.095.258-.193.382-.294 2.987 1.38 6.226 1.38 9.177 0 .125.101.253.199.383.294-.494.29-1.013.54-1.553.745.283.56.612 1.097.984 1.601A19.86 19.86 0 0 0 23 14.76c.378-3.953-.646-7.371-2.683-10.391ZM10.19 12.67c-.897 0-1.635-.826-1.635-1.842 0-1.016.723-1.843 1.635-1.843.92 0 1.65.834 1.635 1.843 0 1.016-.723 1.842-1.635 1.842Zm6.19 0c-.897 0-1.635-.826-1.635-1.842 0-1.016.723-1.843 1.635-1.843.92 0 1.65.834 1.635 1.843 0 1.016-.715 1.842-1.635 1.842Z"/></svg>
-            Discord
-          </a>
-          <a href="login.html" class="nav-login" data-home-guest data-home-login data-home-login-label>Log in</a>
-          <a href="signup.html" class="nav-cta" data-home-primary>Start writing now</a>
-        </div>
-      </div>
+        <a class="btn-discord" href="https://discord.gg/ue7uSCWU9w" target="_blank" rel="noopener noreferrer" aria-label="Join Alysum on Discord">
+            <svg class="discord-logo" viewBox="0 0 127.14 96.36" width="32" height="24" aria-hidden="true" focusable="false">
+                <path fill="#5865F2" d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22h0C129.24,52.84,122.09,29.11,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,46,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.25,60,73.25,53s5-12.74,11.44-12.74S96.23,46,96.12,53,91.08,65.69,84.69,65.69Z"/>
+            </svg>
+        </a>
     </header>
 
-    <div class="hero-panel-wrap">
-      <section class="hero-panel" aria-labelledby="hero-title">
-        <div class="hero-panel-inner">
-          <div class="hero-head">
-            <div class="hero-head-copy">
-              <span class="hero-eyebrow">A writing studio for every writer</span>
-              <h1 id="hero-title" class="hero-title">Every great story starts somewhere.</h1>
-              <p class="hero-sub">
-          Stop juggling Google Docs, character sheets, worldbuilding notes, and random documents. Keep your entire novel in one place..
-              </p>
+    <main class="hero-frame">
+        <div class="hero-content" id="about">
+            <p class="eyebrow">A writing studio for every writer</p>
+            <h1>Every great story starts somewhere.</h1>
+            <p class="hero-sub">
+                Stop juggling Google Docs, character sheets, worldbuilding notes, and
+                random documents. Keep your entire novel in one place.
+            </p>
+            <div class="cta-row">
+                <a class="btn glass-button glass-button--strong" href="signup.html" data-home-primary>Start writing now</a>
+                <a class="btn glass-button" href="login.html" data-home-login data-home-login-label>Log in</a>
             </div>
-            <div class="hero-head-actions">
-              <div class="hero-buttons">
-                <a href="signup.html" class="btn btn-primary" data-home-primary>Start writing now</a>
-                <a href="login.html" class="btn btn-outline">Log in</a>
-              </div>
+            <a class="cta-secondary" href="signup.html">Or start reading now →</a>
+        </div>
+
+        <div class="book-bar-frame" id="library">
+            <div class="book-bar" aria-hidden="true">
+                <div class="book-bar-track">
+                    <div class="book book-a"></div>
+                    <div class="book book-b"></div>
+                    <div class="book book-c"></div>
+                    <div class="book book-d"></div>
+                    <div class="book book-a"></div>
+                    <div class="book book-b"></div>
+                    <div class="book book-c"></div>
+                    <div class="book book-d"></div>
+                </div>
             </div>
-          </div>
-          <figure class="hero-showcase">
-            <img
-              src="assets/homepage-editor-preview.png"
-              width="1920"
-              height="1080"
-              alt="Alysum editor with manuscript sidebar, chapter list, and writing page"
-              loading="eager"
-              decoding="async"
-            />
-          </figure>
-        </div>
-      </section>
-    </div>
 
-    <section class="about section-wrap" id="about">
-      <div class="about-grid">
-        <div>
-          <p class="section-kicker">About Alysum</p>
-          <h2 class="section-title">One place to write, organize, and share your work.</h2>
-          <p class="section-lead">
-            Studio keeps your manuscripts and chapters together. World Encyclopedia is for deeper worldbuilding. When you’re ready, publish to the library for readers.
-          </p>
-        </div>
-        <div class="about-stats">
-          <div class="stat-card">
-            <strong>✍️ Editor</strong>
-            <span>Chapters, formatting, focus sessions, and daily goals.</span>
-          </div>
-          <div class="stat-card">
-            <strong>🌍 World tools</strong>
-            <span>Geography, cultures, history, and magic systems.</span>
-          </div>
-          <div class="stat-card">
-            <strong>📚 Public library</strong>
-            <span>Share stories and discover what other writers publish.</span>
-          </div>
-        </div>
-      </div>
-    </section>
+            <div class="feature-grid" id="features">
+                <div class="feature-card glass-panel feature-card--editor">
+                    <a class="feature-preview glass-button" href="editor-preview.html">Preview</a>
+                    <h3>Editor</h3>
+                    <p>Chapters, formatting, focus sessions, and daily goals.</p>
+                </div>
+                <div class="feature-card glass-panel">
+                    <h3>World tools</h3>
+                    <p>Geography, cultures, history, and magic systems.</p>
+                </div>
+                <div class="feature-card glass-panel">
+                    <h3>Public library</h3>
+                    <p>Share stories and discover what other writers publish.</p>
+                </div>
+                <div class="feature-card glass-panel">
+                    <h3>Offline &amp; synced</h3>
+                    <p>Write anywhere, sync automatically the moment you're back online.</p>
+                </div>
+            </div>
 
-    <section class="arrivals section-wrap" id="library">
-      <div class="section-head">
-        <div>
-          <p class="section-kicker">Reader picks</p>
-          <h2 class="section-title">Popular on Alysum</h2>
+            <div class="library-cta">
+                <a class="btn glass-button" href="signup.html" data-home-library>Go to Library</a>
+            </div>
         </div>
-        <div class="sort-btns">
-          <button type="button" class="sort-btn active" data-sort="popular">Popular</button>
-          <button type="button" class="sort-btn" data-sort="new">Newest</button>
-        </div>
-      </div>
-      <div id="books" class="arrivals-grid"></div>
-      <p class="library-more"><a href="signup.html">Start writing now →</a></p>
-    </section>
-
-    <section class="features section-wrap" id="features">
-      <div class="features-grid">
-        <div>
-          <p class="section-kicker">Built for writers</p>
-          <h2 class="section-title">Everything you need to keep going.</h2>
-          <ul class="feature-list">
-            <li>
-              <span class="feature-icon">🔥</span>
-              <div>
-                <strong>Streaks &amp; daily goals</strong>
-                <span>Build momentum one writing session at a time.</span>
-              </div>
-            </li>
-            <li>
-              <span class="feature-icon">📂</span>
-              <div>
-                <strong>Manuscript structure</strong>
-                <span>Front matter, chapters, and back matter in one tree.</span>
-              </div>
-            </li>
-            <li>
-              <span class="feature-icon">🌍</span>
-              <div>
-                <strong>World encyclopedia</strong>
-                <span>Build geography, cultures, and magic systems for your stories.</span>
-              </div>
-            </li>
-            <li>
-              <span class="feature-icon">🚀</span>
-              <div>
-                <strong>Publish when ready</strong>
-                <span>Share to the Alysum library on your timeline.</span>
-              </div>
-            </li>
-          </ul>
-        </div>
-        <aside class="quote-card">
-          <blockquote>
-            “I finally know what Alysum is — a writing studio, not just another doc editor.”
-          </blockquote>
-          <cite>— What beta readers are looking for</cite>
-        </aside>
-      </div>
-    </section>
-
-    <section class="cta-band">
-      <h2>Ready to write your next chapter?</h2>
-      <p data-home-cta-copy>Join Alysum free — your studio is waiting.</p>
-      <a href="signup.html" class="btn btn-primary" data-home-cta-band>Create your account</a>
-    </section>
+    </main>
 
     <footer class="site-footer">
-      <div class="footer-grid section-wrap" style="padding-left:0;padding-right:0;">
-        <div class="footer-brand">Alysum Studio</div>
-        <div class="footer-cols">
-          <div class="footer-col">
-            <h4>Product</h4>
-            <a href="signup.html" data-home-primary>Start writing now</a>
-            <a href="login.html" data-home-guest data-home-login data-home-login-label>Log in</a>
-          </div>
-          <div class="footer-col">
-            <h4>Explore</h4>
-            <a href="#about">About</a>
-            <a href="#features">Features</a>
-            <a href="#library">Popular stories</a>
-          </div>
-          <div class="footer-col">
-            <h4>Support</h4>
-            <a href="mailto:alysum.support@gmail.com">Email support</a>
-            <a href="https://discord.gg/ue7uSCWU9w" target="_blank" rel="noopener noreferrer">Discord</a>
-          </div>
+        <div class="footer-grid">
+            <div class="footer-brand">Alysum Studio</div>
+            <div class="footer-cols">
+                <div class="footer-col">
+                    <h4>Product</h4>
+                    <a href="signup.html" data-home-primary>Start writing now</a>
+                    <a href="login.html" data-home-login data-home-login-label>Log in</a>
+                </div>
+                <div class="footer-col">
+                    <h4>Explore</h4>
+                    <a href="#about">About</a>
+                    <a href="#features">Features</a>
+                    <a href="#library">Popular stories</a>
+                </div>
+                <div class="footer-col">
+                    <h4>Support</h4>
+                    <a href="mailto:alysum.support@gmail.com">Email support</a>
+                    <a href="https://discord.gg/ue7uSCWU9w" target="_blank" rel="noopener noreferrer">Discord</a>
+                </div>
+            </div>
         </div>
-      </div>
-      <p class="footer-bottom">
-        © 2026 Alysum Studio ·
-        <a href="mailto:alysum.support@gmail.com">alysum.support@gmail.com</a>
-      </p>
+        <p class="footer-bottom">
+            © 2026 Alysum Studio ·
+            <a href="mailto:alysum.support@gmail.com">alysum.support@gmail.com</a>
+        </p>
     </footer>
-  </div>
 
-  <script type="module" src="/js/homepage.js"></script>
+    <script type="module" src="/js/homepage.js"></script>
 </body>
 </html>

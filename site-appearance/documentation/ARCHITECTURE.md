@@ -49,7 +49,8 @@ Every application page (except the marketing homepage, which skips gradient them
 1. `/site-appearance/css-styles/theme.css`
 2. `/site-appearance/css-styles/gradient-themes/index.css`
 3. `/site-appearance/css-styles/typography.css`
-4. `/site-appearance/boot.js` (no defer)
+4. `/site-appearance/css-styles/surface-styles/index.css`
+5. `/site-appearance/boot.js` (no defer)
 
 ## Data flow (today, legacy)
 

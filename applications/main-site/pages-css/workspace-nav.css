@@ -10,12 +10,13 @@
 
 .wd-welcome-bar {
     position: relative;
+    z-index: 45;
     flex-shrink: 0;
     padding: 0 clamp(16px, 3vw, 32px);
     min-height: 88px;
     display: flex;
     align-items: center;
-    overflow: hidden;
+    overflow: visible;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     background: var(
         --theme-welcome-bar,
@@ -68,15 +69,128 @@
     gap: clamp(14px, 2.5vw, 20px);
 }
 
+.wd-pfp-menu {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.wd-pfp-btn {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 64px;
+    height: 64px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.wd-pfp-btn::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.78);
+    pointer-events: none;
+    animation: wd-pfp-pulse 1.8s ease-out infinite;
+}
+
+.wd-pfp-menu.is-open .wd-pfp-btn::after {
+    animation: none;
+    opacity: 0;
+}
+
+.wd-pfp-btn:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 3px;
+}
+
+@keyframes wd-pfp-pulse {
+    0% {
+        transform: scale(1);
+        opacity: 0.9;
+    }
+    100% {
+        transform: scale(1.22);
+        opacity: 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .wd-pfp-btn::after {
+        animation: none;
+        opacity: 0.55;
+    }
+}
+
 .wd-pfp {
+    position: relative;
+    z-index: 1;
     flex-shrink: 0;
     width: 56px;
     height: 56px;
     border-radius: 50%;
     overflow: hidden;
     background: rgba(0, 0, 0, 0.28);
-    border: 2px solid rgba(255, 255, 255, 0.22);
+    border: 2px solid rgba(255, 255, 255, 0.42);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.wd-pfp-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    z-index: 50;
+    min-width: 188px;
+    padding: 8px;
+    border-radius: 14px;
+    background: rgba(11, 18, 32, 0.96);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+}
+
+.wd-pfp-dropdown[hidden] {
+    display: none;
+}
+
+.wd-pfp-dropdown a,
+.wd-pfp-dropdown button {
+    display: block;
+    width: 100%;
+    flex: none;
+    margin: 0 0 4px;
+    padding: 10px 12px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    background: transparent;
+    color: #f5f5fa;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 1.2;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.wd-pfp-dropdown a:last-child,
+.wd-pfp-dropdown button:last-child {
+    margin-bottom: 0;
+}
+
+.wd-pfp-dropdown a:hover,
+.wd-pfp-dropdown button:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.wd-pfp-dropdown .settings-nav-logout,
+.wd-pfp-dropdown button.settings-nav-logout {
+    margin-top: 0;
+    color: #fecaca;
+    background: transparent;
+    border-color: transparent;
 }
 
 .wd-pfp img {
@@ -106,7 +220,7 @@
     font-size: clamp(22px, 4vw, 28px);
     font-weight: 900;
     line-height: 1.15;
-    color: #fff7ed;
+    color: #fff;
     text-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
 }
 
@@ -139,9 +253,15 @@
     touch-action: pan-x;
     scrollbar-width: thin;
     scrollbar-color: color-mix(in srgb, var(--theme-header-mid, #7c3aed) 55%, transparent) transparent;
-    background: rgba(11, 18, 32, 0.92);
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(10px);
+    background:
+        linear-gradient(180deg, rgba(0, 0, 0, 0.28), rgba(0, 0, 0, 0.5)),
+        var(
+            --alysum-chrome-gradient,
+            linear-gradient(135deg, var(--purple-dark, #5b21b6), var(--theme-header-mid, #6d28d9), var(--theme-header-end, #db2777))
+        );
+    background-size: cover;
+    background-position: center;
 }
 
 .wd-nav-wrap::-webkit-scrollbar {
@@ -197,9 +317,9 @@
 .wd-nav a.is-active,
 .wd-nav button.is-active {
     color: #fff;
-    border-color: color-mix(in srgb, var(--theme-header-end, #db2777) 45%, transparent);
+    border-color: rgba(255, 255, 255, 0.38);
     background: var(
-        --theme-welcome-bar,
+        --alysum-chrome-gradient,
         linear-gradient(
             135deg,
             var(--purple-dark, #5b21b6),
@@ -210,7 +330,7 @@
     background-size: cover;
     background-position: center;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.75);
-    box-shadow: 0 2px 10px color-mix(in srgb, var(--theme-header-mid, #6d28d9) 35%, transparent);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
 }
 
 .wd-nav a.is-hidden,
@@ -502,8 +622,9 @@ button.fh-has-new-badge .fh-target-new,
 
 @media (max-width: 900px) {
     .wd-welcome-bar { min-height: 76px; }
+    .wd-pfp-btn { width: 56px; height: 56px; }
     .wd-pfp { width: 48px; height: 48px; }
-    .wd-welcome-sub { display: none; }
+    .wd-welcome-sub { font-size: 12px; }
 
     .wd-nav {
         padding: 8px 12px;

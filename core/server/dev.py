@@ -30,6 +30,7 @@ EXACT = {
     "/manifest.webmanifest": "applications/main-site/public/manifest.webmanifest",
     "/robots.txt": "applications/main-site/public/robots.txt",
     "/Alysum-3.png": "applications/main-site/public/Alysum-3.png",
+    "/discord-logo.png": "applications/main-site/public/discord-logo.png",
 }
 
 

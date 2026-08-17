@@ -1,9 +1,9 @@
 :root {
-    --auth-ink: #1e1b4b;
-    --auth-muted: #64748b;
-    --auth-border: rgba(124, 58, 237, 0.14);
-    --auth-card: rgba(255, 255, 255, 0.94);
-    --auth-gold: var(--gold, #f5d489);
+    --auth-ink: var(--text, #f8fafc);
+    --auth-muted: var(--muted, #9ca3af);
+    --auth-border: color-mix(in srgb, var(--purple, #7c3aed) 22%, transparent);
+    --auth-card: var(--alysum-ui-panel, #111827);
+    --auth-gold: var(--alysum-display-mid, var(--gold, #f5d489));
 }
 
 * { box-sizing: border-box; }
@@ -18,10 +18,10 @@ body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     color: var(--auth-ink);
     background:
-        radial-gradient(circle at 20% 18%, rgba(245, 212, 137, 0.32), transparent 28%),
-        radial-gradient(circle at 80% 12%, rgba(236, 72, 153, 0.24), transparent 24%),
-        radial-gradient(circle at 50% 105%, rgba(124, 58, 237, 0.28), transparent 34%),
-        var(--login-page-bg);
+        radial-gradient(circle at 20% 18%, color-mix(in srgb, var(--gold, #f5d489) 22%, transparent), transparent 28%),
+        radial-gradient(circle at 80% 12%, color-mix(in srgb, var(--pink, #ec4899) 18%, transparent), transparent 24%),
+        radial-gradient(circle at 50% 105%, var(--theme-body-spot-strong, transparent), transparent 34%),
+        var(--bg, var(--login-page-bg));
 }
 
 .auth-shell {
@@ -97,7 +97,7 @@ body {
 h2 {
     margin: 0;
     text-align: center;
-    color: #4c1d95;
+    color: var(--alysum-display-mid, var(--gold, #f5d489));
     font-size: 22px;
     letter-spacing: -0.03em;
 }

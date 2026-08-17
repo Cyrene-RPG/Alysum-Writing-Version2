@@ -10,6 +10,7 @@ import {
     AUTHOR_BIO_MAX_LENGTH,
     supportLinksPayloadFromDraft,
 } from "@alysum/library/author-profile.js";
+import { fillWelcomeBar } from "/js/welcome-bar.js";
 
 export function wireSettingsSaves() {
     els.profileAvatarInput?.addEventListener("change", () => {
@@ -98,6 +99,11 @@ export function wireSettingsSaves() {
             if (metaErr) console.warn(metaErr);
 
             setAvatarPreview(imageUrl, els.displayNameInput.value || els.handleField.textContent || user.email || "A");
+            fillWelcomeBar({
+                displayName: els.displayNameInput.value,
+                username: String(els.handleField.textContent || "").replace(/^@/, ""),
+                profileImageUrl: imageUrl
+            }, { refreshLine: false });
             els.profileAvatarInput.value = "";
 
             if (state.activeAvatarObjectUrl) {
@@ -114,7 +120,7 @@ export function wireSettingsSaves() {
         }
     });
 
-    els.saveAccountTypeBtn.addEventListener("click", async () => {
+    els.saveAccountTypeBtn?.addEventListener("click", async () => {
         hideMsg(els.accountTypeMsg);
 
         const picked = document.querySelector('input[name="settingsAccountType"]:checked');
@@ -229,7 +235,7 @@ export function wireSettingsSaves() {
         }
     });
 
-    els.saveDisplayBtn.addEventListener("click", async () => {
+    els.saveDisplayBtn?.addEventListener("click", async () => {
         hideMsg(els.profileMsg);
 
         const name = normalizeDisplayName(els.displayNameInput.value);
@@ -238,6 +244,10 @@ export function wireSettingsSaves() {
         try {
             if (state.isLocalSettings) {
                 updateProfileRow({ display_name: name || "Guest" });
+                fillWelcomeBar({
+                    displayName: name || "Guest",
+                    username: "guest"
+                }, { refreshLine: false });
                 showMsg(els.profileMsg, "Display name saved locally.", true);
                 return;
             }
@@ -252,6 +262,10 @@ export function wireSettingsSaves() {
             if (error) throw error;
             const { error: metaErr } = await supabase.auth.updateUser({ data: { display_name: name || null } });
             if (metaErr) console.warn(metaErr);
+            fillWelcomeBar({
+                displayName: name,
+                username: fallbackName
+            }, { refreshLine: false });
             if (!name) {
                 els.displayNameInput.value = "";
                 showMsg(
@@ -270,7 +284,7 @@ export function wireSettingsSaves() {
         }
     });
 
-    els.savePasswordBtn.addEventListener("click", async () => {
+    els.savePasswordBtn?.addEventListener("click", async () => {
         hideMsg(els.passwordMsg);
         const { data: udata } = await supabase.auth.getUser();
         const user = udata?.user;

@@ -20,6 +20,7 @@
     <link rel="stylesheet" href="/site-appearance/css-styles/theme.css" />
     <link rel="stylesheet" href="/site-appearance/css-styles/gradient-themes/index.css" />
     <link rel="stylesheet" href="/site-appearance/css-styles/typography.css" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/surface-styles/index.css" />
     <script src="/site-appearance/body-background-presets-data.js"></script>
     <script src="/site-appearance/boot.js"></script>
     <script src="/site-appearance/body-background-sync.js"></script>
@@ -71,11 +72,10 @@
             margin: 0;
             min-height: 100vh;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            color: #f8fafc;
+            color: var(--text, #f8fafc);
             background:
-                radial-gradient(circle at 18% 12%, rgba(245, 212, 137, 0.22), transparent 24%),
-                radial-gradient(circle at 82% 10%, rgba(236, 72, 153, 0.18), transparent 26%),
-                var(--login-page-bg);
+                radial-gradient(circle at top, var(--theme-body-spot-strong, transparent) 0%, transparent 42%),
+                var(--bg, var(--login-page-bg));
         }
 
         .legal-shell {
@@ -97,15 +97,18 @@
         .legal-card {
             overflow: hidden;
             border-radius: 30px;
-            border: 1px solid rgba(255, 255, 255, 0.24);
-            background: rgba(255, 255, 255, 0.94);
-            color: #1e1b4b;
+            border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+            background: var(--alysum-ui-panel, #111827);
+            color: var(--text, #f8fafc);
             box-shadow: 0 24px 70px rgba(15, 23, 42, 0.3);
         }
 
         .legal-hero {
             padding: 34px;
-            background: linear-gradient(135deg, var(--purple-dark, #5b21b6), var(--purple, #6d28d9));
+            background: var(
+                --alysum-chrome-gradient,
+                linear-gradient(135deg, var(--purple-dark, #5b21b6), var(--purple, #6d28d9))
+            );
             color: #fff;
         }
 
@@ -137,7 +140,7 @@
 
         h2 {
             margin: 28px 0 8px;
-            color: #4c1d95;
+            color: var(--alysum-display-mid, var(--gold, #f5d489));
             font-size: 20px;
         }
 
@@ -146,7 +149,7 @@
         }
 
         p, li {
-            color: #475569;
+            color: var(--muted, #9ca3af);
             font-size: 15px;
             line-height: 1.7;
         }

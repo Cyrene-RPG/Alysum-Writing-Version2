@@ -27,6 +27,13 @@
     --accent: #6d28d9;
     --accent-hover: #5b21b6;
     --accent-soft: #7c3aed;
+    --alysum-ui-panel: #111827;
+    --alysum-ui-chrome: #141414;
+    --alysum-ui-raised: #2a2a2a;
+    --panel: var(--alysum-ui-panel);
+    --text: #fff;
+    --muted: #9ca3af;
+    --border: rgba(255, 255, 255, 0.1);
     --accent-muted: rgba(109, 40, 217, 0.18);
     --btn-primary-bg: #6d28d9;
     --btn-primary-bg-hover: #5b21b6;

@@ -13,6 +13,7 @@ import { showMsg, hideMsg, isPasswordChangeBlocked } from "/js/settings/helpers.
 import { applyChromeGradient, getStoredGradientThemeId, getThemePreview } from "@alysum/site-appearance/gradient-theme.js";
 import { getProfileRow, LOCAL_GUEST_USER_ID } from "@alysum/synchronization-engine/local-adapter.js";
 import { normalizeAccountType } from "@alysum/account/mode.js";
+import { fillWelcomeBar } from "/js/welcome-bar.js";
 import { deleteOwnAccount } from "@alysum/authentication/delete-account.js";
 
 export function finishSettingsShell() {
@@ -49,6 +50,11 @@ export function initLocalSettingsUi() {
     setSupportLinksDisabled(true);
     updateAuthorBioCount();
     setAuthorBioPreviewLink("");
+    fillWelcomeBar({
+        displayName: profile.display_name,
+        username: "guest",
+        profileImageUrl: profile.profile_image_url
+    }, { refreshLine: true });
     state.settingsHomeUrl = "settings.html";
 
     const acct = normalizeAccountType(profile.account_type || "author");
@@ -114,14 +120,14 @@ export async function runDeleteAccountFlow() {
         });
         if (result.cancelled) {
             showMsg(els.deleteAccountMsg, "Account deletion cancelled.", false);
-            showSettingsTab("profilePanel");
+            showSettingsTab("securityPanel");
             els.deleteAccountSection?.scrollIntoView({ behavior: "smooth", block: "nearest" });
             return;
         }
     } catch (e) {
         console.error(e);
         showMsg(els.deleteAccountMsg, e?.message || "Could not delete account.", false);
-        showSettingsTab("profilePanel");
+        showSettingsTab("securityPanel");
         els.deleteAccountSection?.scrollIntoView({ behavior: "smooth", block: "nearest" });
     } finally {
         if (els.deleteAccountBtn) els.deleteAccountBtn.disabled = false;

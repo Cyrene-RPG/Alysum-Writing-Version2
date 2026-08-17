@@ -85,7 +85,7 @@ button:disabled {
     align-items: center;
     gap: 12px;
     margin: 18px 0 14px;
-    color: #64748b;
+    color: var(--muted, #9ca3af);
     font-size: 13px;
     font-weight: 600;
 }
@@ -95,7 +95,7 @@ button:disabled {
     content: "";
     flex: 1;
     height: 1px;
-    background: #e2e8f0;
+    background: var(--border, rgba(255, 255, 255, 0.12));
 }
 
 .btn-oauth {
@@ -126,11 +126,11 @@ button:disabled {
     text-align: center;
     font-size: 12px;
     line-height: 1.45;
-    color: #64748b;
+    color: var(--muted, #9ca3af);
 }
 
 .support-footnote a {
-    color: #6d28d9;
+    color: var(--accent-soft, var(--purple, #6d28d9));
     font-weight: 600;
     text-decoration: none;
 }

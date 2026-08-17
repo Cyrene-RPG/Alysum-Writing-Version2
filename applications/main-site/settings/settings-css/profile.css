@@ -9,8 +9,7 @@
 
 #profilePanel.is-active,
 #securityPanel.is-active,
-#accountModePanel.is-active,
-#authorPagePanel.is-active {
+#backupPanel.is-active {
     align-items: center;
 }
 
