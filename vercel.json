@@ -65,6 +65,14 @@
       "destination": "/applications/main-site/settings/:path*"
     },
     {
+      "source": "/js/studio/:path*",
+      "destination": "/applications/studio/page-ui/:path*"
+    },
+    {
+      "source": "/js/editor/:path*",
+      "destination": "/applications/editor/page-ui/:path*"
+    },
+    {
       "source": "/js/:path*",
       "destination": "/applications/main-site/page-ui/:path*"
     },
@@ -85,12 +93,28 @@
       "destination": "/applications/main-site/settings/settings-css/:path*"
     },
     {
+      "source": "/css/studio/:path*",
+      "destination": "/applications/studio/studio-css/:path*"
+    },
+    {
+      "source": "/css/editor/:path*",
+      "destination": "/applications/editor/editor-css/:path*"
+    },
+    {
       "source": "/css/:path*",
       "destination": "/applications/main-site/pages-css/:path*"
     },
     {
       "source": "/assets/:path*",
       "destination": "/applications/main-site/assets/:path*"
+    },
+    {
+      "source": "/studio.html",
+      "destination": "/applications/studio/pages/studio.html"
+    },
+    {
+      "source": "/editor.html",
+      "destination": "/applications/editor/pages/editor.html"
     },
     {
       "source": "/:page.html",

@@ -44,6 +44,10 @@ def public_to_file(url_path: str) -> Path:
         return ROOT / "applications/main-site/signup" / clean[len("/js/signup/") :]
     if clean.startswith("/js/settings/"):
         return ROOT / "applications/main-site/settings" / clean[len("/js/settings/") :]
+    if clean.startswith("/js/studio/"):
+        return ROOT / "applications/studio/page-ui" / clean[len("/js/studio/") :]
+    if clean.startswith("/js/editor/"):
+        return ROOT / "applications/editor/page-ui" / clean[len("/js/editor/") :]
     if clean.startswith("/js/"):
         name = clean[len("/js/") :]
         if name.startswith("homepage"):
@@ -59,12 +63,20 @@ def public_to_file(url_path: str) -> Path:
         return ROOT / "applications/main-site/signup/signup-css" / clean[len("/css/signup/") :]
     if clean.startswith("/css/settings/"):
         return ROOT / "applications/main-site/settings/settings-css" / clean[len("/css/settings/") :]
+    if clean.startswith("/css/studio/"):
+        return ROOT / "applications/studio/studio-css" / clean[len("/css/studio/") :]
+    if clean.startswith("/css/editor/"):
+        return ROOT / "applications/editor/editor-css" / clean[len("/css/editor/") :]
     if clean.startswith("/css/"):
         return ROOT / "applications/main-site/pages-css" / clean[len("/css/") :]
     if clean.startswith("/assets/"):
         return ROOT / "applications/main-site/assets" / clean[len("/assets/") :]
     if clean.startswith(("/site-appearance/", "/core/")):
         return ROOT / clean[1:]
+    if clean == "/studio.html":
+        return ROOT / "applications/studio/pages/studio.html"
+    if clean == "/editor.html":
+        return ROOT / "applications/editor/pages/editor.html"
     if clean.endswith(".html") and "/" not in clean[1:]:
         return ROOT / "applications/main-site/pages" / clean[1:]
     return ROOT / clean[1:]

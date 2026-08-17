@@ -1,5 +1,5 @@
 # Studio
 
-Later: writer hub (books list, streaks, daily goals). Old `writer-dashboard.html`.
+Writer hub: book list and new drafts. Opens `editor.html`.
 
-Uses `core/` and `site-appearance/`. Do not put live pages here yet.
+Uses `core/writing-engine`, `core/synchronization-engine`, `core/authentication`, `core/desktop`, and `site-appearance/`.

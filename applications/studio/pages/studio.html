@@ -1,0 +1,85 @@
+<!DOCTYPE html><html lang="en">
+<head>
+    <script type="importmap">
+    {
+      "imports": {
+        "@alysum/site-appearance/": "/site-appearance/",
+        "@alysum/writing-engine/": "/core/writing-engine/",
+        "@alysum/synchronization-engine/": "/core/synchronization-engine/",
+        "@alysum/authentication/": "/core/authentication/",
+        "@alysum/account/": "/core/account/",
+        "@alysum/desktop/": "/core/desktop/",
+        "@alysum/library/": "/core/library/",
+        "@alysum/publishing/": "/core/publishing/",
+        "@alysum/encyclopedia/": "/core/encyclopedia/",
+        "@alysum/collaboration/": "/core/collaboration/"
+      }
+    }
+    </script>
+    <link rel="stylesheet" href="/site-appearance/css-styles/theme.css" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/gradient-themes/index.css" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/typography.css" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/surface-styles/index.css" />
+    <script src="/site-appearance/body-background-presets-data.js"></script>
+    <script src="/site-appearance/boot.js"></script>
+    <script src="/site-appearance/body-background-sync.js"></script>
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow">
+    <title>Studio — Alysum</title>
+    <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
+    <link rel="stylesheet" href="/css/workspace-nav.css?v=16" />
+    <link rel="stylesheet" href="/css/studio/page.css?v=1" />
+    <script src="/site-appearance/gradient-theme-sync.js" defer></script>
+</head>
+<body>
+    <header class="wd-welcome-bar ui-bar" aria-label="Welcome">
+        <div class="wd-welcome-inner">
+            <div class="wd-pfp-menu" id="welcomePfpMenu">
+                <button type="button" class="wd-pfp-btn" id="welcomePfpBtn" aria-haspopup="menu" aria-expanded="false" aria-controls="welcomePfpDropdown" aria-label="Account menu">
+                    <span class="wd-pfp" id="welcomePfp">
+                        <img id="welcomePfpImg" alt="" hidden />
+                        <span class="wd-pfp-initial" id="welcomePfpInitial" aria-hidden="true">A</span>
+                    </span>
+                </button>
+                <div class="wd-pfp-dropdown" id="welcomePfpDropdown" role="menu" hidden>
+                    <a role="menuitem" href="studio.html" data-close-pfp-menu>Studio</a>
+                    <a role="menuitem" href="overview.html" data-close-pfp-menu>Overview</a>
+                    <a role="menuitem" href="settings.html" data-close-pfp-menu>Settings</a>
+                    <button type="button" role="menuitem" class="settings-nav-logout" data-logout-btn data-close-pfp-menu>Log out</button>
+                </div>
+            </div>
+            <div class="wd-welcome-copy">
+                <h1 class="wd-welcome-title" id="welcomeTitle">Studio</h1>
+                <p class="wd-welcome-sub" id="welcomeSubtitle"></p>
+            </div>
+        </div>
+    </header>
+    <nav class="wd-nav-wrap ui-bar" aria-label="Workspace">
+        <div class="wd-nav">
+            <a href="studio.html" class="is-active">Studio</a>
+            <a href="overview.html">Overview</a>
+            <a href="settings.html">Settings</a>
+            <button type="button" class="settings-nav-logout" data-logout-btn>Logout</button>
+        </div>
+    </nav>
+    <div class="wrap">
+        <div class="panel" id="loadingPanel">
+            <p class="hint" style="margin:0">Loading studio…</p>
+        </div>
+        <div class="panel hidden" id="studioShell">
+            <div class="studio-head">
+                <div>
+                    <h1>Your books</h1>
+                    <p class="hint">Open a draft or start a new one.</p>
+                </div>
+                <button type="button" class="studio-new" id="newBookBtn">New book</button>
+            </div>
+            <div class="studio-list" id="bookList"></div>
+            <p class="studio-status" id="studioStatus" role="status"></p>
+        </div>
+    </div>
+    <script type="module" src="/js/studio/page.js?v=1"></script>
+</body>
+</html>

@@ -1,0 +1,100 @@
+* { box-sizing: border-box; }
+:root {
+    --bg: #0b1220;
+    --panel: var(--alysum-ui-panel, #111827);
+    --text: #fff;
+    --muted: #9ca3af;
+    --border: rgba(255, 255, 255, 0.1);
+}
+body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background:
+        radial-gradient(circle at top, var(--theme-body-spot-strong, transparent) 0%, transparent 42%),
+        linear-gradient(180deg, var(--bg-gradient-top, var(--bg)) 0%, var(--bg) 100%);
+    color: var(--text);
+}
+.hidden { display: none !important; }
+.wrap {
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    padding: 16px clamp(12px, 2vw, 24px) 24px;
+}
+.panel {
+    background: linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--alysum-ui-panel, #111827) 88%, white),
+        var(--alysum-ui-panel, #111827)
+    );
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 20px clamp(16px, 3vw, 28px) 28px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+}
+.studio-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+.studio-head h1 {
+    margin: 0 0 6px;
+    font-size: clamp(22px, 3vw, 30px);
+}
+.hint {
+    margin: 0;
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.45;
+}
+.studio-new {
+    flex-shrink: 0;
+    border: 0;
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-weight: 800;
+    cursor: pointer;
+    color: #fff;
+    background: var(--accent, #6d28d9);
+}
+.studio-new:hover { filter: brightness(1.08); }
+.studio-new:disabled { opacity: 0.6; cursor: wait; }
+.studio-list {
+    display: grid;
+    gap: 12px;
+}
+.studio-book {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    padding: 16px 18px;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: var(--alysum-ui-chrome, #141414);
+}
+.studio-book:hover {
+    border-color: color-mix(in srgb, var(--accent, #6d28d9) 55%, transparent);
+}
+.studio-book-title {
+    margin: 0 0 6px;
+    font-size: 18px;
+}
+.studio-book-meta,
+.studio-book-when {
+    margin: 0;
+    font-size: 13px;
+    color: var(--muted);
+}
+.studio-book-when { margin-top: 4px; }
+.studio-empty { padding: 12px 0; }
+.studio-status {
+    margin: 12px 0 0;
+    min-height: 1.2em;
+    font-size: 13px;
+    color: var(--muted);
+}

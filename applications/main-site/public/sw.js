@@ -8,7 +8,7 @@
  * Bump SW_VERSION when shipping breaking shell changes to force a refresh.
  */
 
-const SW_VERSION = 'v2.33.5';
+const SW_VERSION = 'v2.35.0';
 const SHELL_CACHE = `alysum-shell-${SW_VERSION}`;
 const ASSET_CACHE = `alysum-assets-${SW_VERSION}`;
 
@@ -19,6 +19,8 @@ const APP_SHELL = [
   '/reset-password.html',
   '/signup.html',
   '/overview.html',
+  '/studio.html',
+  '/editor.html',
   '/settings.html',
   '/privacy-policy.html',
   '/terms-of-service.html',

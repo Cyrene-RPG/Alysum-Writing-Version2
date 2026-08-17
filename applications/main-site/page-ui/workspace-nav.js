@@ -13,6 +13,8 @@ function detectActivePage() {
     const file = (window.location.pathname || "").replace(/\\/g, "/").split("/").pop() || "index.html";
     if (file === "overview.html") return "overview";
     if (file === "settings.html") return "settings";
+    if (file === "studio.html") return "studio";
+    if (file === "editor.html") return "editor";
     if (file === "index.html") return "index";
     if (file === "login.html") return "login";
     return "";
@@ -30,7 +32,8 @@ function renderNavHtml(active) {
                         </span>
                     </button>
                     <div class="wd-pfp-dropdown" id="welcomePfpDropdown" role="menu" hidden>
-                        <a role="menuitem" href="overview.html" data-close-pfp-menu>Overview</a>
+                        <a role="menuitem" href="studio.html" data-close-pfp-menu>Studio</a>
+                    <a role="menuitem" href="overview.html" data-close-pfp-menu>Overview</a>
                         <a role="menuitem" href="settings.html#profilePanel" data-close-pfp-menu>Profile Info</a>
                         <a role="menuitem" href="settings.html" data-close-pfp-menu>Settings</a>
                         <button type="button" role="menuitem" class="settings-nav-logout" data-logout-btn data-close-pfp-menu>Log out</button>
@@ -44,6 +47,8 @@ function renderNavHtml(active) {
         </header>
         <nav class="wd-nav-wrap ui-bar" aria-label="Workspace">
             <div class="wd-nav">
+                <a href="${navHref("studio.html")}"${activeClass("studio", active)}>Studio</a>
+                <a href="${navHref("overview.html")}"${activeClass("overview", active)}>Overview</a>
                 <a href="${navHref("settings.html")}"${activeClass("settings", active)}>Settings</a>
                 <a href="${navHref("login.html")}"${activeClass("login", active)}>Login</a>
                 <button type="button" class="settings-nav-logout" data-logout-btn>Logout</button>

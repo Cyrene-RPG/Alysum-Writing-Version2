@@ -5,6 +5,8 @@ Persistence adapters. The only modules that should talk to IndexedDB, localStora
 | File | Status |
 | --- | --- |
 | local-adapter.js | Now (was local-studio-store.js). Still localStorage. |
+| cloud-adapter.js | Now. Owner-only `books` drafts on Supabase. |
+| books.js | Now. Picks local vs cloud from the studio session. |
 | realtime-adapter.js | Later |
 | conflict-resolver.js | Later |
 

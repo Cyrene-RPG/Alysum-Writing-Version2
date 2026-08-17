@@ -86,7 +86,8 @@ html.surface-glass .appearance-block,
 html.surface-glass .appearance-mix-controls,
 html.surface-glass .profile-box:not(.profile-danger-box):not(.backup-practice-box),
 html.surface-glass .wd-pfp-dropdown,
-html.surface-glass .settings-nav {
+html.surface-glass .settings-nav,
+html.surface-glass .writer-tree {
     background-color: var(--glass-sheet);
     background-image: linear-gradient(
         180deg,
@@ -104,8 +105,52 @@ html.surface-glass .settings-nav {
         inset 0 -2px 4px -1px var(--glass-caustic);
 }
 
-html.surface-glass .settings-nav {
+html.surface-glass .settings-nav,
+html.surface-glass .writer-tree {
     background-color: var(--glass-sheet-chrome);
+}
+
+html.surface-glass .writer-shell.is-tree-collapsed .writer-tree {
+    background: transparent;
+    background-image: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: 0;
+    box-shadow: none;
+}
+
+html.surface-glass .writer-tree-toggle {
+    background: var(--glass-sheet-raised);
+    background-image: linear-gradient(
+        180deg,
+        var(--glass-reflection-start) 0%,
+        var(--glass-reflection-end) 40%
+    );
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    border-color: var(--glass-edge);
+    box-shadow:
+        0 10px 24px -12px var(--glass-shadow),
+        inset 0 2px 3px -1px var(--glass-highlight),
+        inset 0 -2px 4px -1px var(--glass-caustic);
+}
+
+html.surface-glass .writer-tree-item {
+    background: var(--glass-sheet-raised);
+    backdrop-filter: blur(16px) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(16px) saturate(var(--glass-saturate));
+    border-color: var(--glass-edge);
+    box-shadow: inset 0 1px 1px var(--glass-highlight);
+}
+
+html.surface-glass .writer-tab {
+    background: color-mix(in srgb, var(--glass-sheet-raised) 70%, transparent);
+    border-color: var(--glass-edge);
+}
+
+html.surface-glass .writer-tab.is-active {
+    background: transparent;
+    border-bottom-color: transparent;
 }
 
 html.surface-glass .settings-nav button:not(.active):not([aria-selected="true"]),

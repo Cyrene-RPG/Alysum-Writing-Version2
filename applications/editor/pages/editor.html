@@ -1,0 +1,140 @@
+<!DOCTYPE html><html lang="en">
+<head>
+    <script type="importmap">
+    {
+      "imports": {
+        "@alysum/site-appearance/": "/site-appearance/",
+        "@alysum/writing-engine/": "/core/writing-engine/",
+        "@alysum/synchronization-engine/": "/core/synchronization-engine/",
+        "@alysum/authentication/": "/core/authentication/",
+        "@alysum/account/": "/core/account/",
+        "@alysum/desktop/": "/core/desktop/",
+        "@alysum/library/": "/core/library/",
+        "@alysum/publishing/": "/core/publishing/",
+        "@alysum/encyclopedia/": "/core/encyclopedia/",
+        "@alysum/collaboration/": "/core/collaboration/"
+      }
+    }
+    </script>
+    <link rel="stylesheet" href="/site-appearance/css-styles/theme.css" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/gradient-themes/index.css" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/typography.css" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/surface-styles/index.css" />
+    <script src="/site-appearance/body-background-presets-data.js"></script>
+    <script src="/site-appearance/boot.js"></script>
+    <script src="/site-appearance/body-background-sync.js"></script>
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow">
+    <title>Writer — Alysum</title>
+    <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
+    <link rel="stylesheet" href="/css/workspace-nav.css?v=16" />
+    <link rel="stylesheet" href="/css/editor/page.css?v=10" />
+    <link rel="stylesheet" href="/css/editor/document.css?v=2" />
+    <script src="/site-appearance/gradient-theme-sync.js" defer></script>
+</head>
+<body>
+    <header class="wd-welcome-bar ui-bar" aria-label="Welcome">
+        <div class="wd-welcome-inner">
+            <div class="wd-pfp-menu" id="welcomePfpMenu">
+                <button type="button" class="wd-pfp-btn" id="welcomePfpBtn" aria-haspopup="menu" aria-expanded="false" aria-controls="welcomePfpDropdown" aria-label="Account menu">
+                    <span class="wd-pfp" id="welcomePfp">
+                        <img id="welcomePfpImg" alt="" hidden />
+                        <span class="wd-pfp-initial" id="welcomePfpInitial" aria-hidden="true">A</span>
+                    </span>
+                </button>
+                <div class="wd-pfp-dropdown" id="welcomePfpDropdown" role="menu" hidden>
+                    <a role="menuitem" href="studio.html" data-close-pfp-menu>Studio</a>
+                    <a role="menuitem" href="overview.html" data-close-pfp-menu>Overview</a>
+                    <a role="menuitem" href="settings.html" data-close-pfp-menu>Settings</a>
+                    <button type="button" role="menuitem" class="settings-nav-logout" data-logout-btn data-close-pfp-menu>Log out</button>
+                </div>
+            </div>
+            <div class="wd-welcome-copy">
+                <h1 class="wd-welcome-title" id="welcomeTitle">Writer</h1>
+                <p class="wd-welcome-sub" id="welcomeSubtitle"></p>
+            </div>
+        </div>
+    </header>
+    <nav class="wd-nav-wrap ui-bar" aria-label="Workspace">
+        <div class="wd-nav">
+            <a href="studio.html">Studio</a>
+            <a href="overview.html">Overview</a>
+            <a href="settings.html">Settings</a>
+            <button type="button" class="settings-nav-logout" data-logout-btn>Logout</button>
+        </div>
+    </nav>
+    <div class="wrap">
+        <div class="writer-loading" id="loadingPanel">Loading writer…</div>
+        <div class="writer-shell hidden" id="writerShell">
+            <aside class="writer-tree" id="chapterTree" aria-label="Manuscript">
+                <div class="writer-tree-head">
+                    <div class="writer-tabs" role="tablist" aria-label="Sidebar">
+                        <button type="button" class="writer-tab is-active" id="tabChapters" role="tab" aria-selected="true" data-tab="chapters">Chapters</button>
+                        <button type="button" class="writer-tab" id="tabBook" role="tab" aria-selected="false" data-tab="book">Book</button>
+                    </div>
+                    <button type="button" class="writer-tree-toggle" id="treeToggle" aria-expanded="true" title="Hide sidebar">‹</button>
+                </div>
+                <div class="writer-tab-pane" id="chaptersPane">
+                    <div class="writer-pane-head writer-pane-head--end">
+                        <button type="button" class="writer-tree-add writer-tree-add--folder" id="folderAdd">Folder</button>
+                        <button type="button" class="writer-tree-add writer-tree-add--note" id="noteAdd">Note</button>
+                        <button type="button" class="writer-tree-add writer-tree-add--chapter" id="treeAdd" aria-label="Add chapter">CH+</button>
+                    </div>
+                    <ul class="writer-tree-list" id="chapterList"></ul>
+                </div>
+                <div class="writer-tab-pane" id="bookPane" hidden>
+                    <p class="writer-pane-hint">Front, body, and back of the book</p>
+                    <section class="writer-matter" aria-labelledby="frontMatterTitle">
+                        <div class="writer-pane-head">
+                            <h3 id="frontMatterTitle">Front matter</h3>
+                            <button type="button" class="writer-tree-add" id="frontAdd" aria-label="Add front matter page">+</button>
+                        </div>
+                        <ul class="writer-tree-list writer-tree-list--matter" id="frontList"></ul>
+                        <p class="writer-empty" id="frontEmpty" hidden>None yet. Use + to add.</p>
+                    </section>
+                    <section class="writer-matter" aria-labelledby="bodyMatterTitle">
+                        <div class="writer-pane-head">
+                            <h3 id="bodyMatterTitle">Body</h3>
+                            <button type="button" class="writer-tree-add writer-tree-add--chapter" id="bodyAdd" aria-label="Add chapter">CH+</button>
+                        </div>
+                        <ul class="writer-tree-list writer-tree-list--matter" id="bodyList"></ul>
+                    </section>
+                    <section class="writer-matter" aria-labelledby="backMatterTitle">
+                        <div class="writer-pane-head">
+                            <h3 id="backMatterTitle">Back matter</h3>
+                            <button type="button" class="writer-tree-add" id="backAdd" aria-label="Add back matter page">+</button>
+                        </div>
+                        <ul class="writer-tree-list writer-tree-list--matter" id="backList"></ul>
+                        <p class="writer-empty" id="backEmpty" hidden>None yet. Use + to add.</p>
+                    </section>
+                </div>
+            </aside>
+            <section class="writer-main">
+                <span class="writer-status" id="saveStatus" role="status">Saved.</span>
+                <input class="writer-book-title" id="bookTitle" aria-label="Book title" />
+                <input class="writer-chapter-title" id="chapterTitle" aria-label="Chapter title" />
+                <p class="writer-folder-hint" id="folderHint" hidden>This is a folder. Add chapters inside it from the Chapters tab, or drag a chapter onto the folder.</p>
+                <div class="writer-toolbar" id="writerToolbar" role="toolbar" aria-label="Formatting"></div>
+                <div class="writer-page" id="pageEditor" aria-label="Chapter text"></div>
+                <div class="writer-wordcount" aria-live="polite">
+                    <span id="chapterWords">0</span> / <span id="totalWords">0</span>
+                </div>
+            </section>
+        </div>
+    </div>
+    <div class="confirm-overlay" id="confirmOverlay" hidden>
+        <div class="confirm-card" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle" aria-describedby="confirmText">
+            <div class="confirm-icon" aria-hidden="true">?</div>
+            <h2 class="confirm-title" id="confirmTitle">Are you sure?</h2>
+            <p class="confirm-text" id="confirmText"></p>
+            <div class="confirm-actions">
+                <button type="button" class="confirm-yes" id="confirmYes" data-confirm-yes>Yes</button>
+                <button type="button" class="confirm-no" id="confirmNo">Cancel</button>
+            </div>
+        </div>
+    </div>
+    <script type="module" src="/js/editor/page.js?v=10"></script>
+</body>
+</html>

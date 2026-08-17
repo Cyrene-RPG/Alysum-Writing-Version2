@@ -1,0 +1,28 @@
+.writer-page {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    padding: 28px clamp(18px, 4vw, 56px) 48px;
+    outline: none;
+    line-height: 1.7;
+    font-size: 1.05rem;
+}
+.writer-page:focus {
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent, #6d28d9) 35%, transparent);
+}
+.writer-page p { margin: 0 0 0.9em; }
+.writer-page h1,
+.writer-page h2,
+.writer-page h3 {
+    margin: 0.4em 0 0.6em;
+    line-height: 1.25;
+}
+.writer-page ul,
+.writer-page ol { margin: 0 0 1em 1.2em; }
+.writer-page blockquote {
+    margin: 0 0 1em;
+    padding: 0.2em 0 0.2em 1em;
+    border-left: 3px solid var(--accent, #6d28d9);
+    color: var(--muted, #9ca3af);
+}
+.writer-page img { max-width: 100%; height: auto; }
