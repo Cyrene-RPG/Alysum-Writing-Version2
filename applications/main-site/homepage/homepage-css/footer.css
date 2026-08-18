@@ -1,7 +1,7 @@
 .site-footer {
     padding: 48px 24px 56px;
-    border-top: 1px solid var(--bg-panel-border);
-    background: rgba(0, 0, 0, 0.28);
+    border-top: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+    background: color-mix(in srgb, var(--alysum-ui-panel, var(--bg, #0b1220)) 35%, transparent);
 }
 
 .footer-grid {
@@ -28,7 +28,7 @@
     font-weight: 900;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: var(--text-secondary);
+    color: var(--muted);
     margin: 0 0 12px;
 }
 
@@ -36,26 +36,26 @@
     display: block;
     font-size: 14px;
     font-weight: 600;
-    color: var(--text-secondary);
+    color: var(--muted);
     margin-bottom: 10px;
 }
 
 .footer-col a:hover {
-    color: var(--text-primary);
+    color: var(--text);
 }
 
 .footer-bottom {
     max-width: 1140px;
     margin: 32px auto 0;
     padding-top: 24px;
-    border-top: 1px solid var(--bg-panel-border);
+    border-top: 1px solid var(--border, rgba(255, 255, 255, 0.1));
     text-align: center;
     font-size: 14px;
-    color: var(--text-secondary);
+    color: var(--muted);
 }
 
 .footer-bottom a {
-    color: #c4b5fd;
+    color: var(--link, var(--accent-soft, var(--purple)));
     font-weight: 700;
     text-decoration: underline;
     text-underline-offset: 3px;

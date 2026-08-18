@@ -1,9 +1,85 @@
 /**
  * Shared UI surfaces. Settings picks Appearance; every app page uses these tokens.
- * Homepage marketing CSS can override body/hero; do not restyle .glass-panel / .glass-button.
+ * Text on color uses the universal 4-ink set: white, cream, black, grey.
  */
 html {
     background-color: var(--bg, #0b1220);
+}
+
+:root {
+    --text-ink-white: #ffffff;
+    --text-ink-cream: #f3ead2;
+    --text-ink-black: #121212;
+    --text-ink-grey: #5e5e5e;
+    --ui-text: var(--text-ink-white);
+    --ui-muted: #c8c8c8;
+}
+
+:root[data-ui-ink="white"] {
+    --ui-text: var(--text-ink-white);
+    --ui-muted: #c8c8c8;
+}
+
+:root[data-ui-ink="cream"] {
+    --ui-text: var(--text-ink-cream);
+    --ui-muted: #d4c4a8;
+}
+
+:root[data-ui-ink="black"] {
+    --ui-text: var(--text-ink-black);
+    --ui-muted: #5e5e5e;
+}
+
+:root[data-ui-ink="grey"] {
+    --ui-text: var(--text-ink-grey);
+    --ui-muted: #3f3f46;
+}
+
+:root[data-body-ink="white"] {
+    --text: var(--text-ink-white);
+    --muted: #c8c8c8;
+}
+
+:root[data-body-ink="cream"] {
+    --text: var(--text-ink-cream);
+    --muted: #d4c4a8;
+}
+
+:root[data-body-ink="black"] {
+    --text: var(--text-ink-black);
+    --muted: #5e5e5e;
+}
+
+:root[data-body-ink="grey"] {
+    --text: var(--text-ink-grey);
+    --muted: #3f3f46;
+}
+
+:root {
+    color-scheme: dark;
+}
+
+:root[data-body-bg-tone="light"] {
+    --border: rgba(28, 25, 23, 0.18);
+    --theme-brand-kicker: var(--purple-dark, #5b21b6);
+    color-scheme: light;
+}
+
+:root[data-ui-tone="light"] {
+    --border: rgba(28, 25, 23, 0.18);
+}
+
+html[data-ui-tone="light"] .panel,
+html[data-ui-tone="light"] .card,
+html[data-ui-tone="light"] .legal-card,
+html[data-ui-tone="light"] .settings-nav,
+html[data-ui-tone="light"] .appearance-fold,
+html[data-ui-tone="light"] .appearance-block,
+html[data-ui-tone="light"] .appearance-mix-controls,
+html[data-ui-tone="light"] .wd-pfp-dropdown,
+html[data-ui-tone="light"] .writer-tree,
+html[data-ui-tone="light"] .writer-rail {
+    color-scheme: light;
 }
 
 body {
@@ -15,13 +91,22 @@ body {
 
 .panel,
 .card,
+.legal-card,
+.settings-nav,
+.wd-pfp-dropdown {
+    --text: var(--ui-text);
+    --muted: var(--ui-muted);
+    color: var(--ui-text, #fff);
+}
+
+.panel,
+.card,
 .legal-card {
     background: linear-gradient(
         180deg,
         color-mix(in srgb, var(--alysum-ui-panel, #111827) 88%, white),
         var(--alysum-ui-panel, #111827)
     );
-    color: var(--text, #fff);
     border-color: var(--border, rgba(255, 255, 255, 0.1));
 }
 
@@ -67,64 +152,53 @@ body {
     border: 1px solid color-mix(in srgb, var(--purple-dark, #5b21b6) 40%, transparent);
 }
 
-html.surface-glass[data-body-bg-tone="light"],
-html[data-ui-tone="light"] {
-    --text: #1c1917;
-    --muted: #3f3a36;
-    --border: rgba(28, 25, 23, 0.18);
+.settings-nav-heading,
+.settings-nav button:not(.active):not([aria-selected="true"]),
+.settings-nav a.settings-nav-page:not(.active):not([aria-current="page"]),
+.wd-pfp-dropdown a,
+.wd-pfp-dropdown button:not(.settings-nav-logout) {
+    color: var(--ui-text);
 }
 
-html.surface-glass[data-body-bg-tone="light"] body,
-html[data-ui-tone="light"] body,
-html.surface-glass[data-body-bg-tone="light"] .panel,
-html.surface-glass[data-body-bg-tone="light"] .card,
-html.surface-glass[data-body-bg-tone="light"] .legal-card,
-html[data-ui-tone="light"] .panel,
-html[data-ui-tone="light"] .card,
-html[data-ui-tone="light"] .legal-card {
-    color: var(--text);
+.settings-nav button.active,
+.settings-nav button[aria-selected="true"],
+.settings-nav a.settings-nav-page.active,
+.settings-nav a.settings-nav-page[aria-current="page"] {
+    color: #fff;
 }
 
-html.surface-glass[data-body-bg-tone="light"] .settings-nav-heading,
-html.surface-glass[data-body-bg-tone="light"] .settings-nav button:not(.active):not([aria-selected="true"]),
-html.surface-glass[data-body-bg-tone="light"] .settings-nav a.settings-nav-page:not(.active):not([aria-current="page"]),
-html.surface-glass[data-body-bg-tone="light"] .wd-pfp-dropdown,
-html.surface-glass[data-body-bg-tone="light"] .wd-pfp-dropdown a,
-html.surface-glass[data-body-bg-tone="light"] .wd-pfp-dropdown button:not(.settings-nav-logout),
-html[data-ui-tone="light"] .settings-nav-heading,
-html[data-ui-tone="light"] .settings-nav button:not(.active):not([aria-selected="true"]),
-html[data-ui-tone="light"] .settings-nav a.settings-nav-page:not(.active):not([aria-current="page"]),
-html[data-ui-tone="light"] .wd-pfp-dropdown,
-html[data-ui-tone="light"] .wd-pfp-dropdown a,
-html[data-ui-tone="light"] .wd-pfp-dropdown button:not(.settings-nav-logout) {
-    color: #1c1917;
-}
-
-html.surface-glass[data-body-bg-tone="light"] .settings-nav button:not(.active):hover,
-html.surface-glass[data-body-bg-tone="light"] .settings-nav a.settings-nav-page:not(.active):not([aria-current="page"]):hover,
-html.surface-glass[data-body-bg-tone="light"] .wd-pfp-dropdown a:hover,
-html.surface-glass[data-body-bg-tone="light"] .wd-pfp-dropdown button:not(.settings-nav-logout):hover,
-html[data-ui-tone="light"] .settings-nav button:not(.active):hover,
-html[data-ui-tone="light"] .settings-nav a.settings-nav-page:not(.active):not([aria-current="page"]):hover,
-html[data-ui-tone="light"] .wd-pfp-dropdown a:hover,
-html[data-ui-tone="light"] .wd-pfp-dropdown button:not(.settings-nav-logout):hover {
-    color: #0c0a09;
-}
-
-html.surface-glass[data-body-bg-tone="light"] .wd-pfp-dropdown .settings-nav-logout,
 html[data-ui-tone="light"] .wd-pfp-dropdown .settings-nav-logout {
     color: #9f1239;
     background: rgba(255, 228, 230, 0.72);
     border-color: rgba(159, 18, 57, 0.28);
 }
 
-html.surface-glass[data-body-bg-tone="light"] .settings-nav button.active,
-html.surface-glass[data-body-bg-tone="light"] .settings-nav button[aria-selected="true"],
-html.surface-glass[data-body-bg-tone="light"] .settings-nav a.settings-nav-page.active,
-html.surface-glass[data-body-bg-tone="light"] .settings-nav a.settings-nav-page[aria-current="page"],
-html[data-ui-tone="light"] .settings-nav button.active,
-html[data-ui-tone="light"] .settings-nav button[aria-selected="true"],
-html[data-ui-tone="light"] .settings-nav a.settings-nav-page.active,
-html[data-ui-tone="light"] .settings-nav a.settings-nav-page[aria-current="page"] {
-    color: #fff;
+.appearance-mix-option,
+.appearance-mix-option:has(input:checked),
+.writer-tree-toggle,
+.writer-tab.is-active,
+.theme-chip:not(.has-preview),
+.wd-loadout-item,
+.wd-loadout-empty {
+    color: var(--ui-text, var(--text));
+}
+
+.theme-chip[data-ink="white"] {
+    color: var(--text-ink-white);
+}
+
+.theme-chip[data-ink="cream"] {
+    color: var(--text-ink-cream);
+}
+
+.theme-chip[data-ink="black"],
+.appearance-loadout-slot[data-ink="black"] {
+    color: var(--text-ink-black);
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.theme-chip[data-ink="grey"],
+.appearance-loadout-slot[data-ink="grey"] {
+    color: var(--text-ink-grey);
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
 }

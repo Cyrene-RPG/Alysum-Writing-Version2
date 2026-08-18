@@ -172,7 +172,12 @@ html[data-display-text-style="lobster"] :is(.library-page-title, .library-welcom
     font-weight: 800;
     line-height: 1.25;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.75);
+    text-shadow: none;
+}
+
+.theme-chip[data-ink="white"] .text-style-chip-label,
+.theme-chip[data-ink="cream"] .text-style-chip-label {
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
 }
 
 .theme-chip.text-style-chip,
@@ -244,5 +249,5 @@ html[data-display-text-style="lobster"] :is(.library-page-title, .library-welcom
 }
 
 .title-color-chip.has-preview .text-style-chip-label {
-    color: #fff;
+    color: inherit;
 }

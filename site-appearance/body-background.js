@@ -2,6 +2,8 @@
  * Page shell background color (the dark space behind panels and content).
  * Presets are tuned to complement site accent themes.
  */
+import { applyRootInk } from "./text-ink.js";
+
 export const BODY_BG_KEY = "alysum-body-bg";
 export const BODY_BG_CUSTOM_KEY = "alysum-body-bg-custom";
 export const GRADIENT_THEME_KEY = "alysum-gradient-theme";
@@ -45,7 +47,8 @@ export const ACCENT_COMPLEMENT_BG = {
     tide: "#061412",
     volcano: "#120808",
     opal: "#0a1018",
-    noir: "#09090b"
+    noir: "#09090b",
+    blanc: "#fafafa"
 };
 
 export const BODY_BG_PRESETS = [
@@ -86,6 +89,7 @@ export const BODY_BG_PRESETS = [
     { id: "mocha", label: "Mocha", bg: "#121010", hint: "Mocha accent" },
     { id: "silver", label: "Silver slate", bg: "#0f1419", hint: "Silver accent" },
     { id: "noir", label: "Noir", bg: "#09090b", hint: "Noir accent" },
+    { id: "blanc", label: "Blanc", bg: "#fafafa", top: "#ffffff", tone: "light", hint: "Light opposite of Noir" },
     { id: "glow-violet", label: "Violet glow", bg: "#1a1038", vibrant: true, hint: "Brighter violet tint" },
     { id: "glow-aurora", label: "Aurora glow", bg: "#102040", vibrant: true, hint: "Brighter aurora blue" },
     { id: "glow-ocean", label: "Ocean vivid", bg: "#0c2240", vibrant: true, hint: "Richer ocean blue" },
@@ -302,9 +306,7 @@ export function applyBodyBackground(id, customBg) {
     }
     syncBodyBgAttribute(bgId);
     if (typeof document !== "undefined") {
-        const root = document.documentElement;
-        if (PRESET_BY_ID.get(bgId)?.tone === "light") root.setAttribute("data-body-bg-tone", "light");
-        else root.removeAttribute("data-body-bg-tone");
+        applyRootInk(document.documentElement, resolveBodyBgColor(bgId), "body");
     }
 
     try {

@@ -1,6 +1,8 @@
 /**
  * Display title colors (independent of title style / effect).
  */
+import { decideTextInk } from "./text-ink.js";
+
 export const DISPLAY_TEXT_COLOR_KEY = "alysum-display-text-color";
 export const DISPLAY_TEXT_COLOR_MAIN_KEY = "alysum-display-text-color-main";
 export const DISPLAY_TEXT_COLOR_ACCENT_KEY = "alysum-display-text-color-accent";
@@ -220,10 +222,7 @@ export function getColorPreview(id) {
     return "linear-gradient(145deg, var(--theme-brand-kicker, #c4b5fd), var(--gold, #fbbf24))";
 }
 
-/** Preview text color that reads on a gradient swatch */
+/** Preview text color that reads on a gradient swatch — white, cream, black, or grey. */
 export function getColorPreviewTextColor(main) {
-    const c = parseHex(main);
-    if (!c) return "#ffffff";
-    const lum = (0.299 * c.r + 0.587 * c.g + 0.114 * c.b) / 255;
-    return lum > 0.55 ? "#0f172a" : "#ffffff";
+    return decideTextInk(main).hex;
 }

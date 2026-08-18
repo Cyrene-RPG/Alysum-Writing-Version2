@@ -1,22 +1,34 @@
 /**
- * Debounced book save. Status is "saving" | "saved" | "error".
+ * Debounced book save. One request at a time; flush waits for the in-flight write.
+ * Status is "saving" | "saved" | "error".
  */
 export function createAutosave({ delay = 400, save } = {}) {
     let timer = 0;
     let pending = null;
+    let inFlight = null;
     let status = "saved";
     let generation = 0;
 
-    async function run(book) {
+    async function pump() {
+        if (inFlight) return inFlight;
+        const payload = pending;
+        if (!payload) return status;
+        pending = null;
         const token = ++generation;
         status = "saving";
-        try {
-            await save(book);
-            if (token === generation && !pending) status = "saved";
-        } catch {
-            if (token === generation) status = "error";
-        }
-        return status;
+        inFlight = (async () => {
+            try {
+                await save(payload, token);
+                if (token === generation && !pending) status = "saved";
+            } catch {
+                if (token === generation && !pending) status = "error";
+            } finally {
+                inFlight = null;
+            }
+            if (pending) return pump();
+            return status;
+        })();
+        return inFlight;
     }
 
     return {
@@ -28,17 +40,13 @@ export function createAutosave({ delay = 400, save } = {}) {
             status = "saving";
             clearTimeout(timer);
             timer = window.setTimeout(() => {
-                const payload = pending;
-                pending = null;
-                if (payload) void run(payload);
+                void pump();
             }, delay);
         },
         async flush() {
             clearTimeout(timer);
-            const payload = pending;
-            pending = null;
-            if (!payload) return status;
-            return run(payload);
+            if (!pending && !inFlight) return status;
+            return pump();
         },
     };
 }

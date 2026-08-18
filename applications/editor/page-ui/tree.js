@@ -36,6 +36,20 @@ function readNoteGroups(mount) {
     }));
 }
 
+function setNodeCollapsed(node, collapsed) {
+    node.classList.toggle("is-collapsed", collapsed);
+    const id = String(node.dataset.itemId || "");
+    if (collapsed) collapsedIds.add(id);
+    else collapsedIds.delete(id);
+    node.querySelectorAll(":scope > .writer-tree-item [data-tree-toggle]").forEach((btn) => {
+        btn.textContent = collapsed ? "▸" : "▾";
+    });
+}
+
+function toggleNodeCollapsed(node) {
+    setNodeCollapsed(node, !node.classList.contains("is-collapsed"));
+}
+
 function bindRow(row, { onSelect, onDelete, onAddNote }) {
     if (!row) return;
     const id = row.dataset.itemId || row.dataset.chapterId;
@@ -57,19 +71,23 @@ function isNote(node) {
 }
 
 function bindDrag(node, root, onDrop) {
+    let didDrag = false;
     node.addEventListener("dragstart", (event) => {
         if (event.target.closest("[data-tree-delete], [data-tree-toggle], [data-tree-note]")) {
             event.preventDefault();
             return;
         }
         event.stopPropagation();
+        didDrag = true;
         event.dataTransfer.effectAllowed = "move";
         event.dataTransfer.setData("text/plain", node.dataset.itemId || "");
         node.classList.add("is-dragging");
     });
     node.addEventListener("dragend", () => {
+        const moved = didDrag;
+        didDrag = false;
         node.classList.remove("is-dragging");
-        onDrop?.();
+        if (moved) onDrop?.();
     });
     node.addEventListener("dragover", (event) => {
         event.preventDefault();
@@ -250,17 +268,13 @@ export function renderOutline({
     };
 
     mount.querySelectorAll(".writer-tree-node").forEach((node) => {
-        bindRow(node.querySelector(":scope > .writer-tree-item"), { onSelect, onDelete, onAddNote });
+        const row = node.querySelector(":scope > .writer-tree-item");
+        bindRow(row, { onSelect, onDelete, onAddNote });
         bindDrag(node, mount, saveOrder);
-        node.querySelector("[data-tree-toggle]")?.addEventListener("click", (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            node.classList.toggle("is-collapsed");
-            const collapsed = node.classList.contains("is-collapsed");
-            const id = String(node.dataset.itemId || "");
-            if (collapsed) collapsedIds.add(id);
-            else collapsedIds.delete(id);
-            event.currentTarget.textContent = collapsed ? "▸" : "▾";
+        if (!row?.querySelector("[data-tree-toggle]")) return;
+        row.addEventListener("click", (event) => {
+            if (event.target.closest("[data-tree-delete], [data-tree-note]")) return;
+            toggleNodeCollapsed(node);
         });
     });
     mount.querySelectorAll("[data-nest='outline']").forEach((ul) => bindListDrop(ul, mount, false));

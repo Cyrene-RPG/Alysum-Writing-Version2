@@ -152,12 +152,6 @@
         return rgbToHex(c.r * (1 - amount), c.g * (1 - amount), c.b * (1 - amount));
     }
 
-    function isLightHex(hex) {
-        var c = parseHex(hex);
-        if (!c) return false;
-        return (0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b) / 255 > 0.58;
-    }
-
     function withAlpha(hex, alpha) {
         var c = parseHex(hex);
         if (!c) return hex;
@@ -247,8 +241,9 @@
             root.style.removeProperty("--alysum-ui-chrome");
             root.style.removeProperty("--alysum-ui-raised");
             root.style.removeProperty("--alysum-ui-color");
+            root.style.removeProperty("--panel");
             root.removeAttribute("data-ui-color");
-            root.removeAttribute("data-ui-tone");
+            if (window.__alysumTextInk) window.__alysumTextInk.applyToRoot(root, "#111827", "ui");
             return;
         }
         if (id === "theme") {
@@ -266,17 +261,18 @@
             root.style.setProperty("--alysum-ui-panel", clean);
             root.style.setProperty("--alysum-ui-chrome", darken(clean, 0.22));
             root.style.setProperty("--alysum-ui-raised", lighten(clean, 0.14));
+            root.style.setProperty("--panel", clean);
             root.style.removeProperty("--alysum-ui-color");
             root.setAttribute("data-ui-color", id);
-            if (isLightHex(clean)) root.setAttribute("data-ui-tone", "light");
-            else root.removeAttribute("data-ui-tone");
+            if (window.__alysumTextInk) window.__alysumTextInk.applyToRoot(root, clean, "ui");
         } else {
             root.style.removeProperty("--alysum-ui-panel");
             root.style.removeProperty("--alysum-ui-chrome");
             root.style.removeProperty("--alysum-ui-raised");
             root.style.removeProperty("--alysum-ui-color");
+            root.style.removeProperty("--panel");
             root.removeAttribute("data-ui-color");
-            root.removeAttribute("data-ui-tone");
+            if (window.__alysumTextInk) window.__alysumTextInk.applyToRoot(root, "#111827", "ui");
         }
     }
 

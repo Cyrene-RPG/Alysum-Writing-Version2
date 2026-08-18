@@ -26,10 +26,13 @@ import { createAutosave } from "./autosave.js";
 import { mountDocument } from "./document.js";
 import { confirmDeleteChapter } from "./prompt.js";
 import { initWorkspaceShell, setWelcomeCopy } from "./shell.js";
+import { loadWorkspaceProfile } from "@alysum/account/workspace-profile.js";
 import { mountToolbar } from "./toolbar.js";
-import { expandTreeItem, renderOutline, renderTree } from "./tree.js?v=4";
+import { expandTreeItem, renderOutline, renderTree } from "./tree.js?v=7";
 
 const TREE_COLLAPSE_KEY = "alysum:editor:chapters-collapsed";
+const RAIL_COLLAPSE_KEY = "alysum:editor:rail-collapsed";
+const MATTER_COLLAPSE_KEY = "alysum:editor:matter-collapsed";
 const TREE_TAB_KEY = "alysum:editor:sidebar-tab";
 
 function bookIdFromUrl() {
@@ -69,6 +72,7 @@ async function boot() {
     initWorkspaceShell({ title: "Writer", subtitle: "Loading…" });
     const session = await requireStudioSession(supabase, window.location.pathname + window.location.search);
     if (!session) return;
+    const profilePromise = loadWorkspaceProfile(supabase, session);
 
     const bookId = bookIdFromUrl();
     if (!bookId) {
@@ -107,6 +111,7 @@ async function boot() {
     const chapterWordsEl = document.getElementById("chapterWords");
     const totalWordsEl = document.getElementById("totalWords");
     const treeToggle = document.getElementById("treeToggle");
+    const railToggle = document.getElementById("railToggle");
     const treeAdd = document.getElementById("treeAdd");
     const folderAdd = document.getElementById("folderAdd");
     const noteAdd = document.getElementById("noteAdd");
@@ -142,6 +147,66 @@ async function boot() {
         setTreeCollapsed(!shell?.classList.contains("is-tree-collapsed"));
     });
 
+    function railCollapsed() {
+        try {
+            return localStorage.getItem(RAIL_COLLAPSE_KEY) === "1";
+        } catch {
+            return false;
+        }
+    }
+    function setRailCollapsed(collapsed) {
+        shell?.classList.toggle("is-rail-collapsed", collapsed);
+        if (railToggle) {
+            railToggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
+            railToggle.title = collapsed ? "Show sidebar" : "Hide sidebar";
+            railToggle.textContent = collapsed ? "‹" : "›";
+        }
+        try {
+            localStorage.setItem(RAIL_COLLAPSE_KEY, collapsed ? "1" : "0");
+        } catch {
+            /* ignore */
+        }
+    }
+    setRailCollapsed(railCollapsed());
+    railToggle?.addEventListener("click", () => {
+        setRailCollapsed(!shell?.classList.contains("is-rail-collapsed"));
+    });
+
+    function matterCollapsedMap() {
+        try {
+            const raw = JSON.parse(localStorage.getItem(MATTER_COLLAPSE_KEY) || "{}");
+            return raw && typeof raw === "object" ? raw : {};
+        } catch {
+            return {};
+        }
+    }
+    function setMatterCollapsed(section, collapsed) {
+        if (!section?.dataset.matter) return;
+        section.classList.toggle("is-collapsed", collapsed);
+        const toggle = section.querySelector("[data-matter-toggle]");
+        const chevron = section.querySelector(".writer-matter-chevron");
+        if (toggle) toggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
+        if (chevron) chevron.textContent = collapsed ? "▸" : "▾";
+        const next = matterCollapsedMap();
+        next[section.dataset.matter] = collapsed;
+        try {
+            localStorage.setItem(MATTER_COLLAPSE_KEY, JSON.stringify(next));
+        } catch {
+            /* ignore */
+        }
+    }
+    document.querySelectorAll(".writer-matter[data-matter]").forEach((section) => {
+        const stored = matterCollapsedMap()[section.dataset.matter] === true;
+        setMatterCollapsed(section, stored);
+        section.querySelector("[data-matter-toggle]")?.addEventListener("click", () => {
+            setMatterCollapsed(section, !section.classList.contains("is-collapsed"));
+        });
+    });
+    function expandMatter(key) {
+        const section = document.querySelector(`.writer-matter[data-matter="${key}"]`);
+        if (section) setMatterCollapsed(section, false);
+    }
+
     function setTab(tab) {
         const bookTab = tab === "book";
         chaptersPane.hidden = bookTab;
@@ -160,13 +225,16 @@ async function boot() {
     tabChapters?.addEventListener("click", () => setTab("chapters"));
     tabBook?.addEventListener("click", () => setTab("book"));
 
+    const profile = await profilePromise;
     initWorkspaceShell({
         title: book.title || "Untitled Book",
         subtitle: "Writing",
-        name: session.user?.email || session.user?.id || "A",
+        name: profile.name,
+        imageUrl: profile.imageUrl,
     });
     if (bookTitle) bookTitle.value = book.title || "";
 
+    let bookRev = 0;
     const autosave = createAutosave({
         delay: 400,
         save: async (next) => {
@@ -176,17 +244,21 @@ async function boot() {
                 words: next.words,
                 media_format: next.media_format,
             });
-            book = { ...next, ...saved, sections: saved.sections || next.sections };
+            if (next._rev !== bookRev) return;
+            book = { ...next, ...saved, sections: saved.sections || next.sections, _rev: next._rev };
             if (saveStatus) saveStatus.textContent = "Saved.";
         },
     });
 
-    function persist(next) {
+    function persist(next, immediate = false) {
         book = withUpdatedWords(next);
+        book._rev = ++bookRev;
         if (saveStatus) saveStatus.textContent = "Saving…";
         paintWordCount(chapterWordsEl, totalWordsEl, book, selectedId);
         setWelcomeCopy(book.title || "Untitled Book", "Writing");
         autosave.schedule(book);
+        if (immediate) return autosave.flush();
+        return Promise.resolve();
     }
 
     function selectedKind() {
@@ -236,7 +308,7 @@ async function boot() {
     async function deleteItem(id, sectionKey) {
         if (!(await confirmDeleteChapter())) return;
         const sections = removeSectionChapter(book.sections, sectionKey, id);
-        persist({ ...book, sections });
+        await persist({ ...book, sections }, true);
         showChapter(fallbackChapterId(sections, selectedId));
     }
 
@@ -249,10 +321,10 @@ async function boot() {
             onDelete: (id) => deleteItem(id, key),
             onReorder: (orderedIds) => {
                 applyChapterContent(editor.getHtml());
-                persist({
+                void persist({
                     ...book,
                     sections: reorderSectionChapters(book.sections, key, orderedIds),
-                });
+                }, true);
             },
         });
     }
@@ -268,11 +340,11 @@ async function boot() {
             onAddNote: addNoteToChapter,
             onReorder: (nodes) => {
                 if (selectedKind() !== "folder") applyChapterContent(editor.getHtml());
-                persist({ ...book, sections: applyBodyOutline(book.sections, nodes) });
+                void persist({ ...book, sections: applyBodyOutline(book.sections, nodes) }, true);
             },
             onNotesReorder: (groups) => {
                 if (selectedKind() !== "folder") applyChapterContent(editor.getHtml());
-                persist({ ...book, sections: applyBodyNotes(book.sections, groups) });
+                void persist({ ...book, sections: applyBodyNotes(book.sections, groups) }, true);
             },
         });
     }
@@ -292,8 +364,9 @@ async function boot() {
         const added = key === "body"
             ? lastOfKind(sections.body, "chapter", folderId)
             : sections[key][sections[key].length - 1];
-        persist({ ...book, sections });
+        await persist({ ...book, sections }, true);
         if (tab) setTab(tab);
+        if (tab === "book") expandMatter(key);
         if (added) showChapter(added.id);
     }
 
@@ -304,7 +377,7 @@ async function boot() {
         const sections = addBodyNote(book.sections, parentId);
         const added = lastNote(sections.body, parentId);
         expandTreeItem(parentId);
-        persist({ ...book, sections });
+        await persist({ ...book, sections }, true);
         setTab("chapters");
         if (added) showChapter(added.id);
     }
@@ -316,7 +389,7 @@ async function boot() {
         await saveChapter();
         const sections = addBodyFolder(book.sections, "");
         const added = lastOfKind(sections.body, "folder");
-        persist({ ...book, sections });
+        await persist({ ...book, sections }, true);
         setTab("chapters");
         if (added) showChapter(added.id);
     });
@@ -329,10 +402,17 @@ async function boot() {
         const logoutBtn = event.target.closest("[data-logout-btn]");
         const link = event.target.closest("a[href]");
         const href = link?.getAttribute("href") || "";
-        const leavingPage = Boolean(
-            logoutBtn ||
-            (link && /^(studio|overview|settings)\.html/i.test(href))
-        );
+        let leavingPage = Boolean(logoutBtn);
+        if (!leavingPage && href && !href.startsWith("#")) {
+            try {
+                const url = new URL(href, window.location.href);
+                leavingPage = url.origin !== window.location.origin
+                    || url.pathname !== window.location.pathname
+                    || url.search !== window.location.search;
+            } catch {
+                leavingPage = /\.html(?:[?#]|$)/i.test(href);
+            }
+        }
         if (!leavingPage) return;
         event.preventDefault();
         event.stopImmediatePropagation();
@@ -355,9 +435,15 @@ async function boot() {
         drawTree();
     });
 
-    window.addEventListener("beforeunload", () => {
+    function snapshotAndFlush() {
+        if (selectedKind() !== "folder") applyChapterContent(editor.getHtml());
         void autosave.flush();
+    }
+    document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "hidden") snapshotAndFlush();
     });
+    window.addEventListener("pagehide", snapshotAndFlush);
+    window.addEventListener("beforeunload", snapshotAndFlush);
 
     showChapter(selectedId);
     if (saveStatus) saveStatus.textContent = "Saved.";

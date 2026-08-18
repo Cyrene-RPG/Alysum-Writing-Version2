@@ -21,6 +21,7 @@
     <link rel="stylesheet" href="/site-appearance/css-styles/typography.css" />
     <link rel="stylesheet" href="/site-appearance/css-styles/surface-styles/index.css" />
     <script src="/site-appearance/body-background-presets-data.js"></script>
+    <script src="/site-appearance/text-ink-data.js"></script>
     <script src="/site-appearance/boot.js"></script>
     <script src="/site-appearance/body-background-sync.js"></script>
     <link rel="manifest" href="/manifest.webmanifest">
@@ -29,9 +30,9 @@
     <meta name="robots" content="noindex, nofollow">
     <title>Writer — Alysum</title>
     <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
-    <link rel="stylesheet" href="/css/workspace-nav.css?v=16" />
-    <link rel="stylesheet" href="/css/editor/page.css?v=10" />
-    <link rel="stylesheet" href="/css/editor/document.css?v=2" />
+    <link rel="stylesheet" href="/css/workspace-nav.css?v=20" />
+    <link rel="stylesheet" href="/css/editor/page.css?v=19" />
+    <link rel="stylesheet" href="/css/editor/document.css?v=4" />
     <script src="/site-appearance/gradient-theme-sync.js" defer></script>
 </head>
 <body>
@@ -60,9 +61,7 @@
     <nav class="wd-nav-wrap ui-bar" aria-label="Workspace">
         <div class="wd-nav">
             <a href="studio.html">Studio</a>
-            <a href="overview.html">Overview</a>
             <a href="settings.html">Settings</a>
-            <button type="button" class="settings-nav-logout" data-logout-btn>Logout</button>
         </div>
     </nav>
     <div class="wrap">
@@ -86,24 +85,33 @@
                 </div>
                 <div class="writer-tab-pane" id="bookPane" hidden>
                     <p class="writer-pane-hint">Front, body, and back of the book</p>
-                    <section class="writer-matter" aria-labelledby="frontMatterTitle">
+                    <section class="writer-matter" data-matter="front" aria-labelledby="frontMatterTitle">
                         <div class="writer-pane-head">
-                            <h3 id="frontMatterTitle">Front matter</h3>
+                            <button type="button" class="writer-matter-toggle" data-matter-toggle aria-expanded="true" aria-controls="frontList">
+                                <span class="writer-matter-chevron" aria-hidden="true">▾</span>
+                                <h3 id="frontMatterTitle">Front matter</h3>
+                            </button>
                             <button type="button" class="writer-tree-add" id="frontAdd" aria-label="Add front matter page">+</button>
                         </div>
                         <ul class="writer-tree-list writer-tree-list--matter" id="frontList"></ul>
                         <p class="writer-empty" id="frontEmpty" hidden>None yet. Use + to add.</p>
                     </section>
-                    <section class="writer-matter" aria-labelledby="bodyMatterTitle">
+                    <section class="writer-matter" data-matter="body" aria-labelledby="bodyMatterTitle">
                         <div class="writer-pane-head">
-                            <h3 id="bodyMatterTitle">Body</h3>
+                            <button type="button" class="writer-matter-toggle" data-matter-toggle aria-expanded="true" aria-controls="bodyList">
+                                <span class="writer-matter-chevron" aria-hidden="true">▾</span>
+                                <h3 id="bodyMatterTitle">Body</h3>
+                            </button>
                             <button type="button" class="writer-tree-add writer-tree-add--chapter" id="bodyAdd" aria-label="Add chapter">CH+</button>
                         </div>
                         <ul class="writer-tree-list writer-tree-list--matter" id="bodyList"></ul>
                     </section>
-                    <section class="writer-matter" aria-labelledby="backMatterTitle">
+                    <section class="writer-matter" data-matter="back" aria-labelledby="backMatterTitle">
                         <div class="writer-pane-head">
-                            <h3 id="backMatterTitle">Back matter</h3>
+                            <button type="button" class="writer-matter-toggle" data-matter-toggle aria-expanded="true" aria-controls="backList">
+                                <span class="writer-matter-chevron" aria-hidden="true">▾</span>
+                                <h3 id="backMatterTitle">Back matter</h3>
+                            </button>
                             <button type="button" class="writer-tree-add" id="backAdd" aria-label="Add back matter page">+</button>
                         </div>
                         <ul class="writer-tree-list writer-tree-list--matter" id="backList"></ul>
@@ -122,6 +130,11 @@
                     <span id="chapterWords">0</span> / <span id="totalWords">0</span>
                 </div>
             </section>
+            <aside class="writer-rail" id="writerRail" aria-label="Tools">
+                <div class="writer-rail-head">
+                    <button type="button" class="writer-tree-toggle" id="railToggle" aria-expanded="true" title="Hide sidebar">›</button>
+                </div>
+            </aside>
         </div>
     </div>
     <div class="confirm-overlay" id="confirmOverlay" hidden>
@@ -135,6 +148,6 @@
             </div>
         </div>
     </div>
-    <script type="module" src="/js/editor/page.js?v=10"></script>
+    <script type="module" src="/js/editor/page.js?v=16"></script>
 </body>
 </html>

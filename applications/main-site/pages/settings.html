@@ -16,12 +16,13 @@
       }
     }
     </script>
-    <link rel="stylesheet" href="/site-appearance/css-styles/theme.css" />
-    <link rel="stylesheet" href="/site-appearance/css-styles/gradient-themes/index.css" />
-    <link rel="stylesheet" href="/site-appearance/css-styles/typography.css" />
-    <link rel="stylesheet" href="/site-appearance/css-styles/surface-styles/index.css" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/theme.css?v=2" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/gradient-themes/index.css?v=2" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/typography.css?v=3" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/surface-styles/index.css?v=3" />
     <script src="/site-appearance/body-background-presets-data.js"></script>
-    <script src="/site-appearance/boot.js"></script>
+    <script src="/site-appearance/text-ink-data.js"></script>
+    <script src="/site-appearance/boot.js?v=2"></script>
     <script src="/site-appearance/body-background-sync.js"></script>
     <!-- ALYSUM:PWA:START -->
     <link rel="manifest" href="/manifest.webmanifest">
@@ -60,15 +61,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Account settings — Alysum</title>
 <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
-<link rel="stylesheet" href="/css/settings/page.css?v=2" />
-<link rel="stylesheet" href="/css/settings/appearance.css" />
+<link rel="stylesheet" href="/css/settings/page.css?v=4" />
+<link rel="stylesheet" href="/css/settings/appearance.css?v=10" />
 <link rel="stylesheet" href="/css/settings/account.css?v=2" />
 <link rel="stylesheet" href="/css/settings/profile.css?v=3" />
 <link rel="stylesheet" href="/css/settings/backup.css?v=2" />
 <link rel="stylesheet" href="/css/settings/security.css?v=2" />
-<link rel="stylesheet" href="/css/workspace-nav.css?v=15" />
+<link rel="stylesheet" href="/css/workspace-nav.css?v=20" />
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-<script src="/site-appearance/gradient-theme-sync.js" defer></script>
+<script src="/site-appearance/gradient-theme-sync.js?v=2" defer></script>
 
 </head>
 <body>
@@ -99,10 +100,9 @@
             <div class="wd-nav">
                 <a href="studio.html">Studio</a>
                 <a href="settings.html" class="is-active">Settings</a>
-                <button type="button" class="settings-nav-logout" data-logout-btn>Logout</button>
             </div>
         </nav>
-        <script type="module" src="/js/workspace-nav.js?v=18"></script>
+        <script type="module" src="/js/workspace-nav.js?v=20"></script>
 
     <div class="wrap">
     <div class="panel" id="loadingPanel">
@@ -122,7 +122,7 @@
         </nav>
 
         <div class="settings-content">
-    <div class="panel hidden settings-tab-panel" id="appearancePanel" role="tabpanel" aria-labelledby="tab-appearance" hidden>
+    <div class="panel hidden settings-tab-panel appearance-tab-panel" id="appearancePanel" role="tabpanel" aria-labelledby="tab-appearance" hidden>
         <h2>Appearance</h2>
         <p class="hint">Accent colors for the UI, plus a title font and color for headings.</p>
         <div class="appearance-mix-controls" aria-labelledby="appearance-mix-heading">
@@ -144,6 +144,18 @@
                 <h3 class="appearance-subhead" id="appearance-glass-heading">Glass</h3>
                 <p class="hint">Frost finish on your current accent. Page background, site accent, and titles stay the same.</p>
                 <div class="theme-grid appearance-grid appearance-grid--glass" id="glassChipRow" aria-label="Glass surface style"></div>
+                <h4 class="appearance-subhead" id="appearance-corners-heading">Corners</h4>
+                <p class="hint">Round restores circles and pills. Sharp uses hard rectangles.</p>
+                <div class="theme-grid appearance-grid appearance-grid--corners" id="cornerChipRow" aria-label="Round or sharp corners"></div>
+                <div class="appearance-loadouts" id="appearanceLoadouts">
+                    <div class="appearance-loadouts-head">
+                        <h4 class="appearance-subhead" id="appearance-loadouts-heading">Saved sections</h4>
+                        <button type="button" class="appearance-loadout-save" id="appearanceLoadoutSave" aria-pressed="false">Save</button>
+                    </div>
+                    <p class="hint">Click Save, then a pulsing slot. Type a name (5 characters max) and press Save or Enter. Click a filled slot to apply it.</p>
+                    <div class="appearance-loadout-slots" id="appearanceLoadoutSlots" role="group" aria-labelledby="appearance-loadouts-heading"></div>
+                    <p class="appearance-loadout-msg" id="appearanceLoadoutMsg" hidden role="status"></p>
+                </div>
             </section>
             <details class="appearance-fold">
                 <summary>Page background</summary>
@@ -168,7 +180,7 @@
             <details class="appearance-fold">
                 <summary>UI colors</summary>
                 <div class="appearance-fold-body">
-                    <p class="hint">Sidebar and panels — the black and navy surfaces. Same palette as Page background.</p>
+                    <p class="hint">Sidebar and panels. Light options (porcelain, cream, Blanc, candy, XP) are at the top of this list.</p>
                     <div class="theme-grid appearance-grid appearance-grid--bg" id="uiColorChipRow" aria-label="UI colors"></div>
                     <div class="display-color-custom" id="uiColorCustom" hidden>
                         <div class="display-color-field">
@@ -176,13 +188,6 @@
                             <input type="color" id="uiColorPicker" value="#111827" />
                         </div>
                     </div>
-                </div>
-            </details>
-            <details class="appearance-fold">
-                <summary>Title fonts</summary>
-                <div class="appearance-fold-body">
-                    <p class="hint">Real typefaces — fantasy, serif, sans, and display.</p>
-                    <div class="theme-grid appearance-grid appearance-grid--fonts" id="textStyleChipRow" aria-label="Title fonts"></div>
                 </div>
             </details>
             <details class="appearance-fold">
@@ -200,6 +205,13 @@
                             <input type="color" id="displayColorAccent" value="#fde68a" />
                         </div>
                     </div>
+                </div>
+            </details>
+            <details class="appearance-fold">
+                <summary>Title fonts</summary>
+                <div class="appearance-fold-body">
+                    <p class="hint">Real typefaces — fantasy, serif, sans, and display.</p>
+                    <div class="theme-grid appearance-grid appearance-grid--fonts" id="textStyleChipRow" aria-label="Title fonts"></div>
                 </div>
             </details>
         </div>
@@ -453,7 +465,7 @@
     </div>
 </div>
 
-<script type="module" src="/js/settings/page.js?v=6"></script>
+<script type="module" src="/js/settings/page.js?v=15"></script>
 
 </body>
 </html>

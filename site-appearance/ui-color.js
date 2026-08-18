@@ -10,6 +10,7 @@ import {
     getStoredCustomBodyBg,
     getBodyBgPreview
 } from "./body-background.js";
+import { applyRootInk } from "./text-ink.js";
 
 export const UI_COLOR_KEY = "alysum-ui-color";
 export const UI_COLOR_CUSTOM_KEY = "alysum-ui-color-custom";
@@ -19,17 +20,45 @@ const DEFAULT_PANEL = "#111827";
 const DEFAULT_CHROME = "#141414";
 const DEFAULT_RAISED = "#2a2a2a";
 
-export const UI_COLORS = BODY_BG_PRESETS.filter((p) => p.tone !== "light").map((p) => ({
-    id: p.id,
-    label: p.id === "theme" ? "Match page" : p.label,
-    hint:
-        p.id === "theme"
-            ? "Sidebar and panels follow your page background"
-            : p.id === "default"
-              ? "Original black sidebar and navy panels"
-              : p.hint,
-    color: p.bg || null
-}));
+function toUiColor(p) {
+    return {
+        id: p.id,
+        label: p.id === "theme" ? "Match page" : p.label,
+        hint:
+            p.id === "theme"
+                ? "Sidebar and panels follow your page background"
+                : p.id === "default"
+                  ? "Original black sidebar and navy panels"
+                  : p.hint,
+        color: p.bg || null
+    };
+}
+
+const EXTRA_LIGHT_UI = [
+    { id: "ui-porcelain", label: "Porcelain", color: "#f8fafc", hint: "Cool white panels" },
+    { id: "ui-fog", label: "Fog", color: "#e5e7eb", hint: "Light grey panels" },
+    { id: "ui-pebble", label: "Pebble", color: "#d6d3d1", hint: "Warm stone panels" },
+    { id: "ui-linen", label: "Linen", color: "#f5f0e8", hint: "Warm paper panels" },
+    { id: "ui-powder", label: "Powder", color: "#e0f2fe", hint: "Pale sky panels" },
+    { id: "ui-petal", label: "Petal", color: "#fce7f3", hint: "Soft pink panels" },
+    { id: "ui-sage", label: "Sage", color: "#ecfdf5", hint: "Mint cream panels" },
+    { id: "ui-lilac", label: "Lilac", color: "#f3e8ff", hint: "Pale violet panels" },
+    { id: "ui-cream", label: "Cream", color: "#fffbeb", hint: "Warm cream panels" }
+];
+
+const specialUiColors = BODY_BG_PRESETS.filter((p) => p.id === "default" || p.id === "theme").map(toUiColor);
+const bodyUiColors = BODY_BG_PRESETS.filter((p) => p.id !== "custom" && p.id !== "default" && p.id !== "theme");
+const lightBodyUiColors = bodyUiColors.filter((p) => p.tone === "light").map(toUiColor);
+const darkBodyUiColors = bodyUiColors.filter((p) => p.tone !== "light").map(toUiColor);
+const customUiColor = toUiColor(BODY_BG_PRESETS.find((p) => p.id === "custom"));
+
+export const UI_COLORS = [
+    ...specialUiColors,
+    ...EXTRA_LIGHT_UI,
+    ...lightBodyUiColors,
+    ...darkBodyUiColors,
+    customUiColor
+];
 
 const COLOR_IDS = new Set(UI_COLORS.map((c) => c.id));
 
@@ -83,7 +112,7 @@ function resolvePageBgHex() {
 }
 
 export function isUiColorId(id) {
-    return COLOR_IDS.has(id);
+    return COLOR_IDS.has(id) || String(id || "").startsWith("ui-");
 }
 
 export function getStoredUiColorId() {
@@ -112,12 +141,6 @@ export function resolveUiColorHex(colorId) {
     return parseHex(row?.color) || DEFAULT_PANEL;
 }
 
-function isLightHex(hex) {
-    const c = hexToRgb(hex);
-    if (!c) return false;
-    return (0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b) / 255 > 0.58;
-}
-
 export function applyUiColorVars(hex) {
     if (typeof document === "undefined") return;
     const root = document.documentElement;
@@ -129,8 +152,8 @@ export function applyUiColorVars(hex) {
     root.style.setProperty("--alysum-ui-panel", clean);
     root.style.setProperty("--alysum-ui-chrome", darken(clean, 0.22));
     root.style.setProperty("--alysum-ui-raised", lighten(clean, 0.14));
-    if (isLightHex(clean)) root.setAttribute("data-ui-tone", "light");
-    else root.removeAttribute("data-ui-tone");
+    root.style.setProperty("--panel", clean);
+    applyRootInk(root, clean, "ui");
 }
 
 export function clearUiColorVars() {
@@ -140,7 +163,8 @@ export function clearUiColorVars() {
     root.style.removeProperty("--alysum-ui-chrome");
     root.style.removeProperty("--alysum-ui-raised");
     root.style.removeProperty("--alysum-ui-color");
-    root.removeAttribute("data-ui-tone");
+    root.style.removeProperty("--panel");
+    applyRootInk(root, DEFAULT_PANEL, "ui");
 }
 
 export function applyUiColor(colorId, customHex) {

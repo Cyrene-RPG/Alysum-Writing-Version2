@@ -4,14 +4,14 @@
     align-items: center;
     justify-content: center;
     padding: 18px 32px;
-    border-bottom: 1px solid var(--bg-panel-border);
+    border-bottom: 1px solid var(--border, rgba(255, 255, 255, 0.1));
 }
 
 .brand {
     display: flex;
     align-items: center;
     gap: 10px;
-    color: var(--text-primary);
+    color: var(--text);
 }
 
 .brand-logo {
@@ -35,7 +35,7 @@
     font-weight: 900;
     line-height: 1;
     padding-right: 0.04em;
-    background: linear-gradient(135deg, #d946ef, var(--accent-primary));
+    background: linear-gradient(135deg, var(--pink, #ec4899), var(--purple, #6d28d9));
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -69,6 +69,6 @@
 }
 
 .btn-discord:focus-visible {
-    outline: 2px solid var(--accent-primary-2);
+    outline: 2px solid var(--purple-bright, var(--purple));
     outline-offset: 2px;
 }

@@ -1,7 +1,6 @@
 /**
- * Text prompt for Electron desktop (window.prompt is unsupported there).
+ * On-screen prompt (window.prompt is unsupported in Electron).
  */
-import { isAlysumDesktop } from "@alysum/desktop/app.js";
 
 let styleInjected = false;
 
@@ -79,8 +78,10 @@ function injectStyles() {
   document.head.appendChild(el);
 }
 
-function showDialog(message, defaultValue) {
+function showDialog(message, defaultValue, options = {}) {
   injectStyles();
+  const maxLength = Number(options.maxLength) > 0 ? Number(options.maxLength) : null;
+  const confirmLabel = options.confirmLabel || "OK";
   return new Promise((resolve) => {
     const root = document.createElement("div");
     root.className = "alysum-prompt-root";
@@ -97,8 +98,13 @@ function showDialog(message, defaultValue) {
     const input = document.createElement("input");
     input.type = "text";
     input.className = "alysum-prompt-input";
-    input.value = defaultValue ?? "";
+    const start = String(defaultValue ?? "");
+    input.value = maxLength ? start.slice(0, maxLength) : start;
     input.autocomplete = "off";
+    if (maxLength) {
+      input.maxLength = maxLength;
+      input.setAttribute("maxlength", String(maxLength));
+    }
 
     const actions = document.createElement("div");
     actions.className = "alysum-prompt-actions";
@@ -111,7 +117,7 @@ function showDialog(message, defaultValue) {
     const okBtn = document.createElement("button");
     okBtn.type = "button";
     okBtn.className = "alysum-prompt-btn alysum-prompt-btn--primary";
-    okBtn.textContent = "OK";
+    okBtn.textContent = confirmLabel;
 
     function finish(value) {
       root.remove();
@@ -119,13 +125,24 @@ function showDialog(message, defaultValue) {
       resolve(value);
     }
 
+    function readValue() {
+      const raw = input.value;
+      return maxLength ? raw.slice(0, maxLength) : raw;
+    }
+
     function onKey(e) {
-      if (e.key === "Escape") finish(null);
-      if (e.key === "Enter") finish(input.value);
+      if (e.key === "Escape") {
+        e.preventDefault();
+        finish(null);
+      }
+      if (e.key === "Enter") {
+        e.preventDefault();
+        finish(readValue());
+      }
     }
 
     cancelBtn.addEventListener("click", () => finish(null));
-    okBtn.addEventListener("click", () => finish(input.value));
+    okBtn.addEventListener("click", () => finish(readValue()));
     root.addEventListener("click", (e) => {
       if (e.target === root) finish(null);
     });
@@ -140,19 +157,80 @@ function showDialog(message, defaultValue) {
   });
 }
 
+function showConfirm(message) {
+  injectStyles();
+  return new Promise((resolve) => {
+    const root = document.createElement("div");
+    root.className = "alysum-prompt-root";
+    root.setAttribute("role", "dialog");
+    root.setAttribute("aria-modal", "true");
+
+    const box = document.createElement("div");
+    box.className = "alysum-prompt-box";
+
+    const msg = document.createElement("p");
+    msg.className = "alysum-prompt-msg";
+    msg.textContent = message;
+
+    const actions = document.createElement("div");
+    actions.className = "alysum-prompt-actions";
+
+    const cancelBtn = document.createElement("button");
+    cancelBtn.type = "button";
+    cancelBtn.className = "alysum-prompt-btn";
+    cancelBtn.textContent = "Cancel";
+
+    const okBtn = document.createElement("button");
+    okBtn.type = "button";
+    okBtn.className = "alysum-prompt-btn alysum-prompt-btn--primary";
+    okBtn.textContent = "Yes";
+
+    function finish(value) {
+      root.remove();
+      document.removeEventListener("keydown", onKey);
+      resolve(value);
+    }
+
+    function onKey(e) {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        finish(false);
+      }
+      if (e.key === "Enter") {
+        e.preventDefault();
+        finish(true);
+      }
+    }
+
+    cancelBtn.addEventListener("click", () => finish(false));
+    okBtn.addEventListener("click", () => finish(true));
+    root.addEventListener("click", (e) => {
+      if (e.target === root) finish(false);
+    });
+
+    actions.append(cancelBtn, okBtn);
+    box.append(msg, actions);
+    root.append(box);
+    document.body.append(root);
+    document.addEventListener("keydown", onKey);
+    okBtn.focus();
+  });
+}
+
 /**
  * @param {string} message
  * @param {string} [defaultValue]
+ * @param {{ maxLength?: number, confirmLabel?: string }} [options]
  * @returns {Promise<string|null>}
  */
-export function alysumPrompt(message, defaultValue = "") {
-  if (!isAlysumDesktop()) {
-    try {
-      const value = window.prompt(message, defaultValue);
-      return Promise.resolve(value);
-    } catch {
-      /* Electron or restricted context */
-    }
-  }
-  return showDialog(message, defaultValue);
+export function alysumPrompt(message, defaultValue = "", options = {}) {
+  return showDialog(message, defaultValue, options);
+}
+
+/**
+ * @param {string} message
+ * @returns {Promise<boolean>}
+ */
+export function alysumConfirm(message) {
+  return showConfirm(message);
 }

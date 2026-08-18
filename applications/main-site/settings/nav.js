@@ -15,7 +15,9 @@ const SETTINGS_SECTION_ANCHORS = {
     "author-support": { panel: "profilePanel", scrollTo: "#author-support", hash: "author-support" },
     libraryPanel: { panel: "securityPanel", scrollTo: "#library-policy", hash: "library-policy" },
     staffPanel: { panel: "securityPanel", scrollTo: "#library-policy", hash: "library-policy" },
-    "library-policy": { panel: "securityPanel", scrollTo: "#library-policy", hash: "library-policy" }
+    "library-policy": { panel: "securityPanel", scrollTo: "#library-policy", hash: "library-policy" },
+    colorsPanel: { panel: "appearancePanel", scrollTo: null, hash: "appearancePanel" },
+    titlesPanel: { panel: "appearancePanel", scrollTo: null, hash: "appearancePanel" }
 };
 
 export function resolveSettingsRoute(rawHash) {

@@ -62,7 +62,7 @@ body {
     text-align: center;
     font-size: 15px;
     font-weight: 800;
-    color: #fff;
+    color: var(--ui-text, #fff);
 }
 
 .settings-nav-list {
@@ -80,7 +80,7 @@ body {
     border-radius: 8px;
     border: 1px solid transparent;
     background: var(--alysum-ui-raised, #2a2a2a);
-    color: #c5c5c5;
+    color: var(--ui-muted, #c5c5c5);
     font-size: 13px;
     font-weight: 800;
     font-family: inherit;
@@ -92,7 +92,7 @@ body {
 
 .settings-nav button:hover,
 .settings-nav a.settings-nav-page:hover {
-    color: #fff;
+    color: var(--ui-text, #fff);
     background: color-mix(in srgb, var(--alysum-ui-raised, #2a2a2a) 82%, white);
 }
 
@@ -180,6 +180,8 @@ body {
     display: flex;
     flex-direction: column;
     flex: 1;
+    min-width: 0;
+    width: 100%;
 }
 
 .settings-tab-panel.panel {

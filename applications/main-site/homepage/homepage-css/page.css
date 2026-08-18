@@ -1,13 +1,5 @@
 :root {
-    --bg-page: #0a0a14;
-    --bg-panel: #12121e;
-    --bg-panel-border: #23233a;
-    --text-primary: #f5f5fa;
-    --text-secondary: #9d9db3;
-    --accent-primary: #8b5cf6;
-    --accent-primary-2: #a855f7;
-    --accent-discord: #5865f2;
-    --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --font-body: var(--font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
     --radius-lg: 16px;
     --radius-pill: 999px;
 }
@@ -21,10 +13,6 @@ html {
 body {
     margin: 0;
     min-height: 100vh;
-    background:
-        radial-gradient(ellipse 80% 50% at 50% -10%, color-mix(in srgb, var(--purple, #8b5cf6) 22%, transparent), transparent 55%),
-        linear-gradient(180deg, var(--bg-gradient-top, var(--bg, var(--bg-page))) 0%, var(--bg, var(--bg-page)) 100%);
-    color: var(--text-primary);
     font-family: var(--font-body);
 }
 
@@ -34,8 +22,8 @@ a {
 }
 
 .alert-banner {
-    border-bottom: 1px solid var(--bg-panel-border);
-    background: rgba(139, 92, 246, 0.12);
+    border-bottom: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+    background: var(--theme-accent-soft-bg, rgba(109, 40, 217, 0.16));
 }
 
 .alert-banner.hidden {
@@ -49,18 +37,18 @@ a {
     gap: 12px;
     padding: 10px 20px;
     font-size: 13px;
-    color: var(--text-secondary);
+    color: var(--muted);
 }
 
 .alert-content a {
-    color: #c4b5fd;
+    color: var(--link, var(--accent-soft, var(--purple)));
     font-weight: 700;
 }
 
 .alert-close {
     border: 0;
     background: transparent;
-    color: var(--text-primary);
+    color: var(--text);
     font-size: 18px;
     cursor: pointer;
 }

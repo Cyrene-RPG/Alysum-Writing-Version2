@@ -1,0 +1,54 @@
+/* Sharp corners — opt-in from Appearance → Glass → Sharp */
+html[data-corner-style="sharp"] {
+    --glass-radius: 0;
+}
+html[data-corner-style="sharp"] .wd-nav > a,
+html[data-corner-style="sharp"] .wd-nav > button,
+html[data-corner-style="sharp"] .wd-loadout-btn,
+html[data-corner-style="sharp"] .wd-loadout-dropdown,
+html[data-corner-style="sharp"] .wd-loadout-item,
+html[data-corner-style="sharp"] .wd-pfp-dropdown,
+html[data-corner-style="sharp"] .wd-pfp-dropdown a,
+html[data-corner-style="sharp"] .wd-pfp-dropdown button,
+html[data-corner-style="sharp"] .appearance-loadout-slot,
+html[data-corner-style="sharp"] .appearance-loadout-save,
+html[data-corner-style="sharp"] .appearance-mix-shuffle,
+html[data-corner-style="sharp"] .appearance-mix-controls,
+html[data-corner-style="sharp"] .appearance-fold,
+html[data-corner-style="sharp"] .appearance-block,
+html[data-corner-style="sharp"] .theme-chip,
+html[data-corner-style="sharp"] .panel,
+html[data-corner-style="sharp"] .card,
+html[data-corner-style="sharp"] .btn,
+html[data-corner-style="sharp"] .btn-primary,
+html[data-corner-style="sharp"] .btn-secondary,
+html[data-corner-style="sharp"] .writer-tab,
+html[data-corner-style="sharp"] .writer-tree-toggle,
+html[data-corner-style="sharp"] .writer-tree-add,
+html[data-corner-style="sharp"] .writer-tree-item,
+html[data-corner-style="sharp"] .writer-tree,
+html[data-corner-style="sharp"] .writer-rail,
+html[data-corner-style="sharp"] .writer-main,
+html[data-corner-style="sharp"] .writer-loading,
+html[data-corner-style="sharp"] .writer-tool,
+html[data-corner-style="sharp"] .writer-wordcount,
+html[data-corner-style="sharp"] .writer-tree-fold,
+html[data-corner-style="sharp"] .confirm-card,
+html[data-corner-style="sharp"] .confirm-yes,
+html[data-corner-style="sharp"] .confirm-no,
+html[data-corner-style="sharp"] .settings-nav,
+html[data-corner-style="sharp"] .settings-nav button,
+html[data-corner-style="sharp"] .settings-nav a.settings-nav-page {
+    border-radius: 0;
+}
+
+html[data-corner-style="sharp"] .writer-shell.is-tree-collapsed .writer-tree,
+html[data-corner-style="sharp"] .writer-shell.is-rail-collapsed .writer-rail,
+html[data-corner-style="sharp"] .writer-shell.is-tree-collapsed .writer-tree-toggle,
+html[data-corner-style="sharp"] .writer-shell.is-rail-collapsed .writer-tree-toggle {
+    border-radius: 0;
+}
+
+html[data-corner-style="sharp"] .corner-chip--round {
+    border-radius: 50%;
+}

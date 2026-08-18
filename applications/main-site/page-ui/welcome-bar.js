@@ -6,11 +6,20 @@ function fillWelcomeAvatar(imageUrl, name) {
     const initial = document.getElementById("welcomePfpInitial");
     const letter = String(name || "A").trim().charAt(0).toUpperCase() || "A";
     const url = String(imageUrl || "").trim();
+    if (initial) initial.textContent = letter;
 
     if (img && url) {
-        img.src = url;
-        img.hidden = false;
         initial?.classList.add("is-hidden");
+        img.onload = () => {
+            img.hidden = false;
+        };
+        img.onerror = () => {
+            img.removeAttribute("src");
+            img.hidden = true;
+            initial?.classList.remove("is-hidden");
+        };
+        img.hidden = false;
+        img.src = url;
         return;
     }
 
@@ -18,10 +27,7 @@ function fillWelcomeAvatar(imageUrl, name) {
         img.removeAttribute("src");
         img.hidden = true;
     }
-    if (initial) {
-        initial.textContent = letter;
-        initial.classList.remove("is-hidden");
-    }
+    initial?.classList.remove("is-hidden");
 }
 
 function closeWelcomePfpMenu() {

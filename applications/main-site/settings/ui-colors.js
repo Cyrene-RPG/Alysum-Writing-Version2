@@ -6,13 +6,7 @@ import {
     getStoredCustomUiColor,
     getUiColorPreview
 } from "@alysum/site-appearance/ui-color.js";
-import { setAppearanceMixMode } from "@alysum/site-appearance/body-background.js";
-
-function markMixFree() {
-    setAppearanceMixMode("free");
-    if (els.appearanceMixLinked) els.appearanceMixLinked.checked = false;
-    if (els.appearanceMixFree) els.appearanceMixFree.checked = true;
-}
+import { paintChipInk } from "@alysum/site-appearance/text-ink.js";
 
 export function setUiColorChipActive(id) {
     els.uiColorChipRow?.querySelectorAll(".theme-chip").forEach((x) => {
@@ -24,6 +18,7 @@ export function refreshUiColorThemeChip() {
     const themeBtn = els.uiColorChipRow?.querySelector('[data-style="theme"]');
     if (!themeBtn) return;
     themeBtn.style.background = getUiColorPreview("theme");
+    paintChipInk(themeBtn, getUiColorPreview("theme"));
 }
 
 export function syncUiColorCustomPanelVisibility(colorId) {
@@ -41,7 +36,10 @@ function bindCustomUiColorInput() {
         if (getStoredUiColorId() !== "custom") return;
         applyUiColor("custom", els.uiColorPicker.value);
         const customBtn = els.uiColorChipRow?.querySelector('[data-style="custom"]');
-        if (customBtn) customBtn.style.background = els.uiColorPicker.value;
+        if (customBtn) {
+            customBtn.style.background = els.uiColorPicker.value;
+            paintChipInk(customBtn, els.uiColorPicker.value);
+        }
     });
 }
 
@@ -66,15 +64,12 @@ export function initUiColorPicker() {
         labelEl.className = "text-style-chip-label";
         labelEl.textContent = c.label;
         b.append(labelEl);
+        paintChipInk(b, preview || c.color || "#111827");
         b.addEventListener("click", () => {
             if (c.id === "custom") {
                 applyUiColor("custom", els.uiColorPicker?.value || getStoredCustomUiColor());
-                markMixFree();
-            } else if (c.id === "theme" || c.id === "default") {
-                applyUiColor(c.id);
             } else {
                 applyUiColor(c.id);
-                markMixFree();
             }
             els.uiColorChipRow.querySelectorAll(".theme-chip").forEach((x) => {
                 x.classList.remove("active");

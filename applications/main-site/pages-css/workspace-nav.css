@@ -245,6 +245,15 @@
     letter-spacing: 0.01em;
 }
 
+html[data-gradient-theme="blanc"] .wd-welcome-title {
+    color: var(--alysum-display-solid, var(--text-ink-black, #18181b));
+    text-shadow: none;
+}
+
+html[data-gradient-theme="blanc"] .wd-welcome-sub {
+    color: var(--text-ink-black, #18181b);
+}
+
 .wd-nav-wrap {
     position: sticky;
     top: 0;
@@ -252,8 +261,8 @@
     flex-shrink: 0;
     width: 100%;
     max-width: 100%;
-    overflow-x: auto;
-    overflow-y: hidden;
+    overflow-x: visible;
+    overflow-y: visible;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-x: contain;
     touch-action: pan-x;
@@ -285,16 +294,16 @@
     align-items: center;
     justify-content: flex-start;
     gap: 4px 6px;
-    width: max-content;
-    min-width: 100%;
+    width: 100%;
+    min-width: 0;
     max-width: none;
     margin: 0;
     padding: 10px clamp(12px, 2vw, 24px);
     box-sizing: border-box;
 }
 
-.wd-nav a,
-.wd-nav button {
+.wd-nav > a,
+.wd-nav > button {
     flex: none;
     display: inline-flex;
     align-items: center;
@@ -314,14 +323,14 @@
     transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
 }
 
-.wd-nav a:hover,
-.wd-nav button:hover {
+.wd-nav > a:hover,
+.wd-nav > button:hover {
     color: #fff;
     background: rgba(255, 255, 255, 0.06);
 }
 
-.wd-nav a.is-active,
-.wd-nav button.is-active {
+.wd-nav > a.is-active,
+.wd-nav > button.is-active {
     color: #fff;
     border-color: rgba(255, 255, 255, 0.38);
     background: var(
@@ -339,8 +348,127 @@
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
 }
 
-.wd-nav a.is-hidden,
-.wd-nav button.is-hidden { display: none; }
+.wd-nav > a.is-hidden,
+.wd-nav > button.is-hidden { display: none; }
+
+.wd-loadout-menu {
+    position: relative;
+    margin-left: auto;
+    flex: 0 0 auto;
+}
+
+.wd-loadout-btn {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px clamp(10px, 0.9vw, 14px);
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    background: rgba(0, 0, 0, 0.22);
+    color: #fff;
+    font-family: inherit;
+    font-size: clamp(12px, 0.85vw, 13px);
+    font-weight: 700;
+    line-height: 1.2;
+    cursor: pointer;
+}
+
+.wd-loadout-btn::after {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: rotate(45deg);
+    margin-top: -3px;
+}
+
+.wd-loadout-menu.is-open .wd-loadout-btn {
+    border-color: rgba(255, 255, 255, 0.45);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.wd-loadout-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    z-index: 60;
+    min-width: 198px;
+    padding: 8px;
+    border-radius: 14px;
+    background: linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--alysum-ui-panel, #111827) 88%, white),
+        var(--alysum-ui-panel, #111827)
+    );
+    color: var(--text, #fff);
+    border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+}
+
+.wd-loadout-dropdown[hidden] {
+    display: none;
+}
+
+.wd-loadout-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    margin: 0 0 4px;
+    padding: 10px 12px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    background: var(--alysum-ui-raised, #2a2a2a);
+    color: var(--text, #fff);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 1.2;
+    text-align: left;
+    cursor: pointer;
+}
+
+.wd-loadout-item:last-child {
+    margin-bottom: 0;
+}
+
+.wd-loadout-item:hover {
+    background: color-mix(in srgb, var(--alysum-ui-raised, #2a2a2a) 82%, white);
+}
+
+.wd-loadout-swatch {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    background: #27272a;
+}
+
+.wd-loadout-empty {
+    margin: 0;
+    padding: 10px 12px;
+    color: var(--muted, #94a3b8);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+html[data-gradient-theme="blanc"] .wd-loadout-btn {
+    color: var(--text-ink-black, #18181b);
+    border-color: rgba(24, 24, 27, 0.2);
+    background: rgba(255, 255, 255, 0.45);
+}
+
+html[data-gradient-theme="blanc"] .wd-nav > a {
+    color: var(--text-ink-black, #18181b);
+}
+
+html[data-gradient-theme="blanc"] .wd-nav > a.is-active {
+    color: var(--text-ink-black, #18181b);
+    text-shadow: none;
+}
 
 .wd-nav-logout { color: #fca5a5; }
 
@@ -637,8 +765,8 @@ button.fh-has-new-badge .fh-target-new,
         gap: 8px;
     }
 
-    .wd-nav a,
-    .wd-nav button {
+    .wd-nav > a,
+    .wd-nav > button {
         font-size: 12px;
         padding: 10px 14px;
         min-height: 40px;

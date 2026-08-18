@@ -102,6 +102,7 @@
       { "source": "/js/settings/author-page.js", "destination": "/applications/main-site/settings/author-page.js" },
       { "source": "/js/settings/appearance.js", "destination": "/applications/main-site/settings/appearance.js" },
       { "source": "/js/settings/ui-colors.js", "destination": "/applications/main-site/settings/ui-colors.js" },
+      { "source": "/js/settings/loadouts.js", "destination": "/applications/main-site/settings/loadouts.js" },
       { "source": "/js/settings/backup.js", "destination": "/applications/main-site/settings/backup.js" },
       { "source": "/js/settings/shell.js", "destination": "/applications/main-site/settings/shell.js" },
       { "source": "/js/settings/saves.js", "destination": "/applications/main-site/settings/saves.js" },

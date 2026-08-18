@@ -2,6 +2,7 @@
  * Welcome bar + logout for the editor. Do not import main-site or studio modules.
  */
 import { wireLogoutButtons } from "@alysum/authentication/logout.js";
+import { initAppearanceLoadoutMenu } from "@alysum/site-appearance/appearance-loadout-menu.js";
 
 function closeWelcomePfpMenu() {
     const menu = document.getElementById("welcomePfpMenu");
@@ -48,15 +49,38 @@ export function setWelcomeCopy(title, subtitle) {
     if (subEl && subtitle != null) subEl.textContent = subtitle;
 }
 
-export function setWelcomeInitial(name) {
+export function setWelcomeAvatar(imageUrl, name) {
+    const img = document.getElementById("welcomePfpImg");
     const initial = document.getElementById("welcomePfpInitial");
-    if (!initial) return;
-    initial.textContent = String(name || "A").trim().charAt(0).toUpperCase() || "A";
+    const letter = String(name || "A").trim().charAt(0).toUpperCase() || "A";
+    const url = String(imageUrl || "").trim();
+    if (initial) initial.textContent = letter;
+    if (img && url) {
+        initial?.classList.add("is-hidden");
+        img.onerror = () => {
+            img.removeAttribute("src");
+            img.hidden = true;
+            initial?.classList.remove("is-hidden");
+        };
+        img.hidden = false;
+        img.src = url;
+        return;
+    }
+    if (img) {
+        img.removeAttribute("src");
+        img.hidden = true;
+    }
+    initial?.classList.remove("is-hidden");
 }
 
-export function initWorkspaceShell({ title, subtitle, name } = {}) {
+export function setWelcomeInitial(name) {
+    setWelcomeAvatar("", name);
+}
+
+export function initWorkspaceShell({ title, subtitle, name, imageUrl } = {}) {
     wireLogoutButtons(document);
     wirePfpMenu();
+    initAppearanceLoadoutMenu();
     if (title || subtitle) setWelcomeCopy(title || "", subtitle || "");
-    if (name) setWelcomeInitial(name);
+    if (name || imageUrl) setWelcomeAvatar(imageUrl, name);
 }

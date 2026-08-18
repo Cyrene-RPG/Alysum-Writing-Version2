@@ -116,14 +116,26 @@ export function createBooksApi(session, supabase) {
             }
         },
         async getBook(id) {
+            const cached = readCache(userId).find((row) => row.id === id) || null;
             try {
                 const book = await cloud.getBook(supabase, userId, id);
-                if (book) upsertCache(userId, book);
-                if (book) return normalizeBook(book);
+                if (book && cached && Number(cached.updated || 0) > Number(book.updated || 0)) {
+                    try {
+                        const pushed = await cloud.updateBook(supabase, userId, id, cached);
+                        upsertCache(userId, pushed);
+                        return normalizeBook(pushed);
+                    } catch {
+                        return normalizeBook(cached);
+                    }
+                }
+                if (book) {
+                    upsertCache(userId, book);
+                    return normalizeBook(book);
+                }
             } catch {
                 /* fall through to cache */
             }
-            return readCache(userId).find((row) => row.id === id) || null;
+            return cached ? normalizeBook(cached) : null;
         },
         async insertBook(payload) {
             const seed = asBook(payload);

@@ -6,9 +6,14 @@
     --muted: #9ca3af;
     --border: rgba(255, 255, 255, 0.1);
 }
+html {
+    height: 100%;
+}
 body {
     margin: 0;
-    min-height: 100vh;
+    height: 100%;
+    max-height: 100vh;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -21,6 +26,7 @@ body {
 .wrap {
     flex: 1;
     min-height: 0;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
 }
@@ -36,28 +42,46 @@ body {
     flex: 1;
     min-height: 0;
     display: grid;
-    grid-template-columns: minmax(220px, 260px) minmax(0, 1fr);
+    grid-template-columns: minmax(220px, 260px) minmax(0, 1fr) minmax(220px, 260px);
+    grid-template-rows: minmax(0, 1fr);
     gap: 16px;
     padding: 16px clamp(12px, 2vw, 24px) 24px;
+    overflow: hidden;
 }
 .writer-shell.is-tree-collapsed {
-    grid-template-columns: 40px minmax(0, 1fr);
+    grid-template-columns: 40px minmax(0, 1fr) minmax(220px, 260px);
+}
+.writer-shell.is-rail-collapsed {
+    grid-template-columns: minmax(220px, 260px) minmax(0, 1fr) 40px;
+}
+.writer-shell.is-tree-collapsed.is-rail-collapsed {
+    grid-template-columns: 40px minmax(0, 1fr) 40px;
 }
 .writer-tree,
+.writer-rail,
 .writer-main {
     min-height: 0;
     border-radius: 18px;
     border: 1px solid var(--border);
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
 }
-.writer-tree {
+.writer-main {
+    height: 100%;
+}
+.writer-tree,
+.writer-rail {
     display: flex;
     flex-direction: column;
+    align-self: start;
+    width: 100%;
+    height: auto;
+    max-height: 100%;
     background: var(--alysum-ui-chrome, #141414);
     padding: 14px 12px;
     overflow: hidden;
 }
-.writer-tree-head {
+.writer-tree-head,
+.writer-rail-head {
     display: flex;
     align-items: flex-end;
     justify-content: space-between;
@@ -65,6 +89,9 @@ body {
     margin-bottom: 12px;
     flex-shrink: 0;
     border-bottom: 1px solid var(--border);
+}
+.writer-rail-head {
+    justify-content: flex-start;
 }
 .writer-tabs {
     display: flex;
@@ -89,12 +116,12 @@ body {
 }
 .writer-tab.is-active {
     background: transparent;
-    color: #fff;
+    color: var(--text, #fff);
     border-bottom-color: var(--alysum-ui-chrome, #141414);
 }
 .writer-tab-pane {
     min-height: 0;
-    flex: 1;
+    flex: 1 1 auto;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -117,6 +144,33 @@ body {
     font-size: 13px;
     font-weight: 800;
 }
+.writer-matter-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+    min-height: 32px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+    text-align: left;
+}
+.writer-matter-chevron {
+    width: 14px;
+    flex-shrink: 0;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1;
+}
+.writer-matter.is-collapsed .writer-tree-list,
+.writer-matter.is-collapsed .writer-empty {
+    display: none;
+}
 .writer-pane-hint {
     margin: 0;
     font-size: 12px;
@@ -138,7 +192,7 @@ body {
     border-radius: 8px;
     font-weight: 800;
     cursor: pointer;
-    color: #fff;
+    color: var(--text, #fff);
     line-height: 1;
     flex-shrink: 0;
 }
@@ -171,7 +225,7 @@ body {
     flex-direction: column;
     gap: 6px;
     min-height: 0;
-    flex: 1;
+    flex: 1 1 auto;
 }
 .writer-tree-list--matter {
     flex: none;
@@ -180,7 +234,8 @@ body {
 #bookPane {
     overflow: auto;
 }
-.writer-shell.is-tree-collapsed .writer-tree {
+.writer-shell.is-tree-collapsed .writer-tree,
+.writer-shell.is-rail-collapsed .writer-rail {
     align-self: start;
     width: 40px;
     height: 40px;
@@ -192,14 +247,16 @@ body {
     box-shadow: none;
     overflow: hidden;
 }
-.writer-shell.is-tree-collapsed .writer-tree-head {
+.writer-shell.is-tree-collapsed .writer-tree-head,
+.writer-shell.is-rail-collapsed .writer-rail-head {
     display: contents;
 }
 .writer-shell.is-tree-collapsed .writer-tabs,
 .writer-shell.is-tree-collapsed .writer-tab-pane {
     display: none;
 }
-.writer-shell.is-tree-collapsed .writer-tree-toggle {
+.writer-shell.is-tree-collapsed .writer-tree-toggle,
+.writer-shell.is-rail-collapsed .writer-tree-toggle {
     width: 40px;
     height: 40px;
     margin: 0;
@@ -258,6 +315,9 @@ body {
 }
 .writer-tree-item--folder {
     background: color-mix(in srgb, var(--alysum-ui-raised, #2a2a2a) 80%, transparent);
+}
+.writer-tree-item:has([data-tree-toggle]) {
+    cursor: pointer;
 }
 .writer-tree-item--note {
     font-size: 13px;
@@ -322,7 +382,7 @@ body {
         color-mix(in srgb, var(--alysum-ui-panel, #111827) 88%, white),
         var(--alysum-ui-panel, #111827)
     );
-    overflow: hidden;
+    overflow: auto;
     position: relative;
 }
 .writer-book-title,
@@ -355,19 +415,26 @@ body {
 }
 .writer-toolbar {
     display: flex;
-    flex-wrap: wrap;
-    gap: 2px;
-    padding: 6px 10px;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 1px;
+    padding: 2px 8px;
     background: var(--alysum-ui-raised, #2a2a2a);
     border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 4;
+    flex-shrink: 0;
+    overflow-x: auto;
 }
 .writer-tool {
-    min-width: 36px;
-    height: 36px;
+    min-width: 28px;
+    height: 26px;
     border: 0;
-    border-radius: 8px;
+    border-radius: 6px;
     background: transparent;
     color: inherit;
+    font-size: 12px;
     font-weight: 800;
     cursor: pointer;
 }
@@ -458,10 +525,18 @@ body {
 @media (max-width: 720px) {
     .writer-shell {
         grid-template-columns: 1fr;
-        grid-template-rows: 220px minmax(0, 1fr);
+        grid-template-rows: 220px minmax(0, 1fr) 220px;
     }
     .writer-shell.is-tree-collapsed {
         grid-template-columns: 1fr;
-        grid-template-rows: 40px minmax(0, 1fr);
+        grid-template-rows: 40px minmax(0, 1fr) 220px;
+    }
+    .writer-shell.is-rail-collapsed {
+        grid-template-columns: 1fr;
+        grid-template-rows: 220px minmax(0, 1fr) 40px;
+    }
+    .writer-shell.is-tree-collapsed.is-rail-collapsed {
+        grid-template-columns: 1fr;
+        grid-template-rows: 40px minmax(0, 1fr) 40px;
     }
 }

@@ -13,9 +13,9 @@
 
 .eyebrow {
     display: inline-block;
-    background: rgba(139, 92, 246, 0.15);
-    border: 1px solid rgba(139, 92, 246, 0.4);
-    color: #c4b5fd;
+    background: var(--theme-accent-soft-bg, rgba(109, 40, 217, 0.16));
+    border: 1px solid color-mix(in srgb, var(--purple, #6d28d9) 40%, transparent);
+    color: var(--theme-brand-kicker, var(--muted));
     font-size: 12px;
     font-weight: 800;
     letter-spacing: 0.06em;
@@ -33,7 +33,7 @@
 }
 
 .hero-sub {
-    color: var(--text-secondary);
+    color: var(--muted);
     font-size: 17px;
     line-height: 1.6;
     max-width: 540px;
@@ -62,14 +62,14 @@
 
 .cta-secondary {
     display: inline-block;
-    color: var(--text-secondary);
+    color: var(--muted);
     font-size: 14px;
     font-weight: 600;
     text-underline-offset: 4px;
     text-decoration: underline;
-    text-decoration-color: rgba(157, 157, 179, 0.4);
+    text-decoration-color: color-mix(in srgb, var(--muted) 40%, transparent);
 }
 
 .cta-secondary:hover {
-    color: var(--text-primary);
+    color: var(--text);
 }

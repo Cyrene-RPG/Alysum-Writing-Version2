@@ -21,9 +21,9 @@ import {
     getStoredCustomDisplayColors,
     initDisplayTextColorOnPage,
     getColorPreview,
-    getColorPreviewTextColor,
     resolveDisplayColorPair
 } from "@alysum/site-appearance/display-text-color.js";
+import { paintChipInk } from "@alysum/site-appearance/text-ink.js";
 import {
     BODY_BG_PRESETS,
     applyBodyBackground,
@@ -43,6 +43,12 @@ import {
     initSurfaceStyleOnPage
 } from "@alysum/site-appearance/surface-style.js";
 import {
+    CORNER_STYLES,
+    applyCornerStyle,
+    getStoredCornerStyleId,
+    initCornerStyleOnPage
+} from "@alysum/site-appearance/corner-style.js";
+import {
     applyUiColor,
     getStoredUiColorId,
     initUiColorOnPage
@@ -50,9 +56,9 @@ import {
 import {
     initUiColorPicker,
     setUiColorChipActive,
-    refreshUiColorThemeChip,
-    syncUiColorCustomPanelVisibility
+    refreshUiColorThemeChip
 } from "/js/settings/ui-colors.js";
+import { initAppearanceLoadouts } from "/js/settings/loadouts.js";
 
 export function setAvatarPreview(imageUrl, label) {
     if (!els.profileAvatarPreview || !els.profileAvatarPreviewWrap) return;
@@ -98,6 +104,32 @@ export function initSurfaceStylePicker() {
     });
 }
 
+export function initCornerStylePicker() {
+    if (!els.cornerChipRow || els.cornerChipRow.dataset.ready === "1") return;
+    els.cornerChipRow.dataset.ready = "1";
+    els.cornerChipRow.innerHTML = "";
+    const cur = getStoredCornerStyleId();
+    CORNER_STYLES.forEach((style) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className =
+            "theme-chip corner-chip corner-chip--" +
+            style.id +
+            (style.id === cur ? " active" : "");
+        b.dataset.corner = style.id;
+        b.textContent = style.label;
+        b.title = style.hint || "";
+        b.addEventListener("click", () => {
+            applyCornerStyle(style.id);
+            els.cornerChipRow.querySelectorAll(".theme-chip").forEach((x) => {
+                x.classList.remove("active");
+            });
+            b.classList.add("active");
+        });
+        els.cornerChipRow.appendChild(b);
+    });
+}
+
 export function initThemePicker() {
     if (!els.themeChipRow || els.themeChipRow.dataset.ready === "1") return;
     els.themeChipRow.dataset.ready = "1";
@@ -115,6 +147,7 @@ export function initThemePicker() {
         b.dataset.theme = t.id;
         b.textContent = t.label;
         b.title = t.hint || "";
+        paintChipInk(b, t.preview || "#111827");
         b.addEventListener("click", () => {
             applyGradientTheme(t.id);
             applyChromeGradient(t.preview || getThemePreview(t.id));
@@ -124,9 +157,6 @@ export function initThemePicker() {
                 setBodyBgChipActive("theme");
                 applyDisplayTextColor("theme");
                 setTextColorChipActive("theme");
-                applyUiColor("theme");
-                setUiColorChipActive("theme");
-                refreshUiColorThemeChip();
             } else {
                 if (getStoredDisplayTextColorId() === "theme") {
                     applyDisplayTextColor("theme");
@@ -135,10 +165,10 @@ export function initThemePicker() {
                     applyBodyBackground("theme");
                     refreshBodyBgThemeChip();
                 }
-                if (getStoredUiColorId() === "theme") {
-                    applyUiColor("theme");
-                    refreshUiColorThemeChip();
-                }
+            }
+            if (getStoredUiColorId() === "theme") {
+                applyUiColor("theme");
+                refreshUiColorThemeChip();
             }
             els.themeChipRow.querySelectorAll(".theme-chip").forEach((x) => {
                 x.classList.remove("active");
@@ -200,16 +230,21 @@ export function initTextStylePicker() {
               );
         if (!styles.length) return;
 
+        const groupEl = document.createElement("div");
+        groupEl.className = "font-group";
         if (group.id !== "all") {
             const heading = document.createElement("div");
             heading.className = "font-group-label";
             heading.textContent = group.label;
-            els.textStyleChipRow.appendChild(heading);
+            groupEl.appendChild(heading);
         }
-
+        const row = document.createElement("div");
+        row.className = "font-group-row";
         styles.forEach((s) => {
-            els.textStyleChipRow.appendChild(createFontStyleChip(s, cur));
+            row.appendChild(createFontStyleChip(s, cur));
         });
+        groupEl.appendChild(row);
+        els.textStyleChipRow.appendChild(groupEl);
     });
 }
 
@@ -217,12 +252,14 @@ export function initAppearancePickers() {
     try {
         bindAppearanceMixControls();
         initSurfaceStylePicker();
+        initCornerStylePicker();
         initThemePicker();
         initBodyBgPicker();
         initUiColorPicker();
         initTextStylePicker();
         initTextColorPicker();
         syncAppearanceMixModeUi();
+        initAppearanceLoadouts();
     } catch (err) {
         console.error("Appearance pickers failed:", err);
     }
@@ -254,8 +291,7 @@ export function bindCustomColorInputs() {
         const main = els.displayColorMain.value;
         const accent = els.displayColorAccent.value;
         customBtn.style.background = `linear-gradient(145deg, ${accent}, ${main})`;
-        const aa = customBtn.querySelector(".text-style-chip-preview");
-        if (aa) aa.style.color = getColorPreviewTextColor(main);
+        paintChipInk(customBtn, `linear-gradient(145deg, ${accent}, ${main})`);
     };
     const onCustomChange = () => {
         if (getStoredDisplayTextColorId() !== "custom") return;
@@ -287,13 +323,13 @@ export function initTextColorPicker() {
         previewEl.className = "text-style-chip-preview";
         previewEl.setAttribute("aria-hidden", "true");
         previewEl.textContent = "Aa";
-        previewEl.style.color = getColorPreviewTextColor(titleColorPreviewMain(c));
 
         const labelEl = document.createElement("span");
         labelEl.className = "text-style-chip-label";
         labelEl.textContent = c.label;
 
         b.append(previewEl, labelEl);
+        paintChipInk(b, preview || titleColorPreviewMain(c));
         b.addEventListener("click", () => {
             if (c.id === "custom") {
                 const main = els.displayColorMain?.value || getStoredCustomDisplayColors().main;
@@ -329,6 +365,7 @@ export function bindBodyBgCustomInput() {
         const customBtn = els.bodyBgChipRow?.querySelector('[data-style="custom"]');
         if (!customBtn) return;
         customBtn.style.background = getBodyBgPreview("custom");
+        paintChipInk(customBtn, getBodyBgPreview("custom"));
     };
     els.bodyBgColor.addEventListener("input", () => {
         if (getStoredBodyBgId() !== "custom") return;
@@ -355,13 +392,14 @@ export function bindAppearanceMixControls() {
         applyDisplayTextColor("theme");
         setBodyBgChipActive("theme");
         setTextColorChipActive("theme");
-        applyUiColor("theme");
-        setUiColorChipActive("theme");
         syncBodyBgCustomPanelVisibility("theme");
         syncCustomColorPanelVisibility("theme");
-        syncUiColorCustomPanelVisibility("theme");
         refreshBodyBgThemeChip();
-        refreshUiColorThemeChip();
+        if (getStoredUiColorId() === "theme") {
+            applyUiColor("theme");
+            setUiColorChipActive("theme");
+            refreshUiColorThemeChip();
+        }
     });
 
     els.appearanceMixFree?.addEventListener("change", () => {
@@ -388,12 +426,13 @@ export function bindAppearanceMixControls() {
         });
         setBodyBgChipActive(bg.id);
         setTextColorChipActive("theme");
-        setUiColorChipActive("theme");
-        applyUiColor("theme");
         syncBodyBgCustomPanelVisibility(bg.id);
         syncCustomColorPanelVisibility("theme");
-        syncUiColorCustomPanelVisibility("theme");
-        refreshUiColorThemeChip();
+        if (getStoredUiColorId() === "theme") {
+            applyUiColor("theme");
+            setUiColorChipActive("theme");
+            refreshUiColorThemeChip();
+        }
     });
 }
 
@@ -413,6 +452,7 @@ export function refreshBodyBgThemeChip() {
     const themeBtn = els.bodyBgChipRow?.querySelector('[data-style="theme"]');
     if (!themeBtn) return;
     themeBtn.style.background = getBodyBgPreview("theme");
+    paintChipInk(themeBtn, getBodyBgPreview("theme"));
 }
 
 export function initBodyBgPicker() {
@@ -429,7 +469,6 @@ export function initBodyBgPicker() {
             cls += " has-preview";
             b.style.background = preview;
         }
-        if (p.tone === "light") cls += " is-light";
         b.className = cls;
         b.dataset.style = p.id;
         b.title = p.hint || "";
@@ -437,22 +476,23 @@ export function initBodyBgPicker() {
         labelEl.className = "text-style-chip-label";
         labelEl.textContent = p.label;
         b.append(labelEl);
+        paintChipInk(b, preview || p.bg || "#0b1220");
         b.addEventListener("click", () => {
             if (p.id === "custom") {
                 const color = els.bodyBgColor?.value || getStoredCustomBodyBg();
-                applyBodyBackground("custom", color);
                 setAppearanceMixMode("free");
                 syncAppearanceMixModeUi();
+                applyBodyBackground("custom", color);
             } else if (p.id === "theme") {
-                applyBodyBackground("theme");
                 setAppearanceMixMode("linked");
                 syncAppearanceMixModeUi();
+                applyBodyBackground("theme");
             } else if (p.id === "default") {
                 applyBodyBackground("default");
             } else {
-                applyBodyBackground(p.id);
                 setAppearanceMixMode("free");
                 syncAppearanceMixModeUi();
+                applyBodyBackground(p.id);
             }
             els.bodyBgChipRow.querySelectorAll(".theme-chip").forEach((x) => {
                 x.classList.remove("active");
@@ -470,5 +510,6 @@ initDisplayTextStyleOnPage();
 initDisplayTextColorOnPage();
 initBodyBackgroundOnPage();
 initSurfaceStyleOnPage();
+initCornerStyleOnPage();
 initUiColorOnPage();
 initAppearancePickers();

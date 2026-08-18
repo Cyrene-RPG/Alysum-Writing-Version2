@@ -40,6 +40,7 @@
         mocha: "#121010",
         silver: "#0f1419",
         noir: "#09090b",
+        blanc: "#fafafa",
         "glow-violet": "#1a1038",
         "glow-aurora": "#102040",
         "glow-ocean": "#0c2240",
@@ -100,10 +101,12 @@
         "xp-olive": "#d6d0ae",
         "xp-silver": "#ece9d8",
         "xp-classic": "#f7f5ee",
-        "xp-teal": "#7eadd4"
+        "xp-teal": "#7eadd4",
+        blanc: "#ffffff"
     };
 
     global.__ALYSUM_BODY_BG_LIGHT = {
+        blanc: 1,
         candy: 1,
         "candy-cloud": 1,
         "opal-shine": 1,
@@ -154,6 +157,7 @@
         tide: "#061412",
         volcano: "#120808",
         opal: "#0a1018",
-        noir: "#09090b"
+        noir: "#09090b",
+        blanc: "#fafafa"
     };
 })(typeof window !== "undefined" ? window : globalThis);
