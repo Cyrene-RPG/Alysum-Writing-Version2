@@ -65,6 +65,12 @@ body {
 }
 .writer-main {
     height: 100%;
+    justify-self: center;
+    width: 100%;
+    max-width: 52rem;
+}
+.writer-shell:not(.is-tree-collapsed):not(.is-rail-collapsed) .writer-main {
+    max-width: 42rem;
 }
 .writer-tree,
 .writer-rail {
@@ -412,6 +418,21 @@ body {
     overflow-x: hidden;
     display: flex;
     flex-direction: column;
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--muted, #9ca3af) 35%, transparent) transparent;
+}
+.writer-main-scroll::-webkit-scrollbar {
+    width: 6px;
+}
+.writer-main-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+.writer-main-scroll::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--muted, #9ca3af) 40%, transparent);
+    border-radius: 999px;
+}
+.writer-main-scroll::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in srgb, var(--muted, #9ca3af) 62%, transparent);
 }
 .writer-book-title,
 .writer-chapter-title {
@@ -673,10 +694,14 @@ html.is-typewriter .writer-shell.is-tree-collapsed.is-rail-collapsed {
     gap: 0;
     padding: 0;
 }
-html.is-typewriter .writer-main {
+html.is-typewriter .writer-main,
+html.is-typewriter .writer-shell .writer-main {
     border: 0;
     border-radius: 0;
     box-shadow: none;
+    max-width: none;
+    width: 100%;
+    justify-self: stretch;
 }
 html.is-typewriter .writer-main-scroll {
     scrollbar-width: none;
