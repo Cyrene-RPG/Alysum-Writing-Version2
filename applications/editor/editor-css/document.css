@@ -21,7 +21,7 @@
 .writer-page p.alysum-flush {
     text-indent: 0;
 }
-.writer-page.is-auto-indent > p:not(.alysum-flush) {
+.writer-page.is-auto-indent > p:not(.alysum-flush):not(.scene-break):not(.scene-spacer) {
     text-indent: 1.5em;
 }
 .writer-page h1,

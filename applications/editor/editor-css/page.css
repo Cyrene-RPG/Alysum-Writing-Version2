@@ -402,9 +402,16 @@ body {
         color-mix(in srgb, var(--alysum-ui-panel, #111827) 88%, white),
         var(--alysum-ui-panel, #111827)
     );
+    overflow: hidden;
+    position: relative;
+}
+.writer-main-scroll {
+    flex: 1;
+    min-height: 0;
     overflow: auto;
     overflow-x: hidden;
-    position: relative;
+    display: flex;
+    flex-direction: column;
 }
 .writer-book-title,
 .writer-chapter-title {
@@ -435,16 +442,82 @@ body {
     font-weight: 700;
     color: var(--muted);
 }
-.writer-folder-hint {
+.writer-folder-view {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    padding: 28px clamp(18px, 4vw, 56px) 48px;
+}
+.writer-folder-view[hidden] { display: none !important; }
+.writer-folder-meta {
+    margin: 0 0 16px;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+.writer-folder-list,
+.writer-folder-sub {
+    list-style: none;
     margin: 0;
-    padding: 28px 16px;
+    padding: 0;
+}
+.writer-folder-sub {
+    padding: 0 0 6px 18px;
+}
+.writer-folder-open {
+    display: grid;
+    grid-template-columns: 4.5rem minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: baseline;
+    width: 100%;
+    margin: 0;
+    padding: 11px 12px;
+    border: 0;
+    border-radius: 12px;
+    background: transparent;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+.writer-folder-open:hover {
+    background: color-mix(in srgb, var(--accent, #6d28d9) 16%, transparent);
+}
+.writer-folder-kind {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+.writer-folder-name {
+    min-width: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.writer-folder-item--note .writer-folder-name {
+    font-size: 0.98rem;
+    font-weight: 600;
+}
+.writer-folder-words {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--muted);
+    white-space: nowrap;
+}
+.writer-folder-empty {
+    margin: 0;
+    padding: 8px 2px;
     color: var(--muted);
     font-size: 15px;
-    line-height: 1.45;
+    line-height: 1.5;
 }
 .writer-toolbar {
     display: flex;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     align-items: center;
     gap: 1px;
     padding: 2px 8px;
@@ -454,7 +527,7 @@ body {
     top: 0;
     z-index: 4;
     flex-shrink: 0;
-    overflow-x: auto;
+    overflow: visible;
 }
 .writer-tool {
     min-width: 28px;
@@ -470,7 +543,8 @@ body {
 .writer-tool:hover {
     background: color-mix(in srgb, var(--accent, #6d28d9) 35%, transparent);
 }
-.writer-tool[aria-pressed="true"] {
+.writer-tool[aria-pressed="true"],
+.writer-tool[aria-expanded="true"] {
     background: color-mix(in srgb, var(--accent, #6d28d9) 45%, transparent);
 }
 .writer-status {
@@ -581,7 +655,9 @@ html.is-typewriter .writer-rail,
 html.is-typewriter .writer-book-title,
 html.is-typewriter .writer-chapter-bar,
 html.is-typewriter .writer-toolbar,
-html.is-typewriter .writer-folder-hint,
+html.is-typewriter .writer-tool-dropdown,
+html.is-typewriter .writer-find,
+html.is-typewriter .writer-folder-view,
 html.is-typewriter .writer-status {
     display: none !important;
 }
@@ -601,10 +677,12 @@ html.is-typewriter .writer-main {
     border: 0;
     border-radius: 0;
     box-shadow: none;
+}
+html.is-typewriter .writer-main-scroll {
     scrollbar-width: none;
     -ms-overflow-style: none;
 }
-html.is-typewriter .writer-main::-webkit-scrollbar {
+html.is-typewriter .writer-main-scroll::-webkit-scrollbar {
     display: none;
     width: 0;
     height: 0;
@@ -651,4 +729,192 @@ html.is-typewriter .writer-typewriter-exit {
         gap: 0;
         padding: 0;
     }
+}
+
+.writer-tool--find {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.writer-tool-menu {
+    position: relative;
+    flex: none;
+}
+.writer-tool-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    z-index: 24;
+    min-width: 198px;
+    max-width: min(320px, 80vw);
+    max-height: min(50vh, 360px);
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding: 6px;
+    border: 1px solid var(--border, rgba(255, 255, 255, 0.14));
+    border-radius: 12px;
+    background: var(--alysum-ui-raised, #2a2a2a);
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.42);
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--muted, #9ca3af) 35%, transparent) transparent;
+}
+.writer-tool-dropdown::-webkit-scrollbar {
+    width: 6px;
+}
+.writer-tool-dropdown::-webkit-scrollbar-track {
+    background: transparent;
+}
+.writer-tool-dropdown::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--muted, #9ca3af) 40%, transparent);
+    border-radius: 999px;
+}
+.writer-tool-dropdown::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in srgb, var(--muted, #9ca3af) 62%, transparent);
+}
+.writer-tool-dropdown--font {
+    min-width: 240px;
+}
+.writer-tool-dropdown--breaks {
+    min-width: 220px;
+}
+.writer-tool-dropdown[hidden] { display: none !important; }
+.writer-toolbar[hidden] .writer-tool-dropdown { display: none !important; }
+.writer-font-group { margin: 0 0 8px; }
+.writer-font-group:last-child { margin-bottom: 0; }
+.writer-font-group-label {
+    margin: 4px 6px 4px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted, #9ca3af);
+}
+.writer-menu-item {
+    display: block;
+    width: 100%;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+.writer-font-size,
+.writer-font-face {
+    padding: 7px 10px;
+    font-size: 13px;
+    font-weight: 600;
+}
+.writer-break-pick {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    padding: 8px 10px;
+}
+.writer-break-pick-name {
+    font-size: 12px;
+    font-weight: 700;
+}
+.writer-menu-item:hover,
+.writer-menu-item.is-active {
+    background: color-mix(in srgb, var(--accent, #6d28d9) 28%, transparent);
+}
+
+.writer-find {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    z-index: 30;
+    width: min(340px, calc(100% - 24px));
+    border: 1px solid var(--border, rgba(255,255,255,0.14));
+    border-radius: 12px;
+    background: var(--alysum-ui-raised, #2a2a2a);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+    overflow: hidden;
+}
+.writer-find[hidden] { display: none !important; }
+.writer-find-bar {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 8px;
+}
+.writer-find-input {
+    flex: 1;
+    min-width: 0;
+    height: 28px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--alysum-ui-panel, #111827);
+    color: inherit;
+    padding: 0 8px;
+    font: inherit;
+    font-size: 13px;
+}
+.writer-find-count {
+    flex: none;
+    min-width: 1.5em;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--muted, #9ca3af);
+    text-align: center;
+}
+.writer-find-btn {
+    flex: none;
+    width: 26px;
+    height: 26px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: inherit;
+    font-size: 14px;
+    font-weight: 800;
+    cursor: pointer;
+}
+.writer-find-btn:hover {
+    background: color-mix(in srgb, var(--accent, #6d28d9) 32%, transparent);
+}
+.writer-find-results {
+    margin: 0;
+    padding: 0 0 6px;
+    list-style: none;
+    max-height: min(40vh, 280px);
+    overflow: auto;
+    border-top: 1px solid var(--border);
+}
+.writer-find-hit,
+.writer-find-empty {
+    margin: 0;
+    padding: 7px 10px;
+    font-size: 12px;
+    line-height: 1.35;
+    cursor: pointer;
+}
+.writer-find-empty { cursor: default; color: var(--muted, #9ca3af); }
+.writer-find-chapter {
+    margin: 0;
+    padding: 8px 10px 3px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    color: var(--muted, #9ca3af);
+    cursor: default;
+    pointer-events: none;
+}
+.writer-find-chapter + .writer-find-hit {
+    padding-top: 4px;
+}
+.writer-find-hit:hover,
+.writer-find-hit.is-current {
+    background: color-mix(in srgb, var(--accent, #6d28d9) 22%, transparent);
+}
+.writer-find-preview {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.writer-find-preview strong {
+    font-weight: 800;
+    color: var(--accent-soft, #c4b5fd);
 }

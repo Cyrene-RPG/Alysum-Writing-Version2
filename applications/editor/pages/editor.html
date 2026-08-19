@@ -31,8 +31,10 @@
     <title>Writer — Alysum</title>
     <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
     <link rel="stylesheet" href="/css/workspace-nav.css?v=26" />
-    <link rel="stylesheet" href="/css/editor/page.css?v=32" />
-    <link rel="stylesheet" href="/css/editor/document.css?v=7" />
+    <link rel="stylesheet" href="/css/editor/page.css?v=38" />
+    <link rel="stylesheet" href="/css/editor/document.css?v=8" />
+    <link rel="stylesheet" href="/css/editor/editor-fonts.css?v=1" />
+    <link rel="stylesheet" href="/css/editor/scene-breaks.css?v=1" />
     <script src="/site-appearance/js-runtime/gradient-theme-sync.js?v=3" defer></script>
 </head>
 <body>
@@ -120,6 +122,7 @@
                 </div>
             </aside>
             <section class="writer-main">
+                <div class="writer-main-scroll">
                 <span class="writer-status" id="saveStatus" role="status" hidden></span>
                 <input class="writer-book-title" id="bookTitle" aria-label="Book title" />
                 <div class="writer-chapter-bar">
@@ -128,9 +131,13 @@
                         <span id="chapterWords">0</span> / <span id="totalWords">0</span>
                     </div>
                 </div>
-                <p class="writer-folder-hint" id="folderHint" hidden>This is a folder. Add chapters inside it from the Chapters tab, or drag a chapter onto the folder.</p>
+                <div class="writer-folder-view" id="folderView" hidden>
+                    <p class="writer-folder-meta" id="folderMeta"></p>
+                    <ul class="writer-folder-list" id="folderList"></ul>
+                </div>
                 <div class="writer-toolbar" id="writerToolbar" role="toolbar" aria-label="Formatting"></div>
                 <div class="writer-page" id="pageEditor" aria-label="Chapter text"></div>
+                </div>
             </section>
             <aside class="writer-rail" id="writerRail" aria-label="Tools">
                 <div class="writer-rail-head">
@@ -151,6 +158,6 @@
             </div>
         </div>
     </div>
-    <script type="module" src="/js/editor/page.js?v=32"></script>
+    <script type="module" src="/js/editor/page.js?v=40"></script>
 </body>
 </html>

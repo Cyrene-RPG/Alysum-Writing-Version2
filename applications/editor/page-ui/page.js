@@ -1,7 +1,7 @@
 import { supabase } from "@alysum/authentication/client.js";
 import { signOutAndGoToHome } from "@alysum/authentication/logout.js";
 import { requireStudioSession } from "@alysum/desktop/studio-session.js";
-import { createBooksApi } from "@alysum/synchronization-engine/books.js?v=3";
+import { createBooksApi } from "@alysum/synchronization-engine/books.js?v=4";
 import {
     addBodyFolder,
     addBodyNote,
@@ -24,16 +24,25 @@ import {
     reorderSectionChapters,
     setChapterContent,
     setChapterTitle,
+    setChapterTypography,
     withUpdatedWords,
-} from "@alysum/writing-engine/manuscript.js?v=3";
+} from "@alysum/writing-engine/manuscript.js?v=4";
 import { countWordsInHtml, countWordsInSections } from "@alysum/writing-engine/word-count.js";
 import { createAutosave } from "./autosave.js";
-import { mountDocument } from "./document.js?v=4";
+import { mountDocument } from "./document.js?v=7";
 import { confirmDeleteChapter } from "./prompt.js";
 import { initWorkspaceShell, setWelcomeCopy } from "./shell.js?v=2";
 import { loadWorkspaceProfile } from "@alysum/account/workspace-profile.js";
-import { mountToolbar } from "./toolbar.js?v=3";
-import { expandTreeItem, renderOutline, renderTree } from "./tree.js?v=15";
+import { mountToolbar } from "./toolbar.js?v=6";
+import { expandTreeItem, renderOutline, renderTree } from "./tree.js?v=16";
+import {
+    applyChapterTypographyStyles,
+    chapterTypography,
+    DEFAULT_FONT_ID,
+    DEFAULT_FONT_SIZE_PX
+} from "./font-catalog.js";
+import { ensureEditorGoogleFont } from "./editor-google-fonts.js";
+import { mountFind, listSearchPages } from "./find.js?v=4";
 
 const TREE_COLLAPSE_KEY = "alysum:editor:chapters-collapsed";
 const RAIL_COLLAPSE_KEY = "alysum:editor:rail-collapsed";
@@ -59,10 +68,92 @@ function fallbackChapterId(sections, preferredId) {
 function paintWordCount(chapterEl, totalEl, book, chapterId) {
     const chapter = currentChapter(book, chapterId);
     const kind = itemKind(chapter);
-    const chapterWords = kind === "folder" ? 0 : countWordsInHtml(chapter?.content || "");
+    const chapterWords = kind === "folder" ? countItemWords(chapter) : countWordsInHtml(chapter?.content || "");
     const total = Number(book?.words) || countWordsInSections(book?.sections);
     if (chapterEl) chapterEl.textContent = String(chapterWords);
     if (totalEl) totalEl.textContent = String(total);
+}
+
+function escapeHtml(s) {
+    return String(s || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+}
+
+function countItemWords(item) {
+    const kind = itemKind(item);
+    if (kind === "folder") {
+        return (item?.children || []).reduce((sum, child) => sum + countItemWords(child), 0);
+    }
+    let n = countWordsInHtml(item?.content || "");
+    if (kind === "chapter") {
+        for (const note of item?.notes || []) n += countWordsInHtml(note?.content || "");
+    }
+    return n;
+}
+
+function tallyFolder(items) {
+    const tally = { chapters: 0, notes: 0, folders: 0 };
+    function walk(list) {
+        for (const item of list || []) {
+            const kind = itemKind(item);
+            if (kind === "folder") {
+                tally.folders += 1;
+                walk(item.children);
+            } else if (kind === "chapter") {
+                tally.chapters += 1;
+                tally.notes += Array.isArray(item.notes) ? item.notes.length : 0;
+            } else if (kind === "note") {
+                tally.notes += 1;
+            }
+        }
+    }
+    walk(items);
+    return tally;
+}
+
+function folderMetaText(tally) {
+    const parts = [];
+    if (tally.chapters) parts.push(`${tally.chapters} ${tally.chapters === 1 ? "chapter" : "chapters"}`);
+    if (tally.notes) parts.push(`${tally.notes} ${tally.notes === 1 ? "note" : "notes"}`);
+    if (tally.folders) parts.push(`${tally.folders} ${tally.folders === 1 ? "folder" : "folders"}`);
+    return parts.join(" · ");
+}
+
+function folderKindLabel(kind) {
+    if (kind === "note") return "Note";
+    if (kind === "folder") return "Folder";
+    return "Chapter";
+}
+
+function folderItemTitle(item, kind) {
+    const title = String(item?.title || "").trim();
+    if (title) return title;
+    if (kind === "note") return "Untitled note";
+    if (kind === "folder") return "Untitled folder";
+    return "Untitled";
+}
+
+function folderItemHtml(item) {
+    const kind = itemKind(item);
+    const id = String(item?.id || "");
+    const words = countItemWords(item);
+    const kids = kind === "folder"
+        ? (item.children || []).map(folderItemHtml).join("")
+        : kind === "chapter"
+            ? (item.notes || []).map(folderItemHtml).join("")
+            : "";
+    return `
+        <li class="writer-folder-item writer-folder-item--${kind}">
+            <button type="button" class="writer-folder-open" data-folder-open="${escapeHtml(id)}">
+                <span class="writer-folder-kind">${folderKindLabel(kind)}</span>
+                <span class="writer-folder-name">${escapeHtml(folderItemTitle(item, kind))}</span>
+                <span class="writer-folder-words">${words.toLocaleString()} ${words === 1 ? "word" : "words"}</span>
+            </button>
+            ${kids ? `<ul class="writer-folder-sub">${kids}</ul>` : ""}
+        </li>`;
 }
 
 function storedTab() {
@@ -118,7 +209,9 @@ async function boot() {
     const tabBook = document.getElementById("tabBook");
     const bookTitle = document.getElementById("bookTitle");
     const chapterTitle = document.getElementById("chapterTitle");
-    const folderHint = document.getElementById("folderHint");
+    const folderView = document.getElementById("folderView");
+    const folderMeta = document.getElementById("folderMeta");
+    const folderList = document.getElementById("folderList");
     const pageEl = document.getElementById("pageEditor");
     const toolbarMount = document.getElementById("writerToolbar");
     const saveStatus = document.getElementById("saveStatus");
@@ -314,6 +407,9 @@ async function boot() {
         book._rev = ++bookRev;
         setSaveStatus("Saving…");
         paintWordCount(chapterWordsEl, totalWordsEl, book, selectedId);
+        if (itemKind(currentChapter(book, selectedId)) === "folder") {
+            paintFolderView(currentChapter(book, selectedId));
+        }
         setWelcomeCopy({ lead: "Working On ", accent: book.title || "Untitled Book" });
         api.stashBook(book.id, {
             title: book.title,
@@ -363,25 +459,89 @@ async function boot() {
         }
         document.documentElement.classList.toggle("is-typewriter", on);
         if (typewriterExit) typewriterExit.hidden = !on;
-        if (on) editor.focus();
+        if (on) {
+            findUi?.close();
+            toolbarApi?.closePopover();
+            editor.focus();
+        }
     }
 
-    mountToolbar({
+    const toolbarApi = mountToolbar({
         mount: toolbarMount,
         editor,
         pageEl,
         onTypewriter: () => setTypewriter(true),
+        onFind: () => findUi?.toggle(),
+        getChapterTypography: () => {
+            const ch = currentChapter(book, selectedId);
+            const t = chapterTypography(ch);
+            return {
+                fontId: t.fontId || DEFAULT_FONT_ID,
+                fontSizePx: t.fontSizePx || String(DEFAULT_FONT_SIZE_PX)
+            };
+        },
+        onTypographyChange: ({ fontId, fontSizePx }) => {
+            if (selectedKind() === "folder") return;
+            persist({
+                ...book,
+                sections: setChapterTypography(book.sections, selectedId, { fontId, fontSizePx })
+            });
+            const chapter = currentChapter(book, selectedId);
+            applyChapterTypographyStyles(pageEl, chapter);
+            const nextFont = chapterTypography(chapter).fontId;
+            if (nextFont) void ensureEditorGoogleFont(nextFont);
+        }
+    });
+    const findUi = mountFind({
+        pageEl,
+        host: document.querySelector(".writer-main") || pageEl.parentElement,
+        editor,
+        getPages() {
+            const pages = listSearchPages(book.sections);
+            if (selectedKind() === "folder") return pages;
+            const live = editor.getHtml();
+            return pages.map((page) => (
+                page.id === selectedId ? { ...page, content: live } : page
+            ));
+        },
+        getCurrentId: () => selectedId,
+        async goToPage(id) {
+            if (id === selectedId) return;
+            await saveChapter();
+            showChapter(id, { keepFind: true });
+        }
     });
     typewriterExit?.addEventListener("click", () => setTypewriter(false));
     window.addEventListener("keydown", (event) => {
         if (event.key !== "Escape") return;
-        if (!document.documentElement.classList.contains("is-typewriter")) return;
         if (!document.getElementById("confirmOverlay")?.hidden) return;
+        if (findUi?.isOpen()) {
+            event.preventDefault();
+            findUi.close();
+            return;
+        }
+        if (!document.documentElement.classList.contains("is-typewriter")) return;
         event.preventDefault();
         setTypewriter(false);
     });
 
-    function showChapter(id) {
+    function paintFolderView(folder) {
+        const isFolder = itemKind(folder) === "folder";
+        if (folderView) folderView.hidden = !isFolder;
+        if (!isFolder || !folderList) return;
+        const children = Array.isArray(folder.children) ? folder.children : [];
+        const tally = tallyFolder(children);
+        if (folderMeta) {
+            folderMeta.textContent = folderMetaText(tally) || "Nothing in this folder yet";
+        }
+        if (!children.length) {
+            folderList.innerHTML = `<li class="writer-folder-empty">Add chapters or notes from the sidebar, or drag them onto this folder.</li>`;
+            return;
+        }
+        folderList.innerHTML = children.map(folderItemHtml).join("");
+    }
+
+    function showChapter(id, options = {}) {
         const chapter = currentChapter(book, id);
         if (!chapter) return;
         selectedId = chapter.id;
@@ -391,10 +551,24 @@ async function boot() {
             chapterTitle.value = chapter.title || "";
             chapterTitle.setAttribute("aria-label", isFolder ? "Folder name" : kind === "note" ? "Note title" : "Chapter title");
         }
-        if (folderHint) folderHint.hidden = !isFolder;
-        if (pageEl) pageEl.hidden = isFolder;
+        paintFolderView(chapter);
+        if (pageEl) {
+            pageEl.hidden = isFolder;
+            pageEl.contentEditable = isFolder ? "false" : "true";
+            pageEl.setAttribute("aria-hidden", isFolder ? "true" : "false");
+        }
         if (toolbarMount) toolbarMount.hidden = isFolder;
-        if (!isFolder) editor.setHtml(chapter.content || "");
+        if (isFolder) toolbarApi?.closePopover();
+        if (!isFolder) {
+            editor.setHtml(chapter.content || "");
+            applyChapterTypographyStyles(pageEl, chapter);
+            const fontId = chapterTypography(chapter).fontId;
+            if (fontId) void ensureEditorGoogleFont(fontId);
+        } else if (pageEl) {
+            pageEl.style.removeProperty("font-family");
+            pageEl.style.removeProperty("font-size");
+        }
+        if (!options.keepFind) findUi?.close();
         paintWordCount(chapterWordsEl, totalWordsEl, book, selectedId);
         drawTree();
     }
@@ -488,8 +662,13 @@ async function boot() {
         if (added) showChapter(added.id);
     }
 
+    folderView?.addEventListener("click", (event) => {
+        const btn = event.target.closest("[data-folder-open]");
+        if (!btn) return;
+        void selectItem(btn.dataset.folderOpen);
+    });
     treeAdd?.addEventListener("click", () => {
-        addPage("body", "chapters");
+        addPage("body", "chapters", parentFolderId(book.sections.body, selectedId));
     });
     folderAdd?.addEventListener("click", async () => {
         await saveChapter();

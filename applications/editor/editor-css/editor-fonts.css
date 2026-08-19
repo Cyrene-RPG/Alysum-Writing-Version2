@@ -1,0 +1,72 @@
+/* Inline chapter fonts — class names slugify EDITOR_FONT_GROUPS ids. */
+.writer-page .alysum-font-georgia { font-family: Georgia, "Times New Roman", serif; }
+.writer-page .alysum-font-times-new-roman { font-family: "Times New Roman", Times, serif; }
+.writer-page .alysum-font-garamond { font-family: Garamond, "Palatino Linotype", serif; }
+.writer-page .alysum-font-palatino-linotype { font-family: "Palatino Linotype", Palatino, serif; }
+.writer-page .alysum-font-book-antiqua { font-family: "Book Antiqua", Palatino, serif; }
+.writer-page .alysum-font-baskerville { font-family: Baskerville, "Libre Baskerville", serif; }
+.writer-page .alysum-font-century-schoolbook { font-family: "Century Schoolbook", Georgia, serif; }
+.writer-page .alysum-font-lora { font-family: "Lora", Georgia, serif; }
+.writer-page .alysum-font-merriweather { font-family: "Merriweather", Georgia, serif; }
+.writer-page .alysum-font-libre-baskerville { font-family: "Libre Baskerville", Georgia, serif; }
+.writer-page .alysum-font-crimson-pro { font-family: "Crimson Pro", Georgia, serif; }
+.writer-page .alysum-font-cormorant-garamond { font-family: "Cormorant Garamond", Garamond, serif; }
+.writer-page .alysum-font-eb-garamond { font-family: "EB Garamond", Garamond, serif; }
+.writer-page .alysum-font-spectral { font-family: "Spectral", Georgia, serif; }
+.writer-page .alysum-font-source-serif-4 { font-family: "Source Serif 4", Georgia, serif; }
+.writer-page .alysum-font-playfair-display { font-family: "Playfair Display", Georgia, serif; }
+.writer-page .alysum-font-literata { font-family: "Literata", Georgia, serif; }
+.writer-page .alysum-font-noto-serif { font-family: "Noto Serif", Georgia, serif; }
+.writer-page .alysum-font-cardo { font-family: "Cardo", Georgia, serif; }
+.writer-page .alysum-font-vollkorn { font-family: "Vollkorn", Georgia, serif; }
+.writer-page .alysum-font-bitter { font-family: "Bitter", Georgia, serif; }
+.writer-page .alysum-font-alegreya { font-family: "Alegreya", Georgia, serif; }
+.writer-page .alysum-font-libre-caslon-text { font-family: "Libre Caslon Text", Georgia, serif; }
+.writer-page .alysum-font-arial { font-family: Arial, Helvetica, sans-serif; }
+.writer-page .alysum-font-verdana { font-family: Verdana, Geneva, sans-serif; }
+.writer-page .alysum-font-tahoma { font-family: Tahoma, Geneva, sans-serif; }
+.writer-page .alysum-font-trebuchet-ms { font-family: "Trebuchet MS", sans-serif; }
+.writer-page .alysum-font-segoe-ui { font-family: "Segoe UI", system-ui, sans-serif; }
+.writer-page .alysum-font-inter { font-family: "Inter", system-ui, sans-serif; }
+.writer-page .alysum-font-roboto { font-family: "Roboto", system-ui, sans-serif; }
+.writer-page .alysum-font-open-sans { font-family: "Open Sans", system-ui, sans-serif; }
+.writer-page .alysum-font-lato { font-family: "Lato", system-ui, sans-serif; }
+.writer-page .alysum-font-montserrat { font-family: "Montserrat", system-ui, sans-serif; }
+.writer-page .alysum-font-raleway { font-family: "Raleway", system-ui, sans-serif; }
+.writer-page .alysum-font-work-sans { font-family: "Work Sans", system-ui, sans-serif; }
+.writer-page .alysum-font-dm-sans { font-family: "DM Sans", system-ui, sans-serif; }
+.writer-page .alysum-font-nunito { font-family: "Nunito", system-ui, sans-serif; }
+.writer-page .alysum-font-courier-new { font-family: "Courier New", Courier, monospace; }
+.writer-page .alysum-font-source-code-pro { font-family: "Source Code Pro", "Courier New", monospace; }
+.writer-page .alysum-font-jetbrains-mono { font-family: "JetBrains Mono", "Courier New", monospace; }
+.writer-page .alysum-font-ibm-plex-mono { font-family: "IBM Plex Mono", "Courier New", monospace; }
+.writer-page .alysum-font-cinzel { font-family: "Cinzel", Georgia, serif; }
+.writer-page .alysum-font-im-fell-english { font-family: "IM Fell English", Georgia, serif; }
+.writer-page .alysum-font-abril-fatface { font-family: "Abril Fatface", Georgia, serif; }
+.writer-page .alysum-font-caveat { font-family: "Caveat", cursive; }
+.writer-page .alysum-font-dancing-script { font-family: "Dancing Script", cursive; }
+.writer-page .alysum-font-opendyslexic { font-family: "OpenDyslexic", sans-serif; }
+.writer-page .alysum-font-atkinson-hyperlegible { font-family: "Atkinson Hyperlegible", sans-serif; }
+.writer-page .alysum-font-orbitron { font-family: "Orbitron", sans-serif; }
+.writer-page .alysum-font-rajdhani { font-family: "Rajdhani", sans-serif; }
+.writer-page .alysum-font-exo-2 { font-family: "Exo 2", sans-serif; }
+.writer-page .alysum-font-oxanium { font-family: "Oxanium", sans-serif; }
+.writer-page .alysum-font-quantico { font-family: "Quantico", sans-serif; }
+.writer-page .alysum-font-audiowide { font-family: "Audiowide", sans-serif; }
+.writer-page .alysum-font-michroma { font-family: "Michroma", sans-serif; }
+.writer-page .alysum-font-syncopate { font-family: "Syncopate", sans-serif; }
+.writer-page .alysum-font-share-tech-mono { font-family: "Share Tech Mono", monospace; }
+.writer-page .alysum-font-space-mono { font-family: "Space Mono", monospace; }
+.writer-page .alysum-font-vt323 { font-family: "VT323", monospace; }
+.writer-page .alysum-font-press-start-2p { font-family: "Press Start 2P", monospace; }
+
+mark.alysum-find-hit {
+    background: color-mix(in srgb, #facc15 72%, transparent);
+    color: inherit;
+    border-radius: 2px;
+    padding: 0 1px;
+}
+mark.alysum-find-hit.is-current {
+    background: #f59e0b;
+    color: #18181b;
+}

@@ -13,6 +13,15 @@ export function itemKind(item) {
     return "chapter";
 }
 
+function typographyFields(src) {
+    const font = String(src?.defaultFont || src?.default_font || "").trim();
+    const size = String(src?.defaultFontSize || src?.default_font_size || "").trim();
+    const out = {};
+    if (font) out.defaultFont = font;
+    if (size) out.defaultFontSize = size;
+    return out;
+}
+
 function cloneNote(note) {
     const item = note && typeof note === "object" ? note : {};
     return {
@@ -20,6 +29,7 @@ function cloneNote(note) {
         title: String(item.title || "").trim() || "Untitled note",
         content: typeof item.content === "string" ? item.content : "",
         kind: "note",
+        ...typographyFields(item)
     };
 }
 
@@ -44,6 +54,7 @@ export function cloneItem(item) {
         notes: Array.isArray(src.notes) ? src.notes.map(cloneNote) : [],
         imageUrl: src.imageUrl,
         imageUrls: Array.isArray(src.imageUrls) ? [...src.imageUrls] : src.imageUrls,
+        ...typographyFields(src)
     };
 }
 

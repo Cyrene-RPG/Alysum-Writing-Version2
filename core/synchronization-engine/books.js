@@ -16,7 +16,7 @@ import {
     mergeSectionsByChapterId,
     walkBookChapters,
     withUpdatedWords,
-} from "../writing-engine/manuscript.js?v=3";
+} from "../writing-engine/manuscript.js?v=4";
 import { countWordsInChapter } from "../writing-engine/word-count.js";
 
 const CACHE_PREFIX = "alysum:editor:draft-cache-";

@@ -18,7 +18,7 @@ import {
     moveItem,
     removeItem,
     walkBookChapters,
-} from "./outline.js?v=3";
+} from "./outline.js?v=4";
 import { countWordsInChapter, countWordsInSections } from "./word-count.js";
 
 const SECTION_KEYS = ["front", "body", "back"];
@@ -40,7 +40,7 @@ export {
     noteParentChapterId,
     parentFolderId,
     walkBookChapters,
-} from "./outline.js?v=3";
+} from "./outline.js?v=4";
 
 export function cloneSections(sections) {
     const src = sections && typeof sections === "object" ? sections : {};
@@ -202,6 +202,17 @@ export function setChapterContent(sections, chapterId, content) {
         ...found.chapter,
         content: typeof content === "string" ? content : "",
     };
+    return next;
+}
+
+export function setChapterTypography(sections, chapterId, values = {}) {
+    const next = cloneSections(sections);
+    const found = findChapter(next, chapterId);
+    if (!found) return next;
+    const chapter = { ...found.chapter };
+    if (values.fontId != null) chapter.defaultFont = String(values.fontId);
+    if (values.fontSizePx != null) chapter.defaultFontSize = String(values.fontSizePx);
+    found.list[found.index] = chapter;
     return next;
 }
 

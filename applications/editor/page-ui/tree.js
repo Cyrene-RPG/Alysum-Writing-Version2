@@ -22,7 +22,7 @@ function chapterIdsFromList(mount) {
 function readOutline(ul) {
     if (!ul) return [];
     return [...ul.children]
-        .filter((node) => node.classList.contains("writer-tree-node") && node.dataset.kind !== "note")
+        .filter((node) => node.classList.contains("writer-tree-node"))
         .map((node) => ({
             id: node.dataset.itemId,
             children: readOutline(node.querySelector(":scope > [data-nest='outline']")),
@@ -84,12 +84,37 @@ function nestNoteUnderChapter(drag, over) {
     const chapter = over.dataset.kind === "chapter"
         ? over
         : over.closest?.(".writer-tree-node[data-kind='chapter']");
-    if (!chapter) return false;
+    if (!chapter || chapter === drag) return false;
     const notes = chapter.querySelector(":scope > [data-nest='notes']");
     if (!notes) return false;
     if (chapter.classList.contains("is-collapsed")) setNodeCollapsed(chapter, false);
     if (drag.parentElement !== notes) notes.appendChild(drag);
     return true;
+}
+
+function placeNoteBesideChapter(drag, chapter, before) {
+    const parent = chapter?.parentElement;
+    if (!parent || drag?.dataset.kind !== "note") return false;
+    if (before) parent.insertBefore(drag, chapter);
+    else parent.insertBefore(drag, chapter.nextSibling);
+    return true;
+}
+
+function placeDraggedNote(drag, related, originalEvent) {
+    if (drag?.dataset.kind !== "note" || !related || related === drag) return "";
+    if (related.dataset.kind === "note") return "";
+    if (related.closest?.("[data-nest='notes']")) return "";
+    const chapter = related.dataset.kind === "chapter"
+        ? related
+        : related.closest?.(".writer-tree-node[data-kind='chapter']");
+    if (!chapter || chapter === drag) return "";
+    const row = chapter.querySelector(":scope > .writer-tree-item");
+    const rect = row?.getBoundingClientRect();
+    const y = originalEvent?.clientY;
+    if (rect && y != null && y < rect.top + rect.height * 0.55) {
+        return placeNoteBesideChapter(drag, chapter, true) ? "before" : "";
+    }
+    return nestNoteUnderChapter(drag, chapter) ? "nested" : "";
 }
 
 function bindOutlineSortable(ul, mount, onEnd) {
@@ -98,7 +123,7 @@ function bindOutlineSortable(ul, mount, onEnd) {
         group: {
             name: "outline",
             pull: true,
-            put: (_to, _from, dragEl) => dragEl?.dataset?.kind !== "note",
+            put: true,
         },
         animation: 200,
         draggable: ".writer-tree-node",
@@ -111,9 +136,12 @@ function bindOutlineSortable(ul, mount, onEnd) {
         swapThreshold: 0.65,
         emptyInsertThreshold: 16,
         invertSwap: true,
+        onStart(evt) {
+            if (evt.item?.dataset?.kind === "note") mount.classList.add("is-note-dragging");
+        },
         onMove(evt) {
             if (evt.dragged?.contains(evt.to)) return false;
-            if (nestNoteUnderChapter(evt.dragged, evt.related)) return false;
+            if (placeDraggedNote(evt.dragged, evt.related, evt.originalEvent)) return false;
             const folder = evt.to?.closest?.(".writer-tree-node[data-kind='folder']");
             window.clearTimeout(expandTimer);
             if (!folder || !folder.classList.contains("is-collapsed")) return true;
@@ -123,7 +151,7 @@ function bindOutlineSortable(ul, mount, onEnd) {
         onEnd(evt) {
             window.clearTimeout(expandTimer);
             mount.classList.remove("is-note-dragging");
-            if (evt.from === evt.to && evt.oldIndex === evt.newIndex) return;
+            if (evt.item?.dataset?.kind !== "note" && evt.from === evt.to && evt.oldIndex === evt.newIndex) return;
             onEnd();
         },
     });
@@ -133,7 +161,7 @@ function bindOutlineSortable(ul, mount, onEnd) {
 function bindNotesSortable(ul, mount, onEnd) {
     const sortable = Sortable.create(ul, {
         group: {
-            name: "notes",
+            name: "outline",
             pull: true,
             put: (_to, _from, dragEl) => dragEl?.dataset?.kind === "note",
         },
@@ -151,12 +179,12 @@ function bindNotesSortable(ul, mount, onEnd) {
             mount.classList.add("is-note-dragging");
         },
         onMove(evt) {
-            nestNoteUnderChapter(evt.dragged, evt.related);
+            if (evt.dragged?.dataset?.kind !== "note") return false;
+            if (placeDraggedNote(evt.dragged, evt.related, evt.originalEvent)) return false;
             return true;
         },
-        onEnd(evt) {
+        onEnd() {
             mount.classList.remove("is-note-dragging");
-            if (evt.from === evt.to && evt.oldIndex === evt.newIndex) return;
             onEnd();
         },
     });

@@ -1,6 +1,18 @@
 /**
  * Contenteditable page. Commands go through execCommand so the toolbar can stay vanilla.
  */
+import {
+    fontClassName,
+    fontIdFromClass,
+    normalizeFontId
+} from "./font-catalog.js";
+import {
+    ensureEditorTailAfterSceneBreaks,
+    initSceneBreakEditorBehavior,
+    insertSceneBreakAtCursor
+} from "./scene-breaks.js";
+import { unwrapFindMarks } from "./find.js?v=4";
+
 export function mountDocument({ pageEl, onInput }) {
     if (!pageEl) throw new Error("pageEl required");
 
@@ -11,9 +23,16 @@ export function mountDocument({ pageEl, onInput }) {
 
     let mute = false;
 
+    function htmlForSave() {
+        if (!pageEl.isConnected) return "";
+        const copy = pageEl.cloneNode(true);
+        unwrapFindMarks(copy);
+        return copy.innerHTML;
+    }
+
     function emit(event) {
         if (mute || !pageEl.isConnected) return;
-        if (typeof onInput === "function") onInput(pageEl.innerHTML, event);
+        if (typeof onInput === "function") onInput(htmlForSave(), event);
     }
 
     function autoIndentOn() {
@@ -47,6 +66,7 @@ export function mountDocument({ pageEl, onInput }) {
     function freezeVisibleIndent() {
         pageEl.querySelectorAll(":scope > p").forEach((p) => {
             if (p.classList.contains("alysum-flush")) return;
+            if (p.classList.contains("scene-break") || p.classList.contains("scene-spacer")) return;
             p.classList.add("alysum-indent");
         });
     }
@@ -56,6 +76,29 @@ export function mountDocument({ pageEl, onInput }) {
         if (!on) freezeVisibleIndent();
         pageEl.classList.toggle("is-auto-indent", on);
         if (!on && wasOn) emit();
+    }
+
+    function stripInlineFontClasses(root) {
+        const nodes = [];
+        const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
+        while (walker.nextNode()) {
+            if (walker.currentNode.tagName === "SPAN") nodes.push(walker.currentNode);
+        }
+        nodes.forEach((span) => {
+            [...span.classList].filter((c) => c.startsWith("alysum-font-")).forEach((c) => span.classList.remove(c));
+            if (!span.classList.length && !span.getAttribute("style") && span.attributes.length === 0) {
+                const parent = span.parentNode;
+                if (!parent) return;
+                while (span.firstChild) parent.insertBefore(span.firstChild, span);
+                parent.removeChild(span);
+            }
+        });
+    }
+
+    function selectionInPage() {
+        const sel = window.getSelection();
+        if (!sel || !sel.rangeCount || !pageEl.contains(sel.anchorNode)) return null;
+        return sel;
     }
 
     pageEl.addEventListener("input", (event) => {
@@ -82,20 +125,22 @@ export function mountDocument({ pageEl, onInput }) {
         /* ignore */
     }
 
+    initSceneBreakEditorBehavior(pageEl);
+
     return {
         setHtml(html) {
             const next = String(html || "").trim() ? String(html) : "<p><br></p>";
             mute = true;
             try {
                 if (pageEl.innerHTML !== next) pageEl.innerHTML = next;
+                ensureEditorTailAfterSceneBreaks(pageEl);
                 if (!autoIndentOn()) freezeVisibleIndent();
             } finally {
                 mute = false;
             }
         },
         getHtml() {
-            if (!pageEl.isConnected) return "";
-            return pageEl.innerHTML;
+            return htmlForSave();
         },
         focus() {
             pageEl.focus();
@@ -117,5 +162,46 @@ export function mountDocument({ pageEl, onInput }) {
             }
             emit();
         },
+        applyFont(fontId) {
+            const normalizedId = normalizeFontId(fontId);
+            pageEl.focus();
+            const sel = selectionInPage();
+            const range = sel?.getRangeAt(0);
+            if (!sel || !range || range.collapsed) {
+                return { mode: "chapter", fontId: normalizedId };
+            }
+            const className = fontClassName(normalizedId);
+            const span = document.createElement("span");
+            span.className = className;
+            const fragment = range.extractContents();
+            stripInlineFontClasses(fragment);
+            span.appendChild(fragment);
+            range.insertNode(span);
+            sel.removeAllRanges();
+            const nextRange = document.createRange();
+            nextRange.selectNodeContents(span);
+            sel.addRange(nextRange);
+            emit();
+            return { mode: "selection", fontId: normalizedId };
+        },
+        activeFontId() {
+            const sel = selectionInPage();
+            if (!sel) return "";
+            let node = sel.anchorNode;
+            if (node.nodeType === Node.TEXT_NODE) node = node.parentElement;
+            while (node && node !== pageEl) {
+                if (node.tagName === "SPAN") {
+                    const fontClass = [...node.classList].find((c) => c.startsWith("alysum-font-"));
+                    const id = fontIdFromClass(fontClass);
+                    if (id) return id;
+                }
+                node = node.parentElement;
+            }
+            return "";
+        },
+        insertSceneBreak(presetId) {
+            insertSceneBreakAtCursor(pageEl, presetId);
+            emit();
+        }
     };
 }

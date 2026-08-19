@@ -89,6 +89,10 @@
       { "source": "/js/editor/document.js", "destination": "/applications/editor/page-ui/document.js" },
       { "source": "/js/editor/autosave.js", "destination": "/applications/editor/page-ui/autosave.js" },
       { "source": "/js/editor/prompt.js", "destination": "/applications/editor/page-ui/prompt.js" },
+      { "source": "/js/editor/font-catalog.js", "destination": "/applications/editor/page-ui/font-catalog.js" },
+      { "source": "/js/editor/editor-google-fonts.js", "destination": "/applications/editor/page-ui/editor-google-fonts.js" },
+      { "source": "/js/editor/scene-breaks.js", "destination": "/applications/editor/page-ui/scene-breaks.js" },
+      { "source": "/js/editor/find.js", "destination": "/applications/editor/page-ui/find.js" },
       { "source": "/js/signup/signup.js", "destination": "/applications/main-site/signup/signup.js" },
       { "source": "/js/signup/elements.js", "destination": "/applications/main-site/signup/elements.js" },
       { "source": "/js/signup/state.js", "destination": "/applications/main-site/signup/state.js" },
@@ -130,7 +134,9 @@
       { "source": "/css/settings/security.css", "destination": "/applications/main-site/settings/settings-css/security.css" },
       { "source": "/css/studio/page.css", "destination": "/applications/studio/studio-css/page.css" },
       { "source": "/css/editor/page.css", "destination": "/applications/editor/editor-css/page.css" },
-      { "source": "/css/editor/document.css", "destination": "/applications/editor/editor-css/document.css" }
+      { "source": "/css/editor/document.css", "destination": "/applications/editor/editor-css/document.css" },
+      { "source": "/css/editor/editor-fonts.css", "destination": "/applications/editor/editor-css/editor-fonts.css" },
+      { "source": "/css/editor/scene-breaks.css", "destination": "/applications/editor/editor-css/scene-breaks.css" }
     ]
   }
 }
