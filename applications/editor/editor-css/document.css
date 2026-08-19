@@ -11,7 +11,13 @@
     box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent, #6d28d9) 35%, transparent);
 }
 .writer-page p { margin: 0 0 0.9em; }
-.writer-page.is-auto-indent > p {
+.writer-page p.alysum-indent {
+    text-indent: 1.5em;
+}
+.writer-page p.alysum-flush {
+    text-indent: 0;
+}
+.writer-page.is-auto-indent > p:not(.alysum-flush) {
     text-indent: 1.5em;
 }
 .writer-page h1,

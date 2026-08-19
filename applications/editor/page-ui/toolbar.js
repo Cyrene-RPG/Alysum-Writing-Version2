@@ -30,21 +30,18 @@ function writeAutoIndent(on) {
     }
 }
 
-function applyAutoIndent(pageEl, on) {
-    pageEl?.classList.toggle("is-auto-indent", on);
-}
-
-export function mountToolbar({ mount, editor, pageEl }) {
+export function mountToolbar({ mount, editor, onTypewriter }) {
     if (!mount || !editor) return;
 
     const indentOn = readAutoIndent();
-    applyAutoIndent(pageEl, indentOn);
+    editor.setAutoIndent(indentOn);
 
     mount.innerHTML = [
         `<button type="button" class="writer-tool" data-indent-toggle aria-pressed="${indentOn ? "true" : "false"}" title="Auto indent" aria-label="Auto indent">Indent</button>`,
         ...ACTIONS.map((action) => (
             `<button type="button" class="writer-tool" data-command="${action.command}" data-value="${action.value || ""}" title="${action.title}" aria-label="${action.title}">${action.label}</button>`
         )),
+        `<button type="button" class="writer-tool writer-tool--type" data-typewriter title="Typewriter mode" aria-label="Typewriter mode">Type</button>`,
     ].join("");
 
     mount.addEventListener("mousedown", (event) => {
@@ -57,7 +54,11 @@ export function mountToolbar({ mount, editor, pageEl }) {
             const next = indentBtn.getAttribute("aria-pressed") !== "true";
             indentBtn.setAttribute("aria-pressed", next ? "true" : "false");
             writeAutoIndent(next);
-            applyAutoIndent(pageEl, next);
+            editor.setAutoIndent(next);
+            return;
+        }
+        if (event.target.closest("[data-typewriter]")) {
+            onTypewriter?.();
             return;
         }
         const btn = event.target.closest(".writer-tool");

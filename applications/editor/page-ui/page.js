@@ -26,11 +26,11 @@ import {
 } from "@alysum/writing-engine/manuscript.js";
 import { countWordsInHtml, countWordsInSections } from "@alysum/writing-engine/word-count.js";
 import { createAutosave } from "./autosave.js";
-import { mountDocument } from "./document.js?v=3";
+import { mountDocument } from "./document.js?v=4";
 import { confirmDeleteChapter } from "./prompt.js";
 import { initWorkspaceShell, setWelcomeCopy } from "./shell.js?v=2";
 import { loadWorkspaceProfile } from "@alysum/account/workspace-profile.js";
-import { mountToolbar } from "./toolbar.js?v=1";
+import { mountToolbar } from "./toolbar.js?v=3";
 import { expandTreeItem, renderOutline, renderTree } from "./tree.js?v=10";
 
 const TREE_COLLAPSE_KEY = "alysum:editor:chapters-collapsed";
@@ -334,7 +334,37 @@ async function boot() {
         pageEl,
         onInput: applyChapterContent,
     });
-    mountToolbar({ mount: toolbarMount, editor, pageEl });
+
+    const typewriterExit = document.getElementById("typewriterExit");
+
+    function setTypewriter(on) {
+        if (on && pageEl) {
+            const width = Math.round(pageEl.getBoundingClientRect().width);
+            if (width > 0) {
+                document.documentElement.style.setProperty("--typewriter-page-width", `${width}px`);
+            }
+        } else {
+            document.documentElement.style.removeProperty("--typewriter-page-width");
+        }
+        document.documentElement.classList.toggle("is-typewriter", on);
+        if (typewriterExit) typewriterExit.hidden = !on;
+        if (on) editor.focus();
+    }
+
+    mountToolbar({
+        mount: toolbarMount,
+        editor,
+        pageEl,
+        onTypewriter: () => setTypewriter(true),
+    });
+    typewriterExit?.addEventListener("click", () => setTypewriter(false));
+    window.addEventListener("keydown", (event) => {
+        if (event.key !== "Escape") return;
+        if (!document.documentElement.classList.contains("is-typewriter")) return;
+        if (!document.getElementById("confirmOverlay")?.hidden) return;
+        event.preventDefault();
+        setTypewriter(false);
+    });
 
     function showChapter(id) {
         const chapter = currentChapter(book, id);

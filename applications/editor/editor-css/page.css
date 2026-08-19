@@ -226,6 +226,13 @@ body {
     gap: 6px;
     min-height: 0;
     flex: 1 1 auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+.writer-tree-list::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
 }
 .writer-tree-list--matter {
     flex: none;
@@ -233,6 +240,13 @@ body {
 }
 #bookPane {
     overflow: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+#bookPane::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
 }
 .writer-shell.is-tree-collapsed .writer-tree,
 .writer-shell.is-rail-collapsed .writer-rail {
@@ -532,6 +546,78 @@ body {
 }
 .confirm-yes { background: #3b82f6; }
 .confirm-no { background: #ef4444; }
+.writer-typewriter-exit {
+    display: none;
+    position: fixed;
+    top: 14px;
+    right: 16px;
+    z-index: 80;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--muted);
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+}
+.writer-typewriter-exit:hover {
+    color: var(--text);
+    background: color-mix(in srgb, var(--accent, #6d28d9) 28%, transparent);
+}
+html.is-typewriter .wd-welcome-bar,
+html.is-typewriter .wd-nav-wrap,
+html.is-typewriter .writer-tree,
+html.is-typewriter .writer-rail,
+html.is-typewriter .writer-book-title,
+html.is-typewriter .writer-chapter-bar,
+html.is-typewriter .writer-toolbar,
+html.is-typewriter .writer-folder-hint,
+html.is-typewriter .writer-status {
+    display: none !important;
+}
+html.is-typewriter .wrap {
+    padding: 0;
+}
+html.is-typewriter .writer-shell,
+html.is-typewriter .writer-shell.is-tree-collapsed,
+html.is-typewriter .writer-shell.is-rail-collapsed,
+html.is-typewriter .writer-shell.is-tree-collapsed.is-rail-collapsed {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    gap: 0;
+    padding: 0;
+}
+html.is-typewriter .writer-main {
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+html.is-typewriter .writer-main::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+}
+html.is-typewriter .writer-page {
+    align-self: center;
+    width: min(var(--typewriter-page-width, 42rem), calc(100vw - 48px));
+    max-width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    min-height: 100%;
+    box-sizing: border-box;
+}
+html.is-typewriter .writer-page:focus {
+    box-shadow: none;
+}
+html.is-typewriter .writer-typewriter-exit {
+    display: grid;
+    place-items: center;
+}
 @media (max-width: 720px) {
     .writer-shell {
         grid-template-columns: 1fr;
@@ -548,5 +634,14 @@ body {
     .writer-shell.is-tree-collapsed.is-rail-collapsed {
         grid-template-columns: 1fr;
         grid-template-rows: 40px minmax(0, 1fr) 40px;
+    }
+    html.is-typewriter .writer-shell,
+    html.is-typewriter .writer-shell.is-tree-collapsed,
+    html.is-typewriter .writer-shell.is-rail-collapsed,
+    html.is-typewriter .writer-shell.is-tree-collapsed.is-rail-collapsed {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: minmax(0, 1fr);
+        gap: 0;
+        padding: 0;
     }
 }
