@@ -1,0 +1,168 @@
+.confirm-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    background: rgba(15, 23, 42, 0.55);
+}
+.confirm-overlay[hidden] { display: none !important; }
+.confirm-card {
+    width: min(440px, 100%);
+    padding: 28px 24px 22px;
+    border-radius: 16px;
+    background: #fff;
+    color: #1f2937;
+    text-align: center;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+}
+.confirm-icon {
+    width: 72px;
+    height: 72px;
+    margin: 0 auto 16px;
+    border: 4px solid #93c5fd;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    color: #93c5fd;
+    font-size: 42px;
+    font-weight: 700;
+    line-height: 1;
+}
+.confirm-title {
+    margin: 0 0 10px;
+    font-size: 22px;
+    font-weight: 800;
+    color: #374151;
+}
+.confirm-text {
+    margin: 0 0 22px;
+    font-size: 15px;
+    color: #6b7280;
+}
+.confirm-actions {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+}
+.confirm-yes,
+.confirm-no {
+    min-width: 120px;
+    border: 0;
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 15px;
+    font-weight: 700;
+    color: #fff;
+    cursor: pointer;
+}
+.confirm-yes { background: #3b82f6; }
+.confirm-no { background: #ef4444; }
+.writer-typewriter-exit {
+    display: none;
+    position: fixed;
+    top: 14px;
+    right: 16px;
+    z-index: 80;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--muted);
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+}
+.writer-typewriter-exit:hover {
+    color: var(--text);
+    background: color-mix(in srgb, var(--accent, #6d28d9) 28%, transparent);
+}
+html.is-typewriter .wd-welcome-bar,
+html.is-typewriter .wd-nav-wrap,
+html.is-typewriter .writer-tree,
+html.is-typewriter .writer-rail,
+html.is-typewriter .writer-book-title,
+html.is-typewriter .writer-chapter-bar,
+html.is-typewriter .writer-toolbar,
+html.is-typewriter .writer-tool-dropdown,
+html.is-typewriter .writer-find,
+html.is-typewriter .writer-folder-view,
+html.is-typewriter .writer-status {
+    display: none !important;
+}
+html.is-typewriter .wrap {
+    padding: 0;
+}
+html.is-typewriter .writer-shell,
+html.is-typewriter .writer-shell.is-tree-collapsed,
+html.is-typewriter .writer-shell.is-rail-collapsed,
+html.is-typewriter .writer-shell.is-tree-collapsed.is-rail-collapsed {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    gap: 0;
+    padding: 0;
+}
+html.is-typewriter .writer-main,
+html.is-typewriter .writer-shell .writer-main {
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    max-width: none;
+    width: 100%;
+    justify-self: stretch;
+}
+html.is-typewriter .writer-main-scroll {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+html.is-typewriter .writer-main-scroll::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+}
+html.is-typewriter .writer-page {
+    align-self: center;
+    width: min(var(--typewriter-page-width, 42rem), calc(100vw - 48px));
+    max-width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    min-height: 100%;
+    box-sizing: border-box;
+}
+html.is-typewriter .writer-page:focus {
+    box-shadow: none;
+}
+html.is-typewriter .writer-typewriter-exit {
+    display: grid;
+    place-items: center;
+}
+@media (max-width: 720px) {
+    .writer-shell {
+        grid-template-columns: 1fr;
+        grid-template-rows: 220px minmax(0, 1fr) 220px;
+    }
+    .writer-shell.is-tree-collapsed {
+        grid-template-columns: 1fr;
+        grid-template-rows: 40px minmax(0, 1fr) 220px;
+    }
+    .writer-shell.is-rail-collapsed {
+        grid-template-columns: 1fr;
+        grid-template-rows: 220px minmax(0, 1fr) 40px;
+    }
+    .writer-shell.is-tree-collapsed.is-rail-collapsed {
+        grid-template-columns: 1fr;
+        grid-template-rows: 40px minmax(0, 1fr) 40px;
+    }
+    html.is-typewriter .writer-shell,
+    html.is-typewriter .writer-shell.is-tree-collapsed,
+    html.is-typewriter .writer-shell.is-rail-collapsed,
+    html.is-typewriter .writer-shell.is-tree-collapsed.is-rail-collapsed {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: minmax(0, 1fr);
+        gap: 0;
+        padding: 0;
+    }
+}

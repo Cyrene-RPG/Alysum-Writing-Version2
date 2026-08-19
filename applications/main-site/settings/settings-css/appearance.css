@@ -299,6 +299,14 @@
     color: var(--text, #fff);
 }
 
+.appearance-easy-read {
+    margin: 0 0 4px;
+}
+
+.appearance-easy-read-hint {
+    margin: 0 0 14px;
+}
+
 .appearance-mix-shuffle {
     flex: 0 0 auto;
     padding: 9px 16px;

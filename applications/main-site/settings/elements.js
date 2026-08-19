@@ -39,6 +39,7 @@ export const els = {
     appearanceMixLinked: document.getElementById("appearanceMixLinked"),
     appearanceMixFree: document.getElementById("appearanceMixFree"),
     appearanceMixShuffle: document.getElementById("appearanceMixShuffle"),
+    appearanceEasyRead: document.getElementById("appearanceEasyRead"),
     glassChipRow: document.getElementById("glassChipRow"),
     cornerChipRow: document.getElementById("cornerChipRow"),
     appearanceLoadoutSave: document.getElementById("appearanceLoadoutSave"),

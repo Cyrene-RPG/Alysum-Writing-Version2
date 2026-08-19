@@ -144,7 +144,33 @@ export function reorderSectionChapters(sections, key, orderedIds) {
 }
 
 export function reorderBodyChapters(sections, orderedIds) {
-    return reorderSectionChapters(sections, "body", orderedIds);
+    const next = cloneSections(sections);
+    const chapters = walkBookChapters(next.body);
+    const byId = new Map(chapters.map((chapter) => [String(chapter.id), chapter]));
+    const queue = [];
+    const seen = new Set();
+    for (const rawId of Array.isArray(orderedIds) ? orderedIds : []) {
+        const id = String(rawId || "");
+        const chapter = byId.get(id);
+        if (!chapter || seen.has(id)) continue;
+        seen.add(id);
+        queue.push(chapter);
+    }
+    for (const chapter of chapters) {
+        const id = String(chapter.id);
+        if (seen.has(id)) continue;
+        queue.push(chapter);
+    }
+    function fill(list) {
+        if (!Array.isArray(list)) return;
+        for (let i = 0; i < list.length; i += 1) {
+            const kind = itemKind(list[i]);
+            if (kind === "folder") fill(list[i].children);
+            else if (kind === "chapter") list[i] = queue.shift() || list[i];
+        }
+    }
+    fill(next.body);
+    return next;
 }
 
 export function applyBodyOutline(sections, nodes) {

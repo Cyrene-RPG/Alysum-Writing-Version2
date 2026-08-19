@@ -6,12 +6,9 @@ import {
     addBodyFolder,
     addBodyNote,
     addSectionChapter,
-    applyBodyOutline,
     applyBodyTree,
     countBookChapters,
     countBookFolders,
-    dedupeBookItems,
-    findChapter,
     itemKind,
     lastNote,
     lastOfKind,
@@ -21,13 +18,14 @@ import {
     noteParentChapterId,
     parentFolderId,
     removeSectionChapter,
+    reorderBodyChapters,
     reorderSectionChapters,
     setChapterContent,
     setChapterTitle,
     setChapterTypography,
     withUpdatedWords,
-} from "@alysum/writing-engine/manuscript.js?v=4";
-import { countWordsInHtml, countWordsInSections } from "@alysum/writing-engine/word-count.js";
+} from "@alysum/writing-engine/manuscript.js?v=5";
+import { countWordsInHtml } from "@alysum/writing-engine/word-count.js";
 import { createAutosave } from "./autosave.js";
 import { mountDocument } from "./document.js?v=7";
 import { confirmDeleteChapter } from "./prompt.js";
@@ -43,126 +41,16 @@ import {
 } from "./font-catalog.js";
 import { ensureEditorGoogleFont } from "./editor-google-fonts.js";
 import { mountFind, listSearchPages } from "./find.js?v=4";
-
-const TREE_COLLAPSE_KEY = "alysum:editor:chapters-collapsed";
-const RAIL_COLLAPSE_KEY = "alysum:editor:rail-collapsed";
-const MATTER_COLLAPSE_KEY = "alysum:editor:matter-collapsed";
-const TREE_TAB_KEY = "alysum:editor:sidebar-tab";
-
-function bookIdFromUrl() {
-    return new URLSearchParams(window.location.search).get("book") || "";
-}
-
-function currentChapter(book, chapterId) {
-    return findChapter(book?.sections, chapterId)?.chapter || listBodyChapters(book?.sections)[0] || null;
-}
-
-function fallbackChapterId(sections, preferredId) {
-    if (findChapter(sections, preferredId)) return preferredId;
-    return listBodyChapters(sections)[0]?.id
-        || listSectionChapters(sections, "front")[0]?.id
-        || listSectionChapters(sections, "back")[0]?.id
-        || "";
-}
-
-function paintWordCount(chapterEl, totalEl, book, chapterId) {
-    const chapter = currentChapter(book, chapterId);
-    const kind = itemKind(chapter);
-    const chapterWords = kind === "folder" ? countItemWords(chapter) : countWordsInHtml(chapter?.content || "");
-    const total = Number(book?.words) || countWordsInSections(book?.sections);
-    if (chapterEl) chapterEl.textContent = String(chapterWords);
-    if (totalEl) totalEl.textContent = String(total);
-}
-
-function escapeHtml(s) {
-    return String(s || "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;");
-}
-
-function countItemWords(item) {
-    const kind = itemKind(item);
-    if (kind === "folder") {
-        return (item?.children || []).reduce((sum, child) => sum + countItemWords(child), 0);
-    }
-    let n = countWordsInHtml(item?.content || "");
-    if (kind === "chapter") {
-        for (const note of item?.notes || []) n += countWordsInHtml(note?.content || "");
-    }
-    return n;
-}
-
-function tallyFolder(items) {
-    const tally = { chapters: 0, notes: 0, folders: 0 };
-    function walk(list) {
-        for (const item of list || []) {
-            const kind = itemKind(item);
-            if (kind === "folder") {
-                tally.folders += 1;
-                walk(item.children);
-            } else if (kind === "chapter") {
-                tally.chapters += 1;
-                tally.notes += Array.isArray(item.notes) ? item.notes.length : 0;
-            } else if (kind === "note") {
-                tally.notes += 1;
-            }
-        }
-    }
-    walk(items);
-    return tally;
-}
-
-function folderMetaText(tally) {
-    const parts = [];
-    if (tally.chapters) parts.push(`${tally.chapters} ${tally.chapters === 1 ? "chapter" : "chapters"}`);
-    if (tally.notes) parts.push(`${tally.notes} ${tally.notes === 1 ? "note" : "notes"}`);
-    if (tally.folders) parts.push(`${tally.folders} ${tally.folders === 1 ? "folder" : "folders"}`);
-    return parts.join(" · ");
-}
-
-function folderKindLabel(kind) {
-    if (kind === "note") return "Note";
-    if (kind === "folder") return "Folder";
-    return "Chapter";
-}
-
-function folderItemTitle(item, kind) {
-    const title = String(item?.title || "").trim();
-    if (title) return title;
-    if (kind === "note") return "Untitled note";
-    if (kind === "folder") return "Untitled folder";
-    return "Untitled";
-}
-
-function folderItemHtml(item) {
-    const kind = itemKind(item);
-    const id = String(item?.id || "");
-    const words = countItemWords(item);
-    const kids = kind === "folder"
-        ? (item.children || []).map(folderItemHtml).join("")
-        : kind === "chapter"
-            ? (item.notes || []).map(folderItemHtml).join("")
-            : "";
-    return `
-        <li class="writer-folder-item writer-folder-item--${kind}">
-            <button type="button" class="writer-folder-open" data-folder-open="${escapeHtml(id)}">
-                <span class="writer-folder-kind">${folderKindLabel(kind)}</span>
-                <span class="writer-folder-name">${escapeHtml(folderItemTitle(item, kind))}</span>
-                <span class="writer-folder-words">${words.toLocaleString()} ${words === 1 ? "word" : "words"}</span>
-            </button>
-            ${kids ? `<ul class="writer-folder-sub">${kids}</ul>` : ""}
-        </li>`;
-}
-
-function storedTab() {
-    try {
-        return localStorage.getItem(TREE_TAB_KEY) === "book" ? "book" : "chapters";
-    } catch {
-        return "chapters";
-    }
-}
+import {
+    bookIdFromUrl,
+    currentChapter,
+    fallbackChapterId,
+    paintWordCount,
+    cleanSections,
+} from "./page/helpers.js?v=41";
+import { createFolderView } from "./page/folder-view.js?v=41";
+import { mountWriterChrome } from "./page/chrome.js?v=41";
+import { mountTypewriter } from "./page/typewriter.js?v=41";
 
 async function boot() {
     initWorkspaceShell({ lead: "Working On ", accent: "…", subtitle: "Loading…" });
@@ -181,15 +69,6 @@ async function boot() {
     if (!book) {
         window.location.replace("studio.html");
         return;
-    }
-
-    function cleanSections(sections) {
-        const src = sections && typeof sections === "object" ? sections : {};
-        return {
-            front: dedupeBookItems(src.front),
-            body: dedupeBookItems(src.body),
-            back: dedupeBookItems(src.back),
-        };
     }
 
     book = withUpdatedWords({ ...book, sections: cleanSections(book.sections) });
@@ -243,108 +122,16 @@ async function boot() {
     loading?.classList.add("hidden");
     shell?.classList.remove("hidden");
 
-    function treeCollapsed() {
-        try {
-            return localStorage.getItem(TREE_COLLAPSE_KEY) === "1";
-        } catch {
-            return false;
-        }
-    }
-    function setTreeCollapsed(collapsed) {
-        shell?.classList.toggle("is-tree-collapsed", collapsed);
-        if (treeToggle) {
-            treeToggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
-            treeToggle.title = collapsed ? "Show sidebar" : "Hide sidebar";
-            treeToggle.textContent = collapsed ? "›" : "‹";
-        }
-        try {
-            localStorage.setItem(TREE_COLLAPSE_KEY, collapsed ? "1" : "0");
-        } catch {
-            /* ignore */
-        }
-    }
-    setTreeCollapsed(treeCollapsed());
-    treeToggle?.addEventListener("click", () => {
-        setTreeCollapsed(!shell?.classList.contains("is-tree-collapsed"));
+    const { setTab, expandMatter } = mountWriterChrome({
+        shell,
+        treeToggle,
+        railToggle,
+        tabChapters,
+        tabBook,
+        chaptersPane,
+        bookPane,
     });
-
-    function railCollapsed() {
-        try {
-            return localStorage.getItem(RAIL_COLLAPSE_KEY) === "1";
-        } catch {
-            return false;
-        }
-    }
-    function setRailCollapsed(collapsed) {
-        shell?.classList.toggle("is-rail-collapsed", collapsed);
-        if (railToggle) {
-            railToggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
-            railToggle.title = collapsed ? "Show sidebar" : "Hide sidebar";
-            railToggle.textContent = collapsed ? "‹" : "›";
-        }
-        try {
-            localStorage.setItem(RAIL_COLLAPSE_KEY, collapsed ? "1" : "0");
-        } catch {
-            /* ignore */
-        }
-    }
-    setRailCollapsed(railCollapsed());
-    railToggle?.addEventListener("click", () => {
-        setRailCollapsed(!shell?.classList.contains("is-rail-collapsed"));
-    });
-
-    function matterCollapsedMap() {
-        try {
-            const raw = JSON.parse(localStorage.getItem(MATTER_COLLAPSE_KEY) || "{}");
-            return raw && typeof raw === "object" ? raw : {};
-        } catch {
-            return {};
-        }
-    }
-    function setMatterCollapsed(section, collapsed) {
-        if (!section?.dataset.matter) return;
-        section.classList.toggle("is-collapsed", collapsed);
-        const toggle = section.querySelector("[data-matter-toggle]");
-        const chevron = section.querySelector(".writer-matter-chevron");
-        if (toggle) toggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
-        if (chevron) chevron.textContent = collapsed ? "▸" : "▾";
-        const next = matterCollapsedMap();
-        next[section.dataset.matter] = collapsed;
-        try {
-            localStorage.setItem(MATTER_COLLAPSE_KEY, JSON.stringify(next));
-        } catch {
-            /* ignore */
-        }
-    }
-    document.querySelectorAll(".writer-matter[data-matter]").forEach((section) => {
-        const stored = matterCollapsedMap()[section.dataset.matter] === true;
-        setMatterCollapsed(section, stored);
-        section.querySelector("[data-matter-toggle]")?.addEventListener("click", () => {
-            setMatterCollapsed(section, !section.classList.contains("is-collapsed"));
-        });
-    });
-    function expandMatter(key) {
-        const section = document.querySelector(`.writer-matter[data-matter="${key}"]`);
-        if (section) setMatterCollapsed(section, false);
-    }
-
-    function setTab(tab) {
-        const bookTab = tab === "book";
-        chaptersPane.hidden = bookTab;
-        bookPane.hidden = !bookTab;
-        tabChapters?.classList.toggle("is-active", !bookTab);
-        tabBook?.classList.toggle("is-active", bookTab);
-        tabChapters?.setAttribute("aria-selected", bookTab ? "false" : "true");
-        tabBook?.setAttribute("aria-selected", bookTab ? "true" : "false");
-        try {
-            localStorage.setItem(TREE_TAB_KEY, bookTab ? "book" : "chapters");
-        } catch {
-            /* ignore */
-        }
-    }
-    setTab(storedTab());
-    tabChapters?.addEventListener("click", () => setTab("chapters"));
-    tabBook?.addEventListener("click", () => setTab("book"));
+    const paintFolderView = createFolderView({ folderView, folderMeta, folderList });
 
     const profile = await profilePromise;
     initWorkspaceShell({
@@ -447,30 +234,13 @@ async function boot() {
     });
 
     const typewriterExit = document.getElementById("typewriterExit");
-
-    function setTypewriter(on) {
-        if (on && pageEl) {
-            const width = Math.round(pageEl.getBoundingClientRect().width);
-            if (width > 0) {
-                document.documentElement.style.setProperty("--typewriter-page-width", `${width}px`);
-            }
-        } else {
-            document.documentElement.style.removeProperty("--typewriter-page-width");
-        }
-        document.documentElement.classList.toggle("is-typewriter", on);
-        if (typewriterExit) typewriterExit.hidden = !on;
-        if (on) {
-            findUi?.close();
-            toolbarApi?.closePopover();
-            editor.focus();
-        }
-    }
+    const typewriter = mountTypewriter({ pageEl, editor, typewriterExit });
 
     const toolbarApi = mountToolbar({
         mount: toolbarMount,
         editor,
         pageEl,
-        onTypewriter: () => setTypewriter(true),
+        onTypewriter: () => typewriter.setTypewriter(true),
         onFind: () => findUi?.toggle(),
         getChapterTypography: () => {
             const ch = currentChapter(book, selectedId);
@@ -492,6 +262,7 @@ async function boot() {
             if (nextFont) void ensureEditorGoogleFont(nextFont);
         }
     });
+    typewriter.setToolbarApi(toolbarApi);
     const findUi = mountFind({
         pageEl,
         host: document.querySelector(".writer-main") || pageEl.parentElement,
@@ -511,35 +282,7 @@ async function boot() {
             showChapter(id, { keepFind: true });
         }
     });
-    typewriterExit?.addEventListener("click", () => setTypewriter(false));
-    window.addEventListener("keydown", (event) => {
-        if (event.key !== "Escape") return;
-        if (!document.getElementById("confirmOverlay")?.hidden) return;
-        if (findUi?.isOpen()) {
-            event.preventDefault();
-            findUi.close();
-            return;
-        }
-        if (!document.documentElement.classList.contains("is-typewriter")) return;
-        event.preventDefault();
-        setTypewriter(false);
-    });
-
-    function paintFolderView(folder) {
-        const isFolder = itemKind(folder) === "folder";
-        if (folderView) folderView.hidden = !isFolder;
-        if (!isFolder || !folderList) return;
-        const children = Array.isArray(folder.children) ? folder.children : [];
-        const tally = tallyFolder(children);
-        if (folderMeta) {
-            folderMeta.textContent = folderMetaText(tally) || "Nothing in this folder yet";
-        }
-        if (!children.length) {
-            folderList.innerHTML = `<li class="writer-folder-empty">Add chapters or notes from the sidebar, or drag them onto this folder.</li>`;
-            return;
-        }
-        folderList.innerHTML = children.map(folderItemHtml).join("");
-    }
+    typewriter.setFindUi(findUi);
 
     function showChapter(id, options = {}) {
         const chapter = currentChapter(book, id);
@@ -591,36 +334,34 @@ async function boot() {
         showChapter(fallbackChapterId(sections, selectedId));
     }
 
-    function bindFlat(mount, key) {
+    function bindFlat(mount, key, chapters) {
         renderTree({
             mount,
-            chapters: listSectionChapters(book.sections, key),
+            chapters: chapters || listSectionChapters(book.sections, key),
             selectedId,
             onSelect: selectItem,
             onDelete: (id) => deleteItem(id, key),
             onReorder: (orderedIds) => {
                 applyChapterContent(editor.getHtml());
-                void persist({
-                    ...book,
-                    sections: reorderSectionChapters(book.sections, key, orderedIds),
-                }, true, { skipClean: true });
+                const sections = key === "body"
+                    ? reorderBodyChapters(book.sections, orderedIds)
+                    : reorderSectionChapters(book.sections, key, orderedIds);
+                void persist({ ...book, sections }, true, { skipClean: true });
             },
         });
     }
 
-    function bindOutline(mount, showNotes) {
+    function bindOutline(mount) {
         renderOutline({
             mount,
             items: listSectionChapters(book.sections, "body"),
             selectedId,
-            showNotes,
+            showNotes: true,
             onSelect: selectItem,
             onDelete: (id) => deleteItem(id, "body"),
             onAddNote: addNoteToChapter,
             onReorder: (nodes, noteGroups) => {
-                let sections = noteGroups
-                    ? applyBodyTree(book.sections, nodes, noteGroups)
-                    : applyBodyOutline(book.sections, nodes);
+                let sections = applyBodyTree(book.sections, nodes, noteGroups);
                 if (selectedKind() !== "folder") {
                     sections = setChapterContent(sections, selectedId, editor.getHtml());
                 }
@@ -630,8 +371,8 @@ async function boot() {
     }
 
     function drawTree() {
-        bindOutline(chapterList, true);
-        bindOutline(bodyList, false);
+        bindOutline(chapterList);
+        bindFlat(bodyList, "body", listBodyChapters(book.sections));
         bindFlat(frontList, "front");
         bindFlat(backList, "back");
         if (frontEmpty) frontEmpty.hidden = listSectionChapters(book.sections, "front").length > 0;

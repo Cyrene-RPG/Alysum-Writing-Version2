@@ -1,7 +1,7 @@
 import { els } from "/js/settings/elements.js";
 import { state } from "/js/settings/state.js";
 import { TAB_PANEL_IDS, initSettingsNav } from "/js/settings/nav.js";
-import { initAppearancePickers, setAvatarPreview } from "/js/settings/appearance.js";
+import { initAppearancePickers, setAvatarPreview } from "/js/settings/appearance.js?v=18";
 import { refreshBackupStatusUi } from "/js/settings/backup.js";
 import {
     updateAuthorBioCount,

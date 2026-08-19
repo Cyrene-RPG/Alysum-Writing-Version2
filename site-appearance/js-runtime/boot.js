@@ -190,6 +190,11 @@
 
     try {
         var root = document.documentElement;
+        if (localStorage.getItem("alysum-easy-read") === "1") {
+            root.setAttribute("data-easy-read", "1");
+        } else {
+            root.removeAttribute("data-easy-read");
+        }
         var resetAppearance =
             (location.hostname === "127.0.0.1" || location.hostname === "localhost") &&
             /(?:^|[?&])reset-appearance=1(?:&|$)/.test(location.search);
@@ -209,7 +214,8 @@
                 "alysum-ui-color",
                 "alysum-ui-color-hex",
                 "alysum-ui-color-custom",
-                "alysum-appearance-loadouts"
+                "alysum-appearance-loadouts",
+                "alysum-easy-read"
             ];
             for (var i = 0; i < appearanceKeys.length; i++) {
                 localStorage.removeItem(appearanceKeys[i]);
@@ -221,6 +227,7 @@
             root.removeAttribute("data-corner-style");
             root.removeAttribute("data-display-text-style");
             root.removeAttribute("data-display-text-color");
+            root.removeAttribute("data-easy-read");
             root.classList.remove("surface-glass");
             try {
                 history.replaceState(null, "", location.pathname);

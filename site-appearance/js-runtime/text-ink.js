@@ -9,6 +9,36 @@ export const TEXT_INK = {
     grey: { id: "grey", hex: "#5e5e5e", muted: "#3f3f46", tone: "light" }
 };
 
+export const EASY_READ_KEY = "alysum-easy-read";
+export const EASY_READ_WHITE = { id: "white", hex: "#c4c4c8", muted: "#8b8b93", tone: "dark" };
+
+export function isEasyReadOn() {
+    try {
+        return localStorage.getItem(EASY_READ_KEY) === "1";
+    } catch {
+        return false;
+    }
+}
+
+export function applyEasyRead(on) {
+    const enabled = Boolean(on);
+    try {
+        if (enabled) localStorage.setItem(EASY_READ_KEY, "1");
+        else localStorage.removeItem(EASY_READ_KEY);
+    } catch {
+        /* ignore */
+    }
+    if (typeof document === "undefined") return enabled;
+    const root = document.documentElement;
+    if (enabled) root.setAttribute("data-easy-read", "1");
+    else root.removeAttribute("data-easy-read");
+    return enabled;
+}
+
+function whiteInk() {
+    return isEasyReadOn() ? EASY_READ_WHITE : TEXT_INK.white;
+}
+
 const COLOR_TOKEN_RE =
     /#(?:[0-9a-f]{6}|[0-9a-f]{3})\b|rgba?\(\s*[^)]+\)|hsla?\(\s*[^)]+\)/gi;
 
@@ -233,13 +263,13 @@ function fallbackUnderlay() {
 
 export function decideTextInk(bg) {
     const c = typeof bg === "object" && bg && "r" in bg ? bg : parseColor(bg);
-    if (!c) return TEXT_INK.white;
+    if (!c) return whiteInk();
     const L = relativeLuminance(c);
     const Lb = relativeLuminance({ r: 18, g: 18, b: 18 });
     const warm = (c.r - c.b) / 255;
     if (contrastRatio(L, 1) >= contrastRatio(L, Lb)) {
         if (L >= 0.12 && warm > 0.12) return TEXT_INK.cream;
-        return TEXT_INK.white;
+        return whiteInk();
     }
     return TEXT_INK.black;
 }
@@ -252,7 +282,7 @@ export function inkFromCssBackground(css) {
 }
 
 export function resolveTextInk(bg) {
-    if (!bg) return TEXT_INK.white;
+    if (!bg) return whiteInk();
     if (typeof bg === "object" && bg.id && bg.hex) return bg;
     const s = String(bg);
     if (s.includes("gradient") || s.includes(",") || s.includes("rgb") || s.includes("hsl")) {

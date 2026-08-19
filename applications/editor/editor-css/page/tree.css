@@ -1,0 +1,119 @@
+.writer-tree-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    background: var(--alysum-ui-panel, #111827);
+    cursor: grab;
+}
+.writer-tree-node {
+    list-style: none;
+}
+.writer-tree-node.is-dragging,
+.writer-tree-item.is-dragging,
+.writer-tree-ghost {
+    opacity: 0.5;
+    cursor: grabbing;
+}
+.writer-tree-children {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 4px 0 0;
+    padding: 4px 0 0 14px;
+    min-height: 20px;
+}
+.writer-tree-node.is-collapsed > .writer-tree-children {
+    display: none;
+}
+.writer-tree-fold {
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+    margin-left: 4px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+}
+.writer-tree-fold--after {
+    margin-left: 0;
+    color: var(--muted);
+    font-size: 12px;
+}
+.writer-tree-notes:empty {
+    display: none;
+    margin: 0;
+    padding: 0;
+    min-height: 0;
+}
+.writer-tree-list.is-note-dragging .writer-tree-notes:empty {
+    display: flex;
+    margin: 4px 0 0;
+    padding: 4px 0 0 22px;
+    min-height: 28px;
+}
+.writer-tree-item--folder {
+    background: color-mix(in srgb, var(--alysum-ui-raised, #2a2a2a) 80%, transparent);
+}
+.writer-tree-item:has([data-tree-toggle]) {
+    cursor: pointer;
+}
+.writer-tree-item--note {
+    font-size: 13px;
+}
+.writer-tree-kind {
+    flex-shrink: 0;
+    padding-left: 8px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+.writer-tree-note-btn {
+    border: 0;
+    background: transparent;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 800;
+    cursor: pointer;
+    padding: 0 6px;
+}
+.writer-tree-notes {
+    padding-left: 22px;
+}
+.writer-tree-item.is-active {
+    border-color: color-mix(in srgb, var(--accent, #6d28d9) 70%, transparent);
+}
+.writer-tree-open {
+    flex: 1;
+    min-width: 0;
+    text-align: left;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    padding: 8px 10px;
+    cursor: grab;
+    font-weight: 700;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.writer-tree-actions {
+    display: flex;
+    flex-shrink: 0;
+    padding-right: 4px;
+}
+.writer-tree-actions button {
+    width: 24px;
+    height: 24px;
+    border: 0;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+}
+.writer-tree-actions button:disabled { opacity: 0.35; cursor: default; }

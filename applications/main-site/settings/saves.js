@@ -1,7 +1,7 @@
 import { els } from "/js/settings/elements.js";
 import { state } from "/js/settings/state.js";
 import { showMsg, hideMsg, normalizeDisplayName, writeStoredAboutMe, writeStoredSupportLinks } from "/js/settings/helpers.js";
-import { setAvatarPreview } from "/js/settings/appearance.js";
+import { setAvatarPreview } from "/js/settings/appearance.js?v=18";
 import { updateAuthorBioCount, readSupportLinkDraft } from "/js/settings/author-page.js";
 import { supabase } from "@alysum/authentication/client.js";
 import { updateProfileRow } from "@alysum/synchronization-engine/local-adapter.js";

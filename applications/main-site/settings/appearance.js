@@ -23,7 +23,7 @@ import {
     getColorPreview,
     resolveDisplayColorPair
 } from "@alysum/site-appearance/js-runtime/display-text-color.js";
-import { paintChipInk } from "@alysum/site-appearance/js-runtime/text-ink.js";
+import { paintChipInk, applyEasyRead, isEasyReadOn, scheduleChromeInk } from "@alysum/site-appearance/js-runtime/text-ink.js";
 import {
     BODY_BG_PRESETS,
     applyBodyBackground,
@@ -251,6 +251,7 @@ export function initTextStylePicker() {
 export function initAppearancePickers() {
     try {
         bindAppearanceMixControls();
+        bindEasyReadControl();
         initSurfaceStylePicker();
         initCornerStylePicker();
         initThemePicker();
@@ -433,6 +434,18 @@ export function bindAppearanceMixControls() {
             setUiColorChipActive("theme");
             refreshUiColorThemeChip();
         }
+    });
+}
+
+export function bindEasyReadControl() {
+    if (!els.appearanceEasyRead || els.appearanceEasyRead.dataset.bound === "1") return;
+    els.appearanceEasyRead.dataset.bound = "1";
+    els.appearanceEasyRead.checked = isEasyReadOn();
+    els.appearanceEasyRead.addEventListener("change", () => {
+        applyEasyRead(els.appearanceEasyRead.checked);
+        applyBodyBackground(getStoredBodyBgId());
+        applyUiColor(getStoredUiColorId());
+        scheduleChromeInk();
     });
 }
 

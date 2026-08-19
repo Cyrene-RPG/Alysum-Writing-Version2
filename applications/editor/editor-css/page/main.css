@@ -1,0 +1,188 @@
+.writer-main {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    background: linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--alysum-ui-panel, #111827) 88%, white),
+        var(--alysum-ui-panel, #111827)
+    );
+    overflow: hidden;
+    position: relative;
+}
+.writer-main-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--muted, #9ca3af) 35%, transparent) transparent;
+}
+.writer-main-scroll::-webkit-scrollbar {
+    width: 6px;
+}
+.writer-main-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+.writer-main-scroll::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--muted, #9ca3af) 40%, transparent);
+    border-radius: 999px;
+}
+.writer-main-scroll::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in srgb, var(--muted, #9ca3af) 62%, transparent);
+}
+.writer-book-title,
+.writer-chapter-title {
+    width: 100%;
+    border: 0;
+    outline: none;
+    background: transparent;
+    color: inherit;
+    font-family: inherit;
+}
+.writer-book-title {
+    padding: 12px 16px 4px;
+    font-size: 1.35rem;
+    font-weight: 800;
+}
+.writer-chapter-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 12px 0 0;
+    border-bottom: 1px solid var(--border);
+}
+.writer-chapter-title {
+    flex: 1;
+    min-width: 0;
+    padding: 0 16px 10px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--muted);
+}
+.writer-folder-view {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    padding: 28px clamp(18px, 4vw, 56px) 48px;
+}
+.writer-folder-view[hidden] { display: none !important; }
+.writer-folder-meta {
+    margin: 0 0 16px;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+.writer-folder-list,
+.writer-folder-sub {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+.writer-folder-sub {
+    padding: 0 0 6px 18px;
+}
+.writer-folder-open {
+    display: grid;
+    grid-template-columns: 4.5rem minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: baseline;
+    width: 100%;
+    margin: 0;
+    padding: 11px 12px;
+    border: 0;
+    border-radius: 12px;
+    background: transparent;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+.writer-folder-open:hover {
+    background: color-mix(in srgb, var(--accent, #6d28d9) 16%, transparent);
+}
+.writer-folder-kind {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+.writer-folder-name {
+    min-width: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.writer-folder-item--note .writer-folder-name {
+    font-size: 0.98rem;
+    font-weight: 600;
+}
+.writer-folder-words {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--muted);
+    white-space: nowrap;
+}
+.writer-folder-empty {
+    margin: 0;
+    padding: 8px 2px;
+    color: var(--muted);
+    font-size: 15px;
+    line-height: 1.5;
+}
+.writer-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1px;
+    padding: 2px 8px;
+    background: var(--alysum-ui-raised, #2a2a2a);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 4;
+    flex-shrink: 0;
+    overflow: visible;
+}
+.writer-tool {
+    min-width: 28px;
+    height: 26px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: inherit;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+}
+.writer-tool:hover {
+    background: color-mix(in srgb, var(--accent, #6d28d9) 35%, transparent);
+}
+.writer-tool[aria-pressed="true"],
+.writer-tool[aria-expanded="true"] {
+    background: color-mix(in srgb, var(--accent, #6d28d9) 45%, transparent);
+}
+.writer-status {
+    position: absolute;
+    right: 14px;
+    top: 14px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--ok, #4ade80);
+}
+.writer-status[hidden] { display: none !important; }
+.writer-wordcount {
+    flex-shrink: 0;
+    margin-left: auto;
+    padding: 6px 12px;
+    border-radius: 8px;
+    background: var(--accent, #6d28d9);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 800;
+}

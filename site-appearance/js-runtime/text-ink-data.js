@@ -11,6 +11,19 @@
         black: { id: "black", hex: "#121212", muted: "#5e5e5e", tone: "light" },
         grey: { id: "grey", hex: "#5e5e5e", muted: "#3f3f46", tone: "light" }
     };
+    var EASY_READ_WHITE = { id: "white", hex: "#c4c4c8", muted: "#8b8b93", tone: "dark" };
+
+    function isEasyReadOn() {
+        try {
+            return localStorage.getItem("alysum-easy-read") === "1";
+        } catch (e) {
+            return false;
+        }
+    }
+
+    function whiteInk() {
+        return isEasyReadOn() ? EASY_READ_WHITE : INK.white;
+    }
 
     var COLOR_TOKEN_RE =
         /#(?:[0-9a-f]{6}|[0-9a-f]{3})\b|rgba?\(\s*[^)]+\)|hsla?\(\s*[^)]+\)/gi;
@@ -246,13 +259,13 @@
 
     function decide(bg) {
         var c = bg && typeof bg === "object" && "r" in bg ? bg : parseColor(bg);
-        if (!c) return INK.white;
+        if (!c) return whiteInk();
         var L = relativeLuminance(c);
         var Lb = relativeLuminance({ r: 18, g: 18, b: 18 });
         var warm = (c.r - c.b) / 255;
         if (contrastRatio(L, 1) >= contrastRatio(L, Lb)) {
             if (L >= 0.12 && warm > 0.12) return INK.cream;
-            return INK.white;
+            return whiteInk();
         }
         return INK.black;
     }

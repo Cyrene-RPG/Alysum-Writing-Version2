@@ -1,0 +1,282 @@
+* { box-sizing: border-box; }
+:root {
+    --bg: #0b1220;
+    --panel: var(--alysum-ui-panel, #111827);
+    --border: rgba(255, 255, 255, 0.1);
+}
+html {
+    height: 100%;
+}
+body {
+    margin: 0;
+    height: 100%;
+    max-height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background:
+        radial-gradient(circle at top, var(--theme-body-spot-strong, transparent) 0%, transparent 42%),
+        linear-gradient(180deg, var(--bg-gradient-top, var(--bg)) 0%, var(--bg) 100%);
+    color: var(--text);
+}
+.hidden { display: none !important; }
+.wrap {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+.writer-loading {
+    margin: 16px clamp(12px, 2vw, 24px);
+    padding: 16px 20px;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    background: var(--alysum-ui-panel, #111827);
+    color: var(--muted);
+}
+.writer-shell {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(220px, 260px) minmax(0, 1fr) minmax(220px, 260px);
+    grid-template-rows: minmax(0, 1fr);
+    gap: 16px;
+    padding: 16px clamp(12px, 2vw, 24px) 24px;
+    overflow: hidden;
+}
+.writer-shell.is-tree-collapsed {
+    grid-template-columns: 40px minmax(0, 1fr) minmax(220px, 260px);
+}
+.writer-shell.is-rail-collapsed {
+    grid-template-columns: minmax(220px, 260px) minmax(0, 1fr) 40px;
+}
+.writer-shell.is-tree-collapsed.is-rail-collapsed {
+    grid-template-columns: 40px minmax(0, 1fr) 40px;
+}
+.writer-tree,
+.writer-rail,
+.writer-main {
+    min-height: 0;
+    border-radius: 18px;
+    border: 1px solid var(--border);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+}
+.writer-main {
+    height: 100%;
+    justify-self: center;
+    width: 100%;
+    max-width: 52rem;
+}
+.writer-shell:not(.is-tree-collapsed):not(.is-rail-collapsed) .writer-main {
+    max-width: 42rem;
+}
+.writer-tree,
+.writer-rail {
+    display: flex;
+    flex-direction: column;
+    align-self: start;
+    width: 100%;
+    height: auto;
+    max-height: 100%;
+    background: var(--alysum-ui-chrome, #141414);
+    padding: 14px 12px;
+    overflow: hidden;
+}
+.writer-tree-head,
+.writer-rail-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 12px;
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--border);
+}
+.writer-rail-head {
+    justify-content: flex-start;
+}
+.writer-tabs {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    gap: 4px;
+}
+.writer-tab {
+    flex: 1;
+    min-width: 0;
+    margin-bottom: -1px;
+    border: 1px solid var(--border);
+    border-bottom-color: transparent;
+    border-radius: 8px 8px 0 0;
+    padding: 8px 6px;
+    background: color-mix(in srgb, #000 28%, transparent);
+    color: var(--muted);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+}
+.writer-tab.is-active {
+    background: transparent;
+    color: var(--text, #fff);
+    border-bottom-color: var(--alysum-ui-chrome, #141414);
+}
+.writer-tab-pane {
+    min-height: 0;
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+.writer-tab-pane[hidden] {
+    display: none !important;
+}
+.writer-pane-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-shrink: 0;
+}
+.writer-pane-head--end {
+    justify-content: flex-end;
+}
+.writer-pane-head h3 {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 800;
+}
+.writer-matter-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+    min-height: 32px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+    text-align: left;
+}
+.writer-matter-chevron {
+    width: 14px;
+    flex-shrink: 0;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1;
+}
+.writer-matter.is-collapsed .writer-tree-list,
+.writer-matter.is-collapsed .writer-empty {
+    display: none;
+}
+.writer-pane-hint {
+    margin: 0;
+    font-size: 12px;
+    color: var(--muted);
+}
+.writer-matter {
+    margin-top: 16px;
+}
+.writer-empty {
+    margin: 8px 0 0;
+    font-size: 12px;
+    color: var(--muted);
+}
+.writer-tree-add,
+.writer-tree-toggle {
+    width: 32px;
+    height: 32px;
+    border: 0;
+    border-radius: 8px;
+    font-weight: 800;
+    cursor: pointer;
+    color: var(--text, #fff);
+    line-height: 1;
+    flex-shrink: 0;
+}
+.writer-tree-add {
+    font-size: 20px;
+    background: var(--accent, #6d28d9);
+}
+.writer-tree-add--folder,
+.writer-tree-add--note,
+.writer-tree-add--chapter {
+    width: auto;
+    padding: 0 10px;
+    font-size: 12px;
+}
+.writer-tree-toggle {
+    font-size: 18px;
+    margin-bottom: 4px;
+    background: var(--alysum-ui-raised, #2a2a2a);
+    border: 1px solid var(--border);
+}
+.writer-tree-toggle:hover {
+    filter: brightness(1.12);
+}
+.writer-tree-list {
+    list-style: none;
+    margin: 12px 0 0;
+    padding: 0;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-height: 0;
+    flex: 1 1 auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+.writer-tree-list::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+}
+.writer-tree-list--matter {
+    flex: none;
+    overflow: visible;
+}
+#bookPane {
+    overflow: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+#bookPane::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+}
+.writer-shell.is-tree-collapsed .writer-tree,
+.writer-shell.is-rail-collapsed .writer-rail {
+    align-self: start;
+    width: 40px;
+    height: 40px;
+    min-height: 40px;
+    padding: 0;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    box-shadow: none;
+    overflow: hidden;
+}
+.writer-shell.is-tree-collapsed .writer-tree-head,
+.writer-shell.is-rail-collapsed .writer-rail-head {
+    display: contents;
+}
+.writer-shell.is-tree-collapsed .writer-tabs,
+.writer-shell.is-tree-collapsed .writer-tab-pane {
+    display: none;
+}
+.writer-shell.is-tree-collapsed .writer-tree-toggle,
+.writer-shell.is-rail-collapsed .writer-tree-toggle {
+    width: 40px;
+    height: 40px;
+    margin: 0;
+    border-radius: 10px;
+}

@@ -16,13 +16,13 @@
       }
     }
     </script>
-    <link rel="stylesheet" href="/site-appearance/css-styles/theme.css?v=4" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/theme.css?v=6" />
     <link rel="stylesheet" href="/site-appearance/css-styles/gradient-themes/index.css?v=3" />
     <link rel="stylesheet" href="/site-appearance/css-styles/typography.css?v=7" />
     <link rel="stylesheet" href="/site-appearance/css-styles/surface-styles/index.css?v=3" />
     <script src="/site-appearance/js-runtime/body-background-presets-data.js?v=3"></script>
-    <script src="/site-appearance/js-runtime/text-ink-data.js?v=3"></script>
-    <script src="/site-appearance/js-runtime/boot.js?v=6"></script>
+    <script src="/site-appearance/js-runtime/text-ink-data.js?v=5"></script>
+    <script src="/site-appearance/js-runtime/boot.js?v=7"></script>
     <script src="/site-appearance/js-runtime/body-background-sync.js"></script>
     <!-- ALYSUM:PWA:START -->
     <link rel="manifest" href="/manifest.webmanifest">
@@ -62,7 +62,7 @@
 <title>Account settings — Alysum</title>
 <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
 <link rel="stylesheet" href="/css/settings/page.css?v=6" />
-<link rel="stylesheet" href="/css/settings/appearance.css?v=14" />
+<link rel="stylesheet" href="/css/settings/appearance.css?v=15" />
 <link rel="stylesheet" href="/css/settings/account.css?v=2" />
 <link rel="stylesheet" href="/css/settings/profile.css?v=4" />
 <link rel="stylesheet" href="/css/settings/backup.css?v=2" />
@@ -139,6 +139,11 @@
             </div>
             <button type="button" class="appearance-mix-shuffle" id="appearanceMixShuffle" title="Random accent and background combo">Mix it up ↻</button>
         </div>
+        <label class="appearance-mix-option appearance-easy-read">
+            <input type="checkbox" id="appearanceEasyRead" />
+            Easy read
+        </label>
+        <p class="hint appearance-easy-read-hint">Softer white on dark pages — less glow, easier with dyslexia and glare.</p>
         <div class="appearance-layout">
             <section class="appearance-block appearance-block--glass" aria-labelledby="appearance-glass-heading">
                 <h3 class="appearance-subhead" id="appearance-glass-heading">Glass</h3>
@@ -465,7 +470,7 @@
     </div>
 </div>
 
-<script type="module" src="/js/settings/page.js?v=17"></script>
+<script type="module" src="/js/settings/page.js?v=18"></script>
 
 </body>
 </html>
