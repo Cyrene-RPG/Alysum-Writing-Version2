@@ -1,7 +1,9 @@
 .writer-page {
     flex: 1 0 auto;
+    align-self: center;
+    width: 100%;
     min-width: 0;
-    max-width: 100%;
+    max-width: 52rem;
     min-height: calc(100% - 7rem);
     overflow: visible;
     overflow-wrap: anywhere;

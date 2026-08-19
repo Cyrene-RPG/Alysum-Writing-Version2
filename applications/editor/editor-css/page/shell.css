@@ -67,10 +67,10 @@ body {
     height: 100%;
     justify-self: center;
     width: 100%;
-    max-width: 52rem;
+    max-width: 68rem;
 }
 .writer-shell:not(.is-tree-collapsed):not(.is-rail-collapsed) .writer-main {
-    max-width: 42rem;
+    max-width: 56rem;
 }
 .writer-tree,
 .writer-rail {
