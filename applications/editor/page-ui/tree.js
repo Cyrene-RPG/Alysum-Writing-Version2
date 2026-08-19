@@ -1,4 +1,4 @@
-import Sortable from "./sortable.js?v=1";
+import Sortable from "./sortable.js?v=2";
 
 function escapeHtml(str) {
     return String(str ?? "")

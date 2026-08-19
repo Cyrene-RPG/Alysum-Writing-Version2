@@ -32,7 +32,7 @@ import { confirmDeleteChapter } from "./prompt.js";
 import { initWorkspaceShell, setWelcomeCopy } from "./shell.js?v=2";
 import { loadWorkspaceProfile } from "@alysum/account/workspace-profile.js";
 import { mountToolbar } from "./toolbar.js?v=6";
-import { expandTreeItem, renderOutline, renderTree } from "./tree.js?v=16";
+import { expandTreeItem, renderOutline, renderTree } from "./tree.js?v=17";
 import {
     applyChapterTypographyStyles,
     chapterTypography,
@@ -147,33 +147,38 @@ async function boot() {
     const autosave = createAutosave({
         delay: 400,
         save: async (next) => {
-            const saved = await api.updateBook(book.id, {
-                title: next.title,
-                sections: next.sections,
-                words: next.words,
-                media_format: next.media_format,
-            });
-            if (next._rev !== bookRev) return;
-            const nextTitle = String(next.title || "").trim();
-            const savedTitle = String(saved?.title || "").trim();
-            const title = nextTitle && nextTitle !== "Untitled Book"
-                ? nextTitle
-                : (savedTitle || nextTitle || "Untitled Book");
-            const sections = saved?.sections
-                ? mergeSectionsByChapterId(next.sections, saved.sections, {
-                    baseUpdated: Number(next.updated) || Date.now(),
-                    otherUpdated: Number(saved.updated) || 0,
-                    unionMissing: false,
-                })
-                : next.sections;
-            book = withUpdatedWords({
-                ...next,
-                ...saved,
-                title,
-                sections,
-                _rev: next._rev,
-            });
-            setSaveStatus("Saved.", 1600);
+            try {
+                const saved = await api.updateBook(book.id, {
+                    title: next.title,
+                    sections: next.sections,
+                    words: next.words,
+                    media_format: next.media_format,
+                });
+                if (next._rev !== bookRev) return;
+                const nextTitle = String(next.title || "").trim();
+                const savedTitle = String(saved?.title || "").trim();
+                const title = nextTitle && nextTitle !== "Untitled Book"
+                    ? nextTitle
+                    : (savedTitle || nextTitle || "Untitled Book");
+                const sections = saved?.sections
+                    ? mergeSectionsByChapterId(next.sections, saved.sections, {
+                        baseUpdated: Number(next.updated) || Date.now(),
+                        otherUpdated: Number(saved.updated) || 0,
+                        unionMissing: false,
+                    })
+                    : next.sections;
+                book = withUpdatedWords({
+                    ...next,
+                    ...saved,
+                    title,
+                    sections,
+                    _rev: next._rev,
+                });
+                setSaveStatus("");
+            } catch (err) {
+                setSaveStatus("Couldn't save.", 4000);
+                throw err;
+            }
         },
     });
 
@@ -192,7 +197,6 @@ async function boot() {
         }
         book = withUpdatedWords(next);
         book._rev = ++bookRev;
-        setSaveStatus("Saving…");
         paintWordCount(chapterWordsEl, totalWordsEl, book, selectedId);
         if (itemKind(currentChapter(book, selectedId)) === "folder") {
             paintFolderView(currentChapter(book, selectedId));
